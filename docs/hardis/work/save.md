@@ -16,7 +16,7 @@ Key functionalities include:
 - **Org Synchronization (Optional):** In interactive mode, prompts the user to pull the latest metadata updates from their scratch org or source-tracked sandbox, ensuring local files reflect the org's state.
 - **Package.xml Updates:** Automatically generates `package.xml` and `destructiveChanges.xml` files based on the Git delta between your current branch and the target branch, reflecting added, modified, and deleted metadata.
 - **Automated Source Cleaning:** Applies predefined cleaning operations to your local Salesforce sources, such as removing unwanted references, minimizing profiles, or cleaning XML files based on configurations in your `.sfdx-hardis.yml`.
-  - `autoCleanTypes`: A list of automated source cleanings, configurable via [hardis:project:clean:references](${CONSTANTS.DOC_URL_ROOT}/hardis/project/clean/references/).
+  - `autoCleanTypes`: A list of automated source cleanings, configurable via [hardis:project:clean:references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/).
   - `autoRemoveUserPermissions`: A list of user permissions to automatically remove from profile metadata.
 - **Deployment Plan Generation:** Builds an automated deployment plan based on the updated `package.xml` and configured deployment splits.
 - **Commit and Push:** Guides the user to commit the changes and push them to the remote Git repository, optionally handling force pushes if a branch reset occurred.
@@ -60,7 +60,7 @@ autoRemoveUserPermissions:
   - WorkCalibrationUser
 ```
 
-Advanced instructions are available in the [Publish a User Story documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/).
+Advanced instructions are available in the [Publish a User Story documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/).
 
 <details markdown="1">
 <summary>Technical explanations</summary>

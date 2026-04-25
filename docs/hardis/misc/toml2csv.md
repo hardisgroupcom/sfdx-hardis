@@ -44,11 +44,23 @@ The command's technical implementation involves:
 - **File Copying:** Optionally copies generated CSV files to other specified locations.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:misc:toml2csv --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name                  |  Type   | Description                                                              | Default | Required | Options |
 |:----------------------|:-------:|:-------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                    |         |          |         |
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                          |         |          |         |
 | filtersections<br/>-l | option  | List of sections to process (if not set, all sections will be processed) |         |          |         |
 | flags-dir             | option  | undefined                                                                |         |          |         |

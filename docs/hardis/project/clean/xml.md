@@ -14,13 +14,27 @@ This can be very useful to avoid to always remove manually the same elements in 
 ![How to build cleaning XPath](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/doc-clean-xml.jpg)
 
 Note: If globpattern and xpath are not sent, elements defined in property **cleanXmlPatterns** in **.sfdx-hardis.yml** config file will be used
-  
+
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:clean:xml --agent --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"
+```
+
+In agent mode:
+
+- The interactive prompt to add the cleaning rule to permanent configuration is skipped.
+- Cleaning is performed using the provided flags or the existing `cleanXmlPatterns` configuration.
+
   
 
 ## Parameters
 
 | Name               |  Type   | Description                                                                                                         |                 Default                 | Required | Options |
 |:-------------------|:-------:|:--------------------------------------------------------------------------------------------------------------------|:---------------------------------------:|:--------:|:-------:|
+| agent              | boolean | Run in non-interactive mode for agents and automation                                                               |                                         |          |         |
 | debug<br/>-d       | boolean | Activate debug mode (more logs)                                                                                     |                                         |          |         |
 | flags-dir          | option  | undefined                                                                                                           |                                         |          |         |
 | folder<br/>-f      | option  | Root folder                                                                                                         |                force-app                |          |         |
@@ -39,6 +53,10 @@ $ sf hardis:project:clean:xml
 
 ```shell
 $ sf hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"
+```
+
+```shell
+$ sf hardis:project:clean:xml --agent
 ```
 
 

@@ -88,6 +88,7 @@ mermaidTheme:
   removedTextColor: "white"
   removedLinkColor: "#E63946"
 ```
+
 ### "Salesforce" Nested Config override
 ```yaml
 mermaidTheme:

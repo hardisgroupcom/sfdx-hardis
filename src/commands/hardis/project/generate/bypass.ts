@@ -9,7 +9,7 @@ import {
   soqlQuery,
   soqlQueryTooling,
 } from "../../../../common/utils/apiUtils.js";
-import { execCommand, uxLog, uxLogTable } from "../../../../common/utils/index.js";
+import { execCommand, isCI, uxLog, uxLogTable } from "../../../../common/utils/index.js";
 import { prompts } from "../../../../common/utils/prompts.js";
 import c from "chalk";
 import path from "path";
@@ -103,6 +103,10 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       description:
         "Skip authentication check when a default username is required",
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     "skip-credits": Flags.boolean({
       aliases: ["skipCredits"],
       char: "k",
@@ -194,6 +198,21 @@ The command's technical implementation involves:
   - Continues processing remaining items even when individual items fail (unless critical errors occur).
 - **Reporting:** Generates timestamped CSV reports showing outcomes for both metadata generation and bypass implementation operations.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:generate:bypass --agent --sObjects Account,Contact --automations Flow,Trigger,VR --metadata-source org
+\`\`\`
+
+In agent mode:
+
+- \`--objects\` (sObjects) and \`--automations\` flags are required; the command will error if not provided
+- \`--metadata-source\` defaults to \`local\` if not specified
+- All interactive prompts are skipped
+- \`--apply-to-vrs\`, \`--apply-to-triggers\`, \`--apply-to-flows\` default to false if not explicitly set
 `;
 
   public static examples = [
@@ -205,12 +224,14 @@ The command's technical implementation involves:
     "$ sf hardis:project:generate:bypass --apply-to-vrs",
     "$ sf hardis:project:generate:bypass --apply-to-triggers",
     "$ sf hardis:project:generate:bypass --metadata-source org",
+    "$ sf hardis:project:generate:bypass --agent --sObjects Account,Contact --automations Flow,Trigger,VR",
   ];
 
   // Main run method
   public async run(): Promise<AnyJson> {
     // Collect options
     const { flags } = await this.parse(HardisProjectGenerateBypass);
+    const agentMode = flags.agent === true;
     const connection = flags["target-org"].getConnection();
     if (
       flags["metadata-source"] !== undefined &&
@@ -313,7 +334,7 @@ The command's technical implementation involves:
       });
     }
 
-    if (promptsNeeded.length) {
+    if (promptsNeeded.length && !isCI && !agentMode) {
       const promptResults = await prompts(promptsNeeded);
       if (promptResults.sobjects) {
         targetSObjects = Object.fromEntries(
@@ -338,6 +359,22 @@ The command's technical implementation involves:
 
       if (promptResults.elementSource) {
         this.retrieveFromOrg = promptResults.elementSource === "org";
+      }
+    }
+
+    // In agent mode, apply defaults for unset values
+    if (agentMode) {
+      if (this.retrieveFromOrg == null) {
+        this.retrieveFromOrg = false;
+      }
+      if (applyToTriggers == null) {
+        applyToTriggers = false;
+      }
+      if (applyToVrs == null) {
+        applyToVrs = false;
+      }
+      if (applyToFlows == null) {
+        applyToFlows = false;
       }
     }
 

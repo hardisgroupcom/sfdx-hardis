@@ -14,11 +14,23 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 120 minutes.
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-apex-tests/) and can output Grafana, Slack and MsTeams Notifications.
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:test:apex --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                   |    Default    | Required |                                Options                                 |
 |:------------------|:-------:|:--------------------------------------------------------------|:-------------:|:--------:|:----------------------------------------------------------------------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation         |               |          |                                                                        |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |               |          |                                                                        |
 | flags-dir         | option  | undefined                                                     |               |          |                                                                        |
 | json              | boolean | Format output as json.                                        |               |          |                                                                        |
@@ -31,6 +43,10 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
 ```shell
 $ sf hardis:org:test:apex
+```
+
+```shell
+$ sf hardis:org:test:apex --agent
 ```
 
 

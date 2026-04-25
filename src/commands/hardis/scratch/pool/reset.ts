@@ -41,13 +41,29 @@ The command's technical implementation involves:
 - **Scratch Org Deletion:** It iterates through each scratch org in the retrieved list. For each org, it authenticates to it using \`authenticateWithSfdxUrlStore\` and then executes \`sf org delete scratch\` via \`execCommand\`.
 - **Logging:** Provides clear messages about the deletion process and the status of each scratch org.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:pool:reset --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:scratch:pool:refresh'];
+  public static examples = ['$ sf hardis:scratch:pool:refresh',
+    '$ sf hardis:scratch:pool:refresh --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

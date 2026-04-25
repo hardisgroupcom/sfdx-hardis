@@ -85,13 +85,29 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
   - **OAuth2 (service account):** Exchanges \`CONFLUENCE_CLIENT_ID\` / \`CONFLUENCE_CLIENT_SECRET\` for a Bearer token via the Atlassian OAuth2 client-credentials endpoint (\`https://api.atlassian.com/oauth/token\`). The Atlassian Cloud ID is resolved from the accessible-resources endpoint and the base URL is automatically set to \`https://api.atlassian.com/ex/confluence/{cloudId}\`.
 - **Error Handling:** Reports per-page errors without stopping the entire process, allowing partial deployments. A summary of failed pages is shown at the end.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:mkdocs-to-confluence --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
     '$ sf hardis:doc:mkdocs-to-confluence',
+    '$ sf hardis:doc:mkdocs-to-confluence --agent',
   ];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -675,7 +691,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
 
     // Convert italic using *text* and _text_ variants. Both variants forbid newlines
-    // inside the span — otherwise a leftover `*` on one line greedily pairs with a
+    // inside the span - otherwise a leftover `*` on one line greedily pairs with a
     // `*` many lines later and splices `<em>` across unrelated content.
     // For _text_, apply strict boundaries so Salesforce API names like Siren__c are preserved.
     html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
@@ -720,7 +736,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     // Restore inline code spans (kept as placeholders during markdown-to-HTML passes).
     html = html.replace(/@@HARDIS_INLINE_CODE_(\d+)@@/g, (_match, index) => inlineCodePlaceholders[parseInt(index, 10)] || '');
 
-    // Final XHTML sanitization. Confluence storage format is XHTML-strict — any malformed
+    // Final XHTML sanitization. Confluence storage format is XHTML-strict - any malformed
     // markup triggers "Content contains unsupported extensions and cannot be edited in
     // Fabric editor" (HTTP 400). CDATA blocks are protected because their contents must
     // stay raw (entity references are not expanded inside CDATA).
@@ -979,7 +995,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     } catch (e: any) {
       // Confluence returns 400 when an attachment with the same filename already exists.
       // For mermaid images the filename embeds a content fingerprint, so an existing attachment
-      // with the same name is guaranteed to be identical — skip silently.
+      // with the same name is guaranteed to be identical - skip silently.
       const body = e?.response?.data;
       const msg: string = body?.message ?? e?.message ?? '';
       if (e?.response?.status === 400 && msg.includes('same file name as an existing attachment')) {
@@ -1020,7 +1036,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
   /**
    * Reorder sibling Confluence pages to match the given ordered list of page IDs.
    * Uses the Confluence v1 move API (PUT /wiki/rest/api/content/{id}/move/after/{targetId})
-   * to position each page after its predecessor — O(n-1) API calls per level.
+   * to position each page after its predecessor - O(n-1) API calls per level.
    */
   private async reorderChildPages(orderedPageIds: string[]): Promise<void> {
     if (orderedPageIds.length < 2) return;
@@ -1103,7 +1119,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
         const line = lines[i];
 
         if (line.trim() === '') {
-          // Blank line — look ahead past all consecutive blanks to decide what follows
+          // Blank line - look ahead past all consecutive blanks to decide what follows
           let j = i + 1;
           while (j < lines.length && lines[j].trim() === '') j++;
           if (j >= lines.length) break;
@@ -1115,15 +1131,15 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
           if (peekListMatch) {
             const peekLevel = peekListMatch[1].length;
             if (peekLevel === baseIndent) {
-              // Next sibling at same level — advance past blank lines and stop body
+              // Next sibling at same level - advance past blank lines and stop body
               i = j;
               break;
             } else if (peekLevel > baseIndent) {
-              // Nested list follows after blank lines — skip blanks and continue
+              // Nested list follows after blank lines - skip blanks and continue
               i = j;
               continue;
             } else {
-              // Outer-level item — end of current list
+              // Outer-level item - end of current list
               break;
             }
           } else if (peekIndent >= bodyIndent) {
@@ -1133,7 +1149,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
             i++;
             continue;
           } else {
-            // Insufficient indentation — end of this list
+            // Insufficient indentation - end of this list
             break;
           }
         }

@@ -37,6 +37,17 @@ This command acts as an intelligent wrapper around the Salesforce CLI's metadata
 - **User Guidance:** It logs messages to the console, including deprecation warnings and pointers to external documentation for troubleshooting.
 - **Argument Passthrough:** It directly passes the command-line arguments (\`this.argv\`) to the underlying Salesforce CLI command, ensuring all standard deployment options are supported.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:mdapi:deploy --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
   public static readonly examples = [];
   public static readonly flags: any = {
@@ -100,6 +111,10 @@ This command acts as an intelligent wrapper around the Salesforce CLI's metadata
     }),
     concise: Flags.boolean({
       description: 'concise',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       default: false,

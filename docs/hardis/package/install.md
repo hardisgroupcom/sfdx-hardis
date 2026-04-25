@@ -7,11 +7,21 @@ Install a package in an org using its id (starting with **04t**)
 
 Assisted menu to propose to update `installedPackages` property in `.sfdx-hardis.yml`
 
+### Agent Mode
+
+Use `--agent` to disable all interactive prompts. Required flags in agent mode:
+
+- `--package`: Package Version Id to install (starting with 04t). Required.
+- `--installationkey`: Optional installation key for the package.
+
+All interactive package selection prompts are skipped. The `managePackageConfig` step is also skipped.
+
 
 ## Parameters
 
 | Name                   |  Type   | Description                                                   | Default | Required | Options |
 |:-----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                  | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d           | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir              | option  | undefined                                                     |         |          |         |
 | installationkey<br/>-k | option  | installation key for key-protected package (default: null)    |         |          |         |
@@ -25,6 +35,10 @@ Assisted menu to propose to update `installedPackages` property in `.sfdx-hardis
 
 ```shell
 $ sf hardis:package:install
+```
+
+```shell
+$ sf hardis:package:install --agent --package 04t...
 ```
 
 

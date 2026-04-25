@@ -52,9 +52,17 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 </details>
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
 
-  public static examples = ['$ sf hardis:org:diagnose:underusedpermsets'];
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:underusedpermsets --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically. The threshold defaults to 5 (or \`PERMSET_LIMITED_USERS_THRESHOLD\` env var) when not provided.`;
+
+  public static examples = ['$ sf hardis:org:diagnose:underusedpermsets', '$ sf hardis:org:diagnose:underusedpermsets --agent'];
 
   public static flags: any = {
     outputfile: Flags.string({

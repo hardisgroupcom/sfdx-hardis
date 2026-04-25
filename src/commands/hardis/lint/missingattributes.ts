@@ -53,8 +53,16 @@ The command's technical implementation involves:
 </details>
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
-  public static examples = ['$ sf hardis:lint:missingattributes'];
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:lint:missingattributes --agent
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+  public static examples = ['$ sf hardis:lint:missingattributes', '$ sf hardis:lint:missingattributes --agent'];
   /* jscpd:ignore-start */
   public static flags: any = {
     debug: Flags.boolean({

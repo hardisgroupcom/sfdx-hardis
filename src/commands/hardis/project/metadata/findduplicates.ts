@@ -38,6 +38,17 @@ export default class Find extends SfCommand<any> {
 Default config :
 metadataDuplicateFindKeys :
 ${Find.metadataDuplicateFindKeys}
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:metadata:findduplicates --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
@@ -86,6 +97,10 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
       char: 'f',
       description: 'XML metadata files path',
       multiple: true,
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     websocket: Flags.string({
       description: messages.getMessage('websocket'),

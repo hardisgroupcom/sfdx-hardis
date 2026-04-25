@@ -47,11 +47,22 @@ The command's technical implementation involves:
 - **Error Handling:** Includes mechanisms to handle potential errors during the export process, such as network issues, API limits, and file validation failures. Each file is assigned a specific status (`success`, `failed`, `skipped`, `invalid`) for comprehensive tracking and troubleshooting.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all prompts. Typical usage:
+
+`sf hardis:org:files:export --agent --path ./my-files-project --target-org myOrg`
+
+- The `--path` flag is required in agent mode (no interactive workspace selection).
+- Default export configuration is used (no interactive config override prompt).
+- Resume/restart prompt is skipped; resume behavior follows the `--resume` flag (default: restart).
+
 
 ## Parameters
 
 | Name                    |  Type   | Description                                                       | Default | Required | Options |
 |:------------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                   | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
 | chunksize<br/>-c        | option  | Number of records to add in a chunk before it is processed        |  1000   |          |         |
 | debug<br/>-d            | boolean | Activate debug mode (more logs)                                   |         |          |         |
 | flags-dir               | option  | undefined                                                         |         |          |         |
@@ -68,6 +79,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:org:files:export
+```
+
+```shell
+$ sf hardis:org:files:export --agent --path ./my-files-project
 ```
 
 

@@ -37,11 +37,23 @@ The command's technical implementation involves:
 - **Summary Reporting:** Tracks and reports on the files that have been updated due to filtering.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:clean:filter-xml-content --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name                |  Type   | Description                                                   | Default | Required | Options |
 |:--------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent               | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | configfile<br/>-c   | option  | Config JSON file path                                         |         |          |         |
 | debug               | boolean | debug                                                         |         |          |         |
 | flags-dir           | option  | undefined                                                     |         |          |         |

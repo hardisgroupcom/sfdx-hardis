@@ -22,10 +22,24 @@ Key functionalities:
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/) and can output Grafana, Slack and MsTeams Notifications.
 
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:diagnose:deployments --agent --period daily --target-org myorg@example.com
+```
+
+In agent mode:
+
+- `--period` defaults to `daily` (last 24 hours) when not provided.
+- All interactive prompts are skipped.
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                                                                 | Default | Required |         Options          |
 |:------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:------------------------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                                                                                       |         |          |                          |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                                                             |         |          |                          |
 | flags-dir         | option  | undefined                                                                                                                                                                   |         |          |                          |
 | json              | boolean | Format output as json.                                                                                                                                                      |         |          |                          |
@@ -51,6 +65,10 @@ $ sf hardis:org:diagnose:deployments --period weekly
 
 ```shell
 $ sf hardis:org:diagnose:deployments --period all
+```
+
+```shell
+$ sf hardis:org:diagnose:deployments --agent
 ```
 
 

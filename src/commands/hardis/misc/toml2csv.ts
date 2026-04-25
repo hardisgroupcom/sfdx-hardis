@@ -60,6 +60,17 @@ The command's technical implementation involves:
 - **Statistics Collection:** Tracks various statistics, such as the number of processed lines, successful lines, error lines, and filtered lines, providing a summary at the end.
 - **File Copying:** Optionally copies generated CSV files to other specified locations.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:misc:toml2csv --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
@@ -93,6 +104,10 @@ The command's technical implementation involves:
     outputdir: Flags.string({
       char: 'z',
       description: 'Output directory',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

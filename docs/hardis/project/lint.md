@@ -28,11 +28,23 @@ The command's technical implementation involves:
 - **User Feedback:** Provides clear messages about the success or failure of the linting process.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:lint --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                   | Default | Required | Options |
 |:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
 | fix<br/>-f        | boolean | Apply linters fixes                                           |         |          |         |
 | flags-dir         | option  | undefined                                                     |         |          |         |
@@ -45,6 +57,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:project:lint
+```
+
+```shell
+$ sf hardis:project:lint --agent
 ```
 
 ```shell

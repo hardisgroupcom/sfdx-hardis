@@ -61,10 +61,26 @@ The command's technical implementation involves:
 ![](https://sfdx-hardis.cloudity.com/assets/images/storage-usage-total.png)
 
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:diagnose:storage-stats --agent --target-org myorg@example.com
+```
+
+In agent mode, all interactive prompts are skipped with sensible defaults:
+- All filtered SObjects are selected for analysis
+- Breakdown field defaults to `CreatedDate` (override with `--breakdown-field`)
+- Date granularity defaults to `year`
+- No WHERE clause is applied (override with `--where`)
+
+
 ## Parameters
 
 | Name                   |  Type   | Description                                                                                                                                 | Default | Required | Options |
 |:-----------------------|:-------:|:--------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                  | boolean | Run in non-interactive mode for agents and automation                                                                                       |         |          |         |
 | breakdown-field<br/>-b | option  | Field to use for storage stats breakdown. Example: "CreatedDate", "LastModifiedDate", "RecordType.Name", or custom fields like "Status__c"  |         |          |         |
 | debug<br/>-d           | boolean | Activate debug mode (more logs)                                                                                                             |         |          |         |
 | flags-dir              | option  | undefined                                                                                                                                   |         |          |         |
@@ -99,6 +115,10 @@ $ sf hardis:org:diagnose:storage-stats -w "Status__c = 'Active'"
 
 ```shell
 $ sf hardis:org:diagnose:storage-stats -b "LastModifiedDate" -w "IsDeleted = false"
+```
+
+```shell
+$ sf hardis:org:diagnose:storage-stats --agent
 ```
 
 

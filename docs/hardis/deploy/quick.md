@@ -49,21 +49,33 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 ```
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:deploy:quick --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
-| Name                     |  Type   | Description            | Default | Required | Options |
-|:-------------------------|:-------:|:-----------------------|:-------:|:--------:|:-------:|
-| --job-id<br/>-i          | option  | job-id                 |         |          |         |
-| --use-most-recent<br/>-r | boolean | use-most-recent        |         |          |         |
-| api-version<br/>-a       | option  | api-version            |         |          |         |
-| async                    | boolean | async                  |         |          |         |
-| debug                    | boolean | debug                  |         |          |         |
-| flags-dir                | option  | undefined              |         |          |         |
-| json                     | boolean | Format output as json. |         |          |         |
-| target-org<br/>-o        | option  | undefined              |         |          |         |
-| tests                    | option  | tests                  |         |          |         |
-| wait<br/>-w              | option  | wait                   |   33    |          |         |
+| Name                     |  Type   | Description                                           | Default | Required | Options |
+|:-------------------------|:-------:|:------------------------------------------------------|:-------:|:--------:|:-------:|
+| --job-id<br/>-i          | option  | job-id                                                |         |          |         |
+| --use-most-recent<br/>-r | boolean | use-most-recent                                       |         |          |         |
+| agent                    | boolean | Run in non-interactive mode for agents and automation |         |          |         |
+| api-version<br/>-a       | option  | api-version                                           |         |          |         |
+| async                    | boolean | async                                                 |         |          |         |
+| debug                    | boolean | debug                                                 |         |          |         |
+| flags-dir                | option  | undefined                                             |         |          |         |
+| json                     | boolean | Format output as json.                                |         |          |         |
+| target-org<br/>-o        | option  | undefined                                             |         |          |         |
+| tests                    | option  | tests                                                 |         |          |         |
+| wait<br/>-w              | option  | wait                                                  |   33    |          |         |
 
 ## Examples
 

@@ -135,11 +135,22 @@ If you have a complex strategy, you might need to input property **mergeTargets*
 
 Define DO_NOT_OVERWRITE_INDEX_MD=true to avoid overwriting the index.md file in docs folder, useful if you want to keep your own index.md file.
 
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:project2markdown --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped. All flags remain available and behave identically - use them to control which documentation sections are generated.
+
 ${this.htmlInstructions}
 `;
 
   public static examples = [
     '$ sf hardis:doc:project2markdown',
+    '$ sf hardis:doc:project2markdown --agent',
     '$ sf hardis:doc:project2markdown --with-history',
     '$ sf hardis:doc:project2markdown --with-history --pdf',
     '$ sf hardis:doc:project2markdown --hide-apex-code',
@@ -149,6 +160,10 @@ ${this.htmlInstructions}
   ];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     "diff-only": Flags.boolean({
       default: false,
       description: "Generate documentation only for changed files (used for monitoring)",

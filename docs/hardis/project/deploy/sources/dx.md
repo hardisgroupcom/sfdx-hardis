@@ -273,11 +273,25 @@ If you need notifications to be sent using the current Pull Request and not the 
 
 If you want to disable the calculation and display of Flow Visual Git Diff in Pull Request comments, define variable **SFDX_DISABLE_FLOW_DIFF=true**
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:deploy:smart --agent --target-org myorg@example.com
+```
+
+In agent mode:
+
+- The interactive org selection prompt is skipped; `--target-org` flag value is used directly.
+- All other behavior remains the same as in CI mode.
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                             | Default | Required | Options |
 |:------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                   |         |          |         |
 | check<br/>-c      | boolean | Only checks the deployment, there is no impact on target org            |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                         |         |          |         |
 | delta             | boolean | Applies sfdx-git-delta to package.xml before other deployment processes |         |          |         |
@@ -331,6 +345,10 @@ $ CI_SFDX_HARDIS_BITBUCKET_TOKEN=xxxxxx BITBUCKET_WORKSPACE=sfdxhardis-demo BITB
 
 ```shell
 $ GITHUB_TOKEN=xxxx GITHUB_REPOSITORY=my-user/my-repo FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com
+```
+
+```shell
+$ sf hardis:project:deploy:smart --agent
 ```
 
 

@@ -41,6 +41,19 @@ Key functionalities include:
 - **Persistent Configuration:** You can choose to save your cleaning selections in your project's configuration (\`.sfdx-hardis.yml\`) so they are automatically applied during future Work Save operations.
 - **File Deletion:** Beyond just cleaning XML content, it can also delete related files (e.g., custom field files and their translations when a custom field is marked for deletion).
 
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:references --agent --type all
+\`\`\`
+
+In agent mode:
+
+- The interactive prompt to select cleaning types is skipped. You must provide \`--type\` or \`--config\`, otherwise the configured \`autoCleanTypes\` are used.
+- The prompt to save cleaning selections to permanent configuration is skipped.
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -59,6 +72,7 @@ The command's technical implementation involves several steps:
     '$ sf hardis:project:clean:references --type all',
     '$ sf hardis:project:clean:references --config ./cleaning/myconfig.json',
     '$ sf hardis:project:clean:references --config ./somefolder/myDestructivePackage.xml',
+    '$ sf hardis:project:clean:references --agent --type all',
   ];
 
   // public static args = [{name: 'file'}];
@@ -95,6 +109,10 @@ The command's technical implementation involves several steps:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
   };
 
@@ -174,6 +192,7 @@ The command's technical implementation involves several steps:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(CleanReferences);
+    const agentMode = flags.agent === true;
     this.debugMode = flags.debug || false;
     this.cleaningTypes = flags.type ? [flags.type] : [];
     this.configFile = flags.config || null;
@@ -189,7 +208,7 @@ The command's technical implementation involves several steps:
       }
 
       // Prompt user cleanings to perform
-      if (!isCI && this.cleaningTypes.length === 0) {
+      if (!isCI && !agentMode && this.cleaningTypes.length === 0) {
         const typesResponse = await prompts({
           type: 'multiselect',
           name: 'value',
@@ -204,7 +223,7 @@ The command's technical implementation involves several steps:
     // Prompt user to save choice in configuration
     const autoCleanTypes = config.autoCleanTypes || [];
     const toAdd = this.cleaningTypes.filter((type) => !autoCleanTypes.includes(type));
-    if (toAdd.length > 0 && !isCI && flags.type !== 'all') {
+    if (toAdd.length > 0 && !isCI && !agentMode && flags.type !== 'all') {
       const saveResponse = await prompts({
         type: 'confirm',
         name: 'value',

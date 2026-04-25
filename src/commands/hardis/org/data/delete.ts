@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
@@ -46,14 +46,27 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 - **Environment Awareness:** It checks the \`isCI\` flag to determine whether to run in an interactive mode (prompting for user input) or a non-interactive mode (relying solely on command-line flags).
 - **Required Plugin:** It explicitly lists \`sfdmu\` as a required plugin, ensuring that the necessary dependency is in place before execution.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all prompts. Typical usage:
+
+\`sf hardis:org:data:delete --agent --path ./scripts/data/MyDataProject --target-org myOrg\`
+
+- The \`--path\` flag is required in agent mode (no interactive workspace selection).
+- The \`--target-org\` flag is used directly (no interactive org selection prompt).
 `;
 
-  public static examples = ['$ sf hardis:org:data:delete'];
+  public static examples = ['$ sf hardis:org:data:delete', '$ sf hardis:org:data:delete --agent --path ./scripts/data/MyDataProject --target-org myOrg'];
 
   public static flags: any = {
     path: Flags.string({
       char: 'p',
       description: 'Path to the sfdmu workspace folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -80,15 +93,19 @@ The command's technical implementation relies heavily on the SFDMU plugin:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DataExport);
     let sfdmuPath = flags.path || null;
+    const agentMode = flags.agent === true;
 
     // Identify sfdmu workspace if not defined
     if (sfdmuPath == null) {
+      if (isCI || agentMode) {
+        throw new SfError(c.red('In agent/CI mode, --path flag is required to specify the data workspace.'));
+      }
       sfdmuPath = await selectDataWorkspace({ selectDataLabel: 'Please select a data workspace to use for DELETION' });
     }
 
     // Select org that where records will be imported
     let orgUsername = flags['target-org'].getUsername();
-    if (!isCI) {
+    if (!isCI && !agentMode) {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false, defaultOrgUsername: flags['target-org']?.getUsername() });
     }
 

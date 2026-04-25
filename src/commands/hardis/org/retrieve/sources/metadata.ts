@@ -51,10 +51,22 @@ The command's technical implementation involves:
   - It logs warnings if post-actions fail or if the monitoring version is deprecated.
 - **Error Handling:** Includes robust error handling for retrieval failures and post-action execution.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:retrieve:sources:metadata --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
     '$ sf hardis:org:retrieve:sources:metadata',
+    '$ sf hardis:org:retrieve:sources:metadata --agent',
     '$ SFDX_RETRIEVE_WAIT_MINUTES=200 sf hardis:org:retrieve:sources:metadata',
   ];
 
@@ -75,6 +87,10 @@ The command's technical implementation involves:
     instanceurl: Flags.string({
       char: 'r',
       description: messages.getMessage('instanceUrl'),
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

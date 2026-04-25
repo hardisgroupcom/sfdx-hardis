@@ -87,10 +87,19 @@ The command's technical implementation involves:
 </details>
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:unused-connected-apps --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:unused-connected-apps',
+    '$ sf hardis:org:diagnose:unused-connected-apps --agent',
   ];
 
   public static flags: any = {

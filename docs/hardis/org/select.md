@@ -6,6 +6,8 @@
 
 ## Command Behavior
 
+> **This command requires human interaction and must be called manually, preferably from the [VS Code SFDX Hardis UI](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis). It is not suitable for automation or AI agent usage.**
+
 **Allows you to select a Salesforce org and set it as your default, optionally filtering by Dev Hub or scratch orgs.**
 
 This command simplifies switching between different Salesforce environments. It presents an interactive list of your authenticated orgs, enabling you to quickly set a new default org for subsequent Salesforce CLI commands.

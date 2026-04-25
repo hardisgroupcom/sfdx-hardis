@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { ensureGitRepository, execCommand, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
@@ -19,11 +19,48 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class ProjectCreate extends SfCommand<any> {
   public static title = 'Login';
 
-  public static description = 'Create a new SFDX Project';
+  public static description = `Create a new SFDX Project
 
-  public static examples = ['$ sf hardis:project:create'];
+## Command Behavior
+
+**Creates and initializes a new Salesforce DX project with sfdx-hardis configuration.**
+
+This command automates the setup of a new SFDX project, including git repository initialization, DevHub connection, project naming, development branch configuration, and default auto-clean types.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Git Repository:** Ensures a git repository exists or clones one.
+- **DevHub Selection:** Prompts for the type of development orgs (scratch, sandbox, or both) and connects to DevHub if needed.
+- **Project Generation:** Creates a new SFDX project using \`sf project generate\` if one doesn't already exist.
+- **Default Files:** Copies default CI/CD configuration files from the package defaults.
+- **Configuration:** Sets project name, development branch, and auto-clean types in \`.sfdx-hardis.yml\`.
+</details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:create --agent
+\`\`\`
+
+In agent mode:
+
+- The DevHub type prompt is skipped; defaults to \`scratch\`.
+- The project name prompt is skipped; the project name must already be set in config or an error is thrown.
+- The development branch prompt is skipped; defaults to \`integration\`.
+`;
+
+  public static examples = ['$ sf hardis:project:create', '$ sf hardis:project:create --agent'];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -47,30 +84,37 @@ export default class ProjectCreate extends SfCommand<any> {
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ProjectCreate);
     this.debugMode = flags.debug || false;
+    const agentMode = flags.agent === true;
     // Check git repo
     await ensureGitRepository({ clone: true });
-    const devHubPrompt = await prompts({
-      name: 'orgType',
-      type: 'select',
-      message: t('toPerformImplementationWillYourProjectUse'),
-      description: t('chooseTypeOfDevelopmentOrgs'),
-      placeholder: t('selectOrgType'),
-      choices: [
-        {
-          title: t('scratchOrgsOnly'),
-          value: 'scratch',
-        },
-        {
-          title: t('sourceTrackedSandboxesOnly'),
-          value: 'sandbox',
-        },
-        {
-          title: t('sourceTrackedSandboxesAndScratchOrgs'),
-          value: 'sandboxAndScratch',
-        },
-      ],
-    });
-    if (['scratch', 'sandboxAndScratch'].includes(devHubPrompt.orgType)) {
+    let orgType = 'scratch';
+    if (!agentMode) {
+      const devHubPrompt = await prompts({
+        name: 'orgType',
+        type: 'select',
+        message: t('toPerformImplementationWillYourProjectUse'),
+        description: t('chooseTypeOfDevelopmentOrgs'),
+        placeholder: t('selectOrgType'),
+        choices: [
+          {
+            title: t('scratchOrgsOnly'),
+            value: 'scratch',
+          },
+          {
+            title: t('sourceTrackedSandboxesOnly'),
+            value: 'sandbox',
+          },
+          {
+            title: t('sourceTrackedSandboxesAndScratchOrgs'),
+            value: 'sandboxAndScratch',
+          },
+        ],
+      });
+      orgType = devHubPrompt.orgType;
+    } else {
+      uxLog("log", this, c.grey(t('agentModeDefaultOrgType', { orgType })));
+    }
+    if (['scratch', 'sandboxAndScratch'].includes(orgType)) {
       // Connect to DevHub
       await this.config.runHook('auth', {
         checkAuth: true,
@@ -84,6 +128,9 @@ export default class ProjectCreate extends SfCommand<any> {
     let projectName = config.projectName;
     let setProjectName = false;
     if (projectName == null) {
+      if (agentMode) {
+        throw new SfError('In agent mode, projectName must be set in config/.sfdx-hardis.yml before running this command.');
+      }
       // User prompts
       projectName = await promptForProjectName();
       setProjectName = true;
@@ -114,16 +161,22 @@ export default class ProjectCreate extends SfCommand<any> {
 
     config = await getConfig('project');
     if (config.developmentBranch == null) {
-      // User prompts
-      const devBranchRes = await prompts({
-        type: 'text',
-        name: 'devBranch',
-        message: t('whatIsNameOfDefaultDevelopmentBranch'),
-        initial: 'integration',
-        description: t('enterNameOfMainDevelopmentBranch'),
-        placeholder: t('exIntegration'),
-      });
-      await setConfig('project', { developmentBranch: devBranchRes.devBranch });
+      if (agentMode) {
+        const defaultBranch = 'integration';
+        uxLog("log", this, c.grey(t('agentModeDefaultDevBranch', { branch: defaultBranch })));
+        await setConfig('project', { developmentBranch: defaultBranch });
+      } else {
+        // User prompts
+        const devBranchRes = await prompts({
+          type: 'text',
+          name: 'devBranch',
+          message: t('whatIsNameOfDefaultDevelopmentBranch'),
+          initial: 'integration',
+          description: t('enterNameOfMainDevelopmentBranch'),
+          placeholder: t('exIntegration'),
+        });
+        await setConfig('project', { developmentBranch: devBranchRes.devBranch });
+      }
     }
 
     // Initialize autoCleanTypes

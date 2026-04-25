@@ -87,4 +87,8 @@ The command's logic orchestrates various underlying processes:
 $ sf hardis:work:new
 ```
 
+```shell
+$ sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration
+```
+
 

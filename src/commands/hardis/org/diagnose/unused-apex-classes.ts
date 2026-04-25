@@ -36,11 +36,20 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 ![](${CONSTANTS.DOC_URL_ROOT}/assets/images/screenshot-monitoring-unused-apex-grafana.jpg)
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:unused-apex-classes --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically. The inactivity threshold defaults to 365 days when \`--days\` is not provided.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:unused-apex-classes',
-    '$ sf hardis:org:diagnose:unused-apex-classes --days 700'
+    '$ sf hardis:org:diagnose:unused-apex-classes --days 700',
+    '$ sf hardis:org:diagnose:unused-apex-classes --agent',
   ];
 
   //Comment default values to test the prompts

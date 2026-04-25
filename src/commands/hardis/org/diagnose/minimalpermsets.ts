@@ -55,12 +55,21 @@ Key functionalities:
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/) and can output Grafana, Slack and MsTeams Notifications.
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:minimalpermsets --agent
+\`\`\`
+
+In agent mode, the command runs fully automatically. The permission threshold defaults to 5 (or \`MINIMAL_PERMSETS_THRESHOLD\` env var) when \`--threshold\` is not provided.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:minimalpermsets',
     '$ sf hardis:org:diagnose:minimalpermsets --threshold 5',
     '$ sf hardis:org:diagnose:minimalpermsets --metadata-dir force-app/main/default/permissionsets',
+    '$ sf hardis:org:diagnose:minimalpermsets --agent',
   ];
 
   public static flags: any = {

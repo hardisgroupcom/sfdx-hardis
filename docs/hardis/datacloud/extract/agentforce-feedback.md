@@ -35,11 +35,23 @@ The command's technical implementation involves:
 - **Exclusion Filters:** Supports excluding specific conversations or sessions via environment variables `AGENTFORCE_FEEDBACK_EXCLUDED_CONV_IDS` and `AGENTFORCE_EXCLUDED_SESSION_IDS` (comma-separated IDs).
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:datacloud:extract:agentforce-feedback --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name                     |  Type   | Description                                                                                   | Default | Required | Options |
 |:-------------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                    | boolean | Run in non-interactive mode for agents and automation                                         |         |          |         |
 | conversation-time-filter | option  | Time filter (days) appended to the Lightning analytics URL when generating conversation links |   30    |          |         |
 | date-from                | option  | Optional ISO-8601 timestamp (UTC) to include conversations starting from this date            |         |          |         |
 | date-to                  | option  | Optional ISO-8601 timestamp (UTC) to include conversations up to this date                    |         |          |         |
@@ -56,6 +68,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:datacloud:extract:agentforce-feedback
+```
+
+```shell
+$ sf hardis:datacloud:extract:agentforce-feedback --agent
 ```
 
 ```shell

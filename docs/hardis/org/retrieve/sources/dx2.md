@@ -29,11 +29,21 @@ The command's technical implementation involves:
 - **User Feedback:** Provides clear messages to the user about the retrieval process and its success.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all prompts. Typical usage:
+
+`sf hardis:org:retrieve:sources:dx2 --agent --packagexml manifest/package.xml --target-org myOrg`
+
+- The `--packagexml` or `--template` flag is required in agent mode (no interactive prompt for package.xml path).
+- Org selection uses the `--target-org` flag value directly.
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                   | Default | Required | Options |
 |:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir         | option  | undefined                                                     |         |          |         |
 | json              | boolean | Format output as json.                                        |         |          |         |
@@ -47,6 +57,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:org:retrieve:sources:dx2
+```
+
+```shell
+$ sf hardis:org:retrieve:sources:dx2 --agent --packagexml manifest/package.xml
 ```
 
 

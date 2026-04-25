@@ -53,7 +53,22 @@ The command's technical implementation involves:
 - **Report Generation:** It uses \`generateCsvFile\` to create the CSV report of users.
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
 - **User Feedback:** Provides a summary of the findings in the console, indicating the number of inactive or active users found.
-</details>`
+</details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:unusedusers --agent --days 180 --licensetypes all-crm --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- \`--days\` defaults to 180 when not provided.
+- \`--licensetypes\` defaults to \`all-crm\` when not provided (covers standard CRM users: SFDC, AUL, AUL1, AULL_IGHT).
+- To target all license types, pass \`--licensetypes all\`.
+- All interactive prompts are skipped.`
     ;
 
   public static examples = [
@@ -62,6 +77,7 @@ The command's technical implementation involves:
     '$ sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm',
     '$ sf hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1',
     '$ sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm --returnactiveusers',
+    '$ sf hardis:org:diagnose:unusedusers --agent',
   ];
 
   //Comment default values to test the prompts

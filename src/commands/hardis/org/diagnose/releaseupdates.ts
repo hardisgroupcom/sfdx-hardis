@@ -28,10 +28,19 @@ Before publishing **Breaking Changes** ❌, Salesforce announce them in the setu
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-release-updates/) and can output Grafana, Slack and MsTeams Notifications.
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:releaseupdates --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:releaseupdates',
+    '$ sf hardis:org:diagnose:releaseupdates --agent',
   ];
 
   public static flags: any = {

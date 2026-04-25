@@ -68,11 +68,11 @@ export class ScheduleBatchAction extends ActionsProvider {
     if (cronResult.records && cronResult.records.length > 0) {
       const existingJob = cronResult.records[0];
       if (existingJob.CronExpression === cronExpression) {
-        // Identical schedule already exists — skip
+        // Identical schedule already exists - skip
         uxLog('log', this, c.green(`[DeploymentActions] ${t('scheduleBatchAlreadyScheduled', { jobName, cronExpression })}`));
         return { statusCode: 'success', output: t('scheduleBatchAlreadyScheduled', { jobName, cronExpression }) };
       }
-      // Different schedule with the same name — error
+      // Different schedule with the same name - error
       uxLog('error', this, c.red(`[DeploymentActions] ${t('scheduleBatchConflict', { jobName, existingCron: existingJob.CronExpression, newCron: cronExpression })}`));
       return { statusCode: 'failed', output: t('scheduleBatchConflict', { jobName, existingCron: existingJob.CronExpression, newCron: cronExpression }) };
     }

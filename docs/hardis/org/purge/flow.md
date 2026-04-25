@@ -28,11 +28,27 @@ The command's technical implementation involves:
 - **Command-Line Execution:** Uses `execSfdxJson` to execute Salesforce CLI commands for querying Flow data.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:purge:flow --agent --target-org myorg@example.com
+```
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- If `--status` is not provided, defaults to `Obsolete`.
+- If `--name` is not provided, all matching Flows are targeted.
+- Flow version and Flow Interview deletions proceed without confirmation.
+
 
 ## Parameters
 
 | Name                          |  Type   | Description                                                                                                              |           Default            | Required | Options |
 |:------------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------|:----------------------------:|:--------:|:-------:|
+| agent                         | boolean | Run in non-interactive mode for agents and automation                                                                    |                              |          |         |
 | allowpurgefailure<br/>-f      | boolean | Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable                                      |                              |          |         |
 | debug<br/>-d                  | boolean | Activate debug mode (more logs)                                                                                          |                              |          |         |
 | delete-flow-interviews<br/>-w | boolean | If the presence of Flow interviews prevent to delete flows versions, delete them before retrying to delete flow versions |                              |          |         |
@@ -58,6 +74,10 @@ $ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com --no-prompt -
 
 ```shell
 $ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft" --name TestFlow
+```
+
+```shell
+$ sf hardis:org:purge:flow --agent
 ```
 
 

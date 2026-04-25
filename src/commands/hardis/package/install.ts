@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import axios from 'axios';
 import c from 'chalk';
@@ -24,13 +24,29 @@ export default class PackageVersionInstall extends SfCommand<any> {
   public static description = `Install a package in an org using its id (starting with **04t**)
 
 Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-hardis.yml\`
+
+### Agent Mode
+
+Use \`--agent\` to disable all interactive prompts. Required flags in agent mode:
+
+- \`--package\`: Package Version Id to install (starting with 04t). Required.
+- \`--installationkey\`: Optional installation key for the package.
+
+All interactive package selection prompts are skipped. The \`managePackageConfig\` step is also skipped.
 `;
 
-  public static examples = ['$ sf hardis:package:install'];
+  public static examples = [
+    '$ sf hardis:package:install',
+    '$ sf hardis:package:install --agent --package 04t...',
+  ];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     package: Flags.string({
       char: 'p',
       description: 'Package Version Id to install (04t...)',
@@ -61,12 +77,19 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(PackageVersionInstall);
+    const agentMode = flags.agent === true;
     const packagesRaw = await fs.readFile(this.allPackagesFileName, 'utf8');
     const packages = JSON.parse(packagesRaw);
     const packageId = flags.package || null;
     const packagesToInstall: any[] = [];
+
+    // In agent mode, require the --package flag
+    if (agentMode && (packageId == null || !packageId.startsWith('04t'))) {
+      throw new SfError("In agent mode, --package flag with a valid package version id (starting with 04t) is required.");
+    }
+
     // If no package Id is sent, ask user what package he/she wants to install
-    if (!isCI && (packageId == null || !packageId.startsWith('04t'))) {
+    if (!isCI && !agentMode && (packageId == null || !packageId.startsWith('04t'))) {
       const allPackages = packages.map((pack) => ({
         title: `${c.yellow(pack.name)} - ${pack.repoUrl || 'Bundle'}`,
         value: pack,
@@ -157,7 +180,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
     const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
     uxLog("other", this, c.italic(c.grey(t('newPackageListOnOrg') + JSON.stringify(installedPackages, null, 2))));
 
-    if (!isCI) {
+    if (!isCI && !agentMode) {
       // Manage package install config storage
       await managePackageConfig(installedPackages, packagesToInstallCompleted);
     }

@@ -18,10 +18,21 @@ Key functionalities:
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/) and can output Grafana, Slack and MsTeams Notifications.
 
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:diagnose:apex-api-version --agent --target-org myorg@example.com
+```
+
+In agent mode, the command runs fully automatically. The API version threshold defaults to 50 (or `DEPRECATED_APEX_API_VERSION` env var) when `--threshold` is not provided.
+
 ## Parameters
 
 | Name                      |  Type   | Description                                                                                                                       | Default | Required | Options |
 |:--------------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                     | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                                     |         |          |         |
 | debug<br/>-d              | boolean | Activate debug mode (more logs)                                                                                                   |         |          |         |
 | flags-dir                 | option  | undefined                                                                                                                         |         |          |         |
 | includetestclasses<br/>-i | boolean | Include @isTest classes in the report (excluded by default)                                                                       |         |          |         |
@@ -44,6 +55,10 @@ $ sf hardis:org:diagnose:apex-api-version --threshold 55
 
 ```shell
 $ sf hardis:org:diagnose:apex-api-version --outputfile ./reports/apex-api-version.csv
+```
+
+```shell
+$ sf hardis:org:diagnose:apex-api-version --agent
 ```
 
 

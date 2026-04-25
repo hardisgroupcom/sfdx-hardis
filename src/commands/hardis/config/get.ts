@@ -31,9 +31,21 @@ The command's logic is straightforward:
 - **\`getConfig\` function:** It calls the \`getConfig\` utility function, passing the desired configuration level as an argument.
 - **Configuration loading:** The \`getConfig\` function is responsible for finding the appropriate configuration file, reading its contents, and parsing it as YAML or JSON.
 - **Output:** The retrieved configuration is then displayed to the user as a JSON string.
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:config:get --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:deploy:sources:metadata'];
+  public static examples = ['$ sf hardis:project:deploy:sources:metadata',
+    '$ sf hardis:project:deploy:sources:metadata --agent',];
 
   public static flags: any = {
     level: Flags.string({
@@ -41,6 +53,10 @@ The command's logic is straightforward:
       default: 'project',
       description: 'project,branch or user',
       options: ['project', 'branch', 'user'],
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

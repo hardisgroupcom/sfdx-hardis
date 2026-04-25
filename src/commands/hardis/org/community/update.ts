@@ -40,11 +40,21 @@ The command's technical implementation involves:
 - **User Interaction:** Uses \`prompts\` to confirm the update action with the user when not running in a CI environment.
 - **Salesforce Connection:** Establishes a connection to the target Salesforce org using the \`target-org\` flag.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all prompts. Typical usage:
+
+\`sf hardis:org:community:update --agent --name 'MyNetworkName' --status DownForMaintenance\`
+
+- Confirmation prompt is skipped; the update proceeds immediately.
+- The \`--name\` and \`--status\` flags are required (same as normal mode).
 `;
 
   public static examples = [
     `$ sf hardis:org:community:update --name 'MyNetworkName' --status DownForMaintenance`,
-    `$ sf hardis:org:community:update --name 'MyNetworkName,MySecondNetworkName' --status Live`
+    `$ sf hardis:org:community:update --name 'MyNetworkName,MySecondNetworkName' --status Live`,
+    `$ sf hardis:org:community:update --agent --name 'MyNetworkName' --status DownForMaintenance`,
   ];
 
   public static readonly flags: any = {
@@ -57,6 +67,10 @@ The command's technical implementation involves:
       description: 'New status for the community, available values are: Live, DownForMaintenance',
       char: 's',
       required: true,
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -71,6 +85,7 @@ The command's technical implementation involves:
     const networkNames = flags.name ? flags.name.split(',') : [];
     const status = flags.status ? flags.status : '';
     const debugMode = flags.debug || false;
+    const agentMode = flags.agent === true;
 
     const conn = flags['target-org'].getConnection();
 
@@ -93,7 +108,7 @@ The command's technical implementation involves:
     const idToNameMap = new Map(networksQueryRes.records.map(network => [network.Id, network.Name]));
 
     // Request configuration from user
-    if (!isCI) {
+    if (!isCI && !agentMode) {
       const confirmUpdate = await prompts({
         type: 'confirm',
         name: 'value',

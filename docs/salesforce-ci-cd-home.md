@@ -8,6 +8,7 @@ description: Easy handling of Salesforce DX to use CI/CD & DevOps principles on 
 - [Why choose sfdx-hardis?](#why-choose-sfdx-hardis)
   - [Because it is user-friendly](#because-it-is-user-friendly)
   - [Because it is compliant with your tools](#because-it-is-compliant-with-your-tools)
+  - [Because it is AI-agent ready](#because-it-is-ai-agent-ready)
   - [Because it is powerful](#because-it-is-powerful)
   - [Because there are no license costs](#because-there-are-no-license-costs)
   - [Because it is widely adopted](#because-it-is-widely-adopted)
@@ -50,6 +51,20 @@ sfdx-hardis has native integrations with your preferred applications:
 - Ticketing: Jira, Azure Boards, or any other tool via webhooks
 - AI: Agentforce OpenAI, Anthropic, Gemini
 - Observability: Grafana, Vector.dev (DataDog, Splunk, etc...)
+
+### Because it is AI-agent ready
+
+sfdx-hardis commands natively support **AI coding agents** such as [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [GitHub Copilot](https://github.com/features/copilot), [Codex](https://openai.com/index/codex/), and others.
+
+Every command that involves interactive prompts supports an **`--agent`** flag that switches to a fully non-interactive execution mode. This means:
+
+- **No wasted tokens on interactive menus**: agents don't have to parse and respond to multi-choice prompts, saving API calls and tokens.
+- **Predictable execution**: required values are passed as CLI flags, and the command fails fast with a clear error message if anything is missing.
+- **Safe defaults**: sensible defaults are applied when prompts are skipped, and destructive operations require explicit flags.
+
+With 130+ commands supporting `--agent` mode, your coding agent can drive the entire Salesforce DevOps lifecycle: create user stories, deploy metadata, run diagnostics, purge obsolete data, manage packages, and more -- all without human interaction.
+
+Learn more in [Using AI Coding Agents](salesforce-ci-cd-agent-skills.md).
 
 ### Because it is powerful
 
@@ -136,7 +151,11 @@ You can also contact us at [**Cloudity**](https://cloudity.com/). Our Profession
 - Change management to accelerate DevOps adoption in your organization
 
 <div style="text-align:center; margin:2rem 0;">
-  <a href="https://cloudity.com/#form" target="_blank" rel="noopener noreferrer" role="button" aria-label="Cloudity Professional Services"
+  <a href="https://cloudity.com/contact-us/" target="_blank" rel="noopener noreferrer">
+    <img src="../assets/images/cloudity-banner.png" alt="Cloudity" style="max-width:100%;" />
+  </a>
+  <br/>
+  <a href="https://cloudity.com/contact-us/" target="_blank" rel="noopener noreferrer" role="button" aria-label="Cloudity Professional Services"
      style="display:inline-block; padding:0.75rem 1.25rem; background:#0070d2; color:#ffffff; text-decoration:none; border-radius:0.25rem; font-weight:600;">
     Contact Cloudity Professional Services
   </a>

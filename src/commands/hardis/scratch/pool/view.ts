@@ -37,13 +37,29 @@ The command's technical implementation involves:
 - **Data Display:** It logs the retrieved pool configuration and pool storage content to the console in a human-readable format.
 - **Error Handling:** It checks if a scratch org pool is configured for the project and provides a warning message if it's not.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:pool:view --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:scratch:pool:view'];
+  public static examples = ['$ sf hardis:scratch:pool:view',
+    '$ sf hardis:scratch:pool:view --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

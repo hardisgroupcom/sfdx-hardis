@@ -54,6 +54,17 @@ commandsPostDeploy:
     context: process-deployment-only
     runOnlyOnceByOrg: true
 \`\`\`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:deploy:quick --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static aliases = [
@@ -87,6 +98,10 @@ commandsPostDeploy:
       min: 1,
       description: "wait",
       exclusive: ["async"],
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       default: false,

@@ -101,6 +101,20 @@ If Flow history doc always display a single state, you probably need to update y
 - on GitHub: [\`fetch-depth: 0\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.github/workflows/org-monitoring.yml#L58)
 - on Azure: [\`fetchDepth: "0"\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/azure-pipelines.yml#L39)
 - on Bitbucket: [\`step: clone: depth: full\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/bitbucket-pipelines.yml#L18)
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:monitor:backup --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- Documentation generation proceeds without prompting.
+- The rebuild mode defaults to diff-only (changed files only) unless \`--rebuild-full-doc\` or \`MONITORING_BACKUP_REBUILD_FULL_DOC=true\` is set.
+- All other interactive prompts are skipped.
 `;
 
   public static examples = [

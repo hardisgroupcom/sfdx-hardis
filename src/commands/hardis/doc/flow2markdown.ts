@@ -49,10 +49,22 @@ The command leverages several internal utilities and external libraries to achie
 - **Salesforce CLI Integration:** Uses \`@salesforce/sf-plugins-core\` for command-line parsing and \`setConnectionVariables\` for Salesforce organization context.
 - **WebSocket Communication:** Interacts with a WebSocket client (\`WebSocketClient.requestOpenFile\`) to open the generated Markdown file in a VS Code tab, enhancing user experience.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:flow2markdown --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
     '$ sf hardis:doc:flow2markdown',
+    '$ sf hardis:doc:flow2markdown --agent',
     '$ sf hardis:doc:flow2markdown --inputfile force-app/main/default/flows/MyFlow.flow-meta.xml',
     '$ sf hardis:doc:flow2markdown --pdf',
     '$ sf hardis:doc:flow2markdown --inputfile force-app/main/default/flows/MyFlow.flow-meta.xml --pdf',
@@ -73,6 +85,10 @@ The command leverages several internal utilities and external libraries to achie
     }),
     pdf: Flags.boolean({
       description: 'Also generate the documentation in PDF format',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

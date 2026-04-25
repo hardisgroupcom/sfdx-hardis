@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
@@ -54,6 +54,15 @@ The command's technical implementation involves:
 
 The command is designed to work seamlessly in both interactive development scenarios and automated CI/CD pipelines, ensuring data consistency across different Salesforce environments.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all prompts. Typical usage:
+
+\`sf hardis:org:data:import --agent --path ./scripts/data/MyDataProject --target-org myOrg\`
+
+- The \`--path\` flag (or \`--project-name\`) is required in agent mode (no interactive workspace selection).
+- The \`--target-org\` flag is used directly (no interactive org selection prompt).
 `;
 
   public static examples = [
@@ -61,6 +70,7 @@ The command is designed to work seamlessly in both interactive development scena
     '$ sf hardis:org:data:import --project-name MyDataProject --target-org my-org@example.com',
     '$ sf hardis:org:data:import --path ./scripts/data/MyDataProject --no-prompt --target-org my-org@example.com',
     '$ SFDMU_CAN_MODIFY=prod-instance.my.salesforce.com sf hardis:org:data:import --project-name MyDataProject --target-org prod@example.com',
+    '$ sf hardis:org:data:import --agent --path ./scripts/data/MyDataProject --target-org myOrg',
   ];
 
   public static flags: any = {
@@ -76,6 +86,10 @@ The command is designed to work seamlessly in both interactive development scena
       char: 'r',
       description: 'Do not prompt for Org, use default org',
       default: false,
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -104,12 +118,13 @@ The command is designed to work seamlessly in both interactive development scena
     let sfdmuPath = flags.path || null;
     const projectName = flags["project-name"] || null;
     const noPrompts = flags["no-prompt"] || false;
+    const agentMode = flags.agent === true;
 
     uxLog("action", this, c.cyan(t('thisCommandWillLaunchDataImportUpload')));
 
     // Select org that where records will be imported
     let orgUsername = flags['target-org'].getUsername();
-    if (!isCI && noPrompts === false) {
+    if (!isCI && !agentMode && noPrompts === false) {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false });
     }
 
@@ -120,6 +135,9 @@ The command is designed to work seamlessly in both interactive development scena
 
     // Identify sfdmu workspace if not defined
     if (sfdmuPath == null) {
+      if (isCI || agentMode) {
+        throw new SfError(c.red('In agent/CI mode, --path or --project-name flag is required to specify the data workspace.'));
+      }
       sfdmuPath = await selectDataWorkspace({
         selectDataLabel: t('selectDataWorkspaceToImport'),
       });

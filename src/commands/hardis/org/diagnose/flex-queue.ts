@@ -33,12 +33,21 @@ export default class DiagnoseFlexQueue extends SfCommand<any> {
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/) and can output Grafana, Slack and MsTeams Notifications.
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:flex-queue --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically. The \`--threshold\` defaults to 90 (or \`APEX_FLEX_QUEUE_THRESHOLD\` env var) when not provided.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:flex-queue',
     '$ sf hardis:org:diagnose:flex-queue --threshold 95',
     '$ sf hardis:org:diagnose:flex-queue --outputfile ./reports/flex-queue-holding.csv',
+    '$ sf hardis:org:diagnose:flex-queue --agent',
   ];
 
   public static flags: any = {
@@ -181,7 +190,7 @@ Supports non-interactive execution with \`--agent\` (uses default values and ski
         .slice(0, 15)
         .map((r) => {
           const label = r.ApexClassName || r.ApexClassId || r.Id;
-          return `• ${label} (${r.JobType || 'n/a'}) — ${r.CreatedDate || 'n/a'}`;
+          return `• ${label} (${r.JobType || 'n/a'}) - ${r.CreatedDate || 'n/a'}`;
         })
         .join('\n');
       notifAttachments.push({

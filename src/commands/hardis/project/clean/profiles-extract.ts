@@ -4,7 +4,7 @@
 // The user is then prompted to select which objects to extract. The selected objects are returned and used in the rest of the extraction process.
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { prompts } from '../../../../common/utils/prompts.js';
-import { uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
 import c from 'chalk';
 import { generateCsvFile, generateReportPath, createXlsxFromCsvFiles } from '../../../../common/utils/filesUtils.js';
 import { bulkQuery } from '../../../../common/utils/apiUtils.js';
@@ -33,6 +33,19 @@ Key capabilities:
 - **Profile field access coverage:** Retrieves FieldPermissions to surface read/edit status per profile and field.
 - **Consolidated reporting:** Produces standalone CSVs plus an aggregated XLSX stored in the report directory.
 
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:profiles-extract --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- The interactive object selection prompt is skipped; all queryable objects with records are used.
+- The persona count prompt is skipped; defaults to 1 persona.
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -49,6 +62,7 @@ Key capabilities:
   public static readonly examples = [
     `$ sf hardis:project:clean:profiles-extract`,
     `$ sf hardis:project:clean:profiles-extract --target-org my-org`,
+    '$ sf hardis:project:clean:profiles-extract --agent --target-org my-org',
   ];
 
   /* jscpd:ignore-start */
@@ -68,6 +82,10 @@ Key capabilities:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
   };
   /* jscpd:ignore-end */
   protected csvFiles: string[] = [];
@@ -82,14 +100,15 @@ Key capabilities:
    */
   public async run(): Promise<void> {
     const { flags } = await this.parse(ProfilesExtract);
+    const agentMode = flags.agent === true;
     const conn = flags['target-org'].getConnection();
     let selectedObjects: string[] = [];
     let numberOfPersonas = 1;
     try {
-      selectedObjects = await this.generateObjectsList(conn);
+      selectedObjects = await this.generateObjectsList(conn, agentMode);
       uxLog("action", this, c.green(t('handlingExtractOfUsers')));
       await this.generateUsersExtract(conn);
-      numberOfPersonas = await this.generatePersonaExtract();
+      numberOfPersonas = await this.generatePersonaExtract(agentMode);
       uxLog("action", this, c.green(t('generatingExtractsForPersonas', { numberOfPersonas })));
       await this.generateRelationExtract(selectedObjects, numberOfPersonas);
       await this.generateRTExtract(conn, selectedObjects, numberOfPersonas);
@@ -169,7 +188,7 @@ Key capabilities:
    * @param conn Salesforce connection
    * @returns Array of selected object API names
    */
-  private async generateObjectsList(conn: any): Promise<string[]> {
+  private async generateObjectsList(conn: any, agentMode = false): Promise<string[]> {
 
     let selectedObjects: string[] = [];
     uxLog('action', this, c.green(t('fetchingSobjectsList')));
@@ -257,16 +276,22 @@ Key capabilities:
         });
       }
 
-      const statusRes = await prompts({
-        message: t('pleaseSelectSobjectsToAddInThe'),
-        type: "multiselect",
-        description: t('beCarefulAboutProfileChanges'),
-        choices: choices,
-      });
+      if (!isCI && !agentMode) {
+        const statusRes = await prompts({
+          message: t('pleaseSelectSobjectsToAddInThe'),
+          type: "multiselect",
+          description: t('beCarefulAboutProfileChanges'),
+          choices: choices,
+        });
 
-      if (statusRes && statusRes.value !== "all") {
-        selectedObjects = statusRes.value;
-        uxLog('log', this, `You selected ${selectedObjects.length} objects.`);
+        if (statusRes && statusRes.value !== "all") {
+          selectedObjects = statusRes.value;
+          uxLog('log', this, `You selected ${selectedObjects.length} objects.`);
+        }
+      } else {
+        // In agent/CI mode, use all objects with records
+        selectedObjects = sobjectsWithRecords.map((sobj) => sobj.API_Name);
+        uxLog('log', this, `Agent mode: using all ${selectedObjects.length} objects with records.`);
       }
 
       uxLog("log", this, c.green(t('generatingObjectsCsvReport')));
@@ -320,17 +345,21 @@ Key capabilities:
    * Generates a CSV report listing the personas.
    * @returns The number of personas
    */
-  private async generatePersonaExtract() {
+  private async generatePersonaExtract(agentMode = false) {
     let numberOfPersonas = 1;
-    const statusRes = await prompts({
-      message: t('pleaseEnterTheNumberOfPersonasTo'),
-      type: "number",
-      description: "One tab by personal will be created in the final Excel file",
-      placeholder: t('inputNumberOfPersonas'),
-    });
-    if (statusRes && statusRes.value !== 0) {
-      numberOfPersonas = statusRes.value;
-      uxLog('log', this, `Creation of ${numberOfPersonas} personas.`);
+    if (!isCI && !agentMode) {
+      const statusRes = await prompts({
+        message: t('pleaseEnterTheNumberOfPersonasTo'),
+        type: "number",
+        description: "One tab by personal will be created in the final Excel file",
+        placeholder: t('inputNumberOfPersonas'),
+      });
+      if (statusRes && statusRes.value !== 0) {
+        numberOfPersonas = statusRes.value;
+        uxLog('log', this, `Creation of ${numberOfPersonas} personas.`);
+      }
+    } else {
+      uxLog('log', this, `Agent mode: using default of ${numberOfPersonas} persona(s).`);
     }
 
     const persona: { 'Persona Name': string }[] = [];
@@ -597,8 +626,8 @@ Key capabilities:
   /**
    * Extracts all Permission Sets in the org.
    * Generates a CSV report mapping each permission set to personas.
-   * @param conn 
-   * @param numberOfPersonas 
+   * @param conn
+   * @param numberOfPersonas
    */
   async generatePermissionSetsExtract(conn: any, numberOfPersonas: number) {
     const permissionSetsRecords: { Name: string; Label: string; Description: string; IsCustom: string;[key: string]: string }[] = [];

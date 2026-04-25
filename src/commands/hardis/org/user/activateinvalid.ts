@@ -23,12 +23,27 @@ export default class OrgUserActiveInvalid extends SfCommand<any> {
 See article below
 
 [![Reactivate all the sandbox users with .invalid emails in 3 clicks](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-email.jpg)](https://nicolas.vuillamy.fr/reactivate-all-the-sandbox-users-with-invalid-emails-in-3-clicks-2265af4e3a3d)
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:user:activateinvalid --agent --target-org my-user@myorg.com
+\`\`\`
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- All users with \`.invalid\` emails are activated automatically.
+- Use \`--profiles\` to limit the scope to specific profiles.
 `;
 
   public static examples = [
     `$ sf hardis:org:user:activateinvalid`,
     `$ sf hardis:org:user:activateinvalid --target-org my-user@myorg.com`,
     `$ sf hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --target-org my-user@myorg.com`,
+    '$ sf hardis:org:user:activateinvalid --agent',
   ];
 
   // public static args = [{name: 'file'}];
@@ -50,6 +65,10 @@ See article below
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -59,6 +78,7 @@ See article below
   protected profiles: any[] = [];
   protected maxUsersDisplay = 100;
   protected debugMode = false;
+  protected agentMode = false;
 
   /* jscpd:ignore-end */
 
@@ -67,6 +87,7 @@ See article below
     this.profiles = flags.profiles ? flags.profiles.split(',') : [];
     const hasProfileConstraint = this.profiles !== null && this.profiles.length > 0;
     this.debugMode = flags.debug || false;
+    this.agentMode = flags.agent === true;
 
     const conn = flags['target-org'].getConnection();
 
@@ -91,7 +112,7 @@ See article below
 
     let usersToActivateFinal = [...usersToActivate];
     // Request confirmation or selection from user
-    if (!isCI && !hasProfileConstraint) {
+    if (!isCI && !this.agentMode && !hasProfileConstraint) {
       const confirmSelect = await prompts({
         type: 'select',
         name: 'value',

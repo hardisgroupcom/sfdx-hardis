@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { assert } from 'console';
@@ -57,13 +57,30 @@ The command's technical implementation involves:
 - **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshStatusMessage\` to notify connected VS Code clients about the new sandbox.
 - **Required Plugin Check:** Explicitly lists \`sfdmu\` as a required plugin, indicating its role in data initialization.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:create --agent --target-dev-hub mydevhub@example.com
+\`\`\`
+
+In agent mode:
+
+- The user email prompt is skipped; \`USER_EMAIL\` env var or \`userEmail\` config property is required.
+- If no email is available, an error is thrown.
 `;
 
-  public static examples = ['$ sf hardis:org:create'];
+  public static examples = ['$ sf hardis:org:create', '$ sf hardis:org:create --agent'];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -87,6 +104,7 @@ The command's technical implementation involves:
   /* jscpd:ignore-end */
 
   protected debugMode = false;
+  protected agentMode = false;
   protected configInfo: any;
   protected devHubAlias: string;
   protected sandboxOrgAlias: string;
@@ -104,6 +122,7 @@ The command's technical implementation involves:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(SandboxCreate);
     this.debugMode = flags.debug || false;
+    this.agentMode = flags.agent === true;
     elapseStart(`Create and initialize sandbox org`);
     await this.initConfig();
     await this.createSandboxOrg();
@@ -149,6 +168,9 @@ The command's technical implementation involves:
 
     // If not found, prompt user email and store it in user config file
     if (this.userEmail == null) {
+      if (this.agentMode) {
+        throw new SfError(c.red('You need to define userEmail property in .sfdx-hardis.yml or set USER_EMAIL env var.'));
+      }
       this.userEmail = await promptUserEmail();
     }
   }

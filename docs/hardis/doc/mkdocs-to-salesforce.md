@@ -28,7 +28,7 @@ Key operations performed:
 - You can specify the type of documentation to generate (e.g., `CICD` or `Monitoring`) using the `--type` flag. The default is `CICD`.
 - You can override default styles by customizing your `mkdocs.yml` file.
 
-More information can be found in the [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-documentation/).
+More information can be found in the [Documentation section](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/).
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -44,11 +44,23 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
 - **File System Operations:** It extensively uses `fs-extra` for file manipulation, including creating directories, moving files, and writing XML content.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:mkdocs-to-salesforce --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                   | Default | Required |       Options       |
 |:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------------------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |                     |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |                     |
 | flags-dir         | option  | undefined                                                     |         |          |                     |
 | json              | boolean | Format output as json.                                        |         |          |                     |
@@ -61,6 +73,10 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
 
 ```shell
 $ sf hardis:doc:mkdocs-to-salesforce
+```
+
+```shell
+$ sf hardis:doc:mkdocs-to-salesforce --agent
 ```
 
 

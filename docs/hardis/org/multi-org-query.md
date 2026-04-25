@@ -33,10 +33,21 @@ The command's technical implementation involves:
 </details>
 
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:multi-org-query --agent --query "SELECT Id,Username FROM User" --target-orgs org1@example.com org2@example.com
+```
+
+In agent mode, both `--query` (or `--query-template`) and `--target-orgs` flags are required. Interactive query builder and org selection prompts are skipped.
+
 ## Parameters
 
 | Name                  |  Type   | Description                                                       | Default | Required |          Options           |
 |:----------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:--------------------------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation             |         |          |                            |
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                   |         |          |                            |
 | flags-dir             | option  | undefined                                                         |         |          |                            |
 | json                  | boolean | Format output as json.                                            |         |          |                            |
@@ -63,6 +74,10 @@ $ sf hardis:org:multi-org-query --query "SELECT Id,Username FROM User" --target-
 
 ```shell
 $ sf hardis:org:multi-org-query --query-template active-users --target-orgs nico@cloudity.com nico@cloudity.com.preprod nico@cloudity.com.uat
+```
+
+```shell
+$ sf hardis:org:multi-org-query --agent --query "SELECT Id,Username FROM User" --target-orgs nico@cloudity.com
 ```
 
 

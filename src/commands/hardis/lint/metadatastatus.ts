@@ -64,9 +64,17 @@ The command's technical implementation involves:
 </details>
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
 
-  public static examples = ['$ sf hardis:lint:metadatastatus'];
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:lint:metadatastatus --agent
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+
+  public static examples = ['$ sf hardis:lint:metadatastatus', '$ sf hardis:lint:metadatastatus --agent'];
   /* jscpd:ignore-start */
   public static flags: any = {
     debug: Flags.boolean({

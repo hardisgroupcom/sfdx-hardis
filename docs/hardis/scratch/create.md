@@ -51,11 +51,25 @@ The command's technical implementation involves:
 - **WebSocket Integration:** Provides real-time status updates and file reporting through WebSocket connections for VS Code extension integration.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:scratch:create --agent --target-dev-hub mydevhub@example.com
+```
+
+In agent mode:
+
+- The scratch org reuse confirmation prompt is skipped and a new org is always created.
+- All other interactive prompts are skipped.
+
 
 ## Parameters
 
 | Name                  |  Type   | Description                                                             | Default | Required | Options |
 |:----------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                   |         |          |         |
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                         |         |          |         |
 | flags-dir             | option  | undefined                                                               |         |          |         |
 | forcenew<br/>-n       | boolean | If an existing scratch org exists, do not reuse it but create a new one |         |          |         |
@@ -69,6 +83,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:scratch:create
+```
+
+```shell
+$ sf hardis:scratch:create --agent
 ```
 
 

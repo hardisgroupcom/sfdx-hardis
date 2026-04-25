@@ -28,11 +28,23 @@ The command performs the following technical steps:
 - **File System Operations:** It uses `fs-extra` to ensure output directories exist and to write the generated CSV and Markdown files.
 - **VS Code Integration:** It uses `WebSocketClient.requestOpenFile` to automatically open the generated CSV and Markdown files in VS Code, enhancing the user experience.
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:extract:permsetgroups --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                       | Default | Required | Options |
 |:------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |         |          |         |
 | flags-dir         | option  | undefined                                                         |         |          |         |
 | json              | boolean | Format output as json.                                            |         |          |         |
@@ -44,6 +56,10 @@ The command performs the following technical steps:
 
 ```shell
 $ sf hardis:doc:extract:permsetgroups
+```
+
+```shell
+$ sf hardis:doc:extract:permsetgroups --agent
 ```
 
 
