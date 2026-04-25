@@ -40,11 +40,23 @@ The command's technical implementation focuses on robust metadata synchronizatio
 - **User Feedback:** Provides clear messages to the user regarding the pull status and guidance for troubleshooting.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:scratch:pull --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |flags-dir|option|undefined||||
 |json|boolean|Format output as json.||||
@@ -56,6 +68,10 @@ The command's technical implementation focuses on robust metadata synchronizatio
 
 ```shell
 $ sf hardis:scratch:pull
+```
+
+```shell
+$ sf hardis:scratch:pull --agent
 ```
 
 

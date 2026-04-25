@@ -31,11 +31,23 @@ The command's technical flow involves:
 - **Salesforce CLI Integration:** It integrates with the Salesforce CLI's authentication mechanisms to establish and manage org connections.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:auth:login --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |devhub<br/>-h|boolean|Also connect associated DevHub||||
 |flags-dir|option|undefined||||
@@ -49,6 +61,10 @@ The command's technical flow involves:
 
 ```shell
 $ sf hardis:auth:login
+```
+
+```shell
+$ sf hardis:auth:login --agent
 ```
 
 ```shell

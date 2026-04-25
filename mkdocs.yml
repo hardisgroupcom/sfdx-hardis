@@ -115,6 +115,7 @@ nav:
           - Validate a merge request: salesforce-ci-cd-validate-merge-request.md
           - Deploy to major orgs: salesforce-ci-cd-deploy-major-branches.md
           - Handle RUN / Hotfix to Production: salesforce-ci-cd-hotfixes.md
+          - Smart Deploy Workflow: salesforce-ci-cd-smart-deployment.md
           - CI/CD Configuration:
               - CI/CD Config Home: salesforce-ci-cd-config-home.md
               - Overwrite Management: salesforce-ci-cd-config-overwrite.md
@@ -132,23 +133,7 @@ nav:
           - Init SFDX Project: salesforce-ci-cd-setup-init-project.md
           - CI Server Authentication: salesforce-ci-cd-setup-auth.md
           - Init from Existing Org: salesforce-ci-cd-setup-existing-org.md
-          - Integrations:
-              - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
-              - GitHub: salesforce-ci-cd-setup-integration-github.md
-              - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
-              - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
-              - BitBucket: salesforce-ci-cd-setup-integration-bitbucket.md
-              - Jenkins: salesforce-ci-cd-setup-integration-jenkins.md
-              - Slack: salesforce-ci-cd-setup-integration-slack.md
-              - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
-              - Email: salesforce-ci-cd-setup-integration-email.md
-              - Grafana: salesforce-ci-cd-setup-integration-api.md
-              - Jira: salesforce-ci-cd-setup-integration-jira.md
-              - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
-              - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
           - First merge request: salesforce-ci-cd-setup-merge-request.md
-      - Using AI Coding Agents: salesforce-ci-cd-agent-skills.md
-      - Smart Deploy Workflow: salesforce-ci-cd-smart-deployment.md
   - Org Monitoring:
       - Monitoring home: salesforce-monitoring-home.md
       - List of checks:
@@ -182,7 +167,8 @@ nav:
           - Bitbucket: salesforce-monitoring-config-bitbucket.md
           - Slack: salesforce-ci-cd-setup-integration-slack.md
           - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
-  - Generate Org Documentation:
+      - Sandbox Refresh: salesforce-sandbox-refresh.md
+  - Generate Documentation:
       - Doc Gen Home: salesforce-project-documentation.md
       - Generate: salesforce-project-doc-generate.md
       - Improve with AI: salesforce-project-doc-ai.md
@@ -191,32 +177,20 @@ nav:
       - Host on Salesforce: salesforce-project-doc-host-on-salesforce.md
       - Host on Cloudflare: salesforce-project-doc-cloudflare.md
       - Publish to Confluence: salesforce-project-doc-confluence.md
-  - Deployment Agent:
-      - Deployment Agent home: salesforce-deployment-agent-home.md
-      - Agent deployment Hints: salesforce-deployment-agent-hints.md
-      - Coding Agent Auto-Fix (Beta): salesforce-deployment-agent-autofix.md
-      - Flow Visual Git Diff: salesforce-deployment-agent-flow-visual-git-diff.md
-      - Configuration:
+  - AI & Agents:
+      - AI Agents Overview: salesforce-agentic-automation.md
+      - Using Coding Agents (Skills): salesforce-ci-cd-agent-skills.md
+      - Deployment Agent:
+          - Deployment Agent home: salesforce-deployment-agent-home.md
+          - Agent deployment Hints: salesforce-deployment-agent-hints.md
+          - Coding Agent Auto-Fix (Beta): salesforce-deployment-agent-autofix.md
+          - Flow Visual Git Diff: salesforce-deployment-agent-flow-visual-git-diff.md
           - Setup Deployment Agent: salesforce-deployment-agent-setup.md
+          - Deployment errors list: salesforce-deployment-agent-error-list.md
+      - AI Setup & Prompts:
           - Setup AI integration: salesforce-ai-setup.md
-      - Deployment errors list: salesforce-deployment-agent-error-list.md
-  - Integrations:
-      - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
-      - GitHub: salesforce-ci-cd-setup-integration-github.md
-      - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
-      - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
-      - BitBucket: salesforce-ci-cd-setup-integration-bitbucket.md
-      - Slack: salesforce-ci-cd-setup-integration-slack.md
-      - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
-      - Email: salesforce-ci-cd-setup-integration-email.md
-      - Grafana: salesforce-ci-cd-setup-integration-api.md
-      - Jira: salesforce-ci-cd-setup-integration-jira.md
-      - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
-      - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
-      - LLM Providers:
-          - LLM home: salesforce-ai-setup.md
-          - Prompts:
-              - All prompts: salesforce-ai-prompts.md
+          - All prompts: salesforce-ai-prompts.md
+          - Prompt Templates:
               - Complete Object Attributes: prompt-templates/PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD.md
               - Describe Apex: prompt-templates/PROMPT_DESCRIBE_APEX.md
               - Describe Approval Process: prompt-templates/PROMPT_DESCRIBE_APPROVAL_PROCESS.md
@@ -235,217 +209,210 @@ nav:
               - Describe Roles: prompt-templates/PROMPT_DESCRIBE_ROLES.md
               - Solve Deployment Error: prompt-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.md
               - Coding Agent Fix Deployment Errors: prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.md
-              - Variables:
-                  - Additional Instructions: prompt-templates/VARIABLE_ADDITIONAL_INSTRUCTIONS.md
-                  - Formatting Requirements: prompt-templates/VARIABLE_FORMATTING_REQUIREMENTS.md
-                  - Output Format Markdown Doc: prompt-templates/VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC.md
-  - Sandbox Refresh: salesforce-sandbox-refresh.md
-  - Commands:
-      All commands: commands.md
-      hardis:
-        auth:
-          login: hardis/auth/login.md
-        cache:
-          clear: hardis/cache/clear.md
-        config:
-          get: hardis/config/get.md
-        datacloud:
-          extract:
-            agentforce-conversations: hardis/datacloud/extract/agentforce-conversations.md
-            agentforce-feedback: hardis/datacloud/extract/agentforce-feedback.md
-          sql-query: hardis/datacloud/sql-query.md
-        doc:
-          extract:
-            permsetgroups: hardis/doc/extract/permsetgroups.md
-          fieldusage: hardis/doc/fieldusage.md
-          flow2markdown: hardis/doc/flow2markdown.md
-          mkdocs-to-cf: hardis/doc/mkdocs-to-cf.md
-          mkdocs-to-confluence: hardis/doc/mkdocs-to-confluence.md
-          mkdocs-to-salesforce: hardis/doc/mkdocs-to-salesforce.md
-          object-field-usage: hardis/doc/object-field-usage.md
-          override-prompts: hardis/doc/override-prompts.md
-          packagexml2markdown: hardis/doc/packagexml2markdown.md
-          plugin:
-            generate: hardis/doc/plugin/generate.md
-          project2markdown: hardis/doc/project2markdown.md
-        git:
-          pull-requests:
-            extract: hardis/git/pull-requests/extract.md
-        lint:
-          access: hardis/lint/access.md
-          metadatastatus: hardis/lint/metadatastatus.md
-          missingattributes: hardis/lint/missingattributes.md
-          unusedmetadatas: hardis/lint/unusedmetadatas.md
-        mdapi:
-          deploy: hardis/mdapi/deploy.md
-        misc:
-          custom-label-translations: hardis/misc/custom-label-translations.md
-          purge-references: hardis/misc/purge-references.md
-          servicenow-report: hardis/misc/servicenow-report.md
-          toml2csv: hardis/misc/toml2csv.md
-        org:
-          community:
-            update: hardis/org/community/update.md
-          configure:
-            data: hardis/org/configure/data.md
-            files: hardis/org/configure/files.md
-            monitoring: hardis/org/configure/monitoring.md
-          connect: hardis/org/connect.md
-          create: hardis/org/create.md
-          data:
-            delete: hardis/org/data/delete.md
-            export: hardis/org/data/export.md
-            import: hardis/org/data/import.md
-          diagnose:
-            apex-api-version: hardis/org/diagnose/apex-api-version.md
-            audittrail: hardis/org/diagnose/audittrail.md
-            deployments: hardis/org/diagnose/deployments.md
-            flex-queue: hardis/org/diagnose/flex-queue.md
-            instanceupgrade: hardis/org/diagnose/instanceupgrade.md
-            legacyapi: hardis/org/diagnose/legacyapi.md
-            licenses: hardis/org/diagnose/licenses.md
-            minimalpermsets: hardis/org/diagnose/minimalpermsets.md
-            releaseupdates: hardis/org/diagnose/releaseupdates.md
-            storage-stats: hardis/org/diagnose/storage-stats.md
-            underusedpermsets: hardis/org/diagnose/underusedpermsets.md
-            unsecure-connected-apps: hardis/org/diagnose/unsecure-connected-apps.md
-            unused-apex-classes: hardis/org/diagnose/unused-apex-classes.md
-            unused-connected-apps: hardis/org/diagnose/unused-connected-apps.md
-            unusedlicenses: hardis/org/diagnose/unusedlicenses.md
-            unusedusers: hardis/org/diagnose/unusedusers.md
-          files:
-            export: hardis/org/files/export.md
-            import: hardis/org/files/import.md
-          fix:
-            listviewmine: hardis/org/fix/listviewmine.md
-          generate:
-            packagexmlfull: hardis/org/generate/packagexmlfull.md
-          monitor:
-            all: hardis/org/monitor/all.md
-            backup: hardis/org/monitor/backup.md
-            errors: hardis/org/monitor/errors.md
-            health-check: hardis/org/monitor/health-check.md
-            limits: hardis/org/monitor/limits.md
-          multi-org-query: hardis/org/multi-org-query.md
-          purge:
-            apexlog: hardis/org/purge/apexlog.md
-            flow: hardis/org/purge/flow.md
-            profile: hardis/org/purge/profile.md
-          refresh:
-            after-refresh: hardis/org/refresh/after-refresh.md
-            before-refresh: hardis/org/refresh/before-refresh.md
-          retrieve:
-            packageconfig: hardis/org/retrieve/packageconfig.md
-            sources:
-              analytics: hardis/org/retrieve/sources/analytics.md
-              dx: hardis/org/retrieve/sources/dx.md
-              dx2: hardis/org/retrieve/sources/dx2.md
-              metadata: hardis/org/retrieve/sources/metadata.md
-              retrofit: hardis/org/retrieve/sources/retrofit.md
-          select: hardis/org/select.md
-          test:
-            apex: hardis/org/test/apex.md
-          user:
-            activateinvalid: hardis/org/user/activateinvalid.md
-            freeze: hardis/org/user/freeze.md
-            unfreeze: hardis/org/user/unfreeze.md
-        package:
-          create: hardis/package/create.md
-          install: hardis/package/install.md
-          mergexml: hardis/package/mergexml.md
-          version:
-            create: hardis/package/version/create.md
-            list: hardis/package/version/list.md
-            promote: hardis/package/version/promote.md
-        packagexml:
-          append: hardis/packagexml/append.md
-          remove: hardis/packagexml/remove.md
-        project:
-          audit:
-            apiversion: hardis/project/audit/apiversion.md
-            callincallout: hardis/project/audit/callincallout.md
-            duplicatefiles: hardis/project/audit/duplicatefiles.md
-            remotesites: hardis/project/audit/remotesites.md
-          clean:
-            emptyitems: hardis/project/clean/emptyitems.md
-            filter-xml-content: hardis/project/clean/filter-xml-content.md
-            flowpositions: hardis/project/clean/flowpositions.md
-            hiddenitems: hardis/project/clean/hiddenitems.md
-            listviews: hardis/project/clean/listviews.md
-            manageditems: hardis/project/clean/manageditems.md
-            minimizeprofiles: hardis/project/clean/minimizeprofiles.md
-            orgmissingitems: hardis/project/clean/orgmissingitems.md
-            profiles-extract: hardis/project/clean/profiles-extract.md
-            references: hardis/project/clean/references.md
-            retrievefolders: hardis/project/clean/retrievefolders.md
-            sensitive-metadatas: hardis/project/clean/sensitive-metadatas.md
-            standarditems: hardis/project/clean/standarditems.md
-            systemdebug: hardis/project/clean/systemdebug.md
-            xml: hardis/project/clean/xml.md
-          configure:
-            auth: hardis/project/configure/auth.md
-          convert:
-            profilestopermsets: hardis/project/convert/profilestopermsets.md
-          create: hardis/project/create.md
-          deploy:
-            notify: hardis/project/deploy/notify.md
-            quick: hardis/project/deploy/quick.md
-            simulate: hardis/project/deploy/simulate.md
-            smart: hardis/project/deploy/smart.md
-            sources:
-              dx: hardis/project/deploy/sources/dx.md
-              metadata: hardis/project/deploy/sources/metadata.md
-            start: hardis/project/deploy/start.md
-            validate: hardis/project/deploy/validate.md
-          fix:
-            profiletabs: hardis/project/fix/profiletabs.md
-            v53flexipages: hardis/project/fix/v53flexipages.md
-          generate:
-            bypass: hardis/project/generate/bypass.md
-            flow-git-diff: hardis/project/generate/flow-git-diff.md
-            gitdelta: hardis/project/generate/gitdelta.md
-          lint: hardis/project/lint.md
-          metadata:
-            activate-decomposed: hardis/project/metadata/activate-decomposed.md
-            findduplicates: hardis/project/metadata/findduplicates.md
-          skills:
-            import: hardis/project/skills/import.md
-        deploy:
-          quick: hardis/deploy/quick.md
-          start: hardis/deploy/start.md
-          validate: hardis/deploy/validate.md
-        scratch:
-          create: hardis/scratch/create.md
-          delete: hardis/scratch/delete.md
-          pool:
-            create: hardis/scratch/pool/create.md
-            localauth: hardis/scratch/pool/localauth.md
-            refresh: hardis/scratch/pool/refresh.md
-            reset: hardis/scratch/pool/reset.md
-            view: hardis/scratch/pool/view.md
-          pull: hardis/scratch/pull.md
-          push: hardis/scratch/push.md
-        source:
-          deploy: hardis/source/deploy.md
-          push: hardis/source/push.md
-          retrieve: hardis/source/retrieve.md
-        work:
-          new: hardis/work/new.md
-          refresh: hardis/work/refresh.md
-          resetselection: hardis/work/resetselection.md
-          save: hardis/work/save.md
-          ws: hardis/work/ws.md
-      hello:
-        world: hello/world.md
-  - Community Events: events.md
-  - Articles & Videos: articles-videos.md
-  - Meet the team: contributors.md
-  - Configuration reference: sfdx-hardis-config-file.md
-  - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
-  - Contributing: contributing.md
-  - Plugins: sfdx-hardis-plugins.md
-  - License: license.md
-  - Security: SECURITY.md
-  - Changelog: CHANGELOG.md
-  - Help: sfdx-hardis-help.md
+          - Prompt Variables:
+              - Additional Instructions: prompt-templates/VARIABLE_ADDITIONAL_INSTRUCTIONS.md
+              - Formatting Requirements: prompt-templates/VARIABLE_FORMATTING_REQUIREMENTS.md
+              - Output Format Markdown Doc: prompt-templates/VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC.md
+  - Integrations:
+      - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
+      - Git Platforms:
+          - GitHub: salesforce-ci-cd-setup-integration-github.md
+          - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
+          - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
+          - BitBucket: salesforce-ci-cd-setup-integration-bitbucket.md
+          - Jenkins: salesforce-ci-cd-setup-integration-jenkins.md
+      - Authentication (CI/CD):
+          - GitHub Actions: salesforce-ci-cd-setup-auth-github.md
+          - GitLab CI: salesforce-ci-cd-setup-auth-gitlab.md
+          - Azure Pipelines: salesforce-ci-cd-setup-auth-azure.md
+          - Bitbucket Pipelines: salesforce-ci-cd-setup-auth-bitbucket.md
+          - Jenkins: salesforce-ci-cd-setup-auth-jenkins.md
+      - Notifications:
+          - Slack: salesforce-ci-cd-setup-integration-slack.md
+          - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+          - Email: salesforce-ci-cd-setup-integration-email.md
+      - Ticketing:
+          - Jira: salesforce-ci-cd-setup-integration-jira.md
+          - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
+          - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
+      - Monitoring Backends:
+          - Grafana: salesforce-ci-cd-setup-integration-api.md
+          - Vector.dev: salesforce-monitoring-config-vector.md
+  - Commands Reference:
+      - All commands: commands.md
+      - hardis:auth:
+          - login: hardis/auth/login.md
+      - hardis:cache:
+          - clear: hardis/cache/clear.md
+      - hardis:config:
+          - get: hardis/config/get.md
+      - hardis:datacloud:
+          - agentforce-conversations: hardis/datacloud/extract/agentforce-conversations.md
+          - agentforce-feedback: hardis/datacloud/extract/agentforce-feedback.md
+          - sql-query: hardis/datacloud/sql-query.md
+      - hardis:doc:
+          - extract permsetgroups: hardis/doc/extract/permsetgroups.md
+          - fieldusage: hardis/doc/fieldusage.md
+          - flow2markdown: hardis/doc/flow2markdown.md
+          - mkdocs-to-cf: hardis/doc/mkdocs-to-cf.md
+          - mkdocs-to-confluence: hardis/doc/mkdocs-to-confluence.md
+          - mkdocs-to-salesforce: hardis/doc/mkdocs-to-salesforce.md
+          - object-field-usage: hardis/doc/object-field-usage.md
+          - override-prompts: hardis/doc/override-prompts.md
+          - packagexml2markdown: hardis/doc/packagexml2markdown.md
+          - plugin generate: hardis/doc/plugin/generate.md
+          - project2markdown: hardis/doc/project2markdown.md
+      - hardis:git:
+          - pull-requests extract: hardis/git/pull-requests/extract.md
+      - hardis:lint:
+          - access: hardis/lint/access.md
+          - metadatastatus: hardis/lint/metadatastatus.md
+          - missingattributes: hardis/lint/missingattributes.md
+          - unusedmetadatas: hardis/lint/unusedmetadatas.md
+      - hardis:mdapi:
+          - deploy: hardis/mdapi/deploy.md
+      - hardis:misc:
+          - custom-label-translations: hardis/misc/custom-label-translations.md
+          - purge-references: hardis/misc/purge-references.md
+          - servicenow-report: hardis/misc/servicenow-report.md
+          - toml2csv: hardis/misc/toml2csv.md
+      - hardis:org:
+          - community update: hardis/org/community/update.md
+          - configure data: hardis/org/configure/data.md
+          - configure files: hardis/org/configure/files.md
+          - configure monitoring: hardis/org/configure/monitoring.md
+          - connect: hardis/org/connect.md
+          - create: hardis/org/create.md
+          - data delete: hardis/org/data/delete.md
+          - data export: hardis/org/data/export.md
+          - data import: hardis/org/data/import.md
+          - diagnose apex-api-version: hardis/org/diagnose/apex-api-version.md
+          - diagnose audittrail: hardis/org/diagnose/audittrail.md
+          - diagnose deployments: hardis/org/diagnose/deployments.md
+          - diagnose flex-queue: hardis/org/diagnose/flex-queue.md
+          - diagnose instanceupgrade: hardis/org/diagnose/instanceupgrade.md
+          - diagnose legacyapi: hardis/org/diagnose/legacyapi.md
+          - diagnose licenses: hardis/org/diagnose/licenses.md
+          - diagnose minimalpermsets: hardis/org/diagnose/minimalpermsets.md
+          - diagnose releaseupdates: hardis/org/diagnose/releaseupdates.md
+          - diagnose storage-stats: hardis/org/diagnose/storage-stats.md
+          - diagnose underusedpermsets: hardis/org/diagnose/underusedpermsets.md
+          - diagnose unsecure-connected-apps: hardis/org/diagnose/unsecure-connected-apps.md
+          - diagnose unused-apex-classes: hardis/org/diagnose/unused-apex-classes.md
+          - diagnose unused-connected-apps: hardis/org/diagnose/unused-connected-apps.md
+          - diagnose unusedlicenses: hardis/org/diagnose/unusedlicenses.md
+          - diagnose unusedusers: hardis/org/diagnose/unusedusers.md
+          - files export: hardis/org/files/export.md
+          - files import: hardis/org/files/import.md
+          - fix listviewmine: hardis/org/fix/listviewmine.md
+          - generate packagexmlfull: hardis/org/generate/packagexmlfull.md
+          - monitor all: hardis/org/monitor/all.md
+          - monitor backup: hardis/org/monitor/backup.md
+          - monitor errors: hardis/org/monitor/errors.md
+          - monitor health-check: hardis/org/monitor/health-check.md
+          - monitor limits: hardis/org/monitor/limits.md
+          - multi-org-query: hardis/org/multi-org-query.md
+          - purge apexlog: hardis/org/purge/apexlog.md
+          - purge flow: hardis/org/purge/flow.md
+          - purge profile: hardis/org/purge/profile.md
+          - refresh after-refresh: hardis/org/refresh/after-refresh.md
+          - refresh before-refresh: hardis/org/refresh/before-refresh.md
+          - retrieve packageconfig: hardis/org/retrieve/packageconfig.md
+          - retrieve sources analytics: hardis/org/retrieve/sources/analytics.md
+          - retrieve sources dx: hardis/org/retrieve/sources/dx.md
+          - retrieve sources dx2: hardis/org/retrieve/sources/dx2.md
+          - retrieve sources metadata: hardis/org/retrieve/sources/metadata.md
+          - retrieve sources retrofit: hardis/org/retrieve/sources/retrofit.md
+          - select: hardis/org/select.md
+          - test apex: hardis/org/test/apex.md
+          - user activateinvalid: hardis/org/user/activateinvalid.md
+          - user freeze: hardis/org/user/freeze.md
+          - user unfreeze: hardis/org/user/unfreeze.md
+      - hardis:package:
+          - create: hardis/package/create.md
+          - install: hardis/package/install.md
+          - mergexml: hardis/package/mergexml.md
+          - version create: hardis/package/version/create.md
+          - version list: hardis/package/version/list.md
+          - version promote: hardis/package/version/promote.md
+      - hardis:packagexml:
+          - append: hardis/packagexml/append.md
+          - remove: hardis/packagexml/remove.md
+      - hardis:project:
+          - audit apiversion: hardis/project/audit/apiversion.md
+          - audit callincallout: hardis/project/audit/callincallout.md
+          - audit duplicatefiles: hardis/project/audit/duplicatefiles.md
+          - audit remotesites: hardis/project/audit/remotesites.md
+          - clean emptyitems: hardis/project/clean/emptyitems.md
+          - clean filter-xml-content: hardis/project/clean/filter-xml-content.md
+          - clean flowpositions: hardis/project/clean/flowpositions.md
+          - clean hiddenitems: hardis/project/clean/hiddenitems.md
+          - clean listviews: hardis/project/clean/listviews.md
+          - clean manageditems: hardis/project/clean/manageditems.md
+          - clean minimizeprofiles: hardis/project/clean/minimizeprofiles.md
+          - clean orgmissingitems: hardis/project/clean/orgmissingitems.md
+          - clean profiles-extract: hardis/project/clean/profiles-extract.md
+          - clean references: hardis/project/clean/references.md
+          - clean retrievefolders: hardis/project/clean/retrievefolders.md
+          - clean sensitive-metadatas: hardis/project/clean/sensitive-metadatas.md
+          - clean standarditems: hardis/project/clean/standarditems.md
+          - clean systemdebug: hardis/project/clean/systemdebug.md
+          - clean xml: hardis/project/clean/xml.md
+          - configure auth: hardis/project/configure/auth.md
+          - convert profilestopermsets: hardis/project/convert/profilestopermsets.md
+          - create: hardis/project/create.md
+          - deploy notify: hardis/project/deploy/notify.md
+          - deploy quick: hardis/project/deploy/quick.md
+          - deploy simulate: hardis/project/deploy/simulate.md
+          - deploy smart: hardis/project/deploy/smart.md
+          - deploy sources dx: hardis/project/deploy/sources/dx.md
+          - deploy sources metadata: hardis/project/deploy/sources/metadata.md
+          - deploy start: hardis/project/deploy/start.md
+          - deploy validate: hardis/project/deploy/validate.md
+          - fix profiletabs: hardis/project/fix/profiletabs.md
+          - fix v53flexipages: hardis/project/fix/v53flexipages.md
+          - generate bypass: hardis/project/generate/bypass.md
+          - generate flow-git-diff: hardis/project/generate/flow-git-diff.md
+          - generate gitdelta: hardis/project/generate/gitdelta.md
+          - lint: hardis/project/lint.md
+          - metadata activate-decomposed: hardis/project/metadata/activate-decomposed.md
+          - metadata findduplicates: hardis/project/metadata/findduplicates.md
+          - skills import: hardis/project/skills/import.md
+      - hardis:deploy:
+          - quick: hardis/deploy/quick.md
+          - start: hardis/deploy/start.md
+          - validate: hardis/deploy/validate.md
+      - hardis:scratch:
+          - create: hardis/scratch/create.md
+          - delete: hardis/scratch/delete.md
+          - pool create: hardis/scratch/pool/create.md
+          - pool localauth: hardis/scratch/pool/localauth.md
+          - pool refresh: hardis/scratch/pool/refresh.md
+          - pool reset: hardis/scratch/pool/reset.md
+          - pool view: hardis/scratch/pool/view.md
+          - pull: hardis/scratch/pull.md
+          - push: hardis/scratch/push.md
+      - hardis:source:
+          - deploy: hardis/source/deploy.md
+          - push: hardis/source/push.md
+          - retrieve: hardis/source/retrieve.md
+      - hardis:work:
+          - new: hardis/work/new.md
+          - refresh: hardis/work/refresh.md
+          - resetselection: hardis/work/resetselection.md
+          - save: hardis/work/save.md
+          - ws: hardis/work/ws.md
+  - Configuration: sfdx-hardis-config-file.md
+  - Community & Resources:
+      - Community Events: events.md
+      - Articles & Videos: articles-videos.md
+      - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
+      - Meet the team: contributors.md
+      - Contributing: contributing.md
+  - About:
+      - Plugins: sfdx-hardis-plugins.md
+      - Changelog: CHANGELOG.md
+      - License: license.md
+      - Security: SECURITY.md
+      - Help: sfdx-hardis-help.md
   - Cloudity, Consulting Partner: cloudity-consulting-partner.md

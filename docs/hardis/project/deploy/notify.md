@@ -71,11 +71,22 @@ This command is for custom SF Cli pipelines, if you are a sfdx-hardis user, it i
 
 You can also use [sfdx-hardis wrapper commands of SF deployment commands](https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-setup/#using-custom-cicd-pipeline)
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:deploy:notify --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |check-only<br/>-c|boolean|Use this option to send notifications from a Deployment simulation job||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |deploy-status<br/>-s|option|Send success, failure or unknown (default) to indicate if the deployment or deployment simulation is in success or not|unknown||valid<br/>invalid<br/>unknown|
@@ -90,6 +101,10 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](https:
 
 ```shell
 $ sf hardis:project:deploy:notify --check-only --deploy-status valid --message "This deployment check is valid\n\nYahooo !!"
+```
+
+```shell
+$ sf hardis:project:deploy:notify --agent
 ```
 
 ```shell

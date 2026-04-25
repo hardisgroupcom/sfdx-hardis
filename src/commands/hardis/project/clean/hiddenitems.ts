@@ -42,15 +42,31 @@ The command's technical implementation involves:
   - Otherwise, only the individual file is removed.
 - **Logging:** Provides clear messages about which items are being removed and a summary of the total number of hidden items cleaned.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:hiddenitems --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:clean:hiddenitems'];
+  public static examples = ['$ sf hardis:project:clean:hiddenitems',
+    '$ sf hardis:project:clean:hiddenitems --agent',];
 
   public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: 'force-app',
       description: 'Root folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

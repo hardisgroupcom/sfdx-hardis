@@ -33,11 +33,23 @@ This command acts as an intelligent wrapper around the Salesforce CLI's metadata
 - **Argument Passthrough:** It directly passes the command-line arguments (`this.argv`) to the underlying Salesforce CLI command, ensuring all standard deployment options are supported.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:mdapi:deploy --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |checkonly<br/>-c|boolean|checkOnly||||
 |concise|boolean|concise||||
 |debug|boolean|debug||||

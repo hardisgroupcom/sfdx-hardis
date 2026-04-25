@@ -243,7 +243,7 @@ In agent mode:
           }
         }
       } else if (appName !== 'N/A') {
-        // No AppMenuItem link — try to match by AppName against External Client Apps
+        // No AppMenuItem link - try to match by AppName against External Client Apps
         const matchingExtClientApp = allExternalClientAppsByName.get(appName.toLowerCase());
         if (matchingExtClientApp) {
           appType = 'Ext Client App';

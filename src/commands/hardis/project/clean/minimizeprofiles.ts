@@ -49,15 +49,31 @@ skipMinimizeProfiles:
   - MyClient Customer Community Login User
   - MyClientPortail Profile
 \`\`\`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:minimizeprofiles --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:clean:minimizeprofiles'];
+  public static examples = ['$ sf hardis:project:clean:minimizeprofiles',
+    '$ sf hardis:project:clean:minimizeprofiles --agent',];
 
   public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: 'force-app',
       description: 'Root folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

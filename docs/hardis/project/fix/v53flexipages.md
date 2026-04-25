@@ -30,11 +30,23 @@ The command's technical implementation involves:
 - **Logging:** Provides messages about which FlexiPages are being processed and a summary of the total number of identifiers added.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:fix:v53flexipages --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |flags-dir|option|undefined||||
 |json|boolean|Format output as json.||||
@@ -46,6 +58,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:project:fix:v53flexipages
+```
+
+```shell
+$ sf hardis:project:fix:v53flexipages --agent
 ```
 
 

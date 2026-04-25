@@ -43,14 +43,30 @@ The command performs the following technical steps:
 - **Markdown Generation:** It generates a Markdown file (\`docs/permission-set-groups.md\`) that includes a title, a table of contents, and detailed sections for each Permission Set Group. Each section lists the group's name, label, description, and a bulleted list of its assigned Permission Sets.
 - **File System Operations:** It uses \`fs-extra\` to ensure output directories exist and to write the generated CSV and Markdown files.
 - **VS Code Integration:** It uses \`WebSocketClient.requestOpenFile\` to automatically open the generated CSV and Markdown files in VS Code, enhancing the user experience.
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:extract:permsetgroups --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:doc:extract:permsetgroups'];
+  public static examples = ['$ sf hardis:doc:extract:permsetgroups',
+    '$ sf hardis:doc:extract:permsetgroups --agent',];
 
   public static flags: any = {
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

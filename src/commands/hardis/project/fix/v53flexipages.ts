@@ -41,15 +41,31 @@ The command's technical implementation involves:
 - **File Writing:** If changes are made, the modified XML content is written back to the FlexiPage file using \`fs.writeFile\`.
 - **Logging:** Provides messages about which FlexiPages are being processed and a summary of the total number of identifiers added.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:fix:v53flexipages --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:fix:v53flexipages'];
+  public static examples = ['$ sf hardis:project:fix:v53flexipages',
+    '$ sf hardis:project:fix:v53flexipages --agent',];
 
   public static flags: any = {
     path: Flags.string({
       char: 'p',
       default: process.cwd(),
       description: 'Root folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

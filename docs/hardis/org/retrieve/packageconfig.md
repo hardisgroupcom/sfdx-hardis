@@ -36,8 +36,9 @@ sf hardis:org:retrieve:packageconfig --agent --update-all-config --target-org my
 
 In agent mode:
 
-- Without `--packages` or `--update-all-config`, the command only lists packages (no config update).
+- Without `--packages`, `--update-existing-config`, or `--update-all-config`, the command only lists packages (no config update).
 - Use `--packages` to update config only for the specified packages (comma-separated names or subscriber package IDs).
+- Use `--update-existing-config` to update only packages that are already present in the project config (version upgrade).
 - Use `--update-all-config` to update config with all retrieved packages.
 
 
@@ -52,7 +53,8 @@ In agent mode:
 |packages|option|Comma-separated list of package names or subscriber package IDs to update in the project config. Used in agent mode.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
 |target-org<br/>-o|option|undefined||||
-|update-all-config|boolean|Update config with all retrieved packages. Required in agent mode if --packages is not provided.||||
+|update-all-config|boolean|Update config with all retrieved packages (existing and new).||||
+|update-existing-config|boolean|Update only packages already present in the project config (version upgrade). Useful in agent mode.||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
@@ -67,6 +69,10 @@ sf hardis:org:retrieve:packageconfig -u myOrg
 
 ```shell
 $ sf hardis:org:retrieve:packageconfig --agent --packages "MyPackage,OtherPkg"
+```
+
+```shell
+$ sf hardis:org:retrieve:packageconfig --agent --update-existing-config
 ```
 
 ```shell

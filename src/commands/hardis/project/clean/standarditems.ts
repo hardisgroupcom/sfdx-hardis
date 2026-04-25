@@ -42,11 +42,27 @@ The command's technical implementation involves:
   - If custom fields are found, it then uses \`glob\` again to find all standard fields (\`*.field-meta.xml\` without \`__\`) within the object's \`fields\` directory and removes only those standard field files.
 - **Logging:** Provides clear messages about which folders and files are being removed or kept.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:standarditems --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:clean:standarditems'];
+  public static examples = ['$ sf hardis:project:clean:standarditems',
+    '$ sf hardis:project:clean:standarditems --agent',];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

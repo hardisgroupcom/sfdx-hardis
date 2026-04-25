@@ -63,7 +63,7 @@ export class CodingAgentProvider {
    * The codingAgent property (or SFDX_HARDIS_CODING_AGENT env var) must be set.
    * If not configured, no agent detection is attempted.
    *
-   * In local mode (outside CI), API keys are not required — agents use their
+   * In local mode (outside CI), API keys are not required - agents use their
    * own login mechanisms (claude login, gh auth login, etc.).
    */
   static async getConfiguredAgent(): Promise<CodingAgentConfig | null> {

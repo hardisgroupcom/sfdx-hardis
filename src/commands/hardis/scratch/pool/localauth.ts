@@ -38,13 +38,29 @@ The command's technical implementation involves:
 - **User Authentication:** It then calls the \`userAuthenticate()\` method on the instantiated provider. This method encapsulates the specific logic for authenticating with the chosen storage service (e.g., prompting for API keys, performing OAuth flows).
 - **Error Handling:** It checks for the absence of a configured scratch org pool and provides a user-friendly message.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:pool:localauth --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:scratch:pool:localauth'];
+  public static examples = ['$ sf hardis:scratch:pool:localauth',
+    '$ sf hardis:scratch:pool:localauth --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

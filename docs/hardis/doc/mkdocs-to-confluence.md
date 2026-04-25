@@ -68,11 +68,23 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
 - **Error Handling:** Reports per-page errors without stopping the entire process, allowing partial deployments. A summary of failed pages is shown at the end.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:mkdocs-to-confluence --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |confluencePagePrefix|option|Confluence page title prefix. Overrides CONFLUENCE_PAGE_PREFIX[_<LANG>] env vars||||
 |confluencePageSuffix|option|Confluence page title suffix. Overrides CONFLUENCE_PAGE_SUFFIX[_<LANG>] env vars||||
 |confluenceParentPageId|option|Confluence parent page ID. Overrides CONFLUENCE_PARENT_PAGE_ID[_<LANG>] env vars||||
@@ -87,6 +99,10 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
 
 ```shell
 $ sf hardis:doc:mkdocs-to-confluence
+```
+
+```shell
+$ sf hardis:doc:mkdocs-to-confluence --agent
 ```
 
 

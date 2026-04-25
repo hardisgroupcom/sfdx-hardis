@@ -27,6 +27,17 @@ The command's technical implementation involves:
 - **File Writing:** The newly constructed XML content is then written to the specified output file.
 - **\`appendPackageXmlFilesContent\` Utility:** The core logic for this operation is encapsulated within the \`appendPackageXmlFilesContent\` utility function, which handles the parsing, merging, and writing of the \`package.xml\` files.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:packagexml:append --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
   public static readonly examples = ["$ sf hardis packagexml append -p package1.xml,package2.xml -o package3.xml"];
   public static readonly flags: any = {
@@ -39,6 +50,10 @@ The command's technical implementation involves:
       char: "f",
       description: "package.xml output file",
       required: true
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       default: false,

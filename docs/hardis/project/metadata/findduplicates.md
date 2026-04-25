@@ -10,11 +10,23 @@ Default config :
 metadataDuplicateFindKeys :
 [object Object]
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:metadata:findduplicates --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |files<br/>-f|option|XML metadata files path||||
 |flags-dir|option|undefined||||
 |json|boolean|Format output as json.||||

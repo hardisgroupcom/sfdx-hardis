@@ -77,10 +77,21 @@ export default class Retrofit extends SfCommand<any> {
   - force-app/main/default/applications/MyOtherApp.app-meta.xml
   - force-app/main/default/flexipages/MyFlexipageContainingDashboards.flexipage-meta.xml
   \`\`\`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:retrieve:sources:retrofit --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
   `;
 
   public static examples = [
     '$ sf hardis:org:retrieve:sources:retrofit',
+    '$ sf hardis:org:retrieve:sources:retrofit --agent',
     'sf hardis:org:retrieve:sources:retrofit --productionbranch master --commit --commitmode updated',
     'sf hardis:org:retrieve:sources:retrofit --productionbranch master  --retrofitbranch preprod --commit --commitmode updated --push --pushmode mergerequest',
   ];
@@ -111,6 +122,10 @@ export default class Retrofit extends SfCommand<any> {
     retrofittargetbranch: Flags.string({
       description:
         'Name of branch the merge request will have as target\nCan be defined in retrofitBranch property in .sfdx-hardis.yml',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

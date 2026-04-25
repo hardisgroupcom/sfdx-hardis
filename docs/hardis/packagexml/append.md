@@ -28,11 +28,23 @@ The command's technical implementation involves:
 - **`appendPackageXmlFilesContent` Utility:** The core logic for this operation is encapsulated within the `appendPackageXmlFilesContent` utility function, which handles the parsing, merging, and writing of the `package.xml` files.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:packagexml:append --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |debug|boolean|debug||||
 |flags-dir|option|undefined||||
 |json|boolean|Format output as json.||||

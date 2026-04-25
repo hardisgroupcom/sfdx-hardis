@@ -35,11 +35,27 @@ The command's technical implementation involves:
 - **Salesforce CLI Integration:** It uses \`sf project retrieve start -m <MetadataType>:<FolderName>\` to retrieve the content of individual folders. This ensures that only the specified folder and its contents are retrieved.
 - **Error Handling:** It includes basic error handling for the \`execCommand\` calls.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:retrievefolders --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:clean:retrievefolders'];
+  public static examples = ['$ sf hardis:project:clean:retrievefolders',
+    '$ sf hardis:project:clean:retrievefolders --agent',];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

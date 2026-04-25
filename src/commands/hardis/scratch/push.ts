@@ -30,13 +30,29 @@ The command's technical implementation involves:
 - **\`forceSourcePush\` Utility:** The core logic resides in the \`forceSourcePush\` utility function, which orchestrates the deployment process.
 - **Connection Handling:** It uses the connection to the target org to perform the push operation.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:push --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:scratch:push'];
+  public static examples = ['$ sf hardis:scratch:push',
+    '$ sf hardis:scratch:push --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

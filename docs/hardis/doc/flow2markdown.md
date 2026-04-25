@@ -34,11 +34,23 @@ The command leverages several internal utilities and external libraries to achie
 - **WebSocket Communication:** Interacts with a WebSocket client (`WebSocketClient.requestOpenFile`) to open the generated Markdown file in a VS Code tab, enhancing user experience.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:flow2markdown --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |flags-dir|option|undefined||||
 |inputfile<br/>-x|option|Path to Flow metadata file. If not specified, the command will prompt the user||||
@@ -54,6 +66,10 @@ The command leverages several internal utilities and external libraries to achie
 
 ```shell
 $ sf hardis:doc:flow2markdown
+```
+
+```shell
+$ sf hardis:doc:flow2markdown --agent
 ```
 
 ```shell

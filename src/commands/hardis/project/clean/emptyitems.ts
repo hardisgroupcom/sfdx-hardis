@@ -43,15 +43,31 @@ The command's technical implementation involves:
 - **File Deletion:** If a file is determined to be empty, it is removed from the file system using \`fs.remove\`.
 - **Logging:** Provides clear messages about which files are being removed and a summary of the total number of items cleaned.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:emptyitems --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:clean:emptyitems'];
+  public static examples = ['$ sf hardis:project:clean:emptyitems',
+    '$ sf hardis:project:clean:emptyitems --agent',];
 
   public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: 'force-app',
       description: 'Root folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

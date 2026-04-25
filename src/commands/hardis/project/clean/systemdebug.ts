@@ -45,15 +45,31 @@ The command's technical implementation involves:
 - **File Writing:** If any changes are made to a file, the modified content is written back to the file using \`fs.writeFile\`.
 - **Logging:** Provides a summary of how many files were cleaned.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:systemdebug --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:clean:systemdebug'];
+  public static examples = ['$ sf hardis:project:clean:systemdebug',
+    '$ sf hardis:project:clean:systemdebug --agent',];
 
   public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: 'force-app',
       description: 'Root folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     websocket: Flags.string({
       description: messages.getMessage('websocket'),

@@ -109,10 +109,10 @@ projectName: my-project
 
 ### API
 
-- `getConfig(layer)` — returns merged config up to the specified layer (`"project"`, `"branch"`, or `"user"` — default `"user"`)
-- `setConfig(layer, propValues)` — writes properties to the config file for the specified layer
-- `CONSTANTS` — static constants (API version, URLs, metadata type lists)
-- `getEnvVar(name)` — reads env var with Azure unresolved-variable detection
+- `getConfig(layer)` - returns merged config up to the specified layer (`"project"`, `"branch"`, or `"user"` - default `"user"`)
+- `setConfig(layer, propValues)` - writes properties to the config file for the specified layer
+- `CONSTANTS` - static constants (API version, URLs, metadata type lists)
+- `getEnvVar(name)` - reads env var with Azure unresolved-variable detection
 
 ### JSON Schema
 

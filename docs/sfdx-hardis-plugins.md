@@ -7,7 +7,7 @@ description: Learn how to build community plugins for sfdx-hardis that integrate
 
 sfdx-hardis exposes a **Plugin API** that allows community developers to build their own Salesforce CLI plugins that seamlessly integrate with the [sfdx-hardis VS Code extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis).
 
-Your plugin commands will automatically communicate with the VS Code extension using the same WebSocket connection initialized by the main sfdx-hardis CLI — no additional setup required.
+Your plugin commands will automatically communicate with the VS Code extension using the same WebSocket connection initialized by the main sfdx-hardis CLI - no additional setup required.
 
 ![](assets/images/sfdx-hardis-plugin-demo.gif)
 
@@ -17,7 +17,7 @@ See demo repository: <https://github.com/hardisgroupcom/sf-plugin-hardis-demo>
 
 When sfdx-hardis runs inside VS Code (via the extension), it initializes a WebSocket connection during its `init` hook. This connection lives in the Node.js process globals, so any plugin loaded into the same CLI process can reuse it.
 
-The WebSocket connection is **automatically activated** for your plugin commands if your plugin lists `sfdx-hardis` in its `dependencies` or `peerDependencies` in `package.json`. The sfdx-hardis init hook detects this at runtime by inspecting the loaded plugins — no extra configuration needed.
+The WebSocket connection is **automatically activated** for your plugin commands if your plugin lists `sfdx-hardis` in its `dependencies` or `peerDependencies` in `package.json`. The sfdx-hardis init hook detects this at runtime by inspecting the loaded plugins - no extra configuration needed.
 
 Your plugin simply imports the exposed utilities from `sfdx-hardis` and calls them. The WebSocket routing happens automatically:
 
@@ -518,7 +518,7 @@ Static class for posting notifications to all configured channels (Slack, MS Tea
 
 Posts a notification to all configured channels.
 
-**Basic example — simple success notification:**
+**Basic example - simple success notification:**
 
 ```typescript
 import { NotifProvider } from "sfdx-hardis/plugin-api";
@@ -559,7 +559,7 @@ const notif: NotifMessage = {
 await NotifProvider.postNotifications(notif);
 ```
 
-**Advanced example — sending numeric metrics to Grafana/InfluxDB/Prometheus:**
+**Advanced example - sending numeric metrics to Grafana/InfluxDB/Prometheus:**
 
 The `metrics` property is used to send time-series data to a metrics API (InfluxDB line protocol or Prometheus format), configured by the end user via `NOTIF_API_METRICS_URL`.
 
@@ -640,7 +640,7 @@ Interface describing a notification to send.
 | Property        | Type                 | Required | Description                                                                                                                           |
 |-----------------|----------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------|
 | `text`          | `string`             | ✓        | Main notification text (supports Slack markdown: `*bold*`, `_italic_`)                                                                |
-| `type`          | `string`             | ✓        | Notification type identifier — use a unique ALL_CAPS string for your plugin (e.g. `"MY_PLUGIN_RESULT"`)                               |
+| `type`          | `string`             | ✓        | Notification type identifier - use a unique ALL_CAPS string for your plugin (e.g. `"MY_PLUGIN_RESULT"`)                               |
 | `severity`      | `NotifSeverity`      | ✓        | One of: `"critical"`, `"error"`, `"warning"`, `"info"`, `"success"`, `"log"`                                                          |
 | `logElements`   | `any[]`              | ✓        | Array of structured items (e.g. failing tests, issues). Sent as `_logElements` in the API payload.                                    |
 | `data`          | `any`                | ✓        | Arbitrary key-value pairs merged into the API payload (available in Grafana/Loki queries)                                             |
@@ -704,7 +704,7 @@ export default class MyCustomCommand extends SfCommand<AnyJson> {
 ## Important notes
 
 - **The WebSocket connection is managed by sfdx-hardis.** Your plugin should never create its own `WebSocketClient` instance. Just call the static methods.
-- **Automatic WebSocket activation.** As long as your plugin lists `sfdx-hardis` in `dependencies` or `peerDependencies`, the WebSocket connection is automatically initialized for your commands — no extra configuration required.
+- **Automatic WebSocket activation.** As long as your plugin lists `sfdx-hardis` in `dependencies` or `peerDependencies`, the WebSocket connection is automatically initialized for your commands - no extra configuration required.
 - **Manual prefix override.** If automatic detection does not work for your setup, set the `SFDX_HARDIS_PLUGIN_PREFIXES` environment variable to a comma-separated list of command prefixes (e.g., `SFDX_HARDIS_PLUGIN_PREFIXES=myplugin,otherplugin`).
 - **Prompts throw in CI mode.** When `process.env.CI` is set, calling `prompts()` throws an error. Design your commands to accept flags for CI usage.
 - **Graceful fallback.** When the VS Code extension is not connected, `uxLog` still outputs to the terminal, and `prompts` falls back to terminal-based inquirer prompts. Your plugin works everywhere.

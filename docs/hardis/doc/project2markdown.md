@@ -73,6 +73,16 @@ If you have a complex strategy, you might need to input property **mergeTargets*
 
 Define DO_NOT_OVERWRITE_INDEX_MD=true to avoid overwriting the index.md file in docs folder, useful if you want to keep your own index.md file.
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:project2markdown --agent
+```
+
+In agent mode, all interactive prompts are skipped. All flags remain available and behave identically - use them to control which documentation sections are generated.
+
 ## Doc HTML Pages
 
 To read the documentation as HTML pages, run the following code (you need [**Python**](https://www.python.org/downloads/) on your computer)
@@ -90,6 +100,7 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build -v || 
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |diff-only|boolean|Generate documentation only for changed files (used for monitoring)||||
 |excel|boolean|Also generate an Excel file with all metadata in separate tabs||||
@@ -114,6 +125,10 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build -v || 
 
 ```shell
 $ sf hardis:doc:project2markdown
+```
+
+```shell
+$ sf hardis:doc:project2markdown --agent
 ```
 
 ```shell

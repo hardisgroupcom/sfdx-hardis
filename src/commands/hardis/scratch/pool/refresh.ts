@@ -45,13 +45,29 @@ The command's technical implementation involves:
 - **Error Handling:** It includes error handling for scratch org creation failures, logging them and updating the pool storage accordingly.
 - **Logging:** Provides detailed logs about the status of scratch orgs (kept, deleted, created, failed creations) and a summary of the refresh operation.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:pool:refresh --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:scratch:pool:refresh'];
+  public static examples = ['$ sf hardis:scratch:pool:refresh',
+    '$ sf hardis:scratch:pool:refresh --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

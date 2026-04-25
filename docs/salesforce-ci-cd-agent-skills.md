@@ -34,7 +34,7 @@ This makes the commands safe, predictable, and **token-efficient** when called b
 
 ---
 
-## `hardis:work:new --agent` — Create a New User Story
+## `hardis:work:new --agent` - Create a New User Story
 
 Creates a Git branch (and optionally a scratch org) for a new User Story.
 
@@ -77,7 +77,7 @@ allowedOrgTypes:
 
 ---
 
-## `hardis:work:save --agent` — Save and Push Your Work
+## `hardis:work:save --agent` - Save and Push Your Work
 
 Cleans sources, updates `package.xml` / `destructiveChanges.xml`, commits, and pushes changes.
 
@@ -214,11 +214,11 @@ graph TD
 
 ---
 
-## `hardis:org:retrieve:packageconfig --agent` — Retrieve and Update Package Config
+## `hardis:org:retrieve:packageconfig --agent` - Retrieve and Update Package Config
 
 Retrieves installed packages from a Salesforce org and optionally updates the local project configuration. In agent mode, this is a **two-step workflow**: first list the packages, then update config for the ones you need.
 
-### Step 1 — List installed packages
+### Step 1 - List installed packages
 
 ```bash
 sf hardis:org:retrieve:packageconfig --agent --target-org myOrg@example.com
@@ -226,17 +226,17 @@ sf hardis:org:retrieve:packageconfig --agent --target-org myOrg@example.com
 
 Without `--packages` or `--update-all-config`, the command **only lists** installed packages and returns them as JSON (with `--json`). No config file is modified.
 
-### Step 2 — Update config
+### Step 2 - Update config
 
 Choose one of three update strategies:
 
-**Option A** — Update only specific packages by name:
+**Option A** - Update only specific packages by name:
 
 ```bash
 sf hardis:org:retrieve:packageconfig --agent --packages "MyManagedPkg,AnotherPkg" --target-org myOrg@example.com
 ```
 
-**Option B** — Update only packages already present in your project config (version upgrade):
+**Option B** - Update only packages already present in your project config (version upgrade):
 
 ```bash
 sf hardis:org:retrieve:packageconfig --agent --update-existing-config --target-org myOrg@example.com
@@ -244,7 +244,7 @@ sf hardis:org:retrieve:packageconfig --agent --update-existing-config --target-o
 
 This is the safest option for automation: it upgrades versions of known packages without adding new ones.
 
-**Option C** — Update config with all retrieved packages:
+**Option C** - Update config with all retrieved packages:
 
 ```bash
 sf hardis:org:retrieve:packageconfig --agent --update-all-config --target-org myOrg@example.com
@@ -287,8 +287,8 @@ When the user asks to sync or update the installed packages configuration:
 
 ## See Also
 
-- [Create New User Story](salesforce-ci-cd-create-new-task.md) — interactive guide
-- [Publish a User Story](salesforce-ci-cd-publish-task.md) — interactive guide
-- [Coding Agent Auto-Fix (Beta)](salesforce-deployment-agent-autofix.md) — auto-fix deployment errors with coding agents
+- [Create New User Story](salesforce-ci-cd-create-new-task.md) - interactive guide
+- [Publish a User Story](salesforce-ci-cd-publish-task.md) - interactive guide
+- [Coding Agent Auto-Fix (Beta)](salesforce-deployment-agent-autofix.md) - auto-fix deployment errors with coding agents
 - [`hardis:work:new` command reference](hardis/work/new.md)
 - [`hardis:work:save` command reference](hardis/work/save.md)

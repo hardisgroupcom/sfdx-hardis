@@ -83,7 +83,7 @@ Examples:
 - `CONFLUENCE_PARENT_PAGE_ID_NL`
 - `CONFLUENCE_PAGE_SUFFIX_PT_BR`
 
-> **Tip — finding the parent page ID:** open the target parent page in Confluence and look at the URL:
+> **Tip - finding the parent page ID:** open the target parent page in Confluence and look at the URL:
 > `https://mycompany.atlassian.net/wiki/spaces/MYSPACE/pages/**123456789**/My+Page`
 > The number between `/pages/` and the title is the ID.
 

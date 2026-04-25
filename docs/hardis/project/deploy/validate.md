@@ -49,11 +49,23 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 ```
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:deploy:validate --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |api-version<br/>-a|option|api-version||||
 |async|boolean|async||||
 |coverage-formatters|option|coverage-formatters||||

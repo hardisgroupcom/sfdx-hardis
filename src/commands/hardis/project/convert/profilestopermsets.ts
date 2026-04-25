@@ -38,9 +38,21 @@ The command's technical implementation involves:
 - **Command Execution:** For each identified Profile (that is not excluded), it constructs and executes the \`sf shane:profile:convert\` command with the appropriate Profile name and desired Permission Set name.
 - **Error Handling:** Includes basic error handling for the external command execution.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:convert:profilestopermsets --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:convert:profilestopermsets'];
+  public static examples = ['$ sf hardis:project:convert:profilestopermsets',
+    '$ sf hardis:project:convert:profilestopermsets --agent',];
 
   public static flags: any = {
     except: Flags.string({
@@ -48,6 +60,10 @@ The command's technical implementation involves:
       default: [],
       description: 'List of filters',
       multiple: true,
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

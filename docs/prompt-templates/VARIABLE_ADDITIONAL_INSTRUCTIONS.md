@@ -12,6 +12,7 @@ This is a reusable prompt variable that provides common instructions across mult
 ## Content
 
 ```
+
 ### Additional Instructions
     
 - Caution: Redact any sensitive information (tokens, passwords, API keys, etc.) and replace with `[HIDDEN_SENSITIVE_INFOS]`.

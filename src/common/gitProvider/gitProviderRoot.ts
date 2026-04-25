@@ -160,6 +160,6 @@ export abstract class GitProviderRoot {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
-    // Default no-op — providers may override
+    // Default no-op - providers may override
   }
 }

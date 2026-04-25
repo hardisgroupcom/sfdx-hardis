@@ -115,7 +115,7 @@ In **CI/CD**, the coding agent CLI needs to authenticate with its AI provider. Y
 
 **Tip:** If you already have a LangChain AI provider configured (see [AI setup](salesforce-ai-setup.md)), sfdx-hardis will automatically **reuse** `LANGCHAIN_LLM_MODEL_API_KEY` so you don't need to set a separate key.
 
-!!! tip "Local mode — no API key needed"
+!!! tip "Local mode - no API key needed"
 
   When running **outside CI/CD** (i.e. on your local machine), sfdx-hardis uses the configured `codingAgent` (for example `claude`) with your existing local CLI authentication session.
 
@@ -169,12 +169,12 @@ See [prompt templates documentation](salesforce-ai-prompts.md) for more details 
 
 !!! danger "Expert review required"
 
-AI coding agents can produce incorrect or incomplete fixes. **Every auto-fix Pull Request must be reviewed and validated by an expert** before merging. Treat these PRs the same way you would treat any code contribution — run tests, inspect changes, and verify correctness.
+AI coding agents can produce incorrect or incomplete fixes. **Every auto-fix Pull Request must be reviewed and validated by an expert** before merging. Treat these PRs the same way you would treat any code contribution - run tests, inspect changes, and verify correctness.
 
 - The coding agent runs with `--allow-all-tools` / full auto-approval mode so it can read and modify files autonomously
-- The agent is **instructed to never deploy** anything to Salesforce — it only modifies local files
+- The agent is **instructed to never deploy** anything to Salesforce - it only modifies local files
 - The agent **can query** the target org for metadata/data (read-only) to understand the current state
-- All changes go through a **Pull Request** for human review before being merged — **do not auto-merge these PRs**
+- All changes go through a **Pull Request** for human review before being merged - **do not auto-merge these PRs**
 - It is recommended to run coding agents in a **restricted CI/CD environment** (container, VM) with limited permissions
 
 ## Example CI/CD configuration

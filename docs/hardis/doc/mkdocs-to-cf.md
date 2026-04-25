@@ -53,11 +53,23 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
 - **Error Handling:** Includes checks for missing `mkdocs.yml` and Cloudflare environment variables, throwing `SfError` when necessary.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:mkdocs-to-cf --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |flags-dir|option|undefined||||
 |json|boolean|Format output as json.||||
@@ -68,6 +80,10 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
 
 ```shell
 $ sf hardis:doc:mkdocs-to-cf
+```
+
+```shell
+$ sf hardis:doc:mkdocs-to-cf --agent
 ```
 
 

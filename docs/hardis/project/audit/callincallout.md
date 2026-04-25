@@ -32,11 +32,23 @@ The command's technical implementation involves:
 - **Filtering:** Filters out files that start with 'hidden' or contain `@isTest` to focus on relevant code.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:audit:callincallout --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |flags-dir|option|undefined||||
 |json|boolean|Format output as json.||||
@@ -47,6 +59,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:project:audit:callouts
+```
+
+```shell
+$ sf hardis:project:audit:callouts --agent
 ```
 
 

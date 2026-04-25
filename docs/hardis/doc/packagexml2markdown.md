@@ -32,11 +32,23 @@ The command's technical implementation involves:
 - **Salesforce Org Context:** It can optionally use the `target-org` flag to provide context, such as the instance URL, which might be used for generating links or additional information within the Markdown.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:packagexml2markdown --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |flags-dir|option|undefined||||
 |inputfile<br/>-x|option|Path to package.xml file. If not specified, the command will look in manifest folder||||
@@ -50,6 +62,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:doc:packagexml2markdown
+```
+
+```shell
+$ sf hardis:doc:packagexml2markdown --agent
 ```
 
 ```shell

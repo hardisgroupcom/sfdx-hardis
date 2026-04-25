@@ -44,14 +44,30 @@ The command's technical implementation involves:
 - **Data Structuring:** Organizes the extracted information into a structured format, including the remote site's name, file name, namespace, URL, active status, description, protocol, and domain.
 - **Reporting:** Uses \`generateReports\` to create a CSV report and display a table in the console, summarizing the audit findings.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:audit:remotesites --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:audit:remotesites'];
+  public static examples = ['$ sf hardis:project:audit:remotesites',
+    '$ sf hardis:project:audit:remotesites --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
     // flag with a value (-n, --name=VALUE)
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

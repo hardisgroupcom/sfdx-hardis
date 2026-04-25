@@ -30,11 +30,23 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 - **Deprecation Warning:** It explicitly logs warnings about the deprecation of `sfdx force:source:retrieve` to inform users about upcoming changes.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:source:retrieve --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |apiversion<br/>-a|option|Override the api version used for api requests made by this command||||
 |debug<br/>-d|boolean|debugMode||||
 |flags-dir|option|undefined||||

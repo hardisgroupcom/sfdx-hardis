@@ -190,7 +190,7 @@ In agent mode, the command runs fully automatically. The \`--threshold\` default
         .slice(0, 15)
         .map((r) => {
           const label = r.ApexClassName || r.ApexClassId || r.Id;
-          return `• ${label} (${r.JobType || 'n/a'}) — ${r.CreatedDate || 'n/a'}`;
+          return `• ${label} (${r.JobType || 'n/a'}) - ${r.CreatedDate || 'n/a'}`;
         })
         .join('\n');
       notifAttachments.push({

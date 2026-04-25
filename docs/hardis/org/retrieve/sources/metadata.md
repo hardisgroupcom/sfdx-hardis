@@ -33,11 +33,23 @@ The command's technical implementation involves:
 - **Error Handling:** Includes robust error handling for retrieval failures and post-action execution.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:retrieve:sources:metadata --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |flags-dir|option|undefined||||
 |folder<br/>-f|option|Folder|.|||
@@ -53,6 +65,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:org:retrieve:sources:metadata
+```
+
+```shell
+$ sf hardis:org:retrieve:sources:metadata --agent
 ```
 
 ```shell

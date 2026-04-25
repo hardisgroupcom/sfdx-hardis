@@ -30,11 +30,23 @@ The command's technical implementation involves:
 - **Logging:** Provides detailed logs about the status of scratch orgs (kept, deleted, created, failed creations) and a summary of the refresh operation.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:scratch:pool:refresh --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |flags-dir|option|undefined||||
 |json|boolean|Format output as json.||||
@@ -46,6 +58,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:scratch:pool:refresh
+```
+
+```shell
+$ sf hardis:scratch:pool:refresh --agent
 ```
 
 

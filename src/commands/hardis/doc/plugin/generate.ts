@@ -61,13 +61,29 @@ The command's technical implementation involves:
 - **File System Operations:** It uses \`fs-extra\` to create directories, copy default MkDocs files (\`defaults/mkdocs\`), and write the generated Markdown and YAML files.
 - **YAML Serialization:** It uses \`js-yaml\` to serialize the navigation object into YAML format for \`mkdocs.yml\`.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:plugin:generate --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:doc:plugin:generate'];
+  public static examples = ['$ sf hardis:doc:plugin:generate',
+    '$ sf hardis:doc:plugin:generate --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -97,7 +113,7 @@ The command's technical implementation involves:
     const config = await Config.load({ root: cwd, devPlugins: false, userPlugins: false });
 
     // Generate commands markdowns
-    const commandsNav = { 'All commands': 'commands.md' };
+    const commandsNav = { 'Commands Reference': 'commands.md' };
     const commandsLinks = {};
     for (const command of config.commands) {
       await this.generateCommandDoc(command);

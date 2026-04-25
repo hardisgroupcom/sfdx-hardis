@@ -30,35 +30,35 @@ You are a report generator. Your task is to create a PowerPoint (.pptx) file sum
 
 The presentation MUST follow this exact structure:
 
-### Slide 1 — Title
+### Slide 1 - Title
 - Title: "Salesforce Org Monitoring Report"
-- Subtitle: "{{ORG_URL}} — {{DATE}}"
+- Subtitle: "{{ORG_URL}} - {{DATE}}"
 - Use a dark blue background (#001135) with white text
 
-### Slide 2 — Executive Summary
+### Slide 2 - Executive Summary
 - Title: "Executive Summary"
 - Body: the AI summary below, reformatted as concise bullet points (5-8 bullets max)
 - Use blue header (#0053FF), dark text on white background
 
-### Slide 3 — Critical & Error Findings
+### Slide 3 - Critical & Error Findings
 - Title: "Critical & Error Findings" (red header #D32F2F)
 - A table with columns: Check Type | Severity | Finding
 - Include all notifications with severity "critical" or "error"
-- If none, display "No critical or error findings — great!"
+- If none, display "No critical or error findings - great!"
 
-### Slide 4 — Warnings
+### Slide 4 - Warnings
 - Title: "Warnings" (orange header #F9A825)
 - Same table format as Slide 3
 - Include all notifications with severity "warning"
 - If none, display "No warnings detected"
 
-### Slide 5 — Info & Positive Findings
+### Slide 5 - Info & Positive Findings
 - Title: "Info & Positive Findings" (green header #2E7D32)
 - Same table format
 - Include all notifications with severity "info" or "success"
 - If none, display "No additional findings"
 
-### Slide 6 — Risk Assessment & Recommendations
+### Slide 6 - Risk Assessment & Recommendations
 - Title: "Risk Assessment & Recommendations"
 - For each finding with severity critical/error/warning, write:
   - What was detected (1 line)
@@ -67,7 +67,7 @@ The presentation MUST follow this exact structure:
 - Group by urgency: must fix now → should fix this week → can wait
 - Limit to top 10 most important items
 
-### Slide 7 — Summary Metrics
+### Slide 7 - Summary Metrics
 - Title: "Key Metrics"
 - A table summarizing numeric data extracted from the notifications:
   - Org limits usage percentages
@@ -82,7 +82,7 @@ The presentation MUST follow this exact structure:
 - Header font size: 24pt, bold
 - Body font size: 11pt
 - Table header: white text on colored background matching the section
-- Keep text concise — max 300 characters per table cell
+- Keep text concise - max 300 characters per table cell
 - Slide dimensions: standard 10x7.5 inches
 
 ## DATA

@@ -38,10 +38,22 @@ The command's technical flow involves:
 - **\`authOrg\` Utility:** If a technical org is configured, it calls the \`authOrg\` utility function to perform the authentication for that specific org, ensuring it's connected and available for subsequent operations.
 - **Salesforce CLI Integration:** It integrates with the Salesforce CLI's authentication mechanisms to establish and manage org connections.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:auth:login --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
     '$ sf hardis:auth:login',
+    '$ sf hardis:auth:login --agent',
     'CI=true CI_COMMIT_REF_NAME=monitoring_myclient sf hardis:auth:login'
   ];
 
@@ -61,6 +73,10 @@ The command's technical flow involves:
       char: 's',
       default: false,
       description: messages.getMessage('scratch'),
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

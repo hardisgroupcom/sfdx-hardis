@@ -54,9 +54,21 @@ The command's technical implementation involves:
 - **Error Handling:** Includes robust error handling for Salesforce CLI commands and file system operations.
 - **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshCommandsMessage\` to notify connected VS Code clients about changes to the project.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:retrieve:sources:dx --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:org:retrieve:sources:dx'];
+  public static examples = ['$ sf hardis:org:retrieve:sources:dx',
+    '$ sf hardis:org:retrieve:sources:dx --agent',];
 
   public static flags: any = {
     folder: Flags.string({
@@ -85,6 +97,10 @@ The command's technical implementation involves:
     instanceurl: Flags.string({
       char: 'r',
       description: messages.getMessage('instanceUrl'),
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

@@ -17,15 +17,31 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class CleanListViews extends SfCommand<any> {
   public static title = 'Replace Mine by Everything in ListViews';
 
-  public static description = 'Replace Mine by Everything in ListView, and log the replacements in sfdx-hardis.yml';
+  public static description = `Replace Mine by Everything in ListView, and log the replacements in sfdx-hardis.yml
 
-  public static examples = ['$ sf hardis:project:clean:listviews'];
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:listviews --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+`;
+
+  public static examples = ['$ sf hardis:project:clean:listviews',
+    '$ sf hardis:project:clean:listviews --agent',];
 
   public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: 'force-app',
       description: 'Root folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

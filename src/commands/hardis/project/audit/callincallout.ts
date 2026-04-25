@@ -44,14 +44,30 @@ The command's technical implementation involves:
 - **Reporting:** Uses \`generateReports\` to create a CSV report and display a table in the console, summarizing the audit findings.
 - **Filtering:** Filters out files that start with 'hidden' or contain \`@isTest\` to focus on relevant code.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:audit:callincallout --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:audit:callouts'];
+  public static examples = ['$ sf hardis:project:audit:callouts',
+    '$ sf hardis:project:audit:callouts --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
     // flag with a value (-n, --name=VALUE)
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

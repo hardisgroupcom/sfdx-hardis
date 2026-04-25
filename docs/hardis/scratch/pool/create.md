@@ -5,6 +5,8 @@
 
 Select a data storage service and configure information to build a scratch org pool
 
+> **This command requires human interaction and must be called manually, preferably from the [VS Code SFDX Hardis UI](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis). It is not suitable for automation or AI agent usage.**
+
   Run the command, follow instruction, then you need to schedule a daily CI job for the pool maintenance:
 
   - Define CI ENV variable SCRATCH_ORG_POOL with value "true"

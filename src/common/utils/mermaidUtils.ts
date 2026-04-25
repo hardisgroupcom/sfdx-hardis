@@ -248,7 +248,7 @@ export async function convertMermaidBlocksToImages(
   const pageSlug = pagePath ? derivePageSlug(pagePath) : null;
   let markdownWithImages = markdownContent;
   for (const block of mermaidBlocks) {
-    // Fingerprint is derived from diagram source — used for cache key and image filename
+    // Fingerprint is derived from diagram source - used for cache key and image filename
     const fingerPrint = UtilsAi.getFingerPrint([block.code.trim()]);
     // Include page slug and block index in the name so images are easy to identify
     // and multiple diagrams on the same page get distinct names.

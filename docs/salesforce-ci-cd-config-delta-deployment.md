@@ -93,10 +93,10 @@ Practical examples:
 
 How to validate in CI:
 
-- When enabled, the pipeline publishes or logs the delta package that will be deployed — inspect the generated package.xml in the job output or artifacts to see the added entries.
+- When enabled, the pipeline publishes or logs the delta package that will be deployed - inspect the generated package.xml in the job output or artifacts to see the added entries.
 - Start by enabling the feature on a non-critical branch (or for a single PR) to confirm the produced delta includes the expected additional metadata before rolling it out broadly.
 
-Note: This feature is provided in beta — it helps reduce deployment surprises but it's recommended to test it on your repository and workflows before relying on it for critical releases.
+Note: This feature is provided in beta - it helps reduce deployment surprises but it's recommended to test it on your repository and workflows before relying on it for critical releases.
 
 ___
 

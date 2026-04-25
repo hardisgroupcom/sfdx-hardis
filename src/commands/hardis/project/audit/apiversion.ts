@@ -26,10 +26,21 @@ export default class CallInCallOut extends SfCommand<any> {
   Example to handle [ApexClass / Trigger & ApexPage mandatory version upgrade](https://help.salesforce.com/s/articleView?id=sf.admin_locales_update_api.htm&type=5) :
    
    \`sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --newapiversion 50\`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:audit:apiversion --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
   `
 
   public static examples = [
     '$ sf hardis:project:audit:apiversion',
+    '$ sf hardis:project:audit:apiversion --agent',
     '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45',
     '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --fix',
     '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --newapiversion 50'
@@ -47,6 +58,10 @@ export default class CallInCallOut extends SfCommand<any> {
       char: 'f',
       default: false,
       description: messages.getMessage('failIfError'),
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

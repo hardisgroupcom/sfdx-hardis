@@ -60,10 +60,22 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
 - **Error Handling and Cleanup:** It includes error handling for deployment failures (e.g., static resource size limits) and ensures that the \`mkdocs.yml\` file is restored to its original state after execution.
 - **File System Operations:** It extensively uses \`fs-extra\` for file manipulation, including creating directories, moving files, and writing XML content.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:mkdocs-to-salesforce --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
     '$ sf hardis:doc:mkdocs-to-salesforce',
+    '$ sf hardis:doc:mkdocs-to-salesforce --agent',
   ];
 
   public static flags: any = {
@@ -72,6 +84,10 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
       options: ["CICD", "Monitoring"],
       default: "CICD",
       description: 'Type of the documentation to generate. Default is "all"',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

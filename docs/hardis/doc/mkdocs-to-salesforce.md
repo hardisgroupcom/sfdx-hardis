@@ -44,11 +44,23 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
 - **File System Operations:** It extensively uses `fs-extra` for file manipulation, including creating directories, moving files, and writing XML content.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:mkdocs-to-salesforce --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |flags-dir|option|undefined||||
 |json|boolean|Format output as json.||||
@@ -61,6 +73,10 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
 
 ```shell
 $ sf hardis:doc:mkdocs-to-salesforce
+```
+
+```shell
+$ sf hardis:doc:mkdocs-to-salesforce --agent
 ```
 
 

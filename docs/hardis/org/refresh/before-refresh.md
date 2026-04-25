@@ -6,6 +6,8 @@
 
 ## Command Behavior
 
+> **This command must always be run by a human. It is intentionally interactive and must not be called by an AI agent.**
+
 **Backs up all Connected Apps (including Consumer Secrets), External Client Apps (including credentials), certificates, custom settings, records and other metadata from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
 
 This command prepares a complete backup prior to a sandbox refresh. It creates a dedicated project under `scripts/sandbox-refresh/<sandbox-folder>`, retrieves metadata and data, attempts to capture Connected App and External Client App consumer secrets, and can optionally delete the apps so they can be reuploaded after the refresh.

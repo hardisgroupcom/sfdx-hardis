@@ -60,10 +60,22 @@ The command's technical implementation involves:
 - **Notification Integration:** Uses \`NotifProvider\` to broadcast the feedback summary and the generated report file to configured channels (Slack, MS Teams, etc.).
 - **Exclusion Filters:** Supports excluding specific conversations or sessions via environment variables \`AGENTFORCE_FEEDBACK_EXCLUDED_CONV_IDS\` and \`AGENTFORCE_EXCLUDED_SESSION_IDS\` (comma-separated IDs).
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:datacloud:extract:agentforce-feedback --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
     '$ sf hardis:datacloud:extract:agentforce-feedback',
+    '$ sf hardis:datacloud:extract:agentforce-feedback --agent',
     '$ sf hardis:datacloud:extract:agentforce-feedback --target-org myorg@example.com',
     '$ sf hardis:datacloud:extract:agentforce-feedback --outputfile ./reports/agentforce-feedback.csv'
   ];
@@ -74,6 +86,10 @@ The command's technical implementation involves:
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

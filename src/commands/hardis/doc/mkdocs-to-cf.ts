@@ -71,13 +71,29 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
 - **Environment Variable Management:** Reads various environment variables to configure Cloudflare settings and project names.
 - **Error Handling:** Includes checks for missing \`mkdocs.yml\` and Cloudflare environment variables, throwing \`SfError\` when necessary.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:mkdocs-to-cf --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
     '$ sf hardis:doc:mkdocs-to-cf',
+    '$ sf hardis:doc:mkdocs-to-cf --agent',
   ];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

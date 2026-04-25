@@ -49,13 +49,29 @@ The command's technical implementation involves:
 - **User Feedback:** Provides detailed logs about created, overwritten, and skipped files, along with instructions on how to use the customized prompts and variables.
 - **Dynamic Content:** The description itself dynamically lists available templates and variables by iterating over \`PROMPT_TEMPLATES\` and \`PROMPT_VARIABLES\` objects.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:override-prompts --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
   public static examples = [
   '$ sf hardis:doc:override-prompts',
+    '$ sf hardis:doc:override-prompts --agent',
   '$ sf hardis:doc:override-prompts --overwrite',
 ];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
   overwrite: Flags.boolean({
     default: false,
     description: 'Overwrite existing template files if they already exist',

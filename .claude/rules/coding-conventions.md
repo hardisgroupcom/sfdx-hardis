@@ -28,7 +28,7 @@
   - **Project**: `config/.sfdx-hardis.yml` (shared, committed to git).
   - **Branch**: `config/branches/.sfdx-hardis.<branch>.yml` (per-environment overrides).
   - **User**: `config/user/.sfdx-hardis.<username>.yml` (per-developer, git-ignored).
-- Read config: `getConfig("project" | "branch" | "user")` — returns merged config up to the specified layer.
+- Read config: `getConfig("project" | "branch" | "user")` - returns merged config up to the specified layer.
 - Write config: `setConfig("project" | "branch" | "user", { key: value })`.
 - Config files support `extends` property to inherit from a remote YAML URL.
 - **JSON Schema**: All config properties must be defined in `config/sfdx-hardis.jsonschema.json`. When adding or modifying a config property, update the schema with `$id`, `description`, `title`, `type`, and optionally `default`, `enum`, `examples`, `docUrl`.

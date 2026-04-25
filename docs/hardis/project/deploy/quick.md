@@ -49,6 +49,17 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 ```
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:deploy:quick --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
@@ -56,6 +67,7 @@ commandsPostDeploy:
 |:---|:--:|:----------|:-----:|:------:|:-----:|
 |--job-id<br/>-i|option|job-id||||
 |--use-most-recent<br/>-r|boolean|use-most-recent||||
+|agent|boolean|Run in non-interactive mode for agents and automation||||
 |api-version<br/>-a|option|api-version||||
 |async|boolean|async||||
 |debug|boolean|debug||||
