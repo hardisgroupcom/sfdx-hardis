@@ -46,21 +46,21 @@ In agent mode:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|allowpurgefailure<br/>-f|boolean|Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|delete-flow-interviews<br/>-w|boolean|If the presence of Flow interviews prevent to delete flows versions, delete them before retrying to delete flow versions||||
-|flags-dir|option|undefined||||
-|instanceurl<br/>-r|option|URL of org instance|https://login.salesforce.com|||
-|json|boolean|Format output as json.||||
-|name<br/>-n|option|Filter according to Name criteria||||
-|prompt<br/>-z|boolean|Prompt for confirmation (true by default, use --no-prompt to skip)||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|status<br/>-s|option|Filter according to Status criteria||||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                          |  Type   | Description                                                                                                              |           Default            | Required | Options |
+|:------------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------|:----------------------------:|:--------:|:-------:|
+| agent                         | boolean | Run in non-interactive mode for agents and automation                                                                    |                              |          |         |
+| allowpurgefailure<br/>-f      | boolean | Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable                                      |                              |          |         |
+| debug<br/>-d                  | boolean | Activate debug mode (more logs)                                                                                          |                              |          |         |
+| delete-flow-interviews<br/>-w | boolean | If the presence of Flow interviews prevent to delete flows versions, delete them before retrying to delete flow versions |                              |          |         |
+| flags-dir                     | option  | undefined                                                                                                                |                              |          |         |
+| instanceurl<br/>-r            | option  | URL of org instance                                                                                                      | https://login.salesforce.com |          |         |
+| json                          | boolean | Format output as json.                                                                                                   |                              |          |         |
+| name<br/>-n                   | option  | Filter according to Name criteria                                                                                        |                              |          |         |
+| prompt<br/>-z                 | boolean | Prompt for confirmation (true by default, use --no-prompt to skip)                                                       |                              |          |         |
+| skipauth                      | boolean | Skip authentication check when a default username is required                                                            |                              |          |         |
+| status<br/>-s                 | option  | Filter according to Status criteria                                                                                      |                              |          |         |
+| target-org<br/>-o             | option  | undefined                                                                                                                |                              |          |         |
+| websocket                     | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                |                              |          |         |
 
 ## Examples
 
