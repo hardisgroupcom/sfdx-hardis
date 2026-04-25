@@ -41,13 +41,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|sObjects<br/>-s|option|Comma-separated list of sObjects to filter||||
-|target-org<br/>-o|option|undefined||||
+| Name              |  Type   | Description                                           | Default | Required | Options |
+|:------------------|:-------:|:------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation |         |          |         |
+| flags-dir         | option  | undefined                                             |         |          |         |
+| json              | boolean | Format output as json.                                |         |          |         |
+| sObjects<br/>-s   | option  | Comma-separated list of sObjects to filter            |         |          |         |
+| target-org<br/>-o | option  | undefined                                             |         |          |         |
 
 ## Examples
 
