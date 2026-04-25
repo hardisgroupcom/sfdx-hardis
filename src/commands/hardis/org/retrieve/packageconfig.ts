@@ -42,14 +42,33 @@ The command's technical implementation involves:
 
 Use \`--agent\` to disable all prompts. Typical usage:
 
-\`sf hardis:org:retrieve:packageconfig --agent --target-org myOrg\`
+\`\`\`sh
+sf hardis:org:retrieve:packageconfig --agent --packages "MyPackage,OtherPackage" --target-org myOrg
+sf hardis:org:retrieve:packageconfig --agent --update-all-config --target-org myOrg
+\`\`\`
 
-- Configuration update confirmation prompt is skipped; the project configuration is updated automatically with the retrieved package list.
+In agent mode:
+
+- Without \`--packages\` or \`--update-all-config\`, the command only lists packages (no config update).
+- Use \`--packages\` to update config only for the specified packages (comma-separated names or subscriber package IDs).
+- Use \`--update-all-config\` to update config with all retrieved packages.
 `;
 
-  public static examples = ['$ sf hardis:org:retrieve:packageconfig', 'sf hardis:org:retrieve:packageconfig -u myOrg', '$ sf hardis:org:retrieve:packageconfig --agent'];
+  public static examples = [
+    '$ sf hardis:org:retrieve:packageconfig',
+    'sf hardis:org:retrieve:packageconfig -u myOrg',
+    '$ sf hardis:org:retrieve:packageconfig --agent --packages "MyPackage,OtherPkg"',
+    '$ sf hardis:org:retrieve:packageconfig --agent --update-all-config',
+  ];
 
   public static flags: any = {
+    packages: Flags.string({
+      description: 'Comma-separated list of package names or subscriber package IDs to update in the project config. Used in agent mode.',
+    }),
+    'update-all-config': Flags.boolean({
+      default: false,
+      description: 'Update config with all retrieved packages. Required in agent mode if --packages is not provided.',
+    }),
     agent: Flags.boolean({
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
@@ -101,7 +120,25 @@ Use \`--agent\` to disable all prompts. Typical usage:
 
     // Store list in config
     if (isCI || agentMode) {
-      await managePackageConfig(installedPackages, installedPackages, true);
+      const packagesFlag = flags.packages as string | undefined;
+      const updateAllConfig = flags['update-all-config'] === true;
+      if (packagesFlag) {
+        // Filter to only the specified packages
+        const filterValues = packagesFlag.split(',').map((v: string) => v.trim().toLowerCase());
+        const filteredPackages = installedPackages.filter((pkg: any) =>
+          filterValues.includes((pkg.SubscriberPackageName || '').toLowerCase()) ||
+          filterValues.includes((pkg.SubscriberPackageId || '').toLowerCase())
+        );
+        if (filteredPackages.length > 0) {
+          await managePackageConfig(filteredPackages, filteredPackages, true);
+        } else {
+          uxLog("warning", this, c.yellow(`No installed packages matched the --packages filter: ${packagesFlag}`));
+        }
+      } else if (updateAllConfig) {
+        await managePackageConfig(installedPackages, installedPackages, true);
+      } else {
+        uxLog("log", this, c.grey('Agent/CI mode: skipping config update (use --packages or --update-all-config to update).'));
+      }
     } else {
       const updateConfigRes = await prompts({
         type: 'confirm',
