@@ -39,6 +39,7 @@ sf hardis:packagexml:append --agent
 In agent mode, all interactive prompts are skipped and default values are used.
 
 `;
+  /* jscpd:ignore-start */
   public static readonly examples = ["$ sf hardis packagexml append -p package1.xml,package2.xml -o package3.xml"];
   public static readonly flags: any = {
     packagexmls: Flags.string({
@@ -63,7 +64,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
       description: "websocket",
     }),
   };
-
+  /* jscpd:ignore-end */
   protected packageXmlFiles: string[];
   protected outputFile: string;
 
