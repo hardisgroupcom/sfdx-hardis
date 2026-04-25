@@ -443,4 +443,52 @@ ${getBannerMarkdownAndLink()}
       body,
     });
   }
+
+  public async getPullRequestCommentByMarker(marker: string): Promise<string | null> {
+    if (!this.prNumber) return null;
+    const comments = await this.octokit.rest.issues.listComments({
+      owner: this.repoOwner || '',
+      repo: this.repoName || '',
+      issue_number: this.prNumber,
+    });
+    for (const comment of comments.data) {
+      if (comment?.body?.includes(marker)) {
+        return comment.body;
+      }
+    }
+    return null;
+  }
+
+  public async upsertPullRequestCommentByMarker(marker: string, body: string): Promise<void> {
+    if (!this.prNumber) return;
+    const comments = await this.octokit.rest.issues.listComments({
+      owner: this.repoOwner || '',
+      repo: this.repoName || '',
+      issue_number: this.prNumber,
+    });
+    let existingId: number | null = null;
+    for (const comment of comments.data) {
+      if (comment?.body?.includes(marker)) {
+        existingId = comment.id;
+        break;
+      }
+    }
+    if (existingId) {
+      await this.octokit.rest.issues.updateComment({
+        owner: this.repoOwner || '',
+        repo: this.repoName || '',
+        comment_id: existingId,
+        body,
+      });
+      uxLog("log", this, c.grey('[GitHub] Updated Deployment Actions comment'));
+    } else {
+      await this.octokit.rest.issues.createComment({
+        owner: this.repoOwner || '',
+        repo: this.repoName || '',
+        issue_number: this.prNumber,
+        body,
+      });
+      uxLog("log", this, c.grey('[GitHub] Created Deployment Actions comment'));
+    }
+  }
 }

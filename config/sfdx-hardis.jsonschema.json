@@ -563,7 +563,7 @@
             "$id": "#/properties/commandsPreDeploy/items/properties/runOnlyOnceByOrg",
             "description": "Run this action only once per target org (useful for idempotent post-deploy tasks)",
             "title": "Run only once by org",
-            "default": false,
+            "default": true,
             "type": "boolean"
           },
           "customUsername": {
@@ -715,7 +715,7 @@
             "$id": "#/properties/commandsPostDeploy/items/properties/runOnlyOnceByOrg",
             "description": "Run this action only once per target org (useful for idempotent post-deploy tasks)",
             "title": "Run only once by org",
-            "default": false,
+            "default": true,
             "type": "boolean"
           },
           "customUsername": {

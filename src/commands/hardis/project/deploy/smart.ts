@@ -200,7 +200,9 @@ You can define command lines to run before or after a deployment, with parameter
 - **label**: Human readable label for the command
 - **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
 - **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
-- **runOnlyOnceByOrg**: If set to true, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
+- **runOnlyOnceByOrg**: If set to true (default), the action runs only once per target org — subsequent deployments skip it. State is tracked in the "Deployment Actions" PR comment.
+
+After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment — ordered by org (integration → uat → preprod → prod) — regardless of \`runOnlyOnceByOrg\`.
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 
@@ -322,13 +324,18 @@ If you want to disable the calculation and display of Flow Visual Git Diff in Pu
 Supports non-interactive execution with \`--agent\`:
 
 \`\`\`sh
-sf hardis:project:deploy:smart --agent --target-org myorg@example.com
+sf hardis:project:deploy:smart --agent --check --source-branch feature/my-feature --target-branch integration --target-org deploy@myclient.com.integration
 \`\`\`
+
+> **Important**: \`--target-org\` must be the **target deployment org** (e.g. the integration sandbox), not the developer's current working org. The Salesforce CLI must be authenticated to that org before running this command.
 
 In agent mode:
 
-- The interactive org selection prompt is skipped; \`--target-org\` flag value is used directly.
-- All other behavior remains the same as in CI mode.
+- The interactive org selection prompt is skipped.
+- Deployment is forced into **simulation/check mode** — \`--check\` is implicit, but should be passed explicitly to make the intent clear. No changes are applied to the org.
+- Use \`--source-branch\` to specify the source git branch (overrides local git branch detection via \`FORCE_SOURCE_BRANCH\`).
+- Use \`--target-branch\` to specify the target git branch. This sets \`FORCE_TARGET_BRANCH\` for delta/PR scope and also sets \`CONFIG_BRANCH\` so the target branch config file (\`config/branches/.sfdx-hardis-BRANCHNAME.yml\`) is loaded — providing the correct \`targetUsername\` for that org automatically.
+- If a deployment action requires a \`customUsername\` and authentication for that user fails, the action is **skipped** (not failed) so the simulation can continue.
 `;
 
   public static examples = [
@@ -342,7 +349,8 @@ In agent mode:
     '$ SYSTEM_ACCESSTOKEN=xxxxxx SYSTEM_COLLECTIONURI=https://dev.azure.com/xxxxxxx/ SYSTEM_TEAMPROJECT="xxxxxxx" BUILD_REPOSITORY_ID=xxxxx SYSTEM_PULLREQUEST_PULLREQUESTID=1418 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my.salesforce@org.com',
     '$ CI_SFDX_HARDIS_BITBUCKET_TOKEN=xxxxxx BITBUCKET_WORKSPACE=sfdxhardis-demo BITBUCKET_REPO_SLUG=test BITBUCKET_BUILD_NUMBER=1 BITBUCKET_BRANCH=uat BITBUCKET_PR_ID=2 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com',
     '$ GITHUB_TOKEN=xxxx GITHUB_REPOSITORY=my-user/my-repo FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com',
-    '$ sf hardis:project:deploy:smart --agent',
+    '$ sf hardis:project:deploy:smart --agent --check',
+    '$ sf hardis:project:deploy:smart --agent --check --source-branch feature/my-feature --target-branch integration --target-org deploy@myclient.com.integration',
   ];
 
 
@@ -393,6 +401,12 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
     }),
+    'source-branch': Flags.string({
+      description: 'Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)',
+    }),
+    'target-branch': Flags.string({
+      description: 'Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername)',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -422,14 +436,36 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(SmartDeploy);
     const agentMode = flags.agent === true;
+    // Store agentMode globally so action providers can skip failing auth instead of failing
+    globalThis._agentMode = agentMode;
+
+    // Apply agent-mode branch/org overrides before any git branch detection or config loading
+    if (flags['source-branch']) {
+      process.env.FORCE_SOURCE_BRANCH = flags['source-branch'];
+    }
+    if (flags['target-branch']) {
+      // FORCE_TARGET_BRANCH drives delta deployment scope and PR comment org-branch lookup
+      process.env.FORCE_TARGET_BRANCH = flags['target-branch'];
+      // CONFIG_BRANCH drives which branch config file is loaded by getConfig('branch'),
+      // so targetUsername resolves to the correct org for the target branch
+      process.env.CONFIG_BRANCH = flags['target-branch'].replace(/\//g, '__');
+    }
+
     this.configInfo = await getConfig('branch');
-    this.checkOnly = flags.check || false;
+    // In agent mode, force simulation/check mode — no actual deployment allowed
+    this.checkOnly = agentMode ? true : (flags.check || false);
+    if (agentMode && !flags.check) {
+      uxLog("warning", this, c.yellow('[AgentMode] Forcing check/simulation mode — no changes will be applied to the org.'));
+    }
     const deltaFromArgs = flags.delta || false;
     const packageXml = flags.packagexml || null;
     this.debugMode = flags.debug || false;
     const currentGitBranch = await getCurrentGitBranch();
-    // Get target org
-    let targetUsername = flags['target-org'].getUsername();
+    // Get target org: prefer targetUsername from target-branch config, then fall back to --target-org
+    let targetUsername = this.configInfo.targetUsername || flags['target-org'].getUsername();
+    if (this.configInfo.targetUsername) {
+      uxLog("log", this, c.grey(`[AgentMode] Using targetUsername from branch config: ${targetUsername}`));
+    }
     if (!isCI && !agentMode) {
       uxLog("warning", this, c.yellow(t('justToBeSurePleaseSelectThe')))
       targetUsername = await promptOrgUsernameDefault(this, targetUsername, { devHub: false, setDefault: false, scratch: false });

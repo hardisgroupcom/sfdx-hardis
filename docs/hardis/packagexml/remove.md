@@ -43,17 +43,17 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-| Name                    |  Type   | Description                                                     | Default | Required | Options |
-|:------------------------|:-------:|:----------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                   | boolean | Run in non-interactive mode for agents and automation           |         |          |         |
-| debug                   | boolean | debug                                                           |         |          |         |
-| flags-dir               | option  | undefined                                                       |         |          |         |
-| json                    | boolean | Format output as json.                                          |         |          |         |
-| outputfile<br/>-f       | option  | package.xml output file                                         |         |          |         |
-| packagexml<br/>-p       | option  | package.xml file to reduce                                      |         |          |         |
-| removedonly<br/>-z      | boolean | Use this flag to generate a package.xml with only removed items |         |          |         |
-| removepackagexml<br/>-r | option  | package.xml file to use to filter input package.xml             |         |          |         |
-| websocket               | option  | websocket                                                       |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|package.xml output file||||
+|packagexml<br/>-p|option|package.xml file to reduce||||
+|removedonly<br/>-z|boolean|Use this flag to generate a package.xml with only removed items||||
+|removepackagexml<br/>-r|option|package.xml file to use to filter input package.xml||||
+|websocket|option|websocket||||
 
 ## Examples
 

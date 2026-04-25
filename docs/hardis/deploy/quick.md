@@ -19,7 +19,9 @@ You can define command lines to run before or after a deployment, with parameter
 - **label**: Human readable label for the command
 - **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
 - **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
-- **runOnlyOnceByOrg**: If set to true, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
+- **runOnlyOnceByOrg**: If set to true (default), the action runs only once per target org — subsequent deployments skip it. State is tracked in the "Deployment Actions" PR comment.
+
+After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment — ordered by org (integration → uat → preprod → prod) — regardless of `runOnlyOnceByOrg`.
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 
@@ -63,19 +65,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-| Name                     |  Type   | Description                                           | Default | Required | Options |
-|:-------------------------|:-------:|:------------------------------------------------------|:-------:|:--------:|:-------:|
-| --job-id<br/>-i          | option  | job-id                                                |         |          |         |
-| --use-most-recent<br/>-r | boolean | use-most-recent                                       |         |          |         |
-| agent                    | boolean | Run in non-interactive mode for agents and automation |         |          |         |
-| api-version<br/>-a       | option  | api-version                                           |         |          |         |
-| async                    | boolean | async                                                 |         |          |         |
-| debug                    | boolean | debug                                                 |         |          |         |
-| flags-dir                | option  | undefined                                             |         |          |         |
-| json                     | boolean | Format output as json.                                |         |          |         |
-| target-org<br/>-o        | option  | undefined                                             |         |          |         |
-| tests                    | option  | tests                                                 |         |          |         |
-| wait<br/>-w              | option  | wait                                                  |   33    |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|--job-id<br/>-i|option|job-id||||
+|--use-most-recent<br/>-r|boolean|use-most-recent||||
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|api-version<br/>-a|option|api-version||||
+|async|boolean|async||||
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|target-org<br/>-o|option|undefined||||
+|tests|option|tests||||
+|wait<br/>-w|option|wait|33|||
 
 ## Examples
 

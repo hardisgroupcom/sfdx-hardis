@@ -6,8 +6,7 @@ import sortArray from 'sort-array';
 import * as chromeLauncher from 'chrome-launcher';
 import * as yaml from 'js-yaml';
 import { uxLog } from './index.js';
-import { Connection, SfError } from '@salesforce/core';
-import { DescribeSObjectResult } from '@jsforce/jsforce-node';
+import { SfError } from '@salesforce/core';
 import { GLOB_IGNORE_PATTERNS } from './projectUtils.js';
 import { t } from './i18n.js';
 
@@ -271,22 +270,6 @@ export function isIntegration(branchName) {
 
 export function isUatRun(branchName) {
   return (branchName.toLowerCase().startsWith("uat") || branchName.toLowerCase().startsWith("recette")) && branchName.toLowerCase().includes("run");
-}
-
-export async function checkSfdxHardisTraceAvailable(conn: Connection) {
-  let traceObject: DescribeSObjectResult;
-  try {
-    traceObject = await conn.sobject("SfdxHardisTrace__c").describe();
-  } catch (e: any) {
-    throw new SfError("You need a Custom Setting of type List (activate through Schema Settings), named SfdxHardisTrace__c, with Type__c and Key__c fields (both string, length 80)\n" + e.message);
-  }
-  const traceObjectFields = traceObject.fields;
-  if (traceObjectFields.filter(field => field.name === "Type__c").length === 0) {
-    throw new SfError("You need a field Type__c (string, length 80) on SfdxHardisTrace__c in target org");
-  }
-  if (traceObjectFields.filter(field => field.name === "Key__c").length === 0) {
-    throw new SfError("You need a field Key__c (string, length 80) on SfdxHardisTrace__c in target org");
-  }
 }
 
 /**
