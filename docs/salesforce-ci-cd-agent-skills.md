@@ -1,6 +1,6 @@
 ---
 title: Using sfdx-hardis with AI Coding Agents
-description: Learn how to use hardis:work:new and hardis:work:save as agent skills in Claude Code, GitHub Copilot, and other AI coding agents
+description: Learn how to use sfdx-hardis commands as agent skills in Claude Code, GitHub Copilot, and other AI coding agents — including work:new, work:save, and the deployment action management commands
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -133,34 +133,47 @@ When asked to save / publish Salesforce work:
 - This will clean sources, update package.xml, and push to the remote.
 ```
 
-You can also register them as [Claude Code skills](https://docs.anthropic.com/en/docs/claude-code/skills) by creating Markdown files in `.claude/skills/`:
+You can also register them as [Claude Code skills](https://docs.anthropic.com/en/docs/claude-code/skills) by creating `SKILL.md` files under `.claude/skills/<skill-name>/`:
 
-**`.claude/skills/new-user-story.md`**
+**`.claude/skills/new-user-story/SKILL.md`**
 
 ```markdown
-# New Salesforce User Story
+---
+name: new-user-story
+description: Start a new Salesforce User Story by creating a feature branch. Use when the user wants to start working on a new feature, bug fix, or task. Use this skill even if the user says "start a new story", "create a branch", "new feature", "new task", "work on JIRA-123", "start JIRA-123" or "begin work".
+argument-hint: "[TICKET-ID description]"
+allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion
+user-invocable: true
+---
 
-When the user asks to start a new Salesforce User Story, run:
+Run the following command, replacing <TICKET-ID> and <description> with values from the user's request:
 
 sf hardis:work:new --agent --task-name "<TICKET-ID> <description>" --target-branch <branch>
 
-- Replace <TICKET-ID> and <description> with values from the user's request.
-- Check config/.sfdx-hardis.yml for available target branches (usually `integration`).
-- Do not pass --open-org unless explicitly asked.
+- Check `config/.sfdx-hardis.yml` for available target branches (usually `integration`).
+- Do not pass `--open-org` unless explicitly asked.
+
+$ARGUMENTS
 ```
 
-**`.claude/skills/save-work.md`**
+**`.claude/skills/save-work/SKILL.md`**
 
 ```markdown
-# Save Salesforce User Story
+---
+name: save-work
+description: Save and push Salesforce work by cleaning sources, updating package.xml, committing, and pushing. Use when the user asks to save, publish, or push their Salesforce changes. Use this skill even if the user says "save my work", "push changes", "publish story", "commit and push", or "save story".
+argument-hint: "[optional target branch]"
+allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion
+user-invocable: true
+---
 
-When the user asks to save or publish their Salesforce work:
+1. Remind the user to manually stage and commit any pending metadata changes with git before continuing.
+2. Run: `sf hardis:work:save --agent`
 
-1. Remind the user to manually stage and commit their pending metadata changes with git.
-2. Run: sf hardis:work:save --agent
+This cleans sources, updates package.xml, and pushes to the remote.
+If the target branch cannot be auto-resolved, add `--targetbranch <branch>`.
 
-This will clean sources, update package.xml, and push to the remote.
-If the target branch cannot be auto-resolved, add --targetbranch <branch>.
+$ARGUMENTS
 ```
 
 ### Other Agents
@@ -261,26 +274,316 @@ sf hardis:org:retrieve:packageconfig --agent --update-all-config --target-org my
 
 ### Agent skill example (Claude Code)
 
-**`.claude/skills/update-package-config.md`**
+**`.claude/skills/update-package-config/SKILL.md`**
 
 ```markdown
-# Update Package Config from Org
+---
+name: update-package-config
+description: Sync or update installed managed package versions in the project configuration from a Salesforce org. Use when the user asks to update packages, sync package versions, or retrieve package configuration. Use this skill even if the user says "update packages", "sync packages", "upgrade managed packages", or "retrieve package config".
+argument-hint: "[org alias or username]"
+allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion
+user-invocable: true
+---
 
-When the user asks to sync or update the installed packages configuration:
+1. List the installed packages to see what is available:
+   `sf hardis:org:retrieve:packageconfig --agent --target-org <org> --json`
 
-1. First, list the packages to see what is installed:
-   sf hardis:org:retrieve:packageconfig --agent --target-org <org> --json
+2. Review the JSON output to identify which packages to update.
 
-2. Review the JSON output to identify the packages to update.
+3. Update config using the appropriate strategy (pick one):
+   - **Specific packages**: `sf hardis:org:retrieve:packageconfig --agent --packages "<pkg1>,<pkg2>" --target-org <org>`
+   - **Upgrade existing only** (safest): `sf hardis:org:retrieve:packageconfig --agent --update-existing-config --target-org <org>`
+   - **All packages**: `sf hardis:org:retrieve:packageconfig --agent --update-all-config --target-org <org>`
 
-3. Update config for the relevant packages (pick one):
-   - Specific packages: sf hardis:org:retrieve:packageconfig --agent --packages "<pkg1>,<pkg2>" --target-org <org>
-   - Upgrade existing only: sf hardis:org:retrieve:packageconfig --agent --update-existing-config --target-org <org>
-   - All packages: sf hardis:org:retrieve:packageconfig --agent --update-all-config --target-org <org>
+Prefer `--update-existing-config` for safe version upgrades.
+Use `--update-all-config` only if the user explicitly asks to sync all packages.
+The `--target-org` flag is required.
 
-- Prefer --update-existing-config for safe version upgrades.
-- Use --update-all-config only if the user explicitly asks to sync all packages.
-- The --target-org flag is required.
+$ARGUMENTS
+```
+
+---
+
+## Deployment Actions Commands (`hardis:project:action:*`)
+
+Deployment actions are pre- or post-deployment steps stored in YAML config files and executed automatically during CI/CD pipelines. They can be scoped to the whole **project**, a specific **branch**, or a **pull request**.
+
+| Scope     | Config file                                            |
+|-----------|--------------------------------------------------------|
+| `project` | `config/.sfdx-hardis.yml`                              |
+| `branch`  | `config/branches/.sfdx-hardis.<branch>.yml`            |
+| `pr`      | `scripts/actions/.sfdx-hardis.<prId>.yml`              |
+
+Six action types are available:
+
+| Type                | Required parameters                            |
+|---------------------|------------------------------------------------|
+| `command`           | `--command`                                    |
+| `apex`              | `--apex-script`                                |
+| `data`              | `--sfdmu-project`                              |
+| `publish-community` | `--community-name`                             |
+| `manual`            | `--instructions`                               |
+| `schedule-batch`    | `--class-name`, `--cron-expression`            |
+
+---
+
+### `hardis:project:action:list --agent` - List Actions
+
+```bash
+sf hardis:project:action:list --agent --scope branch --when pre-deploy
+sf hardis:project:action:list --agent --scope pr --pr-id 123 --when post-deploy --json
+```
+
+#### Required flags
+
+| Flag        | Description                                              |
+|-------------|----------------------------------------------------------|
+| `--scope`   | `project`, `branch`, or `pr`                             |
+| `--when`    | `pre-deploy` or `post-deploy`                            |
+
+#### Optional flags
+
+| Flag        | Description                                                        |
+|-------------|--------------------------------------------------------------------|
+| `--pr-id`   | PR ID (for `pr` scope). Use `current` to auto-detect from branch.  |
+| `--branch`  | Branch name (for `branch` scope, defaults to current branch).      |
+
+---
+
+### `hardis:project:action:create --agent` - Create an Action
+
+```bash
+# Shell command, branch scope
+sf hardis:project:action:create --agent \
+  --scope branch --when pre-deploy \
+  --type command --label "Disable triggers" \
+  --command "sf apex run --file scripts/disable-triggers.apex"
+
+# Data import, PR scope
+sf hardis:project:action:create --agent \
+  --scope pr --pr-id 123 --when post-deploy \
+  --type data --label "Import test data" --sfdmu-project TestData
+
+# Apex script, project scope
+sf hardis:project:action:create --agent \
+  --scope project --when post-deploy \
+  --type apex --label "Set up custom settings" \
+  --apex-script scripts/apex/setup-custom-settings.apex
+```
+
+When `--pr-id` is omitted for `pr` scope, actions are saved to a **draft file** (`scripts/actions/.sfdx-hardis.draft.yml`). Run `hardis:project:action:link-pull-request` to associate the draft with a PR once it is created.
+
+#### Required flags
+
+| Flag        | Description                                              |
+|-------------|----------------------------------------------------------|
+| `--scope`   | `project`, `branch`, or `pr`                             |
+| `--when`    | `pre-deploy` or `post-deploy`                            |
+| `--type`    | Action type (see table above)                            |
+| `--label`   | Human-readable label                                     |
+
+#### Type-specific required flags
+
+| Type                | Required flag(s)                                      |
+|---------------------|-------------------------------------------------------|
+| `command`           | `--command`                                           |
+| `apex`              | `--apex-script`                                       |
+| `data`              | `--sfdmu-project`                                     |
+| `publish-community` | `--community-name`                                    |
+| `manual`            | `--instructions`                                      |
+| `schedule-batch`    | `--class-name`, `--cron-expression`                   |
+
+#### Optional flags
+
+| Flag                    | Default | Description                                                      |
+|-------------------------|---------|------------------------------------------------------------------|
+| `--pr-id`               |         | PR ID (for `pr` scope). `current` auto-detects from branch.     |
+| `--branch`              |         | Branch name (for `branch` scope).                                |
+| `--context`             | `all`   | `all`, `check-deployment-only`, or `process-deployment-only`     |
+| `--skip-if-error`       | `false` | Skip action if deployment already failed                         |
+| `--allow-failure`       | `false` | Do not block deployment if action fails                          |
+| `--run-only-once-by-org`| `false` | Execute only once per target org                                 |
+| `--custom-username`     |         | Run action as a specific Salesforce user                         |
+
+---
+
+### `hardis:project:action:update --agent` - Update an Action
+
+First list actions to get the `--action-id` (the UUID shown in the `Id` column).
+
+```bash
+# Update label and command
+sf hardis:project:action:update --agent \
+  --scope branch --when pre-deploy \
+  --action-id <uuid> --label "New label" --command "echo updated"
+
+# Change context
+sf hardis:project:action:update --agent \
+  --scope project --when post-deploy \
+  --action-id <uuid> --context check-deployment-only
+```
+
+#### Required flags
+
+| Flag          | Description                                          |
+|---------------|------------------------------------------------------|
+| `--scope`     | `project`, `branch`, or `pr`                         |
+| `--when`      | `pre-deploy` or `post-deploy`                        |
+| `--action-id` | UUID of the action to update (from `action:list`)    |
+
+#### Optional flags (provide only the ones to change)
+
+`--label`, `--command`, `--apex-script`, `--sfdmu-project`, `--community-name`, `--instructions`, `--class-name`, `--cron-expression`, `--context`, `--skip-if-error`, `--allow-failure`, `--run-only-once-by-org`, `--custom-username`, `--pr-id`, `--branch`
+
+---
+
+### `hardis:project:action:delete --agent` - Delete an Action
+
+```bash
+sf hardis:project:action:delete --agent \
+  --scope branch --when pre-deploy --action-id <uuid>
+```
+
+#### Required flags
+
+| Flag          | Description                                       |
+|---------------|---------------------------------------------------|
+| `--scope`     | `project`, `branch`, or `pr`                      |
+| `--when`      | `pre-deploy` or `post-deploy`                     |
+| `--action-id` | UUID of the action to delete (from `action:list`) |
+
+---
+
+### `hardis:project:action:reorder --agent` - Reorder Actions
+
+Two modes are available.
+
+**Move a single action to a specific position (1-based):**
+
+```bash
+sf hardis:project:action:reorder --agent \
+  --scope branch --when pre-deploy \
+  --action-id <uuid> --position 2
+```
+
+**Set the complete order in one call (comma-separated UUIDs):**
+
+```bash
+sf hardis:project:action:reorder --agent \
+  --scope branch --when pre-deploy \
+  --order "<uuid1>,<uuid2>,<uuid3>"
+```
+
+The `--order` list must contain **every** action ID exactly once. Retrieve the current list with `action:list --json`.
+
+#### Required flags
+
+| Flag        | Description                                                          |
+|-------------|----------------------------------------------------------------------|
+| `--scope`   | `project`, `branch`, or `pr`                                         |
+| `--when`    | `pre-deploy` or `post-deploy`                                        |
+
+One of:
+
+| Flag          | Description                                                        |
+|---------------|--------------------------------------------------------------------|
+| `--action-id` + `--position` | Move one action to a 1-based position                |
+| `--order`     | Comma-separated list of all action UUIDs in the desired order      |
+
+---
+
+### `hardis:project:action:link-pull-request --agent` - Link Draft Actions to a PR
+
+When actions were created for `pr` scope without a specific `--pr-id`, they are saved in a draft file. This command renames the draft to the target PR file so the actions are picked up during CI/CD for that PR.
+
+```bash
+# Link draft to PR 123
+sf hardis:project:action:link-pull-request --agent --pr-id 123
+
+# Auto-detect PR from current branch
+sf hardis:project:action:link-pull-request --agent --pr-id current
+```
+
+#### Required flags in agent mode
+
+| Flag      | Description                                                              |
+|-----------|--------------------------------------------------------------------------|
+| `--pr-id` | PR number, or `current` to detect from the current git branch            |
+
+---
+
+### Agent Skill Example (Claude Code)
+
+**`.claude/skills/manage-deployment-actions/SKILL.md`**
+
+```markdown
+---
+name: manage-deployment-actions
+description: Create, list, update, delete, or reorder deployment actions that run before or after Salesforce deployments. Actions are scoped to the whole project, a specific branch, or a pull request. Use when the user asks to add, modify, or remove pre-deploy or post-deploy steps. Use this skill even if the user says "add a pre-deploy action", "create a deployment step", "list actions", "delete action", "reorder steps", or "link draft actions to PR".
+argument-hint: "[description of what the user wants to do]"
+allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion
+user-invocable: true
+---
+
+Use the commands below to manage deployment actions. Always list first to understand the current state.
+
+## List actions
+
+```bash
+sf hardis:project:action:list --agent --scope <project|branch|pr> --when <pre-deploy|post-deploy> [--pr-id <id>] [--branch <name>] [--json]
+```
+
+## Create an action
+
+```bash
+sf hardis:project:action:create --agent \
+  --scope <project|branch|pr> --when <pre-deploy|post-deploy> \
+  --type <command|apex|data|publish-community|manual|schedule-batch> \
+  --label "<label>" \
+  [--command "<cmd>"] [--apex-script <path>] [--sfdmu-project <name>] \
+  [--community-name <name>] [--instructions "<text>"] \
+  [--class-name <ClassName>] [--cron-expression "<expr>"] \
+  [--pr-id <id>] [--context all|check-deployment-only|process-deployment-only]
+```
+
+If `--pr-id` is omitted for `pr` scope, actions go to a draft file. Run `link-pull-request` once the PR is created.
+
+## Update an action (provide only the flags to change)
+
+```bash
+sf hardis:project:action:update --agent \
+  --scope <scope> --when <pre-deploy|post-deploy> --action-id <uuid> \
+  [--label "..."] [--command "..."] [--context ...]
+```
+
+## Delete an action
+
+```bash
+sf hardis:project:action:delete --agent \
+  --scope <scope> --when <pre-deploy|post-deploy> --action-id <uuid>
+```
+
+## Reorder actions
+
+```bash
+# Move one action to position N (1-based)
+sf hardis:project:action:reorder --agent \
+  --scope <scope> --when <pre-deploy|post-deploy> \
+  --action-id <uuid> --position <N>
+
+# Set complete order in one call (all UUIDs required)
+sf hardis:project:action:reorder --agent \
+  --scope <scope> --when <pre-deploy|post-deploy> \
+  --order "<uuid1>,<uuid2>,<uuid3>"
+```
+
+## Link draft actions to a PR
+
+```bash
+sf hardis:project:action:link-pull-request --agent --pr-id <prId|current>
+```
+
+$ARGUMENTS
 ```
 
 ---
@@ -292,3 +595,9 @@ When the user asks to sync or update the installed packages configuration:
 - [Coding Agent Auto-Fix (Beta)](salesforce-deployment-agent-autofix.md) - auto-fix deployment errors with coding agents
 - [`hardis:work:new` command reference](hardis/work/new.md)
 - [`hardis:work:save` command reference](hardis/work/save.md)
+- [`hardis:project:action:create` command reference](hardis/project/action/create.md)
+- [`hardis:project:action:list` command reference](hardis/project/action/list.md)
+- [`hardis:project:action:update` command reference](hardis/project/action/update.md)
+- [`hardis:project:action:delete` command reference](hardis/project/action/delete.md)
+- [`hardis:project:action:reorder` command reference](hardis/project/action/reorder.md)
+- [`hardis:project:action:link-pull-request` command reference](hardis/project/action/link-pull-request.md)

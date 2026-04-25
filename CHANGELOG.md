@@ -2,6 +2,13 @@
 
 ## [beta] (main)
 
+- New deployment action management commands with full `--agent` support for non-interactive execution:
+  - [hardis:project:action:create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/) - Create deployment actions (command, data, apex, publish-community, manual, schedule-batch)
+  - [hardis:project:action:update](https://sfdx-hardis.cloudity.com/hardis/project/action/update/) - Update existing deployment actions
+  - [hardis:project:action:delete](https://sfdx-hardis.cloudity.com/hardis/project/action/delete/) - Delete deployment actions
+  - [hardis:project:action:reorder](https://sfdx-hardis.cloudity.com/hardis/project/action/reorder/) - Reorder actions (single move or full reorder)
+  - [hardis:project:action:list](https://sfdx-hardis.cloudity.com/hardis/project/action/list/) - List actions by scope and phase
+  - [hardis:project:action:link-pull-request](https://sfdx-hardis.cloudity.com/hardis/project/action/link-pull-request/) - Link draft actions to a pull request
 - Documentation: updated agentic automation command catalog to reflect all currently `--agent`-enabled commands and aligned command count references to 130+.
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
   - Feature: Data Cloud backup coverage has been expanded and made more reliable.
