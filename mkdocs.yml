@@ -102,7 +102,6 @@ nav:
               - Deployment actions (beta): salesforce-ci-cd-work-on-task-deployment-actions.md
               - Develop in Salesforce: salesforce-ci-cd-work-on-task-development.md
           - Save / Publish your User Story: salesforce-ci-cd-publish-task.md
-          - Using AI Coding Agents: salesforce-ci-cd-agent-skills.md
           - Create Pull Request:
               - On Gitlab: salesforce-ci-cd-merge-request-gitlab.md
               - On Azure: salesforce-ci-cd-pull-request-azure.md
@@ -148,6 +147,7 @@ nav:
               - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
               - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
           - First merge request: salesforce-ci-cd-setup-merge-request.md
+      - Using AI Coding Agents: salesforce-ci-cd-agent-skills.md
       - Smart Deploy Workflow: salesforce-ci-cd-smart-deployment.md
   - Org Monitoring:
       - Monitoring home: salesforce-monitoring-home.md

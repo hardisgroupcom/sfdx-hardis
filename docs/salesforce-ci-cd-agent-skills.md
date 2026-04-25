@@ -23,13 +23,14 @@ This page explains how to set up agent skills (also called "tools" or "custom co
 
 ## The `--agent` flag
 
-Both `hardis:work:new` and `hardis:work:save` accept an **`--agent`** flag that switches the command to a fully **non-interactive** execution mode:
+Over 70 sfdx-hardis commands accept an **`--agent`** flag that switches to a fully **non-interactive** execution mode:
 
 - All interactive prompts are disabled
 - Required inputs must be provided as CLI flags
 - The command fails fast with an explicit error message if any required input is missing, listing available options
+- Sensible defaults are applied where possible, saving tokens and API calls
 
-This makes the commands safe and predictable when called by an automated agent.
+This makes the commands safe, predictable, and **token-efficient** when called by an automated agent.
 
 ---
 
@@ -210,6 +211,77 @@ graph TD
 | `target branch cannot be resolved` (`work:save`)    | Provide `--targetbranch <branch>` explicitly, or ensure the current branch was created with `work:new`. |
 | Authentication errors                               | Ensure `sf org login` has been run and a default org is set before invoking agent commands.             |
 | `sfdx-git-delta` not found (`work:save`)            | Install the plugin: `sf plugins install sfdx-git-delta`                                                 |
+
+---
+
+## `hardis:org:retrieve:packageconfig --agent` — Retrieve and Update Package Config
+
+Retrieves installed packages from a Salesforce org and optionally updates the local project configuration. In agent mode, this is a **two-step workflow**: first list the packages, then update config for the ones you need.
+
+### Step 1 — List installed packages
+
+```bash
+sf hardis:org:retrieve:packageconfig --agent --target-org myOrg@example.com
+```
+
+Without `--packages` or `--update-all-config`, the command **only lists** installed packages and returns them as JSON (with `--json`). No config file is modified.
+
+### Step 2 — Update config
+
+Choose one of three update strategies:
+
+**Option A** — Update only specific packages by name:
+
+```bash
+sf hardis:org:retrieve:packageconfig --agent --packages "MyManagedPkg,AnotherPkg" --target-org myOrg@example.com
+```
+
+**Option B** — Update only packages already present in your project config (version upgrade):
+
+```bash
+sf hardis:org:retrieve:packageconfig --agent --update-existing-config --target-org myOrg@example.com
+```
+
+This is the safest option for automation: it upgrades versions of known packages without adding new ones.
+
+**Option C** — Update config with all retrieved packages:
+
+```bash
+sf hardis:org:retrieve:packageconfig --agent --update-all-config --target-org myOrg@example.com
+```
+
+### Flags summary
+
+| Flag                      | Description                                                                 |
+|---------------------------|-----------------------------------------------------------------------------|
+| `--packages`              | Comma-separated list of package names or subscriber IDs to update in config |
+| `--update-existing-config`| Update only packages already in the project config (version upgrade)        |
+| `--update-all-config`     | Update config with all retrieved packages (existing and new)                |
+| `--target-org`            | Salesforce org to retrieve packages from (required)                         |
+
+### Agent skill example (Claude Code)
+
+**`.claude/skills/update-package-config.md`**
+
+```markdown
+# Update Package Config from Org
+
+When the user asks to sync or update the installed packages configuration:
+
+1. First, list the packages to see what is installed:
+   sf hardis:org:retrieve:packageconfig --agent --target-org <org> --json
+
+2. Review the JSON output to identify the packages to update.
+
+3. Update config for the relevant packages (pick one):
+   - Specific packages: sf hardis:org:retrieve:packageconfig --agent --packages "<pkg1>,<pkg2>" --target-org <org>
+   - Upgrade existing only: sf hardis:org:retrieve:packageconfig --agent --update-existing-config --target-org <org>
+   - All packages: sf hardis:org:retrieve:packageconfig --agent --update-all-config --target-org <org>
+
+- Prefer --update-existing-config for safe version upgrades.
+- Use --update-all-config only if the user explicitly asks to sync all packages.
+- The --target-org flag is required.
+```
 
 ---
 

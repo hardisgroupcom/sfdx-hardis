@@ -6,6 +6,7 @@ import c from 'chalk';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { managePackageConfig, promptOrg } from '../../../../common/utils/orgUtils.js';
+import { getConfig } from '../../../../config/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
@@ -49,8 +50,9 @@ sf hardis:org:retrieve:packageconfig --agent --update-all-config --target-org my
 
 In agent mode:
 
-- Without \`--packages\` or \`--update-all-config\`, the command only lists packages (no config update).
+- Without \`--packages\`, \`--update-existing-config\`, or \`--update-all-config\`, the command only lists packages (no config update).
 - Use \`--packages\` to update config only for the specified packages (comma-separated names or subscriber package IDs).
+- Use \`--update-existing-config\` to update only packages that are already present in the project config (version upgrade).
 - Use \`--update-all-config\` to update config with all retrieved packages.
 `;
 
@@ -58,6 +60,7 @@ In agent mode:
     '$ sf hardis:org:retrieve:packageconfig',
     'sf hardis:org:retrieve:packageconfig -u myOrg',
     '$ sf hardis:org:retrieve:packageconfig --agent --packages "MyPackage,OtherPkg"',
+    '$ sf hardis:org:retrieve:packageconfig --agent --update-existing-config',
     '$ sf hardis:org:retrieve:packageconfig --agent --update-all-config',
   ];
 
@@ -65,9 +68,13 @@ In agent mode:
     packages: Flags.string({
       description: 'Comma-separated list of package names or subscriber package IDs to update in the project config. Used in agent mode.',
     }),
+    'update-existing-config': Flags.boolean({
+      default: false,
+      description: 'Update only packages already present in the project config (version upgrade). Useful in agent mode.',
+    }),
     'update-all-config': Flags.boolean({
       default: false,
-      description: 'Update config with all retrieved packages. Required in agent mode if --packages is not provided.',
+      description: 'Update config with all retrieved packages (existing and new).',
     }),
     agent: Flags.boolean({
       default: false,
@@ -121,6 +128,7 @@ In agent mode:
     // Store list in config
     if (isCI || agentMode) {
       const packagesFlag = flags.packages as string | undefined;
+      const updateExistingConfig = flags['update-existing-config'] === true;
       const updateAllConfig = flags['update-all-config'] === true;
       if (packagesFlag) {
         // Filter to only the specified packages
@@ -134,10 +142,22 @@ In agent mode:
         } else {
           uxLog("warning", this, c.yellow(`No installed packages matched the --packages filter: ${packagesFlag}`));
         }
+      } else if (updateExistingConfig) {
+        // Filter to only packages already in the project config
+        const config = await getConfig('project');
+        const projectPackageIds = (config.installedPackages || []).map((p: any) => p.SubscriberPackageId);
+        const existingPackages = installedPackages.filter((pkg: any) =>
+          projectPackageIds.includes(pkg.SubscriberPackageId)
+        );
+        if (existingPackages.length > 0) {
+          await managePackageConfig(existingPackages, existingPackages, true);
+        } else {
+          uxLog("warning", this, c.yellow('No installed packages match existing project config entries.'));
+        }
       } else if (updateAllConfig) {
         await managePackageConfig(installedPackages, installedPackages, true);
       } else {
-        uxLog("log", this, c.grey('Agent/CI mode: skipping config update (use --packages or --update-all-config to update).'));
+        uxLog("log", this, c.grey('Agent/CI mode: skipping config update (use --packages, --update-existing-config, or --update-all-config to update).'));
       }
     } else {
       const updateConfigRes = await prompts({
