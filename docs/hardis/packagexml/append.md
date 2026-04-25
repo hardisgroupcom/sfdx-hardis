@@ -42,15 +42,15 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug|boolean|debug||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|outputfile<br/>-f|option|package.xml output file||||
-|packagexmls<br/>-p|option|package.xml files path (separated by commas)||||
-|websocket|option|websocket||||
+| Name               |  Type   | Description                                           | Default | Required | Options |
+|:-------------------|:-------:|:------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent              | boolean | Run in non-interactive mode for agents and automation |         |          |         |
+| debug              | boolean | debug                                                 |         |          |         |
+| flags-dir          | option  | undefined                                             |         |          |         |
+| json               | boolean | Format output as json.                                |         |          |         |
+| outputfile<br/>-f  | option  | package.xml output file                               |         |          |         |
+| packagexmls<br/>-p | option  | package.xml files path (separated by commas)          |         |          |         |
+| websocket          | option  | websocket                                             |         |          |         |
 
 ## Examples
 

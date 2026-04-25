@@ -252,12 +252,12 @@ sf hardis:org:retrieve:packageconfig --agent --update-all-config --target-org my
 
 ### Flags summary
 
-| Flag                      | Description                                                                 |
-|---------------------------|-----------------------------------------------------------------------------|
-| `--packages`              | Comma-separated list of package names or subscriber IDs to update in config |
-| `--update-existing-config`| Update only packages already in the project config (version upgrade)        |
-| `--update-all-config`     | Update config with all retrieved packages (existing and new)                |
-| `--target-org`            | Salesforce org to retrieve packages from (required)                         |
+| Flag                       | Description                                                                 |
+|----------------------------|-----------------------------------------------------------------------------|
+| `--packages`               | Comma-separated list of package names or subscriber IDs to update in config |
+| `--update-existing-config` | Update only packages already in the project config (version upgrade)        |
+| `--update-all-config`      | Update config with all retrieved packages (existing and new)                |
+| `--target-org`             | Salesforce org to retrieve packages from (required)                         |
 
 ### Agent skill example (Claude Code)
 
