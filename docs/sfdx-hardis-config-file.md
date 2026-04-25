@@ -1,75 +1,59 @@
 ---
-title: .sfdx-hardis.yml config file
-description: Learn what is a sfdx-hardis config file
+title: sfdx-hardis Configuration
+description: Overview of sfdx-hardis configuration - VS Code UI, config file, environment variables, and links to topic-specific configuration guides
 ---
 <!-- markdownlint-disable MD013 -->
 
-sfdx-hardis projects are like any other sfdx projects, but with an additional configuration stored in a **.sfdx-hardis.yml config file**
+# sfdx-hardis Configuration
 
-Many of these properties are automatically set by CI/CD [setup](salesforce-ci-cd-setup-home.md) and [maintenance](salesforce-ci-cd-release-home.md) operations.
+## Configure with the VS Code UI (recommended)
 
-You can see the [**list of all configuration properties**](schema/sfdx-hardis-json-schema-parameters.html).
+The easiest way to configure sfdx-hardis is through the **[VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis){target=blank}**.
 
-Additional environment variables are also used by sfdx-hardis, see the [complete list of environment variables](all-env-variables.md).
+The extension provides a guided UI that covers most configuration tasks without ever editing a YAML file manually:
 
-Here is an example of a .sfdx-hardis.yml config file:
+- Setting up a new CI/CD project or connecting an existing org
+- Configuring cleaning rules, delta deployments, and overwrite policies
+- Managing packages, permission sets, and scratch org pools
+- Running monitoring and backup operations
 
-```yaml
-projectName: MyClient
-devHubAlias: DevHub_MyClient
-developmentBranch: integration
-allowedOrgTypes:
-  - sandbox
-availableTargetBranches:
-  - develop
-  - preprod
-autoCleanTypes:
-  - destructivechanges
-  - datadotcom
-  - minimizeProfiles
-  - listViewsMine
-autoRemoveUserPermissions:
-  - EnableCommunityAppLauncher
-  - FieldServiceAccess
-  - OmnichannelInventorySync
-  - SendExternalEmailAvailable
-  - UseOmnichannelInventoryAPIs
-  - ViewDataLeakageEvents
-  - ViewMLModels
-  - ViewPlatformEvents
-  - WorkCalibrationUser
-autoRetrieveWhenPull:
-  - CustomApplication:MyClient
-  - CustomApplication:MyClientConnectApplication
-  - CustomApplication:MyOtherApplication
-  - CustomMetadata
-devHubUsername: nicolas.vuillamy@ext.myclient.com
-installPackagesDuringCheckDeploy: true
-installedPackages:
-  - Id: 0A37Z000000AtDYSA0
-    SubscriberPackageId: 033i0000000LVMYAA4
-    SubscriberPackageName: Marketing Cloud
-    SubscriberPackageNamespace: et4ae5
-    SubscriberPackageVersionId: 04t6S000001UjutQAC
-    SubscriberPackageVersionName: Marketing Cloud
-    SubscriberPackageVersionNumber: 238.3.0.2
-    installOnScratchOrgs: true
-    installDuringDeployments: true
-  - Id: 0A35r0000009F9CCAU
-    SubscriberPackageId: 033b0000000Pf2AAAS
-    SubscriberPackageName: Declarative Lookup Rollup Summaries Tool
-    SubscriberPackageNamespace: dlrs
-    SubscriberPackageVersionId: 04t5p000001BmLvAAK
-    SubscriberPackageVersionName: Release
-    SubscriberPackageVersionNumber: 2.15.0.9
-    installOnScratchOrgs: true
-    installDuringDeployments: true
-initPermissionSets:
-  - AdminDefault
-  - MarketingCloudConnectedApp
-  - ApiUserPS
-listViewsToSetToMine:
-  - force-app/main/default/objects/Operation__c/listViews/MyCurrentOperations.listView-meta.xml
-  - force-app/main/default/objects/Operation__c/listViews/MyFinalizedOperations.listView-meta.xml
-```
+Install the extension, open your Salesforce DX project in VS Code, and use the **SFDX Hardis** panel in the sidebar to get started.
+
+---
+
+## The `.sfdx-hardis.yml` config file
+
+Behind the scenes, all configuration is stored in **`config/.sfdx-hardis.yml`** at the root of your project. Most properties are set automatically by the setup and release wizards, but you can also edit the file directly.
+
+Three configuration layers are merged at runtime:
+
+| Layer | File | Scope |
+|-------|------|-------|
+| **Project** | `config/.sfdx-hardis.yml` | Shared - committed to git |
+| **Branch** | `config/branches/.sfdx-hardis.<branch>.yml` | Per-environment overrides |
+| **User** | `config/user/.sfdx-hardis.<username>.yml` | Per-developer - git-ignored |
+
+See the [**full list of configuration properties**](schema/sfdx-hardis-json-schema-parameters.html) for every supported key, its type, default value, and description.
+
+---
+
+## Environment Variables
+
+Many runtime behaviours can be controlled through environment variables - useful for CI/CD pipelines where you cannot ship secrets or machine-specific settings in a committed file.
+
+See the [**complete list of environment variables**](all-env-variables.md).
+
+---
+
+## Topic-specific Configuration Guides
+
+| Topic | Guide |
+|-------|-------|
+| CI/CD pipeline setup (new or existing project) | [Setup a Salesforce CI/CD Project](salesforce-ci-cd-setup-home.md) |
+| CI/CD configuration overview | [Configure a CI/CD Project](salesforce-ci-cd-config-home.md) |
+| Automated metadata cleaning before merge | [Configure Cleaning](salesforce-ci-cd-config-cleaning.md) |
+| Delta deployments with sfdx-git-delta | [Configure Delta Deployments](salesforce-ci-cd-config-delta-deployment.md) |
+| Overwrite management (`package-no-overwrite.xml`) | [Configure Overwrite Management](salesforce-ci-cd-config-overwrite.md) |
+| Org monitoring & backup | [Monitor your Salesforce Org](salesforce-monitoring-home.md) |
+| AI providers (Claude, OpenAI, Gemini, Ollama) | [AI Assistant Setup](salesforce-ai-setup.md) |
 

@@ -85,6 +85,7 @@ extra:
 nav:
   - Home: index.md
   - Installation: installation.md
+  - Configuration: sfdx-hardis-config-file.md
   - Salesforce CI/CD:
       - CI/CD Home: salesforce-ci-cd-home.md
       - Contributor Guide:
@@ -409,7 +410,6 @@ nav:
           - resetselection: hardis/work/resetselection.md
           - save: hardis/work/save.md
           - ws: hardis/work/ws.md
-  - Configuration: sfdx-hardis-config-file.md
   - Community & Resources:
       - Community Events: events.md
       - Articles & Videos: articles-videos.md
