@@ -1,25 +1,22 @@
-/* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
-import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import {
-  ActionScope,
-  ActionWhen,
   findActionById,
   readActions,
   resolvePrId,
   writeActions,
 } from '../../../../common/utils/actionUtils.js';
+import { ActionCommandBase } from './base.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export default class ActionDelete extends SfCommand<any> {
+export default class ActionDelete extends ActionCommandBase {
   public static title = 'Delete deployment action';
 
   public static description = `
@@ -87,28 +84,11 @@ Required in agent mode:
 
   public static requiresProject = true;
 
-  /* jscpd:ignore-end */
-
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ActionDelete);
     const agentMode = flags.agent === true;
 
-    // Collect scope
-    const scope: ActionScope = agentMode || isCI
-      ? this.requireFlag(flags.scope, 'scope') as ActionScope
-      : flags.scope || await this.promptSelect(t('selectActionScope'), [
-        { title: t('actionScopeProject'), value: 'project' },
-        { title: t('actionScopeBranch'), value: 'branch' },
-        { title: t('actionScopePr'), value: 'pr' },
-      ]);
-
-    // Collect when
-    const when: ActionWhen = agentMode || isCI
-      ? this.requireFlag(flags.when, 'when') as ActionWhen
-      : flags.when || await this.promptSelect(t('selectActionWhen'), [
-        { title: t('actionWhenPreDeploy'), value: 'pre-deploy' },
-        { title: t('actionWhenPostDeploy'), value: 'post-deploy' },
-      ]);
+    const { scope, when } = await this.collectScopeAndWhen(flags, agentMode);
 
     // Resolve PR ID if scope is pr
     const resolvedPrId = scope === 'pr' ? await resolvePrId(this, flags['pr-id'], agentMode) : flags['pr-id'];
@@ -148,21 +128,5 @@ Required in agent mode:
     return { outputString: 'Action deleted', deletedLabel, configFile };
   }
 
-  private requireFlag(value: any, flagName: string): string {
-    if (!value) {
-      throw new SfError(t('missingRequiredFlag', { flag: flagName }));
-    }
-    return value;
-  }
-
-  private async promptSelect(message: string, choices: any[]): Promise<any> {
-    const response = await prompts({
-      type: 'select',
-      name: 'value',
-      message: c.cyanBright(message),
-      choices,
-      description: message,
-    });
-    return response.value;
-  }
 }
+

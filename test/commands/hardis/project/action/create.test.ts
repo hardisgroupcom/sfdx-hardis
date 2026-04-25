@@ -1,27 +1,13 @@
 import { expect } from 'chai';
 import fs from 'fs-extra';
 import * as yaml from 'js-yaml';
-import * as os from 'os';
-import * as path from 'path';
 import { readActions, writeActions } from '../../../../../src/common/utils/actionUtils.js';
 import { buildAction } from '../../../../../src/common/utils/actionUtils.js';
 import { randomUUID } from 'crypto';
+import { setupTmpDir } from '../../../../common/utils/actionTestHelper.js';
 
 describe('hardis:project:action:create - unit logic', () => {
-  let tmpDir: string;
-  let originalCwd: string;
-
-  beforeEach(async () => {
-    tmpDir = path.join(os.tmpdir(), `sfdx-hardis-action-create-${Date.now()}`);
-    await fs.ensureDir(tmpDir);
-    originalCwd = process.cwd();
-    process.chdir(tmpDir);
-  });
-
-  afterEach(async () => {
-    process.chdir(originalCwd);
-    await fs.remove(tmpDir);
-  });
+  setupTmpDir('sfdx-hardis-action-create');
 
   it('creates a command action and appends to project config', async () => {
     const action = buildAction({
@@ -101,11 +87,9 @@ describe('hardis:project:action:create - unit logic', () => {
   });
 
   it('appends to existing actions without disturbing them', async () => {
-    // Create initial action
     const first = buildAction({ id: 'first-id', label: 'First', type: 'command', command: 'echo 1' });
     await writeActions('project', 'pre-deploy', [first]);
 
-    // Append second action
     const actions = await readActions('project', 'pre-deploy');
     const second = buildAction({ id: 'second-id', label: 'Second', type: 'command', command: 'echo 2' });
     actions.push(second);

@@ -1,11 +1,11 @@
-/* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { randomUUID } from 'crypto';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { ActionCommandBase } from './base.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import {
@@ -25,7 +25,7 @@ import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvid
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export default class ActionCreate extends SfCommand<any> {
+export default class ActionCreate extends ActionCommandBase {
   public static title = 'Create deployment action';
 
   public static description = `
@@ -150,8 +150,6 @@ In agent mode, \`--context\` defaults to \`all\` and optional boolean flags defa
   };
 
   public static requiresProject = true;
-
-  /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ActionCreate);
@@ -279,13 +277,6 @@ In agent mode, \`--context\` defaults to \`all\` and optional boolean flags defa
     return { outputString: 'Action created', action: action as any, configFile };
   }
 
-  private requireFlag(value: any, flagName: string): string {
-    if (!value) {
-      throw new SfError(t('missingRequiredFlag', { flag: flagName }));
-    }
-    return value;
-  }
-
   private async promptScope(): Promise<ActionScope> {
     const response = await prompts({
       type: 'select',
@@ -335,27 +326,5 @@ In agent mode, \`--context\` defaults to \`all\` and optional boolean flags defa
       description: t('selectActionContext'),
     });
     return response.value as PrePostCommand['context'];
-  }
-
-  private async promptText(message: string, initial: string): Promise<string> {
-    const response = await prompts({
-      type: 'text',
-      name: 'value',
-      message: c.cyanBright(message),
-      initial,
-      description: message,
-    });
-    return response.value || '';
-  }
-
-  private async promptConfirm(message: string): Promise<boolean> {
-    const response = await prompts({
-      type: 'confirm',
-      name: 'value',
-      message: c.cyanBright(message),
-      default: false,
-      description: message,
-    });
-    return response.value === true;
   }
 }

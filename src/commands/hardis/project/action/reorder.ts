@@ -1,15 +1,13 @@
-/* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { ActionCommandBase } from './base.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import {
-  ActionScope,
-  ActionWhen,
   findActionById,
   readActions,
   resolvePrId,
@@ -19,7 +17,7 @@ import {
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export default class ActionReorder extends SfCommand<any> {
+export default class ActionReorder extends ActionCommandBase {
   public static title = 'Reorder deployment actions';
 
   public static description = `
@@ -103,30 +101,12 @@ Required in agent mode:
 
   public static requiresProject = true;
 
-  /* jscpd:ignore-end */
-
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ActionReorder);
     const agentMode = flags.agent === true;
 
-    // Collect scope
-    const scope: ActionScope = agentMode || isCI
-      ? this.requireFlag(flags.scope, 'scope') as ActionScope
-      : flags.scope || await this.promptSelect(t('selectActionScope'), [
-        { title: t('actionScopeProject'), value: 'project' },
-        { title: t('actionScopeBranch'), value: 'branch' },
-        { title: t('actionScopePr'), value: 'pr' },
-      ]);
+    const { scope, when } = await this.collectScopeAndWhen(flags, agentMode);
 
-    // Collect when
-    const when: ActionWhen = agentMode || isCI
-      ? this.requireFlag(flags.when, 'when') as ActionWhen
-      : flags.when || await this.promptSelect(t('selectActionWhen'), [
-        { title: t('actionWhenPreDeploy'), value: 'pre-deploy' },
-        { title: t('actionWhenPostDeploy'), value: 'post-deploy' },
-      ]);
-
-    // Read actions
     // Resolve PR ID if scope is pr
     const resolvedPrId = scope === 'pr' ? await resolvePrId(this, flags['pr-id'], agentMode) : flags['pr-id'];
 
@@ -150,7 +130,6 @@ Required in agent mode:
       ]);
 
       if (mode === 'single') {
-        // Show current order
         this.displayCurrentOrder(actions);
 
         const actionId = await this.promptSelect(t('selectActionToReorder'), actions.map(a => ({
@@ -169,7 +148,6 @@ Required in agent mode:
 
         actions = this.singleMove(actions, actionId, posResponse.value);
       } else {
-        // Full reorder: show current, ask for new order
         this.displayCurrentOrder(actions);
 
         const orderStr = await this.promptText(
@@ -206,24 +184,20 @@ Required in agent mode:
     const existingIds = new Set(actions.map(a => a.id));
     const providedIds = new Set(orderedIds);
 
-    // Check for missing IDs
     const missingIds = [...existingIds].filter(id => !providedIds.has(id));
     if (missingIds.length > 0) {
       throw new SfError(t('reorderMissingIds', { ids: missingIds.join(', ') }));
     }
 
-    // Check for extra IDs
     const extraIds = orderedIds.filter(id => !existingIds.has(id));
     if (extraIds.length > 0) {
       throw new SfError(t('reorderExtraIds', { ids: extraIds.join(', ') }));
     }
 
-    // Check for duplicates
     if (orderedIds.length !== providedIds.size) {
       throw new SfError(t('reorderDuplicateIds'));
     }
 
-    // Reorder
     const actionMap = new Map(actions.map(a => [a.id, a]));
     return orderedIds.map(id => actionMap.get(id)!);
   }
@@ -233,34 +207,5 @@ Required in agent mode:
     actions.forEach((a, i) => {
       uxLog("log", this, c.grey(`  ${i + 1}. ${a.label} (${a.type}) [${a.id}]`));
     });
-  }
-
-  private requireFlag(value: any, flagName: string): string {
-    if (!value) {
-      throw new SfError(t('missingRequiredFlag', { flag: flagName }));
-    }
-    return value;
-  }
-
-  private async promptSelect(message: string, choices: any[]): Promise<any> {
-    const response = await prompts({
-      type: 'select',
-      name: 'value',
-      message: c.cyanBright(message),
-      choices,
-      description: message,
-    });
-    return response.value;
-  }
-
-  private async promptText(message: string, initial: string): Promise<string> {
-    const response = await prompts({
-      type: 'text',
-      name: 'value',
-      message: c.cyanBright(message),
-      initial,
-      description: message,
-    });
-    return response.value || '';
   }
 }

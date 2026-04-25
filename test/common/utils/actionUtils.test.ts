@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import fs from 'fs-extra';
 import * as yaml from 'js-yaml';
-import * as os from 'os';
 import * as path from 'path';
 import {
   getActionConfigFilePath,
@@ -11,22 +10,10 @@ import {
   findActionById,
   buildAction,
 } from '../../../src/common/utils/actionUtils.js';
+import { setupTmpDir } from './actionTestHelper.js';
 
 describe('actionUtils', () => {
-  let tmpDir: string;
-  let originalCwd: string;
-
-  beforeEach(async () => {
-    tmpDir = path.join(os.tmpdir(), `sfdx-hardis-test-${Date.now()}`);
-    await fs.ensureDir(tmpDir);
-    originalCwd = process.cwd();
-    process.chdir(tmpDir);
-  });
-
-  afterEach(async () => {
-    process.chdir(originalCwd);
-    await fs.remove(tmpDir);
-  });
+  const ctx = setupTmpDir('sfdx-hardis-test');
 
   describe('getActionConfigFilePath', () => {
     it('returns project config path for project scope', async () => {
@@ -57,7 +44,7 @@ describe('actionUtils', () => {
     });
 
     it('returns empty array when key is missing', async () => {
-      const configFile = path.join(tmpDir, 'config', '.sfdx-hardis.yml');
+      const configFile = path.join(ctx.getDir(), 'config', '.sfdx-hardis.yml');
       await fs.ensureDir(path.dirname(configFile));
       await fs.writeFile(configFile, yaml.dump({ someOtherKey: 'value' }));
 
@@ -66,7 +53,7 @@ describe('actionUtils', () => {
     });
 
     it('reads commandsPreDeploy for pre-deploy', async () => {
-      const configFile = path.join(tmpDir, 'config', '.sfdx-hardis.yml');
+      const configFile = path.join(ctx.getDir(), 'config', '.sfdx-hardis.yml');
       await fs.ensureDir(path.dirname(configFile));
       const testActions = [{ id: 'test-1', label: 'Test', type: 'command', command: 'echo hello', context: 'all' }];
       await fs.writeFile(configFile, yaml.dump({ commandsPreDeploy: testActions }));
@@ -77,7 +64,7 @@ describe('actionUtils', () => {
     });
 
     it('reads commandsPostDeploy for post-deploy', async () => {
-      const configFile = path.join(tmpDir, 'config', '.sfdx-hardis.yml');
+      const configFile = path.join(ctx.getDir(), 'config', '.sfdx-hardis.yml');
       await fs.ensureDir(path.dirname(configFile));
       const testActions = [{ id: 'post-1', label: 'Post Test', type: 'manual', context: 'all', parameters: { instructions: 'Do something' } }];
       await fs.writeFile(configFile, yaml.dump({ commandsPostDeploy: testActions }));
@@ -93,14 +80,14 @@ describe('actionUtils', () => {
       const actions = [{ id: 'new-1', label: 'New Action', type: 'command' as const, command: 'echo test', context: 'all' as const }];
       const configFile = await writeActions('project', 'pre-deploy', actions);
 
-      expect(fs.existsSync(configFile)).to.be.true;
+      expect(fs.existsSync(configFile)).to.equal(true);
       const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
       expect(doc.commandsPreDeploy).to.have.lengthOf(1);
       expect(doc.commandsPreDeploy[0].id).to.equal('new-1');
     });
 
     it('preserves other config keys in the file', async () => {
-      const configFile = path.join(tmpDir, 'config', '.sfdx-hardis.yml');
+      const configFile = path.join(ctx.getDir(), 'config', '.sfdx-hardis.yml');
       await fs.ensureDir(path.dirname(configFile));
       await fs.writeFile(configFile, yaml.dump({ targetUsername: 'admin@test.com', commandsPostDeploy: [] }));
 
@@ -220,8 +207,8 @@ describe('actionUtils', () => {
       expect(action.label).to.equal('Test Action');
       expect(action.type).to.equal('command');
       expect(action.command).to.equal('echo hello');
-      expect(action.skipIfError).to.be.true;
-      expect(action.runOnlyOnceByOrg).to.be.true;
+      expect(action.skipIfError).to.equal(true);
+      expect(action.runOnlyOnceByOrg).to.equal(true);
       expect(action.customUsername).to.equal('admin@test.com');
     });
 
@@ -233,10 +220,10 @@ describe('actionUtils', () => {
         parameters: { instructions: 'Do something' },
       });
 
-      expect(action.skipIfError).to.be.undefined;
-      expect(action.allowFailure).to.be.undefined;
-      expect(action.runOnlyOnceByOrg).to.be.undefined;
-      expect(action.customUsername).to.be.undefined;
+      expect(action.skipIfError).to.equal(undefined);
+      expect(action.allowFailure).to.equal(undefined);
+      expect(action.runOnlyOnceByOrg).to.equal(undefined);
+      expect(action.customUsername).to.equal(undefined);
       expect(action.parameters).to.deep.equal({ instructions: 'Do something' });
     });
   });

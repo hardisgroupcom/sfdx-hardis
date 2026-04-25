@@ -1,24 +1,9 @@
 import { expect } from 'chai';
-import fs from 'fs-extra';
-import * as os from 'os';
-import * as path from 'path';
 import { buildAction, findActionById, readActions, writeActions } from '../../../../../src/common/utils/actionUtils.js';
+import { setupTmpDir } from '../../../../common/utils/actionTestHelper.js';
 
 describe('hardis:project:action:update - unit logic', () => {
-  let tmpDir: string;
-  let originalCwd: string;
-
-  beforeEach(async () => {
-    tmpDir = path.join(os.tmpdir(), `sfdx-hardis-action-update-${Date.now()}`);
-    await fs.ensureDir(tmpDir);
-    originalCwd = process.cwd();
-    process.chdir(tmpDir);
-  });
-
-  afterEach(async () => {
-    process.chdir(originalCwd);
-    await fs.remove(tmpDir);
-  });
+  setupTmpDir('sfdx-hardis-action-update');
 
   it('updates label of an existing action', async () => {
     const action = buildAction({ id: 'upd-1', label: 'Original', type: 'command', command: 'echo hello' });
@@ -75,7 +60,6 @@ describe('hardis:project:action:update - unit logic', () => {
 
     const actions = await readActions('project', 'post-deploy');
     const { action: found, index } = findActionById(actions, 'upd-4');
-    // Only update context
     found.context = 'process-deployment-only';
     actions[index] = found;
     await writeActions('project', 'post-deploy', actions);
@@ -83,7 +67,7 @@ describe('hardis:project:action:update - unit logic', () => {
     const result = await readActions('project', 'post-deploy');
     expect(result[0].context).to.equal('process-deployment-only');
     expect(result[0].label).to.equal('Full Action');
-    expect(result[0].skipIfError).to.be.true;
-    expect(result[0].allowFailure).to.be.true;
+    expect(result[0].skipIfError).to.equal(true);
+    expect(result[0].allowFailure).to.equal(true);
   });
 });

@@ -1,17 +1,14 @@
-/* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
-import { prompts } from '../../../../common/utils/prompts.js';
+import { ActionCommandBase } from './base.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import {
   ACTION_CONTEXTS,
   ACTION_TYPES,
-  ActionScope,
-  ActionWhen,
   findActionById,
   logActionSummary,
   readActions,
@@ -24,7 +21,7 @@ import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvid
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export default class ActionUpdate extends SfCommand<any> {
+export default class ActionUpdate extends ActionCommandBase {
   public static title = 'Update deployment action';
 
   public static description = `
@@ -144,27 +141,11 @@ Required in agent mode:
 
   public static requiresProject = true;
 
-  /* jscpd:ignore-end */
-
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ActionUpdate);
     const agentMode = flags.agent === true;
 
-    // Collect scope and when
-    const scope: ActionScope = agentMode || isCI
-      ? this.requireFlag(flags.scope, 'scope') as ActionScope
-      : flags.scope || await this.promptSelect(t('selectActionScope'), [
-        { title: t('actionScopeProject'), value: 'project' },
-        { title: t('actionScopeBranch'), value: 'branch' },
-        { title: t('actionScopePr'), value: 'pr' },
-      ]);
-
-    const when: ActionWhen = agentMode || isCI
-      ? this.requireFlag(flags.when, 'when') as ActionWhen
-      : flags.when || await this.promptSelect(t('selectActionWhen'), [
-        { title: t('actionWhenPreDeploy'), value: 'pre-deploy' },
-        { title: t('actionWhenPostDeploy'), value: 'post-deploy' },
-      ]);
+    const { scope, when } = await this.collectScopeAndWhen(flags, agentMode);
 
     // Resolve PR ID if scope is pr
     const resolvedPrId = scope === 'pr' ? await resolvePrId(this, flags['pr-id'], agentMode) : flags['pr-id'];
@@ -218,11 +199,9 @@ Required in agent mode:
   }
 
   private async interactiveUpdate(action: PrePostCommand, _flags: any): Promise<void> {
-    // Label
     const newLabel = await this.promptText(t('enterActionLabel'), action.label);
     if (newLabel) action.label = newLabel;
 
-    // Type
     const newType = await this.promptSelect(t('selectActionType'), ACTION_TYPES.map(t2 => ({ title: t2, value: t2 })), action.type);
     if (newType && newType !== action.type) {
       action.type = newType;
@@ -230,7 +209,6 @@ Required in agent mode:
       action.command = '';
     }
 
-    // Type-specific parameters
     if (action.type === 'command') {
       const val = await this.promptText(t('enterCommand'), action.command || '');
       if (val) action.command = val;
@@ -255,11 +233,9 @@ Required in agent mode:
       if (jn) action.parameters = { ...action.parameters, jobName: jn };
     }
 
-    // Context
     const newContext = await this.promptSelect(t('selectActionContext'), ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })), action.context);
     if (newContext) action.context = newContext;
 
-    // Optional booleans
     action.skipIfError = await this.promptConfirm(t('actionPromptSkipIfError'), action.skipIfError || false);
     action.allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'), action.allowFailure || false);
     action.runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), action.runOnlyOnceByOrg || false);
@@ -287,48 +263,5 @@ Required in agent mode:
     if (flags['allow-failure'] !== undefined) action.allowFailure = flags['allow-failure'];
     if (flags['run-only-once-by-org'] !== undefined) action.runOnlyOnceByOrg = flags['run-only-once-by-org'];
     if (flags['custom-username']) action.customUsername = flags['custom-username'];
-  }
-
-  private requireFlag(value: any, flagName: string): string {
-    if (!value) {
-      throw new SfError(t('missingRequiredFlag', { flag: flagName }));
-    }
-    return value;
-  }
-
-  private async promptSelect(message: string, choices: any[], initial?: string): Promise<any> {
-    const initialIndex = initial ? choices.findIndex(c2 => c2.value === initial) : 0;
-    const response = await prompts({
-      type: 'select',
-      name: 'value',
-      message: c.cyanBright(message),
-      choices,
-      initial: initialIndex >= 0 ? initialIndex : 0,
-      description: message,
-    });
-    return response.value;
-  }
-
-  private async promptText(message: string, initial: string): Promise<string> {
-    const response = await prompts({
-      type: 'text',
-      name: 'value',
-      message: c.cyanBright(message),
-      initial,
-      description: message,
-    });
-    return response.value || '';
-  }
-
-  private async promptConfirm(message: string, initial: boolean = false): Promise<boolean> {
-    const response = await prompts({
-      type: 'confirm',
-      name: 'value',
-      message: c.cyanBright(message),
-      default: initial,
-      initial,
-      description: message,
-    });
-    return response.value === true;
   }
 }

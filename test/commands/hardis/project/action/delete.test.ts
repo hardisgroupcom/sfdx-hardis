@@ -1,24 +1,9 @@
 import { expect } from 'chai';
-import fs from 'fs-extra';
-import * as os from 'os';
-import * as path from 'path';
 import { buildAction, findActionById, readActions, writeActions } from '../../../../../src/common/utils/actionUtils.js';
+import { setupTmpDir } from '../../../../common/utils/actionTestHelper.js';
 
 describe('hardis:project:action:delete - unit logic', () => {
-  let tmpDir: string;
-  let originalCwd: string;
-
-  beforeEach(async () => {
-    tmpDir = path.join(os.tmpdir(), `sfdx-hardis-action-delete-${Date.now()}`);
-    await fs.ensureDir(tmpDir);
-    originalCwd = process.cwd();
-    process.chdir(tmpDir);
-  });
-
-  afterEach(async () => {
-    process.chdir(originalCwd);
-    await fs.remove(tmpDir);
-  });
+  setupTmpDir('sfdx-hardis-action-delete');
 
   it('deletes action by ID', async () => {
     const actions = [
@@ -35,7 +20,7 @@ describe('hardis:project:action:delete - unit logic', () => {
 
     const result = await readActions('project', 'pre-deploy');
     expect(result).to.have.lengthOf(2);
-    expect(result.find(a => a.id === 'del-2')).to.be.undefined;
+    expect(result.find(a => a.id === 'del-2')).to.equal(undefined);
   });
 
   it('preserves other actions in the list', async () => {

@@ -1,29 +1,16 @@
 import { expect } from 'chai';
 import fs from 'fs-extra';
 import * as yaml from 'js-yaml';
-import * as os from 'os';
 import * as path from 'path';
 import { renameDraftToPr } from '../../../../../src/common/utils/actionUtils.js';
+import { setupTmpDir } from '../../../../common/utils/actionTestHelper.js';
 
 describe('hardis:project:action:link-pull-request - unit logic', () => {
-  let tmpDir: string;
-  let originalCwd: string;
-
-  beforeEach(async () => {
-    tmpDir = path.join(os.tmpdir(), `sfdx-hardis-action-link-pr-${Date.now()}`);
-    await fs.ensureDir(tmpDir);
-    originalCwd = process.cwd();
-    process.chdir(tmpDir);
-  });
-
-  afterEach(async () => {
-    process.chdir(originalCwd);
-    await fs.remove(tmpDir);
-  });
+  const ctx = setupTmpDir('sfdx-hardis-action-link-pr');
 
   describe('renameDraftToPr', () => {
     it('renames draft file to PR-specific file', async () => {
-      const draftFile = path.join(tmpDir, 'scripts', 'actions', '.sfdx-hardis.draft.yml');
+      const draftFile = path.join(ctx.getDir(), 'scripts', 'actions', '.sfdx-hardis.draft.yml');
       await fs.ensureDir(path.dirname(draftFile));
       const actions = { commandsPreDeploy: [{ id: 'test', label: 'Test', type: 'command', command: 'echo hello' }] };
       await fs.writeFile(draftFile, yaml.dump(actions));
@@ -31,8 +18,8 @@ describe('hardis:project:action:link-pull-request - unit logic', () => {
       const targetFile = await renameDraftToPr('42');
 
       expect(targetFile).to.include('42');
-      expect(fs.existsSync(targetFile)).to.be.true;
-      expect(fs.existsSync(draftFile)).to.be.false;
+      expect(fs.existsSync(targetFile)).to.equal(true);
+      expect(fs.existsSync(draftFile)).to.equal(false);
 
       const doc: any = yaml.load(fs.readFileSync(targetFile, 'utf-8'));
       expect(doc.commandsPreDeploy).to.have.lengthOf(1);
@@ -49,7 +36,7 @@ describe('hardis:project:action:link-pull-request - unit logic', () => {
     });
 
     it('throws when target file already exists', async () => {
-      const scriptsDir = path.join(tmpDir, 'scripts', 'actions');
+      const scriptsDir = path.join(ctx.getDir(), 'scripts', 'actions');
       await fs.ensureDir(scriptsDir);
       await fs.writeFile(path.join(scriptsDir, '.sfdx-hardis.draft.yml'), yaml.dump({ test: true }));
       await fs.writeFile(path.join(scriptsDir, '.sfdx-hardis.55.yml'), yaml.dump({ existing: true }));

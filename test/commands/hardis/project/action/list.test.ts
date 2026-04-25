@@ -1,24 +1,9 @@
 import { expect } from 'chai';
-import fs from 'fs-extra';
-import * as os from 'os';
-import * as path from 'path';
 import { buildAction, readActions, writeActions } from '../../../../../src/common/utils/actionUtils.js';
+import { setupTmpDir } from '../../../../common/utils/actionTestHelper.js';
 
 describe('hardis:project:action:list - unit logic', () => {
-  let tmpDir: string;
-  let originalCwd: string;
-
-  beforeEach(async () => {
-    tmpDir = path.join(os.tmpdir(), `sfdx-hardis-action-list-${Date.now()}`);
-    await fs.ensureDir(tmpDir);
-    originalCwd = process.cwd();
-    process.chdir(tmpDir);
-  });
-
-  afterEach(async () => {
-    process.chdir(originalCwd);
-    await fs.remove(tmpDir);
-  });
+  setupTmpDir('sfdx-hardis-action-list');
 
   it('returns empty array when no actions defined', async () => {
     const actions = await readActions('project', 'pre-deploy');
