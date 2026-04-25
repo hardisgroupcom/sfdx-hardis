@@ -28,16 +28,16 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |    Default    | Required |                                Options                                 |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------------:|:--------:|:----------------------------------------------------------------------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |               |          |                                                                        |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |               |          |                                                                        |
-| flags-dir         | option  | undefined                                                     |               |          |                                                                        |
-| json              | boolean | Format output as json.                                        |               |          |                                                                        |
-| skipauth          | boolean | Skip authentication check when a default username is required |               |          |                                                                        |
-| target-org<br/>-o | option  | undefined                                                     |               |          |                                                                        |
-| testlevel<br/>-l  | option  | Level of tests to apply to validate deployment                | RunLocalTests |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |               |          |                                                                        |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|testlevel<br/>-l|option|Level of tests to apply to validate deployment|RunLocalTests||NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg|
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

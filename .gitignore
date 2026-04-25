@@ -58,3 +58,4 @@ config/user/
 
 .sfdx/
 .claude/settings.local.json
+site/

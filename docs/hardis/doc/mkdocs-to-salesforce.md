@@ -28,7 +28,7 @@ Key operations performed:
 - You can specify the type of documentation to generate (e.g., `CICD` or `Monitoring`) using the `--type` flag. The default is `CICD`.
 - You can override default styles by customizing your `mkdocs.yml` file.
 
-More information can be found in the [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-documentation/).
+More information can be found in the [Documentation section](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/).
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -58,16 +58,16 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required |       Options       |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------------------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |                     |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |                     |
-| flags-dir         | option  | undefined                                                     |         |          |                     |
-| json              | boolean | Format output as json.                                        |         |          |                     |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |                     |
-| target-org<br/>-o | option  | undefined                                                     |         |          |                     |
-| type<br/>-t       | option  | Type of the documentation to generate. Default is "all"       |  CICD   |          | CICD<br/>Monitoring |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |                     |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|type<br/>-t|option|Type of the documentation to generate. Default is "all"|CICD||CICD<br/>Monitoring|
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

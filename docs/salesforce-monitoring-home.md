@@ -5,7 +5,7 @@ description: Free Salesforce Metadata BackUp , plus many extra monitoring featur
 <!-- markdownlint-disable MD013 -->
 
 - [Monitor your Salesforce org with sfdx-hardis](#monitor-your-salesforce-org-with-sfdx-hardis)
-- [How does it work ?](#how-does-it-work--)
+- [How does it work ?](#how-does-it-work)
 - [All Monitoring Commands](#all-monitoring-commands)
 
 ## Monitor your Salesforce org with sfdx-hardis

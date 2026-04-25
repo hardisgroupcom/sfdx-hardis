@@ -118,6 +118,7 @@ nav:
           - Smart Deploy Workflow: salesforce-ci-cd-smart-deployment.md
           - CI/CD Configuration:
               - CI/CD Config Home: salesforce-ci-cd-config-home.md
+              - All Environment Variables: all-env-variables.md
               - Overwrite Management: salesforce-ci-cd-config-overwrite.md
               - Delta deployments: salesforce-ci-cd-config-delta-deployment.md
               - Automated cleaning: salesforce-ci-cd-config-cleaning.md
@@ -159,6 +160,9 @@ nav:
           - Inactive metadata: salesforce-monitoring-inactive-metadata.md
           - Missing metadata attributes: salesforce-monitoring-missing-metadata-attributes.md
           - Underused Permission Sets: salesforce-monitoring-underused-permsets.md
+          - Apex API Version: salesforce-monitoring-apex-api-version.md
+          - Deployments: salesforce-monitoring-deployments.md
+          - Minimal Permission Sets: salesforce-monitoring-minimal-permsets.md
       - Configuration:
           - Configuration guide: salesforce-monitoring-config-home.md
           - GitHub: salesforce-monitoring-config-github.md
@@ -207,6 +211,9 @@ nav:
               - Describe Permission Set Group: prompt-templates/PROMPT_DESCRIBE_PERMISSION_SET_GROUP.md
               - Describe Profile: prompt-templates/PROMPT_DESCRIBE_PROFILE.md
               - Describe Roles: prompt-templates/PROMPT_DESCRIBE_ROLES.md
+              - Describe Workflow Rule: prompt-templates/PROMPT_DESCRIBE_WORKFLOW_RULE.md
+              - Monitoring PPTX Report: prompt-templates/PROMPT_MONITORING_PPTX_REPORT.md
+              - Monitoring Summary: prompt-templates/PROMPT_MONITORING_SUMMARY.md
               - Solve Deployment Error: prompt-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.md
               - Coding Agent Fix Deployment Errors: prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.md
           - Prompt Variables:

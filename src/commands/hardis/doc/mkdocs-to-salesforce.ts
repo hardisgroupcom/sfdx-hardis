@@ -44,7 +44,7 @@ Key operations performed:
 - You can specify the type of documentation to generate (e.g., \`CICD\` or \`Monitoring\`) using the \`--type\` flag. The default is \`CICD\`.
 - You can override default styles by customizing your \`mkdocs.yml\` file.
 
-More information can be found in the [Documentation section]($\{CONSTANTS.DOC_URL_ROOT}/salesforce-project-documentation/).\
+More information can be found in the [Documentation section](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/).\
 
 <details markdown="1">
 <summary>Technical explanations</summary>

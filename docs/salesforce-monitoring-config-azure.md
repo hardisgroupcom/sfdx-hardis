@@ -7,7 +7,7 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 - [Pre-requisites](#pre-requisites)
   - [Configure a ByPass in Azure Settings](#configure-a-bypass-in-azure-settings)
 - [Run sfdx-hardis configuration command](#run-sfdx-hardis-configuration-command)
-- [Define sfdx-hardis environment variables](#define-sfdx-hardis-environment-variables)
+- [Configure CI/CD Variables](#configure-cicd-variables)
 - [Schedule the monitoring job](#schedule-the-monitoring-job)
 
 ## Pre-requisites
