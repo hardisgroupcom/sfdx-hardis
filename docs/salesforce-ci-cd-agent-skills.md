@@ -200,19 +200,23 @@ graph TD
   A[Agent receives User Story] --> B["sf hardis:work:new --agent<br/>--task-name 'PROJ-123 My Story'<br/>--target-branch integration"]
   B --> C["Agent makes changes<br/>in scratch org or local files"]
   C --> D["User manually stages &<br/>commits changes"]
-  D --> E["sf hardis:project:deploy:smart --agent --check<br/>--source-branch feature/PROJ-123<br/>--target-branch integration<br/>--target-org deploy@myclient.com.integration"]
-  E -->|Simulation passes| F["sf hardis:work:save --agent"]
-  E -->|Errors found| C
-  F --> G[Changes pushed to remote]
-  G --> H["CI/CD pipeline runs<br/>deployment checks"]
+  D --> E["sf hardis:work:save --agent"]
+  E --> F[Changes pushed to remote]
+  F --> G{Authenticated to<br/>target deployment org?}
+  G -->|Yes| H["sf hardis:project:deploy:smart --agent --check<br/>--source-branch feature/PROJ-123<br/>--target-branch integration<br/>--target-org deploy@myclient.com.integration"]
+  G -->|No – CI will validate| I["CI/CD pipeline runs<br/>deployment checks"]
+  H -->|Simulation passes| I
+  H -->|Errors found| C
 
   classDef agent fill:#E8F7F1,stroke:#2E844A,stroke-width:2px,color:#0B3E26;
   classDef cicd fill:#EBF5FB,stroke:#2E86C1,stroke-width:2px,color:#1B4F72;
   classDef user fill:#FEF9E7,stroke:#F1C40F,stroke-width:2px,color:#7D6608;
+  classDef decision fill:#FDF2F8,stroke:#8E44AD,stroke-width:2px,color:#4A235A;
 
   class A,D user;
-  class B,C,E,F agent;
-  class G,H cicd;
+  class B,C,E,H agent;
+  class F,I cicd;
+  class G decision;
 ```
 
 ---
@@ -226,7 +230,7 @@ graph TD
 | `target branch cannot be resolved` (`work:save`)    | Provide `--targetbranch <branch>` explicitly, or ensure the current branch was created with `work:new`. |
 | Authentication errors                               | Ensure `sf org login` has been run and a default org is set before invoking agent commands.             |
 | `sfdx-git-delta` not found (`work:save`)            | Install the plugin: `sf plugins install sfdx-git-delta`                                                 |
-| `deploy:smart` simulation fails with wrong org      | Make sure `config/branches/.sfdx-hardis-<target-branch>.yml` exists and contains `targetUsername`.      |
+| `deploy:smart` simulation fails with wrong org      | Make sure `config/branches/.sfdx-hardis-<target-branch>.yml` exists and contains `targetUsername`. If not authenticated to the target org, skip the step — CI/CD will validate on the PR. |
 | `deploy:smart` simulation uses wrong branch scope   | Provide `--source-branch` explicitly; without it the local git branch is used for delta/PR scope.       |
 
 ---
@@ -308,9 +312,11 @@ $ARGUMENTS
 
 ---
 
-## `hardis:project:deploy:smart --agent` - Simulate Deployment to Target Org
+## `hardis:project:deploy:smart --agent` - Simulate Deployment to Target Org *(optional)*
 
-Runs a full smart deployment **validation** (check/simulate mode) against a target org without applying any changes. Useful for agents to verify whether the current branch is deployable to a target environment before opening a pull request.
+Runs a full smart deployment **validation** (check/simulate mode) against a target org without applying any changes. Run this **after `hardis:work:save`** so that the committed and pushed sources are used for delta scope and git diff calculations.
+
+This step is **optional**: if the Salesforce CLI is not authenticated to the target deployment org locally, skip it — the CI/CD pipeline will run the same validation automatically when the pull request is opened.
 
 ### Usage
 
@@ -321,21 +327,22 @@ sf hardis:project:deploy:smart --agent --check \
   --target-org deploy@myclient.com.integration
 ```
 
-> **Important**: `--target-org` must be the **target deployment org** (e.g. the integration sandbox), not the developer's current working org. The Salesforce CLI must be authenticated to that org before running this command.
+> **Note**: `--target-org` must be the **target deployment org** (e.g. the integration sandbox), not the developer's current working org. If you are not authenticated to it locally, skip this step — CI/CD will validate the deployment on the pull request.
 
 ### Required flags in agent mode
 
 | Flag              | Description                                                                                                                  |
 |-------------------|------------------------------------------------------------------------------------------------------------------------------|
-| `--target-org`    | The **target deployment org** to validate against (e.g. `deploy@myclient.com.integration`). Must be authenticated in the Salesforce CLI. This is typically a different org from the developer's current working org. |
+| `--target-org`    | The **target deployment org** to validate against (e.g. `deploy@myclient.com.integration`). Must be authenticated locally. This is a different org from the developer's current working org. |
 | `--check`         | Explicit simulation flag. Implicit in agent mode but should always be passed to make the intent clear.                       |
 | `--source-branch` | Source git branch. Overrides local branch detection so delta scope and PR comment tracking use the correct branch.           |
 | `--target-branch` | Target git branch. Sets `FORCE_TARGET_BRANCH` and loads `config/branches/.sfdx-hardis-BRANCHNAME.yml`, which provides the correct `targetUsername` for that environment automatically. |
 
 ### Behavior in agent mode
 
+- **Optional step**: if the Salesforce CLI is not authenticated to the target deployment org, skip this command entirely. The pull request CI/CD pipeline performs the same validation.
 - **Always simulation**: deployment is forced into check/validate mode — `--check` is implicit but should be passed explicitly. No changes are applied to the org.
-- **Target org is the deployment org**: unlike day-to-day usage where `--target-org` is the developer's sandbox, in agent mode it must point to the environment being simulated (integration, uat, etc.).
+- **Target org is the deployment org**: unlike day-to-day usage where `--target-org` is the developer's sandbox, here it must point to the environment being simulated (integration, uat, etc.).
 - **Target username from config**: the `targetUsername` used for deployment commands is read from the target branch config file; the `--target-org` flag provides the authenticated connection.
 - **Source branch override**: sets `FORCE_SOURCE_BRANCH` so delta deployment scope uses the correct base branch.
 - **Deployment actions**: pre- and post-deploy actions run in check context. If a `customUsername` authentication fails, the action is **skipped** (not failed) so the simulation can continue.
@@ -353,19 +360,26 @@ allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion
 user-invocable: true
 ---
 
-Run the following command, replacing branch names and org with values from the user's request:
+This step is **optional** and must run **after `hardis:work:save`** (the commits must exist before the simulation can use them for delta scope). If the Salesforce CLI is not authenticated to the target deployment org locally, skip it and inform the user — the CI/CD pipeline will perform the same validation when the pull request is opened.
 
-```bash
-sf hardis:project:deploy:smart --agent --check \
-  --source-branch <source-branch> \
-  --target-branch <target-branch> \
-  --target-org <target-deployment-org>
-```
+1. Check whether the target deployment org is authenticated locally:
+   ```bash
+   sf org list --json
+   ```
+   If the target org username is not listed, skip the simulation and tell the user that CI/CD will validate it on the PR.
+
+2. If authenticated, run the simulation:
+   ```bash
+   sf hardis:project:deploy:smart --agent --check \
+     --source-branch <source-branch> \
+     --target-branch <target-branch> \
+     --target-org <target-deployment-org>
+   ```
 
 - `--check`: always include this flag to make the simulation intent explicit.
 - `--source-branch`: the feature branch being simulated (e.g. `feature/PROJ-123-my-story`). Use the current git branch if the user does not specify.
 - `--target-branch`: the environment to simulate deployment to (e.g. `integration`, `uat`, `main`). Check `config/.sfdx-hardis.yml` for available target branches (`availableTargetBranches`).
-- `--target-org`: the **target deployment org** username or alias (e.g. `deploy@myclient.com.integration`). This is **not** the developer's current working org — it is the org that corresponds to `--target-branch`. The Salesforce CLI must already be authenticated to this org.
+- `--target-org`: the **target deployment org** username or alias (e.g. `deploy@myclient.com.integration`). This is the org that corresponds to `--target-branch`, **not** the developer's current working org.
 
 This always runs in simulation mode (check-only). No changes are applied to the org.
 
