@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- Documentation: updated agentic automation command catalog to reflect all currently `--agent`-enabled commands and aligned command count references to 130+.
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
   - Feature: Data Cloud backup coverage has been expanded and made more reliable.
   - Feature: Added an option to skip Data Cloud backup when needed.

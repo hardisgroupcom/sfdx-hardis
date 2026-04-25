@@ -62,7 +62,7 @@ Every command that involves interactive prompts supports an **`--agent`** flag t
 - **Predictable execution**: required values are passed as CLI flags, and the command fails fast with a clear error message if anything is missing.
 - **Safe defaults**: sensible defaults are applied when prompts are skipped, and destructive operations require explicit flags.
 
-With 70+ commands supporting `--agent` mode, your coding agent can drive the entire Salesforce DevOps lifecycle: create user stories, deploy metadata, run diagnostics, purge obsolete data, manage packages, and more -- all without human interaction.
+With 130+ commands supporting `--agent` mode, your coding agent can drive the entire Salesforce DevOps lifecycle: create user stories, deploy metadata, run diagnostics, purge obsolete data, manage packages, and more -- all without human interaction.
 
 Learn more in [Using AI Coding Agents](salesforce-ci-cd-agent-skills.md).
 
