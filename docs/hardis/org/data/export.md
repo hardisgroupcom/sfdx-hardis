@@ -39,20 +39,30 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 - **Required Plugin:** It explicitly lists `sfdmu` as a required plugin, ensuring that the necessary dependency is in place before execution.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all prompts. Typical usage:
+
+`sf hardis:org:data:export --agent --path ./scripts/data/MyDataProject --target-org myOrg`
+
+- The `--path` flag (or `--project-name`) is required in agent mode (no interactive workspace selection).
+- The `--target-org` flag is used directly (no interactive org selection prompt).
+
 
 ## Parameters
 
-| Name                |  Type   | Description                                                                           | Default | Required | Options |
-|:--------------------|:-------:|:--------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d        | boolean | Activate debug mode (more logs)                                                       |         |          |         |
-| flags-dir           | option  | undefined                                                                             |         |          |         |
-| json                | boolean | Format output as json.                                                                |         |          |         |
-| no-prompt<br/>-r    | boolean | Do not prompt for Org, use default org                                                |         |          |         |
-| path<br/>-p         | option  | Path to the sfdmu workspace folder                                                    |         |          |         |
-| project-name<br/>-n | option  | Name of the sfdmu project to use (if not defined, you will be prompted to select one) |         |          |         |
-| skipauth            | boolean | Skip authentication check when a default username is required                         |         |          |         |
-| target-org<br/>-o   | option  | undefined                                                                             |         |          |         |
-| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                             |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|no-prompt<br/>-r|boolean|Do not prompt for Org, use default org||||
+|path<br/>-p|option|Path to the sfdmu workspace folder||||
+|project-name<br/>-n|option|Name of the sfdmu project to use (if not defined, you will be prompted to select one)||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
@@ -66,6 +76,10 @@ $ sf hardis:org:data:export --project-name MyDataProject --target-org my-org@exa
 
 ```shell
 $ sf hardis:org:data:export --path ./scripts/data/MyDataProject --no-prompt --target-org my-org@example.com
+```
+
+```shell
+$ sf hardis:org:data:export --agent --path ./scripts/data/MyDataProject --target-org myOrg
 ```
 
 

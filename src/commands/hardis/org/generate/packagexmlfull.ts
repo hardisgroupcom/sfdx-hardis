@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Connection, Messages } from '@salesforce/core';
+import { Connection, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import * as path from 'path';
@@ -42,12 +42,26 @@ The command's technical implementation involves:
 - **File System Operations:** It writes the generated \`package.xml\` file to the specified output path.
 - **Interactive Prompts:** Uses \`promptOrgUsernameDefault\` to guide the user in selecting the target Salesforce org.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:generate:packagexmlfull --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- The interactive org selection prompt is skipped; \`--target-org\` flag value is used directly.
+- \`--target-org\` is required; an error is thrown if not provided.
 `;
 
   public static examples = [
     '$ sf hardis:org:generate:packagexmlfull',
     '$ sf hardis:org:generate:packagexmlfull --outputfile /tmp/packagexmlfull.xml',
     '$ sf hardis:org:generate:packagexmlfull --target-org nico@example.com',
+    '$ sf hardis:org:generate:packagexmlfull --agent --target-org myorg@example.com',
   ];
 
   public static flags: any = {
@@ -70,6 +84,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -82,6 +100,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(GeneratePackageXmlFull);
+    const agentMode = flags.agent === true;
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
     const noPrompt = flags['no-prompt'] ?? false;
@@ -89,8 +108,11 @@ The command's technical implementation involves:
     // Select org that will be used to export records
     let conn: Connection | null = null;
     let orgUsername = flags['target-org'].getUsername();
-    if (orgUsername && (isCI || noPrompt)) {
+    if (orgUsername && (isCI || noPrompt || agentMode)) {
       conn = flags['target-org'].getConnection();
+    }
+    else if (agentMode) {
+      throw new SfError(t('agentModeRequiresTargetOrgFlag'));
     }
     else {
       const prevOrgUsername = orgUsername;

@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
@@ -49,12 +49,22 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 - **Environment Awareness:** Checks the \`isCI\` flag to determine whether to run in an interactive mode (prompting for user input) or a non-interactive mode (relying solely on command-line flags).
 - **Required Plugin:** It explicitly lists \`sfdmu\` as a required plugin, ensuring that the necessary dependency is in place before execution.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all prompts. Typical usage:
+
+\`sf hardis:org:data:export --agent --path ./scripts/data/MyDataProject --target-org myOrg\`
+
+- The \`--path\` flag (or \`--project-name\`) is required in agent mode (no interactive workspace selection).
+- The \`--target-org\` flag is used directly (no interactive org selection prompt).
 `;
 
   public static examples = [
     '$ sf hardis:org:data:export',
     '$ sf hardis:org:data:export --project-name MyDataProject --target-org my-org@example.com',
     '$ sf hardis:org:data:export --path ./scripts/data/MyDataProject --no-prompt --target-org my-org@example.com',
+    '$ sf hardis:org:data:export --agent --path ./scripts/data/MyDataProject --target-org myOrg',
   ];
 
   public static flags: any = {
@@ -70,6 +80,10 @@ The command's technical implementation relies heavily on the SFDMU plugin:
       char: 'r',
       description: 'Do not prompt for Org, use default org',
       default: false,
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -98,6 +112,7 @@ The command's technical implementation relies heavily on the SFDMU plugin:
     let sfdmuPath = flags.path || null;
     const projectName = flags["project-name"] || null;
     const noPrompts = flags["no-prompt"] || false;
+    const agentMode = flags.agent === true;
     //const debugMode = flags.debug || false;
 
 
@@ -105,7 +120,7 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 
     // Select org that will be used to export records
     let orgUsername = flags['target-org'].getUsername();
-    if (!isCI && noPrompts === false) {
+    if (!isCI && !agentMode && noPrompts === false) {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false });
     }
 
@@ -116,6 +131,9 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 
     // Identify sfdmu workspace if not defined
     if (sfdmuPath == null) {
+      if (isCI || agentMode) {
+        throw new SfError(c.red('In agent/CI mode, --path or --project-name flag is required to specify the data workspace.'));
+      }
       sfdmuPath = await selectDataWorkspace({
         selectDataLabel: t('selectDataWorkspaceToExport'),
       });

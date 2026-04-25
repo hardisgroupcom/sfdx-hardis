@@ -34,15 +34,29 @@ The command's technical implementation involves several steps:
 - **SOQL Queries:** The `buildOrgManifest` utility (used internally) performs SOQL queries to retrieve metadata information from the Salesforce org.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:clean:orgmissingitems --agent --packagexmltargetorg myorg@example.com
+```
+
+In agent mode:
+
+- The interactive org prompt is skipped; `--packagexmltargetorg` or `--packagexmlfull` flag is required.
+- If neither flag is provided, an error is thrown.
+
 
 ## Parameters
 
-| Name          |  Type   | Description                     |  Default  | Required | Options |
-|:--------------|:-------:|:--------------------------------|:---------:|:--------:|:-------:|
-| debug<br/>-d  | boolean | Activate debug mode (more logs) |           |          |         |
-| flags-dir     | option  | undefined                       |           |          |         |
-| folder<br/>-f | option  | Root folder                     | force-app |          |         |
-| json          | boolean | Format output as json.          |           |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|Format output as json.||||
 |packagexmlfull<br/>-p|option|Path to packagexml used for cleaning.
 Must contain also standard CustomObject and CustomField elements.
 If not provided, it will be generated from a remote org||||
@@ -55,6 +69,10 @@ If not provided, will be prompted to the user.||||
 
 ```shell
 $ sf hardis:project:clean:orgmissingitems
+```
+
+```shell
+$ sf hardis:project:clean:orgmissingitems --agent
 ```
 
 

@@ -41,17 +41,17 @@ All interactive package selection prompts are skipped.
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                             | Default | Required | Options |
-|:----------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation                   |         |          |         |
-| auto<br/>-f           | boolean | Auto-detect which versions of which packages need to be promoted        |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                         |         |          |         |
-| flags-dir             | option  | undefined                                                               |         |          |         |
-| json                  | boolean | Format output as json.                                                  |         |          |         |
-| package<br/>-p        | option  | Package alias to promote (required in agent mode if --auto is not used) |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required           |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                               |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration               |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|auto<br/>-f|boolean|Auto-detect which versions of which packages need to be promoted||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|package<br/>-p|option|Package alias to promote (required in agent mode if --auto is not used)||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-dev-hub<br/>-v|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

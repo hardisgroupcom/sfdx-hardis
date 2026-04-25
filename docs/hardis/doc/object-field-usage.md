@@ -31,16 +31,16 @@ In agent mode:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                                                                         | Default | Required | Options |
-|:------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                                                                                               |         |          |         |
-| fields<br/>-f     | option  | Comma-separated API names of fields to analyze (requires exactly one --objects value)                                                               |         |          |         |
-| flags-dir         | option  | undefined                                                                                                                                           |         |          |         |
-| json              | boolean | Format output as json.                                                                                                                              |         |          |         |
-| objects<br/>-o    | option  | Comma-separated API names of the sObjects to analyze (e.g. Account,CustomObject__c). If omitted, an interactive prompt will list available objects. |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                                                                       |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                                                                           |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                           |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|fields<br/>-f|option|Comma-separated API names of fields to analyze (requires exactly one --objects value)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|objects<br/>-o|option|Comma-separated API names of the sObjects to analyze (e.g. Account,CustomObject__c). If omitted, an interactive prompt will list available objects.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
