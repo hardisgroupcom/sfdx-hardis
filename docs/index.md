@@ -189,9 +189,9 @@ sf hardis:<COMMAND> <OPTIONS>
 
 ### French Touch Dreamin '25
 
-Refresh your full sandboxes without needing to reconfigure everything — with [Mehdi Abdennasser](https://www.linkedin.com/in/mehdi-abdennasser/)
+Refresh your full sandboxes without needing to reconfigure everything - with [Mehdi Abdennasser](https://www.linkedin.com/in/mehdi-abdennasser/)
 
-Paris, France — 02/12/2025
+Paris, France - 02/12/2025
 
 <img width="1920" height="1080" alt="Untitled design (14)" src="https://github.com/user-attachments/assets/853b9d66-973e-43ef-bfcf-fe044d1d4d94" />
 
@@ -199,7 +199,7 @@ Paris, France — 02/12/2025
 
 Why you don't need DevOps vendors tools
 
-London, UK — 20/11/2025
+London, UK - 20/11/2025
 
 <img width="1920" height="1080" alt="Untitled design (13)" src="https://github.com/user-attachments/assets/d626363c-64af-43fb-b0a0-d2f0afcb9c1d" />
 
@@ -717,6 +717,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:project:lint**](hardis/project/lint.md)                                                 |       |
 | [**hardis:project:metadata:activate-decomposed**](hardis/project/metadata/activate-decomposed.md) |       |
 | [**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)           |       |
+| [**hardis:project:skills:import**](hardis/project/skills/import.md)                               |       |
 
 ### hardis:scratch
 

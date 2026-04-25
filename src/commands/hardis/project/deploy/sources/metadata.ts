@@ -20,7 +20,8 @@ export default class DxSources extends SfCommand<any> {
 
   public static description = messages.getMessage('deployMetadatas');
 
-  public static examples = ['$ sf hardis:project:deploy:sources:metadata'];
+  public static examples = ['$ sf hardis:project:deploy:sources:metadata',
+    '$ sf hardis:project:deploy:sources:metadata --agent',];
 
   public static flags: any = {
     check: Flags.boolean({
@@ -51,6 +52,10 @@ export default class DxSources extends SfCommand<any> {
       default: 'RunLocalTests',
       options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunRelevantTests', 'RunAllTestsInOrg'],
       description: messages.getMessage('testLevel'),
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

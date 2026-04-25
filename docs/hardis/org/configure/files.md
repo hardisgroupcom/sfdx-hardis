@@ -6,6 +6,8 @@
 
 ## Command Behavior
 
+> **This command requires human interaction and must be called manually, preferably from the [VS Code SFDX Hardis UI](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis). It is not suitable for automation or AI agent usage.**
+
 **Configures a project for exporting file attachments from a Salesforce org.**
 
 This command streamlines the setup of configurations for mass downloading files (such as Notes, Attachments, or Salesforce Files) associated with Salesforce records. It's particularly useful for data backups, migrations, or integrating Salesforce files with external systems.

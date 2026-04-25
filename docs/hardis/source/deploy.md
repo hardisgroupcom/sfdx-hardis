@@ -62,36 +62,48 @@ Notes:
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:source:deploy --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
-| Name                            |  Type   | Description             |  Default  | Required |                                Options                                 |
-|:--------------------------------|:-------:|:------------------------|:---------:|:--------:|:----------------------------------------------------------------------:|
-| checkcoverage                   | boolean | Check Apex org coverage |           |          |                                                                        |
-| checkonly<br/>-c                | boolean | checkonly               |           |          |                                                                        |
-| coverageformatters              | option  | coverageformatters      |           |          |                                                                        |
-| debug                           | boolean | debug                   |           |          |                                                                        |
-| flags-dir                       | option  | undefined               |           |          |                                                                        |
-| forceoverwrite<br/>-f           | boolean | forceoverwrite          |           |          |                                                                        |
-| ignoreerrors                    | boolean | ignoreErrors            |           |          |                                                                        |
-| ignorewarnings<br/>-g           | boolean | ignoreWarnings          |           |          |                                                                        |
-| json                            | boolean | Format output as json.  |           |          |                                                                        |
-| junit                           | boolean | junit                   |           |          |                                                                        |
-| manifest<br/>-x                 | option  | flagsLong.manifest      |           |          |                                                                        |
-| metadata<br/>-m                 | option  | metadata                |           |          |                                                                        |
-| postdestructivechanges          | option  | postdestructivechanges  |           |          |                                                                        |
-| predestructivechanges           | option  | predestructivechanges   |           |          |                                                                        |
-| resultsdir                      | option  | resultsdir              |           |          |                                                                        |
-| runtests<br/>-r                 | option  | runTests                |           |          |                                                                        |
-| soapdeploy                      | boolean | soapDeploy              |           |          |                                                                        |
-| sourcepath<br/>-p               | option  | sourcePath              |           |          |                                                                        |
-| target-org<br/>-o               | option  | undefined               |           |          |                                                                        |
-| testlevel<br/>-l                | option  | testlevel               | NoTestRun |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
-| tracksource<br/>-t              | boolean | tracksource             |           |          |                                                                        |
-| validateddeployrequestid<br/>-q | option  | validateDeployRequestId |           |          |                                                                        |
-| verbose                         | boolean | verbose                 |           |          |                                                                        |
-| wait<br/>-w                     | option  | wait                    |    60     |          |                                                                        |
-| websocket                       | option  | websocket               |           |          |                                                                        |
+| Name                            |  Type   | Description                                           |  Default  | Required |                                Options                                 |
+|:--------------------------------|:-------:|:------------------------------------------------------|:---------:|:--------:|:----------------------------------------------------------------------:|
+| agent                           | boolean | Run in non-interactive mode for agents and automation |           |          |                                                                        |
+| checkcoverage                   | boolean | Check Apex org coverage                               |           |          |                                                                        |
+| checkonly<br/>-c                | boolean | checkonly                                             |           |          |                                                                        |
+| coverageformatters              | option  | coverageformatters                                    |           |          |                                                                        |
+| debug                           | boolean | debug                                                 |           |          |                                                                        |
+| flags-dir                       | option  | undefined                                             |           |          |                                                                        |
+| forceoverwrite<br/>-f           | boolean | forceoverwrite                                        |           |          |                                                                        |
+| ignoreerrors                    | boolean | ignoreErrors                                          |           |          |                                                                        |
+| ignorewarnings<br/>-g           | boolean | ignoreWarnings                                        |           |          |                                                                        |
+| json                            | boolean | Format output as json.                                |           |          |                                                                        |
+| junit                           | boolean | junit                                                 |           |          |                                                                        |
+| manifest<br/>-x                 | option  | flagsLong.manifest                                    |           |          |                                                                        |
+| metadata<br/>-m                 | option  | metadata                                              |           |          |                                                                        |
+| postdestructivechanges          | option  | postdestructivechanges                                |           |          |                                                                        |
+| predestructivechanges           | option  | predestructivechanges                                 |           |          |                                                                        |
+| resultsdir                      | option  | resultsdir                                            |           |          |                                                                        |
+| runtests<br/>-r                 | option  | runTests                                              |           |          |                                                                        |
+| soapdeploy                      | boolean | soapDeploy                                            |           |          |                                                                        |
+| sourcepath<br/>-p               | option  | sourcePath                                            |           |          |                                                                        |
+| target-org<br/>-o               | option  | undefined                                             |           |          |                                                                        |
+| testlevel<br/>-l                | option  | testlevel                                             | NoTestRun |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
+| tracksource<br/>-t              | boolean | tracksource                                           |           |          |                                                                        |
+| validateddeployrequestid<br/>-q | option  | validateDeployRequestId                               |           |          |                                                                        |
+| verbose                         | boolean | verbose                                               |           |          |                                                                        |
+| wait<br/>-w                     | option  | wait                                                  |    60     |          |                                                                        |
+| websocket                       | option  | websocket                                             |           |          |                                                                        |
 
 ## Examples
 

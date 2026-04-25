@@ -43,11 +43,26 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
 Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:metadata:activate-decomposed --agent
+```
+
+In agent mode:
+
+- All applicable metadata types are processed automatically
+- The retry prompt for source tracking conflicts is skipped; the command will automatically unset the default org and retry
+- All interactive prompts are skipped
+
 
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Run command in debug mode                                     |         |          |         |
 | flags-dir    | option  | undefined                                                     |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
@@ -62,6 +77,10 @@ $ sf hardis:project:metadata:activate-decomposed
 
 ```shell
 $ sf hardis:project:metadata:activate-decomposed --debug
+```
+
+```shell
+$ sf hardis:project:metadata:activate-decomposed --agent
 ```
 
 

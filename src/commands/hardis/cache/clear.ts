@@ -31,13 +31,29 @@ The command's technical implementation is straightforward:
 
 - **Direct Function Call:** It directly invokes the \`clearCache()\` function, which is imported from uri../../../common/cache/index.jsuri.
 - **Cache Management Logic:** The uriclearCache()\` function encapsulates the logic for identifying and removing the specific files and directories that constitute the sfdx-hardis cache.
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:cache:clear --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:cache:clear'];
+  public static examples = ['$ sf hardis:cache:clear',
+    '$ sf hardis:cache:clear --agent',];
 
   public static uiConfig = { hide: true };
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

@@ -19,7 +19,7 @@ Key functionalities:
 **Important:** After running this command, you can modify any of the `.md` files in `config/prompt-templates/` to customize the AI's behavior.
 
 Available templates:
-- PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS\n- PROMPT_SOLVE_DEPLOYMENT_ERROR\n- PROMPT_DESCRIBE_FLOW\n- PROMPT_DESCRIBE_FLOW_DIFF\n- PROMPT_DESCRIBE_OBJECT\n- PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD\n- PROMPT_DESCRIBE_APEX\n- PROMPT_DESCRIBE_PAGE\n- PROMPT_DESCRIBE_PACKAGE\n- PROMPT_DESCRIBE_PROFILE\n- PROMPT_DESCRIBE_PERMISSION_SET\n- PROMPT_DESCRIBE_PERMISSION_SET_GROUP\n- PROMPT_DESCRIBE_ASSIGNMENT_RULES\n- PROMPT_DESCRIBE_APPROVAL_PROCESS\n- PROMPT_DESCRIBE_LWC\n- PROMPT_DESCRIBE_AUTORESPONSE_RULES\n- PROMPT_DESCRIBE_ESCALATION_RULES\n- PROMPT_DESCRIBE_WORKFLOW_RULE\n- PROMPT_DESCRIBE_ROLES
+- PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS\n- PROMPT_SOLVE_DEPLOYMENT_ERROR\n- PROMPT_DESCRIBE_FLOW\n- PROMPT_DESCRIBE_FLOW_DIFF\n- PROMPT_DESCRIBE_OBJECT\n- PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD\n- PROMPT_DESCRIBE_APEX\n- PROMPT_DESCRIBE_PAGE\n- PROMPT_DESCRIBE_PACKAGE\n- PROMPT_DESCRIBE_PROFILE\n- PROMPT_DESCRIBE_PERMISSION_SET\n- PROMPT_DESCRIBE_PERMISSION_SET_GROUP\n- PROMPT_DESCRIBE_ASSIGNMENT_RULES\n- PROMPT_DESCRIBE_APPROVAL_PROCESS\n- PROMPT_DESCRIBE_LWC\n- PROMPT_DESCRIBE_AUTORESPONSE_RULES\n- PROMPT_DESCRIBE_ESCALATION_RULES\n- PROMPT_DESCRIBE_WORKFLOW_RULE\n- PROMPT_DESCRIBE_ROLES\n- PROMPT_MONITORING_SUMMARY\n- PROMPT_MONITORING_PPTX_REPORT
 
 Available variables:
 - VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC\n- VARIABLE_FORMATTING_REQUIREMENTS\n- VARIABLE_ADDITIONAL_INSTRUCTIONS
@@ -38,11 +38,23 @@ The command's technical implementation involves:
 - **Dynamic Content:** The description itself dynamically lists available templates and variables by iterating over `PROMPT_TEMPLATES` and `PROMPT_VARIABLES` objects.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:override-prompts --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir    | option  | undefined                                                     |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
@@ -54,6 +66,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:doc:override-prompts
+```
+
+```shell
+$ sf hardis:doc:override-prompts --agent
 ```
 
 ```shell

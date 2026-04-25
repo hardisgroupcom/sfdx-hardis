@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execCommand, getCurrentGitBranch, git, uxLog } from '../../../common/utils/index.js';
+import { execCommand, getCurrentGitBranch, git, isCI, uxLog } from '../../../common/utils/index.js';
 import { selectTargetBranch } from '../../../common/utils/gitUtils.js';
 import { setConfig } from '../../../config/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
@@ -44,13 +44,30 @@ The command's technical implementation involves:
 - **Configuration Management:** Updates the user's configuration (\`.sfdx-hardis.yml\`) using \`setConfig\` to set the \`canForcePush\` flag.
 - **Error Handling:** Includes a check to prevent resetting protected branches.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:work:resetselection --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- The confirmation prompt is skipped and the reset proceeds automatically.
+- The target branch is selected automatically from the project configuration.
 `;
 
-  public static examples = ['$ sf hardis:work:resetsave'];
+  public static examples = ['$ sf hardis:work:resetsave', '$ sf hardis:work:resetselection --agent'];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -73,6 +90,7 @@ The command's technical implementation involves:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(RebuildSelection);
     this.debugMode = flags.debug || false;
+    const agentMode = flags.agent === true;
 
     const targetBranch = await selectTargetBranch({
       message: t('pleaseSelectTheTargetBranchOfYour'),
@@ -86,13 +104,15 @@ The command's technical implementation involves:
     }
 
     // Ask user to confirm
-    const confirm = await prompts({
-      type: 'confirm',
-      message: t('thisCommandWillGitResetSoftYour', { currentGitBranch }),
-      description: t('confirmThatYouWantToPerformSoftGitReset'),
-    });
-    if (confirm.value === false) {
-      throw new SfError(c.red('[sfdx-hardis] Cancelled by user.'));
+    if (!isCI && !agentMode) {
+      const confirm = await prompts({
+        type: 'confirm',
+        message: t('thisCommandWillGitResetSoftYour', { currentGitBranch }),
+        description: t('confirmThatYouWantToPerformSoftGitReset'),
+      });
+      if (confirm.value === false) {
+        throw new SfError(c.red('[sfdx-hardis] Cancelled by user.'));
+      }
     }
 
     // List all commits since the branch creation

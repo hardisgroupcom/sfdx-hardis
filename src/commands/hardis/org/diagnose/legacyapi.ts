@@ -47,13 +47,22 @@ See article below
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-deprecated-api-calls/) and can output Grafana, Slack and MsTeams Notifications.
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:legacyapi --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:legacyapi',
     '$ sf hardis:org:diagnose:legacyapi -u hardis@myclient.com',
     "$ sf hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legacyapi.csv'",
     '$ sf hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv',
+    '$ sf hardis:org:diagnose:legacyapi --agent',
   ];
 
   // public static args = [{name: 'file'}];

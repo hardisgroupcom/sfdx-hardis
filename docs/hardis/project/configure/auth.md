@@ -6,6 +6,8 @@
 
 ## Command Behavior
 
+> **This command requires human interaction and must be called manually, preferably from the [VS Code SFDX Hardis UI](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis). It is not suitable for automation or AI agent usage.**
+
 **Configures authentication between a Git branch and a target Salesforce org for CI/CD deployments.**
 
 This command facilitates the setup of automated CI/CD pipelines, enabling seamless deployments from specific Git branches to designated Salesforce orgs. It supports both standard Salesforce orgs and Dev Hub configurations, catering to various enterprise deployment workflows.

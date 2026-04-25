@@ -38,15 +38,31 @@ The command's technical implementation involves:
 - **Exclusion Logic:** The \`checkDoublingAllowed\` function contains regular expressions to identify specific file path patterns where duplicate names are acceptable (e.g., \`objects/Account/fields/MyField__c.field-meta.xml\` and \`objects/Contact/fields/MyField__c.field-meta.xml\`). This prevents false positives.
 - **Data Structuring:** Organizes the results into a JavaScript object where keys are duplicate file names and values are arrays of their full paths.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:audit:duplicatefiles --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:audit:duplicatefiles'];
+  public static examples = ['$ sf hardis:project:audit:duplicatefiles',
+    '$ sf hardis:project:audit:duplicatefiles --agent',];
 
   public static flags: any = {
     path: Flags.string({
       char: 'p',
       default: process.cwd(),
       description: 'Root path to check',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

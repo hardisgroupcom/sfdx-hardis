@@ -41,7 +41,7 @@ This guide is part of the [sfdx-hardis monitoring suite](salesforce-monitoring-h
    sf hardis:org:monitor:all
    ```
 
-4. **Query logs in Grafana** using LogQL (see [Query in Grafana](#4-query-in-grafana) below)
+4. **Query logs in Grafana** using LogQL (see [Query in Grafana](#query-in-grafana) below)
 
 ## Configuration
 
@@ -129,7 +129,7 @@ If you're using a monitoring stack (Vector + Loki + Grafana), configure Vector t
 export NOTIF_API_LOGS_JSON_FILE=/path/to/monitoring/logs/sfdx-hardis-logs.json
 ```
 
-**2. Vector Configuration** [config/vector/vector.toml](## Sample Vector Configuration)
+**2. Vector Configuration** [config/vector/vector.toml](#sample-vector-configuration)
 
 The default Vector configuration is already compatible! It:
 - Reads NDJSON files from the logs directory
@@ -138,7 +138,7 @@ The default Vector configuration is already compatible! It:
 
 No changes needed if you're using the standard Vector config!
 
-**4. Query in Grafana:**
+## Query in Grafana
 
 ```logql
 # All sfdx-hardis notifications

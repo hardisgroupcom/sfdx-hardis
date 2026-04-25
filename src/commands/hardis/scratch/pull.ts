@@ -51,13 +51,29 @@ The command's technical implementation focuses on robust metadata synchronizatio
 - **Configuration Integration:** It reads the \`autoRetrieveWhenPull\` setting from the project's \`.sfdx-hardis.yml\` to determine additional metadata to retrieve automatically.
 - **User Feedback:** Provides clear messages to the user regarding the pull status and guidance for troubleshooting.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:pull --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:scratch:pull'];
+  public static examples = ['$ sf hardis:scratch:pull',
+    '$ sf hardis:scratch:pull --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

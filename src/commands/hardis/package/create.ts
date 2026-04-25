@@ -1,9 +1,9 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execSfdxJson, uxLog } from '../../../common/utils/index.js';
+import { execSfdxJson, isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { t } from '../../../common/utils/i18n.js';
 
@@ -38,13 +38,41 @@ The command's technical implementation involves:
 - **\`execSfdxJson\`:** This utility is used to execute the Salesforce CLI command and capture its JSON output, which includes the newly created package's ID.
 - **User Feedback:** Provides clear messages to the user about the successful creation of the package, including its ID and the associated Dev Hub.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all interactive prompts. Required flags in agent mode:
+
+- \`--name\`: Package name (required).
+- \`--path\`: Package source code path (required).
+- \`--type\`: Package type, either \`Managed\` or \`Unlocked\` (default: \`Unlocked\`).
+
+All interactive prompts for package name, path, and type are skipped.
 `;
 
-  public static examples = ['$ sf hardis:package:create'];
+  public static examples = [
+    '$ sf hardis:package:create',
+    '$ sf hardis:package:create --agent --name "My Package" --path "force-app" --type Unlocked',
+  ];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
+    name: Flags.string({
+      char: 'n',
+      description: 'Package name (required in agent mode)',
+    }),
+    path: Flags.string({
+      description: 'Package source code path (required in agent mode)',
+    }),
+    type: Flags.string({
+      options: ['Managed', 'Unlocked'],
+      description: 'Package type: Managed or Unlocked (default: Unlocked in agent mode)',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -66,51 +94,69 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(PackageCreate);
+    const agentMode = flags.agent === true;
     const debugMode = flags.debug || false;
 
-    // Request questions to user
-    const packageResponse = await prompts([
-      {
-        type: 'text',
-        name: 'packageName',
-        message: c.cyanBright(t('pleaseInputPackageName')),
-        description: t('enterClearNameForNewPackage'),
-        placeholder: t('exMyPackage'),
-      },
-      {
-        type: 'text',
-        name: 'packagePath',
-        message: c.cyanBright(t('pleaseInputPackagePath')),
-        description: t('specifyPackageSourceCodePath'),
-        placeholder: t('exSfdxSourceApexMocks'),
-      },
-      {
-        type: 'select',
-        name: 'packageType',
-        message: c.cyanBright(t('pleaseSelectPackageName')),
-        description: t('chooseUnlockedOrManagedPackage'),
-        placeholder: t('selectPackageTypePlaceholder'),
-        choices: [
-          {
-            title: t('managedPackageTitle'),
-            value: 'Managed',
-            description: t('managedPackageDescription'),
-          },
-          {
-            title: t('unlockedPackageTitle'),
-            value: 'Unlocked',
-            description: t('unlockedPackageDescription'),
-          },
-        ],
-      },
-    ]);
+    let packageName: string;
+    let packagePath: string;
+    let packageType: string;
+
+    if (!isCI && !agentMode) {
+      // Request questions to user
+      const packageResponse = await prompts([
+        {
+          type: 'text',
+          name: 'packageName',
+          message: c.cyanBright(t('pleaseInputPackageName')),
+          description: t('enterClearNameForNewPackage'),
+          placeholder: t('exMyPackage'),
+        },
+        {
+          type: 'text',
+          name: 'packagePath',
+          message: c.cyanBright(t('pleaseInputPackagePath')),
+          description: t('specifyPackageSourceCodePath'),
+          placeholder: t('exSfdxSourceApexMocks'),
+        },
+        {
+          type: 'select',
+          name: 'packageType',
+          message: c.cyanBright(t('pleaseSelectPackageName')),
+          description: t('chooseUnlockedOrManagedPackage'),
+          placeholder: t('selectPackageTypePlaceholder'),
+          choices: [
+            {
+              title: t('managedPackageTitle'),
+              value: 'Managed',
+              description: t('managedPackageDescription'),
+            },
+            {
+              title: t('unlockedPackageTitle'),
+              value: 'Unlocked',
+              description: t('unlockedPackageDescription'),
+            },
+          ],
+        },
+      ]);
+      packageName = packageResponse.packageName;
+      packagePath = packageResponse.packagePath;
+      packageType = packageResponse.packageType;
+    } else {
+      // Agent mode or CI: use flags
+      packageName = flags.name || '';
+      packagePath = flags.path || '';
+      packageType = flags.type || 'Unlocked';
+      if (!packageName || !packagePath) {
+        throw new SfError("In agent/CI mode, --name and --path flags are required to create a package.");
+      }
+    }
 
     // Create package
     const packageCreateCommand =
       'sf package create' +
-      ` --name "${packageResponse.packageName}"` +
-      ` --package-type ${packageResponse.packageType}` +
-      ` --path "${packageResponse.packagePath}"`;
+      ` --name "${packageName}"` +
+      ` --package-type ${packageType}` +
+      ` --path "${packagePath}"`;
     const packageCreateResult = await execSfdxJson(packageCreateCommand, this, {
       output: true,
       fail: true,

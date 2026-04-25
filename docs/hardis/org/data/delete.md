@@ -36,11 +36,21 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 - **Required Plugin:** It explicitly lists `sfdmu` as a required plugin, ensuring that the necessary dependency is in place before execution.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all prompts. Typical usage:
+
+`sf hardis:org:data:delete --agent --path ./scripts/data/MyDataProject --target-org myOrg`
+
+- The `--path` flag is required in agent mode (no interactive workspace selection).
+- The `--target-org` flag is used directly (no interactive org selection prompt).
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                   | Default | Required | Options |
 |:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir         | option  | undefined                                                     |         |          |         |
 | json              | boolean | Format output as json.                                        |         |          |         |
@@ -53,6 +63,10 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 
 ```shell
 $ sf hardis:org:data:delete
+```
+
+```shell
+$ sf hardis:org:data:delete --agent --path ./scripts/data/MyDataProject --target-org myOrg
 ```
 
 

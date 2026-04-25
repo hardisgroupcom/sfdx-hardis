@@ -6,7 +6,7 @@ import { generateCsvFile, generateReportPath } from '../../../common/utils/files
 import { soqlQuery } from '../../../common/utils/apiUtils.js';
 import axios from 'axios';
 import c from 'chalk';
-import { uxLog, uxLogTable } from '../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { glob } from 'glob';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
@@ -77,14 +77,32 @@ Example:
     }
 }
 \`\`\`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:misc:servicenow-report --config config/user-stories/my-config.json --where-choice "UAT all" --agent
+\`\`\`
+
+In agent mode:
+- The \`--config\` flag is recommended. If not provided and multiple config files exist, the first one found is used automatically.
+- The \`--where-choice\` flag is recommended. If not provided and multiple WHERE choices exist, the first one is used automatically.
+- All interactive prompts are skipped.
   `;
 
   public static examples = [
     '$ sf hardis:misc:servicenow-report',
-    '$ sf hardis:misc:servicenow-report --config config/user-stories/my-config.json --where-choice "UAT all"'
+    '$ sf hardis:misc:servicenow-report --config config/user-stories/my-config.json --where-choice "UAT all"',
+    '$ sf hardis:misc:servicenow-report --agent',
   ];
   /* jscpd:ignore-start */
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     config: Flags.string({
       char: 'c',
       description: 'Path to JSON config file containing user stories and ServiceNow configuration',
@@ -115,6 +133,7 @@ Example:
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
+  protected agentMode = false;
   protected configFile: string | undefined;
   protected whereChoice: string | undefined;
   protected outputFile: string;
@@ -168,6 +187,7 @@ Example:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ServiceNowReport);
+    this.agentMode = flags.agent === true;
     this.configFile = flags.config;
     this.whereChoice = flags['where-choice'];
     this.outputFile = flags.outputfile || null;
@@ -195,7 +215,7 @@ Example:
         // If whereChoice is provided, use it directly
         this.userStoriesConfig.where = this.userStoriesConfig.whereChoices[this.whereChoice];
       }
-      else {
+      else if (!isCI && !this.agentMode) {
         // If whereChoice is not provided, prompt user to select one
         uxLog("warning", this, c.yellow(t('noWhereChoiceProvidedPleaseSelectOne')));
         // If whereChoices is defined, prompt user to select one
@@ -213,6 +233,13 @@ Example:
         });
         this.whereChoice = whereChoiceRes.value;
         this.userStoriesConfig.where = this.userStoriesConfig.whereChoices[this.whereChoice || ''];
+      }
+      else {
+        // In CI or agent mode, use the first available where choice
+        const firstChoiceKey = Object.keys(this.userStoriesConfig.whereChoices)[0];
+        this.whereChoice = firstChoiceKey;
+        this.userStoriesConfig.where = this.userStoriesConfig.whereChoices[firstChoiceKey];
+        uxLog("log", this, c.cyan(t('agentModeUsingFirstWhereChoice', { choice: firstChoiceKey })));
       }
     }
     uxLog("action", this, c.cyan(t('fetchingUserStoriesFromSalesforce')));
@@ -425,7 +452,7 @@ Example:
         this.configFile = configFiles[0];
         uxLog("other", this, `Single config file found: ${this.configFile}`);
       }
-      else {
+      else if (!isCI && !this.agentMode) {
         // If multiple files are found, prompt user to select one
         const configFileRes = await prompts({
           type: 'select',
@@ -435,6 +462,11 @@ Example:
           choices: configFiles.map((file) => ({ title: file, value: file })),
         });
         this.configFile = configFileRes.value;
+      }
+      else {
+        // In CI or agent mode, use the first available config file
+        this.configFile = configFiles[0];
+        uxLog("log", this, c.cyan(t('agentModeUsingFirstConfigFile', { file: this.configFile })));
       }
     }
     if (this.configFile) {

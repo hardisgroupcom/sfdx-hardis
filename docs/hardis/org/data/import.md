@@ -44,11 +44,21 @@ The command's technical implementation involves:
 The command is designed to work seamlessly in both interactive development scenarios and automated CI/CD pipelines, ensuring data consistency across different Salesforce environments.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all prompts. Typical usage:
+
+`sf hardis:org:data:import --agent --path ./scripts/data/MyDataProject --target-org myOrg`
+
+- The `--path` flag (or `--project-name`) is required in agent mode (no interactive workspace selection).
+- The `--target-org` flag is used directly (no interactive org selection prompt).
+
 
 ## Parameters
 
 | Name                |  Type   | Description                                                                           | Default | Required | Options |
 |:--------------------|:-------:|:--------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent               | boolean | Run in non-interactive mode for agents and automation                                 |         |          |         |
 | debug<br/>-d        | boolean | Activate debug mode (more logs)                                                       |         |          |         |
 | flags-dir           | option  | undefined                                                                             |         |          |         |
 | json                | boolean | Format output as json.                                                                |         |          |         |
@@ -75,6 +85,10 @@ $ sf hardis:org:data:import --path ./scripts/data/MyDataProject --no-prompt --ta
 
 ```shell
 $ SFDMU_CAN_MODIFY=prod-instance.my.salesforce.com sf hardis:org:data:import --project-name MyDataProject --target-org prod@example.com
+```
+
+```shell
+$ sf hardis:org:data:import --agent --path ./scripts/data/MyDataProject --target-org myOrg
 ```
 
 

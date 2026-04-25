@@ -42,14 +42,29 @@ The command's technical implementation involves interacting with a Git provider'
 - **CSV Generation:** The \`generateCsvFile\` utility is responsible for converting the retrieved pull request data into a CSV format, and \`generateReportPath\` determines the output file location.
 - **Error Handling:** It includes error handling for cases where a Git provider cannot be identified.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all interactive prompts. In agent mode:
+
+- \`--target-branch\`: Optional. If omitted, all branches are included.
+- \`--status\`: Optional. If omitted, all statuses are included.
+- \`--min-date\`: Optional date filter.
+- All interactive branch and status selection prompts are skipped.
 `;
 
   public static examples = [
     '$ sf hardis:git:pull-requests:extract',
     '$ sf hardis:git:pull-requests:extract --target-branch main --status merged',
+    '$ sf hardis:git:pull-requests:extract --agent',
+    '$ sf hardis:git:pull-requests:extract --agent --target-branch main --status merged',
   ];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     "target-branch": Flags.string({
       char: 't',
       description: 'Target branch of PRs',
@@ -100,6 +115,7 @@ The command's technical implementation involves interacting with a Git provider'
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(GitPullRequestsExtract);
+    const agentMode = flags.agent === true;
     this.targetBranch = flags["target-branch"] || null;
     this.minDateStr = flags["min-date"] || null;
     this.prStatus = flags["status"] || null;
@@ -118,7 +134,7 @@ The command's technical implementation involves interacting with a Git provider'
     }
 
     // Prompt branch & PR status if not sent
-    await this.handleUserInput();
+    await this.handleUserInput(agentMode);
 
     // Build constraint
     const prConstraint: any = {};
@@ -144,8 +160,8 @@ The command's technical implementation involves interacting with a Git provider'
     };
   }
 
-  private async handleUserInput() {
-    if (!isCI && !this.targetBranch) {
+  private async handleUserInput(agentMode: boolean) {
+    if (!isCI && !agentMode && !this.targetBranch) {
       const gitBranch = await selectGitBranch({
         remote: true,
         checkOutPull: false,
@@ -157,7 +173,7 @@ The command's technical implementation involves interacting with a Git provider'
       }
     }
 
-    if (!isCI && !this.prStatus) {
+    if (!isCI && !agentMode && !this.prStatus) {
       const statusRes = await prompts({
         message: t('pleaseSelectStatusCriterionOrAll'),
         type: "select",

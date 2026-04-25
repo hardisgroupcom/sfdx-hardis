@@ -36,11 +36,24 @@ The core utility function for replacements is called `applyAllReplacementsDefini
 - **User Feedback:** Provides real-time feedback using `ora` for spinners and `uxLog` for logging messages about the progress and results of the operation.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:misc:purge-references --references "Affaire__c,MyField__c" --agent
+```
+
+In agent mode:
+- The `--references` flag is **required** (no interactive prompt for reference strings).
+- The source retrieval confirmation prompt is skipped (sources are assumed up-to-date).
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                   | Default | Required | Options |
 |:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir         | option  | undefined                                                     |         |          |         |
 | json              | boolean | Format output as json.                                        |         |          |         |
@@ -53,6 +66,10 @@ The core utility function for replacements is called `applyAllReplacementsDefini
 
 ```shell
 $ sf hardis:misc:purge-references
+```
+
+```shell
+$ sf hardis:misc:purge-references --references "Affaire__c,MyField__c" --agent
 ```
 
 

@@ -38,15 +38,31 @@ The command's technical implementation involves:
 - **Exit Code Handling:** The \`process.exitCode\` is set based on the Mega-Linter's exit status, allowing CI/CD pipelines to react to linting failures.
 - **User Feedback:** Provides clear messages about the success or failure of the linting process.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:lint --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:lint', '$ sf hardis:project:lint --fix'];
+  public static examples = ['$ sf hardis:project:lint',
+    '$ sf hardis:project:lint --agent', '$ sf hardis:project:lint --fix'];
 
   public static flags: any = {
     fix: Flags.boolean({
       char: 'f',
       default: false,
       description: 'Apply linters fixes',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

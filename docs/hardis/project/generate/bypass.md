@@ -61,11 +61,27 @@ The command's technical implementation involves:
 - **Reporting:** Generates timestamped CSV reports showing outcomes for both metadata generation and bypass implementation operations.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:generate:bypass --agent --sObjects Account,Contact --automations Flow,Trigger,VR --metadata-source org
+```
+
+In agent mode:
+
+- `--objects` (sObjects) and `--automations` flags are required; the command will error if not provided
+- `--metadata-source` defaults to `local` if not specified
+- All interactive prompts are skipped
+- `--apply-to-vrs`, `--apply-to-triggers`, `--apply-to-flows` default to false if not explicitly set
+
 
 ## Parameters
 
 | Name                   |  Type   | Description                                                                                                                 | Default | Required | Options |
 |:-----------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                  | boolean | Run in non-interactive mode for agents and automation                                                                       |         |          |         |
 | apply-to-flows         | boolean | Apply bypass to Flows                                                                                                       |         |          |         |
 | apply-to-triggers      | boolean | Apply bypass to Triggers                                                                                                    |         |          |         |
 | apply-to-vrs           | boolean | Apply bypass to Validation Rules                                                                                            |         |          |         |
@@ -112,6 +128,10 @@ $ sf hardis:project:generate:bypass --apply-to-triggers
 
 ```shell
 $ sf hardis:project:generate:bypass --metadata-source org
+```
+
+```shell
+$ sf hardis:project:generate:bypass --agent --sObjects Account,Contact --automations Flow,Trigger,VR
 ```
 
 

@@ -41,9 +41,21 @@ The command's technical implementation involves:
 - **Conditional Deletion:** Based on the \`folderContainsLocalItems\` check, it conditionally removes files and folders using \`fs.remove\`. If a managed folder contains local items, it is skipped to prevent accidental deletion of custom work.
 - **Logging:** Provides clear messages about which managed items are being removed.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:manageditems --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:clean:manageditems --namespace crta'];
+  public static examples = ['$ sf hardis:project:clean:manageditems --namespace crta',
+    '$ sf hardis:project:clean:manageditems --agent',];
 
   public static flags: any = {
     namespace: Flags.string({
@@ -55,6 +67,10 @@ The command's technical implementation involves:
       char: 'f',
       default: 'force-app',
       description: 'Root folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

@@ -38,10 +38,26 @@ The command's technical implementation involves:
 - **User Feedback:** Provides a summary of the findings in the console, indicating the number of inactive or active users found.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:diagnose:unusedusers --agent --days 180 --licensetypes all-crm --target-org myorg@example.com
+```
+
+In agent mode:
+
+- `--days` defaults to 180 when not provided.
+- `--licensetypes` defaults to `all-crm` when not provided (covers standard CRM users: SFDC, AUL, AUL1, AULL_IGHT).
+- To target all license types, pass `--licensetypes all`.
+- All interactive prompts are skipped.
+
 ## Parameters
 
 | Name                      |  Type   | Description                                                                                                                                                                                                                          | Default | Required |                    Options                    |
 |:--------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:---------------------------------------------:|
+| agent                     | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                                |         |          |                                               |
 | days<br/>-t               | option  | Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days                                                                                                                              |         |          |                                               |
 | debug<br/>-d              | boolean | Activate debug mode (more logs)                                                                                                                                                                                                      |         |          |                                               |
 | flags-dir                 | option  | undefined                                                                                                                                                                                                                            |         |          |                                               |
@@ -74,6 +90,10 @@ $ sf hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL
 
 ```shell
 $ sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm --returnactiveusers
+```
+
+```shell
+$ sf hardis:org:diagnose:unusedusers --agent
 ```
 
 

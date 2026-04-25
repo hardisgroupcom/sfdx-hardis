@@ -18,10 +18,21 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 ![](https://sfdx-hardis.cloudity.com/assets/images/screenshot-monitoring-unused-apex-grafana.jpg)
 
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:diagnose:unused-apex-classes --agent --target-org myorg@example.com
+```
+
+In agent mode, the command runs fully automatically. The inactivity threshold defaults to 365 days when `--days` is not provided.
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                             | Default | Required | Options |
 |:------------------|:-------:|:--------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.           |         |          |         |
 | days<br/>-t       | option  | Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                         |         |          |         |
 | flags-dir         | option  | undefined                                                                                               |         |          |         |
@@ -39,6 +50,10 @@ $ sf hardis:org:diagnose:unused-apex-classes
 
 ```shell
 $ sf hardis:org:diagnose:unused-apex-classes --days 700
+```
+
+```shell
+$ sf hardis:org:diagnose:unused-apex-classes --agent
 ```
 
 

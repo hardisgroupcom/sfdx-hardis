@@ -59,7 +59,7 @@ flowchart TD
     TICKETS --> END([Done])
 
     click INIT "#initialization"
-    click TESTS "#test-level--test-class-resolution"
+    click TESTS "#test-level-test-class-resolution"
     click PKG "#package-installation"
     click MANIFEST "#packagexml--destructive-changes-resolution"
     click DELTA "#delta-processing"

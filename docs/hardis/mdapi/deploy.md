@@ -33,30 +33,42 @@ This command acts as an intelligent wrapper around the Salesforce CLI's metadata
 - **Argument Passthrough:** It directly passes the command-line arguments (`this.argv`) to the underlying Salesforce CLI command, ensuring all standard deployment options are supported.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:mdapi:deploy --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
-| Name                            |  Type   | Description              |  Default  | Required |                                Options                                 |
-|:--------------------------------|:-------:|:-------------------------|:---------:|:--------:|:----------------------------------------------------------------------:|
-| checkonly<br/>-c                | boolean | checkOnly                |           |          |                                                                        |
-| concise                         | boolean | concise                  |           |          |                                                                        |
-| debug                           | boolean | debug                    |           |          |                                                                        |
-| deploydir<br/>-d                | option  | deployDir                |           |          |                                                                        |
-| flags-dir                       | option  | undefined                |           |          |                                                                        |
-| ignoreerrors                    | boolean | ignoreErrors             |           |          |                                                                        |
-| ignorewarnings<br/>-g           | boolean | ignoreWarnings           |           |          |                                                                        |
-| json                            | boolean | Format output as json.   |           |          |                                                                        |
-| purgeondelete                   | boolean | purgeOnDelete            |           |          |                                                                        |
-| runtests<br/>-r                 | option  | runTests                 |           |          |                                                                        |
-| singlepackage<br/>-s            | boolean | singlePackage            |           |          |                                                                        |
-| soapdeploy                      | boolean | soapDeploy               |           |          |                                                                        |
-| target-org<br/>-o               | option  | undefined                |           |          |                                                                        |
-| testlevel<br/>-l                | option  | testLevel                | NoTestRun |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
-| validateddeployrequestid<br/>-q | option  | validatedDeployRequestId |           |          |                                                                        |
-| verbose                         | boolean | verbose                  |           |          |                                                                        |
-| wait<br/>-w                     | option  | wait                     |    120    |          |                                                                        |
-| websocket                       | option  | websocket                |           |          |                                                                        |
-| zipfile<br/>-f                  | option  | zipFile                  |           |          |                                                                        |
+| Name                            |  Type   | Description                                           |  Default  | Required |                                Options                                 |
+|:--------------------------------|:-------:|:------------------------------------------------------|:---------:|:--------:|:----------------------------------------------------------------------:|
+| agent                           | boolean | Run in non-interactive mode for agents and automation |           |          |                                                                        |
+| checkonly<br/>-c                | boolean | checkOnly                                             |           |          |                                                                        |
+| concise                         | boolean | concise                                               |           |          |                                                                        |
+| debug                           | boolean | debug                                                 |           |          |                                                                        |
+| deploydir<br/>-d                | option  | deployDir                                             |           |          |                                                                        |
+| flags-dir                       | option  | undefined                                             |           |          |                                                                        |
+| ignoreerrors                    | boolean | ignoreErrors                                          |           |          |                                                                        |
+| ignorewarnings<br/>-g           | boolean | ignoreWarnings                                        |           |          |                                                                        |
+| json                            | boolean | Format output as json.                                |           |          |                                                                        |
+| purgeondelete                   | boolean | purgeOnDelete                                         |           |          |                                                                        |
+| runtests<br/>-r                 | option  | runTests                                              |           |          |                                                                        |
+| singlepackage<br/>-s            | boolean | singlePackage                                         |           |          |                                                                        |
+| soapdeploy                      | boolean | soapDeploy                                            |           |          |                                                                        |
+| target-org<br/>-o               | option  | undefined                                             |           |          |                                                                        |
+| testlevel<br/>-l                | option  | testLevel                                             | NoTestRun |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
+| validateddeployrequestid<br/>-q | option  | validatedDeployRequestId                              |           |          |                                                                        |
+| verbose                         | boolean | verbose                                               |           |          |                                                                        |
+| wait<br/>-w                     | option  | wait                                                  |    120    |          |                                                                        |
+| websocket                       | option  | websocket                                             |           |          |                                                                        |
+| zipfile<br/>-f                  | option  | zipFile                                               |           |          |                                                                        |
 
 ## Examples
 

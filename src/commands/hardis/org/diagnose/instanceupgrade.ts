@@ -46,9 +46,17 @@ The command's technical implementation involves:
 </details>
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
 
-  public static examples = ['$ sf hardis:org:diagnose:instanceupgrade'];
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:instanceupgrade --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+
+  public static examples = ['$ sf hardis:org:diagnose:instanceupgrade', '$ sf hardis:org:diagnose:instanceupgrade --agent'];
 
   public static flags: any = {
     debug: Flags.boolean({

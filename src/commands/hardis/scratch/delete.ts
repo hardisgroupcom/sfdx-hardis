@@ -1,8 +1,8 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import { execCommand, execSfdxJson, uxLog } from '../../../common/utils/index.js';
+import { execCommand, execSfdxJson, isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import c from 'chalk';
 import sortArray from 'sort-array';
@@ -38,13 +38,34 @@ The command's technical implementation involves:
 - **Error Handling:** Includes basic error handling for Salesforce CLI commands.
 - **Data Sorting:** Sorts the list of scratch orgs by username, alias, and instance URL for better readability in the interactive menu.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:delete --agent --target-dev-hub mydevhub@example.com
+\`\`\`
+
+In agent mode:
+
+- \`--name\` is required: comma-separated list of scratch org usernames to delete.
+- All confirmation prompts are skipped.
 `;
 
-  public static examples = ['$ sf hardis:scratch:delete'];
+  public static examples = ['$ sf hardis:scratch:delete', '$ sf hardis:scratch:delete --agent --name user@scratch.org', '$ sf hardis:scratch:delete --agent'];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    name: Flags.string({
+      char: 'n',
+      description: 'Comma-separated list of scratch org usernames to delete. Used in agent mode to target specific orgs.',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -64,6 +85,7 @@ The command's technical implementation involves:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ScratchDelete);
     const debugMode = flags.debug || false;
+    const agentMode = flags.agent === true;
 
     // List all scratch orgs referenced on local computer
     const orgListRequest = 'sf org list';
@@ -73,10 +95,11 @@ The command's technical implementation involves:
       by: ['username', 'alias', 'instanceUrl'],
       order: ['asc', 'asc', 'asc'],
     });
-    const scratchOrgChoices = scratchOrgsSorted
+    const scratchOrgsFiltered = scratchOrgsSorted
       .filter((scratchInfo: any) => {
         return scratchInfo.devHubUsername === hubOrgUsername;
-      })
+      });
+    const scratchOrgChoices = scratchOrgsFiltered
       .map((scratchInfo: any) => {
         return {
           title: scratchInfo.username,
@@ -87,17 +110,27 @@ The command's technical implementation involves:
         };
       });
 
-    // Request user which scratch he/she wants to delete
-    const scratchToDeleteRes = await prompts({
-      type: 'multiselect',
-      name: 'value',
-      message: c.cyanBright(t('pleaseSelectTheListOfScratchOrgs')),
-      description: t('chooseWhichScratchOrgsToDelete'),
-      choices: scratchOrgChoices,
-    });
+    let scratchOrgsToDelete: any[];
+    const nameFilter = flags.name ? flags.name.split(',').map((n: string) => n.trim()) : null;
+    if (isCI || agentMode) {
+      if (!nameFilter) {
+        throw new SfError('In agent/CI mode, --name flag is required (comma-separated scratch org usernames to delete).');
+      }
+      scratchOrgsToDelete = scratchOrgsFiltered.filter((org: any) => nameFilter.includes(org.username));
+    } else {
+      // Request user which scratch he/she wants to delete
+      const scratchToDeleteRes = await prompts({
+        type: 'multiselect',
+        name: 'value',
+        message: c.cyanBright(t('pleaseSelectTheListOfScratchOrgs')),
+        description: t('chooseWhichScratchOrgsToDelete'),
+        choices: scratchOrgChoices,
+      });
+      scratchOrgsToDelete = scratchToDeleteRes.value;
+    }
 
     // Delete scratch orgs
-    for (const scratchOrgToDelete of scratchToDeleteRes.value) {
+    for (const scratchOrgToDelete of scratchOrgsToDelete) {
       const deleteCommand = `sf org delete scratch --no-prompt --target-org ${scratchOrgToDelete.username}`;
       await execCommand(deleteCommand, this, { fail: false, debug: debugMode, output: true });
       uxLog(

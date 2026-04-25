@@ -63,12 +63,21 @@ The command's technical implementation involves:
 </details>
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:lint:access --agent
+\`\`\`
+
+In agent mode, the interactive prompt to automatically add missing accesses to Permission Sets is skipped. The report is still generated and notifications are sent.`;
 
   public static examples = [
     '$ sf hardis:lint:access',
     '$ sf hardis:lint:access -e "ApexClass:ClassA, CustomField:Account.CustomField"',
     '$ sf hardis:lint:access -i "PermissionSet:permissionSetA, Profile"',
+    '$ sf hardis:lint:access --agent',
   ];
 
   public static flags: any = {

@@ -1,7 +1,8 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import { isCI } from '../../../../common/utils/index.js';
 import { promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { wrapSfdxCoreCommand } from '../../../../common/utils/wrapUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
@@ -42,10 +43,24 @@ The command's technical implementation involves:
 - **\`wrapSfdxCoreCommand\`:** This utility is used to execute the Salesforce CLI command and capture its output.
 - **Connection Variables:** Ensures Salesforce connection variables are set using \`setConnectionVariables\`.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:deploy:simulate --agent --source-dir force-app --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- The interactive org selection prompt is skipped; \`--target-org\` flag value is used directly.
+- \`--target-org\` is required; an error is thrown if not provided.
 `;
 
   public static examples = [
     '$ sf hardis:project:deploy:simulate --source-dir force-app/defaut/main/permissionset/PS_Admin.permissionset-meta.xml',
+    '$ sf hardis:project:deploy:simulate --agent --source-dir force-app --target-org myorg@example.com',
   ];
 
   // public static args = [{name: 'file'}];
@@ -68,6 +83,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -79,13 +98,22 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DeploySimulate);
+    const agentMode = flags.agent === true;
     const sourceDirOrFile = flags["source-dir"];
     this.debugMode = flags.debug || false;
 
     // Prompt target org to user
-    const orgUsername = await promptOrgUsernameDefault(this,
-      flags['target-org'].getUsername(),
-      { devHub: false, setDefault: false, message: t('doYouWantToUseOrgTo', { flags: flags['target-org'].getConnection().instanceUrl, sourceDirOrFile }), quickOrgList: true });
+    let orgUsername: string;
+    if (!isCI && !agentMode) {
+      orgUsername = await promptOrgUsernameDefault(this,
+        flags['target-org'].getUsername(),
+        { devHub: false, setDefault: false, message: t('doYouWantToUseOrgTo', { flags: flags['target-org'].getConnection().instanceUrl, sourceDirOrFile }), quickOrgList: true });
+    } else {
+      orgUsername = flags['target-org'].getUsername();
+      if (!orgUsername) {
+        throw new SfError(t('agentModeRequiresTargetOrgFlag'));
+      }
+    }
 
     await setConnectionVariables(flags['target-org']?.getConnection(), true);
 

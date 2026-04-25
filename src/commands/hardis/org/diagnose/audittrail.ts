@@ -146,13 +146,22 @@ monitoringAllowedSectionsActions:
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-suspect-audit-trail/) and can output Grafana, Slack and MsTeams Notifications.
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:audittrail --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the audit trail report is generated without interactive prompts, using the default number of days.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:audittrail',
     '$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com',
     '$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com',
     '$ sf hardis:org:diagnose:audittrail --lastndays 5',
+    '$ sf hardis:org:diagnose:audittrail --agent',
   ];
 
   public static flags: any = {

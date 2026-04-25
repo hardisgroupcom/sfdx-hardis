@@ -1,9 +1,9 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
 
@@ -38,17 +38,39 @@ The command's technical implementation involves:
 - **\`execSfdxJson\`:** This utility is used to execute the Salesforce CLI command and capture its JSON output.
 - **Error Handling:** It handles cases where a package version might already be promoted or if other errors occur during the promotion process.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all interactive prompts. In agent mode:
+
+- \`--auto\`: Recommended. Automatically detects and promotes unreleased package versions.
+- \`--package\`: Alternatively, specify a single package alias to promote (required if \`--auto\` is not used).
+
+All interactive package selection prompts are skipped.
 `;
 
-  public static examples = ['$ sf hardis:package:version:promote', '$ sf hardis:package:version:promote --auto'];
+  public static examples = [
+    '$ sf hardis:package:version:promote',
+    '$ sf hardis:package:version:promote --auto',
+    '$ sf hardis:package:version:promote --agent --auto',
+    '$ sf hardis:package:version:promote --agent --package "MyPackage@1.0.0"',
+  ];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     auto: Flags.boolean({
       char: 'f',
       default: false,
       description: 'Auto-detect which versions of which packages need to be promoted',
+    }),
+    package: Flags.string({
+      char: 'p',
+      description: 'Package alias to promote (required in agent mode if --auto is not used)',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -71,6 +93,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(PackageVersionPromote);
+    const agentMode = flags.agent === true;
     const debugMode = flags.debug || false;
     const auto = flags.auto || false;
     // List project packages
@@ -99,8 +122,8 @@ The command's technical implementation involves:
         );
       });
       packagesToPromote.push(...filteredPackagesToPromote);
-    } else {
-      // Prompt user if not auto
+    } else if (!isCI && !agentMode) {
+      // Prompt user if not auto and not agent/CI mode
       const packageResponse = await prompts([
         {
           type: 'select',
@@ -115,6 +138,13 @@ The command's technical implementation involves:
       ]);
       // Manage user response
       packagesToPromote.push(packageResponse.packageSelected);
+    } else {
+      // Agent/CI mode: require --package flag
+      const packageFlag = flags.package || null;
+      if (!packageFlag) {
+        throw new SfError("In agent/CI mode without --auto, --package flag is required to specify which package to promote.");
+      }
+      packagesToPromote.push(packageFlag);
     }
 
     const promotedPackageVersions: any[] = [];

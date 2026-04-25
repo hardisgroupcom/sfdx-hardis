@@ -29,11 +29,25 @@ The command's technical implementation involves:
 - **Interactive Prompts:** Uses `promptOrgUsernameDefault` to guide the user in selecting the target Salesforce org.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:generate:packagexmlfull --agent --target-org myorg@example.com
+```
+
+In agent mode:
+
+- The interactive org selection prompt is skipped; `--target-org` flag value is used directly.
+- `--target-org` is required; an error is thrown if not provided.
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                   | Default | Required | Options |
 |:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir         | option  | undefined                                                     |         |          |         |
 | json              | boolean | Format output as json.                                        |         |          |         |
@@ -55,6 +69,10 @@ $ sf hardis:org:generate:packagexmlfull --outputfile /tmp/packagexmlfull.xml
 
 ```shell
 $ sf hardis:org:generate:packagexmlfull --target-org nico@example.com
+```
+
+```shell
+$ sf hardis:org:generate:packagexmlfull --agent --target-org myorg@example.com
 ```
 
 

@@ -9,7 +9,7 @@ The command exists in 2 modes: filtered(default & recommended) and full.
 
 ## Filtered mode (default, better performances)
 
-Automatically skips metadatas from installed packages with namespace.  
+Automatically skips metadatas from installed packages with namespace.
 
 You can remove more metadata types from backup, especially in case you have too many metadatas and that provokes a crash, using:
 
@@ -18,6 +18,12 @@ You can remove more metadata types from backup, especially in case you have too 
   - Works with full wildcard (`<members>*</members>`) , named metadata (`<members>Account.Name</members>`) or partial wildcards names (`<members>pi__*</members>` , `<members>*__dlm</members>` , or `<members>prefix*suffix</members>`)
 
 - Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: `MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation`): that will be applied to all monitoring branches.
+
+## Data Cloud objects backup
+
+When the org contains Data Cloud objects (`__dlm` and `__dll` suffix on CustomObjects), they are backed up by default in a **separate retrieve call**.
+
+To skip Data Cloud objects backup, use config property `monitoringBackupSkipDataCloud: true` or environment variable `MONITORING_BACKUP_SKIP_DATA_CLOUD=true`.
 
 ## Full mode
 
@@ -69,11 +75,26 @@ If Flow history doc always display a single state, you probably need to update y
 - on Azure: [`fetchDepth: "0"`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/azure-pipelines.yml#L39)
 - on Bitbucket: [`step: clone: depth: full`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/bitbucket-pipelines.yml#L18)
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:monitor:backup --agent --target-org myorg@example.com
+```
+
+In agent mode:
+
+- Documentation generation proceeds without prompting.
+- The rebuild mode defaults to diff-only (changed files only) unless `--rebuild-full-doc` or `MONITORING_BACKUP_REBUILD_FULL_DOC=true` is set.
+- All other interactive prompts are skipped.
+
 
 ## Parameters
 
 | Name                      |  Type   | Description                                                                                                                                 | Default | Required | Options |
 |:--------------------------|:-------:|:--------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                     | boolean | Run in non-interactive mode for agents and automation                                                                                       |         |          |         |
 | debug<br/>-d              | boolean | Activate debug mode (more logs)                                                                                                             |         |          |         |
 | exclude-namespaces<br/>-e | boolean | If mode --full is activated, exclude namespaced metadatas                                                                                   |         |          |         |
 | flags-dir                 | option  | undefined                                                                                                                                   |         |          |         |
@@ -109,6 +130,14 @@ $ sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters
 
 ```shell
 $ sf hardis:org:monitor:backup --rebuild-full-doc
+```
+
+```shell
+$ sf hardis:org:monitor:backup --agent
+```
+
+```shell
+$ FULL_ORG_MANIFEST_PATH=manifest/package-all-org-items.xml sf hardis:org:monitor:backup
 ```
 
 

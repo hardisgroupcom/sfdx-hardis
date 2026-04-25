@@ -28,20 +28,35 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
 - **Batching:** MetadataComponentDependency queries are processed in batches (default: 20 fields per batch, configurable via `METADATA_COMPONENT_BATCH_SIZE` environment variable) to avoid HTTP 431 errors with large numbers of fields.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:fieldusage --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                | Default | Required | Options |
-|:------------------|:-------:|:-------------------------------------------|:-------:|:--------:|:-------:|
-| flags-dir         | option  | undefined                                  |         |          |         |
-| json              | boolean | Format output as json.                     |         |          |         |
-| sObjects<br/>-s   | option  | Comma-separated list of sObjects to filter |         |          |         |
-| target-org<br/>-o | option  | undefined                                  |         |          |         |
+| Name              |  Type   | Description                                           | Default | Required | Options |
+|:------------------|:-------:|:------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation |         |          |         |
+| flags-dir         | option  | undefined                                             |         |          |         |
+| json              | boolean | Format output as json.                                |         |          |         |
+| sObjects<br/>-s   | option  | Comma-separated list of sObjects to filter            |         |          |         |
+| target-org<br/>-o | option  | undefined                                             |         |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:doc:fieldusage
+```
+
+```shell
+$ sf hardis:doc:fieldusage --agent
 ```
 
 ```shell

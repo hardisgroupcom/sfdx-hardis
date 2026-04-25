@@ -42,6 +42,16 @@ Activate debug mode (more logs)
 
 Deploy metadatas to source org
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:deploy:sources:metadata --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 # exceptFilter
 
 Allow to take all item except these criteria

@@ -28,9 +28,21 @@ If following configuration is defined, it will fail if apex coverage target is n
 You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 120 minutes.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-apex-tests/) and can output Grafana, Slack and MsTeams Notifications.
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:test:apex --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:org:test:apex'];
+  public static examples = ['$ sf hardis:org:test:apex',
+    '$ sf hardis:org:test:apex --agent',];
 
   public static flags: any = {
     testlevel: Flags.string({
@@ -38,6 +50,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       default: 'RunLocalTests',
       options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunAllTestsInOrg'],
       description: messages.getMessage('testLevel'),
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

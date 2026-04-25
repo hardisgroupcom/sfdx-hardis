@@ -35,12 +35,21 @@ Key functionalities:
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/) and can output Grafana, Slack and MsTeams Notifications.
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:apex-api-version --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically. The API version threshold defaults to 50 (or \`DEPRECATED_APEX_API_VERSION\` env var) when \`--threshold\` is not provided.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:apex-api-version',
     '$ sf hardis:org:diagnose:apex-api-version --threshold 55',
     '$ sf hardis:org:diagnose:apex-api-version --outputfile ./reports/apex-api-version.csv',
+    '$ sf hardis:org:diagnose:apex-api-version --agent',
   ];
 
   public static flags: any = {

@@ -20,6 +20,20 @@ Key functionalities:
 - **Bulk Unfreezing:** Efficiently unfreezes multiple user logins using Salesforce's Bulk API.
 - **Reporting:** Generates CSV and XLSX reports of the users that are about to be unfrozen.
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:user:unfreeze --agent --includeprofiles 'Standard' --target-org my-user@myorg.com
+```
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- The unfreeze operation proceeds automatically for the matched users.
+- You must provide `--includeprofiles` or `--excludeprofiles` to specify which profiles to unfreeze (interactive profile selection is not available).
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -37,6 +51,7 @@ The command's technical implementation involves:
 
 | Name                   |  Type   | Description                                                         | Default | Required | Options |
 |:-----------------------|:-------:|:--------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                  | boolean | Run in non-interactive mode for agents and automation               |         |          |         |
 | debug<br/>-d           | boolean | Activate debug mode (more logs)                                     |         |          |         |
 | excludeprofiles<br/>-e | option  | List of profiles that you want to NOT unfreeze, separated by commas |         |          |         |
 | flags-dir              | option  | undefined                                                           |         |          |         |
@@ -64,6 +79,10 @@ $ sf hardis:org:user:unfreeze --includeprofiles 'Standard'
 
 ```shell
 $ sf hardis:org:user:unfreeze --excludeprofiles 'System Administrator,Some Other Profile'
+```
+
+```shell
+$ sf hardis:org:user:unfreeze --agent
 ```
 
 

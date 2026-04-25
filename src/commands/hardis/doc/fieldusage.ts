@@ -13,6 +13,10 @@ const REF_METADATA_COMPONENT_BATCH_SIZE = Number(process.env.METADATA_COMPONENT_
 export default class HardisDocFieldusage extends SfCommand<any> {
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
     'sObjects': Flags.string({
       char: 's',
@@ -45,10 +49,21 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
 - **SOQL Queries:** It uses \`soqlQuery\` and \`soqlQueryTooling\` utilities to execute SOQL queries against the Salesforce org.
 - **Batching:** MetadataComponentDependency queries are processed in batches (default: 20 fields per batch, configurable via \`METADATA_COMPONENT_BATCH_SIZE\` environment variable) to avoid HTTP 431 errors with large numbers of fields.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:fieldusage --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
 `;
 
   public static examples = [
     '$ sf hardis:doc:fieldusage',
+    '$ sf hardis:doc:fieldusage --agent',
     '$ sf hardis:doc:fieldusage --sObjects Account,Contact,Opportunity',
     '$ sf hardis:doc:fieldusage --target-org myOrgAlias --sObjects CustomObject__c'
   ];

@@ -60,6 +60,18 @@ This command focuses on one or more sObjects and measures how many records popul
 - **Per-field Counts:** Performs one overall record count and one per-field count with \`SELECT COUNT() FROM <sObject> WHERE <field> != null\`, skipping required or non-filterable fields.
 - **Field Distributions:** Combine \`--objects <singleObject>\` with \`--fields FieldA,FieldB\` to group by those fields and list distinct values with their record counts and usage percentages.
 - **Reporting:** Generates CSV/XLSX reports and prints a summary table with per-field population rates.
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:object-field-usage --objects Account,Contact --agent
+\`\`\`
+
+In agent mode:
+- The \`--objects\` flag is **required** (no interactive prompt for object selection).
+- The API usage confirmation prompt is skipped (proceeds automatically).
 `;
 
   public static examples = [
@@ -67,6 +79,7 @@ This command focuses on one or more sObjects and measures how many records popul
     '$ sf hardis:doc:object-field-usage --objects Account,Contact',
     '$ sf hardis:doc:object-field-usage --target-org myOrgAlias --objects CustomObject__c',
     '$ sf hardis:doc:object-field-usage --objects Account --fields SalesRegionAcct__c,Region__c',
+    '$ sf hardis:doc:object-field-usage --objects Account,Contact --agent',
   ];
 
   public static flags: any = {
@@ -87,6 +100,10 @@ This command focuses on one or more sObjects and measures how many records popul
     skipauth: Flags.boolean({
       description:
         "Skip authentication check when a default username is required",
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
   };
 
@@ -522,8 +539,8 @@ This command focuses on one or more sObjects and measures how many records popul
     }, 0);
   }
 
-  protected async confirmApiUsage(plannedCalls: number, objectNames: string[]): Promise<boolean> {
-    if (plannedCalls === 0 || isCI) {
+  protected async confirmApiUsage(plannedCalls: number, objectNames: string[], agentMode = false): Promise<boolean> {
+    if (plannedCalls === 0 || isCI || agentMode) {
       return true;
     }
     const confirm = await prompts({
@@ -553,6 +570,7 @@ This command focuses on one or more sObjects and measures how many records popul
   public async run(): Promise<AnyJson> {
     this.injectObjectsPromptSentinel();
     const { flags } = await this.parse(HardisDocObjectFieldUsage);
+    const agentMode = flags.agent === true;
     const connection = flags['target-org'].getConnection();
     let uniqueObjects: string[] = [];
     const hasPromptSentinel = flags.objects === this.objectsPromptSentinel;
@@ -567,29 +585,35 @@ This command focuses on one or more sObjects and measures how many records popul
 
     const objectContexts: ObjectContext[] = [];
     if (uniqueObjects.length === 0 || hasPromptSentinel) {
-      const availableSObjects = await listOrgSObjects(connection);
-      const sObjectApiNames = (availableSObjects?.records || [])
-        .map((record: any) => record?.QualifiedApiName)
-        .filter((apiName: any) => typeof apiName === 'string' && apiName.length > 0)
-        .filter((apiName: string) => !apiName.endsWith('__Share') && !apiName.endsWith('__ChangeEvent'));
-      sortArray(sObjectApiNames);
+      if (!isCI && !agentMode) {
+        const availableSObjects = await listOrgSObjects(connection);
+        const sObjectApiNames = (availableSObjects?.records || [])
+          .map((record: any) => record?.QualifiedApiName)
+          .filter((apiName: any) => typeof apiName === 'string' && apiName.length > 0)
+          .filter((apiName: string) => !apiName.endsWith('__Share') && !apiName.endsWith('__ChangeEvent'));
+        sortArray(sObjectApiNames);
 
-      const promptObjectsRes = await prompts({
-        type: 'multiselect',
-        name: 'value',
-        message: t('selectTheSobjectsToAnalyze'),
-        description: t('excludeObjectsYouDontWantToAnalyze'),
-        choices: sObjectApiNames.map((apiName: string) => ({ title: apiName, value: apiName })),
-        initial: sObjectApiNames,
-      });
-      const selectedObjects = promptObjectsRes.value || [];
-      if (!selectedObjects.length) {
-        const outputString = 'No objects selected; aborting.';
-        uxLog("warning", this, c.yellow(t('noObjectsSelectedAborting')));
+        const promptObjectsRes = await prompts({
+          type: 'multiselect',
+          name: 'value',
+          message: t('selectTheSobjectsToAnalyze'),
+          description: t('excludeObjectsYouDontWantToAnalyze'),
+          choices: sObjectApiNames.map((apiName: string) => ({ title: apiName, value: apiName })),
+          initial: sObjectApiNames,
+        });
+        const selectedObjects = promptObjectsRes.value || [];
+        if (!selectedObjects.length) {
+          const outputString = 'No objects selected; aborting.';
+          uxLog("warning", this, c.yellow(t('noObjectsSelectedAborting')));
+          return { outputString, cancelled: true };
+        }
+        uniqueObjects = selectedObjects;
+        uxLog("log", this, t('sObjectsSelectedForAnalysis', { count: uniqueObjects.length }));
+      } else {
+        const outputString = t('objectsFlagRequiredInAgentMode');
+        uxLog("error", this, c.red(outputString));
         return { outputString, cancelled: true };
       }
-      uniqueObjects = selectedObjects;
-      uxLog("log", this, t('sObjectsSelectedForAnalysis', { count: uniqueObjects.length }));
     }
 
     const fieldsInput = flags.fields
@@ -632,7 +656,7 @@ This command focuses on one or more sObjects and measures how many records popul
     WebSocketClient.sendProgressEndMessage(uniqueObjects.length);
 
     const plannedApiCalls = this.estimateApiCalls(objectContexts, fieldsInput);
-    const proceed = await this.confirmApiUsage(plannedApiCalls, uniqueObjects);
+    const proceed = await this.confirmApiUsage(plannedApiCalls, uniqueObjects, agentMode);
     if (!proceed) {
       const outputString = 'Operation cancelled by user.';
       uxLog("warning", this, c.yellow(outputString));

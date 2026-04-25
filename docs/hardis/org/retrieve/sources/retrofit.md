@@ -52,12 +52,23 @@ Retrieve changes from org link to a ref branch not present in sources
   - force-app/main/default/applications/MyOtherApp.app-meta.xml
   - force-app/main/default/flexipages/MyFlexipageContainingDashboards.flexipage-meta.xml
   ```
+
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:retrieve:sources:retrofit --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
   
 
 ## Parameters
 
 | Name         |  Type   | Description                                                                    | Default | Required |     Options     |
 |:-------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:---------------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation                          |         |          |                 |
 | commit       | boolean | If true, a commit will be performed after the retrofit                         |         |          |                 |
 | commitmode   | option  | Defines if we commit all retrieved updates, or all updates including creations | updated |          | updated<br/>all |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                                                |         |          |                 |
@@ -77,6 +88,10 @@ Can be defined in retrofitBranch property in .sfdx-hardis.yml||||
 
 ```shell
 $ sf hardis:org:retrieve:sources:retrofit
+```
+
+```shell
+$ sf hardis:org:retrieve:sources:retrofit --agent
 ```
 
 ```shell

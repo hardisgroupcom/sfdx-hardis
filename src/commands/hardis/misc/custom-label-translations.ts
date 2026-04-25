@@ -29,6 +29,19 @@ This command streamlines the process of managing and isolating specific custom l
 - **Collaboration:** Sharing only the necessary translation files with translators, reducing complexity.
 - **Debugging:** Isolating translation issues for specific labels or components.
 
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:misc:custom-label-translations --label Label1,Label2 --agent
+sf hardis:misc:custom-label-translations --lwc MyComponent --agent
+\`\`\`
+
+In agent mode:
+- Interactive selection prompts are skipped.
+- The \`--label\` or \`--lwc\` flag is **required** to specify which labels to extract.
+
 Key functionalities:
 
 - **Label Selection:** You can specify custom label names directly using the \`--label\` flag (comma-separated).
@@ -57,7 +70,8 @@ The command's technical implementation involves:
   public static examples = [
     '$ sf hardis:misc:custom-label-translations --label CustomLabelName',
     '$ sf hardis:misc:custom-label-translations --label Label1,Label2',
-    '$ sf hardis:misc:custom-label-translations --lwc MyComponent'
+    '$ sf hardis:misc:custom-label-translations --lwc MyComponent',
+    '$ sf hardis:misc:custom-label-translations --label Label1,Label2 --agent',
   ];
 
   private outputDirPrefix = 'extract-';
@@ -81,6 +95,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
   };
 
@@ -178,6 +196,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(CustomLabelTranslations);
+    const agentMode = flags.agent === true;
     const debugMode = flags.debug || false;
 
     let labelNames: string[] = [];
@@ -191,7 +210,7 @@ The command's technical implementation involves:
       }
     } else if (flags.label) {
       labelNames = flags.label.split(',').map(label => label.trim());
-    } else if (!isCI) {
+    } else if (!isCI && !agentMode) {
       const selection = await CustomLabelTranslations.promptExtractionMethod();
       if (selection.type == 'labels') {
         labelNames = selection.values;

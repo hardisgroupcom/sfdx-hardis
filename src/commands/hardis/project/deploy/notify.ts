@@ -83,10 +83,21 @@ sf hardis:project:deploy:notify --check-only --deploy-status "$MYSTATUS"
 This command is for custom SF Cli pipelines, if you are a sfdx-hardis user, it is already embedded in sf hardis:deploy:smart.
 
 You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-agent-setup/#using-custom-cicd-pipeline)
-`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:deploy:notify --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+`;
 
   public static examples = [
     '$ sf hardis:project:deploy:notify --check-only --deploy-status valid --message "This deployment check is valid\\n\\nYahooo !!"',
+    '$ sf hardis:project:deploy:notify --agent',
     '$ sf hardis:project:deploy:notify --check-only --deploy-status invalid --message "This deployment check has failed !\\n\\Oh no !!"',
     '$ sf hardis:project:deploy:notify --deploy-status valid --message "This deployment has been processed !\\n\\nYahooo !!"'
   ];
@@ -107,6 +118,10 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
       char: "m",
       default: "",
       description: "Custom message that you want to be added in notifications (string or markdown format)"
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

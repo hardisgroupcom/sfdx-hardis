@@ -18,6 +18,19 @@ Key functionalities include:
 - **Persistent Configuration:** You can choose to save your cleaning selections in your project's configuration (`.sfdx-hardis.yml`) so they are automatically applied during future Work Save operations.
 - **File Deletion:** Beyond just cleaning XML content, it can also delete related files (e.g., custom field files and their translations when a custom field is marked for deletion).
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:clean:references --agent --type all
+```
+
+In agent mode:
+
+- The interactive prompt to select cleaning types is skipped. You must provide `--type` or `--config`, otherwise the configured `autoCleanTypes` are used.
+- The prompt to save cleaning selections to permanent configuration is skipped.
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -35,6 +48,7 @@ The command's technical implementation involves several steps:
 
 | Name          |  Type   | Description                                                   | Default | Required |                                                                                            Options                                                                                            |
 |:--------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| agent         | boolean | Run in non-interactive mode for agents and automation         |         |          |                                                                                                                                                                                               |
 | config<br/>-c | option  | Path to a JSON config file or a destructiveChanges.xml file   |         |          |                                                                                                                                                                                               |
 | debug<br/>-d  | boolean | Activate debug mode (more logs)                               |         |          |                                                                                                                                                                                               |
 | flags-dir     | option  | undefined                                                     |         |          |                                                                                                                                                                                               |
@@ -59,6 +73,10 @@ $ sf hardis:project:clean:references --config ./cleaning/myconfig.json
 
 ```shell
 $ sf hardis:project:clean:references --config ./somefolder/myDestructivePackage.xml
+```
+
+```shell
+$ sf hardis:project:clean:references --agent --type all
 ```
 
 

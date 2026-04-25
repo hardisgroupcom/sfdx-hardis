@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { execCommand, isCI } from '../../../common/utils/index.js';
 import { promptOrg } from '../../../common/utils/orgUtils.js';
@@ -36,13 +36,30 @@ The command's technical implementation involves:
 - **Browser Launch:** If the user opts to open the org in a browser, it executes the \`sf org open\` command, passing the selected org's username as the target.
 - **Environment Awareness:** Checks the \`isCI\` flag to determine whether to offer the browser launch option, as it's typically not applicable in continuous integration environments.
 </details>
+
+### Agent Mode
+
+Supports \`--agent\` flag for automation detection:
+
+\`\`\`sh
+sf hardis:org:connect --agent
+\`\`\`
+
+In agent mode:
+
+- This command is inherently interactive; an error is thrown recommending \`sf org login\` or \`sf org open\` instead.
+- The browser open prompt is skipped.
 `;
 
-  public static examples = ['$ sf hardis:org:connect'];
+  public static examples = ['$ sf hardis:org:connect', '$ sf hardis:org:connect --agent'];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -66,12 +83,16 @@ The command's technical implementation involves:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgConnect);
     this.debugMode = flags.debug || false;
+    const agentMode = flags.agent === true;
 
     // Prompt org to connect to
+    if (agentMode) {
+      throw new SfError('In agent mode, hardis:org:connect is not supported. Use sf org login or sf org open directly.');
+    }
     const org = await promptOrg(this, { devHub: false, setDefault: false });
 
     // Prompt user if he/she wants to open org in Web Browser
-    if (!isCI) {
+    if (!isCI && !agentMode) {
       const openRes = await prompts({
         type: 'confirm',
         name: 'value',

@@ -35,6 +35,17 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 - **Error Handling:** It includes basic error handling, such as prompting the user to re-select an org if an issue occurs during org selection.
 - **Deprecation Warning:** It explicitly logs warnings about the deprecation of \`sfdx force:source:retrieve\` to inform users about upcoming changes.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:source:retrieve --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
   public static readonly examples = [];
   public static readonly requiresProject = true;
@@ -83,6 +94,10 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
     }),
     verbose: Flags.boolean({
       description: 'verbose',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

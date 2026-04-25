@@ -9,6 +9,7 @@ Deploy metadatas to source org
 
 | Name                         |  Type   | Description                                                   |    Default    | Required |                                           Options                                           |
 |:-----------------------------|:-------:|:--------------------------------------------------------------|:-------------:|:--------:|:-------------------------------------------------------------------------------------------:|
+| agent                        | boolean | Run in non-interactive mode for agents and automation         |               |          |                                                                                             |
 | check<br/>-c                 | boolean | Only checks the deployment, there is no impact on target org  |               |          |                                                                                             |
 | debug<br/>-d                 | boolean | Activate debug mode (more logs)                               |               |          |                                                                                             |
 | deploydir<br/>-x             | option  | Deploy directory                                              |       .       |          |                                                                                             |
@@ -26,6 +27,10 @@ Deploy metadatas to source org
 
 ```shell
 $ sf hardis:project:deploy:sources:metadata
+```
+
+```shell
+$ sf hardis:project:deploy:sources:metadata --agent
 ```
 
 

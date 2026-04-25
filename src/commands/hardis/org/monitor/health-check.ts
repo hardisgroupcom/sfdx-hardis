@@ -86,8 +86,16 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 - **Exit codes:** Sets \`process.exitCode = 1\` whenever an error severity is detected to help CI pipelines fail fast when the security score drops below expectations.
 </details>
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
-  public static examples = ['$ sf hardis:org:monitor:health-check'];
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:monitor:health-check --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+  public static examples = ['$ sf hardis:org:monitor:health-check', '$ sf hardis:org:monitor:health-check --agent'];
 
   public static flags: any = {
     outputfile: Flags.string({

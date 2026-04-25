@@ -50,10 +50,25 @@ The command's technical implementation involves:
 </details>
 
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:diagnose:unsecure-connected-apps --agent --target-org myorg@example.com
+```
+
+In agent mode:
+
+- Phantom app OAuth token revocation prompt is skipped (no tokens are revoked automatically).
+- Stale token deletion prompt is skipped (no tokens are deleted automatically).
+- All other interactive prompts are skipped.
+
 ## Parameters
 
 | Name              |  Type   | Description                                                       | Default | Required | Options |
 |:------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |         |          |         |
 | flags-dir         | option  | undefined                                                         |         |          |         |
 | json              | boolean | Format output as json.                                            |         |          |         |
@@ -66,6 +81,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:org:diagnose:unsecure-connected-apps
+```
+
+```shell
+$ sf hardis:org:diagnose:unsecure-connected-apps --agent
 ```
 
 

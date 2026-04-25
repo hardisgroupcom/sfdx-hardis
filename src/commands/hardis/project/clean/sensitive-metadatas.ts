@@ -55,15 +55,31 @@ autoCleanTypes:
   - destructivechanges
   - sensitiveMetadatas
 \`\`\`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:sensitive-metadatas --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:clean:sensitive-metadatas'];
+  public static examples = ['$ sf hardis:project:clean:sensitive-metadatas',
+    '$ sf hardis:project:clean:sensitive-metadatas --agent',];
 
   public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: 'force-app',
       description: 'Root folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

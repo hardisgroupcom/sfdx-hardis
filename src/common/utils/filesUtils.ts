@@ -1718,7 +1718,7 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
     const lastCol = worksheet.columnCount;
     const lastRow = worksheet.rowCount;
 
-    // Build unique column names — Excel tables require all column names to be distinct
+    // Build unique column names - Excel tables require all column names to be distinct
     const usedColumnNames = new Set<string>();
     const tableColumns: { name: string; filterButton: boolean }[] = [];
     for (let colNum = 1; colNum <= lastCol; colNum++) {
@@ -1757,7 +1757,7 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
         rows: tableRows,
       });
     } catch (_e) {
-      // Table creation failed — fall back to a plain auto-filter
+      // Table creation failed - fall back to a plain auto-filter
       worksheet.autoFilter = 'A1:Z1';
     }
   } else {

@@ -41,11 +41,22 @@ The command's technical implementation involves:
 - **Environment Variable Check:** Checks for an `EXPERIMENTAL` environment variable to gate access to this command, indicating it might not be fully stable.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all interactive prompts. The command will:
+
+- Skip the save confirmation prompt and proceed automatically.
+- Use the configured `developmentBranch` as the merge branch (no branch selection prompt).
+- Auto-proceed on merge conflicts instead of prompting (will fail if conflicts cannot be resolved automatically).
+
+Required flags: none beyond `--agent` (uses project defaults).
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                   | Default | Required | Options |
 |:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir         | option  | undefined                                                     |         |          |         |
 | json              | boolean | Format output as json.                                        |         |          |         |
@@ -58,6 +69,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:work:refresh
+```
+
+```shell
+$ sf hardis:work:refresh --agent
 ```
 
 

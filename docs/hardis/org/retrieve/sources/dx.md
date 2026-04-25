@@ -37,11 +37,23 @@ The command's technical implementation involves:
 - **WebSocket Communication:** Uses `WebSocketClient.sendRefreshCommandsMessage` to notify connected VS Code clients about changes to the project.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:retrieve:sources:dx --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name                     |  Type   | Description                                                                        | Default | Required | Options |
 |:-------------------------|:-------:|:-----------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                    | boolean | Run in non-interactive mode for agents and automation                              |         |          |         |
 | debug<br/>-d             | boolean | Activate debug mode (more logs)                                                    |         |          |         |
 | filteredmetadatas<br/>-m | option  | Comma separated list of Metadatas keys to remove from PackageXml file              |         |          |         |
 | flags-dir                | option  | undefined                                                                          |         |          |         |
@@ -59,6 +71,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:org:retrieve:sources:dx
+```
+
+```shell
+$ sf hardis:org:retrieve:sources:dx --agent
 ```
 
 

@@ -105,7 +105,7 @@ The command's logic orchestrates various underlying processes:
 </details>
 `;
 
-  public static examples = ['$ sf hardis:work:new'];
+  public static examples = ['$ sf hardis:work:new', '$ sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration'];
 
   // public static args = [{name: 'file'}];
 

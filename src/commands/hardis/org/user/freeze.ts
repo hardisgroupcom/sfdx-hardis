@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { generateReports, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
@@ -33,6 +33,20 @@ Key functionalities:
 - **Bulk Freezing:** Efficiently freezes multiple user logins using Salesforce's Bulk API.
 - **Reporting:** Generates CSV and XLSX reports of the users that are about to be frozen.
 
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:user:freeze --agent --includeprofiles 'Standard' --target-org my-user@myorg.com
+\`\`\`
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- The freeze operation proceeds automatically for the matched users.
+- You must provide \`--includeprofiles\` or \`--excludeprofiles\` to specify which profiles to freeze (interactive profile selection is not available).
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -51,6 +65,7 @@ The command's technical implementation involves:
     `$ sf hardis:org:user:freeze --target-org my-user@myorg.com`,
     `$ sf hardis:org:user:freeze --includeprofiles 'Standard'`,
     `$ sf hardis:org:user:freeze --excludeprofiles 'System Administrator,Some Other Profile'`,
+    '$ sf hardis:org:user:freeze --agent',
   ];
 
   // public static args = [{name: 'file'}];
@@ -85,6 +100,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -93,6 +112,7 @@ The command's technical implementation involves:
 
   protected maxUsersDisplay = 100;
   protected debugMode = false;
+  protected agentMode = false;
 
   /* jscpd:ignore-end */
 
@@ -102,6 +122,7 @@ The command's technical implementation involves:
     const excludeProfileNames = flags.excludeprofiles ? flags.excludeprofiles.split(',') : [];
     this.maxUsersDisplay = flags.maxuserdisplay || 100;
     this.debugMode = flags.debug || false;
+    this.agentMode = flags.agent === true;
 
     const conn = flags['target-org'].getConnection();
 
@@ -109,6 +130,9 @@ The command's technical implementation involves:
     let profileIds: any[] = [];
     let profileNames: any[] = [];
     if (includeProfileNames.length === 0 && excludeProfileNames.length === 0) {
+      if (isCI || this.agentMode) {
+        throw new SfError(c.red('In agent/CI mode, --includeprofiles or --excludeprofiles flag is required for freeze operation.'));
+      }
       // Manual user selection
       const profilesRes = await promptProfiles(conn, {
         multiselect: true,
@@ -198,7 +222,7 @@ The command's technical implementation involves:
     });
 
     // Request configuration from user
-    if (!isCI) {
+    if (!isCI && !this.agentMode) {
       const confirmfreeze = await prompts({
         type: 'confirm',
         name: 'value',

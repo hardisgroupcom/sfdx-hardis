@@ -32,11 +32,24 @@ The command's technical implementation involves:
 - **CLI UX:** Employs `prompts` for interactive selection/input and `uxLog` for consistent colored logging with chalk.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:datacloud:sql-query --query "SELECT ssot__Name__c FROM ssot__Account__dlm LIMIT 10" --agent
+```
+
+In agent mode:
+- The `--query` flag is **required** (no interactive prompt for query selection).
+- The save-query prompt is skipped.
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                       | Default | Required | Options |
 |:------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |         |          |         |
 | flags-dir         | option  | undefined                                                         |         |          |         |
 | json              | boolean | Format output as json.                                            |         |          |         |
@@ -58,6 +71,10 @@ $ sf hardis:datacloud:sql-query -q "SELECT ssot__Name__c, ssot__CreatedDate__c F
 
 ```shell
 $ sf hardis:datacloud:sql-query -q test
+```
+
+```shell
+$ sf hardis:datacloud:sql-query --query "SELECT ssot__Name__c FROM ssot__Account__dlm LIMIT 10" --agent
 ```
 
 

@@ -44,6 +44,17 @@ The command's technical implementation involves:
 - **Logging:** Provides detailed logs about the filtering process, including which files are being processed and which elements are being filtered.
 - **Summary Reporting:** Tracks and reports on the files that have been updated due to filtering.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:filter-xml-content --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
   public static readonly examples = [
     'sf hardis:project:clean:filter-xml-content -i "./mdapi_output"',
@@ -62,6 +73,10 @@ The command's technical implementation involves:
     outputfolder: Flags.string({
       char: 'f',
       description: 'Output folder (default: parentFolder + _xml_content_filtered)',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       default: false,
@@ -266,7 +281,7 @@ The command's technical implementation involves:
 
   public matchesAnyPattern(value: string, patterns: string[]): boolean {
     return patterns.some((pattern) => {
-      return this.matchesPattern(value, pattern)
+      return this.matchesPattern(value, pattern);
     });
   }
 

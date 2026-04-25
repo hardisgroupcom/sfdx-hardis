@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { humanizeObjectKeys, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
@@ -40,9 +40,18 @@ The command's technical implementation involves:
 - **Interactive Prompts:** Uses \`selectFilesWorkspace\` to allow the user to choose a file import project and \`prompts\` for confirming the overwrite behavior.
 - **Error Handling:** Includes mechanisms to handle potential errors during the import process, such as API limits or file upload failures.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all prompts. Typical usage:
+
+\`sf hardis:org:files:import --agent --path ./my-files-project --target-org myOrg\`
+
+- Overwrite confirmation prompt is skipped; files are imported with overwrite enabled by default.
+- The \`--path\` flag is required in agent mode (no interactive workspace selection).
 `;
 
-  public static examples = ['$ sf hardis:org:files:import'];
+  public static examples = ['$ sf hardis:org:files:import', '$ sf hardis:org:files:import --agent --path ./my-files-project'];
 
   public static flags: any = {
     path: Flags.string({
@@ -52,6 +61,10 @@ The command's technical implementation involves:
     overwrite: Flags.boolean({
       char: 'f',
       description: 'Override existing files (doubles the number of API calls)',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -77,13 +90,17 @@ The command's technical implementation involves:
     const { flags } = await this.parse(FilesImport);
     let filesPath = flags.path || null;
     this.handleOverwrite = flags?.overwrite === true;
+    const agentMode = flags.agent === true;
 
     // Identify files workspace if not defined
     if (filesPath == null) {
+      if (isCI || agentMode) {
+        throw new SfError(c.red('In agent/CI mode, --path flag is required to specify the files workspace.'));
+      }
       filesPath = await selectFilesWorkspace({ selectFilesLabel: 'Please select a files workspace to IMPORT' });
     }
 
-    if (!isCI) {
+    if (!isCI && !agentMode) {
       const handleOverwriteRes = await prompts({
         type: 'confirm',
         name: 'value',
@@ -91,6 +108,8 @@ The command's technical implementation involves:
         description: t('overwriteFilesDescription'),
       });
       this.handleOverwrite = handleOverwriteRes.value;
+    } else if (agentMode) {
+      this.handleOverwrite = true;
     }
 
     const importOptions: any = { handleOverwrite: this.handleOverwrite };
