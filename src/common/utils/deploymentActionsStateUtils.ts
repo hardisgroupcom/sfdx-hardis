@@ -14,6 +14,11 @@ export interface DeploymentActionStateEntry {
   output?: string;
 }
 
+interface DeploymentActionsMultiPrState {
+  entriesByPr: Map<number, DeploymentActionStateEntry[]>;
+  dirtyPrs: Set<number>;
+}
+
 const MAX_OUTPUT_CHARS = 1500;
 const MAX_OUTPUT_LINES = 40;
 
@@ -57,44 +62,90 @@ function truncateOutput(output: string | undefined): string {
   return result;
 }
 
-export async function loadDeploymentActionsState(): Promise<DeploymentActionStateEntry[]> {
-  if (globalThis._deploymentActionsState !== undefined) {
-    return globalThis._deploymentActionsState as DeploymentActionStateEntry[];
+function getMultiPrState(): DeploymentActionsMultiPrState {
+  if (!globalThis._deploymentActionsMultiPrState) {
+    globalThis._deploymentActionsMultiPrState = {
+      entriesByPr: new Map(),
+      dirtyPrs: new Set(),
+    };
   }
-  const body = await GitProvider.tryGetDeploymentActionsCommentBody();
-  if (!body) {
-    globalThis._deploymentActionsState = [];
-    return [];
-  }
-  const entries = parseDeploymentActionsCommentBody(body);
-  globalThis._deploymentActionsState = entries;
-  uxLog("log", null, `Loaded deployment actions state with ${entries.length} entries from PR comment.`);
-  uxLog("other", null, JSON.stringify(entries, null, 2));
-  return entries;
+  return globalThis._deploymentActionsMultiPrState;
 }
 
+/**
+ * Load deployment actions state from all source PRs.
+ * Each PR's "Deployment Actions" comment is read and parsed independently.
+ * Call once before the execution loop.
+ */
+export async function loadDeploymentActionsState(sourcePrNumbers: number[]): Promise<void> {
+  const state = getMultiPrState();
+  if (state.entriesByPr.size > 0) {
+    return; // Already loaded
+  }
+  const uniquePrs = [...new Set(sourcePrNumbers)].filter(n => n > 0);
+  for (const prNumber of uniquePrs) {
+    try {
+      const body = await GitProvider.tryGetDeploymentActionsCommentBodyForPr(prNumber);
+      if (body) {
+        const entries = parseDeploymentActionsCommentBody(body);
+        state.entriesByPr.set(prNumber, entries);
+        uxLog("log", null, `Loaded ${entries.length} deployment actions state entries from PR #${prNumber}.`);
+        uxLog("other", null, JSON.stringify(entries, null, 2));
+      } else {
+        state.entriesByPr.set(prNumber, []);
+      }
+    } catch (e) {
+      uxLog("warning", null, `Could not load deployment actions state from PR #${prNumber}: ${(e as Error).message}`);
+      state.entriesByPr.set(prNumber, []);
+    }
+  }
+}
+
+/**
+ * Check if an action already ran successfully in an org.
+ * Searches across ALL loaded PR state buckets.
+ */
 export function checkActionInState(actionId: string, orgBranch: string): DeploymentActionStateEntry | null {
-  const state: DeploymentActionStateEntry[] = globalThis._deploymentActionsState || [];
-  return state.find(e => e.actionId === actionId && e.orgBranch.trim() === orgBranch.trim() && e.status === 'success') || null;
+  const state = getMultiPrState();
+  for (const entries of state.entriesByPr.values()) {
+    const found = entries.find(e => e.actionId === actionId && e.orgBranch.trim() === orgBranch.trim() && e.status === 'success');
+    if (found) return found;
+  }
+  return null;
 }
 
-export function upsertActionInState(entry: DeploymentActionStateEntry): void {
-  if (!globalThis._deploymentActionsState) {
-    globalThis._deploymentActionsState = [];
+/**
+ * Upsert an entry in the specified PR's state bucket.
+ * sourcePrNumber must be > 0 (a real PR number).
+ */
+export function upsertActionInState(entry: DeploymentActionStateEntry, sourcePrNumber: number): void {
+  if (sourcePrNumber <= 0) return; // No PR context — cannot track
+  const state = getMultiPrState();
+  if (!state.entriesByPr.has(sourcePrNumber)) {
+    state.entriesByPr.set(sourcePrNumber, []);
   }
-  const state: DeploymentActionStateEntry[] = globalThis._deploymentActionsState;
-  const idx = state.findIndex(e => e.actionId === entry.actionId && e.orgBranch === entry.orgBranch);
+  const entries = state.entriesByPr.get(sourcePrNumber)!;
+  const idx = entries.findIndex(e => e.actionId === entry.actionId && e.orgBranch === entry.orgBranch);
   if (idx >= 0) {
-    state[idx] = entry;
+    entries[idx] = entry;
   } else {
-    state.push(entry);
+    entries.push(entry);
   }
+  state.dirtyPrs.add(sourcePrNumber);
 }
 
+/**
+ * Persist dirty PR state back to their respective PR comments.
+ * Each PR gets its own "Deployment Actions" comment containing only its own actions.
+ */
 export async function persistDeploymentActionsState(): Promise<void> {
-  const state: DeploymentActionStateEntry[] = globalThis._deploymentActionsState || [];
-  const body = buildDeploymentActionsCommentBody(state);
-  await GitProvider.tryUpsertDeploymentActionsComment(body);
+  const state = getMultiPrState();
+  for (const prNumber of state.dirtyPrs) {
+    const entries = state.entriesByPr.get(prNumber) || [];
+    const body = buildDeploymentActionsCommentBody(entries);
+    await GitProvider.tryUpsertDeploymentActionsCommentForPr(prNumber, body);
+  }
+  state.dirtyPrs.clear();
 }
 
 export function parseDeploymentActionsCommentBody(body: string): DeploymentActionStateEntry[] {
@@ -176,7 +227,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
     for (const e of withOutput) {
       const truncated = truncateOutput(e.output);
       const dateStr = e.date ? e.date.substring(0, 10) : '';
-      body += `\n<details id="state-${e.actionId}-${e.orgBranch.replace(/[^a-zA-Z0-9-]/g, '-')}">\n`;
+      body += `\n<details>\n<!-- actionId:${e.actionId} -->\n`;
       body += `<summary>${e.actionLabel} (${e.orgBranch}${dateStr ? ' \u2014 ' + dateStr : ''})</summary>\n\n`;
       body += '```\n' + truncated + '\n```\n';
       body += '</details>\n';
@@ -189,5 +240,5 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
 // Augment globalThis types
 declare global {
   // eslint-disable-next-line no-var
-  var _deploymentActionsState: DeploymentActionStateEntry[] | undefined;
+  var _deploymentActionsMultiPrState: DeploymentActionsMultiPrState | undefined;
 }

@@ -237,6 +237,31 @@ export abstract class GitProvider {
     }
   }
 
+  static async tryGetDeploymentActionsCommentBodyForPr(prNumber: number): Promise<string | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    try {
+      return await gitProvider.getPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, prNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Could not read Deployment Actions comment for PR #${prNumber}: ${(e as Error).message}`));
+      return null;
+    }
+  }
+
+  static async tryUpsertDeploymentActionsCommentForPr(prNumber: number, body: string): Promise<void> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return;
+    }
+    try {
+      await gitProvider.upsertPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, body, prNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Could not update Deployment Actions comment for PR #${prNumber}: ${(e as Error).message}`));
+    }
+  }
+
   static async supportsMermaidInPrMarkdown(): Promise<boolean> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {

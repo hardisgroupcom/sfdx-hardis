@@ -212,7 +212,7 @@ describe('actionUtils', () => {
       expect(action.customUsername).to.equal('admin@test.com');
     });
 
-    it('omits optional fields when false/empty', () => {
+    it('defaults boolean fields when not provided', () => {
       const action = buildAction({
         id: 'test-id',
         label: 'Test Action',
@@ -220,9 +220,9 @@ describe('actionUtils', () => {
         parameters: { instructions: 'Do something' },
       });
 
-      expect(action.skipIfError).to.equal(undefined);
-      expect(action.allowFailure).to.equal(undefined);
-      expect(action.runOnlyOnceByOrg).to.equal(undefined);
+      expect(action.skipIfError).to.equal(false);
+      expect(action.allowFailure).to.equal(false);
+      expect(action.runOnlyOnceByOrg).to.equal(true);
       expect(action.customUsername).to.equal(undefined);
       expect(action.parameters).to.deep.equal({ instructions: 'Do something' });
     });

@@ -452,10 +452,15 @@ ${getBannerMarkdownAndLink()}
     await this.gitlabApi.MergeRequests.edit(projectId, id, { title, description: body });
   }
 
-  public async getPullRequestCommentByMarker(marker: string): Promise<string | null> {
+  public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
     const projectId = process.env.CI_PROJECT_ID || null;
-    const mergeRequestIdRaw = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
-    const mergeRequestId = mergeRequestIdRaw ? parseInt(String(mergeRequestIdRaw), 10) : NaN;
+    let mergeRequestId: number;
+    if (prNumber) {
+      mergeRequestId = prNumber;
+    } else {
+      const mergeRequestIdRaw = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
+      mergeRequestId = mergeRequestIdRaw ? parseInt(String(mergeRequestIdRaw), 10) : NaN;
+    }
     if (!projectId || !Number.isFinite(mergeRequestId)) return null;
     const notes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
     for (const note of notes) {
@@ -466,10 +471,15 @@ ${getBannerMarkdownAndLink()}
     return null;
   }
 
-  public async upsertPullRequestCommentByMarker(marker: string, body: string): Promise<void> {
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
     const projectId = process.env.CI_PROJECT_ID || null;
-    const mergeRequestIdRaw = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
-    const mergeRequestId = mergeRequestIdRaw ? parseInt(String(mergeRequestIdRaw), 10) : NaN;
+    let mergeRequestId: number;
+    if (prNumber) {
+      mergeRequestId = prNumber;
+    } else {
+      const mergeRequestIdRaw = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
+      mergeRequestId = mergeRequestIdRaw ? parseInt(String(mergeRequestIdRaw), 10) : NaN;
+    }
     if (!projectId || !Number.isFinite(mergeRequestId)) return;
     const notes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
     let existingNoteId: number | null = null;
@@ -481,10 +491,10 @@ ${getBannerMarkdownAndLink()}
     }
     if (existingNoteId) {
       await this.gitlabApi.MergeRequestNotes.edit(projectId, mergeRequestId, existingNoteId, { body });
-      uxLog("log", this, c.grey('[GitLab] Updated Deployment Actions note'));
+      uxLog("log", this, c.grey(`[GitLab] Updated Deployment Actions note on MR !${mergeRequestId}`));
     } else {
       await this.gitlabApi.MergeRequestNotes.create(projectId, mergeRequestId, body);
-      uxLog("log", this, c.grey('[GitLab] Created Deployment Actions note'));
+      uxLog("log", this, c.grey(`[GitLab] Created Deployment Actions note on MR !${mergeRequestId}`));
     }
   }
 }

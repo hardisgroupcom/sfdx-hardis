@@ -444,12 +444,13 @@ ${getBannerMarkdownAndLink()}
     });
   }
 
-  public async getPullRequestCommentByMarker(marker: string): Promise<string | null> {
-    if (!this.prNumber) return null;
+  public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
+    const issueNumber = prNumber || this.prNumber;
+    if (!issueNumber) return null;
     const comments = await this.octokit.rest.issues.listComments({
       owner: this.repoOwner || '',
       repo: this.repoName || '',
-      issue_number: this.prNumber,
+      issue_number: issueNumber,
     });
     for (const comment of comments.data) {
       if (comment?.body?.includes(marker)) {
@@ -459,12 +460,13 @@ ${getBannerMarkdownAndLink()}
     return null;
   }
 
-  public async upsertPullRequestCommentByMarker(marker: string, body: string): Promise<void> {
-    if (!this.prNumber) return;
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+    const issueNumber = prNumber || this.prNumber;
+    if (!issueNumber) return;
     const comments = await this.octokit.rest.issues.listComments({
       owner: this.repoOwner || '',
       repo: this.repoName || '',
-      issue_number: this.prNumber,
+      issue_number: issueNumber,
     });
     let existingId: number | null = null;
     for (const comment of comments.data) {
@@ -480,15 +482,15 @@ ${getBannerMarkdownAndLink()}
         comment_id: existingId,
         body,
       });
-      uxLog("log", this, c.grey('[GitHub] Updated Deployment Actions comment'));
+      uxLog("log", this, c.grey(`[GitHub] Updated Deployment Actions comment on PR #${issueNumber}`));
     } else {
       await this.octokit.rest.issues.createComment({
         owner: this.repoOwner || '',
         repo: this.repoName || '',
-        issue_number: this.prNumber,
+        issue_number: issueNumber,
         body,
       });
-      uxLog("log", this, c.grey('[GitHub] Created Deployment Actions comment'));
+      uxLog("log", this, c.grey(`[GitHub] Created Deployment Actions comment on PR #${issueNumber}`));
     }
   }
 }

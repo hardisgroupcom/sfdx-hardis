@@ -34,14 +34,16 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     commands.map(c => `- ${c.label} (${c.type || 'command'})`).join('\n')
   ));
 
-  // Determine org branch name for state tracking
+  // Determine org branch name and current PR for state tracking
   const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
   const orgBranchName = prInfo?.targetBranch || await getCurrentGitBranch() || "unknown";
+  const currentPrNumber = prInfo?.idNumber || 0;
 
-  // Always pre-load deployment actions state (for runOnlyOnceByOrg checks and for PR comment updates)
+  // Pre-load deployment actions state from all source PRs
   const hasGitProvider = (await GitProvider.getInstance()) !== null;
   if (hasGitProvider) {
-    await loadDeploymentActionsState();
+    const sourcePrNumbers = collectSourcePrNumbers(commands, currentPrNumber);
+    await loadDeploymentActionsState(sourcePrNumbers);
   }
 
   for (const cmd of commands) {
@@ -106,7 +108,8 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
             };
             // If the action label changed, update it in the PR comment.
             if (existingEntry.actionLabel !== cmd.label) {
-              upsertActionInState({ ...existingEntry, actionLabel: cmd.label });
+              const sourcePr = cmd.pullRequest?.idNumber || currentPrNumber;
+              upsertActionInState({ ...existingEntry, actionLabel: cmd.label }, sourcePr);
               await persistDeploymentActionsState();
             }
             // Preserve the existing success entry in the PR comment — do not overwrite it with skipped.
@@ -120,11 +123,13 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       uxLog("action", this, c.cyan(`[DeploymentActions] Running action ${cmd.label}`));
       await executeAction(cmd);
     }
-    // Track executed/manual/skipped actions in the "Deployment Actions" PR comment.
+    // Track executed/manual/skipped actions in the source PR's "Deployment Actions" comment.
+    // Actions are written to their source PR only — not to the current PR for actions from other PRs.
     // "Already ran" skips (runOnlyOnceByOrg + existing success entry) are excluded via the
     // early `continue` above to avoid overwriting the existing success record.
+    const sourcePrNumber = cmd.pullRequest?.idNumber || currentPrNumber;
     const trackableStatuses = ['success', 'failed', 'manual', 'skipped'];
-    if (hasGitProvider && cmd.result?.statusCode && trackableStatuses.includes(cmd.result.statusCode)) {
+    if (hasGitProvider && sourcePrNumber > 0 && cmd.result?.statusCode && trackableStatuses.includes(cmd.result.statusCode)) {
       const { jobId, jobUrl } = await getJobInfoWithUrl();
       upsertActionInState({
         actionId: cmd.id,
@@ -135,7 +140,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
         jobUrl,
         date: new Date().toISOString(),
         output: cmd.result.output,
-      });
+      }, sourcePrNumber);
       await persistDeploymentActionsState();
     }
     if (cmd.result?.statusCode === "failed" && cmd.allowFailure !== true) {
@@ -177,6 +182,21 @@ async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy
       }
     }
   }
+}
+
+/**
+ * Collect all unique source PR numbers from the commands list.
+ * Includes the current PR number (for branch-config and current PR's own actions).
+ */
+function collectSourcePrNumbers(commands: PrePostCommand[], currentPrNumber: number): number[] {
+  const prNumbers = new Set<number>();
+  if (currentPrNumber > 0) prNumbers.add(currentPrNumber);
+  for (const cmd of commands) {
+    if (cmd.pullRequest?.idNumber && cmd.pullRequest.idNumber > 0) {
+      prNumbers.add(cmd.pullRequest.idNumber);
+    }
+  }
+  return [...prNumbers];
 }
 
 async function checkForDraftCommandsFile(property: 'commandsPreDeploy' | 'commandsPostDeploy', checkOnly: boolean) {
