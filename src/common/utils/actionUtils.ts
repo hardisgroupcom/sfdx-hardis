@@ -147,15 +147,9 @@ export function buildAction(values: {
   if (values.parameters && Object.keys(values.parameters).length > 0) {
     action.parameters = values.parameters;
   }
-  if (values.skipIfError === true) {
-    action.skipIfError = true;
-  }
-  if (values.allowFailure === true) {
-    action.allowFailure = true;
-  }
-  if (values.runOnlyOnceByOrg === true || values.runOnlyOnceByOrg === false) {
-    action.runOnlyOnceByOrg = values.runOnlyOnceByOrg;
-  }
+  action.skipIfError = values.skipIfError === true;
+  action.allowFailure = values.allowFailure === true;
+  action.runOnlyOnceByOrg = values.runOnlyOnceByOrg !== false;
   if (values.customUsername) {
     action.customUsername = values.customUsername;
   }

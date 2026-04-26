@@ -52,7 +52,7 @@ Required in agent mode:
 - \`--scope\`, \`--when\`, \`--type\`, \`--label\`
 - Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch
 
-In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-only-once-by-org\` defaults to \`true\`; other optional boolean flags default to \`false\`.
+In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-only-once-by-org\` defaults to \`true\` (use \`--no-run-only-once-by-org\` to disable); other optional boolean flags default to \`false\`.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -118,7 +118,7 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
     }),
     context: Flags.string({
       options: ['all', 'check-deployment-only', 'process-deployment-only'],
-      description: 'Execution context (default: all)',
+      description: 'Execution context (default: process-deployment-only)',
     }),
     'skip-if-error': Flags.boolean({
       default: false,
@@ -129,8 +129,9 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
       description: 'Allow action to fail without blocking deployment',
     }),
     'run-only-once-by-org': Flags.boolean({
-      default: false,
-      description: 'Execute action only once per target org',
+      default: true,
+      allowNo: true,
+      description: 'Execute action only once per target org (default: true)',
     }),
     'custom-username': Flags.string({
       description: 'Run action with a specific Salesforce username',
@@ -232,9 +233,7 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
       if (!flags['allow-failure']) {
         allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'));
       }
-      if (!flags['run-only-once-by-org']) {
-        runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'));
-      }
+      runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), flags['run-only-once-by-org']);
       if (!flags['custom-username']) {
         customUsername = await this.promptText(t('actionPromptCustomUsername'), '');
       }
