@@ -52,7 +52,7 @@ Required in agent mode:
 - \`--scope\`, \`--when\`, \`--type\`, \`--label\`
 - Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch
 
-In agent mode, \`--context\` defaults to \`all\`. \`--run-only-once-by-org\` defaults to \`true\`; other optional boolean flags default to \`false\`.
+In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-only-once-by-org\` defaults to \`true\`; other optional boolean flags default to \`false\`.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -217,7 +217,7 @@ In agent mode, \`--context\` defaults to \`all\`. \`--run-only-once-by-org\` def
     }
 
     // Collect context
-    const context = (flags.context || (!agentMode && !isCI ? await this.promptContext() : 'all')) as PrePostCommand['context'];
+    const context = (flags.context || (!agentMode && !isCI ? await this.promptContext() : 'process-deployment-only')) as PrePostCommand['context'];
 
     // Collect optional flags (only prompt in interactive mode)
     let skipIfError = flags['skip-if-error'];
@@ -323,6 +323,7 @@ In agent mode, \`--context\` defaults to \`all\`. \`--run-only-once-by-org\` def
       name: 'value',
       message: c.cyanBright(t('selectActionContext')),
       choices: ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })),
+      initial: 2, // default to 'process-deployment-only'
       description: t('selectActionContext'),
     });
     return response.value as PrePostCommand['context'];
