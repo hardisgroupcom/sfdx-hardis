@@ -1,0 +1,478 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 35,
+  "links": [],
+  "panels": [
+    {
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "panels": [],
+      "repeat": "org",
+      "repeatDirection": "h",
+      "title": "$org",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "grafanacloud-logs"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MasterLabel"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 248
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UsedLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 148
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TotalLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Used"
+          }
+        ]
+      },
+      "pluginVersion": "11.1.0-70958",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "grafanacloud-logs"
+          },
+          "editorMode": "builder",
+          "expr": "{orgIdentifier=\"$org\", type=\"LICENSES\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "_logElements"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "keepTime": false,
+            "replace": true,
+            "source": "_logElements"
+          }
+        },
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "allValues"
+            ]
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": true,
+            "source": "All values"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "replace": true,
+            "source": "0"
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "PermissionSetLicense"
+                  }
+                },
+                "fieldName": "type"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Name": true,
+              "type": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "MasterLabel": 0,
+              "Name": 3,
+              "TotalLicenses": 2,
+              "UsedLicenses": 1,
+              "type": 4
+            },
+            "renameByName": {
+              "MasterLabel": "Permission Set License",
+              "TotalLicenses": "Total available",
+              "UsedLicenses": "Used"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "grafanacloud-logs"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MasterLabel"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 248
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UsedLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 148
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TotalLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Used"
+          }
+        ]
+      },
+      "pluginVersion": "11.1.0-70958",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "grafanacloud-logs"
+          },
+          "editorMode": "builder",
+          "expr": "{orgIdentifier=\"$org\", type=\"LICENSES\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "_logElements"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "keepTime": false,
+            "replace": true,
+            "source": "_logElements"
+          }
+        },
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "allValues"
+            ]
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": true,
+            "source": "All values"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "replace": true,
+            "source": "0"
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "UserLicense"
+                  }
+                },
+                "fieldName": "type"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Name": true,
+              "type": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "MasterLabel": 0,
+              "Name": 3,
+              "TotalLicenses": 2,
+              "UsedLicenses": 1,
+              "type": 4
+            },
+            "renameByName": {
+              "MasterLabel": "User License",
+              "TotalLicenses": "Total available",
+              "UsedLicenses": "Used"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "grafanacloud-logs"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "org",
+        "options": [],
+        "query": {
+          "label": "orgIdentifier",
+          "refId": "LokiVariableQueryEditor-VariableQuery",
+          "stream": "{source=\"sfdx-hardis\"}",
+          "type": 1
+        },
+        "refresh": 1,
+        "regex": "^(?!.*\\..*)(?!.*sandbox.*).*$",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timeRangeUpdatedDuringEditOrView": false,
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "DASH - Licenses for all orgs",
+  "uid": "sfdx-hardis-licenses-all-orgs",
+  "version": 12,
+  "weekStart": ""
+}
