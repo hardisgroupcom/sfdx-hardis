@@ -223,15 +223,15 @@ graph TD
 
 ## Troubleshooting
 
-| Issue                                               | Solution                                                                                                |
-|-----------------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| `target-branch is required with --agent`            | Provide `--target-branch <branch>` or configure `availableTargetBranches` in `config/.sfdx-hardis.yml`. |
-| `target-branch="X" is not an allowed target branch` | Check `availableTargetBranches` in `config/.sfdx-hardis.yml` and use one of the listed branches.        |
-| `target branch cannot be resolved` (`work:save`)    | Provide `--targetbranch <branch>` explicitly, or ensure the current branch was created with `work:new`. |
-| Authentication errors                               | Ensure `sf org login` has been run and a default org is set before invoking agent commands.             |
-| `sfdx-git-delta` not found (`work:save`)            | Install the plugin: `sf plugins install sfdx-git-delta`                                                 |
+| Issue                                               | Solution                                                                                                                                                                                  |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `target-branch is required with --agent`            | Provide `--target-branch <branch>` or configure `availableTargetBranches` in `config/.sfdx-hardis.yml`.                                                                                   |
+| `target-branch="X" is not an allowed target branch` | Check `availableTargetBranches` in `config/.sfdx-hardis.yml` and use one of the listed branches.                                                                                          |
+| `target branch cannot be resolved` (`work:save`)    | Provide `--targetbranch <branch>` explicitly, or ensure the current branch was created with `work:new`.                                                                                   |
+| Authentication errors                               | Ensure `sf org login` has been run and a default org is set before invoking agent commands.                                                                                               |
+| `sfdx-git-delta` not found (`work:save`)            | Install the plugin: `sf plugins install sfdx-git-delta`                                                                                                                                   |
 | `deploy:smart` simulation fails with wrong org      | Make sure `config/branches/.sfdx-hardis-<target-branch>.yml` exists and contains `targetUsername`. If not authenticated to the target org, skip the step — CI/CD will validate on the PR. |
-| `deploy:smart` simulation uses wrong branch scope   | Provide `--source-branch` explicitly; without it the local git branch is used for delta/PR scope.       |
+| `deploy:smart` simulation uses wrong branch scope   | Provide `--source-branch` explicitly; without it the local git branch is used for delta/PR scope.                                                                                         |
 
 ---
 
@@ -331,12 +331,12 @@ sf hardis:project:deploy:smart --agent --check \
 
 ### Required flags in agent mode
 
-| Flag              | Description                                                                                                                  |
-|-------------------|------------------------------------------------------------------------------------------------------------------------------|
+| Flag              | Description                                                                                                                                                                                  |
+|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `--target-org`    | The **target deployment org** to validate against (e.g. `deploy@myclient.com.integration`). Must be authenticated locally. This is a different org from the developer's current working org. |
-| `--check`         | Explicit simulation flag. Implicit in agent mode but should always be passed to make the intent clear.                       |
-| `--source-branch` | Source git branch. Overrides local branch detection so delta scope and PR comment tracking use the correct branch.           |
-| `--target-branch` | Target git branch. Sets `FORCE_TARGET_BRANCH` and loads `config/branches/.sfdx-hardis-BRANCHNAME.yml`, which provides the correct `targetUsername` for that environment automatically. |
+| `--check`         | Explicit simulation flag. Implicit in agent mode but should always be passed to make the intent clear.                                                                                       |
+| `--source-branch` | Source git branch. Overrides local branch detection so delta scope and PR comment tracking use the correct branch.                                                                           |
+| `--target-branch` | Target git branch. Sets `FORCE_TARGET_BRANCH` and loads `config/branches/.sfdx-hardis-BRANCHNAME.yml`, which provides the correct `targetUsername` for that environment automatically.       |
 
 ### Behavior in agent mode
 
@@ -392,22 +392,22 @@ $ARGUMENTS
 
 Deployment actions are pre- or post-deployment steps stored in YAML config files and executed automatically during CI/CD pipelines. They can be scoped to the whole **project**, a specific **branch**, or a **pull request**.
 
-| Scope     | Config file                                            |
-|-----------|--------------------------------------------------------|
-| `project` | `config/.sfdx-hardis.yml`                              |
-| `branch`  | `config/branches/.sfdx-hardis.<branch>.yml`            |
-| `pr`      | `scripts/actions/.sfdx-hardis.<prId>.yml`              |
+| Scope     | Config file                                 |
+|-----------|---------------------------------------------|
+| `project` | `config/.sfdx-hardis.yml`                   |
+| `branch`  | `config/branches/.sfdx-hardis.<branch>.yml` |
+| `pr`      | `scripts/actions/.sfdx-hardis.<prId>.yml`   |
 
 Six action types are available:
 
-| Type                | Required parameters                            |
-|---------------------|------------------------------------------------|
-| `command`           | `--command`                                    |
-| `apex`              | `--apex-script`                                |
-| `data`              | `--sfdmu-project`                              |
-| `publish-community` | `--community-name`                             |
-| `manual`            | `--instructions`                               |
-| `schedule-batch`    | `--class-name`, `--cron-expression`            |
+| Type                | Required parameters                 |
+|---------------------|-------------------------------------|
+| `command`           | `--command`                         |
+| `apex`              | `--apex-script`                     |
+| `data`              | `--sfdmu-project`                   |
+| `publish-community` | `--community-name`                  |
+| `manual`            | `--instructions`                    |
+| `schedule-batch`    | `--class-name`, `--cron-expression` |
 
 ---
 
@@ -420,17 +420,17 @@ sf hardis:project:action:list --agent --scope pr --pr-id 123 --when post-deploy 
 
 #### Required flags
 
-| Flag        | Description                                              |
-|-------------|----------------------------------------------------------|
-| `--scope`   | `project`, `branch`, or `pr`                             |
-| `--when`    | `pre-deploy` or `post-deploy`                            |
+| Flag      | Description                   |
+|-----------|-------------------------------|
+| `--scope` | `project`, `branch`, or `pr`  |
+| `--when`  | `pre-deploy` or `post-deploy` |
 
 #### Optional flags
 
-| Flag        | Description                                                        |
-|-------------|--------------------------------------------------------------------|
-| `--pr-id`   | PR ID (for `pr` scope). Use `current` to auto-detect from branch.  |
-| `--branch`  | Branch name (for `branch` scope, defaults to current branch).      |
+| Flag       | Description                                                       |
+|------------|-------------------------------------------------------------------|
+| `--pr-id`  | PR ID (for `pr` scope). Use `current` to auto-detect from branch. |
+| `--branch` | Branch name (for `branch` scope, defaults to current branch).     |
 
 ---
 
@@ -459,35 +459,35 @@ When `--pr-id` is omitted for `pr` scope, actions are saved to a **draft file** 
 
 #### Required flags
 
-| Flag        | Description                                              |
-|-------------|----------------------------------------------------------|
-| `--scope`   | `project`, `branch`, or `pr`                             |
-| `--when`    | `pre-deploy` or `post-deploy`                            |
-| `--type`    | Action type (see table above)                            |
-| `--label`   | Human-readable label                                     |
+| Flag      | Description                   |
+|-----------|-------------------------------|
+| `--scope` | `project`, `branch`, or `pr`  |
+| `--when`  | `pre-deploy` or `post-deploy` |
+| `--type`  | Action type (see table above) |
+| `--label` | Human-readable label          |
 
 #### Type-specific required flags
 
-| Type                | Required flag(s)                                      |
-|---------------------|-------------------------------------------------------|
-| `command`           | `--command`                                           |
-| `apex`              | `--apex-script`                                       |
-| `data`              | `--sfdmu-project`                                     |
-| `publish-community` | `--community-name`                                    |
-| `manual`            | `--instructions`                                      |
-| `schedule-batch`    | `--class-name`, `--cron-expression`                   |
+| Type                | Required flag(s)                    |
+|---------------------|-------------------------------------|
+| `command`           | `--command`                         |
+| `apex`              | `--apex-script`                     |
+| `data`              | `--sfdmu-project`                   |
+| `publish-community` | `--community-name`                  |
+| `manual`            | `--instructions`                    |
+| `schedule-batch`    | `--class-name`, `--cron-expression` |
 
 #### Optional flags
 
-| Flag                    | Default | Description                                                      |
-|-------------------------|---------|------------------------------------------------------------------|
-| `--pr-id`               |         | PR ID (for `pr` scope). `current` auto-detects from branch.     |
-| `--branch`              |         | Branch name (for `branch` scope).                                |
-| `--context`             | `all`   | `all`, `check-deployment-only`, or `process-deployment-only`     |
-| `--skip-if-error`       | `false` | Skip action if deployment already failed                         |
-| `--allow-failure`       | `false` | Do not block deployment if action fails                          |
-| `--run-only-once-by-org`| `true`  | Execute only once per target org (state tracked in the "Deployment Actions" PR comment) |
-| `--custom-username`     |         | Run action as a specific Salesforce user                         |
+| Flag                     | Default | Description                                                                             |
+|--------------------------|---------|-----------------------------------------------------------------------------------------|
+| `--pr-id`                |         | PR ID (for `pr` scope). `current` auto-detects from branch.                             |
+| `--branch`               |         | Branch name (for `branch` scope).                                                       |
+| `--context`              | `all`   | `all`, `check-deployment-only`, or `process-deployment-only`                            |
+| `--skip-if-error`        | `false` | Skip action if deployment already failed                                                |
+| `--allow-failure`        | `false` | Do not block deployment if action fails                                                 |
+| `--run-only-once-by-org` | `true`  | Execute only once per target org (state tracked in the "Deployment Actions" PR comment) |
+| `--custom-username`      |         | Run action as a specific Salesforce user                                                |
 
 ---
 
@@ -509,11 +509,11 @@ sf hardis:project:action:update --agent \
 
 #### Required flags
 
-| Flag          | Description                                          |
-|---------------|------------------------------------------------------|
-| `--scope`     | `project`, `branch`, or `pr`                         |
-| `--when`      | `pre-deploy` or `post-deploy`                        |
-| `--action-id` | UUID of the action to update (from `action:list`)    |
+| Flag          | Description                                       |
+|---------------|---------------------------------------------------|
+| `--scope`     | `project`, `branch`, or `pr`                      |
+| `--when`      | `pre-deploy` or `post-deploy`                     |
+| `--action-id` | UUID of the action to update (from `action:list`) |
 
 #### Optional flags (provide only the ones to change)
 
@@ -562,17 +562,17 @@ The `--order` list must contain **every** action ID exactly once. Retrieve the c
 
 #### Required flags
 
-| Flag        | Description                                                          |
-|-------------|----------------------------------------------------------------------|
-| `--scope`   | `project`, `branch`, or `pr`                                         |
-| `--when`    | `pre-deploy` or `post-deploy`                                        |
+| Flag      | Description                   |
+|-----------|-------------------------------|
+| `--scope` | `project`, `branch`, or `pr`  |
+| `--when`  | `pre-deploy` or `post-deploy` |
 
 One of:
 
-| Flag          | Description                                                        |
-|---------------|--------------------------------------------------------------------|
-| `--action-id` + `--position` | Move one action to a 1-based position                |
-| `--order`     | Comma-separated list of all action UUIDs in the desired order      |
+| Flag                         | Description                                                   |
+|------------------------------|---------------------------------------------------------------|
+| `--action-id` + `--position` | Move one action to a 1-based position                         |
+| `--order`                    | Comma-separated list of all action UUIDs in the desired order |
 
 ---
 
@@ -590,9 +590,9 @@ sf hardis:project:action:link-pull-request --agent --pr-id current
 
 #### Required flags in agent mode
 
-| Flag      | Description                                                              |
-|-----------|--------------------------------------------------------------------------|
-| `--pr-id` | PR number, or `current` to detect from the current git branch            |
+| Flag      | Description                                                   |
+|-----------|---------------------------------------------------------------|
+| `--pr-id` | PR number, or `current` to detect from the current git branch |
 
 ---
 

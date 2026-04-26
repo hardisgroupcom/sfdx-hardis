@@ -74,17 +74,17 @@ commandsPostDeploy:
 
 Each action is an object with the following required and optional properties.
 
-| Field              | Type    | Required? | Description                                                                                                                     |
-|--------------------|---------|:---------:|---------------------------------------------------------------------------------------------------------------------------------|
-| `id`               | string  |    Yes    | Unique identifier for the action.                                                                                               |
-| `label`            | string  |    Yes    | Human-readable description of the action.                                                                                       |
-| `type`             | string  |    Yes    | One of `command`, `data`, `apex`, `publish-community`, `schedule-batch`, `manual`.                                              |
-| `context`          | string  |    Yes    | When the action should run. Allowed values: `all` (default), `check-deployment-only`, `process-deployment-only`.                |
-| `command`          | string  |    No     | Shell command to run (used by `command` type).                                                                                  |
-| `parameters`       | object  |    No     | Parameters of the action (see action details)                                                                                   |
-| `customUsername`   | string  |    No     | Run the action with a specific username instead of the default target org.                                                      |
-| `skipIfError`      | boolean |    No     | If true and the deployment itself failed, the action will be skipped.                                                           |
-| `allowFailure`     | boolean |    No     | If true and the action fails, the deployment continues but the result is marked failed/allowed.                                 |
+| Field              | Type    | Required? | Description                                                                                                                                                                                       |
+|--------------------|---------|:---------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`               | string  |    Yes    | Unique identifier for the action.                                                                                                                                                                 |
+| `label`            | string  |    Yes    | Human-readable description of the action.                                                                                                                                                         |
+| `type`             | string  |    Yes    | One of `command`, `data`, `apex`, `publish-community`, `schedule-batch`, `manual`.                                                                                                                |
+| `context`          | string  |    Yes    | When the action should run. Allowed values: `all` (default), `check-deployment-only`, `process-deployment-only`.                                                                                  |
+| `command`          | string  |    No     | Shell command to run (used by `command` type).                                                                                                                                                    |
+| `parameters`       | object  |    No     | Parameters of the action (see action details)                                                                                                                                                     |
+| `customUsername`   | string  |    No     | Run the action with a specific username instead of the default target org.                                                                                                                        |
+| `skipIfError`      | boolean |    No     | If true and the deployment itself failed, the action will be skipped.                                                                                                                             |
+| `allowFailure`     | boolean |    No     | If true and the action fails, the deployment continues but the result is marked failed/allowed.                                                                                                   |
 | `runOnlyOnceByOrg` | boolean |    No     | Default: `true`. If true, the action runs only once per target org. Execution state is tracked in a dedicated "Deployment Actions" PR comment (see below) — no Salesforce custom object required. |
 
 ### Deployment Actions PR comment
@@ -96,35 +96,35 @@ After every action runs, sfdx-hardis creates or updates a dedicated **"Deploymen
 ```markdown
 ## Deployment Actions
 
-| Action | Org branch | Status | Job |
-|--------|------------|--------|-----|
-| Remove KnowledgeUser flag   | integration | ✅ success (2024-06-01) | [12345](https://github.com/org/repo/actions/runs/12345) |
-| Import email templates      | integration | ✅ success (2024-06-01) | [12345](https://github.com/org/repo/actions/runs/12345) |
-| Publish Experience site     | integration | ❌ failed  (2024-06-02) | [12501](https://github.com/org/repo/actions/runs/12501) |
+| Action                      | Org branch  | Status                  | Job                                                     |
+|-----------------------------|-------------|-------------------------|---------------------------------------------------------|
+| Remove KnowledgeUser flag   | integration | ✅ success (2024-06-01)  | [12345](https://github.com/org/repo/actions/runs/12345) |
+| Import email templates      | integration | ✅ success (2024-06-01)  | [12345](https://github.com/org/repo/actions/runs/12345) |
+| Publish Experience site     | integration | ❌ failed  (2024-06-02)  | [12501](https://github.com/org/repo/actions/runs/12501) |
 | Check external callback URL | integration | 👋 manual  (2024-06-01) | [12345](https://github.com/org/repo/actions/runs/12345) |
-| Remove KnowledgeUser flag   | uat         | ✅ success (2024-06-05) | [12890](https://github.com/org/repo/actions/runs/12890) |
-| Import email templates      | uat         | ✅ success (2024-06-05) | [12890](https://github.com/org/repo/actions/runs/12890) |
+| Remove KnowledgeUser flag   | uat         | ✅ success (2024-06-05)  | [12890](https://github.com/org/repo/actions/runs/12890) |
+| Import email templates      | uat         | ✅ success (2024-06-05)  | [12890](https://github.com/org/repo/actions/runs/12890) |
 ```
 
 The table is ordered by org environment (integration → uat → preprod → prod), then chronologically within each org. It also includes a collapsible **Action Details** section with truncated output per action.
 
 **Columns:**
 
-| Column | Description |
-|--------|-------------|
-| Action | Action label (the `id` is embedded as an HTML comment for machine parsing) |
+| Column     | Description                                                                     |
+|------------|---------------------------------------------------------------------------------|
+| Action     | Action label (the `id` is embedded as an HTML comment for machine parsing)      |
 | Org branch | Target git branch name (e.g. `integration`, `uat`, `main`) — identifies the org |
-| Status | Icon + status word + date |
-| Job | Link to the CI run that performed the action |
+| Status     | Icon + status word + date                                                       |
+| Job        | Link to the CI run that performed the action                                    |
 
 **Status icons:**
 
-| Icon | Status | Meaning |
-|------|--------|---------|
-| ✅ | `success` | Executed successfully |
-| ❌ | `failed` | Executed but failed — will be retried next run |
-| 👋 | `manual` | Manual step — requires human action |
-| ⚪ | `skipped` | Skipped (e.g. already run via `runOnlyOnceByOrg`) |
+| Icon | Status    | Meaning                                           |
+|------|-----------|---------------------------------------------------|
+| ✅    | `success` | Executed successfully                             |
+| ❌    | `failed`  | Executed but failed — will be retried next run    |
+| 👋   | `manual`  | Manual step — requires human action               |
+| ⚪    | `skipped` | Skipped (e.g. already run via `runOnlyOnceByOrg`) |
 
 ### runOnlyOnceByOrg — skip-on-next-run logic
 

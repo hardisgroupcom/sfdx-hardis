@@ -31,18 +31,18 @@ In agent mode, the command runs fully automatically. The permission threshold de
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation. Uses default values and skips prompts.||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|metadata-dir<br/>-m|option|Directory containing .permissionset-meta.xml files. If not set, scans entire project for **/*.permissionset-meta.xml||||
-|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|threshold<br/>-t|option|Maximum number of permissions to be considered minimal. Overrides MINIMAL_PERMSETS_THRESHOLD env var.||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                |  Type   | Description                                                                                                          | Default | Required | Options |
+|:--------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent               | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                        |         |          |         |
+| debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                                      |         |          |         |
+| flags-dir           | option  | undefined                                                                                                            |         |          |         |
+| json                | boolean | Format output as json.                                                                                               |         |          |         |
+| metadata-dir<br/>-m | option  | Directory containing .permissionset-meta.xml files. If not set, scans entire project for **/*.permissionset-meta.xml |         |          |         |
+| outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv                                                    |         |          |         |
+| skipauth            | boolean | Skip authentication check when a default username is required                                                        |         |          |         |
+| target-org<br/>-o   | option  | undefined                                                                                                            |         |          |         |
+| threshold<br/>-t    | option  | Maximum number of permissions to be considered minimal. Overrides MINIMAL_PERMSETS_THRESHOLD env var.                |         |          |         |
+| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                            |         |          |         |
 
 ## Examples
 
