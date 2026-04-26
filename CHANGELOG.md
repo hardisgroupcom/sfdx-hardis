@@ -11,6 +11,9 @@
   - [hardis:project:action:reorder](https://sfdx-hardis.cloudity.com/hardis/project/action/reorder/) - Reorder actions (single move or full reorder)
   - [hardis:project:action:list](https://sfdx-hardis.cloudity.com/hardis/project/action/list/) - List actions by scope and phase
   - [hardis:project:action:link-pull-request](https://sfdx-hardis.cloudity.com/hardis/project/action/link-pull-request/) - Link draft actions to a pull request
+  - [hardis:project:action:test-class:list](https://sfdx-hardis.cloudity.com/hardis/project/action/test-class/list/) - List Apex test classes configured for deployment (`deploymentApexTestClasses`)
+  - [hardis:project:action:test-class:add](https://sfdx-hardis.cloudity.com/hardis/project/action/test-class/add/) - Add one or more Apex test classes to the deployment list; interactive multiselect from sources, or `--class-name` (repeatable) in agent mode
+  - [hardis:project:action:test-class:remove](https://sfdx-hardis.cloudity.com/hardis/project/action/test-class/remove/) - Remove Apex test classes from the deployment list; supports `--class-name` (repeatable) or `--all-class` to empty the list
 - Documentation: updated agentic automation command catalog to reflect all currently `--agent`-enabled commands and aligned command count references to 130+.
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
   - Feature: Data Cloud backup coverage has been expanded and made more reliable.

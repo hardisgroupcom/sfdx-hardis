@@ -1,4 +1,7 @@
+import c from "chalk";
 import { GitProvider } from '../gitProvider/index.js';
+import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { readActions } from './actionUtils.js';
 import { uxLog } from './index.js';
 
 export const DEPLOYMENT_ACTIONS_MARKER = '<!-- sfdx-hardis deployment-actions-state -->';
@@ -7,12 +10,23 @@ export interface DeploymentActionStateEntry {
   actionId: string;
   actionLabel: string;
   orgBranch: string;
+  when: ActionWhen;
+  executionOrder: number;
   status: 'success' | 'failed' | 'manual' | 'skipped';
   jobId: string;
   jobUrl: string;
   date: string;
   output?: string;
 }
+
+/**
+ * PrePostCommand enriched with deployment when and execution order,
+ * needed to sort and describe actions in the PR comment details section.
+ */
+export type ActionDef = PrePostCommand & {
+  when: ActionWhen;
+  executionOrder: number;
+};
 
 interface DeploymentActionsMultiPrState {
   entriesByPr: Map<number, DeploymentActionStateEntry[]>;
@@ -73,6 +87,27 @@ function getMultiPrState(): DeploymentActionsMultiPrState {
 }
 
 /**
+ * Load action definitions from a PR's .sfdx-hardis.PRNB.yml config file
+ * by delegating to the existing readActions utility.
+ */
+async function loadActionDefsFromPrYaml(prNumber: number): Promise<Map<string, ActionDef>> {
+  const prId = String(prNumber);
+  const defs = new Map<string, ActionDef>();
+  try {
+    for (const when of ['pre-deploy', 'post-deploy'] as ActionWhen[]) {
+      const commands = await readActions('pr', when, undefined, prId);
+      for (let i = 0; i < commands.length; i++) {
+        const cmd = commands[i];
+        if (cmd.id) defs.set(cmd.id, { ...cmd, when, executionOrder: i });
+      }
+    }
+  } catch (_e) {
+    // If the file cannot be read or parsed, return empty defs
+  }
+  return defs;
+}
+
+/**
  * Load deployment actions state from all source PRs.
  * Each PR's "Deployment Actions" comment is read and parsed independently.
  * Call once before the execution loop.
@@ -87,13 +122,13 @@ export async function loadDeploymentActionsState(sourcePrNumbers: number[]): Pro
       if (body) {
         const entries = parseDeploymentActionsCommentBody(body);
         state.entriesByPr.set(prNumber, entries);
-        uxLog("log", null, `Loaded ${entries.length} deployment actions state entries from PR #${prNumber}.`);
-        uxLog("other", null, JSON.stringify(entries, null, 2));
+        uxLog("log", null, c.cyan(`Loaded ${entries.length} deployment actions state entries from PR #${prNumber}.`));
+        uxLog("other", null, c.grey(JSON.stringify(entries, null, 2)));
       } else {
         state.entriesByPr.set(prNumber, []);
       }
     } catch (e) {
-      uxLog("warning", null, `Could not load deployment actions state from PR #${prNumber}: ${(e as Error).message}`);
+      uxLog("warning", null, c.yellow(`Could not load deployment actions state from PR #${prNumber}: ${(e as Error).message}`));
       state.entriesByPr.set(prNumber, []);
     }
   }
@@ -139,6 +174,7 @@ export function upsertActionInState(entry: DeploymentActionStateEntry, sourcePrN
  * Before writing, re-reads the existing comment and merges to avoid losing
  * entries that were written by a different deployment (e.g. a different org branch)
  * or that were missed during the initial load.
+ * Action definitions are read from the PR's .sfdx-hardis.PRNB.yml file.
  */
 export async function persistDeploymentActionsState(): Promise<void> {
   const state = getMultiPrState();
@@ -148,7 +184,9 @@ export async function persistDeploymentActionsState(): Promise<void> {
     const mergedEntries = await mergeWithExistingComment(prNumber, inMemoryEntries);
     // Update the in-memory state with the merged result so subsequent persists stay consistent
     state.entriesByPr.set(prNumber, mergedEntries);
-    const body = buildDeploymentActionsCommentBody(mergedEntries);
+    // Load action definitions from the PR's YAML file to populate the details section
+    const actionDefs = await loadActionDefsFromPrYaml(prNumber);
+    const body = buildDeploymentActionsCommentBody(mergedEntries, actionDefs);
     await GitProvider.tryUpsertDeploymentActionsCommentForPr(prNumber, body);
   }
   state.dirtyPrs.clear();
@@ -188,27 +226,29 @@ export function parseDeploymentActionsCommentBody(body: string): DeploymentActio
   const entries: DeploymentActionStateEntry[] = [];
   const lines = body.split('\n');
   for (const line of lines) {
-    // Match table rows like: | <!-- actionId:ID --> Label | orgBranch | status | [jobId](jobUrl) |
-    const rowMatch = line.match(/^\|\s*<!--\s*actionId:([^>]+?)\s*-->\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|/);
+    // | <!-- actionId:ID order:N --> Label | orgBranch | when | status | [jobId](jobUrl) |
+    const rowMatch = line.match(/^\|\s*<!--\s*actionId:(\S+?)(?:\s+order:(\d+))?\s*-->\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|/);
     if (!rowMatch) continue;
+
     const actionId = rowMatch[1].trim();
-    const actionLabel = rowMatch[2].trim();
-    const orgBranch = rowMatch[3].trim();
-    const statusCell = rowMatch[4].trim();
-    const jobCell = rowMatch[5].trim();
+    const executionOrder = rowMatch[2] ? parseInt(rowMatch[2], 10) : 0;
+    const actionLabel = rowMatch[3].trim();
+    const orgBranch = rowMatch[4].trim();
+    const when: ActionWhen = rowMatch[5].trim() === 'pre-deploy' ? 'pre-deploy' : 'post-deploy';
+    const statusCell = rowMatch[6].trim();
+    const jobCell = rowMatch[7].trim();
+
     const status: DeploymentActionStateEntry['status'] =
       statusCell.includes('\u2705') ? 'success' :
         statusCell.includes('\u274c') ? 'failed' :
           statusCell.includes('\ud83d\udc4b') ? 'manual' :
             statusCell.includes('\u26aa') ? 'skipped' : 'failed';
-    // Extract date from status cell: "success (2024-01-15)"
     const dateMatch = statusCell.match(/\(([^)]+)\)/);
     const date = dateMatch ? dateMatch[1] : '';
-    // Extract jobId/jobUrl from job cell: "[jobId](jobUrl)" or just "jobId"
     const jobLinkMatch = jobCell.match(/\[([^\]]+)\]\(([^)]+)\)/);
     const jobId = jobLinkMatch ? jobLinkMatch[1] : jobCell;
     const jobUrl = jobLinkMatch ? jobLinkMatch[2] : '';
-    entries.push({ actionId, actionLabel, orgBranch, status, jobId, jobUrl, date, output: '' });
+    entries.push({ actionId, actionLabel, orgBranch, when, executionOrder, status, jobId, jobUrl, date, output: '' });
   }
   return entries;
 }
@@ -236,41 +276,155 @@ function getOrgBranchWeight(orgBranch: string): number {
   return 0;
 }
 
-export function buildDeploymentActionsCommentBody(entries: DeploymentActionStateEntry[]): string {
-  // Sort by org weight (integ → uat → preprod → prod), then by date within each org
+export function buildDeploymentActionsCommentBody(entries: DeploymentActionStateEntry[], actionDefs?: Map<string, ActionDef>): string {
+  // Sort by: org weight (integ → prod), then when (pre-deploy before post-deploy), then execution order
   const sorted = [...entries].sort((a, b) => {
     const weightDiff = getOrgBranchWeight(a.orgBranch) - getOrgBranchWeight(b.orgBranch);
     if (weightDiff !== 0) return weightDiff;
-    return a.date.localeCompare(b.date);
+    const whenA = a.when === 'pre-deploy' ? 0 : 1;
+    const whenB = b.when === 'pre-deploy' ? 0 : 1;
+    if (whenA !== whenB) return whenA - whenB;
+    return (a.executionOrder ?? 0) - (b.executionOrder ?? 0);
   });
 
   let body = `${DEPLOYMENT_ACTIONS_MARKER}\n## Deployment Actions\n\n`;
   body += `> ⚠️ This section is automatically managed by sfdx-hardis. Do not edit it manually.\n\n`;
-  body += `| Action | Org branch | Status | Job |\n`;
-  body += `|--------|------------|--------|-----|\n`;
+  body += `| Action | Org branch | When | Status | Job |\n`;
+  body += `|--------|------------|------|--------|-----|\n`;
   for (const e of sorted) {
     const statusIcon = getStatusIcon(e.status);
     const dateStr = e.date ? ` (${e.date.substring(0, 10)})` : '';
     const statusCell = `${statusIcon} ${e.status}${dateStr}`;
     const jobCell = e.jobUrl ? `[${e.jobId}](${e.jobUrl})` : e.jobId;
-    body += `| <!-- actionId:${e.actionId} --> ${e.actionLabel} | ${e.orgBranch} | ${statusCell} | ${jobCell} |\n`;
+    const orderAttr = e.executionOrder != null ? ` order:${e.executionOrder}` : '';
+    body += `| <!-- actionId:${e.actionId}${orderAttr} --> ${e.actionLabel} | ${e.orgBranch} | ${e.when} | ${statusCell} | ${jobCell} |\n`;
   }
 
-  // Details section — same sort order as the table
-  const withOutput = sorted.filter(e => e.output);
-  if (withOutput.length > 0) {
+  // Details section — one collapsible per unique action, covering all orgs it ran in.
+  // When actionDefs is provided (from the PR YAML), action properties are shown even for
+  // actions that were skipped or not yet run.
+  const actionGroups = new Map<string, DeploymentActionStateEntry[]>();
+  for (const e of sorted) {
+    if (!actionGroups.has(e.actionId)) actionGroups.set(e.actionId, []);
+    actionGroups.get(e.actionId)!.push(e);
+  }
+
+  // Also include actions present in the YAML but not yet in any state entry
+  if (actionDefs) {
+    for (const [actionId] of actionDefs) {
+      if (!actionGroups.has(actionId)) {
+        actionGroups.set(actionId, []);
+      }
+    }
+  }
+
+  if (actionGroups.size > 0) {
     body += `\n<details>\n<summary>Action Details</summary>\n`;
-    for (const e of withOutput) {
-      const truncated = truncateOutput(e.output);
-      const dateStr = e.date ? e.date.substring(0, 10) : '';
-      body += `\n<details>\n<!-- actionId:${e.actionId} -->\n`;
-      body += `<summary>${e.actionLabel} (${e.orgBranch}${dateStr ? ' \u2014 ' + dateStr : ''})</summary>\n\n`;
-      body += '```\n' + truncated + '\n```\n';
+
+    // Sort unique actions by when then executionOrder.
+    // Actions with no entries use the ActionDef for ordering; entries take precedence otherwise.
+    const uniqueActionIds = [...actionGroups.keys()].sort((a, b) => {
+      const ea = actionGroups.get(a)?.[0];
+      const eb = actionGroups.get(b)?.[0];
+      const defA = actionDefs?.get(a);
+      const defB = actionDefs?.get(b);
+      const whenA = ((ea?.when ?? defA?.when) === 'pre-deploy') ? 0 : 1;
+      const whenB = ((eb?.when ?? defB?.when) === 'pre-deploy') ? 0 : 1;
+      if (whenA !== whenB) return whenA - whenB;
+      const orderA = ea?.executionOrder ?? defA?.executionOrder ?? 0;
+      const orderB = eb?.executionOrder ?? defB?.executionOrder ?? 0;
+      return orderA - orderB;
+    });
+
+    for (const actionId of uniqueActionIds) {
+      const actionEntries = actionGroups.get(actionId)!;
+      const def = actionDefs?.get(actionId);
+      const firstEntry = actionEntries[0];
+      const displayLabel = firstEntry?.actionLabel ?? def?.label ?? actionId;
+      const displayWhen = firstEntry?.when ?? def?.when ?? 'post-deploy';
+      const displayOrder = firstEntry?.executionOrder ?? def?.executionOrder;
+      const orderAttr = displayOrder != null ? ` order:${displayOrder}` : '';
+
+      body += `\n<details>\n<!-- actionId:${actionId}${orderAttr} -->\n`;
+      body += `<summary>${displayLabel} (${displayWhen})</summary>\n\n`;
+
+      body += buildActionPropertiesSection(actionId, def);
+
+      if (actionEntries.length > 0) {
+        const sortedOrgEntries = [...actionEntries].sort((a, b) => {
+          const wDiff = getOrgBranchWeight(a.orgBranch) - getOrgBranchWeight(b.orgBranch);
+          if (wDiff !== 0) return wDiff;
+          return a.orgBranch.localeCompare(b.orgBranch);
+        });
+
+        body += `**Results by org:**\n\n`;
+        for (const e of sortedOrgEntries) {
+          const statusIcon = getStatusIcon(e.status);
+          const dateStr = e.date ? ` (${e.date.substring(0, 10)})` : '';
+          const jobRef = e.jobUrl ? ` — [${e.jobId}](${e.jobUrl})` : (e.jobId ? ` — ${e.jobId}` : '');
+          body += `*${e.orgBranch} — ${statusIcon} ${e.status}${dateStr}${jobRef}*\n\n`;
+          if (e.output) {
+            const truncated = truncateOutput(e.output);
+            body += '```\n' + truncated + '\n```\n\n';
+          }
+        }
+      } else {
+        body += `*No results yet — action has not been executed in any org.*\n\n`;
+      }
+
       body += '</details>\n';
     }
+
     body += `\n</details>\n`;
   }
   return body;
+}
+
+/**
+ * Build the properties description for an action in the details section.
+ */
+function buildActionPropertiesSection(actionId: string, def?: ActionDef): string {
+  if (!def) {
+    return `**ID:** \`${actionId}\` *(properties not available — YAML file not found)*\n\n`;
+  }
+
+  let firstLine = `**ID:** \`${actionId}\``;
+  firstLine += ` | **Type:** ${def.type}`;
+  firstLine += ` | **Context:** ${def.context ?? 'all'}`;
+  firstLine += ` | **Run only once per org:** ${def.runOnlyOnceByOrg !== false ? 'yes' : 'no'}`;
+  firstLine += ` | **Skip if deployment failed:** ${def.skipIfError === true ? 'yes' : 'no'}`;
+  firstLine += ` | **Allow failure:** ${def.allowFailure === true ? 'yes' : 'no'}`;
+  if (def.customUsername) {
+    firstLine += ` | **Custom username:** \`${def.customUsername}\``;
+  }
+  let section = firstLine + '\n';
+
+  if (def.type === 'command' && def.command) {
+    section += `**Command:** \`${def.command}\`\n`;
+  } else if (def.type === 'apex' && def.parameters?.apexScript) {
+    section += `**Apex script:** \`${def.parameters.apexScript}\`\n`;
+  } else if (def.type === 'data' && def.parameters?.sfdmuProject) {
+    section += `**SFDMU project:** \`${def.parameters.sfdmuProject}\`\n`;
+  } else if (def.type === 'publish-community' && def.parameters?.communityName) {
+    section += `**Community name:** ${def.parameters.communityName}\n`;
+  } else if (def.type === 'manual' && def.parameters?.instructions) {
+    section += `**Instructions:** ${def.parameters.instructions}\n`;
+  } else if (def.type === 'schedule-batch') {
+    if (def.parameters?.className) section += `**Class name:** \`${def.parameters.className}\`\n`;
+    if (def.parameters?.cronExpression) section += `**Cron expression:** \`${def.parameters.cronExpression}\`\n`;
+    if (def.parameters?.jobName) section += `**Job name:** ${def.parameters.jobName}\n`;
+  }
+
+  if (def.parameters) {
+    const knownParams = new Set(['apexScript', 'sfdmuProject', 'communityName', 'instructions', 'className', 'cronExpression', 'jobName']);
+    for (const [k, v] of Object.entries(def.parameters)) {
+      if (!knownParams.has(k)) {
+        section += `**${k}:** ${v}\n`;
+      }
+    }
+  }
+
+  return section + '\n';
 }
 
 // Augment globalThis types

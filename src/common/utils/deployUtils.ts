@@ -1022,21 +1022,19 @@ export async function removePackageXmlContent(
     uxLog(
       "action",
       this,
-      c.cyan(
-        `Removing ${c.green(path.basename(packageXmlFileToRemove))} items from ${c.green(
-          path.basename(packageXmlFile)
-        )}...`
-      )
+      c.cyan(t('removingFilterItemsFromPackage', {
+        filterFile: c.green(path.basename(packageXmlFileToRemove)),
+        packageFile: c.green(path.basename(packageXmlFile))
+      }))
     );
   } else {
     uxLog(
       "action",
       this,
-      c.cyan(
-        `Keeping ${c.green(path.basename(packageXmlFileToRemove))} items matching with ${c.green(
-          path.basename(packageXmlFile)
-        )} (and remove the rest)...`
-      )
+      c.cyan(t('keepingMatchingItemsFromFilter', {
+        packageFile: c.green(path.basename(packageXmlFile)),
+        filterFile: c.green(path.basename(packageXmlFileToRemove))
+      }))
     );
   }
   await removePackageXmlFilesContent(packageXmlFile, packageXmlFileToRemove, {

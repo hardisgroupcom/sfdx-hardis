@@ -280,13 +280,18 @@ If you want to disable the calculation and display of Flow Visual Git Diff in Pu
 Supports non-interactive execution with `--agent`:
 
 ```sh
-sf hardis:project:deploy:smart --agent --target-org myorg@example.com
+sf hardis:project:deploy:smart --agent --check --source-branch feature/my-feature --target-branch integration --target-org deploy@myclient.com.integration
 ```
+
+> **Important**: `--target-org` must be the **target deployment org** (e.g. the integration sandbox), not the developer's current working org. The Salesforce CLI must be authenticated to that org before running this command.
 
 In agent mode:
 
-- The interactive org selection prompt is skipped; `--target-org` flag value is used directly.
-- All other behavior remains the same as in CI mode.
+- The interactive org selection prompt is skipped.
+- Deployment is forced into **simulation/check mode** — `--check` is implicit, but should be passed explicitly to make the intent clear. No changes are applied to the org.
+- Use `--source-branch` to specify the source git branch (overrides local git branch detection via `FORCE_SOURCE_BRANCH`).
+- Use `--target-branch` to specify the target git branch. This sets `FORCE_TARGET_BRANCH` for delta/PR scope and also sets `CONFIG_BRANCH` so the target branch config file (`config/branches/.sfdx-hardis-BRANCHNAME.yml`) is loaded — providing the correct `targetUsername` for that org automatically.
+- If a deployment action requires a `customUsername` and authentication for that user fails, the action is **skipped** (not failed) so the simulation can continue.
 
 
 ## Parameters
@@ -303,6 +308,8 @@ In agent mode:
 |runtests<br/>-r|option|If testlevel=RunSpecifiedTests, please provide a list of classes.
 If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
+|source-branch|option|Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)||||
+|target-branch|option|Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername)||||
 |target-org<br/>-o|option|undefined||||
 |testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg|
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
@@ -350,7 +357,11 @@ $ GITHUB_TOKEN=xxxx GITHUB_REPOSITORY=my-user/my-repo FORCE_TARGET_BRANCH=uat NO
 ```
 
 ```shell
-$ sf hardis:project:deploy:smart --agent
+$ sf hardis:project:deploy:smart --agent --check
+```
+
+```shell
+$ sf hardis:project:deploy:smart --agent --check --source-branch feature/my-feature --target-branch integration --target-org deploy@myclient.com.integration
 ```
 
 

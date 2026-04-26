@@ -6,10 +6,13 @@ import { authOrg } from '../utils/authUtils.js';
 import { findUserByUsernameLike } from '../utils/orgUtils.js';
 import { t } from '../utils/i18n.js';
 
+export type ActionWhen = 'pre-deploy' | 'post-deploy';
+
 export interface PrePostCommand {
   id: string;
   label: string;
   type: 'command' | 'data' | 'apex' | 'publish-community' | 'manual' | 'schedule-batch';
+  when?: ActionWhen;
   // Known parameters used by action implementations. Additional keys allowed.
   parameters?: {
     apexScript?: string;     // for 'apex' actions

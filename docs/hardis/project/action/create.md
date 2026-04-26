@@ -27,7 +27,7 @@ Required in agent mode:
 - `--scope`, `--when`, `--type`, `--label`
 - Type-specific flags: `--command` for command, `--apex-script` for apex, `--sfdmu-project` for data, `--community-name` for publish-community, `--instructions` for manual, `--class-name` and `--cron-expression` for schedule-batch
 
-In agent mode, `--context` defaults to `all` and optional boolean flags default to `false`.
+In agent mode, `--context` defaults to `process-deployment-only`. `--run-only-once-by-org` defaults to `true` (use `--no-run-only-once-by-org` to disable); other optional boolean flags default to `false`.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -50,7 +50,7 @@ In agent mode, `--context` defaults to `all` and optional boolean flags default 
 | class-name           | option  | Apex batch class name (for schedule-batch type)                          |         |          |                                                                               |
 | command              | option  | Shell command to execute (for command type)                              |         |          |                                                                               |
 | community-name       | option  | Community name (for publish-community type)                              |         |          |                                                                               |
-| context              | option  | Execution context (default: all)                                         |         |          |           all<br/>check-deployment-only<br/>process-deployment-only           |
+| context              | option  | Execution context (default: process-deployment-only)                     |         |          |           all<br/>check-deployment-only<br/>process-deployment-only           |
 | cron-expression      | option  | Cron expression (for schedule-batch type)                                |         |          |                                                                               |
 | custom-username      | option  | Run action with a specific Salesforce username                           |         |          |                                                                               |
 | debug<br/>-d         | boolean | Activate debug mode (more logs)                                          |         |          |                                                                               |
@@ -60,7 +60,7 @@ In agent mode, `--context` defaults to `all` and optional boolean flags default 
 | json                 | boolean | Format output as json.                                                   |         |          |                                                                               |
 | label                | option  | Human-readable label for the action                                      |         |          |                                                                               |
 | pr-id                | option  | Pull request ID (for pr scope, defaults to draft)                        |         |          |                                                                               |
-| run-only-once-by-org | boolean | Execute action only once per target org                                  |         |          |                                                                               |
+| run-only-once-by-org | boolean | Execute action only once per target org (default: true)                  |         |          |                                                                               |
 | scope                | option  | Configuration scope: project, branch, or pr                              |         |          |                           project<br/>branch<br/>pr                           |
 | sfdmu-project        | option  | SFDMU workspace name (for data type)                                     |         |          |                                                                               |
 | skip-if-error        | boolean | Skip action if deployment failed                                         |         |          |                                                                               |

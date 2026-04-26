@@ -4,13 +4,14 @@ import fs from 'fs-extra';
 import * as yaml from 'js-yaml';
 import * as path from 'path';
 import { getCurrentGitBranch, isCI, uxLog } from './index.js';
-import { PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { findDataWorkspaceByName } from './dataUtils.js';
+import { getConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { t } from './i18n.js';
 
 export type ActionScope = 'project' | 'branch' | 'pr';
-export type ActionWhen = 'pre-deploy' | 'post-deploy';
+export type { ActionWhen };
 
 const WHEN_TO_CONFIG_KEY: Record<ActionWhen, string> = {
   'pre-deploy': 'commandsPreDeploy',
@@ -43,7 +44,11 @@ export async function readActions(scope: ActionScope, when: ActionWhen, branch?:
     return [];
   }
   const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
-  return Array.isArray(doc[configKey]) ? doc[configKey] : [];
+  const commands: PrePostCommand[] = Array.isArray(doc[configKey]) ? doc[configKey] : [];
+  for (const cmd of commands) {
+    cmd.when = when;
+  }
+  return commands;
 }
 
 /**
@@ -147,7 +152,9 @@ export function buildAction(values: {
   if (values.parameters && Object.keys(values.parameters).length > 0) {
     action.parameters = values.parameters;
   }
-  action.skipIfError = values.skipIfError === true;
+  if (values.skipIfError !== undefined) {
+    action.skipIfError = values.skipIfError === true;
+  }
   action.allowFailure = values.allowFailure === true;
   action.runOnlyOnceByOrg = values.runOnlyOnceByOrg !== false;
   if (values.customUsername) {
@@ -202,7 +209,7 @@ export async function resolvePrId(
     return prId;
   }
 
-  // Try to find the PR for the current branch
+  // Try to find the PR for the current branch via git provider API
   try {
     const prInfo = await GitProvider.getPullRequestInfo();
     if (prInfo && prInfo.idStr) {
@@ -211,6 +218,15 @@ export async function resolvePrId(
     }
   } catch (e) {
     uxLog("warning", commandThis, c.yellow(t('prResolutionFailed', { message: (e as Error).message })));
+  }
+
+  // Fallback: look up merge request info from user config
+  const prIdFromConfig = await getPrIdFromUserConfig();
+  if (prIdFromConfig) {
+    uxLog("log", commandThis, c.grey(t('prResolvedFromBranch', { prId: prIdFromConfig })));
+    // If a draft config file exists, rename it to the resolved PR ID
+    tryRenameDraftToPr(prIdFromConfig);
+    return prIdFromConfig;
   }
 
   // PR not found
@@ -256,7 +272,66 @@ export async function renameDraftToPr(prId: string): Promise<string> {
   return targetFile;
 }
 
+/**
+ * Best-effort rename of draft config file to PR-specific file.
+ * Does nothing if no draft exists or if the target file already exists.
+ */
+function tryRenameDraftToPr(prId: string): void {
+  const draftFile = path.join('scripts', 'actions', '.sfdx-hardis.draft.yml');
+  const targetFile = path.join('scripts', 'actions', `.sfdx-hardis.${prId}.yml`);
+  if (fs.existsSync(draftFile) && !fs.existsSync(targetFile)) {
+    fs.renameSync(draftFile, targetFile);
+    uxLog("log", null, c.grey(`Renamed draft config to ${targetFile}`));
+  }
+}
+
+/**
+ * Extract the PR/MR ID from user config's mergeRequests for the current branch.
+ * Returns the ID as a string, or null if not found.
+ */
+export async function getPrIdFromUserConfig(): Promise<string | null> {
+  try {
+    const currentBranch = await getCurrentGitBranch();
+    if (!currentBranch) return null;
+    const userConfig = await getConfig('user');
+    const mergeRequests: any[] = userConfig.mergeRequests || [];
+    const entry = mergeRequests.find((mr: any) => mr?.branch === currentBranch && mr?.url);
+    if (!entry?.url) return null;
+    const match = String(entry.url).match(/\/(\d+)\s*$/);
+    return match ? match[1] : null;
+  } catch (_e) {
+    return null;
+  }
+}
+
 export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch'];
 export const ACTION_CONTEXTS: PrePostCommand['context'][] = ['all', 'check-deployment-only', 'process-deployment-only'];
 export const ACTION_SCOPES: ActionScope[] = ['project', 'branch', 'pr'];
 export const ACTION_WHENS: ActionWhen[] = ['pre-deploy', 'post-deploy'];
+
+/**
+ * Read the deploymentApexTestClasses array from a config file.
+ */
+export async function readTestClasses(scope: ActionScope, branch?: string, prId?: string): Promise<string[]> {
+  const configFile = await getActionConfigFilePath(scope, branch, prId);
+  if (!fs.existsSync(configFile)) {
+    return [];
+  }
+  const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+  return Array.isArray(doc['deploymentApexTestClasses']) ? doc['deploymentApexTestClasses'] : [];
+}
+
+/**
+ * Write the deploymentApexTestClasses array back to config file, preserving other keys.
+ */
+export async function writeTestClasses(scope: ActionScope, classes: string[], branch?: string, prId?: string): Promise<string> {
+  const configFile = await getActionConfigFilePath(scope, branch, prId);
+  let doc: any = {};
+  if (fs.existsSync(configFile)) {
+    doc = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+  }
+  doc['deploymentApexTestClasses'] = classes;
+  await fs.ensureDir(path.dirname(configFile));
+  await fs.writeFile(configFile, yaml.dump(doc));
+  return configFile;
+}

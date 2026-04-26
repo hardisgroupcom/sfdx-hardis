@@ -218,29 +218,23 @@ export async function removePackageXmlFilesContent(
     // Manage * case contained in source
     else if (removeTypeMembers[0] && removeTypeMembers[0] === '*') {
       typeMembers = typeMembers.filter(() => checkRemove(false, removedOnly));
-      uxLog(
-        "log",
-        this,
-        c.grey(
-          c.italic(
-            `Found wildcard * on type ${c.bold(type.name)} which have all been ${removedOnly ? 'kept' : 'removed'}`
-          )
-        )
-      );
+      uxLog("log", this, c.grey(c.italic(
+        removedOnly
+          ? t('wildcardInFilterAllKept', { type: c.bold(type.name) })
+          : t('wildcardInFilterAllRemoved', { type: c.bold(type.name) })
+      )));
     } else {
       // Filter members
+      const originalCount = typeMembers.length;
       typeMembers = typeMembers.filter((member: string) =>
         checkRemove(!removeTypeMembers.includes(member), removedOnly)
       );
-      uxLog(
-        "log",
-        this,
-        c.grey(
-          c.italic(
-            `Found type ${c.bold(type.name)}, ${typeMembers.length} items have been ${removedOnly ? 'removed' : 'kept'}`
-          )
-        )
-      );
+      if (removedOnly) {
+        uxLog("log", this, c.grey(c.italic(t('typeItemsKeptFromFilter', { type: c.bold(type.name), count: typeMembers.length }))));
+      } else {
+        const removedCount = originalCount - typeMembers.length;
+        uxLog("log", this, c.grey(c.italic(t('typeItemsRemainAfterRemoval', { type: c.bold(type.name), count: typeMembers.length, removed: removedCount }))));
+      }
     }
     if (typeMembers.length > 0 || keepEmptyTypes === true) {
       // Update members for type
