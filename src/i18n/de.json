@@ -1835,6 +1835,7 @@
   "queryingOrgForEventlogfileEntriesOfType": "Org wird nach EventLogFile-Einträgen vom Typ {{eventType}} abgefragt...",
   "queryingStorageStatsForObject": "Speicherstatistiken für Objekt {{sObjectName}} werden abgefragt...",
   "queryingUserRecordsMatchingProfiles": "Benutzer-Datensätze werden für {{profileIds}} Profile abgefragt...",
+  "queryingUserRecordsMatchingUsernames": "Benutzer-Datensätze werden für {{count}} angegebene Benutzernamen abgefragt...",
   "queryingUserloginRecordsMatchingUsers": "UserLogin-Datensätze werden für {{usersToFreeze}} Benutzer abgefragt...",
   "queryingUserloginRecordsMatchingUsers2": "UserLogin-Datensätze werden für {{usersToUnfreeze}} Benutzer abgefragt...",
   "readmeDocumentationHeading": "Dokumentation",

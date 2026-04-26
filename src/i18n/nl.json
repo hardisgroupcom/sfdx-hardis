@@ -1836,6 +1836,7 @@
   "queryingOrgForEventlogfileEntriesOfType": "Org wordt opgevraagd naar EventLogFile-vermeldingen van type {{eventType}}...",
   "queryingStorageStatsForObject": "Opslagstatistieken voor object {{sObjectName}} worden opgevraagd...",
   "queryingUserRecordsMatchingProfiles": "Gebruikersrecords die overeenkomen met {{profileIds}} profielen worden opgevraagd...",
+  "queryingUserRecordsMatchingUsernames": "Gebruikersrecords die overeenkomen met de opgegeven {{count}} gebruikersnamen worden opgevraagd...",
   "queryingUserloginRecordsMatchingUsers": "UserLogin-records die overeenkomen met {{usersToFreeze}} gebruikers worden opgevraagd...",
   "queryingUserloginRecordsMatchingUsers2": "UserLogin-records die overeenkomen met {{usersToUnfreeze}} gebruikers worden opgevraagd...",
   "readmeDocumentationHeading": "Documentatie",

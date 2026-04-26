@@ -1836,6 +1836,7 @@
   "queryingOrgForEventlogfileEntriesOfType": "Requête de l'org pour les entrées EventLogFile de type {{eventType}}...",
   "queryingStorageStatsForObject": "Requête des statistiques de stockage pour l'objet {{sObjectName}}...",
   "queryingUserRecordsMatchingProfiles": "Requête sur User records matching {{profileIds}} profiles...",
+  "queryingUserRecordsMatchingUsernames": "Requête sur les enregistrements User correspondant aux {{count}} noms d'utilisateur fournis...",
   "queryingUserloginRecordsMatchingUsers": "Requête sur UserLogin records matching {{usersToFreeze}} users...",
   "queryingUserloginRecordsMatchingUsers2": "Requête sur UserLogin records matching {{usersToUnfreeze}} users...",
   "readmeDocumentationHeading": "Documentation",

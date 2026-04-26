@@ -1840,6 +1840,7 @@
   "queryingOrgForEventlogfileEntriesOfType": "Querying org for EventLogFile entries of type {{eventType}}...",
   "queryingStorageStatsForObject": "Querying storage statistics for object {{sObjectName}}...",
   "queryingUserRecordsMatchingProfiles": "Querying User records matching {{profileIds}} profiles...",
+  "queryingUserRecordsMatchingUsernames": "Querying user records matching {{count}} provided usernames...",
   "queryingUserloginRecordsMatchingUsers": "Querying UserLogin records matching {{usersToFreeze}} users...",
   "queryingUserloginRecordsMatchingUsers2": "Querying UserLogin records matching {{usersToUnfreeze}} users...",
   "readmeDocumentationHeading": "Documentation",

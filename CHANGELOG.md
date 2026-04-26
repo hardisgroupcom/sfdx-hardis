@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [hardis:org:user:freeze](https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/) and [hardis:org:user:unfreeze](https://sfdx-hardis.cloudity.com/hardis/org/user/unfreeze/): Added `--usernames` flag to target specific Salesforce usernames directly (takes priority over profile flags; makes `--includeprofiles`/`--excludeprofiles` optional in all modes including agent/CI).
 - Deployment Actions: `runOnlyOnceByOrg` now defaults to `true` and uses a dedicated PR comment ("Deployment Actions") as the sole state store — replacing the `SfdxHardisTrace__c` Salesforce custom object. The comment table (action / org branch / status / job) is readable by both humans and automation across all CI workflows on the same PR.
 - New deployment action management commands with full `--agent` support for non-interactive execution:
   - [hardis:project:action:create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/) - Create deployment actions (command, data, apex, publish-community, manual, schedule-batch)

@@ -1834,6 +1834,7 @@
   "queryingOrgForEventlogfileEntriesOfType": "レガシーAPIコールを検出するために、タイプ {{eventType}} のEventLogFileエントリを組織から照会しています...",
   "queryingStorageStatsForObject": "オブジェクト {{sObjectName}} のストレージ統計を照会しています...",
   "queryingUserRecordsMatchingProfiles": "{{profileIds}} 件のプロファイルに一致するUserレコードを照会しています...",
+  "queryingUserRecordsMatchingUsernames": "指定された {{count}} 件のユーザー名に一致するUserレコードを照会しています...",
   "queryingUserloginRecordsMatchingUsers": "{{usersToFreeze}} 件のユーザーに一致するUserLoginレコードを照会しています...",
   "queryingUserloginRecordsMatchingUsers2": "{{usersToUnfreeze}} 件のユーザーに一致するUserLoginレコードを照会しています...",
   "readmeDocumentationHeading": "ドキュメント",

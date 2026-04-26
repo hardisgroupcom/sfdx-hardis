@@ -1836,6 +1836,7 @@
   "queryingOrgForEventlogfileEntriesOfType": "Pobieranie z org wpisów EventLogFile typu {{eventType}}...",
   "queryingStorageStatsForObject": "Pobieranie statystyk przechowywania dla obiektu {{sObjectName}}...",
   "queryingUserRecordsMatchingProfiles": "Pobieranie rekordów użytkowników pasujących do {{profileIds}} Profile...",
+  "queryingUserRecordsMatchingUsernames": "Pobieranie rekordów użytkowników pasujących do {{count}} podanych nazw użytkowników...",
   "queryingUserloginRecordsMatchingUsers": "Pobieranie rekordów UserLogin pasujących do {{usersToFreeze}} użytkowników...",
   "queryingUserloginRecordsMatchingUsers2": "Pobieranie rekordów UserLogin pasujących do {{usersToUnfreeze}} użytkowników...",
   "readmeDocumentationHeading": "Dokumentacja",

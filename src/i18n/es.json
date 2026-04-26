@@ -1836,6 +1836,7 @@
   "queryingOrgForEventlogfileEntriesOfType": "Consultando la org en busca de entradas EventLogFile de tipo {{eventType}}...",
   "queryingStorageStatsForObject": "Consultando estadísticas de almacenamiento para el objeto {{sObjectName}}...",
   "queryingUserRecordsMatchingProfiles": "Consultando registros User que coinciden con los Profiles {{profileIds}}...",
+  "queryingUserRecordsMatchingUsernames": "Consultando registros de Usuario que coinciden con los {{count}} nombres de usuario proporcionados...",
   "queryingUserloginRecordsMatchingUsers": "Consultando registros UserLogin que coinciden con {{usersToFreeze}} usuarios...",
   "queryingUserloginRecordsMatchingUsers2": "Consultando registros UserLogin que coinciden con {{usersToUnfreeze}} usuarios...",
   "readmeDocumentationHeading": "Documentación",

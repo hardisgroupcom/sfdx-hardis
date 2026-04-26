@@ -25,10 +25,11 @@ This command allows administrators to unfreeze Salesforce user logins, reactivat
 
 Key functionalities:
 
-- **User Selection:** You can select users to unfreeze based on their assigned profiles.
+- **User Selection:** You can select users to unfreeze using one of the following methods:
+  - \`--usernames\`: Unfreeze a specific comma-separated list of Salesforce usernames (takes priority over profile flags).
   - \`--includeprofiles\`: Unfreeze users belonging to a comma-separated list of specified profiles.
   - \`--excludeprofiles\`: Unfreeze users belonging to all profiles *except* those specified in a comma-separated list.
-  - If no profile flags are provided, an interactive menu will allow you to select profiles.
+  - If no flags are provided, an interactive menu will allow you to select profiles.
 - **Interactive Confirmation:** In non-CI environments, it prompts for confirmation before unfreezing the selected users.
 - **Bulk Unfreezing:** Efficiently unfreezes multiple user logins using Salesforce's Bulk API.
 - **Reporting:** Generates CSV and XLSX reports of the users that are about to be unfrozen.
@@ -38,6 +39,7 @@ Key functionalities:
 Supports non-interactive execution with \`--agent\`:
 
 \`\`\`sh
+sf hardis:org:user:unfreeze --agent --usernames 'user1@myorg.com,user2@myorg.com' --target-org my-user@myorg.com
 sf hardis:org:user:unfreeze --agent --includeprofiles 'Standard' --target-org my-user@myorg.com
 \`\`\`
 
@@ -45,14 +47,14 @@ In agent mode:
 
 - All interactive prompts and confirmations are skipped.
 - The unfreeze operation proceeds automatically for the matched users.
-- You must provide \`--includeprofiles\` or \`--excludeprofiles\` to specify which profiles to unfreeze (interactive profile selection is not available).
+- You must provide \`--usernames\`, \`--includeprofiles\`, or \`--excludeprofiles\` (interactive selection is not available).
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
-- **SOQL Queries (Bulk API):** It executes SOQL queries against the \`User\` and \`Profile\` objects to identify active users based on the provided profile filters. It then queries the \`UserLogin\` object to find frozen login sessions for these users.
+- **SOQL Queries (Bulk API):** When \`--usernames\` is provided, users are queried directly by username. Otherwise, it queries the \`User\` and \`Profile\` objects to identify active users based on the provided profile filters. It then queries the \`UserLogin\` object to find frozen login sessions for these users.
 - **Interactive Prompts:** Uses the \`prompts\` library to guide the user through profile selection and to confirm the unfreezing operation.
 - **Bulk Update:** It constructs an array of \`UserLogin\` records with their \`Id\` and \`IsFrozen\` set to \`false\`, then uses \`bulkUpdate\` to perform the mass update operation on the Salesforce org.
 - **Reporting:** It uses \`generateReports\` to create CSV and XLSX files containing details of the users to be unfrozen.
@@ -63,9 +65,11 @@ The command's technical implementation involves:
   public static examples = [
     `$ sf hardis:org:user:unfreeze`,
     `$ sf hardis:org:user:unfreeze --target-org my-user@myorg.com`,
+    `$ sf hardis:org:user:unfreeze --usernames 'user1@myorg.com,user2@myorg.com'`,
     `$ sf hardis:org:user:unfreeze --includeprofiles 'Standard'`,
     `$ sf hardis:org:user:unfreeze --excludeprofiles 'System Administrator,Some Other Profile'`,
-    '$ sf hardis:org:user:unfreeze --agent',
+    '$ sf hardis:org:user:unfreeze --agent --usernames \'user1@myorg.com,user2@myorg.com\'',
+    '$ sf hardis:org:user:unfreeze --agent --includeprofiles \'Standard\'',
   ];
 
   // public static args = [{name: 'file'}];
@@ -75,6 +79,10 @@ The command's technical implementation involves:
     name: Flags.string({
       char: 'n',
       description: messages.getMessage('nameFilter'),
+    }),
+    usernames: Flags.string({
+      char: 'u',
+      description: 'Comma-separated list of Salesforce usernames to unfreeze (takes priority over profile flags)',
     }),
     includeprofiles: Flags.string({
       char: 'p',
@@ -118,6 +126,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgUnfreezeUser);
+    const usernameList = flags.usernames ? flags.usernames.split(',').map((u: string) => u.trim()).filter((u: string) => u) : [];
     const includeProfileNames = flags.includeprofiles ? flags.includeprofiles.split(',') : [];
     const excludeProfileNames = flags.excludeprofiles ? flags.excludeprofiles.split(',') : [];
     this.maxUsersDisplay = flags.maxuserdisplay || 100;
@@ -126,57 +135,76 @@ The command's technical implementation involves:
 
     const conn = flags['target-org'].getConnection();
 
-    // Select profiles that we want users to be unfrozen
-    let profileIds: any[] = [];
+    let usersToUnfreeze: any[] = [];
     let profileNames: any[] = [];
-    if (includeProfileNames.length === 0 && excludeProfileNames.length === 0) {
-      if (isCI || this.agentMode) {
-        throw new SfError(c.red('In agent/CI mode, --includeprofiles or --excludeprofiles flag is required for unfreeze operation.'));
+
+    if (usernameList.length > 0) {
+      // Unfreeze specific users by username
+      uxLog("action", this, c.cyan(t('queryingUserRecordsMatchingUsernames', { count: c.bold(usernameList.length) })));
+      const usernamesConstraint = usernameList.map((u: string) => `'${u}'`).join(',');
+      const userQuery = `SELECT Id,Name,Username,ProfileId FROM User WHERE Username IN (${usernamesConstraint}) and IsActive=true`;
+      const userQueryRes = await bulkQuery(userQuery, conn);
+      usersToUnfreeze = userQueryRes.records;
+
+      // Resolve profile names for display
+      const uniqueProfileIds = [...new Set(usersToUnfreeze.map((u: any) => u.ProfileId as string))];
+      if (uniqueProfileIds.length > 0) {
+        const profileIdsConstraint = uniqueProfileIds.map((id) => `'${id}'`).join(',');
+        const profilesQuery = `SELECT Id,Name FROM Profile WHERE Id IN (${profileIdsConstraint})`;
+        const profilesQueryRes = await soqlQuery(profilesQuery, conn);
+        profileNames = profilesQueryRes.records.map((profile: any) => [profile.Id, profile.Name]);
       }
-      // Manual user selection
-      const profilesRes = await promptProfiles(conn, {
-        multiselect: true,
-        message: t('pleaseSelectProfilesThatYouDoYou2'),
-        returnField: 'record',
-      });
-      profileIds = profilesRes.map((profile) => profile.Id);
-      profileNames = profilesRes.map((profile) => {
-        return [profile.Id, profile.Name];
-      });
-    } else if (includeProfileNames.length > 0) {
-      // Use includeprofiles argument
-      const profilesConstraintIn = includeProfileNames.map((profileName) => `'${profileName}'`).join(',');
-      const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name IN (${profilesConstraintIn})`;
-      const profilesQueryRes = await soqlQuery(profilesQuery, conn);
-      if (this.debugMode) {
-        uxLog("log", this, c.grey(t('queryResult2', { JSON: JSON.stringify(profilesQueryRes, null, 2) })));
+    } else {
+      // Select profiles that we want users to be unfrozen
+      let profileIds: any[] = [];
+      if (includeProfileNames.length === 0 && excludeProfileNames.length === 0) {
+        if (isCI || this.agentMode) {
+          throw new SfError(c.red('In agent/CI mode, --usernames, --includeprofiles, or --excludeprofiles flag is required for unfreeze operation.'));
+        }
+        // Manual user selection
+        const profilesRes = await promptProfiles(conn, {
+          multiselect: true,
+          message: t('pleaseSelectProfilesThatYouDoYou2'),
+          returnField: 'record',
+        });
+        profileIds = profilesRes.map((profile) => profile.Id);
+        profileNames = profilesRes.map((profile) => {
+          return [profile.Id, profile.Name];
+        });
+      } else if (includeProfileNames.length > 0) {
+        // Use includeprofiles argument
+        const profilesConstraintIn = includeProfileNames.map((profileName) => `'${profileName}'`).join(',');
+        const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name IN (${profilesConstraintIn})`;
+        const profilesQueryRes = await soqlQuery(profilesQuery, conn);
+        if (this.debugMode) {
+          uxLog("log", this, c.grey(t('queryResult2', { JSON: JSON.stringify(profilesQueryRes, null, 2) })));
+        }
+        profileIds = profilesQueryRes.records.map((profile) => profile.Id);
+        profileNames = profilesQueryRes.records.map((profile) => {
+          return [profile.Id, profile.Name];
+        });
+      } else if (excludeProfileNames.length > 0) {
+        // Use excludeprofiles argument
+        const profilesConstraintIn = excludeProfileNames.map((profileName) => `'${profileName}'`).join(',');
+        const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name NOT IN (${profilesConstraintIn})`;
+        const profilesQueryRes = await soqlQuery(profilesQuery, conn);
+        if (this.debugMode) {
+          uxLog("log", this, c.grey(t('queryResult2', { JSON: JSON.stringify(profilesQueryRes, null, 2) })));
+        }
+        profileIds = profilesQueryRes.records.map((profile) => profile.Id);
+        profileNames = profilesQueryRes.records.map((profile) => {
+          return [profile.Id, profile.Name];
+        });
       }
-      profileIds = profilesQueryRes.records.map((profile) => profile.Id);
-      profileNames = profilesQueryRes.records.map((profile) => {
-        return [profile.Id, profile.Name];
-      });
-    } else if (excludeProfileNames.length > 0) {
-      // Use excludeprofiles argument
-      const profilesConstraintIn = excludeProfileNames.map((profileName) => `'${profileName}'`).join(',');
-      const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name NOT IN (${profilesConstraintIn})`;
-      const profilesQueryRes = await soqlQuery(profilesQuery, conn);
-      if (this.debugMode) {
-        uxLog("log", this, c.grey(t('queryResult2', { JSON: JSON.stringify(profilesQueryRes, null, 2) })));
-      }
-      profileIds = profilesQueryRes.records.map((profile) => profile.Id);
-      profileNames = profilesQueryRes.records.map((profile) => {
-        return [profile.Id, profile.Name];
-      });
+
+      // Query users that we want to unfreeze
+      const profileIdsStr = profileIds.map((profileId) => `'${profileId}'`).join(',');
+      uxLog("action", this, c.cyan(t('queryingUserRecordsMatchingProfiles', { profileIds: c.bold(profileIds.length) })));
+      const userQuery = `SELECT Id,Name,Username,ProfileId FROM User WHERE ProfileId IN (${profileIdsStr}) and IsActive=true`;
+      const userQueryRes = await bulkQuery(userQuery, conn);
+      usersToUnfreeze = userQueryRes.records;
     }
 
-    // List profiles that must be unfrozen
-    const profileIdsStr = profileIds.map((profileId) => `'${profileId}'`).join(',');
-
-    // Query users that we want to unfreeze
-    uxLog("action", this, c.cyan(t('queryingUserRecordsMatchingProfiles', { profileIds: c.bold(profileIds.length) })));
-    const userQuery = `SELECT Id,Name,Username,ProfileId FROM User WHERE ProfileId IN (${profileIdsStr}) and IsActive=true`;
-    const userQueryRes = await bulkQuery(userQuery, conn);
-    const usersToUnfreeze = userQueryRes.records;
     const userIdsStr = usersToUnfreeze.map((user) => `'${user.Id}'`).join(',');
 
     // Check empty result

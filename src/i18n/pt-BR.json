@@ -1804,6 +1804,7 @@
   "queryingUserloginRecordsMatchingUsers": "Consultando registros UserLogin correspondentes a {{usersToFreeze}} usuários...",
   "queryingUserloginRecordsMatchingUsers2": "Consultando registros UserLogin correspondentes a {{usersToUnfreeze}} usuários...",
   "queryingUserRecordsMatchingProfiles": "Consultando registros de Usuário correspondentes a {{profileIds}} perfis...",
+  "queryingUserRecordsMatchingUsernames": "Consultando registros de Usuário correspondentes a {{count}} nomes de usuário fornecidos...",
   "queryResult": "Resultado da consulta:\n{{JSON}}",
   "queryResult2": "Resultado da consulta:\n{{JSON}}",
   "queryResultsFromOrgs": "Resultados da consulta de {{targetOrgsIds}} orgs",
