@@ -1,4 +1,5 @@
 import { GitProvider } from '../gitProvider/index.js';
+import { uxLog } from './index.js';
 
 export const DEPLOYMENT_ACTIONS_MARKER = '<!-- sfdx-hardis deployment-actions-state -->';
 
@@ -67,6 +68,8 @@ export async function loadDeploymentActionsState(): Promise<DeploymentActionStat
   }
   const entries = parseDeploymentActionsCommentBody(body);
   globalThis._deploymentActionsState = entries;
+  uxLog("log", null, `Loaded deployment actions state with ${entries.length} entries from PR comment.`);
+  uxLog("other", null, JSON.stringify(entries, null, 2));
   return entries;
 }
 
@@ -108,9 +111,9 @@ export function parseDeploymentActionsCommentBody(body: string): DeploymentActio
     const jobCell = rowMatch[5].trim();
     const status: DeploymentActionStateEntry['status'] =
       statusCell.includes('\u2705') ? 'success' :
-      statusCell.includes('\u274c') ? 'failed' :
-      statusCell.includes('\ud83d\udc4b') ? 'manual' :
-      statusCell.includes('\u26aa') ? 'skipped' : 'failed';
+        statusCell.includes('\u274c') ? 'failed' :
+          statusCell.includes('\ud83d\udc4b') ? 'manual' :
+            statusCell.includes('\u26aa') ? 'skipped' : 'failed';
     // Extract date from status cell: "success (2024-01-15)"
     const dateMatch = statusCell.match(/\(([^)]+)\)/);
     const date = dateMatch ? dateMatch[1] : '';
@@ -126,10 +129,10 @@ export function parseDeploymentActionsCommentBody(body: string): DeploymentActio
 function getStatusIcon(status: DeploymentActionStateEntry['status']): string {
   switch (status) {
     case 'success': return '\u2705';   // ✅
-    case 'failed':  return '\u274c';   // ❌
-    case 'manual':  return '\ud83d\udc4b'; // 👋
+    case 'failed': return '\u274c';   // ❌
+    case 'manual': return '\ud83d\udc4b'; // 👋
     case 'skipped': return '\u26aa';   // ⚪
-    default:        return '\u2753';   // ❓
+    default: return '\u2753';   // ❓
   }
 }
 
@@ -155,6 +158,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
   });
 
   let body = `${DEPLOYMENT_ACTIONS_MARKER}\n## Deployment Actions\n\n`;
+  body += `> ⚠️ This section is automatically managed by sfdx-hardis. Do not edit it manually.\n\n`;
   body += `| Action | Org branch | Status | Job |\n`;
   body += `|--------|------------|--------|-----|\n`;
   for (const e of sorted) {

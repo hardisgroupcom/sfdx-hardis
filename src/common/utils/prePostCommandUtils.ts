@@ -104,6 +104,11 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
               statusCode: "skipped",
               skippedReason: `runOnlyOnceByOrg: already run in org (${orgBranchName}) on ${existingEntry.date}`
             };
+            // If the action label changed, update it in the PR comment.
+            if (existingEntry.actionLabel !== cmd.label) {
+              upsertActionInState({ ...existingEntry, actionLabel: cmd.label });
+              await persistDeploymentActionsState();
+            }
             // Preserve the existing success entry in the PR comment — do not overwrite it with skipped.
             continue;
           }
