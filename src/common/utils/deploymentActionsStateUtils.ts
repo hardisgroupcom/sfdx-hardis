@@ -137,15 +137,53 @@ export function upsertActionInState(entry: DeploymentActionStateEntry, sourcePrN
 /**
  * Persist dirty PR state back to their respective PR comments.
  * Each PR gets its own "Deployment Actions" comment containing only its own actions.
+ *
+ * Before writing, re-reads the existing comment and merges to avoid losing
+ * entries that were written by a different deployment (e.g. a different org branch)
+ * or that were missed during the initial load.
  */
 export async function persistDeploymentActionsState(): Promise<void> {
   const state = getMultiPrState();
   for (const prNumber of state.dirtyPrs) {
-    const entries = state.entriesByPr.get(prNumber) || [];
-    const body = buildDeploymentActionsCommentBody(entries);
+    const inMemoryEntries = state.entriesByPr.get(prNumber) || [];
+    // Re-read the current PR comment and merge to preserve entries from other org branches
+    const mergedEntries = await mergeWithExistingComment(prNumber, inMemoryEntries);
+    // Update the in-memory state with the merged result so subsequent persists stay consistent
+    state.entriesByPr.set(prNumber, mergedEntries);
+    const body = buildDeploymentActionsCommentBody(mergedEntries);
     await GitProvider.tryUpsertDeploymentActionsCommentForPr(prNumber, body);
   }
   state.dirtyPrs.clear();
+}
+
+/**
+ * Merge in-memory entries with the entries currently stored in a PR's comment.
+ * In-memory entries take precedence for the same actionId+orgBranch pair;
+ * entries that only exist in the comment (from other org branches / deployments) are preserved.
+ */
+async function mergeWithExistingComment(prNumber: number, inMemoryEntries: DeploymentActionStateEntry[]): Promise<DeploymentActionStateEntry[]> {
+  let existingEntries: DeploymentActionStateEntry[] = [];
+  try {
+    const existingBody = await GitProvider.tryGetDeploymentActionsCommentBodyForPr(prNumber);
+    if (existingBody) {
+      existingEntries = parseDeploymentActionsCommentBody(existingBody);
+    }
+  } catch (_e) {
+    // If re-read fails, proceed with in-memory entries only
+  }
+  if (existingEntries.length === 0) {
+    return inMemoryEntries;
+  }
+  // Start from in-memory entries (they are the most up-to-date for this run)
+  const merged = [...inMemoryEntries];
+  // Append any existing entries that are NOT already present in memory
+  for (const existing of existingEntries) {
+    const alreadyInMemory = merged.some(e => e.actionId === existing.actionId && e.orgBranch === existing.orgBranch);
+    if (!alreadyInMemory) {
+      merged.push(existing);
+    }
+  }
+  return merged;
 }
 
 export function parseDeploymentActionsCommentBody(body: string): DeploymentActionStateEntry[] {
