@@ -306,3 +306,30 @@ export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex'
 export const ACTION_CONTEXTS: PrePostCommand['context'][] = ['all', 'check-deployment-only', 'process-deployment-only'];
 export const ACTION_SCOPES: ActionScope[] = ['project', 'branch', 'pr'];
 export const ACTION_WHENS: ActionWhen[] = ['pre-deploy', 'post-deploy'];
+
+/**
+ * Read the deploymentApexTestClasses array from a config file.
+ */
+export async function readTestClasses(scope: ActionScope, branch?: string, prId?: string): Promise<string[]> {
+  const configFile = await getActionConfigFilePath(scope, branch, prId);
+  if (!fs.existsSync(configFile)) {
+    return [];
+  }
+  const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+  return Array.isArray(doc['deploymentApexTestClasses']) ? doc['deploymentApexTestClasses'] : [];
+}
+
+/**
+ * Write the deploymentApexTestClasses array back to config file, preserving other keys.
+ */
+export async function writeTestClasses(scope: ActionScope, classes: string[], branch?: string, prId?: string): Promise<string> {
+  const configFile = await getActionConfigFilePath(scope, branch, prId);
+  let doc: any = {};
+  if (fs.existsSync(configFile)) {
+    doc = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+  }
+  doc['deploymentApexTestClasses'] = classes;
+  await fs.ensureDir(path.dirname(configFile));
+  await fs.writeFile(configFile, yaml.dump(doc));
+  return configFile;
+}
