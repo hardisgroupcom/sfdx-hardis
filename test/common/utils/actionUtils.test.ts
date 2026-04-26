@@ -220,7 +220,7 @@ describe('actionUtils', () => {
         parameters: { instructions: 'Do something' },
       });
 
-      expect(action.skipIfError).to.equal(false);
+      expect(action.skipIfError).to.equal(undefined);
       expect(action.allowFailure).to.equal(false);
       expect(action.runOnlyOnceByOrg).to.equal(true);
       expect(action.customUsername).to.equal(undefined);
