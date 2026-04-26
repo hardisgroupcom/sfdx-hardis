@@ -6,6 +6,7 @@ import * as path from 'path';
 import { getCurrentGitBranch, isCI, uxLog } from './index.js';
 import { PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { findDataWorkspaceByName } from './dataUtils.js';
+import { getConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { t } from './i18n.js';
 
@@ -202,7 +203,7 @@ export async function resolvePrId(
     return prId;
   }
 
-  // Try to find the PR for the current branch
+  // Try to find the PR for the current branch via git provider API
   try {
     const prInfo = await GitProvider.getPullRequestInfo();
     if (prInfo && prInfo.idStr) {
@@ -211,6 +212,15 @@ export async function resolvePrId(
     }
   } catch (e) {
     uxLog("warning", commandThis, c.yellow(t('prResolutionFailed', { message: (e as Error).message })));
+  }
+
+  // Fallback: look up merge request info from user config
+  const prIdFromConfig = await getPrIdFromUserConfig();
+  if (prIdFromConfig) {
+    uxLog("log", commandThis, c.grey(t('prResolvedFromBranch', { prId: prIdFromConfig })));
+    // If a draft config file exists, rename it to the resolved PR ID
+    tryRenameDraftToPr(prIdFromConfig);
+    return prIdFromConfig;
   }
 
   // PR not found
@@ -254,6 +264,38 @@ export async function renameDraftToPr(prId: string): Promise<string> {
 
   await fs.rename(draftFile, targetFile);
   return targetFile;
+}
+
+/**
+ * Best-effort rename of draft config file to PR-specific file.
+ * Does nothing if no draft exists or if the target file already exists.
+ */
+function tryRenameDraftToPr(prId: string): void {
+  const draftFile = path.join('scripts', 'actions', '.sfdx-hardis.draft.yml');
+  const targetFile = path.join('scripts', 'actions', `.sfdx-hardis.${prId}.yml`);
+  if (fs.existsSync(draftFile) && !fs.existsSync(targetFile)) {
+    fs.renameSync(draftFile, targetFile);
+    uxLog("log", null, c.grey(`Renamed draft config to ${targetFile}`));
+  }
+}
+
+/**
+ * Extract the PR/MR ID from user config's mergeRequests for the current branch.
+ * Returns the ID as a string, or null if not found.
+ */
+export async function getPrIdFromUserConfig(): Promise<string | null> {
+  try {
+    const currentBranch = await getCurrentGitBranch();
+    if (!currentBranch) return null;
+    const userConfig = await getConfig('user');
+    const mergeRequests: any[] = userConfig.mergeRequests || [];
+    const entry = mergeRequests.find((mr: any) => mr?.branch === currentBranch && mr?.url);
+    if (!entry?.url) return null;
+    const match = String(entry.url).match(/\/(\d+)\s*$/);
+    return match ? match[1] : null;
+  } catch (_e) {
+    return null;
+  }
 }
 
 export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch'];

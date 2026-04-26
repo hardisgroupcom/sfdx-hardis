@@ -12,6 +12,7 @@ import { getPullRequestData, setPullRequestData } from './gitUtils.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { getPullRequestScopedSfdxHardisConfig, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
 import { t } from './i18n.js';
+import { getPrIdFromUserConfig } from './actionUtils.js';
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, extraCommands?: any[] }) {
   const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
@@ -37,7 +38,8 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   // Determine org branch name and current PR for state tracking
   const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
   const orgBranchName = prInfo?.targetBranch || await getCurrentGitBranch() || "unknown";
-  const currentPrNumber = prInfo?.idNumber || 0;
+  const prIdFromConfig = !prInfo?.idNumber ? await getPrIdFromUserConfig() : null;
+  const currentPrNumber = prInfo?.idNumber || (prIdFromConfig ? parseInt(prIdFromConfig, 10) : 0);
 
   // Pre-load deployment actions state from all source PRs
   const hasGitProvider = (await GitProvider.getInstance()) !== null;
