@@ -51,20 +51,20 @@ The command's technical implementation involves:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|excludeprofiles<br/>-e|option|List of profiles that you want to NOT freeze, separated by commas||||
-|flags-dir|option|undefined||||
-|includeprofiles<br/>-p|option|List of profiles that you want to freeze, separated by commas||||
-|json|boolean|Format output as json.||||
-|maxuserdisplay<br/>-m|option|Maximum users to display in logs|100|||
-|name<br/>-n|option|Filter according to Name criteria||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|usernames<br/>-u|option|Comma-separated list of Salesforce usernames to freeze (takes priority over profile flags)||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                   |  Type   | Description                                                                                | Default | Required | Options |
+|:-----------------------|:-------:|:-------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                  | boolean | Run in non-interactive mode for agents and automation                                      |         |          |         |
+| debug<br/>-d           | boolean | Activate debug mode (more logs)                                                            |         |          |         |
+| excludeprofiles<br/>-e | option  | List of profiles that you want to NOT freeze, separated by commas                          |         |          |         |
+| flags-dir              | option  | undefined                                                                                  |         |          |         |
+| includeprofiles<br/>-p | option  | List of profiles that you want to freeze, separated by commas                              |         |          |         |
+| json                   | boolean | Format output as json.                                                                     |         |          |         |
+| maxuserdisplay<br/>-m  | option  | Maximum users to display in logs                                                           |   100   |          |         |
+| name<br/>-n            | option  | Filter according to Name criteria                                                          |         |          |         |
+| skipauth               | boolean | Skip authentication check when a default username is required                              |         |          |         |
+| target-org<br/>-o      | option  | undefined                                                                                  |         |          |         |
+| usernames<br/>-u       | option  | Comma-separated list of Salesforce usernames to freeze (takes priority over profile flags) |         |          |         |
+| websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                  |         |          |         |
 
 ## Examples
 

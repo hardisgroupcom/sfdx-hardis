@@ -192,11 +192,11 @@ commandsPostDeploy:
 
 If some words are found **in the Pull Request description**, special behaviors will be applied
 
-| Word | Behavior |
-| :--- | :--- |
-| NO_DELTA | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request |
-| PURGE_FLOW_VERSIONS | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
-| DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package |
+| Word                                 | Behavior                                                                                                                                                                              |
+|:-------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NO_DELTA                             | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request                                                                        |
+| PURGE_FLOW_VERSIONS                  | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
+| DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package                                                  |
 
 You can also override some `.sfdx-hardis.yml` properties directly in the Pull Request description using YAML blocks. Supported keys: `deploymentApexTestClasses`, `commandsPreDeploy`, `commandsPostDeploy`.
 
@@ -296,15 +296,15 @@ In agent mode:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|check<br/>-c|boolean|Only checks the deployment, there is no impact on target org||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|delta|boolean|Applies sfdx-git-delta to package.xml before other deployment processes||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|packagexml<br/>-p|option|Path to package.xml containing what you want to deploy in target org||||
+| Name              |  Type   | Description                                                             | Default | Required | Options |
+|:------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                   |         |          |         |
+| check<br/>-c      | boolean | Only checks the deployment, there is no impact on target org            |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                         |         |          |         |
+| delta             | boolean | Applies sfdx-git-delta to package.xml before other deployment processes |         |          |         |
+| flags-dir         | option  | undefined                                                               |         |          |         |
+| json              | boolean | Format output as json.                                                  |         |          |         |
+| packagexml<br/>-p | option  | Path to package.xml containing what you want to deploy in target org    |         |          |         |
 |runtests<br/>-r|option|If testlevel=RunSpecifiedTests, please provide a list of classes.
 If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||

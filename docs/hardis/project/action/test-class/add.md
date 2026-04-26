@@ -39,17 +39,17 @@ Defaults applied: validates each class exists in sources before adding.
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|branch|option|Target branch name (for branch scope, defaults to current branch)||||
-|class-name|option|Apex test class name(s) to add (required in agent mode; can be specified multiple times)||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|pr-id|option|Pull request ID (for pr scope, defaults to draft)||||
-|scope|option|Configuration scope: project, branch, or pr|||project<br/>branch<br/>pr|
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name         |  Type   | Description                                                                              | Default | Required |          Options          |
+|:-------------|:-------:|:-----------------------------------------------------------------------------------------|:-------:|:--------:|:-------------------------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation                                    |         |          |                           |
+| branch       | option  | Target branch name (for branch scope, defaults to current branch)                        |         |          |                           |
+| class-name   | option  | Apex test class name(s) to add (required in agent mode; can be specified multiple times) |         |          |                           |
+| debug<br/>-d | boolean | Activate debug mode (more logs)                                                          |         |          |                           |
+| flags-dir    | option  | undefined                                                                                |         |          |                           |
+| json         | boolean | Format output as json.                                                                   |         |          |                           |
+| pr-id        | option  | Pull request ID (for pr scope, defaults to draft)                                        |         |          |                           |
+| scope        | option  | Configuration scope: project, branch, or pr                                              |         |          | project<br/>branch<br/>pr |
+| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                |         |          |                           |
 
 ## Examples
 

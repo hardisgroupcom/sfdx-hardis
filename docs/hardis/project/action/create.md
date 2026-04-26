@@ -41,32 +41,32 @@ In agent mode, `--context` defaults to `process-deployment-only`. `--run-only-on
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|allow-failure|boolean|Allow action to fail without blocking deployment||||
-|apex-script|option|Path to Apex script file (for apex type)||||
-|branch|option|Target branch name (for branch scope, defaults to current branch)||||
-|class-name|option|Apex batch class name (for schedule-batch type)||||
-|command|option|Shell command to execute (for command type)||||
-|community-name|option|Community name (for publish-community type)||||
-|context|option|Execution context (default: process-deployment-only)|||all<br/>check-deployment-only<br/>process-deployment-only|
-|cron-expression|option|Cron expression (for schedule-batch type)||||
-|custom-username|option|Run action with a specific Salesforce username||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|instructions|option|Manual instructions text (for manual type)||||
-|job-name|option|Job name for schedule-batch (optional, defaults to <className>_Schedule)||||
-|json|boolean|Format output as json.||||
-|label|option|Human-readable label for the action||||
-|pr-id|option|Pull request ID (for pr scope, defaults to draft)||||
-|run-only-once-by-org|boolean|Execute action only once per target org (default: true)||||
-|scope|option|Configuration scope: project, branch, or pr|||project<br/>branch<br/>pr|
-|sfdmu-project|option|SFDMU workspace name (for data type)||||
-|skip-if-error|boolean|Skip action if deployment failed||||
-|type|option|Type of action|||command<br/>data<br/>apex<br/>publish-community<br/>manual<br/>schedule-batch|
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
-|when|option|When to run the action: pre-deploy or post-deploy|||pre-deploy<br/>post-deploy|
+| Name                 |  Type   | Description                                                              | Default | Required |                                    Options                                    |
+|:---------------------|:-------:|:-------------------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------------------------------------------:|
+| agent                | boolean | Run in non-interactive mode for agents and automation                    |         |          |                                                                               |
+| allow-failure        | boolean | Allow action to fail without blocking deployment                         |         |          |                                                                               |
+| apex-script          | option  | Path to Apex script file (for apex type)                                 |         |          |                                                                               |
+| branch               | option  | Target branch name (for branch scope, defaults to current branch)        |         |          |                                                                               |
+| class-name           | option  | Apex batch class name (for schedule-batch type)                          |         |          |                                                                               |
+| command              | option  | Shell command to execute (for command type)                              |         |          |                                                                               |
+| community-name       | option  | Community name (for publish-community type)                              |         |          |                                                                               |
+| context              | option  | Execution context (default: process-deployment-only)                     |         |          |           all<br/>check-deployment-only<br/>process-deployment-only           |
+| cron-expression      | option  | Cron expression (for schedule-batch type)                                |         |          |                                                                               |
+| custom-username      | option  | Run action with a specific Salesforce username                           |         |          |                                                                               |
+| debug<br/>-d         | boolean | Activate debug mode (more logs)                                          |         |          |                                                                               |
+| flags-dir            | option  | undefined                                                                |         |          |                                                                               |
+| instructions         | option  | Manual instructions text (for manual type)                               |         |          |                                                                               |
+| job-name             | option  | Job name for schedule-batch (optional, defaults to <className>_Schedule) |         |          |                                                                               |
+| json                 | boolean | Format output as json.                                                   |         |          |                                                                               |
+| label                | option  | Human-readable label for the action                                      |         |          |                                                                               |
+| pr-id                | option  | Pull request ID (for pr scope, defaults to draft)                        |         |          |                                                                               |
+| run-only-once-by-org | boolean | Execute action only once per target org (default: true)                  |         |          |                                                                               |
+| scope                | option  | Configuration scope: project, branch, or pr                              |         |          |                           project<br/>branch<br/>pr                           |
+| sfdmu-project        | option  | SFDMU workspace name (for data type)                                     |         |          |                                                                               |
+| skip-if-error        | boolean | Skip action if deployment failed                                         |         |          |                                                                               |
+| type                 | option  | Type of action                                                           |         |          | command<br/>data<br/>apex<br/>publish-community<br/>manual<br/>schedule-batch |
+| websocket            | option  | Websocket host:port for VsCode SFDX Hardis UI integration                |         |          |                                                                               |
+| when                 | option  | When to run the action: pre-deploy or post-deploy                        |         |          |                          pre-deploy<br/>post-deploy                           |
 
 ## Examples
 
