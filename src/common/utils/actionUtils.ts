@@ -153,8 +153,8 @@ export function buildAction(values: {
   if (values.allowFailure === true) {
     action.allowFailure = true;
   }
-  if (values.runOnlyOnceByOrg === true) {
-    action.runOnlyOnceByOrg = true;
+  if (values.runOnlyOnceByOrg === true || values.runOnlyOnceByOrg === false) {
+    action.runOnlyOnceByOrg = values.runOnlyOnceByOrg;
   }
   if (values.customUsername) {
     action.customUsername = values.customUsername;

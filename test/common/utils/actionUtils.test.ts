@@ -226,5 +226,17 @@ describe('actionUtils', () => {
       expect(action.customUsername).to.equal(undefined);
       expect(action.parameters).to.deep.equal({ instructions: 'Do something' });
     });
+
+    it('persists runOnlyOnceByOrg as false when explicitly set to false', () => {
+      const action = buildAction({
+        id: 'test-id',
+        label: 'Test Action',
+        type: 'command',
+        command: 'echo hello',
+        runOnlyOnceByOrg: false,
+      });
+
+      expect(action.runOnlyOnceByOrg).to.equal(false);
+    });
   });
 });
