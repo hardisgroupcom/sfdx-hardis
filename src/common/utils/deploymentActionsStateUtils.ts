@@ -79,10 +79,8 @@ function getMultiPrState(): DeploymentActionsMultiPrState {
  */
 export async function loadDeploymentActionsState(sourcePrNumbers: number[]): Promise<void> {
   const state = getMultiPrState();
-  if (state.entriesByPr.size > 0) {
-    return; // Already loaded
-  }
-  const uniquePrs = [...new Set(sourcePrNumbers)].filter(n => n > 0);
+  // Only load PRs we haven't loaded yet (post-deploy may have different PRs than pre-deploy)
+  const uniquePrs = [...new Set(sourcePrNumbers)].filter(n => n > 0 && !state.entriesByPr.has(n));
   for (const prNumber of uniquePrs) {
     try {
       const body = await GitProvider.tryGetDeploymentActionsCommentBodyForPr(prNumber);
