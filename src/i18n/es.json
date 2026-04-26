@@ -12,6 +12,7 @@
   "actionCurrentOrder": "Orden actual de las acciones:",
   "actionDeletedSuccessfully": "Acción \"{{label}}\" eliminada correctamente",
   "actionListHeader": "Acciones {{when}} (ámbito {{scope}})",
+  "actionNotFound": "Acción con id {{id}} no encontrada.",
   "actionPromptAllowFailure": "¿Permitir que esta acción falle sin bloquear el despliegue?",
   "actionPromptCustomUsername": "Nombre de usuario de Salesforce personalizado para ejecutar esta acción (déjelo vacío para el predeterminado)",
   "actionPromptRunOnlyOnceByOrg": "¿Ejecutar esta acción solo una vez por org de destino?",

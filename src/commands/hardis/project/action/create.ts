@@ -52,7 +52,7 @@ Required in agent mode:
 - \`--scope\`, \`--when\`, \`--type\`, \`--label\`
 - Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch
 
-In agent mode, \`--context\` defaults to \`all\` and optional boolean flags default to \`false\`.
+In agent mode, \`--context\` defaults to \`all\`. \`--run-only-once-by-org\` defaults to \`true\`; other optional boolean flags default to \`false\`.
 
 <details markdown="1">
 <summary>Technical explanations</summary>

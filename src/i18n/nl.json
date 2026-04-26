@@ -12,6 +12,7 @@
   "actionCurrentOrder": "Huidige actievolgorde:",
   "actionDeletedSuccessfully": "Actie \"{{label}}\" succesvol verwijderd",
   "actionListHeader": "{{when}} acties ({{scope}} scope)",
+  "actionNotFound": "Actie met id {{id}} niet gevonden.",
   "actionPromptAllowFailure": "Toestaan dat deze actie faalt zonder de implementatie te blokkeren?",
   "actionPromptCustomUsername": "Aangepaste Salesforce-gebruikersnaam om deze actie uit te voeren (laat leeg voor standaard)",
   "actionPromptRunOnlyOnceByOrg": "Deze actie slechts eenmaal per doel-org uitvoeren?",

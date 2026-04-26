@@ -52,67 +52,80 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} is not valid: ${actionsIssues.skippedReason}`));
       continue;
     }
-    // If if skipIfError is true and deployment failed
+    // Determine whether the action should be skipped; use a flag instead of early `continue` so
+    // that skipped outcomes are still recorded in the "Deployment Actions" PR comment below.
+    let skipAction = false;
+
+    // If skipIfError is true and deployment failed
     if (options.success === false && !(cmd?.skipIfError === false)) {
       uxLog("action", this, c.yellow(`[DeploymentActions] Skipping ${cmd.label} (skipIfError=true) `));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "skipIfError is true and deployment failed"
       };
-      continue;
+      skipAction = true;
     }
     // Skip if we are in another context than the requested one
-    const cmdContext = cmd.context || "all";
-    if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: check-deployment-only action, and we are in process deployment mode`));
-      cmd.result = {
-        statusCode: "skipped",
-        skippedReason: "Action context is check-deployment-only but we are in process deployment mode"
-      };
-      continue;
-    }
-    if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: process-deployment-only action as we are in check deployment mode`));
-      cmd.result = {
-        statusCode: "skipped",
-        skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
-      };
-      continue;
-    }
-    const runOnlyOnceByOrg = cmd.runOnlyOnceByOrg !== false; // true by default
-    if (runOnlyOnceByOrg) {
-      const gitProviderInst = await GitProvider.getInstance();
-      if (!gitProviderInst) {
-        uxLog("warning", this, c.yellow(
-          `[DeploymentActions] Skipping ${cmd.label}: runOnlyOnceByOrg requires a git provider to track state. Configure GITHUB_TOKEN / CI_SFDX_HARDIS_GITLAB_TOKEN / SYSTEM_ACCESSTOKEN / CI_SFDX_HARDIS_BITBUCKET_TOKEN.`
-        ));
-        cmd.result = { statusCode: "skipped", skippedReason: "runOnlyOnceByOrg: no git provider configured for state tracking" };
-        continue;
-      }
-      const existingEntry = checkActionInState(cmd.id, orgBranchName);
-      if (existingEntry) {
-        uxLog("action", this, c.grey(
-          `[DeploymentActions] Skipping ${cmd.label}: already run in ${orgBranchName} on ${existingEntry.date}`
-        ));
+    if (!skipAction) {
+      const cmdContext = cmd.context || "all";
+      if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
+        uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: check-deployment-only action, and we are in process deployment mode`));
         cmd.result = {
           statusCode: "skipped",
-          skippedReason: `runOnlyOnceByOrg: already run in org (${orgBranchName}) on ${existingEntry.date}`
+          skippedReason: "Action context is check-deployment-only but we are in process deployment mode"
         };
-        continue;
+        skipAction = true;
+      } else if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
+        uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: process-deployment-only action as we are in check deployment mode`));
+        cmd.result = {
+          statusCode: "skipped",
+          skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
+        };
+        skipAction = true;
       }
     }
-    // Run command
-    uxLog("action", this, c.cyan(`[DeploymentActions] Running action ${cmd.label}`));
-    await executeAction(cmd);
-    // Track all executed/manual actions in the "Deployment Actions" PR comment (regardless of runOnlyOnceByOrg)
-    const trackableStatuses = ['success', 'failed', 'manual'];
+    if (!skipAction) {
+      const runOnlyOnceByOrg = cmd.runOnlyOnceByOrg !== false; // true by default
+      if (runOnlyOnceByOrg) {
+        const gitProviderInst = await GitProvider.getInstance();
+        if (!gitProviderInst) {
+          uxLog("warning", this, c.yellow(
+            `[DeploymentActions] Skipping ${cmd.label}: runOnlyOnceByOrg requires a git provider to track state. Configure GITHUB_TOKEN / CI_SFDX_HARDIS_GITLAB_TOKEN / SYSTEM_ACCESSTOKEN / CI_SFDX_HARDIS_BITBUCKET_TOKEN.`
+          ));
+          cmd.result = { statusCode: "skipped", skippedReason: "runOnlyOnceByOrg: no git provider configured for state tracking" };
+          skipAction = true;
+        } else {
+          const existingEntry = checkActionInState(cmd.id, orgBranchName);
+          if (existingEntry) {
+            uxLog("action", this, c.grey(
+              `[DeploymentActions] Skipping ${cmd.label}: already run in ${orgBranchName} on ${existingEntry.date}`
+            ));
+            cmd.result = {
+              statusCode: "skipped",
+              skippedReason: `runOnlyOnceByOrg: already run in org (${orgBranchName}) on ${existingEntry.date}`
+            };
+            // Preserve the existing success entry in the PR comment — do not overwrite it with skipped.
+            continue;
+          }
+        }
+      }
+    }
+    if (!skipAction) {
+      // Run command
+      uxLog("action", this, c.cyan(`[DeploymentActions] Running action ${cmd.label}`));
+      await executeAction(cmd);
+    }
+    // Track executed/manual/skipped actions in the "Deployment Actions" PR comment.
+    // "Already ran" skips (runOnlyOnceByOrg + existing success entry) are excluded via the
+    // early `continue` above to avoid overwriting the existing success record.
+    const trackableStatuses = ['success', 'failed', 'manual', 'skipped'];
     if (hasGitProvider && cmd.result?.statusCode && trackableStatuses.includes(cmd.result.statusCode)) {
       const { jobId, jobUrl } = await getJobInfoWithUrl();
       upsertActionInState({
         actionId: cmd.id,
         actionLabel: cmd.label,
         orgBranch: orgBranchName,
-        status: cmd.result.statusCode as 'success' | 'failed' | 'manual',
+        status: cmd.result.statusCode as 'success' | 'failed' | 'manual' | 'skipped',
         jobId,
         jobUrl,
         date: new Date().toISOString(),

@@ -12,6 +12,7 @@
   "actionCurrentOrder": "Current action order:",
   "actionDeletedSuccessfully": "Action \"{{label}}\" deleted successfully",
   "actionListHeader": "{{when}} actions ({{scope}} scope)",
+  "actionNotFound": "Action with id {{id}} not found.",
   "actionPromptAllowFailure": "Allow this action to fail without blocking the deployment?",
   "actionPromptCustomUsername": "Custom Salesforce username to run this action (leave empty for default)",
   "actionPromptRunOnlyOnceByOrg": "Run this action only once per target org?",

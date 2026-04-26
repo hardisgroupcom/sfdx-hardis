@@ -12,6 +12,7 @@
   "actionCurrentOrder": "現在のアクション順序:",
   "actionDeletedSuccessfully": "アクション「{{label}}」が正常に削除されました",
   "actionListHeader": "{{when}} アクション（{{scope}} スコープ）",
+  "actionNotFound": "ID {{id}} のアクションが見つかりません。",
   "actionPromptAllowFailure": "このアクションがデプロイをブロックせずに失敗することを許可しますか？",
   "actionPromptCustomUsername": "このアクションを実行するカスタム Salesforce ユーザー名（デフォルトの場合は空のままにしてください）",
   "actionPromptRunOnlyOnceByOrg": "このアクションをターゲット org ごとに1回のみ実行しますか？",

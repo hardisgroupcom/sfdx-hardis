@@ -12,6 +12,7 @@
   "actionCurrentOrder": "Ordre actuel des actions :",
   "actionDeletedSuccessfully": "Action \"{{label}}\" supprimée avec succès",
   "actionListHeader": "Actions {{when}} (portée {{scope}})",
+  "actionNotFound": "Action avec l'identifiant {{id}} introuvable.",
   "actionPromptAllowFailure": "Autoriser cette action à échouer sans bloquer le déploiement ?",
   "actionPromptCustomUsername": "Nom d'utilisateur Salesforce personnalisé pour exécuter cette action (laisser vide pour la valeur par défaut)",
   "actionPromptRunOnlyOnceByOrg": "Exécuter cette action une seule fois par org cible ?",

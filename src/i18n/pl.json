@@ -12,6 +12,7 @@
   "actionCurrentOrder": "Bieżąca kolejność akcji:",
   "actionDeletedSuccessfully": "Akcja \"{{label}}\" usunięta pomyślnie",
   "actionListHeader": "Akcje {{when}} (zakres {{scope}})",
+  "actionNotFound": "Akcja z identyfikatorem {{id}} nie została znaleziona.",
   "actionPromptAllowFailure": "Czy zezwolić na niepowodzenie tej akcji bez blokowania wdrożenia?",
   "actionPromptCustomUsername": "Niestandardowa nazwa użytkownika Salesforce do wykonania tej akcji (pozostaw puste dla domyślnej)",
   "actionPromptRunOnlyOnceByOrg": "Czy uruchamiać tę akcję tylko raz dla każdej docelowej org?",

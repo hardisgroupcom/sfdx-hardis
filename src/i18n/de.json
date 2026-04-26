@@ -12,6 +12,7 @@
   "actionCurrentOrder": "Aktuelle Aktionsreihenfolge:",
   "actionDeletedSuccessfully": "Aktion \"{{label}}\" wurde erfolgreich gelöscht",
   "actionListHeader": "{{when}}-Aktionen ({{scope}}-Bereich)",
+  "actionNotFound": "Aktion mit der ID {{id}} nicht gefunden.",
   "actionPromptAllowFailure": "Darf diese Aktion fehlschlagen, ohne das Deployment zu blockieren?",
   "actionPromptCustomUsername": "Benutzerdefinierter Salesforce-Benutzername zum Ausführen dieser Aktion (leer lassen für Standard)",
   "actionPromptRunOnlyOnceByOrg": "Diese Aktion nur einmal pro Ziel-Org ausführen?",
