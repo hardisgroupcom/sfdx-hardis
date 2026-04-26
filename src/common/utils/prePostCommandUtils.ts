@@ -12,18 +12,22 @@ import { getPullRequestData, setPullRequestData } from './gitUtils.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { getPullRequestScopedSfdxHardisConfig, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
 import { t } from './i18n.js';
-import { getPrIdFromUserConfig } from './actionUtils.js';
+import { ActionWhen, getPrIdFromUserConfig } from './actionUtils.js';
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, extraCommands?: any[] }) {
   const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
   uxLog("action", this, c.cyan(`[DeploymentActions] Listing ${actionLabel}...`));
   const branchConfig = await getConfig('branch');
+  const deployWhen: ActionWhen = property === 'commandsPreDeploy' ? 'pre-deploy' : 'post-deploy';
   const extraCommands = (options.extraCommands || []).filter(cmd => cmd.preOrPost === property);
   const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(extraCommands || [])];
   try {
     await completeWithCommandsFromPullRequests(property, commands, options.checkOnly);
   } catch (e) {
     uxLog("error", this, c.red(`[DeploymentActions] Error while retrieving commands from pull requests: ${(e as Error).message}\n ${(e as Error).stack}\n You might report the issue on sfdx-hardis GitHub repository.`));
+  }
+  for (const cmd of commands) {
+    cmd.when ??= deployWhen;
   }
   if (commands.length === 0) {
     uxLog("action", this, c.cyan(`[DeploymentActions] No ${actionLabel} defined in branch config or pull requests`));
@@ -48,7 +52,8 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     await loadDeploymentActionsState(sourcePrNumbers);
   }
 
-  for (const cmd of commands) {
+  for (let cmdIndex = 0; cmdIndex < commands.length; cmdIndex++) {
+    const cmd = commands[cmdIndex];
     const actionsInstance = await ActionsProvider.buildActionInstance(cmd);
     const actionsIssues = await actionsInstance.checkValidityIssues(cmd);
     if (actionsIssues) {
@@ -137,6 +142,8 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
         actionId: cmd.id,
         actionLabel: cmd.label,
         orgBranch: orgBranchName,
+        when: deployWhen,
+        executionOrder: cmdIndex,
         status: cmd.result.statusCode as 'success' | 'failed' | 'manual' | 'skipped',
         jobId,
         jobUrl,

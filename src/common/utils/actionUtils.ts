@@ -4,14 +4,14 @@ import fs from 'fs-extra';
 import * as yaml from 'js-yaml';
 import * as path from 'path';
 import { getCurrentGitBranch, isCI, uxLog } from './index.js';
-import { PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { findDataWorkspaceByName } from './dataUtils.js';
 import { getConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { t } from './i18n.js';
 
 export type ActionScope = 'project' | 'branch' | 'pr';
-export type ActionWhen = 'pre-deploy' | 'post-deploy';
+export type { ActionWhen };
 
 const WHEN_TO_CONFIG_KEY: Record<ActionWhen, string> = {
   'pre-deploy': 'commandsPreDeploy',
@@ -44,7 +44,11 @@ export async function readActions(scope: ActionScope, when: ActionWhen, branch?:
     return [];
   }
   const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
-  return Array.isArray(doc[configKey]) ? doc[configKey] : [];
+  const commands: PrePostCommand[] = Array.isArray(doc[configKey]) ? doc[configKey] : [];
+  for (const cmd of commands) {
+    cmd.when = when;
+  }
+  return commands;
 }
 
 /**
