@@ -341,7 +341,7 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   if (!isGitRepo()) {
     return null;
   }
-  const gitBranch = process.env.CI_COMMIT_REF_NAME || (await git().branchLocal()).current;
+  const gitBranch = process.env.FORCE_SOURCE_BRANCH || process.env.CI_COMMIT_REF_NAME || (await git().branchLocal()).current;
   if (options.formatted === true) {
     return gitBranch.replace('/', '__');
   }

@@ -8,6 +8,7 @@ import {
   execCommand,
   execSfdxJson,
   getCurrentGitBranch,
+  isAgentMode,
   isCI,
   promptInstanceUrl,
   stripAnsi,
@@ -230,10 +231,14 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         if (!logged) {
           throw new SfError(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`);
         }
-      } finally {
+      }
+      catch (e) {
+        uxLog("error", this, c.red(`JWT login failed for org ${orgAlias}. Error: ${(e as Error).message}`));
+      }
+      finally {
         await safeDeleteAuthTempFile(crtKeyfile);
       }
-    } else if (!isCI) {
+    } else if (!isCI && !isAgentMode()) {
       // Login with web auth
       const orgLabel = `org ${orgAlias}`;
       console.warn(

@@ -959,4 +959,53 @@ ${getBannerMarkdownAndLink()}
     const azureGitApi = await this.azureApi.getGitApi();
     await azureGitApi.updatePullRequest({ title, description: body }, repositoryId, id, teamProject);
   }
+
+  public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const pullRequestId = prNumber || Number(process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || '');
+    if (!repositoryId || !pullRequestId) return null;
+    const azureGitApi = await this.azureApi.getGitApi();
+    const threads = await azureGitApi.getThreads(repositoryId, pullRequestId);
+    for (const thread of threads) {
+      if (thread.isDeleted) continue;
+      for (const comment of thread?.comments || []) {
+        if ((comment?.content || '').includes(marker)) {
+          return comment.content || null;
+        }
+      }
+    }
+    return null;
+  }
+
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const pullRequestId = prNumber || Number(process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || '');
+    if (!repositoryId || !pullRequestId) return;
+    const azureGitApi = await this.azureApi.getGitApi();
+    const threads = await azureGitApi.getThreads(repositoryId, pullRequestId);
+    let existingThreadId: number | null = null;
+    let existingCommentId: number | null = null;
+    for (const thread of threads) {
+      if (thread.isDeleted) continue;
+      for (const comment of thread?.comments || []) {
+        if ((comment?.content || '').includes(marker)) {
+          existingThreadId = thread.id || null;
+          existingCommentId = comment.id || null;
+          break;
+        }
+      }
+      if (existingThreadId) break;
+    }
+    if (existingThreadId && existingCommentId) {
+      await azureGitApi.updateComment({ content: body }, repositoryId, pullRequestId, existingThreadId, existingCommentId);
+      uxLog("log", this, c.grey(`[Azure DevOps] Updated Deployment Actions thread comment on PR #${pullRequestId}`));
+    } else {
+      const newThread: GitPullRequestCommentThread = {
+        comments: [{ content: body }],
+        status: CommentThreadStatus.Unknown,
+      };
+      await azureGitApi.createThread(newThread, repositoryId, pullRequestId);
+      uxLog("log", this, c.grey(`[Azure DevOps] Created Deployment Actions thread on PR #${pullRequestId}`));
+    }
+  }
 }

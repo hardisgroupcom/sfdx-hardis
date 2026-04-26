@@ -528,4 +528,60 @@ ${getBannerMarkdownAndLink()}
     });
   }
 
+  public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const pullRequestId = prNumber || Number(process.env.BITBUCKET_PR_ID || '');
+    if (!pullRequestId || !repoSlug || !workspace) return null;
+    const comments = await this.bitbucket.repositories.listPullRequestComments({
+      pull_request_id: pullRequestId,
+      repo_slug: repoSlug,
+      workspace,
+    });
+    for (const comment of comments?.data?.values || []) {
+      if ((comment?.content?.raw || '').includes(marker)) {
+        return comment.content?.raw || null;
+      }
+    }
+    return null;
+  }
+
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const pullRequestId = prNumber || Number(process.env.BITBUCKET_PR_ID || '');
+    if (!pullRequestId || !repoSlug || !workspace) return;
+    const comments = await this.bitbucket.repositories.listPullRequestComments({
+      pull_request_id: pullRequestId,
+      repo_slug: repoSlug,
+      workspace,
+    });
+    let existingCommentId: number | null = null;
+    for (const comment of comments?.data?.values || []) {
+      if ((comment?.content?.raw || '').includes(marker)) {
+        existingCommentId = comment.id || null;
+        break;
+      }
+    }
+    const commentBody: any = { content: { raw: body } };
+    if (existingCommentId) {
+      await this.bitbucket.repositories.updatePullRequestComment({
+        workspace,
+        repo_slug: repoSlug,
+        pull_request_id: pullRequestId,
+        comment_id: existingCommentId,
+        _body: commentBody,
+      });
+      uxLog("log", this, c.grey(`[Bitbucket] Updated Deployment Actions comment on PR #${pullRequestId}`));
+    } else {
+      await this.bitbucket.repositories.createPullRequestComment({
+        workspace,
+        repo_slug: repoSlug,
+        pull_request_id: pullRequestId,
+        _body: commentBody,
+      });
+      uxLog("log", this, c.grey(`[Bitbucket] Created Deployment Actions comment on PR #${pullRequestId}`));
+    }
+  }
+
 }

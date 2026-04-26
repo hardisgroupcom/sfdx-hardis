@@ -1,20 +1,19 @@
-import { Connection, SfError } from '@salesforce/core';
+import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from 'fs-extra';
 
 import * as path from 'path';
 import { getConfig } from '../../config/index.js';
-import { uxLog } from './index.js';
+import { getCurrentGitBranch, uxLog } from './index.js';
 import { GitProvider } from '../gitProvider/index.js';
-import { checkSfdxHardisTraceAvailable } from './orgConfigUtils.js';
-import { soqlQuery } from './apiUtils.js';
+import { loadDeploymentActionsState, checkActionInState, upsertActionInState, persistDeploymentActionsState, getJobInfoWithUrl } from './deploymentActionsStateUtils.js';
 // data import moved to DataAction class in actionsProvider
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { getPullRequestScopedSfdxHardisConfig, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
 import { t } from './i18n.js';
 
-export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection, extraCommands?: any[] }) {
+export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, extraCommands?: any[] }) {
   const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
   uxLog("action", this, c.cyan(`[DeploymentActions] Listing ${actionLabel}...`));
   const branchConfig = await getConfig('branch');
@@ -34,6 +33,19 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     `[DeploymentActions] Found ${commands.length} ${actionLabel} to run\n` +
     commands.map(c => `- ${c.label} (${c.type || 'command'})`).join('\n')
   ));
+
+  // Determine org branch name and current PR for state tracking
+  const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+  const orgBranchName = prInfo?.targetBranch || await getCurrentGitBranch() || "unknown";
+  const currentPrNumber = prInfo?.idNumber || 0;
+
+  // Pre-load deployment actions state from all source PRs
+  const hasGitProvider = (await GitProvider.getInstance()) !== null;
+  if (hasGitProvider) {
+    const sourcePrNumbers = collectSourcePrNumbers(commands, currentPrNumber);
+    await loadDeploymentActionsState(sourcePrNumbers);
+  }
+
   for (const cmd of commands) {
     const actionsInstance = await ActionsProvider.buildActionInstance(cmd);
     const actionsIssues = await actionsInstance.checkValidityIssues(cmd);
@@ -42,65 +54,96 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} is not valid: ${actionsIssues.skippedReason}`));
       continue;
     }
-    // If if skipIfError is true and deployment failed
+    // Determine whether the action should be skipped; use a flag instead of early `continue` so
+    // that skipped outcomes are still recorded in the "Deployment Actions" PR comment below.
+    let skipAction = false;
+
+    // If skipIfError is true and deployment failed
     if (options.success === false && !(cmd?.skipIfError === false)) {
       uxLog("action", this, c.yellow(`[DeploymentActions] Skipping ${cmd.label} (skipIfError=true) `));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "skipIfError is true and deployment failed"
       };
-      continue;
+      skipAction = true;
     }
     // Skip if we are in another context than the requested one
-    const cmdContext = cmd.context || "all";
-    if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: check-deployment-only action, and we are in process deployment mode`));
-      cmd.result = {
-        statusCode: "skipped",
-        skippedReason: "Action context is check-deployment-only but we are in process deployment mode"
-      };
-      continue;
-    }
-    if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: process-deployment-only action as we are in check deployment mode`));
-      cmd.result = {
-        statusCode: "skipped",
-        skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
-      };
-      continue;
-    }
-    const runOnlyOnceByOrg = cmd.runOnlyOnceByOrg || false;
-    if (runOnlyOnceByOrg) {
-      await checkSfdxHardisTraceAvailable(options.conn);
-      const commandTraceQuery = `SELECT Id,CreatedDate FROM SfdxHardisTrace__c WHERE Type__c='${property}' AND Key__c='${cmd.id}' LIMIT 1`;
-      const commandTraceRes = await soqlQuery(commandTraceQuery, options.conn);
-      if (commandTraceRes?.records?.length > 0) {
-        uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: it has been defined with runOnlyOnceByOrg and has already been run on ${commandTraceRes.records[0].CreatedDate}`));
+    if (!skipAction) {
+      const cmdContext = cmd.context || "all";
+      if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
+        uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: check-deployment-only action, and we are in process deployment mode`));
         cmd.result = {
           statusCode: "skipped",
-          skippedReason: "runOnlyOnceByOrg is true and command has already been run on this org"
+          skippedReason: "Action context is check-deployment-only but we are in process deployment mode"
         };
-        continue;
+        skipAction = true;
+      } else if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
+        uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: process-deployment-only action as we are in check deployment mode`));
+        cmd.result = {
+          statusCode: "skipped",
+          skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
+        };
+        skipAction = true;
       }
     }
-    // Run command
-    uxLog("action", this, c.cyan(`[DeploymentActions] Running action ${cmd.label}`));
-    await executeAction(cmd);
-    if (cmd.result?.statusCode === "success" && runOnlyOnceByOrg) {
-      const hardisTraceRecord = {
-        Name: property + "--" + cmd.id,
-        Type__c: property,
-        Key__c: cmd.id
-      }
-      const insertRes = await options.conn.insert("SfdxHardisTrace__c", [hardisTraceRecord]);
-      if (insertRes[0].success) {
-        uxLog("success", this, c.green(`[DeploymentActions] Stored SfdxHardisTrace__c entry ${insertRes[0].id} with command [${cmd.id}] so it is not run again in the future (runOnlyOnceByOrg: true)`));
-      }
-      else {
-        uxLog("error", this, c.red(`[DeploymentActions] Error storing SfdxHardisTrace__c entry :` + JSON.stringify(insertRes, null, 2)));
+    if (!skipAction) {
+      const runOnlyOnceByOrg = cmd.runOnlyOnceByOrg !== false; // true by default
+      if (runOnlyOnceByOrg) {
+        const gitProviderInst = await GitProvider.getInstance();
+        if (!gitProviderInst) {
+          uxLog("warning", this, c.yellow(
+            `[DeploymentActions] Skipping ${cmd.label}: runOnlyOnceByOrg requires a git provider to track state. Configure GITHUB_TOKEN / CI_SFDX_HARDIS_GITLAB_TOKEN / SYSTEM_ACCESSTOKEN / CI_SFDX_HARDIS_BITBUCKET_TOKEN.`
+          ));
+          cmd.result = { statusCode: "skipped", skippedReason: "runOnlyOnceByOrg: no git provider configured for state tracking" };
+          skipAction = true;
+        } else {
+          const existingEntry = checkActionInState(cmd.id, orgBranchName);
+          if (existingEntry) {
+            uxLog("action", this, c.grey(
+              `[DeploymentActions] Skipping ${cmd.label}: already run in ${orgBranchName} on ${existingEntry.date}`
+            ));
+            cmd.result = {
+              statusCode: "skipped",
+              skippedReason: `runOnlyOnceByOrg: already run in org (${orgBranchName}) on ${existingEntry.date}`
+            };
+            // If the action label changed, update it in the PR comment.
+            if (existingEntry.actionLabel !== cmd.label) {
+              const sourcePr = cmd.pullRequest?.idNumber || currentPrNumber;
+              upsertActionInState({ ...existingEntry, actionLabel: cmd.label }, sourcePr);
+              await persistDeploymentActionsState();
+            }
+            // Preserve the existing success entry in the PR comment — do not overwrite it with skipped.
+            continue;
+          }
+        }
       }
     }
-    else if (cmd.result?.statusCode === "failed" && cmd.allowFailure !== true) {
+    if (!skipAction) {
+      // Run command
+      uxLog("action", this, c.cyan(`[DeploymentActions] Running action ${cmd.label}`));
+      await executeAction(cmd);
+    }
+    // Track executed/manual/skipped actions in the source PR's "Deployment Actions" comment.
+    // Actions are written to their source PR only — not to the current PR for actions from other PRs.
+    // "Already ran" skips (runOnlyOnceByOrg + existing success entry) are excluded via the
+    // early `continue` above to avoid overwriting the existing success record.
+    const sourcePrNumber = cmd.pullRequest?.idNumber || currentPrNumber;
+    const trackableStatuses = ['success', 'failed', 'manual', 'skipped'];
+    if (hasGitProvider && sourcePrNumber > 0 && cmd.result?.statusCode && trackableStatuses.includes(cmd.result.statusCode)) {
+      const { jobId, jobUrl } = await getJobInfoWithUrl();
+      upsertActionInState({
+        actionId: cmd.id,
+        actionLabel: cmd.label,
+        orgBranch: orgBranchName,
+        status: cmd.result.statusCode as 'success' | 'failed' | 'manual' | 'skipped',
+        jobId,
+        jobUrl,
+        date: new Date().toISOString(),
+        output: cmd.result.output,
+      }, sourcePrNumber);
+      await persistDeploymentActionsState();
+    }
+    if (cmd.result?.statusCode === "failed" && cmd.allowFailure !== true) {
       uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} failed, stopping execution of further actions.`));
       break;
     }
@@ -139,6 +182,21 @@ async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy
       }
     }
   }
+}
+
+/**
+ * Collect all unique source PR numbers from the commands list.
+ * Includes the current PR number (for branch-config and current PR's own actions).
+ */
+function collectSourcePrNumbers(commands: PrePostCommand[], currentPrNumber: number): number[] {
+  const prNumbers = new Set<number>();
+  if (currentPrNumber > 0) prNumbers.add(currentPrNumber);
+  for (const cmd of commands) {
+    if (cmd.pullRequest?.idNumber && cmd.pullRequest.idNumber > 0) {
+      prNumbers.add(cmd.pullRequest.idNumber);
+    }
+  }
+  return [...prNumbers];
 }
 
 async function checkForDraftCommandsFile(property: 'commandsPreDeploy' | 'commandsPostDeploy', checkOnly: boolean) {

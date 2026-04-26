@@ -2,82 +2,23 @@
 
 ## [beta] (main)
 
+- [hardis:org:user:freeze](https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/) and [hardis:org:user:unfreeze](https://sfdx-hardis.cloudity.com/hardis/org/user/unfreeze/): Added `--usernames` flag to target specific Salesforce usernames directly (takes priority over profile flags; makes `--includeprofiles`/`--excludeprofiles` optional in all modes including agent/CI).
+- Deployment Actions: `runOnlyOnceByOrg` now defaults to `true` and uses a dedicated PR comment ("Deployment Actions") as the sole state store — replacing the `SfdxHardisTrace__c` Salesforce custom object. The comment table (action / org branch / status / job) is readable by both humans and automation across all CI workflows on the same PR.
+- New deployment action management commands with full `--agent` support for non-interactive execution:
+  - [hardis:project:action:create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/) - Create deployment actions (command, data, apex, publish-community, manual, schedule-batch)
+  - [hardis:project:action:update](https://sfdx-hardis.cloudity.com/hardis/project/action/update/) - Update existing deployment actions
+  - [hardis:project:action:delete](https://sfdx-hardis.cloudity.com/hardis/project/action/delete/) - Delete deployment actions
+  - [hardis:project:action:reorder](https://sfdx-hardis.cloudity.com/hardis/project/action/reorder/) - Reorder actions (single move or full reorder)
+  - [hardis:project:action:list](https://sfdx-hardis.cloudity.com/hardis/project/action/list/) - List actions by scope and phase
+  - [hardis:project:action:link-pull-request](https://sfdx-hardis.cloudity.com/hardis/project/action/link-pull-request/) - Link draft actions to a pull request
 - Documentation: updated agentic automation command catalog to reflect all currently `--agent`-enabled commands and aligned command count references to 130+.
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
   - Feature: Data Cloud backup coverage has been expanded and made more reliable.
   - Feature: Added an option to skip Data Cloud backup when needed.
-- Added `--agent` flag for non-interactive headless execution to 47 commands. Commands skip all interactive prompts and use sensible defaults or require explicit flags when running in agent mode. Updated commands:
-  - [hardis:datacloud:sql-query](https://sfdx-hardis.cloudity.com/hardis/datacloud/sql-query/)
-  - [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/)
-  - [hardis:git:pull-requests:extract](https://sfdx-hardis.cloudity.com/hardis/git/pull-requests/extract/)
-  - [hardis:lint:access](https://sfdx-hardis.cloudity.com/hardis/lint/access/)
-  - [hardis:lint:metadatastatus](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/)
-  - [hardis:lint:missingattributes](https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/)
-  - [hardis:lint:unusedmetadatas](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/)
-  - [hardis:misc:custom-label-translations](https://sfdx-hardis.cloudity.com/hardis/misc/custom-label-translations/)
-  - [hardis:misc:purge-references](https://sfdx-hardis.cloudity.com/hardis/misc/purge-references/)
-  - [hardis:misc:servicenow-report](https://sfdx-hardis.cloudity.com/hardis/misc/servicenow-report/)
-  - [hardis:org:community:update](https://sfdx-hardis.cloudity.com/hardis/org/community/update/)
-  - [hardis:org:connect](https://sfdx-hardis.cloudity.com/hardis/org/connect/)
-  - [hardis:org:create](https://sfdx-hardis.cloudity.com/hardis/org/create/)
-  - [hardis:org:data:delete](https://sfdx-hardis.cloudity.com/hardis/org/data/delete/)
-  - [hardis:org:data:export](https://sfdx-hardis.cloudity.com/hardis/org/data/export/)
-  - [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/import/)
-  - [hardis:org:diagnose:apex-api-version](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/apex-api-version/)
-  - [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/)
-  - [hardis:org:diagnose:deployments](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/deployments/)
-  - [hardis:org:diagnose:flex-queue](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/flex-queue/)
-  - [hardis:org:diagnose:instanceupgrade](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/instanceupgrade/)
-  - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/)
-  - [hardis:org:diagnose:licenses](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/licenses/)
-  - [hardis:org:diagnose:minimalpermsets](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/minimalpermsets/)
-  - [hardis:org:diagnose:releaseupdates](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates/)
-  - [hardis:org:diagnose:storage-stats](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/storage-stats/)
-  - [hardis:org:diagnose:underusedpermsets](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/underusedpermsets/)
-  - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/)
-  - [hardis:org:diagnose:unused-apex-classes](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-apex-classes/)
-  - [hardis:org:diagnose:unused-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/)
-  - [hardis:org:diagnose:unusedlicenses](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/)
-  - [hardis:org:diagnose:unusedusers](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/)
-  - [hardis:org:files:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/)
-  - [hardis:org:files:import](https://sfdx-hardis.cloudity.com/hardis/org/files/import/)
-  - [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/)
-  - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
-  - [hardis:org:monitor:errors](https://sfdx-hardis.cloudity.com/hardis/org/monitor/errors/)
-  - [hardis:org:monitor:health-check](https://sfdx-hardis.cloudity.com/hardis/org/monitor/health-check/)
-  - [hardis:org:monitor:limits](https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/)
-  - [hardis:org:multi-org-query](https://sfdx-hardis.cloudity.com/hardis/org/multi-org-query/)
-  - [hardis:org:purge:apexlog](https://sfdx-hardis.cloudity.com/hardis/org/purge/apexlog/)
-  - [hardis:org:purge:flow](https://sfdx-hardis.cloudity.com/hardis/org/purge/flow/)
-  - [hardis:org:purge:profile](https://sfdx-hardis.cloudity.com/hardis/org/purge/profile/)
-  - [hardis:org:retrieve:packageconfig](https://sfdx-hardis.cloudity.com/hardis/org/retrieve/packageconfig/)
-  - [hardis:org:retrieve:sources:analytics](https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/analytics/)
-  - [hardis:org:retrieve:sources:dx2](https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/dx2/)
-  - [hardis:org:user:activateinvalid](https://sfdx-hardis.cloudity.com/hardis/org/user/activateinvalid/)
-  - [hardis:org:user:freeze](https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/)
-  - [hardis:org:user:unfreeze](https://sfdx-hardis.cloudity.com/hardis/org/user/unfreeze/)
-  - [hardis:package:create](https://sfdx-hardis.cloudity.com/hardis/package/create/)
-  - [hardis:package:install](https://sfdx-hardis.cloudity.com/hardis/package/install/)
-  - [hardis:package:mergexml](https://sfdx-hardis.cloudity.com/hardis/package/mergexml/)
-  - [hardis:package:version:create](https://sfdx-hardis.cloudity.com/hardis/package/version/create/)
-  - [hardis:package:version:promote](https://sfdx-hardis.cloudity.com/hardis/package/version/promote/)
-  - [hardis:project:clean:orgmissingitems](https://sfdx-hardis.cloudity.com/hardis/project/clean/orgmissingitems/)
-  - [hardis:project:clean:profiles-extract](https://sfdx-hardis.cloudity.com/hardis/project/clean/profiles-extract/)
-  - [hardis:project:clean:references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/)
-  - [hardis:project:clean:xml](https://sfdx-hardis.cloudity.com/hardis/project/clean/xml/)
-  - [hardis:project:create](https://sfdx-hardis.cloudity.com/hardis/project/create/)
-  - [hardis:project:deploy:simulate](https://sfdx-hardis.cloudity.com/hardis/project/deploy/simulate/)
-  - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/)
-  - [hardis:project:fix:profiletabs](https://sfdx-hardis.cloudity.com/hardis/project/fix/profiletabs/)
-  - [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/)
-  - [hardis:project:generate:flow-git-diff](https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/)
-  - [hardis:project:generate:gitdelta](https://sfdx-hardis.cloudity.com/hardis/project/generate/gitdelta/)
-  - [hardis:project:metadata:activate-decomposed](https://sfdx-hardis.cloudity.com/hardis/project/metadata/activate-decomposed/)
-  - [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/)
-  - [hardis:scratch:delete](https://sfdx-hardis.cloudity.com/hardis/scratch/delete/)
-  - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/)
-  - [hardis:work:refresh](https://sfdx-hardis.cloudity.com/hardis/work/refresh/)
-  - [hardis:work:resetselection](https://sfdx-hardis.cloudity.com/hardis/work/resetselection/)
+- Added `--agent` flag for non-interactive headless execution to 100+ commands. Commands skip all interactive prompts and use sensible defaults or require explicit flags when running in agent mode.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Enhance the command to easily simulate deployments from local computer.
+- Fix: display error when JWT auth failed.
+- Add schedule-batch in JSON Schema
 
 ## [7.10.0] 2026-04-24
 

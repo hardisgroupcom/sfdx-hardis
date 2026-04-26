@@ -40,7 +40,7 @@ It is free and Open-Source, and will allow you to simply:
 
 If you need guidance about how to leverage sfdx-hardis to bring more value to your business, Cloudity's international multi-cloud teams of business experts and technical experts can help: [contact us](https://cloudity.com/contact-us/) !
 
-[![Cloudity](assets/images/cloudity-banner.png)](https://cloudity.com/contact-us/){target=blank}
+[![Cloudity](https://sfdx-hardis.cloudity.com/assets/images/cloudity-banner.png)](https://cloudity.com/contact-us/)
 
 [_See online documentation for a better navigation_](https://sfdx-hardis.cloudity.com)
 
@@ -681,6 +681,12 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 
 | Command                                                                                           | Title |
 |:--------------------------------------------------------------------------------------------------|:------|
+| [**hardis:project:action:create**](hardis/project/action/create.md)                               |       |
+| [**hardis:project:action:delete**](hardis/project/action/delete.md)                               |       |
+| [**hardis:project:action:link-pull-request**](hardis/project/action/link-pull-request.md)         |       |
+| [**hardis:project:action:list**](hardis/project/action/list.md)                                   |       |
+| [**hardis:project:action:reorder**](hardis/project/action/reorder.md)                             |       |
+| [**hardis:project:action:update**](hardis/project/action/update.md)                               |       |
 | [**hardis:project:audit:apiversion**](hardis/project/audit/apiversion.md)                         |       |
 | [**hardis:project:audit:callincallout**](hardis/project/audit/callincallout.md)                   |       |
 | [**hardis:project:audit:duplicatefiles**](hardis/project/audit/duplicatefiles.md)                 |       |

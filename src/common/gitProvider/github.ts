@@ -443,4 +443,54 @@ ${getBannerMarkdownAndLink()}
       body,
     });
   }
+
+  public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
+    const issueNumber = prNumber || this.prNumber;
+    if (!issueNumber) return null;
+    const comments = await this.octokit.rest.issues.listComments({
+      owner: this.repoOwner || '',
+      repo: this.repoName || '',
+      issue_number: issueNumber,
+    });
+    for (const comment of comments.data) {
+      if (comment?.body?.includes(marker)) {
+        return comment.body;
+      }
+    }
+    return null;
+  }
+
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+    const issueNumber = prNumber || this.prNumber;
+    if (!issueNumber) return;
+    const comments = await this.octokit.rest.issues.listComments({
+      owner: this.repoOwner || '',
+      repo: this.repoName || '',
+      issue_number: issueNumber,
+    });
+    let existingId: number | null = null;
+    for (const comment of comments.data) {
+      if (comment?.body?.includes(marker)) {
+        existingId = comment.id;
+        break;
+      }
+    }
+    if (existingId) {
+      await this.octokit.rest.issues.updateComment({
+        owner: this.repoOwner || '',
+        repo: this.repoName || '',
+        comment_id: existingId,
+        body,
+      });
+      uxLog("log", this, c.grey(`[GitHub] Updated Deployment Actions comment on PR #${issueNumber}`));
+    } else {
+      await this.octokit.rest.issues.createComment({
+        owner: this.repoOwner || '',
+        repo: this.repoName || '',
+        issue_number: issueNumber,
+        body,
+      });
+      uxLog("log", this, c.grey(`[GitHub] Created Deployment Actions comment on PR #${issueNumber}`));
+    }
+  }
 }

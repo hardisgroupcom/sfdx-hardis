@@ -162,4 +162,15 @@ export abstract class GitProviderRoot {
   public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
     // Default no-op - providers may override
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
+    uxLog("other", this, `Method getPullRequestCommentByMarker is not implemented yet on ${this.getLabel()}`);
+    return null;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+    uxLog("other", this, `Method upsertPullRequestCommentByMarker is not implemented yet on ${this.getLabel()} for marker ${marker} body length ${body.length}`);
+  }
 }

@@ -226,18 +226,18 @@ export async function smartDeploy(
 
   // Special case: both package.xml and destructive changes files exist but are empty
   if (packageXmlIsEmpty && hasEmptyDestructiveChanges && !hasDestructiveChanges) {
-    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     uxLog("action", this, c.cyan(t('bothPackageXmlAndDestructiveChangesFiles')));
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     await GitProvider.managePostPullRequestComment(check);
     return { messages: [], quickDeploy, deployXmlCount: 0 };
   }
 
   // If we have empty package.xml and no destructive changes, there's nothing to do
   if (packageXmlIsEmpty && !hasDestructiveChanges) {
-    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     uxLog("action", this, t('noDeploymentOrDestructiveChangesToPerform'));
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     await GitProvider.managePostPullRequestComment(check);
     return { messages: [], quickDeploy, deployXmlCount: 0 };
   }
@@ -261,16 +261,16 @@ export async function smartDeploy(
     });
     deployXmlCount = 1;
   } else if (deployXmlCount === 0) {
-    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     uxLog("other", this, t('noDeploymentToPerform'));
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     await GitProvider.managePostPullRequestComment(check);
     return { messages, quickDeploy, deployXmlCount };
   }
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Run deployment pre-commands
-  await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+  await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
   // Process items of deployment plan
   uxLog("action", this, c.cyan(t('processingSplitDeploymentsBuildFromDeploymentPlan')));
   uxLog("other", this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
@@ -547,7 +547,7 @@ export async function smartDeploy(
     messages.push(message);
   }
   // Run deployment post commands
-  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
   // Post pull request comment if available
   await GitProvider.managePostPullRequestComment(check);
   elapseEnd('all deployments');
@@ -597,7 +597,7 @@ async function handleDeployError(
     setPullRequestData({ autoFixPullRequestUrl: autoFixResult.pullRequestUrl });
   }
   elapseEnd(`deploy ${deployment.label}`);
-  await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check, conn: options.conn });
+  await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check });
   await GitProvider.managePostPullRequestComment(check);
   killBoringExitHandlers();
   throw new SfError('Deployment failure. Check messages above');

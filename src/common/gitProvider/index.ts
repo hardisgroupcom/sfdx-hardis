@@ -13,6 +13,9 @@ import { getPullRequestData } from "../utils/gitUtils.js";
 import { t } from '../utils/i18n.js';
 const debug = Debug("sfdxhardis");
 
+// Must match DEPLOYMENT_ACTIONS_MARKER in deploymentActionsStateUtils.ts
+const DEPLOYMENT_ACTIONS_MARKER = '<!-- sfdx-hardis deployment-actions-state -->';
+
 export abstract class GitProvider {
   static async getInstance(prompt = false): Promise<GitProviderRoot | null> {
     try {
@@ -207,6 +210,56 @@ export abstract class GitProvider {
       return null;
     }
     return gitProvider.getCurrentJobUrl();
+  }
+
+  static async tryGetDeploymentActionsCommentBody(): Promise<string | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    try {
+      return await gitProvider.getPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Could not read Deployment Actions comment: ${(e as Error).message}`));
+      return null;
+    }
+  }
+
+  static async tryUpsertDeploymentActionsComment(body: string): Promise<void> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return;
+    }
+    try {
+      await gitProvider.upsertPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, body);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Could not update Deployment Actions comment: ${(e as Error).message}`));
+    }
+  }
+
+  static async tryGetDeploymentActionsCommentBodyForPr(prNumber: number): Promise<string | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    try {
+      return await gitProvider.getPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, prNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Could not read Deployment Actions comment for PR #${prNumber}: ${(e as Error).message}`));
+      return null;
+    }
+  }
+
+  static async tryUpsertDeploymentActionsCommentForPr(prNumber: number, body: string): Promise<void> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return;
+    }
+    try {
+      await gitProvider.upsertPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, body, prNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Could not update Deployment Actions comment for PR #${prNumber}: ${(e as Error).message}`));
+    }
   }
 
   static async supportsMermaidInPrMarkdown(): Promise<boolean> {

@@ -118,11 +118,17 @@ export abstract class ActionsProvider {
       return null;
     }
     if (cmd.customUsername) {
+      const agentMode = globalThis._agentMode === true;
       const conn: Connection = globalThis.jsForceConn;
       const user = await findUserByUsernameLike(cmd.customUsername, conn);
       if (!user) {
-        uxLog('error', this, c.red(`[DeploymentActions] Custom username [${cmd.customUsername}] not found for action ${cmd.label}`));
-        return { statusCode: 'failed', skippedReason: `Custom username [${cmd.customUsername}] not found` };
+        const reason = `Custom username [${cmd.customUsername}] not found`;
+        uxLog('error', this, c.red(`[DeploymentActions] ${reason} for action ${cmd.label}`));
+        if (agentMode) {
+          uxLog('warning', this, c.yellow(`[DeploymentActions] Agent mode: skipping action ${cmd.label} instead of failing`));
+          return { statusCode: 'skipped', skippedReason: reason };
+        }
+        return { statusCode: 'failed', skippedReason: reason };
       }
       let authResult: boolean;
       try {
@@ -139,16 +145,26 @@ export abstract class ActionsProvider {
           setDefault: false,
         });
       } catch (error) {
-        uxLog('error', this, c.red(`[DeploymentActions] Error during authentication with custom username [${user.Username}] for action ${cmd.label}: ${error}`));
-        return { statusCode: 'failed', skippedReason: `Error during authentication with custom username [${user.Username}]: ${error}` };
+        const reason = `Error during authentication with custom username [${user.Username}]: ${error}`;
+        uxLog('error', this, c.red(`[DeploymentActions] ${reason} for action ${cmd.label}`));
+        if (agentMode) {
+          uxLog('warning', this, c.yellow(`[DeploymentActions] Agent mode: skipping action ${cmd.label} instead of failing`));
+          return { statusCode: 'skipped', skippedReason: reason };
+        }
+        return { statusCode: 'failed', skippedReason: reason };
       }
       if (authResult === true) {
         this.customUsernameToUse = user.Username;
         uxLog('log', this, c.green(`[DeploymentActions] Authenticated with custom username [${this.customUsernameToUse}] for action ${cmd.label}`));
       }
       else {
-        uxLog('error', this, c.red(`[DeploymentActions] Failed to authenticate with custom username [${user.Username}] for action ${cmd.label}`));
-        return { statusCode: 'failed', skippedReason: `Failed to authenticate with custom username [${user.Username}]` };
+        const reason = `Failed to authenticate with custom username [${user.Username}]`;
+        uxLog('error', this, c.red(`[DeploymentActions] ${reason} for action ${cmd.label}`));
+        if (agentMode) {
+          uxLog('warning', this, c.yellow(`[DeploymentActions] Agent mode: skipping action ${cmd.label} instead of failing`));
+          return { statusCode: 'skipped', skippedReason: reason };
+        }
+        return { statusCode: 'failed', skippedReason: reason };
       }
     }
     return null;

@@ -158,6 +158,12 @@
 
 | Command                                                                                           | Title |
 |:--------------------------------------------------------------------------------------------------|:------|
+| [**hardis:project:action:create**](hardis/project/action/create.md)                               |       |
+| [**hardis:project:action:delete**](hardis/project/action/delete.md)                               |       |
+| [**hardis:project:action:link-pull-request**](hardis/project/action/link-pull-request.md)         |       |
+| [**hardis:project:action:list**](hardis/project/action/list.md)                                   |       |
+| [**hardis:project:action:reorder**](hardis/project/action/reorder.md)                             |       |
+| [**hardis:project:action:update**](hardis/project/action/update.md)                               |       |
 | [**hardis:project:audit:apiversion**](hardis/project/audit/apiversion.md)                         |       |
 | [**hardis:project:audit:callincallout**](hardis/project/audit/callincallout.md)                   |       |
 | [**hardis:project:audit:duplicatefiles**](hardis/project/audit/duplicatefiles.md)                 |       |
