@@ -26,15 +26,15 @@ More information can be found in the [Documentation section](https://sfdx-hardis
 
 **Environment Variables for Cloudflare Configuration:**
 
-| Variable                                 | Description                                                                |          Default           |
-|:-----------------------------------------|:---------------------------------------------------------------------------|:--------------------------:|
-| `CLOUDFLARE_EMAIL`                       | Cloudflare account email                                                   |         _Required_         |
-| `CLOUDFLARE_API_TOKEN`                   | Cloudflare API token                                                       |         _Required_         |
-| `CLOUDFLARE_ACCOUNT_ID`                  | Cloudflare account ID                                                      |         _Required_         |
-| `CLOUDFLARE_PROJECT_NAME`                | Project name, also used for the site URL                                   | Built from Git branch name |
-| `CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE`   | Cloudflare default login method type                                       |        `onetimepin`        |
-| `CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN` | Cloudflare default access email domain                                     |      `@cloudity.com`       |
-| `CLOUDFLARE_EXTRA_ACCESS_POLICY_ID_LIST` | Comma-separated list of additional policy IDs to assign to the application |         _Optional_         |
+| Variable                                  | Description                                                              | Default                               |
+| :---------------------------------------- | :----------------------------------------------------------------------- | :------------------------------------: |
+| `CLOUDFLARE_EMAIL`                        | Cloudflare account email                                                 | _Required_                            |
+| `CLOUDFLARE_API_TOKEN`                    | Cloudflare API token                                                     | _Required_                            |
+| `CLOUDFLARE_ACCOUNT_ID`                   | Cloudflare account ID                                                    | _Required_                            |
+| `CLOUDFLARE_PROJECT_NAME`                 | Project name, also used for the site URL                                 | Built from Git branch name            |
+| `CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE`    | Cloudflare default login method type                                     | `onetimepin`                          |
+| `CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN`  | Cloudflare default access email domain                                   | `@cloudity.com`                       |
+| `CLOUDFLARE_EXTRA_ACCESS_POLICY_ID_LIST`  | Comma-separated list of additional policy IDs to assign to the application | _Optional_                            |
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -67,14 +67,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

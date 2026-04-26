@@ -1,31 +1,34 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:project:action:delete
+# hardis:project:action:test-class:list
 
 ## Description
 
 
 ## Command Behavior
 
-**Deletes an existing deployment action from the project configuration.**
+**Lists the Apex test classes configured for deployment in the project configuration.**
 
-Removes a single action identified by its ID from the specified scope and deployment phase.
+Requires `enableDeploymentApexTestClasses: true` in `config/.sfdx-hardis.yml`. If the feature is not activated, the command stops with an error.
+
+Displays the list of `deploymentApexTestClasses` for the specified scope (project, branch, or PR).
 
 ### Agent Mode
 
 Supports non-interactive execution with `--agent`:
 
 ```sh
-sf hardis:project:action:delete --agent --scope branch --when pre-deploy --action-id <uuid>
+sf hardis:project:action:test-class:list --agent --scope project
 ```
 
 Required in agent mode:
 
-- `--scope`, `--when`, `--action-id`
+- `--scope`
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Reads the action list from the YAML config file, removes the matching action, and writes the file back.
+- Reads `deploymentApexTestClasses` from the YAML config file at the given scope.
+- Supports `--json` output via SfCommand.
 </details>
 
 
@@ -33,7 +36,6 @@ Required in agent mode:
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
-|action-id|option|ID of the action to delete||||
 |agent|boolean|Run in non-interactive mode for agents and automation||||
 |branch|option|Target branch name (for branch scope, defaults to current branch)||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
@@ -42,16 +44,19 @@ Required in agent mode:
 |pr-id|option|Pull request ID (for pr scope, defaults to draft)||||
 |scope|option|Configuration scope: project, branch, or pr|||project<br/>branch<br/>pr|
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
-|when|option|When to run the action: pre-deploy or post-deploy|||pre-deploy<br/>post-deploy|
 
 ## Examples
 
 ```shell
-$ sf hardis:project:action:delete
+$ sf hardis:project:action:test-class:list
 ```
 
 ```shell
-$ sf hardis:project:action:delete --agent --scope branch --when pre-deploy --action-id abc-123
+$ sf hardis:project:action:test-class:list --agent --scope project
+```
+
+```shell
+$ sf hardis:project:action:test-class:list --scope pr --pr-id 123 --json
 ```
 
 

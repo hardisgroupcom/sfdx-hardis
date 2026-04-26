@@ -51,16 +51,16 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-| Name                |  Type   | Description                                                   | Default | Required | Options |
-|:--------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent               | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| configfile<br/>-c   | option  | Config JSON file path                                         |         |          |         |
-| debug               | boolean | debug                                                         |         |          |         |
-| flags-dir           | option  | undefined                                                     |         |          |         |
-| inputfolder<br/>-i  | option  | Input folder (default: "." )                                  |         |          |         |
-| json                | boolean | Format output as json.                                        |         |          |         |
-| outputfolder<br/>-f | option  | Output folder (default: parentFolder + _xml_content_filtered) |         |          |         |
-| websocket           | option  | websocket                                                     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|configfile<br/>-c|option|Config JSON file path||||
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|inputfolder<br/>-i|option|Input folder (default: "." )||||
+|json|boolean|Format output as json.||||
+|outputfolder<br/>-f|option|Output folder (default: parentFolder + _xml_content_filtered)||||
+|websocket|option|websocket||||
 
 ## Examples
 

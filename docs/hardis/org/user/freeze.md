@@ -12,10 +12,11 @@ This command allows administrators to freeze Salesforce user logins. It provides
 
 Key functionalities:
 
-- **User Selection:** You can select users to freeze based on their assigned profiles.
+- **User Selection:** You can select users to freeze using one of the following methods:
+  - `--usernames`: Freeze a specific comma-separated list of Salesforce usernames (takes priority over profile flags).
   - `--includeprofiles`: Freeze users belonging to a comma-separated list of specified profiles.
   - `--excludeprofiles`: Freeze users belonging to all profiles *except* those specified in a comma-separated list.
-  - If no profile flags are provided, an interactive menu will allow you to select profiles.
+  - If no flags are provided, an interactive menu will allow you to select profiles.
 - **Interactive Confirmation:** In non-CI environments, it prompts for confirmation before freezing the selected users.
 - **Bulk Freezing:** Efficiently freezes multiple user logins using Salesforce's Bulk API.
 - **Reporting:** Generates CSV and XLSX reports of the users that are about to be frozen.
@@ -25,6 +26,7 @@ Key functionalities:
 Supports non-interactive execution with `--agent`:
 
 ```sh
+sf hardis:org:user:freeze --agent --usernames 'user1@myorg.com,user2@myorg.com' --target-org my-user@myorg.com
 sf hardis:org:user:freeze --agent --includeprofiles 'Standard' --target-org my-user@myorg.com
 ```
 
@@ -32,14 +34,14 @@ In agent mode:
 
 - All interactive prompts and confirmations are skipped.
 - The freeze operation proceeds automatically for the matched users.
-- You must provide `--includeprofiles` or `--excludeprofiles` to specify which profiles to freeze (interactive profile selection is not available).
+- You must provide `--usernames`, `--includeprofiles`, or `--excludeprofiles` (interactive selection is not available).
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
-- **SOQL Queries (Bulk API):** It executes SOQL queries against the `User` and `Profile` objects to identify active users based on the provided profile filters. It then queries the `UserLogin` object to find active login sessions for these users.
+- **SOQL Queries (Bulk API):** When `--usernames` is provided, users are queried directly by username. Otherwise, it queries the `User` and `Profile` objects to identify active users based on the provided profile filters. It then queries the `UserLogin` object to find active login sessions for these users.
 - **Interactive Prompts:** Uses the `prompts` library to guide the user through profile selection and to confirm the freezing operation.
 - **Bulk Update:** It constructs an array of `UserLogin` records with their `Id` and `IsFrozen` set to `true`, then uses `bulkUpdate` to perform the mass update operation on the Salesforce org.
 - **Reporting:** It uses `generateReports` to create CSV and XLSX files containing details of the users to be frozen.
@@ -49,19 +51,20 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name                   |  Type   | Description                                                       | Default | Required | Options |
-|:-----------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                  | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
-| debug<br/>-d           | boolean | Activate debug mode (more logs)                                   |         |          |         |
-| excludeprofiles<br/>-e | option  | List of profiles that you want to NOT freeze, separated by commas |         |          |         |
-| flags-dir              | option  | undefined                                                         |         |          |         |
-| includeprofiles<br/>-p | option  | List of profiles that you want to freeze, separated by commas     |         |          |         |
-| json                   | boolean | Format output as json.                                            |         |          |         |
-| maxuserdisplay<br/>-m  | option  | Maximum users to display in logs                                  |   100   |          |         |
-| name<br/>-n            | option  | Filter according to Name criteria                                 |         |          |         |
-| skipauth               | boolean | Skip authentication check when a default username is required     |         |          |         |
-| target-org<br/>-o      | option  | undefined                                                         |         |          |         |
-| websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|excludeprofiles<br/>-e|option|List of profiles that you want to NOT freeze, separated by commas||||
+|flags-dir|option|undefined||||
+|includeprofiles<br/>-p|option|List of profiles that you want to freeze, separated by commas||||
+|json|boolean|Format output as json.||||
+|maxuserdisplay<br/>-m|option|Maximum users to display in logs|100|||
+|name<br/>-n|option|Filter according to Name criteria||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|usernames<br/>-u|option|Comma-separated list of Salesforce usernames to freeze (takes priority over profile flags)||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
@@ -74,6 +77,10 @@ $ sf hardis:org:user:freeze --target-org my-user@myorg.com
 ```
 
 ```shell
+$ sf hardis:org:user:freeze --usernames 'user1@myorg.com,user2@myorg.com'
+```
+
+```shell
 $ sf hardis:org:user:freeze --includeprofiles 'Standard'
 ```
 
@@ -82,7 +89,11 @@ $ sf hardis:org:user:freeze --excludeprofiles 'System Administrator,Some Other P
 ```
 
 ```shell
-$ sf hardis:org:user:freeze --agent
+$ sf hardis:org:user:freeze --agent --usernames 'user1@myorg.com,user2@myorg.com'
+```
+
+```shell
+$ sf hardis:org:user:freeze --agent --includeprofiles 'Standard'
 ```
 
 

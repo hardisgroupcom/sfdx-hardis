@@ -36,14 +36,14 @@ Required in agent mode:
 
 ## Parameters
 
-| Name         |  Type   | Description                                                                  | Default | Required | Options |
-|:-------------|:-------:|:-----------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent        | boolean | Run in non-interactive mode for agents and automation                        |         |          |         |
-| debug<br/>-d | boolean | Activate debug mode (more logs)                                              |         |          |         |
-| flags-dir    | option  | undefined                                                                    |         |          |         |
-| json         | boolean | Format output as json.                                                       |         |          |         |
-| pr-id        | option  | Pull request ID to link, or "current" to auto-detect from the current branch |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration                    |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|pr-id|option|Pull request ID to link, or "current" to auto-detect from the current branch||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
