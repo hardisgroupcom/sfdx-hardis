@@ -452,8 +452,9 @@ ${getBannerMarkdownAndLink()}
     await this.gitlabApi.MergeRequests.edit(projectId, id, { title, description: body });
   }
 
-  public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
+  private resolveMergeRequestContext(prNumber?: number): { projectId: string; mergeRequestId: number } | null {
     const projectId = process.env.CI_PROJECT_ID || null;
+    if (!projectId) return null;
     let mergeRequestId: number;
     if (prNumber) {
       mergeRequestId = prNumber;
@@ -461,8 +462,14 @@ ${getBannerMarkdownAndLink()}
       const mergeRequestIdRaw = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
       mergeRequestId = mergeRequestIdRaw ? parseInt(String(mergeRequestIdRaw), 10) : NaN;
     }
-    if (!projectId || !Number.isFinite(mergeRequestId)) return null;
-    const notes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
+    if (!Number.isFinite(mergeRequestId)) return null;
+    return { projectId, mergeRequestId };
+  }
+
+  public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
+    const ctx = this.resolveMergeRequestContext(prNumber);
+    if (!ctx) return null;
+    const notes = await this.gitlabApi.MergeRequestNotes.all(ctx.projectId, ctx.mergeRequestId);
     for (const note of notes) {
       if ((note.body || '').includes(marker)) {
         return note.body;
@@ -472,15 +479,9 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
-    const projectId = process.env.CI_PROJECT_ID || null;
-    let mergeRequestId: number;
-    if (prNumber) {
-      mergeRequestId = prNumber;
-    } else {
-      const mergeRequestIdRaw = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
-      mergeRequestId = mergeRequestIdRaw ? parseInt(String(mergeRequestIdRaw), 10) : NaN;
-    }
-    if (!projectId || !Number.isFinite(mergeRequestId)) return;
+    const ctx = this.resolveMergeRequestContext(prNumber);
+    if (!ctx) return;
+    const { projectId, mergeRequestId } = ctx;
     const notes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
     let existingNoteId: number | null = null;
     for (const note of notes) {
