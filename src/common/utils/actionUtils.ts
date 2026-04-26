@@ -152,7 +152,9 @@ export function buildAction(values: {
   if (values.parameters && Object.keys(values.parameters).length > 0) {
     action.parameters = values.parameters;
   }
-  action.skipIfError = values.skipIfError === true;
+  if (values.skipIfError !== undefined) {
+    action.skipIfError = values.skipIfError === true;
+  }
   action.allowFailure = values.allowFailure === true;
   action.runOnlyOnceByOrg = values.runOnlyOnceByOrg !== false;
   if (values.customUsername) {

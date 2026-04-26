@@ -162,9 +162,14 @@ Required in agent mode:
 
     // In interactive mode, prompt for each field with current value
     if (!agentMode && !isCI) {
-      await this.interactiveUpdate(action, flags);
+      await this.interactiveUpdate(action, flags, when);
     } else {
-      this.applyFlagUpdates(action, flags);
+      this.applyFlagUpdates(action, flags, when);
+    }
+
+    // skipIfError is meaningless for pre-deploy — remove it if present
+    if (when === 'pre-deploy') {
+      delete action.skipIfError;
     }
 
     // Validate
@@ -186,7 +191,7 @@ Required in agent mode:
     return { outputString: 'Action updated', action: action as any, configFile };
   }
 
-  private async interactiveUpdate(action: PrePostCommand, _flags: any): Promise<void> {
+  private async interactiveUpdate(action: PrePostCommand, _flags: any, when: string): Promise<void> {
     const newLabel = await this.promptText(t('enterActionLabel'), action.label);
     if (newLabel) action.label = newLabel;
 
@@ -224,14 +229,16 @@ Required in agent mode:
     const newContext = await this.promptSelect(t('selectActionContext'), ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })), action.context);
     if (newContext) action.context = newContext;
 
-    action.skipIfError = await this.promptConfirm(t('actionPromptSkipIfError'), action.skipIfError || false);
+    if (when !== 'pre-deploy') {
+      action.skipIfError = await this.promptConfirm(t('actionPromptSkipIfError'), action.skipIfError || false);
+    }
     action.allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'), action.allowFailure || false);
     action.runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), action.runOnlyOnceByOrg || false);
     const cu = await this.promptText(t('actionPromptCustomUsername'), action.customUsername || '');
     action.customUsername = cu || undefined;
   }
 
-  private applyFlagUpdates(action: PrePostCommand, flags: any): void {
+  private applyFlagUpdates(action: PrePostCommand, flags: any, when: string): void {
     if (flags.label) action.label = flags.label;
     if (flags.type) {
       action.type = flags.type;
@@ -247,7 +254,7 @@ Required in agent mode:
     if (flags['cron-expression']) action.parameters = { ...action.parameters, cronExpression: flags['cron-expression'] };
     if (flags['job-name']) action.parameters = { ...action.parameters, jobName: flags['job-name'] };
     if (flags.context) action.context = flags.context;
-    if (flags['skip-if-error'] !== undefined) action.skipIfError = flags['skip-if-error'];
+    if (when !== 'pre-deploy' && flags['skip-if-error'] !== undefined) action.skipIfError = flags['skip-if-error'];
     if (flags['allow-failure'] !== undefined) action.allowFailure = flags['allow-failure'];
     if (flags['run-only-once-by-org'] !== undefined) action.runOnlyOnceByOrg = flags['run-only-once-by-org'];
     if (flags['custom-username']) action.customUsername = flags['custom-username'];

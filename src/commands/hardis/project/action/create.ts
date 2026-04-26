@@ -221,13 +221,14 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
     const context = (flags.context || (!agentMode && !isCI ? await this.promptContext() : 'process-deployment-only')) as PrePostCommand['context'];
 
     // Collect optional flags (only prompt in interactive mode)
-    let skipIfError = flags['skip-if-error'];
+    // skipIfError is meaningless for pre-deploy (deployment hasn't happened yet)
+    let skipIfError: boolean | undefined = when === 'pre-deploy' ? undefined : (flags['skip-if-error'] ?? false);
     let allowFailure = flags['allow-failure'];
     let runOnlyOnceByOrg = flags['run-only-once-by-org'];
     let customUsername = flags['custom-username'] || '';
 
     if (!agentMode && !isCI) {
-      if (!flags['skip-if-error']) {
+      if (when !== 'pre-deploy' && !flags['skip-if-error']) {
         skipIfError = await this.promptConfirm(t('actionPromptSkipIfError'));
       }
       if (!flags['allow-failure']) {

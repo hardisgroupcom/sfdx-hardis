@@ -1,3 +1,4 @@
+import c from "chalk";
 import { GitProvider } from '../gitProvider/index.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { readActions } from './actionUtils.js';
@@ -121,13 +122,13 @@ export async function loadDeploymentActionsState(sourcePrNumbers: number[]): Pro
       if (body) {
         const entries = parseDeploymentActionsCommentBody(body);
         state.entriesByPr.set(prNumber, entries);
-        uxLog("log", null, `Loaded ${entries.length} deployment actions state entries from PR #${prNumber}.`);
-        uxLog("other", null, JSON.stringify(entries, null, 2));
+        uxLog("log", null, c.cyan(`Loaded ${entries.length} deployment actions state entries from PR #${prNumber}.`));
+        uxLog("other", null, c.grey(JSON.stringify(entries, null, 2)));
       } else {
         state.entriesByPr.set(prNumber, []);
       }
     } catch (e) {
-      uxLog("warning", null, `Could not load deployment actions state from PR #${prNumber}: ${(e as Error).message}`);
+      uxLog("warning", null, c.yellow(`Could not load deployment actions state from PR #${prNumber}: ${(e as Error).message}`));
       state.entriesByPr.set(prNumber, []);
     }
   }
