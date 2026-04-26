@@ -156,19 +156,7 @@ Required in agent mode:
       throw new SfError(t('noActionsFound', { when, scope }));
     }
 
-    // Select action
-    let actionId: string;
-    if (agentMode || isCI) {
-      actionId = this.requireFlag(flags['action-id'], 'action-id');
-    } else if (flags['action-id']) {
-      actionId = flags['action-id'];
-    } else {
-      actionId = await this.promptSelect(t('selectActionToUpdate'), actions.map(a => ({
-        title: `${a.label} (${a.type})`,
-        value: a.id,
-        description: a.id,
-      })));
-    }
+    const actionId = await this.resolveActionId(flags, agentMode, actions, t('selectActionToUpdate'));
 
     const { action, index } = findActionById(actions, actionId);
 

@@ -67,6 +67,24 @@ export abstract class ActionCommandBase extends SfCommand<any> {
     return response.value || '';
   }
 
+  /**
+   * Resolve action ID: use flag in agent/CI mode, flag value if provided, or prompt interactively.
+   * `promptMessage` is the i18n key for the interactive select prompt.
+   */
+  protected async resolveActionId(flags: any, agentMode: boolean, actions: any[], promptMessage: string): Promise<string> {
+    if (agentMode || isCI) {
+      return this.requireFlag(flags['action-id'], 'action-id');
+    }
+    if (flags['action-id']) {
+      return flags['action-id'];
+    }
+    return this.promptSelect(promptMessage, actions.map(a => ({
+      title: `${a.label} (${a.type})`,
+      value: a.id,
+      description: a.id,
+    })));
+  }
+
   protected async promptConfirm(message: string, initial = false): Promise<boolean> {
     const response = await prompts({
       type: 'confirm',

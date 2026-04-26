@@ -2,7 +2,7 @@ import { Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { uxLog } from '../../../../common/utils/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import {
@@ -99,19 +99,7 @@ Required in agent mode:
       throw new SfError(t('noActionsFound', { when, scope }));
     }
 
-    // Select action
-    let actionId: string;
-    if (agentMode || isCI) {
-      actionId = this.requireFlag(flags['action-id'], 'action-id');
-    } else if (flags['action-id']) {
-      actionId = flags['action-id'];
-    } else {
-      actionId = await this.promptSelect(t('selectActionToDelete'), actions.map(a => ({
-        title: `${a.label} (${a.type})`,
-        value: a.id,
-        description: a.id,
-      })));
-    }
+    const actionId = await this.resolveActionId(flags, agentMode, actions, t('selectActionToDelete'));
 
     const { action, index } = findActionById(actions, actionId);
     const deletedLabel = action.label;
