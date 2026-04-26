@@ -17,6 +17,7 @@
   - Feature: Added an option to skip Data Cloud backup when needed.
 - Added `--agent` flag for non-interactive headless execution to 100+ commands. Commands skip all interactive prompts and use sensible defaults or require explicit flags when running in agent mode.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Enhance the command to easily simulate deployments from local computer.
+- Fix: display error when JWT auth failed.
 
 ## [7.10.0] 2026-04-24
 
