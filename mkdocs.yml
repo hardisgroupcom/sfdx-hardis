@@ -170,6 +170,7 @@ nav:
           - Gitlab: salesforce-monitoring-config-gitlab.md
           - Azure: salesforce-monitoring-config-azure.md
           - Bitbucket: salesforce-monitoring-config-bitbucket.md
+          - Jenkins: salesforce-monitoring-config-jenkins.md
           - Slack: salesforce-ci-cd-setup-integration-slack.md
           - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
       - Sandbox Refresh: salesforce-sandbox-refresh.md

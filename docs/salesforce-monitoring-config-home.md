@@ -11,6 +11,7 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
   - [Gitlab](#gitlab)
   - [Azure](#azure)
   - [Bitbucket](#bitbucket)
+  - [Jenkins (any Git server)](#jenkins-any-git-server)
 - [Notifications](#notifications)
 - [Troubleshooting](#troubleshooting)
 
@@ -22,7 +23,7 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 
 ### Common instructions
 
-All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab**, **Azure** or **BitBucket** repository.
+All you need to configure sfdx-hardis Org Monitoring is a **GitHub**, **Gitlab**, **Azure**, **BitBucket** or any Git server accessible from a **Jenkins** instance.
 
 - Create and clone a git repository (initialize it with README)
 - Open it with Visual Studio Code, then open [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) extension menu.
@@ -55,6 +56,12 @@ All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab*
 - [Bitbucket configuration](salesforce-monitoring-config-bitbucket.md)
   - [Pre-requisites](salesforce-monitoring-config-bitbucket.md#pre-requisites)
   - [Schedule monitoring job](salesforce-monitoring-config-bitbucket.md#schedule-the-monitoring-job)
+
+### Jenkins (any Git server)
+
+- [Jenkins configuration](salesforce-monitoring-config-jenkins.md)
+  - [Pre-requisites](salesforce-monitoring-config-jenkins.md#pre-requisites)
+  - [Schedule monitoring job](salesforce-monitoring-config-jenkins.md#schedule-the-monitoring-job)
 
 ## Notifications
 
