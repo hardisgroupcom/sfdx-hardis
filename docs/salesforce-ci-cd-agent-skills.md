@@ -1,6 +1,6 @@
 ---
 title: Using sfdx-hardis with AI Coding Agents
-description: Learn how to use sfdx-hardis commands as agent skills in Claude Code, GitHub Copilot, and other AI coding agents — including work:new, work:save, and the deployment action management commands
+description: Learn how to use sfdx-hardis commands as agent skills in Claude Code, GitHub Copilot, and other AI coding agents - including work:new, work:save, and the deployment action management commands
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -230,7 +230,7 @@ graph TD
 | `target branch cannot be resolved` (`work:save`)    | Provide `--targetbranch <branch>` explicitly, or ensure the current branch was created with `work:new`.                                                                                   |
 | Authentication errors                               | Ensure `sf org login` has been run and a default org is set before invoking agent commands.                                                                                               |
 | `sfdx-git-delta` not found (`work:save`)            | Install the plugin: `sf plugins install sfdx-git-delta`                                                                                                                                   |
-| `deploy:smart` simulation fails with wrong org      | Make sure `config/branches/.sfdx-hardis-<target-branch>.yml` exists and contains `targetUsername`. If not authenticated to the target org, skip the step — CI/CD will validate on the PR. |
+| `deploy:smart` simulation fails with wrong org      | Make sure `config/branches/.sfdx-hardis-<target-branch>.yml` exists and contains `targetUsername`. If not authenticated to the target org, skip the step - CI/CD will validate on the PR. |
 | `deploy:smart` simulation uses wrong branch scope   | Provide `--source-branch` explicitly; without it the local git branch is used for delta/PR scope.                                                                                         |
 
 ---
@@ -316,7 +316,7 @@ $ARGUMENTS
 
 Runs a full smart deployment **validation** (check/simulate mode) against a target org without applying any changes. Run this **after `hardis:work:save`** so that the committed and pushed sources are used for delta scope and git diff calculations.
 
-This step is **optional**: if the Salesforce CLI is not authenticated to the target deployment org locally, skip it — the CI/CD pipeline will run the same validation automatically when the pull request is opened.
+This step is **optional**: if the Salesforce CLI is not authenticated to the target deployment org locally, skip it - the CI/CD pipeline will run the same validation automatically when the pull request is opened.
 
 ### Usage
 
@@ -327,7 +327,7 @@ sf hardis:project:deploy:smart --agent --check \
   --target-org deploy@myclient.com.integration
 ```
 
-> **Note**: `--target-org` must be the **target deployment org** (e.g. the integration sandbox), not the developer's current working org. If you are not authenticated to it locally, skip this step — CI/CD will validate the deployment on the pull request.
+> **Note**: `--target-org` must be the **target deployment org** (e.g. the integration sandbox), not the developer's current working org. If you are not authenticated to it locally, skip this step - CI/CD will validate the deployment on the pull request.
 
 ### Required flags in agent mode
 
@@ -341,7 +341,7 @@ sf hardis:project:deploy:smart --agent --check \
 ### Behavior in agent mode
 
 - **Optional step**: if the Salesforce CLI is not authenticated to the target deployment org, skip this command entirely. The pull request CI/CD pipeline performs the same validation.
-- **Always simulation**: deployment is forced into check/validate mode — `--check` is implicit but should be passed explicitly. No changes are applied to the org.
+- **Always simulation**: deployment is forced into check/validate mode - `--check` is implicit but should be passed explicitly. No changes are applied to the org.
 - **Target org is the deployment org**: unlike day-to-day usage where `--target-org` is the developer's sandbox, here it must point to the environment being simulated (integration, uat, etc.).
 - **Target username from config**: the `targetUsername` used for deployment commands is read from the target branch config file; the `--target-org` flag provides the authenticated connection.
 - **Source branch override**: sets `FORCE_SOURCE_BRANCH` so delta deployment scope uses the correct base branch.
@@ -360,7 +360,7 @@ allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion
 user-invocable: true
 ---
 
-This step is **optional** and must run **after `hardis:work:save`** (the commits must exist before the simulation can use them for delta scope). If the Salesforce CLI is not authenticated to the target deployment org locally, skip it and inform the user — the CI/CD pipeline will perform the same validation when the pull request is opened.
+This step is **optional** and must run **after `hardis:work:save`** (the commits must exist before the simulation can use them for delta scope). If the Salesforce CLI is not authenticated to the target deployment org locally, skip it and inform the user - the CI/CD pipeline will perform the same validation when the pull request is opened.
 
 1. Check whether the target deployment org is authenticated locally:
    ```bash

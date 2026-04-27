@@ -156,9 +156,9 @@ You can define command lines to run before or after a deployment, with parameter
 - **label**: Human readable label for the command
 - **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
 - **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
-- **runOnlyOnceByOrg**: If set to true (default), the action runs only once per target org — subsequent deployments skip it. State is tracked in the "Deployment Actions" PR comment.
+- **runOnlyOnceByOrg**: If set to true (default), the action runs only once per target org - subsequent deployments skip it. State is tracked in the "Deployment Actions" PR comment.
 
-After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment — ordered by org (integration → uat → preprod → prod) — regardless of `runOnlyOnceByOrg`.
+After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of `runOnlyOnceByOrg`.
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 
@@ -288,9 +288,9 @@ sf hardis:project:deploy:smart --agent --check --source-branch feature/my-featur
 In agent mode:
 
 - The interactive org selection prompt is skipped.
-- Deployment is forced into **simulation/check mode** — `--check` is implicit, but should be passed explicitly to make the intent clear. No changes are applied to the org.
+- Deployment is forced into **simulation/check mode** - `--check` is implicit, but should be passed explicitly to make the intent clear. No changes are applied to the org.
 - Use `--source-branch` to specify the source git branch (overrides local git branch detection via `FORCE_SOURCE_BRANCH`).
-- Use `--target-branch` to specify the target git branch. This sets `FORCE_TARGET_BRANCH` for delta/PR scope and also sets `CONFIG_BRANCH` so the target branch config file (`config/branches/.sfdx-hardis-BRANCHNAME.yml`) is loaded — providing the correct `targetUsername` for that org automatically.
+- Use `--target-branch` to specify the target git branch. This sets `FORCE_TARGET_BRANCH` for delta/PR scope and also sets `CONFIG_BRANCH` so the target branch config file (`config/branches/.sfdx-hardis-BRANCHNAME.yml`) is loaded - providing the correct `targetUsername` for that org automatically.
 - If a deployment action requires a `customUsername` and authentication for that user fails, the action is **skipped** (not failed) so the simulation can continue.
 
 

@@ -15,6 +15,11 @@
       <members>*</members>
       <name>ConnectedApp</name>
   </types>
+  <!-- External Client Apps (API 59.0+): OAuth consumer key and secret are org-specific and must never be overwritten -->
+  <types>
+      <members>*</members>
+      <name>ExtlClntAppGlobalOauthSettings</name>
+  </types>
   <types>
     <!-- Once a dashboard is published, it is always managed directly in production -->
     <members>*</members>
@@ -25,8 +30,13 @@
     <members>*</members>
     <name>FlowDefinition</name>
   </types>
+  <!-- External Credentials (Named Credentials v2, API 57.0+): auth protocol and named principals are org-specific -->
   <types>
-    <!-- Name Credentials can contain auth info that are different between dev, uat, preprod and prod: let's not overwrite them ! -->
+      <members>*</members>
+      <name>ExternalCredential</name>
+  </types>
+  <types>
+    <!-- Named Credentials can contain auth info that differs between dev, uat, preprod and prod: let's not overwrite them ! -->
     <members>*</members>
     <name>NamedCredential</name>
   </types>

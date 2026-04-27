@@ -1,12 +1,12 @@
 # =============================================================
-# Salesforce Monitoring — Git attributes
+# Salesforce Monitoring - Git attributes
 # Normalize line endings to LF on all platforms.
 # =============================================================
 
 # All text files: store as LF
 * text=auto eol=lf
 
-# Binary files — no diff, no merge
+# Binary files - no diff, no merge
 *.png                       binary
 *.jpg                       binary
 *.jpeg                      binary

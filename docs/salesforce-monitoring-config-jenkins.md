@@ -71,13 +71,13 @@ _Skip this step if you already created a Multibranch Pipeline for another monito
 - Under **Branch Sources**, add your Git server and point it to your monitoring repository
 - Under **Build Configuration**, leave the default **by Jenkinsfile** (the `Jenkinsfile` is at the root of each monitoring branch)
 - Under **Scan Multibranch Pipeline Triggers**, enable **Periodically if not otherwise run** (e.g. every hour) so Jenkins discovers new branches automatically
-- Click **Save** — Jenkins will scan the repository and create one sub-job per monitoring branch it finds
+- Click **Save** - Jenkins will scan the repository and create one sub-job per monitoring branch it finds
 
 ## Update Jenkinsfile
 
 Each monitoring branch contains a `Jenkinsfile` at its root. Open it in VS Code and search for **MANUAL** to find all sections that need your attention:
 
-### 1 — Add your org credentials
+### 1 - Add your org credentials
 
 In **every** `withCredentials([...])` block (Backup Metadata, Apex Tests, Monitoring Checks), add one pair of `string` bindings per monitored org:
 
@@ -93,7 +93,7 @@ withCredentials([
 
 The credential ID must exactly match the ID you created in Jenkins (step [Define sfdx-hardis environment variables](#define-sfdx-hardis-environment-variables)).
 
-### 2 — Commit and push
+### 2 - Commit and push
 
 Commit the updated `Jenkinsfile` and push it to each monitoring branch. Jenkins will pick up the changes on the next scan or run.
 
@@ -107,6 +107,6 @@ triggers {
 }
 ```
 
-To change the schedule, edit the cron expression and commit the updated `Jenkinsfile`. The `H` symbol spreads load across Jenkins agents — replace it with a fixed minute if you need a precise time.
+To change the schedule, edit the cron expression and commit the updated `Jenkinsfile`. The `H` symbol spreads load across Jenkins agents - replace it with a fixed minute if you need a precise time.
 
 > **Tip:** Schedule monitoring jobs for different orgs at different hours (e.g. production at 1 AM, pre-prod at 2 AM) so notifications remain readable.

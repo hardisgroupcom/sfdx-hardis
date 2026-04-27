@@ -167,7 +167,7 @@ Required in agent mode:
       this.applyFlagUpdates(action, flags, when);
     }
 
-    // skipIfError is meaningless for pre-deploy — remove it if present
+    // skipIfError is meaningless for pre-deploy - remove it if present
     if (when === 'pre-deploy') {
       delete action.skipIfError;
     }

@@ -203,7 +203,7 @@ export async function resolvePrId(
 ): Promise<string | undefined> {
   if (!prId || prId !== 'current') {
     if (!prId) {
-      // No PR ID provided — will use draft config
+      // No PR ID provided - will use draft config
       notifyDraftUsage(commandThis);
     }
     return prId;

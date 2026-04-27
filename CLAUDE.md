@@ -30,3 +30,4 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 
 - Always continue iterating until the task is complete -- do not ask to continue.
 - Use git bash for Windows formatting when building commands.
+- **NEVER** use em-dashes (—) in anything you generate.

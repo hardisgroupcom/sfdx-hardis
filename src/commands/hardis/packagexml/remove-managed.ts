@@ -11,15 +11,15 @@ export class PackageXmlRemoveManaged extends SfCommand<any> {
 
 **Removes all managed package items from a \`package.xml\` file, while preserving custom metadata created on top of managed objects.**
 
-Managed items — those whose API name starts with a namespace prefix (e.g. \`SBQQ__Quote__c\`, \`nCino__Loan__c\`) — are automatically excluded from deployments that target orgs where the managed package is already installed. Keeping them in a \`package.xml\` causes unnecessary noise and can block deployments.
+Managed items - those whose API name starts with a namespace prefix (e.g. \`SBQQ__Quote__c\`, \`nCino__Loan__c\`) - are automatically excluded from deployments that target orgs where the managed package is already installed. Keeping them in a \`package.xml\` causes unnecessary noise and can block deployments.
 
 Key functionalities:
 
 - **Namespace detection:**
-  - \`--namespaces\` flag — explicit comma-separated list (e.g. \`SBQQ,nCino\`). When provided, \`--namespace-detection\` is ignored.
+  - \`--namespaces\` flag - explicit comma-separated list (e.g. \`SBQQ,nCino\`). When provided, \`--namespace-detection\` is ignored.
   - When \`--namespaces\` is omitted, \`--namespace-detection\` selects the auto-detection strategy:
-    - \`api-name\` *(default)* — scans every member name for the \`NS__Name__suffix\` pattern (three or more double-underscore segments) and extracts the leading prefix as a namespace.
-    - \`installed-packages\` — reads the \`InstalledPackage\` entries already present in the \`package.xml\`.
+    - \`api-name\` *(default)* - scans every member name for the \`NS__Name__suffix\` pattern (three or more double-underscore segments) and extracts the leading prefix as a namespace.
+    - \`installed-packages\` - reads the \`InstalledPackage\` entries already present in the \`package.xml\`.
 - **Smart child-item preservation:** For metadata that lives under a managed object (e.g. a \`CustomField\` or \`ValidationRule\`), the member is removed **only** if the child part of the API name is itself namespaced. A custom field such as \`SBQQ__Quote__c.My_Status__c\` is therefore kept, while \`SBQQ__Quote__c.SBQQ__Status__c\` is removed.
 - **Output file:** By default the result is written to \`<input>-without-managed.xml\` (e.g. \`package-without-managed.xml\`). Use \`--outputfile\` to choose a different path.
 - **Summary report:** Logs the number of removed items per metadata type. Use \`--debug\` for a full itemised list.
@@ -177,7 +177,7 @@ function resolveNamespaces(
   packageXmlFile: string,
   commandThis: any
 ): string[] {
-  // 1. Explicit flag — detection mode is irrelevant
+  // 1. Explicit flag - detection mode is irrelevant
   if (namespacesFlag) {
     return namespacesFlag
       .split(',')

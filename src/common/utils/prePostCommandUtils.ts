@@ -119,7 +119,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
               upsertActionInState({ ...existingEntry, actionLabel: cmd.label }, sourcePr);
               await persistDeploymentActionsState();
             }
-            // Preserve the existing success entry in the PR comment — do not overwrite it with skipped.
+            // Preserve the existing success entry in the PR comment - do not overwrite it with skipped.
             continue;
           }
         }
@@ -131,7 +131,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       await executeAction(cmd);
     }
     // Track executed/manual/skipped actions in the source PR's "Deployment Actions" comment.
-    // Actions are written to their source PR only — not to the current PR for actions from other PRs.
+    // Actions are written to their source PR only - not to the current PR for actions from other PRs.
     // "Already ran" skips (runOnlyOnceByOrg + existing success entry) are excluded via the
     // early `continue` above to avoid overwriting the existing success record.
     const sourcePrNumber = cmd.pullRequest?.idNumber || currentPrNumber;

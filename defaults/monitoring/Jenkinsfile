@@ -6,14 +6,14 @@
 //    Each monitoring branch must contain this Jenkinsfile.
 //
 // 2. Add the following credentials in Jenkins (Manage Jenkins → Credentials):
-//    - GIT_ACCESS_TOKEN : Username with password — git username + personal access token (for commit push) [REQUIRED]
-//    - SFDX_CLIENT_ID_* and SFDX_CLIENT_KEY_* : Secret text — one pair per monitored org (see MANUAL below) [REQUIRED]
-//    - SLACK_TOKEN, SLACK_CHANNEL_ID, NOTIF_EMAIL_ADDRESS : Secret text [optional — skip if unused]
+//    - GIT_ACCESS_TOKEN : Username with password - git username + personal access token (for commit push) [REQUIRED]
+//    - SFDX_CLIENT_ID_* and SFDX_CLIENT_KEY_* : Secret text - one pair per monitored org (see MANUAL below) [REQUIRED]
+//    - SLACK_TOKEN, SLACK_CHANNEL_ID, NOTIF_EMAIL_ADDRESS : Secret text [optional - skip if unused]
 //    - NOTIF_API_URL, NOTIF_API_BASIC_AUTH_USERNAME, NOTIF_API_BASIC_AUTH_PASSWORD : Secret text [optional]
 //    - NOTIF_API_METRICS_URL, NOTIF_API_METRICS_BASIC_AUTH_USERNAME, NOTIF_API_METRICS_BASIC_AUTH_PASSWORD : Secret text [optional]
 //    - CLOUDFLARE_EMAIL, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, etc. : Secret text [optional]
 //    Optional credentials use `optional: true` (requires Credentials Binding Plugin ≥ 1.24).
-//    Missing optional credentials are silently ignored — the pipeline will NOT crash.
+//    Missing optional credentials are silently ignored - the pipeline will NOT crash.
 //
 // 3. The Docker agent requires Docker to be available on the Jenkins node.
 //    The main agent uses hardisgroupcom/sfdx-hardis:latest.
@@ -25,14 +25,14 @@ pipeline {
 
     agent {
         docker {
-            // Use sfdx-hardis image — no install step needed. If not working on Jenkins, use ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+            // Use sfdx-hardis image - no install step needed. If not working on Jenkins, use ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
             image 'ghcr.io/hardisgroupcom/sfdx-hardis:latest'
             // Mount Docker socket so MegaLinter can run as a sibling container
             args '-v /var/run/docker.sock:/var/run/docker.sock --user root'
         }
     }
 
-    // Run every day at midnight — adjust cron expression as needed
+    // Run every day at midnight - adjust cron expression as needed
     // Cron format reference: https://crontab.cronhub.io/
     triggers {
         cron('H 0 * * *')
@@ -77,14 +77,14 @@ pipeline {
                     // ----------------------------------------------------------------
                     // MANUAL: Add one pair of credentials per monitored org.
                     // The credential ID must match the variable name expected by sfdx-hardis.
-                    // Examples — duplicate and adapt for each org branch:
+                    // Examples - duplicate and adapt for each org branch:
                     //
                     // string(credentialsId: 'SFDX_CLIENT_ID_MONITORING_MYCLIENT',               variable: 'SFDX_CLIENT_ID_MONITORING_MYCLIENT'),
                     // string(credentialsId: 'SFDX_CLIENT_KEY_MONITORING_MYCLIENT',              variable: 'SFDX_CLIENT_KEY_MONITORING_MYCLIENT'),
                     // string(credentialsId: 'SFDX_CLIENT_ID_MONITORING_MYCLIENT__INTEG_SANDBOX', variable: 'SFDX_CLIENT_ID_MONITORING_MYCLIENT__INTEG_SANDBOX'),
                     // string(credentialsId: 'SFDX_CLIENT_KEY_MONITORING_MYCLIENT__INTEG_SANDBOX',variable: 'SFDX_CLIENT_KEY_MONITORING_MYCLIENT__INTEG_SANDBOX'),
                     // ----------------------------------------------------------------
-                    // Notification credentials (optional — pipeline will NOT crash if missing)
+                    // Notification credentials (optional - pipeline will NOT crash if missing)
                     string(credentialsId: 'SLACK_TOKEN',                           variable: 'SLACK_TOKEN',                           optional: true),
                     string(credentialsId: 'SLACK_CHANNEL_ID',                      variable: 'SLACK_CHANNEL_ID',                      optional: true),
                     string(credentialsId: 'NOTIF_EMAIL_ADDRESS',                   variable: 'NOTIF_EMAIL_ADDRESS',                   optional: true),
@@ -94,7 +94,7 @@ pipeline {
                     string(credentialsId: 'NOTIF_API_METRICS_URL',                 variable: 'NOTIF_API_METRICS_URL',                 optional: true),
                     string(credentialsId: 'NOTIF_API_METRICS_BASIC_AUTH_USERNAME', variable: 'NOTIF_API_METRICS_BASIC_AUTH_USERNAME', optional: true),
                     string(credentialsId: 'NOTIF_API_METRICS_BASIC_AUTH_PASSWORD', variable: 'NOTIF_API_METRICS_BASIC_AUTH_PASSWORD', optional: true),
-                    // Cloudflare credentials (optional — pipeline will NOT crash if missing)
+                    // Cloudflare credentials (optional - pipeline will NOT crash if missing)
                     string(credentialsId: 'CLOUDFLARE_EMAIL',                      variable: 'CLOUDFLARE_EMAIL',                      optional: true),
                     string(credentialsId: 'CLOUDFLARE_API_TOKEN',                  variable: 'CLOUDFLARE_API_TOKEN',                  optional: true),
                     string(credentialsId: 'CLOUDFLARE_ACCOUNT_ID',                 variable: 'CLOUDFLARE_ACCOUNT_ID',                 optional: true),
@@ -141,7 +141,7 @@ pipeline {
         }
 
         ///////////////////////////////////////////////////////////////
-        // Post-backup checks — run in parallel (all allow failure)  //
+        // Post-backup checks - run in parallel (all allow failure)  //
         ///////////////////////////////////////////////////////////////
         stage('Post-Backup Checks') {
             parallel {
@@ -180,7 +180,7 @@ pipeline {
                             archiveArtifacts artifacts: 'hardis-report/**', allowEmptyArchive: true
                         }
                         failure {
-                            echo 'Apex Tests failed — pipeline continues (allow_failure)'
+                            echo 'Apex Tests failed - pipeline continues (allow_failure)'
                         }
                     }
                 }
@@ -225,7 +225,7 @@ pipeline {
                             archiveArtifacts artifacts: 'megalinter-reports/**,mega-linter.log', allowEmptyArchive: true
                         }
                         failure {
-                            echo 'MegaLinter failed — pipeline continues (allow_failure)'
+                            echo 'MegaLinter failed - pipeline continues (allow_failure)'
                         }
                     }
                 }
@@ -264,7 +264,7 @@ pipeline {
                             archiveArtifacts artifacts: 'hardis-report/**', allowEmptyArchive: true
                         }
                         failure {
-                            echo 'Monitoring Checks failed — pipeline continues (allow_failure)'
+                            echo 'Monitoring Checks failed - pipeline continues (allow_failure)'
                         }
                     }
                 }
