@@ -77,7 +77,7 @@ Common metadata types to protect:
 | `ConnectedApp` | Contains org-unique OAuth settings | All (`*`) |
 | `ExternalCredential` | Named Credentials v2 (API 57.0+): defines auth protocol and named principals; actual secrets are org-specific and stored at runtime only | All (`*`) |
 | `NamedCredential` | Endpoint URLs and auth references vary per environment | All (`*`) |
-| `ExtlClntAppGlobalOauthSettings` | External Client Apps (API 59.0+): contains OAuth consumer key and consumer secret — highly sensitive, never overwrite | All (`*`) |
+| `ExtlClntAppGlobalOauthSettings` | External Client Apps (API 59.0+): contains OAuth consumer key and consumer secret - highly sensitive, never overwrite | All (`*`) |
 | `RemoteSiteSetting` | URLs differ between orgs | All (`*`) |
 | `ApprovalProcess` | May reference usernames specific to that org | All (`*`) |
 | `SamlSsoConfig` | SSO configuration is org/IdP-specific | All (`*`) |

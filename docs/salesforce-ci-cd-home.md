@@ -141,14 +141,75 @@ _See a detailed article on SalesforceDevOps.net_
 
 ### Setup sfdx-hardis
 
-If you are comfortable with **Git**, **Salesforce CLI**, and **DevOps**, you can set up and use sfdx-hardis CI/CD on your own.
+sfdx-hardis is open source and free to use - but getting it right from day one saves weeks of trial and error. [**Cloudity**](https://cloudity.com/), the company behind sfdx-hardis, offers a range of professional services to match every team's needs and budget.
 
-You can also contact us at [**Cloudity**](https://cloudity.com/). Our Professional Services team will be glad to assist you with:
+---
 
-- Technical setup and initialization from your existing Salesforce production org
-- Release management strategy definition
-- Training for your contributors and release managers
-- Change management to accelerate DevOps adoption in your organization
+#### Assisted Setup - _for experienced teams_
+
+> **Best for:** Teams with solid Git and Salesforce CLI skills who want expert guidance without handing over the wheel.
+
+Your team drives the setup. A Cloudity expert rides along: reviewing your branch model, validating your pipeline configuration, unblocking tricky situations, and making sure you follow best practices from the start.
+
+**What's included:**
+
+- Branch and org model review and recommendations
+- Guided pipeline configuration (CI checks, deployments, notifications)
+- Code review of your sfdx-hardis configuration files
+- Q&A sessions with a Cloudity expert at key milestones
+- Guidance and material to train your team on sfdx-hardis best practices
+
+This is the most cost-effective way to get professional assurance without a full engagement.
+
+---
+
+#### Full Setup Service - _end-to-end, done for you_
+
+> **Best for:** Teams that want a production-ready CI/CD pipeline without investing internal time in setup and configuration.
+
+Cloudity takes full ownership of the setup. We deliver a battle-tested, fully configured CI/CD pipeline tailored to your org structure, team size, and release process - ready to go live.
+
+**What's included:**
+
+- Analysis of your existing Salesforce org and release process
+- Full pipeline setup on your Git platform (GitHub, GitLab, Azure DevOps, Bitbucket, Jenkins...)
+- Branch model and deployment strategy definition
+- Training sessions for contributors, release managers, and project leads
+- Change management support to accelerate adoption across your organization
+- Handover documentation and knowledge transfer
+
+---
+
+#### Option: Support Subscription - _peace of mind, ongoing_
+
+> **Best for:** Any team that wants guaranteed access to sfdx-hardis expertise after go-live - and wants to stay ahead of Salesforce releases.
+
+A Cloudity expert is available whenever you need them: to answer questions, resolve blockers, and review changes. You also directly support the sustainability of sfdx-hardis as an open-source project.
+
+**What's included:**
+
+- A skilled Cloudity experts pool, reachable by your team
+- Priority response for incidents and deployment issues
+- Proactive alerts on Salesforce API changes and sfdx-hardis updates that may affect your pipelines
+- Access to new sfdx-hardis features and security patches as they ship
+- Direct influence on the sfdx-hardis roadmap through feedback and feature requests
+
+---
+
+#### Option: Release Manager as a Service - _your release process, covered_
+
+> **Best for:** Teams without a dedicated release manager, or who need cover during holidays, parental leave, or peak release periods.
+
+A Cloudity release manager takes the wheel - permanently or on demand. Your team keeps shipping, your release cadence stays on track, no matter what.
+
+**What's included:**
+
+- Day-to-day management of pull requests, deployments, and release branches
+- Coordination between development, QA, and business teams
+- Incident response and rollback management
+- Available as a permanent service or as a temporary cover arrangement
+
+---
 
 <div style="text-align:center; margin:2rem 0;">
   <a href="https://cloudity.com/contact-us/" target="_blank" rel="noopener noreferrer">
@@ -156,12 +217,14 @@ You can also contact us at [**Cloudity**](https://cloudity.com/). Our Profession
   </a>
   <br/>
   <a href="https://cloudity.com/contact-us/" target="_blank" rel="noopener noreferrer" role="button" aria-label="Cloudity Professional Services"
-     style="display:inline-block; padding:0.75rem 1.25rem; background:#0070d2; color:#ffffff; text-decoration:none; border-radius:0.25rem; font-weight:600;">
-    Contact Cloudity Professional Services
+     style="display:inline-block; padding:0.75rem 1.25rem; background:#0070d2; color:#ffffff; text-decoration:none; border-radius:0.25rem; font-weight:600; margin-top:1rem;">
+    Talk to a Cloudity expert
   </a>
 </div>
 
-Please read the [Setup Guide](salesforce-ci-cd-setup-home.md) to learn how to initialize and maintain a Salesforce CI/CD project.
+---
+
+Prefer to set it up yourself? Read the [Setup Guide](salesforce-ci-cd-setup-home.md) to learn how to initialize and maintain a Salesforce CI/CD project.
 
 ### As a Contributor
 
