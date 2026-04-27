@@ -3,6 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { ensureGitRepository, execCommand, uxLog } from '../../../common/utils/index.js';
+import { parseXmlFile, writeXmlFile } from '../../../common/utils/xmlUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import c from 'chalk';
 import fs from 'fs-extra';
@@ -44,22 +45,43 @@ The command's technical implementation involves:
 Supports non-interactive execution with \`--agent\`:
 
 \`\`\`sh
-sf hardis:project:create --agent
+sf hardis:project:create --agent --orgtype scratch --projectname MyProject --devbranch integration
 \`\`\`
 
-In agent mode:
+In agent mode, the following flags are **required** (no defaults are applied):
 
-- The DevHub type prompt is skipped; defaults to \`scratch\`.
-- The project name prompt is skipped; the project name must already be set in config or an error is thrown.
-- The development branch prompt is skipped; defaults to \`integration\`.
+- \`--orgtype\`: type of development orgs (\`scratch\`, \`sandbox\`, or \`sandboxAndScratch\`).
+- \`--projectname\`: name of the SFDX project.
+- \`--devbranch\`: name of the default development branch.
+
+Optional flag:
+
+- \`--minimizeprofiles\`: activates the \`minimizeProfiles\` auto-clean type. **Only use this if the project is Permission Set-based**: it removes from profiles any attribute (object access, field access, etc.) that is already granted by a Permission Set. Omitted by default in agent mode; always activated in interactive mode.
 `;
 
-  public static examples = ['$ sf hardis:project:create', '$ sf hardis:project:create --agent'];
+  public static examples = [
+    '$ sf hardis:project:create',
+    '$ sf hardis:project:create --agent --orgtype scratch --projectname MyProject --devbranch integration',
+  ];
 
   public static flags: any = {
     agent: Flags.boolean({
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
+    }),
+    orgtype: Flags.string({
+      description: 'Type of development orgs: scratch, sandbox, or sandboxAndScratch (required with --agent)',
+      options: ['scratch', 'sandbox', 'sandboxAndScratch'],
+    }),
+    projectname: Flags.string({
+      description: 'Name of the SFDX project (required with --agent)',
+    }),
+    devbranch: Flags.string({
+      description: 'Name of the default development branch (required with --agent)',
+    }),
+    minimizeprofiles: Flags.boolean({
+      default: false,
+      description: 'Activate the minimizeProfiles auto-clean type. Use only for Permission Set-based projects: removes from profiles any attribute (object/field access, etc.) already granted by a Permission Set. Off by default in agent mode; always on in interactive mode.',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -87,7 +109,7 @@ In agent mode:
     const agentMode = flags.agent === true;
     // Check git repo
     await ensureGitRepository({ clone: true });
-    let orgType = 'scratch';
+    let orgType: string;
     if (!agentMode) {
       const devHubPrompt = await prompts({
         name: 'orgType',
@@ -112,7 +134,10 @@ In agent mode:
       });
       orgType = devHubPrompt.orgType;
     } else {
-      uxLog("log", this, c.grey(t('agentModeDefaultOrgType', { orgType })));
+      if (!flags.orgtype) {
+        throw new SfError('In agent mode, --orgtype is required. Allowed values: scratch, sandbox, sandboxAndScratch.');
+      }
+      orgType = flags.orgtype;
     }
     if (['scratch', 'sandboxAndScratch'].includes(orgType)) {
       // Connect to DevHub
@@ -125,12 +150,17 @@ In agent mode:
     }
     // Project name
     let config = await getConfig('project');
-    let projectName = config.projectName;
+    let projectName: string;
     let setProjectName = false;
-    if (projectName == null) {
-      if (agentMode) {
-        throw new SfError('In agent mode, projectName must be set in config/.sfdx-hardis.yml before running this command.');
+    if (agentMode) {
+      if (!flags.projectname) {
+        throw new SfError('In agent mode, --projectname is required.');
       }
+      projectName = flags.projectname;
+      setProjectName = true;
+    } else if (config.projectName != null) {
+      projectName = config.projectName;
+    } else {
       // User prompts
       projectName = await promptForProjectName();
       setProjectName = true;
@@ -150,6 +180,17 @@ In agent mode:
         overwrite: false,
       });
       await fs.rm(path.join(process.cwd(), projectName), { recursive: true });
+
+      // Clean generated manifest/package.xml: keep only API version
+      const manifestPackageXml = path.join(process.cwd(), 'manifest', 'package.xml');
+      if (await fs.pathExists(manifestPackageXml)) {
+        const parsedXml = await parseXmlFile(manifestPackageXml);
+        if (parsedXml?.Package) {
+          parsedXml.Package.types = [];
+          await writeXmlFile(manifestPackageXml, parsedXml);
+          uxLog("log", this, c.grey(t('cleanedManifestPackageXml')));
+        }
+      }
     }
     // Copy default project files
     uxLog("action", this, t('copyingDefaultFiles'));
@@ -162,9 +203,10 @@ In agent mode:
     config = await getConfig('project');
     if (config.developmentBranch == null) {
       if (agentMode) {
-        const defaultBranch = 'integration';
-        uxLog("log", this, c.grey(t('agentModeDefaultDevBranch', { branch: defaultBranch })));
-        await setConfig('project', { developmentBranch: defaultBranch });
+        if (!flags.devbranch) {
+          throw new SfError('In agent mode, --devbranch is required.');
+        }
+        await setConfig('project', { developmentBranch: flags.devbranch });
       } else {
         // User prompts
         const devBranchRes = await prompts({
@@ -180,10 +222,10 @@ In agent mode:
     }
 
     // Initialize autoCleanTypes
-    const defaultAutoCleanTypes = [
-      'destructivechanges',
-      'flowPositions',
-      'minimizeProfiles'];
+    const defaultAutoCleanTypes = ['destructivechanges', 'flowPositions'];
+    if (!agentMode || flags.minimizeprofiles) {
+      defaultAutoCleanTypes.push('minimizeProfiles');
+    }
     await setConfig('project', {
       autoCleanTypes: defaultAutoCleanTypes
     });
