@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- New command [hardis:packagexml:remove-managed](https://sfdx-hardis.cloudity.com/hardis/packagexml/remove-managed/) — strips all managed-package items from a `package.xml` while preserving custom metadata built on top of managed objects (e.g. a custom field on `SBQQ__Quote__c` is kept, `SBQQ__Quote__c.SBQQ__Status__c` is removed). Namespaces are resolved automatically from `InstalledPackage` entries or API name patterns, or supplied explicitly via `--namespaces`. Detection strategy selectable with `--namespace-detection` (`api-name` default, or `installed-packages`).
+
 ## [7.11.0] 2026-04-26
 
 - Added `--agent` flag for non-interactive headless execution to **100+ commands**. Commands skip all interactive prompts and use sensible defaults or require explicit flags when running in agent mode.
