@@ -9,8 +9,9 @@
 - [hardis:project:clean:standarditems](https://sfdx-hardis.cloudity.com/hardis/project/clean/standarditems/): Improved logging and automatic removal of standard application files during cleanup.
 - Add .gitattributes files to CI/CD and Monitoring defaults to ensure consistent line endings across platforms
 - Jenkins CI support for Monitoring: added a ready-to-use `Jenkinsfile` template in `defaults/monitoring/` and a new [Jenkins configuration documentation page](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-jenkins/).
-- Doc: rewrite package-no-overwrite documentation to make it more explicit, and with a diagram.
-- Doc: improve CI/CD home page documentation.
+- Doc
+ - rewrite package-no-overwrite documentation to make it more explicit, and with a diagram.
+ - improve CI/CD home page documentation.
 
 ## [7.11.0] 2026-04-26
 
