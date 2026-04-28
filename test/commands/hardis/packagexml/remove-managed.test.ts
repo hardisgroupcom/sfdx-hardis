@@ -5,6 +5,13 @@ import * as path from 'path';
 import { isManagedPackageMember, parsePackageXmlFile } from '../../../../src/common/utils/xmlUtils.js';
 import { PackageXmlRemoveManaged } from '../../../../src/commands/hardis/packagexml/remove-managed.js';
 
+type RemoveManagedResult = {
+  outputPackageXmlFile: string;
+  namespaces: string[];
+  removedCount: number;
+  removedByType: Record<string, string[]>;
+};
+
 /**
  * Lightweight temp-directory helper that does NOT call process.chdir(),
  * avoiding conflicts with ESM module resolution during teardown.
@@ -101,7 +108,7 @@ describe('hardis:packagexml:remove-managed', () => {
     });
     const outputPath = path.join(ctx.getDir(), 'out.xml');
 
-    const result = await PackageXmlRemoveManaged.run(['-p', inputPath, '-n', 'SBQQ', '-o', outputPath]);
+    const result = (await PackageXmlRemoveManaged.run(['-p', inputPath, '-n', 'SBQQ', '-o', outputPath])) as RemoveManagedResult;
 
     // SBQQ__Quote__c (CustomObject) + SBQQ__Quote__c.SBQQ__Status__c (CustomField) = 2 removed
     expect(result.removedCount).to.equal(2);
@@ -115,7 +122,7 @@ describe('hardis:packagexml:remove-managed', () => {
       CustomObject: ['SBQQ__Quote__c', 'MyObject__c'],
     });
 
-    const result = await PackageXmlRemoveManaged.run(['-p', inputPath, '-n', 'SBQQ']);
+    const result = (await PackageXmlRemoveManaged.run(['-p', inputPath, '-n', 'SBQQ'])) as RemoveManagedResult;
 
     const expectedOutput = inputPath.replace('.xml', '-without-managed.xml');
     expect(result.outputPackageXmlFile).to.equal(expectedOutput);
@@ -129,11 +136,11 @@ describe('hardis:packagexml:remove-managed', () => {
     });
     const outputPath = path.join(ctx.getDir(), 'out-installed.xml');
 
-    const result = await PackageXmlRemoveManaged.run([
+    const result = (await PackageXmlRemoveManaged.run([
       '-p', inputPath,
       '--namespace-detection', 'installed-packages',
       '-o', outputPath,
-    ]);
+    ])) as RemoveManagedResult;
 
     expect(result.namespaces).to.deep.equal(['SBQQ']);
     expect(result.removedCount).to.be.greaterThan(0);
@@ -147,11 +154,11 @@ describe('hardis:packagexml:remove-managed', () => {
     });
     const outputPath = path.join(ctx.getDir(), 'out-no-installed.xml');
 
-    const result = await PackageXmlRemoveManaged.run([
+    const result = (await PackageXmlRemoveManaged.run([
       '-p', inputPath,
       '--namespace-detection', 'installed-packages',
       '-o', outputPath,
-    ]);
+    ])) as RemoveManagedResult;
 
     expect(result.namespaces).to.deep.equal([]);
     expect(result.removedCount).to.equal(0);
@@ -165,7 +172,7 @@ describe('hardis:packagexml:remove-managed', () => {
     });
     const outputPath = path.join(ctx.getDir(), 'out-pattern.xml');
 
-    const result = await PackageXmlRemoveManaged.run(['-p', inputPath, '-o', outputPath]);
+    const result = (await PackageXmlRemoveManaged.run(['-p', inputPath, '-o', outputPath])) as RemoveManagedResult;
 
     expect(result.namespaces).to.deep.equal(['SBQQ']);
     expect(result.removedCount).to.equal(2); // SBQQ__Quote__c + SBQQ__Quote__c.SBQQ__Status__c
@@ -179,12 +186,12 @@ describe('hardis:packagexml:remove-managed', () => {
     });
     const outputPath = path.join(ctx.getDir(), 'out-override.xml');
 
-    const result = await PackageXmlRemoveManaged.run([
+    const result = (await PackageXmlRemoveManaged.run([
       '-p', inputPath,
       '-n', 'SBQQ',
       '--namespace-detection', 'installed-packages',
       '-o', outputPath,
-    ]);
+    ])) as RemoveManagedResult;
 
     expect(result.namespaces).to.deep.equal(['SBQQ']);
     const out = await parsePackageXmlFile(outputPath);
@@ -216,7 +223,7 @@ describe('hardis:packagexml:remove-managed', () => {
     });
     const outputPath = path.join(ctx.getDir(), 'out-none.xml');
 
-    const result = await PackageXmlRemoveManaged.run(['-p', inputPath, '-n', 'SBQQ', '-o', outputPath]);
+    const result = (await PackageXmlRemoveManaged.run(['-p', inputPath, '-n', 'SBQQ', '-o', outputPath])) as RemoveManagedResult;
 
     expect(result.removedCount).to.equal(0);
     expect(fs.existsSync(outputPath)).to.be.false;
@@ -229,7 +236,7 @@ describe('hardis:packagexml:remove-managed', () => {
     });
     const outputPath = path.join(ctx.getDir(), 'out-no-ns.xml');
 
-    const result = await PackageXmlRemoveManaged.run(['-p', inputPath, '-o', outputPath]);
+    const result = (await PackageXmlRemoveManaged.run(['-p', inputPath, '-o', outputPath])) as RemoveManagedResult;
 
     expect(result.namespaces).to.deep.equal([]);
     expect(result.removedCount).to.equal(0);
