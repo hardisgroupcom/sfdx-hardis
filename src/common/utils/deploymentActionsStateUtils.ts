@@ -152,7 +152,7 @@ export function checkActionInState(actionId: string, orgBranch: string): Deploym
  * sourcePrNumber must be > 0 (a real PR number).
  */
 export function upsertActionInState(entry: DeploymentActionStateEntry, sourcePrNumber: number): void {
-  if (sourcePrNumber <= 0) return; // No PR context — cannot track
+  if (sourcePrNumber <= 0) return; // No PR context - cannot track
   const state = getMultiPrState();
   if (!state.entriesByPr.has(sourcePrNumber)) {
     state.entriesByPr.set(sourcePrNumber, []);
@@ -300,7 +300,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
     body += `| <!-- actionId:${e.actionId}${orderAttr} --> ${e.actionLabel} | ${e.orgBranch} | ${e.when} | ${statusCell} | ${jobCell} |\n`;
   }
 
-  // Details section — one collapsible per unique action, covering all orgs it ran in.
+  // Details section - one collapsible per unique action, covering all orgs it ran in.
   // When actionDefs is provided (from the PR YAML), action properties are shown even for
   // actions that were skipped or not yet run.
   const actionGroups = new Map<string, DeploymentActionStateEntry[]>();
@@ -361,15 +361,15 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
         for (const e of sortedOrgEntries) {
           const statusIcon = getStatusIcon(e.status);
           const dateStr = e.date ? ` (${e.date.substring(0, 10)})` : '';
-          const jobRef = e.jobUrl ? ` — [${e.jobId}](${e.jobUrl})` : (e.jobId ? ` — ${e.jobId}` : '');
-          body += `*${e.orgBranch} — ${statusIcon} ${e.status}${dateStr}${jobRef}*\n\n`;
+          const jobRef = e.jobUrl ? ` - [${e.jobId}](${e.jobUrl})` : (e.jobId ? ` - ${e.jobId}` : '');
+          body += `*${e.orgBranch} - ${statusIcon} ${e.status}${dateStr}${jobRef}*\n\n`;
           if (e.output) {
             const truncated = truncateOutput(e.output);
             body += '```\n' + truncated + '\n```\n\n';
           }
         }
       } else {
-        body += `*No results yet — action has not been executed in any org.*\n\n`;
+        body += `*No results yet - action has not been executed in any org.*\n\n`;
       }
 
       body += '</details>\n';
@@ -385,7 +385,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
  */
 function buildActionPropertiesSection(actionId: string, def?: ActionDef): string {
   if (!def) {
-    return `**ID:** \`${actionId}\` *(properties not available — YAML file not found)*\n\n`;
+    return `**ID:** \`${actionId}\` *(properties not available - YAML file not found)*\n\n`;
   }
 
   let firstLine = `**ID:** \`${actionId}\``;

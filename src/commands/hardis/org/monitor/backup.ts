@@ -13,7 +13,7 @@ import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/i
 import { MessageAttachment } from '@slack/web-api';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
-import { countPackageXmlItems, parsePackageXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { countPackageXmlItems, isManagedPackageMember, parsePackageXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import Project2Markdown from '../../doc/project2markdown.js';
 import MkDocsToSalesforce from '../../doc/mkdocs-to-salesforce.js';
 import MkDocsToCloudflare from '../../doc/mkdocs-to-cf.js';
@@ -240,14 +240,6 @@ In agent mode:
     return objectName || '';
   }
 
-  private isManagedPackageNamespacedMember(member: string): boolean {
-    const namespaces = this.namespaces || [];
-    return namespaces.some((ns: string) => {
-      const nsPrefix = `${ns}__`;
-      return member.startsWith(nsPrefix) || member.includes(`.${nsPrefix}`);
-    });
-  }
-
   private filterManagedPackageNamespacedDataCloudMetadata(metadata: {
     objects: string[];
     fields: string[];
@@ -257,13 +249,13 @@ In agent mode:
     fields: string[];
     metadataByType: Record<string, string[]>;
   } {
-    const filteredObjects = metadata.objects.filter((member: string) => !this.isManagedPackageNamespacedMember(member));
-    const filteredFields = metadata.fields.filter((member: string) => !this.isManagedPackageNamespacedMember(member));
+    const filteredObjects = metadata.objects.filter((member: string) => !isManagedPackageMember(member, this.namespaces));
+    const filteredFields = metadata.fields.filter((member: string) => !isManagedPackageMember(member, this.namespaces));
     const filteredMetadataByType: Record<string, string[]> = {};
     for (const metadataType of Object.keys(metadata.metadataByType || {})) {
       const members = metadata.metadataByType[metadataType] || [];
       filteredMetadataByType[metadataType] = members.filter(
-        (member: string) => member === '*' || !this.isManagedPackageNamespacedMember(member)
+        (member: string) => member === '*' || !isManagedPackageMember(member, this.namespaces)
       );
     }
     return {
@@ -669,16 +661,16 @@ In agent mode:
     const customObjects: string[] = packageElements['CustomObject'] || [];
     const customFields: string[] = packageElements['CustomField'] || [];
     const dataCloudObjects = customObjects.filter((obj: string) =>
-      MonitorBackup.isDataCloudObjectName(obj) && !this.isManagedPackageNamespacedMember(obj)
+      MonitorBackup.isDataCloudObjectName(obj) && !isManagedPackageMember(obj, this.namespaces)
     );
     const dataCloudFields = customFields.filter((fieldMember: string) =>
-      MonitorBackup.isDataCloudObjectName(MonitorBackup.getObjectNameFromFieldMember(fieldMember)) && !this.isManagedPackageNamespacedMember(fieldMember)
+      MonitorBackup.isDataCloudObjectName(MonitorBackup.getObjectNameFromFieldMember(fieldMember)) && !isManagedPackageMember(fieldMember, this.namespaces)
     );
     const dataCloudMetadataByType: Record<string, string[]> = {};
     for (const metadataType of Object.keys(packageElements)) {
       if (MonitorBackup.isDataCloudMetadataType(metadataType)) {
         dataCloudMetadataByType[metadataType] = (packageElements[metadataType] || []).filter(
-          (member: string) => !this.isManagedPackageNamespacedMember(member)
+          (member: string) => !isManagedPackageMember(member, this.namespaces)
         );
       }
     }
@@ -725,15 +717,15 @@ In agent mode:
       }
       metadata = {
         objects: customObjects.filter((obj: string) =>
-          MonitorBackup.isDataCloudObjectName(obj) && !this.isManagedPackageNamespacedMember(obj)
+          MonitorBackup.isDataCloudObjectName(obj) && !isManagedPackageMember(obj, this.namespaces)
         ),
         fields: customFields.filter((fieldMember: string) =>
-          MonitorBackup.isDataCloudObjectName(MonitorBackup.getObjectNameFromFieldMember(fieldMember)) && !this.isManagedPackageNamespacedMember(fieldMember)
+          MonitorBackup.isDataCloudObjectName(MonitorBackup.getObjectNameFromFieldMember(fieldMember)) && !isManagedPackageMember(fieldMember, this.namespaces)
         ),
         metadataByType: Object.fromEntries(
           Object.entries(metadataByType).map(([metadataType, members]) => [
             metadataType,
-            members.filter((member: string) => !this.isManagedPackageNamespacedMember(member)),
+            members.filter((member: string) => !isManagedPackageMember(member, this.namespaces)),
           ])
         ),
       };

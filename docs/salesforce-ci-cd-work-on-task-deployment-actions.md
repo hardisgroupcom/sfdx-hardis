@@ -85,13 +85,13 @@ Each action is an object with the following required and optional properties.
 | `customUsername`   | string  |    No     | Run the action with a specific username instead of the default target org.                                                                                                                        |
 | `skipIfError`      | boolean |    No     | If true and the deployment itself failed, the action will be skipped.                                                                                                                             |
 | `allowFailure`     | boolean |    No     | If true and the action fails, the deployment continues but the result is marked failed/allowed.                                                                                                   |
-| `runOnlyOnceByOrg` | boolean |    No     | Default: `true`. If true, the action runs only once per target org. Execution state is tracked in a dedicated "Deployment Actions" PR comment (see below) — no Salesforce custom object required. |
+| `runOnlyOnceByOrg` | boolean |    No     | Default: `true`. If true, the action runs only once per target org. Execution state is tracked in a dedicated "Deployment Actions" PR comment (see below) - no Salesforce custom object required. |
 
 ### Deployment Actions PR comment
 
 After every action runs, sfdx-hardis creates or updates a dedicated **"Deployment Actions"** comment on the Pull Request. This gives release managers a consolidated view of what has been executed across every org for the lifetime of the PR.
 
-**Comment structure** — one shared comment per PR, across all CI workflows:
+**Comment structure** - one shared comment per PR, across all CI workflows:
 
 ```markdown
 ## Deployment Actions
@@ -113,7 +113,7 @@ The table is ordered by org environment (integration → uat → preprod → pro
 | Column     | Description                                                                     |
 |------------|---------------------------------------------------------------------------------|
 | Action     | Action label (the `id` is embedded as an HTML comment for machine parsing)      |
-| Org branch | Target git branch name (e.g. `integration`, `uat`, `main`) — identifies the org |
+| Org branch | Target git branch name (e.g. `integration`, `uat`, `main`) - identifies the org |
 | Status     | Icon + status word + date                                                       |
 | Job        | Link to the CI run that performed the action                                    |
 
@@ -122,11 +122,11 @@ The table is ordered by org environment (integration → uat → preprod → pro
 | Icon | Status    | Meaning                                           |
 |------|-----------|---------------------------------------------------|
 | ✅    | `success` | Executed successfully                             |
-| ❌    | `failed`  | Executed but failed — will be retried next run    |
-| 👋   | `manual`  | Manual step — requires human action               |
+| ❌    | `failed`  | Executed but failed - will be retried next run    |
+| 👋   | `manual`  | Manual step - requires human action               |
 | ⚪    | `skipped` | Skipped (e.g. already run via `runOnlyOnceByOrg`) |
 
-### runOnlyOnceByOrg — skip-on-next-run logic
+### runOnlyOnceByOrg - skip-on-next-run logic
 
 When `runOnlyOnceByOrg` is `true` (the default), the "Deployment Actions" PR comment is used as the state store:
 

@@ -2,6 +2,17 @@
 
 ## [beta] (main)
 
+- New command [hardis:packagexml:remove-managed](https://sfdx-hardis.cloudity.com/hardis/packagexml/remove-managed/) - strips all managed-package items from a `package.xml` while preserving custom metadata built on top of managed objects (e.g. a custom field on `SBQQ__Quote__c` is kept, `SBQQ__Quote__c.SBQQ__Status__c` is removed). Namespaces are resolved automatically from `InstalledPackage` entries or API name patterns, or supplied explicitly via `--namespaces`. Detection strategy selectable with `--namespace-detection` (`api-name` default, or `installed-packages`).
+- [hardis:project:create](https://sfdx-hardis.cloudity.com/hardis/project/create/):
+  - Clean manifest/package.xml after creation.
+  - Add CLI flags and behaviors for Agent mode
+- [hardis:project:clean:standarditems](https://sfdx-hardis.cloudity.com/hardis/project/clean/standarditems/): Improved logging and automatic removal of standard application files during cleanup.
+- Add .gitattributes files to CI/CD and Monitoring defaults to ensure consistent line endings across platforms
+- Jenkins CI support for Monitoring: added a ready-to-use `Jenkinsfile` template in `defaults/monitoring/` and a new [Jenkins configuration documentation page](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-jenkins/).
+- Doc
+ - rewrite package-no-overwrite documentation to make it more explicit, and with a diagram.
+ - improve CI/CD home page documentation.
+
 ## [7.11.0] 2026-04-26
 
 - Added `--agent` flag for non-interactive headless execution to **100+ commands**. Commands skip all interactive prompts and use sensible defaults or require explicit flags when running in agent mode.
@@ -23,7 +34,7 @@
   - Feature: Added an option to skip Data Cloud backup when needed.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Enhance the command to easily simulate deployments from local computer.
 - [hardis:org:user:freeze](https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/) and [hardis:org:user:unfreeze](https://sfdx-hardis.cloudity.com/hardis/org/user/unfreeze/): Added `--usernames` flag to target specific Salesforce usernames directly (takes priority over profile flags; makes `--includeprofiles`/`--excludeprofiles` optional in all modes including agent/CI).
-- Deployment Actions: `runOnlyOnceByOrg` now defaults to `true` and uses a dedicated PR comment ("Deployment Actions") as the sole state store — replacing the `SfdxHardisTrace__c` Salesforce custom object. The comment table (action / org branch / status / job) is readable by both humans and automation across all CI workflows on the same PR.
+- Deployment Actions: `runOnlyOnceByOrg` now defaults to `true` and uses a dedicated PR comment ("Deployment Actions") as the sole state store - replacing the `SfdxHardisTrace__c` Salesforce custom object. The comment table (action / org branch / status / job) is readable by both humans and automation across all CI workflows on the same PR.
 - Fix: display error when JWT auth failed.
 - Add schedule-batch in JSON Schema
 

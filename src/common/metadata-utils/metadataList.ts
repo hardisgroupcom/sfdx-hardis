@@ -210,6 +210,13 @@ export function listMetadataTypes() {
         xmlName: 'AiSurface',
       },
       {
+        directoryName: 'aiTestingDefinitions',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'aiTestingDefinition',
+        xmlName: 'AiTestingDefinition',
+      },
+      {
         directoryName: 'aiUsecaseDefinitions',
         inFolder: false,
         metaFile: false,

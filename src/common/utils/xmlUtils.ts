@@ -59,6 +59,28 @@ export async function parsePackageXmlFile(packageXmlFile: string) {
   return targetOrgContent;
 }
 
+/**
+ * Returns true when a package.xml member belongs to a managed package namespace
+ * and should therefore be excluded from a deployment or filtered manifest.
+ *
+ * Rules:
+ *  - Top-level item whose API name starts with `<ns>__` (e.g. `SBQQ__Quote__c`) → managed.
+ *  - Child item (dotted) whose **child** part starts with `<ns>__`
+ *    (e.g. `Account.SBQQ__Field__c` or `SBQQ__Obj__c.SBQQ__Field__c`) → managed.
+ *  - Child item whose parent is namespaced but child is NOT
+ *    (e.g. `SBQQ__Obj__c.MyCustomField__c`) → NOT managed (custom work on managed object).
+ */
+export function isManagedPackageMember(member: string, namespaces: string[]): boolean {
+  return namespaces.some((ns) => {
+    const prefix = `${ns}__`;
+    // Top-level namespaced item (no child separator)
+    if (!member.includes('.') && member.startsWith(prefix)) return true;
+    // Child item: namespaced when the child segment starts with the prefix
+    if (member.includes(`.${prefix}`)) return true;
+    return false;
+  });
+}
+
 export async function countPackageXmlItems(packageXmlFile: string): Promise<number> {
   const packageXmlParsed = await parsePackageXmlFile(packageXmlFile);
   let counter = 0;

@@ -101,12 +101,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
         if (matchingCustomFiles.length === 0) {
           // Remove the whole folder
           await fs.remove(objectDir);
-          uxLog("action", this, c.cyan(t('removedFolder', { objectDir: c.yellow(objectDir) })));
+          uxLog("log", this, c.cyan(t('removedFolder', { objectDir: c.yellow(objectDir) })));
           const sharingRuleFile = path.join(sourceRootFolder, 'sharingRules', objectDirName + '.sharingRules-meta.xml');
           if (fs.existsSync(sharingRuleFile)) {
             // Remove sharingRule if existing
             await fs.remove(sharingRuleFile);
-            uxLog("action", this, c.cyan(t('removedSharingRule', { sharingRuleFile: c.yellow(sharingRuleFile) })));
+            uxLog("log", this, c.cyan(t('removedSharingRule', { sharingRuleFile: c.yellow(sharingRuleFile) })));
           }
         } else {
           // Remove only standard fields
@@ -115,13 +115,21 @@ In agent mode, all interactive prompts are skipped and default values are used.
           for (const field of matchingAllFields) {
             if (!field.includes('__')) {
               await fs.remove(field);
-              uxLog("action", this, c.cyan(t('removedStandardField', { field: c.yellow(field) })));
+              uxLog("log", this, c.cyan(t('removedStandardField', { field: c.yellow(field) })));
             }
           }
 
-          uxLog("action", this, c.cyan(t('keepFolderBecauseOfCustomFieldsFound', { objectDir: c.green(objectDir) })));
+          uxLog("log", this, c.cyan(t('keepFolderBecauseOfCustomFieldsFound', { objectDir: c.green(objectDir) })));
         }
       }
+    }
+
+    // Remove standard application files
+    const standardAppsPattern = `${sourceRootFolder}/applications/standard__*.app-meta.xml`;
+    const matchingStandardApps = await glob(standardAppsPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
+    for (const appFile of matchingStandardApps) {
+      await fs.remove(appFile);
+      uxLog("log", this, c.cyan(t('removedFile', { removeFile: c.yellow(appFile) })));
     }
 
     // Return an object to be displayed with --json
