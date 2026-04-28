@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import fs from 'fs-extra';
 import * as os from 'os';
@@ -229,6 +230,7 @@ describe('hardis:packagexml:remove-managed', () => {
     expect(fs.existsSync(outputPath)).to.be.false;
   });
 
+  /* jscpd:ignore-start */
   it('returns early with empty result when no namespaces can be detected', async () => {
     // No InstalledPackage entries, no NS__Name__ patterns in member names
     const inputPath = writeInput('package.xml', {
@@ -242,4 +244,5 @@ describe('hardis:packagexml:remove-managed', () => {
     expect(result.removedCount).to.equal(0);
     expect(fs.existsSync(outputPath)).to.be.false;
   });
+  /* jscpd:ignore-end */
 });
