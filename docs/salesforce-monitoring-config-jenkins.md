@@ -19,12 +19,12 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 
 Make sure the following plugins are installed on your Jenkins instance (**Manage Jenkins → Plugins**):
 
-| Plugin | Purpose |
-|--------|---------|
-| [Docker Pipeline](https://plugins.jenkins.io/docker-workflow/) | Run pipeline stages inside a Docker container |
+| Plugin                                                                        | Purpose                                                                             |
+|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [Docker Pipeline](https://plugins.jenkins.io/docker-workflow/)                | Run pipeline stages inside a Docker container                                       |
 | [Credentials Binding](https://plugins.jenkins.io/credentials-binding/) ≥ 1.24 | Inject credentials as environment variables (required for `optional: true` support) |
-| [Pipeline](https://plugins.jenkins.io/workflow-aggregator/) | Declarative / scripted pipeline support |
-| [Multibranch Pipeline](https://plugins.jenkins.io/workflow-multibranch/) | Automatically create one job per monitoring branch |
+| [Pipeline](https://plugins.jenkins.io/workflow-aggregator/)                   | Declarative / scripted pipeline support                                             |
+| [Multibranch Pipeline](https://plugins.jenkins.io/workflow-multibranch/)      | Automatically create one job per monitoring branch                                  |
 
 Docker must also be available on the Jenkins node (the pipeline mounts `/var/run/docker.sock` for MegaLinter).
 
