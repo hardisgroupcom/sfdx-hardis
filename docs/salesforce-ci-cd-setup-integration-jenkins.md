@@ -19,12 +19,12 @@ description: Set up a Jenkins Multibranch Pipeline to automate Salesforce deploy
 
 Make sure the following plugins are installed on your Jenkins instance (**Manage Jenkins -> Plugins**):
 
-| Plugin | Purpose |
-|--------|---------|
-| [Docker Pipeline](https://plugins.jenkins.io/docker-workflow/) | Run pipeline stages inside a Docker container |
+| Plugin                                                                         | Purpose                                                                             |
+|--------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [Docker Pipeline](https://plugins.jenkins.io/docker-workflow/)                 | Run pipeline stages inside a Docker container                                       |
 | [Credentials Binding](https://plugins.jenkins.io/credentials-binding/) >= 1.24 | Inject credentials as environment variables (required for `optional: true` support) |
-| [Pipeline](https://plugins.jenkins.io/workflow-aggregator/) | Declarative / scripted pipeline support |
-| [Multibranch Pipeline](https://plugins.jenkins.io/workflow-multibranch/) | Automatically create one sub-job per branch |
+| [Pipeline](https://plugins.jenkins.io/workflow-aggregator/)                    | Declarative / scripted pipeline support                                             |
+| [Multibranch Pipeline](https://plugins.jenkins.io/workflow-multibranch/)       | Automatically create one sub-job per branch                                         |
 
 Docker must also be available on the Jenkins node (the pipeline mounts `/var/run/docker.sock` for MegaLinter).
 
@@ -53,14 +53,14 @@ Repeat for every required `SFDX_CLIENT_ID_<BRANCH>` / `SFDX_CLIENT_KEY_<BRANCH>`
 
 The pipeline also accepts the following optional credentials. Create them if you use the corresponding feature. Missing optional credentials are silently ignored and will NOT crash the pipeline (requires Credentials Binding Plugin >= 1.24).
 
-| Credential ID | Feature |
-|---------------|---------|
-| `SLACK_TOKEN` + `SLACK_CHANNEL_ID` | Slack notifications |
-| `NOTIF_EMAIL_ADDRESS` | Email notifications |
-| `JIRA_HOST` + `JIRA_EMAIL` + `JIRA_TOKEN` / `JIRA_PAT` | JIRA integration |
-| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY` | AI auto-fix of deployment errors |
-| `GITHUB_TOKEN` / `CI_SFDX_HARDIS_GITLAB_TOKEN` / `CI_SFDX_HARDIS_BITBUCKET_TOKEN` / `CI_SFDX_HARDIS_AZURE_TOKEN` | Allow the coding agent to push fix branches and open PRs |
-| `SFDX_AUTH_URL_TECHNICAL_ORG` | Technical org authentication (DevHub or scratch org workflows) |
+| Credential ID                                                                                                    | Feature                                                        |
+|------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| `SLACK_TOKEN` + `SLACK_CHANNEL_ID`                                                                               | Slack notifications                                            |
+| `NOTIF_EMAIL_ADDRESS`                                                                                            | Email notifications                                            |
+| `JIRA_HOST` + `JIRA_EMAIL` + `JIRA_TOKEN` / `JIRA_PAT`                                                           | JIRA integration                                               |
+| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`                                                        | AI auto-fix of deployment errors                               |
+| `GITHUB_TOKEN` / `CI_SFDX_HARDIS_GITLAB_TOKEN` / `CI_SFDX_HARDIS_BITBUCKET_TOKEN` / `CI_SFDX_HARDIS_AZURE_TOKEN` | Allow the coding agent to push fix branches and open PRs       |
+| `SFDX_AUTH_URL_TECHNICAL_ORG`                                                                                    | Technical org authentication (DevHub or scratch org workflows) |
 
 ## Create the Multibranch Pipeline
 
@@ -116,10 +116,10 @@ Commit the updated `Jenkinsfile` and push. Jenkins will pick up the changes on t
 
 ## How the pipeline works
 
-| Trigger | Stages that run |
-|---------|----------------|
+| Trigger                       | Stages that run                                                                    |
+|-------------------------------|------------------------------------------------------------------------------------|
 | Pull Request opened / updated | **MegaLinter** (code quality) + **Validation** (check-only deploy) run in parallel |
-| Push to a deployment branch | **Deployment** (real deploy to the target org) |
+| Push to a deployment branch   | **Deployment** (real deploy to the target org)                                     |
 
 ## Auto-fix branches
 

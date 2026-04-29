@@ -74,7 +74,7 @@ Use `package-no-overwrite.xml` for metadata that:
 Common metadata types to protect:
 
 | Metadata type                              | Reason                                                                                                                                   | Scope recommendation |
-| :----------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- | :------------------- |
+|:-------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:---------------------|
 | `ConnectedApp`                             | Contains org-unique OAuth settings                                                                                                       | All (`*`)            |
 | `ExternalCredential`                       | Named Credentials v2 (API 57.0+): defines auth protocol and named principals; actual secrets are org-specific and stored at runtime only | All (`*`)            |
 | `NamedCredential`                          | Endpoint URLs and auth references vary per environment                                                                                   | All (`*`)            |
@@ -101,7 +101,7 @@ Common metadata types to protect:
 Member entries support three matching modes:
 
 | Pattern                               | Meaning                                        | Example                       |
-| :------------------------------------ | :--------------------------------------------- | :---------------------------- |
+|:--------------------------------------|:-----------------------------------------------|:------------------------------|
 | `*`                                   | Match **all** members of that type             | `<members>*</members>`        |
 | `prefix*` or `*suffix` or `part*part` | Match members whose name fits the glob pattern | `<members>*__dlm</members>`   |
 | Exact name                            | Match only that specific member                | `<members>MyReport</members>` |
@@ -125,7 +125,7 @@ Glob patterns use `*` as a wildcard that matches any sequence of characters. Mul
 ### Configuration options
 
 | Configuration                                  | Description                                                                                                                                    |
-| :--------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
+|:-----------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------|
 | `packageNoOverwritePath` in `.sfdx-hardis.yml` | Override the path to the file for a specific branch (e.g. `manifest/package-no-overwrite-main.xml` in `config/branches/.sfdx-hardis.main.yml`) |
 | `PACKAGE_NO_OVERWRITE_PATH` env variable       | Override the file path at pipeline level                                                                                                       |
 | `SKIP_PACKAGE_DEPLOY_ONCE=true` env variable   | Disable `package-no-overwrite.xml` processing entirely for a specific run                                                                      |
