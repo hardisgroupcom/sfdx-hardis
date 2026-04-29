@@ -6,8 +6,9 @@ description: Prompt template for PROMPT_MONITORING_PPTX_REPORT
 # PROMPT_MONITORING_PPTX_REPORT
 
 ## Variables
+
 | Name                   | Description                                                                   | Example                                                                                       |
-|:-----------------------|:------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------|
+| :--------------------- | :---------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
 | **NOTIFICATIONS_JSON** | JSON array of all monitoring notification messages collected during this run. | `[{"type":"ORG_LIMITS","severity":"warning","text":"Org limits are approaching thresholds"}]` |
 | **AI_SUMMARY**         | AI-generated executive summary of the monitoring findings (markdown).         | `The org is in good health overall, with a few warnings about approaching limits.`            |
 | **ORG_URL**            | The Salesforce org instance URL being monitored.                              | `https://mycompany.my.salesforce.com`                                                         |
