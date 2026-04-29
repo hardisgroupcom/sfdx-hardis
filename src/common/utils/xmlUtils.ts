@@ -246,10 +246,10 @@ export async function removePackageXmlFilesContent(
           : t('wildcardInFilterAllRemoved', { type: c.bold(type.name) })
       )));
     } else {
-      // Filter members
+      // Filter members (supports glob wildcards in filter patterns, e.g. "*__dlm")
       const originalCount = typeMembers.length;
       typeMembers = typeMembers.filter((member: string) =>
-        checkRemove(!removeTypeMembers.includes(member), removedOnly)
+        checkRemove(!removeTypeMembers.some((pattern: string) => memberMatchesPattern(member, pattern)), removedOnly)
       );
       if (removedOnly) {
         uxLog("log", this, c.grey(c.italic(t('typeItemsKeptFromFilter', { type: c.bold(type.name), count: typeMembers.length }))));
@@ -301,6 +301,14 @@ export function sortObject(o) {
   return Object.keys(o)
     .sort()
     .reduce((r, k) => ((r[k] = o[k]), r), {});
+}
+
+// Returns true when member matches pattern, supporting * as a glob wildcard (e.g. "*__dlm", "Account*").
+function memberMatchesPattern(member: string, pattern: string): boolean {
+  if (pattern === '*') return true;
+  if (!pattern.includes('*')) return member === pattern;
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+  return new RegExp(`^${escaped}$`).test(member);
 }
 
 function checkRemove(boolRes, removedOnly = false) {

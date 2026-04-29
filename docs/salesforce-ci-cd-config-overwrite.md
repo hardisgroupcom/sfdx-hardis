@@ -2,6 +2,7 @@
 title: Configure overwrite management on a Salesforce CI/CD Project
 description: Learn how to use package-no-overwrite.xml to protect metadata that is maintained directly in a Salesforce org from being overwritten by CI/CD deployments
 ---
+
 <!-- markdownlint-disable MD013 MD033 -->
 
 - [What is overwrite management?](#what-is-overwrite-management)
@@ -12,7 +13,7 @@ description: Learn how to use package-no-overwrite.xml to protect metadata that 
   - [Configuration options](#configuration-options)
   - [Example](#example)
 
-___
+---
 
 ## What is overwrite management?
 
@@ -22,7 +23,7 @@ On most Salesforce projects, **certain metadata types are intentionally maintain
 
 This is controlled by the file `manifest/package-no-overwrite.xml`.
 
-___
+---
 
 ## package-no-overwrite.xml
 
@@ -73,7 +74,7 @@ Use `package-no-overwrite.xml` for metadata that:
 Common metadata types to protect:
 
 | Metadata type                              | Reason                                                                                                                                   | Scope recommendation |
-|:-------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:---------------------|
+| :----------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- | :------------------- |
 | `ConnectedApp`                             | Contains org-unique OAuth settings                                                                                                       | All (`*`)            |
 | `ExternalCredential`                       | Named Credentials v2 (API 57.0+): defines auth protocol and named principals; actual secrets are org-specific and stored at runtime only | All (`*`)            |
 | `NamedCredential`                          | Endpoint URLs and auth references vary per environment                                                                                   | All (`*`)            |
@@ -90,15 +91,41 @@ Common metadata types to protect:
 
 1. Create the file `manifest/package-no-overwrite.xml` at the root of your Salesforce project
 2. Use the **same XML format as `package.xml`**
-3. List the metadata types and members to protect - you can use wildcards (`<members>*</members>`)
+3. List the metadata types and members to protect - see [Wildcard support](#wildcard-support) below
 4. Commit the file to your repository
 
 > The file was formerly named `packageDeployOnce.xml`. Both names are still recognized for backward compatibility, but `package-no-overwrite.xml` is the current standard.
 
+### Wildcard support
+
+Member entries support three matching modes:
+
+| Pattern                               | Meaning                                        | Example                       |
+| :------------------------------------ | :--------------------------------------------- | :---------------------------- |
+| `*`                                   | Match **all** members of that type             | `<members>*</members>`        |
+| `prefix*` or `*suffix` or `part*part` | Match members whose name fits the glob pattern | `<members>*__dlm</members>`   |
+| Exact name                            | Match only that specific member                | `<members>MyReport</members>` |
+
+Glob patterns use `*` as a wildcard that matches any sequence of characters. Multiple patterns can be mixed within the same `<types>` block.
+
+```xml
+<!-- Protect all Data Cloud (DLM) objects - matched by suffix wildcard -->
+<types>
+  <members>*__dlm</members>
+  <name>CustomObject</name>
+</types>
+
+<!-- Protect all fields on DLM objects -->
+<types>
+  <members>*__dlm.*</members>
+  <name>CustomField</name>
+</types>
+```
+
 ### Configuration options
 
 | Configuration                                  | Description                                                                                                                                    |
-|:-----------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------|
+| :--------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
 | `packageNoOverwritePath` in `.sfdx-hardis.yml` | Override the path to the file for a specific branch (e.g. `manifest/package-no-overwrite-main.xml` in `config/branches/.sfdx-hardis.main.yml`) |
 | `PACKAGE_NO_OVERWRITE_PATH` env variable       | Override the file path at pipeline level                                                                                                       |
 | `SKIP_PACKAGE_DEPLOY_ONCE=true` env variable   | Disable `package-no-overwrite.xml` processing entirely for a specific run                                                                      |

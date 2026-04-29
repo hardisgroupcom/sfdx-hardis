@@ -152,9 +152,10 @@ deploymentApexTestClasses:
 
 ### Dynamic deployment items / Overwrite management
 
-If necessary,you can define the following files (that supports wildcards <members>*</members>):
+If necessary,you can define the following files:
 
 - \`manifest/package-no-overwrite.xml\`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org).
+  - Supports \`<members>*</members>\` (all members of a type), exact names, and glob-style patterns such as \`<members>*__dlm</members>\` or \`<members>Prod_*</members>\`.
   - Can be overridden for a branch using .sfdx-hardis.yml property **packageNoOverwritePath** or environment variable PACKAGE_NO_OVERWRITE_PATH (for example, define: \`packageNoOverwritePath: manifest/package-no-overwrite-main.xml\` in config file \`config/.sfdx-hardis.main.yml\`)
 - \`manifest/packageXmlOnChange.xml\`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
