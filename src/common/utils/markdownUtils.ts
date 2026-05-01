@@ -10,22 +10,29 @@ export async function generatePdfFileFromMarkdown(markdownFile: string): Promise
     const mdToPdfOptions = {
       dest: outputPdfFile,
       css: `img {
-              max-width: 50%;
+              max-width: 60%;
               max-height: 20%;
               display: block;
               margin: 0 auto;
             }
             table {
               width: 100%;
-              table-layout: fixed;
+              table-layout: auto;
               border-collapse: collapse;
-              word-break: break-word;
-              overflow-wrap: break-word;
             }
-            th, td {
+            th {
+              background-color: #f0f0f0;
+              white-space: nowrap;
+              padding: 4px 8px;
+            }
+            td {
+              padding: 4px 8px;
+              white-space: nowrap;
+            }
+            td:nth-child(2) {
+              white-space: normal;
               word-break: break-word;
               overflow-wrap: break-word;
-              padding: 4px 8px;
             }`,
       stylesheet_encoding: 'utf-8',
       launch_options: {

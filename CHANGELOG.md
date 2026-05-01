@@ -2,22 +2,23 @@
 
 ## [beta] (main)
 
-- New command [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/) - generates release notes from git tags, pull requests, tickets, metadata changes (via sfdx-git-delta), and deployment actions. Supports prepare (preview) and post (document) modes. Outputs markdown report (optionally PDF), multi-tab XLSX, and sends notifications for production releases. Includes AI-powered summary when an AI provider is configured.
-- New command [hardis:packagexml:remove-managed](https://sfdx-hardis.cloudity.com/hardis/packagexml/remove-managed/) - strips all managed-package items from a `package.xml` while preserving custom metadata built on top of managed objects (e.g. a custom field on `SBQQ__Quote__c` is kept, `SBQQ__Quote__c.SBQQ__Status__c` is removed). Namespaces are resolved automatically from `InstalledPackage` entries or API name patterns, or supplied explicitly via `--namespaces`. Detection strategy selectable with `--namespace-detection` (`api-name` default, or `installed-packages`).
-- [hardis:project:create](https://sfdx-hardis.cloudity.com/hardis/project/create/):
-  - Clean manifest/package.xml after creation.
-  - Add CLI flags and behaviors for Agent mode
-- [hardis:project:clean:standarditems](https://sfdx-hardis.cloudity.com/hardis/project/clean/standarditems/): Improved logging and automatic removal of standard application files during cleanup.
-- Add .gitattributes files to CI/CD and Monitoring defaults to ensure consistent line endings across platforms
-- Jenkins CI support for Monitoring: added a ready-to-use `Jenkinsfile` template in `defaults/monitoring/` and a new [Jenkins configuration documentation page](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-jenkins/).
-- Jenkins CI/CD pipeline (`defaults/ci/Jenkinsfile`): refactored to use a single top-level Docker agent, scoped `withCredentials()` blocks per stage (no global `environment` credentials), parallel MegaLinter + Validation on PRs, fixed `branch` condition syntax, added `options` and `post` cleanup blocks, and comprehensive setup comments. Updated [Jenkins CI/CD documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jenkins/).
-- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Handle strings with wildcards in package-no-overwrite.xml (ex: `<member>*__dlm`)
-- New command [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/) - generates a DORA metrics report (Deployment Frequency, Lead Time, Change Failure Rate, MTTR, Rework Rate) from Tooling API deployments, Git provider PRs, and ticket references. Outputs markdown with Mermaid diagrams, CSV export, and notifications. Classifies metrics against industry benchmarks (Elite/High/Medium/Low).
-- Added `listPullRequests` method to GitHub, GitLab, and Bitbucket git providers, enabling merged PR listing with date-range filtering.
-- Doc
-  - rewrite package-no-overwrite documentation to make it more explicit, and with a diagram.
-  - improve CI/CD home page documentation.
+- New commands
+  - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/) - generates release notes from git tags, pull requests, tickets, metadata changes (via sfdx-git-delta), and deployment actions. Supports prepare (preview) and post (document) modes. Outputs markdown + PDF + multi-tab XLSX into a dedicated subfolder with `package.xml` and `destructiveChanges.xml`. Bidirectional PR/ticket cross-references, contributor list, AI-powered summary, and Slack/Teams/Email notifications for production releases.
+  - [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/) - generates a DORA metrics report (Deployment Frequency, Lead Time, Change Failure Rate, MTTR, Rework Rate) from Tooling API deployments, Git provider PRs, and ticket references. Outputs markdown with Mermaid diagrams, CSV export, and notifications. Classifies metrics against industry benchmarks (Elite/High/Medium/Low).
+  - [hardis:packagexml:remove-managed](https://sfdx-hardis.cloudity.com/hardis/packagexml/remove-managed/) - strips all managed-package items from a `package.xml` while preserving custom metadata built on top of managed objects (e.g. a custom field on `SBQQ__Quote__c` is kept, `SBQQ__Quote__c.SBQQ__Status__c` is removed). Namespaces are resolved automatically from `InstalledPackage` entries or API name patterns, or supplied explicitly via `--namespaces`. Detection strategy selectable with `--namespace-detection` (`api-name` default, or `installed-packages`).
+- Deployment & project
+  - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Handle strings with wildcards in package-no-overwrite.xml (ex: `<member>*__dlm`)
+  - [hardis:project:create](https://sfdx-hardis.cloudity.com/hardis/project/create/): Clean manifest/package.xml after creation. Add CLI flags and behaviors for Agent mode.
+  - [hardis:project:clean:standarditems](https://sfdx-hardis.cloudity.com/hardis/project/clean/standarditems/): Improved logging and automatic removal of standard application files during cleanup.
+- CI/CD pipelines
+  - Jenkins CI/CD pipeline (`defaults/ci/Jenkinsfile`): refactored to use a single top-level Docker agent, scoped `withCredentials()` blocks per stage (no global `environment` credentials), parallel MegaLinter + Validation on PRs, fixed `branch` condition syntax, added `options` and `post` cleanup blocks, and comprehensive setup comments. Updated [Jenkins CI/CD documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jenkins/).
+  - Jenkins CI support for Monitoring: added a ready-to-use `Jenkinsfile` template in `defaults/monitoring/` and a new [Jenkins configuration documentation page](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-jenkins/).
+  - Add .gitattributes files to CI/CD and Monitoring defaults to ensure consistent line endings across platforms
+- Documentation
+  - Rewrite package-no-overwrite documentation to make it more explicit, and with a diagram.
+  - Improve CI/CD home page documentation.
   - Add SKILL for sfdmu management to configure data exports in natural language.
+  - Activate Cloudity banner
 
 ## [7.11.0] 2026-04-26
 
