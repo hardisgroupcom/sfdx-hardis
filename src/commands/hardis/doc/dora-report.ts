@@ -686,7 +686,7 @@ In agent mode:
         uxLog("log", this, c.grey(`[DORA] Found ${prs.length} merge commits from git log`));
       }
       return prs;
-    } catch (e: any) {
+    } catch (_e: any) {
       uxLog("warning", this, c.yellow(`[DORA] ${t("doraReportNoGitProvider")}`));
       return [];
     }
@@ -700,7 +700,7 @@ In agent mode:
         await TicketProvider.collectTicketsInfo(tickets);
       }
       return tickets;
-    } catch (e: any) {
+    } catch (_e: any) {
       uxLog("log", this, c.grey(`[DORA] ${t("doraReportNoTicketProvider")}`));
       return [];
     }
