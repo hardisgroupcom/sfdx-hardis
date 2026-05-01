@@ -9,35 +9,13 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { DeployRecord, parseDatetime, minutesBetween } from '../../../../common/utils/deployUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { prepareOrgNotificationContext } from '../../../../common/utils/orgNotificationContext.js';
 import sortArray from 'sort-array';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
-
-interface DeployRecord {
-  Type: 'Deployment' | 'Validation';
-  Id: string;
-  Status: string;
-  DeployedBy: string;
-  CreatedDate: string;
-  StartDate: string;
-  CompletedDate: string;
-  PendingMinutes: number;
-  DurationMinutes: number;
-}
-
-function parseDatetime(dateStr: string | null | undefined): Date | null {
-  if (!dateStr) return null;
-  const parsed = Date.parse(dateStr);
-  return Number.isNaN(parsed) ? null : new Date(parsed);
-}
-
-function minutesBetween(start: Date | null, end: Date | null): number {
-  if (!start || !end) return 0;
-  return (end.getTime() - start.getTime()) / 60000;
-}
 
 export default class DiagnoseDeployments extends SfCommand<any> {
   public static title = 'Analyze metadata deployments and validations';

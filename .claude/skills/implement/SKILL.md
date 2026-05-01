@@ -22,6 +22,8 @@ Read `.claude/rules/` for coding conventions, i18n rules, and translation rules 
    - Use `fs-extra` for file operations
    - Use `prompts()` for user input
    - Follow the provider pattern for external integrations
+   - In `src/commands/**` files, keep only the command class declaration in the file body; move interfaces, types, and helper functions to sibling utility modules.
+   - Allowed exception: top-level `Messages.importMessagesDirectoryFromMetaUrl(import.meta.url)` and `const messages = Messages.loadMessages(...)` can remain in command files.
 3. **Add translations**: If new i18n keys were introduced, add them to **all 9 locale files** (`en`, `de`, `es`, `fr`, `it`, `ja`, `nl`, `pl`, `pt-BR`), sorted alphabetically.
 4. **Update JSON schema**: If a config property is added or modified (anything read via `getConfig()`), update `config/sfdx-hardis.jsonschema.json` to match. Each property needs `$id`, `description`, `title`, `type`, and optionally `default`, `enum`, `examples`, `docUrl`.
 5. **Verify patterns**: Ensure new code matches existing patterns in the codebase.

@@ -42,7 +42,9 @@ Every persona can be autonomous in their tasks: Admins, Developers, Release Mana
 
 ![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
 
-There are no "sfdx-hardis" servers anywhere. Everything runs in your own secured environment: Your Git platform, and your local VS Code or Salesforce Code Builder.
+There are no "sfdx-hardis" servers anywhere. Everything runs in your own secured environment: your Git platform, your CI/CD runner, and your local VS Code or Salesforce Code Builder.
+
+**Cloudity has zero access to your data.** sfdx-hardis is a CLI tool - it runs entirely within your own infrastructure, so no Salesforce metadata, no credentials, and no pipeline output ever leaves your environment. Compliance is fully in your hands: it depends on the tools you already operate (Git platform, workflow runner, Jira, AI providers, SSO, etc.) and the security policies you apply to them.
 
 sfdx-hardis has native integrations with your preferred applications:
 
@@ -62,7 +64,7 @@ Every command that involves interactive prompts supports an **`--agent`** flag t
 - **Predictable execution**: required values are passed as CLI flags, and the command fails fast with a clear error message if anything is missing.
 - **Safe defaults**: sensible defaults are applied when prompts are skipped, and destructive operations require explicit flags.
 
-With 130+ commands supporting `--agent` mode, your coding agent can drive the entire Salesforce DevOps lifecycle: create user stories, deploy metadata, run diagnostics, purge obsolete data, manage packages, and more -- all without human interaction.
+With 130+ commands supporting `--agent` mode, your coding agent can drive the entire Salesforce DevOps lifecycle: create user stories, deploy metadata, run diagnostics, purge obsolete data, manage packages, and more - all without human interaction.
 
 Learn more in [Using AI Coding Agents](salesforce-ci-cd-agent-skills.md).
 
@@ -79,6 +81,7 @@ Advanced features make sfdx-hardis a credible alternative to expensive Salesforc
 | **Integration with messaging platforms** | [Receive detailed deployment notifications on Slack, Microsoft Teams, and email.](salesforce-ci-cd-setup-integrations-home.md)                                                                                                                                                                                    |
 | **Integration with ticketing systems**   | Integrate with [Jira](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jira/), [Azure Boards](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure-boards/), or [any other tool](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-generic-ticketing/). |
 | **AI integration**                       | [Deployment Agent: resolve deployment issues with core rules and AI support (Agentforce or direct calls to OpenAI, Anthropic, Gemini).](salesforce-deployment-agent-home.md)                                                                                                                                      |
+| **DORA Metrics**                         | [Generate a DORA (DevOps Research and Assessment) report with Deployment Frequency, Lead Time for Changes, Change Failure Rate, MTTR, and more - classified as Elite / High / Medium / Low against industry benchmarks.](hardis/doc/salesforce-ci-cd-dora-report.md)                                              |
 
 > See the [whole sfdx-hardis smart deployment workflow explained in detail](salesforce-ci-cd-smart-deployment.md)
 

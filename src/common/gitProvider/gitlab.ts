@@ -254,6 +254,59 @@ ${getBannerMarkdownAndLink()}
     }
   }
 
+  public async listPullRequests(
+    filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
+    options: { formatted?: boolean } = { formatted: false },
+  ): Promise<any[] | null> {
+    if (!this.gitlabApi) {
+      return null;
+    }
+
+    const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
+    if (!projectId) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabCiProjectIdRequired')));
+      return null;
+    }
+
+    try {
+      const state = filters.status === "merged" ? "merged" : filters.status === "open" ? "opened" : "all";
+      const params: any = {
+        projectId,
+        state,
+        orderBy: "updated_at" as const,
+        sort: "desc" as const,
+        perPage: 100,
+      };
+      if (filters.targetBranch) {
+        params.targetBranch = filters.targetBranch;
+      }
+      if (filters.minDate) {
+        params.updatedAfter = filters.minDate.toISOString();
+      }
+
+      const mergeRequests = await this.gitlabApi.MergeRequests.all(params);
+
+      if (options.formatted) {
+        return (mergeRequests as any[]).map((mr: any) => ({
+          pullRequestId: mr.iid,
+          targetRefName: mr.target_branch || "",
+          sourceRefName: mr.source_branch || "",
+          status: mr.state || "",
+          title: mr.title || "",
+          description: mr.description || "",
+          createdBy: mr.author?.username || "",
+          creationDate: mr.created_at || "",
+          closedDate: mr.merged_at || mr.closed_at || "",
+          webUrl: mr.web_url || "",
+        }));
+      }
+      return mergeRequests as any[];
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMergeRequests', { message: e?.message || e })));
+      return null;
+    }
+  }
+
   public async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,

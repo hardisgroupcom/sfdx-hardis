@@ -18,7 +18,7 @@ import { t } from "../../../common/utils/i18n.js";
 // Correct
 uxLog("action", this, c.cyan(t("deployingMetadata", { metadata: name })));
 
-// Wrong -- hardcoded English string
+// Wrong - hardcoded English string
 uxLog("action", this, c.cyan(`Deploying metadata ${name}...`));
 ```
 
