@@ -6,10 +6,10 @@ description: Prompt template for PROMPT_RELEASE_SUMMARY
 # PROMPT_RELEASE_SUMMARY
 
 ## Variables
-| Name | Description | Example |
-| :------|:-------------|:---------|
+| Name                  | Description                                                                                    | Example                                                                                                                                                                                               |
+|:----------------------|:-----------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **RELEASE_DATA_JSON** | JSON object containing tickets, pull requests, and metadata change statistics for the release. | `{"tickets":[{"id":"PROJ-123","subject":"Add field","status":"Done"}],"pullRequests":[{"id":"42","title":"feat: add field","author":"J. Smith"}],"metadataStats":{"addedCount":12,"deletedCount":2}}` |
-| **RELEASE_VERSION** | The release version identifier (tag or branch name). | `v1.2.0` |
+| **RELEASE_VERSION**   | The release version identifier (tag or branch name).                                           | `v1.2.0`                                                                                                                                                                                              |
 
 ## Prompt
 

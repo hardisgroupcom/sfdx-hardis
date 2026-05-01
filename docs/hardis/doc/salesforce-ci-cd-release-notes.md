@@ -16,14 +16,14 @@ Command: **[sf hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis
 
 A comprehensive release notes document that includes:
 
-| Section                 | Description                                                              | Source                           |
-|-------------------------|--------------------------------------------------------------------------|----------------------------------|
-| **AI Summary**          | Structured summary with features, fixes, and statistics                  | AI Provider (optional)           |
-| **Tickets**             | Referenced tickets with status, assignee, and link to ticketing system   | Ticket Provider (JIRA, Azure Boards) |
-| **Pull Requests**       | Merged PRs with title, author, and merge date                            | Git Provider                     |
-| **Contributors**        | List of PR authors with contribution count                               | Git Provider                     |
-| **Metadata Changes**    | Created, modified, and deleted metadata items grouped by type            | sfdx-git-delta                   |
-| **Deployment Actions**  | Manual tasks and automated actions with execution status and PR links    | PR comments / action YAML files  |
+| Section                | Description                                                            | Source                               |
+|------------------------|------------------------------------------------------------------------|--------------------------------------|
+| **AI Summary**         | Structured summary with features, fixes, and statistics                | AI Provider (optional)               |
+| **Tickets**            | Referenced tickets with status, assignee, and link to ticketing system | Ticket Provider (JIRA, Azure Boards) |
+| **Pull Requests**      | Merged PRs with title, author, and merge date                          | Git Provider                         |
+| **Contributors**       | List of PR authors with contribution count                             | Git Provider                         |
+| **Metadata Changes**   | Created, modified, and deleted metadata items grouped by type          | sfdx-git-delta                       |
+| **Deployment Actions** | Manual tasks and automated actions with execution status and PR links  | PR comments / action YAML files      |
 
 ### Output formats
 
@@ -33,10 +33,10 @@ A comprehensive release notes document that includes:
 
 ### Two modes
 
-| Mode        | Use case                                                    | How scope is determined                                                      |
-|-------------|-------------------------------------------------------------|------------------------------------------------------------------------------|
-| **prepare** | Preview what will be included in the next release           | Finds an open PR to the target branch, or computes the hypothetical delta    |
-| **post**    | Document a completed release                                | Uses merged PRs and git tags / branch history                                |
+| Mode        | Use case                                          | How scope is determined                                                   |
+|-------------|---------------------------------------------------|---------------------------------------------------------------------------|
+| **prepare** | Preview what will be included in the next release | Finds an open PR to the target branch, or computes the hypothetical delta |
+| **post**    | Document a completed release                      | Uses merged PRs and git tags / branch history                             |
 
 ### Scope resolution
 
