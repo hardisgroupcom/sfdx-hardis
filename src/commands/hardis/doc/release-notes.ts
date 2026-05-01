@@ -4,12 +4,12 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import fs from "fs-extra";
+import * as path from "path";
 import { t } from "../../../common/utils/i18n.js";
-import { uxLog } from "../../../common/utils/index.js";
-import { generateReportPath } from "../../../common/utils/filesUtils.js";
+import { uxLog, uxLogTable } from "../../../common/utils/index.js";
 import { generatePdfFileFromMarkdown } from "../../../common/utils/markdownUtils.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";
-import { CONSTANTS } from "../../../config/index.js";
+import { CONSTANTS, getReportDirectory } from "../../../config/index.js";
 import {
   resolveReleaseScope,
   collectPullRequests,
@@ -22,6 +22,7 @@ import {
   buildReleaseNotesXlsx,
   sendReleaseNotification,
   getReleaseDate,
+  prettifyMetadataType,
   ReleaseNotesData,
 } from "../../../common/utils/releaseNotesUtils.js";
 
@@ -181,21 +182,76 @@ In agent mode:
     uxLog("action", this, c.cyan(t("releaseNotesCollectingPrs")));
     const pullRequests = await collectPullRequests(scope, this);
     uxLog("action", this, c.cyan(t("releaseNotesPrsCollected", { count: String(pullRequests.length) })));
+    // Note: PR table with ticket cross-references is displayed after ticket collection
 
     // 3. Collect tickets
     uxLog("action", this, c.cyan(t("releaseNotesCollectingTickets")));
-    const tickets = await collectTickets(pullRequests, this);
+    const ticketResult = await collectTickets(pullRequests, this);
+    const tickets = ticketResult.tickets;
+    const { ticketToPrs, prToTickets } = ticketResult;
+    if (tickets.length > 0) {
+      uxLogTable(this, tickets.map((tk) => ({
+        ID: tk.id,
+        Title: tk.subject || "",
+        Status: tk.statusLabel || tk.status || "",
+        Assignee: tk.assigneeLabel || tk.assignee || "",
+        PRs: (ticketToPrs.get(tk.id) || []).map((id) => `#${id}`).join(", "),
+      })), ["ID", "Title", "Status", "Assignee", "PRs"]);
+    }
 
-    // 4. Collect metadata changes
+    // Display PR table with ticket cross-references
+    if (pullRequests.length > 0) {
+      uxLogTable(this, pullRequests.map((pr) => ({
+        "#": `#${pr.idStr}`,
+        Title: pr.title,
+        Author: pr.authorName || "",
+        Merged: pr.mergedDate ? pr.mergedDate.split("T")[0] : "",
+        Tickets: (prToTickets.get(pr.idStr) || []).join(", "),
+      })), ["#", "Title", "Author", "Merged", "Tickets"]);
+    }
+
+    // Prepare output directory: hardis-report/release-notes/{branch}-{date}/
+    const reportDate = await getReleaseDate(scope);
+    const version = scope.releaseTag || scope.targetBranch;
+    const releaseNotesDir = outputFile
+      ? path.dirname(outputFile)
+      : path.join(await getReportDirectory(), "release-notes", `${version}-${reportDate}`);
+    await fs.ensureDir(releaseNotesDir);
+
+    // 4. Collect metadata changes (copies package.xml / destructiveChanges.xml into output dir)
     uxLog("action", this, c.cyan(t("releaseNotesCollectingMetadata")));
-    const metadataChanges = await collectMetadataChanges(scope, this);
+    const metadataChanges = await collectMetadataChanges(scope, this, releaseNotesDir);
+    if (metadataChanges.addedCount > 0 || metadataChanges.deletedCount > 0) {
+      const metadataRows: any[] = [];
+      for (const [mdType, members] of Object.entries(metadataChanges.added)) {
+        metadataRows.push({ Type: prettifyMetadataType(mdType), Count: members.length, Change: "Added/Modified" });
+      }
+      for (const [mdType, members] of Object.entries(metadataChanges.deleted)) {
+        metadataRows.push({ Type: prettifyMetadataType(mdType), Count: members.length, Change: "Deleted" });
+      }
+      uxLogTable(this, metadataRows, ["Type", "Count", "Change"]);
+    }
 
     // 5. Collect deployment actions
     uxLog("action", this, c.cyan(t("releaseNotesCollectingActions")));
     const deploymentActions = await collectDeploymentActions(pullRequests, this);
+    if (deploymentActions.length > 0) {
+      uxLogTable(this, deploymentActions.map((a) => ({
+        Action: a.actionLabel,
+        When: a.when,
+        Status: a.status,
+        PR: (a.prNumber ?? 0) > 0 ? `#${a.prNumber}` : "",
+      })), ["Action", "When", "Status", "PR"]);
+    }
 
     // 6. Collect contributors
     const contributors = collectContributors(pullRequests);
+    if (contributors.length > 0) {
+      uxLogTable(this, contributors.map((c) => ({
+        Contributor: c.name,
+        PRs: c.prCount,
+      })), ["Contributor", "PRs"]);
+    }
 
     // Build data structure
     const data: ReleaseNotesData = {
@@ -205,6 +261,8 @@ In agent mode:
       metadataChanges,
       deploymentActions,
       contributors,
+      ticketToPrs,
+      prToTickets,
     };
 
     // 7. AI summary (optional)
@@ -212,16 +270,11 @@ In agent mode:
 
     // 8. Build markdown report
     uxLog("action", this, c.cyan(t("releaseNotesGeneratingMarkdown")));
-    const reportDate = await getReleaseDate(scope);
-    const markdown = buildReleaseNotesMarkdown(data, reportDate);
+    const markdown = await buildReleaseNotesMarkdown(data, reportDate);
 
-    // Write markdown file
-    const version = scope.releaseTag || scope.targetBranch;
-    const defaultMarkdownName = `release-notes-${version}-${reportDate}`;
-    const mdOutputFile = await generateReportPath(defaultMarkdownName, outputFile || "", {
-      fileExtension: "md",
-      withBranchName: false,
-    });
+    // Write markdown file into the release notes subfolder
+    const mdFileName = `release-notes-${version}-${reportDate}.md`;
+    const mdOutputFile = outputFile || path.join(releaseNotesDir, mdFileName);
     await fs.writeFile(mdOutputFile, markdown, "utf8");
     uxLog("success", this, c.green(t("releaseNotesComplete", { outputFile: mdOutputFile })));
     WebSocketClient.sendReportFileMessage(mdOutputFile, t("releaseNotesReportTitle"), "report");

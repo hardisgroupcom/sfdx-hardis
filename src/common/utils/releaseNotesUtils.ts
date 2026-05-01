@@ -20,9 +20,10 @@ import { AiProvider } from "../aiProvider/index.js";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { NotifProvider } from "../notifProvider/index.js";
 import { NotifSeverity } from "../notifProvider/types.js";
-import { createXlsxFromCsvFiles } from "./filesUtils.js";
+import ExcelJS from "exceljs";
 import { getNotificationButtons } from "./notifUtils.js";
 import { prompts } from "./prompts.js";
+import { WebSocketClient } from "../websocketClient.js";
 import { t } from "./i18n.js";
 import { CONSTANTS } from "../../config/index.js";
 
@@ -62,6 +63,10 @@ export interface ReleaseNotesData {
   deploymentActions: DeploymentActionStateEntry[];
   contributors: ContributorInfo[];
   aiSummary?: string;
+  /** ticket ID -> list of PR idStr that reference it */
+  ticketToPrs: Map<string, string[]>;
+  /** PR idStr -> list of ticket IDs found in it */
+  prToTickets: Map<string, string[]>;
 }
 
 export interface ReleaseNotesResult {
@@ -362,18 +367,39 @@ function recursiveGetChildBranches(
   return collected;
 }
 
+export interface TicketCollectionResult {
+  tickets: Ticket[];
+  ticketToPrs: Map<string, string[]>;
+  prToTickets: Map<string, string[]>;
+}
+
 export async function collectTickets(
   pullRequests: CommonPullRequestInfo[],
   commandRef: any,
-): Promise<Ticket[]> {
+): Promise<TicketCollectionResult> {
+  const ticketToPrs = new Map<string, string[]>();
+  const prToTickets = new Map<string, string[]>();
+
   if (pullRequests.length === 0) {
-    return [];
+    return { tickets: [], ticketToPrs, prToTickets };
   }
   let allTickets: Ticket[] = [];
   for (const pr of pullRequests) {
     const text = `${pr.title} ${pr.description || ""}`;
     try {
       const prTickets = await TicketProvider.getProvidersTicketsFromString(text, { commits: [] });
+      const ticketIds: string[] = [];
+      for (const tk of prTickets) {
+        ticketIds.push(tk.id);
+        const prList = ticketToPrs.get(tk.id) || [];
+        if (!prList.includes(pr.idStr)) {
+          prList.push(pr.idStr);
+        }
+        ticketToPrs.set(tk.id, prList);
+      }
+      if (ticketIds.length > 0) {
+        prToTickets.set(pr.idStr, ticketIds);
+      }
       allTickets.push(...prTickets);
     } catch {
       // Ignore ticket extraction errors for individual PRs
@@ -387,12 +413,13 @@ export async function collectTickets(
   } catch (e: any) {
     uxLog("warning", commandRef, c.yellow(t("releaseNotesTicketEnrichFailed", { message: e.message })));
   }
-  return allTickets;
+  return { tickets: allTickets, ticketToPrs, prToTickets };
 }
 
 export async function collectMetadataChanges(
   scope: ReleaseNotesScope,
   commandRef: any,
+  outputDir?: string,
 ): Promise<MetadataChangeMap> {
   const emptyResult: MetadataChangeMap = { added: {}, deleted: {}, addedCount: 0, deletedCount: 0 };
   if (!scope.fromCommit || !scope.toCommit) {
@@ -401,7 +428,9 @@ export async function collectMetadataChanges(
   const tmpDir = path.join(os.tmpdir(), `sfdx-hardis-release-delta-${Date.now()}`);
   try {
     await fs.ensureDir(tmpDir);
-    await callSfdxGitDelta(scope.fromCommit, scope.toCommit, tmpDir);
+    // Skip websocket notifications from callSfdxGitDelta when we copy files to outputDir
+    // (the temp paths would be invalid once cleaned up)
+    await callSfdxGitDelta(scope.fromCommit, scope.toCommit, tmpDir, { skipWebSocketNotification: !!outputDir });
 
     const added: Record<string, string[]> = {};
     const deleted: Record<string, string[]> = {};
@@ -418,6 +447,14 @@ export async function collectMetadataChanges(
           addedCount += members.length;
         }
       }
+      // Copy package.xml to output directory and notify via websocket
+      if (outputDir) {
+        const destPath = path.join(outputDir, "package.xml");
+        await fs.copy(packageXmlFile, destPath, { overwrite: true });
+        if (addedCount > 0) {
+          WebSocketClient.sendReportFileMessage(destPath, t("gitDeltaPackageXmlCount", { count: addedCount }), "report");
+        }
+      }
     }
 
     // Parse deletions
@@ -428,6 +465,14 @@ export async function collectMetadataChanges(
         if (Array.isArray(members) && members.length > 0) {
           deleted[mdType] = members;
           deletedCount += members.length;
+        }
+      }
+      // Copy destructiveChanges.xml to output directory and notify via websocket
+      if (outputDir) {
+        const destPath = path.join(outputDir, "destructiveChanges.xml");
+        await fs.copy(destructiveXmlFile, destPath, { overwrite: true });
+        if (deletedCount > 0) {
+          WebSocketClient.sendReportFileMessage(destPath, t("gitDeltaDestructiveChangesXmlCount", { count: deletedCount }), "report");
         }
       }
     }
@@ -592,7 +637,7 @@ export async function generateReleaseSummary(
 // Markdown report
 // ---------------------------------------------------------------------------
 
-export function buildReleaseNotesMarkdown(data: ReleaseNotesData, releaseDate: string): string {
+export async function buildReleaseNotesMarkdown(data: ReleaseNotesData, releaseDate: string): Promise<string> {
   const lines: string[] = [];
   const version = data.scope.releaseTag || data.scope.targetBranch;
   const dateStr = releaseDate;
@@ -633,15 +678,16 @@ export function buildReleaseNotesMarkdown(data: ReleaseNotesData, releaseDate: s
   if (data.tickets.length > 0) {
     lines.push(`## ${t("releaseNotesTicketsSection")}`);
     lines.push("");
-    lines.push(`| ID | ${t("releaseNotesTitle")} | ${t("releaseNotesStatus")} | ${t("releaseNotesAssignee")} |`);
-    lines.push("|----|-------|--------|----------|");
+    lines.push(`| ID | ${t("releaseNotesTitle")} | ${t("releaseNotesStatus")} | ${t("releaseNotesAssignee")} | PRs |`);
+    lines.push("|----|-------|--------|----------|-----|");
     const sortedTickets = [...data.tickets].sort((a, b) => a.id.localeCompare(b.id));
     for (const tk of sortedTickets) {
       const idCell = tk.url ? `[${tk.id}](${tk.url})` : tk.id;
       const subject = (tk.subject || "").replace(/\|/g, "\\|");
       const status = tk.statusLabel || tk.status || "";
       const assignee = tk.assigneeLabel || tk.assignee || "";
-      lines.push(`| ${idCell} | ${subject} | ${status} | ${assignee} |`);
+      const relatedPrs = (data.ticketToPrs.get(tk.id) || []).map((id) => `#${id}`).join(", ");
+      lines.push(`| ${idCell} | ${subject} | ${status} | ${assignee} | ${relatedPrs} |`);
     }
     lines.push("");
   } else {
@@ -655,15 +701,16 @@ export function buildReleaseNotesMarkdown(data: ReleaseNotesData, releaseDate: s
   if (data.pullRequests.length > 0) {
     lines.push(`## ${t("releaseNotesPullRequestsSection")}`);
     lines.push("");
-    lines.push(`| # | ${t("releaseNotesTitle")} | ${t("releaseNotesAuthor")} | ${t("releaseNotesMergedDate")} |`);
-    lines.push("|---|-------|--------|-------------|");
+    lines.push(`| # | ${t("releaseNotesTitle")} | ${t("releaseNotesAuthor")} | ${t("releaseNotesMergedDate")} | ${t("releaseNotesTicketsSection")} |`);
+    lines.push("|---|-------|--------|-------------|---------|");
     const sortedPrs = [...data.pullRequests].sort((a, b) => a.idNumber - b.idNumber);
     for (const pr of sortedPrs) {
       const idCell = pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`;
       const title = (pr.title || "").replace(/\|/g, "\\|");
       const author = pr.authorName || "";
       const mergedDate = pr.mergedDate ? pr.mergedDate.split("T")[0] : "";
-      lines.push(`| ${idCell} | ${title} | ${author} | ${mergedDate} |`);
+      const relatedTickets = (data.prToTickets.get(pr.idStr) || []).join(", ");
+      lines.push(`| ${idCell} | ${title} | ${author} | ${mergedDate} | ${relatedTickets} |`);
     }
     lines.push("");
   } else {
@@ -756,8 +803,18 @@ export function buildReleaseNotesMarkdown(data: ReleaseNotesData, releaseDate: s
   // Cloudity banner
   lines.push("---");
   lines.push("");
-  const bannerUrl = "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/alpha/docs/assets/images/cloudity-banner.png";
+  const bannerUrl = CONSTANTS.BANNER_IMAGE_URL;
   lines.push(`[![Cloudity - Salesforce DevOps toolbox by Cloudity](${bannerUrl})](${CONSTANTS.WEBSITE_URL})`);
+  lines.push("");
+  const generatedDate = new Date().toISOString().split("T")[0];
+  let jobUrl: string | null = null;
+  try {
+    jobUrl = await GitProvider.getJobUrl();
+  } catch {
+    // ignore
+  }
+  const jobPart = jobUrl ? ` - [CI job](${jobUrl})` : "";
+  lines.push(`_Generated by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) on ${generatedDate}${jobPart}_`);
   lines.push("");
 
   return lines.join("\n");
@@ -836,6 +893,7 @@ export async function buildReleaseNotesXlsx(
         Assignee: tk.assigneeLabel || tk.assignee || "",
         Reporter: tk.reporterLabel || tk.reporter || "",
         URL: tk.url || "",
+        "Related PRs": (data.ticketToPrs.get(tk.id) || []).map((id) => `#${id}`).join(", "),
       }));
       const ticketsCsv = path.join(tmpDir, "Tickets.csv");
       await fs.writeFile(ticketsCsv, Papa.unparse(ticketRows), "utf8");
@@ -852,6 +910,7 @@ export async function buildReleaseNotesXlsx(
         "Target Branch": pr.targetBranch || "",
         "Merged Date": pr.mergedDate ? pr.mergedDate.split("T")[0] : "",
         URL: pr.webUrl || "",
+        Tickets: (data.prToTickets.get(pr.idStr) || []).join(", "),
       }));
       const prsCsv = path.join(tmpDir, "Pull Requests.csv");
       await fs.writeFile(prsCsv, Papa.unparse(prRows), "utf8");
@@ -896,21 +955,18 @@ export async function buildReleaseNotesXlsx(
       return undefined;
     }
 
-    // Combine into multi-tab XLSX
-    // createXlsxFromCsvFiles derives the xlsx name by replacing .csv with .xlsx,
-    // so pass a .csv-named reference path in the same directory as the markdown report.
-    const csvReferencePath = outputBasePath.replace(/\.\w+$/, ".csv");
-    await createXlsxFromCsvFiles(csvFiles, csvReferencePath, {
-      fileTitle: t("releaseNotesReportTitle"),
-    });
-
-    const xlsDir = path.join(path.dirname(outputBasePath), "xls");
+    // Build multi-tab XLSX directly in the output directory
     const xlsxFileName = path.basename(outputBasePath).replace(/\.\w+$/, ".xlsx");
-    const xlsxFile = path.join(xlsDir, xlsxFileName);
-    if (await fs.pathExists(xlsxFile)) {
-      return xlsxFile;
+    const xlsxFile = path.join(path.dirname(outputBasePath), xlsxFileName);
+    const workbook = new ExcelJS.Workbook();
+    for (const csvFile of csvFiles) {
+      const worksheet = await workbook.csv.readFile(csvFile);
+      worksheet.name = path.basename(csvFile, ".csv");
     }
-    return undefined;
+    await workbook.xlsx.writeFile(xlsxFile);
+    uxLog("action", commandRef, c.cyan(t("pleaseSeeDetailedXlsxLogIn", { xslxFile: c.bold(xlsxFile) })));
+    WebSocketClient.sendReportFileMessage(xlsxFile, `${t("releaseNotesReportTitle")} (XLSX)`, "report");
+    return xlsxFile;
   } catch (e: any) {
     uxLog("warning", commandRef, c.yellow(t("releaseNotesXlsxGenerationFailed", { message: e.message })));
     return undefined;
