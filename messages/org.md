@@ -259,6 +259,10 @@ Previous git tag (semver). If omitted, auto-detected from existing tags.
 
 Git tag for the release (semver, e.g. v1.2.0)
 
+# releaseNotesSourceBranch
+
+Source branch name (e.g. integration, develop). In prepare mode, if --target-branch is not set, the target branch is inferred from this branch's mergeTargets configuration.
+
 # releaseNotesSourceCommit
 
 Source commit SHA to use as the start of the release scope

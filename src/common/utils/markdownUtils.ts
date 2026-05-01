@@ -22,17 +22,13 @@ export async function generatePdfFileFromMarkdown(markdownFile: string): Promise
             }
             th {
               background-color: #f0f0f0;
-              white-space: nowrap;
               padding: 4px 8px;
+              white-space: nowrap;
             }
             td {
               padding: 4px 8px;
-              white-space: nowrap;
-            }
-            td:nth-child(2) {
               white-space: normal;
-              word-break: break-word;
-              overflow-wrap: break-word;
+              word-break: normal;
             }`,
       stylesheet_encoding: 'utf-8',
       launch_options: {

@@ -126,10 +126,33 @@ export async function resolveReleaseScope(
   }
 
   // --- Branch-based scope ---
-  const targetBranch = flags["target-branch"] || (await promptTargetBranch(majorOrgs, agentMode));
-  const sourceBranch = findSourceBranch(targetBranch, majorOrgs);
+  // Resolve target and source branches, with mutual inference support
+  let targetBranch: string;
+  let sourceBranch: string | null;
+
+  if (flags["source-branch"] && !flags["target-branch"]) {
+    // Source branch given but no target: infer target from mergeTargets config
+    sourceBranch = flags["source-branch"] as string;
+    const inferredTarget = findTargetBranchFromSource(sourceBranch, majorOrgs);
+    if (inferredTarget) {
+      targetBranch = inferredTarget;
+      uxLog("action", commandRef, c.cyan(t("releaseNotesTargetBranchInferred", { branch: targetBranch })));
+    } else {
+      targetBranch = await promptTargetBranch(majorOrgs, agentMode);
+    }
+  } else {
+    targetBranch = flags["target-branch"] || (await promptTargetBranch(majorOrgs, agentMode));
+    sourceBranch = flags["source-branch"] || findSourceBranch(targetBranch, majorOrgs);
+  }
 
   if (mode === "prepare") {
+    // If sourceBranch is still unknown, prompt for it (needed to identify PRs)
+    if (!sourceBranch) {
+      const prompted = await promptSourceBranch(majorOrgs, targetBranch, agentMode, commandRef);
+      if (prompted) {
+        sourceBranch = prompted;
+      }
+    }
     // Look for open PR or compute hypothetical delta
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider && sourceBranch) {
@@ -152,7 +175,28 @@ export async function resolveReleaseScope(
     return { fromCommit: "", toCommit: "HEAD", targetBranch, sourceBranch: sourceBranch || undefined, mode };
   }
 
-  // Post mode with branch only
+  // Post mode: list merge commits on target branch and prompt user to select
+  const mergeCommits = await listMergeCommitsOnBranch(targetBranch);
+  if (mergeCommits.length > 0) {
+    const selected = await promptMergeCommit(mergeCommits, agentMode, commandRef);
+    if (selected) {
+      const selectedIndex = mergeCommits.findIndex((mc) => mc.sha === selected.sha);
+      const prevCommit = selectedIndex >= 0 && selectedIndex < mergeCommits.length - 1
+        ? mergeCommits[selectedIndex + 1]
+        : null;
+      return {
+        fromCommit: prevCommit?.sha || "",
+        toCommit: selected.sha,
+        targetBranch,
+        sourceBranch: sourceBranch || undefined,
+        mode,
+      };
+    }
+  }
+
+  uxLog("warning", commandRef, c.yellow(t("releaseNotesNoMergeCommitsFound", { branch: targetBranch })));
+
+  // Fallback: use source-branch delta if no merge commits found
   if (sourceBranch) {
     try {
       const delta = await getGitDeltaScope(sourceBranch, targetBranch);
@@ -202,10 +246,102 @@ async function promptTargetBranch(majorOrgs: any[], agentMode: boolean): Promise
   return response.branch || "main";
 }
 
+interface MergeCommitInfo {
+  sha: string;
+  date: string;
+  message: string;
+}
+
+async function listMergeCommitsOnBranch(branch: string, limit = 20): Promise<MergeCommitInfo[]> {
+  try {
+    const result = await execCommand(
+      `git log --merges --first-parent "${branch}" --pretty=format:"%H|%cs|%s" -n ${limit}`,
+      null,
+      { fail: true },
+    );
+    if (!result.stdout?.trim()) {
+      return [];
+    }
+    const lines = result.stdout.trim().split("\n").filter((l: string) => l.trim());
+    return lines.map((line: string) => {
+      const pipeIdx = line.indexOf("|");
+      const pipe2Idx = line.indexOf("|", pipeIdx + 1);
+      const sha = line.substring(0, pipeIdx).trim();
+      const date = line.substring(pipeIdx + 1, pipe2Idx).trim();
+      const message = line.substring(pipe2Idx + 1).trim();
+      return { sha, date, message };
+    }).filter((mc) => mc.sha.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+async function promptMergeCommit(
+  commits: MergeCommitInfo[],
+  agentMode: boolean,
+  commandRef: any,
+): Promise<MergeCommitInfo | null> {
+  if (commits.length === 0) {
+    return null;
+  }
+  if (agentMode || isCI) {
+    const latest = commits[0];
+    uxLog("action", commandRef, c.cyan(t("releaseNotesLatestMergeCommitUsed", { sha: latest.sha.substring(0, 8) })));
+    return latest;
+  }
+  const choices = commits.map((commit) => ({
+    title: `${commit.sha.substring(0, 8)} - ${commit.date} - ${commit.message}`,
+    value: commit,
+  }));
+  const response = await prompts({
+    type: "select",
+    name: "commit",
+    message: c.cyanBright(t("releaseNotesSelectMergeCommit")),
+    description: t("releaseNotesSelectMergeCommit"),
+    choices,
+    initial: 0,
+  });
+  return response.commit || commits[0];
+}
+
 function findSourceBranch(targetBranch: string, majorOrgs: any[]): string | null {
   // Find the branch whose mergeTargets include the target branch
   const childOrg = majorOrgs.find((o: any) => (o.mergeTargets || []).includes(targetBranch));
   return childOrg?.branchName || null;
+}
+
+function findTargetBranchFromSource(sourceBranch: string, majorOrgs: any[]): string | null {
+  // Find the first mergeTarget of the given source branch
+  const sourceOrg = majorOrgs.find((o: any) => o.branchName === sourceBranch);
+  const targets: string[] = sourceOrg?.mergeTargets || [];
+  return targets.length > 0 ? targets[0] : null;
+}
+
+async function promptSourceBranch(
+  majorOrgs: any[],
+  targetBranch: string,
+  agentMode: boolean,
+  commandRef: any,
+): Promise<string | null> {
+  if (agentMode || isCI) {
+    uxLog("warning", commandRef, c.yellow(t("releaseNotesNoSourceBranchForPrepare")));
+    return null;
+  }
+  const choices = majorOrgs
+    .filter((o: any) => o.branchName !== targetBranch)
+    .map((o: any) => ({ title: o.branchName, value: o.branchName }));
+  if (choices.length === 0) {
+    return null;
+  }
+  const response = await prompts({
+    type: "select",
+    name: "branch",
+    message: c.cyanBright(t("releaseNotesSourceBranchPrompt")),
+    description: t("releaseNotesSourceBranchPrompt"),
+    choices,
+    initial: 0,
+  });
+  return response.branch || null;
 }
 
 async function detectTargetBranchForTag(releaseTag: string, majorOrgs: any[], agentMode: boolean): Promise<string> {
@@ -640,6 +776,10 @@ export async function generateReleaseSummary(
 export async function buildReleaseNotesMarkdown(data: ReleaseNotesData, releaseDate: string): Promise<string> {
   const lines: string[] = [];
   const version = data.scope.releaseTag || data.scope.targetBranch;
+
+  // URL lookup maps for cross-reference hyperlinks
+  const prUrlMap = new Map<string, string>(data.pullRequests.map((pr) => [pr.idStr, pr.webUrl || ""]));
+  const ticketUrlMap = new Map<string, string>(data.tickets.map((tk) => [tk.id, tk.url || ""]));
   const dateStr = releaseDate;
   const modeLabel = data.scope.mode === "prepare" ? t("releaseNotesPrepareTitle") : t("releaseNotesPostTitle");
 
@@ -686,7 +826,10 @@ export async function buildReleaseNotesMarkdown(data: ReleaseNotesData, releaseD
       const subject = (tk.subject || "").replace(/\|/g, "\\|");
       const status = tk.statusLabel || tk.status || "";
       const assignee = tk.assigneeLabel || tk.assignee || "";
-      const relatedPrs = (data.ticketToPrs.get(tk.id) || []).map((id) => `#${id}`).join(", ");
+      const relatedPrs = (data.ticketToPrs.get(tk.id) || []).map((id) => {
+        const url = prUrlMap.get(id);
+        return url ? `[#${id}](${url})` : `#${id}`;
+      }).join(", ");
       lines.push(`| ${idCell} | ${subject} | ${status} | ${assignee} | ${relatedPrs} |`);
     }
     lines.push("");
@@ -709,7 +852,10 @@ export async function buildReleaseNotesMarkdown(data: ReleaseNotesData, releaseD
       const title = (pr.title || "").replace(/\|/g, "\\|");
       const author = pr.authorName || "";
       const mergedDate = pr.mergedDate ? pr.mergedDate.split("T")[0] : "";
-      const relatedTickets = (data.prToTickets.get(pr.idStr) || []).join(", ");
+      const relatedTickets = (data.prToTickets.get(pr.idStr) || []).map((id) => {
+        const url = ticketUrlMap.get(id);
+        return url ? `[${id}](${url})` : id;
+      }).join(", ");
       lines.push(`| ${idCell} | ${title} | ${author} | ${mergedDate} | ${relatedTickets} |`);
     }
     lines.push("");
