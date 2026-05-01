@@ -50,5 +50,6 @@
   "i18n-ally.keystyle": "nested",
   "[yaml]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "sarif-viewer.connectToGithubCodeScanning": "off"
 }

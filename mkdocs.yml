@@ -186,6 +186,7 @@ nav:
   - AI & Agents:
       - AI Agents Overview: salesforce-agentic-automation.md
       - Using Coding Agents (Skills): salesforce-ci-cd-agent-skills.md
+      - Data Workspaces (SFDMU): salesforce-ci-cd-agent-data-workspaces.md
       - Deployment Agent:
           - Deployment Agent home: salesforce-deployment-agent-home.md
           - Agent deployment Hints: salesforce-deployment-agent-hints.md

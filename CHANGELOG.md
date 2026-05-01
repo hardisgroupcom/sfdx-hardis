@@ -12,8 +12,9 @@
 - Jenkins CI/CD pipeline (`defaults/ci/Jenkinsfile`): refactored to use a single top-level Docker agent, scoped `withCredentials()` blocks per stage (no global `environment` credentials), parallel MegaLinter + Validation on PRs, fixed `branch` condition syntax, added `options` and `post` cleanup blocks, and comprehensive setup comments. Updated [Jenkins CI/CD documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jenkins/).
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Handle strings with wildcards in package-no-overwrite.xml (ex: `<member>*__dlm`)
 - Doc
-- rewrite package-no-overwrite documentation to make it more explicit, and with a diagram.
-- improve CI/CD home page documentation.
+  - rewrite package-no-overwrite documentation to make it more explicit, and with a diagram.
+  - improve CI/CD home page documentation.
+  - Add SKILL for sfdmu management
 
 ## [7.11.0] 2026-04-26
 
