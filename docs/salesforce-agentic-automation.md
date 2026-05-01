@@ -128,6 +128,8 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:work:new**](hardis/work/new.md)                                             | Create a new User Story Git branch and optionally provision a scratch org or sandbox - required flags: `--task-name`, `--target-branch` |
 | [**hardis:work:resetselection**](hardis/work/resetselection.md)                       | Soft-reset staged commits to re-evaluate which changes go into the merge request                                                        |
 | [**hardis:work:save**](hardis/work/save.md)                                           | Clean metadata, update `package.xml` / `destructiveChanges.xml`, commit, and push - optional: `--targetbranch`, `--noclean`, `--nogit`  |
+| [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                           | Generate release notes with tickets, PRs, metadata changes, deployment actions, and AI summary using `--agent --mode post --target-branch main` |
+| [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                               | Generate a DORA metrics report (Deployment Frequency, Lead Time, Change Failure Rate, MTTR, Rework Rate) with `--agent --target-org` |
 
 ### Monitoring
 

@@ -118,6 +118,7 @@ nav:
           - Handle RUN / Hotfix to Production: salesforce-ci-cd-hotfixes.md
           - Smart Deploy Workflow: salesforce-ci-cd-smart-deployment.md
           - DORA Metrics Report: hardis/doc/salesforce-ci-cd-dora-report.md
+          - Release Notes: hardis/doc/salesforce-ci-cd-release-notes.md
           - CI/CD Configuration:
               - CI/CD Config Home: salesforce-ci-cd-config-home.md
               - All Environment Variables: all-env-variables.md
