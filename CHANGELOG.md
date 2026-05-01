@@ -16,7 +16,7 @@
 - Doc
   - rewrite package-no-overwrite documentation to make it more explicit, and with a diagram.
   - improve CI/CD home page documentation.
-  - Add SKILL for sfdmu management
+  - Add SKILL for sfdmu management to configure data exports in natural language.
 
 ## [7.11.0] 2026-04-26
 
