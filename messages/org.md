@@ -38,6 +38,14 @@ Assisted export data defined in .sfdx-hardis.yml
 
 Activate debug mode (more logs)
 
+# doraReportOutputFile
+
+Force the path and name of output report file. Must end with .md
+
+# doraReportPeriod
+
+Number of days to analyze (default: 90)
+
 # deployMetadatas
 
 Deploy metadatas to source org

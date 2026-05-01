@@ -1615,3 +1615,30 @@ export async function generateApexCoverageOutputFile(): Promise<void> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Shared deployment record types & helpers
+// ---------------------------------------------------------------------------
+
+export interface DeployRecord {
+  Type: 'Deployment' | 'Validation';
+  Id: string;
+  Status: string;
+  DeployedBy: string;
+  CreatedDate: string;
+  StartDate: string;
+  CompletedDate: string;
+  PendingMinutes: number;
+  DurationMinutes: number;
+}
+
+export function parseDatetime(dateStr: string | null | undefined): Date | null {
+  if (!dateStr) return null;
+  const parsed = Date.parse(dateStr);
+  return Number.isNaN(parsed) ? null : new Date(parsed);
+}
+
+export function minutesBetween(start: Date | null, end: Date | null): number {
+  if (!start || !end) return 0;
+  return (end.getTime() - start.getTime()) / 60000;
+}
+

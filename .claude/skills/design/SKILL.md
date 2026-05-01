@@ -17,6 +17,8 @@ Your goal is to design a solution and produce a technical specification.
 3. **Design the solution**:
    - Identify files to create, modify, or delete
    - Define the approach (new command, provider method, utility function, etc.)
+   - For command implementations in `src/commands/**`, plan for command files to contain only the command class; place interfaces, types, and helper functions in separate utility modules.
+   - Allowed exception: keep top-level `Messages.importMessagesDirectoryFromMetaUrl(import.meta.url)` and `const messages = Messages.loadMessages(...)` in command files when needed for oclif message lookup.
    - Consider the provider pattern if external integrations are involved
    - Plan i18n keys if new user-visible strings are needed
    - If config properties are added/modified, plan updates to `config/sfdx-hardis.jsonschema.json`

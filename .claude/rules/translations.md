@@ -23,12 +23,12 @@ When translating, look at other translations in the same language file for consi
 
 ## Japanese (ja)
 
-- Use polite professional Japanese (Desu/Masu form -- です/ます調).
+- Use polite professional Japanese (Desu/Masu form - です/ます調).
 - Use official Salesforce Japanese translations (e.g. `Account` -> `取引先`, `Object` -> `オブジェクト`, `Flow` -> `フロー`, `Permission Set` -> `権限セット`, `Field` -> `項目`, `Deployment` -> `デプロイ`, `Production` -> `本番環境`, `Scratch Org` -> `スクラッチ組織`).
 
 ## Polish (pl)
 
-- Use neutral formal Polish -- avoid personal address ("ty", "Pan", "Pani"). Use impersonal constructs or third-person verbs.
+- Use neutral formal Polish - avoid personal address ("ty", "Pan", "Pani"). Use impersonal constructs or third-person verbs.
 - Keep English technical terms: merge, commit, branch, Scratch Org, package.xml, DevHub, SOQL, DML, CSV, REST, Bulk API, upsert, mock data, org, sandbox.
 - Keep Salesforce metadata names in English: Flow, Permission Set, Permission Set Group, Profile, Custom Setting, Custom Label, Custom Permission, Connected App, External Client App, Validation Rule, Workflow Rule, Approval Process, Assignment Rule, Escalation Rule, Record Type, Lightning Page, Lightning Web Component, Static Resource, Visualforce, sObject, Flexipage.
 - Consistent translations: "deployment" -> "wdrozenie", "deploy" -> "wdrozyc", "retrieve" -> "pobrac"/"pobieranie", "metadata" -> "metadane", "error" -> "blad", "warning" -> "ostrzezenie", "repository" -> "repozytorium".

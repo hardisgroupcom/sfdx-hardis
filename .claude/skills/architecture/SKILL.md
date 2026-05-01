@@ -142,8 +142,8 @@ Communicates with VS Code extension (vscode-sfdx-hardis) for UI interactions, pr
 
 Barrel-exported from `src/common/utils/index.ts`:
 
-- `uxLog()` -- logging
-- `execSfdxJson()` -- CLI subprocess calls
+- `uxLog()` - logging
+- `execSfdxJson()` - CLI subprocess calls
 - Deploy, git, org, XML utilities
 
 ## AI Prompt Templates

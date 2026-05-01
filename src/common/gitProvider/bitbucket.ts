@@ -205,6 +205,57 @@ export class BitbucketProvider extends GitProviderRoot {
     return deploymentCheckId;
   }
 
+  public async listPullRequests(
+    filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
+    options: { formatted?: boolean } = { formatted: false },
+  ): Promise<any[] | null> {
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    if (!workspace || !repoSlug) return null;
+
+    try {
+      const state = filters.status === "merged" ? "MERGED" : filters.status === "open" ? "OPEN" : undefined;
+      const params: any = {
+        workspace,
+        repo_slug: repoSlug,
+        sort: "-updated_on",
+      };
+      if (state) {
+        params.state = state;
+      }
+
+      const result = await this.bitbucket.repositories.listPullRequests(params);
+      let prs = result?.data?.values || [];
+
+      // Filter by minDate
+      if (filters.minDate) {
+        prs = prs.filter((pr: any) => {
+          const createdOn = pr.created_on ? new Date(pr.created_on) : null;
+          return createdOn && createdOn >= filters.minDate!;
+        });
+      }
+
+      if (options.formatted) {
+        return prs.map((pr: any) => ({
+          pullRequestId: pr.id,
+          targetRefName: pr.destination?.branch?.name || "",
+          sourceRefName: pr.source?.branch?.name || "",
+          status: pr.state || "",
+          title: pr.title || "",
+          description: pr.description || "",
+          createdBy: pr.author?.display_name || "",
+          creationDate: pr.created_on || "",
+          closedDate: pr.updated_on || "",
+          webUrl: pr.links?.html?.href || "",
+        }));
+      }
+      return prs;
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketErrorListingPullRequests', { message: e?.message || e })));
+      return null;
+    }
+  }
+
   public async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,

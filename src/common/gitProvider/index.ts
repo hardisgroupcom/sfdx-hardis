@@ -425,6 +425,8 @@ export declare type CommonPullRequestInfo = {
   description: string;
   authorName: string;
   webUrl: string;
+  createdDate?: string;
+  mergedDate?: string;
   customBehaviors: {
     noDeltaDeployment?: boolean,
     purgeFlowVersions?: boolean,

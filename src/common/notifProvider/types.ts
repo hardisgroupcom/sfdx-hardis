@@ -43,6 +43,7 @@ export interface NotifMessage {
   | "APEX_ERROR"
   | "FLOW_ERROR"
   | "DEPLOYMENTS"
+  | "DORA_REPORT"
   | "MONITORING_SUMMARY";
   buttons?: NotifButton[];
   attachments?: any[];

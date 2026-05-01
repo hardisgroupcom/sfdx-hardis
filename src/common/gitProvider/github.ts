@@ -280,6 +280,73 @@ ${getBannerMarkdownAndLink()}
     }
   }
 
+  public async listPullRequests(
+    filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
+    options: { formatted?: boolean } = { formatted: false },
+  ): Promise<any[] | null> {
+    if (!this.octokit || !this.repoOwner || !this.repoName) {
+      return null;
+    }
+    const state = filters.status === "merged" || filters.status === "closed" ? "closed" : filters.status === "open" ? "open" : "all";
+    const allPrs: any[] = [];
+    let page = 1;
+    const maxPages = 10; // Safety limit
+
+    try {
+      while (page <= maxPages) {
+        const params: any = {
+          owner: this.repoOwner,
+          repo: this.repoName,
+          state,
+          sort: "updated",
+          direction: "desc",
+          per_page: 100,
+          page,
+        };
+        if (filters.targetBranch) {
+          params.base = filters.targetBranch;
+        }
+        const response = await this.octokit.rest.pulls.list(params);
+        if (response.data.length === 0) break;
+
+        for (const pr of response.data) {
+          // Filter merged-only when requested
+          if (filters.status === "merged" && !pr.merged_at) continue;
+          // Filter by minDate on creation
+          if (filters.minDate && new Date(pr.created_at) < filters.minDate) continue;
+
+          if (options.formatted) {
+            allPrs.push({
+              pullRequestId: pr.number,
+              targetRefName: pr.base?.ref || "",
+              sourceRefName: pr.head?.ref || "",
+              status: pr.merged_at ? "Merged" : pr.state,
+              title: pr.title,
+              description: pr.body || "",
+              createdBy: pr.user?.login || "",
+              creationDate: pr.created_at,
+              closedDate: pr.merged_at || pr.closed_at,
+              webUrl: pr.html_url,
+            });
+          } else {
+            allPrs.push(pr);
+          }
+        }
+
+        // Stop if we have gone past the date window
+        const lastPr = response.data[response.data.length - 1];
+        if (filters.minDate && new Date(lastPr.updated_at) < filters.minDate) break;
+        if (response.data.length < 100) break;
+        page++;
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('githubErrorListingPullRequests', { message: e?.message || e })));
+      return null;
+    }
+
+    return allPrs;
+  }
+
   public async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,
