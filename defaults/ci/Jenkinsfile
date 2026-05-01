@@ -1,153 +1,263 @@
- /* sfdx-hardis CI/CD Pipeline for Jenkins
+// Pipeline for Salesforce CI/CD using sfdx-hardis
+//
+// SETUP (do a CTRL+F on "MANUAL"):
+// 1. In Jenkins, create a Multibranch Pipeline pointing to this repository.
+//    Jenkins will automatically discover branches and create one sub-job per branch.
+//
+// 2. Add the following credentials in Jenkins (Manage Jenkins -> Credentials -> global):
+//    Required:
+//    - SFDX_CLIENT_ID_<BRANCH>  : Secret text - Connected App consumer key for each target org
+//    - SFDX_CLIENT_KEY_<BRANCH> : Secret text - Private key for each target org
+//    Optional - add only the ones you use (missing optional credentials are silently ignored):
+//    - SLACK_TOKEN, SLACK_CHANNEL_ID      : Slack notifications
+//    - NOTIF_EMAIL_ADDRESS                : Email notifications
+//    - JIRA_HOST, JIRA_EMAIL, JIRA_TOKEN, JIRA_PAT : JIRA integration
+//    - ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY : AI auto-fix of deployment errors
+//    - GITHUB_TOKEN, CI_SFDX_HARDIS_GITLAB_TOKEN, CI_SFDX_HARDIS_BITBUCKET_TOKEN,
+//      CI_SFDX_HARDIS_AZURE_TOKEN         : Allow coding agents to push branches and create PRs
+//    - SFDX_AUTH_URL_TECHNICAL_ORG        : Auth URL for a technical org (e.g. DevHub)
+//    Optional credentials use `optional: true` (requires Credentials Binding Plugin >= 1.24).
+//    Missing optional credentials are silently ignored - the pipeline will NOT crash.
+//
+// 3. The Docker agent requires Docker to be available on the Jenkins node.
+//    The main agent uses hardisgroupcom/sfdx-hardis:latest.
+//    MegaLinter runs via `docker run` inside that agent (Docker socket must be mounted).
+//
+// Doc & support: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jenkins/
 
- You need to do a CTRL+F on "MANUAL" and add your variable instead of example variable
+// MANUAL: List every branch that triggers a real deployment to a Salesforce org
+def DEPLOYMENT_BRANCHES = [
+    'integration',  // Example
+    'uat',          // Example
+    'preprod',      // Example
+    'main',         // Example
+]
 
- */
 pipeline {
-    agent any
-    // MANUAL : Add Environment variable if necessary
-    environment {
-        SFDX_CLIENT_ID_INTEGRATION = credentials('SFDX_CLIENT_ID_INTEGRATION') //Example
-        SFDX_CLIENT_KEY_INTEGRATION = credentials('SFDX_CLIENT_KEY_INTEGRATION') //Example
-        SFDX_CLIENT_ID_UAT = credentials('SFDX_CLIENT_ID_UAT') //Example
-        SFDX_CLIENT_KEY_UAT = credentials('SFDX_CLIENT_KEY_UAT') //Example
-        SFDX_CLIENT_ID_PREPROD = credentials('SFDX_CLIENT_ID_PREPROD') //Example
-        SFDX_CLIENT_KEY_PREPROD = credentials('SFDX_CLIENT_KEY_PREPROD') //Example
-        SFDX_CLIENT_ID_MAIN = credentials('SFDX_CLIENT_ID_MAIN') //Example
-        SFDX_CLIENT_KEY_MAIN = credentials('SFDX_CLIENT_KEY_MAIN') //Example
-        SFDX_AUTH_URL_TECHNICAL_ORG = credentials('SFDX_AUTH_URL_TECHNICAL_ORG')
-        SLACK_TOKEN = credentials('SLACK_TOKEN') // Remove if not used
-        SLACK_CHANNEL_ID = credentials('SLACK_CHANNEL_ID') // Remove if not used
-        NOTIF_EMAIL_ADDRESS = credentials('NOTIF_EMAIL_ADDRESS') // Remove if not used
-        JIRA_HOST = credentials('JIRA_HOST') // Remove if not used
-        JIRA_EMAIL = credentials('JIRA_EMAIL') // Remove if not used
-        JIRA_TOKEN = credentials('JIRA_TOKEN') // Remove if not used
-        JIRA_PAT = credentials('JIRA_PAT') // Remove if not used
-        // Uncomment to provide API keys for coding agent auto-fix of deployment errors
-        // ANTHROPIC_API_KEY = credentials('ANTHROPIC_API_KEY')
-        // OPENAI_API_KEY = credentials('OPENAI_API_KEY')
-        // GEMINI_API_KEY = credentials('GEMINI_API_KEY')
-        // Uncomment to customize coding agent behavior
-        // SFDX_HARDIS_CODING_AGENT_MODEL = "sonnet" // Override the model used by the agent
-        // SFDX_HARDIS_CODING_AGENT_MAX_TURNS = "30" // Limit the number of agentic turns
-        // Optional tokens to allow coding agents to git push and create PR/MR
-        // GITHUB_TOKEN = credentials('GITHUB_TOKEN')
-        // CI_SFDX_HARDIS_GITLAB_TOKEN = credentials('CI_SFDX_HARDIS_GITLAB_TOKEN')
-        // CI_SFDX_HARDIS_BITBUCKET_TOKEN = credentials('CI_SFDX_HARDIS_BITBUCKET_TOKEN')
-        // CI_SFDX_HARDIS_AZURE_TOKEN = credentials('CI_SFDX_HARDIS_AZURE_TOKEN')
-        CONFIG_BRANCH = "${GIT_BRANCH}"
-        CI_COMMIT_REF_NAME = "${GIT_BRANCH}"
-        ORG_ALIAS = "${GIT_BRANCH}"
-        SFDX_DISABLE_FLOW_DIFF = 'false' // Set to true to disable Flow doc during CI/CD setup
+
+    agent {
+        docker {
+            // Use sfdx-hardis image - no install step needed
+            // If rate limits are reached, use: ghcr.io/hardisgroupcom/sfdx-hardis:latest
+            image 'hardisgroupcom/sfdx-hardis:latest'
+            // Mount Docker socket so MegaLinter can run as a sibling container
+            args '-v /var/run/docker.sock:/var/run/docker.sock --user root'
+        }
     }
 
-    //Stage of the job
+    options {
+        timeout(time: 120, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        // Keep build logs for 30 days
+        buildDiscarder(logRotator(daysToKeepStr: '30'))
+    }
+
+    environment {
+        FORCE_COLOR = '1'
+        // Normalize branch name: strip the "origin/" prefix added by Jenkins
+        BRANCH_NAME_CLEAN = "${env.BRANCH_NAME ?: env.GIT_BRANCH?.replaceAll('^origin/', '')}"
+        CI_COMMIT_REF_NAME = "${BRANCH_NAME_CLEAN}"
+        CONFIG_BRANCH      = "${BRANCH_NAME_CLEAN}"
+        ORG_ALIAS          = "${BRANCH_NAME_CLEAN}"
+        // Set to true to disable Flow documentation generation during initial CI/CD setup
+        SFDX_DISABLE_FLOW_DIFF = 'false'
+    }
+
     stages {
-        parallel {
-            //run megalinter
-            stage('MegaLinter') {
-                agent {
-                    docker {
-                        image 'oxsecurity/megalinter:latest'
-                        args "-u root -e VALIDATE_ALL_CODEBASE=true -v ${WORKSPACE}:/tmp/lint --entrypoint=''"
-                        reuseNode true
+
+        ///////////////////////////////////////////////////////////////////////////////
+        // Pull Request: run MegaLinter and Validation in parallel on every PR      //
+        ///////////////////////////////////////////////////////////////////////////////
+        stage('Pull Request Checks') {
+            when { changeRequest() }
+            parallel {
+
+                ////////////////////////////////////////////////////////////
+                // Run MegaLinter to detect quality and security issues   //
+                ////////////////////////////////////////////////////////////
+                stage('MegaLinter') {
+                    steps {
+                        withCredentials([
+                            // Optional API reporter credentials (omit if unused)
+                            string(credentialsId: 'NOTIF_API_URL',                         variable: 'NOTIF_API_URL',                         optional: true),
+                            string(credentialsId: 'NOTIF_API_BASIC_AUTH_USERNAME',         variable: 'NOTIF_API_BASIC_AUTH_USERNAME',         optional: true),
+                            string(credentialsId: 'NOTIF_API_BASIC_AUTH_PASSWORD',         variable: 'NOTIF_API_BASIC_AUTH_PASSWORD',         optional: true),
+                        ]) {
+                            // Run MegaLinter as a sibling container (Docker socket must be mounted in the agent)
+                            // All available variables: https://megalinter.io/latest/config-file/
+                            sh '''
+                                docker pull oxsecurity/megalinter-salesforce:latest
+                                docker run --rm \
+                                  -v "${WORKSPACE}:/tmp/lint" \
+                                  -e DEFAULT_WORKSPACE=/tmp/lint \
+                                  -e VALIDATE_ALL_CODEBASE=true \
+                                  -e API_REPORTER=true \
+                                  -e NOTIF_API_URL="${NOTIF_API_URL}" \
+                                  -e NOTIF_API_BASIC_AUTH_USERNAME="${NOTIF_API_BASIC_AUTH_USERNAME}" \
+                                  -e NOTIF_API_BASIC_AUTH_PASSWORD="${NOTIF_API_BASIC_AUTH_PASSWORD}" \
+                                  oxsecurity/megalinter-salesforce:latest || true
+                            '''
+                        }
+                    }
+                    post {
+                        always {
+                            archiveArtifacts allowEmptyArchive: true, artifacts: 'mega-linter.log,megalinter-reports/**/*', defaultExcludes: false, followSymlinks: false
+                        }
                     }
                 }
-                when { changeRequest() }
-                steps {
-                    sh '/entrypoint.sh'
+
+                ///////////////////////////////////////////////////////////////////////
+                // Validate deployment on the target org (check-only, no side-effect) //
+                ///////////////////////////////////////////////////////////////////////
+                stage('Validation') {
+                    steps {
+                        script {
+                            def currentBranch = env.GIT_BRANCH?.replaceAll('^(refs/heads/|origin/)', '') ?: ''
+                            if (currentBranch.startsWith('auto-fix/')) {
+                                // Skip sf hardis commands on auto-fix branches to avoid recursive runs
+                                echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${currentBranch}"
+                            } else {
+                                withCredentials([
+                                    // ----------------------------------------------------------------
+                                    // MANUAL: Add one pair of credentials per deployment org.
+                                    // The credential ID must match the variable name expected by sfdx-hardis.
+                                    // Examples - duplicate and adapt for each org:
+                                    //
+                                    // string(credentialsId: 'SFDX_CLIENT_ID_INTEGRATION',  variable: 'SFDX_CLIENT_ID_INTEGRATION'),
+                                    // string(credentialsId: 'SFDX_CLIENT_KEY_INTEGRATION', variable: 'SFDX_CLIENT_KEY_INTEGRATION'),
+                                    // string(credentialsId: 'SFDX_CLIENT_ID_UAT',          variable: 'SFDX_CLIENT_ID_UAT'),
+                                    // string(credentialsId: 'SFDX_CLIENT_KEY_UAT',         variable: 'SFDX_CLIENT_KEY_UAT'),
+                                    // string(credentialsId: 'SFDX_CLIENT_ID_PREPROD',      variable: 'SFDX_CLIENT_ID_PREPROD'),
+                                    // string(credentialsId: 'SFDX_CLIENT_KEY_PREPROD',     variable: 'SFDX_CLIENT_KEY_PREPROD'),
+                                    // string(credentialsId: 'SFDX_CLIENT_ID_MAIN',         variable: 'SFDX_CLIENT_ID_MAIN'),
+                                    // string(credentialsId: 'SFDX_CLIENT_KEY_MAIN',        variable: 'SFDX_CLIENT_KEY_MAIN'),
+                                    // ----------------------------------------------------------------
+                                    // Technical org auth URL (optional - used for DevHub or scratch org workflows)
+                                    string(credentialsId: 'SFDX_AUTH_URL_TECHNICAL_ORG',    variable: 'SFDX_AUTH_URL_TECHNICAL_ORG',    optional: true),
+                                    // Notification credentials (optional - pipeline will NOT crash if missing)
+                                    string(credentialsId: 'SLACK_TOKEN',                    variable: 'SLACK_TOKEN',                    optional: true),
+                                    string(credentialsId: 'SLACK_CHANNEL_ID',               variable: 'SLACK_CHANNEL_ID',               optional: true),
+                                    string(credentialsId: 'NOTIF_EMAIL_ADDRESS',            variable: 'NOTIF_EMAIL_ADDRESS',            optional: true),
+                                    // JIRA integration (optional)
+                                    string(credentialsId: 'JIRA_HOST',                      variable: 'JIRA_HOST',                      optional: true),
+                                    string(credentialsId: 'JIRA_EMAIL',                     variable: 'JIRA_EMAIL',                     optional: true),
+                                    string(credentialsId: 'JIRA_TOKEN',                     variable: 'JIRA_TOKEN',                     optional: true),
+                                    string(credentialsId: 'JIRA_PAT',                       variable: 'JIRA_PAT',                       optional: true),
+                                    // AI coding agent credentials (optional - auto-fix deployment errors)
+                                    string(credentialsId: 'ANTHROPIC_API_KEY',              variable: 'ANTHROPIC_API_KEY',              optional: true),
+                                    string(credentialsId: 'OPENAI_API_KEY',                 variable: 'OPENAI_API_KEY',                 optional: true),
+                                    string(credentialsId: 'GEMINI_API_KEY',                 variable: 'GEMINI_API_KEY',                 optional: true),
+                                    // Git provider tokens (optional - allow coding agents to push branches and open PRs)
+                                    string(credentialsId: 'GITHUB_TOKEN',                         variable: 'GITHUB_TOKEN',                         optional: true),
+                                    string(credentialsId: 'CI_SFDX_HARDIS_GITLAB_TOKEN',          variable: 'CI_SFDX_HARDIS_GITLAB_TOKEN',          optional: true),
+                                    string(credentialsId: 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',       variable: 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',       optional: true),
+                                    string(credentialsId: 'CI_SFDX_HARDIS_AZURE_TOKEN',           variable: 'CI_SFDX_HARDIS_AZURE_TOKEN',           optional: true),
+                                ]) {
+                                    sh '''
+                                        if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_AZURE_TOKEN:-}" ]; then
+                                            git config user.email "sfdx-hardis-bot@cloudity.com"
+                                            git config user.name "sfdx-hardis Bot"
+                                            echo "[sfdx-hardis] Coding-agent git auth prerequisites found"
+                                        else
+                                            echo "[sfdx-hardis] Skipping coding-agent git auth setup: no provider token variable is set"
+                                        fi
+                                    '''
+                                    sh 'sf hardis:auth:login'
+                                    sh 'sf hardis:project:deploy:smart --check'
+                                }
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report/**', defaultExcludes: false, followSymlinks: false
+                        }
+                    }
                 }
-                post {
-                    always {
-                        archiveArtifacts allowEmptyArchive: true, artifacts: 'mega-linter.log,megalinter-reports/**/*', defaultExcludes: false, followSymlinks: false
+
+            } // end parallel Pull Request Checks
+        } // end Pull Request Checks
+
+        /////////////////////////////////////////////////////////////////////////////////
+        // Deploy to the target org when a commit lands on a deployment branch        //
+        /////////////////////////////////////////////////////////////////////////////////
+        stage('Deployment') {
+            when {
+                allOf {
+                    expression { DEPLOYMENT_BRANCHES.contains(env.BRANCH_NAME_CLEAN) }
+                    not { changeRequest() }
+                }
+            }
+            steps {
+                script {
+                    def currentBranch = env.GIT_BRANCH?.replaceAll('^(refs/heads/|origin/)', '') ?: ''
+                    if (currentBranch.startsWith('auto-fix/')) {
+                        // Skip sf hardis commands on auto-fix branches to avoid recursive runs
+                        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${currentBranch}"
+                    } else {
+                        withCredentials([
+                            // ----------------------------------------------------------------
+                            // MANUAL: Add one pair of credentials per deployment org.
+                            // Same credential pairs as in the Validation stage above.
+                            //
+                            // string(credentialsId: 'SFDX_CLIENT_ID_INTEGRATION',  variable: 'SFDX_CLIENT_ID_INTEGRATION'),
+                            // string(credentialsId: 'SFDX_CLIENT_KEY_INTEGRATION', variable: 'SFDX_CLIENT_KEY_INTEGRATION'),
+                            // string(credentialsId: 'SFDX_CLIENT_ID_UAT',          variable: 'SFDX_CLIENT_ID_UAT'),
+                            // string(credentialsId: 'SFDX_CLIENT_KEY_UAT',         variable: 'SFDX_CLIENT_KEY_UAT'),
+                            // string(credentialsId: 'SFDX_CLIENT_ID_PREPROD',      variable: 'SFDX_CLIENT_ID_PREPROD'),
+                            // string(credentialsId: 'SFDX_CLIENT_KEY_PREPROD',     variable: 'SFDX_CLIENT_KEY_PREPROD'),
+                            // string(credentialsId: 'SFDX_CLIENT_ID_MAIN',         variable: 'SFDX_CLIENT_ID_MAIN'),
+                            // string(credentialsId: 'SFDX_CLIENT_KEY_MAIN',        variable: 'SFDX_CLIENT_KEY_MAIN'),
+                            // ----------------------------------------------------------------
+                            // Technical org auth URL (optional - used for DevHub or scratch org workflows)
+                            string(credentialsId: 'SFDX_AUTH_URL_TECHNICAL_ORG',    variable: 'SFDX_AUTH_URL_TECHNICAL_ORG',    optional: true),
+                            // Notification credentials (optional - pipeline will NOT crash if missing)
+                            string(credentialsId: 'SLACK_TOKEN',                    variable: 'SLACK_TOKEN',                    optional: true),
+                            string(credentialsId: 'SLACK_CHANNEL_ID',               variable: 'SLACK_CHANNEL_ID',               optional: true),
+                            string(credentialsId: 'NOTIF_EMAIL_ADDRESS',            variable: 'NOTIF_EMAIL_ADDRESS',            optional: true),
+                            // JIRA integration (optional)
+                            string(credentialsId: 'JIRA_HOST',                      variable: 'JIRA_HOST',                      optional: true),
+                            string(credentialsId: 'JIRA_EMAIL',                     variable: 'JIRA_EMAIL',                     optional: true),
+                            string(credentialsId: 'JIRA_TOKEN',                     variable: 'JIRA_TOKEN',                     optional: true),
+                            string(credentialsId: 'JIRA_PAT',                       variable: 'JIRA_PAT',                       optional: true),
+                            // AI coding agent credentials (optional - auto-fix deployment errors)
+                            string(credentialsId: 'ANTHROPIC_API_KEY',              variable: 'ANTHROPIC_API_KEY',              optional: true),
+                            string(credentialsId: 'OPENAI_API_KEY',                 variable: 'OPENAI_API_KEY',                 optional: true),
+                            string(credentialsId: 'GEMINI_API_KEY',                 variable: 'GEMINI_API_KEY',                 optional: true),
+                            // Git provider tokens (optional - allow coding agents to push branches and open PRs)
+                            string(credentialsId: 'GITHUB_TOKEN',                         variable: 'GITHUB_TOKEN',                         optional: true),
+                            string(credentialsId: 'CI_SFDX_HARDIS_GITLAB_TOKEN',          variable: 'CI_SFDX_HARDIS_GITLAB_TOKEN',          optional: true),
+                            string(credentialsId: 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',       variable: 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',       optional: true),
+                            string(credentialsId: 'CI_SFDX_HARDIS_AZURE_TOKEN',           variable: 'CI_SFDX_HARDIS_AZURE_TOKEN',           optional: true),
+                        ]) {
+                            sh '''
+                                if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_AZURE_TOKEN:-}" ]; then
+                                    git config user.email "sfdx-hardis-bot@cloudity.com"
+                                    git config user.name "sfdx-hardis Bot"
+                                    echo "[sfdx-hardis] Coding-agent git auth prerequisites found"
+                                else
+                                    echo "[sfdx-hardis] Skipping coding-agent git auth setup: no provider token variable is set"
+                                fi
+                            '''
+                            sh 'sf hardis:auth:login'
+                            sh 'sf hardis:project:deploy:smart'
+                        }
                     }
                 }
             }
-            stage('Validation') {
-                agent {
-                    docker {
-                        // If rate limits reached, use ghcr.io/hardisgroupcom/sfdx-hardis:latest
-                        image 'hardisgroupcom/sfdx-hardis:latest' 
-                    }
-                }
-                when { changeRequest() }
-                //Validation on the appropriate org
-                steps {
-                    script {
-                        sh '''
-CURRENT_BRANCH=$(echo "${GIT_BRANCH}" | sed -E 's#^refs/heads/##; s#^origin/##')
-if [ "${CURRENT_BRANCH#auto-fix/}" != "${CURRENT_BRANCH}" ]; then
-    echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${CURRENT_BRANCH}"
-    exit 0
-fi
-'''
-                                                sh '''
-if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_AZURE_TOKEN:-}" ] || [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
-    git config user.email "sfdx-hardis-bot@cloudity.com"
-    git config user.name "sfdx-hardis Bot"
-    echo "[sfdx-hardis] Coding-agent git auth prerequisites found"
-else
-    echo "[sfdx-hardis] Skipping coding-agent git auth setup: no provider token variable is set"
-fi
-'''
-                        sh 'sf hardis:auth:login'
-                        sh 'sf hardis:project:deploy:smart --check'
-                    }
-                }
-                post {
-                    always {
-                        archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report', defaultExcludes: false, followSymlinks: false
-                    }
-                }
-            }
-            stage('Deployment') {
-                agent {
-                    docker {
-                        // If rate limits reached, use ghcr.io/hardisgroupcom/sfdx-hardis:latest
-                        image 'hardisgroupcom/sfdx-hardis:latest'
-                    }
-                }
-                //MANUAL: add your major branch if necessary
-                when {
-                    allOf {
-                        anyOf {
-                            branch: 'integration' //Example
-                            branch: 'uat' //Example
-                            branch: 'preprod' //Example
-                            branch: 'main' //Example
-                        };
-                        not { changeRequest() }
-                    }
-                }
-                //deploy on the appropriate org
-                steps {
-                    script {
-                        sh '''
-CURRENT_BRANCH=$(echo "${GIT_BRANCH}" | sed -E 's#^refs/heads/##; s#^origin/##')
-if [ "${CURRENT_BRANCH#auto-fix/}" != "${CURRENT_BRANCH}" ]; then
-    echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${CURRENT_BRANCH}"
-    exit 0
-fi
-'''
-                                                sh '''
-if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_AZURE_TOKEN:-}" ] || [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
-    git config user.email "sfdx-hardis-bot@cloudity.com"
-    git config user.name "sfdx-hardis Bot"
-    echo "[sfdx-hardis] Coding-agent git auth prerequisites found"
-else
-    echo "[sfdx-hardis] Skipping coding-agent git auth setup: no provider token variable is set"
-fi
-'''
-                        sh 'sf hardis:auth:login'
-                        sh 'sf hardis:project:deploy:smart'
-                    }
-                }
-                post {
-                    always {
-                        archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report', defaultExcludes: false, followSymlinks: false
-                    }
+            post {
+                always {
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report/**', defaultExcludes: false, followSymlinks: false
                 }
             }
         }
+
+    } // end stages
+
+    post {
+        always {
+            cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true)
+        }
     }
+
 }

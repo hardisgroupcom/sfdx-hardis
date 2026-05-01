@@ -6,6 +6,7 @@ description: Prompt template for PROMPT_MONITORING_PPTX_REPORT
 # PROMPT_MONITORING_PPTX_REPORT
 
 ## Variables
+
 | Name                   | Description                                                                   | Example                                                                                       |
 |:-----------------------|:------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------|
 | **NOTIFICATIONS_JSON** | JSON array of all monitoring notification messages collected during this run. | `[{"type":"ORG_LIMITS","severity":"warning","text":"Org limits are approaching thresholds"}]` |

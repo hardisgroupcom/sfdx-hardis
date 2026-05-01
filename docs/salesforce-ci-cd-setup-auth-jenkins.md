@@ -1,32 +1,36 @@
 ---
 title: Configure Jenkins CI/CD credentials
-description: Learn how to configure CI/CD variables for CI Server authentication to automate deployments with Jenkins Pipelines
+description: Learn how to configure CI/CD credentials for Jenkins Pipelines to automate Salesforce deployments with sfdx-hardis
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Define sfdx-hardis environment variables
+## Add credentials in Jenkins
 
-- Go to **Dashboard -> Manage Jenkins**
-- Under Security tab click on **Credentials -> global credentials**
-- Click on **Add credential** , then choose **Secret text**
-- Input variable name and value
-- Don't forget to click on **create** !
+- Go to **Dashboard -> Manage Jenkins -> Credentials -> (global)**
+- Click **Add Credentials**
+- Kind: **Secret text**
+- Secret: paste the credential value
+- ID: the variable name expected by sfdx-hardis (e.g. `SFDX_CLIENT_ID_INTEGRATION`)
+- Click **Create**
 
 ![](assets/images/screenshot-monitoring-jenkins-variable.png)
 
 More info: [Jenkins documentation](https://www.jenkins.io/doc/book/using/using-credentials/){target=blank}
 
-## Reference variables in your Jenkinsfile
+## Reference credentials in your Jenkinsfile
 
-When you defined your secret variables in Jenkins, you need to reference them in your pipeline YAML files using the syntax `VARIABLE_NAME: credentials('VARIABLE_NAME')`, so their values are correctly passed to the pipeline.
-
-Example:
+Credentials are injected per-stage using `withCredentials()` so that each stage only receives the secrets it actually needs.
 
 ```groovy
-    environment {
-        SFDX_CLIENT_ID_MY_ORG = credentials('SFDX_CLIENT_ID_MY_ORG') //Example
-        SFDX_CLIENT_KEY_MY_ORG = credentials('SFDX_CLIENT_KEY_MY_ORG') //Example
-    }
+withCredentials([
+    string(credentialsId: 'SFDX_CLIENT_ID_INTEGRATION',  variable: 'SFDX_CLIENT_ID_INTEGRATION'),
+    string(credentialsId: 'SFDX_CLIENT_KEY_INTEGRATION', variable: 'SFDX_CLIENT_KEY_INTEGRATION'),
+    // Optional credentials use `optional: true` - missing ones are silently ignored
+    string(credentialsId: 'SLACK_TOKEN', variable: 'SLACK_TOKEN', optional: true),
+]) {
+    sh 'sf hardis:auth:login'
+    sh 'sf hardis:project:deploy:smart --check'
+}
 ```
 
 Impacted files if present in your repo:
@@ -35,6 +39,5 @@ Impacted files if present in your repo:
 
 ## Auto-fix branches
 
-Default CI templates skip steps that run `sf hardis` commands when the current branch starts with `auto-fix/`.
+Default CI templates skip `sf hardis` commands when the current branch starts with `auto-fix/`.
 This prevents recursive or redundant deploy/check executions on auto-generated fix branches.
-
