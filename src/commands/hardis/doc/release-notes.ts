@@ -136,6 +136,7 @@ In agent mode:
       allowNo: true,
       description: "Generate the documentation in PDF format (enabled by default, use --no-pdf to skip)",
     }),
+    /* jscpd:ignore-start */
     debug: Flags.boolean({
       char: "d",
       default: false,
@@ -152,6 +153,7 @@ In agent mode:
       description: "Run in non-interactive mode for agents and automation",
     }),
     "target-org": optionalOrgFlagWithDeprecations,
+    /* jscpd:ignore-end */
   };
 
   public static requiresProject = false;
