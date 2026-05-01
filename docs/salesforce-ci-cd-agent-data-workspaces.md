@@ -41,7 +41,7 @@ Never guess or blindly default to `Name`. Follow this procedure for each object:
 
 ### Step 1: Look for a declared External ID field
 
-**Option A -- Local metadata (preferred when available):**
+**Option A - Local metadata (preferred when available):**
 Search for `.field-meta.xml` files of the object in the local project and look for
 `<externalId>true</externalId>`:
 
@@ -49,17 +49,17 @@ Search for `.field-meta.xml` files of the object in the local project and look f
 grep -rl "<externalId>true</externalId>" force-app/**/objects/<ObjectName>/fields/ 2>/dev/null
 ```
 
-**Option B -- Tooling API on target org (when local metadata is incomplete or absent):**
+**Option B - Tooling API on target org (when local metadata is incomplete or absent):**
 
 ```bash
 sf data query --query "SELECT QualifiedApiName FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName = '<ObjectName>' AND IsExternalId = true" --target-org <orgAlias> --json
 ```
 
 If either method returns one or more External ID fields, use the most appropriate one.
-**Never use an AutoNumber field as externalId** -- AutoNumber values are generated independently
+**Never use an AutoNumber field as externalId** - AutoNumber values are generated independently
 per org and will not match between source and target, causing every record to be treated as new.
 
-### Step 2: No External ID field exists -- build a composite key
+### Step 2: No External ID field exists - build a composite key
 
 If no declared External ID field is found, you must identify a combination of fields whose
 values are **unique across all records** in the table. Candidates: `Name`, `DeveloperName`,
@@ -71,9 +71,9 @@ values are **unique across all records** in the table. Candidates: `Name`, `Deve
 sf data query --query "SELECT <Field1>, <Field2>, COUNT(Id) cnt FROM <ObjectName> GROUP BY <Field1>, <Field2> HAVING COUNT(Id) > 1" --target-org <orgAlias> --json
 ```
 
-- If the query returns **zero rows**, the combination is unique -- use it as a composite
+- If the query returns **zero rows**, the combination is unique - use it as a composite
   external ID with semicolons: `"externalId": "Field1;Field2"`
-- If the query returns rows, those fields have duplicates -- try a different/wider
+- If the query returns rows, those fields have duplicates - try a different/wider
   combination and re-check.
 - For standard objects with well-known unique fields, you may skip the query:
   - `User` -> `Username`
@@ -85,7 +85,7 @@ sf data query --query "SELECT <Field1>, <Field2>, COUNT(Id) cnt FROM <ObjectName
 ### Step 3: Same-org Update or Delete operations
 
 When the operation is `Update` or `Delete`/`DeleteSource` targeting the **same org** the data
-was exported from, `"externalId": "Id"` is acceptable -- the Salesforce record ID is the
+was exported from, `"externalId": "Id"` is acceptable - the Salesforce record ID is the
 primary key.
 
 ### Summary
@@ -100,16 +100,16 @@ primary key.
 **Never use `Name` as external ID without first confirming it is either a declared External ID
 or genuinely unique for that object in the org.**
 
-**Never use an AutoNumber field as externalId** -- AutoNumber values are generated per org and
+**Never use an AutoNumber field as externalId** - AutoNumber values are generated per org and
 will differ between source and target, making matching impossible.
 
 ## Data Workspace Structure
 
 Workspaces live under `scripts/data/<WorkspaceName>/` and contain:
 
-- `export.json` -- the SFDMU configuration file (see full reference below)
-- `*.csv` -- exported data files (one per object, auto-generated)
-- `logs/` -- execution logs (auto-created)
+- `export.json` - the SFDMU configuration file (see full reference below)
+- `*.csv` - exported data files (one per object, auto-generated)
+- `logs/` - execution logs (auto-created)
 
 ## Creating a Data Workspace
 
@@ -170,10 +170,10 @@ dataPackages:
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `sfdxHardisLabel` | string | -- | Display name for the workspace (sfdx-hardis specific) |
-| `sfdxHardisDescription` | string | -- | Description (sfdx-hardis specific) |
-| `objects` | ScriptObject[] | -- | Array of object migration definitions (required) |
-| `objectSets` | ScriptObjectSet[] | -- | Groups of objects processed as sub-jobs |
+| `sfdxHardisLabel` | string | - | Display name for the workspace (sfdx-hardis specific) |
+| `sfdxHardisDescription` | string | - | Description (sfdx-hardis specific) |
+| `objects` | ScriptObject[] | - | Array of object migration definitions (required) |
+| `objectSets` | ScriptObjectSet[] | - | Groups of objects processed as sub-jobs |
 | `allOrNone` | boolean | false | Abort if any record fails |
 | `bulkApiVersion` | string | "2.0" | "1.0" or "2.0" |
 | `bulkThreshold` | integer | 200 | Record count triggering Bulk API for CRUD |
@@ -187,7 +187,7 @@ dataPackages:
 | `keepObjectOrderWhileExecute` | boolean | false | Preserve array order (false = smart order) |
 | `bulkApiV1BatchSize` | integer | 9500 | Batch size for Bulk API V1 |
 | `queryBulkApiThreshold` | integer | 30000 | Record count triggering Bulk API for queries |
-| `restApiBatchSize` | integer | -- | REST API batch size |
+| `restApiBatchSize` | integer | - | REST API batch size |
 | `parallelBulkJobs` | integer | 1 | Concurrent Bulk API jobs |
 | `parallelRestJobs` | integer | 1 | Concurrent REST API jobs |
 | `allowFieldTruncation` | boolean | false | Truncate values to metadata lengths |
@@ -199,10 +199,10 @@ dataPackages:
 | `sourceRecordsCache` | string | "InMemory" | "InMemory", "CleanFileCache", "FileCache" |
 | `pollingIntervalMs` | integer | 5000 | Bulk API polling interval |
 | `runnableInProduction` | boolean | false | Required true for delete in production |
-| `beforeAddons` | AddonDef[] | -- | Add-ons before migration |
-| `afterAddons` | AddonDef[] | -- | Add-ons after migration |
-| `dataRetrievedAddons` | AddonDef[] | -- | Add-ons after retrieval |
-| `excludedObjects` | string[] | -- | Global object exclusion list |
+| `beforeAddons` | AddonDef[] | - | Add-ons before migration |
+| `afterAddons` | AddonDef[] | - | Add-ons after migration |
+| `dataRetrievedAddons` | AddonDef[] | - | Add-ons after retrieval |
+| `excludedObjects` | string[] | - | Global object exclusion list |
 
 ### ScriptObject Properties (each entry in `objects`)
 
@@ -210,38 +210,38 @@ dataPackages:
 |---|---|---|---|
 | `query` | string | **required** | SOQL query (supports `SELECT all FROM Object` shorthand) |
 | `operation` | string | "Readonly" | Operation type (see values below) |
-| `externalId` | string | "Name" | External ID field for matching -- **must be resolved using the procedure above, never guessed** |
+| `externalId` | string | "Name" | External ID field for matching - **must be resolved using the procedure above, never guessed** |
 | `master` | boolean | true | Master object in hierarchy |
 | `deleteOldData` | boolean | false | Delete old target records first |
 | `deleteFromSource` | boolean | false | Delete from source org |
 | `deleteByHierarchy` | boolean | false | Cascading hierarchical deletion |
-| `deleteQuery` | string | -- | SOQL WHERE for old-data deletion |
+| `deleteQuery` | string | - | SOQL WHERE for old-data deletion |
 | `hardDelete` | boolean | false | Bypass Recycle Bin |
 | `excluded` | boolean | false | Exclude object from migration |
-| `excludedFields` | string[] | -- | Fields to omit |
-| `excludedFromUpdateFields` | string[] | -- | Fields retrieved but not updated |
+| `excludedFields` | string[] | - | Fields to omit |
+| `excludedFromUpdateFields` | string[] | - | Fields retrieved but not updated |
 | `skipExistingRecords` | boolean | false | Skip updates for existing records |
 | `skipRecordsComparison` | boolean | false | Skip source/target comparison |
 | `useQueryAll` | boolean | false | Include deleted/archived records |
 | `queryAllTarget` | boolean | false | Query all target records |
 | `useSourceCSVFile` | boolean | false | Use CSV as data source |
-| `sourceRecordsFilter` | string | -- | AlaSQL filter on source records |
-| `targetRecordsFilter` | string | -- | AlaSQL filter on target records |
+| `sourceRecordsFilter` | string | - | AlaSQL filter on source records |
+| `targetRecordsFilter` | string | - | AlaSQL filter on target records |
 | `useFieldMapping` | boolean | false | Enable field mapping |
-| `fieldMapping` | MappingItem[] | -- | Field mapping definitions |
+| `fieldMapping` | MappingItem[] | - | Field mapping definitions |
 | `useValuesMapping` | boolean | false | Enable ValueMapping.csv |
 | `updateWithMockData` | boolean | false | Enable data anonymization |
-| `mockFields` | MockField[] | -- | Anonymization field definitions |
-| `bulkApiV1BatchSize` | integer | -- | Object-level batch size |
-| `restApiBatchSize` | integer | -- | Object-level REST batch size |
+| `mockFields` | MockField[] | - | Anonymization field definitions |
+| `bulkApiV1BatchSize` | integer | - | Object-level batch size |
+| `restApiBatchSize` | integer | - | Object-level REST batch size |
 | `parallelBulkJobs` | integer | 1 | Object-level parallel bulk jobs |
 | `parallelRestJobs` | integer | 1 | Object-level parallel REST jobs |
 | `alwaysUseRestApi` | boolean | false | Force REST API |
 | `alwaysUseBulkApi` | boolean | false | Force Bulk API |
 | `alwaysUseBulkApiToUpdateRecords` | boolean | false | Force Bulk API for DML only |
-| `beforeAddons` | AddonDef[] | -- | Add-ons before this object |
-| `afterAddons` | AddonDef[] | -- | Add-ons after this object |
-| `filterRecordsAddons` | AddonDef[] | -- | Record filter add-ons |
+| `beforeAddons` | AddonDef[] | - | Add-ons before this object |
+| `afterAddons` | AddonDef[] | - | Add-ons after this object |
+| `filterRecordsAddons` | AddonDef[] | - | Record filter add-ons |
 
 **Operation values:** `Insert`, `Update`, `Upsert`, `Readonly`, `Delete`, `HardDelete`, `DeleteSource`, `DeleteHierarchy`
 
@@ -259,9 +259,9 @@ dataPackages:
 **Pattern values:** `country`, `city`, `street`, `address`, `zip`, `name`, `full_name`, `username`, `first_name`, `last_name`, `email`, `sentence`, `title`, `text`, `word`, `ip`, `domain`, `url`, `integer`, `date`, `time`, `year`, `ids`
 
 **Special functions:**
-- `c_seq_number('prefix', startNum, increment)` -- sequential numbers
-- `c_seq_date('YYYY-MM-DD', step)` -- sequential dates (steps: `d`, `m`, `y`, `-d`, `s`, `ms`)
-- `c_set_value('value')` -- fixed constant
+- `c_seq_number('prefix', startNum, increment)` - sequential numbers
+- `c_seq_date('YYYY-MM-DD', step)` - sequential dates (steps: `d`, `m`, `y`, `-d`, `s`, `ms`)
+- `c_set_value('value')` - fixed constant
 
 ### MappingItem Properties (field mapping)
 
@@ -432,7 +432,7 @@ When generating an export.json:
 3. **Order objects** so parent objects come before children (e.g. Account before Contact)
 4. **Include Readonly objects** for reference data that must exist but should not be modified (RecordType, User, etc.)
 5. **Use `SELECT all`** when all fields are needed; list specific fields when only a subset is required or for performance
-6. **Always resolve externalId** using the "External ID Resolution" procedure above -- search local metadata or query the Tooling API for declared External ID fields first, fall back to a verified-unique composite key, never blindly use `Name`
+6. **Always resolve externalId** using the "External ID Resolution" procedure above - search local metadata or query the Tooling API for declared External ID fields first, fall back to a verified-unique composite key, never blindly use `Name`
 7. **Use `master: false`** on child objects that depend on parent relationships
 8. **For production safety**: never set `runnableInProduction: true` unless explicitly asked; always default to `false`
 9. **For delete workspaces**: use `operation: "DeleteSource"` with `deleteFromSource: true`; keep these in separate workspaces from upsert workspaces
@@ -484,12 +484,12 @@ Requires `deleteFromSource: true` or `operation: "DeleteSource"` in the workspac
 ```
 scripts/data/
   MyWorkspace/
-    export.json          -- SFDMU configuration
-    Account.csv          -- exported records (auto-generated)
+    export.json          - SFDMU configuration
+    Account.csv          - exported records (auto-generated)
     Contact.csv
-    source/              -- source CSV snapshots (auto-created)
-    target/              -- target CSV reports (auto-created)
-    logs/                -- execution logs (auto-created)
+    source/              - source CSV snapshots (auto-created)
+    target/              - target CSV reports (auto-created)
+    logs/                - execution logs (auto-created)
 ```
 
 ---
@@ -581,11 +581,11 @@ These workspaces are automatically imported after metadata deployment during scr
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `sfdxHardisLabel` | string | -- | Display name (sfdx-hardis) |
-| `sfdxHardisDescription` | string | -- | Description (sfdx-hardis) |
-| `objects` | ScriptObject[] | -- | Object definitions (required unless objectSets used) |
-| `objectSets` | ScriptObjectSet[] | -- | Groups of objects as sub-jobs |
-| `orgs` | ScriptOrg[] | -- | Org credentials (omit to use CLI auth) |
+| `sfdxHardisLabel` | string | - | Display name (sfdx-hardis) |
+| `sfdxHardisDescription` | string | - | Description (sfdx-hardis) |
+| `objects` | ScriptObject[] | - | Object definitions (required unless objectSets used) |
+| `objectSets` | ScriptObjectSet[] | - | Groups of objects as sub-jobs |
+| `orgs` | ScriptOrg[] | - | Org credentials (omit to use CLI auth) |
 | `allOrNone` | boolean | false | Abort if any record fails; REST API rolls back |
 | `allowFieldTruncation` | boolean | false | Truncate values to metadata-defined lengths |
 | `alwaysUseRestApiToUpdateRecords` | boolean | false | Force REST API, bypassing bulkThreshold |
@@ -603,7 +603,7 @@ These workspaces are automatically imported after metadata deployment during scr
 | `csvUseUtf8Bom` | boolean | true | UTF-8 BOM in CSV output |
 | `csvWriteUpperCaseHeaders` | boolean | false | Uppercase CSV headers |
 | `excludeIdsFromCSVFiles` | boolean | false | Omit ID/lookup columns from CSV |
-| `excludedObjects` | string[] | -- | Global object exclusion list |
+| `excludedObjects` | string[] | - | Global object exclusion list |
 | `importCSVFilesAsIs` | boolean | false | Skip CSV validation/repair |
 | `keepObjectOrderWhileExecute` | boolean | false | Preserve array order vs. smart order |
 | `parallelBinaryDownloads` | integer | 20 | Concurrent binary transfers |
@@ -613,18 +613,18 @@ These workspaces are automatically imported after metadata deployment during scr
 | `pollingQueryTimeoutMs` | integer | 240000 | SOQL query timeout (ms) |
 | `promptOnIssuesInCSVFiles` | boolean | true | Prompt on CSV issues |
 | `promptOnMissingParentObjects` | boolean | true | Prompt on missing parents |
-| `proxyUrl` | string | -- | Proxy server URL |
+| `proxyUrl` | string | - | Proxy server URL |
 | `queryBulkApiThreshold` | integer | 30000 | Record count triggering Bulk API for queries |
-| `restApiBatchSize` | integer | -- | REST API batch size |
+| `restApiBatchSize` | integer | - | REST API batch size |
 | `simulationMode` | boolean | false | Dry run without persisting |
 | `sourceRecordsCache` | string | "InMemory" | "InMemory", "CleanFileCache", "FileCache" |
 | `binaryDataCache` | string | "InMemory" | "InMemory", "CleanFileCache", "FileCache" |
 | `useSeparatedCSVFiles` | boolean | false | Separate CSV dirs per object set |
 | `validateCSVFilesOnly` | boolean | false | Validate CSV without running migration |
 | `runnableInProduction` | boolean | false | Required true for production deletes (sfdx-hardis) |
-| `beforeAddons` | AddonDef[] | -- | Add-ons before entire migration |
-| `afterAddons` | AddonDef[] | -- | Add-ons after entire migration |
-| `dataRetrievedAddons` | AddonDef[] | -- | Add-ons after data retrieval |
+| `beforeAddons` | AddonDef[] | - | Add-ons before entire migration |
+| `afterAddons` | AddonDef[] | - | Add-ons after entire migration |
+| `dataRetrievedAddons` | AddonDef[] | - | Add-ons after data retrieval |
 
 ### ScriptObject Properties
 
@@ -632,41 +632,41 @@ These workspaces are automatically imported after metadata deployment during scr
 |---|---|---|---|
 | `query` | string | **required** | SOQL query string |
 | `operation` | string | "Readonly" | See operation values below |
-| `externalId` | string | "Name" | External ID field for matching -- **must be resolved using the procedure above, never guessed** |
+| `externalId` | string | "Name" | External ID field for matching - **must be resolved using the procedure above, never guessed** |
 | `master` | boolean | true | Master object in hierarchy |
 | `excluded` | boolean | false | Exclude from migration |
-| `excludedFields` | string[] | -- | Fields omitted from migration |
-| `excludedFromUpdateFields` | string[] | -- | Retrieved but not updated |
+| `excludedFields` | string[] | - | Fields omitted from migration |
+| `excludedFromUpdateFields` | string[] | - | Retrieved but not updated |
 | `deleteOldData` | boolean | false | Delete old target records first |
 | `deleteFromSource` | boolean | false | Delete from source org |
 | `deleteByHierarchy` | boolean | false | Cascading hierarchical delete |
-| `deleteQuery` | string | -- | SOQL for old-data selection |
+| `deleteQuery` | string | - | SOQL for old-data selection |
 | `hardDelete` | boolean | false | Bypass Recycle Bin |
 | `skipExistingRecords` | boolean | false | Skip existing record updates |
 | `skipRecordsComparison` | boolean | false | Skip source/target comparison |
 | `useQueryAll` | boolean | false | Include deleted/archived records |
 | `queryAllTarget` | boolean | false | Query all target records |
 | `useSourceCSVFile` | boolean | false | Use CSV as data source |
-| `sourceRecordsFilter` | string | -- | AlaSQL filter on source |
-| `targetRecordsFilter` | string | -- | AlaSQL filter on target |
+| `sourceRecordsFilter` | string | - | AlaSQL filter on source |
+| `targetRecordsFilter` | string | - | AlaSQL filter on target |
 | `useFieldMapping` | boolean | false | Enable field mapping |
-| `fieldMapping` | MappingItem[] | -- | Field mappings |
+| `fieldMapping` | MappingItem[] | - | Field mappings |
 | `useValuesMapping` | boolean | false | Enable ValueMapping.csv |
 | `updateWithMockData` | boolean | false | Enable anonymization |
-| `mockFields` | MockField[] | -- | Anonymization definitions |
-| `bulkApiV1BatchSize` | integer | -- | Object-level Bulk batch size |
-| `restApiBatchSize` | integer | -- | Object-level REST batch size |
+| `mockFields` | MockField[] | - | Anonymization definitions |
+| `bulkApiV1BatchSize` | integer | - | Object-level Bulk batch size |
+| `restApiBatchSize` | integer | - | Object-level REST batch size |
 | `parallelBulkJobs` | integer | 1 | Parallel Bulk jobs |
 | `parallelRestJobs` | integer | 1 | Parallel REST jobs |
 | `alwaysUseRestApi` | boolean | false | Force REST API |
 | `alwaysUseBulkApi` | boolean | false | Force Bulk API |
 | `alwaysUseBulkApiToUpdateRecords` | boolean | false | Force Bulk API for DML |
 | `respectOrderByOnDeleteRecords` | boolean | false | Force REST single-record delete |
-| `beforeAddons` | AddonDef[] | -- | Add-ons before object |
-| `afterAddons` | AddonDef[] | -- | Add-ons after object |
-| `beforeUpdateAddons` | AddonDef[] | -- | Add-ons before update batch |
-| `afterUpdateAddons` | AddonDef[] | -- | Add-ons after update batch |
-| `filterRecordsAddons` | AddonDef[] | -- | Record filter add-ons |
+| `beforeAddons` | AddonDef[] | - | Add-ons before object |
+| `afterAddons` | AddonDef[] | - | Add-ons after object |
+| `beforeUpdateAddons` | AddonDef[] | - | Add-ons before update batch |
+| `afterUpdateAddons` | AddonDef[] | - | Add-ons after update batch |
+| `filterRecordsAddons` | AddonDef[] | - | Record filter add-ons |
 
 ### Operation Values
 
@@ -746,10 +746,10 @@ Use semicolons to create composite keys:
 Use `$` to bind a polymorphic field to a specific parent object:
 
 ```
-ParentId$Account     -- Attachment/Note ParentId to Account
-ParentId$Case        -- FeedItem ParentId to Case
-WhatId$Opportunity   -- Activity WhatId to Opportunity
-WhoId$Contact        -- Activity WhoId to Contact
+ParentId$Account     - Attachment/Note ParentId to Account
+ParentId$Case        - FeedItem ParentId to Case
+WhatId$Opportunity   - Activity WhatId to Opportunity
+WhoId$Contact        - Activity WhoId to Contact
 ```
 
 A polymorphic field can only bind to one parent type at a time.
