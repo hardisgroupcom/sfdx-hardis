@@ -117,17 +117,19 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 
 ### Devops
 
-| Command                                                                               | What an agent can do                                                                                                                    |
-|---------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)         | Retrieve installed packages from an org and optionally update project config                                                            |
-| [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md) | Retrieve the full CRM Analytics configuration from an org                                                                               |
-| [**hardis:project:create**](hardis/project/create.md)                                 | Scaffold a new SFDX project with sfdx-hardis configuration                                                                              |
-| [**hardis:project:deploy:smart**](hardis/project/deploy/smart.md)                     | Smart-deploy SFDX sources with delta, dependency resolution, and pre/post hooks                                                         |
-| [**hardis:scratch:pull**](hardis/scratch/pull.md)                                     | Pull the latest metadata changes from a scratch org into the local SFDX project                                                         |
-| [**hardis:scratch:push**](hardis/scratch/push.md)                                     | Push local SFDX project metadata to the scratch org                                                                                     |
-| [**hardis:work:new**](hardis/work/new.md)                                             | Create a new User Story Git branch and optionally provision a scratch org or sandbox - required flags: `--task-name`, `--target-branch` |
-| [**hardis:work:resetselection**](hardis/work/resetselection.md)                       | Soft-reset staged commits to re-evaluate which changes go into the merge request                                                        |
-| [**hardis:work:save**](hardis/work/save.md)                                           | Clean metadata, update `package.xml` / `destructiveChanges.xml`, commit, and push - optional: `--targetbranch`, `--noclean`, `--nogit`  |
+| Command                                                                               | What an agent can do                                                                                                                            |
+|---------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)         | Retrieve installed packages from an org and optionally update project config                                                                    |
+| [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md) | Retrieve the full CRM Analytics configuration from an org                                                                                       |
+| [**hardis:project:create**](hardis/project/create.md)                                 | Scaffold a new SFDX project with sfdx-hardis configuration                                                                                      |
+| [**hardis:project:deploy:smart**](hardis/project/deploy/smart.md)                     | Smart-deploy SFDX sources with delta, dependency resolution, and pre/post hooks                                                                 |
+| [**hardis:scratch:pull**](hardis/scratch/pull.md)                                     | Pull the latest metadata changes from a scratch org into the local SFDX project                                                                 |
+| [**hardis:scratch:push**](hardis/scratch/push.md)                                     | Push local SFDX project metadata to the scratch org                                                                                             |
+| [**hardis:work:new**](hardis/work/new.md)                                             | Create a new User Story Git branch and optionally provision a scratch org or sandbox - required flags: `--task-name`, `--target-branch`         |
+| [**hardis:work:resetselection**](hardis/work/resetselection.md)                       | Soft-reset staged commits to re-evaluate which changes go into the merge request                                                                |
+| [**hardis:work:save**](hardis/work/save.md)                                           | Clean metadata, update `package.xml` / `destructiveChanges.xml`, commit, and push - optional: `--targetbranch`, `--noclean`, `--nogit`          |
+| [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                           | Generate release notes with tickets, PRs, metadata changes, deployment actions, and AI summary using `--agent --mode post --target-branch main` |
+| [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                               | Generate a DORA metrics report (Deployment Frequency, Lead Time, Change Failure Rate, MTTR, Rework Rate) with `--agent --target-org`            |
 
 ### Monitoring
 

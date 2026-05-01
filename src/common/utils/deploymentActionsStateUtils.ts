@@ -17,6 +17,8 @@ export interface DeploymentActionStateEntry {
   jobUrl: string;
   date: string;
   output?: string;
+  prNumber?: number;
+  prUrl?: string;
 }
 
 /**

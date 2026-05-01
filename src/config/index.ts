@@ -34,7 +34,7 @@ const username = os.userInfo().username;
 const userConfigFiles = [`config/user/.${moduleName}.${username}.yaml`, `config/user/.${moduleName}.${username}.yml`];
 const REMOTE_CONFIGS: any = {};
 
-const showBanner = false;
+const showBanner = true;
 
 export const CONSTANTS = {
   DEFAULT_API_VERSION: '65.0',
@@ -43,7 +43,7 @@ export const CONSTANTS = {
   CONTACT_URL: "https://cloudity.com/contact-us/",
   BANNER_IMAGE_URL:
     showBanner
-      ? "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/alpha/docs/assets/images/cloudity-banner.png"
+      ? "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/main/docs/assets/images/cloudity-banner.png"
       : false,
   NOT_IMPACTING_METADATA_TYPES: process.env.NOT_IMPACTING_METADATA_TYPES
     ?.split(",")

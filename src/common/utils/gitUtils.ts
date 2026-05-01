@@ -104,8 +104,8 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
     debug: options?.debugMode || false,
     cwd: await getGitRepoRoot(),
   });
-  // Send results to UI if there is one
-  if (WebSocketClient.isAliveWithLwcUI()) {
+  // Send results to UI if there is one (skip if caller handles notifications)
+  if (WebSocketClient.isAliveWithLwcUI() && !options?.skipWebSocketNotification) {
     const deltaPackageXml = path.join(outputDir, 'package', 'package.xml');
     const deltaPackageXmlExists = await fs.exists(deltaPackageXml);
     if (deltaPackageXmlExists) {
