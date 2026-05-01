@@ -16,23 +16,23 @@ Command: **[sf hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/d
 
 #### Core DORA Metrics (5)
 
-| Metric | Description | Source |
-|--------|-------------|--------|
-| **Deployment Frequency** | How often successful deployments reach the target org | Tooling API (DeployRequest) |
-| **Lead Time for Changes** | Time from PR creation to deployment in production | Git Provider + Tooling API |
-| **Change Failure Rate** | Percentage of deployments that fail | Tooling API (DeployRequest) |
-| **Mean Time to Recovery (MTTR)** | Time to restore service after a failed deployment | Tooling API + Ticket Provider |
-| **Deployment Rework Rate** | Ratio of hotfix/unplanned deployments | Git Provider (branch naming) |
+| Metric                           | Description                                           | Source                        |
+|----------------------------------|-------------------------------------------------------|-------------------------------|
+| **Deployment Frequency**         | How often successful deployments reach the target org | Tooling API (DeployRequest)   |
+| **Lead Time for Changes**        | Time from PR creation to deployment in production     | Git Provider + Tooling API    |
+| **Change Failure Rate**          | Percentage of deployments that fail                   | Tooling API (DeployRequest)   |
+| **Mean Time to Recovery (MTTR)** | Time to restore service after a failed deployment     | Tooling API + Ticket Provider |
+| **Deployment Rework Rate**       | Ratio of hotfix/unplanned deployments                 | Git Provider (branch naming)  |
 
 #### Supplementary Salesforce Metrics (5)
 
-| Metric | Description |
-|--------|-------------|
-| **Deployment Duration** | Metadata transfer time (p50, p90, avg) |
-| **PR Cycle Time** | Time from PR creation to merge |
-| **Change Volume** | PRs and deployments per week |
-| **Deployment Activity** | Per-contributor deployment counts and success rates |
-| **Validation Success Rate** | CheckOnly deployment pass rate |
+| Metric                      | Description                                         |
+|-----------------------------|-----------------------------------------------------|
+| **Deployment Duration**     | Metadata transfer time (p50, p90, avg)              |
+| **PR Cycle Time**           | Time from PR creation to merge                      |
+| **Change Volume**           | PRs and deployments per week                        |
+| **Deployment Activity**     | Per-contributor deployment counts and success rates |
+| **Validation Success Rate** | CheckOnly deployment pass rate                      |
 
 Each metric is classified against DORA benchmarks as **Elite**, **High**, **Medium**, or **Low**.
 
@@ -78,12 +78,12 @@ sf hardis:doc:dora-report --agent --target-org myorg@example.com
 
 ### DORA Benchmarks Reference
 
-| Metric | Elite | High | Medium | Low |
-|--------|-------|------|--------|-----|
-| Deployment Frequency | Multiple deploys/day | Once/week to once/day | Once/month to once/week | Less than once/month |
-| Lead Time for Changes | < 1 hour | 1 day to 1 week | 1 week to 1 month | > 1 month |
-| Change Failure Rate | 0-5% | 5-10% | 10-15% | > 15% |
-| MTTR | < 1 hour | < 1 day | < 1 week | > 1 week |
+| Metric                | Elite                | High                  | Medium                  | Low                  |
+|-----------------------|----------------------|-----------------------|-------------------------|----------------------|
+| Deployment Frequency  | Multiple deploys/day | Once/week to once/day | Once/month to once/week | Less than once/month |
+| Lead Time for Changes | < 1 hour             | 1 day to 1 week       | 1 week to 1 month       | > 1 month            |
+| Change Failure Rate   | 0-5%                 | 5-10%                 | 10-15%                  | > 15%                |
+| MTTR                  | < 1 hour             | < 1 day               | < 1 week                | > 1 week             |
 
 ---
 

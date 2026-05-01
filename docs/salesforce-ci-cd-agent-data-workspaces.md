@@ -90,12 +90,12 @@ primary key.
 
 ### Summary
 
-| Scenario | externalId to use |
-|---|---|
-| Object has a declared External ID field | That field (e.g. `External_Key__c`) |
-| Standard object with well-known unique field | The known field (e.g. `Username` for User) |
-| No External ID, combination of fields is unique | Composite key: `"Field1;Field2"` |
-| Same-org Update/Delete only | `"Id"` |
+| Scenario                                        | externalId to use                          |
+|-------------------------------------------------|--------------------------------------------|
+| Object has a declared External ID field         | That field (e.g. `External_Key__c`)        |
+| Standard object with well-known unique field    | The known field (e.g. `Username` for User) |
+| No External ID, combination of fields is unique | Composite key: `"Field1;Field2"`           |
+| Same-org Update/Delete only                     | `"Id"`                                     |
 
 **Never use `Name` as external ID without first confirming it is either a declared External ID
 or genuinely unique for that object in the org.**
@@ -168,93 +168,93 @@ dataPackages:
 
 ### Root-Level Properties
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `sfdxHardisLabel` | string | - | Display name for the workspace (sfdx-hardis specific) |
-| `sfdxHardisDescription` | string | - | Description (sfdx-hardis specific) |
-| `objects` | ScriptObject[] | - | Array of object migration definitions (required) |
-| `objectSets` | ScriptObjectSet[] | - | Groups of objects processed as sub-jobs |
-| `allOrNone` | boolean | false | Abort if any record fails |
-| `bulkApiVersion` | string | "2.0" | "1.0" or "2.0" |
-| `bulkThreshold` | integer | 200 | Record count triggering Bulk API for CRUD |
-| `concurrencyMode` | string | "Parallel" | "Serial" or "Parallel" (Bulk API V1) |
-| `apiVersion` | string | auto | Salesforce API version (e.g. "62.0") |
-| `simulationMode` | boolean | false | Preview mode without updating target |
-| `promptOnMissingParentObjects` | boolean | true | Prompt on missing parents |
-| `promptOnIssuesInCSVFiles` | boolean | true | Prompt on CSV issues |
-| `createTargetCSVFiles` | boolean | true | Generate target CSV reports |
-| `excludeIdsFromCSVFiles` | boolean | false | Omit ID columns from CSV |
-| `keepObjectOrderWhileExecute` | boolean | false | Preserve array order (false = smart order) |
-| `bulkApiV1BatchSize` | integer | 9500 | Batch size for Bulk API V1 |
-| `queryBulkApiThreshold` | integer | 30000 | Record count triggering Bulk API for queries |
-| `restApiBatchSize` | integer | - | REST API batch size |
-| `parallelBulkJobs` | integer | 1 | Concurrent Bulk API jobs |
-| `parallelRestJobs` | integer | 1 | Concurrent REST API jobs |
-| `allowFieldTruncation` | boolean | false | Truncate values to metadata lengths |
-| `csvFileDelimiter` | string | "," | CSV delimiter |
-| `csvFileEncoding` | string | "utf8" | CSV encoding |
-| `csvInsertNulls` | boolean | true | Null handling for CSV |
-| `csvUseEuropeanDateFormat` | boolean | false | Day-first date parsing |
-| `binaryDataCache` | string | "InMemory" | "InMemory", "CleanFileCache", "FileCache" |
-| `sourceRecordsCache` | string | "InMemory" | "InMemory", "CleanFileCache", "FileCache" |
-| `pollingIntervalMs` | integer | 5000 | Bulk API polling interval |
-| `runnableInProduction` | boolean | false | Required true for delete in production |
-| `beforeAddons` | AddonDef[] | - | Add-ons before migration |
-| `afterAddons` | AddonDef[] | - | Add-ons after migration |
-| `dataRetrievedAddons` | AddonDef[] | - | Add-ons after retrieval |
-| `excludedObjects` | string[] | - | Global object exclusion list |
+| Property                       | Type              | Default    | Description                                           |
+|--------------------------------|-------------------|------------|-------------------------------------------------------|
+| `sfdxHardisLabel`              | string            | -          | Display name for the workspace (sfdx-hardis specific) |
+| `sfdxHardisDescription`        | string            | -          | Description (sfdx-hardis specific)                    |
+| `objects`                      | ScriptObject[]    | -          | Array of object migration definitions (required)      |
+| `objectSets`                   | ScriptObjectSet[] | -          | Groups of objects processed as sub-jobs               |
+| `allOrNone`                    | boolean           | false      | Abort if any record fails                             |
+| `bulkApiVersion`               | string            | "2.0"      | "1.0" or "2.0"                                        |
+| `bulkThreshold`                | integer           | 200        | Record count triggering Bulk API for CRUD             |
+| `concurrencyMode`              | string            | "Parallel" | "Serial" or "Parallel" (Bulk API V1)                  |
+| `apiVersion`                   | string            | auto       | Salesforce API version (e.g. "62.0")                  |
+| `simulationMode`               | boolean           | false      | Preview mode without updating target                  |
+| `promptOnMissingParentObjects` | boolean           | true       | Prompt on missing parents                             |
+| `promptOnIssuesInCSVFiles`     | boolean           | true       | Prompt on CSV issues                                  |
+| `createTargetCSVFiles`         | boolean           | true       | Generate target CSV reports                           |
+| `excludeIdsFromCSVFiles`       | boolean           | false      | Omit ID columns from CSV                              |
+| `keepObjectOrderWhileExecute`  | boolean           | false      | Preserve array order (false = smart order)            |
+| `bulkApiV1BatchSize`           | integer           | 9500       | Batch size for Bulk API V1                            |
+| `queryBulkApiThreshold`        | integer           | 30000      | Record count triggering Bulk API for queries          |
+| `restApiBatchSize`             | integer           | -          | REST API batch size                                   |
+| `parallelBulkJobs`             | integer           | 1          | Concurrent Bulk API jobs                              |
+| `parallelRestJobs`             | integer           | 1          | Concurrent REST API jobs                              |
+| `allowFieldTruncation`         | boolean           | false      | Truncate values to metadata lengths                   |
+| `csvFileDelimiter`             | string            | ","        | CSV delimiter                                         |
+| `csvFileEncoding`              | string            | "utf8"     | CSV encoding                                          |
+| `csvInsertNulls`               | boolean           | true       | Null handling for CSV                                 |
+| `csvUseEuropeanDateFormat`     | boolean           | false      | Day-first date parsing                                |
+| `binaryDataCache`              | string            | "InMemory" | "InMemory", "CleanFileCache", "FileCache"             |
+| `sourceRecordsCache`           | string            | "InMemory" | "InMemory", "CleanFileCache", "FileCache"             |
+| `pollingIntervalMs`            | integer           | 5000       | Bulk API polling interval                             |
+| `runnableInProduction`         | boolean           | false      | Required true for delete in production                |
+| `beforeAddons`                 | AddonDef[]        | -          | Add-ons before migration                              |
+| `afterAddons`                  | AddonDef[]        | -          | Add-ons after migration                               |
+| `dataRetrievedAddons`          | AddonDef[]        | -          | Add-ons after retrieval                               |
+| `excludedObjects`              | string[]          | -          | Global object exclusion list                          |
 
 ### ScriptObject Properties (each entry in `objects`)
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `query` | string | **required** | SOQL query (supports `SELECT all FROM Object` shorthand) |
-| `operation` | string | "Readonly" | Operation type (see values below) |
-| `externalId` | string | "Name" | External ID field for matching - **must be resolved using the procedure above, never guessed** |
-| `master` | boolean | true | Master object in hierarchy |
-| `deleteOldData` | boolean | false | Delete old target records first |
-| `deleteFromSource` | boolean | false | Delete from source org |
-| `deleteByHierarchy` | boolean | false | Cascading hierarchical deletion |
-| `deleteQuery` | string | - | SOQL WHERE for old-data deletion |
-| `hardDelete` | boolean | false | Bypass Recycle Bin |
-| `excluded` | boolean | false | Exclude object from migration |
-| `excludedFields` | string[] | - | Fields to omit |
-| `excludedFromUpdateFields` | string[] | - | Fields retrieved but not updated |
-| `skipExistingRecords` | boolean | false | Skip updates for existing records |
-| `skipRecordsComparison` | boolean | false | Skip source/target comparison |
-| `useQueryAll` | boolean | false | Include deleted/archived records |
-| `queryAllTarget` | boolean | false | Query all target records |
-| `useSourceCSVFile` | boolean | false | Use CSV as data source |
-| `sourceRecordsFilter` | string | - | AlaSQL filter on source records |
-| `targetRecordsFilter` | string | - | AlaSQL filter on target records |
-| `useFieldMapping` | boolean | false | Enable field mapping |
-| `fieldMapping` | MappingItem[] | - | Field mapping definitions |
-| `useValuesMapping` | boolean | false | Enable ValueMapping.csv |
-| `updateWithMockData` | boolean | false | Enable data anonymization |
-| `mockFields` | MockField[] | - | Anonymization field definitions |
-| `bulkApiV1BatchSize` | integer | - | Object-level batch size |
-| `restApiBatchSize` | integer | - | Object-level REST batch size |
-| `parallelBulkJobs` | integer | 1 | Object-level parallel bulk jobs |
-| `parallelRestJobs` | integer | 1 | Object-level parallel REST jobs |
-| `alwaysUseRestApi` | boolean | false | Force REST API |
-| `alwaysUseBulkApi` | boolean | false | Force Bulk API |
-| `alwaysUseBulkApiToUpdateRecords` | boolean | false | Force Bulk API for DML only |
-| `beforeAddons` | AddonDef[] | - | Add-ons before this object |
-| `afterAddons` | AddonDef[] | - | Add-ons after this object |
-| `filterRecordsAddons` | AddonDef[] | - | Record filter add-ons |
+| Property                          | Type          | Default      | Description                                                                                    |
+|-----------------------------------|---------------|--------------|------------------------------------------------------------------------------------------------|
+| `query`                           | string        | **required** | SOQL query (supports `SELECT all FROM Object` shorthand)                                       |
+| `operation`                       | string        | "Readonly"   | Operation type (see values below)                                                              |
+| `externalId`                      | string        | "Name"       | External ID field for matching - **must be resolved using the procedure above, never guessed** |
+| `master`                          | boolean       | true         | Master object in hierarchy                                                                     |
+| `deleteOldData`                   | boolean       | false        | Delete old target records first                                                                |
+| `deleteFromSource`                | boolean       | false        | Delete from source org                                                                         |
+| `deleteByHierarchy`               | boolean       | false        | Cascading hierarchical deletion                                                                |
+| `deleteQuery`                     | string        | -            | SOQL WHERE for old-data deletion                                                               |
+| `hardDelete`                      | boolean       | false        | Bypass Recycle Bin                                                                             |
+| `excluded`                        | boolean       | false        | Exclude object from migration                                                                  |
+| `excludedFields`                  | string[]      | -            | Fields to omit                                                                                 |
+| `excludedFromUpdateFields`        | string[]      | -            | Fields retrieved but not updated                                                               |
+| `skipExistingRecords`             | boolean       | false        | Skip updates for existing records                                                              |
+| `skipRecordsComparison`           | boolean       | false        | Skip source/target comparison                                                                  |
+| `useQueryAll`                     | boolean       | false        | Include deleted/archived records                                                               |
+| `queryAllTarget`                  | boolean       | false        | Query all target records                                                                       |
+| `useSourceCSVFile`                | boolean       | false        | Use CSV as data source                                                                         |
+| `sourceRecordsFilter`             | string        | -            | AlaSQL filter on source records                                                                |
+| `targetRecordsFilter`             | string        | -            | AlaSQL filter on target records                                                                |
+| `useFieldMapping`                 | boolean       | false        | Enable field mapping                                                                           |
+| `fieldMapping`                    | MappingItem[] | -            | Field mapping definitions                                                                      |
+| `useValuesMapping`                | boolean       | false        | Enable ValueMapping.csv                                                                        |
+| `updateWithMockData`              | boolean       | false        | Enable data anonymization                                                                      |
+| `mockFields`                      | MockField[]   | -            | Anonymization field definitions                                                                |
+| `bulkApiV1BatchSize`              | integer       | -            | Object-level batch size                                                                        |
+| `restApiBatchSize`                | integer       | -            | Object-level REST batch size                                                                   |
+| `parallelBulkJobs`                | integer       | 1            | Object-level parallel bulk jobs                                                                |
+| `parallelRestJobs`                | integer       | 1            | Object-level parallel REST jobs                                                                |
+| `alwaysUseRestApi`                | boolean       | false        | Force REST API                                                                                 |
+| `alwaysUseBulkApi`                | boolean       | false        | Force Bulk API                                                                                 |
+| `alwaysUseBulkApiToUpdateRecords` | boolean       | false        | Force Bulk API for DML only                                                                    |
+| `beforeAddons`                    | AddonDef[]    | -            | Add-ons before this object                                                                     |
+| `afterAddons`                     | AddonDef[]    | -            | Add-ons after this object                                                                      |
+| `filterRecordsAddons`             | AddonDef[]    | -            | Record filter add-ons                                                                          |
 
 **Operation values:** `Insert`, `Update`, `Upsert`, `Readonly`, `Delete`, `HardDelete`, `DeleteSource`, `DeleteHierarchy`
 
 ### MockField Properties (data anonymization)
 
-| Property | Type | Description |
-|---|---|---|
-| `name` | string | Field to anonymize (or `"all"` for all fields) |
-| `pattern` | string | Fake data type (see patterns below) |
-| `locale` | string | Locale code (e.g. `"en_US"`, `"fr_FR"`) |
-| `excludedRegex` | string | JS regex to exclude values |
-| `includedRegex` | string | JS regex to include values |
-| `excludeNames` | string[] | Fields to skip when name is `"all"` |
+| Property        | Type     | Description                                    |
+|-----------------|----------|------------------------------------------------|
+| `name`          | string   | Field to anonymize (or `"all"` for all fields) |
+| `pattern`       | string   | Fake data type (see patterns below)            |
+| `locale`        | string   | Locale code (e.g. `"en_US"`, `"fr_FR"`)        |
+| `excludedRegex` | string   | JS regex to exclude values                     |
+| `includedRegex` | string   | JS regex to include values                     |
+| `excludeNames`  | string[] | Fields to skip when name is `"all"`            |
 
 **Pattern values:** `country`, `city`, `street`, `address`, `zip`, `name`, `full_name`, `username`, `first_name`, `last_name`, `email`, `sentence`, `title`, `text`, `word`, `ip`, `domain`, `url`, `integer`, `date`, `time`, `year`, `ids`
 
@@ -265,11 +265,11 @@ dataPackages:
 
 ### MappingItem Properties (field mapping)
 
-| Property | Type | Description |
-|---|---|---|
+| Property       | Type   | Description                          |
+|----------------|--------|--------------------------------------|
 | `targetObject` | string | Destination object (first item only) |
-| `sourceField` | string | Source field name |
-| `targetField` | string | Target field name |
+| `sourceField`  | string | Source field name                    |
+| `targetField`  | string | Target field name                    |
 
 ### Composite External ID
 
@@ -552,11 +552,11 @@ commandsPreDeploy:
 
 ### Context values
 
-| Value | Description |
-|---|---|
-| `all` | Run on every deployment (check and process) |
-| `check-deployment-only` | Run only during validation/simulation |
-| `process-deployment-only` | Run only during actual deployment |
+| Value                     | Description                                 |
+|---------------------------|---------------------------------------------|
+| `all`                     | Run on every deployment (check and process) |
+| `check-deployment-only`   | Run only during validation/simulation       |
+| `process-deployment-only` | Run only during actual deployment           |
 
 ### Auto-import in scratch orgs
 
@@ -579,128 +579,128 @@ These workspaces are automatically imported after metadata deployment during scr
 
 ### Root-Level (Script) Properties
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `sfdxHardisLabel` | string | - | Display name (sfdx-hardis) |
-| `sfdxHardisDescription` | string | - | Description (sfdx-hardis) |
-| `objects` | ScriptObject[] | - | Object definitions (required unless objectSets used) |
-| `objectSets` | ScriptObjectSet[] | - | Groups of objects as sub-jobs |
-| `orgs` | ScriptOrg[] | - | Org credentials (omit to use CLI auth) |
-| `allOrNone` | boolean | false | Abort if any record fails; REST API rolls back |
-| `allowFieldTruncation` | boolean | false | Truncate values to metadata-defined lengths |
-| `alwaysUseRestApiToUpdateRecords` | boolean | false | Force REST API, bypassing bulkThreshold |
-| `apiVersion` | string | auto | API version (e.g. "62.0") |
-| `bulkApiV1BatchSize` | integer | 9500 | Records per Bulk API V1 batch |
-| `bulkApiVersion` | string | "2.0" | "1.0" or "2.0" |
-| `bulkThreshold` | integer | 200 | Record count triggering Bulk API |
-| `concurrencyMode` | string | "Parallel" | "Serial" or "Parallel" |
-| `createTargetCSVFiles` | boolean | true | Generate target CSV reports |
-| `csvAlwaysQuoted` | boolean | true | Quote all CSV values |
-| `csvFileDelimiter` | string | "," | CSV delimiter |
-| `csvFileEncoding` | string | "utf8" | utf8, utf16le, latin1, ascii, base64 |
-| `csvInsertNulls` | boolean | true | Null handling for CSV |
-| `csvUseEuropeanDateFormat` | boolean | false | Day-first date parsing |
-| `csvUseUtf8Bom` | boolean | true | UTF-8 BOM in CSV output |
-| `csvWriteUpperCaseHeaders` | boolean | false | Uppercase CSV headers |
-| `excludeIdsFromCSVFiles` | boolean | false | Omit ID/lookup columns from CSV |
-| `excludedObjects` | string[] | - | Global object exclusion list |
-| `importCSVFilesAsIs` | boolean | false | Skip CSV validation/repair |
-| `keepObjectOrderWhileExecute` | boolean | false | Preserve array order vs. smart order |
-| `parallelBinaryDownloads` | integer | 20 | Concurrent binary transfers |
-| `parallelBulkJobs` | integer | 1 | Concurrent Bulk API jobs |
-| `parallelRestJobs` | integer | 1 | Concurrent REST API jobs |
-| `pollingIntervalMs` | integer | 5000 | Bulk API poll interval (ms) |
-| `pollingQueryTimeoutMs` | integer | 240000 | SOQL query timeout (ms) |
-| `promptOnIssuesInCSVFiles` | boolean | true | Prompt on CSV issues |
-| `promptOnMissingParentObjects` | boolean | true | Prompt on missing parents |
-| `proxyUrl` | string | - | Proxy server URL |
-| `queryBulkApiThreshold` | integer | 30000 | Record count triggering Bulk API for queries |
-| `restApiBatchSize` | integer | - | REST API batch size |
-| `simulationMode` | boolean | false | Dry run without persisting |
-| `sourceRecordsCache` | string | "InMemory" | "InMemory", "CleanFileCache", "FileCache" |
-| `binaryDataCache` | string | "InMemory" | "InMemory", "CleanFileCache", "FileCache" |
-| `useSeparatedCSVFiles` | boolean | false | Separate CSV dirs per object set |
-| `validateCSVFilesOnly` | boolean | false | Validate CSV without running migration |
-| `runnableInProduction` | boolean | false | Required true for production deletes (sfdx-hardis) |
-| `beforeAddons` | AddonDef[] | - | Add-ons before entire migration |
-| `afterAddons` | AddonDef[] | - | Add-ons after entire migration |
-| `dataRetrievedAddons` | AddonDef[] | - | Add-ons after data retrieval |
+| Property                          | Type              | Default    | Description                                          |
+|-----------------------------------|-------------------|------------|------------------------------------------------------|
+| `sfdxHardisLabel`                 | string            | -          | Display name (sfdx-hardis)                           |
+| `sfdxHardisDescription`           | string            | -          | Description (sfdx-hardis)                            |
+| `objects`                         | ScriptObject[]    | -          | Object definitions (required unless objectSets used) |
+| `objectSets`                      | ScriptObjectSet[] | -          | Groups of objects as sub-jobs                        |
+| `orgs`                            | ScriptOrg[]       | -          | Org credentials (omit to use CLI auth)               |
+| `allOrNone`                       | boolean           | false      | Abort if any record fails; REST API rolls back       |
+| `allowFieldTruncation`            | boolean           | false      | Truncate values to metadata-defined lengths          |
+| `alwaysUseRestApiToUpdateRecords` | boolean           | false      | Force REST API, bypassing bulkThreshold              |
+| `apiVersion`                      | string            | auto       | API version (e.g. "62.0")                            |
+| `bulkApiV1BatchSize`              | integer           | 9500       | Records per Bulk API V1 batch                        |
+| `bulkApiVersion`                  | string            | "2.0"      | "1.0" or "2.0"                                       |
+| `bulkThreshold`                   | integer           | 200        | Record count triggering Bulk API                     |
+| `concurrencyMode`                 | string            | "Parallel" | "Serial" or "Parallel"                               |
+| `createTargetCSVFiles`            | boolean           | true       | Generate target CSV reports                          |
+| `csvAlwaysQuoted`                 | boolean           | true       | Quote all CSV values                                 |
+| `csvFileDelimiter`                | string            | ","        | CSV delimiter                                        |
+| `csvFileEncoding`                 | string            | "utf8"     | utf8, utf16le, latin1, ascii, base64                 |
+| `csvInsertNulls`                  | boolean           | true       | Null handling for CSV                                |
+| `csvUseEuropeanDateFormat`        | boolean           | false      | Day-first date parsing                               |
+| `csvUseUtf8Bom`                   | boolean           | true       | UTF-8 BOM in CSV output                              |
+| `csvWriteUpperCaseHeaders`        | boolean           | false      | Uppercase CSV headers                                |
+| `excludeIdsFromCSVFiles`          | boolean           | false      | Omit ID/lookup columns from CSV                      |
+| `excludedObjects`                 | string[]          | -          | Global object exclusion list                         |
+| `importCSVFilesAsIs`              | boolean           | false      | Skip CSV validation/repair                           |
+| `keepObjectOrderWhileExecute`     | boolean           | false      | Preserve array order vs. smart order                 |
+| `parallelBinaryDownloads`         | integer           | 20         | Concurrent binary transfers                          |
+| `parallelBulkJobs`                | integer           | 1          | Concurrent Bulk API jobs                             |
+| `parallelRestJobs`                | integer           | 1          | Concurrent REST API jobs                             |
+| `pollingIntervalMs`               | integer           | 5000       | Bulk API poll interval (ms)                          |
+| `pollingQueryTimeoutMs`           | integer           | 240000     | SOQL query timeout (ms)                              |
+| `promptOnIssuesInCSVFiles`        | boolean           | true       | Prompt on CSV issues                                 |
+| `promptOnMissingParentObjects`    | boolean           | true       | Prompt on missing parents                            |
+| `proxyUrl`                        | string            | -          | Proxy server URL                                     |
+| `queryBulkApiThreshold`           | integer           | 30000      | Record count triggering Bulk API for queries         |
+| `restApiBatchSize`                | integer           | -          | REST API batch size                                  |
+| `simulationMode`                  | boolean           | false      | Dry run without persisting                           |
+| `sourceRecordsCache`              | string            | "InMemory" | "InMemory", "CleanFileCache", "FileCache"            |
+| `binaryDataCache`                 | string            | "InMemory" | "InMemory", "CleanFileCache", "FileCache"            |
+| `useSeparatedCSVFiles`            | boolean           | false      | Separate CSV dirs per object set                     |
+| `validateCSVFilesOnly`            | boolean           | false      | Validate CSV without running migration               |
+| `runnableInProduction`            | boolean           | false      | Required true for production deletes (sfdx-hardis)   |
+| `beforeAddons`                    | AddonDef[]        | -          | Add-ons before entire migration                      |
+| `afterAddons`                     | AddonDef[]        | -          | Add-ons after entire migration                       |
+| `dataRetrievedAddons`             | AddonDef[]        | -          | Add-ons after data retrieval                         |
 
 ### ScriptObject Properties
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `query` | string | **required** | SOQL query string |
-| `operation` | string | "Readonly" | See operation values below |
-| `externalId` | string | "Name" | External ID field for matching - **must be resolved using the procedure above, never guessed** |
-| `master` | boolean | true | Master object in hierarchy |
-| `excluded` | boolean | false | Exclude from migration |
-| `excludedFields` | string[] | - | Fields omitted from migration |
-| `excludedFromUpdateFields` | string[] | - | Retrieved but not updated |
-| `deleteOldData` | boolean | false | Delete old target records first |
-| `deleteFromSource` | boolean | false | Delete from source org |
-| `deleteByHierarchy` | boolean | false | Cascading hierarchical delete |
-| `deleteQuery` | string | - | SOQL for old-data selection |
-| `hardDelete` | boolean | false | Bypass Recycle Bin |
-| `skipExistingRecords` | boolean | false | Skip existing record updates |
-| `skipRecordsComparison` | boolean | false | Skip source/target comparison |
-| `useQueryAll` | boolean | false | Include deleted/archived records |
-| `queryAllTarget` | boolean | false | Query all target records |
-| `useSourceCSVFile` | boolean | false | Use CSV as data source |
-| `sourceRecordsFilter` | string | - | AlaSQL filter on source |
-| `targetRecordsFilter` | string | - | AlaSQL filter on target |
-| `useFieldMapping` | boolean | false | Enable field mapping |
-| `fieldMapping` | MappingItem[] | - | Field mappings |
-| `useValuesMapping` | boolean | false | Enable ValueMapping.csv |
-| `updateWithMockData` | boolean | false | Enable anonymization |
-| `mockFields` | MockField[] | - | Anonymization definitions |
-| `bulkApiV1BatchSize` | integer | - | Object-level Bulk batch size |
-| `restApiBatchSize` | integer | - | Object-level REST batch size |
-| `parallelBulkJobs` | integer | 1 | Parallel Bulk jobs |
-| `parallelRestJobs` | integer | 1 | Parallel REST jobs |
-| `alwaysUseRestApi` | boolean | false | Force REST API |
-| `alwaysUseBulkApi` | boolean | false | Force Bulk API |
-| `alwaysUseBulkApiToUpdateRecords` | boolean | false | Force Bulk API for DML |
-| `respectOrderByOnDeleteRecords` | boolean | false | Force REST single-record delete |
-| `beforeAddons` | AddonDef[] | - | Add-ons before object |
-| `afterAddons` | AddonDef[] | - | Add-ons after object |
-| `beforeUpdateAddons` | AddonDef[] | - | Add-ons before update batch |
-| `afterUpdateAddons` | AddonDef[] | - | Add-ons after update batch |
-| `filterRecordsAddons` | AddonDef[] | - | Record filter add-ons |
+| Property                          | Type          | Default      | Description                                                                                    |
+|-----------------------------------|---------------|--------------|------------------------------------------------------------------------------------------------|
+| `query`                           | string        | **required** | SOQL query string                                                                              |
+| `operation`                       | string        | "Readonly"   | See operation values below                                                                     |
+| `externalId`                      | string        | "Name"       | External ID field for matching - **must be resolved using the procedure above, never guessed** |
+| `master`                          | boolean       | true         | Master object in hierarchy                                                                     |
+| `excluded`                        | boolean       | false        | Exclude from migration                                                                         |
+| `excludedFields`                  | string[]      | -            | Fields omitted from migration                                                                  |
+| `excludedFromUpdateFields`        | string[]      | -            | Retrieved but not updated                                                                      |
+| `deleteOldData`                   | boolean       | false        | Delete old target records first                                                                |
+| `deleteFromSource`                | boolean       | false        | Delete from source org                                                                         |
+| `deleteByHierarchy`               | boolean       | false        | Cascading hierarchical delete                                                                  |
+| `deleteQuery`                     | string        | -            | SOQL for old-data selection                                                                    |
+| `hardDelete`                      | boolean       | false        | Bypass Recycle Bin                                                                             |
+| `skipExistingRecords`             | boolean       | false        | Skip existing record updates                                                                   |
+| `skipRecordsComparison`           | boolean       | false        | Skip source/target comparison                                                                  |
+| `useQueryAll`                     | boolean       | false        | Include deleted/archived records                                                               |
+| `queryAllTarget`                  | boolean       | false        | Query all target records                                                                       |
+| `useSourceCSVFile`                | boolean       | false        | Use CSV as data source                                                                         |
+| `sourceRecordsFilter`             | string        | -            | AlaSQL filter on source                                                                        |
+| `targetRecordsFilter`             | string        | -            | AlaSQL filter on target                                                                        |
+| `useFieldMapping`                 | boolean       | false        | Enable field mapping                                                                           |
+| `fieldMapping`                    | MappingItem[] | -            | Field mappings                                                                                 |
+| `useValuesMapping`                | boolean       | false        | Enable ValueMapping.csv                                                                        |
+| `updateWithMockData`              | boolean       | false        | Enable anonymization                                                                           |
+| `mockFields`                      | MockField[]   | -            | Anonymization definitions                                                                      |
+| `bulkApiV1BatchSize`              | integer       | -            | Object-level Bulk batch size                                                                   |
+| `restApiBatchSize`                | integer       | -            | Object-level REST batch size                                                                   |
+| `parallelBulkJobs`                | integer       | 1            | Parallel Bulk jobs                                                                             |
+| `parallelRestJobs`                | integer       | 1            | Parallel REST jobs                                                                             |
+| `alwaysUseRestApi`                | boolean       | false        | Force REST API                                                                                 |
+| `alwaysUseBulkApi`                | boolean       | false        | Force Bulk API                                                                                 |
+| `alwaysUseBulkApiToUpdateRecords` | boolean       | false        | Force Bulk API for DML                                                                         |
+| `respectOrderByOnDeleteRecords`   | boolean       | false        | Force REST single-record delete                                                                |
+| `beforeAddons`                    | AddonDef[]    | -            | Add-ons before object                                                                          |
+| `afterAddons`                     | AddonDef[]    | -            | Add-ons after object                                                                           |
+| `beforeUpdateAddons`              | AddonDef[]    | -            | Add-ons before update batch                                                                    |
+| `afterUpdateAddons`               | AddonDef[]    | -            | Add-ons after update batch                                                                     |
+| `filterRecordsAddons`             | AddonDef[]    | -            | Record filter add-ons                                                                          |
 
 ### Operation Values
 
-| Operation | Description |
-|---|---|
-| `Insert` | Create new records only |
-| `Update` | Update existing records only |
-| `Upsert` | Insert or update based on external ID match |
-| `Readonly` | Retrieve without modification (reference data) |
-| `Delete` | Remove from target org |
-| `HardDelete` | Delete bypassing Recycle Bin |
-| `DeleteSource` | Delete from source org |
-| `DeleteHierarchy` | Cascading hierarchical deletion |
+| Operation         | Description                                    |
+|-------------------|------------------------------------------------|
+| `Insert`          | Create new records only                        |
+| `Update`          | Update existing records only                   |
+| `Upsert`          | Insert or update based on external ID match    |
+| `Readonly`        | Retrieve without modification (reference data) |
+| `Delete`          | Remove from target org                         |
+| `HardDelete`      | Delete bypassing Recycle Bin                   |
+| `DeleteSource`    | Delete from source org                         |
+| `DeleteHierarchy` | Cascading hierarchical deletion                |
 
 ### MockField Properties
 
-| Property | Type | Description |
-|---|---|---|
-| `name` | string | Field to anonymize, or `"all"` for all fields |
-| `pattern` | string | Fake data type |
-| `locale` | string | Locale code (e.g. `"en_US"`, `"fr_FR"`) |
-| `excludedRegex` | string | JS regex to exclude values from anonymization |
-| `includedRegex` | string | JS regex to include values |
-| `excludeNames` | string[] | Fields to skip when name is `"all"` |
+| Property        | Type     | Description                                   |
+|-----------------|----------|-----------------------------------------------|
+| `name`          | string   | Field to anonymize, or `"all"` for all fields |
+| `pattern`       | string   | Fake data type                                |
+| `locale`        | string   | Locale code (e.g. `"en_US"`, `"fr_FR"`)       |
+| `excludedRegex` | string   | JS regex to exclude values from anonymization |
+| `includedRegex` | string   | JS regex to include values                    |
+| `excludeNames`  | string[] | Fields to skip when name is `"all"`           |
 
 **Available patterns:** `country`, `city`, `street`, `address`, `zip`, `name`, `full_name`, `username`, `first_name`, `last_name`, `email`, `sentence`, `title`, `text`, `word`, `ip`, `domain`, `url`, `integer`, `date`, `time`, `year`, `ids`
 
 **Special pattern functions:**
 
-| Function | Description | Example |
-|---|---|---|
-| `c_seq_number('prefix', start, step)` | Sequential numbers | `c_seq_number('ACC-', 1000, 1)` |
-| `c_seq_date('YYYY-MM-DD', step)` | Sequential dates (steps: d, m, y, -d, s, ms) | `c_seq_date('2024-01-01', 'd')` |
-| `c_set_value('value')` | Fixed constant value | `c_set_value('ANONYMIZED')` |
+| Function                              | Description                                  | Example                         |
+|---------------------------------------|----------------------------------------------|---------------------------------|
+| `c_seq_number('prefix', start, step)` | Sequential numbers                           | `c_seq_number('ACC-', 1000, 1)` |
+| `c_seq_date('YYYY-MM-DD', step)`      | Sequential dates (steps: d, m, y, -d, s, ms) | `c_seq_date('2024-01-01', 'd')` |
+| `c_set_value('value')`                | Fixed constant value                         | `c_set_value('ANONYMIZED')`     |
 
 ### MappingItem Properties
 
@@ -758,26 +758,26 @@ A polymorphic field can only bind to one parent type at a time.
 
 Use these keywords in `SELECT` instead of listing individual fields:
 
-| Keyword | Description |
-|---|---|
-| `all` | All object fields |
-| `custom_true` / `custom_false` | Custom vs standard fields |
-| `readonly_true` / `readonly_false` | Non-modifiable vs modifiable fields |
-| `createable_true` / `createable_false` | By creation capability |
-| `updateable_true` / `updateable_false` | By update capability |
-| `lookup_true` / `lookup_false` | Relationship vs non-relationship fields |
-| `type_string`, `type_boolean`, etc. | By specific field data type |
+| Keyword                                | Description                             |
+|----------------------------------------|-----------------------------------------|
+| `all`                                  | All object fields                       |
+| `custom_true` / `custom_false`         | Custom vs standard fields               |
+| `readonly_true` / `readonly_false`     | Non-modifiable vs modifiable fields     |
+| `createable_true` / `createable_false` | By creation capability                  |
+| `updateable_true` / `updateable_false` | By update capability                    |
+| `lookup_true` / `lookup_false`         | Relationship vs non-relationship fields |
+| `type_string`, `type_boolean`, etc.    | By specific field data type             |
 
 Example: `SELECT Id, Name, custom_true, lookup_false FROM Account`
 
 ### Target Records Filter (AlaSQL syntax)
 
-| Syntax | Meaning |
-|---|---|
-| `"FieldName"` | Field is not null |
-| `"NOT FieldName"` | Field is null |
-| `"Field1 AND Field2"` | Both conditions |
-| `"Field1 = Field2"` | Field comparison |
+| Syntax                | Meaning           |
+|-----------------------|-------------------|
+| `"FieldName"`         | Field is not null |
+| `"NOT FieldName"`     | Field is null     |
+| `"Field1 AND Field2"` | Both conditions   |
+| `"Field1 = Field2"`   | Field comparison  |
 
 ### core:RecordsTransform Add-On
 
@@ -1074,15 +1074,15 @@ Migrate ContentVersion, Attachment, and Note files:
 
 ## Troubleshooting
 
-| Issue | Solution |
-|---|---|
-| `sfdmu plugin not found` | Install it: `sf plugins install sfdmu` |
-| `Cannot modify production org` | Set `sfdmuCanModify` in `.sfdx-hardis.yml` or `SFDMU_CAN_MODIFY` env var |
+| Issue                                | Solution                                                                                                          |
+|--------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| `sfdmu plugin not found`             | Install it: `sf plugins install sfdmu`                                                                            |
+| `Cannot modify production org`       | Set `sfdmuCanModify` in `.sfdx-hardis.yml` or `SFDMU_CAN_MODIFY` env var                                          |
 | `export.json contains deletion info` | Delete workspaces and import workspaces must be separate; use `sf hardis:org:data:delete` for deletion workspaces |
-| `Missing parent records` | Add parent objects as `Readonly` entries before child objects in the `objects` array |
-| `External ID mismatch` | Verify the `externalId` field exists and is populated in both source and target |
-| `Bulk API timeout` | Reduce `bulkApiV1BatchSize`, switch to `concurrencyMode: "Serial"`, or use `alwaysUseRestApi: true` |
-| `CSV encoding issues` | Set `csvFileEncoding` and `csvUseUtf8Bom` in export.json |
+| `Missing parent records`             | Add parent objects as `Readonly` entries before child objects in the `objects` array                              |
+| `External ID mismatch`               | Verify the `externalId` field exists and is populated in both source and target                                   |
+| `Bulk API timeout`                   | Reduce `bulkApiV1BatchSize`, switch to `concurrencyMode: "Serial"`, or use `alwaysUseRestApi: true`               |
+| `CSV encoding issues`                | Set `csvFileEncoding` and `csvUseUtf8Bom` in export.json                                                          |
 
 ---
 
