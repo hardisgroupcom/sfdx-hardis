@@ -104,6 +104,10 @@ Filter according to Name criteria
 
 New User Story
 
+# outputFile
+
+Force the path and name of the output report file
+
 # orgFreezeUser
 
 Freeze mass users in org for maintenance or go live purpose
@@ -234,6 +238,38 @@ Websocket host:port for VsCode SFDX Hardis UI integration
 # withDevHub
 
 Also connect associated DevHub
+
+# releaseNotesFromDate
+
+Start date for the release scope (YYYY-MM-DD). Mutually exclusive with tag flags.
+
+# releaseNotesMergeCommit
+
+Specific merge commit SHA to use as the end of the release scope
+
+# releaseNotesMode
+
+Release notes mode: prepare (preview upcoming release) or post (document completed release)
+
+# releaseNotesPreviousTag
+
+Previous git tag (semver). If omitted, auto-detected from existing tags.
+
+# releaseNotesReleaseTag
+
+Git tag for the release (semver, e.g. v1.2.0)
+
+# releaseNotesSourceCommit
+
+Source commit SHA to use as the start of the release scope
+
+# releaseNotesTargetBranch
+
+Target major branch name (e.g. main, production). If omitted, prompted or auto-detected.
+
+# releaseNotesToDate
+
+End date for the release scope (YYYY-MM-DD). Mutually exclusive with tag flags.
 
 # runtests
 

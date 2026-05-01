@@ -44,7 +44,8 @@ export interface NotifMessage {
   | "FLOW_ERROR"
   | "DEPLOYMENTS"
   | "DORA_REPORT"
-  | "MONITORING_SUMMARY";
+  | "MONITORING_SUMMARY"
+  | "RELEASE_NOTES";
   buttons?: NotifButton[];
   attachments?: any[];
   severity: NotifSeverity;

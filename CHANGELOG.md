@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- New command [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/) - generates release notes from git tags, pull requests, tickets, metadata changes (via sfdx-git-delta), and deployment actions. Supports prepare (preview) and post (document) modes. Outputs markdown report (optionally PDF), multi-tab XLSX, and sends notifications for production releases. Includes AI-powered summary when an AI provider is configured.
 - New command [hardis:packagexml:remove-managed](https://sfdx-hardis.cloudity.com/hardis/packagexml/remove-managed/) - strips all managed-package items from a `package.xml` while preserving custom metadata built on top of managed objects (e.g. a custom field on `SBQQ__Quote__c` is kept, `SBQQ__Quote__c.SBQQ__Status__c` is removed). Namespaces are resolved automatically from `InstalledPackage` entries or API name patterns, or supplied explicitly via `--namespaces`. Detection strategy selectable with `--namespace-detection` (`api-name` default, or `installed-packages`).
 - [hardis:project:create](https://sfdx-hardis.cloudity.com/hardis/project/create/):
   - Clean manifest/package.xml after creation.
