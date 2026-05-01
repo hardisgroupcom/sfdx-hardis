@@ -256,6 +256,25 @@ async function getCommitForTag(tag: string): Promise<string> {
   }
 }
 
+export async function getReleaseDate(scope: ReleaseNotesScope): Promise<string> {
+  if (scope.mode === "prepare") {
+    return new Date().toISOString().split("T")[0];
+  }
+  // Post mode: try to get the date from the toCommit
+  if (scope.toCommit) {
+    try {
+      const result = await execCommand(`git show -s --format=%ci ${scope.toCommit}`, null, { fail: true });
+      const dateStr = result.stdout.trim();
+      if (dateStr) {
+        return dateStr.split(" ")[0];
+      }
+    } catch {
+      // Fall through
+    }
+  }
+  return new Date().toISOString().split("T")[0];
+}
+
 // ---------------------------------------------------------------------------
 // Data collection
 // ---------------------------------------------------------------------------
@@ -573,10 +592,10 @@ export async function generateReleaseSummary(
 // Markdown report
 // ---------------------------------------------------------------------------
 
-export function buildReleaseNotesMarkdown(data: ReleaseNotesData): string {
+export function buildReleaseNotesMarkdown(data: ReleaseNotesData, releaseDate: string): string {
   const lines: string[] = [];
   const version = data.scope.releaseTag || data.scope.targetBranch;
-  const dateStr = new Date().toISOString().split("T")[0];
+  const dateStr = releaseDate;
   const modeLabel = data.scope.mode === "prepare" ? t("releaseNotesPrepareTitle") : t("releaseNotesPostTitle");
 
   // Header

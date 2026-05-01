@@ -21,6 +21,7 @@ import {
   buildReleaseNotesMarkdown,
   buildReleaseNotesXlsx,
   sendReleaseNotification,
+  getReleaseDate,
   ReleaseNotesData,
 } from "../../../common/utils/releaseNotesUtils.js";
 
@@ -211,10 +212,10 @@ In agent mode:
 
     // 8. Build markdown report
     uxLog("action", this, c.cyan(t("releaseNotesGeneratingMarkdown")));
-    const markdown = buildReleaseNotesMarkdown(data);
+    const reportDate = await getReleaseDate(scope);
+    const markdown = buildReleaseNotesMarkdown(data, reportDate);
 
     // Write markdown file
-    const reportDate = new Date().toISOString().split("T")[0];
     const version = scope.releaseTag || scope.targetBranch;
     const defaultMarkdownName = `release-notes-${version}-${reportDate}`;
     const mdOutputFile = await generateReportPath(defaultMarkdownName, outputFile || "", {
