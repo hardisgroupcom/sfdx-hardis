@@ -5,15 +5,22 @@ on:
       - main
       - doc
 
+permissions: read-all
+
 jobs:
   # Build & deploy docs
   deploy:
     runs-on: ubuntu-latest
     environment: doc
+    permissions:
+      contents: write
+      pages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
       # Build doc with sfdx-hardis
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
       - run: yarn
@@ -22,7 +29,7 @@ jobs:
       - run: echo y|sf plugins install sfdx-hardis@beta
       - run: sf hardis:doc:plugin:generate
       # Deploy docs with mkdocs-material
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.x
       - run: pip install mkdocs-material mdx_truly_sane_lists json-schema-for-humans mkdocs-glightbox
@@ -32,9 +39,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: deploy
     environment: doc
+    permissions:
+      contents: read
     steps:
       - name: git-sync
-        uses: wei/git-sync@v3
+        uses: wei/git-sync@55c6b63b4f21607da0e9877ca9b4d11a29fc6d83 # v3
         with:
           source_repo: "hardisgroupcom/sfdx-hardis"
           source_branch: "gh-pages"
