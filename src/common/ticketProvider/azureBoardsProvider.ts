@@ -24,7 +24,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     super();
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
     this.serverUrl = getEnvVar("SYSTEM_COLLECTIONURI");
-    // a Personal Access Token must be defined
+    // a Personal Access Token must be defined (CI_SFDX_HARDIS_AZURE_TOKEN takes priority, then SYSTEM_ACCESSTOKEN)
     this.token = getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN") || getEnvVar("SYSTEM_ACCESSTOKEN");
     this.teamProject = getEnvVar("SYSTEM_TEAMPROJECT");
     if (this.serverUrl && this.token && this.teamProject) {
@@ -41,7 +41,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     if (
       // Basic auth
       getEnvVar("SYSTEM_COLLECTIONURI") &&
-      getEnvVar("SYSTEM_ACCESSTOKEN") &&
+      (getEnvVar("SYSTEM_ACCESSTOKEN") || getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN")) &&
       getEnvVar("SYSTEM_TEAMPROJECT")
     ) {
       return true;

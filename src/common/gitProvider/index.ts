@@ -19,8 +19,12 @@ const DEPLOYMENT_ACTIONS_MARKER = '<!-- sfdx-hardis deployment-actions-state -->
 export abstract class GitProvider {
   static async getInstance(prompt = false): Promise<GitProviderRoot | null> {
     try {
-      // Azure
-      if (process.env.SYSTEM_ACCESSTOKEN) {
+      // Azure - detect from SYSTEM_ACCESSTOKEN or CI_SFDX_HARDIS_AZURE_TOKEN
+      if (process.env.SYSTEM_ACCESSTOKEN || process.env.CI_SFDX_HARDIS_AZURE_TOKEN) {
+        // Auto-detect missing CI variables from git remote URL when only a token is available
+        if (!process.env.SYSTEM_COLLECTIONURI || !process.env.SYSTEM_ACCESSTOKEN) {
+          await AzureDevopsProvider.autoDetectSettings();
+        }
         const serverUrl = process.env.SYSTEM_COLLECTIONURI || null;
         // a Personal Access Token must be defined
         const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || null;
@@ -49,14 +53,22 @@ export abstract class GitProvider {
           );
           return null;
         }
+        // Auto-detect missing CI variables from git remote URL
+        if (!process.env.CI_SERVER_URL || !process.env.CI_PROJECT_ID) {
+          await GitlabProvider.autoDetectSettings();
+        }
         return new GitlabProvider();
       }
-      // Github
-      else if (process.env.GITHUB_TOKEN) {
+      // Github - detect from GITHUB_TOKEN or CI_SFDX_HARDIS_GITHUB_TOKEN
+      else if (process.env.GITHUB_TOKEN || process.env.CI_SFDX_HARDIS_GITHUB_TOKEN) {
+        // Auto-detect missing CI variables from git remote URL
+        if (!process.env.GITHUB_REPOSITORY) {
+          await GithubProvider.autoDetectSettings();
+        }
         return new GithubProvider();
       }
-      // Bitbucket
-      else if (process.env.BITBUCKET_WORKSPACE) {
+      // Bitbucket - detect from BITBUCKET_WORKSPACE or CI_SFDX_HARDIS_BITBUCKET_TOKEN
+      else if (process.env.BITBUCKET_WORKSPACE || process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN) {
         const token = process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || null;
         if (token == null) {
           uxLog(
@@ -67,6 +79,10 @@ export abstract class GitProvider {
 - Go to Repository Settings -> Repository Variables -> Create a variable named CI_SFDX_HARDIS_BITBUCKET_TOKEN and paste the access token value`),
           );
           return null;
+        }
+        // Auto-detect missing CI variables from git remote URL
+        if (!process.env.BITBUCKET_WORKSPACE || !process.env.BITBUCKET_REPO_SLUG) {
+          await BitbucketProvider.autoDetectSettings();
         }
         return new BitbucketProvider();
       }

@@ -48,7 +48,7 @@ Collects data from multiple sources and generates a comprehensive release notes 
 
 Supports two modes:
 
-- **prepare**: preview what will be included in the upcoming release (finds open PR or computes hypothetical delta)
+- **prepare**: preview what will be included in the upcoming release (finds open PR or computes hypothetical delta). Accepts \`--source-branch\` to identify the source branch; if \`--target-branch\` is omitted, it is inferred from the source branch mergeTargets configuration. If neither source branch nor target branch can be determined, the user is prompted.
 - **post**: document a completed release (uses merged PRs and tags)
 
 Output includes a **Markdown report** (optionally converted to PDF), a **multi-tab XLSX** with detailed data, and an optional **notification** (Slack, Teams, etc.) for production releases in post mode.
@@ -87,12 +87,15 @@ In agent mode:
 - All interactive prompts are skipped.
 - \`--mode\` defaults to \`post\` when not provided.
 - \`--target-branch\` defaults to the current git branch.
+- When \`--mode post\` and \`--target-branch\` are provided without \`--merge-commit\`, the latest merge commit on the target branch is used automatically.
+- When \`--mode prepare\` and \`--source-branch\` is provided without \`--target-branch\`, the target branch is inferred from the source branch mergeTargets configuration.
 `;
 
   public static examples = [
     "$ sf hardis:doc:release-notes",
     "$ sf hardis:doc:release-notes --mode post --release-tag v1.2.0",
     "$ sf hardis:doc:release-notes --mode prepare --target-branch main",
+    "$ sf hardis:doc:release-notes --mode prepare --source-branch integration",
     "$ sf hardis:doc:release-notes --mode post --target-branch main",
     "$ sf hardis:doc:release-notes --mode post --target-branch main --no-pdf",
     "$ sf hardis:doc:release-notes --mode post --from-date 2026-01-01 --to-date 2026-03-31",
@@ -114,6 +117,9 @@ In agent mode:
     "target-branch": Flags.string({
       char: "t",
       description: messages.getMessage("releaseNotesTargetBranch"),
+    }),
+    "source-branch": Flags.string({
+      description: messages.getMessage("releaseNotesSourceBranch"),
     }),
     "merge-commit": Flags.string({
       description: messages.getMessage("releaseNotesMergeCommit"),
@@ -191,6 +197,8 @@ In agent mode:
     const ticketResult = await collectTickets(pullRequests, this);
     const tickets = ticketResult.tickets;
     const { ticketToPrs, prToTickets } = ticketResult;
+
+    // Display tickets table
     if (tickets.length > 0) {
       uxLogTable(this, tickets.map((tk) => ({
         ID: tk.id,

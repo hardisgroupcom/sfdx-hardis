@@ -22,6 +22,61 @@ export class BitbucketProvider extends GitProviderRoot {
     this.bitbucket = new Bitbucket(clientOptions);
   }
 
+  // Auto-detect Bitbucket CI variables from token + local git remote URL
+  public static async autoDetectSettings(): Promise<void> {
+    try {
+      const remoteUrl = (await git().getConfig("remote.origin.url"))?.value || "";
+      if (!remoteUrl) {
+        uxLog("log", BitbucketProvider, c.grey("[Bitbucket] " + t("autoDetectProviderNoGitRemote", { provider: "Bitbucket" })));
+        return;
+      }
+      const parsed = BitbucketProvider.parseBitbucketRepoUrl(remoteUrl);
+      if (!parsed) {
+        uxLog("log", BitbucketProvider, c.grey("[Bitbucket] " + t("autoDetectProviderParseUrlFailed", { provider: "Bitbucket" })));
+        return;
+      }
+      if (!process.env.BITBUCKET_WORKSPACE) {
+        process.env.BITBUCKET_WORKSPACE = parsed.workspace;
+      }
+      if (!process.env.BITBUCKET_REPO_SLUG) {
+        process.env.BITBUCKET_REPO_SLUG = parsed.repoSlug;
+      }
+      uxLog("log", BitbucketProvider, c.grey("[Bitbucket] " + t("autoDetectProviderSuccess", {
+        provider: "Bitbucket",
+        details: `workspace=${process.env.BITBUCKET_WORKSPACE}, repo=${process.env.BITBUCKET_REPO_SLUG}`,
+      })));
+    } catch (e) {
+      uxLog("warning", BitbucketProvider, c.yellow("[Bitbucket] " + t("autoDetectProviderFailed", { provider: "Bitbucket", message: (e as Error).message })));
+    }
+  }
+
+  public static parseBitbucketRepoUrl(remoteUrl: string): { serverUrl: string; workspace: string; repoSlug: string } | null {
+    // HTTPS: https://bitbucket.org/workspace/repo.git
+    if (remoteUrl.startsWith("https://") || remoteUrl.startsWith("http://")) {
+      const url = remoteUrl.replace(/\.git$/, "").replace(/\/$/, "");
+      const cleanUrl = url.replace(/\/\/([^@/]+@)/gm, "//");
+      const match = cleanUrl.match(/^(https?:\/\/[^/]+)\/([^/]+)\/([^/]+)$/);
+      if (match) {
+        return { serverUrl: match[1], workspace: match[2], repoSlug: match[3] };
+      }
+    }
+    // SSH: git@bitbucket.org:workspace/repo.git
+    if (remoteUrl.startsWith("git@")) {
+      const match = remoteUrl.match(/^git@([^:]+):([^/]+)\/([^/]+?)(?:\.git)?$/);
+      if (match) {
+        return { serverUrl: `https://${match[1]}`, workspace: match[2], repoSlug: match[3] };
+      }
+    }
+    // SSH: ssh://git@bitbucket.org/workspace/repo.git
+    if (remoteUrl.startsWith("ssh://")) {
+      const match = remoteUrl.match(/^ssh:\/\/(?:[^@]+@)?([^/]+)\/([^/]+)\/([^/]+?)(?:\.git)?$/);
+      if (match) {
+        return { serverUrl: `https://${match[1]}`, workspace: match[2], repoSlug: match[3] };
+      }
+    }
+    return null;
+  }
+
   public getLabel(): string {
     return 'sfdx-hardis Bitbucket connector';
   }
