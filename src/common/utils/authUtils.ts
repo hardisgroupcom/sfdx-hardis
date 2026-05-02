@@ -262,16 +262,19 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         );
       }
       const orgTypes = isDevHub ? ['login'] : ['login', 'test'];
-      instanceUrl = await promptInstanceUrl(orgTypes, orgAlias);
+      if (!options.instanceUrl) {
+        instanceUrl = await promptInstanceUrl(orgTypes, orgAlias);
+      }
 
       const configInfoUsr = await getConfig('user');
       let loginResult: any = null;
       uxLog("action", this, c.cyan(t('authenticatingUsingWebLogin')));
       const loginCommand =
         'sf org login web' +
-        (alias ? ` --alias ${alias}` : options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
+        (alias ? ` --alias ${alias}` : "") +
+        (options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
         ` --instance-url ${instanceUrl}` +
-        (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --alias ${orgAlias}` : '');
+        (!alias && orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --alias ${orgAlias}` : '');
       const maxWebLoginAttempts = 2;
       for (let attempt = 1; attempt <= maxWebLoginAttempts; attempt++) {
         try {
@@ -624,7 +627,7 @@ async function execSfdxWebLoginWithLiveVerificationCode(command: string, command
   if (env?.JSFORCE_LOG_LEVEL) {
     env.JSFORCE_LOG_LEVEL = '';
   }
-
+  uxLog("log", commandThis, c.grey(`${command}`));
   return await new Promise((resolve, reject) => {
     const child = childSpawn(command, {
       env,

@@ -3,8 +3,8 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from "chalk";
-import { makeSureOrgIsConnected, promptOrg } from '../../../common/utils/orgUtils.js';
-import { execSfdxJson, uxLog } from '../../../common/utils/index.js';
+import { deleteRottenAuthFile, makeSureOrgIsConnected, promptOrg } from '../../../common/utils/orgUtils.js';
+import { execSfdxJson, isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { t } from '../../../common/utils/i18n.js';
@@ -31,6 +31,7 @@ Key functionalities:
 - **Dev Hub Filtering:** The \`--devhub\` flag filters the list to show only Dev Hub orgs.
 - **Scratch Org Filtering:** The \`--scratch\` flag filters the list to show only scratch orgs related to your default Dev Hub.
 - **Connection Verification:** Ensures that the selected org is connected and prompts for re-authentication if necessary.
+- **Forced Reconnection:** The \`--reconnect\` flag skips the connection check and goes straight to re-authentication.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -40,11 +41,19 @@ The command's technical implementation involves:
 - **Interactive Org Prompt:** Uses the \`promptOrg\` utility to display a list of available Salesforce orgs and allows the user to select one. It passes the \`devHub\` and \`scratch\` flags to \`promptOrg\` to filter the displayed list.
 - **Default Org Configuration:** The \`promptOrg\` utility (internally) handles setting the selected org as the default using Salesforce CLI's configuration mechanisms.
 - **Connection Check:** It calls \`makeSureOrgIsConnected\` to verify the connection status of the selected org and guides the user to re-authenticate if the org is not connected.
+- **Forced Reconnection:** When \`--reconnect\` is used, the command skips the connection check and directly triggers \`sf org login web\` with \`--set-default\`, combining re-authentication and default-setting into a single CLI call.
 - **Salesforce CLI Integration:** It leverages Salesforce CLI's underlying commands for org listing and authentication.
 </details>
 `;
 
-  public static examples = ['$ sf hardis:org:select'];
+  public static examples = [
+    '$ sf hardis:org:select',
+    '$ sf hardis:org:select --devhub',
+    '$ sf hardis:org:select --username myuser@example.com --set-default',
+    '$ sf hardis:org:select --username myuser@example.com --no-set-default',
+    '$ sf hardis:org:select --reconnect --instance-url https://myorg.salesforce.com --set-default',
+    '$ sf hardis:org:select --agent --set-default',
+  ];
 
   // public static args = [{name: 'file'}];
 
@@ -62,11 +71,23 @@ The command's technical implementation involves:
     username: Flags.string({
       char: 't',
       description: "Username of the org you want to authenticate (overrides the interactive prompt)",
-    },),
-    "prompt-default": Flags.boolean({
-      char: 'e',
+    }),
+    reconnect: Flags.boolean({
+      char: 'r',
       default: false,
-      description: 'Prompt to set the selected org as default',
+      description: 'Force re-authentication (skip connection check and go straight to login)',
+    }),
+    "set-default": Flags.boolean({
+      allowNo: true,
+      description: 'Set the selected org as default target-org (or target-dev-hub if --devhub is used). Use --no-set-default to skip. If omitted, you will be prompted.',
+    }),
+    "instance-url": Flags.string({
+      dependsOn: ['reconnect'],
+      description: 'Instance URL to use for login when reconnecting (e.g. https://myorg.salesforce.com). Required with --reconnect.',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -92,26 +113,53 @@ The command's technical implementation involves:
     const { flags } = await this.parse(OrgSelect);
     const devHub = flags.devhub || false;
     const scratch = flags.scratch;
-    const promptDefault = flags["prompt-default"] || false;
     const username = flags.username;
+    const reconnect = flags.reconnect || false;
+    const agentMode = flags.agent === true;
+    const instanceUrl = flags["instance-url"] || null;
     this.debugMode = flags.debug || false;
 
-    let setDefault = true;
-    if (promptDefault) {
-      const promptDefaultRes = await prompts({
+    // Resolve setDefault: explicit flag > agent/CI mode > prompt
+    let setDefault: boolean;
+    const setDefaultFlag = flags["set-default"];
+    if (setDefaultFlag === true || setDefaultFlag === false) {
+      setDefault = setDefaultFlag;
+    } else if (agentMode || isCI) {
+      setDefault = true;
+    } else {
+      const promptRes = await prompts({
         type: 'confirm',
         name: 'setDefault',
         message: t('doYouWantToSetTheSelected'),
         description: t('ifYouChooseNoTheOrgWillBeConnectedButNotSetAsDefault'),
         default: true,
       });
-      if (!promptDefaultRes.setDefault) {
-        setDefault = false;
-      }
+      setDefault = promptRes.setDefault !== false;
     }
 
     let org: any = {};
-    if (username) {
+
+    if (reconnect) {
+      // Force re-authentication via auth hook: skip org display / promptOrg entirely
+      if (!instanceUrl) {
+        throw new Error('--instance-url is required when using --reconnect');
+      }
+      uxLog("action", this, c.cyan(t('reconnectingToOrg', { org: username || instanceUrl })));
+      // Delete potentially rotten auth file before reconnecting (e.g. after sandbox refresh)
+      if (username) {
+        await deleteRottenAuthFile(username);
+      }
+      await this.config.runHook('auth', {
+        checkAuth: true,
+        Command: this,
+        devHub,
+        setDefault,
+        instanceUrl,
+        forceUsername: username || undefined,
+      });
+      org = globalThis.justConnectedOrg || {};
+    } else if (username) {
+      // Get org info with a single sf org display call
       uxLog("action", this, c.cyan(t('gettingInfoAbout', { username })));
       const displayOrgCommand = `sf org display --target-org ${username}`;
       const displayResult = await execSfdxJson(displayOrgCommand, this, {
@@ -119,25 +167,27 @@ The command's technical implementation involves:
         output: false,
       });
       org = displayResult?.result;
-    }
-    else {
+      // Pass org object to avoid a duplicate sf org display call inside makeSureOrgIsConnected
+      uxLog("action", this, c.cyan(t('checkingThatUserIsConnectedToOrg', { org: org.username, org1: org.instanceUrl })));
+      await makeSureOrgIsConnected(org);
+      // Set default org with the correct config key for devhub vs target-org
+      if (setDefault) {
+        const configKey = devHub ? 'target-dev-hub' : 'target-org';
+        const setDefaultCommand = `sf config set ${configKey}=${org.username}`;
+        await execSfdxJson(setDefaultCommand, this, { output: false });
+      }
+    } else {
       // Prompt user to select an org
-      org = await promptOrg(this, { devHub: devHub, setDefault: setDefault, scratch: scratch, useCache: false });
+      // promptOrg handles connection verification and default-setting
+      org = await promptOrg(this, { devHub, setDefault, scratch, useCache: false });
     }
-    // If the org is not connected, ask the user to authenticate again
-    uxLog("action", this, c.cyan(t('checkingThatUserIsConnectedToOrg', { org: org.username, org1: org.instanceUrl })));
-    await makeSureOrgIsConnected(org.username);
+
     if (setDefault) {
-      const setDefaultCommand = `sf config set target-org ${org.username}`;
-      await execSfdxJson(setDefaultCommand, this, { output: false });
-      uxLog("action", this, c.cyan(t('yourDefaultOrgIsNow', { org: org.instanceUrl, org1: org.username })));
-      WebSocketClient.sendRefreshStatusMessage();
-      return { outputString: `Selected org ${org.username}` };
+      uxLog("action", this, c.cyan(t('yourDefaultOrgIsNow', { org: org?.instanceUrl, org1: org?.username })));
+    } else {
+      uxLog("action", this, c.cyan(t('orgConnected', { org: org?.instanceUrl, org1: org?.username })));
     }
-    else {
-      uxLog("action", this, c.cyan(t('orgConnected', { org: org.instanceUrl, org1: org.username })));
-      WebSocketClient.sendRefreshStatusMessage();
-      return { outputString: `Connected org ${org.username}` };
-    }
+    WebSocketClient.sendRefreshStatusMessage();
+    return { outputString: `${setDefault ? 'Selected' : 'Connected'} org ${org?.username}` };
   }
 }

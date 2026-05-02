@@ -71,7 +71,7 @@ Add this in your deployment/check workflow step before running `sf hardis:*` com
 
 ```yaml
 env:
-  CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+  CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 run: |
   if [ -n "${CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN:-}" ]; then

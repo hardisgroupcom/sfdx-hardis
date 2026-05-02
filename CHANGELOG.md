@@ -12,6 +12,9 @@
   - [hardis:project:create](https://sfdx-hardis.cloudity.com/hardis/project/create/): Clean manifest/package.xml after creation. Add CLI flags and behaviors for Agent mode.
   - [hardis:project:clean:standarditems](https://sfdx-hardis.cloudity.com/hardis/project/clean/standarditems/): Improved logging and automatic removal of standard application files during cleanup.
 
+- Utilities
+  - [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): Optimize user path to improve performance
+
 - CI/CD pipelines
   - Jenkins CI/CD pipeline (`defaults/ci/Jenkinsfile`): refactored to use a single top-level Docker agent, scoped `withCredentials()` blocks per stage (no global `environment` credentials), parallel MegaLinter + Validation on PRs, fixed `branch` condition syntax, added `options` and `post` cleanup blocks, and comprehensive setup comments. Updated [Jenkins CI/CD documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jenkins/).
   - Jenkins CI support for Monitoring: added a ready-to-use `Jenkinsfile` template in `defaults/monitoring/` and a new [Jenkins configuration documentation page](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-jenkins/).

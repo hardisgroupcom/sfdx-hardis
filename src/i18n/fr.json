@@ -1979,6 +1979,7 @@
   "readyToWorkInBranch": "Prêt à travailler dans la branche {{branchName}}",
   "rebuildFullDocDescription": "Si oui, toute la documentation sera régénérée (plus lent). Si non, seuls les fichiers modifiés lors du dernier backup seront mis à jour.",
   "recommendedToUseMkdocsMaterialToRead": "Il est recommandé d'utiliser mkdocs-material pour le lire correctement (voir la documentation)",
+  "reconnectingToOrg": "Reconnexion a l'org {{org}}...",
   "recordRestoreCancelledByUser": "Restauration des enregistrements annulée par l'utilisateur.",
   "recordTypeIfApplicable": "Type d'enregistrement (si applicable)",
   "reducingContentOfToGenerate": "Réduction du contenu de {{packageXmlFullFile}} pour générer {{packageXmlBackUpItemsFile}} ...",

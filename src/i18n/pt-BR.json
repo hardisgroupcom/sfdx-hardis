@@ -1947,6 +1947,7 @@
   "readyToRefreshSandboxOrg": "Você está pronto para atualizar sua org sandbox. Prossiga com a atualização da org agora.",
   "readyToWorkInBranch": "Pronto para trabalhar na branch {{branchName}}",
   "recommendedToUseMkdocsMaterialToRead": "Recomenda-se usar mkdocs-material para lê-la corretamente (consulte a documentação)",
+  "reconnectingToOrg": "Reconectando a org {{org}}...",
   "recordRestoreCancelledByUser": "Restauração de registros cancelada pelo usuário.",
   "recordTypeIfApplicable": "Tipo de Registro (se aplicável)",
   "reducingContentOfToGenerate": "Reduzindo o conteúdo de {{packageXmlFullFile}} para gerar {{packageXmlBackUpItemsFile}} ...",

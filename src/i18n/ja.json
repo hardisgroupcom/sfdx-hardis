@@ -1977,6 +1977,7 @@
   "readyToWorkInBranch": "branch {{branchName}} で作業する準備ができました",
   "rebuildFullDocDescription": "はいの場合、すべてのドキュメントが再生成されます（時間がかかります）。いいえの場合、前回のバックアップで変更されたファイルのみが更新されます。",
   "recommendedToUseMkdocsMaterialToRead": "正しく表示するにはmkdocs-materialの使用を推奨します（ドキュメントを参照）",
+  "reconnectingToOrg": "org {{org}} に再接続しています...",
   "recordRestoreCancelledByUser": "レコードのリストアがユーザーによってキャンセルされました。",
   "recordTypeIfApplicable": "レコードタイプ（該当する場合）",
   "reducingContentOfToGenerate": "{{packageXmlBackUpItemsFile}} を生成するために {{packageXmlFullFile}} の内容を削減しています...",
