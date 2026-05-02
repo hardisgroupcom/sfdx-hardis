@@ -17,6 +17,9 @@
   - Jenkins CI support for Monitoring: added a ready-to-use `Jenkinsfile` template in `defaults/monitoring/` and a new [Jenkins configuration documentation page](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-jenkins/).
   - Add .gitattributes files to CI/CD and Monitoring defaults to ensure consistent line endings across platforms
 
+- VsCode integration
+  - Allow to identify missing CI/CD variables only from found tokens in ENV vars (Git Providers, Ticketing providers)
+
 - Documentation
   - Rewrite package-no-overwrite documentation to make it more explicit, and with a diagram.
   - Improve CI/CD home page documentation.
