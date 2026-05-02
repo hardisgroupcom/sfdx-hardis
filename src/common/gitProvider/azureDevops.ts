@@ -28,6 +28,46 @@ export class AzureDevopsProvider extends GitProviderRoot {
     this.azureApi = new azdev.WebApi(this.serverUrl, authHandler);
   }
 
+  // Auto-detect Azure DevOps CI variables from token + local git remote URL (non-interactive)
+  public static async autoDetectSettings(): Promise<void> {
+    try {
+      if (!isGitRepo()) {
+        uxLog("log", AzureDevopsProvider, c.grey("[Azure DevOps] " + t("autoDetectProviderNoGitRemote", { provider: "Azure DevOps" })));
+        return;
+      }
+      // Map CI_SFDX_HARDIS_AZURE_TOKEN to SYSTEM_ACCESSTOKEN if needed
+      if (!process.env.SYSTEM_ACCESSTOKEN && process.env.CI_SFDX_HARDIS_AZURE_TOKEN) {
+        process.env.SYSTEM_ACCESSTOKEN = process.env.CI_SFDX_HARDIS_AZURE_TOKEN;
+      }
+      // Parse git remote URL to extract collection URI, team project, and repository ID
+      if (!process.env.SYSTEM_COLLECTIONURI) {
+        const remoteUrl = (await git().getConfig("remote.origin.url"))?.value || "";
+        if (!remoteUrl) {
+          uxLog("log", AzureDevopsProvider, c.grey("[Azure DevOps] " + t("autoDetectProviderNoGitRemote", { provider: "Azure DevOps" })));
+          return;
+        }
+        const parseUrlRes = AzureDevopsProvider.parseAzureRepoUrl(remoteUrl);
+        if (!parseUrlRes) {
+          uxLog("log", AzureDevopsProvider, c.grey("[Azure DevOps] " + t("autoDetectProviderParseUrlFailed", { provider: "Azure DevOps" })));
+          return;
+        }
+        process.env.SYSTEM_COLLECTIONURI = parseUrlRes.collectionUri;
+        if (!process.env.SYSTEM_TEAMPROJECT) {
+          process.env.SYSTEM_TEAMPROJECT = parseUrlRes.teamProject;
+        }
+        if (!process.env.BUILD_REPOSITORY_ID) {
+          process.env.BUILD_REPOSITORY_ID = parseUrlRes.repositoryId;
+        }
+      }
+      uxLog("log", AzureDevopsProvider, c.grey("[Azure DevOps] " + t("autoDetectProviderSuccess", {
+        provider: "Azure DevOps",
+        details: `server=${process.env.SYSTEM_COLLECTIONURI}, project=${process.env.SYSTEM_TEAMPROJECT || "unknown"}`,
+      })));
+    } catch (e) {
+      uxLog("warning", AzureDevopsProvider, c.yellow("[Azure DevOps] " + t("autoDetectProviderFailed", { provider: "Azure DevOps", message: (e as Error).message })));
+    }
+  }
+
   public static async handleLocalIdentification() {
     if (!isGitRepo()) {
       uxLog("warning", this, c.yellow('[Azure Integration] ' + t('azureIntegrationNotGitRepo')));

@@ -30,6 +30,86 @@ export class GitlabProvider extends GitProviderRoot {
     this.gitlabApi = new Gitlab(gitlabConfig);
   }
 
+  // Auto-detect GitLab CI variables from token + local git remote URL
+  public static async autoDetectSettings(): Promise<void> {
+    try {
+      const remoteUrl = (await git().getConfig("remote.origin.url"))?.value || "";
+      if (!remoteUrl) {
+        uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderNoGitRemote", { provider: "GitLab" })));
+        return;
+      }
+      const parsed = GitlabProvider.parseGitlabRepoUrl(remoteUrl);
+      if (!parsed) {
+        uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderParseUrlFailed", { provider: "GitLab" })));
+        return;
+      }
+      // Set CI_SERVER_URL if missing
+      if (!process.env.CI_SERVER_URL) {
+        process.env.CI_SERVER_URL = parsed.serverUrl;
+      }
+      // Set CI_PROJECT_PATH if missing
+      if (!process.env.CI_PROJECT_PATH) {
+        process.env.CI_PROJECT_PATH = parsed.projectPath;
+      }
+      // Try to resolve project ID via API if missing
+      if (!process.env.CI_PROJECT_ID) {
+        const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || "";
+        if (token) {
+          try {
+            const gitlabConfig: ConstructorParameters<typeof Gitlab>[0] = {
+              host: parsed.serverUrl,
+              token,
+            };
+            if (process.env.GITLAB_API_REJECT_UNAUTHORIZED === "false") {
+              gitlabConfig.agent = new HttpsAgent({ rejectUnauthorized: false });
+            }
+            const tempApi = new Gitlab(gitlabConfig);
+            const project = await tempApi.Projects.show(parsed.projectPath);
+            if (project?.id) {
+              process.env.CI_PROJECT_ID = String(project.id);
+            }
+          } catch (apiErr) {
+            uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderApiError", { provider: "GitLab", message: (apiErr as Error).message })));
+          }
+        }
+      }
+      uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderSuccess", {
+        provider: "GitLab",
+        details: `server=${process.env.CI_SERVER_URL}, project=${process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH || "unknown"}`,
+      })));
+    } catch (e) {
+      uxLog("warning", GitlabProvider, c.yellow("[GitLab] " + t("autoDetectProviderFailed", { provider: "GitLab", message: (e as Error).message })));
+    }
+  }
+
+  public static parseGitlabRepoUrl(remoteUrl: string): { serverUrl: string; projectPath: string } | null {
+    // HTTPS: https://gitlab.com/group/project.git or https://self-hosted.com/group/subgroup/project.git
+    if (remoteUrl.startsWith("https://") || remoteUrl.startsWith("http://")) {
+      const url = remoteUrl.replace(/\.git$/, "").replace(/\/$/,"");
+      // Remove credentials (e.g. https://user:pass@gitlab.com/...)
+      const cleanUrl = url.replace(/\/\/([^@/]+@)/gm, "//");
+      const match = cleanUrl.match(/^(https?:\/\/[^/]+)\/(.+)$/);
+      if (match) {
+        return { serverUrl: match[1], projectPath: match[2] };
+      }
+    }
+    // SSH: git@gitlab.com:group/project.git
+    if (remoteUrl.startsWith("git@")) {
+      const match = remoteUrl.match(/^git@([^:]+):(.+?)(?:\.git)?$/);
+      if (match) {
+        return { serverUrl: `https://${match[1]}`, projectPath: match[2] };
+      }
+    }
+    // SSH: ssh://git@gitlab.com/group/project.git
+    if (remoteUrl.startsWith("ssh://")) {
+      const match = remoteUrl.match(/^ssh:\/\/(?:[^@]+@)?([^/]+)\/(.+?)(?:\.git)?$/);
+      if (match) {
+        return { serverUrl: `https://${match[1]}`, projectPath: match[2] };
+      }
+    }
+    return null;
+  }
+
   public getLabel(): string {
     return "sfdx-hardis Gitlab connector";
   }

@@ -39,6 +39,64 @@ export class GithubProvider extends GitProviderRoot {
     this.runId = github?.context?.runId || process.env.GITHUB_RUN_ID || null;
   }
 
+  // Auto-detect GitHub CI variables from token + local git remote URL
+  public static async autoDetectSettings(): Promise<void> {
+    try {
+      const remoteUrl = (await git().getConfig("remote.origin.url"))?.value || "";
+      if (!remoteUrl) {
+        uxLog("log", GithubProvider, c.grey("[GitHub] " + t("autoDetectProviderNoGitRemote", { provider: "GitHub" })));
+        return;
+      }
+      const parsed = GithubProvider.parseGithubRepoUrl(remoteUrl);
+      if (!parsed) {
+        uxLog("log", GithubProvider, c.grey("[GitHub] " + t("autoDetectProviderParseUrlFailed", { provider: "GitHub" })));
+        return;
+      }
+      if (!process.env.GITHUB_SERVER_URL) {
+        process.env.GITHUB_SERVER_URL = parsed.serverUrl;
+      }
+      if (!process.env.GITHUB_REPOSITORY_OWNER) {
+        process.env.GITHUB_REPOSITORY_OWNER = parsed.owner;
+      }
+      if (!process.env.GITHUB_REPOSITORY) {
+        process.env.GITHUB_REPOSITORY = `${parsed.owner}/${parsed.repo}`;
+      }
+      uxLog("log", GithubProvider, c.grey("[GitHub] " + t("autoDetectProviderSuccess", {
+        provider: "GitHub",
+        details: `server=${process.env.GITHUB_SERVER_URL}, repo=${process.env.GITHUB_REPOSITORY}`,
+      })));
+    } catch (e) {
+      uxLog("warning", GithubProvider, c.yellow("[GitHub] " + t("autoDetectProviderFailed", { provider: "GitHub", message: (e as Error).message })));
+    }
+  }
+
+  public static parseGithubRepoUrl(remoteUrl: string): { serverUrl: string; owner: string; repo: string } | null {
+    // HTTPS: https://github.com/owner/repo.git
+    if (remoteUrl.startsWith("https://") || remoteUrl.startsWith("http://")) {
+      const url = remoteUrl.replace(/\.git$/, "").replace(/\/$/, "");
+      const cleanUrl = url.replace(/\/\/([^@/]+@)/gm, "//");
+      const match = cleanUrl.match(/^(https?:\/\/[^/]+)\/([^/]+)\/([^/]+)$/);
+      if (match) {
+        return { serverUrl: match[1], owner: match[2], repo: match[3] };
+      }
+    }
+    // SSH: git@github.com:owner/repo.git
+    if (remoteUrl.startsWith("git@")) {
+      const match = remoteUrl.match(/^git@([^:]+):([^/]+)\/([^/]+?)(?:\.git)?$/);
+      if (match) {
+        return { serverUrl: `https://${match[1]}`, owner: match[2], repo: match[3] };
+      }
+    }
+    // SSH: ssh://git@github.com/owner/repo.git
+    if (remoteUrl.startsWith("ssh://")) {
+      const match = remoteUrl.match(/^ssh:\/\/(?:[^@]+@)?([^/]+)\/([^/]+)\/([^/]+?)(?:\.git)?$/);
+      if (match) {
+        return { serverUrl: `https://${match[1]}`, owner: match[2], repo: match[3] };
+      }
+    }
+    return null;
+  }
+
   public getLabel(): string {
     return "sfdx-hardis GitHub connector";
   }
