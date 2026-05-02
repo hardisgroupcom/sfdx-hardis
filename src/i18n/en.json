@@ -1983,6 +1983,7 @@
   "readyToWorkInBranch": "Ready to work in branch {{branchName}}",
   "rebuildFullDocDescription": "If yes, the whole documentation will be regenerated (slower). If no, only files changed in the last backup will be updated.",
   "recommendedToUseMkdocsMaterialToRead": "It is recommended to use mkdocs-material to read it correctly (see documentation)",
+  "reconnectingToOrg": "Reconnecting to org {{org}}...",
   "recordRestoreCancelledByUser": "Record restore cancelled by user.",
   "recordTypeIfApplicable": "Record Type (if applicable)",
   "reducingContentOfToGenerate": "Reducing content of {{packageXmlFullFile}} to generate {{packageXmlBackUpItemsFile}} ...",

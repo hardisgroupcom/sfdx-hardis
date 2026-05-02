@@ -1979,6 +1979,7 @@
   "readyToWorkInBranch": "Klaar om te werken in branch {{branchName}}",
   "rebuildFullDocDescription": "Als ja, wordt alle documentatie opnieuw gegenereerd (langzamer). Als nee, worden alleen de bestanden bijgewerkt die zijn gewijzigd in de laatste backup.",
   "recommendedToUseMkdocsMaterialToRead": "Het wordt aanbevolen om mkdocs-material te gebruiken om het correct te lezen (zie documentatie)",
+  "reconnectingToOrg": "Opnieuw verbinden met org {{org}}...",
   "recordRestoreCancelledByUser": "Recordherstel geannuleerd door gebruiker.",
   "recordTypeIfApplicable": "Recordtype (indien van toepassing)",
   "reducingContentOfToGenerate": "Inhoud van {{packageXmlFullFile}} wordt verkleind om {{packageXmlBackUpItemsFile}} te genereren ...",

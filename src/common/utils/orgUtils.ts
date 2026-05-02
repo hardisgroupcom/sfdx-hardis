@@ -319,6 +319,19 @@ export async function promptOrgList(options: { promptMessage?: string } = {}) {
   return orgResponse.orgs;
 }
 
+export async function deleteRottenAuthFile(username: string) {
+  const homeSfdxDir = path.join(process.env.HOME || process.env.USERPROFILE || "~", '.sfdx');
+  const authFile = path.join(homeSfdxDir, `${username}.json`);
+  if (fs.existsSync(authFile)) {
+    try {
+      await fs.unlink(authFile);
+      uxLog("log", this, c.cyan(t('deletedPotentiallyRottenAuthFile', { authFile: c.green(authFile) })));
+    } catch (e: any) {
+      uxLog("warning", this, c.red(t('errorWhileDeletingPotentiallyRottenAuthFile', { authFile: c.green(authFile), message: e.message })));
+    }
+  }
+}
+
 export async function makeSureOrgIsConnected(targetOrg: string | any) {
   // Get connected Status and instance URL
   let connectedStatus;
@@ -327,8 +340,8 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   if (typeof targetOrg !== 'string') {
     instanceUrl = targetOrg.instanceUrl;
     connectedStatus = targetOrg.connectedStatus;
-    targetOrg = targetOrg.username;
     orgResult = targetOrg;
+    targetOrg = targetOrg.username;
   }
   else {
     const displayOrgCommand = `sf org display --target-org ${targetOrg}`;
@@ -347,17 +360,7 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   // Authentication is necessary
   if (connectedStatus?.includes("expired")) {
     uxLog("action", this, c.yellow(t('yourAuthTokenHasExpiredYouNeed')));
-    // Delete rotten authentication json file in case there has been a sandbox refresh
-    const homeSfdxDir = path.join(process.env.HOME || process.env.USERPROFILE || "~", '.sfdx');
-    const authFile = path.join(homeSfdxDir, `${targetOrg}.json`);
-    if (fs.existsSync(authFile)) {
-      try {
-        await fs.unlink(authFile);
-        uxLog("log", this, c.cyan(t('deletedPotentiallyRottenAuthFile', { authFile: c.green(authFile) })));
-      } catch (e: any) {
-        uxLog("warning", this, c.red(t('errorWhileDeletingPotentiallyRottenAuthFile', { authFile: c.green(authFile), message: e.message })));
-      }
-    }
+    await deleteRottenAuthFile(targetOrg);
     // Authenticate again
     const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
     const loginRes = await execSfdxJson(loginCommand, this, { fail: true, output: false });
