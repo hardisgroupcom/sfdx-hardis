@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
       # Setup node
       - name: Setup Node
@@ -75,7 +75,7 @@ jobs:
           ORG_ALIAS: ${{ env.BRANCH }} # Defines the target branch of the PR
           CONFIG_BRANCH: ${{ env.BRANCH }} # Defines the target branch of the PR
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           NOTIF_EMAIL_ADDRESS: ${{ secrets.NOTIF_EMAIL_ADDRESS }}
