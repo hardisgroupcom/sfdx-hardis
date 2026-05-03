@@ -1232,12 +1232,12 @@ export async function buildOrgManifest(
   targetOrgUsernameAlias,
   packageXmlOutputFile: string | null = null,
   conn: any | null = null,
-  options: { excludePackages?: boolean } = {},
+  options: { excludePackages?: boolean, logType?: 'action' | 'log' } = {},
 ) {
   // Manage file name
   if (packageXmlOutputFile === null) {
     const tmpDir = await createTempDir();
-    uxLog("action", this, c.cyan(t('generatingFullPackageXmlFromTargetOrg', { targetOrgUsernameAlias })));
+    uxLog(options.logType || 'action', this, c.cyan(t('generatingFullPackageXmlFromTargetOrg', { targetOrgUsernameAlias })));
     packageXmlOutputFile = path.join(tmpDir, 'packageTargetOrg.xml');
   }
   // Use forced file name, for development purposed only
@@ -1379,7 +1379,7 @@ export async function buildOrgManifest(
   }
 
   const nbRetrievedItems = await countPackageXmlItems(packageXmlFull);
-  uxLog("action", this, c.cyan(t('fullOrgPackageXmlContainsItems', { nbRetrievedItems: c.bold(nbRetrievedItems) })))
+  uxLog("log", this, c.cyan(t('fullOrgPackageXmlContainsItems', { nbRetrievedItems: c.bold(nbRetrievedItems) })))
   return packageXmlFull;
 }
 

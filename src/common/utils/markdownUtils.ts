@@ -1,13 +1,24 @@
 import c from "chalk"
+import puppeteer from "puppeteer";
+import getPort from "get-port";
 import { uxLog } from "./index.js";
-import { mdToPdf } from 'md-to-pdf';
 import { t } from './i18n.js';
 
-export async function generatePdfFileFromMarkdown(markdownFile: string): Promise<string | false> {
+export async function generatePdfFileFromMarkdown(markdownFile: string, options: { timeoutMs?: number } = {}): Promise<string | false> {
   try {
     const outputPdfFile = markdownFile.replace('.md', '.pdf');
-    const launchTimeoutMs = 120000;
-    const mdToPdfOptions = {
+    const timeoutMs = options.timeoutMs || 120000;
+
+    // md-to-pdf does not expose any way to control Puppeteer's page navigation timeout
+    // (hardcoded to 30s in page.goto/waitForNavigation), causing crashes on large documents.
+    // Workaround: replicate mdToPdf() logic but wrap the browser so every new page
+    // gets a higher default navigation timeout before md-to-pdf uses it.
+    const { convertMdToPdf } = await import('md-to-pdf/dist/lib/md-to-pdf.js');
+    const { defaultConfig } = await import('md-to-pdf/dist/lib/config.js');
+    const { serveDirectory, closeServer } = await import('md-to-pdf/dist/lib/serve-dir.js');
+    const { getDir } = await import('md-to-pdf/dist/lib/helpers.js');
+
+    const config: any = {
       dest: outputPdfFile,
       css: `img {
               max-width: 60%;
@@ -31,17 +42,44 @@ export async function generatePdfFileFromMarkdown(markdownFile: string): Promise
               word-break: normal;
             }`,
       stylesheet_encoding: 'utf-8',
-      launch_options: {
-        timeout: launchTimeoutMs,
-        args: [
-          "--disable-dev-shm-usage",
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-        ],
-      }
+      port: await getPort(),
+      basedir: getDir(markdownFile),
+    };
+    const mergedConfig = {
+      ...defaultConfig,
+      ...config,
+      pdf_options: { ...defaultConfig.pdf_options, ...(config.pdf_options || {}) },
     };
 
-    await mdToPdf({ path: markdownFile }, mdToPdfOptions);
+    const server = await serveDirectory(mergedConfig);
+    const browser = await puppeteer.launch({
+      timeout: timeoutMs,
+      protocolTimeout: timeoutMs,
+      args: [
+        "--disable-dev-shm-usage",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+      ],
+    });
+
+    // Wrap browser.newPage so every page created by md-to-pdf gets the timeout
+    const origNewPage = browser.newPage.bind(browser);
+    browser.newPage = async () => {
+      const page = await origNewPage();
+      page.setDefaultNavigationTimeout(timeoutMs);
+      page.setDefaultTimeout(timeoutMs);
+      return page;
+    };
+
+    const pdf = await convertMdToPdf({ path: markdownFile }, mergedConfig, { browser });
+    await browser.close();
+    await closeServer(server);
+
+    // Write PDF if convertMdToPdf returned content but dest wasn't handled
+    if (pdf?.content && !pdf?.filename) {
+      const fs = await import('fs-extra');
+      await fs.writeFile(outputPdfFile, pdf.content);
+    }
 
     uxLog("success", this, c.green(t('pdfFileGeneratedFromDocumentation', { markdownFile, outputPdfFile: c.bold(outputPdfFile) })));
     return outputPdfFile;

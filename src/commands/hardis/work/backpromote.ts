@@ -36,10 +36,12 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class BackpromoteTask extends SfCommand<any> {
-  public static title = 'Backpromote to dev sandbox';
+  public static title = 'Backpromote to dev sandbox (Beta)';
 
   public static description = `
-## Command Behavior
+## Command Behavior (Beta)
+
+> **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Brings the latest changes merged into a parent branch (e.g. integration) into the developer's feature branch and deploys them to their dev sandbox.**
 
@@ -207,7 +209,7 @@ The command's technical implementation involves:
     // Display delta summary
     const addedModified = fs.existsSync(deltaPackageXml) ? await countPackageXmlItems(deltaPackageXml) : 0;
     const deleted = fs.existsSync(destructiveChangesXml) ? await countPackageXmlItems(destructiveChangesXml) : 0;
-    uxLog('action', this, c.cyan(t('backpromoteDeltaSummary', { addedModified, deleted })));
+    uxLog('log', this, c.cyan(t('backpromoteDeltaSummary', { addedModified, deleted })));
 
     // Step 8: Detect org conflicts
     const conflictResult = await detectOrgConflicts(deltaPackageXml, targetUsername, this, debugMode);
@@ -238,6 +240,7 @@ The command's technical implementation involves:
       conflicts,
       this,
       agentMode,
+      conn.instanceUrl || '',
     );
 
     // Step 11: Handle destructive changes

@@ -27,6 +27,7 @@ import { authOrg } from './authUtils.js';
 import { findUserByUsernameLike } from './orgUtils.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
+import { createBlankSfdxProject } from './projectUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { t } from './i18n.js';
 
@@ -492,21 +493,26 @@ export async function detectOrgConflicts(
   // First, filter the delta package.xml to only include items that exist in the org.
   // This prevents retrieve failures caused by metadata types or members not present in the target sandbox.
   const filteredPackageXml = path.join(tmpRetrieveDir, 'filtered-package.xml');
-  const packageXmlForRetrieve = await filterPackageXmlToOrgAvailable(deltaPackageXml, filteredPackageXml, targetUsername, debugMode);
+  const packageXmlForRetrieve = await filterPackageXmlToOrgAvailable(deltaPackageXml, filteredPackageXml, targetUsername, commandThis);
 
   if (!packageXmlForRetrieve) {
     return { conflicts, success: true }; // Nothing to retrieve
   }
 
-  // Retrieve filtered metadata from the org into a temp directory
+  // Create a blank sfdx project in the temp directory so the retrieve command works
+  await createBlankSfdxProject(tmpRetrieveDir);
+  const blankProjectDir = path.join(tmpRetrieveDir, 'sfdx-hardis-blank-project');
+
+  // Retrieve filtered metadata from the org into the blank project
   let retrieveSuccess = false;
   let retrieveError = '';
   try {
-    const retrieveCmd = `sf project retrieve start -x "${packageXmlForRetrieve}" -o ${targetUsername} --output-dir "${tmpRetrieveDir}" --wait 60 --json`;
+    const retrieveCmd = `sf project retrieve start -x "${packageXmlForRetrieve}" -o ${targetUsername} --output-dir "${blankProjectDir}" --wait 60 --json`;
     const result = await execCommand(retrieveCmd, commandThis, {
-      fail: false,
+      fail: true,
       output: debugMode,
       debug: debugMode,
+      cwd: blankProjectDir,
     });
     retrieveSuccess = result.status === 0 || !result.stderr;
     if (!retrieveSuccess) {
@@ -522,9 +528,11 @@ export async function detectOrgConflicts(
     return { conflicts, success: false, errorMessage: retrieveError };
   }
 
+  uxLog("action", commandThis, c.cyan(t('backpromoteComparingWithLocal')));
+
   // Parse the delta package.xml to know which metadata items to check
   const deltaContent = await parsePackageXmlFile(deltaPackageXml);
-  const retrievePackageDir = [{ fullPath: path.resolve(tmpRetrieveDir), path: tmpRetrieveDir }];
+  const retrievePackageDir = [{ fullPath: path.resolve(blankProjectDir), path: blankProjectDir }];
 
   // Walk through retrieved metadata and compare with local
   for (const metadataType of Object.keys(deltaContent)) {
@@ -608,6 +616,7 @@ export async function generateConflictReport(
   conflicts: OrgConflictItem[],
   commandThis: any,
 ): Promise<{ excelPath: string; pdfPath: string | false }> {
+  uxLog('action', commandThis, c.cyan(t('backpromoteGeneratingConflictReport')));
   const getConflictStatusLabel = (status: OrgConflictItem['status']) => {
     if (status === 'modified') {
       return t('backpromoteConflictStatusModifiedInOrg');
@@ -636,7 +645,7 @@ export async function generateConflictReport(
     fileTitle: t('backpromoteConflictReportTitle'),
   });
   const excelPath = csvResult?.xlsxFile || csvPath;
-  uxLog('action', commandThis, c.cyan(t('backpromoteConflictReportGenerated', { excelPath: c.bold(excelPath) })));
+  uxLog('log', commandThis, c.cyan(t('backpromoteConflictReportGenerated', { excelPath: c.bold(excelPath) })));
 
   // Markdown -> PDF report
   const mdPath = csvPath.replace('.csv', '.md');
@@ -644,6 +653,18 @@ export async function generateConflictReport(
   mdContent += `${t('backpromoteConflictReportGeneratedAt', { date: new Date().toISOString() })}\n\n`;
   mdContent += `**${conflicts.length}** ${t('backpromoteConflictReportSummary')}\n\n`;
 
+  // Summary table with hyperlinks to details
+  mdContent += `| # | ${t('backpromoteConflictReportTypeLabel')} | ${t('backpromoteConflictReportNameLabel')} | ${t('backpromoteConflictReportStatusLabel')} |\n`;
+  mdContent += `|---|------|------|--------|\n`;
+  for (let i = 0; i < conflicts.length; i++) {
+    const item = conflicts[i];
+    const anchor = `${item.metadataType.toLowerCase()}-${item.metadataName.toLowerCase()}`.replace(/[^a-z0-9-]/g, '-');
+    const itemStatusLabel = getConflictStatusLabel(item.status);
+    mdContent += `| ${i + 1} | ${item.metadataType} | [${item.metadataName}](#${anchor}) | ${itemStatusLabel} |\n`;
+  }
+  mdContent += '\n---\n\n';
+
+  // Detailed diffs
   for (const item of conflicts) {
     const itemStatusLabel = getConflictStatusLabel(item.status);
     mdContent += `## ${item.metadataType}/${item.metadataName}\n\n`;
@@ -655,10 +676,21 @@ export async function generateConflictReport(
   }
 
   await fs.writeFile(mdPath, mdContent, 'utf-8');
-  const pdfPath = await generatePdfFileFromMarkdown(mdPath);
+  // Try to generate PDF (5 min timeout for large reports), fall back to markdown if it fails
+  uxLog('log', commandThis, c.grey(t('backpromoteStartingReportGeneration')));
+  let pdfPath: string | false = false;
+  try {
+    pdfPath = await generatePdfFileFromMarkdown(mdPath, { timeoutMs: 300000 });
+  } catch (e) {
+    uxLog('warning', commandThis, c.yellow(`[Backpromote] PDF generation failed: ${(e as Error).message}`));
+  }
   if (pdfPath) {
-    uxLog('action', commandThis, c.cyan(t('backpromoteConflictReportPdfGenerated', { pdfPath: c.bold(pdfPath) })));
+    uxLog('log', commandThis, c.cyan(t('backpromoteConflictReportPdfGenerated', { pdfPath: c.bold(pdfPath) })));
     WebSocketClient.sendReportFileMessage(pdfPath, t('backpromoteConflictReportPdfLabel'), 'report');
+    uxLog('action', commandThis, c.yellow(t('backpromoteOpenReportToCheckOverwrites')));
+  } else {
+    WebSocketClient.sendReportFileMessage(mdPath, t('backpromoteConflictReportTitle') + ' (MD)', 'report');
+    uxLog('action', commandThis, c.yellow(t('backpromoteOpenReportToCheckOverwrites')));
   }
 
   return { excelPath, pdfPath };
@@ -672,6 +704,7 @@ export async function promptMetadataValidation(
   conflicts: OrgConflictItem[],
   commandThis: any,
   agentMode: boolean,
+  instanceUrl: string = '',
 ): Promise<{ validatedPackageXml: string; validatedDestructiveXml: string | null }> {
   const deltaContent = await parsePackageXmlFile(deltaPackageXml);
 
@@ -689,7 +722,7 @@ export async function promptMetadataValidation(
     return { validatedPackageXml: deltaPackageXml, validatedDestructiveXml: destructiveChangesXml };
   }
 
-  uxLog('action', commandThis, c.cyan(t('backpromoteDeltaSummary', {
+  uxLog('log', commandThis, c.cyan(t('backpromoteDeltaSummary', {
     addedModified: allItems.length,
     deleted: destructiveChangesXml && fs.existsSync(destructiveChangesXml) ? await countPackageXmlItems(destructiveChangesXml) : 0,
   })));
@@ -698,7 +731,7 @@ export async function promptMetadataValidation(
   const tableData = allItems.map((item) => ({
     'Type': item.type,
     'Name': item.member,
-    'Conflict': item.hasConflict ? t('backpromoteModifiedInOrg') : '-',
+    'Conflict': item.hasConflict ? `⚠️ ${t('backpromoteModifiedInOrg')}` : '-',
   }));
   uxLogTable(commandThis, tableData, ['Type', 'Name', 'Conflict']);
 
@@ -709,7 +742,7 @@ export async function promptMetadataValidation(
 
   // Interactive: let user deselect items
   const choices = allItems.map((item) => ({
-    title: `${item.type}/${item.member}${item.hasConflict ? ` (${t('backpromoteModifiedInOrg')})` : ''}`,
+    title: `${item.type}/${item.member}${item.hasConflict ? ` \u26a0\ufe0f (${t('backpromoteModifiedInOrg')})` : ''}`,
     value: `${item.type}::${item.member}`,
     selected: true,
   }));
@@ -717,8 +750,8 @@ export async function promptMetadataValidation(
   const selectRes = await prompts({
     type: 'multiselect',
     name: 'value',
-    message: c.cyanBright(t('backpromoteSelectMetadataToDeploy')),
-    description: t('backpromoteSelectMetadataToDeploy'),
+    message: c.cyanBright(t('backpromoteSelectMetadataToDeploy', { instanceUrl })),
+    description: t('backpromoteSelectMetadataToDeploy', { instanceUrl }),
     choices,
   });
 
@@ -1126,7 +1159,7 @@ async function filterPackageXmlToOrgAvailable(
   deltaPackageXml: string,
   outputPackageXml: string,
   targetUsername: string,
-  _debugMode: boolean,
+  commandThis: any,
 ): Promise<string | null> {
   const deltaContent = await parsePackageXmlFile(deltaPackageXml);
   if (Object.keys(deltaContent).length === 0) {
@@ -1134,21 +1167,35 @@ async function filterPackageXmlToOrgAvailable(
   }
 
   // Build a full org manifest to know what metadata exists in the target sandbox
-  const orgManifestPath = await buildOrgManifest(targetUsername, null, null, { excludePackages: true });
+  const orgManifestPath = await buildOrgManifest(targetUsername, null, null, { excludePackages: true, logType: "log" });
   const orgContent = await parsePackageXmlFile(orgManifestPath);
 
   // Intersect: keep only delta items that exist in the org
   const filteredContent: Record<string, string[]> = {};
+  const filteredOutItems: Array<{ Type: string; Name: string }> = [];
+  let remainingCount = 0;
+
   for (const metadataType of Object.keys(deltaContent)) {
     const orgMembers = new Set<string>(orgContent[metadataType] || []);
-    if (orgMembers.size === 0) {
-      continue; // This metadata type doesn't exist in the org at all
-    }
-    const existingMembers = deltaContent[metadataType].filter((m: string) => orgMembers.has(m));
-    if (existingMembers.length > 0) {
-      filteredContent[metadataType] = existingMembers;
+    for (const member of deltaContent[metadataType]) {
+      if (orgMembers.has(member)) {
+        if (!filteredContent[metadataType]) {
+          filteredContent[metadataType] = [];
+        }
+        filteredContent[metadataType].push(member);
+        remainingCount++;
+      } else {
+        filteredOutItems.push({ Type: metadataType, Name: member });
+      }
     }
   }
+
+  // Display filtered-out items
+  if (filteredOutItems.length > 0) {
+    uxLog('log', commandThis, c.grey(t('backpromoteFilteredOutItems', { count: filteredOutItems.length })));
+    uxLogTable(commandThis, filteredOutItems, ['Type', 'Name']);
+  }
+  uxLog('log', commandThis, c.grey(t('backpromoteFilteredRemainingItems', { count: remainingCount })));
 
   if (Object.keys(filteredContent).length === 0) {
     return null;

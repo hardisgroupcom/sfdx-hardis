@@ -14,6 +14,7 @@ Work on your dev org using the pages below:
 - [Install packages](salesforce-ci-cd-work-on-task-install-packages.md)
 - [Deployment actions](salesforce-ci-cd-work-on-task-deployment-actions.md)
 - [Develop in Salesforce](salesforce-ci-cd-work-on-task-development.md)
+- [Backpromote to dev sandbox](hardis/work/backpromote.md) (Beta) - Synchronize your dev sandbox with the latest changes merged into a parent branch
 
 These pages contain recommended rules and guidelines to help Release Management run smoothly.
 
