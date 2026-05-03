@@ -1243,7 +1243,7 @@ async function filterPackageXmlToOrgAvailable(
   }
 
   // Build a full org manifest to know what metadata exists in the target sandbox
-  const orgManifestPath = await buildOrgManifest(targetUsername, null);
+  const orgManifestPath = await buildOrgManifest(targetUsername, null, null, { excludePackages: true });
   const orgContent = await parsePackageXmlFile(orgManifestPath);
 
   // Intersect: keep only delta items that exist in the org
