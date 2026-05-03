@@ -7,7 +7,6 @@ import * as path from 'path';
 import {
   checkGitClean,
   createTempDir,
-  execCommand,
   getCurrentGitBranch,
   uxLog,
 } from '../../../common/utils/index.js';
@@ -21,7 +20,6 @@ import {
   generateConflictReport,
   listMergedPrsWithCommits,
   loadBackpromoteState,
-  promptBackpromoteStartingPoint,
   promptConfirmContinueAfterConflictFailure,
   promptMetadataValidation,
   resolveParentBranch,
@@ -131,7 +129,7 @@ The command's technical implementation involves:
     const conn = flags['target-org'].getConnection();
 
     // Step 1: Verify git is clean
-    uxLog('action', this, c.cyan(t('backpromoteStarting', { parentBranch: '' })));
+    uxLog('log', this, c.cyan(t('backpromoteStarting', { parentBranch: '' })));
     await checkGitClean({ allowStash: false });
 
     const currentBranch = (await getCurrentGitBranch()) || '';
@@ -148,7 +146,7 @@ The command's technical implementation involves:
 
     // Step 2: Resolve parent branch
     const parentBranch = await resolveParentBranch(this, flags.parentbranch || null, agentMode, currentBranch);
-    uxLog('action', this, c.cyan(t('backpromoteStarting', { parentBranch: c.green(parentBranch) })));
+    uxLog('log', this, c.cyan(t('backpromoteStarting', { parentBranch: c.green(parentBranch) })));
 
     if (currentBranch === parentBranch) {
       throw new Error(t('backpromoteCannotBackpromoteFromSameBranch'));
@@ -166,38 +164,19 @@ The command's technical implementation involves:
       throw new SfError(t('backpromoteAgentRequiresFromFlag'));
     }
 
-    // Step 5: Determine starting point
-    let sinceCommit: string | null;
-    if (fromFlag) {
-      // --from flag always takes precedence
-      sinceCommit = fromFlag;
-    } else if (agentMode) {
-      // Agent mode uses saved state
-      sinceCommit = lastState?.lastCommit || null;
-    } else {
-      // Interactive mode: always prompt for starting point (pre-select last backpromote commit if available)
-      sinceCommit = await promptBackpromoteStartingPoint(parentBranch, lastState);
-    }
+    // Step 5: List all PRs/commits on the parent branch and let the user select which ones to backpromote
+    // In interactive mode this is a single prompt (no separate "starting point" + "scope" steps)
+    const sinceCommit = fromFlag || null;
+    const allPrGroups = await listMergedPrsWithCommits(parentBranch, currentBranch, sinceCommit, this);
 
-    // Step 6: List merged PRs with commits
-    const prGroups = await listMergedPrsWithCommits(parentBranch, currentBranch, sinceCommit, this);
-
-    if (prGroups.length === 0) {
+    if (allPrGroups.length === 0) {
       uxLog('action', this, c.cyan(t('backpromoteNoPrsMerged', { parentBranch })));
       return { outputString: 'No changes to backpromote' };
     }
 
-    // Step 6: Select scope
-    const { targetCommit, selectedPrs } = await selectBackpromoteScope(prGroups, lastState, this, agentMode, fromFlag);
-
-    // Step 7: Compute delta with sfdx-git-delta
-    const fromCommit = sinceCommit || (
-      await (async () => {
-        const result = await execCommand(
-          `git merge-base ${parentBranch} ${currentBranch}`, this, { fail: true, output: false }
-        );
-        return result.stdout.replace(/[\n\r]/g, '');
-      })()
+    // Select which PRs to include: single unified prompt in interactive mode, auto-select in agent mode
+    const { targetCommit, selectedPrs, fromCommit } = await selectBackpromoteScope(
+      allPrGroups, lastState, this, agentMode, fromFlag,
     );
 
     uxLog('action', this, c.cyan(t('backpromoteComputingDelta', {

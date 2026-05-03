@@ -32,24 +32,25 @@ import { t } from './i18n.js';
 
 // ---- Interfaces ----
 
+/** A first-parent commit on the parent branch, with its associated/inherited PRs */
 export interface BackpromotePrGroup {
-  pr: {
-    id: number;
-    title: string;
-    author: string;
-    mergedAt: string;
-    webUrl: string;
-    sourceBranch: string;
-  };
-  commits: Array<{
+  /** The first-parent commit on the parent branch (what the user selects from) */
+  commit: {
     hash: string;
     message: string;
     author: string;
     date: string;
+  };
+  /** PRs associated with this commit (direct merge or inherited through multi-hop merges) */
+  associatedPrs: Array<{
+    id: number;
+    title: string;
+    author: string;
+    webUrl: string;
+    sourceBranch: string;
   }>;
-  prConfig: any | null;
-  /** Merge commit SHA on the parent branch (used for delta computation) */
-  mergeCommitSha: string;
+  /** PR-scoped configs for deployment actions and test classes (merged from all associated PRs) */
+  prConfigs: any[];
 }
 
 export interface OrgConflictItem {
@@ -122,52 +123,7 @@ export async function resolveParentBranch(
   return branchRes.value || recommendedBranch;
 }
 
-// ---- Prompt starting point ----
-
-export async function promptBackpromoteStartingPoint(
-  parentBranch: string,
-  lastState: BackpromoteState | null,
-): Promise<string | null> {
-  // Show recent commits on the parent branch for the user to pick a starting point
-  let logResult;
-  try {
-    logResult = await git().log([parentBranch, '-n', '50']);
-  } catch {
-    return null;
-  }
-  if (!logResult || logResult.all.length === 0) {
-    return null;
-  }
-
-  // Pre-select the last backpromoted commit if available
-  const lastCommitShort = lastState?.lastCommit?.substring(0, 7) || null;
-  let initialIndex = 0;
-
-  const choices = logResult.all.map((commit, index) => {
-    const isLastBackpromote = lastCommitShort && commit.hash.startsWith(lastCommitShort);
-    if (isLastBackpromote) {
-      initialIndex = index;
-    }
-    const suffix = isLastBackpromote ? ` <-- ${t('backpromoteLastBackpromoteMarker')}` : '';
-    return {
-      title: `${commit.hash.substring(0, 7)} ${commit.message} (${formatShortDate(commit.date)})${suffix}`,
-      value: commit.hash,
-    };
-  });
-
-  const selectRes = await prompts({
-    type: 'select',
-    name: 'value',
-    message: c.cyanBright(t('backpromoteSelectStartingCommit')),
-    description: t('backpromoteSelectStartingCommit'),
-    choices,
-    initial: initialIndex,
-  });
-
-  return selectRes.value || null;
-}
-
-// ---- List merged PRs with commits ----
+// ---- List first-parent commits with associated PRs ----
 
 export async function listMergedPrsWithCommits(
   parentBranch: string,
@@ -177,71 +133,55 @@ export async function listMergedPrsWithCommits(
 ): Promise<BackpromotePrGroup[]> {
   uxLog('action', commandThis, c.cyan(t('backpromoteListingMergedPrs', { parentBranch: c.green(parentBranch) })));
 
-  // Compute the merge-base between feature branch and parent branch
-  let mergeBase: string;
+  // Get first-parent commits on the parent branch (only direct merges/commits, not inherited ones)
+  let firstParentLog;
   try {
-    const mergeBaseResult = await execCommand(`git merge-base ${parentBranch} ${currentBranch}`, commandThis, { fail: true, output: false });
-    mergeBase = mergeBaseResult.stdout.replace(/[\n\r]/g, '');
-  } catch {
-    uxLog('warning', commandThis, c.yellow(t('backpromoteNoPrsMerged', { parentBranch })));
-    return [];
-  }
-
-  const fromCommit = sinceCommit || mergeBase;
-
-  // Get all commits on parent branch since the from commit
-  let logResult;
-  try {
-    logResult = await git().log([`${fromCommit}..${parentBranch}`]);
+    if (sinceCommit) {
+      firstParentLog = await git().log(['--first-parent', `${sinceCommit}..${parentBranch}`]);
+    } else {
+      // No starting point: show recent history (50 commits)
+      firstParentLog = await git().log(['--first-parent', '-n', '50', parentBranch]);
+    }
   } catch {
     return [];
   }
-  if (!logResult || logResult.all.length === 0) {
+  if (!firstParentLog || firstParentLog.all.length === 0) {
     return [];
   }
 
-  // Discover PRs using three complementary strategies:
-  // 1. Extract PR/MR numbers from commit messages (#123, !123, Merged PR 123)
-  // 2. Match commit SHAs against PR merge commit SHAs from the git provider
-  // 3. Extract source branch names from merge commit messages and match against PRs by source branch
-  // Strategy 3 is critical for GitLab where merge commit messages don't include MR numbers,
-  // and for multi-hop merges (preprod -> main -> retrofit -> integration).
-  const prNumbersFromCommits = extractPrNumbersFromCommits(logResult.all);
-  const commitShaSet = new Set(logResult.all.map((c) => c.hash));
-  const sourceBranchesFromCommits = extractSourceBranchesFromCommits(logResult.all);
+  // For each first-parent commit, discover the associated/inherited PRs
+  // by looking at ALL commits reachable from it (not just first-parent)
+  const allCommitsLog = sinceCommit
+    ? await git().log([`${sinceCommit}..${parentBranch}`]).catch(() => null)
+    : await git().log(['-n', '500', parentBranch]).catch(() => null);
+  const allCommits = [...(allCommitsLog?.all || [])];
+
+  // Discover PRs from all commits using the three strategies
+  const prNumbersFromCommits = extractPrNumbersFromCommits(allCommits);
+  const commitShaSet = new Set(allCommits.map((c) => c.hash));
+  const sourceBranchesFromCommits = extractSourceBranchesFromCommits(allCommits);
 
   // Fetch merged PRs from git provider
   const gitProvider = await GitProvider.getInstance();
   const prDetailsMap = new Map<number, any>();
   const mergeCommitToPr = new Map<string, number>();
-  // Maps source branch name -> PR number for strategy 3
   const sourceBranchToPr = new Map<string, number>();
 
   if (gitProvider) {
     try {
-      const allMergedPrs = (await gitProvider.listPullRequests(
-        { status: 'merged' },
-      )) || [];
+      const allMergedPrs = (await gitProvider.listPullRequests({ status: 'merged' })) || [];
       for (const pr of allMergedPrs) {
         const prNum = pr.idNumber;
         if (!prNum) continue;
-        // Strategy 1: PR number found in commit messages
         const matchedByMessage = prNumbersFromCommits.has(prNum);
-        // Strategy 2: PR merge commit SHA is in our commit range
         const mergeSha = pr.mergeCommitSha;
         const matchedByMergeCommit = mergeSha && commitShaSet.has(mergeSha);
-        // Strategy 3: PR source branch name found in merge commit messages
         const matchedBySourceBranch = pr.sourceBranch && sourceBranchesFromCommits.has(pr.sourceBranch);
 
         if (matchedByMessage || matchedByMergeCommit || matchedBySourceBranch) {
           prDetailsMap.set(prNum, pr);
-          if (mergeSha) {
-            mergeCommitToPr.set(mergeSha, prNum);
-          }
-          if (pr.sourceBranch) {
-            sourceBranchToPr.set(pr.sourceBranch, prNum);
-          }
-          prNumbersFromCommits.add(prNum);
+          if (mergeSha) mergeCommitToPr.set(mergeSha, prNum);
+          if (pr.sourceBranch) sourceBranchToPr.set(pr.sourceBranch, prNum);
         }
       }
     } catch (e) {
@@ -249,145 +189,74 @@ export async function listMergedPrsWithCommits(
     }
   }
 
-  // Group commits under their PRs, ordered by first appearance in the log
+  // Build groups: one per first-parent commit, with associated PRs as details
+  const firstParentCommits = [...firstParentLog.all].reverse(); // Chronological order
+  const firstParentShas = new Set(firstParentCommits.map((c) => c.hash));
   const prGroups: BackpromotePrGroup[] = [];
-  const prGroupMap = new Map<number, BackpromotePrGroup>();
-  // For commits grouped by source branch when no PR number is available
-  const branchGroupMap = new Map<string, BackpromotePrGroup>();
-  const assignedCommits = new Set<string>();
 
-  // Process commits in chronological order (oldest first - logResult.all is newest first)
-  const commitsChronological = [...logResult.all].reverse();
+  for (let i = 0; i < firstParentCommits.length; i++) {
+    const commit = firstParentCommits[i];
 
-  for (const commit of commitsChronological) {
-    // Try to find the PR for this commit using all strategies
-    let prNum: number | null = null;
-
-    // Strategy 1: PR/MR number in commit message
-    const prNumbersInMsg = extractPrNumbersFromMessage(commit.message);
-    if (prNumbersInMsg.length > 0) {
-      prNum = prNumbersInMsg[0];
-    }
-    // Strategy 2: merge commit SHA matches a PR
-    if (prNum === null && mergeCommitToPr.has(commit.hash)) {
-      prNum = mergeCommitToPr.get(commit.hash)!;
-    }
-    // Strategy 3: source branch in merge commit message matches a PR
-    const sourceBranch = extractSourceBranchFromMessage(commit.message);
-    if (prNum === null && sourceBranch && sourceBranchToPr.has(sourceBranch)) {
-      prNum = sourceBranchToPr.get(sourceBranch)!;
-    }
-
-    if (prNum !== null) {
-      assignedCommits.add(commit.hash);
-
-      if (!prGroupMap.has(prNum)) {
-        const prDetail = prDetailsMap.get(prNum);
-        const prConfig = await loadPrConfig(prNum);
-        const group: BackpromotePrGroup = {
-          pr: {
-            id: prNum,
-            title: prDetail?.title || `PR #${prNum}`,
-            author: prDetail?.authorName || commit.author_name,
-            mergedAt: prDetail?.mergedDate || commit.date,
-            webUrl: prDetail?.webUrl || '',
-            sourceBranch: prDetail?.sourceBranch || sourceBranch || '',
-          },
-          commits: [],
-          prConfig,
-          mergeCommitSha: commit.hash,
-        };
-        prGroupMap.set(prNum, group);
-        prGroups.push(group);
-      }
-
-      const group = prGroupMap.get(prNum)!;
-      group.commits.push({
-        hash: commit.hash.substring(0, 7),
-        message: commit.message,
-        author: commit.author_name,
-        date: commit.date,
-      });
-      group.mergeCommitSha = commit.hash;
-    } else if (sourceBranch) {
-      // No PR number found, but we have a source branch from the merge commit.
-      // Group these commits by source branch as a "virtual PR".
-      assignedCommits.add(commit.hash);
-
-      if (!branchGroupMap.has(sourceBranch)) {
-        // Extract title from merge commit message (part before "Merge branch")
-        const titleMatch = commit.message.match(/^(.+?)\s*Merge branch/);
-        const title = titleMatch ? titleMatch[1].trim() : sourceBranch;
-        const group: BackpromotePrGroup = {
-          pr: {
-            id: 0,
-            title: title || sourceBranch,
-            author: commit.author_name,
-            mergedAt: commit.date,
-            webUrl: '',
-            sourceBranch,
-          },
-          commits: [],
-          prConfig: null,
-          mergeCommitSha: commit.hash,
-        };
-        branchGroupMap.set(sourceBranch, group);
-        prGroups.push(group);
-      }
-
-      const group = branchGroupMap.get(sourceBranch)!;
-      group.commits.push({
-        hash: commit.hash.substring(0, 7),
-        message: commit.message,
-        author: commit.author_name,
-        date: commit.date,
-      });
-      group.mergeCommitSha = commit.hash;
-    }
-  }
-
-  // Handle unassigned commits (no PR reference and no source branch)
-  const unassignedCommits = commitsChronological.filter((c) => !assignedCommits.has(c.hash));
-  if (unassignedCommits.length > 0 && prGroups.length === 0) {
-    // No PR matching at all - create a single group with all commits
-    prGroups.push({
-      pr: {
-        id: 0,
-        title: t('backpromoteDirectCommits'),
-        author: unassignedCommits[0].author_name,
-        mergedAt: unassignedCommits[unassignedCommits.length - 1].date,
-        webUrl: '',
-        sourceBranch: parentBranch,
-      },
-      commits: unassignedCommits.map((c) => ({
-        hash: c.hash.substring(0, 7),
-        message: c.message,
-        author: c.author_name,
-        date: c.date,
-      })),
-      prConfig: null,
-      mergeCommitSha: unassignedCommits[unassignedCommits.length - 1].hash,
+    // Find all child commits reachable from this commit but not from the previous first-parent commit
+    // These are the commits that were "brought in" by this merge
+    const childCommits = allCommits.filter((c) => {
+      if (firstParentShas.has(c.hash) && c.hash !== commit.hash) return false;
+      // Check if this commit's date is between the previous and current first-parent commits
+      const commitDate = new Date(c.date).getTime();
+      const currentDate = new Date(commit.date).getTime();
+      const prevDate = i > 0 ? new Date(firstParentCommits[i - 1].date).getTime() : 0;
+      return commitDate > prevDate && commitDate <= currentDate;
     });
-  } else if (unassignedCommits.length > 0) {
-    // Append unassigned commits to the nearest PR group by date
-    for (const commit of unassignedCommits) {
-      const commitDate = new Date(commit.date).getTime();
-      let closestGroup = prGroups[0];
-      let minDiff = Math.abs(new Date(closestGroup.pr.mergedAt).getTime() - commitDate);
-      for (const group of prGroups) {
-        const diff = Math.abs(new Date(group.pr.mergedAt).getTime() - commitDate);
-        if (diff < minDiff) {
-          minDiff = diff;
-          closestGroup = group;
-        }
+
+    // Discover associated PRs from child commits
+    const associatedPrs: BackpromotePrGroup['associatedPrs'] = [];
+    const seenPrIds = new Set<number>();
+    const prConfigs: any[] = [];
+
+    for (const childCommit of childCommits) {
+      let prNum: number | null = null;
+      const prNumbersInMsg = extractPrNumbersFromMessage(childCommit.message);
+      if (prNumbersInMsg.length > 0) prNum = prNumbersInMsg[0];
+      if (prNum === null && mergeCommitToPr.has(childCommit.hash)) prNum = mergeCommitToPr.get(childCommit.hash)!;
+      const sourceBranch = extractSourceBranchFromMessage(childCommit.message);
+      if (prNum === null && sourceBranch && sourceBranchToPr.has(sourceBranch)) prNum = sourceBranchToPr.get(sourceBranch)!;
+
+      if (prNum !== null && !seenPrIds.has(prNum)) {
+        seenPrIds.add(prNum);
+        const prDetail = prDetailsMap.get(prNum);
+        associatedPrs.push({
+          id: prNum,
+          title: prDetail?.title || `PR #${prNum}`,
+          author: prDetail?.authorName || childCommit.author_name,
+          webUrl: prDetail?.webUrl || '',
+          sourceBranch: prDetail?.sourceBranch || sourceBranch || '',
+        });
+        const prConfig = await loadPrConfig(prNum);
+        if (prConfig) prConfigs.push(prConfig);
+      } else if (sourceBranch && !seenPrIds.has(0)) {
+        // Virtual PR from source branch name
+        const titleMatch = childCommit.message.match(/^(.+?)\s*Merge branch/);
+        const title = titleMatch ? titleMatch[1].trim() : sourceBranch;
+        associatedPrs.push({
+          id: 0,
+          title: title || sourceBranch,
+          author: childCommit.author_name,
+          webUrl: '',
+          sourceBranch,
+        });
       }
-      closestGroup.commits.push({
-        hash: commit.hash.substring(0, 7),
+    }
+
+    prGroups.push({
+      commit: {
+        hash: commit.hash,
         message: commit.message,
         author: commit.author_name,
         date: commit.date,
-      });
-    }
+      },
+      associatedPrs,
+      prConfigs,
+    });
   }
 
   return prGroups;
@@ -477,7 +346,7 @@ export async function selectBackpromoteScope(
   commandThis: any,
   agentMode: boolean,
   fromFlag: string | null = null,
-): Promise<{ targetCommit: string; selectedPrs: BackpromotePrGroup[] }> {
+): Promise<{ targetCommit: string; selectedPrs: BackpromotePrGroup[]; fromCommit: string }> {
   if (lastBackpromoteState) {
     uxLog('log', commandThis, c.grey(t('backpromoteLastRunInfo', {
       date: lastBackpromoteState.lastTimestamp,
@@ -485,45 +354,60 @@ export async function selectBackpromoteScope(
     })));
   }
 
+  const lastGroup = prGroups[prGroups.length - 1];
+  const targetCommit = lastGroup.commit.hash;
+
   if (agentMode || isCI) {
-    // In agent mode with previous state: select only the next (first) PR
-    if (lastBackpromoteState) {
-      const firstGroup = prGroups[0];
-      uxLog('action', commandThis, c.cyan(t('backpromoteAgentAutoSelectedNextPr', {
-        id: firstGroup.pr.id > 0 ? `#${firstGroup.pr.id}` : firstGroup.pr.title,
-      })));
-      return {
-        targetCommit: firstGroup.mergeCommitSha,
-        selectedPrs: [firstGroup],
-      };
-    }
-    // In agent mode with --from flag: select only the first PR (starting from the --from commit/PR)
-    if (fromFlag) {
-      const firstGroup = prGroups[0];
-      uxLog('action', commandThis, c.cyan(t('backpromoteAgentAutoSelectedNextPr', {
-        id: firstGroup.pr.id > 0 ? `#${firstGroup.pr.id}` : firstGroup.pr.title,
-      })));
-      return {
-        targetCommit: firstGroup.mergeCommitSha,
-        selectedPrs: [firstGroup],
-      };
-    }
-    // Should not reach here (validated in command), but fallback
-    throw new SfError(t('backpromoteAgentRequiresFromFlag'));
+    // In agent mode: select only the next (first) commit
+    const firstGroup = prGroups[0];
+    const label = firstGroup.commit.message.substring(0, 60);
+    uxLog('action', commandThis, c.cyan(t('backpromoteAgentAutoSelectedNextPr', {
+      id: firstGroup.commit.hash.substring(0, 7) + ' ' + label,
+    })));
+    const fromCommit = lastBackpromoteState?.lastCommit || fromFlag || firstGroup.commit.hash;
+    return {
+      targetCommit: firstGroup.commit.hash,
+      selectedPrs: [firstGroup],
+      fromCommit,
+    };
   }
 
-  // Build choices for the prompt
-  const choices = prGroups.map((group, index) => {
-    const prLabel = group.pr.id > 0
-      ? `#${group.pr.id} - ${group.pr.title} (${t('by')} ${group.pr.author}, ${formatShortDate(group.pr.mergedAt)}) [${group.commits.length} commits]`
-      : `${group.pr.title} [${group.commits.length} commits]`;
-    const commitDetails = group.commits.map((c) => `  ${c.hash} ${c.message}`).join('\n');
-    return {
-      title: prLabel,
-      value: index,
-      description: commitDetails,
-    };
-  });
+  // Interactive mode: single select prompt to pick a starting point.
+  // Display newest first so the most recent commits are at the top.
+  // Everything from the selected commit up to the parent branch HEAD will be backpromoted.
+  const lastCommit = lastBackpromoteState?.lastCommit || null;
+  let initialIndex = 0;
+
+  // Build choices in reverse order (newest first) but store the original index as value
+  const choices: Array<{ title: string; value: number; description?: string }> = [];
+  for (let i = prGroups.length - 1; i >= 0; i--) {
+    const group = prGroups[i];
+    const commitShort = group.commit.hash.substring(0, 7);
+    const commitLabel = `${formatDateTime(group.commit.date)} - ${group.commit.message} [${commitShort}]`;
+
+    // Build PR details as description
+    let prDetails: string | undefined;
+    if (group.associatedPrs.length > 0) {
+      prDetails = group.associatedPrs.map((pr) => {
+        return pr.id > 0
+          ? `  PR #${pr.id} - ${pr.title} (${t('by')} ${pr.author})`
+          : `  ${pr.title} (${t('by')} ${pr.author})`;
+      }).join('\n');
+    }
+
+    // Mark the last backpromoted commit
+    const isLastBackpromote = lastCommit && group.commit.hash.startsWith(lastCommit.substring(0, 7));
+    if (isLastBackpromote) {
+      initialIndex = choices.length; // Position in the reversed list
+    }
+    const suffix = isLastBackpromote ? ` <-- ${t('backpromoteLastBackpromoteMarker')}` : '';
+
+    choices.push({
+      title: `${commitLabel}${suffix}`,
+      value: i, // Original index in prGroups
+      description: prDetails,
+    });
+  }
 
   const selectRes = await prompts({
     type: 'select',
@@ -531,16 +415,20 @@ export async function selectBackpromoteScope(
     message: c.cyanBright(t('backpromoteSelectScope')),
     description: t('backpromoteSelectScope'),
     choices,
-    initial: choices.length - 1, // Default to the latest PR
+    initial: initialIndex,
   });
 
-  const selectedIndex = selectRes.value ?? prGroups.length - 1;
-  const selectedPrs = prGroups.slice(0, selectedIndex + 1);
-  const lastSelected = selectedPrs[selectedPrs.length - 1];
+  const selectedIndex = selectRes.value ?? 0;
+  // All commits from the selected starting point to the end are included
+  const selectedPrs = prGroups.slice(selectedIndex);
+  const fromCommit = selectedIndex > 0
+    ? prGroups[selectedIndex - 1].commit.hash
+    : (lastBackpromoteState?.lastCommit || fromFlag || selectedPrs[0].commit.hash);
 
   return {
-    targetCommit: lastSelected.mergeCommitSha,
+    targetCommit,
     selectedPrs,
+    fromCommit,
   };
 }
 
@@ -576,7 +464,7 @@ export async function ensureBranchUpToDate(
     );
   }
 
-  uxLog('action', commandThis, c.cyan(t('backpromoteBranchUpToDate', {
+  uxLog('log', commandThis, c.cyan(t('backpromoteBranchUpToDate', {
     currentBranch: c.green(currentBranch),
     parentBranch: c.green(parentBranch),
   })));
@@ -982,12 +870,13 @@ export async function executeBackpromoteActions(
   const allActions: Array<PrePostCommand & { prLabel: string; prId: number }> = [];
 
   for (const prGroup of selectedPrs) {
-    if (!prGroup.prConfig) continue;
-    const prLabel = prGroup.pr.id > 0 ? `#${prGroup.pr.id}` : prGroup.pr.title;
-    const commands = prGroup.prConfig[phase];
-    if (!Array.isArray(commands)) continue;
-    for (const cmd of commands) {
-      allActions.push({ ...cmd, prLabel, prId: prGroup.pr.id });
+    const commitLabel = prGroup.commit.hash.substring(0, 7);
+    for (const prConfig of prGroup.prConfigs) {
+      const commands = prConfig[phase];
+      if (!Array.isArray(commands)) continue;
+      for (const cmd of commands) {
+        allActions.push({ ...cmd, prLabel: commitLabel, prId: 0 });
+      }
     }
   }
 
@@ -1221,8 +1110,10 @@ export async function saveBackpromoteActionsState(
 export function collectTestClassesFromPrs(selectedPrs: BackpromotePrGroup[]): string[] {
   const testClasses: string[] = [];
   for (const prGroup of selectedPrs) {
-    if (prGroup.prConfig?.deploymentApexTestClasses && Array.isArray(prGroup.prConfig.deploymentApexTestClasses)) {
-      testClasses.push(...prGroup.prConfig.deploymentApexTestClasses);
+    for (const prConfig of prGroup.prConfigs) {
+      if (prConfig?.deploymentApexTestClasses && Array.isArray(prConfig.deploymentApexTestClasses)) {
+        testClasses.push(...prConfig.deploymentApexTestClasses);
+      }
     }
   }
   // Deduplicate
@@ -1273,6 +1164,17 @@ function formatShortDate(dateStr: string): string {
   try {
     const d = new Date(dateStr);
     return d.toISOString().split('T')[0];
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatDateTime(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    const date = d.toISOString().split('T')[0];
+    const time = d.toISOString().split('T')[1].substring(0, 5);
+    return `${date} ${time}`;
   } catch {
     return dateStr;
   }
