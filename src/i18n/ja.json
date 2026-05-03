@@ -175,6 +175,8 @@
   "backpromoteConflictStatusModifiedInOrg": "org で変更",
   "backpromoteDeltaSummary": "差分の概要: デプロイする項目 {{addedModified}} 件、削除する項目 {{deleted}} 件",
   "backpromoteDeployFailed": "デプロイに失敗しました。上記のエラーメッセージを確認してください。",
+  "backpromoteDeployReportLabel": "backpromote デプロイレポート",
+  "backpromoteDeployReportSaved": "デプロイレポートを保存しました: {{reportPath}}",
   "backpromoteDeploySuccess": "{{count}} 件のメタデータ項目を開発 sandbox に正常にデプロイしました",
   "backpromoteDeploying": "{{count}} 件のメタデータ項目を開発 sandbox にデプロイしています...",
   "backpromoteDestructiveChangesAutoConfirmed": "破壊的変更が自動的に確認されました（エージェント/CI モード）",

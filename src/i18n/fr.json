@@ -175,6 +175,8 @@
   "backpromoteConflictStatusModifiedInOrg": "Modifie dans l'org",
   "backpromoteDeltaSummary": "Resume du delta : {{addedModified}} elements a deployer, {{deleted}} elements a supprimer",
   "backpromoteDeployFailed": "Le deploiement a echoue. Verifiez les messages d'erreur ci-dessus.",
+  "backpromoteDeployReportLabel": "Rapport de deploiement backpromote",
+  "backpromoteDeployReportSaved": "Rapport de deploiement sauvegarde : {{reportPath}}",
   "backpromoteDeploySuccess": "{{count}} elements de metadonnees deployes avec succes dans votre sandbox de developpement",
   "backpromoteDeploying": "Deploiement de {{count}} elements de metadonnees dans votre sandbox de developpement...",
   "backpromoteDestructiveChangesAutoConfirmed": "Changements destructifs confirmes automatiquement (mode agent/CI)",

@@ -173,6 +173,8 @@
   "backpromoteConflictStatusModifiedInOrg": "Modificato nell'org",
   "backpromoteDeltaSummary": "Riepilogo delta: {{addedModified}} elementi da distribuire, {{deleted}} elementi da eliminare",
   "backpromoteDeployFailed": "La distribuzione e' fallita. Controlla i messaggi di errore sopra.",
+  "backpromoteDeployReportLabel": "Report di distribuzione backpromote",
+  "backpromoteDeployReportSaved": "Report di distribuzione salvato: {{reportPath}}",
   "backpromoteDeploySuccess": "{{count}} elementi di metadati distribuiti con successo nella tua sandbox di sviluppo",
   "backpromoteDeploying": "Distribuzione di {{count}} elementi di metadati nella tua sandbox di sviluppo...",
   "backpromoteDestructiveChangesAutoConfirmed": "Modifiche distruttive confermate automaticamente (modalita' agent/CI)",

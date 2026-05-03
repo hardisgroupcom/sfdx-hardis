@@ -173,6 +173,8 @@
   "backpromoteConflictStatusModifiedInOrg": "Modified in org",
   "backpromoteDeltaSummary": "Delta summary: {{addedModified}} items to deploy, {{deleted}} items to delete",
   "backpromoteDeployFailed": "Deployment failed. Check error messages above.",
+  "backpromoteDeployReportLabel": "Backpromote Deployment Report",
+  "backpromoteDeployReportSaved": "Deployment report saved: {{reportPath}}",
   "backpromoteDeploySuccess": "Successfully deployed {{count}} metadata items to your dev sandbox",
   "backpromoteDeploying": "Deploying {{count}} metadata items to your dev sandbox...",
   "backpromoteDestructiveChangesAutoConfirmed": "Destructive changes auto-confirmed (agent/CI mode)",

@@ -174,6 +174,8 @@
   "backpromoteDeltaSummary": "Podsumowanie delty: {{addedModified}} elementow do wdrozenia, {{deleted}} elementow do usuniecia",
   "backpromoteDeployFailed": "Wdrozenie nie powiodlo sie. Sprawdz komunikaty o bledach powyzej.",
   "backpromoteDeploying": "Wdrazanie {{count}} elementow metadanych w sandbox deweloperskim...",
+  "backpromoteDeployReportLabel": "Raport wdrozenia backpromote",
+  "backpromoteDeployReportSaved": "Raport wdrozenia zapisany: {{reportPath}}",
   "backpromoteDeploySuccess": "Pomyslnie wdrozono {{count}} elementow metadanych w sandbox deweloperskim",
   "backpromoteDestructiveChangesAutoConfirmed": "Zmiany destrukcyjne potwierdzone automatycznie (tryb agent/CI)",
   "backpromoteDestructiveChangesSkipped": "Zmiany destrukcyjne pominiete przez uzytkownika",

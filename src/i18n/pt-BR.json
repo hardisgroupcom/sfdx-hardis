@@ -173,6 +173,8 @@
   "backpromoteDeltaSummary": "Resumo do delta: {{addedModified}} itens para deploy, {{deleted}} itens para excluir",
   "backpromoteDeployFailed": "O deploy falhou. Verifique as mensagens de erro acima.",
   "backpromoteDeploying": "Implantando {{count}} itens de metadados no sandbox de desenvolvimento...",
+  "backpromoteDeployReportLabel": "Relatorio de deploy do backpromote",
+  "backpromoteDeployReportSaved": "Relatorio de deploy salvo: {{reportPath}}",
   "backpromoteDeploySuccess": "{{count}} itens de metadados implantados com sucesso no sandbox de desenvolvimento",
   "backpromoteDestructiveChangesAutoConfirmed": "Alteracoes destrutivas confirmadas automaticamente (modo agent/CI)",
   "backpromoteDestructiveChangesSkipped": "Alteracoes destrutivas ignoradas pelo usuario",

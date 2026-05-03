@@ -558,32 +558,39 @@ export async function detectOrgConflicts(
         diffPreview = t('backpromoteFileExistsInOrgNotLocal');
         diffMarkdown = `> ${t('backpromoteFileExistsInOrgNotLocal')}\n`;
       } else {
-        const orgContent = await fs.readFile(retrievedFile, 'utf-8');
-        const localContent = await fs.readFile(localFile, 'utf-8');
+        const orgContentRaw = await fs.readFile(retrievedFile, 'utf-8');
+        const localContentRaw = await fs.readFile(localFile, 'utf-8');
+
+        // Normalize content before comparing: unify line endings, trim trailing whitespace per line
+        const orgContent = normalizeForDiff(orgContentRaw);
+        const localContent = normalizeForDiff(localContentRaw);
 
         if (orgContent !== localContent) {
           status = 'modified';
           hasOrgChanges = true;
 
-          // Compute diff
-          const changes = Diff.createTwoFilesPatch(
-            `org/${member}`,
-            `local/${member}`,
-            orgContent,
-            localContent,
-            'org version',
-            'local version',
-          );
-          // Short preview (first few lines)
-          const diffLines = changes.split('\n');
-          const changedLines = diffLines.filter((l) => l.startsWith('+') || l.startsWith('-'));
-          diffPreview = changedLines.slice(0, 5).join(' | ');
-          if (changedLines.length > 5) {
-            diffPreview += ` ... (+${changedLines.length - 5} more)`;
+          // Compute diff ignoring whitespace differences
+          const diffResult = Diff.diffLines(orgContent, localContent, { ignoreWhitespace: true });
+
+          // Build short preview from first changed lines
+          const previewParts: string[] = [];
+          for (const part of diffResult) {
+            if (previewParts.length >= 5) break;
+            if (part.added) {
+              previewParts.push(`+${part.value.split('\n')[0]}`);
+            } else if (part.removed) {
+              previewParts.push(`-${part.value.split('\n')[0]}`);
+            }
+          }
+          diffPreview = previewParts.join(' | ');
+          const totalChanges = diffResult.filter((p) => p.added || p.removed).length;
+          if (totalChanges > 5) {
+            diffPreview += ` ... (+${totalChanges - 5} more)`;
           }
 
-          // Full markdown with diff code block
-          diffMarkdown = '```diff\n' + changes + '\n```\n';
+          // Build markdown with git-diff style: show only a few context lines around changes
+          const contextLines = 3;
+          diffMarkdown = buildDiffMarkdown(diffResult, contextLines);
         }
       }
 
@@ -874,14 +881,56 @@ export async function deployBackpromoteMetadata(
     ` --wait ${getEnvVar('SFDX_DEPLOY_WAIT_MINUTES') || '120'}` +
     ' --json';
 
-  const deployResult = await execCommand(deployCmd, commandThis, {
-    fail: false,
-    output: true,
-    debug: debugMode,
-  });
+  let deploySuccess = false;
+  let deployOutput = '';
+  try {
+    const deployResult = await execCommand(deployCmd, commandThis, {
+      fail: false,
+      output: true,
+      debug: debugMode,
+    });
+    deployOutput = deployResult.stdout || '';
+    if (deployResult.stderr) {
+      deployOutput += '\n' + deployResult.stderr;
+    }
 
-  if (deployResult.status !== 0 && deployResult.stderr) {
+    if (deployResult.status !== 0 || deployResult.stderr) {
+      uxLog('error', commandThis, c.red(t('backpromoteDeployFailed')));
+      uxLog('error', commandThis, c.red(deployResult.stderr || deployResult.stdout || ''));
+    } else {
+      deploySuccess = true;
+    }
+  } catch (e) {
+    deployOutput = (e as Error).message;
     uxLog('error', commandThis, c.red(t('backpromoteDeployFailed')));
+    uxLog('error', commandThis, c.red(deployOutput));
+  }
+
+  // Write deployment results to a report log file
+  const reportPath = await generateReportPath('backpromote-deploy', '', {
+    withDate: true,
+    withBranchName: true,
+    fileExtension: 'log',
+  });
+  const reportContent = [
+    `Backpromote Deployment Report`,
+    `Date: ${new Date().toISOString()}`,
+    `Target org: ${targetUsername}`,
+    `Status: ${deploySuccess ? 'SUCCESS' : 'FAILED'}`,
+    `Items: ${itemCount}`,
+    `Test level: ${testLevel}`,
+    testClasses.length > 0 ? `Test classes: ${testClasses.join(', ')}` : '',
+    `Package XML: ${packageXmlFile}`,
+    destructiveChangesFile ? `Destructive changes: ${destructiveChangesFile}` : '',
+    '',
+    '--- Deployment output ---',
+    deployOutput,
+  ].filter(Boolean).join('\n');
+  await fs.writeFile(reportPath, reportContent, 'utf-8');
+  uxLog('log', commandThis, c.grey(t('backpromoteDeployReportSaved', { reportPath })));
+  WebSocketClient.sendReportFileMessage(reportPath, t('backpromoteDeployReportLabel'), 'report');
+
+  if (!deploySuccess) {
     throw new SfError(t('backpromoteDeployFailed'));
   }
 
@@ -1206,6 +1255,57 @@ async function filterPackageXmlToOrgAvailable(
 }
 
 // ---- Helper: format date ----
+
+// Build markdown diff output showing only a few context lines around each change
+function buildDiffMarkdown(diffResult: Diff.Change[], contextLines: number): string {
+  // Flatten all parts into tagged lines
+  const taggedLines: Array<{ tag: '+' | '-' | ' '; text: string }> = [];
+  for (const part of diffResult) {
+    const lines = part.value.replace(/\n$/, '').split('\n');
+    const tag = part.added ? '+' : part.removed ? '-' : ' ';
+    for (const line of lines) {
+      taggedLines.push({ tag: tag as '+' | '-' | ' ', text: line });
+    }
+  }
+
+  // Determine which lines to show: changed lines + contextLines before/after
+  const showLine = new Array(taggedLines.length).fill(false);
+  for (let i = 0; i < taggedLines.length; i++) {
+    if (taggedLines[i].tag !== ' ') {
+      const from = Math.max(0, i - contextLines);
+      const to = Math.min(taggedLines.length - 1, i + contextLines);
+      for (let j = from; j <= to; j++) {
+        showLine[j] = true;
+      }
+    }
+  }
+
+  // Build output with "..." separators between non-contiguous shown regions
+  let md = '```diff\n';
+  let lastShownIndex = -2;
+  for (let i = 0; i < taggedLines.length; i++) {
+    if (!showLine[i]) continue;
+    if (lastShownIndex >= 0 && i - lastShownIndex > 1) {
+      md += '  ...\n';
+    }
+    const { tag, text } = taggedLines[i];
+    md += `${tag} ${text}\n`;
+    lastShownIndex = i;
+  }
+  md += '```\n';
+  return md;
+}
+
+// Normalize content for diff comparison: unify line endings, trim trailing whitespace per line
+function normalizeForDiff(content: string): string {
+  return content
+    .replace(/\r\n/g, '\n')   // CRLF -> LF
+    .replace(/\r/g, '\n')     // CR -> LF
+    .split('\n')
+    .map((line) => line.trimEnd()) // Trim trailing whitespace per line
+    .join('\n')
+    .trimEnd() + '\n';        // Ensure single trailing newline
+}
 
 function formatShortDate(dateStr: string): string {
   try {

@@ -173,6 +173,8 @@
   "backpromoteConflictStatusModifiedInOrg": "Modificado en la org",
   "backpromoteDeltaSummary": "Resumen del delta: {{addedModified}} elementos a desplegar, {{deleted}} elementos a eliminar",
   "backpromoteDeployFailed": "El despliegue ha fallado. Comprueba los mensajes de error anteriores.",
+  "backpromoteDeployReportLabel": "Informe de despliegue de backpromote",
+  "backpromoteDeployReportSaved": "Informe de despliegue guardado: {{reportPath}}",
   "backpromoteDeploySuccess": "{{count}} elementos de metadatos desplegados con exito en tu sandbox de desarrollo",
   "backpromoteDeploying": "Desplegando {{count}} elementos de metadatos en tu sandbox de desarrollo...",
   "backpromoteDestructiveChangesAutoConfirmed": "Cambios destructivos confirmados automaticamente (modo agent/CI)",

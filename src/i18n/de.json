@@ -173,6 +173,8 @@
   "backpromoteConflictStatusModifiedInOrg": "In Org geaendert",
   "backpromoteDeltaSummary": "Delta-Zusammenfassung: {{addedModified}} Elemente zum Deployen, {{deleted}} Elemente zum Loeschen",
   "backpromoteDeployFailed": "Deployment fehlgeschlagen. Pruefen Sie die Fehlermeldungen oben.",
+  "backpromoteDeployReportLabel": "Backpromote-Deployment-Bericht",
+  "backpromoteDeployReportSaved": "Deployment-Bericht gespeichert: {{reportPath}}",
   "backpromoteDeploySuccess": "{{count}} Metadaten-Elemente erfolgreich in Ihre Entwicklungs-Sandbox deployed",
   "backpromoteDeploying": "Deploye {{count}} Metadaten-Elemente in Ihre Entwicklungs-Sandbox...",
   "backpromoteDestructiveChangesAutoConfirmed": "Destruktive Aenderungen automatisch bestaetigt (Agent/CI-Modus)",
