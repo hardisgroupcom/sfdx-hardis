@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - New commands
+  - [hardis:work:backpromote](https://sfdx-hardis.cloudity.com/hardis/work/backpromote/) - backpromotes changes from a parent branch (e.g. integration) to a developer's feature branch and deploys them to their dev sandbox. Lists merged PRs with commits, computes metadata delta via sfdx-git-delta, detects org conflicts with Excel + PDF diff reports, handles deployment actions with LoginAs support, and tracks backpromote state for incremental runs. Deprecates `hardis:work:refresh`.
   - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/) - generates release notes from git tags, pull requests, tickets, metadata changes (via sfdx-git-delta), and deployment actions. Supports prepare (preview) and post (document) modes. Outputs markdown + PDF + multi-tab XLSX into a dedicated subfolder with `package.xml` and `destructiveChanges.xml`. Bidirectional PR/ticket cross-references, contributor list, AI-powered summary, and Slack/Teams/Email notifications for production releases.
   - [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/) - generates a DORA metrics report (Deployment Frequency, Lead Time, Change Failure Rate, MTTR, Rework Rate) from Tooling API deployments, Git provider PRs, and ticket references. Outputs markdown with Mermaid diagrams, CSV export, and notifications. Classifies metrics against industry benchmarks (Elite/High/Medium/Low).
   - [hardis:packagexml:remove-managed](https://sfdx-hardis.cloudity.com/hardis/packagexml/remove-managed/) - strips all managed-package items from a `package.xml` while preserving custom metadata built on top of managed objects (e.g. a custom field on `SBQQ__Quote__c` is kept, `SBQQ__Quote__c.SBQQ__Status__c` is removed). Namespaces are resolved automatically from `InstalledPackage` entries or API name patterns, or supplied explicitly via `--namespaces`. Detection strategy selectable with `--namespace-detection` (`api-name` default, or `installed-packages`).
@@ -11,6 +12,7 @@
   - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Handle strings with wildcards in package-no-overwrite.xml (ex: `<member>*__dlm`)
   - [hardis:project:create](https://sfdx-hardis.cloudity.com/hardis/project/create/): Clean manifest/package.xml after creation. Add CLI flags and behaviors for Agent mode.
   - [hardis:project:clean:standarditems](https://sfdx-hardis.cloudity.com/hardis/project/clean/standarditems/): Improved logging and automatic removal of standard application files during cleanup.
+  - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): Add **retrofit** value for default branch prefixes choices.
 
 - Utilities
   - [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): Optimize user path to improve performance

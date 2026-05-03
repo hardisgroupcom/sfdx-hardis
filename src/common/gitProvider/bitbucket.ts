@@ -262,8 +262,7 @@ export class BitbucketProvider extends GitProviderRoot {
 
   public async listPullRequests(
     filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
-    options: { formatted?: boolean } = { formatted: false },
-  ): Promise<any[] | null> {
+  ): Promise<CommonPullRequestInfo[] | null> {
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     if (!workspace || !repoSlug) return null;
@@ -290,21 +289,7 @@ export class BitbucketProvider extends GitProviderRoot {
         });
       }
 
-      if (options.formatted) {
-        return prs.map((pr: any) => ({
-          pullRequestId: pr.id,
-          targetRefName: pr.destination?.branch?.name || "",
-          sourceRefName: pr.source?.branch?.name || "",
-          status: pr.state || "",
-          title: pr.title || "",
-          description: pr.description || "",
-          createdBy: pr.author?.display_name || "",
-          creationDate: pr.created_on || "",
-          closedDate: pr.updated_on || "",
-          webUrl: pr.links?.html?.href || "",
-        }));
-      }
-      return prs;
+      return prs.map((pr: any) => this.completePullRequestInfo(pr));
     } catch (e: any) {
       uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketErrorListingPullRequests', { message: e?.message || e })));
       return null;
@@ -550,6 +535,7 @@ ${getBannerMarkdownAndLink()}
       description: prData?.rendered?.description?.raw || prData?.rendered?.description?.markup || prData?.rendered?.description?.html || '',
       webUrl: prData?.links?.html?.href || '',
       authorName: prData?.author?.display_name || '',
+      mergeCommitSha: (prData as any)?.merge_commit?.hash || undefined,
       providerInfo: prData,
       customBehaviors: {}
     };

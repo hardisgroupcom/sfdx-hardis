@@ -436,14 +436,13 @@ export async function collectPullRequests(
 
   // Date-based filtering
   if (scope.fromDate || scope.toDate) {
-    pullRequests = await gitProvider.listPullRequests(
+    pullRequests = (await gitProvider.listPullRequests(
       {
         targetBranch: scope.targetBranch,
         minDate: scope.fromDate ? new Date(scope.fromDate) : undefined,
         status: "merged",
       },
-      { formatted: false },
-    );
+    )) || [];
     // Filter by toDate if provided
     if (scope.toDate) {
       const toDate = new Date(scope.toDate);
@@ -465,17 +464,15 @@ export async function collectPullRequests(
     } catch (e: any) {
       uxLog("warning", commandRef, c.yellow(t("releaseNotesCouldNotListPrs", { message: e.message })));
       // Fallback: try listPullRequests with target branch
-      pullRequests = await gitProvider.listPullRequests(
+      pullRequests = (await gitProvider.listPullRequests(
         { targetBranch: scope.targetBranch, status: "merged" },
-        { formatted: false },
-      );
+      )) || [];
     }
   } else {
     // Tag-based or generic: list merged PRs for the target branch
-    pullRequests = await gitProvider.listPullRequests(
+    pullRequests = (await gitProvider.listPullRequests(
       { targetBranch: scope.targetBranch, status: "merged" },
-      { formatted: false },
-    );
+    )) || [];
   }
 
   // Filter out inter-major-branch PRs

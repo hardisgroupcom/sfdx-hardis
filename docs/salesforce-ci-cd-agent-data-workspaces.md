@@ -428,15 +428,16 @@ Use `$` syntax: `ParentId$Account`, `WhatId$Opportunity`, `WhoId$Contact`
 When generating an export.json:
 
 1. **Always include** `sfdxHardisLabel` and `sfdxHardisDescription` at the root
-2. **Always set** `promptOnMissingParentObjects: false` and `promptOnIssuesInCSVFiles: false` for CI/CD compatibility
-3. **Order objects** so parent objects come before children (e.g. Account before Contact)
-4. **Include Readonly objects** for reference data that must exist but should not be modified (RecordType, User, etc.)
-5. **Use `SELECT all`** when all fields are needed; list specific fields when only a subset is required or for performance
-6. **Always resolve externalId** using the "External ID Resolution" procedure above - search local metadata or query the Tooling API for declared External ID fields first, fall back to a verified-unique composite key, never blindly use `Name`
-7. **Use `master: false`** on child objects that depend on parent relationships
-8. **For production safety**: never set `runnableInProduction: true` unless explicitly asked; always default to `false`
-9. **For delete workspaces**: use `operation: "DeleteSource"` with `deleteFromSource: true`; keep these in separate workspaces from upsert workspaces
-10. **Folder naming**: use PascalCase for workspace folder names (e.g. `ReferenceData`, `CPQConfig`, `ContactAnonymize`)
+2. **Always set `allOrNone: true`** at the root — partial failures are **not acceptable**. If any record fails, the entire migration must abort. Never omit `allOrNone` or leave it at its default (`false`).
+3. **Always set** `promptOnMissingParentObjects: false` and `promptOnIssuesInCSVFiles: false` for CI/CD compatibility
+4. **Order objects** so parent objects come before children (e.g. Account before Contact)
+5. **Include Readonly objects** for reference data that must exist but should not be modified (RecordType, User, etc.)
+6. **Use `SELECT all`** when all fields are needed; list specific fields when only a subset is required or for performance
+7. **Always resolve externalId** using the "External ID Resolution" procedure above - search local metadata or query the Tooling API for declared External ID fields first, fall back to a verified-unique composite key, never blindly use `Name`
+8. **Use `master: false`** on child objects that depend on parent relationships
+9. **For production safety**: never set `runnableInProduction: true` unless explicitly asked; always default to `false`
+10. **For delete workspaces**: use `operation: "DeleteSource"` with `deleteFromSource: true`; keep these in separate workspaces from upsert workspaces
+11. **Folder naming**: use PascalCase for workspace folder names (e.g. `ReferenceData`, `CPQConfig`, `ContactAnonymize`)
 
 $ARGUMENTS
 ````

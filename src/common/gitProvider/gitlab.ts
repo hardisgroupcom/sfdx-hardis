@@ -336,8 +336,7 @@ ${getBannerMarkdownAndLink()}
 
   public async listPullRequests(
     filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
-    options: { formatted?: boolean } = { formatted: false },
-  ): Promise<any[] | null> {
+  ): Promise<CommonPullRequestInfo[] | null> {
     if (!this.gitlabApi) {
       return null;
     }
@@ -366,21 +365,7 @@ ${getBannerMarkdownAndLink()}
 
       const mergeRequests = await this.gitlabApi.MergeRequests.all(params);
 
-      if (options.formatted) {
-        return (mergeRequests as any[]).map((mr: any) => ({
-          pullRequestId: mr.iid,
-          targetRefName: mr.target_branch || "",
-          sourceRefName: mr.source_branch || "",
-          status: mr.state || "",
-          title: mr.title || "",
-          description: mr.description || "",
-          createdBy: mr.author?.username || "",
-          creationDate: mr.created_at || "",
-          closedDate: mr.merged_at || mr.closed_at || "",
-          webUrl: mr.web_url || "",
-        }));
-      }
-      return mergeRequests as any[];
+      return (mergeRequests as any[]).map((mr: any) => this.completePullRequestInfo(mr));
     } catch (e: any) {
       uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMergeRequests', { message: e?.message || e })));
       return null;
@@ -538,6 +523,7 @@ ${getBannerMarkdownAndLink()}
       description: prData?.description || "",
       authorName: prData?.author?.name || "",
       webUrl: prData?.web_url || "",
+      mergeCommitSha: prData?.merge_commit_sha || prData?.mergeCommitSha || undefined,
       providerInfo: prData,
       customBehaviors: {}
     }

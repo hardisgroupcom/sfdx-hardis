@@ -30,7 +30,7 @@ Add `--agent` to any supported command to enable non-interactive mode:
 
 ```bash
 # Create a new User Story branch without any prompts
-sf hardis:work:new --agent --task-name "PROJ-123 Add account scoring" --target-branch integration
+sf hardis:work:new --agent --task-name "PROJ-123 Add account scoring" --target-branch integration --branch-prefix feature
 
 # Run a full org health check
 sf hardis:org:monitor:all --agent --target-org myorg@example.com
@@ -58,7 +58,7 @@ All major coding agents support **skills** - markdown files that describe how to
 
 When the user asks to start a new Salesforce User Story, run:
 
-sf hardis:work:new --agent --task-name "<TICKET-ID> <description>" --target-branch <branch>
+sf hardis:work:new --agent --task-name "<TICKET-ID> <description>" --target-branch <branch> --branch-prefix <feature|fix|retrofit>
 
 - Replace <TICKET-ID> and <description> with values from the user's request.
 - Check config/.sfdx-hardis.yml for available target branches (usually `integration`).
@@ -125,7 +125,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:project:deploy:smart**](hardis/project/deploy/smart.md)                     | Smart-deploy SFDX sources with delta, dependency resolution, and pre/post hooks                                                                 |
 | [**hardis:scratch:pull**](hardis/scratch/pull.md)                                     | Pull the latest metadata changes from a scratch org into the local SFDX project                                                                 |
 | [**hardis:scratch:push**](hardis/scratch/push.md)                                     | Push local SFDX project metadata to the scratch org                                                                                             |
-| [**hardis:work:new**](hardis/work/new.md)                                             | Create a new User Story Git branch and optionally provision a scratch org or sandbox - required flags: `--task-name`, `--target-branch`         |
+| [**hardis:work:new**](hardis/work/new.md)                                             | Create a new User Story Git branch and optionally provision a scratch org or sandbox - required flags: `--task-name`, `--target-branch`; optional: `--branch-prefix` |
 | [**hardis:work:resetselection**](hardis/work/resetselection.md)                       | Soft-reset staged commits to re-evaluate which changes go into the merge request                                                                |
 | [**hardis:work:save**](hardis/work/save.md)                                           | Clean metadata, update `package.xml` / `destructiveChanges.xml`, commit, and push - optional: `--targetbranch`, `--noclean`, `--nogit`          |
 | [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                           | Generate release notes with tickets, PRs, metadata changes, deployment actions, and AI summary using `--agent --mode post --target-branch main` |

@@ -658,157 +658,16 @@ export async function checkGitClean(options: any) {
         throw e;
       }
     } else {
+      const warningMessage = t('branchIsNotCleanCommitOrResetLocalUpdates', {
+        branch: c.bold(gitStatus.current),
+        localUpdates: c.yellow(localUpdates),
+      });
+      uxLog("warning", this, c.yellow(warningMessage));
       throw new SfError(
-        `[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold(
-          'commit or reset'
-        )} the following local updates:\n${c.yellow(localUpdates)}`
+        `[sfdx-hardis] ${warningMessage}`
       );
     }
   }
-}
-
-// Interactive git add
-export async function interactiveGitAdd(options: any = { filter: [], groups: [] }) {
-  if (!isGitRepo()) {
-    throw new SfError('[sfdx-hardis] You must be within a git repository');
-  }
-  // List all files and arrange their format
-  const config = await getConfig('project');
-  const gitStatus = await git().status();
-  let filesFiltered = gitStatus.files
-    .filter((fileStatus: FileStatusResult) => {
-      return (
-        (options.filter || []).filter((filterString: string) => fileStatus.path.includes(filterString)).length === 0
-      );
-    })
-    .map((fileStatus: FileStatusResult) => {
-      fileStatus.path = normalizeFileStatusPath(fileStatus.path, config);
-      return fileStatus;
-    });
-  // Create default group if
-  let groups = options.groups || [];
-  if (groups.length === 0) {
-    groups = [
-      {
-        label: 'All',
-        regex: /(.*)/i,
-        defaultSelect: false,
-        ignore: false,
-      },
-    ];
-  }
-  // Ask user what he/she wants to git add/rm
-  const result: any = { added: [], removed: [] };
-  if (filesFiltered.length > 0) {
-    for (const group of groups) {
-      // Extract files matching group regex
-      const matchingFiles = filesFiltered.filter((fileStatus: FileStatusResult) => {
-        return group.regex.test(fileStatus.path);
-      });
-      if (matchingFiles.length === 0) {
-        continue;
-      }
-      // Remove remaining files list
-      filesFiltered = filesFiltered.filter((fileStatus: FileStatusResult) => {
-        return !group.regex.test(fileStatus.path);
-      });
-      // Ask user for input
-      const selectFilesStatus = await prompts({
-        type: 'multiselect',
-        name: 'files',
-        message: c.cyanBright(
-          `Please select the ${c.bgWhite(
-            c.red(c.bold(group.label.toUpperCase()))
-          )} files you want to commit (save)}`
-        ),
-        description: t('descChooseFilesToCommit'),
-        choices: matchingFiles.map((fileStatus: FileStatusResult) => {
-          return {
-            title: `(${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`,
-            selected: group.defaultSelect || false,
-            value: fileStatus,
-          };
-        }),
-        optionsPerPage: 9999,
-      });
-      // Add to group list of files
-      group.files = selectFilesStatus.files;
-      // Separate added to removed files
-      result.added.push(
-        ...selectFilesStatus.files
-          .filter((fileStatus: FileStatusResult) => fileStatus.working_dir !== 'D')
-          .map((fileStatus: FileStatusResult) => fileStatus.path.replace('"', ''))
-      );
-      result.removed.push(
-        ...selectFilesStatus.files
-          .filter((fileStatus: FileStatusResult) => fileStatus.working_dir === 'D')
-          .map((fileStatus: FileStatusResult) => fileStatus.path.replace('"', ''))
-      );
-    }
-    if (filesFiltered.length > 0) {
-      uxLog(
-        "log",
-        this,
-        c.grey(
-          'The following list of files has not been proposed for selection\n' +
-          filesFiltered
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join('\n')
-        )
-      );
-    }
-    // Ask user for confirmation
-    const confirmationText = groups
-      .filter((group) => group.files != null && group.files.length > 0)
-      .map((group) => {
-        return (
-          c.bgWhite(c.red(c.bold(group.label))) +
-          '\n' +
-          group.files
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join('\n') +
-          '\n'
-        );
-      })
-      .join('\n');
-    const addFilesResponse = await prompts({
-      type: 'select',
-      name: 'addFiles',
-      message: c.cyanBright(t('doYouConfirmThatYouWantTo', { confirmationText })),
-      description: t('descConfirmFileSelection'),
-      choices: [
-        { title: t('titleYesSelectionComplete'), value: 'yes' },
-        { title: t('titleNoSelectAgain'), value: 'no' },
-        { title: t('titleLetMeOut'), value: 'bye' },
-      ],
-      initial: 0,
-    });
-    // Commit if requested
-    if (addFilesResponse.addFiles === 'yes') {
-      if (result.added.length > 0) {
-        await git({ output: true }).add(result.added);
-      }
-      if (result.removed.length > 0) {
-        await git({ output: true }).rm(result.removed);
-      }
-    }
-    // restart selection
-    else if (addFilesResponse.addFiles === 'no') {
-      return await interactiveGitAdd(options);
-    }
-    // exit
-    else {
-      uxLog("other", this, t('cancelledByUser'));
-      process.exit(0);
-    }
-  } else {
-    uxLog("action", this, c.cyan(t('thereIsNoNewFileToCommit')));
-  }
-  return result;
 }
 
 // Shortcut to add, commit and push
@@ -1034,10 +893,6 @@ export function getSfdxFileLabel(filePath: string) {
     }
   }
   return cleanStr;
-}
-
-function getGitWorkingDirLabel(workingDir) {
-  return workingDir === '?' ? 'CREATED' : workingDir === 'D' ? 'DELETED' : workingDir === 'M' ? 'UPDATED' : 'OOOOOPS';
 }
 
 const elapseAll = {};

@@ -149,7 +149,7 @@ Use \`--agent\` to disable all interactive prompts. In agent mode:
     }
 
     // Process call to git provider API
-    this.pullRequests = await gitProvider.listPullRequests(prConstraint, { formatted: true });
+    this.pullRequests = (await gitProvider.listPullRequests(prConstraint)) || [];
 
     this.outputFile = await generateReportPath('pull-requests', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.pullRequests, this.outputFile, { fileTitle: 'Pull Requests' });
