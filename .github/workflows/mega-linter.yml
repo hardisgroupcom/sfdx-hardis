@@ -33,7 +33,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       # Mega-Linter
       - name: Mega-Linter
