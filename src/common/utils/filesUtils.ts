@@ -1681,7 +1681,7 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
   await workbook.xlsx.writeFile(xslxFile);
 }
 
-function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelExportOptions) {
+export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelExportOptions) {
   if (!worksheet.columns) {
     return;
   }
@@ -1711,7 +1711,7 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
     headerByColumn.set(colNumber, headerValue);
   });
 
-  const shouldAutoFit = worksheet.rowCount < 5000;
+  const shouldAutoFit = worksheet.rowCount < 10000;
 
   // Add an Excel table (Insert > Table equivalent) for small-to-medium datasets
   if (shouldAutoFit && worksheet.rowCount > 1 && worksheet.columnCount > 0) {
