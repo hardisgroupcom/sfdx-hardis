@@ -208,6 +208,7 @@
   "backpromoteRetrieveForConflictCheckFailed": "Retrieve for conflict check failed: {{message}}",
   "backpromoteRetryWithoutTests": "Do you want to retry the deployment without running tests? (test classes will need to be fixed before creating a merge request)",
   "backpromoteRetryingWithoutTests": "Retrying deployment without running tests...",
+  "backpromoteRunningAction": "Running deployment action \"{{label}}\"...",
   "backpromoteSelectActions": "Select {{phase}} actions to execute (deselect to skip)",
   "backpromoteSelectMetadataToDeploy": "Select metadata items to backpromote in dev org {{instanceUrl}} (deselect to skip)",
   "backpromoteSelectStartingCommit": "Select the commit to start the backpromote from (changes after this commit will be included)",

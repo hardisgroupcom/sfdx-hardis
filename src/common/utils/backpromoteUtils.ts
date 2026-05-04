@@ -52,7 +52,7 @@ export interface BackpromotePrGroup {
     sourceBranch: string;
   }>;
   /** PR-scoped configs for deployment actions and test classes (merged from all associated PRs) */
-  prConfigs: any[];
+  prConfigs: Array<{ config: any; prId: number; prTitle: string }>;
 }
 
 export interface OrgConflictItem {
@@ -213,7 +213,7 @@ export async function listMergedPrsWithCommits(
     // Discover associated PRs from child commits
     const associatedPrs: BackpromotePrGroup['associatedPrs'] = [];
     const seenPrIds = new Set<number>();
-    const prConfigs: any[] = [];
+    const prConfigs: BackpromotePrGroup['prConfigs'] = [];
 
     for (const childCommit of childCommits) {
       let prNum: number | null = null;
@@ -226,15 +226,16 @@ export async function listMergedPrsWithCommits(
       if (prNum !== null && !seenPrIds.has(prNum)) {
         seenPrIds.add(prNum);
         const prDetail = prDetailsMap.get(prNum);
+        const prTitle = prDetail?.title || `PR #${prNum}`;
         associatedPrs.push({
           id: prNum,
-          title: prDetail?.title || `PR #${prNum}`,
+          title: prTitle,
           author: prDetail?.authorName || childCommit.author_name,
           webUrl: prDetail?.webUrl || '',
           sourceBranch: prDetail?.sourceBranch || sourceBranch || '',
         });
         const prConfig = await loadPrConfig(prNum);
-        if (prConfig) prConfigs.push(prConfig);
+        if (prConfig) prConfigs.push({ config: prConfig, prId: prNum, prTitle });
       } else if (sourceBranch && !seenPrIds.has(0)) {
         // Virtual PR from source branch name
         const titleMatch = childCommit.message.match(/^(.+?)\s*Merge branch/);
@@ -1015,12 +1016,12 @@ export async function executeBackpromoteActions(
   const allActions: Array<PrePostCommand & { prLabel: string; prId: number }> = [];
 
   for (const prGroup of selectedPrs) {
-    const commitLabel = prGroup.commit.hash.substring(0, 7);
-    for (const prConfig of prGroup.prConfigs) {
+    for (const { config: prConfig, prId, prTitle } of prGroup.prConfigs) {
       const commands = prConfig[phase];
       if (!Array.isArray(commands)) continue;
+      const prLabel = prId > 0 ? `#${prId} - ${prTitle}` : prTitle;
       for (const cmd of commands) {
-        allActions.push({ ...cmd, prLabel: commitLabel, prId: 0 });
+        allActions.push({ ...cmd, prLabel, prId });
       }
     }
   }
@@ -1102,12 +1103,13 @@ export async function executeBackpromoteActions(
           const instanceUrl = conn.instanceUrl;
           const authResult = await authOrg('', { forceUsername: user.Username, instanceUrl, setDefault: false });
           if (authResult === true) {
-            uxLog('action', commandThis, c.green(t('backpromoteActionLoginAsSuccess', { username: user.Username, label: action.label })));
+            uxLog('log', commandThis, c.green(t('backpromoteActionLoginAsSuccess', { username: user.Username, label: action.label })));
             const actionInstance = await ActionsProvider.buildActionInstance(action);
             actionInstance.customUsernameToUse = user.Username;
             try {
+              uxLog('action', commandThis, c.cyan(t('backpromoteRunningAction', { label: action.label })));
               await actionInstance.run(action);
-              uxLog('action', commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
+              uxLog('success', commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
               actionStatus = 'success';
             } catch (e) {
               uxLog('error', commandThis, c.red(`[Backpromote] ${t('backpromoteActionFailedWithMessage', { label: action.label, message: (e as Error).message })}`));
@@ -1128,8 +1130,9 @@ export async function executeBackpromoteActions(
       const actionInstance = await ActionsProvider.buildActionInstance(action);
       if (actionInstance) {
         try {
+          uxLog('action', commandThis, c.cyan(t('backpromoteRunningAction', { label: action.label })));
           await actionInstance.run(action);
-          uxLog('action', commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
+          uxLog('success', commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
           actionStatus = 'success';
         } catch (e) {
           uxLog('error', commandThis, c.red(`[Backpromote] ${t('backpromoteActionFailedWithMessage', { label: action.label, message: (e as Error).message })}`));
@@ -1255,7 +1258,7 @@ export async function saveBackpromoteActionsState(
 export function collectTestClassesFromPrs(selectedPrs: BackpromotePrGroup[]): string[] {
   const testClasses: string[] = [];
   for (const prGroup of selectedPrs) {
-    for (const prConfig of prGroup.prConfigs) {
+    for (const { config: prConfig } of prGroup.prConfigs) {
       if (prConfig?.deploymentApexTestClasses && Array.isArray(prConfig.deploymentApexTestClasses)) {
         testClasses.push(...prConfig.deploymentApexTestClasses);
       }

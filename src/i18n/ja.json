@@ -210,6 +210,7 @@
   "backpromoteRetrieveForConflictCheckFailed": "競合チェック用の retrieve が失敗しました: {{message}}",
   "backpromoteRetryWithoutTests": "テストを実行せずにデプロイを再試行しますか？（merge request 作成前にテストクラスの修正が必要です）",
   "backpromoteRetryingWithoutTests": "テストなしでデプロイを再試行しています...",
+  "backpromoteRunningAction": "デプロイアクション「{{label}}」を実行しています...",
   "backpromoteSelectActions": "実行する{{phase}}アクションを選択してください（選択解除でスキップ）",
   "backpromoteSelectMetadataToDeploy": "開発 org {{instanceUrl}} に backpromote するメタデータ項目を選択してください（選択解除でスキップ）",
   "backpromoteSelectStartingCommit": "backpromote を開始する commit を選択してください（この commit 以降の変更が含まれます）",

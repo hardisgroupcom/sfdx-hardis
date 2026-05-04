@@ -210,6 +210,7 @@
   "backpromoteRetrieveForConflictCheckFailed": "Le retrieve pour verification des conflits a echoue : {{message}}",
   "backpromoteRetryWithoutTests": "Voulez-vous relancer le deploiement sans executer les tests ? (les classes de test devront etre corrigees avant de creer une merge request)",
   "backpromoteRetryingWithoutTests": "Relance du deploiement sans tests...",
+  "backpromoteRunningAction": "Execution de l'action de deploiement \"{{label}}\"...",
   "backpromoteSelectActions": "Selectionnez les actions {{phase}} a executer (deselectionnez pour ignorer)",
   "backpromoteSelectMetadataToDeploy": "Selectionnez les elements de metadonnees a backpromote dans l'org de developpement {{instanceUrl}} (deselectionnez pour ignorer)",
   "backpromoteSelectStartingCommit": "Selectionnez le commit a partir duquel demarrer le backpromote (les changements apres ce commit seront inclus)",

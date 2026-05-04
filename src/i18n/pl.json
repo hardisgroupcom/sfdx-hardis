@@ -208,6 +208,7 @@
   "backpromoteRetrieveForConflictCheckFailed": "Retrieve do sprawdzenia konfliktow nie powiodl sie: {{message}}",
   "backpromoteRetryWithoutTests": "Czy powtorzyc wdrozenie bez uruchamiania testow? (klasy testowe beda musialy zostac naprawione przed utworzeniem merge request)",
   "backpromoteRetryingWithoutTests": "Ponowne wdrozenie bez testow...",
+  "backpromoteRunningAction": "Wykonywanie akcji wdrozeniowej \"{{label}}\"...",
   "backpromoteSelectActions": "Wybierz akcje {{phase}} do wykonania (odznacz, aby pominac)",
   "backpromoteSelectMetadataToDeploy": "Wybierz elementy metadanych do backpromote w org deweloperskiej {{instanceUrl}} (odznacz, aby pominac)",
   "backpromoteSelectStartingCommit": "Wybierz commit, od ktorego rozpoczac backpromote (zmiany po tym commit zostana uwzglednione)",

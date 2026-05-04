@@ -208,6 +208,7 @@
   "backpromoteRetrieveForConflictCheckFailed": "Retrieve voor conflictcontrole mislukt: {{message}}",
   "backpromoteRetryWithoutTests": "Wil je de implementatie opnieuw proberen zonder tests uit te voeren? (testklassen moeten worden gerepareerd voordat je een merge request aanmaakt)",
   "backpromoteRetryingWithoutTests": "Implementatie opnieuw proberen zonder tests...",
+  "backpromoteRunningAction": "Implementatieactie \"{{label}}\" uitvoeren...",
   "backpromoteSelectActions": "Selecteer {{phase}}-acties om uit te voeren (deselecteer om over te slaan)",
   "backpromoteSelectMetadataToDeploy": "Selecteer metadata-items om te backpromoten in de ontwikkel-org {{instanceUrl}} (deselecteer om over te slaan)",
   "backpromoteSelectStartingCommit": "Selecteer de commit waarvanaf de backpromote moet starten (wijzigingen na deze commit worden meegenomen)",

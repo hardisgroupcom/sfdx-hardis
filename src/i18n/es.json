@@ -208,6 +208,7 @@
   "backpromoteRetrieveForConflictCheckFailed": "La recuperacion para comprobacion de conflictos fallo: {{message}}",
   "backpromoteRetryWithoutTests": "Deseas reintentar el despliegue sin ejecutar tests? (las clases de test deberan corregirse antes de crear un merge request)",
   "backpromoteRetryingWithoutTests": "Reintentando despliegue sin ejecutar tests...",
+  "backpromoteRunningAction": "Ejecutando accion de despliegue \"{{label}}\"...",
   "backpromoteSelectActions": "Selecciona las acciones {{phase}} a ejecutar (deselecciona para omitir)",
   "backpromoteSelectMetadataToDeploy": "Selecciona los elementos de metadatos para backpromote en la org de desarrollo {{instanceUrl}} (deselecciona para omitir)",
   "backpromoteSelectStartingCommit": "Selecciona el commit desde el cual iniciar el backpromote (los cambios posteriores a este commit se incluiran)",

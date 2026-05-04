@@ -208,6 +208,7 @@
   "backpromoteRetrieveForConflictCheckFailed": "Retrieve per il controllo conflitti fallito: {{message}}",
   "backpromoteRetryWithoutTests": "Vuoi ritentare la distribuzione senza eseguire i test? (le classi di test dovranno essere corrette prima di creare una merge request)",
   "backpromoteRetryingWithoutTests": "Nuovo tentativo di distribuzione senza test...",
+  "backpromoteRunningAction": "Esecuzione dell'azione di distribuzione \"{{label}}\"...",
   "backpromoteSelectActions": "Seleziona le azioni {{phase}} da eseguire (deseleziona per saltare)",
   "backpromoteSelectMetadataToDeploy": "Seleziona gli elementi di metadati da backpromote nell'org di sviluppo {{instanceUrl}} (deseleziona per saltare)",
   "backpromoteSelectStartingCommit": "Seleziona il commit da cui iniziare il backpromote (le modifiche successive a questo commit saranno incluse)",
