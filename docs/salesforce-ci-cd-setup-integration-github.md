@@ -46,9 +46,9 @@ You might want to use GitHub integration with other tools than GitHub Actions, l
 
 When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins environment and maps its variables to GitHub equivalents. You only need to set:
 
-| Variable                         | Description                                                                                                                                                                    |
-|:---------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| CI_SFDX_HARDIS_GITHUB_TOKEN     | A [GitHub Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) stored as a Jenkins credential |
+| Variable                    | Description                                                                                                                                                                          |
+|:----------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| CI_SFDX_HARDIS_GITHUB_TOKEN | A [GitHub Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) stored as a Jenkins credential |
 
 The following variables are **automatically derived** from Jenkins built-in variables (`GIT_URL`, `GIT_BRANCH`, `BUILD_URL`, `BUILD_NUMBER`, `JOB_NAME`, `CHANGE_ID`):
 

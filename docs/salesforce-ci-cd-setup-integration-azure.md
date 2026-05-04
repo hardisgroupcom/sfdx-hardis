@@ -137,9 +137,9 @@ Notes:
 
 When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins environment and maps its variables to Azure DevOps equivalents. You only need to set:
 
-| Variable                         | Description                                                                                                                    |
-|:---------------------------------|:-------------------------------------------------------------------------------------------------------------------------------|
-| CI_SFDX_HARDIS_AZURE_TOKEN      | An Azure DevOps PAT with **Code Read & Write** and **Pull Request Threads Read & Write**, stored as a Jenkins credential        |
+| Variable                   | Description                                                                                                              |
+|:---------------------------|:-------------------------------------------------------------------------------------------------------------------------|
+| CI_SFDX_HARDIS_AZURE_TOKEN | An Azure DevOps PAT with **Code Read & Write** and **Pull Request Threads Read & Write**, stored as a Jenkins credential |
 
 The following variables are **automatically derived** from Jenkins built-in variables:
 

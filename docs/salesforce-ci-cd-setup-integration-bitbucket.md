@@ -38,9 +38,9 @@ Notes:
 
 When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins environment and maps its variables to Bitbucket equivalents. You only need to set:
 
-| Variable                           | Description                                                                                                                              |
-|:-----------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------|
-| CI_SFDX_HARDIS_BITBUCKET_TOKEN    | A Bitbucket repository access token with scopes `pullrequest`, `pullrequest:write`, `repository`, `repository:write`, stored as a Jenkins credential |
+| Variable                       | Description                                                                                                                                          |
+|:-------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| CI_SFDX_HARDIS_BITBUCKET_TOKEN | A Bitbucket repository access token with scopes `pullrequest`, `pullrequest:write`, `repository`, `repository:write`, stored as a Jenkins credential |
 
 The following variables are **automatically derived** from Jenkins built-in variables:
 
