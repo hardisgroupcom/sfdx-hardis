@@ -261,14 +261,11 @@ ${this.getPipelineVariablesConfig()}
   }
 
   public async listPullRequests(filters: {
+    status?: string,
     pullRequestStatus?: "open" | "merged" | "abandoned",
     targetBranch?: string,
     minDate?: Date
-  } = {},
-    options: {
-      formatted?: boolean
-    } = { formatted: false }
-  ): Promise<GitPullRequest[] | any[]> {
+  } = {}): Promise<CommonPullRequestInfo[] | null> {
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
@@ -283,14 +280,15 @@ ${this.getPipelineVariablesConfig()}
     }
     // Build search criteria
     const queryConstraint: GitPullRequestSearchCriteria = {};
-    if (filters.pullRequestStatus) {
+    const statusInput = filters.pullRequestStatus || filters.status;
+    if (statusInput) {
       const azurePrStatusValue =
-        filters.pullRequestStatus === "open" ? PullRequestStatus.Active :
-          filters.pullRequestStatus === "abandoned" ? PullRequestStatus.Abandoned :
-            filters.pullRequestStatus === "merged" ? PullRequestStatus.Completed :
+        statusInput === "open" ? PullRequestStatus.Active :
+          statusInput === "abandoned" ? PullRequestStatus.Abandoned :
+            statusInput === "merged" ? PullRequestStatus.Completed :
               null;
       if (azurePrStatusValue == null) {
-        throw new SfError(`[Azure Integration] No matching status for ${filters.pullRequestStatus} in ${JSON.stringify(PullRequestStatus)}`);
+        throw new SfError(`[Azure Integration] No matching status for ${statusInput} in ${JSON.stringify(PullRequestStatus)}`);
       }
       queryConstraint.status = azurePrStatusValue
     }
@@ -309,55 +307,17 @@ ${this.getPipelineVariablesConfig()}
 
     // List pull requests
     const pullRequests = await azureGitApi.getPullRequests(repositoryId, queryConstraint, teamProject);
-    // Complete results with PR comments
-    const pullRequestsWithComments: Array<GitPullRequest & { threads?: any[] }> = [];
+    // Complete results with PR comments (stored in providerInfo)
+    const results: CommonPullRequestInfo[] = [];
     for (const pullRequest of pullRequests) {
       const pr: GitPullRequest & { threads?: any[] } = Object.assign({}, pullRequest);
       uxLog("log", this, c.grey(t('gettingThreadsForPr', { pullRequest: pullRequest.pullRequestId })));
       const existingThreads = await azureGitApi.getThreads(pullRequest.repository?.id || "", pullRequest.pullRequestId || 0, teamProject);
       pr.threads = existingThreads.filter(thread => !thread.isDeleted);
-      pullRequestsWithComments.push(pr);
+      results.push(this.completePullRequestInfo(pr));
     }
 
-    // Format if requested
-    if (options.formatted) {
-      uxLog("action", this, c.cyan(t('formattingResults', { pullRequestsWithComments: pullRequestsWithComments.length })));
-      const pullRequestsFormatted = pullRequestsWithComments.map(pr => {
-        const prFormatted: any = {};
-        // Find sfdx-hardis deployment simulation status comment and extract tickets part
-        let tickets = "";
-        for (const thread of pr.threads || []) {
-          for (const comment of thread?.comments || []) {
-            if ((comment?.content || "").includes(`<!-- sfdx-hardis deployment-id `)) {
-              const ticketsSplit = comment.content.split("## Tickets");
-              if (ticketsSplit.length === 2) {
-                tickets = ticketsSplit[1].split("## Commits summary")[0].trim();
-              }
-              break;
-            }
-            if (tickets !== "") {
-              break;
-            }
-          }
-        }
-        prFormatted.pullRequestId = pr.pullRequestId;
-        prFormatted.targetRefName = (pr.targetRefName || "").replace("refs/heads/", "");
-        prFormatted.sourceRefName = (pr.sourceRefName || "").replace("refs/heads/", "");
-        prFormatted.status = PullRequestStatus[pr.status || 0]
-        prFormatted.mergeStatus = PullRequestAsyncStatus[pr.mergeStatus || 0];
-        prFormatted.title = pr.title;
-        prFormatted.description = pr.description;
-        prFormatted.tickets = tickets;
-        prFormatted.closedBy = pr.closedBy?.uniqueName || pr.closedBy?.displayName;
-        prFormatted.closedDate = pr.closedDate;
-        prFormatted.createdBy = pr.createdBy?.uniqueName || pr.createdBy?.displayName;
-        prFormatted.creationDate = pr.creationDate;
-        prFormatted.reviewers = (pr.reviewers || []).map(reviewer => reviewer.uniqueName || reviewer.displayName).join(",");
-        return prFormatted;
-      });
-      return pullRequestsFormatted;
-    }
-    return pullRequestsWithComments;
+    return results;
   }
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId: string | null = null;
@@ -691,6 +651,7 @@ ${getBannerMarkdownAndLink()}
         process.env.BUILD_REPOSITORYNAME || "",
       )}/pullrequest/${prData.pullRequestId}`,
       authorName: prData?.createdBy?.displayName || "",
+      mergeCommitSha: prData?.lastMergeCommit?.commitId || undefined,
       providerInfo: prData,
       customBehaviors: {}
     };

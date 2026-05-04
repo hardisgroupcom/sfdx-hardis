@@ -443,6 +443,7 @@ export declare type CommonPullRequestInfo = {
   webUrl: string;
   createdDate?: string;
   mergedDate?: string;
+  mergeCommitSha?: string;
   customBehaviors: {
     noDeltaDeployment?: boolean,
     purgeFlowVersions?: boolean,

@@ -1231,12 +1231,13 @@ async function restoreQuickActions() {
 export async function buildOrgManifest(
   targetOrgUsernameAlias,
   packageXmlOutputFile: string | null = null,
-  conn: any | null = null
+  conn: any | null = null,
+  options: { excludePackages?: boolean, logType?: 'action' | 'log' } = {},
 ) {
   // Manage file name
   if (packageXmlOutputFile === null) {
     const tmpDir = await createTempDir();
-    uxLog("action", this, c.cyan(t('generatingFullPackageXmlFromTargetOrg', { targetOrgUsernameAlias })));
+    uxLog(options.logType || 'action', this, c.cyan(t('generatingFullPackageXmlFromTargetOrg', { targetOrgUsernameAlias })));
     packageXmlOutputFile = path.join(tmpDir, 'packageTargetOrg.xml');
   }
   // Use forced file name, for development purposed only
@@ -1255,13 +1256,14 @@ export async function buildOrgManifest(
     }
     targetOrgUsernameAlias = currentOrg.username;
   }
+  const includePackagesFlag = options.excludePackages ? '' : ' --include-packages managed,unlocked';
   if (isSfdxProject()) {
     // Use sfdx manifest build in current project
     await execCommand(
       `sf project generate manifest` +
       ` --name ${manifestName}` +
       ` --output-dir "${path.resolve(manifestDir)}"` +
-      ` --include-packages managed,unlocked` +
+      includePackagesFlag +
       ` --from-org ${targetOrgUsernameAlias}`,
       this,
       {
@@ -1278,7 +1280,7 @@ export async function buildOrgManifest(
       `sf project generate manifest` +
       ` --name ${manifestName}` +
       ` --output-dir "${path.resolve(manifestDir)}"` +
-      ` --include-packages managed,unlocked` +
+      includePackagesFlag +
       ` --from-org ${targetOrgUsernameAlias}`,
       this,
       {
@@ -1377,7 +1379,7 @@ export async function buildOrgManifest(
   }
 
   const nbRetrievedItems = await countPackageXmlItems(packageXmlFull);
-  uxLog("action", this, c.cyan(t('fullOrgPackageXmlContainsItems', { nbRetrievedItems: c.bold(nbRetrievedItems) })))
+  uxLog("log", this, c.cyan(t('fullOrgPackageXmlContainsItems', { nbRetrievedItems: c.bold(nbRetrievedItems) })))
   return packageXmlFull;
 }
 

@@ -340,13 +340,12 @@ ${getBannerMarkdownAndLink()}
 
   public async listPullRequests(
     filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
-    options: { formatted?: boolean } = { formatted: false },
-  ): Promise<any[] | null> {
+  ): Promise<CommonPullRequestInfo[] | null> {
     if (!this.octokit || !this.repoOwner || !this.repoName) {
       return null;
     }
     const state = filters.status === "merged" || filters.status === "closed" ? "closed" : filters.status === "open" ? "open" : "all";
-    const allPrs: any[] = [];
+    const allPrs: CommonPullRequestInfo[] = [];
     let page = 1;
     const maxPages = 10; // Safety limit
 
@@ -373,22 +372,7 @@ ${getBannerMarkdownAndLink()}
           // Filter by minDate on creation
           if (filters.minDate && new Date(pr.created_at) < filters.minDate) continue;
 
-          if (options.formatted) {
-            allPrs.push({
-              pullRequestId: pr.number,
-              targetRefName: pr.base?.ref || "",
-              sourceRefName: pr.head?.ref || "",
-              status: pr.merged_at ? "Merged" : pr.state,
-              title: pr.title,
-              description: pr.body || "",
-              createdBy: pr.user?.login || "",
-              creationDate: pr.created_at,
-              closedDate: pr.merged_at || pr.closed_at,
-              webUrl: pr.html_url,
-            });
-          } else {
-            allPrs.push(pr);
-          }
+          allPrs.push(this.completePullRequestInfo(pr));
         }
 
         // Stop if we have gone past the date window
@@ -517,6 +501,7 @@ ${getBannerMarkdownAndLink()}
       description: prData?.body || "",
       authorName: prData?.user?.login || "",
       webUrl: prData?.html_url || "",
+      mergeCommitSha: prData?.merge_commit_sha || undefined,
       providerInfo: prData,
       customBehaviors: {}
     }

@@ -41,7 +41,7 @@ Creates a Git branch (and optionally a scratch org) for a new User Story.
 ### Usage
 
 ```bash
-sf hardis:work:new --agent --task-name "MYPROJECT-123 My User Story" --target-branch integration
+sf hardis:work:new --agent --task-name "MYPROJECT-123 My User Story" --target-branch integration --branch-prefix feature
 ```
 
 ### Required flags in agent mode
@@ -53,13 +53,14 @@ sf hardis:work:new --agent --task-name "MYPROJECT-123 My User Story" --target-br
 
 ### Optional flags
 
-| Flag         | Description                               |
-|--------------|-------------------------------------------|
-| `--open-org` | Open the org in a browser after creation. |
+| Flag              | Description                                                                                                                  |
+|-------------------|------------------------------------------------------------------------------------------------------------------------------|
+| `--branch-prefix` | Branch prefix for the created branch. Must be in configured `branchPrefixChoices` (usually `feature`, `fix`, or `retrofit`). |
+| `--open-org`      | Open the org in a browser after creation.                                                                                    |
 
 ### Behavior in agent mode
 
-- **Branch prefix**: uses the first configured `branchPrefixChoices` value, fallback `feature`.
+- **Branch prefix**: uses `--branch-prefix` when provided, otherwise first configured `branchPrefixChoices` value, fallback `feature`.
 - **Org type**: computed automatically from `allowedOrgTypes` in `config/.sfdx-hardis.yml`.
 - **Scratch mode**: always creates a new scratch org (when applicable).
 - **Skips**: sandbox initialization, updating default target branch in user config.
@@ -124,7 +125,7 @@ Add the following instructions to your project's `CLAUDE.md` file (at the reposi
 ## Salesforce User Story Workflow
 
 When asked to start a new Salesforce User Story:
-- Run: `sf hardis:work:new --agent --task-name "<TICKET-ID> <description>" --target-branch <branch>`
+- Run: `sf hardis:work:new --agent --task-name "<TICKET-ID> <description>" --target-branch <branch> --branch-prefix <feature|fix|retrofit>`
 - The target branch is usually `integration` (check config/.sfdx-hardis.yml for available branches).
 
 When asked to save / publish Salesforce work:
@@ -148,7 +149,7 @@ user-invocable: true
 
 Run the following command, replacing <TICKET-ID> and <description> with values from the user's request:
 
-sf hardis:work:new --agent --task-name "<TICKET-ID> <description>" --target-branch <branch>
+sf hardis:work:new --agent --task-name "<TICKET-ID> <description>" --target-branch <branch> --branch-prefix <feature|fix|retrofit>
 
 - Check `config/.sfdx-hardis.yml` for available target branches (usually `integration`).
 - Do not pass `--open-org` unless explicitly asked.
@@ -180,7 +181,7 @@ $ARGUMENTS
 
 For any agent that can execute shell commands, the pattern is the same:
 
-1. **New User Story**: `sf hardis:work:new --agent --task-name "<name>" --target-branch <branch>`
+1. **New User Story**: `sf hardis:work:new --agent --task-name "<name>" --target-branch <branch> --branch-prefix <feature|fix|retrofit>`
 2. **Save Work**: `sf hardis:work:save --agent`
 
 Ensure the agent has access to:
@@ -197,7 +198,7 @@ A complete agent-driven workflow looks like this:
 
 ```mermaid
 graph TD
-  A[Agent receives User Story] --> B["sf hardis:work:new --agent<br/>--task-name 'PROJ-123 My Story'<br/>--target-branch integration"]
+  A[Agent receives User Story] --> B["sf hardis:work:new --agent<br/>--task-name 'PROJ-123 My Story'<br/>--target-branch integration<br/>--branch-prefix feature"]
   B --> C["Agent makes changes<br/>in scratch org or local files"]
   C --> D["User manually stages &<br/>commits changes"]
   D --> E["sf hardis:work:save --agent"]

@@ -63,12 +63,16 @@ Key features include:
 
 Use \`--agent\` to disable all prompts. Typical usage:
 
-\`sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration\`
+\`sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration --branch-prefix feature\`
 
 Required in agent mode:
 
 - \`--task-name\`
 - \`--target-branch\`
+
+Optional in agent mode:
+
+- \`--branch-prefix\` (must be one of configured \`branchPrefixChoices\` values, usually \`feature\`, \`fix\`, or \`retrofit\`)
 
 In \`--agent\` mode, org type is computed automatically:
 
@@ -78,7 +82,7 @@ In \`--agent\` mode, org type is computed automatically:
 
 In \`--agent\` mode, the command also computes automatically:
 
-- branch prefix: first configured branch prefix choice, fallback \`feature\`
+- branch prefix: value provided by \`--branch-prefix\`, otherwise first configured branch prefix choice, fallback \`feature\`
 - scratch mode: always create a new scratch org
 
 In \`--agent\` mode, the command intentionally skips:
@@ -105,7 +109,11 @@ The command's logic orchestrates various underlying processes:
 </details>
 `;
 
-  public static examples = ['$ sf hardis:work:new', '$ sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration'];
+  public static examples = [
+    '$ sf hardis:work:new',
+    '$ sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration',
+    '$ sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration --branch-prefix retrofit'
+  ];
 
   // public static args = [{name: 'file'}];
 
@@ -119,6 +127,9 @@ The command's logic orchestrates various underlying processes:
     }),
     'target-branch': Flags.string({
       description: 'Target branch to branch from',
+    }),
+    'branch-prefix': Flags.string({
+      description: 'Branch prefix to use (must be in configured branchPrefixChoices, e.g. feature, fix, retrofit)',
     }),
     'open-org': Flags.boolean({
       default: false,
@@ -178,8 +189,20 @@ The command's logic orchestrates various underlying processes:
         value: 'fix',
         description: t('branchPrefixFixDescription'),
       },
+      {
+        title: t('choiceBranchRetrofit'),
+        value: 'retrofit',
+        description: t('branchPrefixRetrofitDescription'),
+      },
     ];
     const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
+    const availableBranchPrefixes = branchPrefixChoices.map((choice: any) => choice.value);
+    const requestedBranchPrefix = flags['branch-prefix'];
+    if (requestedBranchPrefix && !availableBranchPrefixes.includes(requestedBranchPrefix)) {
+      throw new SfError(
+        `branch-prefix="${requestedBranchPrefix}" is not an allowed branch prefix. Available: ${this.toOptionList(availableBranchPrefixes)}`
+      );
+    }
 
     // Select project if multiple projects are defined in availableProjects .sfdx-hardis.yml property
     let projectBranchPart = '';
@@ -204,17 +227,19 @@ The command's logic orchestrates various underlying processes:
     // Request info to build branch name. ex features/config/MYTASK
     const response = agentMode
       ? { branch: agentInputs.branchPrefix }
-      : await prompts([
-        {
-          type: 'select',
-          name: 'branch',
-          message: c.cyanBright(t('whatTypeOfUserStoryDoYou')),
-          description: t('selectCategoryOfWorkForUserStory'),
-          placeholder: t('selectUserStoryType'),
-          initial: 0,
-          choices: branchPrefixChoices,
-        },
-      ]);
+      : requestedBranchPrefix
+        ? { branch: requestedBranchPrefix }
+        : await prompts([
+          {
+            type: 'select',
+            name: 'branch',
+            message: c.cyanBright(t('whatTypeOfUserStoryDoYou')),
+            description: t('selectCategoryOfWorkForUserStory'),
+            placeholder: t('selectUserStoryType'),
+            initial: 0,
+            choices: branchPrefixChoices,
+          },
+        ]);
 
     // Request task name
     const taskName = agentMode
@@ -348,8 +373,9 @@ The command's logic orchestrates various underlying processes:
       '  --agent',
       '  --task-name <name>',
       '  --target-branch <branch>',
+      '  --branch-prefix <prefix> (optional, must be in configured branchPrefixChoices)',
       '  --open-org (optional, opens org in browser when set)',
-      '  branch-prefix is auto-selected in --agent mode: first configured prefix, else feature',
+      '  branch-prefix in --agent mode: value from --branch-prefix, else first configured prefix, else feature',
       '  project is never used in --agent mode',
       '  org-type is auto-selected in --agent mode: currentOrg when allowedOrgTypes is missing or starts with sandbox, else first allowedOrgTypes value',
       '  scratch mode is auto-selected in --agent mode: always new',
@@ -368,6 +394,11 @@ The command's logic orchestrates various underlying processes:
         title: t('choiceBranchFix'),
         value: 'fix',
         description: t('branchPrefixFixDescription'),
+      },
+      {
+        title: t('choiceBranchRetrofit'),
+        value: 'retrofit',
+        description: t('branchPrefixRetrofitDescription'),
       },
     ];
     const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
@@ -424,12 +455,27 @@ The command's logic orchestrates various underlying processes:
         value: 'fix',
         description: t('branchPrefixFixDescription'),
       },
+      {
+        title: t('choiceBranchRetrofit'),
+        value: 'retrofit',
+        description: t('branchPrefixRetrofitDescription'),
+      },
     ];
 
     const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
     const availableBranchPrefixes = branchPrefixChoices.map((choice: any) => choice.value);
-    const branchPrefix = this.computeAgentBranchPrefix(config);
-    available.push(`branch-prefix: auto-selected as ${branchPrefix} from ${this.toOptionList(availableBranchPrefixes)}`);
+    const requestedBranchPrefix = flags['branch-prefix'];
+    let branchPrefix = this.computeAgentBranchPrefix(config);
+    if (requestedBranchPrefix) {
+      if (!availableBranchPrefixes.includes(requestedBranchPrefix)) {
+        missing.push(
+          `branch-prefix="${requestedBranchPrefix}" is not an allowed branch prefix. Available: ${this.toOptionList(availableBranchPrefixes)}`
+        );
+      } else {
+        branchPrefix = requestedBranchPrefix;
+      }
+    }
+    available.push(`branch-prefix: ${requestedBranchPrefix ? `selected ${branchPrefix}` : `auto-selected as ${branchPrefix}`} from ${this.toOptionList(availableBranchPrefixes)}`);
 
     const availableTargetBranches = [
       ...(Array.isArray(config.availableTargetBranches) ? config.availableTargetBranches : []),

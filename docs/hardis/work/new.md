@@ -26,12 +26,16 @@ Key features include:
 
 Use `--agent` to disable all prompts. Typical usage:
 
-`sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration`
+`sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration --branch-prefix feature`
 
 Required in agent mode:
 
 - `--task-name`
 - `--target-branch`
+
+Optional in agent mode:
+
+- `--branch-prefix` (must be one of configured `branchPrefixChoices` values, usually `feature`, `fix`, or `retrofit`)
 
 In `--agent` mode, org type is computed automatically:
 
@@ -41,7 +45,7 @@ In `--agent` mode, org type is computed automatically:
 
 In `--agent` mode, the command also computes automatically:
 
-- branch prefix: first configured branch prefix choice, fallback `feature`
+- branch prefix: value provided by `--branch-prefix`, otherwise first configured branch prefix choice, fallback `feature`
 - scratch mode: always create a new scratch org
 
 In `--agent` mode, the command intentionally skips:
@@ -67,19 +71,20 @@ The command's logic orchestrates various underlying processes:
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                   | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir             | option  | undefined                                                     |         |          |         |
-| json                  | boolean | Format output as json.                                        |         |          |         |
-| open-org              | boolean | Open the selected org in browser                              |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-branch         | option  | Target branch to branch from                                  |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |         |          |         |
-| target-org<br/>-o     | option  | undefined                                                     |         |          |         |
-| task-name             | option  | Task name used in created branch name                         |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name                  |  Type   | Description                                                                                   | Default | Required | Options |
+|:----------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                         |         |          |         |
+| branch-prefix         | option  | Branch prefix to use (must be in configured branchPrefixChoices, e.g. feature, fix, retrofit) |         |          |         |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                               |         |          |         |
+| flags-dir             | option  | undefined                                                                                     |         |          |         |
+| json                  | boolean | Format output as json.                                                                        |         |          |         |
+| open-org              | boolean | Open the selected org in browser                                                              |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                 |         |          |         |
+| target-branch         | option  | Target branch to branch from                                                                  |         |          |         |
+| target-dev-hub<br/>-v | option  | undefined                                                                                     |         |          |         |
+| target-org<br/>-o     | option  | undefined                                                                                     |         |          |         |
+| task-name             | option  | Task name used in created branch name                                                         |         |          |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
 
 ## Examples
 
@@ -89,6 +94,10 @@ $ sf hardis:work:new
 
 ```shell
 $ sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration
+```
+
+```shell
+$ sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration --branch-prefix retrofit
 ```
 
 

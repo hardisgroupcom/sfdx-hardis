@@ -1,12 +1,9 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execCommand, getCurrentGitBranch, git, gitFetch, gitPull, isCI, uxLog } from '../../../common/utils/index.js';
-import { forceSourcePull, forceSourcePush } from '../../../common/utils/deployUtils.js';
-import { prompts } from '../../../common/utils/prompts.js';
-import { getConfig } from '../../../config/index.js';
+import { uxLog } from '../../../common/utils/index.js';
 import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -16,6 +13,10 @@ export default class RefreshTask extends SfCommand<any> {
   public static title = 'Refresh User Story branch';
 
   public static description = `
+## DEPRECATED
+
+**This command is deprecated. Use \`sf hardis:work:backpromote\` instead.**
+
 ## Command Behavior
 
 **Refreshes your local Git branch and Salesforce org with the latest content from another Git branch.**
@@ -93,185 +94,10 @@ Required flags: none beyond \`--agent\` (uses project defaults).
   }; // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
 
-  protected debugMode = false;
-  protected agentMode = false;
-  protected noPull = false;
-  protected mergeBranch = null;
-
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
-    const { flags } = await this.parse(RefreshTask);
-    const config = await getConfig('project');
-    if (config.get('EXPERIMENTAL', '') !== 'true') {
-      const msg = 'This command is not stable enough to be used. Use EXPERIMENTAL=true to use it anyway';
-      uxLog("warning", this, c.yellow(msg));
-      return { outputString: msg };
-    }
-
-    this.agentMode = flags.agent === true;
-    this.noPull = flags.nopull || false;
-    uxLog(
-      "action",
-      this,
-      c.cyan(t('thisCommandWillRefreshGitBranchAndOrg'))
-    );
-    // Verify that the user saved his/her work before merging another branch
-    if (!isCI && !this.agentMode) {
-      const savePromptRes = await prompts({
-        type: 'select',
-        message: c.cyanBright(t('sensitiveOperationDidYouRunWorkSave')),
-        name: 'value',
-        description: t('confirmSavedWorkBeforeSensitiveOperation'),
-        placeholder: t('selectAnOption'),
-        choices: [
-          {
-            title: t('yesSavedBeforeMerging'),
-            value: true,
-          },
-          { title: t('noWillSaveRightNow'), value: false },
-        ],
-      });
-      if (savePromptRes.value !== true) {
-        process.exit(0);
-      }
-    }
-    // Select branch to merge
-    const localBranch = await getCurrentGitBranch();
-    if (!isCI && !this.agentMode) {
-      const branchSummary = await git().branch(['-r']);
-      const branchChoices = [
-        {
-          title: `${config.developmentBranch} (recommended)`,
-          value: config.developmentBranch,
-        },
-      ];
-      for (const branchName of Object.keys(branchSummary.branches)) {
-        const branchNameLocal = branchName.replace('origin/', '');
-        if (branchNameLocal !== config.developmentBranch) {
-          branchChoices.push({ title: branchNameLocal, value: branchNameLocal });
-        }
-      }
-      const branchRes = await prompts({
-        type: 'select',
-        message: t('pleaseSelectTheBranchThatYouWant', { localBranch: c.green(localBranch) }),
-        name: 'value',
-        description: t('chooseWhichBranchToMergeIntoCurrent'),
-        placeholder: t('selectABranchToMerge'),
-        choices: branchChoices,
-      });
-      this.mergeBranch = branchRes.value;
-    } else {
-      this.mergeBranch = config.developmentBranch;
-    }
-    // Run refresh of local branch
-    try {
-      return await this.runRefresh(localBranch, flags);
-    } catch (e) {
-      uxLog(
-        "warning",
-        this,
-        c.yellow(t('mergeConflictOrTechnicalErrorContactDeveloper'))
-      );
-      throw e;
-    }
-  }
-
-  private async runRefresh(localBranch, flags): Promise<AnyJson> {
-    this.debugMode = flags.debug || false;
-
-    uxLog(
-      "action",
-      this,
-      c.cyan(
-        `sfdx-hardis will refresh your local branch ${c.green(localBranch)} and your local scratch org ${c.green(
-          flags['target-org'].getUsername()
-        )} with the latest state of ${c.green(this.mergeBranch)}`
-      )
-    );
-
-    if (localBranch === this.mergeBranch) {
-      throw new SfError('[sfdx-hardis] You can not refresh from the same branch');
-    }
-
-    // Pull from scratch org
-    if (this.noPull) {
-      uxLog("action", this, c.cyan(t('skippedPullFromScratchOrg')));
-    } else {
-      uxLog("action", this, c.cyan(t('pullingSourcesFromScratchOrg', { flags: flags['target-org'].getUsername() })));
-      await forceSourcePull(flags['target-org'].getUsername(), this.debugMode);
-    }
-
-    // Stash
-    uxLog(
-      "action",
-      this,
-      c.cyan(t('stashingUncommittedUpdatesBeforeMerging', { localBranch: c.green(localBranch), mergeBranch: c.green(this.mergeBranch) }))
-    );
-    const stashResult = await git({ output: true }).stash(['save', `[sfdx-hardis] Stash of ${localBranch}`]);
-    const stashed = stashResult.includes('Saved working directory');
-    // Pull most recent version of development branch
-    uxLog("action", this, c.cyan(t('pullingMostRecentVersionOfRemoteBranch', { mergeBranch: c.green(this.mergeBranch) })));
-    await gitFetch({ output: true });
-    await git({ output: true }).checkout(this.mergeBranch || '');
-    const pullRes = await gitPull({ output: true });
-    // Go back to current work branch
-    await git({ output: true }).checkout(localBranch);
-    // Check if merge is necessary ( https://stackoverflow.com/a/30177226/7113625 )
-    const mergeRef = (
-      await execCommand(`git show-ref --heads -s ${this.mergeBranch}`, this, {
-        output: true,
-      })
-    ).stdout;
-    const localRef = (await execCommand(`git merge-base ${this.mergeBranch} ${localBranch}`, this, { output: true }))
-      .stdout;
-    // Merge into current branch if necessary
-    if (pullRes.summary.changes > 0 || mergeRef !== localRef) {
-      // Create new commit from merge
-      uxLog("action", this, c.cyan(t('creatingMergeCommitOfWithin', { mergeBranch: c.green(this.mergeBranch), localBranch: c.green(localBranch) })));
-      let mergeSummary = await git({ output: true }).merge([this.mergeBranch || '']);
-      while (mergeSummary.failed) {
-        if (isCI || this.agentMode) {
-          throw new SfError(c.red(t('mergeConflictsPleaseResolve')));
-        }
-        const mergeResult = await prompts({
-          type: 'select',
-          name: 'value',
-          message: c.cyanBright(t('mergeConflictsPleaseResolve')),
-          description: t('chooseActionAfterResolvingMergeConflicts'),
-          placeholder: t('selectAnOption'),
-          choices: [
-            { value: true, title: t('finishedMergingConflicts') },
-            {
-              value: false,
-              title: t('cantMergeConflictsGiveUp'),
-            },
-          ],
-        });
-        if (mergeResult.value === false) {
-          uxLog("other", this, t('refreshScriptStoppedByUser'));
-          process.exit(0);
-        }
-        mergeSummary = await git({ output: true }).merge(['--continue']);
-      }
-    } else {
-      uxLog(
-        "action",
-        this,
-        c.cyan(`Local branch ${c.green(localBranch)} is already up to date with ${c.green(this.mergeBranch)}`)
-      );
-    }
-    // Restoring stash
-    if (stashed) {
-      uxLog("action", this, c.cyan(t('restoringStashIntoYourLocalBranch', { localBranch: c.green(localBranch) })));
-      await git({ output: true }).stash(['pop']);
-    }
-
-    // Push new branch state to scratch org
-    await forceSourcePush(flags['target-org'].getUsername(), this, this.debugMode, {
-      conn: flags['target-org'].getConnection(),
-    });
-
-    // Return an object to be displayed with --json
-    return { outputString: 'Refreshed the User Story branch & org' };
+    uxLog("error", this, c.red(t('workRefreshDeprecatedUseBackpromote')));
+    process.exitCode = 1;
+    return { outputString: 'This command is deprecated. Use sf hardis:work:backpromote instead.' };
   }
 }

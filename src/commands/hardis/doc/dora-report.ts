@@ -595,23 +595,10 @@ In agent mode:
         if (currentBranch) {
           filters.targetBranch = currentBranch;
         }
-        const rawPrs = await gitProvider.listPullRequests(filters, { formatted: true });
+        const rawPrs = await gitProvider.listPullRequests(filters);
         if (rawPrs && Array.isArray(rawPrs) && rawPrs.length > 0) {
           uxLog("log", this, c.grey(`[DORA] ${t("doraReportPrCountFromProvider", { count: rawPrs.length })}`));
-          return rawPrs.map((pr: any) => ({
-            idNumber: pr.pullRequestId || pr.id || pr.iid || 0,
-            idStr: String(pr.pullRequestId || pr.id || pr.iid || ""),
-            title: pr.title || "",
-            description: pr.description || "",
-            authorName: pr.createdBy || pr.author || "",
-            sourceBranch: pr.sourceRefName || pr.source_branch || "",
-            targetBranch: pr.targetRefName || pr.target_branch || "",
-            createdDate: pr.creationDate || pr.created_at || "",
-            mergedDate: pr.closedDate || pr.merged_at || "",
-            webUrl: pr.webUrl || pr.web_url || "",
-            customBehaviors: {},
-            providerInfo: pr,
-          }));
+          return rawPrs;
         }
       }
     } catch (e: any) {
