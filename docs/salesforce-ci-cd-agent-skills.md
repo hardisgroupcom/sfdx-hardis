@@ -53,10 +53,10 @@ sf hardis:work:new --agent --task-name "MYPROJECT-123 My User Story" --target-br
 
 ### Optional flags
 
-| Flag         | Description                               |
-|--------------|-------------------------------------------|
+| Flag              | Description                                                                                                                  |
+|-------------------|------------------------------------------------------------------------------------------------------------------------------|
 | `--branch-prefix` | Branch prefix for the created branch. Must be in configured `branchPrefixChoices` (usually `feature`, `fix`, or `retrofit`). |
-| `--open-org` | Open the org in a browser after creation. |
+| `--open-org`      | Open the org in a browser after creation.                                                                                    |
 
 ### Behavior in agent mode
 
