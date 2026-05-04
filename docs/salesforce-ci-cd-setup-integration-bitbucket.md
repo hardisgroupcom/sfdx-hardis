@@ -34,6 +34,22 @@ Notes:
   - BITBUCKET_PR_ID
   - BITBUCKET_BUILD_NUMBER
 
+## Using Bitbucket integration from Jenkins
+
+When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins environment and maps its variables to Bitbucket equivalents. You only need to set:
+
+| Variable                       | Description                                                                                                                                          |
+|:-------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| CI_SFDX_HARDIS_BITBUCKET_TOKEN | A Bitbucket repository access token with scopes `pullrequest`, `pullrequest:write`, `repository`, `repository:write`, stored as a Jenkins credential |
+
+The following variables are **automatically derived** from Jenkins built-in variables:
+
+- `BITBUCKET_WORKSPACE`, `BITBUCKET_REPO_SLUG` - parsed from `GIT_URL` (git remote)
+- `BITBUCKET_BRANCH` - from `GIT_BRANCH` / `CHANGE_BRANCH`
+- `BITBUCKET_BUILD_NUMBER` - from `BUILD_NUMBER`
+- `BITBUCKET_PR_ID` - from `CHANGE_ID` (Jenkins Multibranch Pipeline)
+- Job URL - from `BUILD_URL`
+
 ## Instructions for using Coding Agents
 
 When using auto-fix with coding agents, the pipeline must be able to push a fix branch and create/update Pull Requests.

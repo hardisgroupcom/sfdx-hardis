@@ -106,6 +106,7 @@
   "autoDetectedNamespacesFromPackageXml": "{{count}} namespace(s) automatisch gedetecteerd uit InstalledPackage-vermeldingen in {{packageXmlFile}}: {{namespaces}}",
   "autoDetectProviderApiError": "Kan project-ID van {{provider}} niet automatisch detecteren via de API: {{message}}",
   "autoDetectProviderFailed": "Kan {{provider}}-instellingen niet automatisch detecteren vanuit git remote: {{message}}",
+  "autoDetectProviderJenkinsMapping": "Jenkins-omgevingsvariabelen zijn gekoppeld aan {{provider}}-equivalenten",
   "autoDetectProviderNoGitRemote": "Kan git remote URL niet lezen voor automatische detectie van {{provider}}",
   "autoDetectProviderParseUrlFailed": "Kan git remote URL niet analyseren voor automatische detectie van {{provider}}",
   "autoDetectProviderSuccess": "{{provider}}-instellingen automatisch gedetecteerd vanuit lokale git repository ({{details}})",

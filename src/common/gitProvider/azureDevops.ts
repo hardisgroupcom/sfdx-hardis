@@ -10,6 +10,7 @@ import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/ind
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -58,6 +59,49 @@ export class AzureDevopsProvider extends GitProviderRoot {
         if (!process.env.BUILD_REPOSITORY_ID) {
           process.env.BUILD_REPOSITORY_ID = parseUrlRes.repositoryId;
         }
+      }
+      // When running on Jenkins, map Jenkins-specific variables to Azure DevOps equivalents
+      if (isJenkins()) {
+        if (!process.env.BUILD_BUILDID) {
+          const buildNumber = getJenkinsBuildNumber();
+          if (buildNumber) {
+            process.env.BUILD_BUILDID = buildNumber;
+          }
+        }
+        if (!process.env.BUILD_BUILD_ID) {
+          const buildNumber = getJenkinsBuildNumber();
+          if (buildNumber) {
+            process.env.BUILD_BUILD_ID = buildNumber;
+          }
+        }
+        if (!process.env.BUILD_SOURCEBRANCHNAME) {
+          const branch = getJenkinsBranchName();
+          if (branch) {
+            process.env.BUILD_SOURCEBRANCHNAME = branch;
+          }
+        }
+        if (!process.env.BUILD_REPOSITORYNAME && process.env.BUILD_REPOSITORY_ID) {
+          process.env.BUILD_REPOSITORYNAME = process.env.BUILD_REPOSITORY_ID;
+        }
+        if (!process.env.SYSTEM_PULLREQUEST_PULLREQUESTID) {
+          const prNumber = getJenkinsPrNumber();
+          if (prNumber) {
+            process.env.SYSTEM_PULLREQUEST_PULLREQUESTID = prNumber;
+          }
+        }
+        if (!process.env.SYSTEM_JOB_DISPLAY_NAME) {
+          const jobName = getJenkinsJobName();
+          if (jobName) {
+            process.env.SYSTEM_JOB_DISPLAY_NAME = jobName;
+          }
+        }
+        if (!process.env.SYSTEM_JOB_ID) {
+          const buildNumber = getJenkinsBuildNumber();
+          if (buildNumber) {
+            process.env.SYSTEM_JOB_ID = buildNumber;
+          }
+        }
+        uxLog("log", AzureDevopsProvider, c.grey("[Azure DevOps] " + t("autoDetectProviderJenkinsMapping", { provider: "Azure DevOps" })));
       }
       uxLog("log", AzureDevopsProvider, c.grey("[Azure DevOps] " + t("autoDetectProviderSuccess", {
         provider: "Azure DevOps",
@@ -119,10 +163,20 @@ export class AzureDevopsProvider extends GitProviderRoot {
     if (process.env.PIPELINE_JOB_URL) {
       return process.env.PIPELINE_JOB_URL;
     }
+    // On Jenkins, always return the Jenkins BUILD_URL so PR comments link to the Jenkins build,
+    // not an Azure DevOps URL constructed from the mapped variables
+    const jenkinsUrl = getJenkinsJobUrl();
+    if (isJenkins() && jenkinsUrl) {
+      return jenkinsUrl;
+    }
     if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_BUILDID) {
       const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${process.env.BUILD_BUILDID
         }`;
       return jobUrl;
+    }
+    // Jenkins fallback (when BUILD_URL exists but isJenkins() returned false)
+    if (jenkinsUrl) {
+      return jenkinsUrl;
     }
     uxLog(
       "warning",

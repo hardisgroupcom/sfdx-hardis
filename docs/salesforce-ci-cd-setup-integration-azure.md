@@ -133,6 +133,25 @@ Notes:
   - BUILD_REPOSITORY_ID: $(Build.Repository.ID)
   - AZURE_ATTACHMENTS_WORK_ITEM_ID (optional: identifier of the Work Items used to attach images)
 
+## Using Azure DevOps integration from Jenkins
+
+When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins environment and maps its variables to Azure DevOps equivalents. You only need to set:
+
+| Variable                   | Description                                                                                                              |
+|:---------------------------|:-------------------------------------------------------------------------------------------------------------------------|
+| CI_SFDX_HARDIS_AZURE_TOKEN | An Azure DevOps PAT with **Code Read & Write** and **Pull Request Threads Read & Write**, stored as a Jenkins credential |
+
+The following variables are **automatically derived** from Jenkins built-in variables:
+
+- `SYSTEM_COLLECTIONURI`, `SYSTEM_TEAMPROJECT`, `BUILD_REPOSITORY_ID` - parsed from `GIT_URL` (git remote)
+- `BUILD_REPOSITORYNAME` - from `BUILD_REPOSITORY_ID`
+- `BUILD_SOURCEBRANCHNAME` - from `GIT_BRANCH` / `CHANGE_BRANCH`
+- `BUILD_BUILDID`, `BUILD_BUILD_ID` - from `BUILD_NUMBER`
+- `SYSTEM_JOB_DISPLAY_NAME` - from `JOB_NAME`
+- `SYSTEM_JOB_ID` - from `BUILD_NUMBER`
+- `SYSTEM_PULLREQUEST_PULLREQUESTID` - from `CHANGE_ID` (Jenkins Multibranch Pipeline)
+- Job URL - from `BUILD_URL`
+
 ## Instructions for using Coding Agents
 
 When using auto-fix with coding agents, the pipeline must be able to push a fix branch and create/update Pull Requests.

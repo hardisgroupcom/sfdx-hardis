@@ -43,6 +43,24 @@ Notes:
   - CI_JOB_URL (provided by Gitlab CI)
   - GITLAB_API_REJECT_UNAUTHORIZED: set to `"false"` if you want to allow connection even without certificate (can be useful on on-premise GitLab instance)
 
+## Using GitLab integration from Jenkins
+
+When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins environment and maps its variables to GitLab CI equivalents. You only need to set:
+
+| Variable                    | Description                                                                                             |
+|:----------------------------|:--------------------------------------------------------------------------------------------------------|
+| CI_SFDX_HARDIS_GITLAB_TOKEN | A GitLab project access token with **Developer** role and **api** scope, stored as a Jenkins credential |
+
+The following variables are **automatically derived** from Jenkins built-in variables:
+
+- `CI_SERVER_URL`, `CI_PROJECT_PATH` - parsed from `GIT_URL` (git remote)
+- `CI_PROJECT_ID` - resolved via the GitLab API using the project path
+- `CI_COMMIT_REF_NAME` - from `GIT_BRANCH` / `CHANGE_BRANCH`
+- `CI_JOB_URL` - from `BUILD_URL`
+- `CI_JOB_NAME` - from `JOB_NAME`
+- `CI_MERGE_REQUEST_IID` - from `CHANGE_ID` (Jenkins Multibranch Pipeline)
+- `CI_PROJECT_URL` - constructed from `CI_SERVER_URL` and `CI_PROJECT_PATH`
+
 ## Instructions for using Coding Agents
 
 When using auto-fix with coding agents, the pipeline must be able to push a fix branch and create/update Merge Requests.
