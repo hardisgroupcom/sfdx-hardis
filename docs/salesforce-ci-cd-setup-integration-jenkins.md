@@ -59,7 +59,7 @@ The pipeline also accepts the following optional credentials. Create them if you
 | `NOTIF_EMAIL_ADDRESS`                                                                                            | Email notifications                                            |
 | `JIRA_HOST` + `JIRA_EMAIL` + `JIRA_TOKEN` / `JIRA_PAT`                                                           | JIRA integration                                               |
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`                                                        | AI auto-fix of deployment errors                               |
-| `GITHUB_TOKEN` / `CI_SFDX_HARDIS_GITLAB_TOKEN` / `CI_SFDX_HARDIS_BITBUCKET_TOKEN` / `CI_SFDX_HARDIS_AZURE_TOKEN` | Allow the coding agent to push fix branches and open PRs       |
+| `GITHUB_TOKEN` / `CI_SFDX_HARDIS_GITLAB_TOKEN` / `CI_SFDX_HARDIS_BITBUCKET_TOKEN` / `CI_SFDX_HARDIS_AZURE_TOKEN` | Git provider integration: post deployment comments on PRs/MRs and allow the coding agent to push fix branches and open PRs. See [Git provider integration from Jenkins](#git-provider-integration) |
 | `SFDX_AUTH_URL_TECHNICAL_ORG`                                                                                    | Technical org authentication (DevHub or scratch org workflows) |
 
 ## Create the Multibranch Pipeline
@@ -120,6 +120,32 @@ Commit the updated `Jenkinsfile` and push. Jenkins will pick up the changes on t
 |-------------------------------|------------------------------------------------------------------------------------|
 | Pull Request opened / updated | **MegaLinter** (code quality) + **Validation** (check-only deploy) run in parallel |
 | Push to a deployment branch   | **Deployment** (real deploy to the target org)                                     |
+
+## Git provider integration
+
+When running on Jenkins, sfdx-hardis **automatically detects** the Jenkins environment and maps its built-in variables (`GIT_URL`, `GIT_BRANCH`, `BUILD_URL`, `BUILD_NUMBER`, `JOB_NAME`, `CHANGE_ID`, etc.) to the native equivalents of your git provider (GitHub, GitLab, Azure DevOps, or Bitbucket).
+
+This means you only need to set the **authentication token** for your git provider - all other CI variables are derived automatically.
+
+| Git provider   | Required credential                     | Documentation                                                                          |
+|----------------|-----------------------------------------|----------------------------------------------------------------------------------------|
+| GitHub         | `CI_SFDX_HARDIS_GITHUB_TOKEN`          | [GitHub integration](salesforce-ci-cd-setup-integration-github.md#jenkins)             |
+| GitLab         | `CI_SFDX_HARDIS_GITLAB_TOKEN`          | [GitLab integration](salesforce-ci-cd-setup-integration-gitlab.md#using-gitlab-integration-from-jenkins) |
+| Azure DevOps   | `CI_SFDX_HARDIS_AZURE_TOKEN`           | [Azure integration](salesforce-ci-cd-setup-integration-azure.md#using-azure-devops-integration-from-jenkins) |
+| Bitbucket      | `CI_SFDX_HARDIS_BITBUCKET_TOKEN`       | [Bitbucket integration](salesforce-ci-cd-setup-integration-bitbucket.md#using-bitbucket-integration-from-jenkins) |
+
+Jenkins variables used for auto-detection:
+
+| Jenkins variable    | Purpose                                          |
+|---------------------|--------------------------------------------------|
+| `JENKINS_URL`       | Detect that the CI runner is Jenkins              |
+| `GIT_URL`           | Parse server URL, repository owner/name           |
+| `GIT_BRANCH`        | Current branch name (fallback: `GIT_LOCAL_BRANCH`)|
+| `BUILD_URL`         | Link to the current build page                    |
+| `BUILD_NUMBER`      | Build identifier                                  |
+| `JOB_NAME`          | Job/workflow name                                 |
+| `CHANGE_ID`         | Pull/Merge request number (Multibranch Pipeline)  |
+| `CHANGE_BRANCH`     | Source branch of a PR build                       |
 
 ## Auto-fix branches
 

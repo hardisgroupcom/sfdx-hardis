@@ -40,9 +40,28 @@ Notes:
 
 ## Using GitHub integration without Github Actions
 
-You might want to use GitHub integration with other tools than GitHub Actions, like Jenkins or Codefresh
+You might want to use GitHub integration with other tools than GitHub Actions, like Jenkins or Codefresh.
 
-In that case, to still benefit from GitHub integration, you need to make sure that the following variables are set.
+### Jenkins
+
+When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins environment and maps its variables to GitHub equivalents. You only need to set:
+
+| Variable                         | Description                                                                                                                                                                    |
+|:---------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| CI_SFDX_HARDIS_GITHUB_TOKEN     | A [GitHub Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) stored as a Jenkins credential |
+
+The following variables are **automatically derived** from Jenkins built-in variables (`GIT_URL`, `GIT_BRANCH`, `BUILD_URL`, `BUILD_NUMBER`, `JOB_NAME`, `CHANGE_ID`):
+
+- `GITHUB_REPOSITORY`, `GITHUB_REPOSITORY_OWNER`, `GITHUB_SERVER_URL` - parsed from `GIT_URL` (git remote)
+- `GITHUB_REF`, `GITHUB_REF_NAME` - from `GIT_BRANCH` / `CHANGE_BRANCH`
+- `GITHUB_RUN_ID` - from `BUILD_NUMBER`
+- `GITHUB_WORKFLOW` - from `JOB_NAME`
+- Pull request number - from `CHANGE_ID` (Jenkins Multibranch Pipeline)
+- Job URL - from `BUILD_URL`
+
+### Other CI systems
+
+For other CI systems (Codefresh, etc.), you need to manually set the following variables:
 
 | Variable                | Description                                                                                                                                                                    |
 |:------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

@@ -6,6 +6,7 @@ import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
 
 export class GitlabProvider extends GitProviderRoot {
   private gitlabApi: InstanceType<typeof Gitlab>;
@@ -73,6 +74,37 @@ export class GitlabProvider extends GitProviderRoot {
           }
         }
       }
+      // When running on Jenkins, map Jenkins-specific variables to GitLab equivalents
+      if (isJenkins()) {
+        if (!process.env.CI_COMMIT_REF_NAME) {
+          const branch = getJenkinsBranchName();
+          if (branch) {
+            process.env.CI_COMMIT_REF_NAME = branch;
+          }
+        }
+        if (!process.env.CI_JOB_URL) {
+          const jobUrl = getJenkinsJobUrl();
+          if (jobUrl) {
+            process.env.CI_JOB_URL = jobUrl;
+          }
+        }
+        if (!process.env.CI_JOB_NAME) {
+          const jobName = getJenkinsJobName();
+          if (jobName) {
+            process.env.CI_JOB_NAME = jobName;
+          }
+        }
+        if (!process.env.CI_MERGE_REQUEST_IID) {
+          const prNumber = getJenkinsPrNumber();
+          if (prNumber) {
+            process.env.CI_MERGE_REQUEST_IID = prNumber;
+          }
+        }
+        if (!process.env.CI_PROJECT_URL && process.env.CI_SERVER_URL && process.env.CI_PROJECT_PATH) {
+          process.env.CI_PROJECT_URL = `${process.env.CI_SERVER_URL}/${process.env.CI_PROJECT_PATH}`;
+        }
+        uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderJenkinsMapping", { provider: "GitLab" })));
+      }
       uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderSuccess", {
         provider: "GitLab",
         details: `server=${process.env.CI_SERVER_URL}, project=${process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH || "unknown"}`,
@@ -130,6 +162,11 @@ export class GitlabProvider extends GitProviderRoot {
     }
     if (process.env.CI_JOB_URL) {
       return process.env.CI_JOB_URL;
+    }
+    // Jenkins fallback
+    const jenkinsUrl = getJenkinsJobUrl();
+    if (jenkinsUrl) {
+      return jenkinsUrl;
     }
     return null;
   }

@@ -6,6 +6,7 @@ import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResul
 import { GitHub } from "@actions/github/lib/utils.js";
 import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
 
 export class GithubProvider extends GitProviderRoot {
   private octokit: InstanceType<typeof GitHub>;
@@ -30,12 +31,15 @@ export class GithubProvider extends GitProviderRoot {
     const ctxPrNumber = github?.context?.payload?.pull_request?.number;
     const envRefFirstSegment = process.env.GITHUB_REF_NAME ? process.env.GITHUB_REF_NAME.split("/")?.[0] || "" : "";
     const envPrNumber = envRefFirstSegment ? parseInt(envRefFirstSegment, 10) : NaN;
+    const jenkinsPrNumber = isJenkins() ? parseInt(getJenkinsPrNumber() || "", 10) : NaN;
     this.prNumber =
       typeof ctxPrNumber === "number" && ctxPrNumber > 0
         ? ctxPrNumber
         : Number.isFinite(envPrNumber) && envPrNumber > 0
           ? envPrNumber
-          : null;
+          : Number.isFinite(jenkinsPrNumber) && jenkinsPrNumber > 0
+            ? jenkinsPrNumber
+            : null;
     this.runId = github?.context?.runId || process.env.GITHUB_RUN_ID || null;
   }
 
@@ -60,6 +64,34 @@ export class GithubProvider extends GitProviderRoot {
       }
       if (!process.env.GITHUB_REPOSITORY) {
         process.env.GITHUB_REPOSITORY = `${parsed.owner}/${parsed.repo}`;
+      }
+      // When running on Jenkins, map Jenkins-specific variables to GitHub equivalents
+      if (isJenkins()) {
+        if (!process.env.GITHUB_REF_NAME) {
+          const branch = getJenkinsBranchName();
+          if (branch) {
+            process.env.GITHUB_REF_NAME = branch;
+          }
+        }
+        if (!process.env.GITHUB_REF) {
+          const branch = getJenkinsBranchName();
+          if (branch) {
+            process.env.GITHUB_REF = `refs/heads/${branch}`;
+          }
+        }
+        if (!process.env.GITHUB_RUN_ID) {
+          const buildNumber = getJenkinsBuildNumber();
+          if (buildNumber) {
+            process.env.GITHUB_RUN_ID = buildNumber;
+          }
+        }
+        if (!process.env.GITHUB_WORKFLOW) {
+          const jobName = getJenkinsJobName();
+          if (jobName) {
+            process.env.GITHUB_WORKFLOW = jobName;
+          }
+        }
+        uxLog("log", GithubProvider, c.grey("[GitHub] " + t("autoDetectProviderJenkinsMapping", { provider: "GitHub" })));
       }
       uxLog("log", GithubProvider, c.grey("[GitHub] " + t("autoDetectProviderSuccess", {
         provider: "GitHub",
@@ -175,6 +207,11 @@ export class GithubProvider extends GitProviderRoot {
     }
     if (process.env.GITHUB_JOB_URL) {
       return process.env.GITHUB_JOB_URL;
+    }
+    // Jenkins fallback
+    const jenkinsUrl = getJenkinsJobUrl();
+    if (jenkinsUrl) {
+      return jenkinsUrl;
     }
     return null;
   }

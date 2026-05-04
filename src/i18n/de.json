@@ -106,6 +106,7 @@
   "autoDetectedNamespacesFromPackageXml": "{{count}} Namespace(s) automatisch aus InstalledPackage-Einträgen in {{packageXmlFile}} erkannt: {{namespaces}}",
   "autoDetectProviderApiError": "Projekt-ID von {{provider}} konnte nicht automatisch ueber die API ermittelt werden: {{message}}",
   "autoDetectProviderFailed": "{{provider}}-Einstellungen konnten nicht automatisch vom Git-Remote erkannt werden: {{message}}",
+  "autoDetectProviderJenkinsMapping": "Jenkins-Umgebungsvariablen wurden auf {{provider}}-Entsprechungen abgebildet",
   "autoDetectProviderNoGitRemote": "Git-Remote-URL fuer die automatische Erkennung von {{provider}} konnte nicht gelesen werden",
   "autoDetectProviderParseUrlFailed": "Git-Remote-URL fuer die automatische Erkennung von {{provider}} konnte nicht analysiert werden",
   "autoDetectProviderSuccess": "{{provider}}-Einstellungen wurden automatisch vom lokalen Git-Repository erkannt ({{details}})",

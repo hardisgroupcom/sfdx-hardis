@@ -106,6 +106,7 @@
   "autoDetectedNamespacesFromPackageXml": "Automatycznie wykryto {{count}} przestrzeń/przestrzenie nazw z wpisów InstalledPackage w {{packageXmlFile}}: {{namespaces}}",
   "autoDetectProviderApiError": "Nie udalo sie automatycznie wykryc ID projektu {{provider}} z API: {{message}}",
   "autoDetectProviderFailed": "Nie udalo sie automatycznie wykryc ustawien {{provider}} z git remote: {{message}}",
+  "autoDetectProviderJenkinsMapping": "Zmienne srodowiskowe Jenkins zostaly zmapowane na odpowiedniki {{provider}}",
   "autoDetectProviderNoGitRemote": "Nie udalo sie odczytac adresu URL git remote do automatycznego wykrywania {{provider}}",
   "autoDetectProviderParseUrlFailed": "Nie udalo sie przeanalizowac adresu URL git remote do automatycznego wykrywania {{provider}}",
   "autoDetectProviderSuccess": "Automatycznie wykryto ustawienia {{provider}} z lokalnego repozytorium git ({{details}})",

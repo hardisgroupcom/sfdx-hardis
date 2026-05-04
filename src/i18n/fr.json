@@ -106,6 +106,7 @@
   "autoDetectedNamespacesFromPackageXml": "{{count}} espace(s) de noms détecté(s) automatiquement depuis les entrées InstalledPackage dans {{packageXmlFile}} : {{namespaces}}",
   "autoDetectProviderApiError": "Impossible de detecter automatiquement l'ID du projet {{provider}} via l'API : {{message}}",
   "autoDetectProviderFailed": "Impossible de detecter automatiquement les parametres {{provider}} depuis le remote git : {{message}}",
+  "autoDetectProviderJenkinsMapping": "Variables d'environnement Jenkins mappees vers les equivalents {{provider}}",
   "autoDetectProviderNoGitRemote": "Impossible de lire l'URL du remote git pour la detection automatique de {{provider}}",
   "autoDetectProviderParseUrlFailed": "Impossible d'analyser l'URL du remote git pour la detection automatique de {{provider}}",
   "autoDetectProviderSuccess": "Parametres {{provider}} detectes automatiquement depuis le depot git local ({{details}})",

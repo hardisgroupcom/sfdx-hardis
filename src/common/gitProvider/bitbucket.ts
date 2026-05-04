@@ -8,6 +8,7 @@ import { git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./jenkinsUtils.js";
 const { Bitbucket } = bbPkg;
 
 export class BitbucketProvider extends GitProviderRoot {
@@ -40,6 +41,28 @@ export class BitbucketProvider extends GitProviderRoot {
       }
       if (!process.env.BITBUCKET_REPO_SLUG) {
         process.env.BITBUCKET_REPO_SLUG = parsed.repoSlug;
+      }
+      // When running on Jenkins, map Jenkins-specific variables to Bitbucket equivalents
+      if (isJenkins()) {
+        if (!process.env.BITBUCKET_BUILD_NUMBER) {
+          const buildNumber = getJenkinsBuildNumber();
+          if (buildNumber) {
+            process.env.BITBUCKET_BUILD_NUMBER = buildNumber;
+          }
+        }
+        if (!process.env.BITBUCKET_BRANCH) {
+          const branch = getJenkinsBranchName();
+          if (branch) {
+            process.env.BITBUCKET_BRANCH = branch;
+          }
+        }
+        if (!process.env.BITBUCKET_PR_ID) {
+          const prNumber = getJenkinsPrNumber();
+          if (prNumber) {
+            process.env.BITBUCKET_PR_ID = prNumber;
+          }
+        }
+        uxLog("log", BitbucketProvider, c.grey("[Bitbucket] " + t("autoDetectProviderJenkinsMapping", { provider: "Bitbucket" })));
       }
       uxLog("log", BitbucketProvider, c.grey("[Bitbucket] " + t("autoDetectProviderSuccess", {
         provider: "Bitbucket",
@@ -97,6 +120,11 @@ export class BitbucketProvider extends GitProviderRoot {
     if (process.env.BITBUCKET_WORKSPACE && process.env.BITBUCKET_REPO_SLUG && process.env.BITBUCKET_BUILD_NUMBER) {
       const jobUrl = `${this.serverUrl}/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/pipelines/results/${process.env.BITBUCKET_BUILD_NUMBER}`;
       return jobUrl;
+    }
+    // Jenkins fallback
+    const jenkinsUrl = getJenkinsJobUrl();
+    if (jenkinsUrl) {
+      return jenkinsUrl;
     }
     uxLog(
       "warning",

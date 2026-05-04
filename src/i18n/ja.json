@@ -104,6 +104,7 @@
   "autocleantypesHasBeenActivatedOnTheNew": "新しいプロジェクトで autoCleanTypes {{defaultAutoCleanTypes}} が有効化されました。",
   "autoDetectProviderApiError": "APIから{{provider}}のプロジェクトIDを自動検出できませんでした: {{message}}",
   "autoDetectProviderFailed": "gitリモートから{{provider}}の設定を自動検出できませんでした: {{message}}",
+  "autoDetectProviderJenkinsMapping": "Jenkinsの環境変数を{{provider}}の対応する変数にマッピングしました",
   "autoDetectProviderNoGitRemote": "{{provider}}の自動検出のためにgitリモートURLを読み取れませんでした",
   "autoDetectProviderParseUrlFailed": "{{provider}}の自動検出のためにgitリモートURLを解析できませんでした",
   "autoDetectProviderSuccess": "ローカルgitリポジトリから{{provider}}の設定を自動検出しました ({{details}})",
