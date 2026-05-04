@@ -41,6 +41,7 @@
     "**/*.md",
     "**/*.yml",
     "**/*.xml",
+    "**/*.test.ts",
     "**/megalinter-reports/**",
     "**/lib/**"
   ]

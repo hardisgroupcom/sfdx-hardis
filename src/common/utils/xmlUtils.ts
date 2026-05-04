@@ -183,11 +183,39 @@ export async function appendPackageXmlFilesContent(packageXmlFileList: string[],
   await writeXmlFile(outputXmlFile, firstPackageXmlContent);
 }
 
+// Build an inline remove-types structure from lists of type names and TypeName:MemberName specs.
+// Used as an alternative to providing a removePackageXmlFile.
+export function buildInlineRemoveTypes(metadataTypes: string[], metadataNames: string[]): any[] {
+  const typesMap: Record<string, string[]> = {};
+  // Types with wildcard - remove all members of each type
+  for (const typeName of metadataTypes) {
+    typesMap[typeName] = ['*'];
+  }
+  // Specific TypeName:MemberName pairs
+  for (const nameSpec of metadataNames) {
+    const colonIdx = nameSpec.indexOf(':');
+    if (colonIdx === -1) continue;
+    const typeName = nameSpec.substring(0, colonIdx).trim();
+    const memberName = nameSpec.substring(colonIdx + 1).trim();
+    if (!typesMap[typeName]) {
+      typesMap[typeName] = [];
+    }
+    // Skip if wildcard already covers this type
+    if (!typesMap[typeName].includes('*')) {
+      typesMap[typeName].push(memberName);
+    }
+  }
+  return Object.entries(typesMap).map(([typeName, members]) => ({
+    name: [typeName],
+    members,
+  }));
+}
+
 // Read package.xml files and remove the content of the
 export async function removePackageXmlFilesContent(
   packageXmlFile: string,
   removePackageXmlFile: string,
-  { outputXmlFile = '', logFlag = false, removedOnly = false, keepEmptyTypes = false }
+  { outputXmlFile = '', logFlag = false, removedOnly = false, keepEmptyTypes = false, inlineRemoveTypes = null as any }
 ) {
   // Read package.xml file to update
   const parsedPackageXml: any = await parseXmlFile(packageXmlFile);
@@ -202,17 +230,22 @@ export async function removePackageXmlFilesContent(
     throw new SfError('Unable to parse package Xml file ' + packageXmlFile);
   }
 
-  // Read package.xml file to use for filtering first file
-  const parsedPackageXmlRemove: any = await parseXmlFile(removePackageXmlFile);
-  if (logFlag) {
-    uxLog("log", this, c.grey(`Parsed ${removePackageXmlFile}:\n` + util.inspect(parsedPackageXmlRemove, false, null)));
-  }
   let packageXmlRemoveMetadatasTypeLs: any;
-  // get metadata types in parse result
-  try {
-    packageXmlRemoveMetadatasTypeLs = parsedPackageXmlRemove.Package.types || [];
-  } catch {
-    throw new SfError('Unable to parse package Xml file ' + removePackageXmlFile);
+  if (inlineRemoveTypes) {
+    // Use the pre-built types structure provided by the caller
+    packageXmlRemoveMetadatasTypeLs = inlineRemoveTypes;
+  } else {
+    // Read package.xml file to use for filtering first file
+    const parsedPackageXmlRemove: any = await parseXmlFile(removePackageXmlFile);
+    if (logFlag) {
+      uxLog("log", this, c.grey(`Parsed ${removePackageXmlFile}:\n` + util.inspect(parsedPackageXmlRemove, false, null)));
+    }
+    // get metadata types in parse result
+    try {
+      packageXmlRemoveMetadatasTypeLs = parsedPackageXmlRemove.Package.types || [];
+    } catch {
+      throw new SfError('Unable to parse package Xml file ' + removePackageXmlFile);
+    }
   }
 
   // Filter main package.xml file

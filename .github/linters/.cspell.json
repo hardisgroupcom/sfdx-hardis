@@ -77,6 +77,8 @@
     "backpromoted",
     "backpromotes",
     "parentbranch",
+    "metadatanames",
+    "metadatatypes",
     "BRANCHNAME",
     "BUILDID",
     "BULKAPIV",
