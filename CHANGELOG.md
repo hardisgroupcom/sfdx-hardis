@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [7.12.1] 2026-05-05
+
 - Utilities
   - [hardis:packagexml:remove](https://sfdx-hardis.cloudity.com/hardis/packagexml/remove/): Add `--metadatatypes` and `--metadatanames` CLI flags to remove specific metadata types and members directly without providing a filter `package.xml` file.
   - Make Git providers compliant with Jenkins by translating Jenkins variables into Git provider expected variables (Azure DevOps, Bitbucket, GitHub, GitLab).
