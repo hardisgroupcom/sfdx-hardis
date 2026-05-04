@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [7.12.0] 2026-05-04
+
 - New commands
   - [hardis:work:backpromote](https://sfdx-hardis.cloudity.com/hardis/work/backpromote/) (Beta) - backpromotes changes from a parent branch (e.g. integration) to a developer's feature branch and deploys them to their dev sandbox. Lists merged PRs with commits, computes metadata delta via sfdx-git-delta, detects org conflicts with Excel + PDF diff reports, handles deployment actions with LoginAs support, and tracks backpromote state for incremental runs. Deprecates `hardis:work:refresh`.
   - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/) - generates release notes from git tags, pull requests, tickets, metadata changes (via sfdx-git-delta), and deployment actions. Supports prepare (preview) and post (document) modes. Outputs markdown + PDF + multi-tab XLSX into a dedicated subfolder with `package.xml` and `destructiveChanges.xml`. Bidirectional PR/ticket cross-references, contributor list, AI-powered summary, and Slack/Teams/Email notifications for production releases.
