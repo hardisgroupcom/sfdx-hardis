@@ -163,13 +163,18 @@ export class AzureDevopsProvider extends GitProviderRoot {
     if (process.env.PIPELINE_JOB_URL) {
       return process.env.PIPELINE_JOB_URL;
     }
+    // On Jenkins, always return the Jenkins BUILD_URL so PR comments link to the Jenkins build,
+    // not an Azure DevOps URL constructed from the mapped variables
+    const jenkinsUrl = getJenkinsJobUrl();
+    if (isJenkins() && jenkinsUrl) {
+      return jenkinsUrl;
+    }
     if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_BUILDID) {
       const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${process.env.BUILD_BUILDID
         }`;
       return jobUrl;
     }
-    // Jenkins fallback
-    const jenkinsUrl = getJenkinsJobUrl();
+    // Jenkins fallback (when BUILD_URL exists but isJenkins() returned false)
     if (jenkinsUrl) {
       return jenkinsUrl;
     }

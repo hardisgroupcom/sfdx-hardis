@@ -38,7 +38,7 @@ Notes:
 
   - GITHUB_TOKEN (provided by GitHub but has to be send as option to the deployment jobs)
 
-## Using GitHub integration without Github Actions
+## Using GitHub integration without GitHub Actions
 
 You might want to use GitHub integration with other tools than GitHub Actions, like Jenkins or Codefresh.
 

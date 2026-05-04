@@ -198,6 +198,11 @@ export class GithubProvider extends GitProviderRoot {
     if (process.env.PIPELINE_JOB_URL) {
       return process.env.PIPELINE_JOB_URL;
     }
+    // On Jenkins, always return the Jenkins BUILD_URL so PR comments link to the Jenkins build
+    const jenkinsUrl = getJenkinsJobUrl();
+    if (isJenkins() && jenkinsUrl) {
+      return jenkinsUrl;
+    }
     try {
       if (this.repoOwner && this.repoName && this.serverUrl && this.runId) {
         return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${this.runId}`;
@@ -208,8 +213,7 @@ export class GithubProvider extends GitProviderRoot {
     if (process.env.GITHUB_JOB_URL) {
       return process.env.GITHUB_JOB_URL;
     }
-    // Jenkins fallback
-    const jenkinsUrl = getJenkinsJobUrl();
+    // Jenkins fallback (when BUILD_URL exists but isJenkins() returned false)
     if (jenkinsUrl) {
       return jenkinsUrl;
     }

@@ -117,12 +117,17 @@ export class BitbucketProvider extends GitProviderRoot {
     if (process.env.PIPELINE_JOB_URL) {
       return process.env.PIPELINE_JOB_URL;
     }
+    // On Jenkins, always return the Jenkins BUILD_URL so PR comments link to the Jenkins build,
+    // not a Bitbucket Pipelines URL constructed from the mapped variables
+    const jenkinsUrl = getJenkinsJobUrl();
+    if (isJenkins() && jenkinsUrl) {
+      return jenkinsUrl;
+    }
     if (process.env.BITBUCKET_WORKSPACE && process.env.BITBUCKET_REPO_SLUG && process.env.BITBUCKET_BUILD_NUMBER) {
       const jobUrl = `${this.serverUrl}/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/pipelines/results/${process.env.BITBUCKET_BUILD_NUMBER}`;
       return jobUrl;
     }
-    // Jenkins fallback
-    const jenkinsUrl = getJenkinsJobUrl();
+    // Jenkins fallback (when BUILD_URL exists but isJenkins() returned false)
     if (jenkinsUrl) {
       return jenkinsUrl;
     }
