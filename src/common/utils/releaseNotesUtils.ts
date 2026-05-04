@@ -21,6 +21,7 @@ import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { NotifProvider } from "../notifProvider/index.js";
 import { NotifSeverity } from "../notifProvider/types.js";
 import ExcelJS from "exceljs";
+import { applyWorksheetFormatting } from "./filesUtils.js";
 import { getNotificationButtons } from "./notifUtils.js";
 import { prompts } from "./prompts.js";
 import { WebSocketClient } from "../websocketClient.js";
@@ -1105,6 +1106,7 @@ export async function buildReleaseNotesXlsx(
     for (const csvFile of csvFiles) {
       const worksheet = await workbook.csv.readFile(csvFile);
       worksheet.name = path.basename(csvFile, ".csv");
+      applyWorksheetFormatting(worksheet, {});
     }
     await workbook.xlsx.writeFile(xlsxFile);
     uxLog("action", commandRef, c.cyan(t("pleaseSeeDetailedXlsxLogIn", { xslxFile: c.bold(xlsxFile) })));
