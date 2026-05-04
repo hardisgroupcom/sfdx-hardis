@@ -263,6 +263,7 @@ The command's technical implementation involves:
       testClasses,
       this,
       debugMode,
+      agentMode,
     );
 
     // Step 14: Execute post-deploy actions

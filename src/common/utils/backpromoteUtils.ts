@@ -14,6 +14,7 @@ import {
   uxLogTable,
 } from './index.js';
 import { buildOrgManifest } from './deployUtils.js';
+import { analyzeDeployErrorLogs } from './deployTips.js';
 import { getConfig, getEnvVar, setConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 // callSfdxGitDelta is used by the command file directly
@@ -852,6 +853,7 @@ export async function deployBackpromoteMetadata(
   testClasses: string[],
   commandThis: any,
   debugMode: boolean,
+  agentMode: boolean = false,
 ): Promise<void> {
   if (!fs.existsSync(packageXmlFile) || await isPackageXmlEmpty(packageXmlFile)) {
     // Check if we have destructive changes only
@@ -881,42 +883,109 @@ export async function deployBackpromoteMetadata(
     ` --wait ${getEnvVar('SFDX_DEPLOY_WAIT_MINUTES') || '120'}` +
     ' --json';
 
-  let deploySuccess = false;
-  let deployOutput = '';
+  const result = await runDeploy(deployCmd, testLevel, commandThis, debugMode);
+
+  // If deployment failed because of test classes or coverage, offer to retry without tests
+  if (!result.success && testClasses.length > 0 && (result.hasTestFailures || result.hasCoverageFailures)) {
+    uxLog('warning', commandThis, c.yellow(t('backpromoteDeployTestFailure')));
+    let retryWithoutTests = agentMode; // Agent mode: auto-retry without tests
+    if (!retryWithoutTests && !isCI) {
+      const retryRes = await prompts({
+        type: 'confirm',
+        name: 'value',
+        message: c.cyanBright(t('backpromoteRetryWithoutTests')),
+        description: t('backpromoteRetryWithoutTests'),
+        initial: true,
+      });
+      retryWithoutTests = retryRes.value === true;
+    }
+    if (retryWithoutTests) {
+      uxLog('action', commandThis, c.cyan(t('backpromoteRetryingWithoutTests')));
+      const noTestCmd =
+        `sf project deploy start` +
+        ` --manifest "${packageXmlFile}"` +
+        ' --ignore-warnings' +
+        ' --ignore-conflicts' +
+        ' --test-level NoTestRun' +
+        (destructiveChangesFile && fs.existsSync(destructiveChangesFile) ? ` --post-destructive-changes "${destructiveChangesFile}"` : '') +
+        ` -o ${targetUsername}` +
+        ` --wait ${getEnvVar('SFDX_DEPLOY_WAIT_MINUTES') || '120'}` +
+        ' --json';
+      const retryResult = await runDeploy(noTestCmd, 'NoTestRun', commandThis, debugMode);
+      await writeDeployReport(retryResult, targetUsername, itemCount, 'NoTestRun', [], packageXmlFile, destructiveChangesFile, commandThis);
+      if (!retryResult.success) {
+        throw new SfError(t('backpromoteDeployFailed'));
+      }
+      uxLog('warning', commandThis, c.yellow(t('backpromoteDeploySuccessButFixTests')));
+      uxLog('action', commandThis, c.green(t('backpromoteDeploySuccess', { count: itemCount })));
+      return;
+    }
+  }
+
+  await writeDeployReport(result, targetUsername, itemCount, testLevel, testClasses, packageXmlFile, destructiveChangesFile, commandThis);
+
+  if (!result.success) {
+    throw new SfError(t('backpromoteDeployFailed'));
+  }
+
+  uxLog('action', commandThis, c.green(t('backpromoteDeploySuccess', { count: itemCount })));
+}
+
+// ---- Deploy helpers ----
+
+interface DeployResult {
+  success: boolean;
+  output: string;
+  hasTestFailures: boolean;
+  hasCoverageFailures: boolean;
+}
+
+async function runDeploy(
+  deployCmd: string,
+  _testLevel: string,
+  commandThis: any,
+  debugMode: boolean,
+): Promise<DeployResult> {
   try {
     const deployResult = await execCommand(deployCmd, commandThis, {
-      fail: false,
+      fail: true,
       output: true,
       debug: debugMode,
     });
-    deployOutput = deployResult.stdout || '';
-    if (deployResult.stderr) {
-      deployOutput += '\n' + deployResult.stderr;
-    }
-
-    if (deployResult.status !== 0 || deployResult.stderr) {
-      uxLog('error', commandThis, c.red(t('backpromoteDeployFailed')));
-      uxLog('error', commandThis, c.red(deployResult.stderr || deployResult.stdout || ''));
-    } else {
-      deploySuccess = true;
-    }
+    return { success: true, output: deployResult.stdout || '', hasTestFailures: false, hasCoverageFailures: false };
   } catch (e) {
-    deployOutput = (e as Error).message;
+    const output = ((e as any).stdout || '') + ((e as any).stderr || '');
+    const { errLog, failedTests, errorsAndTips } = await analyzeDeployErrorLogs(output, true, {});
     uxLog('error', commandThis, c.red(t('backpromoteDeployFailed')));
-    uxLog('error', commandThis, c.red(deployOutput));
+    uxLog('error', commandThis, c.red('\n' + errLog));
+    const hasTestFailures = (failedTests || []).length > 0;
+    const hasCoverageFailures = (errorsAndTips || []).some(
+      (item: any) => item?.tip?.label === 'CodeCoverageWarning'
+    );
+    return { success: false, output, hasTestFailures, hasCoverageFailures };
   }
+}
 
-  // Write deployment results to a report log file
+async function writeDeployReport(
+  result: { success: boolean; output: string },
+  targetUsername: string,
+  itemCount: number,
+  testLevel: string,
+  testClasses: string[],
+  packageXmlFile: string,
+  destructiveChangesFile: string | null,
+  commandThis: any,
+): Promise<void> {
   const reportPath = await generateReportPath('backpromote-deploy', '', {
     withDate: true,
     withBranchName: true,
     fileExtension: 'log',
   });
   const reportContent = [
-    `Backpromote Deployment Report`,
+    'Backpromote Deployment Report',
     `Date: ${new Date().toISOString()}`,
     `Target org: ${targetUsername}`,
-    `Status: ${deploySuccess ? 'SUCCESS' : 'FAILED'}`,
+    `Status: ${result.success ? 'SUCCESS' : 'FAILED'}`,
     `Items: ${itemCount}`,
     `Test level: ${testLevel}`,
     testClasses.length > 0 ? `Test classes: ${testClasses.join(', ')}` : '',
@@ -924,17 +993,11 @@ export async function deployBackpromoteMetadata(
     destructiveChangesFile ? `Destructive changes: ${destructiveChangesFile}` : '',
     '',
     '--- Deployment output ---',
-    deployOutput,
+    result.output,
   ].filter(Boolean).join('\n');
   await fs.writeFile(reportPath, reportContent, 'utf-8');
   uxLog('log', commandThis, c.grey(t('backpromoteDeployReportSaved', { reportPath })));
   WebSocketClient.sendReportFileMessage(reportPath, t('backpromoteDeployReportLabel'), 'report');
-
-  if (!deploySuccess) {
-    throw new SfError(t('backpromoteDeployFailed'));
-  }
-
-  uxLog('action', commandThis, c.green(t('backpromoteDeploySuccess', { count: itemCount })));
 }
 
 // ---- Execute deployment actions ----
