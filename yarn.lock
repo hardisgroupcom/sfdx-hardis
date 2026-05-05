@@ -11637,7 +11637,7 @@ sigstore@^4.0.0:
     "@sigstore/tuf" "^4.0.1"
     "@sigstore/verify" "^3.1.0"
 
-simple-git@3.36.0:
+simple-git@3.36.0, simple-git@^3.20.0, simple-git@^3.28.0:
   version "3.36.0"
   resolved "https://registry.yarnpkg.com/simple-git/-/simple-git-3.36.0.tgz#019b28c0a35847ee34299c6fb63770ab1b2dffb7"
   integrity sha512-cGQjLjK8bxJw4QuYT7gxHw3/IouVESbhahSsHrX97MzCL1gu2u7oy38W6L2ZIGECEfIBG4BabsWDPjBxJENv9Q==
@@ -11646,15 +11646,6 @@ simple-git@3.36.0:
     "@kwsites/promise-deferred" "^1.1.1"
     "@simple-git/args-pathspec" "^1.0.3"
     "@simple-git/argv-parser" "^1.1.0"
-    debug "^4.4.0"
-
-simple-git@^3.20.0, simple-git@^3.28.0:
-  version "3.33.0"
-  resolved "https://registry.yarnpkg.com/simple-git/-/simple-git-3.33.0.tgz#b903dc70f5b93535a4f64ff39172da43058cfb88"
-  integrity sha512-D4V/tGC2sjsoNhoMybKyGoE+v8A60hRawKQ1iFRA1zwuDgGZCBJ4ByOzZ5J8joBbi4Oam0qiPH+GhzmSBwbJng==
-  dependencies:
-    "@kwsites/file-exists" "^1.1.1"
-    "@kwsites/promise-deferred" "^1.1.1"
     debug "^4.4.0"
 
 sinon@10.0.0:
