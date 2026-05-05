@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import axios from 'axios';
-import moment from 'moment';
+import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import c from 'chalk';
 import { uxLog } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
@@ -111,9 +111,9 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     }
 
     // Get number of days before next major upgrade
-    const nextUpgradeDate = moment(orgInfo?.maintenanceNextUpgrade?.plannedStartTime);
+    const nextUpgradeDate = dateHelper(orgInfo?.maintenanceNextUpgrade?.plannedStartTime);
     const nextMajorUpgradeDateStr = nextUpgradeDate.format("ll");
-    const today = moment();
+    const today = dateHelper();
     const daysBeforeUpgrade = today.diff(nextUpgradeDate, 'days');
 
     // Manage notifications

@@ -6,7 +6,7 @@ import c from 'chalk';
 import { isCI, selectGitBranch, uxLog } from '../../../../common/utils/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
-import moment from 'moment';
+import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
 
@@ -122,7 +122,7 @@ Use \`--agent\` to disable all interactive prompts. In agent mode:
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
     if (this.minDateStr) {
-      this.minDate = moment(this.minDateStr).toDate()
+      this.minDate = dateHelper(this.minDateStr).toDate()
     }
 
     // Startup

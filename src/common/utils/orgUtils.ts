@@ -6,7 +6,7 @@ import * as path from 'path';
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isCI, uxLog } from './index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getConfig, setConfig } from '../../config/index.js';
-import * as EmailValidator from 'email-validator';
+import { isValidEmail } from './stringUtils.js';
 import sortArray from 'sort-array';
 import { AuthInfo, Connection, SfError } from '@salesforce/core';
 import { importData } from './dataUtils.js';
@@ -397,7 +397,7 @@ export async function promptUserEmail(promptMessage: string | null = null) {
     message: c.cyanBright(promptMessage || t('pleaseInputYourEmailAddress')),
     description: t('descEnterEmail'),
     placeholder: t('exJohnDoeAtCompany'),
-    validate: (value: string) => EmailValidator.validate(value),
+    validate: (value: string) => isValidEmail(value),
   });
   const userEmail = promptResponse.value;
   // Store email in user .sfdx-hardis.USERNAME.yml file for later reuse

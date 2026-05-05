@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { assert } from 'console';
 import fs from 'fs-extra';
-import moment from 'moment';
+import { dateHelper } from '../../../common/utils/dateHelper.js';
 import * as os from 'os';
 import * as path from 'path';
 import { clearCache } from '../../../common/cache/index.js';
@@ -247,7 +247,7 @@ In agent mode:
       '-' +
       (this.gitBranch.split('/').pop() || '').slice(0, 15) +
       '_' +
-      moment().format('YYYYMMDD_hhmm');
+      dateHelper().format('YYYYMMDD_hhmm');
     this.scratchOrgAlias =
       process.env.SCRATCH_ORG_ALIAS ||
       (!this.forceNew && this.pool == false ? this.configInfo.scratchOrgAlias : null) ||

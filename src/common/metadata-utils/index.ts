@@ -1,6 +1,6 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
-import extractZip from 'extract-zip';
+import AdmZip from 'adm-zip';
 import fs from 'fs-extra';
 import * as path from 'path';
 import sortArray from 'sort-array';
@@ -373,9 +373,8 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
       }
       // Unzip metadatas
       uxLog("action", commandThis, c.cyan(t('unzippingMetadatas')));
-      await extractZip(path.join(metadataFolder, 'unpackaged.zip'), {
-        dir: metadataFolder,
-      });
+      const zip = new AdmZip(path.join(metadataFolder, 'unpackaged.zip'));
+      zip.extractAllTo(metadataFolder, true);
       await fs.unlink(path.join(metadataFolder, 'unpackaged.zip'));
     }
   }

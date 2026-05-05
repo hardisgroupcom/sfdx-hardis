@@ -1,7 +1,7 @@
 // Analyze deployment errors to provide tips to user 😊
 import c from "chalk";
-import format from "string-template";
 import { getAllTips } from "./deployTipsList.js";
+import { formatTemplate as format } from "./stringUtils.js";
 import { stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
 import { updatePullRequestResult } from "./deployTips.js";

@@ -1,6 +1,5 @@
 import { countRegexMatches, uxLog } from "./index.js";
 import c from "chalk";
-import readFilesRecursive from "fs-readdir-recursive";
 import * as path from "path";
 import * as fs from "fs";
 import { getPullRequestScopedSfdxHardisConfig } from "./pullRequestUtils.js";
@@ -28,10 +27,10 @@ export async function getApexTestClasses(classRegexFilter: string = "", excludeS
 
   // Find all APEX classes
   const testClasses: any[] = [];
-  const allFiles = await readFilesRecursive(pathToBrowser)
+  const allFiles = (fs.readdirSync(pathToBrowser, { recursive: true }) as string[])
     .filter((file) => !file.includes("node_modules") && file.includes("classes") && file.endsWith(".cls"))
     .map((file) => {
-      return { fullPath: file, fileName: path.basename(file) };
+      return { fullPath: path.join(pathToBrowser, file), fileName: path.basename(file) };
     });
 
   // Detect test classes

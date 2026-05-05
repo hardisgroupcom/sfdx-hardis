@@ -6,7 +6,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
 import sortArray from 'sort-array';
-import set from 'set-value';
+import { setDeepValue } from '../../../../common/utils/objectUtils.js';
 import * as yaml from 'js-yaml';
 import { uxLog } from '../../../../common/utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
@@ -122,7 +122,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
       const commandMdPath = commandsSplit.join('/') + `/${commandName}.md`;
       const navItem = {};
       navItem[commandName || ''] = commandMdPath;
-      set(commandsNav, commandsSplit.join('.'), navItem, { preservePaths: true, merge: true });
+      setDeepValue(commandsNav, commandsSplit.join('.'), navItem);
       commandsLinks[command.id] = commandMdPath;
     }
     uxLog("other", this, yaml.dump(commandsNav));
