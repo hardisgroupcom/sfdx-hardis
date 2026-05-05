@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import { isValidEmail, formatTemplate, decodeHtmlEntities, toPascalCase } from '../../../src/common/utils/stringUtils.js';
 

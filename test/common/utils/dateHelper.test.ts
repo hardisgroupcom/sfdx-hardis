@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import { DateHelper, dateHelper, formatElapsedMs } from '../../../src/common/utils/dateHelper.js';
 

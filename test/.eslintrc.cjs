@@ -5,6 +5,7 @@ module.exports = {
   rules: {
     // Allow assert style expressions. i.e. expect(true).to.be.true
     'no-unused-expressions': 'off',
+    '@typescript-eslint/no-unused-expressions': 'off',
 
     // It is common for tests to stub out method.
 
