@@ -46,7 +46,9 @@ See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and ho
 ![Salesforce Foundations free tier](assets/images/foundations.png)
 
 - A prompt template **SfdxHardisGenericPrompt** (type `Flex`) must exist in the default org, with input variable **PromptText** (type `FreeText`)
-- The connected used must be assigned to permission set **Prompt Template User**
+- The connected user must be assigned to permission set **Prompt Template User** (EinsteinGPTPromptTemplateUser)
+
+> **Quick setup:** Run [`sf hardis:org:configure:generic-prompt`](hardis/org/configure/generic-prompt.md) to deploy the `SfdxHardisGenericPrompt` template and optionally assign the `EinsteinGPTPromptTemplateUser` Permission Set to your user in a single interactive step. Then **manually** add `useAgentforce: true` to your `.sfdx-hardis.yml` config file or set the `USE_AGENTFORCE` env variable to enable Agentforce integration.
 
 | Variable                           | Description                                                                                                                                                                                                                       | Default                                                                                                        |
 |------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
