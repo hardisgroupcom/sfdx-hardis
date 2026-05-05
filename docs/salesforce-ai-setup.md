@@ -46,7 +46,7 @@ See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and ho
 ![Salesforce Foundations free tier](assets/images/foundations.png)
 
 - A prompt template **SfdxHardisGenericPrompt** (type `Flex`) must exist in the default org, with input variable **PromptText** (type `FreeText`)
-- The connected used must be assigned to permission set **Prompt Template User**
+- The connected user must be assigned to permission set **Prompt Template User** (EinsteinGPTPromptTemplateUser)
 
 | Variable                           | Description                                                                                                                                                                                                                       | Default                                                                                                        |
 |------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
