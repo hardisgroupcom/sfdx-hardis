@@ -11,7 +11,7 @@ import {
   uxLog,
 } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
-import moment from 'moment';
+import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { generateFlowVisualGitDiff, generateHistoryDiffMarkdown } from '../../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -121,7 +121,7 @@ In agent mode:
       allChoices = fileHistory.all.map(log => {
         return {
           value: log.hash,
-          title: `${moment(log.date).format("ll")}: ${log.message}`,
+          title: `${dateHelper(log.date).format("ll")}: ${log.message}`,
           description: `By ${log.author_name}(${log.author_email}) in ${log.refs}`
         }
       });

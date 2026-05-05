@@ -1,6 +1,6 @@
 import c from 'chalk';
 import fs from 'fs-extra';
-import moment from 'moment';
+import { dateHelper } from './dateHelper.js';
 import * as os from 'os';
 import * as path from 'path';
 import { getConfig, setConfig } from '../../config/index.js';
@@ -82,7 +82,7 @@ async function executeAddScratchOrgToPool(scratchOrg: any, options: any = { posi
     poolStorage.scratchOrgs = scratchOrgs;
     await setPoolStorage(poolStorage, options);
     await updateActiveScratchOrg(scratchOrg, {
-      Description: `Added to pool by ${os.userInfo().username} on ${moment().format('YYYYMMDD_hhmm')}`,
+      Description: `Added to pool by ${os.userInfo().username} on ${dateHelper().format('YYYYMMDD_hhmm')}`,
     });
   } else {
     // Store scratch creation errors
@@ -129,7 +129,7 @@ export async function tryFetchScratchOrg(options: any) {
   if (scratchOrgs.length > 0) {
     const scratchOrg = scratchOrgs.shift();
     await updateActiveScratchOrg(scratchOrg, {
-      Description: `Fetched by ${os.userInfo().username} on ${moment().format('YYYYMMDD_hhmm')}`,
+      Description: `Fetched by ${os.userInfo().username} on ${dateHelper().format('YYYYMMDD_hhmm')}`,
     });
     // Remove and save
     poolStorage.scratchOrgs = scratchOrgs;
@@ -178,7 +178,7 @@ export async function tryFetchScratchOrg(options: any) {
     uxLog("action", this, c.cyan(t('openScratchOrgWithUrl', { openRes: c.green(openRes?.result?.url) })));
     // Return scratch org
     await updateActiveScratchOrg(scratchOrg, {
-      Description: `Authenticated by ${os.userInfo().username} on ${moment().format('YYYYMMDD_hhmm')}`,
+      Description: `Authenticated by ${os.userInfo().username} on ${dateHelper().format('YYYYMMDD_hhmm')}`,
     });
     return scratchOrg;
   }

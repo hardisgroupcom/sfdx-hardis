@@ -6,7 +6,7 @@ import which from "which";
 import { execCommand, git, isDockerRunning, uxLog } from "./index.js";
 import { parseFlow } from "./flowVisualiser/flowParser.js";
 import { getConfig, getReportDirectory } from "../../config/index.js";
-import moment from "moment";
+import { dateHelper } from './dateHelper.js';
 import { SfError } from "@salesforce/core";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
 import { AiProvider } from "../aiProvider/index.js";
@@ -417,7 +417,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
 
   const reportDir = await getReportDirectory();
   await fs.ensureDir(path.join(reportDir, "flow-diff"));
-  const diffMdFile = path.join(reportDir, 'flow-diff', `${flowLabel}_${moment().format("YYYYMMDD-hhmmss")}.md`);
+  const diffMdFile = path.join(reportDir, 'flow-diff', `${flowLabel}_${dateHelper().format("YYYYMMDD-hhmmss")}.md`);
 
   if (options.debug) {
     uxLog("log", this, c.grey(t('flowDocBefore') + mermaidMdBefore) + "\n");
@@ -796,7 +796,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
       const flowXml = await git().show([`${fileHistory.all[i].hash}:${flowFile}`]);
       const reportDir = await getReportDirectory();
       await fs.ensureDir(path.join(reportDir, "flow-diff"));
-      const diffMdFileTmp = path.join(reportDir, 'flow-diff', `${flowLabel}_${moment().format("YYYYMMDD-hhmmss")}.md`);
+      const diffMdFileTmp = path.join(reportDir, 'flow-diff', `${flowLabel}_${dateHelper().format("YYYYMMDD-hhmmss")}.md`);
       const genRes = await generateFlowMarkdownFile(flowLabel, flowXml, diffMdFileTmp, { collapsedDetails: false, describeWithAi: false, flowDependencies: {} });
       if (!genRes) {
         throw new Error(`Error generating markdown file for flow ${flowFile}`);
@@ -827,8 +827,8 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
   let finalMd = `# ${flowLabel} history\n\n`;
   finalMd += "<!-- This page has been generated to be viewed with mkdocs-material, you can not view it just as markdown . Activate tab plugin following the doc at https://squidfunk.github.io/mkdocs-material/reference/content-tabs/ -->\n\n"
   for (const diffMdFile of diffMdFiles) {
-    finalMd += `=== "${moment(diffMdFile.commitAfter.date).format("ll")}` + (diffMdFile.initialVersion ? " (Initial)" : "") + `"\n\n`;
-    finalMd += `    _${moment(diffMdFile.commitAfter.date).format("ll")}, by ${diffMdFile.commitAfter.author_name} in commit ${diffMdFile.commitAfter.message}_\n\n`;
+    finalMd += `=== "${dateHelper(diffMdFile.commitAfter.date).format("ll")}` + (diffMdFile.initialVersion ? " (Initial)" : "") + `"\n\n`;
+    finalMd += `    _${dateHelper(diffMdFile.commitAfter.date).format("ll")}, by ${diffMdFile.commitAfter.author_name} in commit ${diffMdFile.commitAfter.message}_\n\n`;
     // Remove title and add indentation for tabs to be displayed
     finalMd += diffMdFile.markdown.split("\n").filter(line => !line.startsWith("# ")).map(line => `    ${line}`).join("\n");
     finalMd += "\n\n";

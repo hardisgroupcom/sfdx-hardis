@@ -4,7 +4,7 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
-import moment from 'moment';
+import { DateHelper } from '../../../common/utils/dateHelper.js';
 import ora from 'ora';
 import * as path from 'path';
 import * as readline from 'readline';
@@ -593,7 +593,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
       if (transfo.addZero && colVal.length === 7) {
         colVal = '0' + colVal;
       }
-      const formattedDate = moment(colVal, transfo.from, true).format(transfo.to);
+      const formattedDate = DateHelper.parse(colVal, transfo.from).format(transfo.to);
       if (formattedDate === 'Invalid date') {
         this.triggerError(`Unable to reformat date ${colVal} for column ${JSON.stringify(colDefinition)}`, false);
       }
@@ -667,8 +667,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
   }
 
   checkFilterDate(filter, lineSplit) {
-    const dateStart = moment(filter.date, filter.dateFormat, true);
-    const colValue = moment(lineSplit[filter.colNumber - 1], filter.colDateFormat, true);
+    const dateStart = DateHelper.parse(filter.date, filter.dateFormat);
+    const colValue = DateHelper.parse(lineSplit[filter.colNumber - 1], filter.colDateFormat);
     const res =
       filter.typeDtl === 'higherThan'
         ? colValue.isAfter(dateStart, 'day')

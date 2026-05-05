@@ -10,7 +10,7 @@ import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
-import moment from 'moment';
+import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import sortArray from 'sort-array';
 import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js';
@@ -218,9 +218,9 @@ In agent mode, the command runs fully automatically with no interactive prompts.
         return {
           SeverityIcon: connectedApp.severityIcon,
           ConnectedApp: connectedApp.Name,
-          AppLastModifiedDate: moment(connectedApp.LastModifiedDate).format('ll'),
+          AppLastModifiedDate: dateHelper(connectedApp.LastModifiedDate).format('ll'),
           AppLastModifiedBy: connectedApp.LastModifiedBy,
-          LastOAuthUsageDate: connectedApp.LastOAuthUsageDate ? moment(connectedApp.LastOAuthUsageDate).format('ll') : '',
+          LastOAuthUsageDate: connectedApp.LastOAuthUsageDate ? dateHelper(connectedApp.LastOAuthUsageDate).format('ll') : '',
           LastOAuthUsageBy: connectedApp.LastOAuthUsageDate,
           SeverityReason: connectedApp.severityReason,
         }
@@ -286,8 +286,8 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     if (latestOAuthToken && latestOAuthToken.LastUsedDate) {
       connectedApp.LastOAuthUsageDate = latestOAuthToken.LastUsedDate;
       connectedApp.LastOAuthUsageBy = latestOAuthToken?.User?.Name || 'Not set';
-      const today = moment();
-      const lastUsage = moment(connectedApp.LastOAuthUsageDate);
+      const today = dateHelper();
+      const lastUsage = dateHelper(connectedApp.LastOAuthUsageDate);
       if (today.diff(lastUsage, "months") < 6 && loginHistoryFound === false) {
         severity = 'log';
         reason = "OAuth Token < 6 months";

@@ -9,7 +9,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
-import moment from 'moment';
+import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import sortArray from 'sort-array';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
@@ -158,11 +158,11 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
           severity: `${apexClass.severityIcon}`,
           name: apexClass.Name,
           AsyncType: apexClass.AsyncType,
-          latestJobDate: apexClass.latestJobDate ? moment(apexClass.latestJobDate).format('YYYY-MM-DD hh:mm') : "Not found",
+          latestJobDate: apexClass.latestJobDate ? dateHelper(apexClass.latestJobDate).format('YYYY-MM-DD hh:mm') : "Not found",
           latestJobRunDays: apexClass.latestJobRunDays,
-          nextJobDate: apexClass.nextJobDate ? moment(apexClass.nextJobDate).format('YYYY-MM-DD hh:mm') : "None",
+          nextJobDate: apexClass.nextJobDate ? dateHelper(apexClass.nextJobDate).format('YYYY-MM-DD hh:mm') : "None",
           queued: apexClass.queued,
-          classCreatedOn: moment(apexClass.ClassCreatedDate).format('YYYY-MM-DD'),
+          classCreatedOn: dateHelper(apexClass.ClassCreatedDate).format('YYYY-MM-DD'),
           classCreatedBy: apexClass.ClassCreatedBy
         };
       });
@@ -201,8 +201,8 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
           apexClass.queued = true;
         }
         apexClass.latestJobDate = relatedJobs[0].expr0;
-        const today = moment();
-        apexClass.latestJobRunDays = today.diff(apexClass.latestJobDate, 'days');
+        const today = dateHelper();
+        apexClass.latestJobRunDays = today.diff(dateHelper(apexClass.latestJobDate), 'days');
         if (apexClass.latestJobRunDays > this.lastNdays && apexClass.nextJobDate === "" && apexClass.queued === false) {
           apexClass.severity = "warning";
           this.unusedNumber++;
@@ -254,7 +254,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
     this.asyncClassList = await Promise.all(this.asyncClassList.map(async (cls) => {
       const matchingClass = classDtlResRecords.filter(classDtl => classDtl.Id === cls.Id)[0];
       // Use date & user found in org by default
-      cls.ClassCreatedDate = moment(matchingClass.CreatedDate).format('YYYY-MM-DD');
+      cls.ClassCreatedDate = dateHelper(matchingClass.CreatedDate).format('YYYY-MM-DD');
       cls.ClassCreatedBy = `${matchingClass.CreatedBy.Name} (org)`;
       // If file found in git, and if git date is lower than org date, use git date and user
       if (isRepo) {
@@ -267,11 +267,11 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
             '--max-count': 1,     // Limit to the first commit
           });
           if (log && log.all.length === 1) {
-            const orgCreatedDate = moment(cls.ClassCreatedDate);
-            const gitCreatedDate = moment(log.all[0].date);
+            const orgCreatedDate = dateHelper(cls.ClassCreatedDate);
+            const gitCreatedDate = dateHelper(log.all[0].date);
             // Use date from git only if it is before date from org
             if (gitCreatedDate.isBefore(orgCreatedDate)) {
-              cls.ClassCreatedDate = moment(log.all[0].date).format('YYYY-MM-DD');
+              cls.ClassCreatedDate = dateHelper(log.all[0].date).format('YYYY-MM-DD');
               cls.ClassCreatedBy = `${log.all[0].author_name} (git)`;
             }
           }
@@ -296,16 +296,16 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
         .filter(apexClass => ["warning", "error"].includes(apexClass.severity))
         .map(apexClass => {
           if (apexClass.nextJobDate) {
-            return `• *${apexClass.Name}*: Will run on ${moment(apexClass.nextJobDate.format('YYYY-MM-DD hh:mm'))}`
+            return `• *${apexClass.Name}*: Will run on ${dateHelper(apexClass.nextJobDate).format('YYYY-MM-DD hh:mm')}`
           }
           else if (apexClass.queued) {
             return `• *${apexClass.Name}*: A future job is queued`
           }
           else if (apexClass.latestJobRunDays < 99999) {
-            return `• *${apexClass.Name}*: ${apexClass.latestJobRunDays} days (created on ${moment(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
+            return `• *${apexClass.Name}*: ${apexClass.latestJobRunDays} days (created on ${dateHelper(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
           }
           else {
-            return `• *${apexClass.Name}*: No past or future job found (created on ${moment(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
+            return `• *${apexClass.Name}*: No past or future job found (created on ${dateHelper(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
           }
         }).join("\n");
       attachments = [{ text: notifDetailText }];
