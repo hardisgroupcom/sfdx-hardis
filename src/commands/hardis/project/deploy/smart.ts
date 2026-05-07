@@ -512,7 +512,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
 
     // Send notification of deployment success
-    if (deployExecuted) {
+    if (!this.checkOnly) {
       await handlePostDeploymentNotifications(flags, targetUsername, quickDeploy, this.delta, this.debugMode);
     }
     // Return result
