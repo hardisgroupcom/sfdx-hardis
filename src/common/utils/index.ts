@@ -20,7 +20,7 @@ import { encryptFile } from '../cryptoUtils.js';
 import { deployMetadatas, shortenLogLines } from './deployUtils.js';
 import { isProductionOrg, promptProfiles, promptUserEmail } from './orgUtils.js';
 import { LogType, WebSocketClient } from '../websocketClient.js';
-import moment from 'moment';
+import { formatElapsedMs } from './dateHelper.js';
 import { writeXmlFile } from './xmlUtils.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { t } from './i18n.js';
@@ -903,7 +903,7 @@ export function elapseEnd(text: string, commandThis: any = this) {
   if (elapseAll[text]) {
     const elapsed = Number(process.hrtime.bigint() - elapseAll[text]);
     const ms = elapsed / 1000000;
-    uxLog("log", commandThis, c.grey(c.italic(text + ' ' + moment().startOf('day').milliseconds(ms).format('H:mm:ss.SSS'))));
+    uxLog("log", commandThis, c.grey(c.italic(text + ' ' + formatElapsedMs(ms))));
     delete elapseAll[text];
   }
 }

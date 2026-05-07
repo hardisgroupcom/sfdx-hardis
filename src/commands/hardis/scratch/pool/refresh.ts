@@ -9,7 +9,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from '../../../../common/utils/poolUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import { execCommand, stripAnsi, uxLog } from '../../../../common/utils/index.js';
-import moment from 'moment';
+import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { authenticateWithSfdxUrlStore } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 
@@ -120,8 +120,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
     const minScratchOrgRemainingDays = config.poolConfig.minScratchOrgRemainingDays || 25;
     const scratchOrgsToDelete: any[] = [];
     scratchOrgs = scratchOrgs.filter((scratchOrg) => {
-      const expiration = moment(scratchOrg?.authFileJson?.result?.expirationDate);
-      const today = moment();
+      const expiration = dateHelper(scratchOrg?.authFileJson?.result?.expirationDate);
+      const today = dateHelper();
       const daysBeforeExpiration = expiration.diff(today, 'days');
       if (daysBeforeExpiration < minScratchOrgRemainingDays) {
         scratchOrg.daysBeforeExpiration = daysBeforeExpiration;

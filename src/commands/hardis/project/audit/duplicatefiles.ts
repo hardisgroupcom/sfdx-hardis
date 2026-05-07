@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import readFilesRecursive from 'fs-readdir-recursive';
+import fs from 'fs-extra';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import { t } from '../../../../common/utils/i18n.js';
@@ -87,10 +87,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
     const pathToBrowser = flags.path || process.cwd();
 
     // List all files
-    const allFiles = readFilesRecursive(pathToBrowser)
+    const allFiles = (fs.readdirSync(pathToBrowser, { recursive: true }) as string[])
       .filter((file) => !file.includes('node_modules'))
+      .filter((file) => {
+        try { return fs.statSync(path.join(pathToBrowser, file)).isFile(); } catch { return false; }
+      })
       .map((file) => {
-        return { fullPath: file, fileName: path.basename(file) };
+        return { fullPath: path.join(pathToBrowser, file), fileName: path.basename(file) };
       });
 
     uxLog(

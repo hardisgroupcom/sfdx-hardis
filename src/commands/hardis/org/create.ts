@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { assert } from 'console';
 import fs from 'fs-extra';
-import moment from 'moment';
+import { dateHelper } from '../../../common/utils/dateHelper.js';
 import * as os from 'os';
 import * as path from 'path';
 import { clearCache } from '../../../common/cache/index.js';
@@ -158,7 +158,7 @@ In agent mode:
       '-' +
       (this.gitBranch.split('/').pop() || '').slice(0, 15) +
       '_' +
-      moment().format('YYYYMMDD_hhmm');
+      dateHelper().format('YYYYMMDD_hhmm');
     this.sandboxOrgAlias = process.env.SANDBOX_ORG_ALIAS || newSandboxName;
 
     this.projectName = process.env.PROJECT_NAME || this.configInfo.projectName;

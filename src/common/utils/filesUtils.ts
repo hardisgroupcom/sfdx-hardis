@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import c from 'chalk';
 import open from 'open';
-import * as split from 'split';
+import { createInterface } from 'readline';
 import { PromisePool } from '@supercharge/promise-pool';
 import crypto from 'crypto';
 
@@ -1428,24 +1428,12 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
 }
 
 export async function countLinesInFile(file: string) {
-  let readError;
   let lineCount = 0;
   return await new Promise((resolve) => {
-    fs.createReadStream(file)
-      .pipe(split())
-      .on('data', () => {
-        lineCount++;
-      })
-      .on('end', () => {
-        if (readError) {
-          return;
-        }
-        resolve(lineCount - 1);
-      })
-      .on('error', (error) => {
-        readError = true;
-        resolve(error);
-      });
+    const rl = createInterface({ input: fs.createReadStream(file), crlfDelay: Infinity });
+    rl.on('line', () => { lineCount++; });
+    rl.on('close', () => { resolve(lineCount); });
+    rl.on('error', (error) => { resolve(error); });
   });
 }
 

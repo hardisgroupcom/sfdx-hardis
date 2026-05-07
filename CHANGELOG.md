@@ -2,11 +2,27 @@
 
 ## [beta] (main)
 
+- New command
+  - [hardis:org:configure:generic-prompt](https://sfdx-hardis.cloudity.com/hardis/org/configure/generic-prompt/): Deploys the `SfdxHardisGenericPrompt` GenAiPromptTemplate metadata to a Salesforce org and optionally assigns the `EinsteinGPTPromptTemplateUser` Permission Set to the current user, enabling AI prompt integration via Agentforce.
+
+- DevOps
+  - Send deployment notifications even when no metadata deployed after merge
+
+- Security: replaced unmaintained npm dependencies with actively maintained alternatives or lightweight inline helpers:
+  - `moment` - replaced by a new `DateHelper` class (`src/common/utils/dateHelper.ts`) using native `Date` and `Intl` APIs
+  - `set-value` - replaced by a new `setDeepValue()` helper (`src/common/utils/objectUtils.ts`)
+  - `pascalcase` - replaced by a new `toPascalCase()` helper (`src/common/utils/stringUtils.ts`)
+  - `he` - replaced by a new `decodeHtmlEntities()` helper (`src/common/utils/stringUtils.ts`)
+  - `string-template` - replaced by a new `formatTemplate()` helper (`src/common/utils/stringUtils.ts`)
+  - `email-validator` - replaced by a new `isValidEmail()` helper (`src/common/utils/stringUtils.ts`)
+  - `extract-zip` - replaced by `adm-zip` (actively maintained)
+  - `split` - replaced by Node.js built-in `readline.createInterface`
+  - `fs-readdir-recursive` - replaced by Node.js built-in `fs.readdirSync` with `{ recursive: true }` option
+
 ## [7.12.1] 2026-05-05
 
-- Utilities
-  - [hardis:packagexml:remove](https://sfdx-hardis.cloudity.com/hardis/packagexml/remove/): Add `--metadatatypes` and `--metadatanames` CLI flags to remove specific metadata types and members directly without providing a filter `package.xml` file.
-  - Make Git providers compliant with Jenkins by translating Jenkins variables into Git provider expected variables (Azure DevOps, Bitbucket, GitHub, GitLab).
+- [hardis:packagexml:remove](https://sfdx-hardis.cloudity.com/hardis/packagexml/remove/): Add `--metadatatypes` and `--metadatanames` CLI flags to remove specific metadata types and members directly without providing a filter `package.xml` file.
+- Make Git providers compliant with Jenkins by translating Jenkins variables into Git provider expected variables (Azure DevOps, Bitbucket, GitHub, GitLab).
 - Make JIRA integration compliant with Jira Data Center / Server
 - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): Auto-Format generated worksheets
 

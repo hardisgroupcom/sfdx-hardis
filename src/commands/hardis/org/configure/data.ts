@@ -4,9 +4,9 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
-import pascalcase from 'pascalcase';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
+import { toPascalCase } from '../../../../common/utils/stringUtils.js';
 import { DATA_FOLDERS_ROOT } from '../../../../common/utils/dataUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -153,7 +153,7 @@ The command's technical implementation involves:
     const resp = await this.promptExportInfo();
 
     // Collect / reformat data
-    this.dataPath = pascalcase(resp.dataPath);
+    this.dataPath = toPascalCase(resp.dataPath);
     const sfdxHardisLabel = resp.sfdxHardisLabel;
     const sfdxHardisDescription = resp.sfdxHardisDescription;
     const additionalConfig: Array<string> = resp.additional || [];
@@ -278,7 +278,7 @@ The command's technical implementation involves:
 
   private async buildExportJsonInfoFromTemplate(templateFile) {
     const templateName = path.basename(templateFile).replace('.json', '');
-    this.dataPath = pascalcase(templateName);
+    this.dataPath = toPascalCase(templateName);
     this.sfdmuConfig = JSON.parse(fs.readFileSync(templateFile, 'utf-8'));
   }
 

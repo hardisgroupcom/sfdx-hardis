@@ -4,9 +4,9 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
-import pascalcase from 'pascalcase';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
+import { toPascalCase } from '../../../../common/utils/stringUtils.js';
 import { filesFolderRoot } from '../../../../common/utils/filesUtils.js';
 import { promptFilesExportConfiguration } from '../../../../common/utils/filesUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -170,13 +170,13 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
 
     this.exportConfig = await promptFilesExportConfiguration(defaultConfig, false);
     // Collect / reformat data
-    this.filesExportPath = pascalcase(this.exportConfig.filesExportPath);
+    this.filesExportPath = toPascalCase(this.exportConfig.filesExportPath);
     delete this.exportConfig.filesExportPath;
   }
 
   private async buildExportJsonInfoFromTemplate(templateFile) {
     const templateName = path.basename(templateFile).replace('.json', '');
-    this.filesExportPath = pascalcase(templateName);
+    this.filesExportPath = toPascalCase(templateName);
     this.exportConfig = JSON.parse(fs.readFileSync(templateFile, 'utf-8'));
   }
 }

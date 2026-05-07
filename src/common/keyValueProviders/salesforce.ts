@@ -1,7 +1,7 @@
 import { Connection } from "@salesforce/core";
 import c from "chalk";
-import * as he from "he";
 import * as path from "path";
+import { decodeHtmlEntities } from "../utils/stringUtils.js";
 import { getConfig } from "../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
 import { uxLog } from "../utils/index.js";
@@ -36,7 +36,7 @@ export class SalesforceProvider implements KeyValueProviderInterface {
     );
     const valueText = queryRes.records[0] ? (queryRes.records[0] as any).ValueText__c || "" : "";
     if (valueText.length > 5) {
-      return valueText.includes("&quot") ? JSON.parse(he.decode(valueText)) : JSON.parse(valueText);
+      return valueText.includes("&quot") ? JSON.parse(decodeHtmlEntities(valueText)) : JSON.parse(valueText);
     }
     return {};
   }
