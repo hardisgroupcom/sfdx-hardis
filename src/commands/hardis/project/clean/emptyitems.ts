@@ -121,7 +121,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     }
 
     // Summary
-    const msg = `Removed ${c.green(c.bold(counter))} hidden source items`;
+    const msg = `Removed ${c.green(c.bold(counter))} empty source items`;
     uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
