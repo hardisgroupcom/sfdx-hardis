@@ -6,7 +6,7 @@
   - [hardis:org:configure:generic-prompt](https://sfdx-hardis.cloudity.com/hardis/org/configure/generic-prompt/): Deploys the `SfdxHardisGenericPrompt` GenAiPromptTemplate metadata to a Salesforce org and optionally assigns the `EinsteinGPTPromptTemplateUser` Permission Set to the current user, enabling AI prompt integration via Agentforce.
 
 - DevOps
-  - Send deployment notifications even when no metadata deployed after merge
+  - Send deployment notifications even when no metadata deployed after merge (ex: automated actions associated to the PR)
 
 - Security: replaced unmaintained npm dependencies with actively maintained alternatives or lightweight inline helpers:
   - `moment` - replaced by a new `DateHelper` class (`src/common/utils/dateHelper.ts`) using native `Date` and `Intl` APIs
