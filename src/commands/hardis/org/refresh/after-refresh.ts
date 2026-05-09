@@ -1,11 +1,11 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Connection, Messages } from '@salesforce/core';
+import { Connection, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as path from 'path';
 import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
-import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
@@ -56,9 +56,9 @@ export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
   public static description = `
 ## Command Behavior
 
-> **This command requires human interaction and must be called manually, preferably from the [VS Code SFDX Hardis UI](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis). It is not suitable for automation or AI agent usage.**
-
 **Restores all previously backed-up Connected Apps (including Consumer Secrets), External Client Apps (including credentials), certificates, custom settings, records and other metadata to a Salesforce org after a sandbox refresh.**
+
+> **CRITICAL SECURITY WARNING:** The save project under \`scripts/sandbox-refresh/<sandbox-folder>\` contains SENSITIVE CREDENTIALS (Consumer Secrets, OAuth Consumer Keys, External Client App credentials, certificates). Do NOT commit this folder to git or any other version control system. Treat it like any other secret store and delete it once the refresh process is complete.
 
 This command is the second step in the sandbox refresh process. It scans the backup folder created before the refresh, allows interactive or flag-driven selection of items to restore, and automates cleanup and redeployment to the refreshed org while preserving credentials and configuration.
 
@@ -75,6 +75,21 @@ Key functionalities:
 - **Reporting & persistence:** Sends restore reports and can update project config to record what was restored.
 
 This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is intended to be run after a sandbox refresh to re-apply saved metadata, credentials and data.
+
+### Agent Mode
+
+When \`--agent\` is specified the command runs non-interactively for AI agents and automation pipelines. All interactive prompts are skipped and decisions are made from CLI flags and the saved \`refreshSandboxConfig\` block of \`config/.sfdx-hardis.yml\`. Selections must be opt-in: if neither a relevant flag nor the corresponding \`refreshSandboxConfig\` entry is provided, the command fails fast (it will not silently process "all"):
+
+- **Backup folder selection:** \`--save-project-path\` is used when provided; otherwise the most recently modified subfolder of \`scripts/sandbox-refresh/\` is picked automatically.
+- **Connected Apps selection:** \`--all\` or \`--name "App1,App2"\` must be provided, OR \`refreshSandboxConfig.connectedApps\` must be set. Otherwise the command aborts.
+- **External Client Apps selection:** \`--all-external-client-apps\` or \`--external-client-apps "EcaA,EcaB"\` must be provided, OR \`refreshSandboxConfig.externalClientApps\` must be set. Otherwise the command aborts.
+- **Custom Settings selection:** \`--all-custom-settings\` or \`--custom-settings "MyCs1__c,MyCs2__c"\` must be provided, OR \`refreshSandboxConfig.customSettings\` must be set. Otherwise the command aborts.
+- **Data Workspaces selection:** \`--all-data-workspaces\` or \`--data-workspaces "scripts/data/Foo,scripts/data/Bar"\` must be provided, OR \`refreshSandboxConfig.dataWorkspaces\` must be set. Otherwise the command aborts.
+- **Certificates / Other Metadata:** Restored from the backup folder as-is (no curated list -- the backup itself is the explicit selection).
+- **SAML SSO Configs:** For each saved SAML SSO Config, the most recent active certificate created within the last year is auto-picked. If no such certificate is available, the SAML SSO Config is skipped (warning logged).
+- **All confirmation prompts:** Default to "yes" so the restore proceeds end-to-end.
+
+Tip: run \`hardis:org:refresh:before-refresh\` interactively at least once first; the resulting selections are persisted to \`refreshSandboxConfig\` in \`config/.sfdx-hardis.yml\`, after which agent-mode runs of \`after-refresh\` will reuse them.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/cMzzWDIARbo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -97,6 +112,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     `$ sf hardis:org:refresh:after-refresh --name "App1,App2,App3" // Process multiple apps, no selection prompt`,
     `$ sf hardis:org:refresh:after-refresh --all // Process all apps, no selection prompt`,
     `$ sf hardis:org:refresh:after-refresh --target-org myDevOrg`,
+    `$ sf hardis:org:refresh:after-refresh --agent`,
+    `$ sf hardis:org:refresh:after-refresh --agent --save-project-path scripts/sandbox-refresh/myorg`,
+    `$ sf hardis:org:refresh:after-refresh --agent --all --all-external-client-apps --all-custom-settings --all-data-workspaces`,
+    `$ sf hardis:org:refresh:after-refresh --agent --name "App1,App2" --external-client-apps "EcaA,EcaB" --custom-settings "MyCs__c" --data-workspaces "scripts/data/Accounts"`,
   ];
 
   public static flags: any = {
@@ -110,6 +129,34 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       char: 'a',
       summary: 'Process all Connected Apps without selection prompt',
       description: 'If set, all Connected Apps from the local repository will be processed. Takes precedence over --name if both are specified.'
+    }),
+    'external-client-apps': Flags.string({
+      description: 'Comma-separated list of External Client App names to restore (e.g. "EcaA,EcaB"). Takes precedence over refreshSandboxConfig.externalClientApps.'
+    }),
+    'all-external-client-apps': Flags.boolean({
+      default: false,
+      description: 'Restore every External Client App found in the backup. Takes precedence over --external-client-apps and refreshSandboxConfig.externalClientApps.'
+    }),
+    'custom-settings': Flags.string({
+      description: 'Comma-separated list of Custom Setting object names to restore (e.g. "MyCs1__c,MyCs2__c"). Takes precedence over refreshSandboxConfig.customSettings.'
+    }),
+    'all-custom-settings': Flags.boolean({
+      default: false,
+      description: 'Restore every Custom Setting found in the backup. Takes precedence over --custom-settings and refreshSandboxConfig.customSettings.'
+    }),
+    'data-workspaces': Flags.string({
+      description: 'Comma-separated list of SFDMU data workspace paths to restore (e.g. "scripts/data/Foo,scripts/data/Bar"). Takes precedence over refreshSandboxConfig.dataWorkspaces.'
+    }),
+    'all-data-workspaces': Flags.boolean({
+      default: false,
+      description: 'Restore every data workspace found in the backup. Takes precedence over --data-workspaces and refreshSandboxConfig.dataWorkspaces.'
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Selections are read from CLI flags first, then from refreshSandboxConfig in config/.sfdx-hardis.yml.'
+    }),
+    'save-project-path': Flags.string({
+      description: 'Path to the sandbox-refresh save project to restore from. If omitted in agent mode, the most recently modified subfolder of scripts/sandbox-refresh/ is used.'
     }),
     websocket: Flags.string({
       summary: messages.getMessage('websocket'),
@@ -130,6 +177,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected orgUsername: string;
   protected nameFilter: string | undefined;
   protected processAll: boolean;
+  protected agentMode: boolean = false;
+  protected ecaNameFilter: string | undefined;
+  protected processAllEcas: boolean = false;
+  protected customSettingNameFilter: string | undefined;
+  protected processAllCustomSettings: boolean = false;
+  protected dataWorkspaceFilter: string | undefined;
+  protected processAllDataWorkspaces: boolean = false;
   protected conn: Connection;
   protected instanceUrl: any;
   protected orgId: string;
@@ -141,6 +195,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.conn = flags["target-org"].getConnection();
     this.orgId = flags["target-org"].getOrgId() as string;
     this.instanceUrl = this.conn.instanceUrl;
+    this.agentMode = flags.agent === true;
     /* jscpd:ignore-start */
     this.processAll = flags.all || false;
     this.nameFilter = this.processAll ? undefined : flags.name; // If --all is set, ignore --name
@@ -148,25 +203,64 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
     this.result = {}
     /* jscpd:ignore-end */
+    this.processAllEcas = flags['all-external-client-apps'] === true;
+    this.ecaNameFilter = this.processAllEcas ? undefined : flags['external-client-apps'];
+    this.processAllCustomSettings = flags['all-custom-settings'] === true;
+    this.customSettingNameFilter = this.processAllCustomSettings ? undefined : flags['custom-settings'];
+    this.processAllDataWorkspaces = flags['all-data-workspaces'] === true;
+    this.dataWorkspaceFilter = this.processAllDataWorkspaces ? undefined : flags['data-workspaces'];
+    // In agent mode, selection MUST be explicit (CLI flag or saved config). No silent "all".
+    if (this.agentMode && !this.processAll && !this.nameFilter) {
+      if (Array.isArray(this.refreshSandboxConfig.connectedApps) && this.refreshSandboxConfig.connectedApps.length > 0) {
+        this.nameFilter = this.refreshSandboxConfig.connectedApps.join(',');
+        uxLog("log", this, c.grey(t('agentModeUsingSavedConnectedAppsFromConfig', { count: this.refreshSandboxConfig.connectedApps.length })));
+      } else {
+        throw new SfError(t('agentModeMissingExplicitSelection', { step: 'Connected Apps', configKey: 'connectedApps' }));
+      }
+    }
     uxLog("action", this, c.cyan(t('thisCommandWillRestoreInformation', { instanceUrl: this.instanceUrl })));
-    // Prompt user to select a save project path
+    uxLog("warning", this, c.yellow(t('sandboxRefreshContainsSensitiveCredentialsWarning')));
+    // Resolve save project path
     const saveProjectPathRoot = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
     // Only get immediate subfolders of saveProjectPathRoot (not recursive)
     const subFolders = fs.readdirSync(saveProjectPathRoot, { withFileTypes: true })
       .filter(dirent => dirent.isDirectory())
       .map(dirent => dirent.name);
 
-    const saveProjectPath = await prompts({
-      type: 'select',
-      name: 'path',
-      message: t('selectTheProjectPathWhereTheSandbox'),
-      description: t('pathWhereMetadatasSavedBeforeRefresh'),
-      choices: subFolders.map(folder => ({
-        title: folder,
-        value: path.join(saveProjectPathRoot, folder)
-      })),
-    });
-    this.saveProjectPath = saveProjectPath.path;
+    const explicitPath: string | undefined = flags['save-project-path'];
+    if (explicitPath) {
+      const resolved = path.isAbsolute(explicitPath) ? explicitPath : path.join(process.cwd(), explicitPath);
+      if (!fs.existsSync(resolved)) {
+        throw new SfError(t('saveProjectPathDoesNotExist', { path: resolved }));
+      }
+      this.saveProjectPath = resolved;
+      uxLog("log", this, c.grey(t('agentModeUsingExplicitSaveProjectPath', { folder: this.saveProjectPath })));
+    } else if (!isCI && !this.agentMode) {
+      const saveProjectPath = await prompts({
+        type: 'select',
+        name: 'path',
+        message: t('selectTheProjectPathWhereTheSandbox'),
+        description: t('pathWhereMetadatasSavedBeforeRefresh'),
+        choices: subFolders.map(folder => ({
+          title: folder,
+          value: path.join(saveProjectPathRoot, folder)
+        })),
+      });
+      this.saveProjectPath = saveProjectPath.path;
+    } else {
+      // Agent / CI mode without explicit flag: pick most recently modified subfolder
+      if (subFolders.length === 0) {
+        throw new SfError(t('agentModeNoSandboxRefreshBackupFolderFound', { path: saveProjectPathRoot }));
+      }
+      const subFoldersWithMtime = subFolders.map(name => {
+        const fullPath = path.join(saveProjectPathRoot, name);
+        const stat = fs.statSync(fullPath);
+        return { fullPath, mtimeMs: stat.mtimeMs };
+      }).sort((a, b) => b.mtimeMs - a.mtimeMs);
+      this.saveProjectPath = subFoldersWithMtime[0].fullPath;
+      uxLog("log", this, c.grey(t('agentModeUsingMostRecentBackupFolder', { folder: this.saveProjectPath })));
+    }
+    uxLog("warning", this, c.yellow(t('doNotCommitSandboxRefreshFolderToGit', { folder: this.saveProjectPath })));
 
 
     // 1. Restore Certificates
@@ -226,18 +320,24 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
 
     // Prompt certificates to restore (all by default)
-    const promptCerts = await prompts({
-      type: 'multiselect',
-      name: 'certs',
-      message: t('selectCertificatesToRestore'),
-      description: t('selectCertificatesToRestoreFromBackup'),
-      choices: validCertsToRestoreNames.map(name => ({
-        title: name,
-        value: name
-      })),
-      initial: validCertsToRestoreNames, // Select all by default
-    });
-    const selectedCerts = promptCerts.certs;
+    let selectedCerts: string[];
+    if (!isCI && !this.agentMode) {
+      const promptCerts = await prompts({
+        type: 'multiselect',
+        name: 'certs',
+        message: t('selectCertificatesToRestore'),
+        description: t('selectCertificatesToRestoreFromBackup'),
+        choices: validCertsToRestoreNames.map(name => ({
+          title: name,
+          value: name
+        })),
+        initial: validCertsToRestoreNames, // Select all by default
+      });
+      selectedCerts = promptCerts.certs;
+    } else {
+      selectedCerts = validCertsToRestoreNames;
+      uxLog("log", this, c.grey(t('agentModeRestoringAllCertificates', { count: selectedCerts.length })));
+    }
     if (selectedCerts.length === 0) {
       uxLog("log", this, c.yellow(t('noCertificatesSelectedForRestoreSkippingCertificate')));
       this.refreshActions.push({ step: "Restore Certificates", type: "Certificate", name: "N/A", status: "Skipped", details: "No certificates selected" });
@@ -245,18 +345,20 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
 
     // Ask user confirmation before restoring certificates
-    const prompt = await prompts({
-      type: 'confirm',
-      name: 'restore',
-      message: t('doYouConfirmYouWantToRestore', { selectedCerts: selectedCerts.length }),
-      description: t('deployAllCertFilesSavedBeforeRefresh'),
-      initial: true
-    });
-    if (!prompt.restore) {
-      for (const cert of selectedCerts) {
-        this.refreshActions.push({ step: "Restore Certificates", type: "Certificate", name: cert, status: "Skipped", details: "User cancelled" });
+    if (!isCI && !this.agentMode) {
+      const prompt = await prompts({
+        type: 'confirm',
+        name: 'restore',
+        message: t('doYouConfirmYouWantToRestore', { selectedCerts: selectedCerts.length }),
+        description: t('deployAllCertFilesSavedBeforeRefresh'),
+        initial: true
+      });
+      if (!prompt.restore) {
+        for (const cert of selectedCerts) {
+          this.refreshActions.push({ step: "Restore Certificates", type: "Certificate", name: cert, status: "Skipped", details: "User cancelled" });
+        }
+        return;
       }
-      return;
     }
     const packageXmlCerts = {
       "Certificate": selectedCerts
@@ -295,18 +397,20 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     uxLog("warning", this, c.yellow(t('lookAtThePackageMetadataToRestore', { saveProjectPath: c.bold(this.saveProjectPath) })));
     uxLog("warning", this, c.yellow(t('confirmItContentOrRemoveCommentPart', { metadataSummary })));
 
-    const prompt = await prompts({
-      type: 'confirm',
-      name: 'restore',
-      message: t('pleaseDoubleCheckPackageMetadataToRestore', { metadataSummary }),
-      description: t('warningCheckAndValidateFileBefore'),
-      initial: true
-    });
-    if (!prompt.restore) {
-      uxLog("warning", this, c.yellow(t('metadataRestoreCancelledByUser')));
-      this.result = Object.assign(this.result, { success: false, message: t('metadataRestoreCancelledByUser') });
-      this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Skipped", details: "User cancelled" });
-      return;
+    if (!isCI && !this.agentMode) {
+      const prompt = await prompts({
+        type: 'confirm',
+        name: 'restore',
+        message: t('pleaseDoubleCheckPackageMetadataToRestore', { metadataSummary }),
+        description: t('warningCheckAndValidateFileBefore'),
+        initial: true
+      });
+      if (!prompt.restore) {
+        uxLog("warning", this, c.yellow(t('metadataRestoreCancelledByUser')));
+        this.result = Object.assign(this.result, { success: false, message: t('metadataRestoreCancelledByUser') });
+        this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Skipped", details: "User cancelled" });
+        return;
+      }
     }
     // Deploy the metadata using the package.xml
     uxLog("action", this, c.cyan(t('deployingOtherMetadatasToOrg')));
@@ -353,24 +457,30 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       return;
     }
     // Prompt user to select which SAML SSO configs to restore
-    const promptSaml = await prompts({
-      type: 'multiselect',
-      name: 'samlFiles',
-      message: t('selectSamlSsoConfigsToRestore'),
-      description: t('selectSamlSsoConfigsToRestore'),
-      choices: allSamlFiles.map(f => ({ title: f.replace('.samlssoconfig-meta.xml', ''), value: f })),
-      initial: allSamlFiles // select all by default
-    });
-    const selectedSamlFiles: string[] = promptSaml.samlFiles;
+    let selectedSamlFiles: string[];
+    if (!isCI && !this.agentMode) {
+      const promptSaml = await prompts({
+        type: 'multiselect',
+        name: 'samlFiles',
+        message: t('selectSamlSsoConfigsToRestore'),
+        description: t('selectSamlSsoConfigsToRestore'),
+        choices: allSamlFiles.map(f => ({ title: f.replace('.samlssoconfig-meta.xml', ''), value: f })),
+        initial: allSamlFiles // select all by default
+      });
+      selectedSamlFiles = promptSaml.samlFiles;
+    } else {
+      selectedSamlFiles = allSamlFiles;
+      uxLog("log", this, c.grey(t('agentModeRestoringAllSamlSsoConfigs', { count: selectedSamlFiles.length })));
+    }
     if (!selectedSamlFiles || selectedSamlFiles.length === 0) {
       uxLog("log", this, c.yellow(t('noSamlSsoConfigsSelectedForRestore')));
       return;
     }
 
     // 1. Clean up XML and prompt for cert
-    // Query active certificates
-    const soql = "SELECT Id, MasterLabel FROM Certificate WHERE ExpirationDate > TODAY  LIMIT 200";
-    let certs: { Id: string, MasterLabel: string }[] = [];
+    // Query active certificates (we also need CreatedDate for agent-mode cert filtering)
+    const soql = "SELECT Id, MasterLabel, CreatedDate FROM Certificate WHERE ExpirationDate > TODAY ORDER BY CreatedDate DESC LIMIT 200";
+    let certs: { Id: string, MasterLabel: string, CreatedDate: string }[] = [];
     try {
       const res = await soqlQueryTooling(soql, this.conn);
       certs = res.records as any;
@@ -382,22 +492,46 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       uxLog("error", this, c.yellow('No active certificates found in org. You\'ll need to update manually field requestSigningCertId with the id of a valid certificate.'));
       return;
     }
+    // In agent mode, pre-pick the most recent active cert that is less than 1 year old.
+    let agentSelectedCertId: string | null = null;
+    if (this.agentMode || isCI) {
+      const oneYearAgoMs = Date.now() - 365 * 24 * 60 * 60 * 1000;
+      const fresh = certs.find(cert => {
+        const createdMs = new Date(cert.CreatedDate).getTime();
+        return Number.isFinite(createdMs) && createdMs >= oneYearAgoMs;
+      });
+      agentSelectedCertId = fresh ? fresh.Id.substring(0, 15) : null;
+      if (agentSelectedCertId) {
+        uxLog("log", this, c.grey(t('agentModeUsingFreshCertificateForSaml', { label: (fresh as any).MasterLabel })));
+      }
+    }
     const updated: string[] = [];
     const errors: string[] = [];
     for (const samlFile of selectedSamlFiles) {
       const samlName = samlFile.replace('.samlssoconfig-meta.xml', '');
-      // Prompt user to select a certificate
-      const certPrompt = await prompts({
-        type: 'select',
-        name: 'certId',
-        message: t('selectTheCertificateToUseForSaml', { samlName }),
-        description: t('willUpdateRequestSigningCertId'),
-        choices: certs.map(cert => ({
-          title: cert.MasterLabel,
-          value: cert.Id.substring(0, 15)
-        })),
-      });
-      const selectedCertId = certPrompt.certId;
+      // Pick a certificate
+      let selectedCertId: string | null = null;
+      if (!isCI && !this.agentMode) {
+        const certPrompt = await prompts({
+          type: 'select',
+          name: 'certId',
+          message: t('selectTheCertificateToUseForSaml', { samlName }),
+          description: t('willUpdateRequestSigningCertId'),
+          choices: certs.map(cert => ({
+            title: cert.MasterLabel,
+            value: cert.Id.substring(0, 15)
+          })),
+        });
+        selectedCertId = certPrompt.certId;
+      } else {
+        selectedCertId = agentSelectedCertId;
+        if (!selectedCertId) {
+          uxLog("warning", this, c.yellow(t('agentModeNoFreshCertificateSkippingSaml', { samlName })));
+          errors.push(`No fresh certificate (created within the last year) available for ${samlName}`);
+          this.refreshActions.push({ step: "Restore SAML SSO Configs", type: "SamlSsoConfig", name: samlName, status: "Skipped", details: "Agent mode: no certificate created within the last year" });
+          continue;
+        }
+      }
       if (!selectedCertId) {
         uxLog("warning", this, c.yellow(t('noCertificateSelectedSkippingSamlSsoConfig')));
         errors.push(`No certificate selected for ${samlName}`);
@@ -415,18 +549,20 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
       await fs.writeFile(filePath, xml, 'utf8');
       uxLog("log", this, c.grey(t('updatedSamlSsoConfigWithCertificateAnd', { samlFile, selectedCertId })));
-      // 2. Prompt user to confirm deployment
-      const promptDeploy = await prompts({
-        type: 'confirm',
-        name: 'deploy',
-        message: t('doYouConfirmYouWantToDeploy', { samlFile }),
-        description: t('deploySelectedSamlSsoConfigs'),
-        initial: true
-      });
-      if (!promptDeploy.deploy) {
-        uxLog("warning", this, c.yellow(t('samlSsoConfigDeploymentCancelledByUser', { samlFile })));
-        errors.push(`Deployment cancelled for ${samlFile}`);
-        continue;
+      // 2. Prompt user to confirm deployment (skipped in agent mode)
+      if (!isCI && !this.agentMode) {
+        const promptDeploy = await prompts({
+          type: 'confirm',
+          name: 'deploy',
+          message: t('doYouConfirmYouWantToDeploy', { samlFile }),
+          description: t('deploySelectedSamlSsoConfigs'),
+          initial: true
+        });
+        if (!promptDeploy.deploy) {
+          uxLog("warning", this, c.yellow(t('samlSsoConfigDeploymentCancelledByUser', { samlFile })));
+          errors.push(`Deployment cancelled for ${samlFile}`);
+          continue;
+        }
       }
       const deployCommand = `sf project deploy start -m SamlSsoConfig:${samlName} --target-org ${this.orgUsername}`;
       try {
@@ -484,36 +620,55 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       return;
     }
     // Prompt custom settings to restore: All by default
-    const promptRestore = await prompts({
-      type: 'multiselect',
-      name: 'settings',
-      message: t('selectCustomSettingsToRestore'),
-      description: t('selectCustomSettingsToRestoreFromBackup'),
-      choices: csToRestore.map(folder => ({
-        title: folder,
-        value: folder
-      })),
-      initial: csToRestore // Select all by default
-    });
-    const selectedSettings = promptRestore.settings;
+    let selectedSettings: string[];
+    if (!isCI && !this.agentMode) {
+      const promptRestore = await prompts({
+        type: 'multiselect',
+        name: 'settings',
+        message: t('selectCustomSettingsToRestore'),
+        description: t('selectCustomSettingsToRestoreFromBackup'),
+        choices: csToRestore.map(folder => ({
+          title: folder,
+          value: folder
+        })),
+        initial: csToRestore // Select all by default
+      });
+      selectedSettings = promptRestore.settings;
+    } else {
+      // Agent / CI mode: selection precedence is --all-custom-settings > --custom-settings > config; no silent "all"
+      if (this.processAllCustomSettings) {
+        selectedSettings = csToRestore;
+      } else if (this.customSettingNameFilter) {
+        const requested = this.customSettingNameFilter.split(',').map(s => s.trim()).filter(Boolean);
+        selectedSettings = csToRestore.filter(f => requested.includes(f));
+      } else if (Array.isArray(this.refreshSandboxConfig.customSettings) && this.refreshSandboxConfig.customSettings.length > 0) {
+        const savedCs: string[] = this.refreshSandboxConfig.customSettings;
+        selectedSettings = csToRestore.filter(f => savedCs.includes(f));
+      } else {
+        throw new SfError(t('agentModeMissingExplicitSelection', { step: 'Custom Settings', configKey: 'customSettings' }));
+      }
+      uxLog("log", this, c.grey(t('agentModeUsingCustomSettingsSelection', { count: selectedSettings.length })));
+    }
     if (selectedSettings.length === 0) {
       uxLog("log", this, c.yellow(t('noCustomSettingsSelectedForRestoreSkipping')));
       this.refreshActions.push({ step: "Restore Custom Settings", type: "CustomSetting", name: "N/A", status: "Skipped", details: "No custom settings selected" });
       return;
     }
 
-    // Ask last confirmation to user
-    const prompt = await prompts({
-      type: 'confirm',
-      name: 'restore',
-      message: t('doYouConfirmYouWantToRestore2', { selectedSettings: selectedSettings.length }),
-      description: t('thisWillImportAllCustomSettingsDataSavedBeforeRefresh'),
-      initial: true
-    });
-    if (!prompt.restore) {
-      uxLog("warning", this, c.yellow(t('customSettingsRestoreCancelledByUser')));
-      this.refreshActions.push({ step: "Restore Custom Settings", type: "CustomSetting", name: "N/A", status: "Skipped", details: "User cancelled" });
-      return;
+    // Ask last confirmation to user (skipped in agent mode)
+    if (!isCI && !this.agentMode) {
+      const prompt = await prompts({
+        type: 'confirm',
+        name: 'restore',
+        message: t('doYouConfirmYouWantToRestore2', { selectedSettings: selectedSettings.length }),
+        description: t('thisWillImportAllCustomSettingsDataSavedBeforeRefresh'),
+        initial: true
+      });
+      if (!prompt.restore) {
+        uxLog("warning", this, c.yellow(t('customSettingsRestoreCancelledByUser')));
+        this.refreshActions.push({ step: "Restore Custom Settings", type: "CustomSetting", name: "N/A", status: "Skipped", details: "User cancelled" });
+        return;
+      }
     }
     uxLog("action", this, c.cyan(t('restoringCustomSettings', { selectedSettings: selectedSettings.length })));
     const successSettings: string[] = []
@@ -612,29 +767,57 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreRecords(): Promise<void> {
-    const sfdmuWorkspaces = await selectDataWorkspace({
-      selectDataLabel: 'Select data workspaces to use to restore records after sandbox refresh',
-      multiple: true,
-      initial: "all",
-      cwd: this.saveProjectPath
-    });
+    let sfdmuWorkspaces: string[] | string | null;
+    if (!isCI && !this.agentMode) {
+      sfdmuWorkspaces = await selectDataWorkspace({
+        selectDataLabel: 'Select data workspaces to use to restore records after sandbox refresh',
+        multiple: true,
+        initial: "all",
+        cwd: this.saveProjectPath
+      });
+    } else {
+      // Agent / CI mode: selection precedence is --all-data-workspaces > --data-workspaces > config; no silent "all"
+      const dataRoot = path.join(this.saveProjectPath, 'scripts', 'data');
+      if (!fs.existsSync(dataRoot)) {
+        uxLog("warning", this, c.yellow(t('noDataWorkspaceFoundSkippingRecordRestore')));
+        this.refreshActions.push({ step: "Restore Records", type: "Records", name: "N/A", status: "Skipped", details: "No data workspace found" });
+        return;
+      }
+      const allWorkspaces = fs.readdirSync(dataRoot, { withFileTypes: true })
+        .filter(d => d.isDirectory())
+        .map(d => path.join('scripts', 'data', d.name).replace(/\\/g, '/'));
+      if (this.processAllDataWorkspaces) {
+        sfdmuWorkspaces = allWorkspaces;
+      } else if (this.dataWorkspaceFilter) {
+        const requested = this.dataWorkspaceFilter.split(',').map(s => s.trim().replace(/\\/g, '/')).filter(Boolean);
+        sfdmuWorkspaces = allWorkspaces.filter(ws => requested.includes(ws));
+      } else if (Array.isArray(this.refreshSandboxConfig.dataWorkspaces) && this.refreshSandboxConfig.dataWorkspaces.length > 0) {
+        const savedWs: string[] = this.refreshSandboxConfig.dataWorkspaces;
+        sfdmuWorkspaces = allWorkspaces.filter(ws => savedWs.some(s => s.replace(/\\/g, '/') === ws));
+      } else {
+        throw new SfError(t('agentModeMissingExplicitSelection', { step: 'Data Workspaces', configKey: 'dataWorkspaces' }));
+      }
+      uxLog("log", this, c.grey(t('agentModeUsingDataWorkspacesSelection', { count: (sfdmuWorkspaces as string[]).length })));
+    }
     if (!(Array.isArray(sfdmuWorkspaces) && sfdmuWorkspaces.length > 0)) {
       uxLog("warning", this, c.yellow(t('noDataWorkspaceFoundSkippingRecordRestore')));
       this.refreshActions.push({ step: "Restore Records", type: "Records", name: "N/A", status: "Skipped", details: "No data workspace found" });
       return;
     }
 
-    const confirmRestore = await prompts({
-      type: 'confirm',
-      name: 'confirm',
-      message: t('beforeLaunchingTheDataLoadingPleaseMake', { orgUsername: this.orgUsername }),
-      initial: true,
-      description: t('onceConfirmedTheDataLoadingWillStart')
-    });
-    if (!confirmRestore.confirm) {
-      uxLog("warning", this, c.yellow(t('recordRestoreCancelledByUser')));
-      this.refreshActions.push({ step: "Restore Records", type: "Records", name: "N/A", status: "Skipped", details: "User cancelled" });
-      return;
+    if (!isCI && !this.agentMode) {
+      const confirmRestore = await prompts({
+        type: 'confirm',
+        name: 'confirm',
+        message: t('beforeLaunchingTheDataLoadingPleaseMake', { orgUsername: this.orgUsername }),
+        initial: true,
+        description: t('onceConfirmedTheDataLoadingWillStart')
+      });
+      if (!confirmRestore.confirm) {
+        uxLog("warning", this, c.yellow(t('recordRestoreCancelledByUser')));
+        this.refreshActions.push({ step: "Restore Records", type: "Records", name: "N/A", status: "Skipped", details: "User cancelled" });
+        return;
+      }
     }
 
     for (const sfdmuPath of sfdmuWorkspaces) {
@@ -658,15 +841,32 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     uxLog("log", this, c.cyan(t('foundExternalClientAppsInTheOrg', { count: ecaNames.length })));
 
     // Multiselect which ECAs to restore (all selected by default)
-    const promptSelect = await prompts({
-      type: 'multiselect',
-      name: 'selectedApps',
-      message: t('selectExternalClientAppsToRestore'),
-      description: t('selectExternalClientAppsToRestoreDescription'),
-      choices: ecaNames.map(name => ({ title: name, value: name })),
-      initial: ecaNames,
-    });
-    const selectedEcaNames: string[] = promptSelect.selectedApps || [];
+    let selectedEcaNames: string[];
+    if (!isCI && !this.agentMode) {
+      const promptSelect = await prompts({
+        type: 'multiselect',
+        name: 'selectedApps',
+        message: t('selectExternalClientAppsToRestore'),
+        description: t('selectExternalClientAppsToRestoreDescription'),
+        choices: ecaNames.map(name => ({ title: name, value: name })),
+        initial: ecaNames,
+      });
+      selectedEcaNames = promptSelect.selectedApps || [];
+    } else {
+      // Agent / CI mode: selection precedence is --all-external-client-apps > --external-client-apps > config; no silent "all"
+      if (this.processAllEcas) {
+        selectedEcaNames = ecaNames;
+      } else if (this.ecaNameFilter) {
+        const requested = this.ecaNameFilter.split(',').map(s => s.trim()).filter(Boolean);
+        selectedEcaNames = ecaNames.filter(n => requested.includes(n));
+      } else if (Array.isArray(this.refreshSandboxConfig.externalClientApps) && this.refreshSandboxConfig.externalClientApps.length > 0) {
+        const savedEcas: string[] = this.refreshSandboxConfig.externalClientApps;
+        selectedEcaNames = ecaNames.filter(n => savedEcas.includes(n));
+      } else {
+        throw new SfError(t('agentModeMissingExplicitSelection', { step: 'External Client Apps', configKey: 'externalClientApps' }));
+      }
+      uxLog("log", this, c.grey(t('agentModeUsingExternalClientAppsSelection', { count: selectedEcaNames.length })));
+    }
     if (selectedEcaNames.length === 0) {
       uxLog("warning", this, c.yellow(t('noExternalClientAppsSelected')));
       this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "No External Client Apps selected" });
@@ -725,14 +925,18 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     uxLog("action", this, c.cyan(t('noConnectedAppsCreationRestricted')));
 
     let restoreConnectedApps = false;
-    const promptRestoreConnectedApps = await prompts({
-      type: 'confirm',
-      name: 'confirmRestore',
-      message: t('doYouWantToRestoreConnectedApps', { saveProjectPath: c.bold(this.saveProjectPath) }),
-      initial: true,
-      description: t('thisWillRestoreAllConnectedAppsFromBackup')
-    });
-    if (promptRestoreConnectedApps.confirmRestore) {
+    if (!isCI && !this.agentMode) {
+      const promptRestoreConnectedApps = await prompts({
+        type: 'confirm',
+        name: 'confirmRestore',
+        message: t('doYouWantToRestoreConnectedApps', { saveProjectPath: c.bold(this.saveProjectPath) }),
+        initial: true,
+        description: t('thisWillRestoreAllConnectedAppsFromBackup')
+      });
+      if (promptRestoreConnectedApps.confirmRestore) {
+        restoreConnectedApps = true;
+      }
+    } else {
       restoreConnectedApps = true;
     }
 
@@ -891,10 +1095,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     if (this.refreshSandboxConfig.connectedApps && this.refreshSandboxConfig.connectedApps.length > 0) {
       initialSelection.push(...this.refreshSandboxConfig.connectedApps);
     }
+    // Agent mode bypasses interactive multiselect: use the candidate list as-is
+    // (filtering by saved config is already applied via this.nameFilter in run()).
+    const effectiveProcessAll = (this.agentMode || isCI) ? true : processAll;
     return selectConnectedAppsForProcessing(
       connectedApps,
       initialSelection,
-      processAll,
+      effectiveProcessAll,
       nameFilter,
       'Select Connected Apps to restore',
       this
@@ -908,15 +1115,17 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   ): Promise<void> {
     if (connectedApps.length === 0) return;
 
-    const promptResponse = await prompts({
-      type: 'confirm',
-      name: 'confirmDelete',
-      message: t('nowWeNeedToDeleteConnectedApp', { connectedApps: connectedApps.length }),
-      description: t('thisStepIsNecessaryToEnsureConnectedAppsCanBeRedeployed'),
-      initial: true
-    });
-    if (!promptResponse.confirmDelete) {
-      throw new Error('Connected Apps deletion cancelled by user.');
+    if (!isCI && !this.agentMode) {
+      const promptResponse = await prompts({
+        type: 'confirm',
+        name: 'confirmDelete',
+        message: t('nowWeNeedToDeleteConnectedApp', { connectedApps: connectedApps.length }),
+        description: t('thisStepIsNecessaryToEnsureConnectedAppsCanBeRedeployed'),
+        initial: true
+      });
+      if (!promptResponse.confirmDelete) {
+        throw new Error('Connected Apps deletion cancelled by user.');
+      }
     }
 
     // Convert ProjectConnectedApp to the format required by deleteConnectedApps
@@ -933,16 +1142,18 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   ): Promise<void> {
     if (connectedApps.length === 0) return;
 
-    const promptResponse = await prompts({
-      type: 'confirm',
-      name: 'confirmDeploy',
-      message: t('nowWeWillDeployConnectedAppTo', { connectedApps: connectedApps.length }),
-      description: t('thisStepWillDeployConnectedAppsWithSavedCredentials'),
-      initial: true
-    });
+    if (!isCI && !this.agentMode) {
+      const promptResponse = await prompts({
+        type: 'confirm',
+        name: 'confirmDeploy',
+        message: t('nowWeWillDeployConnectedAppTo', { connectedApps: connectedApps.length }),
+        description: t('thisStepWillDeployConnectedAppsWithSavedCredentials'),
+        initial: true
+      });
 
-    if (!promptResponse.confirmDeploy) {
-      throw new Error('Connected Apps deployment cancelled by user.');
+      if (!promptResponse.confirmDeploy) {
+        throw new Error('Connected Apps deployment cancelled by user.');
+      }
     }
 
     // Convert ProjectConnectedApp to the format needed by deployConnectedApps

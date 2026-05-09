@@ -5,6 +5,9 @@
 - New command
   - [hardis:org:configure:generic-prompt](https://sfdx-hardis.cloudity.com/hardis/org/configure/generic-prompt/): Deploys the `SfdxHardisGenericPrompt` GenAiPromptTemplate metadata to a Salesforce org and optionally assigns the `EinsteinGPTPromptTemplateUser` Permission Set to the current user, enabling AI prompt integration via Agentforce.
 
+- Sandbox refresh
+  - [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/) and [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/) now support `--agent` for non-interactive runs (after a first interactive run that saves selections to `refreshSandboxConfig`). New CLI flags allow explicit selections of External Client Apps, Custom Settings and data workspaces. Both commands now warn that the `scripts/sandbox-refresh/` folder contains sensitive credentials and must not be committed.
+
 - DevOps
   - Send deployment notifications even when no metadata deployed after merge (ex: automated actions associated to the PR)
 
