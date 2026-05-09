@@ -342,7 +342,16 @@ Tip: run the command interactively at least once first; the resulting selections
         }
         selectedEcaNames = availableEcaNames.filter(name => requested.includes(name));
       } else if (Array.isArray(this.refreshSandboxConfig.externalClientApps) && this.refreshSandboxConfig.externalClientApps.length > 0) {
-        selectedEcaNames = this.refreshSandboxConfig.externalClientApps.filter((name: string) => availableEcaNames.includes(name));
+        const requested = this.refreshSandboxConfig.externalClientApps;
+        const missing = requested.filter((name: string) => !availableEcaNames.includes(name));
+        if (missing.length > 0) {
+          throw new SfError(t('agentModeSelectionContainsUnknownValues', {
+            step: 'External Client Apps',
+            missingValues: missing.join(', '),
+            availableValues: availableEcaNames.join(', ')
+          }));
+        }
+        selectedEcaNames = availableEcaNames.filter(name => requested.includes(name));
       } else {
         throw new SfError(t('agentModeMissingExplicitSelection', { step: 'External Client Apps', configKey: 'externalClientApps' }));
       }
