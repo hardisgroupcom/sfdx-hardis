@@ -332,6 +332,14 @@ Tip: run the command interactively at least once first; the resulting selections
         selectedEcaNames = availableEcaNames;
       } else if (this.ecaNameFilter) {
         const requested = this.ecaNameFilter.split(',').map(s => s.trim()).filter(Boolean);
+        const missing = requested.filter(name => !availableEcaNames.includes(name));
+        if (missing.length > 0) {
+          throw new SfError(t('agentModeSelectionContainsUnknownValues', {
+            step: 'External Client Apps',
+            missingValues: missing.join(', '),
+            availableValues: availableEcaNames.join(', ')
+          }));
+        }
         selectedEcaNames = availableEcaNames.filter(name => requested.includes(name));
       } else if (Array.isArray(this.refreshSandboxConfig.externalClientApps) && this.refreshSandboxConfig.externalClientApps.length > 0) {
         selectedEcaNames = this.refreshSandboxConfig.externalClientApps.filter((name: string) => availableEcaNames.includes(name));
@@ -1243,6 +1251,14 @@ Tip: run the command interactively at least once first; the resulting selections
         selectedCsNames = allCsNames;
       } else if (this.customSettingNameFilter) {
         const requested = this.customSettingNameFilter.split(',').map(s => s.trim()).filter(Boolean);
+        const missing = requested.filter(name => !allCsNames.includes(name));
+        if (missing.length > 0) {
+          throw new SfError(t('agentModeSelectionContainsUnknownValues', {
+            step: 'Custom Settings',
+            missingValues: missing.join(', '),
+            availableValues: allCsNames.join(', ')
+          }));
+        }
         selectedCsNames = allCsNames.filter(n => requested.includes(n));
       } else if (Array.isArray(this.refreshSandboxConfig.customSettings) && this.refreshSandboxConfig.customSettings.length > 0) {
         selectedCsNames = this.refreshSandboxConfig.customSettings.filter((n: string) => allCsNames.includes(n));
@@ -1371,6 +1387,14 @@ Tip: run the command interactively at least once first; the resulting selections
         sfdmuWorkspaces = allWorkspaces;
       } else if (this.dataWorkspaceFilter) {
         const requested = this.dataWorkspaceFilter.split(',').map(s => s.trim().replace(/\\/g, '/')).filter(Boolean);
+        const missing = requested.filter(name => !allWorkspaces.includes(name));
+        if (missing.length > 0) {
+          throw new SfError(t('agentModeSelectionContainsUnknownValues', {
+            step: 'Data Workspaces',
+            missingValues: missing.join(', '),
+            availableValues: allWorkspaces.join(', ')
+          }));
+        }
         sfdmuWorkspaces = allWorkspaces.filter(ws => requested.includes(ws));
       } else if (Array.isArray(this?.refreshSandboxConfig?.dataWorkspaces) && this.refreshSandboxConfig.dataWorkspaces.length > 0) {
         const savedWs: string[] = this.refreshSandboxConfig.dataWorkspaces;

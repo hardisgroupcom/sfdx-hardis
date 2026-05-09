@@ -220,13 +220,6 @@ Tip: run \`hardis:org:refresh:before-refresh\` interactively at least once first
     }
     uxLog("action", this, c.cyan(t('thisCommandWillRestoreInformation', { instanceUrl: this.instanceUrl })));
     uxLog("warning", this, c.yellow(t('sandboxRefreshContainsSensitiveCredentialsWarning')));
-    // Resolve save project path
-    const saveProjectPathRoot = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
-    // Only get immediate subfolders of saveProjectPathRoot (not recursive)
-    const subFolders = fs.readdirSync(saveProjectPathRoot, { withFileTypes: true })
-      .filter(dirent => dirent.isDirectory())
-      .map(dirent => dirent.name);
-
     const explicitPath: string | undefined = flags['save-project-path'];
     if (explicitPath) {
       const resolved = path.isAbsolute(explicitPath) ? explicitPath : path.join(process.cwd(), explicitPath);
@@ -235,30 +228,40 @@ Tip: run \`hardis:org:refresh:before-refresh\` interactively at least once first
       }
       this.saveProjectPath = resolved;
       uxLog("log", this, c.grey(t('agentModeUsingExplicitSaveProjectPath', { folder: this.saveProjectPath })));
-    } else if (!isCI && !this.agentMode) {
-      const saveProjectPath = await prompts({
-        type: 'select',
-        name: 'path',
-        message: t('selectTheProjectPathWhereTheSandbox'),
-        description: t('pathWhereMetadatasSavedBeforeRefresh'),
-        choices: subFolders.map(folder => ({
-          title: folder,
-          value: path.join(saveProjectPathRoot, folder)
-        })),
-      });
-      this.saveProjectPath = saveProjectPath.path;
     } else {
-      // Agent / CI mode without explicit flag: pick most recently modified subfolder
-      if (subFolders.length === 0) {
-        throw new SfError(t('agentModeNoSandboxRefreshBackupFolderFound', { path: saveProjectPathRoot }));
+      const saveProjectPathRoot = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
+      if (!fs.existsSync(saveProjectPathRoot)) {
+        throw new SfError(t('sandboxRefreshBackupFolderMissingOrEmpty', { path: saveProjectPathRoot }));
       }
-      const subFoldersWithMtime = subFolders.map(name => {
-        const fullPath = path.join(saveProjectPathRoot, name);
-        const stat = fs.statSync(fullPath);
-        return { fullPath, mtimeMs: stat.mtimeMs };
-      }).sort((a, b) => b.mtimeMs - a.mtimeMs);
-      this.saveProjectPath = subFoldersWithMtime[0].fullPath;
-      uxLog("log", this, c.grey(t('agentModeUsingMostRecentBackupFolder', { folder: this.saveProjectPath })));
+      // Only get immediate subfolders of saveProjectPathRoot (not recursive)
+      const subFolders = fs.readdirSync(saveProjectPathRoot, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory())
+        .map(dirent => dirent.name);
+      if (subFolders.length === 0) {
+        throw new SfError(t('sandboxRefreshBackupFolderMissingOrEmpty', { path: saveProjectPathRoot }));
+      }
+      if (!isCI && !this.agentMode) {
+        const saveProjectPath = await prompts({
+          type: 'select',
+          name: 'path',
+          message: t('selectTheProjectPathWhereTheSandbox'),
+          description: t('pathWhereMetadatasSavedBeforeRefresh'),
+          choices: subFolders.map(folder => ({
+            title: folder,
+            value: path.join(saveProjectPathRoot, folder)
+          })),
+        });
+        this.saveProjectPath = saveProjectPath.path;
+      } else {
+        // Agent / CI mode without explicit flag: pick most recently modified subfolder
+        const subFoldersWithMtime = subFolders.map(name => {
+          const fullPath = path.join(saveProjectPathRoot, name);
+          const stat = fs.statSync(fullPath);
+          return { fullPath, mtimeMs: stat.mtimeMs };
+        }).sort((a, b) => b.mtimeMs - a.mtimeMs);
+        this.saveProjectPath = subFoldersWithMtime[0].fullPath;
+        uxLog("log", this, c.grey(t('agentModeUsingMostRecentBackupFolder', { folder: this.saveProjectPath })));
+      }
     }
     uxLog("warning", this, c.yellow(t('doNotCommitSandboxRefreshFolderToGit', { folder: this.saveProjectPath })));
 
