@@ -22,7 +22,7 @@
     "@slack/web-api": "7.15.1",
     "@supercharge/promise-pool": "3.2.0",
     "@xmldom/xmldom": "0.9.10",
-    "adm-zip": "0.5.16",
+    "adm-zip": "0.5.17",
     "axios": "1.15.2",
     "azure-devops-node-api": "14.1.0",
     "bitbucket": "2.12.0",
