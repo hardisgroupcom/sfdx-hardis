@@ -639,13 +639,14 @@ Tip: run \`hardis:org:refresh:before-refresh\` interactively at least once first
       selectedSettings = promptRestore.settings;
     } else {
       // Agent / CI mode: selection precedence is --all-custom-settings > --custom-settings > config; no silent "all"
+      const availableValues = csToRestore.length > 10 ? `${csToRestore.slice(0, 10).join(', ')}, ...` : csToRestore.join(', ');
       const validateSelectedSettings = (requestedSettings: string[]): void => {
         const missing = requestedSettings.filter(name => !csToRestore.includes(name));
         if (missing.length > 0) {
           throw new SfError(t('agentModeSelectionContainsUnknownValues', {
             step: 'Custom Settings',
             missingValues: missing.join(', '),
-            availableValues: csToRestore.join(', ')
+            availableValues
           }));
         }
       };
