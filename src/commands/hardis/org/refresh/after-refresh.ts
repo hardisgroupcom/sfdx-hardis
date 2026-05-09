@@ -789,14 +789,32 @@ Tip: run \`hardis:org:refresh:before-refresh\` interactively at least once first
       const allWorkspaces = fs.readdirSync(dataRoot, { withFileTypes: true })
         .filter(d => d.isDirectory())
         .map(d => path.join('scripts', 'data', d.name).replace(/\\/g, '/'));
+      const availableWorkspaces = new Set(allWorkspaces.map(ws => ws.replace(/\\/g, '/')));
+      const formatWorkspaceList = (workspaces: string[]): string => workspaces.length > 0 ? workspaces.join(', ') : 'none';
+      const validateExplicitWorkspaces = (sourceLabel: string, workspaces: string[]): string[] => {
+        const normalizedWorkspaces = workspaces.map(ws => ws.trim().replace(/\\/g, '/')).filter(Boolean);
+        const missingWorkspaces = normalizedWorkspaces.filter(ws => !availableWorkspaces.has(ws));
+        if (missingWorkspaces.length > 0) {
+          throw new SfError(
+            `${sourceLabel} contains data workspace(s) not found in backup. Missing: ${formatWorkspaceList(missingWorkspaces)}. Available: ${formatWorkspaceList(allWorkspaces)}.`
+          );
+        }
+        return normalizedWorkspaces;
+      };
       if (this.processAllDataWorkspaces) {
         sfdmuWorkspaces = allWorkspaces;
       } else if (this.dataWorkspaceFilter) {
-        const requested = this.dataWorkspaceFilter.split(',').map(s => s.trim().replace(/\\/g, '/')).filter(Boolean);
-        sfdmuWorkspaces = allWorkspaces.filter(ws => requested.includes(ws));
+        const requested = validateExplicitWorkspaces(
+          '--data-workspaces',
+          this.dataWorkspaceFilter.split(',')
+        );
+        sfdmuWorkspaces = requested;
       } else if (Array.isArray(this.refreshSandboxConfig.dataWorkspaces) && this.refreshSandboxConfig.dataWorkspaces.length > 0) {
-        const savedWs: string[] = this.refreshSandboxConfig.dataWorkspaces;
-        sfdmuWorkspaces = allWorkspaces.filter(ws => savedWs.some(s => s.replace(/\\/g, '/') === ws));
+        const savedWs: string[] = validateExplicitWorkspaces(
+          'refreshSandboxConfig.dataWorkspaces',
+          this.refreshSandboxConfig.dataWorkspaces
+        );
+        sfdmuWorkspaces = savedWs;
       } else {
         throw new SfError(t('agentModeMissingExplicitSelection', { step: 'Data Workspaces', configKey: 'dataWorkspaces' }));
       }
