@@ -1981,19 +1981,6 @@ export function listMetadataTypes() {
         metaFile: false,
         suffix: 'fieldMappingConfig',
         xmlName: 'FieldMappingConfig',
-        childXmlNames: [
-          'FieldMappingConfigItem',
-        ],
-      },
-      {
-        directoryName: 'fieldMappingConfigItems',
-        inFolder: false,
-        metaFile: false,
-        suffix: 'fieldMappingConfigItem',
-        xmlName: 'FieldMappingConfigItem',
-        parentXmlName: 'FieldMappingConfig',
-        xmlTag: 'fieldMappingConfigItems',
-        key: 'processType',
       },
       {
         directoryName: 'fieldRestrictionRules',
