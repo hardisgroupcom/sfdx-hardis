@@ -47,7 +47,7 @@
   "agentModeDefaultGranularity": "Tryb agenta: użycie domyślnej granularności {{granularity}} dla podziału wg daty",
   "agentModeDefaultOrgType": "Tryb agenta: użycie domyślnego typu org '{{orgType}}'",
   "agentModeFailedToCaptureConsumerSecret": "Tryb agenta: nie udało się automatycznie przechwycić Consumer Secret dla Connected App {{app}}. Ręczne wprowadzanie nie jest obsługiwane w trybie agenta.",
-  "agentModeMissingExplicitSelection": "Tryb agenta wymaga jawnego wyboru dla {{step}}. Nalezy przekazac odpowiednia CLI flag (np. --all lub --name) albo najpierw ustawic refreshSandboxConfig.{{configKey}} w config/.sfdx-hardis.yml (uruchom komende raz interaktywnie, aby ja wypelnic). Przerywanie.",
+  "agentModeMissingExplicitSelection": "Tryb agenta wymaga jawnego wyboru dla {{step}}. Należy przekazać odpowiednią flagę CLI (np. --all lub --name) albo najpierw ustawić refreshSandboxConfig.{{configKey}} w config/.sfdx-hardis.yml (uruchom komendę raz interaktywnie, aby ją wypełnić). Przerywanie.",
   "agentModeSelectionContainsUnknownValues": "Tryb agenta: jawny wybór dla {{step}} zawiera wartości, których nie znaleziono w org lub projekcie: {{missingValues}}. Dostępne wartości: {{availableValues}}. Przerywanie.",
   "agentModeNoFreshCertificateSkippingSaml": "Tryb agenta: brak aktywnego certyfikatu utworzonego w ciągu ostatniego roku; pomijanie SAML SSO Config {{samlName}}.",
   "agentModeNoSandboxRefreshBackupFolderFound": "Tryb agenta: nie znaleziono folderu kopii zapasowej sandbox-refresh w {{path}}. Należy użyć --save-project-path lub najpierw uruchomić hardis:org:refresh:before-refresh.",
