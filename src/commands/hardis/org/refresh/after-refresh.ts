@@ -861,9 +861,17 @@ Tip: run \`hardis:org:refresh:before-refresh\` interactively at least once first
         selectedEcaNames = ecaNames;
       } else if (this.ecaNameFilter) {
         const requested = this.ecaNameFilter.split(',').map(s => s.trim()).filter(Boolean);
+        const missing = requested.filter(name => !ecaNames.includes(name));
+        if (missing.length > 0) {
+          throw new SfError(`Unknown External Client Apps requested with --external-client-apps: ${missing.join(', ')}. Available in backup: ${ecaNames.join(', ')}`);
+        }
         selectedEcaNames = ecaNames.filter(n => requested.includes(n));
       } else if (Array.isArray(this.refreshSandboxConfig.externalClientApps) && this.refreshSandboxConfig.externalClientApps.length > 0) {
         const savedEcas: string[] = this.refreshSandboxConfig.externalClientApps;
+        const missing = savedEcas.filter(name => !ecaNames.includes(name));
+        if (missing.length > 0) {
+          throw new SfError(`Unknown External Client Apps requested in refreshSandboxConfig.externalClientApps: ${missing.join(', ')}. Available in backup: ${ecaNames.join(', ')}`);
+        }
         selectedEcaNames = ecaNames.filter(n => savedEcas.includes(n));
       } else {
         throw new SfError(t('agentModeMissingExplicitSelection', { step: 'External Client Apps', configKey: 'externalClientApps' }));
