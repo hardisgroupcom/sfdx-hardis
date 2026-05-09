@@ -1270,7 +1270,16 @@ Tip: run the command interactively at least once first; the resulting selections
         }
         selectedCsNames = allCsNames.filter(n => requested.includes(n));
       } else if (Array.isArray(this.refreshSandboxConfig.customSettings) && this.refreshSandboxConfig.customSettings.length > 0) {
-        selectedCsNames = this.refreshSandboxConfig.customSettings.filter((n: string) => allCsNames.includes(n));
+        const requested = this.refreshSandboxConfig.customSettings;
+        const missing = requested.filter((name: string) => !allCsNames.includes(name));
+        if (missing.length > 0) {
+          throw new SfError(t('agentModeSelectionContainsUnknownValues', {
+            step: 'Custom Settings',
+            missingValues: missing.join(', '),
+            availableValues: allCsNames.join(', ')
+          }));
+        }
+        selectedCsNames = allCsNames.filter(n => requested.includes(n));
       } else {
         throw new SfError(t('agentModeMissingExplicitSelection', { step: 'Custom Settings', configKey: 'customSettings' }));
       }
