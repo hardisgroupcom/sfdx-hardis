@@ -643,9 +643,25 @@ Tip: run \`hardis:org:refresh:before-refresh\` interactively at least once first
         selectedSettings = csToRestore;
       } else if (this.customSettingNameFilter) {
         const requested = this.customSettingNameFilter.split(',').map(s => s.trim()).filter(Boolean);
+        const missing = requested.filter(name => !csToRestore.includes(name));
+        if (missing.length > 0) {
+          throw new SfError(t('agentModeSelectionContainsUnknownValues', {
+            step: 'Custom Settings',
+            missingValues: missing.join(', '),
+            availableValues: csToRestore.join(', ')
+          }));
+        }
         selectedSettings = csToRestore.filter(f => requested.includes(f));
       } else if (Array.isArray(this.refreshSandboxConfig.customSettings) && this.refreshSandboxConfig.customSettings.length > 0) {
         const savedCs: string[] = this.refreshSandboxConfig.customSettings;
+        const missing = savedCs.filter(name => !csToRestore.includes(name));
+        if (missing.length > 0) {
+          throw new SfError(t('agentModeSelectionContainsUnknownValues', {
+            step: 'Custom Settings',
+            missingValues: missing.join(', '),
+            availableValues: csToRestore.join(', ')
+          }));
+        }
         selectedSettings = csToRestore.filter(f => savedCs.includes(f));
       } else {
         throw new SfError(t('agentModeMissingExplicitSelection', { step: 'Custom Settings', configKey: 'customSettings' }));
