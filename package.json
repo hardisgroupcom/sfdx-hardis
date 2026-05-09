@@ -39,7 +39,7 @@
     "farmhash": "5.0.1",
     "fast-xml-parser": "5.7.2",
     "form-data": "4.0.5",
-    "fs-extra": "11.3.4",
+    "fs-extra": "11.3.5",
     "glob": "13.0.6",
     "i18next": "25.10.10",
     "inquirer": "10.2.2",
