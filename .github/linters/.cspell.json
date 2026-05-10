@@ -83,6 +83,7 @@
     "metadatanames",
     "filesutils",
     "millis",
+    "uxlog",
     "unrecognised",
     "metadatatypes",
     "BRANCHNAME",
