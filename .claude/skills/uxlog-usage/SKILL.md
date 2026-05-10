@@ -26,15 +26,15 @@ import { t } from "../../../common/utils/i18n.js";
 
 Always pair the level with its chalk color. Mixing them confuses the terminal output and breaks the convention used across ~2000 existing call sites.
 
-| Level     | Chalk color | When to use                                                                                                                                                  |
-|-----------|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `action`  | `c.cyan`    | A new major step. Opens a new section / log group in the VS Code LWC UI. One per logical phase (e.g. "Querying", "Generating report", "Deploying metadata"). |
-| `log`     | `c.grey`    | Sub-detail beneath the current `action`. Counts, file paths, timings, intermediate state.                                                                    |
-| `warning` | `c.yellow`  | Recoverable issue the user should review. Operation continues.                                                                                               |
-| `error`   | `c.red`     | Failure or blocking issue. Operation is aborting or the result is unusable.                                                                                  |
-| `success` | `c.green`   | Confirmed successful completion of an operation, often the closing line of an `action` block.                                                                |
-| `other`   | none / `c.grey` / `c.italic` | Console + file only. NOT forwarded to the VS Code UI. Use for raw JSON dumps, verbose debug, or chatter that would clutter the UI session log. |
-| `table`   | (internal)  | Used by `uxLogTable` only. Do **not** call `uxLog("table", ...)` directly.                                                                                   |
+| Level     | Chalk color                  | When to use                                                                                                                                                  |
+|-----------|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `action`  | `c.cyan`                     | A new major step. Opens a new section / log group in the VS Code LWC UI. One per logical phase (e.g. "Querying", "Generating report", "Deploying metadata"). |
+| `log`     | `c.grey`                     | Sub-detail beneath the current `action`. Counts, file paths, timings, intermediate state.                                                                    |
+| `warning` | `c.yellow`                   | Recoverable issue the user should review. Operation continues.                                                                                               |
+| `error`   | `c.red`                      | Failure or blocking issue. Operation is aborting or the result is unusable.                                                                                  |
+| `success` | `c.green`                    | Confirmed successful completion of an operation, often the closing line of an `action` block.                                                                |
+| `other`   | none / `c.grey` / `c.italic` | Console + file only. NOT forwarded to the VS Code UI. Use for raw JSON dumps, verbose debug, or chatter that would clutter the UI session log.               |
+| `table`   | (internal)                   | Used by `uxLogTable` only. Do **not** call `uxLog("table", ...)` directly.                                                                                   |
 
 ### Examples
 
