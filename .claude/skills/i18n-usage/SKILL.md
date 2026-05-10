@@ -14,6 +14,8 @@ import { t } from "../../../common/utils/i18n.js";
 
 ## uxLog
 
+For picking the right level (`action`, `log`, `warning`, `error`, `success`, `other`) and its matching chalk color, see the `uxlog-usage` skill.
+
 ```typescript
 // Correct
 uxLog("action", this, c.cyan(t("deployingMetadata", { metadata: name })));
@@ -25,7 +27,7 @@ uxLog("action", this, c.cyan(`Deploying metadata ${name}...`));
 ## uxLogTable
 
 ```typescript
-import { uxLogTable } from "../../../common/utils/uxLog.js";
+import { uxLogTable } from "../../../common/utils/index.js";
 
 uxLogTable(
   this,

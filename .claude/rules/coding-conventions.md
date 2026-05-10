@@ -8,10 +8,10 @@
 
 ## Logging
 
-- Use `uxLog(level, context, message)` for all logging.
+- Use `uxLog(level, context, message)` for all logging. See the `uxlog-usage` skill for the level/color pairing and when to use each level.
 - Use `chalk` (commonly aliased as `c`) for colors.
 - No emojis at the beginning of log lines.
-- Use `uxLogTable` from `src/common/utils/uxLog.js` for formatted tables.
+- Use `uxLogTable` from `src/common/utils/index.js` for formatted tables.
 
 ## File Operations
 
