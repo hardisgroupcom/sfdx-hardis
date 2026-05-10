@@ -185,6 +185,19 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
   }
 }
 
+// Populate pullRequestData with a success message when there is no metadata to deploy,
+// so the resulting PR comment is rendered as a successful deployment instead of an empty body.
+function setNoMetadataDeploymentSuccess(check: boolean): void {
+  const prData: Partial<PullRequestData> = {
+    messageKey: "deployment",
+    title: check ? "✅ Deployment check success - No metadata to deploy" : "✅ Deployment success - No metadata to deploy",
+    deployErrorsMarkdownBody: "No metadata to deploy: the package.xml is empty so nothing was sent to the target org. " + (check ? "The deployment check succeeded." : "The deployment succeeded."),
+    deployStatus: "valid",
+    status: "valid",
+  };
+  setPullRequestData(prData);
+}
+
 export async function smartDeploy(
   packageXmlFile: string,
   check = false,
@@ -229,6 +242,7 @@ export async function smartDeploy(
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     uxLog("action", this, c.cyan(t('bothPackageXmlAndDestructiveChangesFiles')));
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    setNoMetadataDeploymentSuccess(check);
     await GitProvider.managePostPullRequestComment(check);
     return { messages: [], quickDeploy, deployXmlCount: 0 };
   }
@@ -238,6 +252,7 @@ export async function smartDeploy(
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     uxLog("action", this, t('noDeploymentOrDestructiveChangesToPerform'));
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    setNoMetadataDeploymentSuccess(check);
     await GitProvider.managePostPullRequestComment(check);
     return { messages: [], quickDeploy, deployXmlCount: 0 };
   }
@@ -264,6 +279,7 @@ export async function smartDeploy(
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     uxLog("other", this, t('noDeploymentToPerform'));
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    setNoMetadataDeploymentSuccess(check);
     await GitProvider.managePostPullRequestComment(check);
     return { messages, quickDeploy, deployXmlCount };
   }
