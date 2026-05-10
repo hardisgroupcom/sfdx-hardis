@@ -100,7 +100,7 @@ export class WebSocketClient {
     return WebSocketClient.isAlive() && WebSocketClient.activeInstance?.userInput === 'ui-lwc';
   }
 
-  static sendMessage(data: any) {
+static sendMessage(data: any) {
     const instance = WebSocketClient.activeInstance;
     if (instance) {
       instance.sendMessageToServer(data);
@@ -113,13 +113,9 @@ export class WebSocketClient {
   }
 
   // Requests VS Code to open one or more side-by-side diff editors via vscode.diff command
-  static sendVscodeDiffMessage(
-    diffs: OrgDiffItem[],
-    context?: { id: string; command?: string },
-  ) {
+  static sendVscodeDiffMessage(diffs: OrgDiffItem[]) {
     WebSocketClient.sendMessage({
       event: 'vscodeDiff',
-      context: context,
       diffs: diffs.map((d) => ({
         leftPath: d.leftPath.replace(/\\/g, '/'),
         rightPath: d.rightPath.replace(/\\/g, '/'),
