@@ -60,6 +60,8 @@ export interface OrgConflictItem {
   metadataName: string;
   status: 'modified' | 'added' | 'deleted' | 'unchanged';
   localPath: string;
+  /** Path to the file retrieved from the org (left side of a visual diff). May be empty for items that don't have an org-side file. */
+  orgPath: string;
   diffPreview: string;
   diffMarkdown: string;
   hasOrgChanges: boolean;
@@ -479,6 +481,10 @@ export interface OrgConflictResult {
   conflicts: OrgConflictItem[];
   success: boolean;
   errorMessage?: string;
+  /** Temp directory holding org-retrieved files. Kept alive after detection so VS Code can use it for visual diffs. */
+  tmpRetrieveDir?: string;
+  /** Path of an empty placeholder file used as the right side of the diff for "deleted locally" conflicts. */
+  emptyPlaceholderPath?: string;
 }
 
 export async function detectOrgConflicts(
@@ -489,8 +495,12 @@ export async function detectOrgConflicts(
 ): Promise<OrgConflictResult> {
   uxLog('action', commandThis, c.cyan(t('backpromoteDetectingOrgConflicts')));
 
+  // The temp dir is intentionally NOT cleaned at the end of this function:
+  // org-retrieved files must remain on disk so VS Code can keep displaying
+  // them in the side-by-side diff editor opened by promptOpenVisualDiffsInVsCode.
   const tmpRetrieveDir = await createTempDir();
   const conflicts: OrgConflictItem[] = [];
+  let emptyPlaceholderPath: string | undefined;
 
   // First, filter the delta package.xml to only include items that exist in the org.
   // This prevents retrieve failures caused by metadata types or members not present in the target sandbox.
@@ -498,7 +508,7 @@ export async function detectOrgConflicts(
   const packageXmlForRetrieve = await filterPackageXmlToOrgAvailable(deltaPackageXml, filteredPackageXml, targetUsername, commandThis);
 
   if (!packageXmlForRetrieve) {
-    return { conflicts, success: true }; // Nothing to retrieve
+    return { conflicts, success: true, tmpRetrieveDir }; // Nothing to retrieve
   }
 
   // Create a blank sfdx project in the temp directory so the retrieve command works
@@ -527,7 +537,7 @@ export async function detectOrgConflicts(
   if (!retrieveSuccess) {
     uxLog('error', commandThis, c.red(t('backpromoteConflictDetectionFailed')));
     uxLog('error', commandThis, c.red(retrieveError));
-    return { conflicts, success: false, errorMessage: retrieveError };
+    return { conflicts, success: false, errorMessage: retrieveError, tmpRetrieveDir };
   }
 
   uxLog("action", commandThis, c.cyan(t('backpromoteComparingWithLocal')));
@@ -559,6 +569,12 @@ export async function detectOrgConflicts(
         hasOrgChanges = true;
         diffPreview = t('backpromoteFileExistsInOrgNotLocal');
         diffMarkdown = `> ${t('backpromoteFileExistsInOrgNotLocal')}\n`;
+        // Lazily create a single empty placeholder file used as the "right" side
+        // of the visual diff in VS Code for items that don't exist locally.
+        if (!emptyPlaceholderPath) {
+          emptyPlaceholderPath = path.join(tmpRetrieveDir, '.empty');
+          await fs.writeFile(emptyPlaceholderPath, '', 'utf-8');
+        }
       } else {
         const orgContentRaw = await fs.readFile(retrievedFile, 'utf-8');
         const localContentRaw = await fs.readFile(localFile, 'utf-8');
@@ -602,6 +618,7 @@ export async function detectOrgConflicts(
           metadataName: member,
           status,
           localPath: localFile || '',
+          orgPath: retrievedFile,
           diffPreview,
           diffMarkdown,
           hasOrgChanges,
@@ -616,7 +633,7 @@ export async function detectOrgConflicts(
     uxLog('action', commandThis, c.green(t('backpromoteNoOrgConflicts')));
   }
 
-  return { conflicts, success: true };
+  return { conflicts, success: true, tmpRetrieveDir, emptyPlaceholderPath };
 }
 
 // ---- Generate conflict report ----
@@ -703,6 +720,77 @@ export async function generateConflictReport(
   }
 
   return { excelPath, pdfPath };
+}
+
+// ---- Prompt to open visual diffs in VS Code ----
+
+export async function promptOpenVisualDiffsInVsCode(
+  conflicts: OrgConflictItem[],
+  emptyPlaceholderPath: string | undefined,
+  commandThis: any,
+  agentMode: boolean,
+): Promise<void> {
+  if (agentMode || isCI) {
+    return;
+  }
+  if (conflicts.length === 0) {
+    return;
+  }
+  if (!WebSocketClient.isAlive()) {
+    return;
+  }
+
+  const confirmRes = await prompts({
+    type: 'confirm',
+    name: 'value',
+    message: c.cyanBright(t('backpromoteOpenVisualDiffsInVsCodePrompt')),
+    description: t('backpromoteOpenVisualDiffsInVsCodePrompt'),
+    initial: true,
+  });
+
+  if (confirmRes.value !== true) {
+    uxLog('log', commandThis, c.grey(t('backpromoteVisualDiffsSkippedByUser')));
+    return;
+  }
+
+  const diffs: Array<{ leftPath: string; rightPath: string; title: string }> = [];
+  let placeholder = emptyPlaceholderPath;
+  for (const item of conflicts) {
+    if (!item.orgPath) {
+      continue;
+    }
+    if (item.status === 'deleted') {
+      // Right side: empty placeholder file. Create one on demand if detectOrgConflicts didn't.
+      if (!placeholder) {
+        placeholder = path.join(path.dirname(item.orgPath), '.empty');
+        await fs.writeFile(placeholder, '', 'utf-8');
+      }
+      diffs.push({
+        leftPath: item.orgPath,
+        rightPath: placeholder,
+        title: t('backpromoteVisualDiffTitleDeletedLocally', {
+          type: item.metadataType,
+          name: item.metadataName,
+        }),
+      });
+    } else if (item.status === 'modified' && item.localPath) {
+      diffs.push({
+        leftPath: item.orgPath,
+        rightPath: item.localPath,
+        title: t('backpromoteVisualDiffTitleModified', {
+          type: item.metadataType,
+          name: item.metadataName,
+        }),
+      });
+    }
+  }
+
+  if (diffs.length === 0) {
+    return;
+  }
+
+  WebSocketClient.sendVscodeDiffMessage(diffs);
+  uxLog('action', commandThis, c.cyan(t('backpromoteVisualDiffsOpenedInVsCode', { count: diffs.length })));
 }
 
 // ---- Prompt metadata validation ----

@@ -7,6 +7,7 @@
 
 - DevOps
   - Send deployment notifications even when no metadata deployed after merge (ex: automated actions associated to the PR)
+  - [hardis:work:backpromote](https://sfdx-hardis.cloudity.com/hardis/work/backpromote/): Offer to open VS Code's native side-by-side diff editor for each conflicting file after org-conflict detection (skipped when running outside VS Code or in agent/CI mode).
 
 - Security: replaced unmaintained npm dependencies with actively maintained alternatives or lightweight inline helpers:
   - `moment` - replaced by a new `DateHelper` class (`src/common/utils/dateHelper.ts`) using native `Date` and `Intl` APIs

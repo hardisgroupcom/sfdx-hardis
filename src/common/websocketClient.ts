@@ -102,6 +102,18 @@ export class WebSocketClient {
     WebSocketClient.sendMessage({ event: 'openFile', file: file.replace(/\\/g, '/') });
   }
 
+  // Requests VS Code to open one or more side-by-side diff editors via vscode.diff command
+  static sendVscodeDiffMessage(diffs: Array<{ leftPath: string; rightPath: string; title: string }>) {
+    WebSocketClient.sendMessage({
+      event: 'vscodeDiff',
+      diffs: diffs.map((d) => ({
+        leftPath: d.leftPath.replace(/\\/g, '/'),
+        rightPath: d.rightPath.replace(/\\/g, '/'),
+        title: d.title,
+      })),
+    });
+  }
+
   // Send refresh status message
   static sendRefreshStatusMessage() {
     WebSocketClient.sendMessage({ event: 'refreshStatus' });

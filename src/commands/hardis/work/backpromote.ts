@@ -22,6 +22,7 @@ import {
   loadBackpromoteState,
   promptConfirmContinueAfterConflictFailure,
   promptMetadataValidation,
+  promptOpenVisualDiffsInVsCode,
   resolveParentBranch,
   saveBackpromoteState,
   selectBackpromoteScope,
@@ -231,6 +232,13 @@ The command's technical implementation involves:
     // Step 9: Generate conflict report if there are conflicts
     if (conflicts.length > 0) {
       await generateConflictReport(conflicts, this);
+      // Offer to open a VS Code visual diff for each conflict (no-op outside VS Code / in agent/CI mode)
+      await promptOpenVisualDiffsInVsCode(
+        conflicts,
+        conflictResult.emptyPlaceholderPath,
+        this,
+        agentMode,
+      );
     }
 
     // Step 10: Prompt user to validate metadata to deploy
