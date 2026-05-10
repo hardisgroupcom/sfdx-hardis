@@ -22,6 +22,7 @@ import {
   loadBackpromoteState,
   promptConfirmContinueAfterConflictFailure,
   promptMetadataValidation,
+  promptOpenVisualDiffsInVsCode,
   resolveParentBranch,
   saveBackpromoteState,
   selectBackpromoteScope,
@@ -229,8 +230,16 @@ The command's technical implementation involves:
     }
 
     // Step 9: Generate conflict report if there are conflicts
+    let diffsShownInVsCode = false;
     if (conflicts.length > 0) {
       await generateConflictReport(conflicts, this);
+      // Offer to open a VS Code visual diff for each conflict (no-op outside VS Code / in agent/CI mode)
+      diffsShownInVsCode = await promptOpenVisualDiffsInVsCode(
+        conflicts,
+        conflictResult.emptyPlaceholderPath,
+        this,
+        agentMode,
+      );
     }
 
     // Step 10: Prompt user to validate metadata to deploy
@@ -241,6 +250,7 @@ The command's technical implementation involves:
       this,
       agentMode,
       conn.instanceUrl || '',
+      diffsShownInVsCode,
     );
 
     // Step 11: Handle destructive changes
