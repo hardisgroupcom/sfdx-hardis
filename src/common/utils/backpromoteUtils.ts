@@ -583,12 +583,14 @@ export async function detectOrgConflicts(
         const orgContent = normalizeForDiff(orgContentRaw);
         const localContent = normalizeForDiff(localContentRaw);
 
-        if (orgContent !== localContent) {
+        // Compute diff ignoring whitespace differences. Whitespace-only diffs
+        // (indentation, leading/trailing spaces) must not count as a conflict.
+        const diffResult = Diff.diffLines(orgContent, localContent, { ignoreWhitespace: true });
+        const hasRealChanges = diffResult.some((p) => p.added || p.removed);
+
+        if (hasRealChanges) {
           status = 'modified';
           hasOrgChanges = true;
-
-          // Compute diff ignoring whitespace differences
-          const diffResult = Diff.diffLines(orgContent, localContent, { ignoreWhitespace: true });
 
           // Build short preview from first changed lines
           const previewParts: string[] = [];
@@ -729,15 +731,15 @@ export async function promptOpenVisualDiffsInVsCode(
   emptyPlaceholderPath: string | undefined,
   commandThis: any,
   agentMode: boolean,
-): Promise<void> {
+): Promise<boolean> {
   if (agentMode || isCI) {
-    return;
+    return false;
   }
   if (conflicts.length === 0) {
-    return;
+    return false;
   }
   if (!WebSocketClient.isAlive()) {
-    return;
+    return false;
   }
 
   const confirmRes = await prompts({
@@ -750,7 +752,7 @@ export async function promptOpenVisualDiffsInVsCode(
 
   if (confirmRes.value !== true) {
     uxLog('log', commandThis, c.grey(t('backpromoteVisualDiffsSkippedByUser')));
-    return;
+    return false;
   }
 
   const diffs: OrgDiffItem[] = [];
@@ -806,11 +808,12 @@ export async function promptOpenVisualDiffsInVsCode(
   }
 
   if (diffs.length === 0) {
-    return;
+    return false;
   }
 
   WebSocketClient.sendVscodeDiffMessage(diffs);
   uxLog('action', commandThis, c.cyan(t('backpromoteVisualDiffsOpenedInVsCode', { count: diffs.length })));
+  return true;
 }
 
 // ---- Prompt metadata validation ----
@@ -822,6 +825,7 @@ export async function promptMetadataValidation(
   commandThis: any,
   agentMode: boolean,
   instanceUrl: string = '',
+  diffsShownInVsCode: boolean = false,
 ): Promise<{ validatedPackageXml: string; validatedDestructiveXml: string | null }> {
   const deltaContent = await parsePackageXmlFile(deltaPackageXml);
 
@@ -844,13 +848,15 @@ export async function promptMetadataValidation(
     deleted: destructiveChangesXml && fs.existsSync(destructiveChangesXml) ? await countPackageXmlItems(destructiveChangesXml) : 0,
   })));
 
-  // Display items table
-  const tableData = allItems.map((item) => ({
-    'Type': item.type,
-    'Name': item.member,
-    'Conflict': item.hasConflict ? `⚠️ ${t('backpromoteModifiedInOrg')}` : '-',
-  }));
-  uxLogTable(commandThis, tableData, ['Type', 'Name', 'Conflict']);
+  // Display items table (skipped when diffs are already shown in VS Code)
+  if (!diffsShownInVsCode) {
+    const tableData = allItems.map((item) => ({
+      'Type': item.type,
+      'Name': item.member,
+      'Conflict': item.hasConflict ? `⚠️ ${t('backpromoteModifiedInOrg')}` : '-',
+    }));
+    uxLogTable(commandThis, tableData, ['Type', 'Name', 'Conflict']);
+  }
 
   if (agentMode || isCI) {
     // In agent mode, deploy everything
