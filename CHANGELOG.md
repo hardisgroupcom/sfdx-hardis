@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [7.13.0] 2026-05-10
+
 - New command
   - [hardis:org:configure:generic-prompt](https://sfdx-hardis.cloudity.com/hardis/org/configure/generic-prompt/): Deploys the `SfdxHardisGenericPrompt` GenAiPromptTemplate metadata to a Salesforce org and optionally assigns the `EinsteinGPTPromptTemplateUser` Permission Set to the current user, enabling AI prompt integration via Agentforce.
 
