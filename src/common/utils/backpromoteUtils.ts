@@ -29,7 +29,7 @@ import { findUserByUsernameLike } from './orgUtils.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { createBlankSfdxProject } from './projectUtils.js';
-import { WebSocketClient } from '../websocketClient.js';
+import { OrgDiffItem, WebSocketClient } from '../websocketClient.js';
 import { t } from './i18n.js';
 
 // ---- Interfaces ----
@@ -753,14 +753,28 @@ export async function promptOpenVisualDiffsInVsCode(
     return;
   }
 
-  const diffs: Array<{ leftPath: string; rightPath: string; title: string }> = [];
+  const diffs: OrgDiffItem[] = [];
   let placeholder = emptyPlaceholderPath;
   for (const item of conflicts) {
-    if (!item.orgPath) {
-      continue;
-    }
-    if (item.status === 'deleted') {
-      // Right side: empty placeholder file. Create one on demand if detectOrgConflicts didn't.
+    if (item.status === 'added' && item.localPath) {
+      // File exists locally but not in org - show empty left side vs local file
+      if (!placeholder) {
+        placeholder = path.join(path.dirname(item.localPath), '.empty');
+        await fs.writeFile(placeholder, '', 'utf-8');
+      }
+      diffs.push({
+        leftPath: placeholder,
+        rightPath: item.localPath,
+        title: t('backpromoteVisualDiffTitleAddedLocally', {
+          type: item.metadataType,
+          name: item.metadataName,
+        }),
+        metadataType: item.metadataType,
+        metadataName: item.metadataName,
+        status: 'added',
+      });
+    } else if (item.status === 'deleted' && item.orgPath) {
+      // File exists in org but not locally - show org file vs empty right side
       if (!placeholder) {
         placeholder = path.join(path.dirname(item.orgPath), '.empty');
         await fs.writeFile(placeholder, '', 'utf-8');
@@ -772,8 +786,11 @@ export async function promptOpenVisualDiffsInVsCode(
           type: item.metadataType,
           name: item.metadataName,
         }),
+        metadataType: item.metadataType,
+        metadataName: item.metadataName,
+        status: 'deleted',
       });
-    } else if (item.status === 'modified' && item.localPath) {
+    } else if (item.status === 'modified' && item.orgPath && item.localPath) {
       diffs.push({
         leftPath: item.orgPath,
         rightPath: item.localPath,
@@ -781,6 +798,9 @@ export async function promptOpenVisualDiffsInVsCode(
           type: item.metadataType,
           name: item.metadataName,
         }),
+        metadataType: item.metadataType,
+        metadataName: item.metadataName,
+        status: 'modified',
       });
     }
   }

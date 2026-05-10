@@ -224,6 +224,7 @@
   "backpromoteUnableToListPullRequests": "Pull Requests konnten nicht aufgelistet werden: {{message}}",
   "backpromoteVisualDiffsOpenedInVsCode": "{{count}} visuelle Diff(s) in VS Code geoeffnet. Pruefen Sie sie parallel, waehrend Sie die zu deployenden Metadaten auswaehlen.",
   "backpromoteVisualDiffsSkippedByUser": "Visuelle Diffs in VS Code vom Benutzer uebersprungen",
+  "backpromoteVisualDiffTitleAddedLocally": "{{type}}/{{name}} (Lokal -- nicht in der Org)",
   "backpromoteVisualDiffTitleDeletedLocally": "{{type}}/{{name}} (Org -- nicht lokal)",
   "backpromoteVisualDiffTitleModified": "{{type}}/{{name}} (Org ↔ Lokal)",
   "backupPackageXmlThatFailedToBe": "Backup package.xml, das nicht abgerufen werden konnte:\n",

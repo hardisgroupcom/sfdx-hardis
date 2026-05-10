@@ -224,6 +224,7 @@
   "backpromoteUnableToListPullRequests": "No se pudieron listar pull requests: {{message}}",
   "backpromoteVisualDiffsOpenedInVsCode": "Se abrieron {{count}} diff(s) visual(es) en VS Code. Revisalos en paralelo mientras seleccionas los metadatos a desplegar.",
   "backpromoteVisualDiffsSkippedByUser": "Diffs visuales en VS Code omitidos por el usuario",
+  "backpromoteVisualDiffTitleAddedLocally": "{{type}}/{{name}} (Local -- no esta en Org)",
   "backpromoteVisualDiffTitleDeletedLocally": "{{type}}/{{name}} (Org -- no esta en local)",
   "backpromoteVisualDiffTitleModified": "{{type}}/{{name}} (Org ↔ Local)",
   "backupPackageXmlThatFailedToBe": "Copia de seguridad de package.xml que no pudo recuperarse:\n",

@@ -20,6 +20,16 @@ const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
 export const LOG_TYPES = ['log', 'action', 'warning', 'error', 'success', 'table', "other"] as const;
 export type LogType = typeof LOG_TYPES[number];
 
+/** One entry in a vscodeDiff message - describes a single file pair to open in a side-by-side diff editor. */
+export interface OrgDiffItem {
+  leftPath: string;
+  rightPath: string;
+  title: string;
+  metadataType: string;
+  metadataName: string;
+  status: 'added' | 'modified' | 'deleted';
+}
+
 /** Context passed to the WebSocketClient constructor, identifying the running command and connection endpoint. */
 export interface WebSocketClientContext {
   /** The command identifier, e.g. `"hardis:doc:flow2markdown"`. */
@@ -103,13 +113,20 @@ export class WebSocketClient {
   }
 
   // Requests VS Code to open one or more side-by-side diff editors via vscode.diff command
-  static sendVscodeDiffMessage(diffs: Array<{ leftPath: string; rightPath: string; title: string }>) {
+  static sendVscodeDiffMessage(
+    diffs: OrgDiffItem[],
+    context?: { id: string; command?: string },
+  ) {
     WebSocketClient.sendMessage({
       event: 'vscodeDiff',
+      context: context,
       diffs: diffs.map((d) => ({
         leftPath: d.leftPath.replace(/\\/g, '/'),
         rightPath: d.rightPath.replace(/\\/g, '/'),
         title: d.title,
+        metadataType: d.metadataType,
+        metadataName: d.metadataName,
+        status: d.status,
       })),
     });
   }

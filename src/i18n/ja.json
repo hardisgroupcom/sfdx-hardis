@@ -226,6 +226,7 @@
   "backpromoteUnableToListPullRequests": "pull request を一覧取得できませんでした: {{message}}",
   "backpromoteVisualDiffsOpenedInVsCode": "{{count}} 件のビジュアル差分を VS Code で開きました。デプロイするメタデータを選択しながら、並行して確認してください。",
   "backpromoteVisualDiffsSkippedByUser": "VS Code でのビジュアル差分はユーザーによってスキップされました",
+  "backpromoteVisualDiffTitleAddedLocally": "{{type}}/{{name}} (ローカル -- Orgに存在しません)",
   "backpromoteVisualDiffTitleDeletedLocally": "{{type}}/{{name}} (Org -- ローカルに存在しません)",
   "backpromoteVisualDiffTitleModified": "{{type}}/{{name}} (Org ↔ ローカル)",
   "badWordsDetectorDescription": "レコード内の不適切な単語リストを検出できます",

@@ -223,6 +223,7 @@
   "backpromoteUnableToListPullRequests": "Nao foi possivel listar pull requests: {{message}}",
   "backpromoteVisualDiffsOpenedInVsCode": "{{count}} diff(s) visual(is) abertos no VS Code. Analise-os em paralelo enquanto seleciona os metadados a serem implantados.",
   "backpromoteVisualDiffsSkippedByUser": "Diffs visuais no VS Code ignorados pelo usuario",
+  "backpromoteVisualDiffTitleAddedLocally": "{{type}}/{{name}} (Local -- ausente na Org)",
   "backpromoteVisualDiffTitleDeletedLocally": "{{type}}/{{name}} (Org -- ausente localmente)",
   "backpromoteVisualDiffTitleModified": "{{type}}/{{name}} (Org ↔ Local)",
   "backupedAndReplaced": "Backup realizado e substituído ",

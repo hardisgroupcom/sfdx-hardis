@@ -224,6 +224,7 @@
   "backpromoteUnableToListPullRequests": "Kon pull requests niet ophalen: {{message}}",
   "backpromoteVisualDiffsOpenedInVsCode": "{{count}} visuele diff(s) geopend in VS Code. Bekijk ze parallel terwijl je metadata selecteert om te implementeren.",
   "backpromoteVisualDiffsSkippedByUser": "Visuele diffs in VS Code overgeslagen door gebruiker",
+  "backpromoteVisualDiffTitleAddedLocally": "{{type}}/{{name}} (Lokaal -- niet aanwezig in Org)",
   "backpromoteVisualDiffTitleDeletedLocally": "{{type}}/{{name}} (Org -- niet lokaal aanwezig)",
   "backpromoteVisualDiffTitleModified": "{{type}}/{{name}} (Org ↔ Lokaal)",
   "backupPackageXmlThatFailedToBe": "Back-up van package.xml dat niet kon worden opgehaald:\n",

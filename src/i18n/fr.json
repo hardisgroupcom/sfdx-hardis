@@ -226,6 +226,7 @@
   "backpromoteUnableToListPullRequests": "Impossible de lister les pull requests : {{message}}",
   "backpromoteVisualDiffsOpenedInVsCode": "{{count}} diff(s) visuel(s) ouvert(s) dans VS Code. Examinez-les en parallele pendant que vous selectionnez les metadonnees a deployer.",
   "backpromoteVisualDiffsSkippedByUser": "Diffs visuels dans VS Code ignores par l'utilisateur",
+  "backpromoteVisualDiffTitleAddedLocally": "{{type}}/{{name}} (Local -- absent de l'org)",
   "backpromoteVisualDiffTitleDeletedLocally": "{{type}}/{{name}} (Org -- absent en local)",
   "backpromoteVisualDiffTitleModified": "{{type}}/{{name}} (Org ↔ Local)",
   "badWordsDetectorDescription": "Peut détecter une liste de mots indésirables dans les enregistrements",

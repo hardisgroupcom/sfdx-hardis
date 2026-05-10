@@ -224,6 +224,7 @@
   "backpromoteUnableToListPullRequests": "Nie mozna pobrac listy pull request: {{message}}",
   "backpromoteVisualDiffsOpenedInVsCode": "Otwarto {{count}} wizualnych diffow w VS Code. Sprawdz je rownolegle, wybierajac metadane do wdrozenia.",
   "backpromoteVisualDiffsSkippedByUser": "Wizualne diffy w VS Code pominiete przez uzytkownika",
+  "backpromoteVisualDiffTitleAddedLocally": "{{type}}/{{name}} (Lokalnie -- brak w Org)",
   "backpromoteVisualDiffTitleDeletedLocally": "{{type}}/{{name}} (Org -- brak lokalnie)",
   "backpromoteVisualDiffTitleModified": "{{type}}/{{name}} (Org ↔ Lokalnie)",
   "backupPackageXmlThatFailedToBe": "BackUp package.xml, który nie mógł zostać pobrany:\n",
