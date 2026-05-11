@@ -1436,6 +1436,7 @@
   "gitFailedDueToAuthenticationError": "Git {{operation}} failed due to authentication error.",
   "gitFailedDueToAuthenticationErrorIn": "Git {{operation}} failed due to authentication error in CI environment",
   "gitPasswordPatIsRequiredToContinue": "Git password/PAT is required to continue",
+  "gitPullNoUpstreamFallback": "Branch {{branchName}} has no upstream tracking. Pulling from origin/{{branchName}} and setting upstream...",
   "gitProviderErrorGettingInstance": "Error while trying to get git provider instance: {{message}}. Maybe an expired Personal Access Token?",
   "gitProviderLocalAuthNotImplemented": "Local authentication is not yet implemented for {{provider}}",
   "gitProviderMayBeMisconfigured": "Maybe you misconfigured your {{provider}}?",

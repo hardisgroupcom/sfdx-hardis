@@ -1432,6 +1432,7 @@
   "gitFailedDueToAuthenticationError": "Git {{operation}} a échoué en raison d'une erreur d'authentification.",
   "gitFailedDueToAuthenticationErrorIn": "Git {{operation}} a échoué en raison d'une erreur d'authentification dans l'environnement CI",
   "gitPasswordPatIsRequiredToContinue": "Le mot de passe/PAT Git est requis pour continuer",
+  "gitPullNoUpstreamFallback": "La branche {{branchName}} n'a pas de suivi de branche distante. Récupération depuis origin/{{branchName}} et configuration du suivi...",
   "gitProviderErrorGettingInstance": "Erreur lors de la tentative d'obtention de l'instance du fournisseur git : {{message}}. Un Personal Access Token expiré peut-être ?",
   "gitProviderLocalAuthNotImplemented": "L'authentification locale n'est pas encore implémentée pour {{provider}}",
   "gitProviderMayBeMisconfigured": "Peut-être avez-vous mal configuré votre {{provider}} ?",

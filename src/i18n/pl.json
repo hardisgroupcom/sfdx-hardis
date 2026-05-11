@@ -1432,6 +1432,7 @@
   "gitFailedDueToAuthenticationError": "Git {{operation}} nie powiodło się z powodu błędu uwierzytelniania.",
   "gitFailedDueToAuthenticationErrorIn": "Git {{operation}} nie powiodło się z powodu błędu uwierzytelniania w środowisku CI",
   "gitPasswordPatIsRequiredToContinue": "Hasło Git / PAT jest wymagane do kontynuowania",
+  "gitPullNoUpstreamFallback": "Branch {{branchName}} nie ma sledzenia upstream. Pobieranie z origin/{{branchName}} i ustawianie upstream...",
   "gitProviderErrorGettingInstance": "Błąd podczas próby uzyskania instancji dostawcy Git: {{message}}. Może wygasł Personal Access Token?",
   "gitProviderLocalAuthNotImplemented": "Lokalne uwierzytelnianie nie zostało jeszcze zaimplementowane dla {{provider}}",
   "gitProviderMayBeMisconfigured": "Być może nieprawidłowo skonfigurowano {{provider}}?",

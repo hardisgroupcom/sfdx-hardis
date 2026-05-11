@@ -1432,6 +1432,7 @@
   "gitFailedDueToAuthenticationError": "Git {{operation}} mislukt vanwege een authenticatiefout.",
   "gitFailedDueToAuthenticationErrorIn": "Git {{operation}} mislukt vanwege een authenticatiefout in de CI-omgeving",
   "gitPasswordPatIsRequiredToContinue": "Git-wachtwoord/PAT is vereist om door te gaan",
+  "gitPullNoUpstreamFallback": "Branch {{branchName}} heeft geen upstream tracking. Ophalen vanuit origin/{{branchName}} en upstream instellen...",
   "gitProviderErrorGettingInstance": "Fout bij het ophalen van de git-providerinstantie: {{message}}. Misschien een verlopen Personal Access Token?",
   "gitProviderLocalAuthNotImplemented": "Lokale authenticatie is nog niet geimplementeerd voor {{provider}}",
   "gitProviderMayBeMisconfigured": "Misschien heb je je {{provider}} verkeerd geconfigureerd?",

@@ -1430,6 +1430,7 @@
   "gitFailedDueToAuthenticationError": "Git {{operation}} が認証エラーにより失敗しました。",
   "gitFailedDueToAuthenticationErrorIn": "CI 環境で Git {{operation}} が認証エラーにより失敗しました",
   "gitPasswordPatIsRequiredToContinue": "続行するには Git のパスワード/PAT が必要です",
+  "gitPullNoUpstreamFallback": "ブランチ {{branchName}} に上流追跡が設定されていません。origin/{{branchName}} から pull を実行し、上流を設定しています...",
   "gitProviderErrorGettingInstance": "Git プロバイダーインスタンスの取得中にエラーが発生しました: {{message}}。Personal Access Token の有効期限が切れている可能性があります。",
   "gitProviderLocalAuthNotImplemented": "{{provider}} のローカル認証はまだ実装されていません",
   "gitProviderMayBeMisconfigured": "{{provider}} の設定が正しくない可能性があります。",
