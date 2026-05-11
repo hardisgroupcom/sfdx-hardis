@@ -496,22 +496,29 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
 
   if (certVarContent) {
     const usedVarName = process.env[certVarName] ? certVarName : 'SFDX_CLIENT_CERT';
-    // Strict format detection: raw PEM only when content explicitly carries the PEM header.
-    // Anything else is treated as the sfdx-hardis encrypted format (the recommended default),
-    // so existing CI-variable encrypted setups keep working unchanged.
-    const looksLikePem = /-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(certVarContent);
-    if (looksLikePem) {
+    // Some CI providers store multi-line secrets with literal "\n" escapes; PEM content
+    // never legitimately contains the 2-char sequence "\n", so this normalization is safe.
+    const normalizedCertVarContent = certVarContent.replace(/\\n/g, '\n');
+    // Strict format detection: raw PEM is only valid when content explicitly carries a
+    // private-key PEM header. Other PEM blocks (for example BEGIN CERTIFICATE) are invalid
+    // here and should fail fast with a clear error instead of being treated as encrypted data.
+    const looksLikePrivateKeyPem = /-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(normalizedCertVarContent);
+    const pemHeaderMatch = normalizedCertVarContent.match(/-----BEGIN ([A-Z ]+)-----/);
+    if (looksLikePrivateKeyPem) {
       console.log(
         c.grey(
           `[sfdx-hardis] Using ${usedVarName} env variable as raw PEM private key (no decryption)`
         )
       );
       const tmpSshKeyFile = path.join(await createTempDir(), `${orgAlias}.key`);
-      // Some CI providers store multi-line secrets with literal "\n" escapes; PEM content
-      // never legitimately contains the 2-char sequence "\n", so this normalization is safe.
-      const pemContent = certVarContent.replace(/\\n/g, '\n');
-      await fs.writeFile(tmpSshKeyFile, pemContent, { encoding: 'utf8', mode: 0o600 });
+      await fs.writeFile(tmpSshKeyFile, normalizedCertVarContent, { encoding: 'utf8', mode: 0o600 });
       return tmpSshKeyFile;
+    }
+    if (pemHeaderMatch) {
+      const pemType = pemHeaderMatch[1];
+      throw new SfError(
+        `Invalid ${usedVarName} content: found PEM block "${pemType}". Please provide the JWT private key (for example server.key), not the certificate (for example server.crt).`
+      );
     }
     console.log(c.grey(`[sfdx-hardis] Using ${usedVarName} env variable for encrypted certificate key`));
     const sshKey = await getKey(orgAlias, config);
