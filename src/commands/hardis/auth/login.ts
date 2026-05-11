@@ -43,7 +43,7 @@ The command's technical flow involves:
 sfdx-hardis registers a \`prerun\` hook (and a matching \`auth\` hook) that runs before every \`hardis:*\` command. The hook:
 
 1. Skips itself for a short list of commands (\`hardis:doc:plugin:generate\`, raw \`source:push/pull/deploy\`, \`hardis:mdapi:deploy\`, \`hardis:project:deploy:simulate\`, etc.) and during tests.
-2. Reads \`skipAuthCheck\` from the user-layer \`.sfdx-hardis.yml\`; if \`true\`, no authentication is performed.
+2. Reads \`skipAuthCheck\` from the merged config returned by \`getConfig('user')\` (which can include project, branch, and user layers); if \`true\`, no authentication is performed.
 3. Authenticates to the **Dev Hub** if the command declares \`target-dev-hub\` as required, or if it explicitly opts in via \`devHub: true\`.
 4. Authenticates to the **target org** if the command declares \`target-org\` as required (unless \`--skipauth\` is passed), or if \`checkAuth: true\` is set.
 
