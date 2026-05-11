@@ -1598,7 +1598,7 @@ export async function generateSSLCertificate(
     });
     if (certSourceResponse.value === 'caSigned') {
       await configureCaSignedCertificate(branchName, commandThis);
-      return;
+      return { mode: 'caSigned' as const };
     }
   }
   uxLog("action", commandThis, c.cyan(t('generatingSslCertificate')));
@@ -2113,6 +2113,7 @@ export async function generateSSLCertificate(
       c.grey(t('configureCiVariableClientKey', { branchNameUpper: branchName.toUpperCase(), encryptionKey: c.green(encryptionKey) }))
     );
   }
+  return { mode: 'selfSigned' as const };
 }
 
 // Bring-your-own CA-signed certificate flow.
