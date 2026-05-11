@@ -85,9 +85,9 @@ If your organization requires a certificate signed by an internal or public Cert
 1. Generate your key pair, get `server.crt` signed by your CA, and create the **External Client App manually in Setup** with `server.crt` uploaded as **Digital Signature**, Permitted Users = **Admin approved users are pre-authorized**, and the CI user's profile assigned.
 2. Set two CI/CD variables for the matching branch:
     - `SFDX_CLIENT_ID_<ALIAS>` = the **Consumer Key** of the External Client App.
-    - `SFDX_CLIENT_CERT_<ALIAS>` = the **full PEM content of your private key file** (`server.key`), including the `-----BEGIN ... PRIVATE KEY-----` and `-----END ... PRIVATE KEY-----` lines.
+    - `SFDX_CLIENT_CERT_<ALIAS>` = the **full PEM content of your private key file** (`server.key`), including the `-----BEGIN ... PRIVATE KEY-----` and `-----END ... PRIVATE KEY-----` lines. The key must be **unencrypted** (no passphrase) and in a supported PEM private key format such as `-----BEGIN PRIVATE KEY-----` or `-----BEGIN RSA PRIVATE KEY-----`. Do **not** use `-----BEGIN ENCRYPTED PRIVATE KEY-----` or `-----BEGIN OPENSSH PRIVATE KEY-----`.
 
-That's it. **Do not set** `SFDX_CLIENT_KEY_<ALIAS>` in this mode: sfdx-hardis auto-detects that `SFDX_CLIENT_CERT_<ALIAS>` starts with `-----BEGIN` and uses the key as-is, with no decryption step.
+That's it. **Do not set** `SFDX_CLIENT_KEY_<ALIAS>` in this mode: sfdx-hardis auto-detects that `SFDX_CLIENT_CERT_<ALIAS>` starts with `-----BEGIN` and uses the key as-is, with no decryption step. Because of that, passphrase-protected keys and unsupported private key formats cannot be loaded for JWT signing.
 
 > 💡 **Fetching the key from a vault at runtime:** because sfdx-hardis only reads `SFDX_CLIENT_CERT_<ALIAS>` from the environment when `hardis:auth:login` runs, you do not have to store the key as a static CI/CD variable. You can add your own pipeline step **before** `sf hardis:auth:login` that retrieves the PEM key from your secrets backend (HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, GCP Secret Manager, CyberArk Conjur, etc.) and exports it as `SFDX_CLIENT_CERT_<ALIAS>`. Example:
 >
