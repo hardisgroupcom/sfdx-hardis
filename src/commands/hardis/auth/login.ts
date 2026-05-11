@@ -62,7 +62,7 @@ Then \`authOrg(alias, options)\` attempts authentication in this order:
 
 When resolving the JWT private key, the hook looks at \`SFDX_CLIENT_CERT_<ALIAS>\` (or \`SFDX_CLIENT_CERT\`) and auto-detects the format:
 
-- If the value **starts with \`-----BEGIN ... PRIVATE KEY-----\`**, it is treated as a **raw PEM** and used as-is. No \`SFDX_CLIENT_KEY_<ALIAS>\` passphrase is needed. This is the advanced CA-signed flow.
+- If the value **contains a \`-----BEGIN ... PRIVATE KEY-----\` header**, it is treated as a **raw PEM** and used as-is. No \`SFDX_CLIENT_KEY_<ALIAS>\` passphrase is needed. This is the advanced CA-signed flow.
 - Otherwise, the value is treated as the **sfdx-hardis encrypted format** (\`<iv-hex>:<encrypted-hex>\`) and decrypted with the AES passphrase from \`SFDX_CLIENT_KEY_<ALIAS>\`. This is the recommended default produced by the wizard.
 
 If \`SFDX_CLIENT_CERT_<ALIAS>\` is not set, the hook tries the following encrypted-key file locations in order (and still requires \`SFDX_CLIENT_KEY_<ALIAS>\` to decrypt):
