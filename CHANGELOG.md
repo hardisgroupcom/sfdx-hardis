@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): Add a `SFDX_HARDIS_REASON` column to the per-severity API clients summary file, listing the specific reasons each IP was flagged (e.g. `SOAP login`, `REST API v3.0`).
+
 ## [7.13.0] 2026-05-10
 
 - New command
