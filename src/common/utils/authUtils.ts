@@ -474,26 +474,18 @@ async function getKey(orgAlias: string, config: any) {
 
 // Try to find certificate key file for SF CLI connected app in different locations
 async function getCertificateKeyFile(orgAlias: string, config: any) {
-  // Support storing encrypted certificate content in a CI/CD env variable instead of a file in the repo.
+  // Support storing the certificate key content in a CI/CD env variable instead of a file in the repo.
   // This allows enterprises to avoid committing key files to git.
+  // Two formats are supported in SFDX_CLIENT_CERT[_<ORGALIAS>]:
+  //   1. Encrypted content (format "<iv-hex>:<encrypted-hex>") produced by sfdx-hardis. RECOMMENDED.
+  //      Requires SFDX_CLIENT_KEY[_<ORGALIAS>] AES passphrase to decrypt.
+  //   2. Raw PEM private key (starts with "-----BEGIN ..."). Used as-is, no decryption needed.
+  //      Fallback for advanced cases like a CA-signed certificate where the External Client App is created manually.
   // Variable names tried (in order): SFDX_CLIENT_CERT_<ORGALIAS>, SFDX_CLIENT_CERT
   const certVarName = `SFDX_CLIENT_CERT_${orgAlias.toUpperCase()}`;
-  const encryptedCertContent = process.env[certVarName] || process.env.SFDX_CLIENT_CERT;
-  if (encryptedCertContent) {
-    const usedVarName = process.env[certVarName] ? certVarName : 'SFDX_CLIENT_CERT';
-    console.log(c.grey(`[sfdx-hardis] Using ${usedVarName} env variable for certificate key (no key file needed in repo)`));
-    const sshKey = await getKey(orgAlias, config);
-    if (sshKey) {
-      const tmpDir = await createTempDir();
-      const encryptedKeyFile = path.join(tmpDir, `${orgAlias}.key.enc`);
-      const tmpSshKeyFile = path.join(tmpDir, `${orgAlias}.key`);
-      await fs.writeFile(encryptedKeyFile, encryptedCertContent, 'utf8');
-      console.log(c.grey(`[sfdx-hardis] Decrypting key...`));
-      await decryptFile(encryptedKeyFile, tmpSshKeyFile, sshKey);
-      return tmpSshKeyFile;
-    }
-  }
+  const certVarContent = process.env[certVarName] || process.env.SFDX_CLIENT_CERT;
 
+  // List of repo locations where an encrypted .key file may have been committed.
   const filesToTry = [
     `./config/branches/.jwt/${orgAlias}.key`,
     `./config/.jwt/${orgAlias}.key`,
@@ -501,6 +493,45 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
     `./.ssh/${orgAlias}.key`,
     './ssh/server.key',
   ];
+
+  if (certVarContent) {
+    const usedVarName = process.env[certVarName] ? certVarName : 'SFDX_CLIENT_CERT';
+    // Some CI providers store multi-line secrets with literal "\n" escapes; PEM content
+    // never legitimately contains the 2-char sequence "\n", so this normalization is safe.
+    const normalizedCertVarContent = certVarContent.replace(/\\n/g, '\n');
+    // Strict format detection: raw PEM is only valid when content explicitly carries a
+    // private-key PEM header. Other PEM blocks (for example BEGIN CERTIFICATE) are invalid
+    // here and should fail fast with a clear error instead of being treated as encrypted data.
+    const looksLikePrivateKeyPem = /-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(normalizedCertVarContent);
+    const pemHeaderMatch = normalizedCertVarContent.match(/-----BEGIN ([A-Z ]+)-----/);
+    if (looksLikePrivateKeyPem) {
+      console.log(
+        c.grey(
+          `[sfdx-hardis] Using ${usedVarName} env variable as raw PEM private key (no decryption)`
+        )
+      );
+      const tmpSshKeyFile = path.join(await createTempDir(), `${orgAlias}.key`);
+      await fs.writeFile(tmpSshKeyFile, normalizedCertVarContent, { encoding: 'utf8', mode: 0o600 });
+      return tmpSshKeyFile;
+    }
+    if (pemHeaderMatch) {
+      const pemType = pemHeaderMatch[1];
+      throw new SfError(
+        `Invalid ${usedVarName} content: found PEM block "${pemType}". Please provide the JWT private key (for example server.key), not the certificate (for example server.crt).`
+      );
+    }
+    console.log(c.grey(`[sfdx-hardis] Using ${usedVarName} env variable for encrypted certificate key`));
+    const sshKey = await getKey(orgAlias, config);
+    if (sshKey) {
+      const tmpDir = await createTempDir();
+      const encryptedKeyFile = path.join(tmpDir, `${orgAlias}.key.enc`);
+      const tmpSshKeyFile = path.join(tmpDir, `${orgAlias}.key`);
+      await fs.writeFile(encryptedKeyFile, certVarContent, 'utf8');
+      console.log(c.grey(`[sfdx-hardis] Decrypting key...`));
+      await decryptFile(encryptedKeyFile, tmpSshKeyFile, sshKey);
+      return tmpSshKeyFile;
+    }
+  }
   // Check if we find multiple files
   const filesFound = filesToTry.filter((file) => fs.existsSync(file));
   if (filesFound.length > 1) {
@@ -532,7 +563,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
       c.red(
         `[sfdx-hardis] You must put a certificate key to connect via JWT. Possible locations:\n  -${filesToTry.join(
           '\n  -'
-        )}\nAlternatively, set env variable SFDX_CLIENT_CERT_${orgAlias.toUpperCase()} with the encrypted key content to avoid storing key files in git.`
+        )}\nAlternatively, set env variable SFDX_CLIENT_CERT_${orgAlias.toUpperCase()} with the sfdx-hardis encrypted key content (recommended, paired with SFDX_CLIENT_KEY_${orgAlias.toUpperCase()}) to avoid storing key files in git. Raw PEM content is also accepted for advanced cases like CA-signed certificates.`
       )
     );
     uxLog("error", this, c.red(t('seeCiAuthenticationDocAtSalesforceCi', { CONSTANTS: CONSTANTS.DOC_URL_ROOT })));
