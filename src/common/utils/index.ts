@@ -388,7 +388,23 @@ export async function selectGitBranch(
 
 export async function gitCheckOutRemote(branchName: string) {
   await git().checkout(branchName);
-  await gitPull();
+  try {
+    await gitPull();
+  } catch (error: any) {
+    const errorStr = (error?.message || error?.toString() || '');
+    // Fallback when the local branch has no upstream tracking: pull explicitly from origin, then set upstream
+    if (/no tracking information/i.test(errorStr) || /no upstream/i.test(errorStr)) {
+      uxLog("warning", this, c.yellow(t('gitPullNoUpstreamFallback', { branchName })));
+      await gitPull(['origin', branchName]);
+      try {
+        await git().branch([`--set-upstream-to=origin/${branchName}`, branchName]);
+      } catch {
+        // Best-effort: tracking setup failure should not break the checkout
+      }
+    } else {
+      throw error;
+    }
+  }
 }
 
 // Helper function to detect git authentication errors

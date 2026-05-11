@@ -1439,6 +1439,7 @@
   "gitlabUnableToFindMrInfo": "Não foi possível encontrar informações do Merge Request relacionado",
   "gitlabUpdatingMrNote": "Atualizando Nota do Merge Request no Gitlab...",
   "gitPasswordPatIsRequiredToContinue": "A senha/PAT do Git é obrigatória para continuar",
+  "gitPullNoUpstreamFallback": "A branch {{branchName}} não tem rastreamento upstream. Fazendo pull de origin/{{branchName}} e configurando upstream...",
   "gitProviderErrorGettingInstance": "Erro ao tentar obter a instância do provedor git: {{message}}. Talvez um Token de Acesso Pessoal expirado?",
   "gitProviderLocalAuthNotImplemented": "A autenticação local ainda não está implementada para {{provider}}",
   "gitProviderMayBeMisconfigured": "Talvez você tenha configurado incorretamente seu {{provider}}?",

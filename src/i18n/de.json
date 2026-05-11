@@ -1431,6 +1431,7 @@
   "gitFailedDueToAuthenticationError": "Git {{operation}} ist aufgrund eines Authentifizierungsfehlers fehlgeschlagen.",
   "gitFailedDueToAuthenticationErrorIn": "Git {{operation}} ist aufgrund eines Authentifizierungsfehlers in der CI-Umgebung fehlgeschlagen",
   "gitPasswordPatIsRequiredToContinue": "Git-Passwort/PAT ist erforderlich, um fortzufahren",
+  "gitPullNoUpstreamFallback": "Branch {{branchName}} hat kein Upstream-Tracking. Pull von origin/{{branchName}} wird ausgeführt und Upstream wird gesetzt...",
   "gitProviderErrorGettingInstance": "Fehler beim Abrufen der Git-Provider-Instanz: {{message}}. Möglicherweise ein abgelaufenes Personal Access Token?",
   "gitProviderLocalAuthNotImplemented": "Lokale Authentifizierung ist für {{provider}} noch nicht implementiert",
   "gitProviderMayBeMisconfigured": "Möglicherweise haben Sie {{provider}} falsch konfiguriert?",
