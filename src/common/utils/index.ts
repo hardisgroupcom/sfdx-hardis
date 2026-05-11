@@ -2116,98 +2116,32 @@ export async function generateSSLCertificate(
 }
 
 // Bring-your-own CA-signed certificate flow.
-// sfdx-hardis does NOT generate the cert or create the External Client App.
-// Instead, we prompt the user to:
-//   1) create the ECA manually in Setup (with their CA-signed certificate uploaded as Digital Signature),
-//   2) provide the Consumer Key and the path to the private key,
-//   3) set the resulting CI/CD variables (raw PEM, no encryption).
+// sfdx-hardis does NOT generate the cert, does NOT create the External Client App, and does NOT
+// touch the repo or CI variables. The user is fully in charge of:
+//   1) creating the External Client App manually in Setup (with their CA-signed certificate
+//      uploaded as Digital Signature, and the CI user's profile pre-authorized),
+//   2) setting SFDX_CLIENT_ID_<ALIAS> and SFDX_CLIENT_CERT_<ALIAS> CI/CD variables
+//      (raw PEM key, no encryption, no SFDX_CLIENT_KEY_<ALIAS> needed).
+// We just show the instructions and point at the documentation.
 async function configureCaSignedCertificate(branchName: string, commandThis: any) {
   const aliasUpper = branchName.toUpperCase();
   const clientIdVar = `SFDX_CLIENT_ID_${aliasUpper}`;
   const clientCertVar = `SFDX_CLIENT_CERT_${aliasUpper}`;
+  const docUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/#use-a-ca-signed-certificate`;
 
   uxLog("action", commandThis, c.cyan(t('caSignedConfigureForBranch', { branchName: c.bold(branchName) })));
   uxLog("log", commandThis, c.grey(t('caSignedManualEcaInstructions')));
-
-  await prompts({
-    type: 'confirm',
-    name: 'value',
-    initial: true,
-    message: c.cyanBright(t('caSignedConfirmEcaCreated')),
-    description: t('descCaSignedConfirmEcaCreated'),
-  });
-
-  const consumerKeyResponse = await prompts({
-    type: 'text',
-    name: 'value',
-    message: c.cyanBright(t('caSignedPromptConsumerKey')),
-    description: t('descCaSignedPromptConsumerKey'),
-    placeholder: t('exConsumerKeyPlaceholder'),
-  });
-
-  const keyPathResponse = await prompts({
-    type: 'text',
-    name: 'value',
-    message: c.cyanBright(t('caSignedPromptKeyPath')),
-    description: t('descCaSignedPromptKeyPath'),
-    placeholder: t('exServerKeyPathPlaceholder'),
-    initial: 'server.key',
-  });
-
-  const keyAbsolutePath = path.resolve(keyPathResponse.value);
-  if (!(await fs.pathExists(keyAbsolutePath))) {
-    throw new SfError(t('caSignedKeyFileNotFound', { file: keyAbsolutePath }));
-  }
-  const keyContent = await fs.readFile(keyAbsolutePath, 'utf8');
-  if (!/-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(keyContent)) {
-    throw new SfError(t('caSignedKeyFileNotPem', { file: keyAbsolutePath }));
-  }
-
-  let idDisplay = consumerKeyResponse.value;
-  let keyDisplay = keyContent.trim();
-  if (WebSocketClient.isAliveWithLwcUI()) {
-    idDisplay = `<copy>${idDisplay}</copy>`;
-    keyDisplay = `<copy>${keyDisplay}</copy>`;
-  }
-
   uxLog("action", commandThis, c.cyan(t('caSignedSetCiVariables')));
   uxLog(
     "log",
     commandThis,
     c.grey(
-      c.cyanBright(
-        `- Variable: ${c.green(c.bold(clientIdVar))}\n  Value: ${c.bold(c.green(idDisplay))}`
-      )
-    ),
-    true
+      `- ${c.green(c.bold(clientIdVar))}: Consumer Key of the External Client App\n- ${c.green(c.bold(clientCertVar))}: full PEM content of your private key (including BEGIN/END lines)`
+    )
   );
-  uxLog(
-    "log",
-    commandThis,
-    c.grey(
-      c.cyanBright(
-        `- Variable: ${c.green(c.bold(clientCertVar))}\n  Value (paste the full content of ${keyAbsolutePath}, including BEGIN/END lines):\n${c.bold(c.green(keyDisplay))}`
-      )
-    ),
-    true
-  );
-  uxLog(
-    "log",
-    commandThis,
-    c.grey(c.yellow(t('helpToConfigureCiCdVariablesUrl', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/` })))
-  );
+  uxLog("log", commandThis, c.grey(c.yellow(t('helpToConfigureCiCdVariablesUrl', { url: docUrl }))));
 
-  WebSocketClient.sendReportFileMessage(
-    `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`,
-    t('helpToConfigureCiVariables'),
-    'docUrl'
-  );
-
-  await prompts({
-    type: 'confirm',
-    message: c.cyanBright(t('pleaseConfirmWhenVariablesHaveBeenSet')),
-    description: t('descConfirmCiCdVariables'),
-  });
+  WebSocketClient.sendReportFileMessage(docUrl, t('helpToConfigureCiVariables'), 'docUrl');
 
   uxLog("action", commandThis, c.green(t('caSignedConfigurationComplete', { branchName })));
 }
