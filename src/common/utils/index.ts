@@ -1574,6 +1574,33 @@ export async function generateSSLCertificate(
   conn: any,
   options: any
 ) {
+  // Ask the user whether sfdx-hardis should generate a self-signed certificate, or whether they want
+  // to use their own CA-signed certificate (in that case, the External Client App must be created manually).
+  if (!isCI && !isAgentMode()) {
+    const certSourceResponse = await prompts({
+      type: 'select',
+      name: 'value',
+      message: c.cyanBright(t('howDoYouWantToProvideCertificate')),
+      description: t('descHowDoYouWantToProvideCertificate'),
+      choices: [
+        {
+          title: t('titleSelfSignedCertificate'),
+          value: 'selfSigned',
+          description: t('descSelfSignedCertificate'),
+        },
+        {
+          title: t('titleCaSignedCertificate'),
+          value: 'caSigned',
+          description: t('descCaSignedCertificate'),
+        },
+      ],
+      initial: 0,
+    });
+    if (certSourceResponse.value === 'caSigned') {
+      await configureCaSignedCertificate(branchName, commandThis);
+      return;
+    }
+  }
   uxLog("action", commandThis, c.cyan(t('generatingSslCertificate')));
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
@@ -2086,6 +2113,103 @@ export async function generateSSLCertificate(
       c.grey(t('configureCiVariableClientKey', { branchNameUpper: branchName.toUpperCase(), encryptionKey: c.green(encryptionKey) }))
     );
   }
+}
+
+// Bring-your-own CA-signed certificate flow.
+// sfdx-hardis does NOT generate the cert or create the External Client App.
+// Instead, we prompt the user to:
+//   1) create the ECA manually in Setup (with their CA-signed certificate uploaded as Digital Signature),
+//   2) provide the Consumer Key and the path to the private key,
+//   3) set the resulting CI/CD variables (raw PEM, no encryption).
+async function configureCaSignedCertificate(branchName: string, commandThis: any) {
+  const aliasUpper = branchName.toUpperCase();
+  const clientIdVar = `SFDX_CLIENT_ID_${aliasUpper}`;
+  const clientCertVar = `SFDX_CLIENT_CERT_${aliasUpper}`;
+
+  uxLog("action", commandThis, c.cyan(t('caSignedConfigureForBranch', { branchName: c.bold(branchName) })));
+  uxLog("log", commandThis, c.grey(t('caSignedManualEcaInstructions')));
+
+  await prompts({
+    type: 'confirm',
+    name: 'value',
+    initial: true,
+    message: c.cyanBright(t('caSignedConfirmEcaCreated')),
+    description: t('descCaSignedConfirmEcaCreated'),
+  });
+
+  const consumerKeyResponse = await prompts({
+    type: 'text',
+    name: 'value',
+    message: c.cyanBright(t('caSignedPromptConsumerKey')),
+    description: t('descCaSignedPromptConsumerKey'),
+    placeholder: t('exConsumerKeyPlaceholder'),
+  });
+
+  const keyPathResponse = await prompts({
+    type: 'text',
+    name: 'value',
+    message: c.cyanBright(t('caSignedPromptKeyPath')),
+    description: t('descCaSignedPromptKeyPath'),
+    placeholder: t('exServerKeyPathPlaceholder'),
+    initial: 'server.key',
+  });
+
+  const keyAbsolutePath = path.resolve(keyPathResponse.value);
+  if (!(await fs.pathExists(keyAbsolutePath))) {
+    throw new SfError(t('caSignedKeyFileNotFound', { file: keyAbsolutePath }));
+  }
+  const keyContent = await fs.readFile(keyAbsolutePath, 'utf8');
+  if (!/-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(keyContent)) {
+    throw new SfError(t('caSignedKeyFileNotPem', { file: keyAbsolutePath }));
+  }
+
+  let idDisplay = consumerKeyResponse.value;
+  let keyDisplay = keyContent.trim();
+  if (WebSocketClient.isAliveWithLwcUI()) {
+    idDisplay = `<copy>${idDisplay}</copy>`;
+    keyDisplay = `<copy>${keyDisplay}</copy>`;
+  }
+
+  uxLog("action", commandThis, c.cyan(t('caSignedSetCiVariables')));
+  uxLog(
+    "log",
+    commandThis,
+    c.grey(
+      c.cyanBright(
+        `- Variable: ${c.green(c.bold(clientIdVar))}\n  Value: ${c.bold(c.green(idDisplay))}`
+      )
+    ),
+    true
+  );
+  uxLog(
+    "log",
+    commandThis,
+    c.grey(
+      c.cyanBright(
+        `- Variable: ${c.green(c.bold(clientCertVar))}\n  Value (paste the full content of ${keyAbsolutePath}, including BEGIN/END lines):\n${c.bold(c.green(keyDisplay))}`
+      )
+    ),
+    true
+  );
+  uxLog(
+    "log",
+    commandThis,
+    c.grey(c.yellow(t('helpToConfigureCiCdVariablesUrl', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/` })))
+  );
+
+  WebSocketClient.sendReportFileMessage(
+    `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`,
+    t('helpToConfigureCiVariables'),
+    'docUrl'
+  );
+
+  await prompts({
+    type: 'confirm',
+    message: c.cyanBright(t('pleaseConfirmWhenVariablesHaveBeenSet')),
+    description: t('descConfirmCiCdVariables'),
+  });
+
+  uxLog("action", commandThis, c.green(t('caSignedConfigurationComplete', { branchName })));
 }
 
 export async function isMonitoringJob() {
