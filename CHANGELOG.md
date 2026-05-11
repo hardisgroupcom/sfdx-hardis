@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): Add a `SFDX_HARDIS_REASON` column to the per-severity API clients summary file, listing the specific reasons each IP was flagged (e.g. `SOAP login`, `REST API v3.0`).
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): When checking out a parent branch with no upstream tracking, `gitCheckOutRemote` now falls back to `git pull origin <branch>` and automatically sets the upstream, fixing the `There is no tracking information for the current branch` failure.
 
 ## [7.13.0] 2026-05-10
 
