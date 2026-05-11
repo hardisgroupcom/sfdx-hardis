@@ -59,7 +59,7 @@ When the wizard generates the SSL certificate, it asks where you want to store t
 1. **Encrypted file in repo** (default): the encrypted `<branchName>.key` file is committed to `config/branches/.jwt/`. Only `SFDX_CLIENT_ID_<ALIAS>` and `SFDX_CLIENT_KEY_<ALIAS>` need to be set as CI variables (the latter being the AES passphrase used to decrypt the file at runtime).
 2. **CI variable**: nothing is committed to the repo. You set three CI variables: `SFDX_CLIENT_ID_<ALIAS>`, `SFDX_CLIENT_KEY_<ALIAS>`, and `SFDX_CLIENT_CERT_<ALIAS>` (which holds the encrypted key content directly).
 
-When you bring your own CA-signed certificate (see [Advanced scenarios](#advanced-scenarios) below), a **third mode** is available: store the **raw PEM private key** directly in `SFDX_CLIENT_CERT_<ALIAS>`, no AES passphrase needed.
+When you bring your own CA-signed certificate (see [Use a CA-signed certificate](#use-a-ca-signed-certificate) below), a **third mode** is available: store the **raw PEM private key** directly in `SFDX_CLIENT_CERT_<ALIAS>`, no AES passphrase needed.
 
 The variable-storage modes are useful when your security policy forbids committing any key material (even encrypted) to git.
 
