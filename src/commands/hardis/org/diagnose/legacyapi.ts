@@ -31,7 +31,7 @@ type LegacyApiDescriptor = {
   deprecationRelease: string;
   errors: any[];
   totalErrors: number;
-  ipCounts: Record<string, number>;
+  ipCounts: Record<string, { count: number; reasons: string[] }>;
   apiResources?: string[];
 };
 
@@ -385,8 +385,29 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       if (!eventLogRecord || !eventLogRecord.CLIENT_IP) {
         continue;
       }
-      descriptor.ipCounts[eventLogRecord.CLIENT_IP] = (descriptor.ipCounts[eventLogRecord.CLIENT_IP] || 0) + 1;
+      const ip = eventLogRecord.CLIENT_IP;
+      if (!descriptor.ipCounts[ip]) {
+        descriptor.ipCounts[ip] = { count: 0, reasons: [] };
+      }
+      descriptor.ipCounts[ip].count += 1;
+      const reason = this.buildFlagReason(descriptor, eventLogRecord);
+      if (!descriptor.ipCounts[ip].reasons.includes(reason)) {
+        descriptor.ipCounts[ip].reasons.push(reason);
+      }
     }
+  }
+
+  private buildFlagReason(descriptor: LegacyApiDescriptor, eventLogRecord: any): string {
+    const apiFamily = (eventLogRecord.API_FAMILY || '').toUpperCase() || 'API';
+    const apiResource = (eventLogRecord.API_RESOURCE || '').toLowerCase();
+    const apiVersionRaw = eventLogRecord.API_VERSION;
+    if (descriptor.apiResources && descriptor.apiResources.length > 0 && apiResource) {
+      return `${apiFamily} ${apiResource}`;
+    }
+    if (apiVersionRaw !== undefined && apiVersionRaw !== null && apiVersionRaw !== '') {
+      return `${apiFamily} API v${apiVersionRaw}`;
+    }
+    return `${apiFamily} API`;
   }
 
   private ensureCsvColumns(rows: any[]) {
@@ -535,14 +556,17 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     }
   }
 
-  private async generateSummaryLog(ipCounts: Record<string, number>, severity: string) {
+  private async generateSummaryLog(
+    ipCounts: Record<string, { count: number; reasons: string[] }>,
+    severity: string
+  ) {
     if (!ipCounts || Object.keys(ipCounts).length === 0) {
       return null;
     }
     // Try to get hostname for ips
     const ipResults: any[] = [];
     for (const ip of Object.keys(ipCounts)) {
-      const count = ipCounts[ip];
+      const { count, reasons } = ipCounts[ip];
       let hostname: string | string[] = 'unknown';
       try {
         hostname = await dnsPromises.reverse(ip);
@@ -551,7 +575,13 @@ In agent mode, the command runs fully automatically with no interactive prompts.
         uxLog("other", this, c.grey(t('unableToResolveHostnameForIp', { ip, val: e })));
       }
       const formattedHostname = Array.isArray(hostname) ? hostname.join(', ') : hostname;
-      const ipResult = { CLIENT_IP: ip, CLIENT_HOSTNAME: formattedHostname, SFDX_HARDIS_COUNT: count };
+      const formattedReasons = [...reasons].sort().join(', ');
+      const ipResult = {
+        CLIENT_IP: ip,
+        CLIENT_HOSTNAME: formattedHostname,
+        SFDX_HARDIS_COUNT: count,
+        SFDX_HARDIS_REASON: formattedReasons,
+      };
       ipResults.push(ipResult);
     }
     const sortedIpResults = sortArray(ipResults, {
