@@ -510,7 +510,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
       // Some CI providers store multi-line secrets with literal "\n" escapes; PEM content
       // never legitimately contains the 2-char sequence "\n", so this normalization is safe.
       const pemContent = certVarContent.replace(/\\n/g, '\n');
-      await fs.writeFile(tmpSshKeyFile, pemContent, 'utf8');
+      await fs.writeFile(tmpSshKeyFile, pemContent, { encoding: 'utf8', mode: 0o600 });
       return tmpSshKeyFile;
     }
     console.log(c.grey(`[sfdx-hardis] Using ${usedVarName} env variable for encrypted certificate key`));
