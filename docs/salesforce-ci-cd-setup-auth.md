@@ -76,7 +76,7 @@ sfdx-hardis resolves the JWT credentials in this priority order:
 
 `<ALIAS>` is the **uppercased branch name** (for example `INTEGRATION`, `UAT`, `PREPROD`, `PRODUCTION`). For the Dev Hub, the alias is the value of `devHubAlias` from `.sfdx-hardis.yml` (often `DEVHUB_<PROJECTNAME>`).
 
-> sfdx-hardis also recognizes `SFDX_AUTH_URL_<ALIAS>` and `SFDX_AUTH_URL_DEV_HUB` for SFDX auth URL flow (mostly used for scratch orgs and Dev Hubs). When set, JWT is skipped and `sf org login sfdx-url` is used instead.
+> ⚠️ **Less secure alternative:** sfdx-hardis also recognizes `SFDX_AUTH_URL_<ALIAS>` and `SFDX_AUTH_URL_DEV_HUB` for the SFDX auth URL flow. When set, JWT is skipped and `sf org login sfdx-url` is used instead. **Do not use this for major orgs (integration / UAT / preprod / production).** An SFDX auth URL embeds a long-lived **OAuth refresh token** that grants full org access if leaked; unlike JWT, it cannot be tied to a specific signing certificate and cannot be rotated without re-authenticating manually. Reserve it for **scratch orgs** and **Dev Hub** scenarios where JWT cannot be set up.
 
 ### Use a CA-signed certificate
 
@@ -173,4 +173,4 @@ This stores the Dev Hub alias / username / instance URL in the project-level `.s
 - `SFDX_CLIENT_KEY_<DEVHUB_ALIAS>` (and optionally `SFDX_CLIENT_CERT_<DEVHUB_ALIAS>` with the encrypted key) for the self-signed flow, or
 - `SFDX_CLIENT_CERT_<DEVHUB_ALIAS>` with the raw PEM key content for the CA-signed flow.
 
-Alternatively, for scratch-org workflows where JWT is not practical, you can set `SFDX_AUTH_URL_DEV_HUB` with the output of `sf org display --target-org <devhub-alias> --verbose --json | jq -r .result.sfdxAuthUrl`.
+As a **less secure last resort** for scratch-org workflows where JWT cannot be set up, you can set `SFDX_AUTH_URL_DEV_HUB` with the output of `sf org display --target-org <devhub-alias> --verbose --json | jq -r .result.sfdxAuthUrl`. Be aware that this value contains a long-lived OAuth refresh token granting full Dev Hub access if leaked; prefer JWT whenever possible.
