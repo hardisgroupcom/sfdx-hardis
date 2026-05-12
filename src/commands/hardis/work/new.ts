@@ -15,7 +15,7 @@ import {
   gitPull,
   uxLog,
 } from '../../../common/utils/index.js';
-import { selectTargetBranch } from '../../../common/utils/gitUtils.js';
+import { buildAvailableTargetBranches, selectTargetBranch } from '../../../common/utils/gitUtils.js';
 import {
   initApexScripts,
   initOrgData,
@@ -477,11 +477,8 @@ The command's logic orchestrates various underlying processes:
     }
     available.push(`branch-prefix: ${requestedBranchPrefix ? `selected ${branchPrefix}` : `auto-selected as ${branchPrefix}`} from ${this.toOptionList(availableBranchPrefixes)}`);
 
-    const availableTargetBranches = [
-      ...(Array.isArray(config.availableTargetBranches) ? config.availableTargetBranches : []),
-      ...(config.developmentBranch ? [config.developmentBranch] : []),
-    ].filter((value: string, index: number, self: string[]) => value && self.indexOf(value) === index);
-    available.push(`target-branch: ${this.toOptionList(availableTargetBranches)}`);
+    const { branches: availableTargetBranches, display: availableTargetBranchesDisplay } = buildAvailableTargetBranches(config);
+    available.push(`target-branch: ${this.toOptionList(availableTargetBranchesDisplay)}`);
 
     const availableProjects = (config.availableProjects || []).map((project: string) => this.parseProjectValue(project));
     if (availableProjects.length > 0) {
@@ -500,11 +497,11 @@ The command's logic orchestrates various underlying processes:
       if (availableTargetBranches.length === 1) {
         targetBranch = availableTargetBranches[0];
       } else {
-        missing.push(`target-branch is required with --agent. Available: ${this.toOptionList(availableTargetBranches)}`);
+        missing.push(`target-branch is required with --agent. Available: ${this.toOptionList(availableTargetBranchesDisplay)}`);
       }
     } else if (availableTargetBranches.length > 0 && !availableTargetBranches.includes(targetBranch)) {
       missing.push(
-        `target-branch="${targetBranch}" is not an allowed target branch. Available: ${this.toOptionList(availableTargetBranches)}`
+        `target-branch="${targetBranch}" is not an allowed target branch. Available: ${this.toOptionList(availableTargetBranchesDisplay)}`
       );
     } else if (availableTargetBranches.length === 0) {
       missing.push(

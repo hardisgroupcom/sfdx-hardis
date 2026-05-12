@@ -415,6 +415,21 @@
       "title": "Available PR/MR target branches",
       "type": "array"
     },
+    "availableTargetBranchesLabels": {
+      "$id": "#/properties/availableTargetBranchesLabels",
+      "description": "Human-readable labels for the branches listed in availableTargetBranches, in the same order.\nWhen defined, the label at index N is shown instead of the raw branch name when prompting contributors to select a target branch.\nExample: availableTargetBranches: [preprod, integration] and availableTargetBranchesLabels: [Pre-Production, Integration]",
+      "examples": [
+        [
+          "Pre-Production",
+          "Integration"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Labels for available PR/MR target branches",
+      "type": "array"
+    },
     "branchPrefixChoices": {
       "$id": "#/properties/branchPrefixChoices",
       "description": "When calling hardis:work:new, you can override the default branch prefixes. Input title, value and description for each of them",
@@ -1700,6 +1715,26 @@
       "title": "Manual Actions File URL",
       "type": "string"
     },
+    "manualActionsMode": {
+      "$id": "#/properties/manualActionsMode",
+      "default": "externalFile",
+      "description": "Defines how manual actions are managed for deployments.\n- **externalFile** (default): Manual actions are tracked in an external Excel/XLS file referenced by manualActionsFileUrl. The pipeline view will warn if this file is not configured.\n- **sfdxHardis**: Manual actions are managed directly within sfdx-hardis. No external file is required, and the pipeline view will not warn about a missing manual actions file.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-deploy/",
+      "enum": [
+        "externalFile",
+        "sfdxHardis"
+      ],
+      "enumNames": [
+        "External Excel file (manualActionsFileUrl)",
+        "sfdx-hardis built-in"
+      ],
+      "examples": [
+        "externalFile",
+        "sfdxHardis"
+      ],
+      "title": "Manual Actions Mode",
+      "type": "string"
+    },
     "mergeTargets": {
       "$id": "#/properties/mergeTargets",
       "description": "In branch-scoped config file, declares the list of branches that the current one can have as merge target. For example, integration will have mergeTargets [uat]",
@@ -1920,6 +1955,26 @@
       },
       "title": "Disabled notification types",
       "type": "array"
+    },
+    "orgAuthenticationMode": {
+      "$id": "#/properties/orgAuthenticationMode",
+      "default": "encryptedCert",
+      "description": "Defines how the CI/CD pipeline authenticates to Salesforce orgs.\n- **encryptedCert** (default): Authentication uses encrypted certificate key files committed to the repository. The pipeline view will warn if a key file is missing for a branch.\n- **secretsOnly**: Authentication relies solely on CI/CD secrets variables (e.g. SFDX_HARDIS_CERT_<ORG>). No key file is required, and the pipeline view will not warn about missing certificate files.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/",
+      "enum": [
+        "encryptedCert",
+        "secretsOnly"
+      ],
+      "enumNames": [
+        "Encrypted certificate key files",
+        "CI/CD secrets variables only"
+      ],
+      "examples": [
+        "encryptedCert",
+        "secretsOnly"
+      ],
+      "title": "Org Authentication Mode",
+      "type": "string"
     },
     "packageNoOverwritePath": {
       "$id": "#/properties/packageNoOverwritePath",

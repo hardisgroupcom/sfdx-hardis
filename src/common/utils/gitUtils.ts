@@ -29,6 +29,47 @@ import { WebSocketClient } from '../websocketClient.js';
 import { countPackageXmlItems } from './xmlUtils.js';
 import { t } from './i18n.js';
 
+function getDefaultBranchLabel(branchName: string): string {
+  const lower = branchName.toLowerCase();
+  if (lower === 'integration' || lower === 'integ') {
+    return t('defaultLabelBuildStream');
+  }
+  if (lower === 'preprod' || lower === 'uatrun' || lower === 'uat_run') {
+    return t('defaultLabelRunStream');
+  }
+  if (lower === 'main' || lower === 'production') {
+    return t('defaultLabelHotfixStream');
+  }
+  return '';
+}
+
+// Priority: explicit label array > comma-embedded label > default by branch name
+function resolveBranchLabel(branchRaw: string, configBranchLabels: string[], idx: number): string {
+  if (idx >= 0 && configBranchLabels[idx]) {
+    return configBranchLabels[idx];
+  }
+  if (branchRaw.includes(',')) {
+    return branchRaw.split(',').slice(1).join(',').trim();
+  }
+  return getDefaultBranchLabel(branchRaw);
+}
+
+export function buildAvailableTargetBranches(config: any): { branches: string[]; display: string[] } {
+  const configBranches: string[] = Array.isArray(config.availableTargetBranches) ? config.availableTargetBranches : [];
+  const configBranchLabels: string[] = config.availableTargetBranchesLabels || [];
+  const branches = [
+    ...configBranches,
+    ...(config.developmentBranch ? [config.developmentBranch] : []),
+  ].filter((value: string, index: number, self: string[]) => value && self.indexOf(value) === index);
+  const display = branches.map((branch) => {
+    const branchValue = branch.includes(',') ? branch.split(',')[0] : branch;
+    const idx = configBranches.indexOf(branch);
+    const label = resolveBranchLabel(branch, configBranchLabels, idx);
+    return label ? `${branchValue} (${label})` : branchValue;
+  });
+  return { branches, display };
+}
+
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const gitUrl = await getGitRepoUrl() || '';
   const message =
@@ -36,6 +77,7 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
     t('whatWillBeTheTargetBranch', { mergeRequestName: GitProvider.getMergeRequestName(gitUrl) });
   const config = await getConfig('user');
   const availableTargetBranches = config.availableTargetBranches || null;
+  const availableTargetBranchesLabels: string[] = config.availableTargetBranchesLabels || [];
   // There is only once choice so return it
   if (availableTargetBranches === null && config.developmentBranch) {
     uxLog("action", this, c.cyan(t('automaticallySelectedTargetBranchIs', { config: c.green(config.developmentBranch) })));
@@ -51,10 +93,13 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       description: t('descChooseTargetBranch'),
       placeholder: availableTargetBranches ? undefined : t('exIntegration'),
       choices: availableTargetBranches
-        ? availableTargetBranches.map((branch) => {
+        ? availableTargetBranches.map((branch, index) => {
+          const branchValue = branch.includes(',') ? branch.split(',')[0] : branch;
+          const label = resolveBranchLabel(branch, availableTargetBranchesLabels, index);
           return {
-            title: branch.includes(',') ? branch.split(',').join(' - ') : branch,
-            value: branch.includes(',') ? branch.split(',')[0] : branch,
+            title: branchValue,
+            description: label || undefined,
+            value: branchValue,
           };
         })
         : [],
