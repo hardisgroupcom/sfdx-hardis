@@ -1858,6 +1858,7 @@
   "openaiReceivedResponseDebug": "Réponse au prompt reçue de {{modelName}}\n{{response}}",
   "openaiRequestingPrompt": "Envoi du prompt à {{modelName}}{{template}} (définir DEBUG_PROMPTS=true pour voir les détails)",
   "openaiRequestingPromptDebug": "Envoi du prompt suivant à {{modelName}}{{template}} :\n{{promptText}}",
+  "openDevOpsPipelineForManualActions": "Ouvrez le panneau DevOps Pipeline pour examiner et mettre à jour les actions manuelles de votre pull request.",
   "openingApplicationListPagePleaseManuallyFind": "Ouverture de la page de liste des applications. Veuillez trouver manuellement {{app}}.",
   "openingHelpAt": "Ouverture de help at {{commitHelpUrl}} ...",
   "openingOrg": "Ouverture de org {{orgUsername}}...",

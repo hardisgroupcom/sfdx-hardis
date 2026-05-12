@@ -264,14 +264,22 @@ The command's technical implementation involves a series of orchestrated steps:
 - ${t('useNewUserStoryMenuEvenIfSameOrg')} 😊`);
       // Manual actions file
       const config = await getConfig('project');
-      if (config.manualActionsFileUrl && config.manualActionsFileUrl !== '') {
-        uxLog("warning", this, c.yellow(t('ifYouHavePreDeploymentOrPost', { config: c.green(config.manualActionsFileUrl) })));
+      const manualActionsMode = config.manualActionsMode || 'externalFile';
+      if (manualActionsMode === 'sfdxHardis') {
+        uxLog("warning", this, c.yellow(t('openDevOpsPipelineForManualActions')));
         if (WebSocketClient.isAliveWithLwcUI()) {
-          WebSocketClient.sendReportFileMessage(config.manualActionsFileUrl, t('updateManualActionsFile'), 'actionUrl');
+          WebSocketClient.sendOpenPipelinePullRequestMessage(this.currentBranch, this.targetBranch || '');
         }
-      }
-      else {
-        uxLog("warning", this, c.yellow(t('defineManualActionsFileAskReleaseMgr')));
+      } else {
+        if (config.manualActionsFileUrl && config.manualActionsFileUrl !== '') {
+          uxLog("warning", this, c.yellow(t('ifYouHavePreDeploymentOrPost', { config: c.green(config.manualActionsFileUrl) })));
+          if (WebSocketClient.isAliveWithLwcUI()) {
+            WebSocketClient.sendReportFileMessage(config.manualActionsFileUrl, t('updateManualActionsFile'), 'actionUrl');
+          }
+        }
+        else {
+          uxLog("warning", this, c.yellow(t('defineManualActionsFileAskReleaseMgr')));
+        }
       }
       if (!WebSocketClient.isAliveWithLwcUI()) {
         uxLog("log", this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(mergeRequestDoc)}`));

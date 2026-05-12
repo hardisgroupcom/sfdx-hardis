@@ -1857,6 +1857,7 @@
   "openaiReceivedResponseDebug": "Prompt-Antwort von {{modelName}} empfangen\n{{response}}",
   "openaiRequestingPrompt": "Prompt an {{modelName}}{{template}} wird angefordert (DEBUG_PROMPTS=true definieren, um Details zu sehen)",
   "openaiRequestingPromptDebug": "Folgender Prompt wird an {{modelName}}{{template}} angefordert:\n{{promptText}}",
+  "openDevOpsPipelineForManualActions": "Öffnen Sie das DevOps-Pipeline-Panel, um die manuellen Aktionen für Ihren Pull Request zu prüfen und zu aktualisieren.",
   "openingApplicationListPagePleaseManuallyFind": "Anwendungslistenseite wird geöffnet. Bitte suchen Sie {{app}} manuell.",
   "openingHelpAt": "Hilfe wird unter {{commitHelpUrl}} geöffnet ...",
   "openingOrg": "Org {{orgUsername}} wird geöffnet...",

@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Configuration: Add `manualActionsMode` (`externalFile` default / `sfdxHardis`) and `orgAuthenticationMode` (`encryptedCert` default / `secretsOnly`) JSON schema properties so the VS Code extension can suppress pipeline-view warnings when manual actions are managed within sfdx-hardis or when org authentication relies solely on CI/CD secrets variables.
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): When `manualActionsMode` is `sfdxHardis`, display a dedicated message and send a `openPipelinePullRequest` WebSocket event so the VS Code extension opens the DevOps Pipeline panel for the current pull request instead of warning about a missing external actions file.
 - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): Add a `SFDX_HARDIS_REASON` column to the per-severity API clients summary file, listing the specific reasons each IP was flagged (e.g. `SOAP login`, `REST API v3.0`).
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): When checking out a parent branch with no upstream tracking, `gitCheckOutRemote` now falls back to `git pull origin <branch>` and automatically sets the upstream, fixing the `There is no tracking information for the current branch` failure.
 - CI/CD authentication: support bring-your-own **CA-signed certificate** flow (issue [#1900](https://github.com/hardisgroupcom/sfdx-hardis/issues/1900))

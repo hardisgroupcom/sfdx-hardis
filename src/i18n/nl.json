@@ -1858,6 +1858,7 @@
   "openaiReceivedResponseDebug": "Promptrespons ontvangen van {{modelName}}\n{{response}}",
   "openaiRequestingPrompt": "Prompt aanvragen bij {{modelName}}{{template}} (stel DEBUG_PROMPTS=true in om details te zien)",
   "openaiRequestingPromptDebug": "De volgende prompt aanvragen bij {{modelName}}{{template}}:\n{{promptText}}",
+  "openDevOpsPipelineForManualActions": "Open het DevOps Pipeline-paneel om de handmatige acties voor je pull request te bekijken en bij te werken.",
   "openingApplicationListPagePleaseManuallyFind": "Applicatielijstpagina wordt geopend. Zoek {{app}} handmatig op.",
   "openingHelpAt": "Help wordt geopend op {{commitHelpUrl}} ...",
   "openingOrg": "Org wordt geopend",

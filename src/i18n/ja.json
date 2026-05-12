@@ -1856,6 +1856,7 @@
   "openaiReceivedResponseDebug": "{{modelName}} からプロンプトの応答を受信しました\n{{response}}",
   "openaiRequestingPrompt": "{{modelName}}{{template}} にプロンプトをリクエストしています (詳細を表示するには DEBUG_PROMPTS=true を定義してください)",
   "openaiRequestingPromptDebug": "{{modelName}}{{template}} に以下のプロンプトをリクエストしています:\n{{promptText}}",
+  "openDevOpsPipelineForManualActions": "DevOps Pipelineパネルを開いて、プルリクエストの手動アクションを確認・更新してください。",
   "openingApplicationListPagePleaseManuallyFind": "アプリケーション一覧ページを開いています。{{app}} を手動で見つけてください。",
   "openingHelpAt": "{{commitHelpUrl}} でヘルプを開いています...",
   "openingOrg": "組織 {{orgUsername}} を開いています...",
