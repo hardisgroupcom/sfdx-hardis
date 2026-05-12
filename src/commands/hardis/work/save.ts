@@ -20,7 +20,7 @@ import {
 } from '../../../common/utils/index.js';
 import { exportData } from '../../../common/utils/dataUtils.js';
 import { forceSourcePull } from '../../../common/utils/deployUtils.js';
-import { callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from '../../../common/utils/gitUtils.js';
+import { buildAvailableTargetBranches, callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from '../../../common/utils/gitUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import {
   appendPackageXmlFilesContent,
@@ -779,12 +779,9 @@ The command's technical implementation involves a series of orchestrated steps:
     const projectConfig = await getConfig('project');
     const userConfig = await getConfig('user');
     const inferredTargetBranch = userConfig?.localStorageBranchTargets?.[localBranch] || null;
-    const availableTargetBranches = [
-      ...(Array.isArray(projectConfig.availableTargetBranches) ? projectConfig.availableTargetBranches : []),
-      ...(projectConfig.developmentBranch ? [projectConfig.developmentBranch] : []),
-    ].filter((value: string, index: number, self: string[]) => value && self.indexOf(value) === index);
+    const { branches: availableTargetBranches, display: availableTargetBranchesDisplay } = buildAvailableTargetBranches(projectConfig);
 
-    available.push(`targetbranch: ${this.toOptionList(availableTargetBranches)}`);
+    available.push(`targetbranch: ${this.toOptionList(availableTargetBranchesDisplay)}`);
     available.push(`targetbranch inferred from localStorageBranchTargets: ${inferredTargetBranch || '(none)'}`);
     available.push('metadata pull: always skipped in --agent mode');
     available.push('push: always enabled in --agent mode');
@@ -796,7 +793,7 @@ The command's technical implementation involves a series of orchestrated steps:
       missing.push('targetbranch is required with --agent when no localStorageBranchTargets mapping exists for current branch');
     } else if (availableTargetBranches.length > 0 && !availableTargetBranches.includes(targetBranch)) {
       missing.push(
-        `targetbranch="${targetBranch}" is not in availableTargetBranches. Available: ${this.toOptionList(availableTargetBranches)}`
+        `targetbranch="${targetBranch}" is not in availableTargetBranches. Available: ${this.toOptionList(availableTargetBranchesDisplay)}`
       );
     }
 

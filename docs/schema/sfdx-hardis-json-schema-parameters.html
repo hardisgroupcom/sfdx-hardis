@@ -7551,6 +7551,58 @@ If defined, makes obsolete the parameter Default Pull Request target branch.</p>
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionmanualActionsMode">
+    <div class="card">
+        <div class="card-header" id="headingmanualActionsMode">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#manualActionsMode"
+                        aria-expanded="" aria-controls="manualActionsMode" onclick="setAnchor('#manualActionsMode')"><span class="property-name">manualActionsMode</span></button>
+            </h2>
+        </div>
+
+        <div id="manualActionsMode"
+             class="collapse property-definition-div" aria-labelledby="headingmanualActionsMode"
+             data-parent="#accordionmanualActionsMode">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#manualActionsMode" onclick="anchorLink('manualActionsMode')">manualActionsMode</a></div><h4>Manual Actions Mode</h4><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "externalFile"</span><br/>
+<div class="description collapse" id="collapseDescription_manualActionsMode">
+            <p>Defines how manual actions are managed for deployments.<br />
+- <strong>externalFile</strong> (default): Manual actions are tracked in an external Excel/XLS file referenced by manualActionsFileUrl. The pipeline view will warn if this file is not configured.<br />
+- <strong>sfdxHardis</strong>: Manual actions are managed directly within sfdx-hardis. No external file is required, and the pipeline view will not warn about a missing manual actions file.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_manualActionsMode"
+               aria-expanded="false" aria-controls="collapseDescriptionmanualActionsMode"
+            ></a>
+        </div><div class="enum-value" id="manualActionsMode_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"externalFile"</li><li class="list-group-item enum-item">"sfdxHardis"</li></ul>
+            </div>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="manualActionsMode_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;externalFile&quot;</span>
+</pre></div>
+</div><div id="manualActionsMode_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;sfdxHardis&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionmergeTargets">
     <div class="card">
         <div class="card-header" id="headingmergeTargets">
@@ -8555,6 +8607,58 @@ Example: 'MYPROJECT-168 Update account status validation rule'</p>
 <span class="w">    </span><span class="s2">&quot;METADATA_STATUS&quot;</span><span class="p">,</span>
 <span class="w">    </span><span class="s2">&quot;UNUSED_METADATAS&quot;</span>
 <span class="p">]</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgAuthenticationMode">
+    <div class="card">
+        <div class="card-header" id="headingorgAuthenticationMode">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgAuthenticationMode"
+                        aria-expanded="" aria-controls="orgAuthenticationMode" onclick="setAnchor('#orgAuthenticationMode')"><span class="property-name">orgAuthenticationMode</span></button>
+            </h2>
+        </div>
+
+        <div id="orgAuthenticationMode"
+             class="collapse property-definition-div" aria-labelledby="headingorgAuthenticationMode"
+             data-parent="#accordionorgAuthenticationMode">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgAuthenticationMode" onclick="anchorLink('orgAuthenticationMode')">orgAuthenticationMode</a></div><h4>Org Authentication Mode</h4><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "encryptedCert"</span><br/>
+<div class="description collapse" id="collapseDescription_orgAuthenticationMode">
+            <p>Defines how the CI/CD pipeline authenticates to Salesforce orgs.<br />
+- <strong>encryptedCert</strong> (default): Authentication uses encrypted certificate key files committed to the repository. The pipeline view will warn if a key file is missing for a branch.<br />
+- <strong>secretsOnly</strong>: Authentication relies solely on CI/CD secrets variables (e.g. SFDX<em>HARDIS</em>CERT_&lt;ORG&gt;). No key file is required, and the pipeline view will not warn about missing certificate files.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_orgAuthenticationMode"
+               aria-expanded="false" aria-controls="collapseDescriptionorgAuthenticationMode"
+            ></a>
+        </div><div class="enum-value" id="orgAuthenticationMode_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"encryptedCert"</li><li class="list-group-item enum-item">"secretsOnly"</li></ul>
+            </div>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="orgAuthenticationMode_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;encryptedCert&quot;</span>
+</pre></div>
+</div><div id="orgAuthenticationMode_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;secretsOnly&quot;</span>
 </pre></div>
 </div>
             </div>

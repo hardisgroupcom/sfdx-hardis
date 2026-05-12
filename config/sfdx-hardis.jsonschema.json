@@ -415,6 +415,21 @@
       "title": "Available PR/MR target branches",
       "type": "array"
     },
+    "availableTargetBranchesLabels": {
+      "$id": "#/properties/availableTargetBranchesLabels",
+      "description": "Human-readable labels for the branches listed in availableTargetBranches, in the same order.\nWhen defined, the label at index N is shown instead of the raw branch name when prompting contributors to select a target branch.\nExample: availableTargetBranches: [preprod, integration] and availableTargetBranchesLabels: [Pre-Production, Integration]",
+      "examples": [
+        [
+          "Pre-Production",
+          "Integration"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Labels for available PR/MR target branches",
+      "type": "array"
+    },
     "branchPrefixChoices": {
       "$id": "#/properties/branchPrefixChoices",
       "description": "When calling hardis:work:new, you can override the default branch prefixes. Input title, value and description for each of them",
