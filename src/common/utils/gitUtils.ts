@@ -32,13 +32,13 @@ import { t } from './i18n.js';
 function getDefaultBranchLabel(branchName: string): string {
   const lower = branchName.toLowerCase();
   if (lower === 'integration' || lower === 'integ') {
-    return 'BUILD Stream (will then go through UAT for business stakeholder validation)';
+    return t('defaultLabelBuildStream');
   }
   if (lower === 'preprod' || lower === 'uatrun' || lower === 'uat_run') {
-    return 'RUN Stream (will then go through preprod / uatrun / uat_run for quick validation)';
+    return t('defaultLabelRunStream');
   }
   if (lower === 'main' || lower === 'production') {
-    return 'HOTFIX Stream (will then go straight to production)';
+    return t('defaultLabelHotfixStream');
   }
   return '';
 }
