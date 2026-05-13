@@ -19,12 +19,12 @@ Most monitoring commands emit a single notification type whose key matches the c
 
 ## Source of truth for defaults
 
-| What | Where | Notes |
-|------|-------|-------|
-| Monitoring commands (key, title, command, frequency) | `src/common/monitoring/monitoringDefaults.ts` -> `monitoringCommandsDefault` | Array of `MonitoringCommandEntry`. Iterated by `monitor:all` on every run. |
-| Notification-only types (no associated command) | `src/common/monitoring/monitoringDefaults.ts` -> `notificationOnlyTypes` | Drives the configuration UI payload. |
-| Per-channel routing defaults | `src/common/notifProvider/notificationDefaults.ts` -> `notificationDefaults` | Keyed by `NotifMessage.type`. Per-key map of `{ messaging?, email?, api? }` thresholds. Missing channels fall back to `messaging: info`, `email: info`, `api: log`. |
-| Notification type union | `src/common/notifProvider/types.ts` -> `NotifMessage.type` | The TypeScript union. Maintainer comment at the top lists everywhere to update. |
+| What                                                 | Where                                                                        | Notes                                                                                                                                                               |
+|------------------------------------------------------|------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Monitoring commands (key, title, command, frequency) | `src/common/monitoring/monitoringDefaults.ts` -> `monitoringCommandsDefault` | Array of `MonitoringCommandEntry`. Iterated by `monitor:all` on every run.                                                                                          |
+| Notification-only types (no associated command)      | `src/common/monitoring/monitoringDefaults.ts` -> `notificationOnlyTypes`     | Drives the configuration UI payload.                                                                                                                                |
+| Per-channel routing defaults                         | `src/common/notifProvider/notificationDefaults.ts` -> `notificationDefaults` | Keyed by `NotifMessage.type`. Per-key map of `{ messaging?, email?, api? }` thresholds. Missing channels fall back to `messaging: info`, `email: info`, `api: log`. |
+| Notification type union                              | `src/common/notifProvider/types.ts` -> `NotifMessage.type`                   | The TypeScript union. Maintainer comment at the top lists everywhere to update.                                                                                     |
 
 ## User override model
 
