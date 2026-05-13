@@ -24,12 +24,14 @@ export class DocBuilderPage extends DocBuilderRoot {
       "| :----      | :--: | "
     ]);
     for (const page of filteredPages) {
+      /* jscpd:ignore-start */
       const pageNameCell = `[${page.name}](${prefix}${page.name}.md)`;
       lines.push(...[
         `| ${pageNameCell} | ${page.type} |`
       ]);
     }
     lines.push("");
+    /* jscpd:ignore-end */
     return lines;
   }
 

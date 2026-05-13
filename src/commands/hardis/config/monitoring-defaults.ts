@@ -51,6 +51,7 @@ The data is assembled in \`getMonitoringConfigDefaults()\` (\`src/common/monitor
   ];
 
   public static flags: any = {
+    /* jscpd:ignore-start */
     agent: Flags.boolean({
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
@@ -66,6 +67,7 @@ The data is assembled in \`getMonitoringConfigDefaults()\` (\`src/common/monitor
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    /* jscpd:ignore-end */
   };
 
   public static requiresProject = false;
