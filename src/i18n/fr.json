@@ -101,6 +101,7 @@
   "authenticatingToScratchOrgFromPool": "Authentification à la scratch org depuis le pool...",
   "authenticatingUsingWebLogin": "Authentification via la connexion web...",
   "authenticationHasExpiredPleaseLogIn": "Votre authentification a expiré. Veuillez vous reconnecter via le navigateur web.",
+  "authWebLoginNoUserDetected": "La connexion web n'a pas abouti : la fenêtre du navigateur a été fermée ou l'opération a expiré. Veuillez réessayer.",
   "autocleantypesHasBeenActivatedOnTheNew": "autoCleanTypes {{defaultAutoCleanTypes}} a été activé sur le nouveau projet.",
   "autoDetectedNamespacesFromApiNames": "{{count}} espace(s) de noms détecté(s) automatiquement à partir des patterns de noms d'API dans {{packageXmlFile}} : {{namespaces}}",
   "autoDetectedNamespacesFromPackageXml": "{{count}} espace(s) de noms détecté(s) automatiquement depuis les entrées InstalledPackage dans {{packageXmlFile}} : {{namespaces}}",

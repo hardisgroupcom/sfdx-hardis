@@ -102,6 +102,7 @@
   "authenticatingUsingWebLogin": "Autenticando via login web...",
   "verificationCodeEnterInBrowser": "Código de verificação: {{code}}. Se solicitado, insira este código na janela do navegador.",
   "authenticationHasExpiredPleaseLogIn": "Sua autenticação expirou. Por favor, faça login novamente usando o navegador web.",
+  "authWebLoginNoUserDetected": "O login web não foi concluído: a janela do navegador foi fechada ou a operação expirou. Tente novamente.",
   "autocleantypesHasBeenActivatedOnTheNew": "autoCleanTypes {{defaultAutoCleanTypes}} foi ativado no novo projeto.",
   "autoDetectedNamespacesFromApiNames": "{{count}} namespace(s) detectado(s) automaticamente a partir de padrões de nomes de API em {{packageXmlFile}}: {{namespaces}}",
   "autoDetectedNamespacesFromPackageXml": "{{count}} namespace(s) detectado(s) automaticamente a partir de entradas InstalledPackage em {{packageXmlFile}}: {{namespaces}}",

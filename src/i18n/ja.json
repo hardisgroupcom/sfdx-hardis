@@ -101,6 +101,7 @@
   "authenticatingToScratchOrgFromPool": "プールからスクラッチ組織に認証しています...",
   "authenticatingUsingWebLogin": "Web ログインを使用して認証しています...",
   "authenticationHasExpiredPleaseLogIn": "認証の有効期限が切れました。Webブラウザから再度ログインしてください。",
+  "authWebLoginNoUserDetected": "Webログインが完了しませんでした。ブラウザウィンドウが閉じられたか、操作がタイムアウトしました。再度お試しください。",
   "autocleantypesHasBeenActivatedOnTheNew": "新しいプロジェクトで autoCleanTypes {{defaultAutoCleanTypes}} が有効化されました。",
   "autoDetectProviderApiError": "APIから{{provider}}のプロジェクトIDを自動検出できませんでした: {{message}}",
   "autoDetectProviderFailed": "gitリモートから{{provider}}の設定を自動検出できませんでした: {{message}}",

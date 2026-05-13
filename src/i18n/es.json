@@ -101,6 +101,7 @@
   "authenticatingToScratchOrgFromPool": "Autenticando en la Scratch Org desde el pool...",
   "authenticatingUsingWebLogin": "Autenticando mediante inicio de sesión web...",
   "authenticationHasExpiredPleaseLogIn": "La autenticación ha expirado. Inicie sesión de nuevo a través del navegador.",
+  "authWebLoginNoUserDetected": "El inicio de sesión web no se completó: la ventana del navegador se cerró o la operación caducó. Vuelve a intentarlo.",
   "autocleantypesHasBeenActivatedOnTheNew": "autoCleanTypes {{defaultAutoCleanTypes}} se activó en el nuevo proyecto.",
   "autoDetectedNamespacesFromApiNames": "{{count}} espacio(s) de nombre detectados automáticamente a partir de patrones de nombre de API en {{packageXmlFile}}: {{namespaces}}",
   "autoDetectedNamespacesFromPackageXml": "{{count}} espacio(s) de nombre detectados automáticamente desde entradas InstalledPackage en {{packageXmlFile}}: {{namespaces}}",

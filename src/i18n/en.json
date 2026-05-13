@@ -101,6 +101,7 @@
   "authenticatingToScratchOrgFromPool": "Authenticating to scratch org from pool...",
   "authenticatingUsingWebLogin": "Authenticating using web login...",
   "authenticationHasExpiredPleaseLogIn": "Your authentication has expired. Please log in again using the web browser.",
+  "authWebLoginNoUserDetected": "Web login did not complete: the browser window was closed or the operation timed out. Please try again.",
   "autocleantypesHasBeenActivatedOnTheNew": "autoCleanTypes {{defaultAutoCleanTypes}} has been activated on the new project.",
   "automaticallyImportDataSetForScratchOrgs": "Automatically import this data set when creating new scratch orgs for development",
   "autoDetectedNamespacesFromApiNames": "Auto-detected {{count}} namespace(s) from API name patterns in {{packageXmlFile}}: {{namespaces}}",

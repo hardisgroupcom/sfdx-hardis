@@ -101,6 +101,7 @@
   "authenticatingToScratchOrgFromPool": "Authenticeren bij scratch org vanuit de pool...",
   "authenticatingUsingWebLogin": "Authenticeren via weblogin...",
   "authenticationHasExpiredPleaseLogIn": "Je authenticatie is verlopen. Log opnieuw in via de webbrowser.",
+  "authWebLoginNoUserDetected": "Web-login is niet voltooid: het browservenster werd gesloten of de bewerking is verlopen. Probeer het opnieuw.",
   "autocleantypesHasBeenActivatedOnTheNew": "autoCleanTypes {{defaultAutoCleanTypes}} is geactiveerd op het nieuwe project.",
   "autoDetectedNamespacesFromApiNames": "{{count}} namespace(s) automatisch gedetecteerd uit API-naampatronen in {{packageXmlFile}}: {{namespaces}}",
   "autoDetectedNamespacesFromPackageXml": "{{count}} namespace(s) automatisch gedetecteerd uit InstalledPackage-vermeldingen in {{packageXmlFile}}: {{namespaces}}",
