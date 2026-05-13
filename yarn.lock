@@ -8700,12 +8700,11 @@ langchain@1.2.25:
     zod "^3.25.76 || ^4"
 
 "langsmith@>=0.4.0 <1.0.0", "langsmith@>=0.5.0 <1.0.0":
-  version "0.5.20"
-  resolved "https://registry.yarnpkg.com/langsmith/-/langsmith-0.5.20.tgz#4021847d2ccd5a86c5eb96060f9bb5f19f80eca5"
-  integrity sha512-ULhLM8RswvQDXufLtNtvclHrWCBx8Cb5UPI6lAZC+8Dq59iHsVPz/3Ac9khWNm1VIvChRsuykixD/WrmzuuA3Q==
+  version "0.6.3"
+  resolved "https://registry.yarnpkg.com/langsmith/-/langsmith-0.6.3.tgz#a3d8ad58d66a47d3697e3c69b2be3f6df5233190"
+  integrity sha512-pXrQ4/4myQvjFFOAUmt5pWRrLEZR20gzIJD7MNdUH+5/S5nLI4ZRBo/SYKC6coaYj9pYTfQdBIzcs+3kfJ5uDA==
   dependencies:
     p-queue "6.6.2"
-    uuid "10.0.0"
 
 latest-version@^9.0.0:
   version "9.0.0"
@@ -12921,7 +12920,7 @@ util-deprecate@^1.0.1, util-deprecate@^1.0.2, util-deprecate@~1.0.1:
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
   integrity sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==
 
-uuid@10.0.0, uuid@14.0.0, uuid@^10.0.0, uuid@^11.1.0, uuid@^13.0.0, uuid@^8.3.0, uuid@^8.3.2, uuid@^9.0.1:
+uuid@14.0.0, uuid@^10.0.0, uuid@^11.1.0, uuid@^13.0.0, uuid@^8.3.0, uuid@^8.3.2, uuid@^9.0.1:
   version "14.0.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-14.0.0.tgz#0af883220163d264ffe0c084f6b8a89b9666966d"
   integrity sha512-Qo+uWgilfSmAhXCMav1uYFynlQO7fMFiMVZsQqZRMIXp0O7rR7qjkj+cPvBHLgBqi960QCoo/PH2/6ZtVqKvrg==
