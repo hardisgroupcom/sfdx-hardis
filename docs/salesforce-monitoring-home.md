@@ -81,9 +81,9 @@ Are you ready ? [Configure the monitoring on your orgs](salesforce-monitoring-co
 
 The following checks are active out of the box.
 
-In order to avoid to overflow channels of notifications, some commands are run everyday whereas less critical ones are run weekly (on saturday).
+In order to avoid to overflow channels of notifications, some commands are run everyday whereas less critical ones are run weekly (on saturday by default).
 
-You can force the daily run of all commands by defining env var `MONITORING_IGNORE_FREQUENCY=true`.
+Each command's cadence is fully customizable per entry in `.sfdx-hardis.yml` via the `monitoringCommands` property. Supported frequencies are `daily`, `weekly`, `biweekly`, `monthly`, and `off`. For `weekly` and `biweekly` you can pick the day with `frequencyDay` (`monday`..`sunday`, default `saturday`). For `monthly` you can pick the day of month with `frequencyDayOfMonth` (`1`..`31`, clamped to the last day of shorter months). Pass `--force-all` to `hardis:org:monitor:all` (or set env var `MONITORING_IGNORE_FREQUENCY=true`) to run every command regardless of its configured frequency. See [Monitoring configuration](salesforce-monitoring-config-home.md#monitoring-commands) for full examples.
 
 | Check                                                                                                                       | Frequency |
 |-----------------------------------------------------------------------------------------------------------------------------|-----------|

@@ -5,55 +5,212 @@
   "definitions": {
     "enum_notification_types": {
       "enum": [
-        "AUDIT_TRAIL",
+        "ACTIVE_USERS",
+        "ACTIVE_USERS_CRM_WEEKLY",
+        "ACTIVE_USERS_EXPERIENCE_MONTHLY",
+        "AGENTFORCE_CONVERSATIONS",
+        "AGENTFORCE_FEEDBACK",
+        "APEX_API_VERSION",
+        "APEX_ERROR",
+        "APEX_FLEX_QUEUE",
         "APEX_TESTS",
+        "AUDIT_TRAIL",
         "BACKUP",
+        "CONNECTED_APPS",
         "DEPLOYMENT",
+        "DEPLOYMENTS",
+        "DORA_REPORT",
+        "FLOW_ERROR",
         "LEGACY_API",
+        "LICENSES",
         "LINT_ACCESS",
-        "UNUSED_METADATAS",
         "METADATA_STATUS",
+        "MINIMAL_PERMSETS",
         "MISSING_ATTRIBUTES",
+        "MONITORING_SUMMARY",
+        "ORG_HEALTH_CHECK",
+        "ORG_INFO",
+        "ORG_LIMITS",
+        "RELEASE_NOTES",
+        "RELEASE_UPDATES",
+        "SERVICENOW_REPORT",
+        "UNDERUSED_PERMSETS",
+        "UNSECURED_CONNECTED_APPS",
+        "UNUSED_APEX_CLASSES",
         "UNUSED_LICENSES",
-        "RELEASE_UPDATES"
+        "UNUSED_METADATAS",
+        "UNUSED_USERS",
+        "UNUSED_USERS_CRM_6_MONTHS",
+        "UNUSED_USERS_EXPERIENCE_6_MONTHS"
       ],
       "enumNames": [
-        "Audit Trail",
+        "Active Users",
+        "Active Users CRM (weekly)",
+        "Active Users Experience (monthly)",
+        "Agentforce Conversations",
+        "Agentforce Feedback",
+        "Apex API Version",
+        "Apex Error",
+        "Apex Flex Queue",
         "Apex Tests",
+        "Audit Trail",
         "Backup",
+        "Connected Apps",
         "Deployment",
+        "Deployments",
+        "DORA Report",
+        "Flow Error",
         "Legacy API",
+        "Licenses",
         "Lint Access",
-        "Unused Metadatas",
         "Metadata Status",
+        "Minimal Permission Sets",
         "Missing Attributes",
+        "Monitoring Summary",
+        "Org Health Check",
+        "Org Info",
+        "Org Limits",
+        "Release Notes",
+        "Release Updates",
+        "ServiceNow Report",
+        "Underused Permission Sets",
+        "Unsecured Connected Apps",
+        "Unused Apex Classes",
         "Unused Licenses",
-        "Release Updates"
+        "Unused Metadatas",
+        "Unused Users",
+        "Unused Users CRM (6 months)",
+        "Unused Users Experience (6 months)"
       ],
       "type": "string"
     },
     "enum_monitoring_commands": {
       "enum": [
+        "ACTIVE_USERS_CRM_WEEKLY",
+        "ACTIVE_USERS_EXPERIENCE_MONTHLY",
+        "APEX_API_VERSION",
+        "APEX_FLEX_QUEUE",
+        "APEX_FLOW_ERRORS",
         "AUDIT_TRAIL",
+        "CONNECTED_APPS",
+        "DEPLOYMENTS",
         "LEGACY_API",
+        "LICENSES",
         "LINT_ACCESS",
-        "UNUSED_METADATAS",
         "METADATA_STATUS",
+        "MINIMAL_PERMSETS",
         "MISSING_ATTRIBUTES",
+        "ORG_HEALTH_CHECK",
+        "ORG_INFO",
+        "ORG_LIMITS",
+        "RELEASE_UPDATES",
+        "UNDERUSED_PERMSETS",
+        "UNSECURED_CONNECTED_APPS",
+        "UNUSED_APEX_CLASSES",
         "UNUSED_LICENSES",
-        "RELEASE_UPDATES"
+        "UNUSED_METADATAS",
+        "UNUSED_USERS",
+        "UNUSED_USERS_CRM_6_MONTHS",
+        "UNUSED_USERS_EXPERIENCE_6_MONTHS"
       ],
       "enumNames": [
+        "Active Users CRM (weekly)",
+        "Active Users Experience (monthly)",
+        "Apex API Version",
+        "Apex Flex Queue",
+        "Apex and Flow Errors",
         "Audit Trail",
+        "Connected Apps",
+        "Deployments",
         "Legacy API",
+        "Licenses",
         "Lint Access",
-        "Unused Metadatas",
         "Metadata Status",
+        "Minimal Permission Sets",
         "Missing Attributes",
+        "Org Health Check",
+        "Org Info",
+        "Org Limits",
+        "Release Updates",
+        "Underused Permission Sets",
+        "Unsecured Connected Apps",
+        "Unused Apex Classes",
         "Unused Licenses",
-        "Release Updates"
+        "Unused Metadatas",
+        "Unused Users",
+        "Unused Users CRM (6 months)",
+        "Unused Users Experience (6 months)"
       ],
       "type": "string"
+    },
+    "enum_notification_threshold": {
+      "description": "Minimum severity required to send a notification on a channel. 'off' disables the channel for the target notification type. Order from low to high: log, success, info, warning, error, critical.",
+      "enum": [
+        "log",
+        "success",
+        "info",
+        "warning",
+        "error",
+        "critical",
+        "off"
+      ],
+      "enumNames": [
+        "Log",
+        "Success",
+        "Info",
+        "Warning",
+        "Error",
+        "Critical",
+        "Off"
+      ],
+      "type": "string"
+    },
+    "notification_channel_config": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-channel notification routing. 'messaging' covers Slack and Teams. 'api' covers the sfdx-hardis Api / metrics provider (Grafana Loki, Prometheus). When omitted, sensible hardcoded defaults apply.",
+      "title": "Notification channel config",
+      "properties": {
+        "messaging": {
+          "$ref": "#/definitions/enum_notification_threshold",
+          "description": "Severity threshold for messaging notifications (Slack + Teams)."
+        },
+        "email": {
+          "description": "Email channel configuration. Either a severity threshold string, or an object combining a threshold with explicit recipients.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/enum_notification_threshold"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "threshold": {
+                  "$ref": "#/definitions/enum_notification_threshold"
+                },
+                "recipients": {
+                  "type": "array",
+                  "description": "Email recipients applied to this notification type. By default they are appended to the env-var-derived recipient list; set replaceRecipients: true to fully replace it.",
+                  "items": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "uniqueItems": true
+                },
+                "replaceRecipients": {
+                  "type": "boolean",
+                  "description": "When true, the recipients listed here replace the env-var-derived recipient chain (NOTIF_EMAIL_ADDRESS, branch- and type-specific overrides) for this notification type.",
+                  "default": false
+                }
+              }
+            }
+          ]
+        },
+        "api": {
+          "$ref": "#/definitions/enum_notification_threshold",
+          "description": "Severity threshold for the sfdx-hardis Api / metrics provider. Defaults to 'log' (everything is sent)."
+        }
+      }
     }
   },
   "description": "Configuration file definition for sfdx-hardis Salesforce DX plugin",
@@ -1761,20 +1918,39 @@
     },
     "monitoringCommands": {
       "$id": "#/properties/monitoringCommands",
-      "description": "List of monitoring commands to run with command hardis:org:monitor:all",
+      "description": "List of monitoring commands to run with command hardis:org:monitor:all.\nUser entries are merged by 'key' onto the built-in defaults: provide only the fields you want to override. New keys are appended as custom commands. Entries that omit 'command' are treated as pure notification-routing overrides (useful for non-monitoring notification types).",
       "examples": [
         [
           {
-            "title": "Detect calls to deprecated API versions",
-            "key": "LEGACYAPI",
-            "command": "sf hardis:org:diagnose:legacyapi",
-            "frequency": "weekly"
+            "key": "AUDIT_TRAIL",
+            "frequency": "weekly",
+            "frequencyDay": "monday",
+            "notifications": {
+              "messaging": "warning",
+              "email": {
+                "threshold": "error",
+                "recipients": [
+                  "security@company.com"
+                ],
+                "replaceRecipients": true
+              },
+              "api": "log"
+            }
+          },
+          {
+            "key": "LICENSES",
+            "frequency": "monthly",
+            "frequencyDayOfMonth": 1
+          },
+          {
+            "key": "ORG_LIMITS",
+            "frequency": "off"
           },
           {
             "title": "My custom command",
             "key": "MY_CUSTOM_KEY",
             "command": "sf my:custom:command",
-            "frequency": "daily"
+            "frequency": "biweekly"
           }
         ]
       ],
@@ -1782,37 +1958,83 @@
         "$id": "#/properties/monitoringCommands/items",
         "type": "object",
         "additionalProperties": false,
-        "description": "Monitoring command",
+        "description": "Monitoring command entry. May be a full custom command (key + title + command) or an override targeting a built-in default by key.",
         "properties": {
           "key": {
             "$id": "#/properties/monitoringCommands/items/properties/key",
-            "description": "Unique identifier of the monitoring command. Can be used with monitoringDisable",
+            "description": "Unique identifier of the monitoring command or notification type. Matches a built-in key to override its settings, or defines a new custom key.",
             "title": "Key",
             "type": "string"
           },
           "title": {
             "$id": "#/properties/monitoringCommands/items/properties/title",
-            "description": "Title of the command (will appear in logs)",
+            "description": "Title of the command (will appear in logs).",
             "title": "Title",
             "type": "string"
           },
           "command": {
             "$id": "#/properties/monitoringCommands/items/properties/command",
-            "description": "Bash command to run",
+            "description": "Bash command to run. Omit for routing-only overrides (used to tune notifications without running anything).",
             "title": "Command",
             "type": "string"
           },
           "frequency": {
             "$id": "#/properties/monitoringCommands/items/properties/frequency",
-            "description": "daily or weekly",
+            "description": "How often the command runs. 'off' skips the command unless --force-all (or MONITORING_IGNORE_FREQUENCY=true) is set.",
             "title": "Frequency",
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "daily",
+              "weekly",
+              "biweekly",
+              "monthly",
+              "off"
+            ],
+            "enumNames": [
+              "Daily",
+              "Weekly",
+              "Biweekly (every other week)",
+              "Monthly",
+              "Off"
+            ]
+          },
+          "frequencyDay": {
+            "$id": "#/properties/monitoringCommands/items/properties/frequencyDay",
+            "description": "Day of the week the command runs when frequency is 'weekly' or 'biweekly'. Defaults to 'saturday'.",
+            "title": "Frequency day of week",
+            "type": "string",
+            "enum": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday",
+              "sunday"
+            ],
+            "enumNames": [
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday",
+              "Saturday",
+              "Sunday"
+            ]
+          },
+          "frequencyDayOfMonth": {
+            "$id": "#/properties/monitoringCommands/items/properties/frequencyDayOfMonth",
+            "description": "Day of the month the command runs when frequency is 'monthly'. Defaults to 1. Values larger than the number of days in the current month are clamped to the last day.",
+            "title": "Frequency day of month",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 31,
+            "default": 1
+          },
+          "notifications": {
+            "$ref": "#/definitions/notification_channel_config"
           }
-        },
-        "required": [
-          "title",
-          "command"
-        ]
+        }
       },
       "title": "Monitoring commands",
       "type": "array"
@@ -1877,46 +2099,6 @@
         "https://my.msteams.webhook.url"
       ],
       "title": "MsTeams WebHook Url (ALL)",
-      "type": "string"
-    },
-    "msTeamsWebhookUrlCritical": {
-      "$id": "#/properties/msTeamsWebhookUrlCritical",
-      "default": "",
-      "description": "Url of the Ms Teams channel Web Hook that can be used to send CRITICAL notifications",
-      "examples": [
-        "https://my.msteams.webhook.url"
-      ],
-      "title": "MsTeams WebHook Url (CRITICAL)",
-      "type": "string"
-    },
-    "msTeamsWebhookUrlSevere": {
-      "$id": "#/properties/msTeamsWebhookUrlSevere",
-      "default": "",
-      "description": "Url of the Ms Teams channel Web Hook that can be used to send SEVERE notifications",
-      "examples": [
-        "https://my.msteams.webhook.url"
-      ],
-      "title": "MsTeams WebHook Url (SEVERE)",
-      "type": "string"
-    },
-    "msTeamsWebhookUrlWarning": {
-      "$id": "#/properties/msTeamsWebhookUrlWarning",
-      "default": "",
-      "description": "Url of the Ms Teams channel Web Hook that can be used to send WARNING notifications",
-      "examples": [
-        "https://my.msteams.webhook.url"
-      ],
-      "title": "MsTeams WebHook Url (WARNING)",
-      "type": "string"
-    },
-    "msTeamsWebhookUrlInfo": {
-      "$id": "#/properties/msTeamsWebhookUrlInfo",
-      "default": "",
-      "description": "Url of the Ms Teams channel Web Hook that can be used to send INFO notifications",
-      "examples": [
-        "https://my.msteams.webhook.url"
-      ],
-      "title": "MsTeams WebHook Url (INFO)",
       "type": "string"
     },
     "newTaskNameRegex": {

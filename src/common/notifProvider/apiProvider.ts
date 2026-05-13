@@ -2,7 +2,7 @@ import { Connection, SfError } from "@salesforce/core";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils/index.js";
-import type { NotifMessage, NotifSeverity } from "./types.js";
+import type { NotificationChannel, NotifMessage, NotifSeverity } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 
@@ -28,6 +28,10 @@ export class ApiProvider extends NotifProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis Api connector";
+  }
+
+  public getChannel(): NotificationChannel {
+    return "api";
   }
 
   // Always send notifications to API endpoint

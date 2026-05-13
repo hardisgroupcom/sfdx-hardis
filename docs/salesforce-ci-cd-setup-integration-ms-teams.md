@@ -41,6 +41,22 @@ Create a Teams Workflow using the following steps:
 
 That's all, you're all set !
 
+## Per notification type severity threshold
+
+Microsoft Teams belongs to the `messaging` channel (shared with Slack). You can raise the minimum severity required to post a notification on this channel per notification type, directly in `.sfdx-hardis.yml`:
+
+```yaml
+monitoringCommands:
+  - key: AUDIT_TRAIL
+    notifications:
+      messaging: warning   # Teams/Slack only on warning, error, critical
+  - key: METADATA_STATUS
+    notifications:
+      messaging: off       # mute Teams/Slack for this type
+```
+
+See [Monitoring configuration](salesforce-monitoring-config-home.md#fine-grained-routing-per-notification-type) for the full per-channel routing model.
+
 ## Alternative: Email Notifications
 
 If you prefer email-based notifications, you can also use [Email Notifications](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-email/) with the Teams Channel Email as `NOTIF_EMAIL_ADDRESS`.

@@ -4,6 +4,10 @@
 ## Description
 
 
+## DEPRECATED
+
+**This command is deprecated. Use `sf hardis:work:backpromote` instead.**
+
 ## Command Behavior
 
 **Refreshes your local Git branch and Salesforce org with the latest content from another Git branch.**
@@ -54,16 +58,16 @@ Required flags: none beyond `--agent` (uses project defaults).
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| nopull<br/>-n     | boolean | No scratch pull before save (careful if you use that!)        |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|nopull<br/>-n|boolean|No scratch pull before save (careful if you use that!)||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.integci|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

@@ -108,9 +108,10 @@ deploymentApexTestClasses:
 
 ### Dynamic deployment items / Overwrite management
 
-If necessary,you can define the following files (that supports wildcards <members>*</members>):
+If necessary,you can define the following files:
 
 - `manifest/package-no-overwrite.xml`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org).
+  - Supports `<members>*</members>` (all members of a type), exact names, and glob-style patterns such as `<members>*__dlm</members>` or `<members>Prod_*</members>`.
   - Can be overridden for a branch using .sfdx-hardis.yml property **packageNoOverwritePath** or environment variable PACKAGE_NO_OVERWRITE_PATH (for example, define: `packageNoOverwritePath: manifest/package-no-overwrite-main.xml` in config file `config/.sfdx-hardis.main.yml`)
 - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
@@ -192,11 +193,11 @@ commandsPostDeploy:
 
 If some words are found **in the Pull Request description**, special behaviors will be applied
 
-| Word                                 | Behavior                                                                                                                                                                              |
-|:-------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| NO_DELTA                             | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request                                                                        |
-| PURGE_FLOW_VERSIONS                  | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
-| DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package                                                  |
+| Word | Behavior |
+| :--- | :--- |
+| NO_DELTA | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request |
+| PURGE_FLOW_VERSIONS | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
+| DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package |
 
 You can also override some `.sfdx-hardis.yml` properties directly in the Pull Request description using YAML blocks. Supported keys: `deploymentApexTestClasses`, `commandsPreDeploy`, `commandsPostDeploy`.
 
@@ -296,21 +297,21 @@ In agent mode:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                             | Default | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                   |         |          |         |
-| check<br/>-c      | boolean | Only checks the deployment, there is no impact on target org            |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                         |         |          |         |
-| delta             | boolean | Applies sfdx-git-delta to package.xml before other deployment processes |         |          |         |
-| flags-dir         | option  | undefined                                                               |         |          |         |
-| json              | boolean | Format output as json.                                                  |         |          |         |
-| packagexml<br/>-p | option  | Path to package.xml containing what you want to deploy in target org    |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|check<br/>-c|boolean|Only checks the deployment, there is no impact on target org||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|delta|boolean|Applies sfdx-git-delta to package.xml before other deployment processes||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|packagexml<br/>-p|option|Path to package.xml containing what you want to deploy in target org||||
 |runtests<br/>-r|option|If testlevel=RunSpecifiedTests, please provide a list of classes.
 If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
 |source-branch|option|Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)||||
 |target-branch|option|Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername)||||
-|target-org<br/>-o|option|undefined||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.integci|||
 |testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg|
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 

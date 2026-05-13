@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): Fine-grained monitoring configuration. `monitoringCommands` user entries are now merged by `key` onto built-in defaults so you can override one field without restating the whole entry. Frequency accepts `daily | weekly | biweekly | monthly | off` with optional `frequencyDay` (monday..sunday) and `frequencyDayOfMonth` (1-31, clamped to last day of month). Each entry can declare a `notifications` block with per-channel severity thresholds (`messaging` for Slack/Teams, `email`, `api`). The email channel also accepts an object form with explicit `recipients` and `replaceRecipients` to redirect a notification type to a dedicated mailing list.
 - Configuration: Add `manualActionsMode` (`externalFile` default / `sfdxHardis`) and `orgAuthenticationMode` (`encryptedCert` default / `secretsOnly`) JSON schema properties so the VS Code extension can suppress pipeline-view warnings when manual actions are managed within sfdx-hardis or when org authentication relies solely on CI/CD secrets variables.
 - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): When `manualActionsMode` is `sfdxHardis`, display a dedicated message and send a `openPipelinePullRequest` WebSocket event so the VS Code extension opens the DevOps Pipeline panel for the current pull request instead of warning about a missing external actions file.
 - Configuration: Add `availableTargetBranchesLabels` JSON schema property + default values for common branch names

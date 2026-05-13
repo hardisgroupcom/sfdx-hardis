@@ -1,0 +1,206 @@
+import { getConfig } from "../../config/index.js";
+import type {
+  EmailChannelConfig,
+  EmailChannelObject,
+  MonitoringCommandEntry,
+  MonitoringFrequency,
+  NotificationChannel,
+  NotificationChannelConfig,
+  NotificationThreshold,
+  NotifSeverity,
+  Weekday,
+} from "./types.js";
+import { notificationDefaults } from "./notificationDefaults.js";
+
+const WEEKDAY_INDEX: Record<Weekday, number> = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
+
+const DEFAULT_WEEKLY_DAY: Weekday = "saturday";
+const DEFAULT_MONTHLY_DAY = 1;
+
+const SEVERITY_RANK: Record<NotifSeverity, number> = {
+  log: 0,
+  success: 1,
+  info: 2,
+  warning: 3,
+  error: 4,
+  critical: 5,
+};
+
+const DEFAULT_CHANNEL_THRESHOLD: Record<NotificationChannel, NotificationThreshold> = {
+  messaging: "info",
+  email: "info",
+  api: "log",
+};
+
+export function severityMeetsThreshold(severity: NotifSeverity, threshold: NotificationThreshold): boolean {
+  if (threshold === "off") {
+    return false;
+  }
+  return SEVERITY_RANK[severity] >= SEVERITY_RANK[threshold];
+}
+
+export function isEmailChannelObject(value: EmailChannelConfig | undefined): value is EmailChannelObject {
+  return typeof value === "object" && value !== null;
+}
+
+export function getChannelThreshold(
+  config: NotificationChannelConfig,
+  channel: NotificationChannel,
+): NotificationThreshold {
+  if (channel === "email") {
+    const emailConfig = config.email;
+    if (isEmailChannelObject(emailConfig)) {
+      return emailConfig.threshold ?? DEFAULT_CHANNEL_THRESHOLD.email;
+    }
+    return emailConfig ?? DEFAULT_CHANNEL_THRESHOLD.email;
+  }
+  return config[channel] ?? DEFAULT_CHANNEL_THRESHOLD[channel];
+}
+
+export function getEmailRecipientsConfig(config: NotificationChannelConfig): {
+  recipients: string[];
+  replace: boolean;
+} {
+  const emailConfig = config.email;
+  if (!isEmailChannelObject(emailConfig)) {
+    return { recipients: [], replace: false };
+  }
+  return {
+    recipients: emailConfig.recipients ?? [],
+    replace: emailConfig.replaceRecipients === true,
+  };
+}
+
+export async function getEffectiveNotificationConfig(notifType: string): Promise<NotificationChannelConfig> {
+  const defaults = notificationDefaults[notifType] ?? {};
+  const userConfig = await getConfig("user");
+  const userEntries: MonitoringCommandEntry[] = userConfig.monitoringCommands ?? [];
+  const userEntry = userEntries.find((entry) => entry?.key === notifType);
+  const userNotifications = userEntry?.notifications ?? {};
+  return mergeNotificationConfig(defaults, userNotifications);
+}
+
+export function mergeNotificationConfig(
+  base: NotificationChannelConfig,
+  override: NotificationChannelConfig,
+): NotificationChannelConfig {
+  const merged: NotificationChannelConfig = { ...base };
+  if (override.messaging !== undefined) {
+    merged.messaging = override.messaging;
+  }
+  if (override.api !== undefined) {
+    merged.api = override.api;
+  }
+  if (override.email !== undefined) {
+    if (isEmailChannelObject(override.email)) {
+      const baseEmail = base.email;
+      const baseEmailObject: EmailChannelObject = isEmailChannelObject(baseEmail)
+        ? baseEmail
+        : baseEmail !== undefined
+          ? { threshold: baseEmail }
+          : {};
+      merged.email = {
+        threshold: override.email.threshold ?? baseEmailObject.threshold,
+        recipients: override.email.recipients ?? baseEmailObject.recipients,
+        replaceRecipients: override.email.replaceRecipients ?? baseEmailObject.replaceRecipients,
+      };
+    } else {
+      merged.email = override.email;
+    }
+  }
+  return merged;
+}
+
+function getDaysInMonth(date: Date): number {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+}
+
+// ISO week number, used to anchor biweekly scheduling. Two commands sharing the same frequencyDay
+// fire on the same calendar weeks (even ISO weeks) so cadence is predictable.
+function getIsoWeek(date: Date): number {
+  const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = tmp.getUTCDay() || 7;
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+  return Math.ceil(((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
+export interface ScheduleEvaluation {
+  shouldRun: boolean;
+  reasonKey?: "skippedCommandFrequencyOff" | "skippedCommandWeeklyFrequency" | "skippedCommandBiweeklyFrequency" | "skippedCommandMonthlyFrequency";
+}
+
+export function shouldRunCommandNow(
+  command: { frequency?: MonitoringFrequency; frequencyDay?: Weekday; frequencyDayOfMonth?: number },
+  now: Date = new Date(),
+): ScheduleEvaluation {
+  const frequency: MonitoringFrequency = command.frequency ?? "daily";
+  if (frequency === "off") {
+    return { shouldRun: false, reasonKey: "skippedCommandFrequencyOff" };
+  }
+  if (frequency === "daily") {
+    return { shouldRun: true };
+  }
+  if (frequency === "weekly") {
+    const targetDay = WEEKDAY_INDEX[command.frequencyDay ?? DEFAULT_WEEKLY_DAY];
+    return now.getDay() === targetDay
+      ? { shouldRun: true }
+      : { shouldRun: false, reasonKey: "skippedCommandWeeklyFrequency" };
+  }
+  if (frequency === "biweekly") {
+    const targetDay = WEEKDAY_INDEX[command.frequencyDay ?? DEFAULT_WEEKLY_DAY];
+    const isAnchorWeek = getIsoWeek(now) % 2 === 0;
+    return now.getDay() === targetDay && isAnchorWeek
+      ? { shouldRun: true }
+      : { shouldRun: false, reasonKey: "skippedCommandBiweeklyFrequency" };
+  }
+  if (frequency === "monthly") {
+    const configuredDay = command.frequencyDayOfMonth ?? DEFAULT_MONTHLY_DAY;
+    const daysInMonth = getDaysInMonth(now);
+    const effectiveDay = Math.min(Math.max(configuredDay, 1), daysInMonth);
+    return now.getDate() === effectiveDay
+      ? { shouldRun: true }
+      : { shouldRun: false, reasonKey: "skippedCommandMonthlyFrequency" };
+  }
+  return { shouldRun: true };
+}
+
+export function resolveMonitoringCommands<T extends MonitoringCommandEntry>(
+  defaults: readonly T[],
+  userEntries: readonly MonitoringCommandEntry[] | undefined,
+): T[] {
+  const entries = Array.isArray(userEntries) ? userEntries : [];
+  const result: T[] = [];
+  const seenKeys = new Set<string>();
+  for (const def of defaults) {
+    const override = entries.find((entry) => entry?.key === def.key);
+    if (override) {
+      const mergedNotifications =
+        def.notifications || override.notifications
+          ? mergeNotificationConfig(def.notifications ?? {}, override.notifications ?? {})
+          : undefined;
+      const merged = { ...def, ...override } as T;
+      if (mergedNotifications) {
+        merged.notifications = mergedNotifications;
+      }
+      result.push(merged);
+    } else {
+      result.push(def);
+    }
+    seenKeys.add(def.key);
+  }
+  for (const entry of entries) {
+    if (entry?.key && !seenKeys.has(entry.key)) {
+      result.push(entry as T);
+    }
+  }
+  return result;
+}
