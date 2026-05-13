@@ -105,6 +105,10 @@ See [Create a Pull Request using Azure](salesforce-ci-cd-pull-request-azure.md)
 
 See [Create a Pull Request using Github](salesforce-ci-cd-pull-request-github.md)
 
+### Using Bitbucket
+
+See [Create a Pull Request using Bitbucket](salesforce-ci-cd-pull-request-bitbucket.md)
+
 ## Check merge request results
 
 After you create your merge request, check the results of its control jobs: [see how to handle merge request results](salesforce-ci-cd-handle-merge-request-results.md).

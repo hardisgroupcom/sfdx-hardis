@@ -107,6 +107,7 @@ nav:
               - On Gitlab: salesforce-ci-cd-merge-request-gitlab.md
               - On Azure: salesforce-ci-cd-pull-request-azure.md
               - On Github: salesforce-ci-cd-pull-request-github.md
+              - On Bitbucket: salesforce-ci-cd-pull-request-bitbucket.md
           - Check Pull Request results:
               - Merge Request results Home: salesforce-ci-cd-handle-merge-request-results.md
               - Solve deployment errors: salesforce-ci-cd-solve-deployment-errors.md
