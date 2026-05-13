@@ -540,6 +540,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 |Command|Title|
 |:------|:----------|
 |[**hardis:config:get**](hardis/config/get.md)||
+|[**hardis:config:monitoring-defaults**](hardis/config/monitoring-defaults.md)||
 
 ### hardis:datacloud
 

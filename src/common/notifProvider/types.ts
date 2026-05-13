@@ -50,14 +50,15 @@ export interface NotifButton {
 
 export interface NotifMessage {
   text: string;
-  // Whenever a new type is added here, also add it to:
-  //   - src/common/notifProvider/notificationDefaults.ts (routing defaults: messaging/email/api thresholds)
-  //   - config/sfdx-hardis.jsonschema.json definitions.enum_notification_types
-  // If the new type is emitted by a new monitoring sub-command, also add an entry to:
-  //   - MonitorAll.monitoringCommandsDefault in src/commands/hardis/org/monitor/all.ts
-  //   - config/sfdx-hardis.jsonschema.json definitions.enum_monitoring_commands
-  // Existing installations pick up new types automatically as long as users have not explicitly
-  // overridden the same key in their .sfdx-hardis.yml monitoringCommands array.
+  // Adding a new notification type? The .claude/skills/monitoring-notifications/SKILL.md file
+  // lists every place that needs to change. Quick summary:
+  //   - src/common/notifProvider/notificationDefaults.ts -- routing defaults (messaging/email/api thresholds)
+  //   - src/common/monitoring/monitoringDefaults.ts -- notificationOnlyTypes (if NOT a monitoring command key)
+  //                                                    or monitoringCommandsDefault (if it IS a command)
+  //   - src/i18n/*.json -- notifTypeTitle<PascalCaseKey> + notifTypeDesc<PascalCaseKey> in ALL 9 locales
+  //   - config/sfdx-hardis.jsonschema.json -- enum_notification_types (always) and enum_monitoring_commands (if a command)
+  // Existing installations pick up new types automatically except for fields a user has explicitly
+  // overridden in their .sfdx-hardis.yml monitoringCommands array.
   type:
   | "ACTIVE_USERS"
   | "ACTIVE_USERS_CRM_WEEKLY"
