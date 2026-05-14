@@ -71,6 +71,7 @@ The data is assembled in \`getMonitoringConfigDefaults()\` (\`src/common/monitor
   };
 
   public static requiresProject = false;
+  public static disableWebsocket = true;
 
   public async run(): Promise<AnyJson> {
     await this.parse(ConfigMonitoringDefaults);
