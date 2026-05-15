@@ -16,7 +16,7 @@ import { generateMonitoringPptxReport } from '../../../../common/utils/monitorin
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { resolveMonitoringCommands, shouldRunCommandNow } from '../../../../common/notifProvider/notificationConfig.js';
-import { monitoringCommandsDefault } from '../../../../common/monitoring/monitoringDefaults.js';
+import { getTitleI18nKey, monitoringCommandsDefault } from '../../../../common/monitoring/monitoringDefaults.js';
 import type { MonitoringCommandEntry } from '../../../../common/notifProvider/types.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -147,7 +147,8 @@ ${this.getDefaultCommandsMarkdown()}
         continue;
       }
       const commandDocUrl = `${CONSTANTS.DOC_URL_ROOT}/${cmd.command.split(" ")[1].replaceAll(":", "/")}`;
-      mdLines.push(`| [${cmd.key}](${commandDocUrl}) | ${cmd.title} | [${cmd.command}](${commandDocUrl}) | ${cmd.frequency} |`);
+      const title = cmd.title ?? t(getTitleI18nKey(cmd.key));
+      mdLines.push(`| [${cmd.key}](${commandDocUrl}) | ${title} | [${cmd.command}](${commandDocUrl}) | ${cmd.frequency} |`);
     }
     return mdLines.join("\n");
   }

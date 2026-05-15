@@ -54,13 +54,13 @@ Touch these files, in this order. The new command will be picked up on every exi
    ```ts
    {
      key: 'YOUR_NEW_COMMAND',
-     title: 'Short imperative title',
      command: 'sf hardis:your:new:command',
      frequency: 'weekly',
      // frequencyDay: 'monday',           // optional
      // frequencyDayOfMonth: 1,           // optional, monthly only
    }
    ```
+   Do not set a hardcoded `title` -- the title is resolved at runtime from the `notifTypeTitle<PascalCaseKey>` i18n key (see step 5).
 
 2. **`src/common/notifProvider/types.ts`** -- add `'YOUR_NEW_COMMAND'` to the `NotifMessageType` union (alphabetical-ish, but matching neighbours is fine) **and** add a matching entry to `NOTIFICATION_TYPE_CATEGORY` assigning it to one of the seven categories. The record is typed `Record<NotifMessageType, NotificationCategory>` so the compiler enforces this. If the new key is a monitoring command that aggregates multiple notification types (like `APEX_FLOW_ERRORS`), add it to `monitoringOnlyCategoryOverrides` in `monitoringDefaults.ts` instead.
 
@@ -72,7 +72,7 @@ Touch these files, in this order. The new command will be picked up on every exi
    - `notifTypeTitle<PascalCaseKey>` -- short label shown in the configuration UI.
    - `notifTypeDesc<PascalCaseKey>` -- one-line explanation.
    - PascalCase conversion: `YOUR_NEW_COMMAND` -> `YourNewCommand`; `UNUSED_USERS_CRM_6_MONTHS` -> `UnusedUsersCrm6Months`.
-   - The `title` field on the `monitoringCommandsDefault` entry is the source for the existing English title -- copy it into `notifTypeTitle...` in `en.json`.
+   - `notifTypeTitle...` is the single source of truth for the title (the docs table generator in `monitor:all` resolves it via `t(getTitleI18nKey(cmd.key))`). Write a short imperative phrase, and wrap the most informative noun phrase in `**...**` so it stands out in UIs that render markdown (e.g. `"Detect if **org limits** are close to be reached"`).
    - Follow `.claude/rules/translations.md` for the other 8 locales. Each locale file has its own sort convention (see existing entries); `pt-BR.json` uses case-insensitive ordering, the others use case-sensitive.
 
 6. **In the new command's source file** -- when calling `NotifProvider.postNotifications(...)`, set `type: 'YOUR_NEW_COMMAND'`. Pick the right `severity` per case (it interacts with the threshold filter, so emit `warning`/`error` only when you really want to push to messaging by default).
