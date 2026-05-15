@@ -261,12 +261,12 @@ const FREQUENCY_DAYS: Weekday[] = [
   "sunday",
 ];
 const SEVERITY_THRESHOLDS: NotificationThreshold[] = [
-  "log",
-  "success",
-  "info",
-  "warning",
-  "error",
   "critical",
+  "error",
+  "warning",
+  "info",
+  "success",
+  "log",
   "off",
 ];
 const CHANNELS: NotificationChannel[] = ["messaging", "email", "api"];
