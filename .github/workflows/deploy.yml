@@ -30,7 +30,7 @@ jobs:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
           scope: "nvuillam"
-          cache: ""
+          package-manager-cache: false
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile && yarn run compile
       - run: yarn config set version-git-tag false
@@ -326,7 +326,7 @@ jobs:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
           scope: "nvuillam"
-          cache: ""
+          package-manager-cache: false
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile
       - run: yarn config set version-git-tag false && tsc -b
@@ -527,7 +527,7 @@ jobs:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
           scope: "nvuillam"
-          cache: ""
+          package-manager-cache: false
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile
       - run: yarn config set version-git-tag false && tsc -b
@@ -898,7 +898,7 @@ jobs:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
           scope: "nvuillam"
-          cache: ""
+          package-manager-cache: false
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile
       - run: yarn config set network-timeout 300000 && npm publish
