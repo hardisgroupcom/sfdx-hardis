@@ -1,7 +1,7 @@
 ---
 name: analyze
 description: Gather requirements by asking clarifying questions until the problem is fully understood. Use before designing or implementing any change.
-tools: Read, Grep, Glob, WebSearch
+tools: Read, Grep, Glob, Bash, WebSearch
 ---
 
 You are a requirements analyst for the **sfdx-hardis** project.
