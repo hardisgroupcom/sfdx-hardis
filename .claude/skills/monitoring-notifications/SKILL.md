@@ -24,7 +24,9 @@ Most monitoring commands emit a single notification type whose key matches the c
 | Monitoring commands (key, title, command, frequency) | `src/common/monitoring/monitoringDefaults.ts` -> `monitoringCommandsDefault` | Array of `MonitoringCommandEntry`. Iterated by `monitor:all` on every run.                                                                                          |
 | Notification-only types (no associated command)      | `src/common/monitoring/monitoringDefaults.ts` -> `notificationOnlyTypes`     | Drives the configuration UI payload.                                                                                                                                |
 | Per-channel routing defaults                         | `src/common/notifProvider/notificationDefaults.ts` -> `notificationDefaults` | Keyed by `NotifMessage.type`. Per-key map of `{ messaging?, email?, api? }` thresholds. Missing channels fall back to `messaging: info`, `email: info`, `api: log`. |
-| Notification type union                              | `src/common/notifProvider/types.ts` -> `NotifMessage.type`                   | The TypeScript union. Maintainer comment at the top lists everywhere to update.                                                                                     |
+| Notification type union                              | `src/common/notifProvider/types.ts` -> `NotifMessageType`                    | The TypeScript union. Maintainer comment in `NotifMessage` lists everywhere to update.                                                                              |
+| Notification type -> category mapping                | `src/common/notifProvider/types.ts` -> `NOTIFICATION_TYPE_CATEGORY`          | `Record<NotifMessageType, NotificationCategory>` -- exhaustive, so a new union member without a category is a compile error.                                        |
+| Category list (titles + order)                       | `src/common/notifProvider/types.ts` -> `NOTIFICATION_CATEGORIES`             | The 7 categories rendered as sections in the configuration UI (`orgActivity`, `userActivity`, `apexTestsSecurity`, `orgInfo`, `technicalDebt`, `licensesPackages`, `other`). |
 
 ## User override model
 
@@ -60,7 +62,7 @@ Touch these files, in this order. The new command will be picked up on every exi
    }
    ```
 
-2. **`src/common/notifProvider/types.ts`** -- add `'YOUR_NEW_COMMAND'` to the `NotifMessage.type` union (alphabetical-ish, but matching neighbours is fine).
+2. **`src/common/notifProvider/types.ts`** -- add `'YOUR_NEW_COMMAND'` to the `NotifMessageType` union (alphabetical-ish, but matching neighbours is fine) **and** add a matching entry to `NOTIFICATION_TYPE_CATEGORY` assigning it to one of the seven categories. The record is typed `Record<NotifMessageType, NotificationCategory>` so the compiler enforces this. If the new key is a monitoring command that aggregates multiple notification types (like `APEX_FLOW_ERRORS`), add it to `monitoringOnlyCategoryOverrides` in `monitoringDefaults.ts` instead.
 
 3. **`src/common/notifProvider/notificationDefaults.ts`** -- add a `notificationDefaults['YOUR_NEW_COMMAND']` entry with the default per-channel thresholds. Default pattern: `{ messaging: 'warning', email: 'error', api: 'log' }` for issues to act on; `{ messaging: 'info', email: 'warning', api: 'log' }` for informational reports. Always include `api: 'log'` unless there's a reason not to (the API/Grafana provider expects to receive everything).
 
@@ -83,7 +85,7 @@ You usually do **not** need to touch `src/commands/hardis/org/monitor/all.ts` --
 
 For notification types emitted outside `monitor:all` (e.g. `BACKUP`, `DEPLOYMENT`, `DORA_REPORT`):
 
-1. **`src/common/notifProvider/types.ts`** -- add the type to the `NotifMessage.type` union.
+1. **`src/common/notifProvider/types.ts`** -- add the type to the `NotifMessageType` union **and** add an entry to `NOTIFICATION_TYPE_CATEGORY` (exhaustiveness check will fail compilation if you forget).
 2. **`src/common/notifProvider/notificationDefaults.ts`** -- add a default routing entry.
 3. **`src/common/monitoring/monitoringDefaults.ts`** -- append the key to `notificationOnlyTypes` so the configuration UI command surfaces it.
 4. **`config/sfdx-hardis.jsonschema.json`** -- add the key to `definitions.enum_notification_types`. Do **not** add it to `enum_monitoring_commands` (it isn't a command).
@@ -119,10 +121,14 @@ The VS Code extension reads defaults via the read-only `hardis:config:monitoring
       "description": "...",    // translated
       "command": "sf hardis:...",      // monitoringCommand only
       "frequency": "daily",            // monitoringCommand only
+      "category": "orgActivity",       // foreign key to categories[]
       "frequencyDay": "saturday",      // optional
       "frequencyDayOfMonth": 1,        // optional
       "notifications": { "messaging": "warning", "email": "error", "api": "log" }
     }
+  ],
+  "categories": [
+    { "key": "orgActivity", "title": "Org Activity", "description": "...", "order": 1 }
   ],
   "options": {
     "frequencies": ["daily","weekly","biweekly","monthly","off"],

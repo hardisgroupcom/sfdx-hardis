@@ -18,7 +18,8 @@ export default class ConfigMonitoringDefaults extends SfCommand<any> {
 
 The payload contains:
 
-- One **entry per configurable key** (monitoring commands and standalone notification types), with translated \`title\` and \`description\`, the default \`frequency\` / scheduling fields (when applicable), and the default per-channel severity thresholds (\`messaging\`, \`email\`, \`api\`).
+- One **entry per configurable key** (monitoring commands and standalone notification types), with translated \`title\` and \`description\`, a \`category\` foreign key, the default \`frequency\` / scheduling fields (when applicable), and the default per-channel severity thresholds (\`messaging\`, \`email\`, \`api\`).
+- The list of **categories** used to group entries in configuration UIs (\`orgActivity\`, \`userActivity\`, \`apexTestsSecurity\`, \`orgInfo\`, \`technicalDebt\`, \`licensesPackages\`, \`other\`), each with a translated \`title\`, \`description\`, and a stable \`order\`.
 - The **option lists** the UI can use to populate dropdowns: supported frequencies, weekdays, severity thresholds, and channel names.
 
 This command is **read-only**, requires no Salesforce org, and produces no notifications. It does not read \`.sfdx-hardis.yml\` -- callers are expected to read the user configuration file directly and merge it on top of the returned defaults using the same merge-by-key semantics as the runtime.
@@ -40,7 +41,8 @@ The data is assembled in \`getMonitoringConfigDefaults()\` (\`src/common/monitor
 
 - Each entry in \`monitoringCommandsDefault\` becomes a \`monitoringCommand\` entry with its scheduling fields and resolved notification thresholds (looked up in \`notificationDefaults\`).
 - Each notification type emitted outside of \`monitor:all\` (BACKUP, DEPLOYMENT, RELEASE_NOTES, MONITORING_SUMMARY, etc.) becomes a \`notificationType\` entry with just the routing thresholds.
-- Titles and descriptions are resolved via \`t()\` using keys named \`notifTypeTitle<PascalCaseKey>\` and \`notifTypeDesc<PascalCaseKey>\`. The active language is governed by the \`SFDX_HARDIS_LANG\` environment variable.
+- Every entry is assigned to one of the seven categories via a static mapping; the resolver throws if a new key is introduced without a category.
+- Titles and descriptions are resolved via \`t()\` using keys named \`notifTypeTitle<PascalCaseKey>\` / \`notifTypeDesc<PascalCaseKey>\` for entries and \`notifCategoryTitle<PascalCaseKey>\` / \`notifCategoryDesc<PascalCaseKey>\` for categories. The active language is governed by the \`SFDX_HARDIS_LANG\` environment variable.
 - Channel thresholds fall back to \`messaging: info\`, \`email: info\`, \`api: log\` when a key has no entry in \`notificationDefaults\`.
 </details>
 `;

@@ -1,11 +1,17 @@
 import type {
   MonitoringCommandEntry,
   MonitoringFrequency,
+  NotificationCategory,
   NotificationChannel,
   NotificationThreshold,
   NotifMessage,
+  NotifMessageType,
   NotifSeverity,
   Weekday,
+} from "../notifProvider/types.js";
+import {
+  NOTIFICATION_CATEGORIES,
+  NOTIFICATION_TYPE_CATEGORY,
 } from "../notifProvider/types.js";
 import { notificationDefaults } from "../notifProvider/notificationDefaults.js";
 import { isEmailChannelObject } from "../notifProvider/notificationConfig.js";
@@ -209,6 +215,41 @@ export function getDescriptionI18nKey(key: string): string {
   return `notifTypeDesc${toPascalSlug(key)}`;
 }
 
+// Converts a category key like "orgActivity" to the PascalCase slug used in i18n keys.
+function toCategoryPascalSlug(key: string): string {
+  return key.length ? key[0].toUpperCase() + key.slice(1) : "";
+}
+
+export function getCategoryTitleI18nKey(key: string): string {
+  return `notifCategoryTitle${toCategoryPascalSlug(key)}`;
+}
+
+export function getCategoryDescriptionI18nKey(key: string): string {
+  return `notifCategoryDesc${toCategoryPascalSlug(key)}`;
+}
+
+// Resolves the category for a monitoring command or notification type.
+// The single source of truth is NOTIFICATION_TYPE_CATEGORY in notifProvider/types.ts; this wrapper
+// adds a runtime guard for monitoring command keys that are NOT in the NotifMessage type union
+// (currently APEX_FLOW_ERRORS, which aggregates APEX_ERROR + FLOW_ERROR notifications).
+const monitoringOnlyCategoryOverrides: Record<string, NotificationCategory> = {
+  APEX_FLOW_ERRORS: "orgActivity",
+};
+
+function resolveCategory(key: string): NotificationCategory {
+  const override = monitoringOnlyCategoryOverrides[key];
+  if (override) {
+    return override;
+  }
+  const category = NOTIFICATION_TYPE_CATEGORY[key as NotifMessageType];
+  if (!category) {
+    throw new Error(
+      `Missing category mapping for monitoring/notification key "${key}". Add it to NOTIFICATION_TYPE_CATEGORY in src/common/notifProvider/types.ts, or to monitoringOnlyCategoryOverrides in src/common/monitoring/monitoringDefaults.ts if the key is not a NotifMessage type.`,
+    );
+  }
+  return category;
+}
+
 const FREQUENCIES: MonitoringFrequency[] = ["daily", "weekly", "biweekly", "monthly", "off"];
 const FREQUENCY_DAYS: Weekday[] = [
   "monday",
@@ -251,6 +292,7 @@ export interface MonitoringConfigEntry {
   kind: "monitoringCommand" | "notificationType";
   title: string;
   description: string;
+  category: NotificationCategory;
   command?: string;
   frequency?: MonitoringFrequency;
   frequencyDay?: Weekday;
@@ -258,8 +300,16 @@ export interface MonitoringConfigEntry {
   notifications: Record<NotificationChannel, NotificationThreshold>;
 }
 
+export interface MonitoringConfigCategory {
+  key: NotificationCategory;
+  title: string;
+  description: string;
+  order: number;
+}
+
 export interface MonitoringConfigDefaultsPayload {
   entries: MonitoringConfigEntry[];
+  categories: MonitoringConfigCategory[];
   options: {
     frequencies: MonitoringFrequency[];
     frequencyDays: Weekday[];
@@ -277,6 +327,7 @@ export function getMonitoringConfigDefaults(): MonitoringConfigDefaultsPayload {
       kind: "monitoringCommand",
       title: t(getTitleI18nKey(cmd.key)),
       description: t(getDescriptionI18nKey(cmd.key)),
+      category: resolveCategory(cmd.key),
       command: cmd.command,
       frequency: cmd.frequency,
       frequencyDay: cmd.frequencyDay,
@@ -295,12 +346,21 @@ export function getMonitoringConfigDefaults(): MonitoringConfigDefaultsPayload {
       kind: "notificationType",
       title: t(getTitleI18nKey(key)),
       description: t(getDescriptionI18nKey(key)),
+      category: resolveCategory(key),
       notifications: resolveDefaultThresholds(key),
     });
   }
 
+  const categories: MonitoringConfigCategory[] = NOTIFICATION_CATEGORIES.map((cat) => ({
+    key: cat.key,
+    title: t(getCategoryTitleI18nKey(cat.key)),
+    description: t(getCategoryDescriptionI18nKey(cat.key)),
+    order: cat.order,
+  }));
+
   return {
     entries,
+    categories,
     options: {
       frequencies: FREQUENCIES,
       frequencyDays: FREQUENCY_DAYS,

@@ -48,18 +48,8 @@ export interface NotifButton {
   style?: "primary" | "danger";
 }
 
-export interface NotifMessage {
-  text: string;
-  // Adding a new notification type? The .claude/skills/monitoring-notifications/SKILL.md file
-  // lists every place that needs to change. Quick summary:
-  //   - src/common/notifProvider/notificationDefaults.ts -- routing defaults (messaging/email/api thresholds)
-  //   - src/common/monitoring/monitoringDefaults.ts -- notificationOnlyTypes (if NOT a monitoring command key)
-  //                                                    or monitoringCommandsDefault (if it IS a command)
-  //   - src/i18n/*.json -- notifTypeTitle<PascalCaseKey> + notifTypeDesc<PascalCaseKey> in ALL 9 locales
-  //   - config/sfdx-hardis.jsonschema.json -- enum_notification_types (always) and enum_monitoring_commands (if a command)
-  // Existing installations pick up new types automatically except for fields a user has explicitly
-  // overridden in their .sfdx-hardis.yml monitoringCommands array.
-  type:
+// Notification type union: every member must also have an entry in NOTIFICATION_TYPE_CATEGORY below.
+export type NotifMessageType =
   | "ACTIVE_USERS"
   | "ACTIVE_USERS_CRM_WEEKLY"
   | "ACTIVE_USERS_EXPERIENCE_MONTHLY"
@@ -97,6 +87,90 @@ export interface NotifMessage {
   | "DORA_REPORT"
   | "MONITORING_SUMMARY"
   | "RELEASE_NOTES";
+
+// Categories used to group notification types in configuration UIs.
+// Order here drives the rendering order in the monitoring-defaults payload.
+export type NotificationCategory =
+  | "orgActivity"
+  | "userActivity"
+  | "apexTestsSecurity"
+  | "orgInfo"
+  | "technicalDebt"
+  | "licensesPackages"
+  | "other";
+
+export const NOTIFICATION_CATEGORIES: { key: NotificationCategory; order: number }[] = [
+  { key: "orgActivity", order: 1 },
+  { key: "userActivity", order: 2 },
+  { key: "apexTestsSecurity", order: 3 },
+  { key: "orgInfo", order: 4 },
+  { key: "technicalDebt", order: 5 },
+  { key: "licensesPackages", order: 6 },
+  { key: "other", order: 7 },
+];
+
+// Maps every notification type to its category. Typing as Record<NotifMessageType, NotificationCategory>
+// makes this exhaustive: adding a new type to NotifMessageType without an entry here is a compile error.
+export const NOTIFICATION_TYPE_CATEGORY: Record<NotifMessageType, NotificationCategory> = {
+  // orgActivity
+  AUDIT_TRAIL: "orgActivity",
+  LEGACY_API: "orgActivity",
+  APEX_FLEX_QUEUE: "orgActivity",
+  APEX_ERROR: "orgActivity",
+  FLOW_ERROR: "orgActivity",
+  BACKUP: "orgActivity",
+  DEPLOYMENT: "orgActivity",
+  DEPLOYMENTS: "orgActivity",
+  // userActivity
+  ACTIVE_USERS: "userActivity",
+  ACTIVE_USERS_CRM_WEEKLY: "userActivity",
+  ACTIVE_USERS_EXPERIENCE_MONTHLY: "userActivity",
+  UNUSED_USERS: "userActivity",
+  UNUSED_USERS_CRM_6_MONTHS: "userActivity",
+  UNUSED_USERS_EXPERIENCE_6_MONTHS: "userActivity",
+  // apexTestsSecurity
+  APEX_TESTS: "apexTestsSecurity",
+  ORG_HEALTH_CHECK: "apexTestsSecurity",
+  UNSECURED_CONNECTED_APPS: "apexTestsSecurity",
+  // orgInfo
+  ORG_INFO: "orgInfo",
+  ORG_LIMITS: "orgInfo",
+  RELEASE_UPDATES: "orgInfo",
+  // technicalDebt
+  APEX_API_VERSION: "technicalDebt",
+  CONNECTED_APPS: "technicalDebt",
+  LINT_ACCESS: "technicalDebt",
+  METADATA_STATUS: "technicalDebt",
+  MISSING_ATTRIBUTES: "technicalDebt",
+  UNUSED_APEX_CLASSES: "technicalDebt",
+  UNUSED_METADATAS: "technicalDebt",
+  // licensesPackages
+  LICENSES: "licensesPackages",
+  UNUSED_LICENSES: "licensesPackages",
+  UNDERUSED_PERMSETS: "licensesPackages",
+  MINIMAL_PERMSETS: "licensesPackages",
+  // other
+  AGENTFORCE_CONVERSATIONS: "other",
+  AGENTFORCE_FEEDBACK: "other",
+  DORA_REPORT: "other",
+  MONITORING_SUMMARY: "other",
+  RELEASE_NOTES: "other",
+  SERVICENOW_REPORT: "other",
+};
+
+export interface NotifMessage {
+  text: string;
+  // Adding a new notification type? The .claude/skills/monitoring-notifications/SKILL.md file
+  // lists every place that needs to change. Quick summary:
+  //   - src/common/notifProvider/types.ts -- add to NotifMessageType union AND NOTIFICATION_TYPE_CATEGORY mapping
+  //   - src/common/notifProvider/notificationDefaults.ts -- routing defaults (messaging/email/api thresholds)
+  //   - src/common/monitoring/monitoringDefaults.ts -- notificationOnlyTypes (if NOT a monitoring command key)
+  //                                                    or monitoringCommandsDefault (if it IS a command)
+  //   - src/i18n/*.json -- notifTypeTitle<PascalCaseKey> + notifTypeDesc<PascalCaseKey> in ALL 9 locales
+  //   - config/sfdx-hardis.jsonschema.json -- enum_notification_types (always) and enum_monitoring_commands (if a command)
+  // Existing installations pick up new types automatically except for fields a user has explicitly
+  // overridden in their .sfdx-hardis.yml monitoringCommands array.
+  type: NotifMessageType;
   buttons?: NotifButton[];
   attachments?: any[];
   severity: NotifSeverity;
