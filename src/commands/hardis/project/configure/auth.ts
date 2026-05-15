@@ -262,11 +262,13 @@ prompts
     const sslGenOptions = {
       targetUsername: devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername(),
     };
-    await generateSSLCertificate(certName, certFolder, this, orgConn, sslGenOptions);
+    const sslResult = await generateSSLCertificate(certName, certFolder, this, orgConn, sslGenOptions);
 
     uxLog("action", this, c.green(t('branchSuccessfullyConfiguredForAuthentication', { devHub: devHub ? '(DevHub)' : branchName })));
     uxLog("warning", this, c.yellow(t('makeSureYouHaveSetTheEnvironment')));
-    uxLog("warning", this, c.yellow(t('dontForgetToCommitConfigAndCertKey')));
+    if (sslResult?.mode !== 'caSigned') {
+      uxLog("warning", this, c.yellow(t('dontForgetToCommitConfigAndCertKey')));
+    }
 
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };

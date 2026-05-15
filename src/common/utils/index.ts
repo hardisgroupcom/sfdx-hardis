@@ -388,7 +388,23 @@ export async function selectGitBranch(
 
 export async function gitCheckOutRemote(branchName: string) {
   await git().checkout(branchName);
-  await gitPull();
+  try {
+    await gitPull();
+  } catch (error: any) {
+    const errorStr = (error?.message || error?.toString() || '');
+    // Fallback when the local branch has no upstream tracking: pull explicitly from origin, then set upstream
+    if (/no tracking information/i.test(errorStr) || /no upstream/i.test(errorStr)) {
+      uxLog("warning", this, c.yellow(t('gitPullNoUpstreamFallback', { branchName })));
+      await gitPull(['origin', branchName]);
+      try {
+        await git().branch([`--set-upstream-to=origin/${branchName}`, branchName]);
+      } catch {
+        // Best-effort: tracking setup failure should not break the checkout
+      }
+    } else {
+      throw error;
+    }
+  }
 }
 
 // Helper function to detect git authentication errors
@@ -1558,6 +1574,33 @@ export async function generateSSLCertificate(
   conn: any,
   options: any
 ) {
+  // Ask the user whether sfdx-hardis should generate a self-signed certificate, or whether they want
+  // to use their own CA-signed certificate (in that case, the External Client App must be created manually).
+  if (!isCI && !isAgentMode()) {
+    const certSourceResponse = await prompts({
+      type: 'select',
+      name: 'value',
+      message: c.cyanBright(t('howDoYouWantToProvideCertificate')),
+      description: t('descHowDoYouWantToProvideCertificate'),
+      choices: [
+        {
+          title: t('titleSelfSignedCertificate'),
+          value: 'selfSigned',
+          description: t('descSelfSignedCertificate'),
+        },
+        {
+          title: t('titleCaSignedCertificate'),
+          value: 'caSigned',
+          description: t('descCaSignedCertificate'),
+        },
+      ],
+      initial: 0,
+    });
+    if (certSourceResponse.value === 'caSigned') {
+      await configureCaSignedCertificate(branchName, commandThis);
+      return { mode: 'caSigned' as const };
+    }
+  }
   uxLog("action", commandThis, c.cyan(t('generatingSslCertificate')));
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
@@ -2070,6 +2113,38 @@ export async function generateSSLCertificate(
       c.grey(t('configureCiVariableClientKey', { branchNameUpper: branchName.toUpperCase(), encryptionKey: c.green(encryptionKey) }))
     );
   }
+  return { mode: 'selfSigned' as const };
+}
+
+// Bring-your-own CA-signed certificate flow.
+// sfdx-hardis does NOT generate the cert, does NOT create the External Client App, and does NOT
+// touch the repo or CI variables. The user is fully in charge of:
+//   1) creating the External Client App manually in Setup (with their CA-signed certificate
+//      uploaded as Digital Signature, and the CI user's profile pre-authorized),
+//   2) setting SFDX_CLIENT_ID_<ALIAS> and SFDX_CLIENT_CERT_<ALIAS> CI/CD variables
+//      (raw PEM key, no encryption, no SFDX_CLIENT_KEY_<ALIAS> needed).
+// We just show the instructions and point at the documentation.
+async function configureCaSignedCertificate(branchName: string, commandThis: any) {
+  const aliasUpper = branchName.toUpperCase();
+  const clientIdVar = `SFDX_CLIENT_ID_${aliasUpper}`;
+  const clientCertVar = `SFDX_CLIENT_CERT_${aliasUpper}`;
+  const docUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/#use-a-ca-signed-certificate`;
+
+  uxLog("action", commandThis, c.cyan(t('caSignedConfigureForBranch', { branchName: c.bold(branchName) })));
+  uxLog("log", commandThis, c.grey(t('caSignedManualEcaInstructions')));
+  uxLog("action", commandThis, c.cyan(t('caSignedSetCiVariables')));
+  uxLog(
+    "log",
+    commandThis,
+    c.grey(
+      `- ${c.green(c.bold(clientIdVar))}: Consumer Key of the External Client App\n- ${c.green(c.bold(clientCertVar))}: full PEM content of your private key (including BEGIN/END lines)`
+    )
+  );
+  uxLog("log", commandThis, c.grey(c.yellow(t('helpToConfigureCiCdVariablesUrl', { url: docUrl }))));
+
+  WebSocketClient.sendReportFileMessage(docUrl, t('helpToConfigureCiVariables'), 'docUrl');
+
+  uxLog("action", commandThis, c.green(t('caSignedConfigurationComplete', { branchName })));
 }
 
 export async function isMonitoringJob() {

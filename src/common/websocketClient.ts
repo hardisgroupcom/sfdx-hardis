@@ -217,6 +217,11 @@ static sendMessage(data: any) {
     WebSocketClient.sendMessage({ event: 'refreshPipeline' });
   }
 
+  // Opens the DevOps Pipeline panel and shows the new PR modal for the given branches
+  static sendOpenPipelinePullRequestMessage(currentBranch: string, targetBranch: string) {
+    WebSocketClient.sendMessage({ event: 'openPipelinePullRequest', currentBranch, targetBranch });
+  }
+
   static sendRefreshDataWorkbenchMessage() {
     WebSocketClient.sendMessage({ event: 'refreshDataWorkbench' });
   }
