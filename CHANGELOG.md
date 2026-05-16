@@ -13,7 +13,7 @@
 - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): Report now includes a reason column showing why each API client was flagged (e.g. `SOAP login`, `REST API v3.0`).
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): Fix checkout failure when the parent branch has no upstream tracking.
 - CI/CD authentication: support bring-your-own CA-signed certificate (issue [#1900](https://github.com/hardisgroupcom/sfdx-hardis/issues/1900)).
-- Disable flavor suggestions in the default MegaLinter configuration.
+- Disable flavor suggestions in the default MegaLinter configuration (not needed).
 
 ## [7.13.0] 2026-05-10
 
