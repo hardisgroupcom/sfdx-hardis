@@ -94,6 +94,7 @@
     "langsmith": "0.7.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@oclif/plugin-command-snapshot": "5.3.16",
     "@salesforce/cli-plugins-testkit": "5.3.50",
     "@salesforce/dev-config": "4.3.2",
@@ -116,12 +117,15 @@
     "@types/ws": "8.18.1",
     "@types/xml2js": "0.4.14",
     "c8": "^11.0.0",
+    "eslint": "^10.4.0",
     "eslint-plugin-sf-plugin": "1.20.33",
+    "globals": "^17.6.0",
     "oclif": "4.23.0",
     "tmp": "0.2.5",
     "ts-node": "10.9.2",
     "tsx": "^4.22.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.59.3"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -264,7 +268,7 @@
         "src/**/*.ts",
         "test/**/*.ts",
         "messages/**",
-        "**/.eslint*",
+        "eslint.config.mjs",
         "**/tsconfig.json"
       ],
       "output": []
