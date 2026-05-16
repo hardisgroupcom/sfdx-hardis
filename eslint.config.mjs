@@ -1,13 +1,23 @@
 import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import globals from 'globals';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
 
-export default tseslint.config(
+const mochaGlobals = {
+  describe: 'readonly',
+  it: 'readonly',
+  before: 'readonly',
+  after: 'readonly',
+  beforeEach: 'readonly',
+  afterEach: 'readonly',
+  context: 'readonly',
+  specify: 'readonly',
+};
+
+export default [
   {
     ignores: ['**/*.cjs/'],
   },
   js.configs.recommended,
-  ...tseslint.configs.recommended,
+  ...tsPlugin.configs['flat/recommended'],
   {
     linterOptions: {
       reportUnusedDisableDirectives: 'off',
@@ -30,10 +40,7 @@ export default tseslint.config(
   {
     files: ['test/**/*.{ts,cjs,js}'],
     languageOptions: {
-      globals: {
-        ...globals.mocha,
-        ...globals.node,
-      },
+      globals: mochaGlobals,
     },
     rules: {
       'no-unused-expressions': 'off',
@@ -43,5 +50,5 @@ export default tseslint.config(
       '@typescript-eslint/require-await': 'off',
       header: 'off',
     },
-  }
-);
+  },
+];

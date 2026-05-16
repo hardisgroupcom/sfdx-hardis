@@ -99,6 +99,8 @@
     "@salesforce/cli-plugins-testkit": "5.3.50",
     "@salesforce/dev-config": "4.3.2",
     "@salesforce/dev-scripts": "10.2.12",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
     "@types/adm-zip": "0.5.7",
     "@types/columnify": "1.5.4",
     "@types/cosmiconfig": "6.0.3",
@@ -119,13 +121,11 @@
     "c8": "^11.0.0",
     "eslint": "^10.4.0",
     "eslint-plugin-sf-plugin": "1.20.33",
-    "globals": "^17.6.0",
     "oclif": "4.23.0",
     "tmp": "0.2.5",
     "ts-node": "10.9.2",
     "tsx": "^4.22.0",
-    "typescript": "5.9.3",
-    "typescript-eslint": "^8.59.3"
+    "typescript": "5.9.3"
   },
   "engines": {
     "node": ">=20.0.0"
