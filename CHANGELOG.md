@@ -2,18 +2,24 @@
 
 ## [beta] (main)
 
-- [hardis:config:get](https://sfdx-hardis.cloudity.com/hardis/config/get/), [hardis:config:monitoring-defaults](https://sfdx-hardis.cloudity.com/hardis/config/monitoring-defaults/), [hardis:cache:clear](https://sfdx-hardis.cloudity.com/hardis/cache/clear/): Faster startup - WebSocket client is no longer initialized for these CLI-only commands.
-- [hardis:auth:login](https://sfdx-hardis.cloudity.com/hardis/auth/login/) / [hardis:org:connect](https://sfdx-hardis.cloudity.com/hardis/org/connect/): Fix silent failure when the browser window is closed or the login times out during web authentication.
-- [hardis:config:monitoring-defaults](https://sfdx-hardis.cloudity.com/hardis/config/monitoring-defaults/): New command returning the built-in monitoring and notification defaults, used by configuration UIs such as the VS Code sfdx-hardis extension.
-- [hardis:config:monitoring-defaults](https://sfdx-hardis.cloudity.com/hardis/config/monitoring-defaults/): Payload now groups each entry under a translated category (Org Activity, User Activity, Apex Tests & Security, Org Info, Technical Debt, Licenses & Packages, Other) so configuration UIs can render notification types as sections.
-- [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): Override individual monitoring command fields without restating the full entry, set frequency (`daily | weekly | biweekly | monthly | off`), and configure per-channel notification thresholds including dedicated email recipients per notification type.
-- Configuration: New `manualActionsMode` and `orgAuthenticationMode` options to suppress irrelevant pipeline-view warnings in the VS Code extension.
-- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): When `manualActionsMode` is `sfdxHardis`, open the DevOps Pipeline panel in VS Code directly instead of showing a missing manual actions file warning.
-- Configuration: New `availableTargetBranchesLabels` option to customize branch name labels in the UI.
-- [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): Report now includes a reason column showing why each API client was flagged (e.g. `SOAP login`, `REST API v3.0`).
-- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): Fix checkout failure when the parent branch has no upstream tracking.
-- CI/CD authentication: support bring-your-own CA-signed certificate (issue [#1900](https://github.com/hardisgroupcom/sfdx-hardis/issues/1900)).
-- Disable flavor suggestions in the default MegaLinter configuration (not needed).
+- Features
+  - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): Override individual monitoring command fields without restating the full entry, set frequency (`daily | weekly | biweekly | monthly | off`), and configure per-channel notification thresholds including dedicated email recipients per notification type.
+  - [hardis:config:monitoring-defaults](https://sfdx-hardis.cloudity.com/hardis/config/monitoring-defaults/): New command returning the built-in monitoring and notification defaults, used by configuration UIs such as the VS Code sfdx-hardis extension. The payload now groups each entry under a translated category (Org Activity, User Activity, Apex Tests & Security, Org Info, Technical Debt, Licenses & Packages, Other) so configuration UIs can render notification types as sections, and startup is faster because the WebSocket client is no longer initialized for this CLI-only command.
+  - Configuration: New `manualActionsMode` and `orgAuthenticationMode` options to suppress irrelevant pipeline-view warnings in the VS Code extension.
+  - Configuration: New `availableTargetBranchesLabels` option to customize branch name labels in the UI.
+  - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): Report now includes a reason column showing why each API client was flagged (e.g. `SOAP login`, `REST API v3.0`).
+  - CI/CD authentication: support bring-your-own CA-signed certificate (issue [#1900](https://github.com/hardisgroupcom/sfdx-hardis/issues/1900)).
+
+- Fixes
+  - [hardis:auth:login](https://sfdx-hardis.cloudity.com/hardis/auth/login/) / [hardis:org:connect](https://sfdx-hardis.cloudity.com/hardis/org/connect/): Fix silent failure when the browser window is closed or the login times out during web authentication.
+  - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): When `manualActionsMode` is `sfdxHardis`, open the DevOps Pipeline panel in VS Code directly instead of showing a missing manual actions file warning.
+  - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): Fix checkout failure when the parent branch has no upstream tracking.
+
+- Performance
+  - [hardis:config:get](https://sfdx-hardis.cloudity.com/hardis/config/get/) and [hardis:cache:clear](https://sfdx-hardis.cloudity.com/hardis/cache/clear/): Faster startup - WebSocket client is no longer initialized for these CLI-only commands.
+
+- CI
+  - Disable flavor suggestions in the default MegaLinter configuration (not needed).
 
 ## [7.13.0] 2026-05-10
 
