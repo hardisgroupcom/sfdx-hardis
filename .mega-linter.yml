@@ -1,15 +1,28 @@
-# Configuration file for Mega-Linter
-# See all available variables at https://megalinter.io/latest/config-file/ and in linters documentation
+# Configuration file for MegaLinter
+#
+# See all available variables at https://megalinter.io/latest/config-file/ and in
+# linters documentation
+---
+# all, none, or list of linter keys
+APPLY_FIXES: all
 
-APPLY_FIXES: all # all, none, or list of linter keys
-DEFAULT_BRANCH: main # Usually master or main
-# ENABLE: # If you use ENABLE variable, all other languages/formats/tooling-formats will be disabled by default
-# ENABLE_LINTERS: # If you use ENABLE_LINTERS variable, all other linters will be disabled by default
+# Usually master or main
+DEFAULT_BRANCH: main
+
+# If you use ENABLE variable, all other languages/formats/tooling-formats will
+# be disabled by default
+# ENABLE:
+
+# If you use ENABLE_LINTERS variable, all other linters will be disabled by
+# default
+# ENABLE_LINTERS:
+
 DISABLE:
   - CSS
   - EDITORCONFIG
   - HTML
   - JAVASCRIPT
+
 DISABLE_LINTERS:
   - BASH_EXEC
   - JSON_JSONLINT
@@ -29,12 +42,15 @@ DISABLE_LINTERS:
   - YAML_PRETTIER
   - YAML_YAMLLINT
   - XML_XMLLINT
+
 DISABLE_ERRORS_LINTERS:
   - JSON_V8R
   - REPOSITORY_GRYPE
   - SPELL_LYCHEE
+
 ACTION_ZIZMOR_UNSECURED_ENV_VARIABLES:
   - GITHUB_TOKEN
+
 GITHUB_STATUS_REPORTER: false
 MARKDOWN_MARKDOWN_LINK_CHECK_FILTER_REGEX_EXCLUDE: (README\.md)
 BASH_SHELLCHECK_FILTER_REGEX_EXCLUDE: (husky)
@@ -55,16 +71,22 @@ SPELL_LYCHEE_UNSECURED_ENV_VARIABLES:
 SPELL_FILTER_REGEX_EXCLUDE: "Dockerfile(-.+)?"
 
 REPORTERS_MARKDOWN_SUMMARY_TYPE: table-sections
+
 # LLM Advisor
 LLM_ADVISOR_LEVEL: ERROR
 
 # Choose your provider and model
-LLM_PROVIDER: google # openai, anthropic, google, huggingface, mistral, deepseek, grok, ollama
+# openai, anthropic, google, huggingface, mistral, deepseek, grok, ollama
+LLM_PROVIDER: google
 LLM_MODEL_NAME: gemini-2.5-flash
 LLM_MAX_TOKENS: "10000"
 LLM_TEMPERATURE: "0.1"
+
 ADDITIONAL_EXCLUDED_DIRECTORIES:
   - .wireit
   - node_modules
   - lib
   - megalinter-reports
+
+# Uncomment if you want MegaLinter to detect errors but not block CI to pass
+# DISABLE_ERRORS: true

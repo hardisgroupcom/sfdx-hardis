@@ -20,6 +20,7 @@
 
 - CI
   - Disable flavor suggestions in the default MegaLinter configuration (not needed).
+  - Upgrade to MegaLinter v9
 
 ## [7.13.0] 2026-05-10
 
