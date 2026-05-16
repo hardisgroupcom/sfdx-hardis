@@ -1,5 +1,8 @@
-import js from '@eslint/js';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const js = require('@eslint/js');
+const tsPlugin = require('@typescript-eslint/eslint-plugin');
 
 const mochaGlobals = {
   describe: 'readonly',
