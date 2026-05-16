@@ -31,7 +31,7 @@
     "cloudflare": "4.5.0",
     "cosmiconfig": "9.0.1",
     "cross-spawn": "7.0.6",
-    "csv-stringify": "6.6.0",
+    "csv-stringify": "6.7.0",
     "debug": "4.4.3",
     "diff": "8.0.3",
     "dotenv": "16.6.1",
