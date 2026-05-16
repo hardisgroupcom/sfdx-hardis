@@ -40,7 +40,7 @@ jobs:
         id: ml
         # You can override Mega-Linter flavor used to have faster performances
         # More info at https://megalinter.io/latest/flavors/
-        uses: oxsecurity/megalinter/flavors/javascript@beta # zizmor: ignore[unpinned-uses,ref-confusion]
+        uses: oxsecurity/megalinter/flavors/javascript@v9 # zizmor: ignore[unpinned-uses,ref-confusion]
         env:
           # All available variables are described in documentation
           # https://megalinter.io/latest/config-file/
