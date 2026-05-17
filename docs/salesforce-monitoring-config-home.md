@@ -67,16 +67,22 @@ All you need to configure sfdx-hardis Org Monitoring is a **GitHub**, **Gitlab**
 
 For a better user experience, it is highly recommended to configure notifications !
 
-- [Slack instructions](salesforce-ci-cd-setup-integration-slack.md)
-- [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md)
-- [Email instructions](salesforce-ci-cd-setup-integration-email.md)
-- [Grafana instructions](salesforce-ci-cd-setup-integration-api.md) (example: for Grafana Loki integration)
+You can wire any combination of the following targets - they are fully independent and can be enabled in parallel:
 
-sfdx-hardis groups notification targets into three channels:
+- [Slack instructions](salesforce-ci-cd-setup-integration-slack.md) -- post to one or several Slack channels (global, branch-scoped, errors-only)
+- [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md) -- post to Teams channels via incoming webhooks
+- [Email instructions](salesforce-ci-cd-setup-integration-email.md) -- send to any recipient list, with per-notification-type overrides
+- [API / Grafana instructions](salesforce-ci-cd-setup-integration-api.md) -- stream logs and Prometheus metrics to Grafana Loki, Prometheus, or any HTTP endpoint (used to build [Grafana dashboards](salesforce-ci-cd-setup-integration-api.md#grafana-setup))
+
+sfdx-hardis groups these targets into three channels, and you can configure each channel independently per notification type:
 
 - **messaging** -- Slack and Microsoft Teams
 - **email** -- email recipients
 - **api** -- the sfdx-hardis API / metrics provider (e.g. Grafana Loki, Prometheus). The `api` channel is always sent when configured, unless explicitly set to `off`.
+
+The full configuration (frequency, per-channel severity thresholds, custom commands) can be edited from the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) UI, or directly in `.sfdx-hardis.yml`:
+
+![](assets/images/monitoring-config-2026.gif)
 
 ### Fine-grained routing per notification type
 
