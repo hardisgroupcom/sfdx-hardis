@@ -200,6 +200,36 @@ describe('getMonitoringConfigDefaults()', () => {
     }
   });
 
+  it('does not reference SLDS icon names that do not exist in @salesforce-ux/design-system', () => {
+    // These names look plausible but are NOT shipped in the SLDS utility icon set, so vscode
+    // renders them as blank. Verified against
+    // node_modules/@salesforce-ux/design-system/assets/icons/utility/ in vscode-sfdx-hardis.
+    const knownMissing = new Set([
+      'utility:variation',
+      'utility:health_check',
+      'utility:gauge',
+      'utility:dashboard',
+      'utility:feedback',
+    ]);
+    const offenders: string[] = [];
+    for (const entry of payload.notificationConfig) {
+      if (knownMissing.has(entry.icon)) {
+        offenders.push(`notification "${entry.key}" -> "${entry.icon}"`);
+      }
+    }
+    for (const cmd of payload.monitoringCommands) {
+      if (knownMissing.has(cmd.icon)) {
+        offenders.push(`command "${cmd.key}" -> "${cmd.icon}"`);
+      }
+    }
+    for (const cat of payload.categories) {
+      if (knownMissing.has(cat.icon)) {
+        offenders.push(`category "${cat.key}" -> "${cat.icon}"`);
+      }
+    }
+    expect(offenders, 'unknown SLDS icon names').to.be.empty;
+  });
+
   it('exposes an SLDS icon on every notificationConfig and monitoringCommands entry', () => {
     const sldsPattern = /^(utility|standard|action|custom|doctype):[a-z0-9_]+$/;
     for (const entry of payload.notificationConfig) {
@@ -210,7 +240,7 @@ describe('getMonitoringConfigDefaults()', () => {
     }
     // Specific regression: MONITORING_SUMMARY had no icon before.
     const summary = payload.notificationConfig.find((n) => n.key === 'MONITORING_SUMMARY');
-    expect(summary?.icon, 'MONITORING_SUMMARY must carry an icon').to.equal('utility:dashboard');
+    expect(summary?.icon, 'MONITORING_SUMMARY must carry an icon').to.equal('utility:summarydetail');
   });
 
   it('keeps every per-channel default within the matching availableThresholds list', () => {

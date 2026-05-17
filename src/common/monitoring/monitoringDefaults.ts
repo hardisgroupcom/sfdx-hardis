@@ -37,7 +37,7 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     frequency: "daily",
     notificationTypes: ["LEGACY_API"],
     category: "orgActivity",
-    icon: "utility:variation",
+    icon: "utility:deprecate",
   },
   {
     key: "ORG_LIMITS",
@@ -45,7 +45,7 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     frequency: "daily",
     notificationTypes: ["ORG_LIMITS"],
     category: "orgInfo",
-    icon: "utility:gauge",
+    icon: "utility:metrics",
   },
   {
     key: "APEX_FLEX_QUEUE",
@@ -165,7 +165,7 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     frequency: "weekly",
     notificationTypes: ["ORG_HEALTH_CHECK"],
     category: "apexTestsSecurity",
-    icon: "utility:health_check",
+    icon: "utility:heart",
   },
   {
     key: "UNUSED_METADATAS",

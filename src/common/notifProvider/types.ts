@@ -202,7 +202,7 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
   },
   LEGACY_API: {
     category: "orgActivity",
-    icon: "utility:variation",
+    icon: "utility:deprecate",
     colorClass: "legacy",
     emittedSeverities: ["error", "log"],
     defaults: { messaging: "error", email: "error", api: "log" },
@@ -305,7 +305,7 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
   },
   ORG_HEALTH_CHECK: {
     category: "apexTestsSecurity",
-    icon: "utility:health_check",
+    icon: "utility:heart",
     colorClass: "health",
     emittedSeverities: ["error", "warning", "success"],
     defaults: { messaging: "warning", email: "error", api: "log" },
@@ -321,7 +321,7 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
   // orgInfo
   ORG_LIMITS: {
     category: "orgInfo",
-    icon: "utility:gauge",
+    icon: "utility:metrics",
     colorClass: "limits",
     emittedSeverities: ["error", "warning", "log"],
     defaults: { messaging: "warning", email: "error", api: "log" },
@@ -432,7 +432,7 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
   },
   AGENTFORCE_FEEDBACK: {
     category: "other",
-    icon: "utility:feedback",
+    icon: "utility:like",
     colorClass: "tests",
     emittedSeverities: ["warning", "log"],
     defaults: { messaging: "warning", email: "warning", api: "log" },
@@ -446,7 +446,7 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
   },
   MONITORING_SUMMARY: {
     category: "other",
-    icon: "utility:dashboard",
+    icon: "utility:summarydetail",
     colorClass: "backup",
     emittedSeverities: ["info"],
     defaults: { messaging: "info", email: "info", api: "log" },
