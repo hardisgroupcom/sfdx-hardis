@@ -25,17 +25,17 @@ In agent mode:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|commit-after|option|Hash of the commit of the new flow state (will be prompted if not set)||||
-|commit-before|option|Hash of the commit of the previous flow state, or "allStates" (will be prompted if not set)||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|flow|option|Path to flow file (will be prompted if not set)||||
-|json|boolean|Format output as json.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name          |  Type   | Description                                                                                 | Default | Required | Options |
+|:--------------|:-------:|:--------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent         | boolean | Run in non-interactive mode for agents and automation                                       |         |          |         |
+| commit-after  | option  | Hash of the commit of the new flow state (will be prompted if not set)                      |         |          |         |
+| commit-before | option  | Hash of the commit of the previous flow state, or "allStates" (will be prompted if not set) |         |          |         |
+| debug<br/>-d  | boolean | Activate debug mode (more logs)                                                             |         |          |         |
+| flags-dir     | option  | undefined                                                                                   |         |          |         |
+| flow          | option  | Path to flow file (will be prompted if not set)                                             |         |          |         |
+| json          | boolean | Format output as json.                                                                      |         |          |         |
+| skipauth      | boolean | Skip authentication check when a default username is required                               |         |          |         |
+| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                   |         |          |         |
 
 ## Examples
 
