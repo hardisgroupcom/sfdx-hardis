@@ -7802,9 +7802,16 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
             />
         </svg>
     <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a></div><h4>Monitoring commands</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
-<span class="description"><p>List of monitoring commands to run with command hardis:org:monitor:all.<br />
-User entries are merged by 'key' onto the built-in defaults: provide only the fields you want to override. New keys are appended as custom commands. Entries that omit 'command' are treated as pure notification-routing overrides (useful for non-monitoring notification types).</p>
-</span>
+<div class="description collapse" id="collapseDescription_monitoringCommands">
+            <p>List of monitoring commands to run with command hardis:org:monitor:all.<br />
+User entries are merged by 'key' onto the built-in defaults: provide only the fields you want to override. New keys are appended as custom commands. A single command can emit multiple notification types via 'notificationTypes' (e.g. APEX<em>FLOW</em>ERRORS emits both APEX<em>ERROR and FLOW</em>ERROR). Per-channel routing thresholds live on the top-level 'notificationConfig' property, not here.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_monitoringCommands"
+               aria-expanded="false" aria-controls="collapseDescriptionmonitoringCommands"
+            ></a>
+        </div>
         
 
         
@@ -7874,7 +7881,7 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
             />
         </svg>
     <a href="#monitoringCommands_items_key" onclick="anchorLink('monitoringCommands_items_key')">key</a></div><h4>Key</h4><span class="badge badge-dark value-type">Type: string</span><br/>
-<span class="description"><p>Unique identifier of the monitoring command or notification type. Matches a built-in key to override its settings, or defines a new custom key.</p>
+<span class="description"><p>Unique identifier of the monitoring command. Matches a built-in key to override its settings, or defines a new custom key.</p>
 </span>
         
 
@@ -7970,7 +7977,7 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
             />
         </svg>
     <a href="#monitoringCommands_items_command" onclick="anchorLink('monitoringCommands_items_command')">command</a></div><h4>Command</h4><span class="badge badge-dark value-type">Type: string</span><br/>
-<span class="description"><p>Bash command to run. Omit for routing-only overrides (used to tune notifications without running anything).</p>
+<span class="description"><p>Bash command to run.</p>
 </span>
         
 
@@ -8132,18 +8139,18 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
         </div>
     </div>
 </div>
-<div class="accordion" id="accordionmonitoringCommands_items_notifications">
+<div class="accordion" id="accordionmonitoringCommands_items_notificationTypes">
     <div class="card">
-        <div class="card-header" id="headingmonitoringCommands_items_notifications">
+        <div class="card-header" id="headingmonitoringCommands_items_notificationTypes">
             <h2 class="mb-0">
-                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringCommands_items_notifications"
-                        aria-expanded="" aria-controls="monitoringCommands_items_notifications" onclick="setAnchor('#monitoringCommands_items_notifications')"><span class="property-name">notifications</span></button>
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringCommands_items_notificationTypes"
+                        aria-expanded="" aria-controls="monitoringCommands_items_notificationTypes" onclick="setAnchor('#monitoringCommands_items_notificationTypes')"><span class="property-name">notificationTypes</span></button>
             </h2>
         </div>
 
-        <div id="monitoringCommands_items_notifications"
-             class="collapse property-definition-div" aria-labelledby="headingmonitoringCommands_items_notifications"
-             data-parent="#accordionmonitoringCommands_items_notifications">
+        <div id="monitoringCommands_items_notificationTypes"
+             class="collapse property-definition-div" aria-labelledby="headingmonitoringCommands_items_notificationTypes"
+             data-parent="#accordionmonitoringCommands_items_notificationTypes">
             <div class="card-body pl-5">
 
     <div class="breadcrumbs">root
@@ -8167,7 +8174,246 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications" onclick="anchorLink('monitoringCommands_items_notifications')">notifications</a></div><h4>Notification channel config</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+    <a href="#monitoringCommands_items_notificationTypes" onclick="anchorLink('monitoringCommands_items_notificationTypes')">notificationTypes</a></div><h4>Notification types</h4><span class="badge badge-dark value-type">Type: array</span><br/>
+<span class="description"><p>Notification type keys this command can emit. A single command may emit multiple types (e.g. APEX<em>FLOW</em>ERRORS aggregates APEX<em>ERROR + FLOW</em>ERROR). Routing thresholds for those types are configured under the top-level 'notificationConfig' property.</p>
+</span>
+        
+
+        
+        
+
+        <p><span class="badge badge-light restriction unique-items-restriction" id="monitoringCommands_items_notificationTypes_uniqueItems">All items must be unique</span></p> <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="monitoringCommands_items_notificationTypes_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringCommands_items" onclick="anchorLink('monitoringCommands_items')">monitoringCommands items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringCommands_items_notificationTypes" onclick="anchorLink('monitoringCommands_items_notificationTypes')">notificationTypes</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringCommands_items_notificationTypes_items" onclick="anchorLink('monitoringCommands_items_notificationTypes_items')">enum_notification_types</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+
+
+    <div class="enum-value" id="monitoringCommands_items_notificationTypes_items_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"ACTIVE_USERS"</li><li class="list-group-item enum-item">"ACTIVE_USERS_CRM_WEEKLY"</li><li class="list-group-item enum-item">"ACTIVE_USERS_EXPERIENCE_MONTHLY"</li><li class="list-group-item enum-item">"AGENTFORCE_CONVERSATIONS"</li><li class="list-group-item enum-item">"AGENTFORCE_FEEDBACK"</li><li class="list-group-item enum-item">"APEX_API_VERSION"</li><li class="list-group-item enum-item">"APEX_ERROR"</li><li class="list-group-item enum-item">"APEX_FLEX_QUEUE"</li><li class="list-group-item enum-item">"APEX_TESTS"</li><li class="list-group-item enum-item">"AUDIT_TRAIL"</li><li class="list-group-item enum-item">"BACKUP"</li><li class="list-group-item enum-item">"CONNECTED_APPS"</li><li class="list-group-item enum-item">"DEPLOYMENT"</li><li class="list-group-item enum-item">"DEPLOYMENTS"</li><li class="list-group-item enum-item">"DORA_REPORT"</li><li class="list-group-item enum-item">"FLOW_ERROR"</li><li class="list-group-item enum-item">"LEGACY_API"</li><li class="list-group-item enum-item">"LICENSES"</li><li class="list-group-item enum-item">"LINT_ACCESS"</li><li class="list-group-item enum-item">"METADATA_STATUS"</li><li class="list-group-item enum-item">"MINIMAL_PERMSETS"</li><li class="list-group-item enum-item">"MISSING_ATTRIBUTES"</li><li class="list-group-item enum-item">"MONITORING_SUMMARY"</li><li class="list-group-item enum-item">"ORG_HEALTH_CHECK"</li><li class="list-group-item enum-item">"ORG_INFO"</li><li class="list-group-item enum-item">"ORG_LIMITS"</li><li class="list-group-item enum-item">"RELEASE_NOTES"</li><li class="list-group-item enum-item">"RELEASE_UPDATES"</li><li class="list-group-item enum-item">"SERVICENOW_REPORT"</li><li class="list-group-item enum-item">"UNDERUSED_PERMSETS"</li><li class="list-group-item enum-item">"UNSECURED_CONNECTED_APPS"</li><li class="list-group-item enum-item">"UNUSED_APEX_CLASSES"</li><li class="list-group-item enum-item">"UNUSED_LICENSES"</li><li class="list-group-item enum-item">"UNUSED_METADATAS"</li><li class="list-group-item enum-item">"UNUSED_USERS"</li><li class="list-group-item enum-item">"UNUSED_USERS_CRM_6_MONTHS"</li><li class="list-group-item enum-item">"UNUSED_USERS_EXPERIENCE_6_MONTHS"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#monitoringCommands_ex1" aria-controls="monitoringCommands_ex1"></button><div id="monitoringCommands_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;AUDIT_TRAIL&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;frequency&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;weekly&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;frequencyDay&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;monday&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;LICENSES&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;frequency&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;monthly&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;frequencyDayOfMonth&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">1</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;ORG_LIMITS&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;frequency&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;off&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;title&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;My custom command&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;MY_CUSTOM_KEY&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;command&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;sf my:custom:command&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;frequency&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;biweekly&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;notificationTypes&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="s2">&quot;DEPLOYMENT&quot;</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionnotificationConfig">
+    <div class="card">
+        <div class="card-header" id="headingnotificationConfig">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#notificationConfig"
+                        aria-expanded="" aria-controls="notificationConfig" onclick="setAnchor('#notificationConfig')"><span class="property-name">notificationConfig</span></button>
+            </h2>
+        </div>
+
+        <div id="notificationConfig"
+             class="collapse property-definition-div" aria-labelledby="headingnotificationConfig"
+             data-parent="#accordionnotificationConfig">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a></div><h4>Notification routing configuration</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
+<span class="description"><p>Per-notification-type routing configuration. User entries are merged by 'key' onto the built-in defaults defined in src/common/notifProvider/notificationDefaults.ts: provide only the channels you want to override.</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="notificationConfig_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#notificationConfig_items" onclick="anchorLink('notificationConfig_items')">notificationConfig items</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Routing override for a single notification type.</p>
+</span> <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordionnotificationConfig_items_key">
+    <div class="card">
+        <div class="card-header" id="headingnotificationConfig_items_key">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#notificationConfig_items_key"
+                        aria-expanded="" aria-controls="notificationConfig_items_key" onclick="setAnchor('#notificationConfig_items_key')"><span class="property-name">key</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="notificationConfig_items_key"
+             class="collapse property-definition-div" aria-labelledby="headingnotificationConfig_items_key"
+             data-parent="#accordionnotificationConfig_items_key">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#notificationConfig_items" onclick="anchorLink('notificationConfig_items')">notificationConfig items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#notificationConfig_items_key" onclick="anchorLink('notificationConfig_items_key')">key</a></div><h4>Notification type</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<span class="description"><p>Notification type key (must match a value of enum<em>notification</em>types).</p>
+</span>
+
+    <div class="enum-value" id="notificationConfig_items_key_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"ACTIVE_USERS"</li><li class="list-group-item enum-item">"ACTIVE_USERS_CRM_WEEKLY"</li><li class="list-group-item enum-item">"ACTIVE_USERS_EXPERIENCE_MONTHLY"</li><li class="list-group-item enum-item">"AGENTFORCE_CONVERSATIONS"</li><li class="list-group-item enum-item">"AGENTFORCE_FEEDBACK"</li><li class="list-group-item enum-item">"APEX_API_VERSION"</li><li class="list-group-item enum-item">"APEX_ERROR"</li><li class="list-group-item enum-item">"APEX_FLEX_QUEUE"</li><li class="list-group-item enum-item">"APEX_TESTS"</li><li class="list-group-item enum-item">"AUDIT_TRAIL"</li><li class="list-group-item enum-item">"BACKUP"</li><li class="list-group-item enum-item">"CONNECTED_APPS"</li><li class="list-group-item enum-item">"DEPLOYMENT"</li><li class="list-group-item enum-item">"DEPLOYMENTS"</li><li class="list-group-item enum-item">"DORA_REPORT"</li><li class="list-group-item enum-item">"FLOW_ERROR"</li><li class="list-group-item enum-item">"LEGACY_API"</li><li class="list-group-item enum-item">"LICENSES"</li><li class="list-group-item enum-item">"LINT_ACCESS"</li><li class="list-group-item enum-item">"METADATA_STATUS"</li><li class="list-group-item enum-item">"MINIMAL_PERMSETS"</li><li class="list-group-item enum-item">"MISSING_ATTRIBUTES"</li><li class="list-group-item enum-item">"MONITORING_SUMMARY"</li><li class="list-group-item enum-item">"ORG_HEALTH_CHECK"</li><li class="list-group-item enum-item">"ORG_INFO"</li><li class="list-group-item enum-item">"ORG_LIMITS"</li><li class="list-group-item enum-item">"RELEASE_NOTES"</li><li class="list-group-item enum-item">"RELEASE_UPDATES"</li><li class="list-group-item enum-item">"SERVICENOW_REPORT"</li><li class="list-group-item enum-item">"UNDERUSED_PERMSETS"</li><li class="list-group-item enum-item">"UNSECURED_CONNECTED_APPS"</li><li class="list-group-item enum-item">"UNUSED_APEX_CLASSES"</li><li class="list-group-item enum-item">"UNUSED_LICENSES"</li><li class="list-group-item enum-item">"UNUSED_METADATAS"</li><li class="list-group-item enum-item">"UNUSED_USERS"</li><li class="list-group-item enum-item">"UNUSED_USERS_CRM_6_MONTHS"</li><li class="list-group-item enum-item">"UNUSED_USERS_EXPERIENCE_6_MONTHS"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionnotificationConfig_items_notifications">
+    <div class="card">
+        <div class="card-header" id="headingnotificationConfig_items_notifications">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#notificationConfig_items_notifications"
+                        aria-expanded="" aria-controls="notificationConfig_items_notifications" onclick="setAnchor('#notificationConfig_items_notifications')"><span class="property-name">notifications</span></button>
+            </h2>
+        </div>
+
+        <div id="notificationConfig_items_notifications"
+             class="collapse property-definition-div" aria-labelledby="headingnotificationConfig_items_notifications"
+             data-parent="#accordionnotificationConfig_items_notifications">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#notificationConfig_items" onclick="anchorLink('notificationConfig_items')">notificationConfig items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#notificationConfig_items_notifications" onclick="anchorLink('notificationConfig_items_notifications')">notifications</a></div><h4>Notification channel config</h4><span class="badge badge-dark value-type">Type: object</span><br/>
 <span class="description"><p>Per-channel notification routing. 'messaging' covers Slack and Teams. 'api' covers the sfdx-hardis Api / metrics provider (Grafana Loki, Prometheus). When omitted, sensible hardcoded defaults apply.</p>
 </span>
 
@@ -8178,18 +8424,18 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
         
 
         
-<div class="accordion" id="accordionmonitoringCommands_items_notifications_messaging">
+<div class="accordion" id="accordionnotificationConfig_items_notifications_messaging">
     <div class="card">
-        <div class="card-header" id="headingmonitoringCommands_items_notifications_messaging">
+        <div class="card-header" id="headingnotificationConfig_items_notifications_messaging">
             <h2 class="mb-0">
-                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringCommands_items_notifications_messaging"
-                        aria-expanded="" aria-controls="monitoringCommands_items_notifications_messaging" onclick="setAnchor('#monitoringCommands_items_notifications_messaging')"><span class="property-name">messaging</span></button>
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#notificationConfig_items_notifications_messaging"
+                        aria-expanded="" aria-controls="notificationConfig_items_notifications_messaging" onclick="setAnchor('#notificationConfig_items_notifications_messaging')"><span class="property-name">messaging</span></button>
             </h2>
         </div>
 
-        <div id="monitoringCommands_items_notifications_messaging"
-             class="collapse property-definition-div" aria-labelledby="headingmonitoringCommands_items_notifications_messaging"
-             data-parent="#accordionmonitoringCommands_items_notifications_messaging">
+        <div id="notificationConfig_items_notifications_messaging"
+             class="collapse property-definition-div" aria-labelledby="headingnotificationConfig_items_notifications_messaging"
+             data-parent="#accordionnotificationConfig_items_notifications_messaging">
             <div class="card-body pl-5">
 
     <div class="breadcrumbs">root
@@ -8199,32 +8445,32 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items" onclick="anchorLink('monitoringCommands_items')">monitoringCommands items</a>
+    <a href="#notificationConfig_items" onclick="anchorLink('notificationConfig_items')">notificationConfig items</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications" onclick="anchorLink('monitoringCommands_items_notifications')">notifications</a>
+    <a href="#notificationConfig_items_notifications" onclick="anchorLink('notificationConfig_items_notifications')">notifications</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_messaging" onclick="anchorLink('monitoringCommands_items_notifications_messaging')">messaging</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+    <a href="#notificationConfig_items_notifications_messaging" onclick="anchorLink('notificationConfig_items_notifications_messaging')">messaging</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
 <span class="description"><p>Severity threshold for messaging notifications (Slack + Teams).</p>
 </span>
 
-    <div class="enum-value" id="monitoringCommands_items_notifications_messaging_enum">
+    <div class="enum-value" id="notificationConfig_items_notifications_messaging_enum">
             <h4>Must be one of:</h4>
             <ul class="list-group"><li class="list-group-item enum-item">"log"</li><li class="list-group-item enum-item">"success"</li><li class="list-group-item enum-item">"info"</li><li class="list-group-item enum-item">"warning"</li><li class="list-group-item enum-item">"error"</li><li class="list-group-item enum-item">"critical"</li><li class="list-group-item enum-item">"off"</li></ul>
             </div>
@@ -8238,18 +8484,18 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
         </div>
     </div>
 </div>
-<div class="accordion" id="accordionmonitoringCommands_items_notifications_email">
+<div class="accordion" id="accordionnotificationConfig_items_notifications_email">
     <div class="card">
-        <div class="card-header" id="headingmonitoringCommands_items_notifications_email">
+        <div class="card-header" id="headingnotificationConfig_items_notifications_email">
             <h2 class="mb-0">
-                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringCommands_items_notifications_email"
-                        aria-expanded="" aria-controls="monitoringCommands_items_notifications_email" onclick="setAnchor('#monitoringCommands_items_notifications_email')"><span class="property-name">email</span></button>
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#notificationConfig_items_notifications_email"
+                        aria-expanded="" aria-controls="notificationConfig_items_notifications_email" onclick="setAnchor('#notificationConfig_items_notifications_email')"><span class="property-name">email</span></button>
             </h2>
         </div>
 
-        <div id="monitoringCommands_items_notifications_email"
-             class="collapse property-definition-div" aria-labelledby="headingmonitoringCommands_items_notifications_email"
-             data-parent="#accordionmonitoringCommands_items_notifications_email">
+        <div id="notificationConfig_items_notifications_email"
+             class="collapse property-definition-div" aria-labelledby="headingnotificationConfig_items_notifications_email"
+             data-parent="#accordionnotificationConfig_items_notifications_email">
             <div class="card-body pl-5">
 
     <div class="breadcrumbs">root
@@ -8259,44 +8505,44 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items" onclick="anchorLink('monitoringCommands_items')">monitoringCommands items</a>
+    <a href="#notificationConfig_items" onclick="anchorLink('notificationConfig_items')">notificationConfig items</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications" onclick="anchorLink('monitoringCommands_items_notifications')">notifications</a>
+    <a href="#notificationConfig_items_notifications" onclick="anchorLink('notificationConfig_items_notifications')">notifications</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email" onclick="anchorLink('monitoringCommands_items_notifications_email')">email</a></div><br/>
+    <a href="#notificationConfig_items_notifications_email" onclick="anchorLink('notificationConfig_items_notifications_email')">email</a></div><br/>
 <span class="description"><p>Email channel configuration. Either a severity threshold string, or an object combining a threshold with explicit recipients.</p>
-</span><div class="one-of-value" id="monitoringCommands_items_notifications_email_oneOf"><h2 class="handle">
+</span><div class="one-of-value" id="notificationConfig_items_notifications_email_oneOf"><h2 class="handle">
   <label>One of</label>
-</h2><ul class="nav nav-tabs" id="tabsmonitoringCommands_items_notifications_email_oneOf_oneOf" role="tablist"><li class="nav-item">
+</h2><ul class="nav nav-tabs" id="tabsnotificationConfig_items_notifications_email_oneOf_oneOf" role="tablist"><li class="nav-item">
             <a class="nav-link active oneOf-option"
-               id="monitoringCommands_items_notifications_email_oneOf_i0" data-toggle="tab" href="#tab-pane_monitoringCommands_items_notifications_email_oneOf_i0" role="tab"
-               onclick="setAnchor('#monitoringCommands_items_notifications_email_oneOf_i0')"
+               id="notificationConfig_items_notifications_email_oneOf_i0" data-toggle="tab" href="#tab-pane_notificationConfig_items_notifications_email_oneOf_i0" role="tab"
+               onclick="setAnchor('#notificationConfig_items_notifications_email_oneOf_i0')"
             >enum_notification_threshold</a>
         </li><li class="nav-item">
             <a class="nav-link oneOf-option"
-               id="monitoringCommands_items_notifications_email_oneOf_i1" data-toggle="tab" href="#tab-pane_monitoringCommands_items_notifications_email_oneOf_i1" role="tab"
-               onclick="setAnchor('#monitoringCommands_items_notifications_email_oneOf_i1')"
+               id="notificationConfig_items_notifications_email_oneOf_i1" data-toggle="tab" href="#tab-pane_notificationConfig_items_notifications_email_oneOf_i1" role="tab"
+               onclick="setAnchor('#notificationConfig_items_notifications_email_oneOf_i1')"
             >Option 2</a>
         </li></ul>
 <div class="tab-content card"><div class="tab-pane fade card-body active show"
-             id="tab-pane_monitoringCommands_items_notifications_email_oneOf_i0" role="tabpanel">
+             id="tab-pane_notificationConfig_items_notifications_email_oneOf_i0" role="tabpanel">
             
 
     <div class="breadcrumbs">root
@@ -8306,46 +8552,46 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items" onclick="anchorLink('monitoringCommands_items')">monitoringCommands items</a>
+    <a href="#notificationConfig_items" onclick="anchorLink('notificationConfig_items')">notificationConfig items</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications" onclick="anchorLink('monitoringCommands_items_notifications')">notifications</a>
+    <a href="#notificationConfig_items_notifications" onclick="anchorLink('notificationConfig_items_notifications')">notifications</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email" onclick="anchorLink('monitoringCommands_items_notifications_email')">email</a>
+    <a href="#notificationConfig_items_notifications_email" onclick="anchorLink('notificationConfig_items_notifications_email')">email</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf')">oneOf</a>
+    <a href="#notificationConfig_items_notifications_email_oneOf" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf')">oneOf</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf_i0" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf_i0')">enum_notification_threshold</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+    <a href="#notificationConfig_items_notifications_email_oneOf_i0" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf_i0')">enum_notification_threshold</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
 <span class="description"><p>Minimum severity required to send a notification on a channel. 'off' disables the channel for the target notification type. Order from low to high: log, success, info, warning, error, critical.</p>
 </span>
 
-    <div class="enum-value" id="monitoringCommands_items_notifications_email_oneOf_i0_enum">
+    <div class="enum-value" id="notificationConfig_items_notifications_email_oneOf_i0_enum">
             <h4>Must be one of:</h4>
             <ul class="list-group"><li class="list-group-item enum-item">"log"</li><li class="list-group-item enum-item">"success"</li><li class="list-group-item enum-item">"info"</li><li class="list-group-item enum-item">"warning"</li><li class="list-group-item enum-item">"error"</li><li class="list-group-item enum-item">"critical"</li><li class="list-group-item enum-item">"off"</li></ul>
             </div>
@@ -8356,7 +8602,7 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
 
         
         </div><div class="tab-pane fade card-body "
-             id="tab-pane_monitoringCommands_items_notifications_email_oneOf_i1" role="tabpanel">
+             id="tab-pane_notificationConfig_items_notifications_email_oneOf_i1" role="tabpanel">
             
 
     <div class="breadcrumbs">root
@@ -8366,42 +8612,42 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items" onclick="anchorLink('monitoringCommands_items')">monitoringCommands items</a>
+    <a href="#notificationConfig_items" onclick="anchorLink('notificationConfig_items')">notificationConfig items</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications" onclick="anchorLink('monitoringCommands_items_notifications')">notifications</a>
+    <a href="#notificationConfig_items_notifications" onclick="anchorLink('notificationConfig_items_notifications')">notifications</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email" onclick="anchorLink('monitoringCommands_items_notifications_email')">email</a>
+    <a href="#notificationConfig_items_notifications_email" onclick="anchorLink('notificationConfig_items_notifications_email')">email</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf')">oneOf</a>
+    <a href="#notificationConfig_items_notifications_email_oneOf" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf')">oneOf</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf_i1" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf_i1')">item 1</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+    <a href="#notificationConfig_items_notifications_email_oneOf_i1" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf_i1')">item 1</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
  <span class="badge badge-info no-additional">No Additional Properties</span>
         
 
@@ -8409,18 +8655,18 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
         
 
         
-<div class="accordion" id="accordionmonitoringCommands_items_notifications_email_oneOf_i1_threshold">
+<div class="accordion" id="accordionnotificationConfig_items_notifications_email_oneOf_i1_threshold">
     <div class="card">
-        <div class="card-header" id="headingmonitoringCommands_items_notifications_email_oneOf_i1_threshold">
+        <div class="card-header" id="headingnotificationConfig_items_notifications_email_oneOf_i1_threshold">
             <h2 class="mb-0">
-                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringCommands_items_notifications_email_oneOf_i1_threshold"
-                        aria-expanded="" aria-controls="monitoringCommands_items_notifications_email_oneOf_i1_threshold" onclick="setAnchor('#monitoringCommands_items_notifications_email_oneOf_i1_threshold')"><span class="property-name">threshold</span></button>
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#notificationConfig_items_notifications_email_oneOf_i1_threshold"
+                        aria-expanded="" aria-controls="notificationConfig_items_notifications_email_oneOf_i1_threshold" onclick="setAnchor('#notificationConfig_items_notifications_email_oneOf_i1_threshold')"><span class="property-name">threshold</span></button>
             </h2>
         </div>
 
-        <div id="monitoringCommands_items_notifications_email_oneOf_i1_threshold"
-             class="collapse property-definition-div" aria-labelledby="headingmonitoringCommands_items_notifications_email_oneOf_i1_threshold"
-             data-parent="#accordionmonitoringCommands_items_notifications_email_oneOf_i1_threshold">
+        <div id="notificationConfig_items_notifications_email_oneOf_i1_threshold"
+             class="collapse property-definition-div" aria-labelledby="headingnotificationConfig_items_notifications_email_oneOf_i1_threshold"
+             data-parent="#accordionnotificationConfig_items_notifications_email_oneOf_i1_threshold">
             <div class="card-body pl-5">
 
     <div class="breadcrumbs">root
@@ -8430,53 +8676,53 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items" onclick="anchorLink('monitoringCommands_items')">monitoringCommands items</a>
+    <a href="#notificationConfig_items" onclick="anchorLink('notificationConfig_items')">notificationConfig items</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications" onclick="anchorLink('monitoringCommands_items_notifications')">notifications</a>
+    <a href="#notificationConfig_items_notifications" onclick="anchorLink('notificationConfig_items_notifications')">notifications</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email" onclick="anchorLink('monitoringCommands_items_notifications_email')">email</a>
+    <a href="#notificationConfig_items_notifications_email" onclick="anchorLink('notificationConfig_items_notifications_email')">email</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf')">oneOf</a>
+    <a href="#notificationConfig_items_notifications_email_oneOf" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf')">oneOf</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf_i1" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf_i1')">item 1</a>
+    <a href="#notificationConfig_items_notifications_email_oneOf_i1" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf_i1')">item 1</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf_i1_threshold" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf_i1_threshold')">threshold</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+    <a href="#notificationConfig_items_notifications_email_oneOf_i1_threshold" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf_i1_threshold')">threshold</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
 <span class="description"><p>Minimum severity required to send a notification on a channel. 'off' disables the channel for the target notification type. Order from low to high: log, success, info, warning, error, critical.</p>
 </span>
 
-    <div class="enum-value" id="monitoringCommands_items_notifications_email_oneOf_i1_threshold_enum">
+    <div class="enum-value" id="notificationConfig_items_notifications_email_oneOf_i1_threshold_enum">
             <h4>Must be one of:</h4>
             <ul class="list-group"><li class="list-group-item enum-item">"log"</li><li class="list-group-item enum-item">"success"</li><li class="list-group-item enum-item">"info"</li><li class="list-group-item enum-item">"warning"</li><li class="list-group-item enum-item">"error"</li><li class="list-group-item enum-item">"critical"</li><li class="list-group-item enum-item">"off"</li></ul>
             </div>
@@ -8490,18 +8736,18 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
         </div>
     </div>
 </div>
-<div class="accordion" id="accordionmonitoringCommands_items_notifications_email_oneOf_i1_recipients">
+<div class="accordion" id="accordionnotificationConfig_items_notifications_email_oneOf_i1_recipients">
     <div class="card">
-        <div class="card-header" id="headingmonitoringCommands_items_notifications_email_oneOf_i1_recipients">
+        <div class="card-header" id="headingnotificationConfig_items_notifications_email_oneOf_i1_recipients">
             <h2 class="mb-0">
-                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringCommands_items_notifications_email_oneOf_i1_recipients"
-                        aria-expanded="" aria-controls="monitoringCommands_items_notifications_email_oneOf_i1_recipients" onclick="setAnchor('#monitoringCommands_items_notifications_email_oneOf_i1_recipients')"><span class="property-name">recipients</span></button>
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#notificationConfig_items_notifications_email_oneOf_i1_recipients"
+                        aria-expanded="" aria-controls="notificationConfig_items_notifications_email_oneOf_i1_recipients" onclick="setAnchor('#notificationConfig_items_notifications_email_oneOf_i1_recipients')"><span class="property-name">recipients</span></button>
             </h2>
         </div>
 
-        <div id="monitoringCommands_items_notifications_email_oneOf_i1_recipients"
-             class="collapse property-definition-div" aria-labelledby="headingmonitoringCommands_items_notifications_email_oneOf_i1_recipients"
-             data-parent="#accordionmonitoringCommands_items_notifications_email_oneOf_i1_recipients">
+        <div id="notificationConfig_items_notifications_email_oneOf_i1_recipients"
+             class="collapse property-definition-div" aria-labelledby="headingnotificationConfig_items_notifications_email_oneOf_i1_recipients"
+             data-parent="#accordionnotificationConfig_items_notifications_email_oneOf_i1_recipients">
             <div class="card-body pl-5">
 
     <div class="breadcrumbs">root
@@ -8511,49 +8757,49 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items" onclick="anchorLink('monitoringCommands_items')">monitoringCommands items</a>
+    <a href="#notificationConfig_items" onclick="anchorLink('notificationConfig_items')">notificationConfig items</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications" onclick="anchorLink('monitoringCommands_items_notifications')">notifications</a>
+    <a href="#notificationConfig_items_notifications" onclick="anchorLink('notificationConfig_items_notifications')">notifications</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email" onclick="anchorLink('monitoringCommands_items_notifications_email')">email</a>
+    <a href="#notificationConfig_items_notifications_email" onclick="anchorLink('notificationConfig_items_notifications_email')">email</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf')">oneOf</a>
+    <a href="#notificationConfig_items_notifications_email_oneOf" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf')">oneOf</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf_i1" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf_i1')">item 1</a>
+    <a href="#notificationConfig_items_notifications_email_oneOf_i1" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf_i1')">item 1</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf_i1_recipients" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf_i1_recipients')">recipients</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+    <a href="#notificationConfig_items_notifications_email_oneOf_i1_recipients" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf_i1_recipients')">recipients</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
 <span class="description"><p>Email recipients applied to this notification type. By default they are appended to the env-var-derived recipient list; set replaceRecipients: true to fully replace it.</p>
 </span>
         
@@ -8561,9 +8807,9 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
         
         
 
-        <p><span class="badge badge-light restriction unique-items-restriction" id="monitoringCommands_items_notifications_email_oneOf_i1_recipients_uniqueItems">All items must be unique</span></p> <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+        <p><span class="badge badge-light restriction unique-items-restriction" id="notificationConfig_items_notifications_email_oneOf_i1_recipients_uniqueItems">All items must be unique</span></p> <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
-        <div class="card-body items-definition" id="monitoringCommands_items_notifications_email_oneOf_i1_recipients_items">
+        <div class="card-body items-definition" id="notificationConfig_items_notifications_email_oneOf_i1_recipients_items">
             
 
     <div class="breadcrumbs">root
@@ -8573,56 +8819,56 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items" onclick="anchorLink('monitoringCommands_items')">monitoringCommands items</a>
+    <a href="#notificationConfig_items" onclick="anchorLink('notificationConfig_items')">notificationConfig items</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications" onclick="anchorLink('monitoringCommands_items_notifications')">notifications</a>
+    <a href="#notificationConfig_items_notifications" onclick="anchorLink('notificationConfig_items_notifications')">notifications</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email" onclick="anchorLink('monitoringCommands_items_notifications_email')">email</a>
+    <a href="#notificationConfig_items_notifications_email" onclick="anchorLink('notificationConfig_items_notifications_email')">email</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf')">oneOf</a>
+    <a href="#notificationConfig_items_notifications_email_oneOf" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf')">oneOf</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf_i1" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf_i1')">item 1</a>
+    <a href="#notificationConfig_items_notifications_email_oneOf_i1" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf_i1')">item 1</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf_i1_recipients" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf_i1_recipients')">recipients</a>
+    <a href="#notificationConfig_items_notifications_email_oneOf_i1_recipients" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf_i1_recipients')">recipients</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf_i1_recipients_items" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf_i1_recipients_items')">recipients items</a></div><span class="badge badge-dark value-type">Type: string</span><span class="badge badge-info value-type">Format: email</span><br/>
+    <a href="#notificationConfig_items_notifications_email_oneOf_i1_recipients_items" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf_i1_recipients_items')">recipients items</a></div><span class="badge badge-dark value-type">Type: string</span><span class="badge badge-info value-type">Format: email</span><br/>
 
         
 
@@ -8636,18 +8882,18 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
         </div>
     </div>
 </div>
-<div class="accordion" id="accordionmonitoringCommands_items_notifications_email_oneOf_i1_replaceRecipients">
+<div class="accordion" id="accordionnotificationConfig_items_notifications_email_oneOf_i1_replaceRecipients">
     <div class="card">
-        <div class="card-header" id="headingmonitoringCommands_items_notifications_email_oneOf_i1_replaceRecipients">
+        <div class="card-header" id="headingnotificationConfig_items_notifications_email_oneOf_i1_replaceRecipients">
             <h2 class="mb-0">
-                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringCommands_items_notifications_email_oneOf_i1_replaceRecipients"
-                        aria-expanded="" aria-controls="monitoringCommands_items_notifications_email_oneOf_i1_replaceRecipients" onclick="setAnchor('#monitoringCommands_items_notifications_email_oneOf_i1_replaceRecipients')"><span class="property-name">replaceRecipients</span></button>
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#notificationConfig_items_notifications_email_oneOf_i1_replaceRecipients"
+                        aria-expanded="" aria-controls="notificationConfig_items_notifications_email_oneOf_i1_replaceRecipients" onclick="setAnchor('#notificationConfig_items_notifications_email_oneOf_i1_replaceRecipients')"><span class="property-name">replaceRecipients</span></button>
             </h2>
         </div>
 
-        <div id="monitoringCommands_items_notifications_email_oneOf_i1_replaceRecipients"
-             class="collapse property-definition-div" aria-labelledby="headingmonitoringCommands_items_notifications_email_oneOf_i1_replaceRecipients"
-             data-parent="#accordionmonitoringCommands_items_notifications_email_oneOf_i1_replaceRecipients">
+        <div id="notificationConfig_items_notifications_email_oneOf_i1_replaceRecipients"
+             class="collapse property-definition-div" aria-labelledby="headingnotificationConfig_items_notifications_email_oneOf_i1_replaceRecipients"
+             data-parent="#accordionnotificationConfig_items_notifications_email_oneOf_i1_replaceRecipients">
             <div class="card-body pl-5">
 
     <div class="breadcrumbs">root
@@ -8657,49 +8903,49 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items" onclick="anchorLink('monitoringCommands_items')">monitoringCommands items</a>
+    <a href="#notificationConfig_items" onclick="anchorLink('notificationConfig_items')">notificationConfig items</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications" onclick="anchorLink('monitoringCommands_items_notifications')">notifications</a>
+    <a href="#notificationConfig_items_notifications" onclick="anchorLink('notificationConfig_items_notifications')">notifications</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email" onclick="anchorLink('monitoringCommands_items_notifications_email')">email</a>
+    <a href="#notificationConfig_items_notifications_email" onclick="anchorLink('notificationConfig_items_notifications_email')">email</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf')">oneOf</a>
+    <a href="#notificationConfig_items_notifications_email_oneOf" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf')">oneOf</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf_i1" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf_i1')">item 1</a>
+    <a href="#notificationConfig_items_notifications_email_oneOf_i1" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf_i1')">item 1</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_email_oneOf_i1_replaceRecipients" onclick="anchorLink('monitoringCommands_items_notifications_email_oneOf_i1_replaceRecipients')">replaceRecipients</a></div><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+    <a href="#notificationConfig_items_notifications_email_oneOf_i1_replaceRecipients" onclick="anchorLink('notificationConfig_items_notifications_email_oneOf_i1_replaceRecipients')">replaceRecipients</a></div><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <span class="description"><p>When true, the recipients listed here replace the env-var-derived recipient chain (NOTIF<em>EMAIL</em>ADDRESS, branch- and type-specific overrides) for this notification type.</p>
 </span>
         
@@ -8723,18 +8969,18 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
         </div>
     </div>
 </div>
-<div class="accordion" id="accordionmonitoringCommands_items_notifications_api">
+<div class="accordion" id="accordionnotificationConfig_items_notifications_api">
     <div class="card">
-        <div class="card-header" id="headingmonitoringCommands_items_notifications_api">
+        <div class="card-header" id="headingnotificationConfig_items_notifications_api">
             <h2 class="mb-0">
-                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringCommands_items_notifications_api"
-                        aria-expanded="" aria-controls="monitoringCommands_items_notifications_api" onclick="setAnchor('#monitoringCommands_items_notifications_api')"><span class="property-name">api</span></button>
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#notificationConfig_items_notifications_api"
+                        aria-expanded="" aria-controls="notificationConfig_items_notifications_api" onclick="setAnchor('#notificationConfig_items_notifications_api')"><span class="property-name">api</span></button>
             </h2>
         </div>
 
-        <div id="monitoringCommands_items_notifications_api"
-             class="collapse property-definition-div" aria-labelledby="headingmonitoringCommands_items_notifications_api"
-             data-parent="#accordionmonitoringCommands_items_notifications_api">
+        <div id="notificationConfig_items_notifications_api"
+             class="collapse property-definition-div" aria-labelledby="headingnotificationConfig_items_notifications_api"
+             data-parent="#accordionnotificationConfig_items_notifications_api">
             <div class="card-body pl-5">
 
     <div class="breadcrumbs">root
@@ -8744,32 +8990,32 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a>
+    <a href="#notificationConfig" onclick="anchorLink('notificationConfig')">notificationConfig</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items" onclick="anchorLink('monitoringCommands_items')">monitoringCommands items</a>
+    <a href="#notificationConfig_items" onclick="anchorLink('notificationConfig_items')">notificationConfig items</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications" onclick="anchorLink('monitoringCommands_items_notifications')">notifications</a>
+    <a href="#notificationConfig_items_notifications" onclick="anchorLink('notificationConfig_items_notifications')">notifications</a>
         <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill-rule="evenodd"
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_notifications_api" onclick="anchorLink('monitoringCommands_items_notifications_api')">api</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+    <a href="#notificationConfig_items_notifications_api" onclick="anchorLink('notificationConfig_items_notifications_api')">api</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
 <span class="description"><p>Severity threshold for the sfdx-hardis Api / metrics provider. Defaults to 'log' (everything is sent).</p>
 </span>
 
-    <div class="enum-value" id="monitoringCommands_items_notifications_api_enum">
+    <div class="enum-value" id="notificationConfig_items_notifications_api_enum">
             <h4>Must be one of:</h4>
             <ul class="list-group"><li class="list-group-item enum-item">"log"</li><li class="list-group-item enum-item">"success"</li><li class="list-group-item enum-item">"info"</li><li class="list-group-item enum-item">"warning"</li><li class="list-group-item enum-item">"error"</li><li class="list-group-item enum-item">"critical"</li><li class="list-group-item enum-item">"off"</li></ul>
             </div>
@@ -8790,17 +9036,15 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
         </div>
     </div><br/>
 <div class="badge badge-secondary">Example:</div>
-<br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#monitoringCommands_ex1" aria-controls="monitoringCommands_ex1"></button><div id="monitoringCommands_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#notificationConfig_ex1" aria-controls="notificationConfig_ex1"></button><div id="notificationConfig_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;AUDIT_TRAIL&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;frequency&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;weekly&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;frequencyDay&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;monday&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;DEPLOYMENT&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;notifications&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="s2">&quot;messaging&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;warning&quot;</span><span class="p">,</span>
 <span class="w">            </span><span class="s2">&quot;email&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                </span><span class="s2">&quot;threshold&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;error&quot;</span><span class="p">,</span>
 <span class="w">                </span><span class="s2">&quot;recipients&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                    </span><span class="s2">&quot;security@company.com&quot;</span>
+<span class="w">                    </span><span class="s2">&quot;release@company.com&quot;</span>
 <span class="w">                </span><span class="p">],</span>
 <span class="w">                </span><span class="s2">&quot;replaceRecipients&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span>
 <span class="w">            </span><span class="p">},</span>
@@ -8808,19 +9052,10 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">},</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;LICENSES&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;frequency&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;monthly&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;frequencyDayOfMonth&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">1</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;ORG_LIMITS&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;frequency&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;off&quot;</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;title&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;My custom command&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;MY_CUSTOM_KEY&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;command&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;sf my:custom:command&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;frequency&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;biweekly&quot;</span>
+<span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;AUDIT_TRAIL&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;notifications&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="s2">&quot;messaging&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span>
+<span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">]</span>
 </pre></div>
