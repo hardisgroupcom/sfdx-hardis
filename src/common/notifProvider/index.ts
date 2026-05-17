@@ -17,7 +17,7 @@ import {
 } from "./notificationConfig.js";
 
 export abstract class NotifProvider {
-  static getInstances(): NotifProviderRoot[] {
+  static getInstances(userConfig?: { notificationConfig?: any[] }): NotifProviderRoot[] {
     const notifProviders: NotifProviderRoot[] = [];
     // Slack
     if (UtilsNotifs.isSlackAvailable()) {
@@ -27,8 +27,8 @@ export abstract class NotifProvider {
     if (UtilsNotifs.isMsTeamsAvailable()) {
       notifProviders.push(new TeamsProvider());
     }
-    // Email
-    if (UtilsNotifs.isEmailAvailable()) {
+    // Email -- enabled by NOTIF_EMAIL_ADDRESS or by per-type recipients in user config
+    if (UtilsNotifs.isEmailAvailable(userConfig)) {
       notifProviders.push(new EmailProvider());
     }
     // Api
@@ -45,7 +45,7 @@ export abstract class NotifProvider {
     const notificationsDisable =
       config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
     uxLog("log", this, c.grey(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
-    const notifProviders = this.getInstances();
+    const notifProviders = this.getInstances(config);
     if (notifProviders.length === 0 && isCI) {
       uxLog(
         "log",
