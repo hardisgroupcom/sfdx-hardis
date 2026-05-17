@@ -101,10 +101,10 @@ export type NotificationCategory =
 
 export const NOTIFICATION_CATEGORIES: { key: NotificationCategory; order: number }[] = [
   { key: "orgActivity", order: 1 },
-  { key: "userActivity", order: 2 },
-  { key: "apexTestsSecurity", order: 3 },
-  { key: "orgInfo", order: 4 },
-  { key: "technicalDebt", order: 5 },
+  { key: "apexTestsSecurity", order: 2 },
+  { key: "userActivity", order: 3 },
+  { key: "technicalDebt", order: 4 },
+  { key: "orgInfo", order: 5 },
   { key: "licensesPackages", order: 6 },
   { key: "other", order: 7 },
 ];
