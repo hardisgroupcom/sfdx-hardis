@@ -225,19 +225,20 @@ ${this.getDefaultCommandsMarkdown()}
       if (/^sf hardis/.test(commandStr) && !/(^|\s)--skipauth(\s|$)/.test(commandStr)) {
         commandStr = `${commandStr} --skipauth`;
       }
-      uxLog("action", this, c.cyan(t('runningMonitoringCommandKey', { command: c.bold(command.title), command1: c.bold(command.key) })));
+      const commandTitle = command.title ?? t(getTitleI18nKey(command.key));
+      uxLog("action", this, c.cyan(t('runningMonitoringCommandKey', { command: c.bold(commandTitle), command1: c.bold(command.key) })));
       const startTime = Date.now();
       try {
         const execCommandResult = await execCommand(commandStr, this, { fail: false, output: true });
         const duration = Date.now() - startTime;
         if (execCommandResult.status === 0) {
-          uxLog("success", this, c.green(t('commandHasBeenRunSuccessfully', { command: c.bold(command.title) })));
+          uxLog("success", this, c.green(t('commandHasBeenRunSuccessfully', { command: c.bold(commandTitle) })));
         } else {
           success = false;
-          uxLog("warning", this, c.yellow(t('commandHasFailed', { command: c.bold(command.title) })));
+          uxLog("warning", this, c.yellow(t('commandHasFailed', { command: c.bold(commandTitle) })));
         }
         commandsSummary.push({
-          title: command.title,
+          title: commandTitle,
           status: execCommandResult.status === 0 ? 'success' : 'failure',
           command: command.command,
           duration: MonitorAll.formatDuration(duration),
@@ -246,9 +247,9 @@ ${this.getDefaultCommandsMarkdown()}
         // Handle unexpected failure
         const duration = Date.now() - startTime;
         success = false;
-        uxLog("warning", this, c.yellow(t('commandHasFailed2', { command: c.bold(command.title), as: (e as Error).message })));
+        uxLog("warning", this, c.yellow(t('commandHasFailed2', { command: c.bold(commandTitle), as: (e as Error).message })));
         commandsSummary.push({
-          title: command.title,
+          title: commandTitle,
           status: 'error',
           command: command.command,
           duration: MonitorAll.formatDuration(duration),
