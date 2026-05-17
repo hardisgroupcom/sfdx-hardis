@@ -100,16 +100,16 @@ The default list of commands is the following:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                    | Default | Required | Options |
-|:------------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                          |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                |         |          |         |
-| flags-dir         | option  | undefined                                                                      |         |          |         |
-| force-all         | boolean | Force all monitoring commands to run, regardless of their configured frequency |         |          |         |
-| json              | boolean | Format output as json.                                                         |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                  |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                      |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                      |         |          |         |
+| Name              |  Type   | Description                                                                    |                Default                | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------|:-------------------------------------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                          |                                       |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                |                                       |          |         |
+| flags-dir         | option  | undefined                                                                      |                                       |          |         |
+| force-all         | boolean | Force all monitoring commands to run, regardless of their configured frequency |                                       |          |         |
+| json              | boolean | Format output as json.                                                         |                                       |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                  |                                       |          |         |
+| target-org<br/>-o | option  | undefined                                                                      | nicolas.vuillamy@cloudity.com.integci |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                      |                                       |          |         |
 
 ## Examples
 

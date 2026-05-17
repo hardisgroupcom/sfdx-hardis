@@ -7,18 +7,13 @@ description: Free Salesforce Metadata BackUp , plus many extra monitoring featur
 - [Monitor your Salesforce org with sfdx-hardis](#monitor-your-salesforce-org-with-sfdx-hardis)
 - [How does it work ?](#how-does-it-work)
 - [All Monitoring Commands](#all-monitoring-commands)
+- [Dreamforce 24 presentation](#dreamforce-24-presentation)
 
 ## Monitor your Salesforce org with sfdx-hardis
 
 > This feature worked yesterday in production, but today it crashes, what happened ?
 
-_Instead of reading, watch the [presentation at Dreamforce 24](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH) conference in San Francisco !_
-
-<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/NxiLiYeo11A" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
-
-_or if you like reading, here are the slides !_
-
-<div style="text-align:center"><iframe src="https://www.slideshare.net/slideshow/embed_code/key/jxxBlqw7iup8Gh?hostedIn=slideshare&page=upload" width="476" height="400" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"></iframe></div>
+![](assets/images/monitoring-config-2026.gif)
 
 Salesforce provide **Audit Trail** to trace configuration updates in **production** or **sandbox** orgs.
 
@@ -37,7 +32,13 @@ Extra indicators are also available out of the box, like:
 
 You don't need to work in CI/CD to use Monitoring, it is **compliant with any API enabled org** :)
 
-Installation and usage are **admin-friendly**, and **notifications** can be sent via **Slack** or **Microsoft Teams**.
+Installation and usage are **admin-friendly**, and **notifications** can be routed independently to:
+
+- **Messaging channels** -- [Slack](salesforce-ci-cd-setup-integration-slack.md) and [Microsoft Teams](salesforce-ci-cd-setup-integration-ms-teams.md)
+- **Email** -- [any recipient list](salesforce-ci-cd-setup-integration-email.md), with per-notification-type overrides
+- **API / Grafana / Prometheus** -- [external endpoints](salesforce-ci-cd-setup-integration-api.md) for dashboards (e.g. Grafana Loki, Prometheus)
+
+Each notification type (audit trail, org limits, apex tests, ...) can be configured per channel with its own severity threshold, so you can stream everything to Grafana while keeping Slack/Teams reserved for warnings and errors only. The configuration is fully editable from the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) or directly in `.sfdx-hardis.yml`.
 
 _Example of visualization in Grafana_
 
@@ -116,3 +117,13 @@ Each command's cadence is fully customizable per entry in `.sfdx-hardis.yml` via
 | [Detect underused permission sets](salesforce-monitoring-underused-permsets.md)                                             | Weekly    |
 | [Detect Apex classes and triggers with deprecated API version](salesforce-monitoring-apex-api-version.md)                   | Weekly    |
 | [Detect permission sets with minimal permissions](salesforce-monitoring-minimal-permsets.md)                                | Weekly    |
+
+## Dreamforce 24 presentation
+
+_Watch the [presentation at Dreamforce 24](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH) conference in San Francisco !_
+
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/NxiLiYeo11A" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
+_or if you like reading, here are the slides !_
+
+<div style="text-align:center"><iframe src="https://www.slideshare.net/slideshow/embed_code/key/jxxBlqw7iup8Gh?hostedIn=slideshare&page=upload" width="476" height="400" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"></iframe></div>

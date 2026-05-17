@@ -20,11 +20,9 @@ ___
 
 ## Commit your updates
 
-_The following video shows how to perform these operations._
+_The following animation shows how to perform these operations._
 
-> Note: this video shows an older version of sfdx-hardis and will be updated to reference the new VS Code SFDX-Hardis UI.
-
-<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+![](assets/images/retrieve-and-commit-2026.gif)
 
 ### Retrieve metadata
 
@@ -67,6 +65,8 @@ ___
 - Wait for the script to complete, then select **Push commit to server** when prompted.
 
 If you want to create a Pull Request / Merge Request, click on the related button.
+
+![](assets/images/save-publish-pr-2026.gif)
 
 ![](assets/images/screenshot-work-save.png)
 

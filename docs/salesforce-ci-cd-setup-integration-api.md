@@ -86,6 +86,25 @@ ApexTestsFailingClasses,source=sfdx-hardis,type=APEX_TESTS,orgIdentifier=hardis-
 ApexTestsCodeCoverage,source=sfdx-hardis,type=APEX_TESTS,orgIdentifier=hardis-group,gitIdentifier=monitoring-hardis-org/monitoring_hardis_group metric=90.00
 ```
 
+## Per notification type severity threshold
+
+The API channel (Grafana Loki / Prometheus / custom endpoint) is configurable per notification type, exactly like `messaging` and `email`. By default it forwards everything (so Grafana dashboards stay complete), but you can raise the threshold or mute a notification type entirely from `.sfdx-hardis.yml`:
+
+```yaml
+monitoringCommands:
+  - key: AUDIT_TRAIL
+    notifications:
+      api: log             # everything reaches Grafana (default)
+  - key: METADATA_STATUS
+    notifications:
+      api: warning         # only warning / error / critical reach Grafana
+  - key: ORG_LIMITS
+    notifications:
+      api: off             # disable API/Grafana for this type
+```
+
+See [Monitoring configuration](salesforce-monitoring-config-home.md#fine-grained-routing-per-notification-type) for the full per-channel routing model.
+
 ## Skip Configuration
 
 > The API channel is always sent by default when `NOTIF_API_URL` is configured, regardless of the per-channel severity threshold. To filter what reaches the API per notification type, use either the env vars below, or set `api: off` (or any other threshold) in the per-entry `notifications` block of `monitoringCommands` -- see [Monitoring configuration](salesforce-monitoring-config-home.md#fine-grained-routing-per-notification-type).

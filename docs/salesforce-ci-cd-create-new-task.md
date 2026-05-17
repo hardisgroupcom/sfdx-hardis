@@ -11,7 +11,6 @@ description: Learn how to create a new User Story using a tracked sandbox or a s
   - [Pre-requisites (sandbox)](#pre-requisites-sandbox)
   - [Start new User Story on sandbox](#start-new-user-story-on-sandbox)
     - [Select sandbox](#select-sandbox)
-    - [Update your sandbox ?](#update-your-sandbox)
     - [Work !](#work)
 - [Scratch Org mode](#scratch-org-mode)
   - [Pre-requisites (scratch org)](#pre-requisites-scratch-org)
@@ -25,9 +24,7 @@ From Welcome Menu then DevOps Pipeline UI, click on **New User Story**
 
 Answer the questions, and if you have any doubt, ask your Release Manager.
 
-![](assets/images/screenshot-new-user-story-btn.png)
-
-![](assets/images/screenshot-new-user-story-1.png)
+![](assets/images/new-user-story-2026.gif)
 
 Once the command is completed, you can start working in your dev sandbox or scratch org :)
 ___
@@ -75,25 +72,12 @@ It is recommended to create sandbox from the org that is related to the target g
 - Answer the questions then **select Sandbox** when prompted
   - If the sandbox is not proposed in the list, select the option to authenticate to your desired sandbox
 
-#### Update your sandbox ?
-
-- When prompted if you want to update your sandbox:
-  - Select `yes` **only if you have NO pending work in your sandbox that you'll want to publish later**
-    - If the update script fails, you can manually deploy single metadatas using `Right click -> Deploy to org` (see screenshot below)
-  - Otherwise, select `no`
-
-_Example of manual deploy of a metadata that you think could have been updated in parent branch, after an Update sandbox failure_
-
-![](assets/images/screenshot-deploy-to-org.png)
-
 #### Work
 
 - At the end of the script execution:
 
   - If you want to reset the sandbox tracking (**meaning you don't care about the previous updates in your sandbox**), you can click on command ![](assets/images/btn-reset-tracking.jpg)
   - Click on ![Open org in browser](assets/images/btn-open-org.jpg) and you can start working in it :)
-
-<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/WOqssZwjPhw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
 
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >

@@ -46,6 +46,10 @@ export default class SaveTask extends SfCommand<any> {
 
 **Guides the user through the process of saving their work, preparing it for a Merge Request (also named Pull Request), and pushing changes to the remote Git repository.**
 
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/retrieve-and-commit-2026.gif)
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/save-publish-pr-2026.gif)
+
 This command automates several critical steps involved in finalizing a development User Story and integrating it into the main codebase. It ensures that your local changes are properly synchronized, cleaned, and committed before being pushed.
 
 Key functionalities include:
