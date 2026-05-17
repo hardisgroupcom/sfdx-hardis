@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [7.14.0] 2026-05-17
+
 - Features
   - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): Override individual monitoring command fields without restating the full entry, set frequency (`daily | weekly | biweekly | monthly | off`), and configure per-channel notification thresholds including dedicated email recipients per notification type.
   - [hardis:config:monitoring-defaults](https://sfdx-hardis.cloudity.com/hardis/config/monitoring-defaults/): New command returning the built-in monitoring and notification defaults, used by configuration UIs such as the VS Code sfdx-hardis extension. The payload now groups each entry under a translated category (Org Activity, User Activity, Apex Tests & Security, Org Info, Technical Debt, Licenses & Packages, Other) so configuration UIs can render notification types as sections, and startup is faster because the WebSocket client is no longer initialized for this CLI-only command.
