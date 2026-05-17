@@ -54,17 +54,17 @@ The command's technical implementation involves:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|from|option|PR number or commit SHA to start the backpromote from. Required in --agent mode when no previous backpromote state exists.||||
-|json|boolean|Format output as json.||||
-|parentbranch|option|Name of the parent branch to backpromote from. Will be guessed or prompted if not provided.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.integci|||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name              |  Type   | Description                                                                                                                |                Default                | Required | Options |
+|:------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------|:-------------------------------------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                                      |                                       |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                            |                                       |          |         |
+| flags-dir         | option  | undefined                                                                                                                  |                                       |          |         |
+| from              | option  | PR number or commit SHA to start the backpromote from. Required in --agent mode when no previous backpromote state exists. |                                       |          |         |
+| json              | boolean | Format output as json.                                                                                                     |                                       |          |         |
+| parentbranch      | option  | Name of the parent branch to backpromote from. Will be guessed or prompted if not provided.                                |                                       |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                              |                                       |          |         |
+| target-org<br/>-o | option  | undefined                                                                                                                  | nicolas.vuillamy@cloudity.com.integci |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                  |                                       |          |         |
 
 ## Examples
 
