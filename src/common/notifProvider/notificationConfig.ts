@@ -6,10 +6,13 @@ import type {
   MonitoringFrequency,
   NotificationChannel,
   NotificationChannelConfig,
+  NotificationConfigEntry,
   NotificationThreshold,
+  NotifMessageType,
   NotifSeverity,
   Weekday,
 } from "./types.js";
+import { NOTIFICATION_TYPE_EMITTED_SEVERITIES } from "./types.js";
 import { notificationDefaults } from "./notificationDefaults.js";
 
 const WEEKDAY_INDEX: Record<Weekday, number> = {
@@ -47,6 +50,52 @@ export function severityMeetsThreshold(severity: NotifSeverity, threshold: Notif
   return SEVERITY_RANK[severity] >= SEVERITY_RANK[threshold];
 }
 
+// Meaningful thresholds for a notification type: every severity the type can actually be emitted
+// with, plus the universal "log" floor ("send every emission, whatever its severity"), sorted from
+// most restrictive to least restrictive and followed by "off".
+// "log" is always included because it is the conventional "audit everything" value for the api
+// channel even when the type never emits a `log`-severity notification. Any threshold outside this
+// list is implicitly equivalent to one inside it (e.g. "error" on a type that only emits
+// "warning" is equivalent to "off").
+export function getAvailableThresholds(notifType: string): NotificationThreshold[] {
+  const emitted = NOTIFICATION_TYPE_EMITTED_SEVERITIES[notifType as NotifMessageType] ?? [];
+  const severities = new Set<NotifSeverity>(emitted);
+  severities.add("log");
+  const sorted = Array.from(severities).sort((a, b) => SEVERITY_RANK[b] - SEVERITY_RANK[a]);
+  return [...sorted, "off"];
+}
+
+// Returns the threshold value the user effectively gets at runtime, given the severities the
+// notification type can be emitted with. Used to clamp legacy defaults into the available set so
+// configuration UIs never show a value that cannot fire.
+//
+// Rule: pick the smallest emitted severity whose rank is >= the requested threshold rank. If no
+// emitted severity is high enough, the channel is effectively silenced -> "off".
+export function clampThresholdToAvailable(
+  threshold: NotificationThreshold,
+  notifType: string,
+): NotificationThreshold {
+  if (threshold === "off") {
+    return "off";
+  }
+  const available = getAvailableThresholds(notifType);
+  if (available.includes(threshold)) {
+    return threshold;
+  }
+  const emitted = NOTIFICATION_TYPE_EMITTED_SEVERITIES[notifType as NotifMessageType] ?? [];
+  if (emitted.length === 0) {
+    return "log";
+  }
+  const targetRank = SEVERITY_RANK[threshold as NotifSeverity];
+  const ascending = [...emitted].sort((a, b) => SEVERITY_RANK[a] - SEVERITY_RANK[b]);
+  for (const candidate of ascending) {
+    if (SEVERITY_RANK[candidate] >= targetRank) {
+      return candidate;
+    }
+  }
+  return "off";
+}
+
 export function isEmailChannelObject(value: EmailChannelConfig | undefined): value is EmailChannelObject {
   return typeof value === "object" && value !== null;
 }
@@ -82,7 +131,7 @@ export function getEmailRecipientsConfig(config: NotificationChannelConfig): {
 export async function getEffectiveNotificationConfig(notifType: string): Promise<NotificationChannelConfig> {
   const defaults = notificationDefaults[notifType] ?? {};
   const userConfig = await getConfig("user");
-  const userEntries: MonitoringCommandEntry[] = userConfig.monitoringCommands ?? [];
+  const userEntries: NotificationConfigEntry[] = userConfig.notificationConfig ?? [];
   const userEntry = userEntries.find((entry) => entry?.key === notifType);
   const userNotifications = userEntry?.notifications ?? {};
   return mergeNotificationConfig(defaults, userNotifications);
@@ -177,21 +226,16 @@ export function resolveMonitoringCommands<T extends MonitoringCommandEntry>(
   defaults: readonly T[],
   userEntries: readonly MonitoringCommandEntry[] | undefined,
 ): T[] {
+  // Merges user overrides into the default monitoring commands by `key`. Only scheduling fields
+  // and notificationTypes are merged here; per-channel notification thresholds live on
+  // notificationConfig[] (see getEffectiveNotificationConfig).
   const entries = Array.isArray(userEntries) ? userEntries : [];
   const result: T[] = [];
   const seenKeys = new Set<string>();
   for (const def of defaults) {
     const override = entries.find((entry) => entry?.key === def.key);
     if (override) {
-      const mergedNotifications =
-        def.notifications || override.notifications
-          ? mergeNotificationConfig(def.notifications ?? {}, override.notifications ?? {})
-          : undefined;
-      const merged = { ...def, ...override } as T;
-      if (mergedNotifications) {
-        merged.notifications = mergedNotifications;
-      }
-      result.push(merged);
+      result.push({ ...def, ...override } as T);
     } else {
       result.push(def);
     }

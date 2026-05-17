@@ -39,6 +39,17 @@ export interface MonitoringCommandEntry {
   // Used when frequency is "monthly". Day of month (1-31). Defaults to 1.
   // When the configured day does not exist in the current month (e.g. 31 in February), the command runs on the last day of the month.
   frequencyDayOfMonth?: number;
+  // Notification type keys this command can emit. A single command may emit multiple types
+  // (e.g. APEX_FLOW_ERRORS aggregates APEX_ERROR + FLOW_ERROR). Per-channel routing
+  // thresholds live on NotificationConfigEntry (notificationConfig), not here.
+  notificationTypes?: string[];
+}
+
+// Per-notification-type routing configuration. User overrides live under the top-level
+// `notificationConfig:` key in .sfdx-hardis.yml and are merged by `key` onto the defaults
+// defined in src/common/notifProvider/notificationDefaults.ts.
+export interface NotificationConfigEntry {
+  key: string;
   notifications?: NotificationChannelConfig;
 }
 
@@ -108,6 +119,66 @@ export const NOTIFICATION_CATEGORIES: { key: NotificationCategory; order: number
   { key: "licensesPackages", order: 6 },
   { key: "other", order: 7 },
 ];
+
+// Severities each notification type can actually be emitted with. Derived from the source code of
+// the commands that emit each type. Used by the monitoring-defaults catalog to expose the
+// `availableThresholds` list for configuration UIs (so a threshold selector only offers severities
+// that can actually fire for the given type, plus "off").
+//
+// Severity order (low to high): log < success < info < warning < error < critical.
+// When a notification type is not emitted anywhere yet (placeholder/reserved), list all severities
+// so configuration UIs do not constrain users prematurely.
+//
+// Whenever you add or change a `severity:` value on a NotifProvider.postNotifications call, update
+// the matching entry here.
+export const NOTIFICATION_TYPE_EMITTED_SEVERITIES: Record<NotifMessageType, NotifSeverity[]> = {
+  // orgActivity
+  AUDIT_TRAIL: ["warning", "log"],
+  LEGACY_API: ["error", "log"],
+  APEX_FLEX_QUEUE: ["warning", "log"],
+  APEX_ERROR: ["error", "success"],
+  FLOW_ERROR: ["error", "success"],
+  BACKUP: ["info", "log"],
+  // Reserved/placeholder - not currently emitted; expose every severity so UIs do not lock users in.
+  DEPLOYMENT: ["critical", "error", "warning", "info", "success", "log"],
+  DEPLOYMENTS: ["warning", "log"],
+  // userActivity
+  ACTIVE_USERS: ["log"],
+  ACTIVE_USERS_CRM_WEEKLY: ["log"],
+  ACTIVE_USERS_EXPERIENCE_MONTHLY: ["log"],
+  UNUSED_USERS: ["log"],
+  UNUSED_USERS_CRM_6_MONTHS: ["log"],
+  UNUSED_USERS_EXPERIENCE_6_MONTHS: ["log"],
+  // apexTestsSecurity
+  APEX_TESTS: ["error", "log"],
+  ORG_HEALTH_CHECK: ["error", "warning", "success"],
+  UNSECURED_CONNECTED_APPS: ["error", "log"],
+  // orgInfo
+  ORG_INFO: ["log"],
+  ORG_LIMITS: ["error", "warning", "log"],
+  RELEASE_UPDATES: ["warning", "log"],
+  // technicalDebt
+  APEX_API_VERSION: ["warning", "log"],
+  CONNECTED_APPS: ["warning", "log"],
+  LINT_ACCESS: ["warning", "log"],
+  METADATA_STATUS: ["warning", "log"],
+  MISSING_ATTRIBUTES: ["warning", "log"],
+  UNUSED_APEX_CLASSES: ["warning", "log"],
+  UNUSED_METADATAS: ["warning", "log"],
+  // licensesPackages
+  LICENSES: ["log"],
+  UNUSED_LICENSES: ["warning", "log"],
+  UNDERUSED_PERMSETS: ["warning", "log"],
+  MINIMAL_PERMSETS: ["error", "warning", "log"],
+  // other
+  AGENTFORCE_CONVERSATIONS: ["log"],
+  AGENTFORCE_FEEDBACK: ["warning", "log"],
+  DORA_REPORT: ["warning", "info", "success"],
+  MONITORING_SUMMARY: ["info"],
+  // Reserved/placeholder - not currently emitted; expose every severity.
+  RELEASE_NOTES: ["critical", "error", "warning", "info", "success", "log"],
+  SERVICENOW_REPORT: ["log"],
+};
 
 // Maps every notification type to its category. Typing as Record<NotifMessageType, NotificationCategory>
 // makes this exhaustive: adding a new type to NotifMessageType without an entry here is a compile error.

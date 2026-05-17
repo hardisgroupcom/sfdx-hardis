@@ -1918,24 +1918,13 @@
     },
     "monitoringCommands": {
       "$id": "#/properties/monitoringCommands",
-      "description": "List of monitoring commands to run with command hardis:org:monitor:all.\nUser entries are merged by 'key' onto the built-in defaults: provide only the fields you want to override. New keys are appended as custom commands. Entries that omit 'command' are treated as pure notification-routing overrides (useful for non-monitoring notification types).",
+      "description": "List of monitoring commands to run with command hardis:org:monitor:all.\nUser entries are merged by 'key' onto the built-in defaults: provide only the fields you want to override. New keys are appended as custom commands. A single command can emit multiple notification types via 'notificationTypes' (e.g. APEX_FLOW_ERRORS emits both APEX_ERROR and FLOW_ERROR). Per-channel routing thresholds live on the top-level 'notificationConfig' property, not here.",
       "examples": [
         [
           {
             "key": "AUDIT_TRAIL",
             "frequency": "weekly",
-            "frequencyDay": "monday",
-            "notifications": {
-              "messaging": "warning",
-              "email": {
-                "threshold": "error",
-                "recipients": [
-                  "security@company.com"
-                ],
-                "replaceRecipients": true
-              },
-              "api": "log"
-            }
+            "frequencyDay": "monday"
           },
           {
             "key": "LICENSES",
@@ -1950,7 +1939,10 @@
             "title": "My custom command",
             "key": "MY_CUSTOM_KEY",
             "command": "sf my:custom:command",
-            "frequency": "biweekly"
+            "frequency": "biweekly",
+            "notificationTypes": [
+              "DEPLOYMENT"
+            ]
           }
         ]
       ],
@@ -1962,7 +1954,7 @@
         "properties": {
           "key": {
             "$id": "#/properties/monitoringCommands/items/properties/key",
-            "description": "Unique identifier of the monitoring command or notification type. Matches a built-in key to override its settings, or defines a new custom key.",
+            "description": "Unique identifier of the monitoring command. Matches a built-in key to override its settings, or defines a new custom key.",
             "title": "Key",
             "type": "string"
           },
@@ -1974,7 +1966,7 @@
           },
           "command": {
             "$id": "#/properties/monitoringCommands/items/properties/command",
-            "description": "Bash command to run. Omit for routing-only overrides (used to tune notifications without running anything).",
+            "description": "Bash command to run.",
             "title": "Command",
             "type": "string"
           },
@@ -2031,12 +2023,69 @@
             "maximum": 31,
             "default": 1
           },
-          "notifications": {
-            "$ref": "#/definitions/notification_channel_config"
+          "notificationTypes": {
+            "$id": "#/properties/monitoringCommands/items/properties/notificationTypes",
+            "description": "Notification type keys this command can emit. A single command may emit multiple types (e.g. APEX_FLOW_ERRORS aggregates APEX_ERROR + FLOW_ERROR). Routing thresholds for those types are configured under the top-level 'notificationConfig' property.",
+            "title": "Notification types",
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/enum_notification_types"
+            },
+            "uniqueItems": true
           }
         }
       },
       "title": "Monitoring commands",
+      "type": "array"
+    },
+    "notificationConfig": {
+      "$id": "#/properties/notificationConfig",
+      "description": "Per-notification-type routing configuration. User entries are merged by 'key' onto the built-in defaults defined in src/common/notifProvider/notificationDefaults.ts: provide only the channels you want to override.",
+      "examples": [
+        [
+          {
+            "key": "DEPLOYMENT",
+            "notifications": {
+              "messaging": "warning",
+              "email": {
+                "threshold": "error",
+                "recipients": [
+                  "release@company.com"
+                ],
+                "replaceRecipients": true
+              },
+              "api": "log"
+            }
+          },
+          {
+            "key": "AUDIT_TRAIL",
+            "notifications": {
+              "messaging": "critical"
+            }
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/notificationConfig/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Routing override for a single notification type.",
+        "properties": {
+          "key": {
+            "$id": "#/properties/notificationConfig/items/properties/key",
+            "description": "Notification type key (must match a value of enum_notification_types).",
+            "title": "Notification type",
+            "$ref": "#/definitions/enum_notification_types"
+          },
+          "notifications": {
+            "$ref": "#/definitions/notification_channel_config"
+          }
+        },
+        "required": [
+          "key"
+        ]
+      },
+      "title": "Notification routing configuration",
       "type": "array"
     },
     "monitoringAllowedSectionsActions": {
