@@ -4,16 +4,11 @@ import type {
   NotificationCategory,
   NotificationChannel,
   NotificationThreshold,
-  NotifMessage,
   NotifMessageType,
   NotifSeverity,
   Weekday,
 } from "../notifProvider/types.js";
-import {
-  NOTIFICATION_CATEGORIES,
-  NOTIFICATION_TYPE_CATEGORY,
-} from "../notifProvider/types.js";
-import { notificationDefaults } from "../notifProvider/notificationDefaults.js";
+import { NOTIFICATION_CATEGORIES, notificationTypesDefault } from "../notifProvider/types.js";
 import {
   clampThresholdToAvailable,
   getAvailableThresholds,
@@ -23,166 +18,218 @@ import { t } from "../utils/i18n.js";
 
 // Default monitoring commands run by hardis:org:monitor:all.
 // User entries in .sfdx-hardis.yml monitoringCommands[] are merged by key onto this list at runtime.
-// Each key here must also have an entry in notifTypeMetadata below (for title/description shown in
-// configuration UIs). Each command declares which notification type keys it can emit via
-// notificationTypes; routing thresholds for those types are owned by notificationDefaults and can
-// be overridden by users under the top-level notificationConfig[] key.
+// Each entry is fully self-contained: it carries its own `category` and `icon` (SLDS) so the
+// configuration UI never has to derive them. Per-notification-type metadata still lives on
+// `notificationTypesDefault` in src/common/notifProvider/types.ts (see `notificationTypes` for the
+// cross-reference).
 export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
   {
     key: "AUDIT_TRAIL",
     command: "sf hardis:org:diagnose:audittrail",
     frequency: "daily",
     notificationTypes: ["AUDIT_TRAIL"],
+    category: "orgActivity",
+    icon: "utility:shield",
   },
   {
     key: "LEGACY_API",
     command: "sf hardis:org:diagnose:legacyapi",
     frequency: "daily",
     notificationTypes: ["LEGACY_API"],
+    category: "orgActivity",
+    icon: "utility:variation",
   },
   {
     key: "ORG_LIMITS",
     command: "sf hardis:org:monitor:limits",
     frequency: "daily",
     notificationTypes: ["ORG_LIMITS"],
+    category: "orgInfo",
+    icon: "utility:gauge",
   },
   {
     key: "APEX_FLEX_QUEUE",
     command: "sf hardis:org:diagnose:flex-queue",
     frequency: "daily",
     notificationTypes: ["APEX_FLEX_QUEUE"],
+    category: "orgActivity",
+    icon: "utility:queue",
   },
   {
     key: "APEX_FLOW_ERRORS",
     command: "sf hardis:org:monitor:errors",
     frequency: "daily",
     notificationTypes: ["APEX_ERROR", "FLOW_ERROR"],
+    category: "orgActivity",
+    icon: "utility:warning",
   },
   {
     key: "UNSECURED_CONNECTED_APPS",
     command: "sf hardis:org:diagnose:unsecure-connected-apps",
     frequency: "daily",
     notificationTypes: ["UNSECURED_CONNECTED_APPS"],
+    category: "apexTestsSecurity",
+    icon: "utility:lock",
   },
   {
     key: "DEPLOYMENTS",
     command: "sf hardis:org:diagnose:deployments --period weekly",
     frequency: "daily",
     notificationTypes: ["DEPLOYMENTS"],
+    category: "orgActivity",
+    icon: "utility:upload",
   },
   {
     key: "LICENSES",
     command: "sf hardis:org:diagnose:licenses",
     frequency: "weekly",
     notificationTypes: ["LICENSES"],
+    category: "licensesPackages",
+    icon: "utility:identity",
   },
   {
     key: "LINT_ACCESS",
     command: "sf hardis:lint:access",
     frequency: "weekly",
     notificationTypes: ["LINT_ACCESS"],
+    category: "technicalDebt",
+    icon: "utility:key",
   },
   {
     key: "UNUSED_LICENSES",
     command: "sf hardis:org:diagnose:unusedlicenses",
     frequency: "weekly",
     notificationTypes: ["UNUSED_LICENSES"],
+    category: "licensesPackages",
+    icon: "utility:identity",
   },
   {
     key: "UNUSED_USERS",
     command: "sf hardis:org:diagnose:unusedusers --licensetypes all --days 180",
     frequency: "weekly",
     notificationTypes: ["UNUSED_USERS"],
+    category: "userActivity",
+    icon: "utility:logout",
   },
   {
     key: "UNUSED_USERS_CRM_6_MONTHS",
     command: "sf hardis:org:diagnose:unusedusers --licensetypes all-crm --days 180",
     frequency: "weekly",
     notificationTypes: ["UNUSED_USERS_CRM_6_MONTHS"],
+    category: "userActivity",
+    icon: "utility:logout",
   },
   {
     key: "UNUSED_USERS_EXPERIENCE_6_MONTHS",
     command: "sf hardis:org:diagnose:unusedusers --licensetypes experience --days 180",
     frequency: "weekly",
     notificationTypes: ["UNUSED_USERS_EXPERIENCE_6_MONTHS"],
+    category: "userActivity",
+    icon: "utility:logout",
   },
   {
     key: "ACTIVE_USERS_CRM_WEEKLY",
     command: "sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes all-crm --days 7",
     frequency: "weekly",
     notificationTypes: ["ACTIVE_USERS_CRM_WEEKLY"],
+    category: "userActivity",
+    icon: "utility:user",
   },
   {
     key: "ACTIVE_USERS_EXPERIENCE_MONTHLY",
     command: "sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes experience --days 30",
     frequency: "weekly",
     notificationTypes: ["ACTIVE_USERS_EXPERIENCE_MONTHLY"],
-  },
-  {
-    key: "ORG_INFO",
-    command: "sf hardis:org:diagnose:instanceupgrade",
-    frequency: "weekly",
-    notificationTypes: ["ORG_INFO"],
+    category: "userActivity",
+    icon: "utility:user",
   },
   {
     key: "RELEASE_UPDATES",
     command: "sf hardis:org:diagnose:releaseupdates",
     frequency: "weekly",
     notificationTypes: ["RELEASE_UPDATES"],
+    category: "orgInfo",
+    icon: "utility:date_time",
+  },
+  {
+    key: "ORG_INFO",
+    command: "sf hardis:org:diagnose:instanceupgrade",
+    frequency: "weekly",
+    notificationTypes: ["ORG_INFO"],
+    category: "orgInfo",
+    icon: "utility:info",
   },
   {
     key: "ORG_HEALTH_CHECK",
     command: "sf hardis:org:monitor:health-check",
     frequency: "weekly",
     notificationTypes: ["ORG_HEALTH_CHECK"],
+    category: "apexTestsSecurity",
+    icon: "utility:health_check",
   },
   {
     key: "UNUSED_METADATAS",
     command: "sf hardis:lint:unusedmetadatas",
     frequency: "weekly",
     notificationTypes: ["UNUSED_METADATAS"],
+    category: "technicalDebt",
+    icon: "utility:settings",
   },
   {
     key: "UNUSED_APEX_CLASSES",
     command: "sf hardis:org:diagnose:unused-apex-classes",
     frequency: "weekly",
     notificationTypes: ["UNUSED_APEX_CLASSES"],
+    category: "technicalDebt",
+    icon: "utility:apex",
   },
   {
     key: "APEX_API_VERSION",
     command: "sf hardis:org:diagnose:apex-api-version",
     frequency: "weekly",
     notificationTypes: ["APEX_API_VERSION"],
+    category: "technicalDebt",
+    icon: "utility:apex",
   },
   {
     key: "CONNECTED_APPS",
     command: "sf hardis:org:diagnose:unused-connected-apps",
     frequency: "weekly",
     notificationTypes: ["CONNECTED_APPS"],
+    category: "technicalDebt",
+    icon: "utility:apps",
   },
   {
     key: "METADATA_STATUS",
     command: "sf hardis:lint:metadatastatus",
     frequency: "weekly",
     notificationTypes: ["METADATA_STATUS"],
+    category: "technicalDebt",
+    icon: "utility:settings",
   },
   {
     key: "MISSING_ATTRIBUTES",
     command: "sf hardis:lint:missingattributes",
     frequency: "weekly",
     notificationTypes: ["MISSING_ATTRIBUTES"],
+    category: "technicalDebt",
+    icon: "utility:question",
   },
   {
     key: "UNDERUSED_PERMSETS",
     command: "sf hardis:org:diagnose:underusedpermsets",
     frequency: "weekly",
     notificationTypes: ["UNDERUSED_PERMSETS"],
+    category: "licensesPackages",
+    icon: "utility:key",
   },
   {
     key: "MINIMAL_PERMSETS",
     command: "sf hardis:org:diagnose:minimalpermsets",
     frequency: "weekly",
     notificationTypes: ["MINIMAL_PERMSETS"],
+    category: "licensesPackages",
+    icon: "utility:key",
   },
 ];
 
@@ -215,44 +262,44 @@ export function getCategoryDescriptionI18nKey(key: string): string {
   return `notifCategoryDesc${toCategoryPascalSlug(key)}`;
 }
 
-// Resolves the category for a notification type. The single source of truth is
-// NOTIFICATION_TYPE_CATEGORY in notifProvider/types.ts. Monitoring command keys are NOT in that
-// mapping (the relationship is now via notificationTypes[]) -- monitoringOnlyCategoryOverrides
-// gives them a category for display in configuration UIs that still want to group commands.
-const monitoringOnlyCategoryOverrides: Record<string, NotificationCategory> = {
-  APEX_FLOW_ERRORS: "orgActivity",
-};
+// Each built-in command in monitoringCommandsDefault carries its own `category` and `icon`. The
+// resolvers below exist only as a safety net for user-defined custom commands declared via
+// .sfdx-hardis.yml monitoringCommands[] -- those entries can legally omit category/icon, in
+// which case we inherit from the first notification type the command emits.
+
+function resolveNotificationTypeIcon(key: string): string {
+  return notificationTypesDefault[key as NotifMessageType]?.icon ?? "";
+}
+
+function resolveMonitoringCommandIcon(cmd: MonitoringCommandEntry): string {
+  if (cmd.icon) {
+    return cmd.icon;
+  }
+  const firstType = cmd.notificationTypes?.[0];
+  return notificationTypesDefault[firstType as NotifMessageType]?.icon ?? "";
+}
 
 function resolveNotificationTypeCategory(key: string): NotificationCategory {
-  const category = NOTIFICATION_TYPE_CATEGORY[key as NotifMessageType];
+  const category = notificationTypesDefault[key as NotifMessageType]?.category;
   if (!category) {
     throw new Error(
-      `Missing category mapping for notification type "${key}". Add it to NOTIFICATION_TYPE_CATEGORY in src/common/notifProvider/types.ts.`,
+      `Missing notificationTypesDefault entry for notification type "${key}". Add one to src/common/notifProvider/types.ts.`,
     );
   }
   return category;
 }
 
 function resolveMonitoringCommandCategory(cmd: MonitoringCommandEntry): NotificationCategory {
-  const override = monitoringOnlyCategoryOverrides[cmd.key];
-  if (override) {
-    return override;
+  if (cmd.category) {
+    return cmd.category;
   }
-  // Derive category from the first notification type the command emits.
   const firstType = cmd.notificationTypes?.[0];
-  if (firstType) {
-    const category = NOTIFICATION_TYPE_CATEGORY[firstType as NotifMessageType];
-    if (category) {
-      return category;
-    }
-  }
-  // Last-resort fallback: try the command key itself.
-  const fallback = NOTIFICATION_TYPE_CATEGORY[cmd.key as NotifMessageType];
-  if (fallback) {
-    return fallback;
+  const category = notificationTypesDefault[firstType as NotifMessageType]?.category;
+  if (category) {
+    return category;
   }
   throw new Error(
-    `Cannot resolve a category for monitoring command "${cmd.key}". Either add an entry to NOTIFICATION_TYPE_CATEGORY for one of its notificationTypes, or to monitoringOnlyCategoryOverrides.`,
+    `Cannot resolve a category for monitoring command "${cmd.key}". Declare a \`category\` on the command entry, or add an entry to notificationTypesDefault for one of its notificationTypes.`,
   );
 }
 
@@ -282,7 +329,7 @@ function defaultThreshold(channel: NotificationChannel): NotificationThreshold {
 }
 
 function resolveDefaultThresholds(key: string): Record<NotificationChannel, NotificationThreshold> {
-  const defaults = notificationDefaults[key as NotifMessage["type"]] ?? {};
+  const defaults = notificationTypesDefault[key as NotifMessageType]?.defaults ?? {};
   const emailThreshold: NotificationThreshold = isEmailChannelObject(defaults.email)
     ? (defaults.email.threshold ?? defaultThreshold("email"))
     : ((defaults.email as NotifSeverity | "off" | undefined) ?? defaultThreshold("email"));
@@ -300,6 +347,10 @@ export interface MonitoringCommandDefaultEntry {
   title: string;
   description: string;
   category: NotificationCategory;
+  // SLDS icon name in `<category>:<name>` form, inherited from the first notification type the
+  // command emits (or from the entry's own optional `icon` field for aggregate commands).
+  // Empty string when no mapping exists; the UI is expected to fall back to a generic glyph.
+  icon: string;
   command?: string;
   frequency?: MonitoringFrequency;
   frequencyDay?: Weekday;
@@ -313,6 +364,10 @@ export interface NotificationConfigDefaultEntry {
   title: string;
   description: string;
   category: NotificationCategory;
+  // SLDS icon name in `<category>:<name>` form (https://www.salesforceicons.com/), e.g.
+  // "utility:dashboard", "standard:report", "action:approval". Empty string when no mapping
+  // exists; the UI is expected to fall back to a generic glyph in that case.
+  icon: string;
   notifications: Record<NotificationChannel, NotificationThreshold>;
   // Thresholds that can actually fire for this notification type, sorted from most restrictive
   // (e.g. "critical") to least restrictive ("log") and terminated by "off". Configuration UIs
@@ -347,6 +402,7 @@ export function getMonitoringConfigDefaults(): MonitoringConfigDefaultsPayload {
     title: t(getTitleI18nKey(cmd.key)),
     description: t(getDescriptionI18nKey(cmd.key)),
     category: resolveMonitoringCommandCategory(cmd),
+    icon: resolveMonitoringCommandIcon(cmd),
     command: cmd.command,
     frequency: cmd.frequency,
     frequencyDay: cmd.frequencyDay,
@@ -354,15 +410,16 @@ export function getMonitoringConfigDefaults(): MonitoringConfigDefaultsPayload {
     notificationTypes: cmd.notificationTypes ?? [],
   }));
 
-  // Build notificationConfig[] from every entry in NOTIFICATION_TYPE_CATEGORY so the catalog covers
+  // Build notificationConfig[] from every entry in notificationTypesDefault so the catalog covers
   // every notification type the CLI can emit, whether or not a scheduled command emits it.
   const notificationConfig: NotificationConfigDefaultEntry[] = (
-    Object.keys(NOTIFICATION_TYPE_CATEGORY) as NotifMessageType[]
+    Object.keys(notificationTypesDefault) as NotifMessageType[]
   ).map((key) => ({
     key,
     title: t(getTitleI18nKey(key)),
     description: t(getDescriptionI18nKey(key)),
     category: resolveNotificationTypeCategory(key),
+    icon: resolveNotificationTypeIcon(key),
     notifications: resolveDefaultThresholds(key),
     availableThresholds: getAvailableThresholds(key),
   }));

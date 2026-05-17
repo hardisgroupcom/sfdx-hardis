@@ -2040,7 +2040,7 @@
     },
     "notificationConfig": {
       "$id": "#/properties/notificationConfig",
-      "description": "Per-notification-type routing configuration. User entries are merged by 'key' onto the built-in defaults defined in src/common/notifProvider/notificationDefaults.ts: provide only the channels you want to override.",
+      "description": "Per-notification-type routing configuration. User entries are merged by 'key' onto the built-in defaults declared in `notificationTypesDefault` (src/common/notifProvider/types.ts): provide only the channels you want to override.",
       "examples": [
         [
           {

@@ -43,11 +43,20 @@ export interface MonitoringCommandEntry {
   // (e.g. APEX_FLOW_ERRORS aggregates APEX_ERROR + FLOW_ERROR). Per-channel routing
   // thresholds live on NotificationConfigEntry (notificationConfig), not here.
   notificationTypes?: string[];
+  // Optional category override for the monitoring-defaults catalog. Useful for aggregate
+  // commands like APEX_FLOW_ERRORS that emit multiple notification types and would otherwise
+  // inherit only the first emitted type's category. When omitted, the resolver falls back to
+  // the category of the first key in `notificationTypes`.
+  category?: NotificationCategory;
+  // Optional SLDS icon (`<category>:<name>`, e.g. "utility:warning") for the monitoring-defaults
+  // catalog. Same fallback semantics as `category` above: when omitted the resolver inherits
+  // the first notification type's icon.
+  icon?: string;
 }
 
 // Per-notification-type routing configuration. User overrides live under the top-level
-// `notificationConfig:` key in .sfdx-hardis.yml and are merged by `key` onto the defaults
-// defined in src/common/notifProvider/notificationDefaults.ts.
+// `notificationConfig:` key in .sfdx-hardis.yml and are merged by `key` onto the `defaults`
+// blocks declared in `notificationTypesDefault` (see below).
 export interface NotificationConfigEntry {
   key: string;
   notifications?: NotificationChannelConfig;
@@ -59,7 +68,8 @@ export interface NotifButton {
   style?: "primary" | "danger";
 }
 
-// Notification type union: every member must also have an entry in NOTIFICATION_TYPE_CATEGORY below.
+// Notification type union: every member must also have an entry in notificationTypesDefault below
+// (compile-time enforced via Record<NotifMessageType, NotificationTypeDefault>).
 export type NotifMessageType =
   | "ACTIVE_USERS"
   | "ACTIVE_USERS_CRM_WEEKLY"
@@ -120,123 +130,291 @@ export const NOTIFICATION_CATEGORIES: { key: NotificationCategory; order: number
   { key: "other", order: 7 },
 ];
 
-// Severities each notification type can actually be emitted with. Derived from the source code of
-// the commands that emit each type. Used by the monitoring-defaults catalog to expose the
-// `availableThresholds` list for configuration UIs (so a threshold selector only offers severities
-// that can actually fire for the given type, plus "off").
+// Per-notification-type metadata: category, icon, emitted severities, channel routing defaults.
 //
-// Severity order (low to high): log < success < info < warning < error < critical.
-// When a notification type is not emitted anywhere yet (placeholder/reserved), list all severities
-// so configuration UIs do not constrain users prematurely.
+// SINGLE SOURCE OF TRUTH for every static fact about a notification type. Whenever you add or
+// change a type, edit one entry here -- the monitoring-defaults catalog, threshold clamping,
+// availableThresholds derivation, and per-channel default routing all read directly from this
+// object.
 //
-// Whenever you add or change a `severity:` value on a NotifProvider.postNotifications call, update
-// the matching entry here.
-export const NOTIFICATION_TYPE_EMITTED_SEVERITIES: Record<NotifMessageType, NotifSeverity[]> = {
+// Fields:
+//
+// - `category`: NotificationCategory the type belongs to. Drives grouping in configuration UIs.
+//
+// - `icon`: SLDS icon name in `<category>:<name>` form (see https://www.salesforceicons.com/),
+//   e.g. `utility:dashboard`, `standard:report`, `action:approval`. Surfaced on the catalog so
+//   configuration UIs can render a glyph next to each row.
+//
+// - `emittedSeverities`: severities this type can actually be emitted with. Derived from the
+//   source code of the commands that emit each type. Drives the `availableThresholds` list (so a
+//   threshold selector only offers values that can actually fire, plus "off"). When a type is not
+//   emitted anywhere yet (placeholder/reserved), list all severities so UIs do not lock users in.
+//   Severity order (low to high): log < success < info < warning < error < critical.
+//
+// - `defaults`: per-channel routing thresholds applied when the user has not overridden them.
+//   Each value MUST belong to the type's available thresholds (= emittedSeverities ∪ {"log"} ∪
+//   {"off"}); otherwise the catalog clamps it to the nearest meaningful value at runtime.
+//   Convention: `api: "log"` for every type (audit everything to the API).
+//
+// Typing as `Record<NotifMessageType, NotificationTypeDefault>` makes this exhaustive: adding a
+// new type to NotifMessageType without an entry here is a compile error.
+export interface NotificationTypeDefault {
+  category: NotificationCategory;
+  icon: string;
+  emittedSeverities: NotifSeverity[];
+  defaults: NotificationChannelConfig;
+}
+
+export const notificationTypesDefault: Record<NotifMessageType, NotificationTypeDefault> = {
   // orgActivity
-  AUDIT_TRAIL: ["warning", "log"],
-  LEGACY_API: ["error", "log"],
-  APEX_FLEX_QUEUE: ["warning", "log"],
-  APEX_ERROR: ["error", "success"],
-  FLOW_ERROR: ["error", "success"],
-  BACKUP: ["info", "log"],
+  AUDIT_TRAIL: {
+    category: "orgActivity",
+    icon: "utility:shield",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "off", api: "log" },
+  },
+  LEGACY_API: {
+    category: "orgActivity",
+    icon: "utility:variation",
+    emittedSeverities: ["error", "log"],
+    defaults: { messaging: "error", email: "error", api: "log" },
+  },
+  APEX_FLEX_QUEUE: {
+    category: "orgActivity",
+    icon: "utility:queue",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "off", api: "log" },
+  },
+  APEX_ERROR: {
+    category: "orgActivity",
+    icon: "utility:bug",
+    emittedSeverities: ["error", "success"],
+    defaults: { messaging: "error", email: "error", api: "log" },
+  },
+  FLOW_ERROR: {
+    category: "orgActivity",
+    icon: "utility:flow",
+    emittedSeverities: ["error", "success"],
+    defaults: { messaging: "error", email: "error", api: "log" },
+  },
+  BACKUP: {
+    category: "orgActivity",
+    icon: "utility:archive",
+    emittedSeverities: ["info", "log"],
+    defaults: { messaging: "info", email: "off", api: "log" },
+  },
   // Reserved/placeholder - not currently emitted; expose every severity so UIs do not lock users in.
-  DEPLOYMENT: ["critical", "error", "warning", "info", "success", "log"],
-  DEPLOYMENTS: ["warning", "log"],
+  DEPLOYMENT: {
+    category: "orgActivity",
+    icon: "utility:upload",
+    emittedSeverities: ["critical", "error", "warning", "info", "success", "log"],
+    defaults: { messaging: "info", email: "warning", api: "log" },
+  },
+  DEPLOYMENTS: {
+    category: "orgActivity",
+    icon: "utility:upload",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "warning", api: "log" },
+  },
+
   // userActivity
-  ACTIVE_USERS: ["log"],
-  ACTIVE_USERS_CRM_WEEKLY: ["log"],
-  ACTIVE_USERS_EXPERIENCE_MONTHLY: ["log"],
-  UNUSED_USERS: ["log"],
-  UNUSED_USERS_CRM_6_MONTHS: ["log"],
-  UNUSED_USERS_EXPERIENCE_6_MONTHS: ["log"],
+  ACTIVE_USERS: {
+    category: "userActivity",
+    icon: "utility:user",
+    emittedSeverities: ["log"],
+    defaults: { messaging: "off", email: "off", api: "log" },
+  },
+  ACTIVE_USERS_CRM_WEEKLY: {
+    category: "userActivity",
+    icon: "utility:user",
+    emittedSeverities: ["log"],
+    defaults: { messaging: "off", email: "off", api: "log" },
+  },
+  ACTIVE_USERS_EXPERIENCE_MONTHLY: {
+    category: "userActivity",
+    icon: "utility:user",
+    emittedSeverities: ["log"],
+    defaults: { messaging: "off", email: "off", api: "log" },
+  },
+  UNUSED_USERS: {
+    category: "userActivity",
+    icon: "utility:logout",
+    emittedSeverities: ["log"],
+    defaults: { messaging: "off", email: "off", api: "log" },
+  },
+  UNUSED_USERS_CRM_6_MONTHS: {
+    category: "userActivity",
+    icon: "utility:logout",
+    emittedSeverities: ["log"],
+    defaults: { messaging: "off", email: "off", api: "log" },
+  },
+  UNUSED_USERS_EXPERIENCE_6_MONTHS: {
+    category: "userActivity",
+    icon: "utility:logout",
+    emittedSeverities: ["log"],
+    defaults: { messaging: "off", email: "off", api: "log" },
+  },
+
   // apexTestsSecurity
-  APEX_TESTS: ["error", "log"],
-  ORG_HEALTH_CHECK: ["error", "warning", "success"],
-  UNSECURED_CONNECTED_APPS: ["error", "log"],
+  APEX_TESTS: {
+    category: "apexTestsSecurity",
+    icon: "utility:check",
+    emittedSeverities: ["error", "log"],
+    defaults: { messaging: "error", email: "error", api: "log" },
+  },
+  ORG_HEALTH_CHECK: {
+    category: "apexTestsSecurity",
+    icon: "utility:health_check",
+    emittedSeverities: ["error", "warning", "success"],
+    defaults: { messaging: "warning", email: "error", api: "log" },
+  },
+  UNSECURED_CONNECTED_APPS: {
+    category: "apexTestsSecurity",
+    icon: "utility:lock",
+    emittedSeverities: ["error", "log"],
+    defaults: { messaging: "error", email: "error", api: "log" },
+  },
+
   // orgInfo
-  ORG_INFO: ["log"],
-  ORG_LIMITS: ["error", "warning", "log"],
-  RELEASE_UPDATES: ["warning", "log"],
+  ORG_LIMITS: {
+    category: "orgInfo",
+    icon: "utility:gauge",
+    emittedSeverities: ["error", "warning", "log"],
+    defaults: { messaging: "warning", email: "error", api: "log" },
+  },
+  RELEASE_UPDATES: {
+    category: "orgInfo",
+    icon: "utility:date_time",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "warning", api: "log" },
+  },
+  ORG_INFO: {
+    category: "orgInfo",
+    icon: "utility:info",
+    emittedSeverities: ["log"],
+    defaults: { messaging: "off", email: "off", api: "log" },
+  },
+
   // technicalDebt
-  APEX_API_VERSION: ["warning", "log"],
-  CONNECTED_APPS: ["warning", "log"],
-  LINT_ACCESS: ["warning", "log"],
-  METADATA_STATUS: ["warning", "log"],
-  MISSING_ATTRIBUTES: ["warning", "log"],
-  UNUSED_APEX_CLASSES: ["warning", "log"],
-  UNUSED_METADATAS: ["warning", "log"],
+  APEX_API_VERSION: {
+    category: "technicalDebt",
+    icon: "utility:apex",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "off", api: "log" },
+  },
+  CONNECTED_APPS: {
+    category: "technicalDebt",
+    icon: "utility:apps",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "warning", api: "log" },
+  },
+  LINT_ACCESS: {
+    category: "technicalDebt",
+    icon: "utility:key",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "off", api: "log" },
+  },
+  METADATA_STATUS: {
+    category: "technicalDebt",
+    icon: "utility:settings",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "warning", api: "log" },
+  },
+  MISSING_ATTRIBUTES: {
+    category: "technicalDebt",
+    icon: "utility:question",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "warning", api: "log" },
+  },
+  UNUSED_APEX_CLASSES: {
+    category: "technicalDebt",
+    icon: "utility:apex",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "warning", api: "log" },
+  },
+  UNUSED_METADATAS: {
+    category: "technicalDebt",
+    icon: "utility:settings",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "warning", api: "log" },
+  },
+
   // licensesPackages
-  LICENSES: ["log"],
-  UNUSED_LICENSES: ["warning", "log"],
-  UNDERUSED_PERMSETS: ["warning", "log"],
-  MINIMAL_PERMSETS: ["error", "warning", "log"],
+  LICENSES: {
+    category: "licensesPackages",
+    icon: "utility:identity",
+    emittedSeverities: ["log"],
+    defaults: { messaging: "off", email: "off", api: "log" },
+  },
+  UNUSED_LICENSES: {
+    category: "licensesPackages",
+    icon: "utility:identity",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "warning", api: "log" },
+  },
+  UNDERUSED_PERMSETS: {
+    category: "licensesPackages",
+    icon: "utility:key",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "warning", api: "log" },
+  },
+  MINIMAL_PERMSETS: {
+    category: "licensesPackages",
+    icon: "utility:key",
+    emittedSeverities: ["error", "warning", "log"],
+    defaults: { messaging: "warning", email: "warning", api: "log" },
+  },
+
   // other
-  AGENTFORCE_CONVERSATIONS: ["log"],
-  AGENTFORCE_FEEDBACK: ["warning", "log"],
-  DORA_REPORT: ["warning", "info", "success"],
-  MONITORING_SUMMARY: ["info"],
+  AGENTFORCE_CONVERSATIONS: {
+    category: "other",
+    icon: "utility:einstein",
+    emittedSeverities: ["log"],
+    defaults: { messaging: "off", email: "off", api: "log" },
+  },
+  AGENTFORCE_FEEDBACK: {
+    category: "other",
+    icon: "utility:feedback",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "warning", api: "log" },
+  },
+  DORA_REPORT: {
+    category: "other",
+    icon: "utility:trending",
+    emittedSeverities: ["warning", "info", "success"],
+    defaults: { messaging: "info", email: "info", api: "log" },
+  },
+  MONITORING_SUMMARY: {
+    category: "other",
+    icon: "utility:dashboard",
+    emittedSeverities: ["info"],
+    defaults: { messaging: "info", email: "info", api: "log" },
+  },
   // Reserved/placeholder - not currently emitted; expose every severity.
-  RELEASE_NOTES: ["critical", "error", "warning", "info", "success", "log"],
-  SERVICENOW_REPORT: ["log"],
+  RELEASE_NOTES: {
+    category: "other",
+    icon: "utility:note",
+    emittedSeverities: ["critical", "error", "warning", "info", "success", "log"],
+    defaults: { messaging: "info", email: "info", api: "log" },
+  },
+  SERVICENOW_REPORT: {
+    category: "other",
+    icon: "utility:case",
+    emittedSeverities: ["log"],
+    defaults: { messaging: "off", email: "off", api: "log" },
+  },
 };
 
-// Maps every notification type to its category. Typing as Record<NotifMessageType, NotificationCategory>
-// makes this exhaustive: adding a new type to NotifMessageType without an entry here is a compile error.
-export const NOTIFICATION_TYPE_CATEGORY: Record<NotifMessageType, NotificationCategory> = {
-  // orgActivity
-  AUDIT_TRAIL: "orgActivity",
-  LEGACY_API: "orgActivity",
-  APEX_FLEX_QUEUE: "orgActivity",
-  APEX_ERROR: "orgActivity",
-  FLOW_ERROR: "orgActivity",
-  BACKUP: "orgActivity",
-  DEPLOYMENT: "orgActivity",
-  DEPLOYMENTS: "orgActivity",
-  // userActivity
-  ACTIVE_USERS: "userActivity",
-  ACTIVE_USERS_CRM_WEEKLY: "userActivity",
-  ACTIVE_USERS_EXPERIENCE_MONTHLY: "userActivity",
-  UNUSED_USERS: "userActivity",
-  UNUSED_USERS_CRM_6_MONTHS: "userActivity",
-  UNUSED_USERS_EXPERIENCE_6_MONTHS: "userActivity",
-  // apexTestsSecurity
-  APEX_TESTS: "apexTestsSecurity",
-  ORG_HEALTH_CHECK: "apexTestsSecurity",
-  UNSECURED_CONNECTED_APPS: "apexTestsSecurity",
-  // orgInfo
-  ORG_INFO: "orgInfo",
-  ORG_LIMITS: "orgInfo",
-  RELEASE_UPDATES: "orgInfo",
-  // technicalDebt
-  APEX_API_VERSION: "technicalDebt",
-  CONNECTED_APPS: "technicalDebt",
-  LINT_ACCESS: "technicalDebt",
-  METADATA_STATUS: "technicalDebt",
-  MISSING_ATTRIBUTES: "technicalDebt",
-  UNUSED_APEX_CLASSES: "technicalDebt",
-  UNUSED_METADATAS: "technicalDebt",
-  // licensesPackages
-  LICENSES: "licensesPackages",
-  UNUSED_LICENSES: "licensesPackages",
-  UNDERUSED_PERMSETS: "licensesPackages",
-  MINIMAL_PERMSETS: "licensesPackages",
-  // other
-  AGENTFORCE_CONVERSATIONS: "other",
-  AGENTFORCE_FEEDBACK: "other",
-  DORA_REPORT: "other",
-  MONITORING_SUMMARY: "other",
-  RELEASE_NOTES: "other",
-  SERVICENOW_REPORT: "other",
-};
 
 export interface NotifMessage {
   text: string;
   // Adding a new notification type? The .claude/skills/monitoring-notifications/SKILL.md file
   // lists every place that needs to change. Quick summary:
-  //   - src/common/notifProvider/types.ts -- add to NotifMessageType union AND NOTIFICATION_TYPE_CATEGORY mapping
-  //   - src/common/notifProvider/notificationDefaults.ts -- routing defaults (messaging/email/api thresholds)
-  //   - src/common/monitoring/monitoringDefaults.ts -- notificationOnlyTypes (if NOT a monitoring command key)
-  //                                                    or monitoringCommandsDefault (if it IS a command)
+  //   - src/common/notifProvider/types.ts -- add to NotifMessageType union AND add a matching
+  //                                          entry to notificationTypesDefault (category, icon,
+  //                                          emittedSeverities, channel defaults all in one place)
+  //   - src/common/monitoring/monitoringDefaults.ts -- monitoringCommandsDefault (only if the
+  //                                                    type is bound to a scheduled command)
   //   - src/i18n/*.json -- notifTypeTitle<PascalCaseKey> + notifTypeDesc<PascalCaseKey> in ALL 9 locales
   //   - config/sfdx-hardis.jsonschema.json -- enum_notification_types (always) and enum_monitoring_commands (if a command)
   // Existing installations pick up new types automatically except for fields a user has explicitly

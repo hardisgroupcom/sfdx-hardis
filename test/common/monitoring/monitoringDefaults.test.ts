@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import { getMonitoringConfigDefaults } from '../../../src/common/monitoring/monitoringDefaults.js';
-import { NOTIFICATION_TYPE_EMITTED_SEVERITIES } from '../../../src/common/notifProvider/types.js';
+import { notificationTypesDefault } from '../../../src/common/notifProvider/types.js';
 
 describe('getMonitoringConfigDefaults()', () => {
   const payload = getMonitoringConfigDefaults();
@@ -77,9 +77,10 @@ describe('getMonitoringConfigDefaults()', () => {
         entry.availableThresholds.includes('log'),
         `entry "${entry.key}" availableThresholds must always include "log"`,
       ).to.be.true;
-      const emitted = NOTIFICATION_TYPE_EMITTED_SEVERITIES[entry.key as keyof typeof NOTIFICATION_TYPE_EMITTED_SEVERITIES];
+      const emitted =
+        notificationTypesDefault[entry.key as keyof typeof notificationTypesDefault]?.emittedSeverities;
       // availableThresholds = (emitted severities ∪ {"log"}) + "off"
-      const expectedSeverities = new Set<string>([...(emitted as readonly string[]), 'log']);
+      const expectedSeverities = new Set<string>([...((emitted ?? []) as readonly string[]), 'log']);
       const actualSeverities = entry.availableThresholds.filter((t) => t !== 'off');
       expect(new Set(actualSeverities), `entry "${entry.key}" availableThresholds mismatch`).to.deep.equal(
         expectedSeverities,
@@ -94,6 +95,19 @@ describe('getMonitoringConfigDefaults()', () => {
         `entry "${entry.key}" api channel default must be "log"`,
       ).to.equal('log');
     }
+  });
+
+  it('exposes an SLDS icon on every notificationConfig and monitoringCommands entry', () => {
+    const sldsPattern = /^(utility|standard|action|custom|doctype):[a-z0-9_]+$/;
+    for (const entry of payload.notificationConfig) {
+      expect(entry.icon, `entry "${entry.key}" missing SLDS icon`).to.match(sldsPattern);
+    }
+    for (const cmd of payload.monitoringCommands) {
+      expect(cmd.icon, `monitoring command "${cmd.key}" missing SLDS icon`).to.match(sldsPattern);
+    }
+    // Specific regression: MONITORING_SUMMARY had no icon before.
+    const summary = payload.notificationConfig.find((n) => n.key === 'MONITORING_SUMMARY');
+    expect(summary?.icon, 'MONITORING_SUMMARY must carry an icon').to.equal('utility:dashboard');
   });
 
   it('keeps every per-channel default within the matching availableThresholds list', () => {

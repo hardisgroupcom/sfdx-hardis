@@ -11,7 +11,7 @@ This skill documents the moving parts of the monitoring + notification pipeline 
 ## Mental model
 
 - **Monitoring command** = a sub-command run by `hardis:org:monitor:all`. Has a `key`, `command`, `frequency`, and a `notificationTypes: string[]` declaring which notification type keys it can emit. Listed in `monitoringCommandsDefault`. Routing thresholds are NOT stored here.
-- **Notification type** = a value of `NotifMessage.type`. Every notification dispatched through `NotifProvider.postNotifications` has one. Listed in the `NotifMessage.type` union. Its per-channel routing thresholds live in `notificationDefaults`.
+- **Notification type** = a value of `NotifMessage.type`. Every notification dispatched through `NotifProvider.postNotifications` has one. Listed in the `NotifMessage.type` union. Its per-channel routing thresholds (plus its category, SLDS icon, and emitted severities) live on `notificationTypesDefault` in `src/common/notifProvider/types.ts`.
 - **Channel** = a logical bucket of providers. Three exist: `messaging` (Slack + Teams), `email`, `api`. Providers declare their channel via `getChannel()`.
 - **Threshold** = the minimum severity required to deliver a notification on a channel. Order, low to high: `log < success < info < warning < error < critical`. The sentinel `off` disables the channel.
 
@@ -21,11 +21,9 @@ Most monitoring commands emit a single notification type whose key matches the c
 
 | What                                                      | Where                                                                         | Notes                                                                                                                                                                                                                                                                                                  |
 |-----------------------------------------------------------|-------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Monitoring commands (key, command, frequency, notif refs) | `src/common/monitoring/monitoringDefaults.ts` -> `monitoringCommandsDefault`  | Array of `MonitoringCommandEntry`. Iterated by `monitor:all` on every run. Each entry has `notificationTypes: string[]`.                                                                                                                                                                               |
-| Per-channel routing defaults                              | `src/common/notifProvider/notificationDefaults.ts` -> `notificationDefaults`  | Keyed by `NotifMessage.type`. Per-key map of `{ messaging?, email?, api? }` thresholds. Missing channels fall back to `messaging: info`, `email: info`, `api: log`.                                                                                                                                    |
+| Per-notification-type metadata (category + icon + emittedSeverities + channel defaults) | `src/common/notifProvider/types.ts` -> `notificationTypesDefault`        | `Record<NotifMessageType, NotificationTypeDefault>` -- the SINGLE source of truth for everything per-type. Exhaustive: a new union member without an entry here is a compile error. Read fields with `notificationTypesDefault[key].category`, `.icon`, `.emittedSeverities`, `.defaults`. |
+| Monitoring commands (key, command, frequency, notif refs) | `src/common/monitoring/monitoringDefaults.ts` -> `monitoringCommandsDefault`  | Array of `MonitoringCommandEntry`. Iterated by `monitor:all` on every run. Each entry has `notificationTypes: string[]` plus optional `category` / `icon` overrides for aggregate commands (e.g. `APEX_FLOW_ERRORS`). |
 | Notification type union                                   | `src/common/notifProvider/types.ts` -> `NotifMessageType`                     | The TypeScript union. Maintainer comment in `NotifMessage` lists everywhere to update.                                                                                                                                                                                                                 |
-| Notification type -> category mapping                     | `src/common/notifProvider/types.ts` -> `NOTIFICATION_TYPE_CATEGORY`           | `Record<NotifMessageType, NotificationCategory>` -- exhaustive, so a new union member without a category is a compile error.                                                                                                                                                                           |
-| Notification type -> severities it can be emitted with    | `src/common/notifProvider/types.ts` -> `NOTIFICATION_TYPE_EMITTED_SEVERITIES` | `Record<NotifMessageType, NotifSeverity[]>` -- drives the `availableThresholds` array surfaced by the monitoring-defaults catalog and the `clampThresholdToAvailable()` helper. Whenever you add or change a `severity:` value on a `NotifProvider.postNotifications` call, update the matching entry. |
 | Category list (titles + order)                            | `src/common/notifProvider/types.ts` -> `NOTIFICATION_CATEGORIES`              | The 7 categories rendered as sections in the configuration UI (`orgActivity`, `userActivity`, `apexTestsSecurity`, `orgInfo`, `technicalDebt`, `licensesPackages`, `other`).                                                                                                                           |
 
 ## User override model
@@ -33,7 +31,7 @@ Most monitoring commands emit a single notification type whose key matches the c
 The user `.sfdx-hardis.yml` has **two independent top-level keys**, each merged by `key` onto its respective defaults list:
 
 - `monitoringCommands:` -- scheduling overrides. `monitor:all` calls `resolveMonitoringCommands(monitoringCommandsDefault, userEntries)` from `src/common/notifProvider/notificationConfig.ts`. Each user entry is shallow-merged on top of the matching default; user-only entries (new keys) are appended as custom commands.
-- `notificationConfig:` -- per-notification-type routing overrides. `NotifProvider.postNotifications` calls `getEffectiveNotificationConfig(notifType)` from the same file. It reads `notificationDefaults[type]` and merges the user's `notificationConfig[i].notifications` block on top, field-by-field.
+- `notificationConfig:` -- per-notification-type routing overrides. `NotifProvider.postNotifications` calls `getEffectiveNotificationConfig(notifType)` from the same file. It reads `notificationTypesDefault[type].defaults` and merges the user's `notificationConfig[i].notifications` block on top, field-by-field.
 
 Net effect: **fields the user did not set automatically pick up new defaults the next time you ship**. Fields the user explicitly set keep their value (user intent wins).
 
@@ -62,28 +60,42 @@ Touch these files, in this order. The new command will be picked up on every exi
      notificationTypes: ['YOUR_NEW_COMMAND'], // most commands list their own key; APEX_FLOW_ERRORS-style aggregates list 2+ different keys
      // frequencyDay: 'monday',           // optional
      // frequencyDayOfMonth: 1,           // optional, monthly only
+     // category: 'orgActivity',          // optional override; aggregates only -- single-type commands inherit from the notification type
+     // icon: 'utility:warning',          // optional override; aggregates only -- single-type commands inherit from the notification type
    }
    ```
-   Do not set a hardcoded `title` -- the title is resolved at runtime from the `notifTypeTitle<PascalCaseKey>` i18n key (see step 5).
+   Do not set a hardcoded `title` -- the title is resolved at runtime from the `notifTypeTitle<PascalCaseKey>` i18n key (see step 4).
 
-2. **`src/common/notifProvider/types.ts`** -- add the notification type emitted by the command (typically the same key as the command, but it can differ) to the `NotifMessageType` union **and** add a matching entry to `NOTIFICATION_TYPE_CATEGORY` assigning it to one of the seven categories. The record is typed `Record<NotifMessageType, NotificationCategory>` so the compiler enforces this. If the command aggregates multiple notification types (like `APEX_FLOW_ERRORS` -> `APEX_ERROR` + `FLOW_ERROR`), add the command key itself to `monitoringOnlyCategoryOverrides` in `monitoringDefaults.ts` to pin a category for the command row in configuration UIs.
+2. **`src/common/notifProvider/types.ts`** -- add the notification type emitted by the command (typically the same key as the command, but it can differ) to the `NotifMessageType` union **and** add a matching entry to `notificationTypesDefault`. The record is typed `Record<NotifMessageType, NotificationTypeDefault>` so the compiler enforces this. A single entry carries all per-type metadata:
+   ```ts
+   YOUR_NEW_COMMAND: {
+     category: 'orgActivity',                   // one of the 7 categories
+     icon: 'utility:warning',                   // SLDS icon (https://www.salesforceicons.com/)
+     emittedSeverities: ['warning', 'log'],     // every severity your command may pass to postNotifications()
+     defaults: { messaging: 'warning', email: 'error', api: 'log' },  // per-channel routing thresholds
+   },
+   ```
 
-3. **`src/common/notifProvider/notificationDefaults.ts`** -- add a `notificationDefaults['YOUR_NEW_COMMAND']` entry with the default per-channel thresholds. Default pattern: `{ messaging: 'warning', email: 'error', api: 'log' }` for issues to act on; `{ messaging: 'info', email: 'warning', api: 'log' }` for informational reports. Always include `api: 'log'` unless there's a reason not to (the API/Grafana provider expects to receive everything). Each per-channel threshold MUST be one of the severities the type can actually be emitted with (see `NOTIFICATION_TYPE_EMITTED_SEVERITIES` in `types.ts`) or `'off'` -- the catalog clamps any out-of-range value, so a mismatch silently downgrades to `'off'` or to the nearest emitted severity.
+   Default routing patterns:
+   - `{ messaging: 'warning', email: 'error', api: 'log' }` for issues to act on
+   - `{ messaging: 'info', email: 'warning', api: 'log' }` for informational reports
 
-   Also add an entry to `NOTIFICATION_TYPE_EMITTED_SEVERITIES` in `src/common/notifProvider/types.ts` listing every `severity:` value your command may pass to `NotifProvider.postNotifications`.
+   Always include `api: 'log'` unless there's a reason not to (the API/Grafana provider expects to receive everything). Each per-channel threshold MUST be a value the type can actually be emitted with (= a member of `emittedSeverities` ∪ {"log"} ∪ {"off"}) -- the catalog clamps any out-of-range value, so a mismatch silently downgrades to `'off'` or to the nearest emitted severity.
 
-4. **`config/sfdx-hardis.jsonschema.json`** -- add the key to **both** `definitions.enum_monitoring_commands.enum`/`enumNames` **and** `definitions.enum_notification_types.enum`/`enumNames`. Keep both arrays alphabetically sorted.
+   If the command aggregates multiple notification types (like `APEX_FLOW_ERRORS` -> `APEX_ERROR` + `FLOW_ERROR`), set `category` / `icon` directly on the command entry in step 1 to pin a row identity that isn't inherited from the first emitted type.
 
-5. **i18n** -- add two keys per locale, all 9 of them (`en, de, es, fr, it, ja, nl, pl, pt-BR`). Naming follows the pattern emitted by the helpers in `monitoringDefaults.ts`:
+3. **`config/sfdx-hardis.jsonschema.json`** -- add the key to **both** `definitions.enum_monitoring_commands.enum`/`enumNames` **and** `definitions.enum_notification_types.enum`/`enumNames`. Keep both arrays alphabetically sorted.
+
+4. **i18n** -- add two keys per locale, all 9 of them (`en, de, es, fr, it, ja, nl, pl, pt-BR`). Naming follows the pattern emitted by the helpers in `monitoringDefaults.ts`:
    - `notifTypeTitle<PascalCaseKey>` -- short label shown in the configuration UI.
    - `notifTypeDesc<PascalCaseKey>` -- one-line explanation.
    - PascalCase conversion: `YOUR_NEW_COMMAND` -> `YourNewCommand`; `UNUSED_USERS_CRM_6_MONTHS` -> `UnusedUsersCrm6Months`.
    - `notifTypeTitle...` is the single source of truth for the title (the docs table generator in `monitor:all` resolves it via `t(getTitleI18nKey(cmd.key))`). Write a short imperative phrase, and wrap the most informative noun phrase in `**...**` so it stands out in UIs that render markdown (e.g. `"Detect if **org limits** are close to be reached"`).
    - Follow `.claude/rules/translations.md` for the other 8 locales. Each locale file has its own sort convention (see existing entries); `pt-BR.json` uses case-insensitive ordering, the others use case-sensitive.
 
-6. **In the new command's source file** -- when calling `NotifProvider.postNotifications(...)`, set `type: 'YOUR_NEW_COMMAND'` (or whichever notification type key your command emits). Pick the right `severity` per case (it interacts with the threshold filter, so emit `warning`/`error` only when you really want to push to messaging by default).
+5. **In the new command's source file** -- when calling `NotifProvider.postNotifications(...)`, set `type: 'YOUR_NEW_COMMAND'` (or whichever notification type key your command emits). Pick the right `severity` per case (it interacts with the threshold filter, so emit `warning`/`error` only when you really want to push to messaging by default).
 
-7. **CHANGELOG.md** -- add a bullet under `## [beta] (main)` pointing at the new command.
+6. **CHANGELOG.md** -- add a bullet under `## [beta] (main)` pointing at the new command.
 
 You usually do **not** need to touch `src/commands/hardis/org/monitor/all.ts` -- it imports `monitoringCommandsDefault` from the shared module.
 
@@ -91,17 +103,16 @@ You usually do **not** need to touch `src/commands/hardis/org/monitor/all.ts` --
 
 For notification types emitted outside `monitor:all` (e.g. `BACKUP`, `DEPLOYMENT`, `DORA_REPORT`):
 
-1. **`src/common/notifProvider/types.ts`** -- add the type to the `NotifMessageType` union **and** add an entry to `NOTIFICATION_TYPE_CATEGORY` (exhaustiveness check will fail compilation if you forget).
-2. **`src/common/notifProvider/notificationDefaults.ts`** -- add a default routing entry.
-3. **`config/sfdx-hardis.jsonschema.json`** -- add the key to `definitions.enum_notification_types`. Do **not** add it to `enum_monitoring_commands` (it isn't a command).
-4. **i18n** -- add `notifTypeTitle<PascalCaseKey>` and `notifTypeDesc<PascalCaseKey>` in all 9 locales.
-5. Use `NotifProvider.postNotifications({ type: 'YOUR_TYPE', ... })` in the code that emits the notification.
+1. **`src/common/notifProvider/types.ts`** -- add the type to the `NotifMessageType` union **and** add a single entry to `notificationTypesDefault` carrying `category`, `icon`, `emittedSeverities`, and `defaults` (per-channel routing). Exhaustiveness check will fail compilation if you forget. There is no separate `notificationDefaults` file to edit -- it's derived from this map.
+2. **`config/sfdx-hardis.jsonschema.json`** -- add the key to `definitions.enum_notification_types`. Do **not** add it to `enum_monitoring_commands` (it isn't a command).
+3. **i18n** -- add `notifTypeTitle<PascalCaseKey>` and `notifTypeDesc<PascalCaseKey>` in all 9 locales.
+4. Use `NotifProvider.postNotifications({ type: 'YOUR_TYPE', ... })` in the code that emits the notification.
 
-The new type appears automatically in `notificationConfig[]` of the `hardis:config:monitoring-defaults` payload because that list is derived from `NOTIFICATION_TYPE_CATEGORY`.
+The new type appears automatically in `notificationConfig[]` of the `hardis:config:monitoring-defaults` payload because that list is derived from `notificationTypesDefault`.
 
-## Changing default routing for an existing key
+## Changing default routing for an existing key (or its icon / category / emitted severities)
 
-Edit `notificationDefaults[KEY]` in `src/common/notifProvider/notificationDefaults.ts`. That's it. Existing installations pick the change up automatically for any channel the user did not explicitly override.
+Edit `notificationTypesDefault[KEY]` in `src/common/notifProvider/types.ts`. The four sub-fields (`category`, `icon`, `emittedSeverities`, `defaults`) live in the same place; updating one does not require touching any other file. Existing installations pick the change up automatically for any channel the user did not explicitly override.
 
 If you change a default that a user has fully overridden in their YAML (`notificationConfig:` entry), their override wins. That's intentional.
 
@@ -139,6 +150,7 @@ The VS Code extension reads defaults via the read-only `hardis:config:monitoring
       "title": "...",          // translated
       "description": "...",    // translated
       "category": "orgActivity",       // foreign key to categories[]
+      "icon": "utility:bug",                                       // SLDS icon (https://www.salesforceicons.com/)
       "notifications": { "messaging": "error", "email": "error", "api": "log" },
       "availableThresholds": ["error", "success", "log", "off"]   // emitted severities + "log" (always) + "off"
     }
@@ -175,4 +187,4 @@ node bin/dev.js hardis:config:monitoring-defaults --json
 SFDX_HARDIS_LANG=fr node bin/dev.js hardis:config:monitoring-defaults --json   # confirms translations resolve
 ```
 
-`monitoringCommands[]` length should equal `monitoringCommandsDefault.length`, and `notificationConfig[]` length should equal `Object.keys(NOTIFICATION_TYPE_CATEGORY).length`.
+`monitoringCommands[]` length should equal `monitoringCommandsDefault.length`, and `notificationConfig[]` length should equal `Object.keys(notificationTypesDefault).length`.

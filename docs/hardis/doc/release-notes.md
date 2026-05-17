@@ -62,26 +62,26 @@ In agent mode:
 
 ## Parameters
 
-| Name                 |  Type   | Description                                                                                                                                                                  |                Default                | Required |     Options      |
-|:---------------------|:-------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------:|:--------:|:----------------:|
-| agent                | boolean | Run in non-interactive mode for agents and automation                                                                                                                        |                                       |          |                  |
-| debug<br/>-d         | boolean | Activate debug mode (more logs)                                                                                                                                              |                                       |          |                  |
-| flags-dir            | option  | undefined                                                                                                                                                                    |                                       |          |                  |
-| from-date            | option  | Start date for the release scope (YYYY-MM-DD). Mutually exclusive with tag flags.                                                                                            |                                       |          |                  |
-| json                 | boolean | Format output as json.                                                                                                                                                       |                                       |          |                  |
-| merge-commit         | option  | Specific merge commit SHA to use as the end of the release scope                                                                                                             |                                       |          |                  |
-| mode<br/>-m          | option  | Release notes mode: prepare (preview upcoming release) or post (document completed release)                                                                                  |                                       |          | prepare<br/>post |
-| outputfile<br/>-f    | option  | Force the path and name of the output report file                                                                                                                            |                                       |          |                  |
-| pdf                  | boolean | Generate the documentation in PDF format (enabled by default, use --no-pdf to skip)                                                                                          |                                       |          |                  |
-| previous-tag         | option  | Previous git tag (semver). If omitted, auto-detected from existing tags.                                                                                                     |                                       |          |                  |
-| release-tag          | option  | Git tag for the release (semver, e.g. v1.2.0)                                                                                                                                |                                       |          |                  |
-| skipauth             | boolean | Skip authentication check when a default username is required                                                                                                                |                                       |          |                  |
-| source-branch        | option  | Source branch name (e.g. integration, develop). In prepare mode, if --target-branch is not set, the target branch is inferred from this branch's mergeTargets configuration. |                                       |          |                  |
-| source-commit        | option  | Source commit SHA to use as the start of the release scope                                                                                                                   |                                       |          |                  |
-| target-branch<br/>-t | option  | Target major branch name (e.g. main, production). If omitted, prompted or auto-detected.                                                                                     |                                       |          |                  |
-| target-org<br/>-o    | option  | undefined                                                                                                                                                                    | nicolas.vuillamy@cloudity.com.integci |          |                  |
-| to-date              | option  | End date for the release scope (YYYY-MM-DD). Mutually exclusive with tag flags.                                                                                              |                                       |          |                  |
-| websocket            | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                    |                                       |          |                  |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|from-date|option|Start date for the release scope (YYYY-MM-DD). Mutually exclusive with tag flags.||||
+|json|boolean|Format output as json.||||
+|merge-commit|option|Specific merge commit SHA to use as the end of the release scope||||
+|mode<br/>-m|option|Release notes mode: prepare (preview upcoming release) or post (document completed release)|||prepare<br/>post|
+|outputfile<br/>-f|option|Force the path and name of the output report file||||
+|pdf|boolean|Generate the documentation in PDF format (enabled by default, use --no-pdf to skip)||||
+|previous-tag|option|Previous git tag (semver). If omitted, auto-detected from existing tags.||||
+|release-tag|option|Git tag for the release (semver, e.g. v1.2.0)||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|source-branch|option|Source branch name (e.g. integration, develop). In prepare mode, if --target-branch is not set, the target branch is inferred from this branch's mergeTargets configuration.||||
+|source-commit|option|Source commit SHA to use as the start of the release scope||||
+|target-branch<br/>-t|option|Target major branch name (e.g. main, production). If omitted, prompted or auto-detected.||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.integci|||
+|to-date|option|End date for the release scope (YYYY-MM-DD). Mutually exclusive with tag flags.||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

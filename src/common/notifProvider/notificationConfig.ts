@@ -12,8 +12,7 @@ import type {
   NotifSeverity,
   Weekday,
 } from "./types.js";
-import { NOTIFICATION_TYPE_EMITTED_SEVERITIES } from "./types.js";
-import { notificationDefaults } from "./notificationDefaults.js";
+import { notificationTypesDefault } from "./types.js";
 
 const WEEKDAY_INDEX: Record<Weekday, number> = {
   sunday: 0,
@@ -58,7 +57,7 @@ export function severityMeetsThreshold(severity: NotifSeverity, threshold: Notif
 // list is implicitly equivalent to one inside it (e.g. "error" on a type that only emits
 // "warning" is equivalent to "off").
 export function getAvailableThresholds(notifType: string): NotificationThreshold[] {
-  const emitted = NOTIFICATION_TYPE_EMITTED_SEVERITIES[notifType as NotifMessageType] ?? [];
+  const emitted = notificationTypesDefault[notifType as NotifMessageType]?.emittedSeverities ?? [];
   const severities = new Set<NotifSeverity>(emitted);
   severities.add("log");
   const sorted = Array.from(severities).sort((a, b) => SEVERITY_RANK[b] - SEVERITY_RANK[a]);
@@ -82,7 +81,7 @@ export function clampThresholdToAvailable(
   if (available.includes(threshold)) {
     return threshold;
   }
-  const emitted = NOTIFICATION_TYPE_EMITTED_SEVERITIES[notifType as NotifMessageType] ?? [];
+  const emitted = notificationTypesDefault[notifType as NotifMessageType]?.emittedSeverities ?? [];
   if (emitted.length === 0) {
     return "log";
   }
@@ -129,7 +128,7 @@ export function getEmailRecipientsConfig(config: NotificationChannelConfig): {
 }
 
 export async function getEffectiveNotificationConfig(notifType: string): Promise<NotificationChannelConfig> {
-  const defaults = notificationDefaults[notifType] ?? {};
+  const defaults = notificationTypesDefault[notifType as NotifMessageType]?.defaults ?? {};
   const userConfig = await getConfig("user");
   const userEntries: NotificationConfigEntry[] = userConfig.notificationConfig ?? [];
   const userEntry = userEntries.find((entry) => entry?.key === notifType);
