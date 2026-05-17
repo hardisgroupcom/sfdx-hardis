@@ -8,6 +8,8 @@
 
 **Assisted menu to start working on a Salesforce User Story, streamlining the setup of your development environment.**
 
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/new-user-story-2026.gif)
+
 This command guides you through the process of preparing your local environment and a Salesforce org for a new development or configuration based User Story. It automates several steps, ensuring consistency and adherence to project standards.
 
 Key features include:
@@ -71,20 +73,20 @@ The command's logic orchestrates various underlying processes:
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                                                   | Default | Required | Options |
-|:----------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation                                         |         |          |         |
-| branch-prefix         | option  | Branch prefix to use (must be in configured branchPrefixChoices, e.g. feature, fix, retrofit) |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                               |         |          |         |
-| flags-dir             | option  | undefined                                                                                     |         |          |         |
-| json                  | boolean | Format output as json.                                                                        |         |          |         |
-| open-org              | boolean | Open the selected org in browser                                                              |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required                                 |         |          |         |
-| target-branch         | option  | Target branch to branch from                                                                  |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                                                     |         |          |         |
-| target-org<br/>-o     | option  | undefined                                                                                     |         |          |         |
-| task-name             | option  | Task name used in created branch name                                                         |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|branch-prefix|option|Branch prefix to use (must be in configured branchPrefixChoices, e.g. feature, fix, retrofit)||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|open-org|boolean|Open the selected org in browser||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-branch|option|Target branch to branch from||||
+|target-dev-hub<br/>-v|option|undefined||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.integci|||
+|task-name|option|Task name used in created branch name||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

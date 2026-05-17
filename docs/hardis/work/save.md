@@ -8,6 +8,10 @@
 
 **Guides the user through the process of saving their work, preparing it for a Merge Request (also named Pull Request), and pushing changes to the remote Git repository.**
 
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/retrieve-and-commit-2026.gif)
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/save-publish-pr-2026.gif)
+
 This command automates several critical steps involved in finalizing a development User Story and integrating it into the main codebase. It ensures that your local changes are properly synchronized, cleaned, and committed before being pushed.
 
 Key functionalities include:
@@ -81,20 +85,20 @@ The command's technical implementation involves a series of orchestrated steps:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                           | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                                 |         |          |         |
-| auto              | boolean | No user prompts (when called from CI for example)                                     |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                       |         |          |         |
-| flags-dir         | option  | undefined                                                                             |         |          |         |
-| json              | boolean | Format output as json.                                                                |         |          |         |
-| noclean<br/>-c    | boolean | No cleaning of local sources                                                          |         |          |         |
-| nogit<br/>-g      | boolean | No automated git operations                                                           |         |          |         |
-| nopull<br/>-n     | boolean | No scratch pull before save                                                           |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                         |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                             |         |          |         |
-| targetbranch      | option  | Name of the Merge Request target branch. Will be guessed or prompted if not provided. |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                             |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|auto|boolean|No user prompts (when called from CI for example)||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|noclean<br/>-c|boolean|No cleaning of local sources||||
+|nogit<br/>-g|boolean|No automated git operations||||
+|nopull<br/>-n|boolean|No scratch pull before save||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.integci|||
+|targetbranch|option|Name of the Merge Request target branch. Will be guessed or prompted if not provided.||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
