@@ -53,7 +53,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 | json              | boolean | Format output as json.                                                                                                                                                            |                                       |          |         |
 | name<br/>-n       | option  | Connected App name(s) to process. For multiple apps, separate with commas (e.g., "App1,App2")                                                                                     |                                       |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required                                                                                                                     |                                       |          |         |
-| target-org<br/>-o | option  | undefined                                                                                                                                                                         | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o | option  | undefined                                                                                                                                                                         |  |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                         |                                       |          |         |
 
 ## Examples

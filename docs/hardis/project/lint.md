@@ -50,7 +50,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | flags-dir         | option  | undefined                                                     |                                       |          |         |
 | json              | boolean | Format output as json.                                        |                                       |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required |                                       |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o | option  | undefined                                                     |  |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                       |          |         |
 
 ## Examples

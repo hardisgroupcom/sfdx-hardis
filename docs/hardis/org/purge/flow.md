@@ -59,7 +59,7 @@ In agent mode:
 | prompt<br/>-z                 | boolean | Prompt for confirmation (true by default, use --no-prompt to skip)                                                       |                                       |          |         |
 | skipauth                      | boolean | Skip authentication check when a default username is required                                                            |                                       |          |         |
 | status<br/>-s                 | option  | Filter according to Status criteria                                                                                      |                                       |          |         |
-| target-org<br/>-o             | option  | undefined                                                                                                                | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o             | option  | undefined                                                                                                                |  |          |         |
 | websocket                     | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                |                                       |          |         |
 
 ## Examples

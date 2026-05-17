@@ -47,7 +47,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | flags-dir         | option  | undefined                                             |                                       |          |         |
 | json              | boolean | Format output as json.                                |                                       |          |         |
 | sObjects<br/>-s   | option  | Comma-separated list of sObjects to filter            |                                       |          |         |
-| target-org<br/>-o | option  | undefined                                             | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o | option  | undefined                                             |  |          |         |
 
 ## Examples
 

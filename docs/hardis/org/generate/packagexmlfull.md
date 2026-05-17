@@ -54,7 +54,7 @@ In agent mode:
 | no-prompt<br/>-n  | boolean | Do not prompt for org username, use the default one           |                                       |          |         |
 | outputfile        | option  | Output package.xml file                                       |                                       |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required |                                       |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o | option  | undefined                                                     |  |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                       |          |         |
 
 ## Examples

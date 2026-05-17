@@ -72,7 +72,7 @@ Use `--agent` to disable all prompts. Typical usage:
 | resume<br/>-r           | boolean | Resume previous export by checking existing files (default in CI) |                                       |          |         |
 | skipauth                | boolean | Skip authentication check when a default username is required     |                                       |          |         |
 | startchunknumber<br/>-s | option  | Chunk number to start from                                        |                                       |          |         |
-| target-org<br/>-o       | option  | undefined                                                         | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o       | option  | undefined                                                         |  |          |         |
 | websocket               | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |                                       |          |         |
 
 ## Examples

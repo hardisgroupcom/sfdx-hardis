@@ -151,7 +151,7 @@ In agent mode, the audit trail report is generated without interactive prompts, 
 | lastndays<br/>-t    | option  | Number of days to extract from today (included)                   |                                       |          |         |
 | outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv |                                       |          |         |
 | skipauth            | boolean | Skip authentication check when a default username is required     |                                       |          |         |
-| target-org<br/>-o   | option  | undefined                                                         | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o   | option  | undefined                                                         |  |          |         |
 | websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |                                       |          |         |
 
 ## Examples

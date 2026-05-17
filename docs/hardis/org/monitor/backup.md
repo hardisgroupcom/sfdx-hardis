@@ -107,7 +107,7 @@ In agent mode:
 | skip-doc                  | boolean | Skip the generation of project documentation at the end of the command                                                                      |                                       |          |         |
 | skipauth                  | boolean | Skip authentication check when a default username is required                                                                               |                                       |          |         |
 | start-chunk               | option  | Use this parameter to troubleshoot a specific chunk. It will be used as the first chunk to retrieve                                         |                   1                   |          |         |
-| target-org<br/>-o         | option  | undefined                                                                                                                                   | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o         | option  | undefined                                                                                                                                   |  |          |         |
 | websocket                 | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                   |                                       |          |         |
 
 ## Examples

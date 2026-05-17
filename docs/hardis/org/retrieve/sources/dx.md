@@ -63,7 +63,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | keepmetadatatypes<br/>-k | option  | Comma separated list of metadatas types that will be the only ones to be retrieved |                                       |          |         |
 | shape<br/>-s             | boolean | Updates project-scratch-def.json from org shape                                    |                                       |          |         |
 | skipauth                 | boolean | Skip authentication check when a default username is required                      |                                       |          |         |
-| target-org<br/>-o        | option  | undefined                                                                          | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o        | option  | undefined                                                                          |  |          |         |
 | tempfolder<br/>-t        | option  | Temporary folder                                                                   |                 ./tmp                 |          |         |
 | websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                          |                                       |          |         |
 

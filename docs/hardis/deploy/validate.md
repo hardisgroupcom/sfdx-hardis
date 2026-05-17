@@ -88,7 +88,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | results-dir              | option  | results-dir                                           |                                       |          |         |
 | single-package           | boolean | single-package                                        |                                       |          |         |
 | source-dir<br/>-d        | option  | source-dir                                            |                                       |          |         |
-| target-org<br/>-o        | option  | undefined                                             | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o        | option  | undefined                                             |  |          |         |
 | test-level               | option  | test-level                                            |                                       |          |         |
 | tests                    | option  | tests                                                 |                                       |          |         |
 | wait<br/>-w              | option  | wait                                                  |                  33                   |          |         |

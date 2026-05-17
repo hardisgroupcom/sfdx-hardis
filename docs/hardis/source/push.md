@@ -32,7 +32,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | ignorewarnings<br/>-g | boolean | ignorewarnings                                        |                                       |          |         |
 | json                  | boolean | Format output as json.                                |                                       |          |         |
 | quiet                 | boolean | quiet                                                 |                                       |          |         |
-| target-org<br/>-o     | option  | undefined                                             | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o     | option  | undefined                                             |  |          |         |
 | wait<br/>-w           | option  | wait                                                  |                  60                   |          |         |
 | websocket             | option  | websocket                                             |                                       |          |         |
 

@@ -82,7 +82,7 @@ The command's logic orchestrates various underlying processes:
 | skipauth              | boolean | Skip authentication check when a default username is required                                 |                                       |          |         |
 | target-branch         | option  | Target branch to branch from                                                                  |                                       |          |         |
 | target-dev-hub<br/>-v | option  | undefined                                                                                     |                                       |          |         |
-| target-org<br/>-o     | option  | undefined                                                                                     | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o     | option  | undefined                                                                                     |  |          |         |
 | task-name             | option  | Task name used in created branch name                                                         |                                       |          |         |
 | websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |                                       |          |         |
 

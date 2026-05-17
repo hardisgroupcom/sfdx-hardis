@@ -94,7 +94,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | json                 | boolean | Format output as json.                                                                                                 |                                       |          |                               |
 | message<br/>-m       | option  | Custom message that you want to be added in notifications (string or markdown format)                                  |                                       |          |                               |
 | skipauth             | boolean | Skip authentication check when a default username is required                                                          |                                       |          |                               |
-| target-org<br/>-o    | option  | undefined                                                                                                              | nicolas.vuillamy@cloudity.com.integci |          |                               |
+| target-org<br/>-o    | option  | undefined                                                                                                              |  |          |                               |
 | websocket            | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                              |                                       |          |                               |
 
 ## Examples

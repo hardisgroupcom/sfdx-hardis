@@ -56,7 +56,7 @@ In agent mode:
 | outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |                                       |          |         |
 | query<br/>-q      | option  | Data Cloud query string                                           |                                       |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required     |                                       |          |         |
-| target-org<br/>-o | option  | undefined                                                         | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o | option  | undefined                                                         |  |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |                                       |          |         |
 
 ## Examples

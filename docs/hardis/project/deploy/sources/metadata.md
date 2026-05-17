@@ -19,7 +19,7 @@ Deploy metadatas to source org
 | json                         | boolean | Format output as json.                                        |                                       |          |                                                                                             |
 | packagexml<br/>-p            | option  | Path to package.xml file to deploy                            |                                       |          |                                                                                             |
 | skipauth                     | boolean | Skip authentication check when a default username is required |                                       |          |                                                                                             |
-| target-org<br/>-o            | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.integci |          |                                                                                             |
+| target-org<br/>-o            | option  | undefined                                                     |  |          |                                                                                             |
 | testlevel<br/>-l             | option  | Level of tests to apply to validate deployment                |             RunLocalTests             |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg |
 | websocket                    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                       |          |                                                                                             |
 

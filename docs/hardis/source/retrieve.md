@@ -57,7 +57,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | packagenames<br/>-n   | option  | packagenames                                                        |                                       |          |         |
 | skipauth              | boolean | Skip authentication check when a default username is required       |                                       |          |         |
 | sourcepath<br/>-p     | option  | sourcePath                                                          |                                       |          |         |
-| target-org<br/>-o     | option  | undefined                                                           | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o     | option  | undefined                                                           |  |          |         |
 | tracksource<br/>-t    | boolean | tracksource                                                         |                                       |          |         |
 | verbose               | boolean | verbose                                                             |                                       |          |         |
 | wait<br/>-w           | option  | wait                                                                |                                       |          |         |

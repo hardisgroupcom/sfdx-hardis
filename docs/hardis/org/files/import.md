@@ -51,7 +51,7 @@ Use `--agent` to disable all prompts. Typical usage:
 | overwrite<br/>-f  | boolean | Override existing files (doubles the number of API calls)     |                                       |          |         |
 | path<br/>-p       | option  | Path to the file export project                               |                                       |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required |                                       |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o | option  | undefined                                                     |  |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                       |          |         |
 
 ## Examples

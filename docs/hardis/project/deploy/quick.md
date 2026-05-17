@@ -75,7 +75,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | debug                    | boolean | debug                                                 |                                       |          |         |
 | flags-dir                | option  | undefined                                             |                                       |          |         |
 | json                     | boolean | Format output as json.                                |                                       |          |         |
-| target-org<br/>-o        | option  | undefined                                             | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o        | option  | undefined                                             |  |          |         |
 | tests                    | option  | tests                                                 |                                       |          |         |
 | wait<br/>-w              | option  | wait                                                  |                  33                   |          |         |
 

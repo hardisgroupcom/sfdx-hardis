@@ -68,7 +68,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | outputdir<br/>-z      | option  | Output directory                                                         |                                       |          |         |
 | skipauth              | boolean | Skip authentication check when a default username is required            |                                       |          |         |
 | skiptransfo<br/>-s    | boolean | Do not apply transformation to input data                                |                                       |          |         |
-| target-org<br/>-o     | option  | undefined                                                                | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o     | option  | undefined                                                                |  |          |         |
 | tomlfile<br/>-f       | option  | Input TOML file path                                                     |                                       |          |         |
 | transfoconfig<br/>-t  | option  | Path to JSON config file for mapping and transformation                  |                                       |          |         |
 | websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                |                                       |          |         |

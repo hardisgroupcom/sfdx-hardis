@@ -117,7 +117,7 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build -v || 
 | json                     | boolean | Format output as json.                                                                                          |                                       |          |         |
 | pdf                      | boolean | Also generate the documentation in PDF format                                                                   |                                       |          |         |
 | skipauth                 | boolean | Skip authentication check when a default username is required                                                   |                                       |          |         |
-| target-org<br/>-o        | option  | undefined                                                                                                       | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o        | option  | undefined                                                                                                       |  |          |         |
 | websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                       |                                       |          |         |
 | with-history             | boolean | Generate a markdown file with the history diff of the Flow                                                      |                                       |          |         |
 

@@ -49,7 +49,7 @@ Use `--agent` to disable all prompts. Typical usage:
 | json              | boolean | Format output as json.                                        |                                       |          |         |
 | packagexml<br/>-x | option  | Path to package.xml file                                      |                                       |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required |                                       |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o | option  | undefined                                                     |  |          |         |
 | template<br/>-t   | option  | sfdx-hardis package.xml Template name. ex: wave               |                                       |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                       |          |         |
 

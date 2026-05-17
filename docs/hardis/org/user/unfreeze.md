@@ -62,7 +62,7 @@ The command's technical implementation involves:
 | maxuserdisplay<br/>-m  | option  | Maximum users to display in logs                                                             |                  100                  |          |         |
 | name<br/>-n            | option  | Filter according to Name criteria                                                            |                                       |          |         |
 | skipauth               | boolean | Skip authentication check when a default username is required                                |                                       |          |         |
-| target-org<br/>-o      | option  | undefined                                                                                    | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o      | option  | undefined                                                                                    |  |          |         |
 | usernames<br/>-u       | option  | Comma-separated list of Salesforce usernames to unfreeze (takes priority over profile flags) |                                       |          |         |
 | websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                    |                                       |          |         |
 

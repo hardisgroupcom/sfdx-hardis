@@ -56,7 +56,7 @@ Use `--agent` to disable all prompts. Typical usage:
 | json              | boolean | Format output as json.                                        |                                       |          |         |
 | path<br/>-p       | option  | Path to the sfdmu workspace folder                            |                                       |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required |                                       |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o | option  | undefined                                                     |  |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                       |          |         |
 
 ## Examples

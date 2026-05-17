@@ -92,7 +92,7 @@ The command's technical implementation involves a series of orchestrated steps:
 | nogit<br/>-g      | boolean | No automated git operations                                                           |                                       |          |         |
 | nopull<br/>-n     | boolean | No scratch pull before save                                                           |                                       |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required                         |                                       |          |         |
-| target-org<br/>-o | option  | undefined                                                                             | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o | option  | undefined                                                                             |  |          |         |
 | targetbranch      | option  | Name of the Merge Request target branch. Will be guessed or prompted if not provided. |                                       |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                             |                                       |          |         |
 

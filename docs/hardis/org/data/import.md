@@ -66,7 +66,7 @@ Use `--agent` to disable all prompts. Typical usage:
 | path<br/>-p         | option  | Path to the sfdmu workspace folder                                                    |                                       |          |         |
 | project-name<br/>-n | option  | Name of the sfdmu project to use (if not defined, you will be prompted to select one) |                                       |          |         |
 | skipauth            | boolean | Skip authentication check when a default username is required                         |                                       |          |         |
-| target-org<br/>-o   | option  | undefined                                                                             | nicolas.vuillamy@cloudity.com.integci |          |         |
+| target-org<br/>-o   | option  | undefined                                                                             |  |          |         |
 | websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                             |                                       |          |         |
 
 ## Examples
