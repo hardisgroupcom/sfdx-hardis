@@ -85,6 +85,7 @@ extra:
 nav:
   - Home: index.md
   - Installation: installation.md
+  - VsCode Extension: vscode-extension.md
   - Configuration: sfdx-hardis-config-file.md
   - Salesforce CI/CD:
       - CI/CD Home: salesforce-ci-cd-home.md
