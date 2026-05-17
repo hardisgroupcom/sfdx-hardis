@@ -97,6 +97,109 @@ describe('getMonitoringConfigDefaults()', () => {
     }
   });
 
+  it('exposes a non-empty colorClass on every category, command and notification entry', () => {
+    for (const cat of payload.categories) {
+      expect(cat.colorClass, `category "${cat.key}" missing colorClass`).to.be.a('string').and.not.empty;
+    }
+    for (const cmd of payload.monitoringCommands) {
+      expect(cmd.colorClass, `monitoring command "${cmd.key}" missing colorClass`).to.be.a('string').and.not
+        .empty;
+    }
+    for (const entry of payload.notificationConfig) {
+      expect(entry.colorClass, `notification "${entry.key}" missing colorClass`).to.be.a('string').and.not
+        .empty;
+    }
+  });
+
+  it('exposes the expected per-notification-type colorClass values', () => {
+    const expected: Record<string, string> = {
+      AUDIT_TRAIL: 'audit',
+      LEGACY_API: 'legacy',
+      APEX_ERROR: 'alerts',
+      FLOW_ERROR: 'alerts',
+      DEPLOYMENT: 'audit',
+      DEPLOYMENTS: 'audit',
+      BACKUP: 'backup',
+      ORG_LIMITS: 'limits',
+      UNSECURED_CONNECTED_APPS: 'security',
+      ORG_HEALTH_CHECK: 'health',
+      ORG_INFO: 'health',
+      RELEASE_UPDATES: 'updates',
+      RELEASE_NOTES: 'updates',
+      LINT_ACCESS: 'metadata-access',
+      MISSING_ATTRIBUTES: 'metadata-access',
+      MINIMAL_PERMSETS: 'metadata-access',
+      UNUSED_METADATAS: 'unused-metadata',
+      UNUSED_APEX_CLASSES: 'apex',
+      APEX_API_VERSION: 'legacy',
+      METADATA_STATUS: 'legacy',
+      CONNECTED_APPS: 'connected-apps',
+      LICENSES: 'licenses',
+      UNUSED_LICENSES: 'licenses',
+      UNDERUSED_PERMSETS: 'licenses',
+      UNUSED_USERS: 'users',
+      ACTIVE_USERS: 'users',
+      ACTIVE_USERS_CRM_WEEKLY: 'tests',
+      ACTIVE_USERS_EXPERIENCE_MONTHLY: 'tests',
+      MONITORING_SUMMARY: 'backup',
+      DORA_REPORT: 'health',
+      SERVICENOW_REPORT: 'backup',
+    };
+    const byKey = Object.fromEntries(payload.notificationConfig.map((n) => [n.key, n.colorClass]));
+    for (const [key, color] of Object.entries(expected)) {
+      expect(byKey[key], `notification "${key}" colorClass`).to.equal(color);
+    }
+  });
+
+  it('exposes the expected per-category colorClass values', () => {
+    const expected: Record<string, string> = {
+      orgActivity: 'tests',
+      apexTestsSecurity: 'security',
+      userActivity: 'users',
+      technicalDebt: 'limits',
+      orgInfo: 'health',
+      licensesPackages: 'licenses',
+      other: 'legacy',
+    };
+    const byKey = Object.fromEntries(payload.categories.map((c) => [c.key, c.colorClass]));
+    for (const [key, color] of Object.entries(expected)) {
+      expect(byKey[key], `category "${key}" colorClass`).to.equal(color);
+    }
+  });
+
+  it('exposes an SLDS icon on every category entry', () => {
+    const sldsPattern = /^(utility|standard|action|custom|doctype):[a-z0-9_]+$/;
+    const expected: Record<string, string> = {
+      orgActivity: 'utility:refresh',
+      apexTestsSecurity: 'utility:shield',
+      userActivity: 'utility:user',
+      technicalDebt: 'utility:warning',
+      orgInfo: 'utility:info',
+      licensesPackages: 'utility:package',
+      other: 'utility:apps',
+    };
+    for (const cat of payload.categories) {
+      expect(cat.icon, `category "${cat.key}" missing SLDS icon`).to.match(sldsPattern);
+    }
+    const byKey = Object.fromEntries(payload.categories.map((c) => [c.key, c.icon]));
+    for (const [key, icon] of Object.entries(expected)) {
+      expect(byKey[key], `category "${key}" icon`).to.equal(icon);
+    }
+  });
+
+  it('inherits each monitoring command colorClass from its first notification type', () => {
+    const notifColor = Object.fromEntries(
+      payload.notificationConfig.map((n) => [n.key, n.colorClass]),
+    );
+    for (const cmd of payload.monitoringCommands) {
+      const firstType = cmd.notificationTypes[0];
+      const expectedColor = notifColor[firstType];
+      if (expectedColor) {
+        expect(cmd.colorClass, `monitoring command "${cmd.key}" colorClass`).to.equal(expectedColor);
+      }
+    }
+  });
+
   it('exposes an SLDS icon on every notificationConfig and monitoringCommands entry', () => {
     const sldsPattern = /^(utility|standard|action|custom|doctype):[a-z0-9_]+$/;
     for (const entry of payload.notificationConfig) {

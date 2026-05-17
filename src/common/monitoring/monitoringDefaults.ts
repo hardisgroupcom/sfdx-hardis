@@ -303,6 +303,49 @@ function resolveMonitoringCommandCategory(cmd: MonitoringCommandEntry): Notifica
   );
 }
 
+// Index NOTIFICATION_CATEGORIES by key for O(1) lookups when resolving per-category fallbacks
+// (icon and colorClass).
+const NOTIFICATION_CATEGORIES_BY_KEY: Record<NotificationCategory, (typeof NOTIFICATION_CATEGORIES)[number]> =
+  NOTIFICATION_CATEGORIES.reduce(
+    (acc, cat) => {
+      acc[cat.key] = cat;
+      return acc;
+    },
+    {} as Record<NotificationCategory, (typeof NOTIFICATION_CATEGORIES)[number]>,
+  );
+
+function resolveCategoryColorClass(category: NotificationCategory): string {
+  return NOTIFICATION_CATEGORIES_BY_KEY[category]?.colorClass ?? NOTIFICATION_CATEGORIES_BY_KEY.other.colorClass;
+}
+
+function resolveNotificationTypeColorClass(key: string): string {
+  const def = notificationTypesDefault[key as NotifMessageType];
+  if (def?.colorClass) {
+    return def.colorClass;
+  }
+  if (def?.category) {
+    return resolveCategoryColorClass(def.category);
+  }
+  return resolveCategoryColorClass("other");
+}
+
+function resolveMonitoringCommandColorClass(
+  cmd: MonitoringCommandEntry,
+  category: NotificationCategory,
+): string {
+  if (cmd.colorClass) {
+    return cmd.colorClass;
+  }
+  const firstType = cmd.notificationTypes?.[0];
+  if (firstType) {
+    const firstColor = notificationTypesDefault[firstType as NotifMessageType]?.colorClass;
+    if (firstColor) {
+      return firstColor;
+    }
+  }
+  return resolveCategoryColorClass(category);
+}
+
 const FREQUENCIES: MonitoringFrequency[] = ["daily", "weekly", "biweekly", "monthly", "off"];
 const FREQUENCY_DAYS: Weekday[] = [
   "monday",
@@ -351,6 +394,10 @@ export interface MonitoringCommandDefaultEntry {
   // command emits (or from the entry's own optional `icon` field for aggregate commands).
   // Empty string when no mapping exists; the UI is expected to fall back to a generic glyph.
   icon: string;
+  // CSS class hint used by configuration UIs to color the command badge. Derived from
+  // `category` so it stays in sync; configuration UIs can read this directly instead of
+  // maintaining their own category-to-color mapping.
+  colorClass: string;
   command?: string;
   frequency?: MonitoringFrequency;
   frequencyDay?: Weekday;
@@ -368,6 +415,10 @@ export interface NotificationConfigDefaultEntry {
   // "utility:dashboard", "standard:report", "action:approval". Empty string when no mapping
   // exists; the UI is expected to fall back to a generic glyph in that case.
   icon: string;
+  // CSS class hint used by configuration UIs to color the notification badge. Derived from
+  // `category` so it stays in sync; configuration UIs can read this directly instead of
+  // maintaining their own category-to-color mapping.
+  colorClass: string;
   notifications: Record<NotificationChannel, NotificationThreshold>;
   // Thresholds that can actually fire for this notification type, sorted from most restrictive
   // (e.g. "critical") to least restrictive ("log") and terminated by "off". Configuration UIs
@@ -382,6 +433,13 @@ export interface MonitoringConfigCategory {
   title: string;
   description: string;
   order: number;
+  // Default SLDS icon for the category section header (`<category>:<name>`,
+  // e.g. "utility:refresh"). UIs that render emojis instead of SLDS icons may keep a local
+  // emoji mapping; the CLI standardizes on SLDS to stay consistent with per-type / per-command icons.
+  icon: string;
+  // CSS class hint used by configuration UIs to color the category section / icon container.
+  // Stable across releases so downstream UIs can rely on it for theming.
+  colorClass: string;
 }
 
 export interface MonitoringConfigDefaultsPayload {
@@ -397,38 +455,48 @@ export interface MonitoringConfigDefaultsPayload {
 }
 
 export function getMonitoringConfigDefaults(): MonitoringConfigDefaultsPayload {
-  const monitoringCommands: MonitoringCommandDefaultEntry[] = monitoringCommandsDefault.map((cmd) => ({
-    key: cmd.key,
-    title: t(getTitleI18nKey(cmd.key)),
-    description: t(getDescriptionI18nKey(cmd.key)),
-    category: resolveMonitoringCommandCategory(cmd),
-    icon: resolveMonitoringCommandIcon(cmd),
-    command: cmd.command,
-    frequency: cmd.frequency,
-    frequencyDay: cmd.frequencyDay,
-    frequencyDayOfMonth: cmd.frequencyDayOfMonth,
-    notificationTypes: cmd.notificationTypes ?? [],
-  }));
+  const monitoringCommands: MonitoringCommandDefaultEntry[] = monitoringCommandsDefault.map((cmd) => {
+    const category = resolveMonitoringCommandCategory(cmd);
+    return {
+      key: cmd.key,
+      title: t(getTitleI18nKey(cmd.key)),
+      description: t(getDescriptionI18nKey(cmd.key)),
+      category,
+      icon: resolveMonitoringCommandIcon(cmd),
+      colorClass: resolveMonitoringCommandColorClass(cmd, category),
+      command: cmd.command,
+      frequency: cmd.frequency,
+      frequencyDay: cmd.frequencyDay,
+      frequencyDayOfMonth: cmd.frequencyDayOfMonth,
+      notificationTypes: cmd.notificationTypes ?? [],
+    };
+  });
 
   // Build notificationConfig[] from every entry in notificationTypesDefault so the catalog covers
   // every notification type the CLI can emit, whether or not a scheduled command emits it.
   const notificationConfig: NotificationConfigDefaultEntry[] = (
     Object.keys(notificationTypesDefault) as NotifMessageType[]
-  ).map((key) => ({
-    key,
-    title: t(getTitleI18nKey(key)),
-    description: t(getDescriptionI18nKey(key)),
-    category: resolveNotificationTypeCategory(key),
-    icon: resolveNotificationTypeIcon(key),
-    notifications: resolveDefaultThresholds(key),
-    availableThresholds: getAvailableThresholds(key),
-  }));
+  ).map((key) => {
+    const category = resolveNotificationTypeCategory(key);
+    return {
+      key,
+      title: t(getTitleI18nKey(key)),
+      description: t(getDescriptionI18nKey(key)),
+      category,
+      icon: resolveNotificationTypeIcon(key),
+      colorClass: resolveNotificationTypeColorClass(key),
+      notifications: resolveDefaultThresholds(key),
+      availableThresholds: getAvailableThresholds(key),
+    };
+  });
 
   const categories: MonitoringConfigCategory[] = NOTIFICATION_CATEGORIES.map((cat) => ({
     key: cat.key,
     title: t(getCategoryTitleI18nKey(cat.key)),
     description: t(getCategoryDescriptionI18nKey(cat.key)),
     order: cat.order,
+    icon: cat.icon,
+    colorClass: cat.colorClass,
   }));
 
   return {
