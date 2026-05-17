@@ -88,6 +88,8 @@ ApexTestsCodeCoverage,source=sfdx-hardis,type=APEX_TESTS,orgIdentifier=hardis-gr
 
 ## Skip Configuration
 
+> The API channel is always sent by default when `NOTIF_API_URL` is configured, regardless of the per-channel severity threshold. To filter what reaches the API per notification type, use either the env vars below, or set `api: off` (or any other threshold) in the per-entry `notifications` block of `monitoringCommands` -- see [Monitoring configuration](salesforce-monitoring-config-home.md#fine-grained-routing-per-notification-type).
+
 You can skip sending logs or metrics to the API based on notification type by defining the following CI/CD variables:
 
 - **NOTIF_API_SKIP_LOGS** : Comma-separated list of notification types to skip for logs, or `all` to skip all logs

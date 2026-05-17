@@ -28,26 +28,34 @@ The command's technical implementation involves:
 Supports non-interactive execution with `--agent`:
 
 ```sh
-sf hardis:project:create --agent
+sf hardis:project:create --agent --orgtype scratch --projectname MyProject --devbranch integration
 ```
 
-In agent mode:
+In agent mode, the following flags are **required** (no defaults are applied):
 
-- The DevHub type prompt is skipped; defaults to `scratch`.
-- The project name prompt is skipped; the project name must already be set in config or an error is thrown.
-- The development branch prompt is skipped; defaults to `integration`.
+- `--orgtype`: type of development orgs (`scratch`, `sandbox`, or `sandboxAndScratch`).
+- `--projectname`: name of the SFDX project.
+- `--devbranch`: name of the default development branch.
+
+Optional flag:
+
+- `--minimizeprofiles`: activates the `minimizeProfiles` auto-clean type. **Only use this if the project is Permission Set-based**: it removes from profiles any attribute (object access, field access, etc.) that is already granted by a Permission Set. Omitted by default in agent mode; always activated in interactive mode.
 
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name             |  Type   | Description                                                                                                                                                                                                                                                  | Default | Required |                  Options                  |
+|:-----------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------:|
+| agent            | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                                                        |         |          |                                           |
+| debug<br/>-d     | boolean | Activate debug mode (more logs)                                                                                                                                                                                                                              |         |          |                                           |
+| devbranch        | option  | Name of the default development branch (required with --agent)                                                                                                                                                                                               |         |          |                                           |
+| flags-dir        | option  | undefined                                                                                                                                                                                                                                                    |         |          |                                           |
+| json             | boolean | Format output as json.                                                                                                                                                                                                                                       |         |          |                                           |
+| minimizeprofiles | boolean | Activate the minimizeProfiles auto-clean type. Use only for Permission Set-based projects: removes from profiles any attribute (object/field access, etc.) already granted by a Permission Set. Off by default in agent mode; always on in interactive mode. |         |          |                                           |
+| orgtype          | option  | Type of development orgs: scratch, sandbox, or sandboxAndScratch (required with --agent)                                                                                                                                                                     |         |          | scratch<br/>sandbox<br/>sandboxAndScratch |
+| projectname      | option  | Name of the SFDX project (required with --agent)                                                                                                                                                                                                             |         |          |                                           |
+| skipauth         | boolean | Skip authentication check when a default username is required                                                                                                                                                                                                |         |          |                                           |
+| websocket        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                                                    |         |          |                                           |
 
 ## Examples
 
@@ -56,7 +64,7 @@ $ sf hardis:project:create
 ```
 
 ```shell
-$ sf hardis:project:create --agent
+$ sf hardis:project:create --agent --orgtype scratch --projectname MyProject --devbranch integration
 ```
 
 

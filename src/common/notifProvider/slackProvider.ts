@@ -3,7 +3,7 @@ import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web-api";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
-import type { NotifMessage } from "./types.js";
+import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
 import { getEnvVar } from "../../config/index.js";
 
@@ -18,6 +18,10 @@ export class SlackProvider extends NotifProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis Slack connector";
+  }
+
+  public getChannel(): NotificationChannel {
+    return "messaging";
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

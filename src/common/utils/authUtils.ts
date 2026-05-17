@@ -731,13 +731,17 @@ async function execSfdxWebLoginWithLiveVerificationCode(command: string, command
       const stderrClean = stripAnsi(stderr);
       if (status === 0) {
         const parsedResult = parseAuthorizedUserFromWebLoginOutput(`${stdoutClean}\n${stderrClean}`);
+        if (!parsedResult) {
+          reject(new SfError(t('authWebLoginNoUserDetected')));
+          return;
+        }
         resolve({
           status: 0,
           stdout,
           stderr,
-          username: parsedResult?.username || null,
-          orgId: parsedResult?.orgId || null,
-          result: parsedResult ? { username: parsedResult.username, id: parsedResult.orgId } : null,
+          username: parsedResult.username,
+          orgId: parsedResult.orgId,
+          result: { username: parsedResult.username, id: parsedResult.orgId },
         });
         return;
       }

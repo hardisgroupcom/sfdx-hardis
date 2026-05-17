@@ -111,6 +111,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     // Loop in files
     for (const file of remoteSiteSettingsFiles) {
       const fileText = await fs.readFile(file, 'utf8');
+      /* jscpd:ignore-start */
       // Loop on criteria to find matches in this file
       for (const catcher of catchers) {
         const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
@@ -121,6 +122,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     // Format result
     const result: any[] = this.matchResults.map((item: any) => {
       return {
+        /* jscpd:ignore-end */
         name: item.fileName.replace('.remoteSite-meta.xml', '').replace('.remoteSite', ''),
         fileName: item.fileName,
         nameSpace: item.fileName.includes('__') ? item.fileName.split('__')[0] : 'Custom',

@@ -4,6 +4,10 @@
 ## Description
 
 
+## DEPRECATED
+
+**This command is deprecated. Use `sf hardis:work:backpromote` instead.**
+
 ## Command Behavior
 
 **Refreshes your local Git branch and Salesforce org with the latest content from another Git branch.**

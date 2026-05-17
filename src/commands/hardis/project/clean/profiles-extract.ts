@@ -494,15 +494,10 @@ In agent mode:
 
     // Print API name + Label
     permissionFields.forEach(field => {
-      const personaCols: Record<string, string> = {};
-      for (let i = 1; i <= numberOfPersonas; i++) {
-        const personaRow = i + 1;
-        personaCols[`=persona!A${personaRow}`] = '';
-      }
       permissionsRecords.push({
         Permission_Label: field.label,
         Permission_API_Name: field.name,
-        ...personaCols,
+        ...this.buildPersonaCols(numberOfPersonas),
       });
     });
     const reportDir = await getReportDirectory();
@@ -523,15 +518,10 @@ In agent mode:
     try {
       const tabsResult = await conn.query(`SELECT Name, Label FROM TabDefinition WHERE IsCustom = true`);
       tabsResult.records.forEach((tab) => {
-        const personaCols: Record<string, string> = {};
-        for (let i = 1; i <= numberOfPersonas; i++) {
-          const personaRow = i + 1;
-          personaCols[`=persona!A${personaRow}`] = '';
-        }
         tabsRecords.push({
           Tab_Label: tab.Label,
           Tab_API_Name: tab.Name,
-          ...personaCols,
+          ...this.buildPersonaCols(numberOfPersonas),
         });
       });
       const reportDir = await getReportDirectory();
@@ -663,6 +653,14 @@ In agent mode:
     } catch (error) {
       uxLog('warning', this, c.yellow(t('failedToQueryPermissionsets', { error: (error as Error).message })));
     }
+  }
+
+  private buildPersonaCols(numberOfPersonas: number): Record<string, string> {
+    const cols: Record<string, string> = {};
+    for (let i = 1; i <= numberOfPersonas; i++) {
+      cols[`=persona!A${i + 1}`] = '';
+    }
+    return cols;
   }
 
 }

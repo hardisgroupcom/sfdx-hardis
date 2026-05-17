@@ -1,5 +1,13 @@
 import { Hook } from '@oclif/core';
 
+// Commands that never need a WebSocket connection (CLI-only).
+// Keep in sync with classes that declare `public static disableWebsocket = true`.
+const DISABLE_WEBSOCKET_COMMANDS = new Set([
+  'hardis:cache:clear',
+  'hardis:config:get',
+  'hardis:config:monitoring-defaults',
+]);
+
 const hook: Hook<'init'> = async (options) => {
   const commandId = options?.id || '';
 
@@ -28,19 +36,27 @@ const hook: Hook<'init'> = async (options) => {
     return;
   }
 
+  // Fast path: skip WebSocket for known CLI-only commands without loading the class
+  if (DISABLE_WEBSOCKET_COMMANDS.has(commandId)) {
+    return;
+  }
+
   // Initialize WebSocketClient to communicate with VS Code SFDX Hardis extension
   const context: any = { command: commandId, id: process.pid };
 
-  // Resolve the plugin root so websocketClient can import the command class
-  // even when the command comes from a third-party plugin.
+  // Resolve the plugin root and check disableWebsocket on the command class.
   try {
     const cmd = options?.config?.findCommand(commandId);
     const pluginRoot = (cmd as any)?.plugin?.root;
     if (pluginRoot) {
       context.commandPluginRoot = pluginRoot;
     }
+    const cmdClass = await cmd?.load();
+    if ((cmdClass as any)?.disableWebsocket === true) {
+      return;
+    }
   } catch {
-    // Silently ignore – commandPluginRoot is optional
+    // Silently ignore – commandPluginRoot is optional and disableWebsocket check is best-effort
   }
 
   const websocketArgIndex = options?.argv?.indexOf('--websocket') ?? -1;

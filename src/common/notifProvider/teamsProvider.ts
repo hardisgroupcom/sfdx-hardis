@@ -1,7 +1,7 @@
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
-import type { NotifMessage } from "./types.js";
+import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
 import { getEnvVar } from "../../config/index.js";
 
@@ -27,6 +27,10 @@ const ERRORS_WARNINGS_ENV_VAR = "MS_TEAMS_WEBHOOK_URL_ERRORS_WARNINGS";
 export class TeamsProvider extends NotifProviderRoot {
   public getLabel(): string {
     return "sfdx-hardis MsTeams connector";
+  }
+
+  public getChannel(): NotificationChannel {
+    return "messaging";
   }
 
   public async postNotification(notifMessage: NotifMessage): Promise<void> {

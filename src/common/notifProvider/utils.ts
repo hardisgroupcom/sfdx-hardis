@@ -1,5 +1,6 @@
-import type { NotifSeverity } from "./types.js";
+import type { NotifSeverity, NotificationConfigEntry } from "./types.js";
 import { getEnvVar } from "../../config/index.js";
+import { isEmailChannelObject } from "./notificationConfig.js";
 
 export class UtilsNotifs {
   public static isSlackAvailable() {
@@ -16,11 +17,24 @@ export class UtilsNotifs {
     return false;
   }
 
-  public static isEmailAvailable() {
-    if (getEnvVar("NOTIF_EMAIL_ADDRESS") && globalThis.jsForceConn) {
+  // Email is available when:
+  //   - the global NOTIF_EMAIL_ADDRESS env var is set, OR
+  //   - at least one .sfdx-hardis.yml notificationConfig entry declares email recipients;
+  // and a Salesforce connection is available (emails are dispatched via Salesforce Messaging).
+  public static isEmailAvailable(userConfig?: { notificationConfig?: NotificationConfigEntry[] }) {
+    if (!globalThis.jsForceConn) {
+      return false;
+    }
+    if (getEnvVar("NOTIF_EMAIL_ADDRESS")) {
       return true;
     }
-    return false;
+    const entries = userConfig?.notificationConfig ?? [];
+    return entries.some((entry) => {
+      const email = entry?.notifications?.email;
+      return (
+        isEmailChannelObject(email) && Array.isArray(email.recipients) && email.recipients.some((r) => r && r.trim().length > 0)
+      );
+    });
   }
 
   public static isApiAvailable() {

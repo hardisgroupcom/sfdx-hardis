@@ -48,6 +48,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     '$ sf hardis:cache:clear --agent',];
 
   public static uiConfig = { hide: true };
+  public static disableWebsocket = true;
 
   public static flags: any = {
     agent: Flags.boolean({
