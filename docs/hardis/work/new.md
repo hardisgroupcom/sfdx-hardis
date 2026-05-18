@@ -8,7 +8,7 @@
 
 **Assisted menu to start working on a Salesforce User Story, streamlining the setup of your development environment.**
 
-![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/new-user-story-2026.gif)
+[![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/new-user-story-2026.gif)](https://www.youtube.com/watch?v=58OPSy40nNA)
 
 This command guides you through the process of preparing your local environment and a Salesforce org for a new development or configuration based User Story. It automates several steps, ensuring consistency and adherence to project standards.
 
