@@ -24,7 +24,7 @@ From Welcome Menu then DevOps Pipeline UI, click on **New User Story**
 
 Answer the questions, and if you have any doubt, ask your Release Manager.
 
-![](assets/images/new-user-story-2026.gif)
+[![](assets/images/new-user-story-2026.gif)](https://www.youtube.com/watch?v=58OPSy40nNA)
 
 Once the command is completed, you can start working in your dev sandbox or scratch org :)
 ___

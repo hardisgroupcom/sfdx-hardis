@@ -22,7 +22,7 @@ ___
 
 _The following animation shows how to perform these operations._
 
-![](assets/images/retrieve-and-commit-2026.gif)
+[![](assets/images/retrieve-and-commit-2026.gif)](https://www.youtube.com/watch?v=96i6M6CMflQ)
 
 ### Retrieve metadata
 
@@ -66,7 +66,7 @@ ___
 
 If you want to create a Pull Request / Merge Request, click on the related button.
 
-![](assets/images/save-publish-pr-2026.gif)
+[![](assets/images/save-publish-pr-2026.gif)](https://www.youtube.com/watch?v=-h94uLQB62I)
 
 ![](assets/images/screenshot-work-save.png)
 
