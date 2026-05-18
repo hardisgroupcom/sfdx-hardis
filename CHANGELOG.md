@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [7.14.1] 2026-05-18
+
 - Update CI/CD documentation about using Mac + create git API tokens
 - Prerun hook: handle git config write failures gracefully (e.g. missing rights on Mac) by displaying a warning that invites the user to run the command manually in a terminal.
 
