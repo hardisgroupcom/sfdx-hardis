@@ -577,6 +577,7 @@
   "couldNotParseXmlFor": "Could not parse XML for {{app}}",
   "couldNotRetrieveFinalApiUsage": "Could not retrieve final API usage: {{error}}",
   "couldNotRetrieveRemoteOriginUrl": "Could not retrieve remote origin URL",
+  "couldNotSetGitConfig": "Could not set git config '{{key}}' to '{{value}}': {{message}}. You can run it manually in a terminal (on Mac, you may need to prefix with sudo): git config {{key}} \"{{value}}\"",
   "couldNotValidateExistingFile": "Could not validate existing file {{fileName}}: {{as}}",
   "countingTotalRecords": "Counting total {{sObjectName}} records...",
   "coverageResultsJson": "Coverage Results JSON",

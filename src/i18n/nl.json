@@ -577,6 +577,7 @@
   "couldNotParseXmlFor": "Kon XML voor {{app}} niet verwerken",
   "couldNotRetrieveFinalApiUsage": "Kon definitief API-gebruik niet ophalen: {{error}}",
   "couldNotRetrieveRemoteOriginUrl": "Kon de remote origin URL niet ophalen",
+  "couldNotSetGitConfig": "Kon git config '{{key}}' niet instellen op '{{value}}': {{message}}. Je kunt dit handmatig in een terminal uitvoeren (op Mac moet je mogelijk sudo ervoor plaatsen): git config {{key}} \"{{value}}\"",
   "couldNotValidateExistingFile": "Kon bestaand bestand {{fileName}} niet valideren: {{as}}",
   "countingTotalRecords": "Totaal aantal {{sObjectName}} records tellen...",
   "coverageResultsJson": "Coverage resultaten JSON",

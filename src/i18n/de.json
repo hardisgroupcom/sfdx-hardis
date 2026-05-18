@@ -576,6 +576,7 @@
   "couldNotParseXmlFor": "XML für {{app}} konnte nicht geparst werden",
   "couldNotRetrieveFinalApiUsage": "Endgültige API-Nutzung konnte nicht abgerufen werden: {{error}}",
   "couldNotRetrieveRemoteOriginUrl": "Remote-Origin-URL konnte nicht abgerufen werden",
+  "couldNotSetGitConfig": "Die Git-Konfiguration '{{key}}' konnte nicht auf '{{value}}' gesetzt werden: {{message}}. Sie können sie manuell in einem Terminal ausführen (auf dem Mac müssen Sie möglicherweise sudo voranstellen): git config {{key}} \"{{value}}\"",
   "couldNotValidateExistingFile": "Vorhandene Datei {{fileName}} konnte nicht validiert werden: {{as}}",
   "countingTotalRecords": "Gesamtanzahl der {{sObjectName}}-Datensätze wird gezählt...",
   "coverageResultsJson": "Abdeckungsergebnisse JSON",
