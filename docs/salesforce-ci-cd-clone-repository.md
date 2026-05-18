@@ -10,6 +10,8 @@ description: Learn how to clone a Salesforce repository on your computer
   - [From the Git server UI](#from-the-git-server-ui)
   - [From Visual Studio Code](#from-visual-studio-code)
 
+> If you are prompted for a username and password when cloning, you need a **Personal Access Token**. See [Create Git access tokens](salesforce-ci-cd-git-tokens.md) for step-by-step instructions for GitHub, GitLab, Azure DevOps and Bitbucket.
+
 ---
 
 ## Pre-requisites
@@ -42,7 +44,7 @@ Click the green **Code** button, make sure the **HTTPS** tab is selected, then c
 
 ![](assets/images/open-vs-code-gitlab.jpg)
 
-If later you are prompted for username and password, you might need to create a Personal Access Token ([video tuto here](https://www.youtube.com/watch?v=9y5VmmYHuIg)) and use it as password.
+If later you are prompted for username and password, you might need to create a Personal Access Token ([video tuto here](https://www.youtube.com/watch?v=9y5VmmYHuIg), or see the [step-by-step guide](salesforce-ci-cd-git-tokens.md#gitlab)) and use it as password.
 
 If later, it prompts several times the same password in VsCode, run the following command line
 
@@ -54,7 +56,7 @@ In Azure DevOps, use **Clone** -> **Open in Visual Studio Code** from your repos
 
 If this option is not available, copy the **HTTPS** repository URL and use it in the [**From Visual Studio Code**](#from-visual-studio-code) section below.
 
-If you are prompted for credentials, generate an Azure DevOps Personal Access Token and use it as password.
+If you are prompted for credentials, generate an Azure DevOps Personal Access Token (see the [step-by-step guide](salesforce-ci-cd-git-tokens.md#azure-devops)) and use it as password.
 
 ![](assets/images/open-vs-code-azure.jpg)
 

@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Update CI/CD documentation about using Mac + create git API tokens
+
 ## [7.14.0] 2026-05-17
 
 - Features
