@@ -575,6 +575,7 @@
   "couldNotParseXmlFor": "{{app}} の XML を解析できませんでした",
   "couldNotRetrieveFinalApiUsage": "最終的な API 使用量を取得できませんでした: {{error}}",
   "couldNotRetrieveRemoteOriginUrl": "リモート origin URL を取得できませんでした",
+  "couldNotSetGitConfig": "git 設定 '{{key}}' を '{{value}}' に設定できませんでした: {{message}}。ターミナルで手動で実行できます (Mac の場合は sudo を付ける必要があるかもしれません): git config {{key}} \"{{value}}\"",
   "couldNotValidateExistingFile": "既存ファイル {{fileName}} を検証できませんでした: {{as}}",
   "countingTotalRecords": "{{sObjectName}} の総レコード数を集計しています...",
   "coverageResultsJson": "カバレッジ結果 JSON",

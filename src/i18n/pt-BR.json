@@ -555,6 +555,7 @@
   "couldNotParseXmlFor": "Não foi possível analisar o XML para {{app}}",
   "couldNotRetrieveFinalApiUsage": "Não foi possível recuperar o uso final da API: {{error}}",
   "couldNotRetrieveRemoteOriginUrl": "Não foi possível recuperar a URL de origem remota",
+  "couldNotSetGitConfig": "Não foi possível definir a configuração git '{{key}}' como '{{value}}': {{message}}. Você pode executá-lo manualmente em um terminal (no Mac, talvez seja necessário prefixar com sudo): git config {{key}} \"{{value}}\"",
   "couldNotValidateExistingFile": "Não foi possível validar o arquivo existente {{fileName}}: {{as}}",
   "countingTotalRecords": "Contando o total de registros {{sObjectName}}...",
   "coverageResultsJson": "JSON de Resultados de Cobertura",

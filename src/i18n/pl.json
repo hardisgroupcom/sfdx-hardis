@@ -577,6 +577,7 @@
   "couldNotParseXmlFor": "Nie można przetworzyć XML dla {{app}}",
   "couldNotRetrieveFinalApiUsage": "Nie można pobrać końcowego zużycia API: {{error}}",
   "couldNotRetrieveRemoteOriginUrl": "Nie można pobrać zdalnego URL origin",
+  "couldNotSetGitConfig": "Nie można ustawić konfiguracji git '{{key}}' na '{{value}}': {{message}}. Można uruchomić to ręcznie w terminalu (na Mac może być konieczne poprzedzenie sudo): git config {{key}} \"{{value}}\"",
   "couldNotValidateExistingFile": "Nie można zwalidować istniejącego pliku {{fileName}}: {{as}}",
   "countingTotalRecords": "Liczenie łącznej liczby rekordów {{sObjectName}}...",
   "coverageResultsJson": "JSON wyników pokrycia kodu",
