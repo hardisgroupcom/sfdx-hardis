@@ -94,6 +94,7 @@ nav:
           - Pre-requisites:
               - Prepare your computer: salesforce-ci-cd-use-install.md
               - Clone the repository: salesforce-ci-cd-clone-repository.md
+              - Create Git access tokens: salesforce-ci-cd-git-tokens.md
           - Create new User Story: salesforce-ci-cd-create-new-task.md
           - Work on your dev org:
               - Work home: salesforce-ci-cd-work-on-task.md
