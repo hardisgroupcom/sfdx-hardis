@@ -1,10 +1,9 @@
 import c from "chalk";
-import { NotifProviderRoot } from "./notifProviderRoot.js";
-import { getCurrentGitBranch, uxLog } from "../utils/index.js";
+import { WebhookNotifProviderRoot } from "./webhookNotifProviderRoot.js";
+import { uxLog } from "../utils/index.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
 import { convertMarkdownToGoogleChatMarkup } from "./googleChatMarkup.js";
-import { getEnvVar } from "../../config/index.js";
 
 interface CardV2Widget {
   [key: string]: any;
@@ -27,12 +26,10 @@ interface CardV2 {
   sections: CardV2Section[];
 }
 
-const ERROR_SEVERITIES = ["critical", "error", "warning"];
-const MAIN_ENV_VAR = "GOOGLE_CHAT_WEBHOOK_URL";
-const ERRORS_WARNINGS_ENV_VAR = "GOOGLE_CHAT_WEBHOOK_URL_ERRORS_WARNINGS";
 const CARD_ID = "sfdx-hardis-notif";
+const LOG_PREFIX = "[GoogleChatProvider]";
 
-export class GoogleChatProvider extends NotifProviderRoot {
+export class GoogleChatProvider extends WebhookNotifProviderRoot {
   public getLabel(): string {
     return "sfdx-hardis Google Chat connector";
   }
@@ -41,10 +38,26 @@ export class GoogleChatProvider extends NotifProviderRoot {
     return "messaging";
   }
 
+  protected getMainEnvVar(): string {
+    return "GOOGLE_CHAT_WEBHOOK_URL";
+  }
+
+  protected getErrorsWarningsEnvVar(): string {
+    return "GOOGLE_CHAT_WEBHOOK_URL_ERRORS_WARNINGS";
+  }
+
+  protected getLogPrefix(): string {
+    return LOG_PREFIX;
+  }
+
+  protected getContentType(): string {
+    return "application/json; charset=UTF-8";
+  }
+
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     const webhookUrls = await this.getWebhookUrls(notifMessage);
     if (webhookUrls.length === 0) {
-      uxLog("error", this, c.red("[GoogleChatProvider] GOOGLE_CHAT_WEBHOOK_URL is not defined"));
+      uxLog("error", this, c.red(`${LOG_PREFIX} ${this.getMainEnvVar()} is not defined`));
       return;
     }
 
@@ -52,57 +65,6 @@ export class GoogleChatProvider extends NotifProviderRoot {
     const payload = { cardsV2: [{ cardId: CARD_ID, card }] };
 
     await this.sendToWebhooks(webhookUrls, payload);
-  }
-
-  private async getWebhookUrls(notifMessage: NotifMessage): Promise<string[]> {
-    const mainWebhookUrl = getEnvVar(MAIN_ENV_VAR);
-    if (!mainWebhookUrl) {
-      return [];
-    }
-
-    const webhookUrls = mainWebhookUrl.split(",");
-
-    const currentBranch = await getCurrentGitBranch();
-    if (currentBranch) {
-      const branchWebhookVar = `${MAIN_ENV_VAR}_${currentBranch.toUpperCase()}`;
-      const branchWebhook = getEnvVar(branchWebhookVar);
-      if (branchWebhook) {
-        webhookUrls.push(...branchWebhook.split(","));
-      }
-    }
-
-    if (ERROR_SEVERITIES.indexOf(notifMessage.severity) > -1) {
-      const errorsWebhook = getEnvVar(ERRORS_WARNINGS_ENV_VAR);
-      if (errorsWebhook) {
-        webhookUrls.push(...errorsWebhook.split(","));
-      }
-    }
-
-    return webhookUrls;
-  }
-
-  private async sendToWebhooks(webhookUrls: string[], payload: object): Promise<void> {
-    for (const webhookUrl of webhookUrls) {
-      try {
-        const response = await fetch(webhookUrl.trim(), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json; charset=UTF-8",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          uxLog("log", this, c.cyan("[GoogleChatProvider] Sent Google Chat notification to webhook"));
-        } else {
-          const errorText = await response.text();
-          uxLog("error", this, c.grey("[GoogleChatProvider] Failed Google Chat message content:\n" + JSON.stringify(payload, null, 2)));
-          uxLog("error", this, c.red(`[GoogleChatProvider] Error while sending message to webhook\n${response.status} - ${errorText}`));
-        }
-      } catch (error) {
-        uxLog("error", this, c.red(`[GoogleChatProvider] Error while sending message to webhook\n${(error as Error).message}`));
-      }
-    }
   }
 
   private buildCardV2(notifMessage: NotifMessage): CardV2 {

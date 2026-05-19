@@ -149,7 +149,7 @@ describe('convertMarkdownToSlackMrkdwn()', () => {
     });
 
     it('wraps the Metrics Snapshot table in a code fence', () => {
-      expect(out).to.match(/```[\s\S]*\| Metric \| Value \| Threshold \|[\s\S]*```/);
+      expect(out).to.match(/```[\s\S]*\| Metric\s+\| Value\s+\| Threshold\s+\|[\s\S]*```/);
     });
 
     it('preserves the leading Slack emoji shortcode', () => {

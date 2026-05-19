@@ -1,10 +1,9 @@
 import c from "chalk";
-import { NotifProviderRoot } from "./notifProviderRoot.js";
-import { getCurrentGitBranch, uxLog } from "../utils/index.js";
+import { WebhookNotifProviderRoot } from "./webhookNotifProviderRoot.js";
+import { uxLog } from "../utils/index.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
 import { convertMarkdownToTeamsMrkdwn } from "./teamsMarkdown.js";
-import { getEnvVar } from "../../config/index.js";
 
 interface AdaptiveCardElement {
   type: string;
@@ -21,11 +20,9 @@ interface AdaptiveCard {
 const ADAPTIVE_CARD_VERSION = "1.0";
 const CONTENT_TYPE_ADAPTIVE_CARD = "application/vnd.microsoft.card.adaptive";
 const DETAILS_CONTAINER_ID = "detailsContainer";
-const ERROR_SEVERITIES = ["critical", "error", "warning"];
-const MAIN_ENV_VAR = "MS_TEAMS_WEBHOOK_URL";
-const ERRORS_WARNINGS_ENV_VAR = "MS_TEAMS_WEBHOOK_URL_ERRORS_WARNINGS";
+const LOG_PREFIX = "[TeamsProvider]";
 
-export class TeamsProvider extends NotifProviderRoot {
+export class TeamsProvider extends WebhookNotifProviderRoot {
   public getLabel(): string {
     return "sfdx-hardis MsTeams connector";
   }
@@ -34,10 +31,22 @@ export class TeamsProvider extends NotifProviderRoot {
     return "messaging";
   }
 
+  protected getMainEnvVar(): string {
+    return "MS_TEAMS_WEBHOOK_URL";
+  }
+
+  protected getErrorsWarningsEnvVar(): string {
+    return "MS_TEAMS_WEBHOOK_URL_ERRORS_WARNINGS";
+  }
+
+  protected getLogPrefix(): string {
+    return LOG_PREFIX;
+  }
+
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     const webhookUrls = await this.getWebhookUrls(notifMessage);
     if (webhookUrls.length === 0) {
-      uxLog("error", this, c.red("[TeamsProvider] MS_TEAMS_WEBHOOK_URL is not defined"));
+      uxLog("error", this, c.red(`${LOG_PREFIX} ${this.getMainEnvVar()} is not defined`));
       return;
     }
 
@@ -45,35 +54,6 @@ export class TeamsProvider extends NotifProviderRoot {
     const payload = this.buildPayload(adaptiveCard);
 
     await this.sendToWebhooks(webhookUrls, payload);
-  }
-
-  private async getWebhookUrls(notifMessage: NotifMessage): Promise<string[]> {
-    const mainWebhookUrl = getEnvVar(MAIN_ENV_VAR);
-    if (!mainWebhookUrl) {
-      return [];
-    }
-
-    const webhookUrls = mainWebhookUrl.split(",");
-
-    // Add branch-specific webhook if defined
-    const currentBranch = await getCurrentGitBranch();
-    if (currentBranch) {
-      const branchWebhookVar = `${MAIN_ENV_VAR}_${currentBranch.toUpperCase()}`;
-      const branchWebhook = getEnvVar(branchWebhookVar);
-      if (branchWebhook) {
-        webhookUrls.push(...branchWebhook.split(","));
-      }
-    }
-
-    // Add errors/warnings webhook if applicable
-    if (ERROR_SEVERITIES.indexOf(notifMessage.severity) > -1) {
-      const errorsWebhook = getEnvVar(ERRORS_WARNINGS_ENV_VAR);
-      if (errorsWebhook) {
-        webhookUrls.push(...errorsWebhook.split(","));
-      }
-    }
-
-    return webhookUrls;
   }
 
   private buildPayload(adaptiveCard: AdaptiveCard): object {
@@ -85,30 +65,6 @@ export class TeamsProvider extends NotifProviderRoot {
         },
       ],
     };
-  }
-
-  private async sendToWebhooks(webhookUrls: string[], payload: object): Promise<void> {
-    for (const webhookUrl of webhookUrls) {
-      try {
-        const response = await fetch(webhookUrl.trim(), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          uxLog("log", this, c.cyan("[TeamsProvider] Sent Teams notification to webhook"));
-        } else {
-          const errorText = await response.text();
-          uxLog("error", this, c.grey("[TeamsProvider] Failed Teams message content:\n" + JSON.stringify(payload, null, 2)));
-          uxLog("error", this, c.red(`[TeamsProvider] Error while sending message to webhook\n${response.status} - ${errorText}`));
-        }
-      } catch (error) {
-        uxLog("error", this, c.red(`[TeamsProvider] Error while sending message to webhook\n${(error as Error).message}`));
-      }
-    }
   }
 
   private buildAdaptiveCard(notifMessage: NotifMessage): AdaptiveCard {
