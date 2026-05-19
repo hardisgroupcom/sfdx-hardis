@@ -17,6 +17,13 @@ export class UtilsNotifs {
     return false;
   }
 
+  public static isGoogleChatAvailable() {
+    if (getEnvVar("GOOGLE_CHAT_WEBHOOK_URL")) {
+      return true;
+    }
+    return false;
+  }
+
   // Email is available when:
   //   - the global NOTIF_EMAIL_ADDRESS env var is set, OR
   //   - at least one .sfdx-hardis.yml notificationConfig entry declares email recipients;

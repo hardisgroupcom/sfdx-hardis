@@ -4,6 +4,7 @@ import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { SlackProvider } from "./slackProvider.js";
 import { UtilsNotifs as utilsNotifs } from "./utils.js";
 import { TeamsProvider } from "./teamsProvider.js";
+import { GoogleChatProvider } from "./googleChatProvider.js";
 import { CONSTANTS, getConfig } from "../../config/index.js";
 import { EmailProvider } from "./emailProvider.js";
 import { ApiProvider } from "./apiProvider.js";
@@ -26,6 +27,10 @@ export abstract class NotifProvider {
     // Ms Teams
     if (UtilsNotifs.isMsTeamsAvailable()) {
       notifProviders.push(new TeamsProvider());
+    }
+    // Google Chat
+    if (UtilsNotifs.isGoogleChatAvailable()) {
+      notifProviders.push(new GoogleChatProvider());
     }
     // Email -- enabled by NOTIF_EMAIL_ADDRESS or by per-type recipients in user config
     if (UtilsNotifs.isEmailAvailable(userConfig)) {

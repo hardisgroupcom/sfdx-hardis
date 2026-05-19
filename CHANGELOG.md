@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- New [Google Chat](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-google-chat/) notification channel. Set `GOOGLE_CHAT_WEBHOOK_URL` (and optionally `GOOGLE_CHAT_WEBHOOK_URL_<BRANCH>` / `GOOGLE_CHAT_WEBHOOK_URL_ERRORS_WARNINGS`) to receive deployment and monitoring notifications as Google Chat Card v2 messages, with the same per-type severity routing as Slack and Microsoft Teams.
 - Notification text is now authored once in standard Markdown and translated per channel. Slack notifications render Markdown headings, bold, tables, and links correctly, Microsoft Teams notifications collapse Markdown headings to bold, email bodies are produced from the same Markdown source as the other channels, and console / API log payloads strip Markdown markers to plain text.
 - Notification bodies across monitoring and diagnose commands now use proper Markdown: bullet lists use `-`, key counts and names are highlighted in bold, and section labels render as bold rather than appearing as raw `*text*` or `•` characters.
 - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): The Slack monitoring summary now renders correctly. Headings, bold, links, and tables emitted by the AI summary are translated into Slack's mrkdwn syntax instead of appearing as raw `##`, `**bold**`, and pipe-table characters in the channel.
