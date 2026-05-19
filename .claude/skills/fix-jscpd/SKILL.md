@@ -1,6 +1,6 @@
 ---
 name: fix-jscpd
-description: Decision framework for fixing jscpd (copy-paste detector) errors. Use when asked to fix jscpd issues, copy-paste errors, or COPYPASTE lint failures.
+description: Decision framework for fixing jscpd (copy-paste detector) errors. Use when asked to fix jscpd issues, copy-paste errors, clones or COPYPASTE lint failures.
 user-invocable: false
 ---
 
