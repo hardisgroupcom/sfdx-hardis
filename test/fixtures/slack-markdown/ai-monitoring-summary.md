@@ -28,9 +28,9 @@ The org presents one active error requiring immediate attention: a misconfigured
 
 ## Metrics Snapshot
 
-| Metric | Value | Threshold |
-|---|---|---|
-| Flow Errors (24h) | 129 | - |
-| Suspect Audit Trail Records | 40 | - |
-| Apex Flex Queue (Holding) | 0 | 90 |
-| Deployments (weekly) | 0 | - |
+| Metric                      | Value | Threshold |
+|-----------------------------|-------|-----------|
+| Flow Errors (24h)           | 129   | -         |
+| Suspect Audit Trail Records | 40    | -         |
+| Apex Flex Queue (Holding)   | 0     | 90        |
+| Deployments (weekly)        | 0     | -         |
