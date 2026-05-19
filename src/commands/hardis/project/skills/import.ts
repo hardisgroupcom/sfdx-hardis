@@ -28,6 +28,7 @@ Key functionalities:
 - **Remote Repository Cloning:** Clones the specified git repository into a temporary directory for file extraction.
 - **File Copy with Overwrite Control:** Copies \`.claude/skills/\`, \`.claude/agents/\`, \`.claude/rules/\`, \`CLAUDE.md\`, and \`WORKFLOW.md\` from the cloned repo into the current project. If any files already exist, prompts once to overwrite all or skip all (defaults to overwrite).
 - **Config Persistence:** When \`--repo\` is not provided, reads the repo URL from the \`skillsRepo\` config property. If not found, prompts the user and stores the URL for future use.
+- **Add-On Mode:** When \`--addon\` is used, the resolved repository URL is appended to the \`skillsRepoAddOns\` array config property instead of being saved as the main \`skillsRepo\`. This lets you track a main skills repo plus a list of complementary add-on repos in the project config. The actual files are still imported from a single repo per invocation; merging across the main repo and add-ons is expected to be handled separately by an agent later.
 - **Agent Mode:** Supports \`--agent\` flag for non-interactive CI/CD and automation use. In agent mode, \`--repo\` or \`skillsRepo\` config must be set, and existing files are always overwritten.
 
 <details markdown="1">
@@ -37,6 +38,7 @@ Key functionalities:
 - Walks the \`.claude/\` subdirectories (\`skills\`, \`agents\`, \`rules\`) in the cloned repo and copies each file into the corresponding path in the current project.
 - In interactive mode, if any existing files are detected, a single overwrite prompt is shown (default: overwrite all).
 - In agent mode (\`--agent\`), all existing files are silently overwritten.
+- With \`--addon\`, the URL is appended (deduplicated) to the \`skillsRepoAddOns\` string array config property; without it, the URL replaces the \`skillsRepo\` string config property as before.
 - The temporary directory is cleaned up after the operation completes.
 </details>
 `;
@@ -44,6 +46,7 @@ Key functionalities:
   public static examples = [
     '$ sf hardis:project:skills:import',
     '$ sf hardis:project:skills:import --repo https://github.com/mycompany/claude-skills.git',
+    '$ sf hardis:project:skills:import --repo https://github.com/mycompany/claude-skills-billing.git --addon',
     '$ sf hardis:project:skills:import --agent --repo https://github.com/mycompany/claude-skills.git',
   ];
 
@@ -51,6 +54,10 @@ Key functionalities:
     repo: Flags.string({
       char: 'r',
       description: 'Git repository URL containing .claude/ skills, agents, and rules to import',
+    }),
+    addon: Flags.boolean({
+      default: false,
+      description: 'Persist the repository URL to the skillsRepoAddOns array config property instead of the main skillsRepo property',
     }),
     agent: Flags.boolean({
       default: false,
@@ -79,6 +86,7 @@ Key functionalities:
     const { flags } = await this.parse(SkillsImport);
     this.debugMode = flags.debug || false;
     const agentMode = flags.agent === true;
+    const addonMode = flags.addon === true;
 
     // Resolve repo URL: flag > config > prompt
     const repoUrl = await this.resolveRepoUrl(flags.repo, agentMode);
@@ -97,12 +105,8 @@ Key functionalities:
       throw new Error(t("skillsImportCloneError", { repo: repoUrl, error: (e as Error).message }));
     }
 
-    // Clone succeeded: persist repo URL in project config
-    const config = await getConfig('project');
-    if (config.skillsRepo !== repoUrl) {
-      await setConfig('project', { skillsRepo: repoUrl });
-      uxLog("log", this, c.grey(t("skillsImportRepoSaved", { repo: repoUrl })));
-    }
+    // Clone succeeded: persist repo URL in project config (main or add-ons list)
+    await this.persistRepoUrl(repoUrl, addonMode);
 
     // Check that the cloned repo has a .claude/ directory
     const sourceClaudeDir = path.join(tmpDir, '.claude');
@@ -173,7 +177,7 @@ Key functionalities:
 
     uxLog("action", this, c.cyan(t("skillsImportComplete", { copied: copiedCount, skipped: skippedCount })));
 
-    return { outputString: 'Imported skills', copiedCount, skippedCount, repoUrl };
+    return { outputString: 'Imported skills', copiedCount, skippedCount, repoUrl, addonMode };
   }
 
   private async resolveRepoUrl(flagRepo: string | undefined, agentMode: boolean): Promise<string> {
@@ -208,6 +212,27 @@ Key functionalities:
     }
 
     return response.repoUrl;
+  }
+
+  private async persistRepoUrl(repoUrl: string, addonMode: boolean): Promise<void> {
+    const config = await getConfig('project');
+
+    if (addonMode) {
+      const existing: string[] = Array.isArray(config.skillsRepoAddOns) ? config.skillsRepoAddOns : [];
+      if (existing.includes(repoUrl)) {
+        return;
+      }
+      const updated = [...existing, repoUrl];
+      await setConfig('project', { skillsRepoAddOns: updated });
+      uxLog("log", this, c.grey(t("skillsImportAddonSaved", { repo: repoUrl })));
+      return;
+    }
+
+    if (config.skillsRepo === repoUrl) {
+      return;
+    }
+    await setConfig('project', { skillsRepo: repoUrl });
+    uxLog("log", this, c.grey(t("skillsImportRepoSaved", { repo: repoUrl })));
   }
 
   private async promptOverwrite(): Promise<boolean> {

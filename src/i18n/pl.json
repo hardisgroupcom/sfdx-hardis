@@ -2551,6 +2551,7 @@
   "sfdxHardisTruncatedMessage": "Skrócono do pierwszych {{maxLen}} linii z {{total}} łącznie, więcej szczegółów w pełnym raporcie.",
   "sfdxProjectCreatedContinueSteps": "Projekt SFDX został utworzony. Możesz kontynuować kroki w dokumentacji pod adresem {{docUrl}}",
   "sfdxProjectDocumentationUploadedToSalesforceAnd": "Dokumentacja projektu SFDX przesłana do Salesforce i dostępna w Custom Tab {{resName}}.",
+  "skillsImportAddonSaved": "{{repo}} zapisano we właściwości skillsRepoAddOns konfiguracji projektu do przyszłego użytku.",
   "skillsImportCloneError": "Błąd podczas klonowania repozytorium {{repo}}: {{error}}",
   "skillsImportCloningRepo": "Klonowanie repozytorium skills {{repo}}...",
   "skillsImportComplete": "Import skills zakończony: skopiowano {{copied}} plik(ów), pominięto {{skipped}} plik(ów).",

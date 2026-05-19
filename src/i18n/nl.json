@@ -2551,6 +2551,7 @@
   "sfdxHardisTruncatedMessage": "Ingekort tot de eerste {{maxLen}} regels van {{total}} totale regels, zie het volledige rapport voor meer details.",
   "sfdxProjectCreatedContinueSteps": "SFDX-project is aangemaakt. Je kunt de stappen in de documentatie voortzetten op {{docUrl}}",
   "sfdxProjectDocumentationUploadedToSalesforceAnd": "SFDX-projectdocumentatie geüpload naar Salesforce en beschikbaar in het aangepaste tabblad {{resName}}.",
+  "skillsImportAddonSaved": "{{repo}} opgeslagen in de skillsRepoAddOns projectconfiguratie voor toekomstig gebruik.",
   "skillsImportCloneError": "Fout bij het klonen van repository {{repo}}: {{error}}",
   "skillsImportCloningRepo": "Skills-repository {{repo}} wordt gekloond...",
   "skillsImportComplete": "Skills-import voltooid: {{copied}} bestand(en) gekopieerd, {{skipped}} bestand(en) overgeslagen.",

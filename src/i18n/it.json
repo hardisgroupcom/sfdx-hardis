@@ -2551,6 +2551,7 @@
   "sfdxHardisTruncatedMessage": "Troncato alle prime {{maxLen}} righe su {{total}} righe totali, consulta il report completo per maggiori dettagli.",
   "sfdxProjectCreatedContinueSteps": "Il progetto SFDX è stato creato. Puoi continuare i passaggi nella documentazione su {{docUrl}}",
   "sfdxProjectDocumentationUploadedToSalesforceAnd": "La documentazione del progetto SFDX è stata caricata su Salesforce ed è disponibile nella scheda personalizzata {{resName}}.",
+  "skillsImportAddonSaved": "{{repo}} salvato nella proprietà skillsRepoAddOns della configurazione del progetto per utilizzi futuri.",
   "skillsImportCloneError": "Errore durante la clonazione del repository {{repo}}: {{error}}",
   "skillsImportCloningRepo": "Clonazione del repository di skills {{repo}} in corso...",
   "skillsImportComplete": "Importazione skills completata: {{copied}} file copiati, {{skipped}} file ignorati.",

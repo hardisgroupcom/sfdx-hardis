@@ -2425,6 +2425,22 @@
       "title": "Skills Repository",
       "type": "string"
     },
+    "skillsRepoAddOns": {
+      "$id": "#/properties/skillsRepoAddOns",
+      "default": [],
+      "description": "Additional .claude/ skills repositories layered on top of skillsRepo when running hardis:project:skills:import. Each addon is cloned in order after the main repo, and its files override any same-named files from earlier sources.",
+      "examples": [
+        [
+          "https://github.com/mycompany/claude-skills-team-billing.git",
+          "https://github.com/mycompany/claude-skills-data.git"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Skills Repository Add-Ons",
+      "type": "array"
+    },
     "skipMinimizeProfiles": {
       "$id": "#/properties/skipMinimizeProfiles",
       "description": "These profiles will not be reformatted by command hardis:project:clean:minimizeprofiles",

@@ -2548,6 +2548,7 @@
   "sfdxHardisTruncatedMessage": "{{total}} 行中の最初の {{maxLen}} 行に切り詰めました。詳細はレポート全体をご確認ください。",
   "sfdxProjectCreatedContinueSteps": "SFDXプロジェクトが作成されました。{{docUrl}} のドキュメントで手順を続行できます",
   "sfdxProjectDocumentationUploadedToSalesforceAnd": "SFDXプロジェクトのドキュメントがSalesforceにアップロードされ、カスタムタブ {{resName}} で利用できます。",
+  "skillsImportAddonSaved": "{{repo}} をプロジェクト設定の skillsRepoAddOns プロパティに保存しました。",
   "skillsImportCloneError": "リポジトリ {{repo}} のクローンに失敗しました: {{error}}",
   "skillsImportCloningRepo": "Skillsリポジトリ {{repo}} をクローンしています...",
   "skillsImportComplete": "Skillsのインポートが完了しました: {{copied}} 個のファイルをコピー、{{skipped}} 個のファイルをスキップしました。",
