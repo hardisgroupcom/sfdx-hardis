@@ -5,6 +5,7 @@ import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
+import { convertMarkdownToSlackMrkdwn } from "./slackMarkdown.js";
 import { getEnvVar } from "../../config/index.js";
 
 export class SlackProvider extends NotifProviderRoot {
@@ -44,13 +45,24 @@ export class SlackProvider extends NotifProviderRoot {
       slackChannelsIds.push(...warningsErrorsChannelId.split(","));
     }
 
+    // Convert CommonMark / GitHub-flavored markdown (as emitted by AI prompts and many
+    // call sites) into Slack's mrkdwn dialect. Slack does not render `## headings`,
+    // `**bold**`, pipe tables, `---` horizontal rules, or `[label](url)` links natively.
+    const slackText = convertMarkdownToSlackMrkdwn(notifMessage.text);
+    const slackAttachments = (notifMessage.attachments || []).map((att) => {
+      if (att && typeof att === "object" && typeof att.text === "string") {
+        return { ...att, text: convertMarkdownToSlackMrkdwn(att.text) };
+      }
+      return att;
+    });
+
     // Main block
     const blocks: Block[] = [];
     const block: SectionBlock = {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: UtilsNotifs.prefixWithSeverityEmoji(notifMessage.text, notifMessage.severity),
+        text: UtilsNotifs.prefixWithSeverityEmoji(slackText, notifMessage.severity),
       },
     };
     /* Disable until we don't know how to use it cleanly
@@ -89,8 +101,8 @@ export class SlackProvider extends NotifProviderRoot {
     // Post messages
     for (const slackChannelId of slackChannelsIds) {
       const slackMessage = {
-        text: notifMessage.text,
-        attachments: notifMessage.attachments,
+        text: slackText,
+        attachments: slackAttachments,
         blocks: blocks,
         channel: slackChannelId,
         unfurl_links: false,
