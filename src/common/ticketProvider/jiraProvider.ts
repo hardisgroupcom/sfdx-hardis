@@ -3,11 +3,10 @@ import { TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from "sort-array";
 import { Ticket } from "./index.js";
-import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
-import { extractRegexMatches, uxLog } from "../utils/index.js";
+import { extractRegexMatches, getCurrentGitBranch, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
 import { CONSTANTS, getConfig, getEnvVar } from "../../config/index.js";
-import { CommonPullRequestInfo } from "../gitProvider/index.js";
+import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
 import { t } from '../utils/i18n.js';
 import axios from "axios";
 
@@ -294,8 +293,14 @@ export class JiraProvider extends TicketProviderRoot {
     uxLog("action", this, c.cyan('[JiraProvider] ' + t('jiraProviderPostingComments', { count: tickets.length })));
 
     const genericHtmlResponseError = "Probably config/access error since response is HTML";
-    const orgMarkdown = JSON.parse(await getOrgMarkdown(org, "jira"));
-    const branchMarkdown = JSON.parse(await getBranchMarkdown("jira"));
+    // Jira's ADF / wiki markup builders below consume { label, url } objects.
+    // TODO(commonmark-jira): replace the bespoke ADF / wiki markup builders with a
+    // CommonMark -> Jira converter so this provider can join the central pipeline.
+    const orgLabel = org.replace("https://", "").replace(".my.salesforce.com", "");
+    const orgMarkdown = { label: orgLabel, url: org };
+    const branchName = (await getCurrentGitBranch()) || "";
+    const branchUrl = (await GitProvider.getCurrentBranchUrl()) || "";
+    const branchMarkdown = { label: branchName, url: branchUrl };
     const tag = await this.getDeploymentTag();
     const commentedTickets: Ticket[] = [];
     const taggedTickets: Ticket[] = [];

@@ -1,3 +1,4 @@
+// Private Use Area sentinels chosen so they cannot appear in real text or markdown.
 const BOLD_SENTINEL_OPEN = '';
 const BOLD_SENTINEL_CLOSE = '';
 const CODE_PH_OPEN = 'CODE';

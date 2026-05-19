@@ -44,17 +44,8 @@ export class UtilsNotifs {
     return false;
   }
 
-  public static markdownLink(url: string, label: string, type = "slack") {
-    if (type == "teams") {
-      return `[${label}](${url})`;
-    }
-    if (type === "jira") {
-      return `{ "label": "${label}", "url": "${url}"}`;
-    }
-    if (type == "html") {
-      return `<a href="${url}">${label}</a>`;
-    }
-    return `<${url}|*${label}*>`;
+  public static markdownLink(url: string, label: string): string {
+    return `[${label}](${url})`;
   }
 
   public static prefixWithSeverityEmoji(text: string, severity: NotifSeverity | null) {
@@ -79,16 +70,4 @@ export class UtilsNotifs {
     return images[imageKey] || null;
   }
 
-  public static slackToTeamsMarkdown(text: string) {
-    // Bold
-    const boldRegex = /(\*(.*?)\*)/gm;
-    text = text.replace(boldRegex, "**$2**");
-    // Carriage return
-    const carriageReturnRegex = /\n/gm;
-    text = text.replace(carriageReturnRegex, "\n\n");
-    // Hyperlink
-    const hyperlinkRegex = /<(.*?)\|(.*?)>/gm;
-    text = text.replace(hyperlinkRegex, "[$2]($1)");
-    return text;
-  }
 }
