@@ -3,6 +3,7 @@ import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
+import { convertMarkdownToTeamsMrkdwn } from "./teamsMarkdown.js";
 import { getEnvVar } from "../../config/index.js";
 
 interface AdaptiveCardElement {
@@ -123,8 +124,9 @@ export class TeamsProvider extends NotifProviderRoot {
   }
 
   private buildCardBody(notifMessage: NotifMessage): AdaptiveCardElement[] {
-    const messageText = UtilsNotifs.slackToTeamsMarkdown(
-      UtilsNotifs.prefixWithSeverityEmoji(notifMessage.text, notifMessage.severity)
+    const messageText = UtilsNotifs.prefixWithSeverityEmoji(
+      convertMarkdownToTeamsMrkdwn(notifMessage.text),
+      notifMessage.severity,
     );
 
     const body: AdaptiveCardElement[] = [
@@ -153,7 +155,7 @@ export class TeamsProvider extends NotifProviderRoot {
       .filter((attachment) => attachment.text)
       .map((attachment) => ({
         type: "TextBlock",
-        text: UtilsNotifs.slackToTeamsMarkdown(attachment.text),
+        text: convertMarkdownToTeamsMrkdwn(attachment.text),
         wrap: true,
       }));
 

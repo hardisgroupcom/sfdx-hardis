@@ -108,10 +108,10 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
       const notifSeverity: NotifSeverity = 'warning';
-      const notifText = `${this.releaseUpdatesRecords.length} Release Updates to check have been found in ${orgMarkdown}`
+      const notifText = `**${this.releaseUpdatesRecords.length}** Release Updates to check have been found in ${orgMarkdown}`
       let notifDetailText = '';
       for (const releaseUpdate of this.releaseUpdatesRecords) {
-        notifDetailText += `• *${releaseUpdate.Title}* (${releaseUpdate.StepStage},${releaseUpdate.Status},${releaseUpdate.Category}), due for ${dateHelper(releaseUpdate.DueDate).format("ll")}\n`;
+        notifDetailText += `- **${releaseUpdate.Title}** (${releaseUpdate.StepStage},${releaseUpdate.Status},${releaseUpdate.Category}), due for ${dateHelper(releaseUpdate.DueDate).format("ll")}\n`;
       }
       const notifAttachments = [{ text: notifDetailText }];
       // Post notif

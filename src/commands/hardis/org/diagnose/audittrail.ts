@@ -297,16 +297,16 @@ In agent mode, the audit trail report is generated without interactive prompts, 
     let notifAttachments: any[] = [];
     if (this.suspectRecords.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.suspectRecords.length} suspect Setup Audit Trail records have been found in ${orgMarkdown}`;
+      notifText = `**${this.suspectRecords.length}** suspect Setup Audit Trail records have been found in ${orgMarkdown}`;
       let notifDetailText = ``;
-      notifDetailText += '*Related users*:\n';
+      notifDetailText += '**Related users**:\n';
       for (const user of this.suspectUsers) {
-        notifDetailText += `• ${user + " (" + this.suspectUsersAndActions[user].actions.join(', ') + ")"}\n`;
+        notifDetailText += `- ${user + " (" + this.suspectUsersAndActions[user].actions.join(', ') + ")"}\n`;
       }
       notifDetailText += '\n';
-      notifDetailText += '*Related actions*:\n';
+      notifDetailText += '**Related actions**:\n';
       for (const action of suspectActionsWithCount) {
-        notifDetailText += `• ${action}\n`;
+        notifDetailText += `- ${action}\n`;
       }
       notifAttachments = [{ text: notifDetailText }];
     }

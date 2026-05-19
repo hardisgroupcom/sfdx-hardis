@@ -287,25 +287,25 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = 'log';
-    let notifText = `All async apex classes of org ${orgMarkdown} have been called during the latest ${this.lastNdays} days.`;
+    let notifText = `All async apex classes of org ${orgMarkdown} have been called during the latest **${this.lastNdays}** days.`;
     let attachments: any[] = [];
     if (this.unusedNumber > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.unusedNumber} apex classes might not be used anymore.`;
+      notifText = `**${this.unusedNumber}** apex classes might not be used anymore.`;
       const notifDetailText = this.asyncClassList
         .filter(apexClass => ["warning", "error"].includes(apexClass.severity))
         .map(apexClass => {
           if (apexClass.nextJobDate) {
-            return `• *${apexClass.Name}*: Will run on ${dateHelper(apexClass.nextJobDate).format('YYYY-MM-DD hh:mm')}`
+            return `- **${apexClass.Name}**: Will run on ${dateHelper(apexClass.nextJobDate).format('YYYY-MM-DD hh:mm')}`
           }
           else if (apexClass.queued) {
-            return `• *${apexClass.Name}*: A future job is queued`
+            return `- **${apexClass.Name}**: A future job is queued`
           }
           else if (apexClass.latestJobRunDays < 99999) {
-            return `• *${apexClass.Name}*: ${apexClass.latestJobRunDays} days (created on ${dateHelper(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
+            return `- **${apexClass.Name}**: **${apexClass.latestJobRunDays}** days (created on ${dateHelper(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
           }
           else {
-            return `• *${apexClass.Name}*: No past or future job found (created on ${dateHelper(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
+            return `- **${apexClass.Name}**: No past or future job found (created on ${dateHelper(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
           }
         }).join("\n");
       attachments = [{ text: notifDetailText }];

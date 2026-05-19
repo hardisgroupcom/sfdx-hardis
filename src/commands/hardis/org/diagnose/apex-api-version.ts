@@ -194,10 +194,10 @@ In agent mode, the command runs fully automatically. The API version threshold d
 
     if (totalCount > 0) {
       notifSeverity = 'warning';
-      notifText = `${totalCount} Apex class(es)/trigger(s) with deprecated API version (<= ${threshold}) in ${orgMarkdown}`;
+      notifText = `**${totalCount}** Apex class(es)/trigger(s) with deprecated API version (<= **${threshold}**) in ${orgMarkdown}`;
       const detailText = allDeprecated
         .slice(0, 20)
-        .map((r) => `• ${r.Type} ${r.Name}: ApiVersion ${r.ApiVersion}`)
+        .map((r) => `- ${r.Type} **${r.Name}**: ApiVersion ${r.ApiVersion}`)
         .join('\n');
       notifAttachments.push({
         text: totalCount > 20 ? `${detailText}\n... and ${totalCount - 20} more` : detailText,

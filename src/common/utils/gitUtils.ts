@@ -400,16 +400,16 @@ async function collectNotifAttachments(attachments: MessageAttachment[], pullReq
   // Tickets attachment
   if (commitsSummary.tickets.length > 0) {
     attachments.push({
-      text: `*Tickets*\n${commitsSummary.tickets
+      text: `**Tickets**\n${commitsSummary.tickets
         .map((ticket) => {
           if (ticket.foundOnServer) {
-            let ticketsMarkdown = '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id) + ' ' + ticket.subject;
+            let ticketsMarkdown = '- ' + UtilsNotifs.markdownLink(ticket.url, ticket.id) + ' ' + ticket.subject;
             if (ticket.statusLabel) {
               ticketsMarkdown += ' (' + ticket.statusLabel + ')';
             }
             return ticketsMarkdown;
           } else {
-            return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id);
+            return '- ' + UtilsNotifs.markdownLink(ticket.url, ticket.id);
           }
         })
         .join('\n')}`,
@@ -418,9 +418,9 @@ async function collectNotifAttachments(attachments: MessageAttachment[], pullReq
   // Manual actions attachment
   if (commitsSummary.manualActions.length > 0) {
     attachments.push({
-      text: `*Manual actions*\n${commitsSummary.manualActions
+      text: `**Manual actions**\n${commitsSummary.manualActions
         .map((manualAction) => {
-          return '• ' + manualAction;
+          return '- ' + manualAction;
         })
         .join('\n')}`,
     });
@@ -428,9 +428,9 @@ async function collectNotifAttachments(attachments: MessageAttachment[], pullReq
   // Commits attachment
   if (commitsSummary.logResults.length > 0) {
     attachments.push({
-      text: `*Commits*\n${commitsSummary.logResults
+      text: `**Commits**\n${commitsSummary.logResults
         .map((logResult) => {
-          return '• ' + logResult.message + ', by ' + logResult.author_name;
+          return '- ' + logResult.message + ', by ' + logResult.author_name;
         })
         .join('\n')}`,
     });

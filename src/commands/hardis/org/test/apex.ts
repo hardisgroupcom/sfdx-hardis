@@ -213,13 +213,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
       {
         text: this.failingTestClasses
           .map((failingTestClass) => {
-            return '• *' + failingTestClass.name + '*: ' + failingTestClass.error;
+            return '- **' + failingTestClass.name + '**: ' + failingTestClass.error;
           })
           .join('\n'),
       },
     ];
     this.statusMessage = `Apex tests failed (${this.failingTestClasses.length}). (Outcome: ${this.testRunOutcome})`;
-    this.notifText = `Apex tests failed (${this.failingTestClasses.length}) in org ${this.orgMarkdown} (Outcome: ${this.testRunOutcome})`;
+    this.notifText = `Apex tests failed (**${this.failingTestClasses.length}**) in org ${this.orgMarkdown} (Outcome: ${this.testRunOutcome})`;
     const failedTestsString = this.failingTestClasses
       .map((failingTestClass) => {
         return `- ${failingTestClass.name}: ${failingTestClass.error}`;
@@ -264,13 +264,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
     // Min coverage not reached
     else if (coverageOrgWide < minCoverageOrgWide) {
       this.notifSeverity = 'error';
-      this.statusMessage = `Test run coverage (org wide) *${coverageOrgWide}%* should be > to ${minCoverageOrgWide}%`;
+      this.statusMessage = `Test run coverage (org wide) **${coverageOrgWide}%** should be > to ${minCoverageOrgWide}%`;
       this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
     }
     // We are good !
     else {
       this.notifSeverity = 'log';
-      this.statusMessage = `Test run coverage (org wide) *${coverageOrgWide}%* is > to ${minCoverageOrgWide}%`;
+      this.statusMessage = `Test run coverage (org wide) **${coverageOrgWide}%** is > to ${minCoverageOrgWide}%`;
       this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
     }
   }
@@ -309,13 +309,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
       // Min coverage not reached
       else if (coverageTestRun < minCoverageTestRun) {
         this.notifSeverity = 'error';
-        this.statusMessage = `Test run coverage *${coverageTestRun}%* should be > to ${minCoverageTestRun}%`;
+        this.statusMessage = `Test run coverage **${coverageTestRun}%** should be > to ${minCoverageTestRun}%`;
         this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
       }
       // We are good !
       else {
         this.notifSeverity = 'log';
-        this.statusMessage = `Test run coverage *${coverageTestRun}%* is > to ${minCoverageTestRun}%`;
+        this.statusMessage = `Test run coverage **${coverageTestRun}%** is > to ${minCoverageTestRun}%`;
         this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
       }
     }

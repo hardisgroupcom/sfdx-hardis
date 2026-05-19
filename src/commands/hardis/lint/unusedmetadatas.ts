@@ -121,20 +121,20 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     const attachments: MessageAttachment[] = [];
     if (unusedLabels.length > 0) {
       attachments.push({
-        text: `*Unused Labels*\n${unusedLabels.map((label) => `• ${label.name}`).join('\n')}`,
+        text: `**Unused Labels**\n${unusedLabels.map((label) => `- ${label.name}`).join('\n')}`,
       });
     }
     if (unusedCustomPermissions.length > 0) {
       attachments.push({
-        text: `*Unused Custom Permissions*\n${unusedCustomPermissions
-          .map((permission) => `• ${permission.name}`)
+        text: `**Unused Custom Permissions**\n${unusedCustomPermissions
+          .map((permission) => `- ${permission.name}`)
           .join('\n')}`,
       });
     }
     uxLog("action", this, c.cyan(t('summary')));
     if (unusedLabels.length > 0 || unusedCustomPermissions.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.unusedData.length} unused metadata were detected in ${branchMd}`;
+      notifText = `**${this.unusedData.length}** unused metadata were detected in ${branchMd}`;
       if (unusedLabels.length > 0) {
         uxLog("warning", this, c.yellow(t('unusedLabels', { unusedLabels: unusedLabels.length })));
       }

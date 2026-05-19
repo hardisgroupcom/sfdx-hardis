@@ -336,7 +336,7 @@ In agent mode:
     const notifText = t('unsecuredConnectedAppsFoundInOrg', { count: numberWarnings, orgMarkdown })
     let notifDetailText = '';
     for (const connectedApp of uniqueUnsecureConnectedAppsWithTokens) {
-      notifDetailText += `• *${connectedApp.AppName}* (${connectedApp.NumberOfUnsecuredOAuthTokens} OAuth Tokens)\n`;
+      notifDetailText += `- **${connectedApp.AppName}** (**${connectedApp.NumberOfUnsecuredOAuthTokens}** OAuth Tokens)\n`;
     }
     const notifAttachments = [{ text: notifDetailText }];
     // Post notif

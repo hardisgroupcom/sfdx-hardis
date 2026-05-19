@@ -111,11 +111,11 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     let attachments: MessageAttachment[] = [];
     if (this.fieldsWithoutDescription.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.fieldsWithoutDescription.length} fields with missing descriptions were found in ${branchMd}`;
+      notifText = `**${this.fieldsWithoutDescription.length}** fields with missing descriptions were found in ${branchMd}`;
       await this.buildCsvFile(this.fieldsWithoutDescription);
       attachments = [
         {
-          text: `*Missing descriptions*\n${this.fieldsWithoutDescription.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Missing descriptions**\n${this.fieldsWithoutDescription.map((file) => `- ${file.name}`).join('\n')}`,
         },
       ];
     } else {

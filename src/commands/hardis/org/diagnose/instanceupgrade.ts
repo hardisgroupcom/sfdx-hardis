@@ -120,17 +120,18 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = 'log';
-    const notifText = `Salesforce instance *${instanceName}* of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (*${daysBeforeUpgrade} days*) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
+    const notifText = `Salesforce instance **${instanceName}** of ${orgMarkdown} will be upgraded on **${nextMajorUpgradeDateStr}** (**${daysBeforeUpgrade} days**) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
+    const logText = `Salesforce instance ${instanceName} of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (${daysBeforeUpgrade} days) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
 
     // Change severity according to number of days
     if (daysBeforeUpgrade <= 15) {
       notifSeverity = 'warning';
-      uxLog("warning", this, c.yellow(notifText));
+      uxLog("warning", this, c.yellow(logText));
     } else if (daysBeforeUpgrade <= 30) {
       notifSeverity = 'info';
-      uxLog("success", this, c.green(notifText));
+      uxLog("success", this, c.green(logText));
     } else {
-      uxLog("success", this, c.green(notifText));
+      uxLog("success", this, c.green(logText));
     }
 
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email

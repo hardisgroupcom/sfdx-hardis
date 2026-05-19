@@ -378,10 +378,10 @@ In agent mode, the bulk-delete confirmation prompt is skipped (no unused PSLAs a
     let attachments: any[] = [];
     if (unusedPermissionSetLicenseAssignments.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${unusedPermissionSetLicenseAssignments.length} unused Permission Set Licenses Assignments have been found in ${orgMarkdown}`;
+      notifText = `**${unusedPermissionSetLicenseAssignments.length}** unused Permission Set Licenses Assignments have been found in ${orgMarkdown}`;
       for (const pslMasterLabel of Object.keys(summary).sort()) {
         const psl = this.getPermissionSetLicenseByMasterLabel(pslMasterLabel);
-        notifDetailText += `• ${pslMasterLabel}: ${summary[pslMasterLabel]} (${psl.UsedLicenses} used on ${psl.TotalLicenses} available)\n`;
+        notifDetailText += `- **${pslMasterLabel}**: **${summary[pslMasterLabel]}** (${psl.UsedLicenses} used on ${psl.TotalLicenses} available)\n`;
       }
       attachments = [{ text: notifDetailText }];
     }

@@ -264,15 +264,15 @@ In agent mode, the command runs fully automatically. The permission threshold de
     if (this.minimalPermSets.length > 0) {
       const zeroValueCount = this.minimalPermSets.filter((ps) => ps.PermissionCount === 0).length;
       notifSeverity = zeroValueCount > 0 ? 'error' : 'warning';
-      notifText = `${this.minimalPermSets.length} minimal permission set(s) (<= ${threshold} permissions) in project for ${orgMarkdown}`;
+      notifText = `**${this.minimalPermSets.length}** minimal permission set(s) (<= ${threshold} permissions) in project for ${orgMarkdown}`;
       if (zeroValueCount > 0) {
-        notifText = `${zeroValueCount} zero-value permission set(s) (0 permissions) and ${this.minimalPermSets.length - zeroValueCount} minimal in project for ${orgMarkdown}`;
+        notifText = `**${zeroValueCount}** zero-value permission set(s) (0 permissions) and **${this.minimalPermSets.length - zeroValueCount}** minimal in project for ${orgMarkdown}`;
       }
       const detailText = this.minimalPermSets
         .slice(0, 20)
         .map((ps) => {
           const prefix = ps.PermissionCount === 0 ? '❌' : '⚠️';
-          return `${prefix} ${ps.Name}: ${ps.PermissionCount} permissions`;
+          return `${prefix} **${ps.Name}**: ${ps.PermissionCount} permissions`;
         })
         .join('\n');
       notifAttachments.push({

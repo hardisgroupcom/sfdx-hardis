@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+- Notification text is now authored once in standard Markdown and translated per channel. Slack notifications render Markdown headings, bold, tables, and links correctly, Microsoft Teams notifications collapse Markdown headings to bold, email bodies are produced from the same Markdown source as the other channels, and console / API log payloads strip Markdown markers to plain text.
+- Notification bodies across monitoring and diagnose commands now use proper Markdown: bullet lists use `-`, key counts and names are highlighted in bold, and section labels render as bold rather than appearing as raw `*text*` or `•` characters.
+- [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): The Slack monitoring summary now renders correctly. Headings, bold, links, and tables emitted by the AI summary are translated into Slack's mrkdwn syntax instead of appearing as raw `##`, `**bold**`, and pipe-table characters in the channel.
+
 ## [7.14.1] 2026-05-18
 
 - Update CI/CD documentation about using Mac + create git API tokens
