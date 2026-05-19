@@ -3,7 +3,10 @@ import { expect } from 'chai';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { convertMarkdownToSlackMrkdwn } from '../../../src/common/notifProvider/slackMarkdown.js';
+import {
+  convertMarkdownToSlackBlocks,
+  convertMarkdownToSlackMrkdwn,
+} from '../../../src/common/notifProvider/slackMarkdown.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixturesDir = path.resolve(__dirname, '../../fixtures/slack-markdown');
@@ -156,5 +159,71 @@ describe('convertMarkdownToSlackMrkdwn()', () => {
     it('keeps the Quick Wins section heading text', () => {
       expect(out).to.include('Quick Wins');
     });
+  });
+});
+
+describe('convertMarkdownToSlackBlocks()', () => {
+  it('returns an empty array for empty input', () => {
+    expect(convertMarkdownToSlackBlocks('')).to.deep.equal([]);
+  });
+
+  it('wraps a single paragraph in one mrkdwn section block', () => {
+    const blocks = convertMarkdownToSlackBlocks('hello world');
+    expect(blocks).to.have.length(1);
+    expect(blocks[0]).to.deep.equal({
+      type: 'section',
+      text: { type: 'mrkdwn', text: 'hello world' },
+    });
+  });
+
+  it('emits a native table block for a pipe table', () => {
+    const input = '| A | B |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |';
+    const blocks = convertMarkdownToSlackBlocks(input);
+    expect(blocks).to.have.length(1);
+    expect(blocks[0].type).to.equal('table');
+    const table = blocks[0] as any;
+    expect(table.rows).to.have.length(3);
+    expect(table.rows[0]).to.deep.equal([
+      { type: 'raw_text', text: 'A' },
+      { type: 'raw_text', text: 'B' },
+    ]);
+    expect(table.rows[1]).to.deep.equal([
+      { type: 'raw_text', text: '1' },
+      { type: 'raw_text', text: '2' },
+    ]);
+    expect(table.rows[2]).to.deep.equal([
+      { type: 'raw_text', text: '3' },
+      { type: 'raw_text', text: '4' },
+    ]);
+  });
+
+  it('splits text before and after a table into separate blocks', () => {
+    const input = 'before\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\nafter';
+    const blocks = convertMarkdownToSlackBlocks(input);
+    expect(blocks).to.have.length(3);
+    expect(blocks[0].type).to.equal('section');
+    expect(blocks[1].type).to.equal('table');
+    expect(blocks[2].type).to.equal('section');
+    expect((blocks[0] as any).text.text).to.equal('before');
+    expect((blocks[2] as any).text.text).to.equal('after');
+  });
+
+  it('does not extract a table that lives inside a fenced code block', () => {
+    const input = '```\n| A | B |\n|---|---|\n| 1 | 2 |\n```';
+    const blocks = convertMarkdownToSlackBlocks(input);
+    expect(blocks).to.have.length(1);
+    expect(blocks[0].type).to.equal('section');
+    expect((blocks[0] as any).text.text).to.include('| A | B |');
+  });
+
+  it('converts the AI monitoring summary fixture into mixed section + table blocks', () => {
+    const input = fs.readFileSync(path.join(fixturesDir, 'ai-monitoring-summary.md'), 'utf8');
+    const blocks = convertMarkdownToSlackBlocks(input);
+    const sectionCount = blocks.filter((b) => b.type === 'section').length;
+    const tableCount = blocks.filter((b) => b.type === 'table').length;
+    expect(sectionCount).to.be.greaterThan(0);
+    expect(tableCount).to.equal(1);
+    const table = blocks.find((b) => b.type === 'table') as any;
+    expect(table.rows[0].map((c: any) => c.text)).to.deep.equal(['Metric', 'Value', 'Threshold']);
   });
 });

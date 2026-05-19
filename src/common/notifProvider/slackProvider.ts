@@ -5,7 +5,7 @@ import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
-import { convertMarkdownToSlackMrkdwn } from "./slackMarkdown.js";
+import { convertMarkdownToSlackBlocks, convertMarkdownToSlackMrkdwn } from "./slackMarkdown.js";
 import { getEnvVar } from "../../config/index.js";
 
 export class SlackProvider extends NotifProviderRoot {
@@ -46,8 +46,10 @@ export class SlackProvider extends NotifProviderRoot {
     }
 
     // Convert CommonMark / GitHub-flavored markdown (as emitted by AI prompts and many
-    // call sites) into Slack's mrkdwn dialect. Slack does not render `## headings`,
-    // `**bold**`, pipe tables, `---` horizontal rules, or `[label](url)` links natively.
+    // call sites) into Slack Block Kit blocks. Pipe tables become native `table` blocks
+    // so columns render aligned in Slack's UI; everything else becomes a `section` with
+    // mrkdwn text. The plain `text` field below is the fallback for notification
+    // previews and accessibility, so we still produce a flat mrkdwn string.
     const slackText = convertMarkdownToSlackMrkdwn(notifMessage.text);
     const slackAttachments = (notifMessage.attachments || []).map((att) => {
       if (att && typeof att === "object" && typeof att.text === "string") {
@@ -56,24 +58,39 @@ export class SlackProvider extends NotifProviderRoot {
       return att;
     });
 
-    // Main block
-    const blocks: Block[] = [];
-    const block: SectionBlock = {
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: UtilsNotifs.prefixWithSeverityEmoji(slackText, notifMessage.severity),
-      },
-    };
+    // Main blocks: split markdown into section + table blocks, then prefix the
+    // severity emoji to the first section. If the message starts with a table, fall
+    // back to inserting a dedicated emoji-only section block before it.
+    const blocks: Block[] = convertMarkdownToSlackBlocks(notifMessage.text);
+    const firstSectionIndex = blocks.findIndex(
+      (b) => b.type === "section" && (b as SectionBlock).text?.type === "mrkdwn",
+    );
+    if (firstSectionIndex >= 0) {
+      const firstSection = blocks[firstSectionIndex] as SectionBlock;
+      if (firstSection.text) {
+        firstSection.text = {
+          type: "mrkdwn",
+          text: UtilsNotifs.prefixWithSeverityEmoji(firstSection.text.text || "", notifMessage.severity),
+        };
+      }
+    } else {
+      const emojiBlock: SectionBlock = {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: UtilsNotifs.prefixWithSeverityEmoji("", notifMessage.severity).trim(),
+        },
+      };
+      blocks.unshift(emojiBlock);
+    }
     /* Disable until we don't know how to use it cleanly
     if (notifMessage.sideImage) {
-      block.accessory = {
+      (blocks[firstSectionIndex >= 0 ? firstSectionIndex : 0] as SectionBlock).accessory = {
         "type": "image",
         "image_url": notifMessage.sideImage,
         "alt_text": "sfdx-hardis"
       }
     } */
-    blocks.push(block);
     // Add action blocks
     if (notifMessage.buttons?.length && notifMessage.buttons?.length > 0) {
       const actionElements: any[] = [];
