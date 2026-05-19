@@ -313,11 +313,11 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       notifSeverity = 'warning';
     }
 
-    let notifText = `Security Health Check score for ${orgMarkdown} is ${scoreText}.`;
+    let notifText = `Security Health Check score for ${orgMarkdown} is **${scoreText}**.`;
     if (highRisks.length > 0) {
-      notifText = `Security Health Check score for ${orgMarkdown} is ${scoreText} with ${highRisks.length} error-severity indicators.`;
+      notifText = `Security Health Check score for ${orgMarkdown} is **${scoreText}** with **${highRisks.length}** error-severity indicators.`;
     } else if (mediumRisks.length > 0) {
-      notifText = `Security Health Check score for ${orgMarkdown} is ${scoreText} with ${mediumRisks.length} warning-severity indicators.`;
+      notifText = `Security Health Check score for ${orgMarkdown} is **${scoreText}** with **${mediumRisks.length}** warning-severity indicators.`;
     }
 
     const notifAttachments: MessageAttachment[] = [];
@@ -371,7 +371,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
         const groupLabel = risk.SettingGroup ? ` (${risk.SettingGroup})` : '';
         const orgValue = risk.OrgValue ?? 'N/A';
         const standardValue = risk.StandardValue ?? 'N/A';
-        return `• ${risk.Setting || 'Unknown'}${groupLabel}: Org=${orgValue} / Baseline=${standardValue}`;
+        return `- **${risk.Setting || 'Unknown'}**${groupLabel}: Org=${orgValue} / Baseline=${standardValue}`;
       })
       .join('\n');
   }

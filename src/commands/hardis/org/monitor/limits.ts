@@ -104,7 +104,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
   /* jscpd:ignore-end */
 
   private static formatLimitLine(limit: any): string {
-    return `• ${limit.name}: *${limit.percentUsed}%* used (${limit.used}/${limit.max})`;
+    return `- ${limit.name}: **${limit.percentUsed}%** used (${limit.used}/${limit.max})`;
   }
 
   public async run(): Promise<AnyJson> {
@@ -199,8 +199,8 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     // Dangerous limits has been found
     if (numberLimitsError > 0) {
       notifSeverity = 'error';
-      notifText = `Limit severe alerts have been detected in ${orgMarkdown} (error: ${numberLimitsError}, warning: ${numberLimitsWarning})`;
-      const errorText = `*Error Limits*\n${limitsError.map(MonitorLimits.formatLimitLine).join('\n')}`;
+      notifText = `Limit severe alerts have been detected in ${orgMarkdown} (error: **${numberLimitsError}**, warning: **${numberLimitsWarning}**)`;
+      const errorText = `**Error Limits**\n${limitsError.map(MonitorLimits.formatLimitLine).join('\n')}`;
       notifAttachments.push({
         text: errorText,
       });
@@ -210,8 +210,8 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     // Warning limits detected
     else if (numberLimitsWarning > 0) {
       notifSeverity = 'warning';
-      notifText = `Limit warning alerts have been detected in ${orgMarkdown} (${numberLimitsWarning})`;
-      const warningText = `*Warning Limits*\n${limitsWarning.map(MonitorLimits.formatLimitLine).join('\n')}`;
+      notifText = `Limit warning alerts have been detected in ${orgMarkdown} (**${numberLimitsWarning}**)`;
+      const warningText = `**Warning Limits**\n${limitsWarning.map(MonitorLimits.formatLimitLine).join('\n')}`;
       notifAttachments.push({
         text: warningText,
       });

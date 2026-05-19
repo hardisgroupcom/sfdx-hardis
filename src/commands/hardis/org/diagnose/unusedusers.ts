@@ -323,8 +323,8 @@ In agent mode:
     if (users.length > 0) {
       notifSeverity = this.returnActiveUsers ? 'log' : 'warning';
       notifText = this.returnActiveUsers
-        ? `*${this.users.length}* active users have logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`
-        : `*${this.users.length}* active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
+        ? `**${this.users.length}** active users have logged in to ${orgMarkdown} within the last **${this.lastNdays}** days.`
+        : `**${this.users.length}** active users have not logged in to ${orgMarkdown} within the last **${this.lastNdays}** days.`;
       attachments = [{ text: notifDetailText }];
     }
     const notificationType = this.getNotificationType();

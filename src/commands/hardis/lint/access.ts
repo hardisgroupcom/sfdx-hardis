@@ -518,13 +518,13 @@ In agent mode, the interactive prompt to automatically add missing accesses to P
     // Manage detail in case there are issues
     if (this.missingElements.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.missingElements.length} custom elements have no access defined in any Profile or Permission set in ${branchMd}`;
+      notifText = `**${this.missingElements.length}** custom elements have no access defined in any Profile or Permission set in ${branchMd}`;
       let notifDetailText = ``;
       for (const missingType of Object.keys(this.missingElementsMap)) {
         if (this.missingElementsMap[missingType]?.length > 0) {
-          notifDetailText += `*${missingType}*\n`;
+          notifDetailText += `**${missingType}**\n`;
           for (const missingItem of this.missingElementsMap[missingType]) {
-            notifDetailText += `• ${missingItem}\n`;
+            notifDetailText += `- ${missingItem}\n`;
           }
         }
       }

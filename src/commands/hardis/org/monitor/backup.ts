@@ -386,7 +386,7 @@ In agent mode:
               if (diffFile.index && diffFile.index !== ' ') {
                 flag = ` (${diffFile.index === '?' ? 'A' : diffFile.index})`;
               }
-              const line = `• ${filesHumanFormatted.get(diffFile.path)}` + flag;
+              const line = `- ${filesHumanFormatted.get(diffFile.path)}` + flag;
               return line;
             })
             .join('\n'),

@@ -404,9 +404,9 @@ In agent mode:
       const orgMarkdown = await getOrgMarkdown(this.conn?.instanceUrl);
       const notifButtons = await getNotificationButtons();
       const notifSeverity: NotifSeverity = 'warning';
-      let notifText = `${this.results.length} ServiceNow report lines have been extracted from ${orgMarkdown}`;
+      let notifText = `**${this.results.length}** ServiceNow report lines have been extracted from ${orgMarkdown}`;
       if (this.invalidResults.length > 0) {
-        notifText += `, including ${this.invalidResults.length} invalid entries`;
+        notifText += `, including **${this.invalidResults.length}** invalid entries`;
       }
       // Post notif
       await setConnectionVariables(this.conn);// Required for some notifications providers like Email
