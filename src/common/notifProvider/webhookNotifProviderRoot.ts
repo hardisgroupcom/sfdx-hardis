@@ -10,8 +10,20 @@ export abstract class WebhookNotifProviderRoot extends NotifProviderRoot {
   protected abstract getMainEnvVar(): string;
   protected abstract getErrorsWarningsEnvVar(): string;
   protected abstract getLogPrefix(): string;
+  protected abstract buildPayload(notifMessage: NotifMessage): object;
   protected getContentType(): string {
     return "application/json";
+  }
+
+  public async postNotification(notifMessage: NotifMessage): Promise<void> {
+    const webhookUrls = await this.getWebhookUrls(notifMessage);
+    if (webhookUrls.length === 0) {
+      uxLog("error", this, c.red(`${this.getLogPrefix()} ${this.getMainEnvVar()} is not defined`));
+      return;
+    }
+
+    const payload = this.buildPayload(notifMessage);
+    await this.sendToWebhooks(webhookUrls, payload);
   }
 
   protected async getWebhookUrls(notifMessage: NotifMessage): Promise<string[]> {

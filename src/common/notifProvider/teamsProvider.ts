@@ -1,6 +1,4 @@
-import c from "chalk";
 import { WebhookNotifProviderRoot } from "./webhookNotifProviderRoot.js";
-import { uxLog } from "../utils/index.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
 import { convertMarkdownToTeamsMrkdwn } from "./teamsMarkdown.js";
@@ -43,20 +41,8 @@ export class TeamsProvider extends WebhookNotifProviderRoot {
     return LOG_PREFIX;
   }
 
-  public async postNotification(notifMessage: NotifMessage): Promise<void> {
-    const webhookUrls = await this.getWebhookUrls(notifMessage);
-    if (webhookUrls.length === 0) {
-      uxLog("error", this, c.red(`${LOG_PREFIX} ${this.getMainEnvVar()} is not defined`));
-      return;
-    }
-
+  protected buildPayload(notifMessage: NotifMessage): object {
     const adaptiveCard = this.buildAdaptiveCard(notifMessage);
-    const payload = this.buildPayload(adaptiveCard);
-
-    await this.sendToWebhooks(webhookUrls, payload);
-  }
-
-  private buildPayload(adaptiveCard: AdaptiveCard): object {
     return {
       attachments: [
         {

@@ -1,6 +1,4 @@
-import c from "chalk";
 import { WebhookNotifProviderRoot } from "./webhookNotifProviderRoot.js";
-import { uxLog } from "../utils/index.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
 import { convertMarkdownToGoogleChatMarkup } from "./googleChatMarkup.js";
@@ -54,17 +52,9 @@ export class GoogleChatProvider extends WebhookNotifProviderRoot {
     return "application/json; charset=UTF-8";
   }
 
-  public async postNotification(notifMessage: NotifMessage): Promise<void> {
-    const webhookUrls = await this.getWebhookUrls(notifMessage);
-    if (webhookUrls.length === 0) {
-      uxLog("error", this, c.red(`${LOG_PREFIX} ${this.getMainEnvVar()} is not defined`));
-      return;
-    }
-
+  protected buildPayload(notifMessage: NotifMessage): object {
     const card = this.buildCardV2(notifMessage);
-    const payload = { cardsV2: [{ cardId: CARD_ID, card }] };
-
-    await this.sendToWebhooks(webhookUrls, payload);
+    return { cardsV2: [{ cardId: CARD_ID, card }] };
   }
 
   private buildCardV2(notifMessage: NotifMessage): CardV2 {
