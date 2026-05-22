@@ -178,6 +178,7 @@ nav:
           - Jenkins: salesforce-monitoring-config-jenkins.md
           - Slack: salesforce-ci-cd-setup-integration-slack.md
           - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+          - Google Chat: salesforce-ci-cd-setup-integration-google-chat.md
       - Sandbox Refresh: salesforce-sandbox-refresh.md
   - Generate Documentation:
       - Doc Gen Home: salesforce-project-documentation.md
@@ -245,6 +246,7 @@ nav:
       - Notifications:
           - Slack: salesforce-ci-cd-setup-integration-slack.md
           - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+          - Google Chat: salesforce-ci-cd-setup-integration-google-chat.md
           - Email: salesforce-ci-cd-setup-integration-email.md
       - Ticketing:
           - Jira: salesforce-ci-cd-setup-integration-jira.md

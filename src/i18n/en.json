@@ -2555,6 +2555,7 @@
   "sfdxHardisTruncatedMessage": "Truncated to the first {{maxLen}} lines on {{total}} total lines, see full report for more details.",
   "sfdxProjectCreatedContinueSteps": "SFDX Project has been created. You can continue the steps in documentation at {{docUrl}}",
   "sfdxProjectDocumentationUploadedToSalesforceAnd": "SFDX project documentation uploaded to Salesforce and is available in the Custom Tab {{resName}}.",
+  "skillsImportAddonSaved": "Saved {{repo}} in skillsRepoAddOns project config for future use.",
   "skillsImportCloneError": "Failed to clone repository {{repo}}: {{error}}",
   "skillsImportCloningRepo": "Cloning skills repository {{repo}}...",
   "skillsImportComplete": "Skills import complete: {{copied}} file(s) copied, {{skipped}} file(s) skipped.",
