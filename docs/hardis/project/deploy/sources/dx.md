@@ -108,9 +108,10 @@ deploymentApexTestClasses:
 
 ### Dynamic deployment items / Overwrite management
 
-If necessary,you can define the following files (that supports wildcards <members>*</members>):
+If necessary,you can define the following files:
 
 - `manifest/package-no-overwrite.xml`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org).
+  - Supports `<members>*</members>` (all members of a type), exact names, and glob-style patterns such as `<members>*__dlm</members>` or `<members>Prod_*</members>`.
   - Can be overridden for a branch using .sfdx-hardis.yml property **packageNoOverwritePath** or environment variable PACKAGE_NO_OVERWRITE_PATH (for example, define: `packageNoOverwritePath: manifest/package-no-overwrite-main.xml` in config file `config/.sfdx-hardis.main.yml`)
 - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
@@ -310,7 +311,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 |skipauth|boolean|Skip authentication check when a default username is required||||
 |source-branch|option|Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)||||
 |target-branch|option|Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername)||||
-|target-org<br/>-o|option|undefined||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.integci|||
 |testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg|
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 

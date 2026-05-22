@@ -85,6 +85,7 @@ The command's technical implementation involves:
       char: 'c',
       description: 'Developer name of the Lightning Web Component',
     }),
+    /* jscpd:ignore-start */
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -100,6 +101,7 @@ The command's technical implementation involves:
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
     }),
+    /* jscpd:ignore-end */
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default

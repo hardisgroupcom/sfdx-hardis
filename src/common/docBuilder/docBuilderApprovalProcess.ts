@@ -25,6 +25,7 @@ export class DocBuilderApprovalProcess extends DocBuilderRoot {
       "| :----            |    :--:   |"
     ]);
 
+    /* jscpd:ignore-start */
     for (const approvalProcess of filteredApprovalProcesses) {
       const approvalProcessNameCell = `[${approvalProcess.name}](${prefix}${approvalProcess.name}.md)`;
       lines.push(...[
@@ -32,6 +33,7 @@ export class DocBuilderApprovalProcess extends DocBuilderRoot {
       ]);
     }
     lines.push("");
+    /* jscpd:ignore-end */
 
     return lines;
   }

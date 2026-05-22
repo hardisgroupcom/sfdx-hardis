@@ -622,7 +622,7 @@ In agent mode:
     const maxItems = 10;
     const lines = this.apexErrors.slice(0, maxItems).map((entry) => {
       const userName = entry.UserName ? ` (${entry.UserName})` : '';
-      return `• ${entry.StartTime} - ${entry.Operation || entry.Exception || t('monitorErrorsUnknown')}${userName}`;
+      return `- **${entry.StartTime}** - ${entry.Operation || entry.Exception || t('monitorErrorsUnknown')}${userName}`;
     });
     const remaining = this.apexErrors.length - maxItems;
     if (remaining > 0) {
@@ -643,7 +643,7 @@ In agent mode:
     const maxItems = 10;
     const lines = this.flowErrors.slice(0, maxItems).map((entry) => {
       const label = entry.Operation ? ` ${entry.Operation}` : '';
-      return `• ${entry.StartTime} - ${label || t('monitorErrorsUnknown')} - ${entry.ErrorStep || t('monitorErrorsErrorFallback')
+      return `- **${entry.StartTime}** - ${label || t('monitorErrorsUnknown')} - ${entry.ErrorStep || t('monitorErrorsErrorFallback')
         }`;
     });
     const remaining = this.flowErrors.length - maxItems;

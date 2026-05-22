@@ -380,7 +380,7 @@ function computeFeedbackStats(records: AgentforceCsvRecord[]): FeedbackStats {
 }
 
 function buildNotificationText(stats: FeedbackStats, filters: AgentforceQueryFilters): string {
-  const lines = [`Agentforce feedback summary: ${stats.goodCount} GOOD / ${stats.badCount} BAD (total ${stats.totalCount}).`];
+  const lines = [`Agentforce feedback summary: **${stats.goodCount}** GOOD / **${stats.badCount}** BAD (total **${stats.totalCount}**).`];
   const windowDescription = describeFeedbackDateRange(filters);
   if (windowDescription) {
     lines.push(windowDescription);

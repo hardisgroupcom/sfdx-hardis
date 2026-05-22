@@ -2,11 +2,12 @@ import { Connection, SfError } from "@salesforce/core";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils/index.js";
-import type { NotifMessage, NotifSeverity } from "./types.js";
+import type { NotificationChannel, NotifMessage, NotifSeverity } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 
-import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils.js";
+import { getSeverityIcon } from "../utils/notifUtils.js";
+import { convertMarkdownToPlainText } from "./markdownToPlainText.js";
 import { GitProvider } from "../gitProvider/index.js";
 import axios, { AxiosRequestConfig } from "axios";
 import fs from "fs-extra";
@@ -28,6 +29,10 @@ export class ApiProvider extends NotifProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis Api connector";
+  }
+
+  public getChannel(): NotificationChannel {
+    return "api";
   }
 
   // Always send notifications to API endpoint
@@ -102,12 +107,11 @@ export class ApiProvider extends NotifProviderRoot {
 
   // Build message
   private async buildPayload(notifMessage: NotifMessage) {
-    const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(
-      UtilsNotifs.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]),
+    const logTitle = UtilsNotifs.prefixWithSeverityEmoji(
+      convertMarkdownToPlainText(notifMessage.text.split("\n")[0]),
       notifMessage.severity,
     );
-    const logTitle = removeMarkdown(firstLineMarkdown);
-    let logBodyText = UtilsNotifs.prefixWithSeverityEmoji(UtilsNotifs.slackToTeamsMarkdown(notifMessage.text), notifMessage.severity);
+    let logBodyMd = UtilsNotifs.prefixWithSeverityEmoji(notifMessage.text, notifMessage.severity);
 
     // Add text details
     if (notifMessage?.attachments?.length && notifMessage?.attachments?.length > 0) {
@@ -118,25 +122,25 @@ export class ApiProvider extends NotifProviderRoot {
         }
       }
       if (text !== "") {
-        logBodyText += UtilsNotifs.slackToTeamsMarkdown(text) + "\n\n";
+        logBodyMd += text + "\n\n";
       }
     }
 
     // Add action blocks
     if (notifMessage.buttons?.length && notifMessage.buttons?.length > 0) {
-      logBodyText += "Links:\n\n";
+      logBodyMd += "Links:\n\n";
       for (const button of notifMessage.buttons) {
         // Url button
         if (button.url) {
-          logBodyText += "  - " + button.text + ": " + button.url + "\n\n";
+          logBodyMd += "  - " + button.text + ": " + button.url + "\n\n";
         }
       }
-      logBodyText += "\n\n";
+      logBodyMd += "\n\n";
     }
 
     // Add sfdx-hardis ref
-    logBodyText += `Powered by sfdx-hardis: ${CONSTANTS.DOC_URL_ROOT}`;
-    logBodyText = removeMarkdown(logBodyText);
+    logBodyMd += `Powered by sfdx-hardis: ${CONSTANTS.DOC_URL_ROOT}`;
+    const logBodyText = convertMarkdownToPlainText(logBodyMd);
 
     // Build payload
     const repoName = (await getGitRepoName() || "").replace(".git", "");

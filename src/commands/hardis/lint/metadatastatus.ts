@@ -144,51 +144,51 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       notifSeverity = 'warning';
       if (inactiveApprovalProcesses.length > 0) {
         attachments.push({
-          text: `*Inactive Approval Processes*\n${inactiveApprovalProcesses.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Approval Processes**\n${inactiveApprovalProcesses.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveAssignmentRules.length > 0) {
         attachments.push({
-          text: `*Inactive Assignment Rules*\n${inactiveAssignmentRules.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Assignment Rules**\n${inactiveAssignmentRules.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveAutoResponseRules.length > 0) {
         attachments.push({
-          text: `*Inactive Auto Response Rules*\n${inactiveAutoResponseRules.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Auto Response Rules**\n${inactiveAutoResponseRules.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveEscalationRules.length > 0) {
         attachments.push({
-          text: `*Inactive Escalation Rules*\n${inactiveEscalationRules.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Escalation Rules**\n${inactiveEscalationRules.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (draftFlows.length > 0) {
         attachments.push({
-          text: `*Inactive Flows*\n${draftFlows.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Flows**\n${draftFlows.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveForecastingTypes.length > 0) {
         attachments.push({
-          text: `*Inactive Forecasting Types*\n${inactiveForecastingTypes.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Forecasting Types**\n${inactiveForecastingTypes.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveRecordTypes.length > 0) {
         attachments.push({
-          text: `*Inactive Record Types*\n${inactiveRecordTypes.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Record Types**\n${inactiveRecordTypes.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveValidationRules.length > 0) {
         attachments.push({
-          text: `*Inactive Validation Rules*\n${inactiveValidationRules.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Validation Rules**\n${inactiveValidationRules.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveWorkflows.length > 0) {
         attachments.push({
-          text: `*Inactive Workflow Rules*\n${inactiveWorkflows.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Workflow Rules**\n${inactiveWorkflows.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
 
-      notifText = `${this.inactiveItems.length} inactive configuration elements were found in ${branchMd}`;
+      notifText = `**${this.inactiveItems.length}** inactive configuration elements were found in ${branchMd}`;
       // Build result file
       await this.buildCsvFile();
     } else {

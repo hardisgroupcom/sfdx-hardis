@@ -71,6 +71,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     }),
   }; // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
+  public static disableWebsocket = true;
 
   protected configInfo: any = {};
 

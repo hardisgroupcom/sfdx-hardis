@@ -3,7 +3,7 @@
   "description": "French-army-knife Toolbox for Salesforce. Orchestrates base commands and assist users with interactive wizards to make much more than native Salesforce CLI + Allows you to define a complete CI/CD Pipeline and Schedule a daily Metadata backup & monitoring of your orgs + AI-enhanced org Documentation",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
-  "version": "7.13.0",
+  "version": "7.14.1",
   "dependencies": {
     "@actions/github": "7.0.0",
     "@cparra/apexdocs": "3.21.2",
@@ -31,7 +31,7 @@
     "cloudflare": "4.5.0",
     "cosmiconfig": "9.0.1",
     "cross-spawn": "7.0.6",
-    "csv-stringify": "6.6.0",
+    "csv-stringify": "6.7.0",
     "debug": "4.4.3",
     "diff": "8.0.3",
     "dotenv": "16.6.1",
@@ -65,12 +65,13 @@
     "sort-array": "4.1.5",
     "update-notifier": "7.3.1",
     "which": "4.0.0",
-    "ws": "8.19.0",
+    "ws": "8.20.1",
     "xml2js": "0.6.2",
     "xpath": "0.0.34"
   },
   "resolutions": {
     "axios": "1.15.2",
+    "minimatch/brace-expansion": "5.0.6",
     "uuid": "14.0.0",
     "basic-ftp": "5.3.1",
     "dompurify": "3.4.0",
@@ -79,7 +80,7 @@
     "lodash": "4.18.0",
     "lodash-es": "4.18.0",
     "picomatch": "4.0.4",
-    "qs": "6.14.2",
+    "qs": "6.15.2",
     "serve-handler": "6.1.7",
     "tar": "7.5.11",
     "tmp": "0.2.5",
@@ -90,9 +91,11 @@
     "ip-address": "10.2.0",
     "fast-uri": "3.1.2",
     "parse5": "6.0.1",
-    "simple-git": "3.36.0"
+    "simple-git": "3.36.0",
+    "langsmith": "0.7.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@oclif/plugin-command-snapshot": "5.3.16",
     "@salesforce/cli-plugins-testkit": "5.3.50",
     "@salesforce/dev-config": "4.3.2",
@@ -114,12 +117,15 @@
     "@types/which": "3.0.4",
     "@types/ws": "8.18.1",
     "@types/xml2js": "0.4.14",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
     "c8": "^11.0.0",
+    "eslint": "^10.4.0",
     "eslint-plugin-sf-plugin": "1.20.33",
     "oclif": "4.23.0",
     "tmp": "0.2.5",
     "ts-node": "10.9.2",
-    "tsx": "^4.21.0",
+    "tsx": "4.21.0",
     "typescript": "5.9.3"
   },
   "engines": {
@@ -263,7 +269,7 @@
         "src/**/*.ts",
         "test/**/*.ts",
         "messages/**",
-        "**/.eslint*",
+        "eslint.config.mjs",
         "**/tsconfig.json"
       ],
       "output": []

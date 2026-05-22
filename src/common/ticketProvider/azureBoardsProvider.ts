@@ -5,6 +5,7 @@ import c from "chalk";
 import sortArray from "sort-array";
 import { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
+import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
 import { extractRegexMatches, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
 import { getConfig, getEnvVar } from "../../config/index.js";
@@ -152,22 +153,23 @@ export class AzureBoardsProvider extends TicketProviderRoot {
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
     uxLog("action", this, c.cyan('[AzureBoardsProvider] ' + t('azureBoardsProviderPostingComments', { count: tickets.length })));
-    const orgMarkdown = await getOrgMarkdown(org, "html");
-    const branchMarkdown = await getBranchMarkdown("html");
+    const orgMarkdown = await getOrgMarkdown(org);
+    const branchMarkdown = await getBranchMarkdown();
     const tag = await this.getDeploymentTag();
     const commentedTickets: Ticket[] = [];
     const taggedTickets: Ticket[] = [];
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
-        let azureBoardsComment = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
+        let commentMd = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
         if (pullRequestInfo) {
           const prUrl = pullRequestInfo.webUrl || "";
           if (prUrl) {
             const prAuthor = pullRequestInfo.authorName;
-            azureBoardsComment += `<br/><br/>PR: <a href="${prUrl}">${pullRequestInfo.title}</a>` + (prAuthor ? ` by ${prAuthor}` : "");
+            commentMd += `\n\nPR: [${pullRequestInfo.title}](${prUrl})` + (prAuthor ? ` by ${prAuthor}` : "");
           }
         }
+        const azureBoardsComment = await convertMarkdownToHtml(commentMd);
 
         // Post comment
         try {

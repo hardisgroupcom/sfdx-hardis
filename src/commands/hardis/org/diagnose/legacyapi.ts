@@ -107,8 +107,8 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     'https://raw.githubusercontent.com/pozil/legacy-api-scanner/main/legacy-api-scanner.apex';
 
   protected articleTextLegacyApi = `See article to solve issue before it's too late:
-• EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
-• FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
+- EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
+- FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
 
   protected legacyApiDescriptors: LegacyApiDescriptor[] = [
     {
@@ -285,7 +285,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     let notifDetailText = '';
     for (const descriptor of this.legacyApiDescriptors) {
       if (descriptor.totalErrors > 0) {
-        notifDetailText += `• ${descriptor.severity}: API version calls found in logs: ${descriptor.totalErrors} (${descriptor.deprecationRelease})\n`;
+        notifDetailText += `- **${descriptor.severity}**: API version calls found in logs: **${descriptor.totalErrors}** (${descriptor.deprecationRelease})\n`;
       }
     }
 
@@ -307,7 +307,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     let notifText = `No deprecated Salesforce API versions are used in ${orgMarkdown}`;
     if (totalErrorsFound > 0) {
       notifSeverity = 'error';
-      notifText = `${totalErrorsFound} deprecated Salesforce API versions are used in ${orgMarkdown}`;
+      notifText = `**${totalErrorsFound}** deprecated Salesforce API versions are used in ${orgMarkdown}`;
     }
     // Post notifications
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email

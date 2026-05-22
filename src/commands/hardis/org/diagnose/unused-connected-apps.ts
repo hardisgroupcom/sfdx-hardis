@@ -191,10 +191,10 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
       const notifSeverity: NotifSeverity = numberWarnings > 0 ? 'warning' : 'log';
-      const notifText = `${numberWarnings} Connected Apps to check have been found in ${orgMarkdown}`
+      const notifText = `**${numberWarnings}** Connected Apps to check have been found in ${orgMarkdown}`
       let notifDetailText = '';
       for (const connectedApp of this.connectedAppResults.filter(app => app.severity === "warning")) {
-        notifDetailText += `• *${connectedApp.Name}*\n`;
+        notifDetailText += `- **${connectedApp.Name}**\n`;
       }
       const notifAttachments = [{ text: notifDetailText }];
       // Post notif

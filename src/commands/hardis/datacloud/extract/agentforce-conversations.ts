@@ -422,7 +422,7 @@ function computeConversationStats(records: ConversationCsvRecord[]): Conversatio
 
 function buildConversationNotificationText(stats: ConversationStats, filters: AgentforceQueryFilters): string {
   const lines = [
-    `Agentforce conversations exported: ${stats.totalCount} (with feedback: ${stats.withFeedback}, GOOD: ${stats.feedbackGood}, BAD: ${stats.feedbackBad}).`,
+    `Agentforce conversations exported: **${stats.totalCount}** (with feedback: **${stats.withFeedback}**, GOOD: **${stats.feedbackGood}**, BAD: **${stats.feedbackBad}**).`,
   ];
   if (filters.dateFrom && filters.dateTo) {
     lines.push(`Window: ${filters.dateFrom} → ${filters.dateTo}`);

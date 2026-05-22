@@ -38,6 +38,9 @@ Depending of your git provider, configure one of the following integrations.
 - [Microsoft Teams](salesforce-ci-cd-setup-integration-ms-teams.md)
   - Notifications
 
+- [Google Chat](salesforce-ci-cd-setup-integration-google-chat.md)
+  - Notifications
+
 - [Email](salesforce-ci-cd-setup-integration-email.md)
   - Notifications
 

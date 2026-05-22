@@ -321,7 +321,7 @@ In agent mode, the command runs fully automatically. The threshold defaults to 5
       const limitedItems = [...this.limitedUserPermSets, ...this.limitedUserPermSetGroups];
       const zeroText =
         zeroItems.length > 0
-          ? `${t('underusedPermsetsZeroUsersSection')}\n${zeroItems.map((ps) => `• ${ps.Name} (${ps.Type})`).join('\n')}` : '';
+          ? `${t('underusedPermsetsZeroUsersSection')}\n${zeroItems.map((ps) => `- **${ps.Name}** (${ps.Type})`).join('\n')}` : '';
       const limitedText =
         limitedItems.length > 0
           ? `${t('underusedPermsetsLimitedUsersSection', { threshold: this.threshold })}\n${limitedItems.map((ps) => t('underusedPermsetsLimitedUsersEntry', { name: ps.Name, type: ps.Type, userCount: ps.UserCount })).join('\n')}`

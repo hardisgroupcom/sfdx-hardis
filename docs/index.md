@@ -537,9 +537,10 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 
 ### hardis:config
 
-| Command                                       | Title |
-|:----------------------------------------------|:------|
-| [**hardis:config:get**](hardis/config/get.md) |       |
+| Command                                                                       | Title |
+|:------------------------------------------------------------------------------|:------|
+| [**hardis:config:get**](hardis/config/get.md)                                 |       |
+| [**hardis:config:monitoring-defaults**](hardis/config/monitoring-defaults.md) |       |
 
 ### hardis:datacloud
 
@@ -561,6 +562,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 
 | Command                                                                     | Title |
 |:----------------------------------------------------------------------------|:------|
+| [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                     |       |
 | [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md) |       |
 | [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                       |       |
 | [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                 |       |
@@ -572,6 +574,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)     |       |
 | [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)             |       |
 | [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)           |       |
+| [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                 |       |
 
 ### hardis:git
 
@@ -610,6 +613,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:org:community:update**](hardis/org/community/update.md)                                 |       |
 | [**hardis:org:configure:data**](hardis/org/configure/data.md)                                     |       |
 | [**hardis:org:configure:files**](hardis/org/configure/files.md)                                   |       |
+| [**hardis:org:configure:generic-prompt**](hardis/org/configure/generic-prompt.md)                 |       |
 | [**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)                         |       |
 | [**hardis:org:connect**](hardis/org/connect.md)                                                   |       |
 | [**hardis:org:create**](hardis/org/create.md)                                                     |       |
@@ -672,10 +676,11 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 
 ### hardis:packagexml
 
-| Command                                                     | Title |
-|:------------------------------------------------------------|:------|
-| [**hardis:packagexml:append**](hardis/packagexml/append.md) |       |
-| [**hardis:packagexml:remove**](hardis/packagexml/remove.md) |       |
+| Command                                                                     | Title |
+|:----------------------------------------------------------------------------|:------|
+| [**hardis:packagexml:append**](hardis/packagexml/append.md)                 |       |
+| [**hardis:packagexml:remove**](hardis/packagexml/remove.md)                 |       |
+| [**hardis:packagexml:remove-managed**](hardis/packagexml/remove-managed.md) |       |
 
 ### hardis:project
 
@@ -757,6 +762,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 
 | Command                                                         | Title |
 |:----------------------------------------------------------------|:------|
+| [**hardis:work:backpromote**](hardis/work/backpromote.md)       |       |
 | [**hardis:work:new**](hardis/work/new.md)                       |       |
 | [**hardis:work:refresh**](hardis/work/refresh.md)               |       |
 | [**hardis:work:resetselection**](hardis/work/resetselection.md) |       |

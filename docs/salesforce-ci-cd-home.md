@@ -10,6 +10,7 @@ description: Easy handling of Salesforce DX to use CI/CD & DevOps principles on 
   - [Because it is compliant with your tools](#because-it-is-compliant-with-your-tools)
   - [Because it is AI-agent ready](#because-it-is-ai-agent-ready)
   - [Because it is powerful](#because-it-is-powerful)
+  - [Because it monitors your orgs](#because-it-monitors-your-orgs)
   - [Because there are no license costs](#because-there-are-no-license-costs)
   - [Because it is widely adopted](#because-it-is-widely-adopted)
 - [Get started](#get-started)
@@ -107,6 +108,23 @@ _You can define much simpler branch/org models to manage only RUN operations._
 See advanced Q&A in the following article.
 
 [![Questions/Answers](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-questions-answers.jpg)](https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476)
+
+### Because it monitors your orgs
+
+CI/CD is only half of the story: once your changes are in production, you also need to **know what is happening in your orgs**. sfdx-hardis ships with a built-in [Monitoring & Observability layer](salesforce-monitoring-home.md) that runs in the same Git repository and pipelines you already use for CI/CD - no extra license, no extra platform.
+
+![](assets/images/monitoring-config-2026.gif)
+
+What you get out of the box:
+
+- **Daily metadata backup** with exact git diff between yesterday and today (who changed what, before / after).
+- **Suspect setup actions** detected from the Salesforce Audit Trail, so production changes never go unnoticed.
+- **Apex tests, code quality (MegaLinter), org limits, deprecated API calls, release updates, unsecured Connected Apps, unused licenses, missing access...** all scheduled and reported automatically.
+- **Per-channel notifications** routed independently to [Slack / Microsoft Teams](salesforce-ci-cd-setup-integration-slack.md), [email](salesforce-ci-cd-setup-integration-email.md), and [API / Grafana / Prometheus](salesforce-ci-cd-setup-integration-api.md) endpoints, with a per-notification-type severity threshold (stream everything to Grafana, keep Slack for warnings/errors only).
+- **Ready-to-use Grafana dashboards** to visualize org health, backups, tests, security, and license usage over time.
+- **Fully configurable** from the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) or directly in `.sfdx-hardis.yml` (frequency, thresholds, channels, custom commands).
+
+> Adopting sfdx-hardis for CI/CD means you also get a production-grade **monitoring stack for your Salesforce orgs** in the same move - see the [Monitoring documentation](salesforce-monitoring-home.md) for the full picture.
 
 ### Because there are no license costs
 

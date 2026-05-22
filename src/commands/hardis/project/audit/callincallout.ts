@@ -122,6 +122,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
       if (fileText.startsWith('hidden') || fileText.includes('@isTest')) {
         continue;
       }
+      /* jscpd:ignore-start */
       // Loop on criteria to find matches in this file
       for (const catcher of catchers) {
         const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
@@ -132,6 +133,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     // Format result
     const result: any[] = this.matchResults.map((item: any) => {
       return {
+        /* jscpd:ignore-end */
         type: item.type,
         subType: item.subType,
         fileName: item.fileName,

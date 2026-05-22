@@ -20,11 +20,9 @@ ___
 
 ## Commit your updates
 
-_The following video shows how to perform these operations._
+_The following animation shows how to perform these operations._
 
-> Note: this video shows an older version of sfdx-hardis and will be updated to reference the new VS Code SFDX-Hardis UI.
-
-<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+[![](assets/images/retrieve-and-commit-2026.gif)](https://www.youtube.com/watch?v=96i6M6CMflQ)
 
 ### Retrieve metadata
 
@@ -68,6 +66,8 @@ ___
 
 If you want to create a Pull Request / Merge Request, click on the related button.
 
+[![](assets/images/save-publish-pr-2026.gif)](https://www.youtube.com/watch?v=-h94uLQB62I)
+
 ![](assets/images/screenshot-work-save.png)
 
 > ![Under the hood](assets/images/engine.png) **Under the hood**
@@ -104,6 +104,10 @@ See [Create a Pull Request using Azure](salesforce-ci-cd-pull-request-azure.md)
 ### Using GitHub
 
 See [Create a Pull Request using Github](salesforce-ci-cd-pull-request-github.md)
+
+### Using Bitbucket
+
+See [Create a Pull Request using Bitbucket](salesforce-ci-cd-pull-request-bitbucket.md)
 
 ## Check merge request results
 

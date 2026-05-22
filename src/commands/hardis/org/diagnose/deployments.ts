@@ -237,18 +237,18 @@ In agent mode:
     // Notifications
     const { orgMarkdown, notifButtons } = await prepareOrgNotificationContext(flags['target-org']?.getConnection());
     let notifSeverity: NotifSeverity = 'log';
-    let notifText = `Deployment analysis (${period}) for ${orgMarkdown}: ${deployments.length} deployments (${deploymentSuccessRate}% success, avg ${avgDeploymentMinutes.toFixed(1)} min), ${validations.length} validations (${validationSuccessRate}% success, avg ${avgValidationMinutes.toFixed(1)} min)`;
+    let notifText = `Deployment analysis (${period}) for ${orgMarkdown}: **${deployments.length}** deployments (**${deploymentSuccessRate}%** success, avg ${avgDeploymentMinutes.toFixed(1)} min), **${validations.length}** validations (**${validationSuccessRate}%** success, avg ${avgValidationMinutes.toFixed(1)} min)`;
     const notifAttachments: any[] = [];
 
     if (failedDeployments.length > 0 || failedValidations.length > 0) {
       notifSeverity = 'warning';
-      notifText += ` (${failedDeployments.length} failed deployment(s), ${failedValidations.length} failed validation(s))`;
+      notifText += ` (**${failedDeployments.length}** failed deployment(s), **${failedValidations.length}** failed validation(s))`;
       const detailLines: string[] = [];
       failedDeployments.slice(0, 3).forEach((r) => {
-        detailLines.push(`• Deployment ${r.Id}: ${r.DeployedBy} - ${r.Status}`);
+        detailLines.push(`- Deployment ${r.Id}: ${r.DeployedBy} - **${r.Status}**`);
       });
       failedValidations.slice(0, 3).forEach((r) => {
-        detailLines.push(`• Validation ${r.Id}: ${r.DeployedBy} - ${r.Status}`);
+        detailLines.push(`- Validation ${r.Id}: ${r.DeployedBy} - **${r.Status}**`);
       });
       if (detailLines.length > 0) {
         notifAttachments.push({ text: detailLines.join('\n') });

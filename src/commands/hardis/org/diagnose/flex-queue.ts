@@ -181,7 +181,7 @@ In agent mode, the command runs fully automatically. The \`--threshold\` default
     });
 
     const { orgMarkdown, notifButtons } = await prepareOrgNotificationContext(flags['target-org']?.getConnection());
-    let notifText = `Apex flex queue OK in ${orgMarkdown}: ${count} Holding job(s) (threshold ${threshold}).`;
+    let notifText = `Apex flex queue OK in ${orgMarkdown}: **${count}** Holding job(s) (threshold **${threshold}**).`;
     const notifAttachments: any[] = [];
 
     if (this.statusCode === 1) {
@@ -190,7 +190,7 @@ In agent mode, the command runs fully automatically. The \`--threshold\` default
         .slice(0, 15)
         .map((r) => {
           const label = r.ApexClassName || r.ApexClassId || r.Id;
-          return `• ${label} (${r.JobType || 'n/a'}) - ${r.CreatedDate || 'n/a'}`;
+          return `- **${label}** (${r.JobType || 'n/a'}) - ${r.CreatedDate || 'n/a'}`;
         })
         .join('\n');
       notifAttachments.push({

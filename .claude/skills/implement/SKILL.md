@@ -29,10 +29,11 @@ Read `.claude/rules/` for coding conventions, i18n rules, and translation rules 
 5. **Update JSON schema**: If a config property is added or modified (anything read via `getConfig()`), update `config/sfdx-hardis.jsonschema.json` to match. Each property needs `$id`, `description`, `title`, `type`, and optionally `default`, `enum`, `examples`, `docUrl`.
 6. **Verify patterns**: Ensure new code matches existing patterns in the codebase.
 7. **Update CHANGELOG.md**: Add a bullet point under the `## [beta] (master)` section describing the change. Follow the existing style:
-   - Start with a short description of the change.
+   - Write for **end users**, not developers. Describe what changed from the user's perspective - what they can now do, what was fixed, what behaves differently.
+   - Omit implementation details: no class names, internal method names, hook names, i18n keys, TypeScript types, or file paths unless they are user-visible config keys or flag names.
    - If a new command was added, include a link: `[hardis:topic:action](https://sfdx-hardis.cloudity.com/hardis/topic/action/)`.
    - If an existing command was modified, reference it the same way.
-   - Keep it concise (one or two lines per change).
+   - One short sentence per change. Two sentences maximum only when a second sentence adds essential user-facing context.
 
 Continue iterating until all changes from the design are implemented. Do not stop to ask whether to continue.
 

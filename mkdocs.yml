@@ -85,6 +85,7 @@ extra:
 nav:
   - Home: index.md
   - Installation: installation.md
+  - VsCode Extension: vscode-extension.md
   - Configuration: sfdx-hardis-config-file.md
   - Salesforce CI/CD:
       - CI/CD Home: salesforce-ci-cd-home.md
@@ -93,6 +94,7 @@ nav:
           - Pre-requisites:
               - Prepare your computer: salesforce-ci-cd-use-install.md
               - Clone the repository: salesforce-ci-cd-clone-repository.md
+              - Create Git access tokens: salesforce-ci-cd-git-tokens.md
           - Create new User Story: salesforce-ci-cd-create-new-task.md
           - Work on your dev org:
               - Work home: salesforce-ci-cd-work-on-task.md
@@ -107,6 +109,7 @@ nav:
               - On Gitlab: salesforce-ci-cd-merge-request-gitlab.md
               - On Azure: salesforce-ci-cd-pull-request-azure.md
               - On Github: salesforce-ci-cd-pull-request-github.md
+              - On Bitbucket: salesforce-ci-cd-pull-request-bitbucket.md
           - Check Pull Request results:
               - Merge Request results Home: salesforce-ci-cd-handle-merge-request-results.md
               - Solve deployment errors: salesforce-ci-cd-solve-deployment-errors.md
@@ -175,6 +178,7 @@ nav:
           - Jenkins: salesforce-monitoring-config-jenkins.md
           - Slack: salesforce-ci-cd-setup-integration-slack.md
           - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+          - Google Chat: salesforce-ci-cd-setup-integration-google-chat.md
       - Sandbox Refresh: salesforce-sandbox-refresh.md
   - Generate Documentation:
       - Doc Gen Home: salesforce-project-documentation.md
@@ -242,6 +246,7 @@ nav:
       - Notifications:
           - Slack: salesforce-ci-cd-setup-integration-slack.md
           - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+          - Google Chat: salesforce-ci-cd-setup-integration-google-chat.md
           - Email: salesforce-ci-cd-setup-integration-email.md
       - Ticketing:
           - Jira: salesforce-ci-cd-setup-integration-jira.md

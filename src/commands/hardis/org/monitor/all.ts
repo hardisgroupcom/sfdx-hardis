@@ -15,6 +15,9 @@ import { generateMonitoringAiSummary } from '../../../../common/utils/monitoring
 import { generateMonitoringPptxReport } from '../../../../common/utils/monitoringPptxReport.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { resolveMonitoringCommands, shouldRunCommandNow } from '../../../../common/notifProvider/notificationConfig.js';
+import { getTitleI18nKey, monitoringCommandsDefault } from '../../../../common/monitoring/monitoringDefaults.js';
+import type { MonitoringCommandEntry } from '../../../../common/notifProvider/types.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -22,164 +25,8 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class MonitorAll extends SfCommand<any> {
   public static title = 'Monitor org';
 
-  public static monitoringCommandsDefault = [
-    {
-      key: 'AUDIT_TRAIL',
-      title: 'Detect suspect setup actions in major org',
-      command: 'sf hardis:org:diagnose:audittrail',
-      frequency: 'daily',
-    },
-    {
-      key: 'LEGACY_API',
-      title: 'Detect calls to deprecated API versions',
-      command: 'sf hardis:org:diagnose:legacyapi',
-      frequency: 'daily',
-    },
-    {
-      key: 'ORG_LIMITS',
-      title: 'Detect if org limits are close to be reached',
-      command: 'sf hardis:org:monitor:limits',
-      frequency: 'daily',
-    },
-    {
-      key: 'APEX_FLEX_QUEUE',
-      title: 'Detect Apex flex queue backlog (AsyncApexJob Holding)',
-      command: 'sf hardis:org:diagnose:flex-queue',
-      frequency: 'daily',
-    },
-    {
-      key: 'APEX_FLOW_ERRORS',
-      title: 'Detect Apex and Flow errors',
-      command: 'sf hardis:org:monitor:errors',
-      frequency: 'daily',
-    },
-    {
-      key: 'UNSECURED_CONNECTED_APPS',
-      title: 'Detect unsecured Connected Apps in an org',
-      command: 'sf hardis:org:diagnose:unsecure-connected-apps',
-      frequency: 'daily',
-    },
-    {
-      key: 'DEPLOYMENTS',
-      title: 'Analyze metadata deployments and validations',
-      command: 'sf hardis:org:diagnose:deployments --period weekly',
-      frequency: 'daily',
-    },
-    {
-      key: 'LICENSES',
-      title: 'Extract licenses information',
-      command: 'sf hardis:org:diagnose:licenses',
-      frequency: 'weekly',
-    },
-    {
-      key: 'LINT_ACCESS',
-      title: 'Detect custom elements with no access rights defined in permission sets',
-      command: 'sf hardis:lint:access',
-      frequency: 'weekly',
-    },
-    {
-      key: 'UNUSED_LICENSES',
-      title: 'Detect permission set licenses that are assigned to users that do not need them',
-      command: 'sf hardis:org:diagnose:unusedlicenses',
-      frequency: 'weekly',
-    },
-    {
-      key: 'UNUSED_USERS',
-      title: 'Detect active users without recent logins (All licenses, 6 months)',
-      command: 'sf hardis:org:diagnose:unusedusers --licensetypes all --days 180',
-      frequency: 'weekly',
-    },
-    {
-      key: 'UNUSED_USERS_CRM_6_MONTHS',
-      title: 'Detect active users without recent logins (CRM, 6 months)',
-      command: 'sf hardis:org:diagnose:unusedusers --licensetypes all-crm --days 180',
-      frequency: 'weekly',
-    },
-    {
-      key: 'UNUSED_USERS_EXPERIENCE_6_MONTHS',
-      title: 'Detect active users without recent logins (Experience, 6 months)',
-      command: 'sf hardis:org:diagnose:unusedusers --licensetypes experience --days 180',
-      frequency: 'weekly',
-    },
-    {
-      key: 'ACTIVE_USERS_CRM_WEEKLY',
-      title: 'Detect active users with recent logins (CRM, 1 week)',
-      command: 'sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes all-crm --days 7',
-      frequency: 'weekly',
-    },
-    {
-      key: 'ACTIVE_USERS_EXPERIENCE_MONTHLY',
-      title: 'Detect active users with recent logins (Experience, 1 month)',
-      command: 'sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes experience --days 30',
-      frequency: 'weekly',
-    },
-    {
-      key: 'ORG_INFO',
-      title: 'Get org info + SF instance info + next major upgrade date',
-      command: 'sf hardis:org:diagnose:instanceupgrade',
-      frequency: 'weekly',
-    },
-    {
-      key: 'RELEASE_UPDATES',
-      title: 'Gather warnings about incoming and overdue Release Updates',
-      command: 'sf hardis:org:diagnose:releaseupdates',
-      frequency: 'weekly',
-    },
-    {
-      key: 'ORG_HEALTH_CHECK',
-      title: 'Run Salesforce Security Health Check',
-      command: 'sf hardis:org:monitor:health-check',
-      frequency: 'weekly',
-    },
-    {
-      key: 'UNUSED_METADATAS',
-      title: 'Detect custom labels and custom permissions that are not in use',
-      command: 'sf hardis:lint:unusedmetadatas',
-      frequency: 'weekly',
-    },
-    {
-      key: 'UNUSED_APEX_CLASSES',
-      title: 'Detect unused Apex classes in an org',
-      command: 'sf hardis:org:diagnose:unused-apex-classes',
-      frequency: 'weekly',
-    },
-    {
-      key: 'APEX_API_VERSION',
-      title: 'Detect Apex classes and triggers with deprecated API version',
-      command: 'sf hardis:org:diagnose:apex-api-version',
-      frequency: 'weekly',
-    },
-    {
-      key: 'CONNECTED_APPS',
-      title: 'Detect unused Connected Apps in an org',
-      command: 'sf hardis:org:diagnose:unused-connected-apps',
-      frequency: 'weekly',
-    },
-    {
-      key: 'METADATA_STATUS',
-      title: 'Detect inactive metadata',
-      command: 'sf hardis:lint:metadatastatus',
-      frequency: 'weekly',
-    },
-    {
-      key: 'MISSING_ATTRIBUTES',
-      title: 'Detect missing description on custom field',
-      command: 'sf hardis:lint:missingattributes',
-      frequency: 'weekly',
-    },
-    {
-      key: 'UNDERUSED_PERMSETS',
-      title: 'Detect underused permission sets',
-      command: 'sf hardis:org:diagnose:underusedpermsets',
-      frequency: 'weekly',
-    },
-    {
-      key: 'MINIMAL_PERMSETS',
-      title: 'Detect permission sets with minimal permissions in project',
-      command: 'sf hardis:org:diagnose:minimalpermsets',
-      frequency: 'weekly',
-    },
-  ];
+  // Re-export the shared default list for plugin / extension consumers that historically read this static property.
+  public static monitoringCommandsDefault: MonitoringCommandEntry[] = monitoringCommandsDefault;
 
   public static description = `Monitor org, generate reports and sends notifications
 
@@ -192,10 +39,10 @@ Key functionalities:
 - **Monitoring commands:** Runs a [default list of monitoring commands](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/#monitoring-commands) (or custom ones defined in \`.sfdx-hardis.yml\`), each producing individual notifications.
 - **Non-interactive execution:** Every monitoring sub-command is executed with \`--agent\`, enforcing non-interactive behavior (no user prompts).
 - **AI-powered summary:** When an AI provider is configured, collects all monitoring notifications and generates a consolidated **executive summary** using AI, sent as a single notification.
-- **Weekly PPTX report:** On weekly runs (Saturday, or when \`MONITORING_IGNORE_FREQUENCY=true\`), a **PowerPoint report** can be generated by a [coding agent](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-agent-autofix/) (Claude, Codex, Gemini, or Copilot) and attached to the summary notification.
+- **Weekly PPTX report:** On weekly runs (Saturday by default, or when \`--force-all\` is passed, or when env var \`MONITORING_IGNORE_FREQUENCY=true\` is set), a **PowerPoint report** can be generated by a [coding agent](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-agent-autofix/) (Claude, Codex, Gemini, or Copilot) and attached to the summary notification.
 - **Report generation toggle (disabled by default):** Enable coding-agent PPTX generation with \`codingAgentGenerateReports: true\` or env var \`SFDX_HARDIS_CODING_AGENT_GENERATE_REPORTS=true\`. Requires \`codingAgent\` to be configured.
-- **Disable/enable commands:** You can skip specific monitoring commands via \`monitoringDisable\` config or \`MONITORING_DISABLE\` env var.
-- **Frequency control:** Commands can run daily or weekly. Use \`MONITORING_IGNORE_FREQUENCY=true\` to force all commands to run.
+- **Frequency control:** Commands can run \`daily\`, \`weekly\`, \`biweekly\`, \`monthly\`, or \`off\`. Use \`frequencyDay\` (monday..sunday) to pick the firing day for weekly/biweekly, and \`frequencyDayOfMonth\` (1-31) for monthly. Use \`--force-all\` (or env var \`MONITORING_IGNORE_FREQUENCY=true\`) to force all commands to run regardless of their configured frequency.
+- **Per-channel notification routing:** Each entry accepts a \`notifications\` block with severity thresholds per channel (\`messaging\`, \`email\`, \`api\`). User entries are merged by \`key\` onto the built-in defaults, so you can override only the fields you need.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/).
 
@@ -213,36 +60,35 @@ Both prompt templates can be overridden by placing files in \`config/prompt-temp
 
 You can enable coding-agent PPTX generation by defining **codingAgentGenerateReports: true** in \`.sfdx-hardis.yml\` or by setting env var **SFDX_HARDIS_CODING_AGENT_GENERATE_REPORTS=true**.
 
-You can disable some commands defining either a **monitoringDisable** property in \`.sfdx-hardis.yml\`, or a comma separated list in env variable **MONITORING_DISABLE**
+A [default list of monitoring commands](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/#monitoring-commands) is used. You can extend or override it via the **monitoringCommands** property in your .sfdx-hardis.yml file. User entries are **merged by key** onto the built-in defaults, so you can override one field (e.g. \`frequency\`) without redefining the whole entry. New keys are appended as custom commands. Set \`frequency: off\` on an entry to skip it entirely.
 
-Example in .sfdx-hardis.yml:
-  
-\`\`\`yaml
-monitoringDisable:
-  - METADATA_STATUS
-  - MISSING_ATTRIBUTES
-  - UNUSED_METADATAS
-\`\`\`
-  
-Example in env var:
-
-\`\`\`sh
-MONITORING_DISABLE=METADATA_STATUS,MISSING_ATTRIBUTES,UNUSED_METADATAS
-\`\`\`
-
-A [default list of monitoring commands](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/#monitoring-commands) is used, if you want to override it you can define property **monitoringCommands** in your .sfdx-hardis.yml file
-
-Example:
+Example (override built-in defaults + add a custom command + tune routing):
 
 \`\`\`yaml
 monitoringCommands:
-  - title: My Custom command
+  - key: AUDIT_TRAIL
+    frequency: weekly
+    frequencyDay: monday
+    notifications:
+      messaging: warning
+      email:
+        threshold: error
+        recipients:
+          - security@company.com
+        replaceRecipients: true
+      api: log
+  - key: LICENSES
+    frequency: monthly
+    frequencyDayOfMonth: 1
+  - key: ORG_LIMITS
+    frequency: off
+  - key: MY_CUSTOM_REPORT
+    title: My Custom command
     command: sf my:custom:command
-  - title: My Custom command 2
-    command: sf my:other:custom:command
+    frequency: biweekly
 \`\`\`
 
-You can force the daily run of all commands by defining env var \`MONITORING_IGNORE_FREQUENCY=true\`
+You can force a run of all commands regardless of their configured frequency by passing \`--force-all\` (or by setting env var \`MONITORING_IGNORE_FREQUENCY=true\`).
 
 The default list of commands is the following:
 
@@ -264,7 +110,7 @@ ${this.getDefaultCommandsMarkdown()}
     }),
     'force-all': Flags.boolean({
       default: false,
-      description: 'Force all monitoring commands to run, including weekly ones. Equivalent to MONITORING_IGNORE_FREQUENCY=true',
+      description: 'Force all monitoring commands to run, regardless of their configured frequency',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -297,8 +143,12 @@ ${this.getDefaultCommandsMarkdown()}
 
     ];
     for (const cmd of MonitorAll.monitoringCommandsDefault) {
+      if (!cmd.command) {
+        continue;
+      }
       const commandDocUrl = `${CONSTANTS.DOC_URL_ROOT}/${cmd.command.split(" ")[1].replaceAll(":", "/")}`;
-      mdLines.push(`| [${cmd.key}](${commandDocUrl}) | ${cmd.title} | [${cmd.command}](${commandDocUrl}) | ${cmd.frequency} |`);
+      const title = cmd.title ?? t(getTitleI18nKey(cmd.key));
+      mdLines.push(`| [${cmd.key}](${commandDocUrl}) | ${title} | [${cmd.command}](${commandDocUrl}) | ${cmd.frequency} |`);
     }
     return mdLines.join("\n");
   }
@@ -332,7 +182,7 @@ ${this.getDefaultCommandsMarkdown()}
     );
 
     const config = await getConfig('user');
-    const commands = MonitorAll.monitoringCommandsDefault.concat(config.monitoringCommands || []);
+    const commands = resolveMonitoringCommands(MonitorAll.monitoringCommandsDefault, config.monitoringCommands);
     const monitoringDisable =
       config.monitoringDisable ?? (process.env?.MONITORING_DISABLE ? process.env.MONITORING_DISABLE.split(',') : []);
     const codingAgentGenerateReports =
@@ -353,21 +203,20 @@ ${this.getDefaultCommandsMarkdown()}
     let success = true;
     const commandsSummary: any[] = [];
     for (const command of commands) {
+      if (!command.command) {
+        // Routing-only entry (no command to run) -- skip silently
+        continue;
+      }
       if (monitoringDisable.includes(command.key)) {
         uxLog("log", this, c.grey(t('skippedCommandAccordingToCustomConfiguration', { command: c.bold(command.key) })));
         continue;
       }
-      if (
-        command?.frequency === 'weekly' &&
-        new Date().getDay() !== 6 &&
-        !forceAll
-      ) {
-        uxLog(
-          "log",
-          this,
-          c.grey(t('skippedCommandWeeklyFrequency', { command: c.bold(command.key) }))
-        );
-        continue;
+      if (!forceAll) {
+        const evaluation = shouldRunCommandNow(command);
+        if (!evaluation.shouldRun && evaluation.reasonKey) {
+          uxLog("log", this, c.grey(t(evaluation.reasonKey, { command: c.bold(command.key) })));
+          continue;
+        }
       }
       // Run command
       let commandStr = /(^|\s)--agent(\s|$)/.test(command.command)
@@ -376,19 +225,20 @@ ${this.getDefaultCommandsMarkdown()}
       if (/^sf hardis/.test(commandStr) && !/(^|\s)--skipauth(\s|$)/.test(commandStr)) {
         commandStr = `${commandStr} --skipauth`;
       }
-      uxLog("action", this, c.cyan(t('runningMonitoringCommandKey', { command: c.bold(command.title), command1: c.bold(command.key) })));
+      const commandTitle = command.title ?? t(getTitleI18nKey(command.key));
+      uxLog("action", this, c.cyan(t('runningMonitoringCommandKey', { command: c.bold(commandTitle), command1: c.bold(command.key) })));
       const startTime = Date.now();
       try {
         const execCommandResult = await execCommand(commandStr, this, { fail: false, output: true });
         const duration = Date.now() - startTime;
         if (execCommandResult.status === 0) {
-          uxLog("success", this, c.green(t('commandHasBeenRunSuccessfully', { command: c.bold(command.title) })));
+          uxLog("success", this, c.green(t('commandHasBeenRunSuccessfully', { command: c.bold(commandTitle) })));
         } else {
           success = false;
-          uxLog("warning", this, c.yellow(t('commandHasFailed', { command: c.bold(command.title) })));
+          uxLog("warning", this, c.yellow(t('commandHasFailed', { command: c.bold(commandTitle) })));
         }
         commandsSummary.push({
-          title: command.title,
+          title: commandTitle,
           status: execCommandResult.status === 0 ? 'success' : 'failure',
           command: command.command,
           duration: MonitorAll.formatDuration(duration),
@@ -397,9 +247,9 @@ ${this.getDefaultCommandsMarkdown()}
         // Handle unexpected failure
         const duration = Date.now() - startTime;
         success = false;
-        uxLog("warning", this, c.yellow(t('commandHasFailed2', { command: c.bold(command.title), as: (e as Error).message })));
+        uxLog("warning", this, c.yellow(t('commandHasFailed2', { command: c.bold(commandTitle), as: (e as Error).message })));
         commandsSummary.push({
-          title: command.title,
+          title: commandTitle,
           status: 'error',
           command: command.command,
           duration: MonitorAll.formatDuration(duration),
@@ -436,9 +286,11 @@ ${this.getDefaultCommandsMarkdown()}
       }
     }
 
-    // Generate PPTX on weekly (Saturday) runs using a coding agent - regardless of AI availability
+    // Generate PPTX on the weekly cadence using a coding agent - regardless of AI availability
     const isWeekly = new Date().getDay() === 6 || forceAll;
     if (isWeekly && codingAgentGenerateReports) {
+      // codingAgent PPTX generation still anchored on the original Saturday cadence (or --force-all);
+      // per-command frequency changes (biweekly/monthly) only affect command execution, not this report.
       try {
         const reportDir = path.resolve(config.reportDirectory || 'hardis-report');
         await fs.ensureDir(reportDir);

@@ -72,12 +72,18 @@ if (!isCI && !agentMode) {
 External integrations use a root class + concrete implementations:
 
 - **gitProvider**: GitHub, GitLab, Azure DevOps, Bitbucket
-- **notifProvider**: Slack, MS Teams, Email, API webhook
+- **notifProvider**: Slack, MS Teams, Email, API webhook. Slack and Teams share the logical `messaging` channel; each provider declares its channel via `getChannel()`. Routing is filtered per notification type and per channel via severity thresholds. See the `monitoring-notifications` skill.
 - **ticketProvider**: Jira, Azure Boards, generic
 - **aiProvider**: LangChain-based (Anthropic, Google GenAI, Ollama, OpenAI) + Codex + Agentforce
 - **actionsProvider**: Post-deploy actions (Apex, data, manual, community publish, schedule batch)
 - **keyValueProviders**: Salesforce org, local test
 - **docBuilder**: Documentation generation
+
+## Monitoring Pipeline (`src/common/monitoring/`, `src/common/notifProvider/`)
+
+`hardis:org:monitor:all` runs a list of sub-commands (`monitoringCommandsDefault`) on a configurable cadence. Each sub-command posts notifications through `NotifProvider.postNotifications`, which fans out to enabled channels (`messaging` / `email` / `api`) using per-notification-type severity thresholds. Defaults live in source; users override per-entry via the `monitoringCommands` property in `.sfdx-hardis.yml`, merged by `key`. The `hardis:config:monitoring-defaults` command exposes the full defaults payload to the VS Code extension UI.
+
+When adding a monitoring command, a notification type, or changing default routing, use the **`monitoring-notifications` skill** -- it lists exactly which files to touch.
 
 ## Configuration System (`src/config/index.ts`)
 

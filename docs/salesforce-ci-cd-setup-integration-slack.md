@@ -56,3 +56,19 @@ Create a slack app here -> <https://api.slack.com/apps>
 - Make sure all those variables are visible to your CI/CD pipelines
 
 That's all, you're all set !
+
+## Per notification type severity threshold
+
+Slack belongs to the `messaging` channel (shared with Microsoft Teams). You can raise the minimum severity required to post a notification on this channel per notification type, directly in `.sfdx-hardis.yml`:
+
+```yaml
+monitoringCommands:
+  - key: AUDIT_TRAIL
+    notifications:
+      messaging: warning   # Slack/Teams only on warning, error, critical
+  - key: METADATA_STATUS
+    notifications:
+      messaging: off       # mute Slack/Teams for this type
+```
+
+See [Monitoring configuration](salesforce-monitoring-config-home.md#fine-grained-routing-per-notification-type) for the full per-channel routing model.

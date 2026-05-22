@@ -4,15 +4,21 @@ import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { SlackProvider } from "./slackProvider.js";
 import { UtilsNotifs as utilsNotifs } from "./utils.js";
 import { TeamsProvider } from "./teamsProvider.js";
+import { GoogleChatProvider } from "./googleChatProvider.js";
 import { CONSTANTS, getConfig } from "../../config/index.js";
 import { EmailProvider } from "./emailProvider.js";
 import { ApiProvider } from "./apiProvider.js";
 import type { NotifMessage } from "./types.js";
 import { t } from '../utils/i18n.js';
 import { writeMonitoringNotifFile } from './monitoringNotifWriter.js';
+import {
+  getChannelThreshold,
+  getEffectiveNotificationConfig,
+  severityMeetsThreshold,
+} from "./notificationConfig.js";
 
 export abstract class NotifProvider {
-  static getInstances(): NotifProviderRoot[] {
+  static getInstances(userConfig?: { notificationConfig?: any[] }): NotifProviderRoot[] {
     const notifProviders: NotifProviderRoot[] = [];
     // Slack
     if (UtilsNotifs.isSlackAvailable()) {
@@ -22,8 +28,12 @@ export abstract class NotifProvider {
     if (UtilsNotifs.isMsTeamsAvailable()) {
       notifProviders.push(new TeamsProvider());
     }
-    // Email
-    if (UtilsNotifs.isEmailAvailable()) {
+    // Google Chat
+    if (UtilsNotifs.isGoogleChatAvailable()) {
+      notifProviders.push(new GoogleChatProvider());
+    }
+    // Email -- enabled by NOTIF_EMAIL_ADDRESS or by per-type recipients in user config
+    if (UtilsNotifs.isEmailAvailable(userConfig)) {
       notifProviders.push(new EmailProvider());
     }
     // Api
@@ -40,7 +50,7 @@ export abstract class NotifProvider {
     const notificationsDisable =
       config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
     uxLog("log", this, c.grey(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
-    const notifProviders = this.getInstances();
+    const notifProviders = this.getInstances(config);
     if (notifProviders.length === 0 && isCI) {
       uxLog(
         "log",
@@ -50,6 +60,8 @@ export abstract class NotifProvider {
         ),
       );
     }
+    // Resolve the effective per-channel routing config for this notification type once
+    const effectiveConfig = await getEffectiveNotificationConfig(notifMessage.type);
     for (const notifProvider of notifProviders) {
       uxLog("log", this, c.grey(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
       // Skip if matching NOTIFICATIONS_DISABLE except for Api
@@ -61,9 +73,36 @@ export abstract class NotifProvider {
             `[NotifProvider] Skip notification of type ${notifMessage.type} according to configuration (NOTIFICATIONS_DISABLE env var or notificationsDisable .sfdx-hardis.yml property)`,
           ),
         );
+        continue;
+      }
+      // Per-channel severity threshold filter (alwaysSend bypasses)
+      const channel = notifProvider.getChannel();
+      const threshold = getChannelThreshold(effectiveConfig, channel);
+      if (!notifMessage.alwaysSend && !severityMeetsThreshold(notifMessage.severity, threshold)) {
+        if (threshold === "off") {
+          uxLog(
+            "log",
+            this,
+            c.grey(t("notificationChannelDisabledForType", { channel, type: notifMessage.type })),
+          );
+        } else {
+          uxLog(
+            "log",
+            this,
+            c.grey(
+              t("skippedNotificationChannel", {
+                channel,
+                type: notifMessage.type,
+                severity: notifMessage.severity,
+                threshold,
+              }),
+            ),
+          );
+        }
+        continue;
       }
       // Do not send notifs for level "log" to Users, but just to logs/metrics API
-      else if (notifProvider.isApplicableForNotif(notifMessage)) {
+      if (notifProvider.isApplicableForNotif(notifMessage)) {
         await notifProvider.postNotification(notifMessage);
       } else {
         uxLog("error", this, c.grey(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));

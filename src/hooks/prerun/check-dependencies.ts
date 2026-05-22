@@ -30,6 +30,16 @@ const hook: Hook<'prerun'> = async (options) => {
   /* jscpd:ignore-end */
   // Check Git config and complete it if necessary (asynchronously so the script is not stopped)
   if (!isCI && isGitRepo()) {
+    const { default: c } = await import('chalk');
+    const tryAddGitConfig = async (key: string, value: string) => {
+      try {
+        await git({ output: true }).addConfig(key, value);
+        return true;
+      } catch (e: any) {
+        uxLog("warning", this, c.yellow(t('couldNotSetGitConfig', { key, value, message: e.message })));
+        return false;
+      }
+    };
     git()
       .listConfig()
       .then(async (gitConfig) => {
@@ -37,33 +47,43 @@ const hook: Hook<'prerun'> = async (options) => {
         // User
         if (allConfigs['user.name'] == null) {
           const username = os.userInfo().username;
-          await git({ output: true }).addConfig('user.name', username);
-          uxLog("log", this, t('definedAsGitUserName', { username }));
+          if (await tryAddGitConfig('user.name', username)) {
+            uxLog("log", this, t('definedAsGitUserName', { username }));
+          }
         }
         // Email
         if (allConfigs['user.email'] == null) {
           const config = await getConfig('user');
           const email = config.userEmail || 'default@cloudity.com';
-          await git({ output: true }).addConfig('user.email', email);
-          uxLog("log", this, t('definedAsGitUserEmail', { email }));
+          if (await tryAddGitConfig('user.email', email)) {
+            uxLog("log", this, t('definedAsGitUserEmail', { email }));
+          }
         }
         // Manage special characters in git file / folder names
         if (allConfigs['core.quotepath'] == null || allConfigs['core.quotepath'] == 'true') {
-          await git({ output: true }).addConfig('core.quotepath', 'false');
-          uxLog("log", this, t('definedFalseAsGitCoreQuotepath'));
+          if (await tryAddGitConfig('core.quotepath', 'false')) {
+            uxLog("log", this, t('definedFalseAsGitCoreQuotepath'));
+          }
         }
         // Merge tool
         if (allConfigs['merge.tool'] == null) {
-          await git({ output: true }).addConfig('merge.tool', 'vscode');
-          await git({ output: true }).addConfig('mergetool.vscode.cmd', 'code --wait $MERGED');
-          uxLog("log", this, t('definedVsCodeAsGitMergeTool'));
+          const okMergeTool = await tryAddGitConfig('merge.tool', 'vscode');
+          const okMergeCmd = await tryAddGitConfig('mergetool.vscode.cmd', 'code --wait $MERGED');
+          if (okMergeTool && okMergeCmd) {
+            uxLog("log", this, t('definedVsCodeAsGitMergeTool'));
+          }
         }
         // Diff tool
         if (allConfigs['diff.tool'] == null) {
-          await git({ output: true }).addConfig('diff.tool', 'vscode');
-          await git({ output: true }).addConfig('difftool.vscode.cmd', 'code --wait --diff $LOCAL $REMOTE');
-          uxLog("log", this, t('definedVsCodeAsGitDiffTool'));
+          const okDiffTool = await tryAddGitConfig('diff.tool', 'vscode');
+          const okDiffCmd = await tryAddGitConfig('difftool.vscode.cmd', 'code --wait --diff $LOCAL $REMOTE');
+          if (okDiffTool && okDiffCmd) {
+            uxLog("log", this, t('definedVsCodeAsGitDiffTool'));
+          }
         }
+      })
+      .catch((e: any) => {
+        uxLog("warning", this, c.yellow(t('couldNotSetGitConfig', { key: '*', value: '*', message: e.message })));
       });
   }
 

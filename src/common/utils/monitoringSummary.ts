@@ -3,6 +3,9 @@ import { AiProvider } from '../aiProvider/index.js';
 import { uxLog } from '../utils/index.js';
 import { t } from '../utils/i18n.js';
 
+// Slack section blocks reject text over 3000 chars. The prompt asks for <2800; this is a backstop.
+const MONITORING_SUMMARY_MAX_LEN = 2800;
+
 /**
  * Generate an AI-powered summary of monitoring notifications.
  * Returns the markdown summary string, or null if AI fails.
@@ -22,7 +25,17 @@ export async function generateMonitoringAiSummary(
     if (aiResponse?.success && aiResponse.promptResponse) {
       uxLog("success", null, c.green(t('monitoringAiSummaryGenerated')));
       uxLog("log", null, c.grey(`[AI Summary]\n${aiResponse.promptResponse}`));
-      return aiResponse.promptResponse;
+      let summary = aiResponse.promptResponse;
+      if (summary.length > MONITORING_SUMMARY_MAX_LEN) {
+        uxLog(
+          "warning",
+          null,
+          c.yellow(`[MonitoringSummary] AI summary exceeded ${MONITORING_SUMMARY_MAX_LEN} chars (${summary.length}); truncating to fit Slack's 3000-char block limit.`),
+        );
+        const suffix = "\n...(truncated)";
+        summary = summary.slice(0, MONITORING_SUMMARY_MAX_LEN - suffix.length).trimEnd() + suffix;
+      }
+      return summary;
     }
     uxLog("warning", null, c.yellow(t('monitoringAiSummaryFailed', { message: 'No response from AI provider' })));
     return null;
