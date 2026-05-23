@@ -7,6 +7,7 @@
 - Notification text is now authored once in standard Markdown and translated per channel. Slack notifications render Markdown headings, bold, tables, and links correctly, Microsoft Teams notifications collapse Markdown headings to bold, email bodies are produced from the same Markdown source as the other channels, and console / API log payloads strip Markdown markers to plain text.
 - Notification bodies across monitoring and diagnose commands now use proper Markdown: bullet lists use `-`, key counts and names are highlighted in bold, and section labels render as bold rather than appearing as raw `*text*` or `•` characters.
 - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): The Slack monitoring summary now renders correctly. Headings, bold, links, and tables emitted by the AI summary are translated into Slack's mrkdwn syntax instead of appearing as raw `##`, `**bold**`, and pipe-table characters in the channel.
+- CI: Default MegaLinter configuration now treats `osv-scanner` and `zizmor` findings as warnings instead of build-failing errors (`REPOSITORY_OSV_SCANNER_DISABLE_ERRORS` and `ACTION_ZIZMOR_DISABLE_ERRORS`).
 
 ## [7.14.1] 2026-05-18
 
