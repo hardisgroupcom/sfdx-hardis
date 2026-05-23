@@ -2,9 +2,16 @@ name: tests
 on:
   push:
     branches-ignore: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions: read-all
+
+# Avoid duplicate runs for same-repo PR branches (push + pull_request)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   linux-unit-tests:
