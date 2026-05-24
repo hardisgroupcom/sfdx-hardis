@@ -2,13 +2,32 @@
 
 ## [beta] (main)
 
-- [hardis:project:skills:import](https://sfdx-hardis.cloudity.com/hardis/project/skills/import/): New `--addon` boolean flag. When set, the resolved repository URL is appended (deduplicated) to the new `skillsRepoAddOns` array config property instead of replacing the main `skillsRepo` string. This lets a project track a main Claude Code skills repo plus a list of complementary add-on repos in `.sfdx-hardis.yml`.
-- New [Google Chat](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-google-chat/) notification channel. Set `GOOGLE_CHAT_WEBHOOK_URL` (and optionally `GOOGLE_CHAT_WEBHOOK_URL_<BRANCH>` / `GOOGLE_CHAT_WEBHOOK_URL_ERRORS_WARNINGS`) to receive deployment and monitoring notifications as Google Chat Card v2 messages, with the same per-type severity routing as Slack and Microsoft Teams.
-- Notification text is now authored once in standard Markdown and translated per channel. Slack notifications render Markdown headings, bold, tables, and links correctly, Microsoft Teams notifications collapse Markdown headings to bold, email bodies are produced from the same Markdown source as the other channels, and console / API log payloads strip Markdown markers to plain text.
-- Notification bodies across monitoring and diagnose commands now use proper Markdown: bullet lists use `-`, key counts and names are highlighted in bold, and section labels render as bold rather than appearing as raw `*text*` or `•` characters.
-- [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): The Slack monitoring summary now renders correctly. Headings, bold, links, and tables emitted by the AI summary are translated into Slack's mrkdwn syntax instead of appearing as raw `##`, `**bold**`, and pipe-table characters in the channel.
-- CI: Default MegaLinter configuration now treats `osv-scanner` and `zizmor` findings as warnings instead of build-failing errors (`REPOSITORY_OSV_SCANNER_DISABLE_ERRORS` and `ACTION_ZIZMOR_DISABLE_ERRORS`).
-- CI: Run tests from forked repos' Pull Requests
+- Prepare for the Salesforce CLI credential redaction effective 2026-05-27.
+  - [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/), [hardis:org:multi-org-query](https://sfdx-hardis.cloudity.com/hardis/org/multi-org-query/), and the `TECHNICAL_ORG` connection now retrieve credentials via `sf org auth show-access-token` and `sf org auth show-sfdx-auth-url` instead of parsing `sf org display --verbose`.
+  - Automatic fallback: if the new `sf org auth show-*` commands are unavailable (older Salesforce CLI) or also return redacted values, sfdx-hardis transparently falls back to `sf org display --verbose` with `SF_TEMP_SHOW_SECRETS=true`, logs a warning, and points to https://github.com/forcedotcom/cli/issues/3560.
+  - Documentation and CI variable retrieval instructions updated to recommend `sf org auth show-sfdx-auth-url --target-org <alias> --no-prompt --json`.
+- [hardis:project:skills:import](https://sfdx-hardis.cloudity.com/hardis/project/skills/import/): Support a main Claude Code skills repo plus complementary add-on repos.
+  - New `--addon` boolean flag.
+  - When set, the resolved repository URL is appended (deduplicated) to the new `skillsRepoAddOns` array config property instead of replacing the main `skillsRepo` string in `.sfdx-hardis.yml`.
+- New [Google Chat](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-google-chat/) notification channel.
+  - Set `GOOGLE_CHAT_WEBHOOK_URL` to receive deployment and monitoring notifications as Google Chat Card v2 messages.
+  - Optional `GOOGLE_CHAT_WEBHOOK_URL_<BRANCH>` and `GOOGLE_CHAT_WEBHOOK_URL_ERRORS_WARNINGS` overrides.
+  - Uses the same per-type severity routing as Slack and Microsoft Teams.
+- Notification text is now authored once in standard Markdown and translated per channel.
+  - Slack: renders Markdown headings, bold, tables, and links correctly.
+  - Microsoft Teams: collapses Markdown headings to bold.
+  - Email: bodies produced from the same Markdown source as the other channels.
+  - Console and API log payloads: strip Markdown markers to plain text.
+- Notification bodies across monitoring and diagnose commands now use proper Markdown.
+  - Bullet lists use `-`.
+  - Key counts and names are highlighted in bold.
+  - Section labels render as bold rather than appearing as raw `*text*` or `•` characters.
+- [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): The Slack monitoring summary now renders correctly.
+  - Headings, bold, links, and tables emitted by the AI summary are translated into Slack's mrkdwn syntax.
+  - Previously, these appeared as raw `##`, `**bold**`, and pipe-table characters in the channel.
+- CI: Default MegaLinter configuration now treats `osv-scanner` and `zizmor` findings as warnings instead of build-failing errors.
+  - Controlled by `REPOSITORY_OSV_SCANNER_DISABLE_ERRORS` and `ACTION_ZIZMOR_DISABLE_ERRORS`.
+- CI: Run tests from forked repos' Pull Requests.
 
 ## [7.14.1] 2026-05-18
 

@@ -27,6 +27,7 @@ import {
   promptUserEmail,
 } from '../../../common/utils/orgUtils.js';
 import { addScratchOrgToPool, fetchScratchOrg } from '../../../common/utils/poolUtils.js';
+import { getOrgSfdxAuthUrl } from '../../../common/utils/credentialUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { getConfig, setConfig } from '../../../config/index.js';
@@ -419,19 +420,21 @@ In agent mode:
 
     if (isCI || this.pool === true) {
       // Try to store sfdxAuthUrl for scratch org reuse during CI
-      const displayOrgCommand = `sf org display -o ${this.scratchOrgAlias} --verbose`;
+      const displayOrgCommand = `sf org display -o ${this.scratchOrgAlias}`;
       const displayResult = await execSfdxJson(displayOrgCommand, this, {
         fail: true,
         output: false,
         debug: this.debugMode,
       });
-      if (displayResult.result.sfdxAuthUrl) {
+      const authUrlFromCommand = await getOrgSfdxAuthUrl(this.scratchOrgAlias, { fail: false, debug: this.debugMode });
+      if (authUrlFromCommand) {
         await setConfig('user', {
-          scratchOrgSfdxAuthUrl: displayResult.result.sfdxAuthUrl,
+          scratchOrgSfdxAuthUrl: authUrlFromCommand,
         });
-        this.scratchOrgSfdxAuthUrl = displayResult.result.sfdxAuthUrl;
+        this.scratchOrgSfdxAuthUrl = authUrlFromCommand;
+        displayResult.result.sfdxAuthUrl = authUrlFromCommand;
       } else {
-        // Try to get sfdxAuthUrl with workaround
+        // Fallback: read auth file directly via @salesforce/core
         try {
           const authInfo = await AuthInfo.create({ username: displayResult.result.username });
           this.scratchOrgSfdxAuthUrl = authInfo.getSfdxAuthUrl();

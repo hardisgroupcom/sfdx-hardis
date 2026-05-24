@@ -4,6 +4,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isCI, uxLog } from './index.js';
+import { getOrgAccessToken } from './credentialUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getConfig, setConfig } from '../../config/index.js';
 import { isValidEmail } from './stringUtils.js';
@@ -745,27 +746,32 @@ export async function setConnectionVariables(conn, handleTechnical = false) {
   }
   if (handleTechnical && tryTechnical && !(process.env?.SKIP_TECHNICAL_ORG === "true")) {
     try {
-      const techOrgDisplayCommand = 'sf org display --target-org TECHNICAL_ORG --json --verbose';
+      const techOrgDisplayCommand = 'sf org display --target-org TECHNICAL_ORG --json';
       const orgInfoResult = await execSfdxJson(techOrgDisplayCommand, this, {
         fail: false,
         output: false,
         debug: false,
       });
       if (orgInfoResult.result && orgInfoResult.result.connectedStatus === 'Connected') {
-        const authInfo = await AuthInfo.create({
-          username: orgInfoResult.result.username,
-          isDefaultUsername: false,
-        });
-        const connTechnical = await Connection.create({
-          authInfo: authInfo,
-          connectionOptions: {
-            instanceUrl: orgInfoResult.result.instanceUrl,
-            accessToken: orgInfoResult.result.accessToken
-          }
-        });
-        const identity = await connTechnical.identity();
-        uxLog("log", this, c.grey(t('connectedToTechnicalOrg', { identity: c.green(identity.username) })));
-        globalThis.jsForceConnTechnical = connTechnical;
+        const accessToken = await getOrgAccessToken('TECHNICAL_ORG');
+        if (!accessToken) {
+          globalThis.jsForceConnTechnical = null;
+        } else {
+          const authInfo = await AuthInfo.create({
+            username: orgInfoResult.result.username,
+            isDefaultUsername: false,
+          });
+          const connTechnical = await Connection.create({
+            authInfo: authInfo,
+            connectionOptions: {
+              instanceUrl: orgInfoResult.result.instanceUrl,
+              accessToken: accessToken
+            }
+          });
+          const identity = await connTechnical.identity();
+          uxLog("log", this, c.grey(t('connectedToTechnicalOrg', { identity: c.green(identity.username) })));
+          globalThis.jsForceConnTechnical = connTechnical;
+        }
       }
     } catch (e) {
       uxLog("warning", this, c.yellow(t('unableToConnectToTechnicalOrgNthat', { val: e })));

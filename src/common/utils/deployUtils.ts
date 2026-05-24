@@ -1284,7 +1284,7 @@ export async function buildOrgManifest(
       this,
       {
         fail: true,
-        debug: process.env.DEBUG,
+        debug: Boolean(process.env.DEBUG),
         output: true,
       }
     );
@@ -1302,7 +1302,7 @@ export async function buildOrgManifest(
       {
         fail: true,
         cwd: path.join(tmpDirSfdxProject, 'sfdx-hardis-blank-project'),
-        debug: process.env.DEBUG,
+        debug: Boolean(process.env.DEBUG),
         output: true,
       }
     );

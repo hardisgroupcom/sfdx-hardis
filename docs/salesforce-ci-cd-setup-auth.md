@@ -132,4 +132,4 @@ This stores the Dev Hub alias / username / instance URL in the project-level `.s
 - `SFDX_CLIENT_KEY_<DEVHUB_ALIAS>` (and optionally `SFDX_CLIENT_CERT_<DEVHUB_ALIAS>` with the encrypted key) for the self-signed flow, or
 - `SFDX_CLIENT_CERT_<DEVHUB_ALIAS>` with the raw PEM key content for the CA-signed flow.
 
-As a **less secure last resort** for scratch-org workflows where JWT cannot be set up, you can set `SFDX_AUTH_URL_DEV_HUB` with the output of `sf org display --target-org <devhub-alias> --verbose --json | jq -r .result.sfdxAuthUrl`. Be aware that this value contains a long-lived OAuth refresh token granting full Dev Hub access if leaked; prefer JWT whenever possible.
+As a **less secure last resort** for scratch-org workflows where JWT cannot be set up, you can set `SFDX_AUTH_URL_DEV_HUB` with the output of `sf org auth show-sfdx-auth-url --target-org <devhub-alias> --no-prompt --json | jq -r .result.sfdxAuthUrl`. Be aware that this value contains a long-lived OAuth refresh token granting full Dev Hub access if leaked; prefer JWT whenever possible.

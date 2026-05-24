@@ -135,7 +135,7 @@ export default class DxSources extends SfCommand<any> {
         this.deployDir = tmpDir;
         await execCommand(filterCommand, this, {
           output: true,
-          debugMode,
+          debug: debugMode,
           fail: true,
         });
       }
