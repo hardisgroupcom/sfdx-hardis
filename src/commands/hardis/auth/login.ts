@@ -25,7 +25,7 @@ Key aspects:
   - For Monitoring repositories: [Configure Org Monitoring](${CONSTANTS.DOC_URL_ROOT}/hardis/org/configure/monitoring/)
 - **Technical Org Support:** Supports authentication to a 'technical org' (e.g., for calling Agentforce from another org) by utilizing the \`SFDX_AUTH_URL_TECHNICAL_ORG\` environment variable. If this variable is set, the command authenticates to this org with the alias \`TECHNICAL_ORG\`.
 
-To obtain the \`SFDX_AUTH_URL_TECHNICAL_ORG\` value, you can run \`sf org display --verbose --json\` and copy the \`sfdxAuthUrl\` field from the output.
+To obtain the \`SFDX_AUTH_URL_TECHNICAL_ORG\` value, you can run \`sf org auth show-sfdx-auth-url --target-org <alias> --no-prompt --json\` and copy the \`sfdxAuthUrl\` field from the output.
 
 <details markdown="1">
 <summary>Technical explanations</summary>

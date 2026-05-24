@@ -4,6 +4,7 @@ import { AuthInfo, Connection, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from "chalk";
 import { makeSureOrgIsConnected, promptOrgList } from '../../../common/utils/orgUtils.js';
+import { getOrgAccessToken } from '../../../common/utils/credentialUtils.js';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import { bulkQuery } from '../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
@@ -179,16 +180,20 @@ In agent mode, both \`--query\` (or \`--query-template\`) and \`--target-orgs\` 
 
   private async performQueries() {
     for (const orgId of this.targetOrgsIds) {
-      const matchOrgs = this.targetOrgs.filter(org => (org.username === orgId || org.alias === orgId) && org.accessToken);
+      const matchOrgs = this.targetOrgs.filter(org => (org.username === orgId || org.alias === orgId));
       if (matchOrgs.length === 0) {
         uxLog("warning", this, c.yellow(t('skippedUnableToFindAuthenticationRunSf', { orgId })));
         continue;
       }
-      const accessToken = matchOrgs[0].accessToken;
       const username = matchOrgs[0].username;
       const instanceUrl = matchOrgs[0].instanceUrl;
       const loginUrl = matchOrgs[0].loginUrl || instanceUrl;
       uxLog("action", this, c.cyan(t('performingQueryOn', { orgId: c.bold(orgId) })));
+      const accessToken = await getOrgAccessToken(username, { fail: false });
+      if (!accessToken) {
+        this.errorOrgs.push({ org: orgId, error: new Error(t('unableToRetrieveCredential', { org: orgId, kind: 'access-token' })) });
+        continue;
+      }
       try {
         const authInfo = await AuthInfo.create({
           username: username
@@ -228,7 +233,7 @@ In agent mode, both \`--query\` (or \`--query-template\`) and \`--target-orgs\` 
 
     // Check orgs are connected
     for (const orgId of this.targetOrgsIds) {
-      const matchOrgs = this.targetOrgs.filter(org => (org.username === orgId || org.alias === orgId) && org.accessToken && org.connectedStatus === 'Connected');
+      const matchOrgs = this.targetOrgs.filter(org => (org.username === orgId || org.alias === orgId) && org.connectedStatus === 'Connected');
       if (matchOrgs.length === 0) {
         if (isCI || agentMode) {
           throw new SfError(`${orgId} must be authenticated using Salesforce CLI before calling this command`);
