@@ -8,9 +8,12 @@ on:
 
 permissions: read-all
 
-# Avoid duplicate runs for same-repo PR branches (push + pull_request)
+# Avoid duplicate runs when push + pull_request fire for the same branch.
+# Key on branch name so both events share a group (head_ref is the PR branch
+# on pull_request, ref_name is the branch on push); falling back to ref makes
+# manual workflow_dispatch runs cancellable too.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name || github.ref }}
   cancel-in-progress: true
 
 jobs:
