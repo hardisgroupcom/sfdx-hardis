@@ -30,8 +30,11 @@ PR_NUMBER="$(printf '%s' "$PR_JSON" | jq -r '.[0].number // empty')"
 
 ### 2. Inspect CI state
 
+**Always query BOTH `gh pr checks` and `gh run list`** -- `gh pr checks` only sees workflow checks that have already registered with the PR, and there is a 30-90s lag between a workflow being triggered and its check appearing. A workflow that is `queued` or just-started `in_progress` may not yet be in `gh pr checks`, so a snapshot showing "all pass" can be a lie when other runs are still pending registration. This bit you before -- don't trust a single signal.
+
 ```bash
 gh pr checks "$PR_NUMBER" --json name,bucket,state,workflow,link
+gh run list --branch "$BRANCH" --limit 20 --json status,conclusion,name,event,createdAt,databaseId
 ```
 
 sfdx-hardis CI surface (as of writing):
@@ -48,17 +51,24 @@ Classify each check by `bucket`/`state`:
 - `skipping` -> treat as success (e.g. `nuts` skipping on a fork PR because secrets are unavailable)
 - `pending`, `in_progress`, `queued`, `waiting`, `requested` -> still running
 
+Classify each workflow run by `status` (from `gh run list`):
+
+- `in_progress`, `queued`, `waiting`, `requested`, `pending` -> still running
+- `completed` -> done (look at `conclusion`)
+
+**Same-SHA duplicate runs are normal.** A same-repo PR fires both `push` and `pull_request` events, and if the workflow's `concurrency.group` formula resolves to different keys for the two events, both runs execute in parallel for the same commit. Wait for the latest one -- the older one will either be cancelled by concurrency or both will land in `gh pr checks` as redundant entries for the same workflow.
+
 Decide:
 
-- **All `pass`** -> **STOP**. Report success and the PR URL.
-- **Any failure** -> go to step 4 (fix).
-- **No failure but some running** -> go to step 3 (wait).
+- **All `pass`/`skipping` in checks AND zero in-progress runs in `gh run list` for the current HEAD SHA** -> **STOP**. Report success and the PR URL.
+- **Any failure in checks** -> go to step 4 (fix).
+- **No failure, but `gh pr checks` has pending OR `gh run list` has any non-`completed` runs for the current SHA** -> go to step 3 (wait). The run-list pending signal MUST gate "done" even if `gh pr checks` is briefly all-pass.
 
 ### 3. Wait for running jobs
 
 Poll every **5 minutes**, fixed interval. No backoff -- the user explicitly wants a 5-minute cadence so failures surface fast. Use a persistent `Monitor` with a description that starts with `PR watch:` so step 0 of a future invocation can find and stop it.
 
-Example:
+Example (both signals -- `gh pr checks` for failures, `gh run list` to catch runs that haven't yet registered as checks):
 
 ```
 Monitor:
@@ -66,10 +76,13 @@ Monitor:
   persistent: true
   command: |
     while true; do
-      state="$(gh pr checks 1903 --json name,bucket 2>/dev/null || echo '[]')"
-      counts="$(jq -r '[.[] | .bucket] | group_by(.) | map("\(.[0])=\(length)") | join(" ")' <<<"$state")"
-      pending="$(jq -r '[.[] | select(.bucket=="pending")] | length' <<<"$state")"
-      fail_now="$(jq -r '[.[] | select(.bucket=="fail" or .bucket=="cancel") | .name] | sort | join(",")' <<<"$state")"
+      checks="$(gh pr checks 1903 --json name,bucket 2>/dev/null || echo '[]')"
+      runs="$(gh run list --branch BRANCH --limit 20 --json status,conclusion,name 2>/dev/null || echo '[]')"
+
+      counts="$(jq -r '[.[] | .bucket] | group_by(.) | map("\(.[0])=\(length)") | join(" ")' <<<"$checks")"
+      pending_checks="$(jq -r '[.[] | select(.bucket=="pending")] | length' <<<"$checks")"
+      pending_runs="$(jq -r '[.[] | select(.status=="in_progress" or .status=="queued" or .status=="requested" or .status=="waiting" or .status=="pending")] | length' <<<"$runs")"
+      fail_now="$(jq -r '[.[] | select(.bucket=="fail" or .bucket=="cancel") | .name] | sort | join(",")' <<<"$checks")"
 
       # Emit on new failures
       if [ -n "$fail_now" ] && [ "$fail_now" != "${prev_fail:-}" ]; then
@@ -77,14 +90,17 @@ Monitor:
         prev_fail="$fail_now"
       fi
 
-      # Done condition: nothing pending
-      if [ "$pending" = "0" ]; then
-        echo "[final] $counts"
+      # Done condition: BOTH check-pending = 0 AND run-list-pending = 0
+      # (run-list catches workflows that haven't yet registered as checks)
+      if [ "$pending_checks" = "0" ] && [ "$pending_runs" = "0" ]; then
+        echo "[final] checks: $counts | runs: 0 in-progress"
         break
       fi
       sleep 300
     done
 ```
+
+Replace `BRANCH` with the actual branch name when instantiating the monitor.
 
 The monitor emits notifications only on state changes (new failures or completion). It does not emit a notification every 5 minutes -- that would be noise. If the user wants a heartbeat, they can ask.
 
