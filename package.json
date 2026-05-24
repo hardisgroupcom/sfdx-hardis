@@ -92,7 +92,8 @@
     "fast-uri": "3.1.2",
     "parse5": "6.0.1",
     "simple-git": "3.36.0",
-    "langsmith": "0.7.1"
+    "langsmith": "0.7.1",
+    "**/yargs": "18.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
