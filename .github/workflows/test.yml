@@ -13,20 +13,102 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+# Node matrix is inlined here (instead of using the salesforcecli reusable
+# workflows) because those workflows read `NODE_DISABLE_VERSIONS` from caller-
+# repo `vars`, which GitHub does not propagate to runs triggered by
+# pull_request from a forked repo. As a result, disabled Node majors (e.g. 26,
+# which has a yargs ESM/CJS incompatibility) would still get tested on fork
+# PRs and fail for reasons unrelated to the contributor's change.
 jobs:
   linux-unit-tests:
-    uses: salesforcecli/github-workflows/.github/workflows/unitTestsLinux.yml@main # zizmor: ignore[unpinned-uses]
+    strategy:
+      matrix:
+        node_version: [22, 24, 25]
+      fail-fast: false
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       checks: write
-    with:
-      skipTsDepCheck: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: yarn
+
+      - uses: google/wireit@setup-github-actions-caching/v2 # zizmor: ignore[unpinned-uses]
+        continue-on-error: true
+
+      - name: Cache node modules
+        id: cache-nodemodules
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: "**/node_modules"
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+
+      - uses: salesforcecli/github-workflows/.github/actions/yarnInstallWithRetries@main # zizmor: ignore[unpinned-uses]
+        if: ${{ steps.cache-nodemodules.outputs.cache-hit != 'true' }}
+
+      - name: Install wireit
+        run: yarn add wireit@^0.14.12
+
+      - run: yarn build
+
+      - name: yarn test
+        uses: salesforcecli/github-workflows/.github/actions/retry@main # zizmor: ignore[unpinned-uses]
+        with:
+          command: yarn test
+        env:
+          SF_DISABLE_TELEMETRY: true
 
   windows-unit-tests:
-    uses: salesforcecli/github-workflows/.github/workflows/unitTestsWindows.yml@main # zizmor: ignore[unpinned-uses]
+    strategy:
+      matrix:
+        node_version: [22, 24, 25]
+      fail-fast: false
+    runs-on: windows-latest
     permissions:
       contents: read
       checks: write
+    steps:
+      - run: git config --system core.longpaths true
+
+      - uses: actions/checkout@v4
+
+      - uses: google/wireit@setup-github-actions-caching/v2 # zizmor: ignore[unpinned-uses]
+        continue-on-error: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: yarn
+
+      - name: Cache node modules
+        id: cache-nodemodules
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: "**/node_modules"
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+
+      - uses: salesforcecli/github-workflows/.github/actions/yarnInstallWithRetries@main # zizmor: ignore[unpinned-uses]
+        if: ${{ steps.cache-nodemodules.outputs.cache-hit != 'true' }}
+
+      - name: Install wireit
+        run: yarn add wireit@^0.14.12
+
+      - run: yarn build
+
+      - name: yarn test
+        uses: salesforcecli/github-workflows/.github/actions/retry@main # zizmor: ignore[unpinned-uses]
+        with:
+          command: yarn test
+        env:
+          SF_DISABLE_TELEMETRY: true
 
   nuts:
     needs:
