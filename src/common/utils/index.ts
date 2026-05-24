@@ -725,11 +725,37 @@ export function normalizeFileStatusPath(fileStatusPath: string, config): string 
   return fileStatusPath;
 }
 
+// Retry policy for execCommand. tryCount is set by execCommand on retry — callers do not provide it.
+export interface ExecCommandRetryOptions {
+  tryCount?: number;
+  retryMaxAttempts?: number;
+  retryStringConstraint?: string;
+  retryDelay?: number;
+}
+
+// Options accepted by execCommand and execSfdxJson.
+export interface ExecCommandOptions {
+  // Throw on non-zero command exit (or on --json status > 0). Default false.
+  fail?: boolean;
+  // Print command output to the user. null/undefined means "auto" based on --json. Default false.
+  output?: boolean | null;
+  // Log the stdout for debugging. Default false.
+  debug?: boolean;
+  // Show an ora spinner during execution. Default true.
+  spinner?: boolean;
+  // Working directory for the child process.
+  cwd?: string;
+  // Extra environment variables to merge on top of the inherited process env.
+  env?: NodeJS.ProcessEnv;
+  // Retry policy on failure.
+  retry?: ExecCommandRetryOptions;
+}
+
 // Execute salesforce DX command with --json
 export async function execSfdxJson(
   command: string,
   commandThis: any,
-  options: any = {
+  options: ExecCommandOptions = {
     fail: false,
     output: false,
     debug: false,
@@ -745,7 +771,7 @@ export async function execSfdxJson(
 export async function execCommand(
   command: string,
   commandThis: SfCommand<any> | null,
-  options: any = {
+  options: ExecCommandOptions = {
     fail: false,
     output: false,
     debug: false,
@@ -776,6 +802,9 @@ export async function execCommand(
   execOptions.env = env;
   if (command.startsWith('sf hardis')) {
     execOptions.env.NO_NEW_COMMAND_TAB = 'true';
+  }
+  if (options.env && typeof options.env === 'object') {
+    Object.assign(execOptions.env, options.env);
   }
   let commandResult: any = {};
   const output = options.output !== null ? options.output : !commandThis?.argv?.includes('--json');
@@ -828,21 +857,22 @@ export async function execCommand(
       }
       (e as Error).message = (e as Error).message += '\n' + strErr;
       // Manage retry if requested
-      if (options.retry != null) {
-        options.retry.tryCount = (options.retry.tryCount || 0) + 1;
+      const retry = options.retry;
+      if (retry != null) {
+        retry.tryCount = (retry.tryCount || 0) + 1;
         if (
-          options.retry.tryCount <= (options.retry.retryMaxAttempts || 1) &&
-          (options.retry.retryStringConstraint == null ||
-            ((e as any).stdout + (e as any).stderr).includes(options.retry.retryStringConstraint))
+          retry.tryCount <= (retry.retryMaxAttempts || 1) &&
+          (retry.retryStringConstraint == null ||
+            ((e as any).stdout + (e as any).stderr).includes(retry.retryStringConstraint))
         ) {
           uxLog(
             "warning",
             commandThis,
-            c.yellow(`Retry command: ${options.retry.tryCount} on ${options.retry.retryMaxAttempts || 1}`)
+            c.yellow(`Retry command: ${retry.tryCount} on ${retry.retryMaxAttempts || 1}`)
           );
-          if (options.retry.retryDelay) {
-            uxLog("other", this, `Waiting ${options.retry.retryDelay} seconds before retrying command`);
-            await new Promise((resolve) => setTimeout(resolve, options.retry.retryDelay * 1000));
+          if (retry.retryDelay) {
+            uxLog("other", this, `Waiting ${retry.retryDelay} seconds before retrying command`);
+            await new Promise((resolve) => setTimeout(resolve, retry.retryDelay! * 1000));
           }
           return await execCommand(command, commandThis, options);
         }

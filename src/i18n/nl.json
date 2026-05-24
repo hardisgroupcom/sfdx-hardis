@@ -610,6 +610,7 @@
   "creatingSfdxProject2": "sfdx-project aanmaken...",
   "creatingStaticResourceMetadata": "Metadata voor Static Resource {{resName}} aanmaken.",
   "creatingVisualforcePageMetadata": "Metadata voor Visualforce-pagina {{resName}} aanmaken.",
+  "credentialFallbackToLegacy": "Kan inloggegevens voor {{org}} niet ophalen met `sf org auth show-{{kind}}`. Terugvallen op het verouderde commando `sf org display --verbose` met SF_TEMP_SHOW_SECRETS=true. Dit is een tijdelijke tussenoplossing; werk de Salesforce CLI bij wanneer mogelijk. Zie {{url}}",
   "csvLogFileInitialized": "CSV-logbestand geïnitialiseerd: {{logFile}}",
   "customDataCloudSqlQuery": "Aangepaste Data Cloud SQL-query",
   "customQuery": "Aangepaste query",

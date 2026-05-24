@@ -609,6 +609,7 @@
   "creatingSfdxProject2": "sfdx-project wird erstellt...",
   "creatingStaticResourceMetadata": "Static Resource {{resName}}-Metadaten werden erstellt.",
   "creatingVisualforcePageMetadata": "Visualforce-Seite {{resName}}-Metadaten werden erstellt.",
+  "credentialFallbackToLegacy": "Anmeldedaten für {{org}} konnten mit `sf org auth show-{{kind}}` nicht abgerufen werden. Wechsel zum Legacy-Befehl `sf org display --verbose` mit SF_TEMP_SHOW_SECRETS=true. Dies ist eine temporäre Übergangslösung; bitte aktualisieren Sie die Salesforce CLI, sobald möglich. Siehe {{url}}",
   "csvLogFileInitialized": "CSV-Protokolldatei initialisiert: {{logFile}}",
   "customDataCloudSqlQuery": "Benutzerdefinierte Data Cloud SQL-Abfrage",
   "customQuery": "Benutzerdefinierte Abfrage",

@@ -610,6 +610,7 @@
   "creatingSfdxProject2": "Creating sfdx-project...",
   "creatingStaticResourceMetadata": "Creating Static Resource {{resName}} metadata.",
   "creatingVisualforcePageMetadata": "Creating Visualforce page {{resName}} metadata.",
+  "credentialFallbackToLegacy": "Unable to retrieve credential for {{org}} using `sf org auth show-{{kind}}`. Falling back to legacy `sf org display --verbose` with SF_TEMP_SHOW_SECRETS=true. This is a temporary workaround; please upgrade Salesforce CLI when possible. See {{url}}",
   "csvLogFileInitialized": "CSV log file initialized: {{logFile}}",
   "customDataCloudSqlQuery": "Custom Data Cloud SQL query",
   "customQuery": "Custom Query",

@@ -4,6 +4,7 @@
 
 - Prepare for the Salesforce CLI credential redaction effective 2026-05-27.
   - [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/), [hardis:org:multi-org-query](https://sfdx-hardis.cloudity.com/hardis/org/multi-org-query/), and the `TECHNICAL_ORG` connection now retrieve credentials via `sf org auth show-access-token` and `sf org auth show-sfdx-auth-url` instead of parsing `sf org display --verbose`.
+  - Automatic fallback: if the new `sf org auth show-*` commands are unavailable (older Salesforce CLI) or also return redacted values, sfdx-hardis transparently falls back to `sf org display --verbose` with `SF_TEMP_SHOW_SECRETS=true`, logs a warning, and points to https://github.com/forcedotcom/cli/issues/3560.
   - Documentation and CI variable retrieval instructions updated to recommend `sf org auth show-sfdx-auth-url --target-org <alias> --no-prompt --json`.
 - [hardis:project:skills:import](https://sfdx-hardis.cloudity.com/hardis/project/skills/import/): Support a main Claude Code skills repo plus complementary add-on repos.
   - New `--addon` boolean flag.

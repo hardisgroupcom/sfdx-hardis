@@ -608,6 +608,7 @@
   "creatingSfdxProject2": "sfdx-project を作成しています...",
   "creatingStaticResourceMetadata": "静的リソース {{resName}} のメタデータを作成しています。",
   "creatingVisualforcePageMetadata": "Visualforce ページ {{resName}} のメタデータを作成しています。",
+  "credentialFallbackToLegacy": "{{org}} の認証情報を `sf org auth show-{{kind}}` で取得できませんでした。SF_TEMP_SHOW_SECRETS=true を指定した従来の `sf org display --verbose` にフォールバックします。これは一時的な回避策です。可能な限り早く Salesforce CLI をアップグレードしてください。詳細: {{url}}",
   "csvLogFileInitialized": "CSV ログファイルが初期化されました: {{logFile}}",
   "customDataCloudSqlQuery": "カスタム Data Cloud SQL クエリ",
   "customQuery": "カスタムクエリ",

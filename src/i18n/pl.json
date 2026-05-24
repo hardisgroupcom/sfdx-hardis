@@ -610,6 +610,7 @@
   "creatingSfdxProject2": "Tworzenie sfdx-project...",
   "creatingStaticResourceMetadata": "Tworzenie metadanych Static Resource {{resName}}.",
   "creatingVisualforcePageMetadata": "Tworzenie metadanych strony Visualforce {{resName}}.",
+  "credentialFallbackToLegacy": "Nie można pobrać poświadczeń dla {{org}} za pomocą `sf org auth show-{{kind}}`. Przełączanie na starsze polecenie `sf org display --verbose` z SF_TEMP_SHOW_SECRETS=true. To jest tymczasowe obejście; zaktualizuj Salesforce CLI, gdy będzie to możliwe. Zobacz {{url}}",
   "csvLogFileInitialized": "Plik dziennika CSV zainicjalizowany: {{logFile}}",
   "customDataCloudSqlQuery": "Niestandardowe zapytanie SQL Data Cloud",
   "customQuery": "Niestandardowe zapytanie",

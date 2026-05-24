@@ -610,6 +610,7 @@
   "creatingSfdxProject2": "Creando sfdx-project...",
   "creatingStaticResourceMetadata": "Creando metadatos de Static Resource {{resName}}.",
   "creatingVisualforcePageMetadata": "Creando metadatos de Visualforce Page {{resName}}.",
+  "credentialFallbackToLegacy": "No se han podido recuperar las credenciales para {{org}} con `sf org auth show-{{kind}}`. Se utiliza el comando heredado `sf org display --verbose` con SF_TEMP_SHOW_SECRETS=true. Esta es una solución temporal; actualice la Salesforce CLI cuando sea posible. Consulte {{url}}",
   "csvLogFileInitialized": "Archivo de registro CSV inicializado: {{logFile}}",
   "customDataCloudSqlQuery": "Consulta SQL personalizada de Data Cloud",
   "customQuery": "Consulta personalizada",
