@@ -32,6 +32,8 @@ There are many ways to do DevOps with Salesforce. Each has its advantages and li
 
 Every persona can be autonomous in their tasks: Admins, Developers, Release Managers and even Project Leaders.
 
+![](assets/images/pipeline-4-persona.png)
+
 | Role                 | How they use sfdx-hardis                                                                                                                                            |
 |----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Admins**           | [Build their pull requests](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/) using the **VS Code extension** with clicks. No command line required. |
@@ -41,7 +43,7 @@ Every persona can be autonomous in their tasks: Admins, Developers, Release Mana
 
 ### Because it is compliant with your tools
 
-![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
+![](assets/images/slide-technical-stack.png)
 
 There are no "sfdx-hardis" servers anywhere. Everything runs in your own secured environment: your Git platform, your CI/CD runner, and your local VS Code or Salesforce Code Builder.
 
