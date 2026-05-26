@@ -72,6 +72,14 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     icon: "utility:lock",
   },
   {
+    key: "MFA_CONFIG",
+    command: "sf hardis:org:diagnose:mfa",
+    frequency: "weekly",
+    notificationTypes: ["MFA_CONFIG"],
+    category: "apexTestsSecurity",
+    icon: "utility:shield",
+  },
+  {
     key: "DEPLOYMENTS",
     command: "sf hardis:org:diagnose:deployments --period weekly",
     frequency: "daily",

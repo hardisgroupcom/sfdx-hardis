@@ -7,7 +7,7 @@ import { UtilsNotifs } from "./utils.js";
 import { convertMarkdownToHtml } from "./markdownToHtml.js";
 import { convertMarkdownToPlainText } from "./markdownToPlainText.js";
 import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
-import { EmailMessage, sendEmail } from "../utils/emailUtils.js";
+import { EmailMessage, extractEmailSoapErrors, getEmailErrorAdviceKeys, sendEmail } from "../utils/emailUtils.js";
 import { getEffectiveNotificationConfig, getEmailRecipientsConfig } from "./notificationConfig.js";
 import { t } from "../utils/i18n.js";
 
@@ -120,9 +120,23 @@ export class EmailProvider extends NotifProviderRoot {
     };
     const emailRes = await sendEmail(emailMessage);
     if (emailRes?.success) {
-      uxLog("action", this, c.cyan(`[EmailProvider] Sent email to ${emailAddresses.join(",")}`));
+      uxLog("log", this, c.cyan(`[EmailProvider] Sent email to ${emailAddresses.join(",")}`));
     } else {
       uxLog("warning", this, c.yellow(`[EmailProvider] Error while sending email to ${emailAddresses.join(",")}`));
+      /* Parse the SOAP envelope, surface a concise statusCode + message line per error, then a remediation block */
+      const parsedErrors = extractEmailSoapErrors(emailRes?.detail);
+      for (const err of parsedErrors) {
+        uxLog(
+          "warning",
+          this,
+          c.yellow(`[EmailProvider] ${err.statusCode || "ERROR"}: ${err.message || "(no message)"}`),
+        );
+      }
+      const adviceKeys = getEmailErrorAdviceKeys(parsedErrors);
+      for (const key of adviceKeys) {
+        uxLog("warning", this, c.cyan(`[EmailProvider] ${t(key)}`));
+      }
+      /* Always keep the raw SOAP detail at log level for diagnostics */
       uxLog("log", this, c.grey(JSON.stringify(emailRes?.detail, null, 2)));
     }
     return;

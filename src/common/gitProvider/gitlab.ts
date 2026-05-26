@@ -105,10 +105,13 @@ export class GitlabProvider extends GitProviderRoot {
         }
         uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderJenkinsMapping", { provider: "GitLab" })));
       }
-      uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderSuccess", {
-        provider: "GitLab",
-        details: `server=${process.env.CI_SERVER_URL}, project=${process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH || "unknown"}`,
-      })));
+      /* Only log the success summary when Jenkins is involved - on native CI providers this is just noise */
+      if (isJenkins()) {
+        uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderSuccess", {
+          provider: "GitLab",
+          details: `server=${process.env.CI_SERVER_URL}, project=${process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH || "unknown"}`,
+        })));
+      }
     } catch (e) {
       uxLog("warning", GitlabProvider, c.yellow("[GitLab] " + t("autoDetectProviderFailed", { provider: "GitLab", message: (e as Error).message })));
     }

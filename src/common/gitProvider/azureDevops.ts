@@ -103,10 +103,13 @@ export class AzureDevopsProvider extends GitProviderRoot {
         }
         uxLog("log", AzureDevopsProvider, c.grey("[Azure DevOps] " + t("autoDetectProviderJenkinsMapping", { provider: "Azure DevOps" })));
       }
-      uxLog("log", AzureDevopsProvider, c.grey("[Azure DevOps] " + t("autoDetectProviderSuccess", {
-        provider: "Azure DevOps",
-        details: `server=${process.env.SYSTEM_COLLECTIONURI}, project=${process.env.SYSTEM_TEAMPROJECT || "unknown"}`,
-      })));
+      /* Only log the success summary when Jenkins is involved - on native CI providers this is just noise */
+      if (isJenkins()) {
+        uxLog("log", AzureDevopsProvider, c.grey("[Azure DevOps] " + t("autoDetectProviderSuccess", {
+          provider: "Azure DevOps",
+          details: `server=${process.env.SYSTEM_COLLECTIONURI}, project=${process.env.SYSTEM_TEAMPROJECT || "unknown"}`,
+        })));
+      }
     } catch (e) {
       uxLog("warning", AzureDevopsProvider, c.yellow("[Azure DevOps] " + t("autoDetectProviderFailed", { provider: "Azure DevOps", message: (e as Error).message })));
     }

@@ -206,6 +206,8 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)                                     | Fix `.invalid` email suffixes on sandbox users so they can log in                   |
 | [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                                                       | Freeze user logins (temporarily suspend access without deactivating)                |
 | [**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)                                                   | Unfreeze previously frozen users to restore their access                            |
+| [**hardis:org:user:unlink-security-key**](hardis/org/user/unlink-security-key.md)                             | Disconnect U2F / MFA registrations from users via automated Salesforce Setup        |
+| [**hardis:org:diagnose:mfa**](hardis/org/diagnose/mfa.md)                                                     | Audit MFA configuration gaps (enforcement, bypass perms, privileged users, SSO)     |
 
 ### Metadata Utils
 

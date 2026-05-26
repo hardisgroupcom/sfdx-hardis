@@ -28,21 +28,26 @@ Read `.claude/rules/` for coding conventions, i18n rules, and translation rules 
 4. **Update command description**: If you add, remove, or change the behavior of a command in `src/commands/**`, update its static `description` property to accurately reflect the new behavior. Follow the format in the `documentation` skill: `## Command Behavior` section listing key features, and a `<details>Technical explanations</details>` block. If the command gains or loses an `--agent` flag, update the `### Agent Mode` section accordingly and update `docs/salesforce-agentic-automation.md`.
 5. **Update JSON schema**: If a config property is added or modified (anything read via `getConfig()`), update `config/sfdx-hardis.jsonschema.json` to match. Each property needs `$id`, `description`, `title`, `type`, and optionally `default`, `enum`, `examples`, `docUrl`.
 6. **Verify patterns**: Ensure new code matches existing patterns in the codebase.
-7. **Update CHANGELOG.md**: Add a bullet point under the `## [beta] (master)` section describing the change. The changelog is read by **end users** (Salesforce admins, developers, release managers) - it must be easy to scan and easy to understand. Follow the existing style:
-   - Write for **end users**, not developers. Describe what changed from the user's perspective - what they can now do, what was fixed, what behaves differently.
-   - Omit implementation details: no class names, internal method names, hook names, i18n keys, TypeScript types, or file paths unless they are user-visible config keys or flag names.
-   - If a new command was added, include a link: `[hardis:topic:action](https://sfdx-hardis.cloudity.com/hardis/topic/action/)`.
-   - If an existing command was modified, reference it the same way.
-   - **Favor scannability over prose.** Keep the headline of each entry to one short sentence stating what changed. If the change has multiple user-visible aspects (new flag, new env var, new behavior, migration note, follow-up steps, etc.), break them out as **indented sub-bullets** under the headline rather than chaining everything into a long sentence.
-   - Avoid run-on sentences linked by commas, semicolons, or repeated "and". If you find yourself writing "X, and Y, and Z" or "A; B; C", split into sub-bullets.
-   - Each bullet (top-level or nested) should fit on one screen line when possible. A reader skimming the changelog should be able to grasp the scope of each entry at a glance.
-   - Example of a multi-aspect entry:
+7. **Update CHANGELOG.md**: Add a bullet under `## [beta] (master)`. **Be radically concise: announce the feature in ONE short line per entry, nothing more.** Readers who want details click the command's doc URL.
+   - **One line per entry.** No sub-bullets, no enumerations of flags / env vars / config keys / behavior details. Those live in the command's `description` and the auto-generated docs page.
+   - Write for **end users**, not developers. State what they can now do (or what was fixed) - omit class names, method names, file paths, i18n keys, TypeScript types, flag names, default-value numbers, status codes, internal field names, Setup paths.
+   - If a new command was added, include a link: `[hardis:topic:action](https://sfdx-hardis.cloudity.com/hardis/topic/action/)`. If an existing command was modified, reference it the same way.
+   - Avoid run-on sentences. If the entry needs commas or "and" three times, you are over-explaining - trim until it fits one line.
+   - Example - good:
      ```
-     - [hardis:topic:action](https://sfdx-hardis.cloudity.com/hardis/topic/action/): One-line summary of what changed.
-       - New `--my-flag` flag to do X.
-       - New `MY_ENV_VAR` environment variable to configure Y.
-       - Behavior Z now defaults to W instead of V.
+     - New [hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa/): Audit MFA configuration and prepare for Salesforce's July 1 2026 phishing-resistant MFA enforcement.
      ```
+   - Example - too verbose (do NOT do this):
+     ```
+     - New [hardis:org:diagnose:mfa](...): Audit MFA.
+       - Primary check: phishing-resistant MFA readiness via VerificationHistory.
+       - Five additional checks: org-wide MFA enforcement, ...
+       - New `--lookback-days`, `--ignore-users`, `--privileged-permissions` flags.
+       - New `monitoringMfaIgnoreUsers` config key.
+       - Wired into monitor:all at weekly frequency.
+     ```
+     All the bullets above belong in the command's `description` and the docs page, not the changelog.
+   - Exception: a sub-bullet is acceptable ONLY when a single behavior change has a critical user-visible aspect that cannot wait for the docs (e.g. a breaking migration, a required follow-up action). Default to no sub-bullets.
 
 Continue iterating until all changes from the design are implemented. Do not stop to ask whether to continue.
 

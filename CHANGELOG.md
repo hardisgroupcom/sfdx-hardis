@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+- New [hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa/): Audit MFA configuration and prepare for Salesforce's July 1 2026 phishing-resistant MFA enforcement.
+- New [hardis:org:user:unlink-security-key](https://sfdx-hardis.cloudity.com/hardis/org/user/unlink-security-key/): Disconnect lost or compromised MFA registrations from users.
+- Email notifications now print actionable fix steps when Salesforce rejects an outgoing email.
+
 ## [7.15.0] 2026-05-24
 
 - Prepare for the Salesforce CLI credential redaction effective 2026-05-27.

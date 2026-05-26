@@ -25,6 +25,7 @@
         "LICENSES",
         "LINT_ACCESS",
         "METADATA_STATUS",
+        "MFA_CONFIG",
         "MINIMAL_PERMSETS",
         "MISSING_ATTRIBUTES",
         "MONITORING_SUMMARY",
@@ -64,6 +65,7 @@
         "Licenses",
         "Lint Access",
         "Metadata Status",
+        "MFA Configuration",
         "Minimal Permission Sets",
         "Missing Attributes",
         "Monitoring Summary",
@@ -98,6 +100,7 @@
         "LICENSES",
         "LINT_ACCESS",
         "METADATA_STATUS",
+        "MFA_CONFIG",
         "MINIMAL_PERMSETS",
         "MISSING_ATTRIBUTES",
         "ORG_HEALTH_CHECK",
@@ -126,6 +129,7 @@
         "Licenses",
         "Lint Access",
         "Metadata Status",
+        "MFA Configuration",
         "Minimal Permission Sets",
         "Missing Attributes",
         "Org Health Check",
@@ -2124,6 +2128,37 @@
       },
       "title": "Monitoring usernames to exclude",
       "type": "array"
+    },
+    "monitoringMfaIgnoreUsers": {
+      "$id": "#/properties/monitoringMfaIgnoreUsers",
+      "description": "List of usernames to exclude from hardis:org:diagnose:mfa checks (e.g. integration accounts, break-glass admins). Also settable via env var MONITORING_MFA_IGNORE_USERS (comma-separated).",
+      "examples": [
+        [
+          "integration@myorg.com",
+          "break-glass@myorg.com"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "MFA diagnose - ignored usernames",
+      "type": "array"
+    },
+    "monitoringMfaLoginHistoryLookbackDays": {
+      "$id": "#/properties/monitoringMfaLoginHistoryLookbackDays",
+      "default": 30,
+      "description": "Number of days back the hardis:org:diagnose:mfa command scans LoginHistory for non-MFA direct UI logins.",
+      "examples": [30, 60],
+      "title": "MFA diagnose - LoginHistory lookback (days)",
+      "type": "number"
+    },
+    "monitoringMfaPhishingResistantLookbackDays": {
+      "$id": "#/properties/monitoringMfaPhishingResistantLookbackDays",
+      "default": 180,
+      "description": "Number of days back the hardis:org:diagnose:mfa command scans VerificationHistory for phishing-resistant MFA registration / usage per privileged user. The Salesforce July 1 2026 enforcement requires Sys Admin / ModifyAllData / ViewAllData / CustomizeApplication / AuthorApex users to have a security key (U2F / WebAuthn / built-in authenticator) registered.",
+      "examples": [90, 180, 365],
+      "title": "MFA diagnose - VerificationHistory lookback (days)",
+      "type": "number"
     },
     "monitoringUnsecureConnectedAppsIgnore": {
       "$id": "#/properties/monitoringUnsecureConnectedAppsIgnore",
