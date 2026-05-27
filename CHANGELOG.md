@@ -2,6 +2,9 @@
 
 ## [beta] (main)
 
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): More engaging intro on the generated documentation home page.
+- Refreshed the [Salesforce Project Documentation](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/) landing page.
+
 ## [7.15.0] 2026-05-24
 
 - Prepare for the Salesforce CLI credential redaction effective 2026-05-27.
@@ -39,6 +42,7 @@
 ## [7.14.0] 2026-05-17
 
 - Features
+
   - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): Override individual monitoring command fields without restating the full entry, set frequency (`daily | weekly | biweekly | monthly | off`), and configure per-channel notification thresholds including dedicated email recipients per notification type.
   - [hardis:config:monitoring-defaults](https://sfdx-hardis.cloudity.com/hardis/config/monitoring-defaults/): New command returning the built-in monitoring and notification defaults, used by configuration UIs such as the VS Code sfdx-hardis extension. The payload now groups each entry under a translated category (Org Activity, User Activity, Apex Tests & Security, Org Info, Technical Debt, Licenses & Packages, Other) so configuration UIs can render notification types as sections, and startup is faster because the WebSocket client is no longer initialized for this CLI-only command.
   - Configuration: New `manualActionsMode` and `orgAuthenticationMode` options to suppress irrelevant pipeline-view warnings in the VS Code extension.
@@ -47,11 +51,13 @@
   - CI/CD authentication: support bring-your-own CA-signed certificate (issue [#1900](https://github.com/hardisgroupcom/sfdx-hardis/issues/1900)).
 
 - Fixes
+
   - [hardis:auth:login](https://sfdx-hardis.cloudity.com/hardis/auth/login/) / [hardis:org:connect](https://sfdx-hardis.cloudity.com/hardis/org/connect/): Fix silent failure when the browser window is closed or the login times out during web authentication.
   - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): When `manualActionsMode` is `sfdxHardis`, open the DevOps Pipeline panel in VS Code directly instead of showing a missing manual actions file warning.
   - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): Fix checkout failure when the parent branch has no upstream tracking.
 
 - Performance
+
   - [hardis:config:get](https://sfdx-hardis.cloudity.com/hardis/config/get/) and [hardis:cache:clear](https://sfdx-hardis.cloudity.com/hardis/cache/clear/): Faster startup - WebSocket client is no longer initialized for these CLI-only commands.
 
 - CI
@@ -61,9 +67,11 @@
 ## [7.13.0] 2026-05-10
 
 - New command
+
   - [hardis:org:configure:generic-prompt](https://sfdx-hardis.cloudity.com/hardis/org/configure/generic-prompt/): Deploys the `SfdxHardisGenericPrompt` GenAiPromptTemplate metadata to a Salesforce org and optionally assigns the `EinsteinGPTPromptTemplateUser` Permission Set to the current user, enabling AI prompt integration via Agentforce.
 
 - DevOps
+
   - Send deployment notifications even when no metadata deployed after merge (ex: automated actions associated to the PR)
   - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): When a deployment (or deployment check) is successful but `package.xml` is empty, the PR comment now renders as a successful deployment with a "No metadata to deploy" message instead of an empty body.
   - [hardis:work:backpromote](https://sfdx-hardis.cloudity.com/hardis/work/backpromote/) enhancements
@@ -91,26 +99,31 @@
 ## [7.12.0] 2026-05-04
 
 - New commands
+
   - [hardis:work:backpromote](https://sfdx-hardis.cloudity.com/hardis/work/backpromote/) (Beta) - backpromotes changes from a parent branch (e.g. integration) to a developer's feature branch and deploys them to their dev sandbox. Lists merged PRs with commits, computes metadata delta via sfdx-git-delta, detects org conflicts with Excel + PDF diff reports, handles deployment actions with LoginAs support, and tracks backpromote state for incremental runs. Deprecates `hardis:work:refresh`.
   - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/) - generates release notes from git tags, pull requests, tickets, metadata changes (via sfdx-git-delta), and deployment actions. Supports prepare (preview) and post (document) modes. Outputs markdown + PDF + multi-tab XLSX into a dedicated subfolder with `package.xml` and `destructiveChanges.xml`. Bidirectional PR/ticket cross-references, contributor list, AI-powered summary, and Slack/Teams/Email notifications for production releases.
   - [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/) - generates a DORA metrics report (Deployment Frequency, Lead Time, Change Failure Rate, MTTR, Rework Rate) from Tooling API deployments, Git provider PRs, and ticket references. Outputs markdown with Mermaid diagrams, CSV export, and notifications. Classifies metrics against industry benchmarks (Elite/High/Medium/Low).
   - [hardis:packagexml:remove-managed](https://sfdx-hardis.cloudity.com/hardis/packagexml/remove-managed/) - strips all managed-package items from a `package.xml` while preserving custom metadata built on top of managed objects (e.g. a custom field on `SBQQ__Quote__c` is kept, `SBQQ__Quote__c.SBQQ__Status__c` is removed). Namespaces are resolved automatically from `InstalledPackage` entries or API name patterns, or supplied explicitly via `--namespaces`. Detection strategy selectable with `--namespace-detection` (`api-name` default, or `installed-packages`).
 
 - Deployment & project
+
   - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Handle strings with wildcards in package-no-overwrite.xml (ex: `<member>*__dlm`)
   - [hardis:project:create](https://sfdx-hardis.cloudity.com/hardis/project/create/): Clean manifest/package.xml after creation. Add CLI flags and behaviors for Agent mode.
   - [hardis:project:clean:standarditems](https://sfdx-hardis.cloudity.com/hardis/project/clean/standarditems/): Improved logging and automatic removal of standard application files during cleanup.
   - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): Add **retrofit** value for default branch prefixes choices.
 
 - Utilities
+
   - [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): Optimize user path to improve performance
 
 - CI/CD pipelines
+
   - Jenkins CI/CD pipeline (`defaults/ci/Jenkinsfile`): refactored to use a single top-level Docker agent, scoped `withCredentials()` blocks per stage (no global `environment` credentials), parallel MegaLinter + Validation on PRs, fixed `branch` condition syntax, added `options` and `post` cleanup blocks, and comprehensive setup comments. Updated [Jenkins CI/CD documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jenkins/).
   - Jenkins CI support for Monitoring: added a ready-to-use `Jenkinsfile` template in `defaults/monitoring/` and a new [Jenkins configuration documentation page](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-jenkins/).
   - Add .gitattributes files to CI/CD and Monitoring defaults to ensure consistent line endings across platforms
 
 - VsCode integration
+
   - Allow to identify missing CI/CD variables only from found tokens in ENV vars (Git Providers, Ticketing providers)
 
 - Documentation
