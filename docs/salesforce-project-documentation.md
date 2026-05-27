@@ -11,7 +11,7 @@ Turn your Salesforce project into a **beautiful, searchable documentation websit
 
 ![Documentation site preview](assets/images/Screenshot-doc-flow.png)
 
-> Activate [**AI integration**](salesforce-ai-setup.md) to supercharge your docs with natural-language explanations and visual Flow diff history.
+> Activate [**AI integration**](salesforce-ai-setup.md) to add natural-language explanations and visual Flow diff history to your docs.
 
 ---
 

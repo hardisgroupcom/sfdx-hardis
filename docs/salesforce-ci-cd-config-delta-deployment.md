@@ -57,7 +57,7 @@ Sometimes, using pure delta deployment is not enough: for example, if you delete
 
 [Stepan Stepanov](https://www.linkedin.com/in/stepan-stepanov-79a48734/) implemented a smart way to handle that with sfdx-hardis: Delta with dependencies.
 
-Delta with dependencies mode leverages a set of processors defined in `src/common/utils/deltaUtils.ts` to automatically detect and include related metadata dependencies in your deployment package. These processors analyze changes and ensure that dependent components are also deployed, reducing the risk of deployment failures due to missing references.
+Delta with dependencies mode uses a set of processors defined in `src/common/utils/deltaUtils.ts` to automatically detect and include related metadata dependencies in your deployment package. These processors analyze changes and ensure dependent components are also deployed, reducing the risk of deployment failures due to missing references.
 
 **List of supported dependency processors:**
 

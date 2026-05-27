@@ -1,90 +1,128 @@
 ---
 title: How to monitor your Salesforce Org
-description: Free Salesforce Metadata BackUp , plus many extra monitoring features like Grafana Dashboards
+description: Free Salesforce Metadata BackUp, plus many extra monitoring features like Grafana Dashboards
 ---
+
 <!-- markdownlint-disable MD013 -->
 
-- [Monitor your Salesforce org with sfdx-hardis](#monitor-your-salesforce-org-with-sfdx-hardis)
-- [How does it work ?](#how-does-it-work)
-- [All Monitoring Commands](#all-monitoring-commands)
-- [Dreamforce 24 presentation](#dreamforce-24-presentation)
+## Salesforce Org Monitoring
 
-## Monitor your Salesforce org with sfdx-hardis
+Keep a **daily, version-tracked backup** of every metadata in your Salesforce orgs, with **before/after diffs**, **quality and security checks**, and **notifications** routed where your team actually reads them.
 
-> This feature worked yesterday in production, but today it crashes, what happened ?
+![Monitoring configuration preview](assets/images/monitoring-config-2026.gif)
 
-![](assets/images/monitoring-config-2026.gif)
+> "This feature worked yesterday in production, but today it crashes. What happened?"
+> Sfdx-hardis Monitoring answers that question in seconds.
 
-Salesforce provide **Audit Trail** to trace configuration updates in **production** or **sandbox** orgs.
+---
 
-You can **know who updated what**, but not with details (before / after).
+## Why monitor your orgs?
 
-Sfdx-hardis monitoring provides a simple way to **Backup your orgs metadatas everyday**, or even several times a day, and provides an **exact and detailed comparison with the previous metadata configuration** (using git commits comparison)
+- **See exactly what changed**: Salesforce Audit Trail tells you who updated what, but not the before/after. A git-based metadata backup gives you the full picture.
+- **Catch problems early**: failing Apex tests, security issues, deprecated API calls, org limits, overdue Release Updates are all surfaced automatically.
+- **Stay admin-friendly**: works on any API-enabled org. No CI/CD project required.
+- **Route the right signal to the right channel**: stream everything to Grafana while keeping Slack and Teams reserved for warnings and errors only.
 
-Extra indicators are also available out of the box, like:
+---
 
-- Run **apex tests** (and soon flow tests)
-- Analyze the **quality and the security of your metadatas** with [MegaLinter](https://megalinter.io/latest/)
-- Checking org limits
-- Be warned of release updates
-- Check if you have [**deprecated api versions called**](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
-- **Custom command lines** that you can [define in `.sfdx-hardis.yml`](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/)
+## What gets monitored
 
-You don't need to work in CI/CD to use Monitoring, it is **compliant with any API enabled org** :)
+**Configuration changes**
 
-Installation and usage are **admin-friendly**, and **notifications** can be routed independently to:
+- Daily metadata backup with full git history
+- Detection of suspect setup actions in Audit Trail
+- Visual diff of every change between two backups
 
-- **Messaging channels** -- [Slack](salesforce-ci-cd-setup-integration-slack.md) and [Microsoft Teams](salesforce-ci-cd-setup-integration-ms-teams.md)
-- **Email** -- [any recipient list](salesforce-ci-cd-setup-integration-email.md), with per-notification-type overrides
-- **API / Grafana / Prometheus** -- [external endpoints](salesforce-ci-cd-setup-integration-api.md) for dashboards (e.g. Grafana Loki, Prometheus)
+**Quality and security**
 
-Each notification type (audit trail, org limits, apex tests, ...) can be configured per channel with its own severity threshold, so you can stream everything to Grafana while keeping Slack/Teams reserved for warnings and errors only. The configuration is fully editable from the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) or directly in `.sfdx-hardis.yml`.
+- Apex tests (and soon Flow tests)
+- Code quality and security analysis with [MegaLinter](https://megalinter.io/latest/)
+- Salesforce Security Health Check
+- Unsecured Connected Apps
 
-_Example of visualization in Grafana_
+**Org health**
 
-![](assets/images/grafana-screenshot.jpg)
+- Org limits and Apex flex queue backlog
+- Apex and Flow runtime errors
+- Calls to [deprecated API versions](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
+- Metadata deployments and validations
+- Next major Salesforce upgrade date and incoming Release Updates
 
-![](assets/images/grafana-screenshot-1.jpg)
+**Users and licenses**
 
-![](assets/images/grafana-screenshot-2.png)
+- License usage and unused permission set licenses
+- Active users without recent logins
+- Underused or minimal permission sets
 
-_Example notifications with Slack_
+**Unused metadata**
 
-![](assets/images/screenshot-slack-monitoring.jpg)
+- Custom labels, custom permissions, Apex classes, Connected Apps, inactive metadata
+- Missing descriptions on custom fields
+- Custom elements with no access rights in any permission set
 
-_Example of a monitoring git repository_
+**Custom checks**
 
-![](assets/images/screenshot-monitoring-git.jpg)
+- Your own [custom command lines](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/) defined in `.sfdx-hardis.yml`
 
-## How does it work ?
+---
 
-Every night (or even more frequently, according to your schedule), a CI job will be triggered.
+## A look inside
 
-It will **extract all the metadatas of your org**, then push a **new commit in the monitoring repository** in case there are updates since the latest metadata backup.
+Browse the **monitoring git repository** to see every metadata change, commit by commit.
 
-![](assets/images/monitoring-architecture.jpg)
+![Monitoring git repository](assets/images/screenshot-monitoring-git.jpg)
 
-_Example workflow with GitHub actions_
+Inspect diffs with **GitLens** to see exactly what was added, removed, or modified.
 
-![](assets/images/screenshot-monitoring-jobs.jpg)
+![Diff visualization with GitLens](assets/images/screenshot-monitoring-backup.jpg)
 
-_Example diff visualization with GitLens_
+Build dashboards in **Grafana** to track trends across all your orgs.
 
-![](assets/images/screenshot-monitoring-backup.jpg)
+![Grafana monitoring dashboard](assets/images/grafana-screenshot.jpg)
 
-The **list of updated metadatas** will be sent via notification to a **Slack and/or Microsoft Teams channel**.
+![Grafana monitoring dashboard, second view](assets/images/grafana-screenshot-1.jpg)
 
-After the metadata backup, other jobs will be triggered (Apex tests, Code Quality, Legacy API checks + your own commands), and their results will be stored in job artifacts and sent via notifications.
+![Grafana monitoring dashboard, third view](assets/images/grafana-screenshot-2.png)
 
-Are you ready ? [Configure the monitoring on your orgs](salesforce-monitoring-config-home.md) !
+Get **Slack** or **Teams** notifications when something needs attention.
 
-## All Monitoring Commands
+![Slack notification example](assets/images/screenshot-slack-monitoring.jpg)
 
-The following checks are active out of the box.
+---
 
-In order to avoid to overflow channels of notifications, some commands are run everyday whereas less critical ones are run weekly (on saturday by default).
+## How it works
 
-Each command's cadence is fully customizable per entry in `.sfdx-hardis.yml` via the `monitoringCommands` property. Supported frequencies are `daily`, `weekly`, `biweekly`, `monthly`, and `off`. For `weekly` and `biweekly` you can pick the day with `frequencyDay` (`monday`..`sunday`, default `saturday`). For `monthly` you can pick the day of month with `frequencyDayOfMonth` (`1`..`31`, clamped to the last day of shorter months). Pass `--force-all` to `hardis:org:monitor:all` (or set env var `MONITORING_IGNORE_FREQUENCY=true`) to run every command regardless of its configured frequency. See [Monitoring configuration](salesforce-monitoring-config-home.md#monitoring-commands) for full examples.
+Every night (or on your own schedule), a CI job extracts all metadata from the org and pushes a new commit to the monitoring repository whenever something changed.
+
+![Monitoring architecture](assets/images/monitoring-architecture.jpg)
+
+Additional jobs then run on top of the backup: Apex tests, code quality, legacy API checks, plus any custom command you define. Results are stored as job artifacts and forwarded to your notification channels.
+
+![Example workflow on GitHub Actions](assets/images/screenshot-monitoring-jobs.jpg)
+
+---
+
+## Route notifications anywhere
+
+Each notification type (audit trail, org limits, Apex tests, ...) can be configured **per channel** with its own severity threshold. Configure it from the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) or directly in `.sfdx-hardis.yml`.
+
+- **Messaging channels**: [Slack](salesforce-ci-cd-setup-integration-slack.md) and [Microsoft Teams](salesforce-ci-cd-setup-integration-ms-teams.md)
+- **Email**: [any recipient list](salesforce-ci-cd-setup-integration-email.md), with per-notification-type overrides
+- **API / Grafana / Prometheus**: [external endpoints](salesforce-ci-cd-setup-integration-api.md) for dashboards (e.g. Grafana Loki, Prometheus)
+
+---
+
+## Customize the cadence
+
+Most checks run daily; less critical ones run weekly (Saturday by default) to avoid overflowing your channels.
+
+Every command is configurable in `.sfdx-hardis.yml` via the `monitoringCommands` property. Supported frequencies: `daily`, `weekly`, `biweekly`, `monthly`, `off`. Pick the day with `frequencyDay` (`monday`..`sunday`) or `frequencyDayOfMonth` (`1`..`31`). Pass `--force-all` to `hardis:org:monitor:all` (or set `MONITORING_IGNORE_FREQUENCY=true`) to run everything regardless of cadence.
+
+See [Monitoring configuration](salesforce-monitoring-config-home.md#monitoring-commands) for full examples.
+
+---
+
+## All monitoring commands
 
 | Check                                                                                                                       | Frequency |
 |-----------------------------------------------------------------------------------------------------------------------------|-----------|
@@ -118,12 +156,20 @@ Each command's cadence is fully customizable per entry in `.sfdx-hardis.yml` via
 | [Detect Apex classes and triggers with deprecated API version](salesforce-monitoring-apex-api-version.md)                   | Weekly    |
 | [Detect permission sets with minimal permissions](salesforce-monitoring-minimal-permsets.md)                                | Weekly    |
 
-## Dreamforce 24 presentation
+---
 
-_Watch the [presentation at Dreamforce 24](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH) conference in San Francisco !_
+## Next steps
+
+- [**Configure monitoring on your orgs**](salesforce-monitoring-config-home.md): step-by-step setup guide.
+- [**Pair it with project documentation**](salesforce-project-documentation.md): regenerate docs automatically on every backup.
+- [**Watch the Dreamforce 24 talk**](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH): live demo from San Francisco.
+
+---
+
+## Dreamforce 24 presentation
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/NxiLiYeo11A" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
 
-_or if you like reading, here are the slides !_
+_Prefer reading? Here are the slides:_
 
 <div style="text-align:center"><iframe src="https://www.slideshare.net/slideshow/embed_code/key/jxxBlqw7iup8Gh?hostedIn=slideshare&page=upload" width="476" height="400" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"></iframe></div>

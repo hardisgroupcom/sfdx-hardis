@@ -1,12 +1,12 @@
 ---
 title: Smart Deployment Orchestration
-description: Deep dive into how sfdx-hardis Smart Deploy command orchestrates Salesforce CI/CD deployments
+description: How the sfdx-hardis Smart Deploy command orchestrates Salesforce CI/CD deployments
 ---
 <!-- markdownlint-disable MD013 MD033 -->
 
 # Smart Deployment Orchestration
 
-The command [`sf hardis:project:deploy:smart`](hardis/project/deploy/smart.md) is the central deployment engine of [sfdx-hardis CI/CD](salesforce-ci-cd-home.md). It orchestrates a sophisticated pipeline that handles **[delta deployments](salesforce-ci-cd-config-delta-deployment.md)**, **[Quick Deploy](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_quick_deploy.htm)**, **test class selection**, **[package installation](salesforce-ci-cd-work-on-task-install-packages.md)**, **[overwrite management](salesforce-ci-cd-config-overwrite.md)**, **[pre/post commands](salesforce-ci-cd-work-on-task-deployment-actions.md)**, and **[notifications](salesforce-ci-cd-setup-integrations-home.md)**, all in a single, unified flow.
+The command [`sf hardis:project:deploy:smart`](hardis/project/deploy/smart.md) is the central deployment engine of [sfdx-hardis CI/CD](salesforce-ci-cd-home.md). It orchestrates a pipeline that handles **[delta deployments](salesforce-ci-cd-config-delta-deployment.md)**, **[Quick Deploy](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_quick_deploy.htm)**, **test class selection**, **[package installation](salesforce-ci-cd-work-on-task-install-packages.md)**, **[overwrite management](salesforce-ci-cd-config-overwrite.md)**, **[pre/post commands](salesforce-ci-cd-work-on-task-deployment-actions.md)**, and **[notifications](salesforce-ci-cd-setup-integrations-home.md)** in a single flow.
 
 ---
 

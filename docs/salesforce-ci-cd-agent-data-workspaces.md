@@ -428,7 +428,7 @@ Use `$` syntax: `ParentId$Account`, `WhatId$Opportunity`, `WhoId$Contact`
 When generating an export.json:
 
 1. **Always include** `sfdxHardisLabel` and `sfdxHardisDescription` at the root
-2. **Always set `allOrNone: true`** at the root — partial failures are **not acceptable**. If any record fails, the entire migration must abort. Never omit `allOrNone` or leave it at its default (`false`).
+2. **Always set `allOrNone: true`** at the root - partial failures are **not acceptable**. If any record fails, the entire migration must abort. Never omit `allOrNone` or leave it at its default (`false`).
 3. **Always set** `promptOnMissingParentObjects: false` and `promptOnIssuesInCSVFiles: false` for CI/CD compatibility
 4. **Order objects** so parent objects come before children (e.g. Account before Contact)
 5. **Include Readonly objects** for reference data that must exist but should not be modified (RecordType, User, etc.)
