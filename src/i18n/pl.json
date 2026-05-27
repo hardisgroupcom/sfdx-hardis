@@ -2881,7 +2881,7 @@
   "warningUnableToReplaceJsonInString": "Ostrzeżenie: nie można zastąpić JSON w ciągu znaków:",
   "warningUsersHasNotBeenFrozenBulk": "Ostrzeżenie: {{bold}} użytkowników nie zostało zamrożonych (błędy bulk API)",
   "warningUsersNotUnfrozenBulkApiErrors": "Ostrzeżenie: {{count}} użytkowników nie zostało odmrożonych (błędy bulk API)",
-  "welcomeToDocumentation": "Witaj w dokumentacji Twojego projektu Salesforce.",
+  "welcomeToDocumentation": "Witamy w **żywej dokumentacji** projektu Salesforce, wygenerowanej przez sfdx-hardis.\n\nPoniżej można przeglądać każdy Object, Flow, Profile, klasę Apex i Lightning Page, wzbogacone o diagramy wizualne, wyjaśnienia generowane przez AI oraz historię różnic Flow.",
   "whatAreTargetGitBranchesToMergeIn": "Jakie są docelowe gałęzie git, do których {{branchName}} będzie mógł być scalony? (bardzo często jest to jedna gałąź docelowa do wybrania)",
   "whatAreWeDoingHerePleaseCreate": "Co tu robimy? Utwórz zgłoszenie z następującym tekstem: ",
   "whatIsACommitHelp": "😱 Co to jest commit? Co oznacza pull? Pomocy!",

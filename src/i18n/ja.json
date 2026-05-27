@@ -2878,7 +2878,7 @@
   "warningUnableToReplaceJsonInString": "警告: 文字列内の JSON を置換できません:",
   "warningUsersHasNotBeenFrozenBulk": "警告: {{bold}} 人のユーザーが凍結されませんでした（Bulk API エラー）",
   "warningUsersNotUnfrozenBulkApiErrors": "警告: {{count}} 人のユーザーの凍結が解除されませんでした（Bulk API エラー）",
-  "welcomeToDocumentation": "Salesforce プロジェクトのドキュメントへようこそ。",
+  "welcomeToDocumentation": "Salesforce プロジェクトの**生きたドキュメント**へようこそ。sfdx-hardis によって生成されています。\n\n以下では、すべてのオブジェクト、フロー、プロファイル、Apex クラス、Lightning ページを参照できます。視覚的な図、AI による説明、フローの差分履歴で強化されています。",
   "whatAreTargetGitBranchesToMergeIn": "{{branchName}} が merge できる対象の git branch は何ですか？",
   "whatAreWeDoingHerePleaseCreate": "ここで何が起きているのでしょうか？以下のテキストで Issue を作成してください: ",
   "whatIsACommitHelp": "😱 commit とは何ですか？pull とは何ですか？ヘルプ！",
