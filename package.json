@@ -84,6 +84,7 @@
     "serve-handler": "6.1.7",
     "tar": "7.5.11",
     "tmp": "0.2.6",
+    "mute-stream": "3.0.0",
     "undici": "6.24.1",
     "yauzl": "3.2.1",
     "prebuild-install/tar-fs": "2.1.4",
