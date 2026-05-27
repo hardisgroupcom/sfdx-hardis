@@ -6,10 +6,10 @@ description: Prompt template for PROMPT_MONITORING_SUMMARY
 # PROMPT_MONITORING_SUMMARY
 
 ## Variables
-| Name | Description | Example |
-| :------|:-------------|:---------|
+| Name                   | Description                                                                   | Example                                                     |
+|:-----------------------|:------------------------------------------------------------------------------|:------------------------------------------------------------|
 | **NOTIFICATIONS_JSON** | JSON array of all monitoring notification messages collected during this run. | `[{"type":"ORG_LIMITS","severity":"warning","text":"..."}]` |
-| **ORG_URL** | The Salesforce org instance URL being monitored. | `https://mycompany.my.salesforce.com` |
+| **ORG_URL**            | The Salesforce org instance URL being monitored.                              | `https://mycompany.my.salesforce.com`                       |
 
 ## Prompt
 
