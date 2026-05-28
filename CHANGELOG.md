@@ -4,6 +4,7 @@
 
 - New [hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa/): Audit MFA configuration and prepare for Salesforce's July 1 2026 phishing-resistant MFA enforcement.
 - New [hardis:org:user:unlink-security-key](https://sfdx-hardis.cloudity.com/hardis/org/user/unlink-security-key/): Disconnect lost or compromised MFA registrations from users.
+- Fix: in CI mode, an explicit `--target-org` on the command line is now respected instead of being overridden by the current git branch name.
 - Email notifications now print actionable fix steps when Salesforce rejects an outgoing email.
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): More engaging intro on the generated documentation home page.
 - Refreshed the [Salesforce Project Documentation](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/) landing page.

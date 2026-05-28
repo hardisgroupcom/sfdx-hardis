@@ -40,6 +40,25 @@ export interface AuthOrgOptions {
 
 // (removed accidental default export)
 
+/* Extract --target-org / --targetusername / -o / -u value from argv.
+   Supports both "--flag value" and "--flag=value" forms. */
+export function extractTargetOrgFromArgv(argv: string[] | undefined): string | null {
+  if (!argv || argv.length === 0) return null;
+  const flagNames = ['--target-org', '--targetusername', '-o', '-u'];
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    for (const flag of flagNames) {
+      if (arg === flag && i + 1 < argv.length) {
+        return argv[i + 1];
+      }
+      if (arg.startsWith(flag + '=')) {
+        return arg.substring(flag.length + 1);
+      }
+    }
+  }
+  return null;
+}
+
 // Authorize an org with sfdxAuthUrl, manually or with JWT
 export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promise<boolean> {
   const isDevHub = orgAlias.includes('DevHub');
