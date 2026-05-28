@@ -4,7 +4,7 @@ import { uxLog } from './index.js';
 import { getChromeExecutablePath } from './orgConfigUtils.js';
 import { t } from './i18n.js';
 
-export type UnlinkMethodKey = 'securityKey' | 'salesforceAuthenticator' | 'totp' | 'tempCode';
+export type UnlinkMethodKey = 'securityKey' | 'salesforceAuthenticator' | 'totp';
 
 export interface UnlinkMethodSpec {
   key: UnlinkMethodKey;
@@ -72,17 +72,6 @@ export const MFA_METHODS: Record<UnlinkMethodKey, UnlinkMethodSpec> = {
     sectionTextMarkers: ['One-Time Password Authenticator', 'TOTP'],
     hrefPatterns: [/removetimebased/i, /removetotp/i, /onetimepassword.*(delete|remove|disconnect)/i],
     labelKey: 'unlinkSecurityKeyMethodLabelTotp',
-  },
-  tempCode: {
-    key: 'tempCode',
-    /*
-     * "Temporary verification code" is localized by Salesforce - the row-marker
-     * strategy only matches in English orgs. Admins on non-English orgs can pass
-     * --text-markers '{"tempCode":["<localized label>"]}' to extend the match.
-     */
-    sectionTextMarkers: ['Temporary verification code'],
-    hrefPatterns: [/tempidentityverification.*expire/i, /tempcode.*(expire|delete|remove)/i],
-    labelKey: 'unlinkSecurityKeyMethodLabelTempCode',
   },
 };
 

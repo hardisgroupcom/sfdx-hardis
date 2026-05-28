@@ -2881,7 +2881,6 @@
   "unlinkSecurityKeyLaunchingBrowser": "Salesforce Setup を介してセキュリティキーを切断するためにブラウザを起動しています...",
   "unlinkSecurityKeyMethodLabelSalesforceAuthenticator": "Salesforce Authenticator",
   "unlinkSecurityKeyMethodLabelSecurityKey": "セキュリティキー (U2F または WebAuthn)",
-  "unlinkSecurityKeyMethodLabelTempCode": "一時的な検証コード",
   "unlinkSecurityKeyMethodLabelTotp": "ワンタイムパスワード認証アプリ (TOTP)",
   "unlinkSecurityKeyMethodNotLinked": "方式 {{method}} はユーザ {{username}} に登録されていません",
   "unlinkSecurityKeyMethodUnlinked": "ユーザ {{username}} の方式 {{method}} を切断しました",

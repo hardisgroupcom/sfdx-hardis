@@ -2884,7 +2884,6 @@
   "unlinkSecurityKeyLaunchingBrowser": "Uruchamianie przegladarki w celu odlaczenia kluczy bezpieczenstwa za posrednictwem Salesforce Setup...",
   "unlinkSecurityKeyMethodLabelSalesforceAuthenticator": "Salesforce Authenticator",
   "unlinkSecurityKeyMethodLabelSecurityKey": "Security Key (U2F lub WebAuthn)",
-  "unlinkSecurityKeyMethodLabelTempCode": "Tymczasowy kod weryfikacyjny",
   "unlinkSecurityKeyMethodLabelTotp": "One-Time Password Authenticator (TOTP)",
   "unlinkSecurityKeyMethodNotLinked": "Metoda {{method}} nie jest zarejestrowana dla uzytkownika {{username}}",
   "unlinkSecurityKeyMethodUnlinked": "Odlaczono metode {{method}} dla uzytkownika {{username}}",

@@ -2884,7 +2884,6 @@
   "unlinkSecurityKeyLaunchingBrowser": "Browser starten om security keys los te koppelen via Salesforce Setup...",
   "unlinkSecurityKeyMethodLabelSalesforceAuthenticator": "Salesforce Authenticator",
   "unlinkSecurityKeyMethodLabelSecurityKey": "Security Key (U2F of WebAuthn)",
-  "unlinkSecurityKeyMethodLabelTempCode": "Tijdelijke verificatiecode",
   "unlinkSecurityKeyMethodLabelTotp": "One-Time Password Authenticator (TOTP)",
   "unlinkSecurityKeyMethodNotLinked": "Methode {{method}} is niet geregistreerd voor gebruiker {{username}}",
   "unlinkSecurityKeyMethodUnlinked": "Methode {{method}} losgekoppeld voor gebruiker {{username}}",

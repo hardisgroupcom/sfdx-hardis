@@ -2883,7 +2883,6 @@
   "unlinkSecurityKeyLaunchingBrowser": "Browser wird gestartet, um Security Keys uber Salesforce Setup zu trennen...",
   "unlinkSecurityKeyMethodLabelSalesforceAuthenticator": "Salesforce Authenticator",
   "unlinkSecurityKeyMethodLabelSecurityKey": "Security Key (U2F oder WebAuthn)",
-  "unlinkSecurityKeyMethodLabelTempCode": "Temporarer Verifizierungscode",
   "unlinkSecurityKeyMethodLabelTotp": "One-Time Password Authenticator (TOTP)",
   "unlinkSecurityKeyMethodNotLinked": "Methode {{method}} ist fur Benutzer {{username}} nicht registriert",
   "unlinkSecurityKeyMethodUnlinked": "Methode {{method}} fur Benutzer {{username}} getrennt",

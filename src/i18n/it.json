@@ -2884,7 +2884,6 @@
   "unlinkSecurityKeyLaunchingBrowser": "Avvio del browser per disconnettere le security key tramite Salesforce Setup...",
   "unlinkSecurityKeyMethodLabelSalesforceAuthenticator": "Salesforce Authenticator",
   "unlinkSecurityKeyMethodLabelSecurityKey": "Security key (U2F o WebAuthn)",
-  "unlinkSecurityKeyMethodLabelTempCode": "Codice di verifica temporaneo",
   "unlinkSecurityKeyMethodLabelTotp": "Autenticatore One-Time Password (TOTP)",
   "unlinkSecurityKeyMethodNotLinked": "Il metodo {{method}} non e registrato per l'utente {{username}}",
   "unlinkSecurityKeyMethodUnlinked": "Metodo {{method}} disconnesso per l'utente {{username}}",
