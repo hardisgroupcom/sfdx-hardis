@@ -2950,7 +2950,7 @@
   "warningUnableToReplaceJsonInString": "Aviso: não foi possível substituir o JSON na string:",
   "warningUsersHasNotBeenFrozenBulk": "Aviso: {{bold}} usuário(s) não foram congelados (erros na API em massa)",
   "warningUsersNotUnfrozenBulkApiErrors": "Aviso: {{count}} usuário(s) não foram descongelados (erros na API em massa)",
-  "welcomeToDocumentation": "Bem-vindo à documentação do seu projeto Salesforce.",
+  "welcomeToDocumentation": "Bem-vindo à **documentação viva** do seu projeto Salesforce, gerada pelo sfdx-hardis.\n\nExplore abaixo cada Object, Flow, Profile, classe Apex e Lightning Page, enriquecidos com diagramas visuais, explicações geradas por IA e histórico de diferenças de Flow.",
   "whatAreTargetGitBranchesToMergeIn": "Quais são as branches git de destino nas quais {{branchName}} poderá mesclar? (geralmente uma única branch de destino a selecionar)",
   "whatAreWeDoingHerePleaseCreate": "O que estamos fazendo aqui? Por favor, crie uma issue com o seguinte texto: ",
   "whatIsACommitHelp": "😱 O que é um commit? O que significa pull? Ajuda!",

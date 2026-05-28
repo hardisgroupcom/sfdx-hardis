@@ -6,7 +6,7 @@ description: How to drive Salesforce DevOps tasks non-interactively with Claude 
 
 # sfdx-hardis with AI Coding Agents
 
-sfdx-hardis is built to work seamlessly with **AI coding agents** such as [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [GitHub Copilot](https://github.com/features/copilot), [Gemini CLI](https://github.com/google-gemini/gemini-cli), [Cursor](https://www.cursor.com/), [OpenAI Codex](https://openai.com/codex), and any other agent that can run shell commands and understands skills.
+sfdx-hardis is built to work with **AI coding agents** such as [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [GitHub Copilot](https://github.com/features/copilot), [Gemini CLI](https://github.com/google-gemini/gemini-cli), [Cursor](https://www.cursor.com/), [OpenAI Codex](https://openai.com/codex), and any other agent that can run shell commands and understands skills.
 
 Over **130 commands** expose an `--agent` flag that switches to a fully **non-interactive, automation-safe** execution mode - no prompts, no blocking, predictable outputs.
 

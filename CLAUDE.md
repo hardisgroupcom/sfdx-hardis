@@ -31,3 +31,19 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 - Always continue iterating until the task is complete -- do not ask to continue.
 - Use git bash for Windows formatting when building commands.
 - **NEVER** use em-dashes (—) in anything you generate. (replace them with simple hyphens)
+
+## Never write like an AI
+
+Applies to all generated text: docs, CHANGELOG entries, commit messages, PR descriptions, command descriptions, code comments, i18n strings, README updates, anything user-facing.
+
+- **No em-dashes (—).** Use a hyphen, comma, colon, or split the sentence.
+- **No AI-tell vocabulary.** Avoid: delve, leverage, harness, unleash, supercharge, empower, elevate, streamline, seamless(ly), robust, comprehensive, cutting-edge, state-of-the-art, in the realm of, navigate (figurative), embark, tapestry, foster, facilitate, utilize (use "use"), holistic, paradigm, synergy, journey (figurative), unlock, transform (figurative), revolutionize, game-changing, deep dive, at the end of the day, it's worth noting that, it's important to note, in today's fast-paced, ever-evolving, landscape.
+- **No filler openers.** Don't start sentences with "Certainly!", "Of course!", "Absolutely!", "Great question!", "Let's dive in".
+- **No hollow closers.** Don't end with "I hope this helps!", "Feel free to ask", "Let me know if you have any questions".
+- **No three-item rhetorical lists** with vague abstract nouns ("efficiency, scalability, and innovation"). Be concrete or drop the list.
+- **No marketing intensifiers** stacked on every noun ("powerful, intuitive, comprehensive solution"). Pick one if any.
+- **No "not just X, but Y"** construction. Just say Y.
+- **No hedging filler** ("it's worth mentioning that", "as you may know", "essentially", "basically", "simply").
+- **Use plain verbs.** "use" not "utilize", "help" not "facilitate", "show" not "showcase", "start" not "kick off", "make" not "craft".
+- **Concrete over abstract.** "Backs up metadata every night and posts the diff to Slack" beats "provides a comprehensive monitoring solution that empowers teams".
+- **Vary sentence length.** AI prose tends to medium-length, evenly-paced sentences. Mix short and long.

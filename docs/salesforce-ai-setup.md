@@ -1,6 +1,6 @@
 ---
 title: Sfdx-hardis AI assistant setup
-description: Learn how to use AI to supercharge sfdx-hardis deployments
+description: Learn how to wire AI into sfdx-hardis deployments
 ---
 
 <!-- markdownlint-disable MD013 -->

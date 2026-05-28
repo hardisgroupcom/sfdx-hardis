@@ -5,7 +5,7 @@ description: Learn how to build community plugins for sfdx-hardis that integrate
 
 # Creating sfdx-hardis Plugins
 
-sfdx-hardis exposes a **Plugin API** that allows community developers to build their own Salesforce CLI plugins that seamlessly integrate with the [sfdx-hardis VS Code extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis).
+sfdx-hardis exposes a **Plugin API** that lets community developers build their own Salesforce CLI plugins that integrate directly with the [sfdx-hardis VS Code extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis).
 
 Your plugin commands will automatically communicate with the VS Code extension using the same WebSocket connection initialized by the main sfdx-hardis CLI - no additional setup required.
 

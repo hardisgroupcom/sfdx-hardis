@@ -11,7 +11,7 @@ description: Learn how to set up Salesforce Deployment Agent
 
 Make sure to have configured your [GitHub](salesforce-ci-cd-setup-integration-github.md), [Gitlab](salesforce-ci-cd-setup-integration-gitlab.md), [Azure Pipelines](salesforce-ci-cd-setup-integration-azure.md) or [BitBucket](salesforce-ci-cd-setup-integration-bitbucket.md) integration so Deployment Agent can post its help in Pull Request comments.
 
-If you want to supercharge Deployment Agent with AI, follow [sfdx-hardis AI setup](salesforce-ai-setup.md).
+If you want to add AI to Deployment Agent, follow [sfdx-hardis AI setup](salesforce-ai-setup.md).
 
 You can also receive [Slack](salesforce-ci-cd-setup-integration-slack.md), [Ms Teams](salesforce-ci-cd-setup-integration-ms-teams.md) and [Email](salesforce-ci-cd-setup-integration-email.md) notifications in case of successful deployment.
 

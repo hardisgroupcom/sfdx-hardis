@@ -2984,7 +2984,7 @@
   "warningUnableToReplaceJsonInString": "Waarschuwing: kan JSON niet vervangen in string:",
   "warningUsersHasNotBeenFrozenBulk": "Waarschuwing: {{bold}} gebruikers zijn niet bevroren (Bulk API-fouten)",
   "warningUsersNotUnfrozenBulkApiErrors": "Waarschuwing: {{count}} gebruikers zijn niet ontdooid (Bulk API-fouten)",
-  "welcomeToDocumentation": "Welkom bij de documentatie van je Salesforce-project.",
+  "welcomeToDocumentation": "Welkom bij de **levende documentatie** van je Salesforce-project, gegenereerd door sfdx-hardis.\n\nBlader hieronder door elke Object, Flow, Profile, Apex-klasse en Lightning Page, verrijkt met visuele diagrammen, AI-gegenereerde uitleg en Flow diff-geschiedenis.",
   "whatAreTargetGitBranchesToMergeIn": "Wat zijn de doel-git-branches waar {{branchName}} in kan mergen? (vaak slechts één doeltak te selecteren)",
   "whatAreWeDoingHerePleaseCreate": "Wat doen we hier? Maak alsjeblieft een issue aan met de volgende tekst: ",
   "whatIsACommitHelp": "😱 Wat is een commit? Wat betekent pull? Help!",
