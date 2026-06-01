@@ -330,6 +330,14 @@ async function checkOrgEnforcement(
   };
 }
 
+/* Query active Standard users assigned to any of the given profiles */
+async function queryActiveStandardUsersByProfiles(conn: Connection, profiles: any[]): Promise<any[]> {
+  const profileIds = profiles.map((p) => `'${p.Id}'`).join(',');
+  const userQuery = `SELECT Id, Username, Name, IsActive, UserType, ProfileId FROM User WHERE ProfileId IN (${profileIds}) AND IsActive = true`;
+  const userRes = await soqlQuery(userQuery, conn);
+  return ((userRes.records || []) as any[]).filter((u) => u.UserType === 'Standard');
+}
+
 async function checkMfaBypassUsers(conn: Connection, ignoreSet: Set<string>): Promise<MfaCheckResult> {
   const checkTitle = t('mfaCheckBypassUsersTitle');
   const checkKey: MfaCheckKey = 'mfaBypassUsers';
@@ -368,11 +376,8 @@ async function checkMfaBypassUsers(conn: Connection, ignoreSet: Set<string>): Pr
   }
 
   if (bypassProfiles.length > 0) {
-    const profileIds = bypassProfiles.map((p) => `'${p.Id}'`).join(',');
-    const userQuery = `SELECT Id, Username, Name, IsActive, UserType, ProfileId FROM User WHERE ProfileId IN (${profileIds}) AND IsActive = true`;
-    const userRes = await soqlQuery(userQuery, conn);
-    for (const u of (userRes.records || []) as any[]) {
-      if (u.UserType !== 'Standard') continue;
+    const users = await queryActiveStandardUsersByProfiles(conn, bypassProfiles);
+    for (const u of users) {
       if (ignoreSet.has((u.Username || '').toLowerCase())) continue;
       const profile = bypassProfiles.find((p) => p.Id === u.ProfileId);
       rows.push({
@@ -460,11 +465,8 @@ async function buildPrivilegedUserContext(
   }
 
   if (privProfiles.length > 0) {
-    const profileIds = privProfiles.map((p) => `'${p.Id}'`).join(',');
-    const userQuery = `SELECT Id, Username, Name, IsActive, UserType, ProfileId FROM User WHERE ProfileId IN (${profileIds}) AND IsActive = true`;
-    const userRes = await soqlQuery(userQuery, conn);
-    for (const u of (userRes.records || []) as any[]) {
-      if (u.UserType !== 'Standard') continue;
+    const users = await queryActiveStandardUsersByProfiles(conn, privProfiles);
+    for (const u of users) {
       const username = u.Username || '';
       if (!username || ignoreSet.has(username.toLowerCase())) continue;
       const profile = privProfiles.find((p) => p.Id === u.ProfileId);

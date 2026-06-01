@@ -1308,6 +1308,23 @@
     "\u00e9l\u00e9ments",
     "\u00eates",
     "\u00eatre",
-    "\u00ecntegration"
+    "\u00ecntegration",
+    "Authentificateur",
+    "Fnoredirect",
+    "Lookback",
+    "noredirect",
+    "onetimepassword",
+    "orgwide",
+    "Pwless",
+    "REMEDIATIONS",
+    "removetimebased",
+    "removetotp",
+    "removetwofactorauth",
+    "salesforceauthenticator",
+    "securitykey",
+    "Srcs",
+    "summarises",
+    "totp",
+    "webauthn"
   ]
 }
