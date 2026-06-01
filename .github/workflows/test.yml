@@ -34,11 +34,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          BRANCH_NAME: ${{ github.ref_name }}
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            open_prs="$(gh pr list --head "${{ github.ref_name }}" --state open --json number --jq 'length')"
+          if [ "$EVENT_NAME" = "push" ]; then
+            open_prs="$(gh pr list --head "$BRANCH_NAME" --state open --json number --jq 'length')"
             if [ "${open_prs:-0}" -gt 0 ]; then
-              echo "Open PR found for ${{ github.ref_name }}; skipping duplicate push run."
+              echo "Open PR found for $BRANCH_NAME; skipping duplicate push run."
               echo "should_run=false" >> "$GITHUB_OUTPUT"
             else
               echo "should_run=true" >> "$GITHUB_OUTPUT"
