@@ -89,6 +89,7 @@ export type NotifMessageType =
   | "LEGACY_API"
   | "LICENSES"
   | "LINT_ACCESS"
+  | "MFA_CONFIG"
   | "UNUSED_METADATAS"
   | "METADATA_STATUS"
   | "MISSING_ATTRIBUTES"
@@ -316,6 +317,13 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     colorClass: "security",
     emittedSeverities: ["error", "log"],
     defaults: { messaging: "error", email: "error", api: "log" },
+  },
+  MFA_CONFIG: {
+    category: "apexTestsSecurity",
+    icon: "utility:shield",
+    colorClass: "security",
+    emittedSeverities: ["error", "warning", "log"],
+    defaults: { messaging: "warning", email: "error", api: "log" },
   },
 
   // orgInfo

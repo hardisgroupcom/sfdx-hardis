@@ -5,6 +5,7 @@ When translating, look at other translations in the same language file for consi
 ## French (fr)
 
 - Use the official Salesforce French translations (e.g. `Permission Set` -> `Ensemble d'autorisations`, `Record Type` -> `Type d'enregistrement`, `Flow` -> `Flux`, `Object` -> `Objet`, `Field` -> `Champ`, `Profile` -> `Profil`).
+- Keep `flag` untranslated (do NOT translate as `drapeau`). Same for other developer/IT terms commonly used in English by French developers.
 
 ## German (de)
 

@@ -116,6 +116,80 @@ function sanitizeForXml(value) {
     .replace(/'/g, '&apos;');
 }
 
+export interface EmailSoapError {
+  statusCode: string;
+  message: string;
+}
+
+/*
+ * Walk the SOAP envelope returned by `sendEmail` and extract one or more
+ * `<errors>` entries. Salesforce returns either a single object or an array
+ * depending on how many errors fired; we always return an array.
+ */
+export function extractEmailSoapErrors(detail: any): EmailSoapError[] {
+  const errors = getNested(detail, [
+    'soapenv:Envelope',
+    'soapenv:Body',
+    'sendEmailResponse',
+    'result',
+    'errors',
+  ]);
+  if (!errors) return [];
+  const list = Array.isArray(errors) ? errors : [errors];
+  return list
+    .map((e: any) => ({
+      statusCode: (e?.statusCode || '').toString(),
+      message: (e?.message || '').toString(),
+    }))
+    .filter((e: EmailSoapError) => e.statusCode || e.message);
+}
+
+/*
+ * Known Salesforce sendEmail failure patterns -> actionable i18n key.
+ * Adding a new pattern is a one-line change: extend this list with an
+ * `i18nKey` that resolves to the remediation message.
+ */
+const EMAIL_ERROR_REMEDIATIONS: { match: (e: EmailSoapError) => boolean; i18nKey: string }[] = [
+  {
+    /* Spring '26 Email-Sending Domain Verification: domain not verified */
+    match: (e) =>
+      e.statusCode === 'INSUFFICIENT_ACCESS_OR_READONLY' &&
+      /domain\s+isn[’']?t\s+verified|domain\s+is\s+not\s+verified/i.test(e.message),
+    i18nKey: 'emailErrorAdviceDomainNotVerified',
+  },
+  {
+    /* Deliverability "Access level" too low (System email only) - blocks single email send */
+    match: (e) =>
+      e.statusCode === 'NO_SINGLE_MAIL_PERMISSION' || e.statusCode === 'NO_MASS_MAIL_PERMISSION',
+    i18nKey: 'emailErrorAdviceNoMailPermission',
+  },
+  {
+    /* Org-Wide Email Address profile access missing */
+    match: (e) =>
+      e.statusCode === 'INSUFFICIENT_ACCESS_OR_READONLY' &&
+      /org.wide\s+email\s+address|orgwide\s+email\s+address/i.test(e.message),
+    i18nKey: 'emailErrorAdviceOrgWideEmailAccess',
+  },
+  {
+    /* Salesforce deliverability access level too restrictive (System Email Only) - generic fallback */
+    match: (e) => /access\s+level|deliverability/i.test(e.message),
+    i18nKey: 'emailErrorAdviceDeliverability',
+  },
+];
+
+export function getEmailErrorAdviceKeys(errors: EmailSoapError[]): string[] {
+  const seen = new Set<string>();
+  for (const e of errors) {
+    for (const remediation of EMAIL_ERROR_REMEDIATIONS) {
+      if (remediation.match(e)) {
+        seen.add(remediation.i18nKey);
+        break;
+      }
+    }
+  }
+  return Array.from(seen);
+}
+
 export interface EmailMessage {
   subject: string;
   body_text?: string;

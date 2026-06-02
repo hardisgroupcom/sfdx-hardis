@@ -64,10 +64,13 @@ export class BitbucketProvider extends GitProviderRoot {
         }
         uxLog("log", BitbucketProvider, c.grey("[Bitbucket] " + t("autoDetectProviderJenkinsMapping", { provider: "Bitbucket" })));
       }
-      uxLog("log", BitbucketProvider, c.grey("[Bitbucket] " + t("autoDetectProviderSuccess", {
-        provider: "Bitbucket",
-        details: `workspace=${process.env.BITBUCKET_WORKSPACE}, repo=${process.env.BITBUCKET_REPO_SLUG}`,
-      })));
+      /* Only log the success summary when Jenkins is involved - on native CI providers this is just noise */
+      if (isJenkins()) {
+        uxLog("log", BitbucketProvider, c.grey("[Bitbucket] " + t("autoDetectProviderSuccess", {
+          provider: "Bitbucket",
+          details: `workspace=${process.env.BITBUCKET_WORKSPACE}, repo=${process.env.BITBUCKET_REPO_SLUG}`,
+        })));
+      }
     } catch (e) {
       uxLog("warning", BitbucketProvider, c.yellow("[Bitbucket] " + t("autoDetectProviderFailed", { provider: "Bitbucket", message: (e as Error).message })));
     }

@@ -27,7 +27,7 @@ const hook: Hook<'prerun'> = async (options) => {
 
   // Dynamic imports in parallel to improve performances when other CLI commands are called
   const [
-    { authOrg },
+    { authOrg, extractTargetOrgFromArgv },
     { default: c },
     { checkConfig, getConfig },
     { elapseStart, getCurrentGitBranch, isCI, restoreLocalSfdxInfo },
@@ -67,19 +67,22 @@ const hook: Hook<'prerun'> = async (options) => {
       (options as any)?.checkAuth === true) &&
     !((options as any)?.devHub === true)
   ) {
-    const orgAlias = (options as any)?.alias
-      ? (options as any).alias
-      : process.env.ORG_ALIAS
-        ? process.env.ORG_ALIAS
-        : isCI && configInfo.scratchOrgAlias
-          ? configInfo.scratchOrgAlias
-          : isCI && (options as any)?.scratch && configInfo.sfdxAuthUrl
-            ? configInfo.sfdxAuthUrl
-            : isCI
-              ? await getCurrentGitBranch({ formatted: true })
-              : commandId === 'hardis:auth:login' && configInfo.orgAlias
-                ? configInfo.orgAlias
-                : configInfo.scratchOrgAlias || ''; // Can be '' and it's ok if we're not in scratch org context
+    const cliTargetOrg = extractTargetOrgFromArgv(options?.argv);
+    const orgAlias = cliTargetOrg
+      ? cliTargetOrg
+      : (options as any)?.alias
+        ? (options as any).alias
+        : process.env.ORG_ALIAS
+          ? process.env.ORG_ALIAS
+          : isCI && configInfo.scratchOrgAlias
+            ? configInfo.scratchOrgAlias
+            : isCI && (options as any)?.scratch && configInfo.sfdxAuthUrl
+              ? configInfo.sfdxAuthUrl
+              : isCI
+                ? await getCurrentGitBranch({ formatted: true })
+                : commandId === 'hardis:auth:login' && configInfo.orgAlias
+                  ? configInfo.orgAlias
+                  : configInfo.scratchOrgAlias || ''; // Can be '' and it's ok if we're not in scratch org context
     await authOrg(orgAlias, options);
   }
 };

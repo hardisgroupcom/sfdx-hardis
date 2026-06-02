@@ -93,10 +93,13 @@ export class GithubProvider extends GitProviderRoot {
         }
         uxLog("log", GithubProvider, c.grey("[GitHub] " + t("autoDetectProviderJenkinsMapping", { provider: "GitHub" })));
       }
-      uxLog("log", GithubProvider, c.grey("[GitHub] " + t("autoDetectProviderSuccess", {
-        provider: "GitHub",
-        details: `server=${process.env.GITHUB_SERVER_URL}, repo=${process.env.GITHUB_REPOSITORY}`,
-      })));
+      /* Only log the success summary when Jenkins is involved - on native CI providers this is just noise */
+      if (isJenkins()) {
+        uxLog("log", GithubProvider, c.grey("[GitHub] " + t("autoDetectProviderSuccess", {
+          provider: "GitHub",
+          details: `server=${process.env.GITHUB_SERVER_URL}, repo=${process.env.GITHUB_REPOSITORY}`,
+        })));
+      }
     } catch (e) {
       uxLog("warning", GithubProvider, c.yellow("[GitHub] " + t("autoDetectProviderFailed", { provider: "GitHub", message: (e as Error).message })));
     }

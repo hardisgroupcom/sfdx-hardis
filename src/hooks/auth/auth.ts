@@ -8,7 +8,7 @@ const hook: Hook<'auth'> = async (options: any) => {
     { getCurrentGitBranch, isCI },
     { default: c },
     { checkConfig, getConfig },
-    { authOrg },
+    { authOrg, extractTargetOrgFromArgv },
   ] = await Promise.all([
     import('../../common/utils/index.js'),
     import('chalk'),
@@ -35,19 +35,22 @@ const hook: Hook<'auth'> = async (options: any) => {
     (options as any)?.checkAuth === true &&
     !((options as any)?.devHub === true)
   ) {
-    const orgAlias = (options as any)?.alias
-      ? (options as any).alias
-      : process.env.ORG_ALIAS
-        ? process.env.ORG_ALIAS
-        : isCI && configInfo.scratchOrgAlias
-          ? configInfo.scratchOrgAlias
-          : isCI && (options as any)?.scratch && configInfo.sfdxAuthUrl
-            ? configInfo.sfdxAuthUrl
-            : isCI
-              ? await getCurrentGitBranch({ formatted: true })
-              : commandId === 'hardis:auth:login' && configInfo.orgAlias
-                ? configInfo.orgAlias
-                : configInfo.scratchOrgAlias || ''; // Can be ''  and it's ok if we're not in scratch org context
+    const cliTargetOrg = extractTargetOrgFromArgv((options as any)?.argv);
+    const orgAlias = cliTargetOrg
+      ? cliTargetOrg
+      : (options as any)?.alias
+        ? (options as any).alias
+        : process.env.ORG_ALIAS
+          ? process.env.ORG_ALIAS
+          : isCI && configInfo.scratchOrgAlias
+            ? configInfo.scratchOrgAlias
+            : isCI && (options as any)?.scratch && configInfo.sfdxAuthUrl
+              ? configInfo.sfdxAuthUrl
+              : isCI
+                ? await getCurrentGitBranch({ formatted: true })
+                : commandId === 'hardis:auth:login' && configInfo.orgAlias
+                  ? configInfo.orgAlias
+                  : configInfo.scratchOrgAlias || ''; // Can be ''  and it's ok if we're not in scratch org context
     console.log(c.grey(`We'll try to authenticate to the org related to ${orgAlias !== configInfo.sfdxAuthUrl ? (orgAlias || "DEFAULT ORG") : "sfdxAuthUrl"}`));
     await authOrg(orgAlias, options);
   }
