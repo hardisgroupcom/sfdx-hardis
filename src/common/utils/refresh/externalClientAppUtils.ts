@@ -28,31 +28,50 @@ export const ECA_SATELLITE_META: Record<string, { dir: string; fileSuffix: strin
   'ExtlClntAppConfigurablePolicies': { dir: 'extlClntAppPolicies', fileSuffix: 'ecaPlcy-meta.xml' },
 };
 
-// Suffix appended to the app name to form the member name for each satellite type.
-// ExternalClientApplication uses no suffix (member == appName).
-export const ECA_SATELLITE_SUFFIXES: Record<string, string> = {
-  'ExternalClientApplication': '',
-  'ExtlClntAppOauthSettings': '_defOauthSet',
-  'ExtlClntAppGlobalOauthSettings': '_defGlblOauthSet',
-  'ExtlClntAppOauthConfigurablePolicies': '_defOauthPlcy',
-  'ExtlClntAppConfigurablePolicies': '_defPlcy',
-};
+/**
+ * Resolve which app a satellite member belongs to: the longest app name it starts with.
+ * Satellite member names do NOT follow a fixed `{appName}{suffix}` pattern; the only reliable
+ * invariant is that they start with the parent ExternalClientApplication name
+ * (e.g. app `sfdx_hardis_uat` -> ExtlClntAppGlobalOauthSettings `sfdx_hardis_uatGlblOAuth`).
+ * App names may be prefixes of one another (e.g. `sfdx_hardis` and `sfdx_hardis_uat`), so the
+ * longest matching name wins to avoid attributing a member to the wrong app.
+ */
+export function resolveEcaMemberOwner(member: string, allAppNames: string[]): string | null {
+  let owner: string | null = null;
+  for (const appName of allAppNames) {
+    if (member.startsWith(appName) && (owner === null || appName.length > owner.length)) {
+      owner = appName;
+    }
+  }
+  return owner;
+}
 
 /**
- * Build the package content for the 5 ECA metadata types.
- * When appNames is provided, member names are constructed as `{appName}{suffix}`
- * using ECA_SATELLITE_SUFFIXES. Otherwise wildcards are used.
+ * List satellite member names of a given metadata type that belong to one of the selected apps.
+ * Ownership is resolved against allAppNames (the full set of app names in the org) so that an
+ * app whose name is a prefix of another app does not steal the other app's members.
  */
-export function getEcaPackageContent(appNames?: string[]): Record<string, string[]> {
-  if (appNames && appNames.length > 0) {
-    return Object.fromEntries(
-      ECA_METADATA_TYPES.map(type => [
-        type,
-        appNames.map(name => name + (ECA_SATELLITE_SUFFIXES[type] ?? '')),
-      ])
-    );
-  }
-  return Object.fromEntries(ECA_METADATA_TYPES.map(t => [t, ['*']]));
+export async function listEcaSatelliteMembers(
+  orgUsername: string,
+  metadataType: string,
+  allAppNames: string[],
+  selectedNames: string[],
+  command: SfCommand<any>
+): Promise<string[]> {
+  const result = await execSfdxJson(
+    `sf org list metadata --metadata-type ${metadataType} --target-org ${orgUsername}`,
+    command,
+    { output: false }
+  );
+  const members = result?.result && Array.isArray(result.result) ? result.result : [];
+  const selectedSet = new Set(selectedNames);
+  return members
+    .map((m: any) => m.fullName)
+    .filter((fullName: string) => {
+      const owner = resolveEcaMemberOwner(fullName, allAppNames);
+      return owner !== null && selectedSet.has(owner);
+    })
+    .sort();
 }
 
 /**
@@ -94,7 +113,24 @@ export async function retrieveExternalClientApps(
   command: SfCommand<any>,
   selectedNames?: string[]
 ): Promise<number> {
-  const packageContent = getEcaPackageContent(selectedNames && selectedNames.length > 0 ? selectedNames : undefined);
+  // For selected apps, retrieve the parent by exact name and discover satellite member names
+  // from the org (they are not a predictable `{appName}{suffix}`). Otherwise use wildcards.
+  let packageContent: Record<string, string[]>;
+  if (selectedNames && selectedNames.length > 0) {
+    // Need every app name in the org (not just the selected ones) so longest-prefix ownership
+    // can tell apart apps whose names are prefixes of one another.
+    const allAppNames = await listExternalClientAppNames(orgUsername, command);
+    packageContent = { ExternalClientApplication: selectedNames };
+    for (const type of ECA_METADATA_TYPES) {
+      if (type === 'ExternalClientApplication') continue;
+      const members = await listEcaSatelliteMembers(orgUsername, type, allAppNames, selectedNames, command);
+      if (members.length > 0) {
+        packageContent[type] = members;
+      }
+    }
+  } else {
+    packageContent = Object.fromEntries(ECA_METADATA_TYPES.map(type => [type, ['*']]));
+  }
   const ecaPackageXml = path.join(saveProjectPath, 'manifest', 'package-eca-to-save.xml');
   await writePackageXmlFile(ecaPackageXml, packageContent);
 
@@ -380,8 +416,10 @@ export async function deployExternalClientApps(
   command: SfCommand<any>,
   selectedNames?: string[]
 ): Promise<Record<string, string[]>> {
-  const ecaNames = selectedNames && selectedNames.length > 0 ? selectedNames : getEcaNames(saveProjectPath);
-  const ecaContent = getEcaPackageContent(ecaNames.length > 0 ? ecaNames : undefined);
+  const allEcaNames = getEcaNames(saveProjectPath);
+  const ecaNames = selectedNames && selectedNames.length > 0 ? selectedNames : allEcaNames;
+  const selectedSet = new Set(ecaNames);
+  const parentMembers = ecaNames.length > 0 ? ecaNames : ['*'];
 
   // Phase 1: Deploy ExternalClientApplication parent type only.
   // Satellite types (OAuth settings, policies) require the parent to exist first.
@@ -402,7 +440,7 @@ export async function deployExternalClientApps(
   }
 
   const ecaPackageXmlPhase1 = path.join(saveProjectPath, 'manifest', 'package-eca-to-restore-phase1.xml');
-  await writePackageXmlFile(ecaPackageXmlPhase1, { ExternalClientApplication: ecaContent['ExternalClientApplication'] });
+  await writePackageXmlFile(ecaPackageXmlPhase1, { ExternalClientApplication: parentMembers });
   uxLog("action", command, c.cyan(t('restoringExternalClientAppsStep1')));
   await execCommand(
     `sf project deploy start --manifest "${ecaPackageXmlPhase1}" --target-org ${orgUsername} --ignore-conflicts --json`,
@@ -430,14 +468,28 @@ export async function deployExternalClientApps(
   // Only include members for which a metadata file actually exists in the backup.
   const forceAppDefault = path.join(saveProjectPath, 'force-app', 'main', 'default');
   const satelliteContent: Record<string, string[]> = {};
-  for (const [type, members] of Object.entries(ecaContent)) {
+  for (const type of ECA_METADATA_TYPES) {
     if (type === 'ExternalClientApplication') continue;
     const meta = ECA_SATELLITE_META[type];
     if (!meta) continue;
-    const presentMembers = members.filter(member => {
-      const filePath = path.join(forceAppDefault, meta.dir, `${member}.${meta.fileSuffix}`);
-      return fs.existsSync(filePath);
-    });
+    const folder = path.join(forceAppDefault, meta.dir);
+    if (!fs.existsSync(folder)) {
+      uxLog("log", command, c.grey(t('ecaSatelliteTypeNoFilesFound', { type })));
+      continue;
+    }
+    // Member names are not predictable; only the prefix (app name) is reliable. Attribute each
+    // backup file to its owning app via longest-prefix match (against the full backup set, so
+    // prefix-named apps don't collide) and keep it only when that app was selected.
+    const suffix = `.${meta.fileSuffix}`;
+    const presentMembers = fs.readdirSync(folder)
+      .filter(f => f.endsWith(suffix))
+      .map(f => f.slice(0, -suffix.length))
+      .filter(member => {
+        if (ecaNames.length === 0) return true;
+        const owner = resolveEcaMemberOwner(member, allEcaNames);
+        return owner !== null && selectedSet.has(owner);
+      })
+      .sort();
     if (presentMembers.length > 0) {
       satelliteContent[type] = presentMembers;
       uxLog("log", command, c.grey(t('ecaSatelliteTypeFilesFound', { type, count: presentMembers.length })));
@@ -457,7 +509,7 @@ export async function deployExternalClientApps(
   uxLog("success", command, c.green(t('externalClientAppsRestoredSuccessfully', { instanceUrl })));
 
   return {
-    ExternalClientApplication: ecaContent['ExternalClientApplication'] ?? [],
+    ExternalClientApplication: parentMembers,
     ...satelliteContent,
   };
 }
