@@ -136,6 +136,7 @@ See [Monitoring configuration](salesforce-monitoring-config-home.md#monitoring-c
 | [Detect Apex and Flow errors](salesforce-monitoring-apex-flow-errors.md)                                                    | Daily     |
 | [Detect unsecured Connected Apps in an org](salesforce-monitoring-unsecured-connected-apps.md)                              | Daily     |
 | [Analyze metadata deployments and validations](salesforce-monitoring-deployments.md)                                        | Daily     |
+| [Audit Multi-Factor Authentication (MFA) configuration](salesforce-monitoring-mfa.md)                                       | Weekly    |
 | [Extract licenses information](salesforce-monitoring-licenses-overview.md)                                                  | Weekly    |
 | [Detect custom elements with no access rights defined in permission sets](salesforce-monitoring-missing-access.md)          | Weekly    |
 | [Detect permission set licenses that are assigned to users that do not need them](salesforce-monitoring-unused-licenses.md) | Weekly    |
