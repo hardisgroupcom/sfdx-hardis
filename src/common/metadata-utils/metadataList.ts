@@ -2258,6 +2258,13 @@ export function listMetadataTypes() {
         xmlName: 'HomePageLayout',
       },
       {
+        directoryName: 'householdNamingConfigs',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'householdNamingConfig',
+        xmlName: 'HouseholdNamingConfig',
+      },
+      {
         directoryName: 'icons',
         inFolder: false,
         metaFile: false,
