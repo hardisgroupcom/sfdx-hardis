@@ -49,6 +49,8 @@ Exclusions:
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/) and produces Grafana, Slack, Microsoft Teams, Google Chat, and email notifications.
 
+![](${CONSTANTS.DOC_URL_ROOT}/assets/images/screenshot-monitoring-mfa.png)
+
 ### Agent Mode
 
 Supports non-interactive execution with \`--agent\`:
