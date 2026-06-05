@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+## [7.16.1] 2026-06-06
+
+- Update skills importer
+
 ## [7.16.0] 2026-06-05
 
 - New [hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa/): Audit MFA configuration and prepare for Salesforce's July 1 2026 phishing-resistant MFA enforcement.
