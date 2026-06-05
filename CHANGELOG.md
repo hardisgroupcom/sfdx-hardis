@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [7.16.0] 2026-06-05
+
 - New [hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa/): Audit MFA configuration and prepare for Salesforce's July 1 2026 phishing-resistant MFA enforcement.
 - New [hardis:org:user:unlink-security-key](https://sfdx-hardis.cloudity.com/hardis/org/user/unlink-security-key/): Disconnect lost or compromised MFA registrations from users.
 - Fix: in all commands in CI mode, an explicit `--target-org` on the command line is now respected instead of being overridden by the current git branch name.
