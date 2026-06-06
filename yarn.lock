@@ -2228,54 +2228,54 @@
   dependencies:
     "@octokit/openapi-types" "^24.2.0"
 
-"@openai/codex-darwin-arm64@npm:@openai/codex@0.105.0-darwin-arm64":
-  version "0.105.0-darwin-arm64"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0-darwin-arm64.tgz#cc75f2f64346fb602d9d7e99daa9a0400b5cad8f"
-  integrity sha512-9TD7pDIg8o7itmOhyEPcC2HeVnVIOxxrrbwTvnTibMj2rHPLnY8E0JaK8QOBRNiIUlqI4WKspTMUZQg5Fegndw==
+"@openai/codex-darwin-arm64@npm:@openai/codex@0.137.0-darwin-arm64":
+  version "0.137.0-darwin-arm64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.137.0-darwin-arm64.tgz#25d9c5eaccd555766ffe3963492b6fd32be8904b"
+  integrity sha512-YjKmre7DlKslQVhSfocHscgxntZKaZc1LQySKh7q+hNL8jdK+c8nSWSePi583yKFNIxZ8Z/zCkewtjFNvOpQiQ==
 
-"@openai/codex-darwin-x64@npm:@openai/codex@0.105.0-darwin-x64":
-  version "0.105.0-darwin-x64"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0-darwin-x64.tgz#d48df9018a5e3079dbb65a50ac1b4bfb1fe474b8"
-  integrity sha512-00xRV2X7RwKFRY8LB99/WmVSWqhHnMV6BB4gc5x4MMuDPDslaNrGTYWdp6KBukok1ayrg0JfwazUeAawNWU5Zw==
+"@openai/codex-darwin-x64@npm:@openai/codex@0.137.0-darwin-x64":
+  version "0.137.0-darwin-x64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.137.0-darwin-x64.tgz#40fe9ba111b38c38247ea45ebf00b4b9fac5b142"
+  integrity sha512-zjzrFV80LZby9et44dan82e3cwUd46U7u1LSVXTIz5AUcY4y1KZpAeN6cSLVKMZuOHXTDpi15MUQdRwzdeqIOg==
 
-"@openai/codex-linux-arm64@npm:@openai/codex@0.105.0-linux-arm64":
-  version "0.105.0-linux-arm64"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0-linux-arm64.tgz#9f820f14479b3817280d9ac28a3d54b9591115bd"
-  integrity sha512-UFGyZhRB0Gtr31wFf0WDd//W3XGbZZ7mxYwf528i6rhlwabb3FIJKWrgv4DVXKQZCGiBujqAk0pr32PziElouA==
+"@openai/codex-linux-arm64@npm:@openai/codex@0.137.0-linux-arm64":
+  version "0.137.0-linux-arm64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.137.0-linux-arm64.tgz#63836f3f4c6bfc98865e2e7213d6f1ac89d0f909"
+  integrity sha512-R3ZZymQQA1qpp6OpowN49XJ4scHwSckq7CjVvgmLv3bIs3X+F0XXK3xPFkC9vs2mX3wPekPi3ONpxx+yPAsJ6Q==
 
-"@openai/codex-linux-x64@npm:@openai/codex@0.105.0-linux-x64":
-  version "0.105.0-linux-x64"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0-linux-x64.tgz#e0e1a51ce8540b121a40423c42af740a281c414e"
-  integrity sha512-cZgNzNjspqHmXNf/CraqqQrfotw5cXO7wvkSSYs2NZjZR7Ud10u5hFeumUW1sEvb5/F9tEKsjO+WCj+bVxdrYQ==
+"@openai/codex-linux-x64@npm:@openai/codex@0.137.0-linux-x64":
+  version "0.137.0-linux-x64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.137.0-linux-x64.tgz#96bf1f0258504849cc64f52c92b8b562d45a5449"
+  integrity sha512-n+26MUj8rekbEDUeYTGoD6HXuGS0MmLHn2LOn0i5qTNYIJvXV82B7cCLSTzVKF/RJxRMRl22se9Q0Z035JIVng==
 
-"@openai/codex-sdk@0.105.0":
-  version "0.105.0"
-  resolved "https://registry.yarnpkg.com/@openai/codex-sdk/-/codex-sdk-0.105.0.tgz#2fe4bc6bdeb72a43cd65905ec94699f8412e27a8"
-  integrity sha512-sHq9JdcZftlybuWH5846h2bezKcMpTBX7m2AH8vpqV1+1ex7Q/Prwy64b81oMjrlWooiK+sVelZFED6ZPeLCZg==
+"@openai/codex-sdk@0.137.0":
+  version "0.137.0"
+  resolved "https://registry.yarnpkg.com/@openai/codex-sdk/-/codex-sdk-0.137.0.tgz#91ae890fa40f5d6adaec160081e05c4c88e5a6c0"
+  integrity sha512-KYNY7shsKYOLRNV+kjOoaBaLVHy+FUolHPFraOU4JGeyNR1pORxINTAlwHSxDcuXTibj/3OC6jMGDl7X0q4MUw==
   dependencies:
-    "@openai/codex" "0.105.0"
+    "@openai/codex" "0.137.0"
 
-"@openai/codex-win32-arm64@npm:@openai/codex@0.105.0-win32-arm64":
-  version "0.105.0-win32-arm64"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0-win32-arm64.tgz#c5333c8ea7734aa6b1496912469dd046dc13e123"
-  integrity sha512-OGvHTn/XAyY8889n0ZEcvUgiaPeT/rLFEFUEOzWgt5yhKiODV+zEzfruYmcvZUpzgFJ1kRQlDgKPMbW7u2r01Q==
+"@openai/codex-win32-arm64@npm:@openai/codex@0.137.0-win32-arm64":
+  version "0.137.0-win32-arm64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.137.0-win32-arm64.tgz#e5af378e7b696e4c3f17cf3ce26d05465864d4b1"
+  integrity sha512-Cofktt213TycdQ/v+nAUuwXUBzjMWfA/ZkXyqefyXxDgw0TMtaiM3cgDna3I8YdXnR0PM9AMbx4t7VloJ3ZZYQ==
 
-"@openai/codex-win32-x64@npm:@openai/codex@0.105.0-win32-x64":
-  version "0.105.0-win32-x64"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0-win32-x64.tgz#874816e5a693d856db970609cbdb0ec9fc7ed354"
-  integrity sha512-8V26RjFeg06i4mrrhQTKLY6lcRXsm0s1cxT3lamApLccvBBAhhAOE0je6jHb5nkrncvf9x/lee+WmY0louvvGQ==
+"@openai/codex-win32-x64@npm:@openai/codex@0.137.0-win32-x64":
+  version "0.137.0-win32-x64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.137.0-win32-x64.tgz#9873ec6a4434d20f18edfaaed319f3d12aa8cc58"
+  integrity sha512-g9qZ9ERrm5OWXMWJOgojYv1kOc5jajTKq37PBMSe56aJfAr9Jk/qBvIOy7LKq3rABdXuz8k+W65PIt2E1hXilw==
 
-"@openai/codex@0.105.0":
-  version "0.105.0"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0.tgz#a9d7319a2cbbf22cbec4ad41aed6cbd0a33ef76d"
-  integrity sha512-enoNmQs3aOgUhsKYC6kfuKEG0AogS4q01pqcySPwf9zl2r8OcKuMUoLw1v5n4Y7sd3B6qGS7UtTABqbcT5FaMA==
+"@openai/codex@0.137.0":
+  version "0.137.0"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.137.0.tgz#6c8c7da794fe3be61c6e8c007ac63dc29e44194c"
+  integrity sha512-1jUsCnzDBwv7Z4VFZajIlsz41fC18qg6d5qK4PEZhiUk0zJHS90/uGBA70aQPUJLTUZShvyKVAANjw6J/D9eYQ==
   optionalDependencies:
-    "@openai/codex-darwin-arm64" "npm:@openai/codex@0.105.0-darwin-arm64"
-    "@openai/codex-darwin-x64" "npm:@openai/codex@0.105.0-darwin-x64"
-    "@openai/codex-linux-arm64" "npm:@openai/codex@0.105.0-linux-arm64"
-    "@openai/codex-linux-x64" "npm:@openai/codex@0.105.0-linux-x64"
-    "@openai/codex-win32-arm64" "npm:@openai/codex@0.105.0-win32-arm64"
-    "@openai/codex-win32-x64" "npm:@openai/codex@0.105.0-win32-x64"
+    "@openai/codex-darwin-arm64" "npm:@openai/codex@0.137.0-darwin-arm64"
+    "@openai/codex-darwin-x64" "npm:@openai/codex@0.137.0-darwin-x64"
+    "@openai/codex-linux-arm64" "npm:@openai/codex@0.137.0-linux-arm64"
+    "@openai/codex-linux-x64" "npm:@openai/codex@0.137.0-linux-x64"
+    "@openai/codex-win32-arm64" "npm:@openai/codex@0.137.0-win32-arm64"
+    "@openai/codex-win32-x64" "npm:@openai/codex@0.137.0-win32-x64"
 
 "@pinojs/redact@^0.4.0":
   version "0.4.0"
