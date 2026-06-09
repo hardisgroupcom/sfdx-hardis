@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+## [7.16.2] 2026-06-09
+
+- Upgrade npm dependencies
+
 ## [7.16.1] 2026-06-06
 
 - Update skills importer
