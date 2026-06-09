@@ -20,6 +20,10 @@ Sfdx-hardis command: [sf hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.c
 
 Key: **MFA_CONFIG**
 
+### Report example
+
+![](assets/images/screenshot-monitoring-mfa.png)
+
 ### Severity
 
 - **error** if org-wide MFA enforcement is missing, any privileged user has the bypass permission, or any non-MFA direct UI login was detected.
