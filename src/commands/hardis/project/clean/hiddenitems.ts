@@ -126,11 +126,15 @@ In agent mode, all interactive prompts are skipped and default values are used.
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = `**/*.{${HIDDEN_SOURCE_FILE_EXTENSIONS}}`;
-    const matchingCustomFiles = await glob(findManagedPattern, { cwd: rootFolder, ignore: GLOB_IGNORE_PATTERNS });
+    const matchingCustomFiles = await glob(findManagedPattern, { cwd: rootFolder, ignore: GLOB_IGNORE_PATTERNS, nodir: true });
     let counter = 0;
     for (const matchingCustomFile of matchingCustomFiles) {
       const matchingCustomFilePath = path.join(rootFolder, matchingCustomFile);
       if (!fs.existsSync(matchingCustomFilePath)) {
+        continue;
+      }
+      const fileStats = await fs.stat(matchingCustomFilePath);
+      if (!fileStats.isFile()) {
         continue;
       }
       const fileContent = await fs.readFile(matchingCustomFilePath, 'utf8');
