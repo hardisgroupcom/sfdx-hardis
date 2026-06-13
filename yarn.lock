@@ -878,24 +878,24 @@
   dependencies:
     chalk "^4.1.0"
 
-"@cparra/apex-reflection@2.24.0":
-  version "2.24.0"
-  resolved "https://registry.yarnpkg.com/@cparra/apex-reflection/-/apex-reflection-2.24.0.tgz#7fba1b03cc767398487765e9eb5c286c5974faf9"
-  integrity sha512-AKpLNYuADB0Acg//0L8QOyfWvL1z8kNPwXrz4yCBXA/RdoBNyFBV/40WtMMQRKsYYU8vSHl4aiqubR441vbnNA==
+"@cparra/apex-reflection@2.24.4":
+  version "2.24.4"
+  resolved "https://registry.yarnpkg.com/@cparra/apex-reflection/-/apex-reflection-2.24.4.tgz#8e22f48be3fa27e207c21f75e5b7058a020872d1"
+  integrity sha512-Obr61j7Yulsk82zUsAMB6C9ZkBfl7XSZA99ulYUHKTfN0HYfT+TstwlS5l3nBQSLqz6AB9GgBe0tODAyJVXxVg==
 
-"@cparra/apexdocs@3.21.2":
-  version "3.21.2"
-  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.21.2.tgz#42a937804d289419cd66b2fe95ba79f3591cc40f"
-  integrity sha512-80cLtsn0uuHxjkyGrbNru33qlPJ49Vx2BNSZJCUCKRLeQ6mmcM2/ZFXnR8Uavkwu7+zYz4x5Zy3pqwgLEvsaZw==
+"@cparra/apexdocs@3.21.8":
+  version "3.21.8"
+  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.21.8.tgz#06432791b230b65471aec2f6040229552cedc2d8"
+  integrity sha512-zrlDAISLmIR7WP4t5UPtzptwWy0MBwAt/kXqT8RO/p3e0AGAJ+rvhIDhtfvhCcLKko/GoW+mbpPKZ4Pws1VXiA==
   dependencies:
-    "@cparra/apex-reflection" "2.24.0"
+    "@cparra/apex-reflection" "2.24.4"
     "@salesforce/source-deploy-retrieve" "^12.20.1"
     "@types/js-yaml" "^4.0.9"
     "@types/yargs" "^17.0.32"
     chalk "^4.1.2"
     cosmiconfig "^9.0.0"
     cosmiconfig-typescript-loader "^5.0.0"
-    fast-xml-parser "^5.3.4"
+    fast-xml-parser "^5.5.9"
     fp-ts "^2.16.8"
     handlebars "^4.7.8"
     js-yaml "4.1.1"
@@ -6445,7 +6445,7 @@ fast-xml-builder@^1.1.5:
     path-expression-matcher "^1.5.0"
     xml-naming "^0.1.0"
 
-fast-xml-parser@5.7.2, fast-xml-parser@5.7.3, fast-xml-parser@^4.5.3, fast-xml-parser@^5.3.4:
+fast-xml-parser@5.7.2, fast-xml-parser@5.7.3, fast-xml-parser@^4.5.3, fast-xml-parser@^5.5.9:
   version "5.7.2"
   resolved "https://registry.yarnpkg.com/fast-xml-parser/-/fast-xml-parser-5.7.2.tgz#fecd0b054c6c132fc03dab994a413da781e0eb9f"
   integrity sha512-P7oW7tLbYnhOLQk/Gv7cZgzgMPP/XN03K02/Jy6Y/NHzyIAIpxuZIM/YqAkfiXFPxA2CTm7NtCijK9EDu09u2w==
