@@ -1933,13 +1933,12 @@
     "@standard-schema/spec" "1.1.0"
     uuid "^10.0.0"
 
-"@langchain/ollama@1.2.3":
-  version "1.2.3"
-  resolved "https://registry.yarnpkg.com/@langchain/ollama/-/ollama-1.2.3.tgz#e2e94b1bf67ba0487b58ae0ed3b8b4e6e6c9bea6"
-  integrity sha512-wkXdKVFQWeDOpAv77R8g0/ra4b0EFbTwFw4ot/lrWo/iOZZ3WI82wbbtsjb0yrbAJU4CoUjyLygZft8Szbza6A==
+"@langchain/ollama@1.2.7":
+  version "1.2.7"
+  resolved "https://registry.yarnpkg.com/@langchain/ollama/-/ollama-1.2.7.tgz#a1d6ed8105ebcefdb7d30ebf7daa0f35c7a32e31"
+  integrity sha512-7Gu17q1dn4nKGB3ZYJyaaL8H/2k7LHvcL6V25S8cVDniTTSvd0fWzI5MzPJvbf9WPxBhvmf+rDDLAhOWljHEtQ==
   dependencies:
     ollama "^0.6.3"
-    uuid "^10.0.0"
 
 "@langchain/openai@1.2.12":
   version "1.2.12"
