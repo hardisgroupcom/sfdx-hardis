@@ -178,4 +178,44 @@ DS-0002
 DS026
 DS-0026
 
+# https://avd.aquasec.com/nvd/cve-2026-6321 + cve-2026-6322
+# fast-uri 3.1.0 path traversal / URI authority bypass, located in @salesforce/cli and sfdx-git-delta so they'll fix that soon
+CVE-2026-6321
+CVE-2026-6322
+
+# https://avd.aquasec.com/nvd/cve-2026-4800
+# lodash 4.17.23 arbitrary code execution via untrusted template imports, located in @salesforce/cli so they'll fix that soon
+CVE-2026-4800
+
+# https://avd.aquasec.com/nvd/cve-2026-33671
+# picomatch 2.3.1 Regular Expression Denial of Service, located in @salesforce/cli so they'll fix that soon
+CVE-2026-33671
+
+# https://avd.aquasec.com/nvd/cve-2026-44289
+# protobufjs 7.5.5 DoS / process-wide DoS / code generation gadget / arbitrary code execution, located in @salesforce/cli so they'll fix that soon
+CVE-2026-44289
+CVE-2026-44290
+CVE-2026-44291
+CVE-2026-44293
+
+# https://avd.aquasec.com/nvd/cve-2026-28291 + cve-2026-6951
+# simple-git 3.30.0 command execution / remote code execution, located in sfdx-git-delta so they'll fix that soon
+CVE-2026-28291
+CVE-2026-6951
+
+# https://avd.aquasec.com/nvd/cve-2026-44705
+# tmp 0.0.33 (via external-editor) arbitrary file write through symlink, located in @salesforce/cli so they'll fix that soon
+CVE-2026-44705
+
+# https://avd.aquasec.com/nvd/cve-2026-33811
+# Go stdlib v1.26.2 in the pebble binary of the Ubuntu base image (usr/bin/pebble), fixed in Go 1.25.10 / 1.26.3, depends on the upstream base image rebuild
+CVE-2026-33811
+CVE-2026-33814
+CVE-2026-39820
+CVE-2026-39823
+CVE-2026-39825
+CVE-2026-39836
+CVE-2026-42499
+CVE-2026-42504
+
 

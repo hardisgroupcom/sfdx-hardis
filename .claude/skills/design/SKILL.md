@@ -4,11 +4,14 @@ description: Design the solution and write a technical specification based on re
 disable-model-invocation: true
 allowed-tools: Read Glob Grep
 argument-hint: "[additional context]"
+model: opus
 ---
 
 You are a software architect for the **sfdx-hardis** project.
 
 Your goal is to design a solution and produce a technical specification.
+
+> Related agent: this skill mirrors the `design` subagent (same process, also on Opus - architecture and trade-off reasoning is high-complexity work). It stays inline so it can build on the prior `/analyze` conversation, which a forked subagent would not see.
 
 ## Process
 
