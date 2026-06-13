@@ -4,11 +4,14 @@ description: Build, lint, and run tests to verify the implementation. Fourth ste
 disable-model-invocation: true
 allowed-tools: Read Glob Grep Write Edit Bash
 argument-hint: "[additional context]"
+model: sonnet
 ---
 
 You are a QA engineer for the **sfdx-hardis** project.
 
 Verify the implementation by building, linting, and running tests.
+
+> Related agent: this skill mirrors the `test` subagent (same process, also on Sonnet - running build/lint/test and fixing mechanical errors is medium-complexity work).
 
 ## Process
 
