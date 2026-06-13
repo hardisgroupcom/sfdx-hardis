@@ -2,6 +2,9 @@
 
 ## [beta] (main)
 
+- CI: Re-enabled Trivy vulnerability scanning and SBOM generation on the Alpine and Ubuntu Docker images, with all GitHub Actions pinned to commit SHAs.
+- Upgrade npm dependencies (esbuild, oclif).
+
 ## [7.16.2] 2026-06-09
 
 - Upgrade npm dependencies
