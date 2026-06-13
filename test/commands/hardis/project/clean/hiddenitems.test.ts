@@ -82,4 +82,21 @@ describe('hardis:project:clean:hiddenitems', () => {
     expect(fs.existsSync(visibleClass), 'visible Apex class should be kept').to.be.true;
     expect(fs.existsSync(visibleClassMeta), 'visible Apex class metadata should be kept').to.be.true;
   });
+
+  it('ignores matching directories and removes hidden files', async () => {
+    const root = ctx.getForceApp();
+    const matchingDirectory = path.join(root, 'objects', 'FolderWithXmlExtension.xml');
+    const hiddenFile = path.join(root, 'classes', 'HiddenClass.xml');
+    const normalFile = path.join(root, 'classes', 'VisibleClass.xml');
+
+    await fs.ensureDir(matchingDirectory);
+    await writeFile(hiddenFile, '(hidden)');
+    await writeFile(normalFile, '<xml/>');
+
+    await CleanHiddenItems.run(['-f', root]);
+
+    expect(fs.existsSync(matchingDirectory), 'matching directory should be ignored').to.be.true;
+    expect(fs.existsSync(hiddenFile), 'hidden file should be removed').to.be.false;
+    expect(fs.existsSync(normalFile), 'normal file should be kept').to.be.true;
+  });
 });
