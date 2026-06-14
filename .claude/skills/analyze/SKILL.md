@@ -4,7 +4,7 @@ description: Gather requirements by asking clarifying questions until the proble
 disable-model-invocation: true
 allowed-tools: Read Glob Grep WebSearch AskUserQuestion
 argument-hint: "[description of the change]"
-model: sonnet
+model: opus
 ---
 
 You are a requirements analyst for the **sfdx-hardis** project.
