@@ -4,7 +4,7 @@ import fs from "fs-extra";
 import FormData from 'form-data'
 import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
-import { git, uxLog } from '../utils/index.js';
+import { getCurrentGitBranch, git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
@@ -215,7 +215,66 @@ export class BitbucketProvider extends GitProviderRoot {
       uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketPrCommitLinksAppRequired')));
     }
 
+    // Fallback that does not require the "Pull Request Commit Links" Bitbucket app:
+    // on a post-merge branch build (BITBUCKET_PR_ID unset), find the merged PR targeting the current branch.
+    const branchName = process.env.BITBUCKET_BRANCH || (await getCurrentGitBranch()) || '';
+    if (branchName) {
+      const prFromBranch = await this.getMergedPullRequestForBranch(sha, branchName);
+      if (prFromBranch) {
+        return prFromBranch;
+      }
+    }
+
     uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketUnableToFindPrInfo')));
+    return null;
+  }
+
+  // Find the merged PR targeting a branch, without relying on the "Pull Request Commit Links" app.
+  // Matches the PR whose merge commit equals HEAD, or (fallback) whose merge commit is an ancestor of HEAD.
+  private async getMergedPullRequestForBranch(sha: string, branchName: string): Promise<CommonPullRequestInfo | null> {
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    if (!repoSlug || !workspace) {
+      return null;
+    }
+    uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketSearchingPrByBranch', { branch: branchName, sha })));
+    try {
+      const mergedPullRequests = await this.bitbucket.repositories.listPullRequests({
+        repo_slug: repoSlug,
+        workspace: workspace,
+        state: 'MERGED',
+        q: `destination.branch.name = "${branchName}"`,
+        sort: '-updated_on',
+      });
+      const values = mergedPullRequests?.data?.values || [];
+
+      // Exact match: the PR whose merge commit is the current HEAD
+      const exactMatch = values.find((pr) => (pr as any)?.merge_commit?.hash === sha);
+      if (exactMatch) {
+        const prInfo = this.completePullRequestInfo(exactMatch);
+        uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFoundPrViaBranchFallback', { prId: prInfo.idNumber, prTitle: prInfo.title, branch: branchName })));
+        return prInfo;
+      }
+
+      // Ancestry fallback: HEAD may have advanced past the merge commit (several merges in one build window)
+      for (const pr of values) {
+        const mergeCommitHash = (pr as any)?.merge_commit?.hash;
+        if (!mergeCommitHash) {
+          continue;
+        }
+        try {
+          await git().raw(['merge-base', '--is-ancestor', mergeCommitHash, 'HEAD']);
+        } catch {
+          // Non-zero exit means the merge commit is not an ancestor of HEAD: skip it
+          continue;
+        }
+        const prInfo = this.completePullRequestInfo(pr);
+        uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFoundPrViaBranchFallback', { prId: prInfo.idNumber, prTitle: prInfo.title, branch: branchName })));
+        return prInfo;
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketErrorListingPullRequests', { message: (e as Error).message })));
+    }
     return null;
   }
 
