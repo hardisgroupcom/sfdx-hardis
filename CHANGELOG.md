@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Fix Bitbucket + Jenkins post-merge deployments not finding the merged Pull Request to post the deployment comment, even when the Pull Request Commit Links app is not installed.
+- [hardis:project:clean:hiddenitems](https://sfdx-hardis.cloudity.com/hardis/project/clean/hiddenitems/): Clean hidden managed package sources and handle directories, not only files.
 - CI: Re-enabled Trivy vulnerability scanning and SBOM generation on the Alpine and Ubuntu Docker images, with all GitHub Actions pinned to commit SHAs.
 - Upgrade npm dependencies (esbuild, oclif).
 
