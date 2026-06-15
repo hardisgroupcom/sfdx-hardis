@@ -140,6 +140,7 @@
   "azureIntegrationUnableToExtractPrId": "commit メッセージから PR ID を抽出できません: {{message}}",
   "azureIntegrationUnableToFindPrInfo": "関連する Pull Request 情報が見つかりません",
   "azureIntegrationUnableToParseRepoUrl": "{{repoUrl}} を解析して SYSTEM_COLLECTIONURI と BUILD_REPOSITORY_ID を取得できません",
+  "azureNoPrMatchingDeployedCommit": "デプロイされたコミット {{sha}} に一致する Pull Request のマージコミットがありません。QuickDeploy をスキップし、完全なデプロイにフォールバックします。",
   "backingUpDataCloudObjectsSeparately": "{{count}} 件の Data Cloud オブジェクト (__dlm/__dll) が見つかりました。別の取得呼び出しでバックアップします",
   "backpromoteActionAlreadyDone": "{{date}} に実行済み",
   "backpromoteActionCompletedSuccessfully": "アクション「{{label}}」が正常に完了しました",

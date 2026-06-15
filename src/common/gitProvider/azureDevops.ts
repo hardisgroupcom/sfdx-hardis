@@ -302,7 +302,7 @@ ${this.getPipelineVariablesConfig()}
       status: PullRequestStatus.Completed,
     });
     const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch.filter(
-      (pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded && pr.lastMergeCommit?.commitId === sha,
+      (pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded && this.isPullRequestMatchingCommit(pr, sha),
     );
     if (latestMergedPullRequestOnBranch.length > 0) {
       const pullRequest = latestMergedPullRequestOnBranch[0];
@@ -393,14 +393,22 @@ ${this.getPipelineVariablesConfig()}
     });
     const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch.filter((pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded);
     if (latestMergedPullRequestOnBranch.length > 0) {
-      const latestPullRequest = latestMergedPullRequestOnBranch[0];
-      const latestPullRequestId = latestPullRequest.pullRequestId;
+      // Select the PR whose merge commit matches the commit currently being deployed (HEAD).
+      // When several PRs are merged around the same time, the most recently completed PR is not
+      // necessarily the one that produced this build's commit. Using its validation id would make
+      // QuickDeploy reuse an unrelated PR's deployment and deploy the wrong metadata.
+      const sha = await git().revparse(["HEAD"]);
+      const matchingPullRequest = latestMergedPullRequestOnBranch.find((pr) => this.isPullRequestMatchingCommit(pr, sha)) || null;
+      if (matchingPullRequest == null) {
+        uxLog("warning", this, c.yellow('[Azure Integration] ' + t('azureNoPrMatchingDeployedCommit', { sha })));
+        return null;
+      }
       deploymentCheckId = await this.getDeploymentIdFromPullRequest(
         azureGitApi,
         repositoryId,
-        latestPullRequestId || 0,
+        matchingPullRequest.pullRequestId || 0,
         deploymentCheckId,
-        latestPullRequest,
+        matchingPullRequest,
       );
     }
     return deploymentCheckId;
@@ -421,6 +429,13 @@ ${this.getPipelineVariablesConfig()}
     }
     return null;
   }
+
+  private isPullRequestMatchingCommit(pr: GitPullRequest, sha: string): boolean {
+    // Azure can put the deployed target-branch HEAD in lastMergeCommit for merge/squash
+    // completions, or in lastMergeSourceCommit for rebase/fast-forward completions.
+    return pr.lastMergeCommit?.commitId === sha || pr.lastMergeSourceCommit?.commitId === sha;
+  }
+
   private async getDeploymentIdFromPullRequest(
     azureGitApi: any,
     repositoryId: string,

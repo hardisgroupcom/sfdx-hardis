@@ -140,6 +140,7 @@
   "azureIntegrationUnableToExtractPrId": "PR-ID konnte nicht aus der Commit-Nachricht extrahiert werden: {{message}}",
   "azureIntegrationUnableToFindPrInfo": "Zugehörige Pull Request-Informationen konnten nicht gefunden werden",
   "azureIntegrationUnableToParseRepoUrl": "{{repoUrl}} konnte nicht analysiert werden, um SYSTEM_COLLECTIONURI und BUILD_REPOSITORY_ID zu ermitteln",
+  "azureNoPrMatchingDeployedCommit": "Kein Pull Request-Merge-Commit stimmt mit dem bereitgestellten Commit {{sha}} überein; QuickDeploy wird übersprungen und auf eine vollständige Bereitstellung zurückgegriffen.",
   "backingUpDataCloudObjectsSeparately": "{{count}} Data Cloud-Objekte (__dlm/__dll) gefunden, werden in einem separaten Retrieve-Aufruf gesichert",
   "backpromoteActionAlreadyDone": "bereits ausgefuehrt am {{date}}",
   "backpromoteActionCompletedSuccessfully": "Aktion \"{{label}}\" erfolgreich abgeschlossen",
