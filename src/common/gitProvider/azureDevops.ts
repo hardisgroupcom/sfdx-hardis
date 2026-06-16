@@ -444,25 +444,44 @@ ${this.getPipelineVariablesConfig()}
     latestPullRequest: any,
   ): Promise<string | null> {
     const existingThreads = await azureGitApi.getThreads(repositoryId, latestPullRequestId);
+    // A PR can hold several deployment-id comments, one per pipeline run. The getThreads API has no
+    // sort parameter, so we cannot rely on ordering: scan every comment and select the most recent
+    // one by date, otherwise QuickDeploy would reuse an outdated validation id.
+    let latestDeploymentTime = -1;
     for (const existingThread of existingThreads) {
       if (existingThread.isDeleted) {
         continue;
       }
       for (const comment of existingThread?.comments || []) {
+        if (comment?.isDeleted) {
+          continue;
+        }
         if ((comment?.content || "").includes(`<!-- sfdx-hardis deployment-id `)) {
           const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment.content);
           if (matches) {
-            deploymentCheckId = matches[1];
-            uxLog("error", this, c.grey(t('foundDeploymentIdOnPr', { deploymentCheckId, latestPullRequestId, latestPullRequest: latestPullRequest.title })));
-            break;
+            const commentTime = this.getCommentTimestamp(comment, existingThread);
+            if (commentTime >= latestDeploymentTime) {
+              latestDeploymentTime = commentTime;
+              deploymentCheckId = matches[1];
+            }
           }
         }
       }
-      if (deploymentCheckId) {
-        break;
-      }
+    }
+    if (deploymentCheckId) {
+      uxLog("log", this, c.grey(t('foundDeploymentIdOnPr', { deploymentCheckId, latestPullRequestId, latestPullRequest: latestPullRequest.title })));
     }
     return deploymentCheckId;
+  }
+
+  // Returns a comparable timestamp (ms) for a PR comment, falling back to its parent thread.
+  private getCommentTimestamp(comment: any, thread: any): number {
+    const dateValue = comment?.publishedDate || comment?.lastUpdatedDate || thread?.publishedDate || thread?.lastUpdatedDate;
+    if (!dateValue) {
+      return 0;
+    }
+    const time = new Date(dateValue).getTime();
+    return isNaN(time) ? 0 : time;
   }
 
   public async listPullRequestsInBranchSinceLastMerge(
