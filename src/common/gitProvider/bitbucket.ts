@@ -203,7 +203,7 @@ export class BitbucketProvider extends GitProviderRoot {
         commit: sha,
       });
       const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch?.data?.values?.filter(
-        (pr) => pr.state === 'MERGED' && pr.merge_commit?.hash === sha
+        (pr) => pr.state === 'MERGED' && this.hashesMatch(sha, pr.merge_commit?.hash)
       );
       if (latestMergedPullRequestOnBranch?.length && latestMergedPullRequestOnBranch?.length > 0) {
         const pullRequest = latestMergedPullRequestOnBranch[0];
@@ -249,7 +249,8 @@ export class BitbucketProvider extends GitProviderRoot {
       const values = mergedPullRequests?.data?.values || [];
 
       // Exact match: the PR whose merge commit is the current HEAD
-      const exactMatch = values.find((pr) => (pr as any)?.merge_commit?.hash === sha);
+      // (Bitbucket abbreviates merge_commit.hash to 12 chars, so match by prefix)
+      const exactMatch = values.find((pr) => this.hashesMatch(sha, (pr as any)?.merge_commit?.hash));
       if (exactMatch) {
         const prInfo = this.completePullRequestInfo(exactMatch);
         uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFoundPrViaBranchFallback', { prId: prInfo.idNumber, prTitle: prInfo.title, branch: branchName })));
@@ -391,6 +392,44 @@ export class BitbucketProvider extends GitProviderRoot {
     }
   }
 
+  // Bitbucket Cloud returns merge_commit.hash ABBREVIATED to 12 chars in pull
+  // request payloads, while commits.list (and local `git`) use FULL 40-char
+  // hashes. An exact-string comparison therefore never matches, so compare with
+  // prefix awareness (either hash being a prefix of the other).
+  private hashesMatch(a: string | undefined, b: string | undefined): boolean {
+    if (!a || !b) {
+      return false;
+    }
+    return a === b || a.startsWith(b) || b.startsWith(a);
+  }
+
+  // Bitbucket Cloud paginates list responses (pull requests, commits...). Each
+  // response only carries one page of `values` plus a `next` link when more
+  // pages exist. This helper follows `next` (via the `page` param) and returns
+  // every item across all pages, so callers never silently miss results.
+  // `pagelen` maxes out at 50 for pull requests and 100 for commits.
+  private async fetchAllPages(
+    listFn: (params: any) => Promise<any>,
+    params: any,
+    maxPages: number = 50,
+  ): Promise<any[]> {
+    const all: any[] = [];
+    let page = 1;
+    while (page <= maxPages) {
+      const response = await listFn({ ...params, page });
+      const values =
+        response && response.data && response.data.values
+          ? response.data.values
+          : [];
+      all.push(...values);
+      if (!response?.data?.next || values.length === 0) {
+        break;
+      }
+      page++;
+    }
+    return all;
+  }
+
   public async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,
@@ -437,19 +476,17 @@ export class BitbucketProvider extends GitProviderRoot {
 
       uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketGettingCommits', { include: currentBranchName, exclude: excludeRef })));
 
-      const commitsResponse = await this.bitbucket.commits.list({
-        workspace,
-        repo_slug: repoSlug,
-        include: currentBranchName,
-        exclude: excludeRef,
-      } as any);
-
-      const commits =
-        commitsResponse &&
-          commitsResponse.data &&
-          commitsResponse.data.values
-          ? commitsResponse.data.values
-          : [];
+      // Paginated: a busy branch can have far more than one page of commits since the last merge
+      const commits = await this.fetchAllPages(
+        (params) => this.bitbucket.commits.list(params),
+        {
+          workspace,
+          repo_slug: repoSlug,
+          include: currentBranchName,
+          exclude: excludeRef,
+          pagelen: 100,
+        },
+      );
 
       uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFoundCommits', { count: commits.length })));
 
@@ -457,7 +494,7 @@ export class BitbucketProvider extends GitProviderRoot {
         return [];
       }
 
-      const commitHashes = new Set(commits.map((c: any) => c.hash));
+      const commitHashes: string[] = commits.map((c: any) => c.hash);
 
       // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
       const allBranches = [currentBranchName, ...childBranchesNames];
@@ -467,16 +504,16 @@ export class BitbucketProvider extends GitProviderRoot {
       const prPromises = allBranches.map(async (branchName) => {
         try {
           const branchQuery = `destination.branch.name = "${branchName}" AND state = "MERGED"`;
-          const response = await this.bitbucket.pullrequests.list({
-            workspace,
-            repo_slug: repoSlug,
-            q: branchQuery,
-          } as any);
-
-          const values =
-            response && response.data && response.data.values
-              ? response.data.values
-              : [];
+          // Paginated: a branch can have more merged PRs than fit on one page
+          const values = await this.fetchAllPages(
+            (params) => this.bitbucket.pullrequests.list(params),
+            {
+              workspace,
+              repo_slug: repoSlug,
+              q: branchQuery,
+              pagelen: 50,
+            },
+          );
 
           uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFoundMergedPrs', { count: values.length, branchName })));
 
@@ -492,10 +529,12 @@ export class BitbucketProvider extends GitProviderRoot {
 
       uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketTotalMergedPrs', { count: allMergedPRs.length })));
 
-      // Step 4: Filter PRs whose merge commit is in our commit list
+      // Step 4: Filter PRs whose merge commit is in our commit list.
+      // The PR merge_commit hash (12 chars) is a prefix of the full commit hash
+      // (40 chars), so match with prefix awareness instead of exact equality.
       const relevantPRs = allMergedPRs.filter((pr) => {
         const mergeCommitHash = pr.merge_commit?.hash;
-        return mergeCommitHash && commitHashes.has(mergeCommitHash);
+        return commitHashes.some((hash) => this.hashesMatch(hash, mergeCommitHash));
       });
 
       uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketRelevantPrs', { count: relevantPRs.length })));
@@ -626,8 +665,8 @@ ${getBannerMarkdownAndLink()}
       idStr: prData.id ? prData?.id?.toString() : '',
       sourceBranch: prData?.source?.branch?.name || '',
       targetBranch: prData?.destination?.branch?.name || '',
-      title: prData?.rendered?.title?.raw || prData?.rendered?.title?.markup || prData?.rendered?.title?.html || '',
-      description: prData?.rendered?.description?.raw || prData?.rendered?.description?.markup || prData?.rendered?.description?.html || '',
+      title: prData?.rendered?.title?.raw || prData?.rendered?.title?.markup || prData?.rendered?.title?.html || prData?.title || '',
+      description: prData?.rendered?.description?.raw || prData?.rendered?.description?.markup || prData?.rendered?.description?.html || (prData as any)?.description || '',
       webUrl: prData?.links?.html?.href || '',
       authorName: prData?.author?.display_name || '',
       mergeCommitSha: (prData as any)?.merge_commit?.hash || undefined,
