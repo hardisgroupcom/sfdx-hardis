@@ -19,8 +19,15 @@ export class BitbucketProvider extends GitProviderRoot {
   constructor() {
     super();
     this.token = process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || '';
-    const clientOptions = { auth: { token: this.token } };
-    this.bitbucket = new Bitbucket(clientOptions);
+    // A Bitbucket repository/workspace Access Token authenticates as a Bearer
+    // token (token only). An Atlassian account API token must instead be used as
+    // Basic auth, with the account email as the username. Pick the scheme based
+    // on whether CI_SFDX_HARDIS_BITBUCKET_EMAIL is provided.
+    const email = process.env.CI_SFDX_HARDIS_BITBUCKET_EMAIL || '';
+    const clientOptions = email
+      ? { auth: { username: email, password: this.token } }
+      : { auth: { token: this.token } };
+    this.bitbucket = new Bitbucket(clientOptions as any);
   }
 
   // Auto-detect Bitbucket CI variables from token + local git remote URL
