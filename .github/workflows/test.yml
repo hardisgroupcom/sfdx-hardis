@@ -67,12 +67,20 @@ jobs:
       contents: read
       checks: write
 
+  # NUTs need org/DevHub secrets (secrets: inherit). Fork PRs do not receive
+  # repository secrets, so the job would fail to authenticate; running it would
+  # also expose secrets to untrusted fork code. Skip it for PRs opened from a
+  # fork (head repo != base repo). It still runs on push, workflow_dispatch and
+  # same-repo PRs. Unit tests above need no secrets and run on fork PRs too.
   nuts:
     needs:
       - detect-duplicate-run
       - linux-unit-tests
       - windows-unit-tests
-    if: needs.detect-duplicate-run.outputs.should_run == 'true'
+    if: >-
+      needs.detect-duplicate-run.outputs.should_run == 'true' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     uses: salesforcecli/github-workflows/.github/workflows/nut.yml@main # zizmor: ignore[unpinned-uses]
     secrets: inherit # zizmor: ignore[secrets-inherit]
     permissions:

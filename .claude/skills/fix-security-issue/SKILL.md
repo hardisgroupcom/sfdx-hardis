@@ -3,6 +3,7 @@ name: fix-security-issue
 description: Handle CVE/vulnerability reports from security linters (trivy, osv-scanner, etc.). Tries to upgrade first; ignores only when safe and justified.
 allowed-tools: Read Grep Glob Edit Write Bash WebFetch WebSearch
 argument-hint: "[CVE-ID or vulnerability description]"
+model: sonnet
 ---
 
 Investigate and fix the security issue `$ARGUMENTS` reported by trivy, osv-scanner, or another security linter.

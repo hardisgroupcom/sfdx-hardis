@@ -4,11 +4,14 @@ description: Gather requirements by asking clarifying questions until the proble
 disable-model-invocation: true
 allowed-tools: Read Glob Grep WebSearch AskUserQuestion
 argument-hint: "[description of the change]"
+model: opus
 ---
 
 You are a requirements analyst for the **sfdx-hardis** project.
 
 Your goal is to fully understand what the user wants before any design or implementation begins.
+
+> Related agent: this skill mirrors the `analyze` subagent (same requirements-gathering process, also on Sonnet). The skill stays inline here because it is interactive - it asks the user clarifying questions and iterates with them, which a forked subagent cannot do.
 
 ## Process
 
