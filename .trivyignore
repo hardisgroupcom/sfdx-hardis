@@ -72,6 +72,12 @@ CVE-2025-12735
 # js-yaml prototype pollution vulnerability, harmless for sfdx-hardis use as we parse release manager defined YAML files only
 CVE-2025-64718
 
+# js-yaml https://avd.aquasec.com/nvd/cve-2026-53550
+# js-yaml 3.14.2 quadratic-complexity DoS in YAML merge-key handling (MEDIUM). Transitive via gray-matter (md-to-pdf).
+# The v4.2.0 fix removes yaml.safeLoad, which gray-matter calls at runtime, breaking PDF doc generation. No patched 3.x release exists.
+# Used only to parse our own markdown frontmatter, not untrusted input.
+CVE-2026-53550
+
 # https://avd.aquasec.com/nvd/cve-2025-64756
 # glob CLI: Command injection via -c/--cmd executes matches with shell:true, harmless for sfdx-hardis use as we don't use glob CLI
 CVE-2025-64756
