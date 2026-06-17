@@ -23,7 +23,14 @@ class SfdxHardisBuilder {
 
   async updateMetadataListFromRegistry() {
     console.log("Updating metadata list from source-deploy-retrieve registry...");
-    const metadataRegistry = await this.fetchJson(SDR_METADATA_REGISTRY_URL);
+    let metadataRegistry;
+    try {
+      metadataRegistry = await this.fetchJson(SDR_METADATA_REGISTRY_URL);
+    } catch (e) {
+      console.warn(`Warning: Could not download metadata registry (network unavailable?): ${e.message}`);
+      console.warn("Skipping metadata list update.");
+      return;
+    }
     const metadataTypes = this.buildMetadataTypesList(metadataRegistry);
     const metadataListContent = this.buildMetadataListFileContent(metadataTypes);
     this.writeFileIfChanged(METADATA_LIST_FILE, metadataListContent);
