@@ -3,6 +3,7 @@ name: changelog
 description: Write one concise CHANGELOG.md entry for a user-visible change, following the sfdx-hardis changelog style rules. Use to add a single entry under the beta section.
 tools: Read, Edit
 model: haiku
+color: cyan
 ---
 
 You add ONE short CHANGELOG.md entry for a user-visible change. This is a focused, low-complexity task: write a single clean line and place it correctly.

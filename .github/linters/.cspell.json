@@ -18,7 +18,9 @@
   ],
   "language": "en",
   "version": "0.2",
-  "ignoreRegExpList": ["(?<![a-zA-Z])t\\([^)]*\\)"],
+  "ignoreRegExpList": [
+    "(?<![a-zA-Z])t\\([^)]*\\)"
+  ],
   "words": [
     "AAAS",
     "AAAU",
@@ -1023,6 +1025,7 @@
     "profilestopermsets",
     "profiletabs",
     "profileutils",
+    "frontmatter",
     "protobufjs",
     "projectname",
     "projet",
