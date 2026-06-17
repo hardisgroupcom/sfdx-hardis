@@ -297,18 +297,24 @@ export class BitbucketProvider extends GitProviderRoot {
       q: `destination.branch.name = "${gitBranch}"`,
       sort: '-updated_on',
     });
-    if (
-      latestMergedPullRequestsOnBranch?.data?.values?.length &&
-      latestMergedPullRequestsOnBranch?.data?.values?.length > 0
-    ) {
-      const latestPullRequest = latestMergedPullRequestsOnBranch?.data?.values[0];
-      const latestPullRequestId = latestPullRequest.id;
+    const values = latestMergedPullRequestsOnBranch?.data?.values || [];
+    if (values.length > 0) {
+      // Select the PR whose merge commit matches the commit currently being deployed (HEAD).
+      // When several PRs are merged around the same time, the most recently updated PR is not
+      // necessarily the one that produced this build's commit. Using its validation id would make
+      // QuickDeploy reuse an unrelated PR's deployment and deploy the wrong metadata.
+      const sha = await git().revparse(['HEAD']);
+      const matchingPullRequest = values.find((pr) => this.hashesMatch(sha, (pr as any)?.merge_commit?.hash)) || null;
+      if (matchingPullRequest == null) {
+        uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('noPrMatchingDeployedCommit', { sha })));
+        return null;
+      }
       deploymentCheckId = await this.getDeploymentIdFromPullRequest(
-        latestPullRequestId || 0,
+        matchingPullRequest.id || 0,
         repoSlug || '',
         workspace || '',
         deploymentCheckId,
-        this.completePullRequestInfo(latestPullRequest)
+        this.completePullRequestInfo(matchingPullRequest)
       );
     }
 
@@ -344,23 +350,44 @@ export class BitbucketProvider extends GitProviderRoot {
       workspace: workspace,
     });
 
+    // A PR can hold several deployment-id comments, one per pipeline run. Scan every comment and
+    // select the most recent one by date, otherwise QuickDeploy would reuse an outdated validation id.
+    let latestDeploymentTime = -1;
     for (const comment of comments?.data?.values || []) {
+      if (comment?.deleted) {
+        continue;
+      }
       if ((comment?.content?.raw || '').includes(`<!-- sfdx-hardis deployment-id `)) {
         const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment?.content?.raw || '');
         if (matches) {
-          deploymentCheckId = matches[1];
-          uxLog(
-            "log",
-            this,
-            c.grey(
-              `[Bitbucket Integration] Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`
-            )
-          );
-          break;
+          const commentTime = this.getCommentTimestamp(comment);
+          if (commentTime >= latestDeploymentTime) {
+            latestDeploymentTime = commentTime;
+            deploymentCheckId = matches[1];
+          }
         }
       }
     }
+    if (deploymentCheckId) {
+      uxLog(
+        "log",
+        this,
+        c.grey(
+          `[Bitbucket Integration] Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`
+        )
+      );
+    }
     return deploymentCheckId;
+  }
+
+  // Returns a comparable timestamp (ms) for a PR comment.
+  private getCommentTimestamp(comment: any): number {
+    const dateValue = comment?.created_on || comment?.updated_on;
+    if (!dateValue) {
+      return 0;
+    }
+    const time = new Date(dateValue).getTime();
+    return isNaN(time) ? 0 : time;
   }
 
   public async listPullRequests(

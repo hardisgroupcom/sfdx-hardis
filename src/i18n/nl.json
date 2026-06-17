@@ -1898,6 +1898,7 @@
   "noPackageXmlFoundSoNoDeployment": "Geen package.xml gevonden, er is dus geen implementatie uitgevoerd",
   "noPermissionSetFoundInTheProject": "Geen machtigingenset gevonden in het project",
   "noPermissionSetGroupFoundInThe": "Geen machtigingensetgroep gevonden in het project",
+  "noPrMatchingDeployedCommit": "Geen Pull Request merge commit komt overeen met de geïmplementeerde commit {{sha}}; QuickDeploy wordt overgeslagen en er wordt teruggevallen op een volledige implementatie.",
   "noProcessBuilderFoundInTheProject": "Geen process builder gevonden in het project",
   "noProfileFieldAccessRecordsFoundSkipping": "Geen profielveldtoegangsrecords gevonden, ProfileFieldAccess.csv wordt overgeslagen.",
   "noProfileFoundInTheProject": "Geen profiel gevonden in het project",

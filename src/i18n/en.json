@@ -1902,6 +1902,7 @@
   "noPackageXmlFoundSoNoDeployment": "No package.xml found so no deployment has been performed",
   "noPermissionSetFoundInTheProject": "No permission set found in the project",
   "noPermissionSetGroupFoundInThe": "No permission set group found in the project",
+  "noPrMatchingDeployedCommit": "No Pull Request merge commit matches the deployed commit {{sha}}; skipping QuickDeploy and falling back to a full deployment.",
   "noProcessBuilderFoundInTheProject": "No process builder found in the project",
   "noProfileFieldAccessRecordsFoundSkipping": "No profile field access records found, skipping ProfileFieldAccess.csv.",
   "noProfileFoundInTheProject": "No profile found in the project",

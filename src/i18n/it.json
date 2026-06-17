@@ -1898,6 +1898,7 @@
   "noPackageXmlFoundSoNoDeployment": "Nessun package.xml trovato, quindi nessuna distribuzione è stata eseguita",
   "noPermissionSetFoundInTheProject": "Nessun permission set trovato nel progetto",
   "noPermissionSetGroupFoundInThe": "Nessun permission set group trovato nel progetto",
+  "noPrMatchingDeployedCommit": "Nessun commit di merge della Pull Request corrisponde al commit distribuito {{sha}}; QuickDeploy ignorato, si torna a una distribuzione completa.",
   "noProcessBuilderFoundInTheProject": "Nessun process builder trovato nel progetto",
   "noProfileFieldAccessRecordsFoundSkipping": "Nessun record di accesso ai campi del profilo trovato, ProfileFieldAccess.csv ignorato.",
   "noProfileFoundInTheProject": "Nessun profilo trovato nel progetto",

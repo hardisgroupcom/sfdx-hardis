@@ -156,11 +156,24 @@ export class GithubProvider extends GitProviderRoot {
       base: gitBranch,
     });
     if (latestPullRequestsOnBranch.data.length > 0) {
-      const latestPullRequest = latestPullRequestsOnBranch.data[0];
-      const latestPullRequestId = latestPullRequest.number;
-      deploymentCheckId = await this.getDeploymentIdFromPullRequest(latestPullRequestId, this.repoOwner || "", this.repoName || "", deploymentCheckId, latestPullRequest);
+      // Select the PR whose merge commit matches the commit currently being deployed (HEAD).
+      // When several PRs are merged around the same time, the most recently closed PR is not
+      // necessarily the one that produced this build's commit. Using its validation id would make
+      // QuickDeploy reuse an unrelated PR's deployment and deploy the wrong metadata.
+      const sha = await git().revparse(["HEAD"]);
+      const matchingPullRequest = latestPullRequestsOnBranch.data.find((pr) => this.isPullRequestMatchingCommit(pr, sha)) || null;
+      if (matchingPullRequest == null) {
+        uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('noPrMatchingDeployedCommit', { sha })));
+        return null;
+      }
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(matchingPullRequest.number, this.repoOwner || "", this.repoName || "", deploymentCheckId, matchingPullRequest);
     }
     return deploymentCheckId;
+  }
+
+  private isPullRequestMatchingCommit(pr: any, sha: string): boolean {
+    // A merged PR exposes the resulting base-branch commit in merge_commit_sha (merge, squash or rebase).
+    return pr?.merged_at != null && pr?.merge_commit_sha === sha;
   }
 
   public async getPullRequestDeploymentCheckId(): Promise<string | null> {
@@ -183,17 +196,35 @@ export class GithubProvider extends GitProviderRoot {
       repo: repoName,
       issue_number: latestPullRequestId,
     });
+    // A PR can hold several deployment-id comments, one per pipeline run. Scan every comment and
+    // select the most recent one by date, otherwise QuickDeploy would reuse an outdated validation id.
+    let latestDeploymentTime = -1;
     for (const existingComment of existingComments.data) {
       if ((existingComment.body || "").includes("<!-- sfdx-hardis deployment-id ")) {
         const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingComment.body || "");
         if (matches) {
-          deploymentCheckId = matches[1];
-          uxLog("error", this, c.grey(t('foundDeploymentIdOnPr', { deploymentCheckId, latestPullRequestId, latestPullRequest: latestPullRequest.title })));
-          break;
+          const commentTime = this.getCommentTimestamp(existingComment);
+          if (commentTime >= latestDeploymentTime) {
+            latestDeploymentTime = commentTime;
+            deploymentCheckId = matches[1];
+          }
         }
       }
     }
+    if (deploymentCheckId) {
+      uxLog("log", this, c.grey(t('foundDeploymentIdOnPr', { deploymentCheckId, latestPullRequestId, latestPullRequest: latestPullRequest.title })));
+    }
     return deploymentCheckId;
+  }
+
+  // Returns a comparable timestamp (ms) for a PR comment.
+  private getCommentTimestamp(comment: any): number {
+    const dateValue = comment?.created_at || comment?.updated_at;
+    if (!dateValue) {
+      return 0;
+    }
+    const time = new Date(dateValue).getTime();
+    return isNaN(time) ? 0 : time;
   }
 
   // Returns current job URL

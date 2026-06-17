@@ -1898,6 +1898,7 @@
   "noPackageXmlFoundSoNoDeployment": "Aucun package.xml trouvé, aucun déploiement n'a été effectué",
   "noPermissionSetFoundInTheProject": "Aucun ensemble d'autorisations trouvé dans le projet",
   "noPermissionSetGroupFoundInThe": "Aucun groupe d'ensembles d'autorisations trouvé dans le projet",
+  "noPrMatchingDeployedCommit": "Aucun commit de merge de Pull Request ne correspond au commit déployé {{sha}} ; QuickDeploy ignoré, retour à un déploiement complet.",
   "noProcessBuilderFoundInTheProject": "Aucun Process Builder trouvé dans le projet",
   "noProfileFieldAccessRecordsFoundSkipping": "Aucun enregistrement d'accès aux champs de profil trouvé, ProfileFieldAccess.csv ignoré.",
   "noProfileFoundInTheProject": "Aucun profil trouvé dans le projet",

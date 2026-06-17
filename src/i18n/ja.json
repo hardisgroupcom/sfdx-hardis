@@ -1896,6 +1896,7 @@
   "noPackageXmlFoundSoNoDeployment": "package.xml が見つからなかったため、デプロイは実行されませんでした",
   "noPermissionSetFoundInTheProject": "プロジェクトに権限セットが見つかりませんでした",
   "noPermissionSetGroupFoundInThe": "プロジェクトに権限セットグループが見つかりませんでした",
+  "noPrMatchingDeployedCommit": "デプロイされたコミット {{sha}} に一致する Pull Request のマージコミットがありません。QuickDeploy をスキップし、完全なデプロイにフォールバックします。",
   "noProcessBuilderFoundInTheProject": "プロジェクトにプロセスビルダーが見つかりませんでした",
   "noProfileFieldAccessRecordsFoundSkipping": "プロファイル項目アクセスレコードが見つかりません。ProfileFieldAccess.csv をスキップします。",
   "noProfileFoundInTheProject": "プロジェクトにプロファイルが見つかりませんでした",
