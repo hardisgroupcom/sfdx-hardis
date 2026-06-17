@@ -55,12 +55,41 @@ type FlowNodeType = typeof FLOW_NODE_TYPES[number];
  * @param label The label to sanitize
  * @returns The sanitized label safe for use in Mermaid diagrams
  */
-function sanitizeMermaidLabel(label: string | undefined): string {
-    if (!label) {
+function normalizeMermaidLabel(label: unknown): string {
+    if (label === undefined || label === null) {
+        return '';
+    }
+    if (typeof label === 'string') {
+        return label;
+    }
+    if (typeof label === 'number' || typeof label === 'boolean' || typeof label === 'bigint') {
+        return String(label);
+    }
+    if (Array.isArray(label)) {
+        return label.map(item => normalizeMermaidLabel(item)).filter(Boolean).join(', ');
+    }
+    if (typeof label === 'object') {
+        const labelObject = label as Record<string, unknown>;
+        for (const key of ['stringValue', 'elementReference', 'targetReference', 'name', '#text']) {
+            if (labelObject[key] !== undefined) {
+                return normalizeMermaidLabel(labelObject[key]);
+            }
+        }
+        if (Object.keys(labelObject).length === 0) {
+            return '';
+        }
+        return JSON.stringify(labelObject);
+    }
+    return String(label);
+}
+
+function sanitizeMermaidLabel(label: unknown): string {
+    const normalizedLabel = normalizeMermaidLabel(label);
+    if (!normalizedLabel) {
         return '';
     }
     // Replace special characters that could break Mermaid syntax
-    return label
+    return normalizedLabel
         .replace(/"/g, '#quot;')      // Replace double quotes with #quot;
         .replace(/'/g, '#39;')         // Replace single quotes with #39;
         .replace(/`/g, '#96;')         // Replace backticks with #96;
