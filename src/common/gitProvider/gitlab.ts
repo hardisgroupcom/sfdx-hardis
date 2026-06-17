@@ -282,11 +282,24 @@ export class GitlabProvider extends GitProviderRoot {
       targetBranch: gitBranch,
     });
     if (latestMergeRequestsOnBranch.length > 0) {
-      const latestMergeRequest = latestMergeRequestsOnBranch[0];
-      const latestMergeRequestId = latestMergeRequest.iid;
-      deploymentCheckId = await this.getDeploymentIdFromPullRequest(projectId || "", latestMergeRequestId, deploymentCheckId, this.completePullRequestInfo(latestMergeRequest));
+      // Select the MR whose merge commit matches the commit currently being deployed (HEAD).
+      // When several MRs are merged around the same time, the most recently merged MR is not
+      // necessarily the one that produced this build's commit. Using its validation id would make
+      // QuickDeploy reuse an unrelated MR's deployment and deploy the wrong metadata.
+      const sha = await git().revparse(["HEAD"]);
+      const matchingMergeRequest = latestMergeRequestsOnBranch.find((mr) => this.isMergeRequestMatchingCommit(mr, sha)) || null;
+      if (matchingMergeRequest == null) {
+        uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('noPrMatchingDeployedCommit', { sha })));
+        return null;
+      }
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(projectId || "", matchingMergeRequest.iid, deploymentCheckId, this.completePullRequestInfo(matchingMergeRequest));
     }
     return deploymentCheckId;
+  }
+
+  private isMergeRequestMatchingCommit(mr: any, sha: string): boolean {
+    // GitLab exposes the resulting target-branch commit in merge_commit_sha (merge) or squash_commit_sha (squash).
+    return (mr?.mergeCommitSha || mr?.merge_commit_sha) === sha || (mr?.squashCommitSha || mr?.squash_commit_sha) === sha;
   }
 
   public async getPullRequestDeploymentCheckId(): Promise<string | null> {
@@ -300,17 +313,35 @@ export class GitlabProvider extends GitProviderRoot {
 
   private async getDeploymentIdFromPullRequest(projectId: string, latestMergeRequestId: number, deploymentCheckId: string | null, latestMergeRequest: CommonPullRequestInfo): Promise<string | null> {
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, latestMergeRequestId);
+    // An MR can hold several deployment-id notes, one per pipeline run. Scan every note and select
+    // the most recent one by date, otherwise QuickDeploy would reuse an outdated validation id.
+    let latestDeploymentTime = -1;
     for (const existingNote of existingNotes) {
       if (existingNote.body.includes("<!-- sfdx-hardis deployment-id ")) {
         const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingNote.body);
         if (matches) {
-          deploymentCheckId = matches[1];
-          uxLog("error", this, c.grey(t('foundDeploymentIdOnMr', { deploymentCheckId, latestMergeRequestId, latestMergeRequest: latestMergeRequest.title })));
-          break;
+          const noteTime = this.getCommentTimestamp(existingNote);
+          if (noteTime >= latestDeploymentTime) {
+            latestDeploymentTime = noteTime;
+            deploymentCheckId = matches[1];
+          }
         }
       }
     }
+    if (deploymentCheckId) {
+      uxLog("log", this, c.grey(t('foundDeploymentIdOnMr', { deploymentCheckId, latestMergeRequestId, latestMergeRequest: latestMergeRequest.title })));
+    }
     return deploymentCheckId;
+  }
+
+  // Returns a comparable timestamp (ms) for an MR note.
+  private getCommentTimestamp(note: any): number {
+    const dateValue = note?.created_at || note?.updated_at;
+    if (!dateValue) {
+      return 0;
+    }
+    const time = new Date(dateValue).getTime();
+    return isNaN(time) ? 0 : time;
   }
 
   // Posts a note on the merge request
