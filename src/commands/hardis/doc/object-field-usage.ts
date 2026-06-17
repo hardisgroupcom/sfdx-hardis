@@ -22,6 +22,7 @@ type FieldUsageRow = {
   populatedRecords: number;
   populatedPercentageNumeric: number;
   populatedPercentage: string;
+  sum: number | string;
 };
 
 type SkippedFieldInfo = {
@@ -35,6 +36,7 @@ type ObjectContext = {
   describeResult: any;
   useTooling: boolean;
   eligibleFields: any[];
+  sumFields: string[];
 };
 
 type FieldDistributionResult = {
@@ -57,6 +59,8 @@ This command focuses on one or more sObjects and measures how many records popul
 
 - **Target Org:** Use \`--target-org\` to pick the org connection context.
 - **Multiple sObjects:** Provide one or more API names via \`--objects\` (comma-separated) to analyze several objects in one run.
+- **Restrict to specific fields:** Use the \`Object:Field1,Field2\` syntax in \`--objects\` (groups separated by spaces) to analyze only the listed fields instead of every custom field. Example: \`--objects "Contact:Name,Email Account:Name,MyField__c"\`. Explicitly named fields are analyzed even when they are standard, as long as they exist and are filterable.
+- **Sum of values:** Append \`(WITH_SUM)\` to a field name to add a \`sum\` column with the total of its populated values. Example: \`--objects "Opportunity:Amount(WITH_SUM),Name,ExpectedRevenue(WITH_SUM)"\`. Only numeric fields (currency, double, int, percent) are summed; the column is added to the report only when at least one field requests it.
 - **Per-field Counts:** Performs one overall record count and one per-field count with \`SELECT COUNT() FROM <sObject> WHERE <field> != null\`, skipping required or non-filterable fields.
 - **Field Distributions:** Combine \`--objects <singleObject>\` with \`--fields FieldA,FieldB\` to group by those fields and list distinct values with their record counts and usage percentages.
 - **Reporting:** Generates CSV/XLSX reports and prints a summary table with per-field population rates.
@@ -71,6 +75,7 @@ sf hardis:doc:object-field-usage --objects Account,Contact --agent
 
 In agent mode:
 - The \`--objects\` flag is **required** (no interactive prompt for object selection).
+- The \`Object:Field1,Field2\` syntax can be used to restrict the analysis to specific fields, with an optional \`(WITH_SUM)\` modifier per numeric field.
 - The API usage confirmation prompt is skipped (proceeds automatically).
 `;
 
@@ -78,6 +83,8 @@ In agent mode:
     '$ sf hardis:doc:object-field-usage',
     '$ sf hardis:doc:object-field-usage --objects Account,Contact',
     '$ sf hardis:doc:object-field-usage --target-org myOrgAlias --objects CustomObject__c',
+    '$ sf hardis:doc:object-field-usage --objects "Contact:Name,Email Account:Name,MyField__c,MyOtherField__c"',
+    '$ sf hardis:doc:object-field-usage --objects "Opportunity:Amount(WITH_SUM),Name,ExpectedRevenue(WITH_SUM)"',
     '$ sf hardis:doc:object-field-usage --objects Account --fields SalesRegionAcct__c,Region__c',
     '$ sf hardis:doc:object-field-usage --objects Account,Contact --agent',
   ];
@@ -86,7 +93,7 @@ In agent mode:
     'target-org': requiredOrgFlagWithDeprecations,
     objects: Flags.string({
       char: 'o',
-      description: 'Comma-separated API names of the sObjects to analyze (e.g. Account,CustomObject__c). If omitted, an interactive prompt will list available objects.',
+      description: 'Comma-separated API names of the sObjects to analyze (e.g. Account,CustomObject__c). To restrict the analysis to specific fields, use the Object:Field1,Field2 syntax with groups separated by spaces (e.g. "Contact:Name,Email Account:MyField__c"). Append (WITH_SUM) to a numeric field to add a column with the sum of its values (e.g. "Opportunity:Amount(WITH_SUM)"). If omitted, an interactive prompt will list available objects.',
       required: false,
     }),
     fields: Flags.string({
@@ -197,6 +204,78 @@ In agent mode:
     if (!this.identifierRegex.test(identifier)) {
       throw new Error(`Invalid ${label} name: ${identifier}`);
     }
+  }
+
+  // Parses the --objects flag value into a list of objects with their optional field restrictions.
+  // Two accepted forms:
+  //  - Comma-separated objects (legacy): "Account,Contact" -> all eligible fields per object.
+  //  - Per-object field selection: "Contact:Name,Email Account:MyField__c" (groups separated by spaces).
+  // A field can carry a (WITH_SUM) suffix (e.g. "Amount(WITH_SUM)") to request an extra column
+  // with the sum of its populated values.
+  protected parseObjectsInput(raw: string): Array<{ name: string; fields: Array<{ name: string; withSum: boolean }> }> {
+    const input = (raw || '').trim();
+    if (!input) {
+      return [];
+    }
+    // Without a colon, keep the historical comma-separated objects behavior (all fields).
+    if (!input.includes(':')) {
+      return input
+        .split(',')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+        .map((name) => ({ name, fields: [] }));
+    }
+    // With a colon, groups are separated by spaces and each group is Object or Object:Field1,Field2
+    return input
+      .split(/\s+/)
+      .map((group) => group.trim())
+      .filter((group) => group.length > 0)
+      .map((group) => {
+        const colonIndex = group.indexOf(':');
+        if (colonIndex === -1) {
+          return { name: group, fields: [] };
+        }
+        const name = group.slice(0, colonIndex).trim();
+        const fields = group
+          .slice(colonIndex + 1)
+          .split(',')
+          .map((field) => field.trim())
+          .filter((field) => field.length > 0)
+          .map((field) => {
+            const sumMatch = field.match(/^(.*?)\s*\(WITH_SUM\)\s*$/i);
+            if (sumMatch) {
+              return { name: sumMatch[1].trim(), withSum: true };
+            }
+            return { name: field, withSum: false };
+          });
+        return { name, fields };
+      })
+      .filter((entry) => entry.name.length > 0);
+  }
+
+  // Resolves explicitly requested field names against the object describe.
+  // Honors standard fields too; skips unknown or non-filterable fields with a warning.
+  protected selectRequestedFields(describeFields: any[], requestedNames: string[], sObjectName: string): any[] {
+    const fieldsByLowerName = new Map<string, any>();
+    for (const field of describeFields || []) {
+      if (field?.name && typeof field.name === 'string') {
+        fieldsByLowerName.set(field.name.toLowerCase(), field);
+      }
+    }
+    const selected: any[] = [];
+    for (const requestedName of requestedNames) {
+      const field = fieldsByLowerName.get(requestedName.toLowerCase());
+      if (!field) {
+        uxLog("warning", this, c.yellow(t('requestedFieldNotFound', { fieldName: requestedName, sObjectName })));
+        continue;
+      }
+      if (field.filterable === false) {
+        uxLog("warning", this, c.yellow(t('requestedFieldNotFilterable', { fieldName: field.name, sObjectName })));
+        continue;
+      }
+      selected.push(field);
+    }
+    return selected;
   }
 
   protected extractCount(result: any): number {
@@ -319,6 +398,38 @@ In agent mode:
     return useTooling ? soqlQueryTooling(query, connection) : soqlQuery(query, connection);
   }
 
+  // Computes SUM() for the requested numeric fields in a single aggregate query.
+  // Returns a map fieldName -> sum (null when the org returned no value).
+  protected async computeFieldSums(
+    connection: Connection,
+    sObjectName: string,
+    sumFields: string[],
+    useTooling: boolean
+  ): Promise<Record<string, number | null>> {
+    const sums: Record<string, number | null> = {};
+    if (!sumFields.length) {
+      return sums;
+    }
+    const aliasToField: Record<string, string> = {};
+    const selectParts = sumFields.map((fieldName, idx) => {
+      const alias = `sum${idx}`;
+      aliasToField[alias] = fieldName;
+      return `SUM(${fieldName}) ${alias}`;
+    });
+    const query = `SELECT ${selectParts.join(', ')} FROM ${sObjectName}`;
+    try {
+      const result = useTooling ? await soqlQueryTooling(query, connection) : await soqlQuery(query, connection);
+      const record = (result?.records || [])[0] || {};
+      for (const [alias, fieldName] of Object.entries(aliasToField)) {
+        const value = record[alias];
+        sums[fieldName] = value === null || typeof value === 'undefined' ? null : Number(value);
+      }
+    } catch (error: any) {
+      uxLog("warning", this, c.yellow(t('unableToComputeFieldSums', { sObjectName, message: error?.message || error })));
+    }
+    return sums;
+  }
+
   protected isInvalidTypeError(error: any): boolean {
     const message = (error?.message || '').toLowerCase();
     const name = (error?.name || error?.code || '').toLowerCase();
@@ -401,7 +512,8 @@ In agent mode:
     connection: Connection,
     sObjectName: string,
     eligibleFields: any[],
-    useTooling: boolean
+    useTooling: boolean,
+    sumFields: string[] = []
   ): Promise<{ rows: FieldUsageRow[]; totalRecords: number; skippedFields: SkippedFieldInfo[] }> {
     if (eligibleFields.length === 0) {
       uxLog("warning", this, c.yellow(t('noEligibleFieldsFoundOnSkipping', { sObjectName })));
@@ -427,6 +539,9 @@ In agent mode:
       skippedFields
     );
 
+    const sumFieldsSet = new Set(sumFields);
+    const fieldSums = await this.computeFieldSums(connection, sObjectName, sumFields, useTooling);
+
     const rows: FieldUsageRow[] = [];
     for (const field of eligibleFields) {
       const populatedRecords = fieldCounts[field.name];
@@ -437,6 +552,11 @@ In agent mode:
         continue;
       }
       const percentage = totalRecords === 0 ? 0 : (populatedRecords / totalRecords) * 100;
+      let sum: number | string = '';
+      if (sumFieldsSet.has(field.name)) {
+        const computedSum = fieldSums[field.name];
+        sum = computedSum === null || typeof computedSum === 'undefined' ? 'N/A' : computedSum;
+      }
       rows.push({
         sObjectName,
         fieldApiName: field.name,
@@ -446,6 +566,7 @@ In agent mode:
         populatedRecords,
         populatedPercentageNumeric: percentage,
         populatedPercentage: `${percentage.toFixed(2)}%`,
+        sum,
       });
     }
 
@@ -471,18 +592,25 @@ In agent mode:
   protected async generateFieldUsageCsvReport(
     rows: FieldUsageRow[],
     reportName: string,
-    fileTitle: string
+    fileTitle: string,
+    includeSum = false
   ): Promise<string> {
     const csvPath = await generateReportPath(reportName, '', { withDate: true });
-    const csvData = rows.map((row) => ({
-      sObjectName: row.sObjectName,
-      fieldApiName: row.fieldApiName,
-      fieldLabel: row.fieldLabel,
-      fieldCreatedDate: row.fieldCreatedDate,
-      totalRecords: row.totalRecords,
-      populatedRecords: row.populatedRecords,
-      populatedPercentage: row.populatedPercentage,
-    }));
+    const csvData = rows.map((row) => {
+      const csvRow: Record<string, any> = {
+        sObjectName: row.sObjectName,
+        fieldApiName: row.fieldApiName,
+        fieldLabel: row.fieldLabel,
+        fieldCreatedDate: row.fieldCreatedDate,
+        totalRecords: row.totalRecords,
+        populatedRecords: row.populatedRecords,
+        populatedPercentage: row.populatedPercentage,
+      };
+      if (includeSum) {
+        csvRow.sum = row.sum;
+      }
+      return csvRow;
+    });
     await generateCsvFile(csvData, csvPath, {
       fileTitle,
       noExcel: true,
@@ -519,7 +647,7 @@ In agent mode:
   }
 
   protected estimateApiCalls(
-    contexts: Array<{ sObjectName: string; eligibleFields: any[] }>,
+    contexts: Array<{ sObjectName: string; eligibleFields: any[]; sumFields?: string[] }>,
     fieldFilters: string[] = []
   ): number {
     if (contexts.length === 0) {
@@ -535,7 +663,8 @@ In agent mode:
       }
       const compositeCalls = Math.ceil(eligibleCount / this.compositeBatchSize);
       const createdDateCalls = Math.ceil(eligibleCount / this.toolingCustomFieldBatchSize) || 1;
-      return sum + 1 + createdDateCalls + compositeCalls; // total count + CustomField chunks + composite batches
+      const sumCalls = (context.sumFields?.length || 0) > 0 ? 1 : 0; // single aggregate query per object
+      return sum + 1 + createdDateCalls + compositeCalls + sumCalls; // total count + CustomField chunks + composite batches + sum
     }, 0);
   }
 
@@ -573,14 +702,30 @@ In agent mode:
     const agentMode = flags.agent === true;
     const connection = flags['target-org'].getConnection();
     let uniqueObjects: string[] = [];
+    const requestedFieldsByObject: Record<string, string[]> = {};
+    // Field names (lowercased) explicitly requested with the (WITH_SUM) modifier, per object
+    const sumFieldsByObject: Record<string, Set<string>> = {};
     const hasPromptSentinel = flags.objects === this.objectsPromptSentinel;
     if (flags.objects && !hasPromptSentinel) {
-      const objectsInput = (flags.objects as string)
-        .split(',')
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0);
-      uniqueObjects = Array.from(new Set(objectsInput));
-      uniqueObjects.forEach((name) => this.validateIdentifier(name, 'sObject'));
+      const parsedObjects = this.parseObjectsInput(flags.objects as string);
+      for (const entry of parsedObjects) {
+        this.validateIdentifier(entry.name, 'sObject');
+        entry.fields.forEach((field) => this.validateIdentifier(field.name, 'field'));
+        if (!requestedFieldsByObject[entry.name]) {
+          requestedFieldsByObject[entry.name] = [];
+          sumFieldsByObject[entry.name] = new Set();
+        }
+        for (const field of entry.fields) {
+          requestedFieldsByObject[entry.name].push(field.name);
+          if (field.withSum) {
+            sumFieldsByObject[entry.name].add(field.name.toLowerCase());
+          }
+        }
+      }
+      uniqueObjects = Object.keys(requestedFieldsByObject);
+      for (const name of uniqueObjects) {
+        requestedFieldsByObject[name] = Array.from(new Set(requestedFieldsByObject[name]));
+      }
     }
 
     const objectContexts: ObjectContext[] = [];
@@ -626,7 +771,11 @@ In agent mode:
         )
       )
       : [];
+    const hasPerObjectFields = Object.values(requestedFieldsByObject).some((fields) => fields.length > 0);
     if (fieldsInput.length > 0) {
+      if (hasPerObjectFields) {
+        throw new Error('--fields cannot be combined with the Object:Field1,Field2 syntax in --objects. Use one or the other.');
+      }
       fieldsInput.forEach((fieldName) => this.validateIdentifier(fieldName, 'field'));
       if (uniqueObjects.length !== 1) {
         throw new Error('--fields can only be used when a single object is specified or selected.');
@@ -639,16 +788,37 @@ In agent mode:
       uxLog("log", this, c.grey(t('describing', { sObjectName })));
       const context = await this.describeTarget(connection, sObjectName);
       uxLog("log", this, c.grey(t('usingApiFor', { context: context.useTooling ? 'Tooling' : 'standard', sObjectName })));
-      const eligibleFields = this.filterDescribeFields(context.describeResult?.fields || []);
-      // Filter eligible fields to remove those with namespaces
-      const eligibleFieldsFiltered = eligibleFields.filter((field) => {
-        if (isManagedApiName(field.name) && !fieldsInput.includes(field.name)) {
-          return false;
+      const requestedFields = requestedFieldsByObject[sObjectName] || [];
+      let eligibleFieldsFiltered: any[];
+      if (requestedFields.length > 0) {
+        // Only analyze the explicitly requested fields (standard fields honored, namespace filter bypassed)
+        eligibleFieldsFiltered = this.selectRequestedFields(context.describeResult?.fields || [], requestedFields, sObjectName);
+      } else {
+        const eligibleFields = this.filterDescribeFields(context.describeResult?.fields || []);
+        // Filter eligible fields to remove those with namespaces
+        eligibleFieldsFiltered = eligibleFields.filter((field) => {
+          if (isManagedApiName(field.name) && !fieldsInput.includes(field.name)) {
+            return false;
+          }
+          return true;
+        });
+      }
+      // Resolve which eligible fields should also get a SUM column (numeric fields only)
+      const requestedSumFields = sumFieldsByObject[sObjectName] || new Set<string>();
+      const numericFieldTypes = new Set(['currency', 'double', 'int', 'percent']);
+      const sumFields: string[] = [];
+      for (const field of eligibleFieldsFiltered) {
+        if (!requestedSumFields.has(field.name.toLowerCase())) {
+          continue;
         }
-        return true;
-      });
+        if (numericFieldTypes.has((field.type || '').toLowerCase())) {
+          sumFields.push(field.name);
+        } else {
+          uxLog("warning", this, c.yellow(t('sumRequestedOnNonNumericField', { fieldName: field.name, sObjectName })));
+        }
+      }
       if (eligibleFieldsFiltered.length > 0) {
-        objectContexts.push({ sObjectName, ...context, eligibleFields: eligibleFieldsFiltered });
+        objectContexts.push({ sObjectName, ...context, eligibleFields: eligibleFieldsFiltered, sumFields });
       }
       WebSocketClient.sendProgressStepMessage(counter + 1, uniqueObjects.length);
       counter++;
@@ -728,7 +898,8 @@ In agent mode:
         connection,
         context.sObjectName,
         context.eligibleFields,
-        context.useTooling
+        context.useTooling,
+        context.sumFields
       );
       aggregatedRows.push(...rows);
       perObjectRows[context.sObjectName] = rows;
@@ -738,6 +909,9 @@ In agent mode:
       counter++;
     }
     WebSocketClient.sendProgressEndMessage(objectContexts.length);
+
+    // Only add the Sum column when at least one (WITH_SUM) field was requested
+    const includeSumColumn = objectContexts.some((context) => (context.sumFields?.length || 0) > 0);
 
     uxLog("action", this, c.cyan(t('generatingReports')));
     const reportFiles: any[] = [];
@@ -750,7 +924,8 @@ In agent mode:
       const csvPath = await this.generateFieldUsageCsvReport(
         rows,
         `object-field-usage-${context.sObjectName}`,
-        `Field usage - ${context.sObjectName}`
+        `Field usage - ${context.sObjectName}`,
+        includeSumColumn
       );
       csvFilesForXlsx.push(csvPath);
       reportFiles.push({ type: 'csv', file: csvPath });
@@ -760,7 +935,8 @@ In agent mode:
       const summaryCsv = await this.generateFieldUsageCsvReport(
         aggregatedRows,
         'object-field-usage-summary',
-        'Object field usage summary'
+        'Object field usage summary',
+        includeSumColumn
       );
       csvFilesForXlsx.unshift(summaryCsv);
       reportFiles.push({ type: 'csv', file: summaryCsv });

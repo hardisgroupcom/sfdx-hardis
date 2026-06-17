@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/): Restrict the analysis to specific fields per object using the `Object:Field1,Field2` syntax in `--objects`, with an optional `(WITH_SUM)` modifier to add a column with the sum of a numeric field's values.
+
 ## [7.16.3] 2026-06-15
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Fix Bitbucket + Jenkins post-merge deployments not finding the merged Pull Request to post the deployment comment, even when the Pull Request Commit Links app is not installed.

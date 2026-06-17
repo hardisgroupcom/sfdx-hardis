@@ -188,7 +188,7 @@ In agent mode:
     const totalTokens = tokensCountQueryRes.totalSize;
     uxLog("log", this, t('oauthTokensFound', { count: totalTokens }));
 
-    const baseOAuthTokenQuery = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name , User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id, DeleteToken FROM OAuthToken";
+    const baseOAuthTokenQuery = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name, User.Username, User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id, DeleteToken FROM OAuthToken";
     const allOAuthTokenQuery = baseOAuthTokenQuery + " ORDER BY CreatedDate ASC";
     const allOAuthTokenQueryRes = await bulkQuery(allOAuthTokenQuery, conn);
     const allOAuthTokens = allOAuthTokenQueryRes.records;
@@ -260,6 +260,7 @@ In agent mode:
         "Status": isIgnored ? '⚪ Ignored' : (adminPreApproved ? '✅ Secured' : '❌ Unsecured'),
         "Admin Pre-Approved": adminPreApproved ? 'Yes' : 'No',
         "User": oAuthToken["User.Name"] ? oAuthToken["User.Name"] : 'N/A',
+        "Username": oAuthToken["User.Username"] ? oAuthToken["User.Username"] : 'N/A',
         "User Profile": oAuthToken["User.Profile.Name"] ? oAuthToken["User.Profile.Name"] : 'N/A',
         "Last Used Date": oAuthToken.LastUsedDate ? new Date(oAuthToken.LastUsedDate).toISOString().split('T')[0] : 'N/A',
         "Created Date": oAuthToken.CreatedDate ? new Date(oAuthToken.CreatedDate).toISOString().split('T')[0] : 'N/A',
@@ -326,6 +327,40 @@ In agent mode:
       uxLog("action", this, c.cyan(t('unsecuredConnectedAppsFound', { count: uniqueUnsecuredAppNames.length })));
       uxLogTable(this, uniqueUnsecureConnectedAppsWithTokens);
       uxLog("warning", this, t('howToSecureConnectedApps'));
+    }
+
+    // Aggregate OAuth tokens by user, listing all apps the user has tokens for (with last usage date) in a single cell
+    const tokensByUser: { [username: string]: { username: string; lastUsageByApp: { [appName: string]: string }; } } = {};
+    for (const token of allOAuthTokensWithStatus) {
+      const userKey = token["Username"] && token["Username"] !== 'N/A' ? token["Username"] : token["User"];
+      if (!tokensByUser[userKey]) {
+        tokensByUser[userKey] = {
+          username: userKey,
+          lastUsageByApp: {},
+        };
+      }
+      if (token.AppName && token.AppName !== 'N/A') {
+        const lastUsedDate = token["Last Used Date"] && token["Last Used Date"] !== 'N/A' ? token["Last Used Date"] : '';
+        const existing = tokensByUser[userKey].lastUsageByApp[token.AppName];
+        // Keep the most recent usage date if the user has several tokens for the same app
+        if (!(token.AppName in tokensByUser[userKey].lastUsageByApp) || (lastUsedDate && lastUsedDate > (existing || ''))) {
+          tokensByUser[userKey].lastUsageByApp[token.AppName] = lastUsedDate;
+        }
+      }
+    }
+    const oAuthTokensByUser = Object.values(tokensByUser).map(entry => ({
+      "Username": entry.username,
+      "Connected Apps": Object.keys(entry.lastUsageByApp).sort().map(appName => {
+        const lastUsedDate = entry.lastUsageByApp[appName];
+        return lastUsedDate ? `${appName} (${lastUsedDate})` : appName;
+      }).join('\n'),
+    }));
+    sortArray(oAuthTokensByUser, { by: 'Username' });
+    const outputFileOAuthTokensByUser = await generateReportPath('oauth-tokens-by-user', '');
+    await generateCsvFile(oAuthTokensByUser, outputFileOAuthTokensByUser, { fileTitle: t('oauthTokensByUserFiletitle') });
+    if (oAuthTokensByUser.length > 0) {
+      uxLog("action", this, c.cyan(t('usersWithOauthTokensFound', { count: oAuthTokensByUser.length })));
+      uxLogTable(this, oAuthTokensByUser);
     }
 
     // Build notification
@@ -490,6 +525,7 @@ In agent mode:
       allOAuthTokensWithStatus: allOAuthTokensWithStatus,
       unsecuredOAuthTokens: unsecuredOAuthTokens,
       unsecuredConnectedApps: uniqueUnsecuredAppNames as AnyJson[],
+      oAuthTokensByUser: oAuthTokensByUser,
     }
   }
 
