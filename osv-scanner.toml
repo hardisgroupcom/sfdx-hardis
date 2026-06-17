@@ -24,3 +24,7 @@ reason = "serialize-javascript 6.0.2 is brought by mocha from @salesforce/dev-sc
 [[IgnoredVulns]]
 id = "GHSA-qj8w-gfj5-8c6v"
 reason = "serialize-javascript 6.0.2 is brought by mocha from @salesforce/dev-scripts (test tooling only)."
+
+[[IgnoredVulns]]
+id = "GHSA-h67p-54hq-rp68"
+reason = "js-yaml 3.14.2 quadratic-complexity DoS in YAML merge-key handling (MEDIUM). Transitive via gray-matter (md-to-pdf). The v4.2.0 fix removes yaml.safeLoad, which gray-matter calls at runtime, breaking PDF doc generation. No patched 3.x release exists. Used only to parse our own markdown frontmatter, not untrusted input."
