@@ -38,9 +38,11 @@ Key functionalities:
 - **Unsecured App Detection:** Identifies apps that allow users to authorize themselves without admin approval, which can pose security risks.
 - **Phantom App Cleanup (Optional):** Detects unsecured apps not present in the installed Connected Apps or External Client Apps list and offers an interactive option to revoke their OAuth tokens (forces re-authentication if still needed).
 - **Stale Token Cleanup (Optional):** Detects secured apps that still have old unsecured OAuth tokens (authorized before proper hardening) and offers an interactive option to delete them.
-- **Detailed Reporting:** Generates two comprehensive CSV reports:
+- **Detailed Reporting:** Generates several CSV reports:
   - **OAuth Tokens Report:** Lists all OAuth tokens with security status, app type, user information, and usage data
-  - **Connected Apps Summary:** Aggregates unsecured apps with counts of associated OAuth tokens and app type
+  - **Unsecured Connected Apps Summary:** Aggregates unsecured apps with counts of associated OAuth tokens and app type
+  - **OAuth Tokens by User:** Lists each user with the apps they hold a token for and the last usage date
+  - **Connected Apps Usage:** Lists every Connected App and External Client App that has OAuth tokens (secured or not), with its last usage date and the usernames who use it
 - **Visual Indicators:** Uses status icons (❌ for unsecured, ✅ for secured, ⚪ for ignored) to provide immediate visual feedback on security status.
 - **Security Recommendations:** Provides actionable guidance on how to secure Connected Apps and External Client Apps through proper configuration.
 - **Notifications:** Sends alerts to configured channels (Grafana, Slack, MS Teams) with security findings and attached reports.
@@ -188,7 +190,7 @@ In agent mode:
     const totalTokens = tokensCountQueryRes.totalSize;
     uxLog("log", this, t('oauthTokensFound', { count: totalTokens }));
 
-    const baseOAuthTokenQuery = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name , User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id, DeleteToken FROM OAuthToken";
+    const baseOAuthTokenQuery = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name, User.Username, User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id, DeleteToken FROM OAuthToken";
     const allOAuthTokenQuery = baseOAuthTokenQuery + " ORDER BY CreatedDate ASC";
     const allOAuthTokenQueryRes = await bulkQuery(allOAuthTokenQuery, conn);
     const allOAuthTokens = allOAuthTokenQueryRes.records;
@@ -260,6 +262,7 @@ In agent mode:
         "Status": isIgnored ? '⚪ Ignored' : (adminPreApproved ? '✅ Secured' : '❌ Unsecured'),
         "Admin Pre-Approved": adminPreApproved ? 'Yes' : 'No',
         "User": oAuthToken["User.Name"] ? oAuthToken["User.Name"] : 'N/A',
+        "Username": oAuthToken["User.Username"] ? oAuthToken["User.Username"] : 'N/A',
         "User Profile": oAuthToken["User.Profile.Name"] ? oAuthToken["User.Profile.Name"] : 'N/A',
         "Last Used Date": oAuthToken.LastUsedDate ? new Date(oAuthToken.LastUsedDate).toISOString().split('T')[0] : 'N/A',
         "Created Date": oAuthToken.CreatedDate ? new Date(oAuthToken.CreatedDate).toISOString().split('T')[0] : 'N/A',
@@ -326,6 +329,79 @@ In agent mode:
       uxLog("action", this, c.cyan(t('unsecuredConnectedAppsFound', { count: uniqueUnsecuredAppNames.length })));
       uxLogTable(this, uniqueUnsecureConnectedAppsWithTokens);
       uxLog("warning", this, t('howToSecureConnectedApps'));
+    }
+
+    // Aggregate OAuth tokens by user, listing all apps the user has tokens for (with last usage date) in a single cell
+    const tokensByUser: { [username: string]: { username: string; lastUsageByApp: { [appName: string]: string }; } } = {};
+    for (const token of allOAuthTokensWithStatus) {
+      const userKey = token["Username"] && token["Username"] !== 'N/A' ? token["Username"] : token["User"];
+      if (!tokensByUser[userKey]) {
+        tokensByUser[userKey] = {
+          username: userKey,
+          lastUsageByApp: {},
+        };
+      }
+      if (token.AppName && token.AppName !== 'N/A') {
+        const lastUsedDate = token["Last Used Date"] && token["Last Used Date"] !== 'N/A' ? token["Last Used Date"] : '';
+        const existing = tokensByUser[userKey].lastUsageByApp[token.AppName];
+        // Keep the most recent usage date if the user has several tokens for the same app
+        if (!(token.AppName in tokensByUser[userKey].lastUsageByApp) || (lastUsedDate && lastUsedDate > (existing || ''))) {
+          tokensByUser[userKey].lastUsageByApp[token.AppName] = lastUsedDate;
+        }
+      }
+    }
+    const oAuthTokensByUser = Object.values(tokensByUser).map(entry => ({
+      "Username": entry.username,
+      "Connected Apps": Object.keys(entry.lastUsageByApp).sort().map(appName => {
+        const lastUsedDate = entry.lastUsageByApp[appName];
+        return lastUsedDate ? `${appName} (${lastUsedDate})` : appName;
+      }).join('\n'),
+    }));
+    sortArray(oAuthTokensByUser, { by: 'Username' });
+    const outputFileOAuthTokensByUser = await generateReportPath('oauth-tokens-by-user', '');
+    await generateCsvFile(oAuthTokensByUser, outputFileOAuthTokensByUser, { fileTitle: t('oauthTokensByUserFiletitle') });
+    if (oAuthTokensByUser.length > 0) {
+      uxLog("action", this, c.cyan(t('usersWithOauthTokensFound', { count: oAuthTokensByUser.length })));
+      uxLogTable(this, oAuthTokensByUser);
+    }
+
+    // Aggregate ALL apps that have OAuth tokens (secured, unsecured and ignored) to give a full usage inventory,
+    // with the most recent usage date and the list of usernames who hold a token for each app.
+    const appsUsage: { [appName: string]: { appName: string; appType: string; lastUsedDate: string; usernames: Set<string>; } } = {};
+    for (const token of allOAuthTokensWithStatus) {
+      const appName = token.AppName && token.AppName !== 'N/A' ? token.AppName : 'N/A';
+      if (!appsUsage[appName]) {
+        appsUsage[appName] = {
+          appName,
+          appType: token["App Type"] || 'Connected App',
+          lastUsedDate: '',
+          usernames: new Set<string>(),
+        };
+      }
+      const username = token["Username"] && token["Username"] !== 'N/A'
+        ? token["Username"]
+        : (token["User"] && token["User"] !== 'N/A' ? token["User"] : '');
+      if (username) {
+        appsUsage[appName].usernames.add(username);
+      }
+      // Dates are ISO YYYY-MM-DD strings, so a string comparison keeps the most recent one
+      const lastUsedDate = token["Last Used Date"] && token["Last Used Date"] !== 'N/A' ? token["Last Used Date"] : '';
+      if (lastUsedDate && lastUsedDate > appsUsage[appName].lastUsedDate) {
+        appsUsage[appName].lastUsedDate = lastUsedDate;
+      }
+    }
+    const connectedAppsUsage = Object.values(appsUsage).map(entry => ({
+      "Connected App": entry.appName,
+      "App Type": entry.appType,
+      "Last Used Date": entry.lastUsedDate || 'N/A',
+      "Usernames": Array.from(entry.usernames).sort().join('\n'),
+    }));
+    sortArray(connectedAppsUsage, { by: 'Connected App' });
+    const outputFileConnectedAppsUsage = await generateReportPath('connected-apps-usage', '');
+    await generateCsvFile(connectedAppsUsage, outputFileConnectedAppsUsage, { fileTitle: t('connectedAppsUsageFiletitle') });
+    if (connectedAppsUsage.length > 0) {
+      uxLog("action", this, c.cyan(t('connectedAppsUsageFound', { count: connectedAppsUsage.length })));
+      uxLogTable(this, connectedAppsUsage);
     }
 
     // Build notification
@@ -490,6 +566,8 @@ In agent mode:
       allOAuthTokensWithStatus: allOAuthTokensWithStatus,
       unsecuredOAuthTokens: unsecuredOAuthTokens,
       unsecuredConnectedApps: uniqueUnsecuredAppNames as AnyJson[],
+      oAuthTokensByUser: oAuthTokensByUser,
+      connectedAppsUsage: connectedAppsUsage,
     }
   }
 
