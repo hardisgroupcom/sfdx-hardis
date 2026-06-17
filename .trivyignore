@@ -224,4 +224,16 @@ CVE-2026-39836
 CVE-2026-42499
 CVE-2026-42504
 
+# https://avd.aquasec.com/nvd/cve-2026-12143
+# form-data: sfdx-hardis own tree is already pinned to 4.0.6 in yarn.lock; residual instances in the image come from independently-installed Salesforce CLI plugins, not under sfdx-hardis control. Not dangerous (HTTP multipart boundary)
+CVE-2026-12143
+
+# https://avd.aquasec.com/nvd/cve-2026-48712
+# protobufjs: not in sfdx-hardis dependency tree at all; pulled transitively by Salesforce CLI / plugins (sfdmu, mermaid-cli, etc.). Not remediable from this repo. Not dangerous in this usage
+CVE-2026-48712
+
+# https://avd.aquasec.com/nvd/cve-2026-48779
+# ws: sfdx-hardis own tree is already pinned to 8.21.0 in yarn.lock; residual old ws (8.18.3/8.20.1) in the image comes from independently-installed Salesforce CLI plugins. Not dangerous (DoS)
+CVE-2026-48779
+
 
