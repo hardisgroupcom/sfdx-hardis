@@ -15,7 +15,7 @@ import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml,
 import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
-import { GLOB_IGNORE_PATTERNS, listApexFiles, listFlowFiles, listPageFiles, returnApexType } from '../../../common/utils/projectUtils.js';
+import { GLOB_IGNORE_PATTERNS, METADATA_DOC_GLOB_IGNORE_PATTERNS, listApexFiles, listFlowFiles, listPageFiles, returnApexType } from '../../../common/utils/projectUtils.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
@@ -757,7 +757,7 @@ ${this.htmlInstructions}
     uxLog("action", this, c.cyan(t('preparingGenerationOfProfilesDocumentation')));
     uxLog("log", this, t('ifYouDontWantProfilesDoc'));
     const profilesForMenu: any = { [t('docMdAllProfiles')]: "profiles/index.md" };
-    const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
+    const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(profilesFiles);
     if (profilesFiles.length === 0) {
       uxLog("log", this, c.yellow(t('noProfileFoundInTheProject')));
@@ -806,7 +806,7 @@ ${this.htmlInstructions}
     uxLog("action", this, c.cyan(t('preparingGenerationOfPermissionSetsDocumentation')));
     uxLog("log", this, t('ifYouDontWantProfilesDoc'));
     const psForMenu: any = { [t('docMdAllPermissionSets')]: "permissionsets/index.md" };
-    const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
+    const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(psFiles);
     if (psFiles.length === 0) {
       uxLog("log", this, c.yellow(t('noPermissionSetFoundInTheProject')));
@@ -857,7 +857,7 @@ ${this.htmlInstructions}
   private async generatePermissionSetGroupsDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfPermissionSetGroupsDocumentation')));
     const psgForMenu: any = { [t('docMdAllPermissionSetGroups')]: "permissionsetgroups/index.md" };
-    const psgFiles = (await glob("**/permissionsetgroups/**.permissionsetgroup-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }))
+    const psgFiles = (await glob("**/permissionsetgroups/**.permissionsetgroup-meta.xml", { cwd: process.cwd(), ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS }))
     sortCrossPlatform(psgFiles);
     if (psgFiles.length === 0) {
       uxLog("log", this, c.yellow(t('noPermissionSetGroupFoundInThe')));
@@ -910,7 +910,7 @@ ${this.htmlInstructions}
   private async generateRolesDocumentation() {
     uxLog("action", this, c.cyan(t('generatingRolesDocumentation')));
     uxLog("log", this, t('ifYouDontWantProfilesDoc'));
-    const roleFiles = (await glob("**/roles/**.role-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
+    const roleFiles = (await glob("**/roles/**.role-meta.xml", { cwd: process.cwd(), ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(roleFiles);
     if (roleFiles.length === 0) {
       uxLog("log", this, c.yellow(t('noRoleFoundInTheProject')));
@@ -946,7 +946,7 @@ ${this.htmlInstructions}
     const assignmentRulesForMenu: any = { [t('docMdAllAssignmentRules')]: "assignmentRules/index.md" };
     const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", {
       cwd: process.cwd(),
-      ignore: GLOB_IGNORE_PATTERNS
+      ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
     }));
     sortCrossPlatform(assignmentRulesFiles);
     const builder = new XMLBuilder();
@@ -1009,7 +1009,7 @@ ${this.htmlInstructions}
     const approvalProcessesForMenu: any = { [t('docMdAllApprovalProcesses')]: "approvalProcesses/index.md" }
     const approvalProcessFiles = (await glob("**/approvalProcesses/**.approvalProcess-meta.xml", {
       cwd: process.cwd(),
-      ignore: GLOB_IGNORE_PATTERNS
+      ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
     }));
     sortCrossPlatform(approvalProcessFiles);
 
@@ -1063,7 +1063,7 @@ ${this.htmlInstructions}
     const autoResponseRulesForMenu: any = { [t('docMdAllAutoResponseRules')]: "autoResponseRules/index.md" };
     const autoResponseRulesFiles = (await glob("**/autoResponseRules/**.autoResponseRules-meta.xml", {
       cwd: process.cwd(),
-      ignore: GLOB_IGNORE_PATTERNS
+      ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
     }));
     sortCrossPlatform(autoResponseRulesFiles);
     const builder = new XMLBuilder();
@@ -1126,7 +1126,7 @@ ${this.htmlInstructions}
     const escalationRulesForMenu: any = { [t('docMdAllEscalationRules')]: "escalationRules/index.md" };
     const escalationRulesFiles = (await glob("**/escalationRules/**.escalationRules-meta.xml", {
       cwd: process.cwd(),
-      ignore: GLOB_IGNORE_PATTERNS
+      ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
     }));
     sortCrossPlatform(escalationRulesFiles);
     const builder = new XMLBuilder();
@@ -1189,7 +1189,7 @@ ${this.htmlInstructions}
     const workflowRulesForMenu: any = { [t('docMdAllWorkflowRules')]: "workflowRules/index.md" };
     const workflowRulesFiles = (await glob("**/workflows/**.workflow-meta.xml", {
       cwd: process.cwd(),
-      ignore: GLOB_IGNORE_PATTERNS
+      ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
     }));
     sortCrossPlatform(workflowRulesFiles);
     const builder = new XMLBuilder();
@@ -1558,7 +1558,7 @@ ${this.htmlInstructions}
   private async generateLinksInfo(): Promise<string> {
     uxLog("log", this, c.cyan(t('generateMasterdetailAndLookupInfosToProvide')));
     const findFieldsPattern = `**/objects/**/fields/**.field-meta.xml`;
-    const matchingFieldFiles = (await glob(findFieldsPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).map(file => file.replace(/\\/g, '/'));
+    const matchingFieldFiles = (await glob(findFieldsPattern, { cwd: process.cwd(), ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS })).map(file => file.replace(/\\/g, '/'));
     const customFieldsLinks: string[] = [];
     for (const fieldFile of matchingFieldFiles) {
       const fieldXml = fs.readFileSync(fieldFile, "utf8").toString();
@@ -1882,7 +1882,7 @@ ${this.htmlInstructions}
     for (const packageDir of packageDirs) {
       const lwcMetaFiles = await glob(`${packageDir.path}/**/lwc/**/*.js-meta.xml`, {
         cwd: process.cwd(),
-        ignore: GLOB_IGNORE_PATTERNS
+        ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
       });
 
       for (const lwcMetaFile of lwcMetaFiles) {
