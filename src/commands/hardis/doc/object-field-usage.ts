@@ -62,6 +62,7 @@ This command focuses on one or more sObjects and measures how many records popul
 - **Restrict to specific fields:** Use the \`Object:Field1,Field2\` syntax in \`--objects\` (groups separated by spaces) to analyze only the listed fields instead of every custom field. Example: \`--objects "Contact:Name,Email Account:Name,MyField__c"\`. Explicitly named fields are analyzed even when they are standard, as long as they exist and are filterable.
 - **Sum of values:** Append \`(WITH_SUM)\` to a field name to add a \`sum\` column with the total of its populated values. Example: \`--objects "Opportunity:Amount(WITH_SUM),Name,ExpectedRevenue(WITH_SUM)"\`. Only numeric fields (currency, double, int, percent) are summed; the column is added to the report only when at least one field requests it.
 - **Per-field Counts:** Performs one overall record count and one per-field count with \`SELECT COUNT() FROM <sObject> WHERE <field> != null\`, skipping required or non-filterable fields.
+- **Non-filterable Fields:** Long Text Area and Rich Text fields cannot be counted with \`WHERE != null\`, so they are skipped by default. Add \`--include-non-filterable\` to compute their population rate anyway: the command pages through the records and counts how many have a non-empty value (slower on objects with many records, since the values cannot be tested server-side).
 - **Field Distributions:** Combine \`--objects <singleObject>\` with \`--fields FieldA,FieldB\` to group by those fields and list distinct values with their record counts and usage percentages.
 - **Reporting:** Generates CSV/XLSX reports and prints a summary table with per-field population rates.
 
@@ -85,6 +86,7 @@ In agent mode:
     '$ sf hardis:doc:object-field-usage --target-org myOrgAlias --objects CustomObject__c',
     '$ sf hardis:doc:object-field-usage --objects "Contact:Name,Email Account:Name,MyField__c,MyOtherField__c"',
     '$ sf hardis:doc:object-field-usage --objects "Opportunity:Amount(WITH_SUM),Name,ExpectedRevenue(WITH_SUM)"',
+    '$ sf hardis:doc:object-field-usage --objects "Opportunity:Description,Name" --include-non-filterable',
     '$ sf hardis:doc:object-field-usage --objects Account --fields SalesRegionAcct__c,Region__c',
     '$ sf hardis:doc:object-field-usage --objects Account,Contact --agent',
   ];
@@ -100,6 +102,10 @@ In agent mode:
       char: 'f',
       description: 'Comma-separated API names of fields to analyze (requires exactly one --objects value)',
       required: false,
+    }),
+    'include-non-filterable': Flags.boolean({
+      default: false,
+      description: 'Also compute the population rate of non-filterable fields (e.g. Long Text Area, Rich Text). Their values cannot be counted server-side, so the command pages through the records and counts non-empty values, which can be slow on objects with many records.',
     }),
     websocket: Flags.string({
       description: messages.getMessage("websocket"),
@@ -254,8 +260,9 @@ In agent mode:
   }
 
   // Resolves explicitly requested field names against the object describe.
-  // Honors standard fields too; skips unknown or non-filterable fields with a warning.
-  protected selectRequestedFields(describeFields: any[], requestedNames: string[], sObjectName: string): any[] {
+  // Honors standard fields too; skips unknown fields with a warning.
+  // Non-filterable fields are skipped unless includeNonFilterable is set (then counted in memory).
+  protected selectRequestedFields(describeFields: any[], requestedNames: string[], sObjectName: string, includeNonFilterable = false): any[] {
     const fieldsByLowerName = new Map<string, any>();
     for (const field of describeFields || []) {
       if (field?.name && typeof field.name === 'string') {
@@ -269,13 +276,74 @@ In agent mode:
         uxLog("warning", this, c.yellow(t('requestedFieldNotFound', { fieldName: requestedName, sObjectName })));
         continue;
       }
-      if (field.filterable === false) {
+      // Compound parents (Address / Geolocation) can't be counted; analyze their components instead
+      if (this.isCompoundParentField(field)) {
+        uxLog("warning", this, c.yellow(t('requestedFieldIsCompound', { fieldName: field.name, sObjectName })));
+        continue;
+      }
+      if (field.filterable === false && !includeNonFilterable) {
         uxLog("warning", this, c.yellow(t('requestedFieldNotFilterable', { fieldName: field.name, sObjectName })));
         continue;
       }
       selected.push(field);
     }
     return selected;
+  }
+
+  // Counts populated values for non-filterable fields (Long Text Area, Rich Text...).
+  // These cannot be counted with COUNT() WHERE != null, and SOQL cannot test their emptiness
+  // server-side, so we page through the records with the REST query API (JSON) and only keep a
+  // running count of non-empty values. Records are discarded after each page, so the field
+  // contents are never accumulated in memory; we only care whether each value is empty or not.
+  protected async countNonFilterableFields(
+    connection: Connection,
+    sObjectName: string,
+    fields: any[],
+    skippedFields: SkippedFieldInfo[]
+  ): Promise<Record<string, number>> {
+    const counts: Record<string, number> = {};
+    if (!fields.length) {
+      return counts;
+    }
+    const fieldNames = fields.map((field) => field.name);
+    for (const fieldName of fieldNames) {
+      counts[fieldName] = 0;
+    }
+    uxLog("log", this, c.grey(t('countingNonFilterableFields', { count: fieldNames.length, sObjectName })));
+
+    const tally = (records: any[]) => {
+      for (const record of records) {
+        for (const field of fields) {
+          const value = record[field.name];
+          if (value !== null && typeof value !== 'undefined' && String(value).trim() !== '') {
+            counts[field.name]++;
+          }
+        }
+      }
+    };
+
+    try {
+      const query = `SELECT ${fieldNames.join(', ')} FROM ${sObjectName}`;
+      let result: any = await connection.query(query);
+      tally(result.records || []);
+      let fetched = result.records?.length || 0;
+      let nextProgress = 100000;
+      while (result.done === false && result.nextRecordsUrl) {
+        result = await connection.queryMore(result.nextRecordsUrl);
+        tally(result.records || []);
+        fetched += result.records?.length || 0;
+        if (fetched >= nextProgress) {
+          uxLog("log", this, c.grey(t('nonFilterableCountProgress', { count: fetched, sObjectName })));
+          nextProgress += 100000;
+        }
+      }
+    } catch (error: any) {
+      const warning = t('nonFilterableCountFailed', { sObjectName, message: error?.message || error });
+      uxLog("warning", this, c.yellow(warning));
+      fields.forEach((field) => skippedFields.push({ sObjectName, fieldName: field.name, reason: warning }));
+      return {};
+    }
+    return counts;
   }
 
   protected extractCount(result: any): number {
@@ -531,13 +599,28 @@ In agent mode:
       eligibleFields.map((f) => f.name).filter((name) => typeof name === 'string' && name.length > 0)
     );
 
+    // Non-filterable fields (Long Text Area, Rich Text...) can't use COUNT() WHERE != null,
+    // so split them out and count them in memory via the Bulk API.
+    const filterableFields = eligibleFields.filter((field) => field.filterable !== false);
+    const nonFilterableFields = eligibleFields.filter((field) => field.filterable === false);
+
     const fieldCounts = await this.countFieldsWithComposite(
       connection,
       sObjectName,
-      eligibleFields,
+      filterableFields,
       useTooling,
       skippedFields
     );
+
+    if (nonFilterableFields.length > 0) {
+      const nonFilterableCounts = await this.countNonFilterableFields(
+        connection,
+        sObjectName,
+        nonFilterableFields,
+        skippedFields
+      );
+      Object.assign(fieldCounts, nonFilterableCounts);
+    }
 
     const sumFieldsSet = new Set(sumFields);
     const fieldSums = await this.computeFieldSums(connection, sObjectName, sumFields, useTooling);
@@ -619,7 +702,15 @@ In agent mode:
     return csvPath;
   }
 
-  protected filterDescribeFields(fields: any[]): any[] {
+  // True for the parent of a compound field (Address or Geolocation). Such fields can't be
+  // counted with WHERE != null, and when selected their value is an object, so the emptiness
+  // check is meaningless. Their individual components (e.g. BillingStreet) can still be analyzed.
+  protected isCompoundParentField(field: any): boolean {
+    const type = (field?.type || '').toLowerCase();
+    return type === 'address' || type === 'location';
+  }
+
+  protected filterDescribeFields(fields: any[], includeNonFilterable = false): any[] {
     if (!Array.isArray(fields)) {
       return [];
     }
@@ -636,7 +727,16 @@ In agent mode:
       if (field.calculated || field.deprecatedAndHidden) {
         return false;
       }
-      if (!field.nillable || !field.filterable) {
+      if (!field.nillable) {
+        return false;
+      }
+      // Compound parents (Address / Geolocation) can't be counted and their value is an object
+      if (this.isCompoundParentField(field)) {
+        return false;
+      }
+      // Non-filterable fields (Long Text Area, Rich Text...) can't be counted with WHERE != null.
+      // They are kept only when --include-non-filterable is set, then counted in memory.
+      if (!field.filterable && !includeNonFilterable) {
         return false;
       }
       if (field.compoundFieldName && field.compoundFieldName !== field.name) {
@@ -661,10 +761,13 @@ In agent mode:
       if (eligibleCount === 0) {
         return sum;
       }
-      const compositeCalls = Math.ceil(eligibleCount / this.compositeBatchSize);
+      const filterableCount = context.eligibleFields.filter((field) => field.filterable !== false).length;
+      const nonFilterableCount = eligibleCount - filterableCount;
+      const compositeCalls = Math.ceil(filterableCount / this.compositeBatchSize);
       const createdDateCalls = Math.ceil(eligibleCount / this.toolingCustomFieldBatchSize) || 1;
       const sumCalls = (context.sumFields?.length || 0) > 0 ? 1 : 0; // single aggregate query per object
-      return sum + 1 + createdDateCalls + compositeCalls + sumCalls; // total count + CustomField chunks + composite batches + sum
+      const nonFilterableCalls = nonFilterableCount > 0 ? 1 : 0; // record paging per object (more on large objects)
+      return sum + 1 + createdDateCalls + compositeCalls + sumCalls + nonFilterableCalls; // total count + CustomField chunks + composite batches + sum + non-filterable paging
     }, 0);
   }
 
@@ -700,6 +803,7 @@ In agent mode:
     this.injectObjectsPromptSentinel();
     const { flags } = await this.parse(HardisDocObjectFieldUsage);
     const agentMode = flags.agent === true;
+    const includeNonFilterable = flags['include-non-filterable'] === true;
     const connection = flags['target-org'].getConnection();
     let uniqueObjects: string[] = [];
     const requestedFieldsByObject: Record<string, string[]> = {};
@@ -792,9 +896,9 @@ In agent mode:
       let eligibleFieldsFiltered: any[];
       if (requestedFields.length > 0) {
         // Only analyze the explicitly requested fields (standard fields honored, namespace filter bypassed)
-        eligibleFieldsFiltered = this.selectRequestedFields(context.describeResult?.fields || [], requestedFields, sObjectName);
+        eligibleFieldsFiltered = this.selectRequestedFields(context.describeResult?.fields || [], requestedFields, sObjectName, includeNonFilterable);
       } else {
-        const eligibleFields = this.filterDescribeFields(context.describeResult?.fields || []);
+        const eligibleFields = this.filterDescribeFields(context.describeResult?.fields || [], includeNonFilterable);
         // Filter eligible fields to remove those with namespaces
         eligibleFieldsFiltered = eligibleFields.filter((field) => {
           if (isManagedApiName(field.name) && !fieldsInput.includes(field.name)) {

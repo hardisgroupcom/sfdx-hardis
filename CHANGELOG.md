@@ -3,6 +3,9 @@
 ## [beta] (main)
 
 - [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/): Restrict the analysis to specific fields per object using the `Object:Field1,Field2` syntax in `--objects`, with an optional `(WITH_SUM)` modifier to add a column with the sum of a numeric field's values.
+- [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): Add a report listing OAuth tokens grouped by user, with each user's Connected Apps and their last usage date.
+- Bitbucket: support both a repository/workspace Access Token and an Atlassian account API token for authentication.
+- Fix Bitbucket merged Pull Request detection on busy branches by matching abbreviated commit hashes and paginating Pull Request and commit lookups.
 
 ## [7.16.3] 2026-06-15
 

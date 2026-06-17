@@ -38,9 +38,11 @@ Key functionalities:
 - **Unsecured App Detection:** Identifies apps that allow users to authorize themselves without admin approval, which can pose security risks.
 - **Phantom App Cleanup (Optional):** Detects unsecured apps not present in the installed Connected Apps or External Client Apps list and offers an interactive option to revoke their OAuth tokens (forces re-authentication if still needed).
 - **Stale Token Cleanup (Optional):** Detects secured apps that still have old unsecured OAuth tokens (authorized before proper hardening) and offers an interactive option to delete them.
-- **Detailed Reporting:** Generates two comprehensive CSV reports:
+- **Detailed Reporting:** Generates several CSV reports:
   - **OAuth Tokens Report:** Lists all OAuth tokens with security status, app type, user information, and usage data
-  - **Connected Apps Summary:** Aggregates unsecured apps with counts of associated OAuth tokens and app type
+  - **Unsecured Connected Apps Summary:** Aggregates unsecured apps with counts of associated OAuth tokens and app type
+  - **OAuth Tokens by User:** Lists each user with the apps they hold a token for and the last usage date
+  - **Connected Apps Usage:** Lists every Connected App and External Client App that has OAuth tokens (secured or not), with its last usage date and the usernames who use it
 - **Visual Indicators:** Uses status icons (❌ for unsecured, ✅ for secured, ⚪ for ignored) to provide immediate visual feedback on security status.
 - **Security Recommendations:** Provides actionable guidance on how to secure Connected Apps and External Client Apps through proper configuration.
 - **Notifications:** Sends alerts to configured channels (Grafana, Slack, MS Teams) with security findings and attached reports.
@@ -363,6 +365,45 @@ In agent mode:
       uxLogTable(this, oAuthTokensByUser);
     }
 
+    // Aggregate ALL apps that have OAuth tokens (secured, unsecured and ignored) to give a full usage inventory,
+    // with the most recent usage date and the list of usernames who hold a token for each app.
+    const appsUsage: { [appName: string]: { appName: string; appType: string; lastUsedDate: string; usernames: Set<string>; } } = {};
+    for (const token of allOAuthTokensWithStatus) {
+      const appName = token.AppName && token.AppName !== 'N/A' ? token.AppName : 'N/A';
+      if (!appsUsage[appName]) {
+        appsUsage[appName] = {
+          appName,
+          appType: token["App Type"] || 'Connected App',
+          lastUsedDate: '',
+          usernames: new Set<string>(),
+        };
+      }
+      const username = token["Username"] && token["Username"] !== 'N/A'
+        ? token["Username"]
+        : (token["User"] && token["User"] !== 'N/A' ? token["User"] : '');
+      if (username) {
+        appsUsage[appName].usernames.add(username);
+      }
+      // Dates are ISO YYYY-MM-DD strings, so a string comparison keeps the most recent one
+      const lastUsedDate = token["Last Used Date"] && token["Last Used Date"] !== 'N/A' ? token["Last Used Date"] : '';
+      if (lastUsedDate && lastUsedDate > appsUsage[appName].lastUsedDate) {
+        appsUsage[appName].lastUsedDate = lastUsedDate;
+      }
+    }
+    const connectedAppsUsage = Object.values(appsUsage).map(entry => ({
+      "Connected App": entry.appName,
+      "App Type": entry.appType,
+      "Last Used Date": entry.lastUsedDate || 'N/A',
+      "Usernames": Array.from(entry.usernames).sort().join('\n'),
+    }));
+    sortArray(connectedAppsUsage, { by: 'Connected App' });
+    const outputFileConnectedAppsUsage = await generateReportPath('connected-apps-usage', '');
+    await generateCsvFile(connectedAppsUsage, outputFileConnectedAppsUsage, { fileTitle: t('connectedAppsUsageFiletitle') });
+    if (connectedAppsUsage.length > 0) {
+      uxLog("action", this, c.cyan(t('connectedAppsUsageFound', { count: connectedAppsUsage.length })));
+      uxLogTable(this, connectedAppsUsage);
+    }
+
     // Build notification
     const numberWarnings = uniqueUnsecuredAppNames.length;
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
@@ -526,6 +567,7 @@ In agent mode:
       unsecuredOAuthTokens: unsecuredOAuthTokens,
       unsecuredConnectedApps: uniqueUnsecuredAppNames as AnyJson[],
       oAuthTokensByUser: oAuthTokensByUser,
+      connectedAppsUsage: connectedAppsUsage,
     }
   }
 
