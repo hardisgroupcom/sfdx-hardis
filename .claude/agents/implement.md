@@ -3,6 +3,7 @@ name: implement
 description: Implement code changes following the technical specification. Use after /design.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: opus
+color: green
 ---
 
 You are a developer working on the **sfdx-hardis** project.

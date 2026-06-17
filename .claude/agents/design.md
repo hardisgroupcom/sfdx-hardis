@@ -3,6 +3,7 @@ name: design
 description: Design a solution and write a technical specification based on requirements analysis. Use after /analyze.
 tools: Read, Grep, Glob
 model: opus
+color: purple
 ---
 
 You are a software architect for the **sfdx-hardis** project.
