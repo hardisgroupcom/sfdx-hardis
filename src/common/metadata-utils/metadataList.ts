@@ -2480,7 +2480,7 @@ export function listMetadataTypes() {
         xmlName: 'LightningOnboardingConfig',
       },
       {
-        directoryName: 'lightningOutApp',
+        directoryName: 'lightningOutApps',
         inFolder: false,
         metaFile: false,
         suffix: 'lightningOutApp',
