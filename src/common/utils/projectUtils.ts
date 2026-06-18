@@ -18,6 +18,11 @@ export const GLOB_IGNORE_PATTERNS = [
   '**/.vscode/**',
 ];
 
+export const METADATA_DOC_GLOB_IGNORE_PATTERNS = [
+  ...GLOB_IGNORE_PATTERNS,
+  '**/staticresources/**',
+];
+
 export function isSfdxProject(cwd = process.cwd()) {
   return fs.existsSync(path.join(cwd, 'sfdx-project.json'));
 }
@@ -38,7 +43,7 @@ export async function listFlowFiles(packageDirs) {
   const flowFiles: any[] = [];
   const skippedFlows: string[] = [];
   for (const packageDir of packageDirs || []) {
-    const flowMetadatas = await glob("**/*.flow-meta.xml", { cwd: packageDir.path, ignore: GLOB_IGNORE_PATTERNS });
+    const flowMetadatas = await glob("**/*.flow-meta.xml", { cwd: packageDir.path, ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
     for (const flowMetadata of flowMetadatas) {
       const flowFile = path.join(packageDir.path, flowMetadata).replace(/\\/g, '/');
       if (await isManagedFlow(flowFile)) {
@@ -94,7 +99,7 @@ export async function listApexFiles(packageDirs) {
   const apexFiles: any[] = [];
   const skippedApex: string[] = [];
   for (const packageDir of packageDirs || []) {
-    const apexMetadatas = await glob("**/*.{cls,trigger}", { cwd: packageDir.path, ignore: GLOB_IGNORE_PATTERNS });
+    const apexMetadatas = await glob("**/*.{cls,trigger}", { cwd: packageDir.path, ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
     for (const apexMetadata of apexMetadatas) {
       const apexFile = path.join(packageDir.path, apexMetadata).replace(/\\/g, '/');
       if (apexFile.includes('__')) {
@@ -118,7 +123,7 @@ export async function listPageFiles(packageDirs) {
   const pageFiles: any[] = [];
   const skippedPages: string[] = [];
   for (const packageDir of packageDirs || []) {
-    const pageMetadatas = await glob("**/*.flexipage-meta.xml", { cwd: packageDir.path, ignore: GLOB_IGNORE_PATTERNS });
+    const pageMetadatas = await glob("**/*.flexipage-meta.xml", { cwd: packageDir.path, ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
     for (const pageMetadata of pageMetadatas) {
       const pageFile = path.join(packageDir.path, pageMetadata).replace(/\\/g, '/');
       if (pageFile.includes('__')) {

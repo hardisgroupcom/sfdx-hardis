@@ -20,7 +20,7 @@ import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { getCache, setCache } from '../cache/index.js';
 import { buildOrgManifest } from '../utils/deployUtils.js';
 import { listMajorOrgs } from '../utils/orgConfigUtils.js';
-import { GLOB_IGNORE_PATTERNS, isSfdxProject } from '../utils/projectUtils.js';
+import { GLOB_IGNORE_PATTERNS, METADATA_DOC_GLOB_IGNORE_PATTERNS, isSfdxProject } from '../utils/projectUtils.js';
 import { prompts } from '../utils/prompts.js';
 import { parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { listMetadataTypes } from './metadataList.js';
@@ -493,7 +493,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
   }
 
   public static async promptFlow() {
-    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: GLOB_IGNORE_PATTERNS });
+    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
     sortCrossPlatform(flowFiles);
     const flowSelectRes = await prompts({
       type: 'select',
@@ -507,7 +507,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
   }
 
   public static async promptMultipleFlows() {
-    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: GLOB_IGNORE_PATTERNS });
+    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
     sortCrossPlatform(flowFiles);
     const flowSelectRes = await prompts({
       type: 'multiselect',
