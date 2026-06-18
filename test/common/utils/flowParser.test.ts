@@ -84,6 +84,35 @@ describe('Flow Parser - Mermaid Label Sanitization', () => {
         expect(result.uml).to.include('Check #quot;Active#quot; Status');
     });
 
+    it('Should handle boolean labels parsed from Flow XML', async () => {
+        const flowXml = `<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <assignments>
+        <name>Set_Flag</name>
+        <label>false</label>
+        <assignmentItems>
+            <assignToReference>flag</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <booleanValue>false</booleanValue>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <start>
+        <connector>
+            <targetReference>Set_Flag</targetReference>
+        </connector>
+    </start>
+    <label>Boolean Label Flow</label>
+    <processType>AutoLaunchedFlow</processType>
+    <status>Active</status>
+</Flow>`;
+
+        const result = await parseFlow(flowXml, 'mermaid');
+
+        expect(result.uml).to.include('<br/>false');
+    });
+
     it('Should sanitize flow labels with single quotes', async () => {
         const flowXml = `<?xml version="1.0" encoding="UTF-8"?>
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">

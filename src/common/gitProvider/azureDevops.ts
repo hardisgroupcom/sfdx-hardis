@@ -302,7 +302,7 @@ ${this.getPipelineVariablesConfig()}
       status: PullRequestStatus.Completed,
     });
     const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch.filter(
-      (pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded && pr.lastMergeCommit?.commitId === sha,
+      (pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded && this.isPullRequestMatchingCommit(pr, sha),
     );
     if (latestMergedPullRequestOnBranch.length > 0) {
       const pullRequest = latestMergedPullRequestOnBranch[0];
@@ -393,14 +393,22 @@ ${this.getPipelineVariablesConfig()}
     });
     const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch.filter((pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded);
     if (latestMergedPullRequestOnBranch.length > 0) {
-      const latestPullRequest = latestMergedPullRequestOnBranch[0];
-      const latestPullRequestId = latestPullRequest.pullRequestId;
+      // Select the PR whose merge commit matches the commit currently being deployed (HEAD).
+      // When several PRs are merged around the same time, the most recently completed PR is not
+      // necessarily the one that produced this build's commit. Using its validation id would make
+      // QuickDeploy reuse an unrelated PR's deployment and deploy the wrong metadata.
+      const sha = await git().revparse(["HEAD"]);
+      const matchingPullRequest = latestMergedPullRequestOnBranch.find((pr) => this.isPullRequestMatchingCommit(pr, sha)) || null;
+      if (matchingPullRequest == null) {
+        uxLog("warning", this, c.yellow('[Azure Integration] ' + t('azureNoPrMatchingDeployedCommit', { sha })));
+        return null;
+      }
       deploymentCheckId = await this.getDeploymentIdFromPullRequest(
         azureGitApi,
         repositoryId,
-        latestPullRequestId || 0,
+        matchingPullRequest.pullRequestId || 0,
         deploymentCheckId,
-        latestPullRequest,
+        matchingPullRequest,
       );
     }
     return deploymentCheckId;
@@ -421,6 +429,13 @@ ${this.getPipelineVariablesConfig()}
     }
     return null;
   }
+
+  private isPullRequestMatchingCommit(pr: GitPullRequest, sha: string): boolean {
+    // Azure can put the deployed target-branch HEAD in lastMergeCommit for merge/squash
+    // completions, or in lastMergeSourceCommit for rebase/fast-forward completions.
+    return pr.lastMergeCommit?.commitId === sha || pr.lastMergeSourceCommit?.commitId === sha;
+  }
+
   private async getDeploymentIdFromPullRequest(
     azureGitApi: any,
     repositoryId: string,
@@ -429,25 +444,44 @@ ${this.getPipelineVariablesConfig()}
     latestPullRequest: any,
   ): Promise<string | null> {
     const existingThreads = await azureGitApi.getThreads(repositoryId, latestPullRequestId);
+    // A PR can hold several deployment-id comments, one per pipeline run. The getThreads API has no
+    // sort parameter, so we cannot rely on ordering: scan every comment and select the most recent
+    // one by date, otherwise QuickDeploy would reuse an outdated validation id.
+    let latestDeploymentTime = -1;
     for (const existingThread of existingThreads) {
       if (existingThread.isDeleted) {
         continue;
       }
       for (const comment of existingThread?.comments || []) {
+        if (comment?.isDeleted) {
+          continue;
+        }
         if ((comment?.content || "").includes(`<!-- sfdx-hardis deployment-id `)) {
           const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment.content);
           if (matches) {
-            deploymentCheckId = matches[1];
-            uxLog("error", this, c.grey(t('foundDeploymentIdOnPr', { deploymentCheckId, latestPullRequestId, latestPullRequest: latestPullRequest.title })));
-            break;
+            const commentTime = this.getCommentTimestamp(comment, existingThread);
+            if (commentTime >= latestDeploymentTime) {
+              latestDeploymentTime = commentTime;
+              deploymentCheckId = matches[1];
+            }
           }
         }
       }
-      if (deploymentCheckId) {
-        break;
-      }
+    }
+    if (deploymentCheckId) {
+      uxLog("log", this, c.grey(t('foundDeploymentIdOnPr', { deploymentCheckId, latestPullRequestId, latestPullRequest: latestPullRequest.title })));
     }
     return deploymentCheckId;
+  }
+
+  // Returns a comparable timestamp (ms) for a PR comment, falling back to its parent thread.
+  private getCommentTimestamp(comment: any, thread: any): number {
+    const dateValue = comment?.publishedDate || comment?.lastUpdatedDate || thread?.publishedDate || thread?.lastUpdatedDate;
+    if (!dateValue) {
+      return 0;
+    }
+    const time = new Date(dateValue).getTime();
+    return isNaN(time) ? 0 : time;
   }
 
   public async listPullRequestsInBranchSinceLastMerge(
