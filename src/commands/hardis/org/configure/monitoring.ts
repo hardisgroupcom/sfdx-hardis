@@ -7,6 +7,7 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import open from 'open';
 import {
+  buildOrgSlugFromInstanceUrl,
   ensureGitBranch,
   ensureGitRepository,
   execCommand,
@@ -174,14 +175,7 @@ The command's technical implementation involves a series of Git operations, file
 
     // Build monitoring branch name
     const branchName =
-      'monitoring_' +
-      flags['target-org']
-        ?.getConnection()
-        .instanceUrl.replace('https://', '')
-        .replace('.my.salesforce.com', '')
-        .replace(/\./gm, '_')
-        .replace(/--/gm, '__')
-        .replace(/-/gm, '_');
+      'monitoring_' + buildOrgSlugFromInstanceUrl(flags['target-org']?.getConnection().instanceUrl);
 
     uxLog("action", this, c.cyan(t('handlingMonitoringGitBranch', { branchName: c.bold(branchName) })));
 
@@ -242,7 +236,7 @@ The command's technical implementation involves a series of Git operations, file
     }
 
     // Generate SSL certificate (requires openssl to be installed on computer)
-    await generateSSLCertificate(branchName, './.ssh', this, flags['target-org'].getConnection(), {});
+    await generateSSLCertificate(branchName, './.ssh', this, flags['target-org'].getConnection(), { usageType: 'monitoring' });
 
     // Confirm & push on server
     const confirmPush = await prompts({

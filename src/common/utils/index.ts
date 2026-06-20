@@ -348,6 +348,16 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   return gitBranch;
 }
 
+// Build a stable slug from an org instance URL (used to name branch/auth configs from an org domain)
+export function buildOrgSlugFromInstanceUrl(instanceUrl: string): string {
+  return (instanceUrl || '')
+    .replace('https://', '')
+    .replace('.my.salesforce.com', '')
+    .replace(/\./gm, '_')
+    .replace(/--/gm, '__')
+    .replace(/-/gm, '_');
+}
+
 export async function getLatestGitCommit() {
   if (!isGitRepo()) {
     return null;
@@ -1453,6 +1463,32 @@ export async function restoreLocalSfdxInfo() {
 }
 
 // Generate External Client App metadata files in a temporary directory
+// Heuristic detection of a deploy failure caused by an auth app (External Client App) that already exists,
+// including the common case where the org refuses the provided credentials/consumer key of an existing app.
+function isAuthAppAlreadyExistsError(error: any): boolean {
+  const haystack = (typeof error === 'string' ? error : (error?.message || '') + ' ' + JSON.stringify(error || {})).toLowerCase();
+  return [
+    'already exists',
+    'duplicate value found',
+    'duplicate_developer_name',
+    'duplicate developer name',
+    'consumer key',
+    'already in use',
+    'name is already',
+    'value already exists',
+  ].some((needle) => haystack.includes(needle));
+}
+
+// Escape the few characters that are not valid as-is inside an XML text node
+function escapeXml(value: string): string {
+  return (value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 export async function generateExternalClientAppMetadata(
   appName: string,
   profileName: string,
@@ -1460,13 +1496,14 @@ export async function generateExternalClientAppMetadata(
   crtContent: string,
   consumerKey: string,
   tmpDir: string,
-  conn: Connection
+  conn: Connection,
+  description: string = 'External Client App for sfdx-hardis CI/CD authentication'
 ): Promise<void> {
   // 1. ExternalClientApplication (.eca-meta.xml)
   const ecaMetadata = `<?xml version="1.0" encoding="UTF-8"?>
 <ExternalClientApplication xmlns="http://soap.sforce.com/2006/04/metadata">
     <contactEmail>${contactEmail}</contactEmail>
-    <description>External Client App for sfdx-hardis CI/CD authentication</description>
+    <description>${escapeXml(description)}</description>
     <distributionState>Local</distributionState>
     <isProtected>false</isProtected>
     <label>${appName}</label>
@@ -1676,26 +1713,34 @@ export async function generateSSLCertificate(
     const clientKeyStringRaw = `SFDX_CLIENT_KEY_${branchName.toUpperCase()}`;
     const clientCertStringRaw = `SFDX_CLIENT_CERT_${branchName.toUpperCase()}`;
 
-    const certStorageResponse = await prompts({
-      type: 'select',
-      name: 'value',
-      message: c.cyanBright(t('whichJwtCertificateStorageModeDoYouWant')),
-      description: t('descSelectJwtCertificateStorageMode'),
-      choices: [
-        {
-          title: t('titleJwtCertificateAsEncryptedFile'),
-          value: 'file',
-          description: t('descJwtCertificateAsEncryptedFile')
-        },
-        {
-          title: t('titleJwtCertificateAsCiVariable'),
-          value: 'variable',
-          description: t('descJwtCertificateAsCiVariable')
-        },
-      ],
-      initial: 0,
-    });
-    const storeCertificateInVariable = certStorageResponse.value === 'variable';
+    // With external storage, only the encrypted certificate goes to a password manager;
+    // the other secrets (client id, decryption key) still go to CI/CD variables.
+    const externalStorage = options.externalStorage === true;
+    const certStorageResponse = externalStorage
+      ? { value: 'file' }
+      : await prompts({
+        type: 'select',
+        name: 'value',
+        message: c.cyanBright(t('whichJwtCertificateStorageModeDoYouWant')),
+        description: t('descSelectJwtCertificateStorageMode'),
+        choices: [
+          {
+            title: t('titleJwtCertificateAsEncryptedFile'),
+            value: 'file',
+            description: t('descJwtCertificateAsEncryptedFile')
+          },
+          {
+            title: t('titleJwtCertificateAsCiVariable'),
+            value: 'variable',
+            description: t('descJwtCertificateAsCiVariable')
+          },
+        ],
+        initial: 0,
+      });
+    // True when the encrypted certificate is stored as a CI/CD variable (SFDX_CLIENT_CERT)
+    const storeCertificateInVariable = !externalStorage && certStorageResponse.value === 'variable';
+    // True when the committed encrypted certificate file must be removed from the repo
+    const removeCertFileFromRepo = externalStorage || storeCertificateInVariable;
 
     const idKeyValues = {
       clientIdString: clientIdStringRaw,
@@ -1768,8 +1813,19 @@ export async function generateSSLCertificate(
         )
       )
     );
+    // External storage: the encrypted certificate must be kept in a password manager, not in the repo nor a CI/CD variable
+    if (externalStorage) {
+      uxLog("action", commandThis, c.cyan(t('pleaseStoreEncryptedCertInPasswordManager')));
+      uxLog(
+        "log",
+        commandThis,
+        c.grey(c.cyanBright(`- ${c.bold(c.green(idKeyValues.clientCertString))}\n- Value: ${c.bold(c.green(idKeyValues.clientCertValueString))}`)),
+        true
+      );
+      uxLog("warning", commandThis, c.yellow(t('externalStorageCertNotCommitted')));
+    }
 
-    if (storeCertificateInVariable) {
+    if (removeCertFileFromRepo) {
       await fs.remove(targetKeyFile);
       uxLog("log", commandThis, c.cyan(t('encryptedCertificateKeyFileDeletedLocally', { targetKeyFile })));
     }
@@ -1777,29 +1833,8 @@ export async function generateSSLCertificate(
     WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, t('helpToConfigureCiVariables'), "docUrl");
     await prompts({
       type: 'confirm',
-      message: c.cyanBright(t('pleaseConfirmWhenVariablesHaveBeenSet')),
+      message: c.cyanBright(externalStorage ? t('pleaseConfirmWhenSecretsStoredInPasswordManager') : t('pleaseConfirmWhenVariablesHaveBeenSet')),
       description: t('descConfirmCiCdVariables'),
-    });
-
-    // Ask user which type of app to create
-    const appTypeResponse = await prompts({
-      type: 'select',
-      name: 'value',
-      message: c.cyanBright(t('whichTypeOfAppDoYouWant')),
-      description: t('descSelectAppType'),
-      choices: [
-        {
-          title: t('titleExternalClientApp'),
-          value: 'externalClientApp',
-          description: t('descExternalClientApp')
-        },
-        {
-          title: t('titleConnectedAppLegacy'),
-          value: 'connectedApp',
-          description: t('descConnectedAppLegacy')
-        },
-      ],
-      initial: 0,
     });
 
     // Build default app name from branch name by replacing all non-alphanumeric characters with empty string
@@ -1812,6 +1847,8 @@ export async function generateSSLCertificate(
     if (appNameDflt.length > 20) {
       appNameDflt = appNameDflt.substring(0, 20);
     }
+    // Use the app name provided by the caller (CLI flag) if available, else the computed default
+    const appNameInitial = options.appName ? options.appName : 'sfdxhardis' + appNameDflt;
 
     // Read certificate content (shared by both flows)
     const crtContent = await fs.readFile(crtFile, 'utf8');
@@ -1932,49 +1969,71 @@ export async function generateSSLCertificate(
       await fs.remove(crtFile);
     };
 
-    // Branch based on app type selection
-    if (appTypeResponse.value === 'externalClientApp') {
-      // ========== EXTERNAL CLIENT APP FLOW ==========
-      const promptResponses = await prompts([
-        {
+    // ========== EXTERNAL CLIENT APP FLOW ==========
+    // Connected Apps can no longer be created in Salesforce orgs, so always create an External Client App
+    const promptResponses = await prompts([
+      {
+        type: 'text',
+        name: 'appName',
+        initial: appNameInitial,
+        message: c.cyanBright(t('howWouldYouLikeToNameThe2')),
+        description: t('descExternalClientAppName'),
+        placeholder: t('exSfdxHardis'),
+      },
+    ]);
+    const contactEmail = await promptUserEmail(
+      t('enterContactEmailExternalClientApp')
+    );
+
+    const profileSelection = await promptProfiles(conn, {
+      multiselect: false,
+      message: t('whatProfileWillBePreAuthorizedFor'),
+      initialSelection: ['System Administrator', 'Administrateur Système'],
+    });
+
+    const selectedProfile = Array.isArray(profileSelection)
+      ? (profileSelection[0] as string)
+      : (profileSelection as string);
+
+    // Resolve the External Client App description according to its usage.
+    // CI/CD and monitoring descriptions are stored in the org metadata, so they are always in English (not localized).
+    const usageType = options.usageType === 'monitoring' || options.usageType === 'other' ? options.usageType : 'cicd';
+    let appDescription: string;
+    if (usageType === 'monitoring') {
+      appDescription = `External Client App used by sfdx-hardis for org monitoring authentication. Documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/`;
+    } else if (usageType === 'other') {
+      appDescription = options.appDescription
+        ? options.appDescription
+        : (await prompts({
           type: 'text',
-          name: 'appName',
-          initial: 'sfdxhardis' + appNameDflt,
-          message: c.cyanBright(t('howWouldYouLikeToNameThe2')),
-          description: t('descExternalClientAppName'),
-          placeholder: t('exSfdxHardis'),
-        },
-      ]);
-      const contactEmail = await promptUserEmail(
-        t('enterContactEmailExternalClientApp')
-      );
+          name: 'value',
+          message: c.cyanBright(t('whatIsExternalClientAppDescription')),
+          description: t('descExternalClientAppDescription'),
+          placeholder: t('placeholderExternalClientAppDescription'),
+        })).value;
+    } else {
+      appDescription = `External Client App used by sfdx-hardis for CI/CD authentication. Documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`;
+    }
 
-      const profileSelection = await promptProfiles(conn, {
-        multiselect: false,
-        message: t('whatProfileWillBePreAuthorizedFor'),
-        initialSelection: ['System Administrator', 'Administrateur Système'],
-      });
+    // Sanitize app name for metadata
+    const sanitizedAppName = promptResponses.appName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || 'sfdxhardis';
 
-      const selectedProfile = Array.isArray(profileSelection)
-        ? (profileSelection[0] as string)
-        : (profileSelection as string);
+    // Create metadata folder and generate ECA metadata files
+    const tmpDirMd = await createTempDir();
+    await generateExternalClientAppMetadata(
+      sanitizedAppName,
+      selectedProfile || 'System Administrator',
+      contactEmail,
+      crtContent,
+      consumerKey,
+      tmpDirMd,
+      conn,
+      appDescription
+    );
 
-      // Sanitize app name for metadata
-      const sanitizedAppName = promptResponses.appName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || 'sfdxhardis';
-
-      // Create metadata folder and generate ECA metadata files
-      const tmpDirMd = await createTempDir();
-      await generateExternalClientAppMetadata(
-        sanitizedAppName,
-        selectedProfile || 'System Administrator',
-        contactEmail,
-        crtContent,
-        consumerKey,
-        tmpDirMd,
-        conn
-      );
-
-      // Deploy metadatas
+    // Deploy metadatas (retry loop to handle the "External Client App already exists" case)
+    let deployed = false;
+    while (!deployed) {
       try {
         uxLog(
           "action",
@@ -1996,127 +2055,49 @@ export async function generateSSLCertificate(
           fullName: sanitizedAppName,
           friendlyLabel: 'External Client App',
         });
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        deployed = true;
       } catch (e) {
-        uxLog(
-          "error",
-          commandThis,
-          c.red(t('errorPushingExternalClientAppMetadata'))
-        );
-        uxLog(
-          "warning",
-          commandThis,
-          c.yellow(t('manualInstructionsExternalClientApp', { appName: sanitizedAppName, contactEmail, crtFile: c.bold(crtFile), branchNameUpper: branchName.toUpperCase() })));
-        await prompts({
-          type: 'confirm',
-          message: c.cyanBright(
-            t('youNeedToManuallyConfigureTheExternalClientApp')
-          ),
-          description: t('descConfirmExternalClientApp'),
-        });
-      }
-    } else {
-      // ========== CONNECTED APP FLOW (existing logic) ==========
-      const promptResponses = await prompts([
-        {
-          type: 'text',
-          name: 'appName',
-          initial: 'sfdxhardis' + appNameDflt,
-          message: c.cyanBright(t('howWouldYouLikeToNameThe')),
-          description: t('descConnectedAppName'),
-          placeholder: t('exSfdxHardis'),
-        },
-      ]);
-      const contactEmail = await promptUserEmail(
-        t('enterContactEmailConnectedApp')
-      );
-      const profile = await promptProfiles(conn, {
-        multiselect: false,
-        message: t('whatProfileWillBeUsedForThe'),
-        initialSelection: ['System Administrator', 'Administrateur Système'],
-      });
-      // Build ConnectedApp metadata
-      const connectedAppMetadata = `<?xml version="1.0" encoding="UTF-8"?>
-<ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
-  <contactEmail>${contactEmail}</contactEmail>
-  <label>${promptResponses.appName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || 'sfdxhardis'}</label>
-  <oauthConfig>
-      <callbackUrl>http://localhost:1717/OauthRedirect</callbackUrl>
-      <certificate>${crtContent}</certificate>
-      <consumerKey>${consumerKey}</consumerKey>
-      <isAdminApproved>true</isAdminApproved>
-      <isConsumerSecretOptional>false</isConsumerSecretOptional>
-      <isIntrospectAllTokens>false</isIntrospectAllTokens>
-      <isSecretRequiredForRefreshToken>false</isSecretRequiredForRefreshToken>
-      <scopes>Api</scopes>
-      <scopes>Web</scopes>
-      <scopes>RefreshToken</scopes>
-  </oauthConfig>
-  <oauthPolicy>
-      <ipRelaxation>ENFORCE</ipRelaxation>
-      <refreshTokenPolicy>specific_lifetime:3:HOURS</refreshTokenPolicy>
-  </oauthPolicy>
-  <profileName>${profile || 'System Administrator'}</profileName>
-</ConnectedApp>
-`;
-      const packageXml = `<?xml version="1.0" encoding="UTF-8"?>
-<Package xmlns="http://soap.sforce.com/2006/04/metadata">
-  <types>
-    <members>${promptResponses.appName}</members>
-    <name>ConnectedApp</name>
-  </types>
-  <version>${getApiVersion()}</version>
-</Package>
-`;
-      // create metadata folder
-      const tmpDirMd = await createTempDir();
-      const connectedAppDir = path.join(tmpDirMd, 'connectedApps');
-      await fs.ensureDir(connectedAppDir);
-      await fs.writeFile(path.join(tmpDirMd, 'package.xml'), packageXml);
-      await fs.writeFile(path.join(connectedAppDir, `${promptResponses.appName}.connectedApp`), connectedAppMetadata);
-
-      // Deploy metadatas
-      try {
-        uxLog(
-          "action",
-          commandThis,
-          c.cyan(t('deployingConnectedApp', { appName: c.bold(promptResponses.appName), targetUsername: options.targetUsername || '' }))
-        );
-        // Replace sensitive info in connectedAppMetadata for logging
-        const connectedAppMetadataForLog = connectedAppMetadata
-          .replace(consumerKey, '***CONSUMERKEY_HIDDEN_FROM_LOGS***')
-          .replace(crtContent, '***CERTIFICATE_HIDDEN_FROM_LOGS***');
-
-        uxLog("log", commandThis, c.grey(t('connectedAppMetadatasXml', { connectedAppMetadataForLog })));
-        uxLog(
-          "log",
-          commandThis,
-          c.grey(c.yellow(t('ifUploadErrorReadMessageAfterConnected')))
-        );
-        await deployAuthMetadataAndCleanup(tmpDirMd, `${promptResponses.appName} Connected App`, {
-          type: 'ConnectedApp',
-          fullName: promptResponses.appName,
-          friendlyLabel: 'Connected App',
-        });
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (e) {
-        uxLog(
-          "error",
-          commandThis,
-          c.red(t('errorPushingConnectedAppMetadata'))
-        );
-        uxLog(
-          "warning",
-          commandThis,
-          c.yellow(t('manualInstructionsConnectedApp', { appName: promptResponses.appName, crtFile: c.bold(crtFile), branchNameUpper: branchName.toUpperCase() }))
-        );
-        await prompts({
-          type: 'confirm',
-          message: c.cyanBright(
-            t('youNeedToManuallyConfigureTheConnectedApp')
-          ),
-          description: t('descConfirmConnectedApp'),
-        });
+        if (isAuthAppAlreadyExistsError(e)) {
+          // The app (or its consumer key) already exists: ask the user to delete it in Setup, then retry or give up
+          const setupUrl = `${conn.instanceUrl}/lightning/setup/ExternalClientAppsManager/home`;
+          uxLog("error", commandThis, c.red(t('externalClientAppAlreadyExists', { appName: sanitizedAppName })));
+          uxLog("warning", commandThis, c.yellow(t('deleteExternalClientAppInSetup', { setupUrl })));
+          WebSocketClient.sendReportFileMessage(setupUrl, t('openExternalClientAppManager'), "actionUrl");
+          const existsResponse = await prompts({
+            type: 'select',
+            name: 'value',
+            message: c.cyanBright(t('externalClientAppExistsWhatToDo')),
+            description: t('descExternalClientAppExistsWhatToDo'),
+            choices: [
+              { title: t('retryDeployExternalClientApp'), value: 'retry' },
+              { title: t('giveUpExternalClientApp'), value: 'giveUp' },
+            ],
+            initial: 0,
+          });
+          if (existsResponse.value === 'giveUp') {
+            throw new SfError(t('externalClientAppDeploymentCancelled', { appName: sanitizedAppName }));
+          }
+          // else: loop again and retry the deployment
+        } else {
+          // Any other error: fall back to manual instructions and stop retrying
+          uxLog(
+            "error",
+            commandThis,
+            c.red(t('errorPushingExternalClientAppMetadata'))
+          );
+          uxLog(
+            "warning",
+            commandThis,
+            c.yellow(t('manualInstructionsExternalClientApp', { appName: sanitizedAppName, contactEmail, crtFile: c.bold(crtFile), branchNameUpper: branchName.toUpperCase() })));
+          await prompts({
+            type: 'confirm',
+            message: c.cyanBright(
+              t('youNeedToManuallyConfigureTheExternalClientApp')
+            ),
+            description: t('descConfirmExternalClientApp'),
+          });
+          break;
+        }
       }
     }
   } else {

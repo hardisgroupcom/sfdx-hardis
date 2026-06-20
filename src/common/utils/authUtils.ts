@@ -31,6 +31,7 @@ export interface AuthOrgOptions {
   scratch?: boolean;
   setDefault?: boolean;
   forceUsername?: string;
+  encryptedCertContent?: string;
   Command?: {
     flags?: Record<string, any>;
     id?: string;
@@ -229,7 +230,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
               : 'https://login.salesforce.com';
     // Get JWT items clientId and certificate key
     const sfdxClientId = await getSfdxClientId(orgAlias, config);
-    const crtKeyfile = await getCertificateKeyFile(orgAlias, config);
+    const crtKeyfile = await getCertificateKeyFile(orgAlias, config, options);
     const usernameArg = options.setDefault === false ? '' : isDevHub ? '--set-default-dev-hub' : '--set-default';
     if (crtKeyfile && sfdxClientId && username) {
       // Login with JWT
@@ -446,7 +447,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
   return null;
 }
 
-// Get clientId for SFDX connected app
+// Get the decryption key (AES passphrase) used to decrypt the encrypted certificate. Always read from a variable.
 async function getKey(orgAlias: string, config: any) {
   // Try to find in global variables
   const sfdxClientKeyVarName = `SFDX_CLIENT_KEY_${orgAlias}`;
@@ -492,17 +493,19 @@ async function getKey(orgAlias: string, config: any) {
 }
 
 // Try to find certificate key file for SF CLI connected app in different locations
-async function getCertificateKeyFile(orgAlias: string, config: any) {
-  // Support storing the certificate key content in a CI/CD env variable instead of a file in the repo.
-  // This allows enterprises to avoid committing key files to git.
-  // Two formats are supported in SFDX_CLIENT_CERT[_<ORGALIAS>]:
+async function getCertificateKeyFile(orgAlias: string, config: any, options: AuthOrgOptions = {}) {
+  // Support providing the encrypted certificate content without committing a key file to the repo.
+  // Priority order for the encrypted certificate content:
+  //   1. options.encryptedCertContent: content of the file passed via hardis:auth:login --encrypted-cert-file
+  //      (typically retrieved from a password manager when configured with --external-storage).
+  //   2. CI/CD env variable SFDX_CLIENT_CERT[_<ORGALIAS>].
+  // Two formats are supported for the content:
   //   1. Encrypted content (format "<iv-hex>:<encrypted-hex>") produced by sfdx-hardis. RECOMMENDED.
-  //      Requires SFDX_CLIENT_KEY[_<ORGALIAS>] AES passphrase to decrypt.
+  //      Requires SFDX_CLIENT_KEY[_<ORGALIAS>] AES passphrase (always a variable) to decrypt.
   //   2. Raw PEM private key (starts with "-----BEGIN ..."). Used as-is, no decryption needed.
   //      Fallback for advanced cases like a CA-signed certificate where the External Client App is created manually.
-  // Variable names tried (in order): SFDX_CLIENT_CERT_<ORGALIAS>, SFDX_CLIENT_CERT
   const certVarName = `SFDX_CLIENT_CERT_${orgAlias.toUpperCase()}`;
-  const certVarContent = process.env[certVarName] || process.env.SFDX_CLIENT_CERT;
+  const certVarContent = options.encryptedCertContent || process.env[certVarName] || process.env.SFDX_CLIENT_CERT;
 
   // List of repo locations where an encrypted .key file may have been committed.
   const filesToTry = [
@@ -514,7 +517,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
   ];
 
   if (certVarContent) {
-    const usedVarName = process.env[certVarName] ? certVarName : 'SFDX_CLIENT_CERT';
+    const usedVarName = options.encryptedCertContent ? '--encrypted-cert-file' : process.env[certVarName] ? certVarName : 'SFDX_CLIENT_CERT';
     // Some CI providers store multi-line secrets with literal "\n" escapes; PEM content
     // never legitimately contains the 2-char sequence "\n", so this normalization is safe.
     const normalizedCertVarContent = certVarContent.replace(/\\n/g, '\n');
@@ -539,7 +542,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
         `Invalid ${usedVarName} content: found PEM block "${pemType}". Please provide the JWT private key (for example server.key), not the certificate (for example server.crt).`
       );
     }
-    console.log(c.grey(`[sfdx-hardis] Using ${usedVarName} env variable for encrypted certificate key`));
+    console.log(c.grey(`[sfdx-hardis] Using ${usedVarName} for encrypted certificate`));
     const sshKey = await getKey(orgAlias, config);
     if (sshKey) {
       const tmpDir = await createTempDir();

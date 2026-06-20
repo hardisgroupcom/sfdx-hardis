@@ -90,6 +90,7 @@ export type NotifMessageType =
   | "LICENSES"
   | "LINT_ACCESS"
   | "MFA_CONFIG"
+  | "SECURITY_KEY_UNLINK"
   | "UNUSED_METADATAS"
   | "METADATA_STATUS"
   | "MISSING_ATTRIBUTES"
@@ -317,6 +318,13 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     colorClass: "security",
     emittedSeverities: ["error", "log"],
     defaults: { messaging: "error", email: "error", api: "log" },
+  },
+  SECURITY_KEY_UNLINK: {
+    category: "apexTestsSecurity",
+    icon: "utility:key",
+    colorClass: "security",
+    emittedSeverities: ["error", "warning", "log"],
+    defaults: { messaging: "warning", email: "warning", api: "log" },
   },
   MFA_CONFIG: {
     category: "apexTestsSecurity",
