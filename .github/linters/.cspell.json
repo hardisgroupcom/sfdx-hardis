@@ -1322,7 +1322,11 @@
     "\u00eatre",
     "\u00ecntegration",
     "Authentificateur",
+    "connecter",
+    "deleteredirect",
+    "Déconnecter",
     "Fnoredirect",
+    "Inscrire",
     "Lookback",
     "noredirect",
     "onetimepassword",
@@ -1332,11 +1336,15 @@
     "removetimebased",
     "removetotp",
     "removetwofactorauth",
+    "sactiver",
     "salesforceauthenticator",
+    "sécurité",
     "securitykey",
+    "Supprimer",
     "Srcs",
     "summarises",
     "totp",
+    "voquer",
     "webauthn"
   ]
 }
