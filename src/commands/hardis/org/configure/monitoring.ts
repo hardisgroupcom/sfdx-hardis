@@ -236,7 +236,7 @@ The command's technical implementation involves a series of Git operations, file
     }
 
     // Generate SSL certificate (requires openssl to be installed on computer)
-    await generateSSLCertificate(branchName, './.ssh', this, flags['target-org'].getConnection(), {});
+    await generateSSLCertificate(branchName, './.ssh', this, flags['target-org'].getConnection(), { usageType: 'monitoring' });
 
     // Confirm & push on server
     const confirmPush = await prompts({

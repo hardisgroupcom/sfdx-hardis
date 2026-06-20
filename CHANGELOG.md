@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/): Name the auth config after the org domain instead of a Git branch, name the External Client App directly, keep the encrypted certificate out of the repository with `--external-storage`, and always create an External Client App (Connected Apps can no longer be created in Salesforce orgs).
+- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/): Name the auth config after the org domain instead of a Git branch, name the External Client App directly, keep the encrypted certificate out of the repository with `--external-storage`, set the app description from its usage (CI/CD or monitoring docs link, or a custom one with `--usage other`), recover from an existing-app deploy error with a Setup link plus retry/give-up, and always create an External Client App (Connected Apps can no longer be created in Salesforce orgs).
 - [hardis:auth:login](https://sfdx-hardis.cloudity.com/hardis/auth/login/): Authenticate to an org by name reusing a config created by hardis:project:configure:auth, and read the encrypted certificate from a file with `--encrypted-cert-file`.
 - [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/): Restrict the analysis to specific fields per object using the `Object:Field1,Field2` syntax in `--objects`, with an optional `(WITH_SUM)` modifier to add a column with the sum of a numeric field's values.
 - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): Add a report listing OAuth tokens grouped by user, with each user's Connected Apps and their last usage date.

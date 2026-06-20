@@ -1463,6 +1463,32 @@ export async function restoreLocalSfdxInfo() {
 }
 
 // Generate External Client App metadata files in a temporary directory
+// Heuristic detection of a deploy failure caused by an auth app (External Client App) that already exists,
+// including the common case where the org refuses the provided credentials/consumer key of an existing app.
+function isAuthAppAlreadyExistsError(error: any): boolean {
+  const haystack = (typeof error === 'string' ? error : (error?.message || '') + ' ' + JSON.stringify(error || {})).toLowerCase();
+  return [
+    'already exists',
+    'duplicate value found',
+    'duplicate_developer_name',
+    'duplicate developer name',
+    'consumer key',
+    'already in use',
+    'name is already',
+    'value already exists',
+  ].some((needle) => haystack.includes(needle));
+}
+
+// Escape the few characters that are not valid as-is inside an XML text node
+function escapeXml(value: string): string {
+  return (value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 export async function generateExternalClientAppMetadata(
   appName: string,
   profileName: string,
@@ -1470,13 +1496,14 @@ export async function generateExternalClientAppMetadata(
   crtContent: string,
   consumerKey: string,
   tmpDir: string,
-  conn: Connection
+  conn: Connection,
+  description: string = 'External Client App for sfdx-hardis CI/CD authentication'
 ): Promise<void> {
   // 1. ExternalClientApplication (.eca-meta.xml)
   const ecaMetadata = `<?xml version="1.0" encoding="UTF-8"?>
 <ExternalClientApplication xmlns="http://soap.sforce.com/2006/04/metadata">
     <contactEmail>${contactEmail}</contactEmail>
-    <description>External Client App for sfdx-hardis CI/CD authentication</description>
+    <description>${escapeXml(description)}</description>
     <distributionState>Local</distributionState>
     <isProtected>false</isProtected>
     <label>${appName}</label>
@@ -1968,6 +1995,26 @@ export async function generateSSLCertificate(
       ? (profileSelection[0] as string)
       : (profileSelection as string);
 
+    // Resolve the External Client App description according to its usage.
+    // CI/CD and monitoring descriptions are stored in the org metadata, so they are always in English (not localized).
+    const usageType = options.usageType === 'monitoring' || options.usageType === 'other' ? options.usageType : 'cicd';
+    let appDescription: string;
+    if (usageType === 'monitoring') {
+      appDescription = `External Client App used by sfdx-hardis for org monitoring authentication. Documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/`;
+    } else if (usageType === 'other') {
+      appDescription = options.appDescription
+        ? options.appDescription
+        : (await prompts({
+          type: 'text',
+          name: 'value',
+          message: c.cyanBright(t('whatIsExternalClientAppDescription')),
+          description: t('descExternalClientAppDescription'),
+          placeholder: t('placeholderExternalClientAppDescription'),
+        })).value;
+    } else {
+      appDescription = `External Client App used by sfdx-hardis for CI/CD authentication. Documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`;
+    }
+
     // Sanitize app name for metadata
     const sanitizedAppName = promptResponses.appName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || 'sfdxhardis';
 
@@ -1980,49 +2027,78 @@ export async function generateSSLCertificate(
       crtContent,
       consumerKey,
       tmpDirMd,
-      conn
+      conn,
+      appDescription
     );
 
-    // Deploy metadatas
-    try {
-      uxLog(
-        "action",
-        commandThis,
-        c.cyan(t('deployingExternalClientApp', { appName: c.bold(sanitizedAppName), targetUsername: options.targetUsername || '' }))
-      );
+    // Deploy metadatas (retry loop to handle the "External Client App already exists" case)
+    let deployed = false;
+    while (!deployed) {
+      try {
+        uxLog(
+          "action",
+          commandThis,
+          c.cyan(t('deployingExternalClientApp', { appName: c.bold(sanitizedAppName), targetUsername: options.targetUsername || '' }))
+        );
 
-      // Log metadata info (hide sensitive data)
-      uxLog("log", commandThis, c.grey(t('externalClientAppMetadataFiles', { appName: sanitizedAppName })));
+        // Log metadata info (hide sensitive data)
+        uxLog("log", commandThis, c.grey(t('externalClientAppMetadataFiles', { appName: sanitizedAppName })));
 
-      uxLog(
-        "log",
-        commandThis,
-        c.grey(c.yellow(t('ifUploadErrorReadMessageAfterExternal')))
-      );
+        uxLog(
+          "log",
+          commandThis,
+          c.grey(c.yellow(t('ifUploadErrorReadMessageAfterExternal')))
+        );
 
-      await deployAuthMetadataAndCleanup(tmpDirMd, `${sanitizedAppName} External Client App`, {
-        type: 'ExternalClientApplication',
-        fullName: sanitizedAppName,
-        friendlyLabel: 'External Client App',
-      });
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {
-      uxLog(
-        "error",
-        commandThis,
-        c.red(t('errorPushingExternalClientAppMetadata'))
-      );
-      uxLog(
-        "warning",
-        commandThis,
-        c.yellow(t('manualInstructionsExternalClientApp', { appName: sanitizedAppName, contactEmail, crtFile: c.bold(crtFile), branchNameUpper: branchName.toUpperCase() })));
-      await prompts({
-        type: 'confirm',
-        message: c.cyanBright(
-          t('youNeedToManuallyConfigureTheExternalClientApp')
-        ),
-        description: t('descConfirmExternalClientApp'),
-      });
+        await deployAuthMetadataAndCleanup(tmpDirMd, `${sanitizedAppName} External Client App`, {
+          type: 'ExternalClientApplication',
+          fullName: sanitizedAppName,
+          friendlyLabel: 'External Client App',
+        });
+        deployed = true;
+      } catch (e) {
+        if (isAuthAppAlreadyExistsError(e)) {
+          // The app (or its consumer key) already exists: ask the user to delete it in Setup, then retry or give up
+          const setupUrl = `${conn.instanceUrl}/lightning/setup/ExternalClientAppsManager/home`;
+          uxLog("error", commandThis, c.red(t('externalClientAppAlreadyExists', { appName: sanitizedAppName })));
+          uxLog("warning", commandThis, c.yellow(t('deleteExternalClientAppInSetup', { setupUrl })));
+          WebSocketClient.sendReportFileMessage(setupUrl, t('openExternalClientAppManager'), "actionUrl");
+          const existsResponse = await prompts({
+            type: 'select',
+            name: 'value',
+            message: c.cyanBright(t('externalClientAppExistsWhatToDo')),
+            description: t('descExternalClientAppExistsWhatToDo'),
+            choices: [
+              { title: t('retryDeployExternalClientApp'), value: 'retry' },
+              { title: t('giveUpExternalClientApp'), value: 'giveUp' },
+            ],
+            initial: 0,
+          });
+          if (existsResponse.value === 'giveUp') {
+            throw new SfError(t('externalClientAppDeploymentCancelled', { appName: sanitizedAppName }));
+          }
+          // else: loop again and retry the deployment
+        } else {
+          // Any other error: fall back to manual instructions and stop retrying
+          uxLog(
+            "error",
+            commandThis,
+            c.red(t('errorPushingExternalClientAppMetadata'))
+          );
+          uxLog(
+            "warning",
+            commandThis,
+            c.yellow(t('manualInstructionsExternalClientApp', { appName: sanitizedAppName, contactEmail, crtFile: c.bold(crtFile), branchNameUpper: branchName.toUpperCase() })));
+          await prompts({
+            type: 'confirm',
+            message: c.cyanBright(
+              t('youNeedToManuallyConfigureTheExternalClientApp')
+            ),
+            description: t('descConfirmExternalClientApp'),
+          });
+          break;
+        }
+      }
     }
   } else {
     // Tell infos to install manually

@@ -41,7 +41,7 @@ Key functionalities include:
 - **Merge Target Definition:** Enables defining target Git branches into which the configured branch can merge, ensuring controlled deployment flows.
 - **Salesforce Username Configuration:** Prompts for the Salesforce username to be used by the CI server for deployments.
 - **SSL Certificate Generation:** Automatically generates an SSL certificate for secure authentication.
-- **External Client App Creation:** Creates an External Client App (Connected Apps can no longer be created in Salesforce orgs). Pass \`--app-name\` to name the app instead of being prompted.
+- **External Client App Creation:** Creates an External Client App (Connected Apps can no longer be created in Salesforce orgs). Pass \`--app-name\` to name the app instead of being prompted. The app description is set from its usage: CI/CD and monitoring include a link to the matching documentation, while \`--usage other\` uses \`--app-description\` (or prompts for it). If the app already exists in the org, the deployment fails and you are offered a Setup link to delete it, then retry or give up.
 - **Certificate Storage:** By default the encrypted certificate is committed to the repository. Pass \`--external-storage\` to keep only the encrypted certificate out of the repository and store it in a password manager instead, then provide it at authentication time (see \`hardis:auth:login --encrypted-cert-file\`). The other secrets (client id, decryption key) are still stored as CI/CD variables.
 
 <details markdown="1">
@@ -72,6 +72,7 @@ prompts
     '$ sf hardis:project:configure:auth',
     '$ sf hardis:project:configure:auth --name-type org-domain --app-name sfdxhardismyorg',
     '$ sf hardis:project:configure:auth --name-type org-domain --app-name sfdxhardismyorg --external-storage',
+    '$ sf hardis:project:configure:auth --usage other --app-description "External Client App for my integration"',
   ];
 
   // public static args = [{name: 'file'}];
@@ -92,6 +93,14 @@ prompts
     }),
     'app-name': Flags.string({
       description: 'Name of the External Client App to create',
+    }),
+    usage: Flags.string({
+      options: ['cicd', 'monitoring', 'other'],
+      default: 'cicd',
+      description: 'Usage of the External Client App, used to set its description. With "other", the description is taken from --app-description or prompted',
+    }),
+    'app-description': Flags.string({
+      description: 'Description of the External Client App (only used when --usage other)',
     }),
     'external-storage': Flags.boolean({
       default: false,
@@ -298,6 +307,8 @@ prompts
       targetUsername: devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername(),
       appName: flags['app-name'],
       externalStorage: flags['external-storage'] === true,
+      usageType: flags.usage,
+      appDescription: flags['app-description'],
     };
     const sslResult = await generateSSLCertificate(certName, certFolder, this, orgConn, sslGenOptions);
 
