@@ -236,4 +236,9 @@ CVE-2026-48712
 # ws: sfdx-hardis own tree is already pinned to 8.21.0 in yarn.lock; residual old ws (8.18.3/8.20.1) in the image comes from independently-installed Salesforce CLI plugins. Not dangerous (DoS)
 CVE-2026-48779
 
+# https://avd.aquasec.com/nvd/cve-2026-12151 + cve-2026-6734 + cve-2026-9697
+# undici 5.29.0 bundled inside the globally-installed Salesforce CLI (/root/.local/share/sf/node_modules), not in the sfdx-hardis dependency tree. No fix available for undici 5.x (fixes land in 7.28.0+/8.2.0), so not remediable from this repo; the Salesforce CLI team will pick up the upgrade. DoS / info disclosure / MITM via ignored TLS, harmless for sfdx-hardis usage. Added 2026-06-20.
+CVE-2026-12151
+CVE-2026-6734
+CVE-2026-9697
 
