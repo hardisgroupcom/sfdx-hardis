@@ -5,11 +5,11 @@ import {
   optionalOrgFlagWithDeprecations,
   optionalHubFlagWithDeprecations,
 } from '@salesforce/sf-plugins-core';
-import { fs, Messages } from '@salesforce/core';
+import { fs, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import * as yaml from 'js-yaml';
-import { execSfdxJson, generateSSLCertificate, git, promptInstanceUrl, uxLog } from '../../../../common/utils/index.js';
+import { buildOrgSlugFromInstanceUrl, execSfdxJson, generateSSLCertificate, git, isCI, promptInstanceUrl, uxLog } from '../../../../common/utils/index.js';
 import { getOrgAliasUsername, promptOrg } from '../../../../common/utils/orgUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { checkConfig, getConfig, setConfig, setInConfigFile } from '../../../../config/index.js';
@@ -31,21 +31,18 @@ export default class ConfigureAuth extends SfCommand<any> {
 
 This command facilitates the setup of automated CI/CD pipelines, enabling seamless deployments from specific Git branches to designated Salesforce orgs. It supports both standard Salesforce orgs and Dev Hub configurations, catering to various enterprise deployment workflows.
 
-This command supports two authentication app types:
-
-- **External Client App** (modern)
-- **Connected App** (legacy)
-
-Both use JWT Bearer flow with SSL certificates for secure CI/CD authentication.
+It creates an **External Client App** that uses the JWT Bearer flow with SSL certificates for secure CI/CD authentication.
 
 Key functionalities include:
 
 - **Org Selection/Login:** Guides the user to select an existing Salesforce org or log in to a new one.
+- **Config Naming:** Names the auth config after an existing Git branch (default), or derives a name from the org domain with \`--name-type org-domain\` (or pass an explicit name with \`--name\`). Org-domain configs are not tied to a Git branch, so the merge targets step is skipped.
 - **Git Branch Association:** Allows associating a specific Git branch with the chosen Salesforce org.
 - **Merge Target Definition:** Enables defining target Git branches into which the configured branch can merge, ensuring controlled deployment flows.
 - **Salesforce Username Configuration:** Prompts for the Salesforce username to be used by the CI server for deployments.
 - **SSL Certificate Generation:** Automatically generates an SSL certificate for secure authentication.
-- **App Type Selection:** Choose between Connected App (traditional) or External Client App (modern, metadata-based).
+- **External Client App Creation:** Creates an External Client App (Connected Apps can no longer be created in Salesforce orgs). Pass \`--app-name\` to name the app instead of being prompted.
+- **Certificate Storage:** By default the encrypted certificate is committed to the repository. Pass \`--external-storage\` to keep only the encrypted certificate out of the repository and store it in a password manager instead, then provide it at authentication time (see \`hardis:auth:login --encrypted-cert-file\`). The other secrets (client id, decryption key) are still stored as CI/CD variables.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -71,7 +68,11 @@ prompts
 - **Dependency Check:** Ensures the presence of \`openssl\` on the system, which is required for SSL certificate generation.
 `;
 
-  public static examples = ['$ sf hardis:project:configure:auth'];
+  public static examples = [
+    '$ sf hardis:project:configure:auth',
+    '$ sf hardis:project:configure:auth --name-type org-domain --app-name sfdxhardismyorg',
+    '$ sf hardis:project:configure:auth --name-type org-domain --app-name sfdxhardismyorg --external-storage',
+  ];
 
   // public static args = [{name: 'file'}];
 
@@ -80,6 +81,21 @@ prompts
       char: 'b',
       default: false,
       description: 'Configure project DevHub',
+    }),
+    name: Flags.string({
+      description: 'Name of the org-based auth config to create in config/branches (skips Git branch selection and merge targets). Auto-derived from the org domain when --name-type=org-domain.',
+    }),
+    'name-type': Flags.string({
+      options: ['git-branch', 'org-domain'],
+      default: 'git-branch',
+      description: 'How to name the auth config: git-branch (select an existing Git branch) or org-domain (derive the name from the org domain)',
+    }),
+    'app-name': Flags.string({
+      description: 'Name of the External Client App to create',
+    }),
+    'external-storage': Flags.boolean({
+      default: false,
+      description: 'Do not store the encrypted certificate in a file in the repository. Instead, the user is asked to keep it in a password manager and provide it at authentication time. The other secrets (client id, decryption key) are still stored as CI/CD variables.',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -105,6 +121,11 @@ prompts
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ConfigureAuth);
     const devHub = flags.devhub || false;
+
+    // This command requires human interaction and can not run in CI or agent mode
+    if (isCI) {
+      throw new SfError(t('configureAuthInteractiveOnly'));
+    }
 
     uxLog("action", this, c.cyan(t('thisCommandWillConfigureTheAuthenticationBetween', { devHub: devHub ? t('devHubLabel') : t('aSalesforceOrgLabel') })));
 
@@ -139,30 +160,44 @@ prompts
     const config = await getConfig('project');
     // Get branch name to configure if not Dev Hub
     let branchName = '';
+    let isOrgBasedName = false;
     let instanceUrl = 'https://login.salesforce.com';
+    const orgInstanceUrl = flags['target-org']?.getConnection()?.instanceUrl || '';
     const branches = await git().branch(["--list", "-r"]);
     const branchesFiltered = branches.all
       .map((branch: string) => branch.replace('origin/', ''))
       .filter((branch: string) => branch !== branchName && !branch.includes("/"));
 
     if (!devHub) {
-      const branchResponse = await prompts({
-        type: 'select',
-        name: 'value',
-        message: c.cyanBright(t('whatIsNameOfGitBranchToConfigureCiCd')),
-        choices: branchesFiltered.map((branch: string) => {
-          return {
-            title: branch,
-            value: branch,
-          };
-        }),
-        description: t('enterGitBranchNameForOrgConfig'),
-        placeholder: t('selectTheGitBranchName'),
-      });
-      branchName = branchResponse.value.replace(/\s/g, '-');
-      /* if (["main", "master"].includes(branchName)) {
-        throw new SfError("You can not use main or master as deployment branch name. Maybe you want to use production ?");
-      } */
+      if (flags.name) {
+        // Explicit org-based config name provided
+        branchName = flags.name.replace(/\s/g, '-');
+        isOrgBasedName = true;
+      } else if (flags['name-type'] === 'org-domain') {
+        // Derive the config name from the org domain
+        branchName = buildOrgSlugFromInstanceUrl(orgInstanceUrl);
+        isOrgBasedName = true;
+        uxLog("action", this, c.cyan(t('authConfigNameGeneratedFromOrg', { name: c.bold(branchName) })));
+      } else {
+        // Default: name the config after an existing Git branch
+        const branchResponse = await prompts({
+          type: 'select',
+          name: 'value',
+          message: c.cyanBright(t('whatIsNameOfGitBranchToConfigureCiCd')),
+          choices: branchesFiltered.map((branch: string) => {
+            return {
+              title: branch,
+              value: branch,
+            };
+          }),
+          description: t('enterGitBranchNameForOrgConfig'),
+          placeholder: t('selectTheGitBranchName'),
+        });
+        branchName = branchResponse.value.replace(/\s/g, '-');
+        /* if (["main", "master"].includes(branchName)) {
+          throw new SfError("You can not use main or master as deployment branch name. Maybe you want to use production ?");
+        } */
+      }
     }
 
     instanceUrl = await promptInstanceUrl(
@@ -173,8 +208,8 @@ prompts
         : flags['target-org']?.getConnection()?.instanceUrl || "",
     });
 
-    // Request merge targets
-    if (!devHub) {
+    // Request merge targets (skipped for org-based configs)
+    if (!devHub && !isOrgBasedName) {
       let initialMergeTargets: string[] = [];
       const branchConfigFile = `./config/branches/.sfdx-hardis.${branchName}.yml`;
       if (fs.existsSync(branchConfigFile)) {
@@ -261,6 +296,8 @@ prompts
     const orgConn = devHub ? flags['target-dev-hub']?.getConnection() : flags['target-org']?.getConnection();
     const sslGenOptions = {
       targetUsername: devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername(),
+      appName: flags['app-name'],
+      externalStorage: flags['external-storage'] === true,
     };
     const sslResult = await generateSSLCertificate(certName, certFolder, this, orgConn, sslGenOptions);
 
