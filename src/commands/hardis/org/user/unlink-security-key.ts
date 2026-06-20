@@ -6,6 +6,9 @@ import c from 'chalk';
 import { generateReports, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
+import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import {
   MFA_METHODS,
   UnlinkMethodKey,
@@ -36,6 +39,7 @@ Key functionalities:
 - **Per-user result:** Each username receives one of the following statuses: \`unlinked\`, \`notLinked\`, \`notFound\`, \`inactive\`, or \`error\`.
 - **Locale-independent detection:** Disconnect links are located by the brand / spec tokens (\`U2F\`, \`WebAuthn\`, \`Salesforce Authenticator\`, \`One-Time Password Authenticator\`, \`TOTP\`) that Salesforce does not translate. On non-English orgs, you can extend the matching set with \`--text-markers\`.
 - **Reporting:** A console table summarises the run, and CSV / XLSX reports are generated for audit trails.
+- **Notifications:** Sends a notification (Slack, Microsoft Teams, email, API/Grafana) summarising which users had MFA methods unlinked, so security admins are alerted. Routing thresholds follow the \`SECURITY_KEY_UNLINK\` notification type configuration.
 
 ### Agent Mode
 
@@ -270,9 +274,44 @@ Reference: [Salesforce Help - Remove a user's security key](https://help.salesfo
     uxLogTable(this, tableRows);
     uxLog('success', this, c.green(t('unlinkSecurityKeySummary', summary)));
 
-    await generateReports(tableRows, ['Username', 'UserId', 'Status', 'Unlinked', 'NotLinked', 'Message'], this, {
+    const reportResult = await generateReports(tableRows, ['Username', 'UserId', 'Status', 'Unlinked', 'NotLinked', 'Message'], this, {
       logFileName: 'users-security-key-unlink',
       logLabel: 'Unlink security key report',
+    });
+
+    // Send notifications (Slack / Teams / email / API) about the MFA methods that have been unlinked
+    const orgMarkdown = await getOrgMarkdown(conn.instanceUrl);
+    const notifButtons = await getNotificationButtons();
+    let notifSeverity: NotifSeverity = 'log';
+    let notifText = t('unlinkSecurityKeyNotifNone', { orgMarkdown });
+    if (summary.error > 0) {
+      notifSeverity = 'error';
+      notifText = t('unlinkSecurityKeyNotifErrors', { errorCount: summary.error, unlinkedCount: summary.unlinked, orgMarkdown });
+    } else if (summary.unlinked > 0) {
+      notifSeverity = 'warning';
+      notifText = t('unlinkSecurityKeyNotifUnlinked', { unlinkedCount: summary.unlinked, orgMarkdown });
+    }
+    let notifDetailText = '';
+    for (const r of results.filter((res) => res.status === 'unlinked' || res.status === 'error')) {
+      notifDetailText += `- ${r.username}: ${r.status}${r.methodsUnlinked.length > 0 ? ` (${r.methodsUnlinked.join(', ')})` : ''}${r.message ? ` - ${r.message}` : ''}\n`;
+    }
+    const notifAttachments = notifDetailText ? [{ text: notifDetailText }] : [];
+    const xlsxFile = (reportResult.find((res) => res.type === 'xls') || {}).file;
+
+    await setConnectionVariables(conn); // Required for some notifications providers like Email
+    await NotifProvider.postNotifications({
+      type: 'SECURITY_KEY_UNLINK',
+      text: notifText,
+      attachments: notifAttachments,
+      buttons: notifButtons,
+      severity: notifSeverity,
+      attachedFiles: xlsxFile ? [xlsxFile] : [],
+      logElements: tableRows,
+      data: { metric: summary.unlinked },
+      metrics: {
+        SecurityKeyUnlinkUnlinked: summary.unlinked,
+        SecurityKeyUnlinkErrors: summary.error,
+      },
     });
 
     return {
