@@ -1322,6 +1322,7 @@
     "\u00eatre",
     "\u00ecntegration",
     "Authentificateur",
+    "connecter",
     "deleteredirect",
     "Déconnecter",
     "Fnoredirect",
@@ -1335,6 +1336,7 @@
     "removetimebased",
     "removetotp",
     "removetwofactorauth",
+    "sactiver",
     "salesforceauthenticator",
     "sécurité",
     "securitykey",
@@ -1342,6 +1344,7 @@
     "Srcs",
     "summarises",
     "totp",
+    "voquer",
     "webauthn"
   ]
 }
