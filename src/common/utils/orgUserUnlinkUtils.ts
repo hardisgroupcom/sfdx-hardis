@@ -14,9 +14,12 @@ export interface UnlinkMethodSpec {
    */
   anchorIds?: string[];
   /*
-   * Brand / spec tokens that Salesforce does NOT translate. The anchor finder
-   * locates the row containing one of these tokens and clicks the link inside
-   * it - this works regardless of the org's UI language.
+   * Tokens used to locate the method's row. These are mostly brand / spec
+   * tokens that Salesforce does NOT translate (U2F, WebAuthn, TOTP, Salesforce
+   * Authenticator), plus a few known localized section labels (e.g. French) so
+   * common non-English orgs work without --text-markers. The anchor finder
+   * locates the row containing one of these tokens and clicks the removal link
+   * inside it.
    */
   sectionTextMarkers: string[];
   /*
@@ -53,7 +56,8 @@ export const MFA_METHODS: Record<UnlinkMethodKey, UnlinkMethodSpec> = {
   securityKey: {
     key: 'securityKey',
     anchorIds: ['DisableU2FOrWebAuthn'],
-    sectionTextMarkers: ['U2F', 'WebAuthn', 'Security Key'],
+    /* "Clé de sécurité" = French label; U2F / WebAuthn stay in every locale */
+    sectionTextMarkers: ['U2F', 'WebAuthn', 'Security Key', 'Clé de sécurité'],
     hrefPatterns: [
       /u2f.*(delete|remove|disconnect)/i,
       /webauthn.*(delete|remove|disconnect)/i,
@@ -63,13 +67,15 @@ export const MFA_METHODS: Record<UnlinkMethodKey, UnlinkMethodSpec> = {
   },
   salesforceAuthenticator: {
     key: 'salesforceAuthenticator',
+    /* "Salesforce Authenticator" is a brand name kept untranslated in all locales */
     sectionTextMarkers: ['Salesforce Authenticator'],
     hrefPatterns: [/removetwofactorauth/i, /salesforceauthenticator.*(delete|remove|disconnect)/i],
     labelKey: 'unlinkSecurityKeyMethodLabelSalesforceAuthenticator',
   },
   totp: {
     key: 'totp',
-    sectionTextMarkers: ['One-Time Password Authenticator', 'TOTP'],
+    /* "passe à usage unique" matches the French label (singular and plural) */
+    sectionTextMarkers: ['One-Time Password Authenticator', 'TOTP', 'passe à usage unique'],
     hrefPatterns: [/removetimebased/i, /removetotp/i, /onetimepassword.*(delete|remove|disconnect)/i],
     labelKey: 'unlinkSecurityKeyMethodLabelTotp',
   },
@@ -406,31 +412,78 @@ async function findMfaAnchor(frame: Frame, method: UnlinkMethodSpec): Promise<an
       };
       const hrefRxs = hrefPatternSrcsIn.map((s) => new RegExp(s, 'i'));
 
+      /*
+       * A method is only "connected" when its row exposes a removal action. When
+       * NOT connected, the same row instead shows a registration link, and
+       * clicking it would enroll a brand new key instead of doing nothing. So the
+       * row-based strategies below must only ever return a genuine removal anchor;
+       * if none is present we return null and the caller reports "not linked".
+       *
+       * Registration ("add a new factor") links are detected and excluded first.
+       * Confirmed DOM (en + fr): id="AddU2FOrWebAuthn", href="javascript:void(0)",
+       * onclick navigates to ".../registrationInterstitial.apexp...", visible label
+       * "[Register]" / "[Inscrire]". All of these signals are locale-independent.
+       */
+      const isRegistrationLink = (a: HTMLAnchorElement): boolean => {
+        if (/^Add[A-Z]/.test(a.id || '')) return true;
+        const href = a.getAttribute('href') || '';
+        const onclick = a.getAttribute('onclick') || '';
+        return /registrationInterstitial/i.test(href) || /registrationInterstitial/i.test(onclick);
+      };
+
+      /*
+       * Removal signals, most reliable first:
+       *  - the stable anchor id ("DisableU2FOrWebAuthn"), locale-independent;
+       *  - the Salesforce delete-redirect URL ("deleteredirect.jsp" /
+       *    "isDeleteRedirect") in the javascript: href, locale-independent;
+       *  - the per-method href patterns (best-effort, for Authenticator / TOTP);
+       *  - the visible action label in English and French ("[Remove]" / "[Retirer]",
+       *    "[Disconnect]" / "[Déconnecter]").
+       * Excluding registration links first means a stray "delete" substring in a
+       * random CSRF token can never turn a register link into a removal link.
+       */
+      const removalUrlRx = /deleteredirect\.jsp|isDeleteRedirect/i;
+      const removalTextRx =
+        /\b(delete|remove|disconnect|disable|revoke)\b|supprimer|d[ée]connecter|retirer|r[ée]voquer|d[ée]sactiver/i;
+      const isRemovalLink = (a: HTMLAnchorElement): boolean => {
+        if (isRegistrationLink(a)) return false;
+        if (a.id && anchorIdsIn.includes(a.id)) return true;
+        const href = a.getAttribute('href') || '';
+        const onclick = a.getAttribute('onclick') || '';
+        if (removalUrlRx.test(href) || removalUrlRx.test(onclick)) return true;
+        if (hrefRxs.some((rx) => rx.test(href) || rx.test(onclick))) return true;
+        return removalTextRx.test(visibleText(a));
+      };
+      const findRemovalAnchor = (root: Element): HTMLAnchorElement | null => {
+        const anchorsInRow = Array.from(root.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+        return anchorsInRow.find((a) => isRemovalLink(a)) || null;
+      };
+
       /* Strategy 0: known stable anchor IDs (locale-independent, most reliable) */
       for (const id of anchorIdsIn) {
         const byId = document.getElementById(id) as HTMLAnchorElement | null;
         if (byId) return byId;
       }
 
-      /* Strategy 1: locate a row whose text contains a brand/spec marker, click the link inside */
+      /* Strategy 1: locate a row whose text contains a brand/spec marker, click the removal link inside */
       const rowSel = 'tr, [role="row"], li, .detailRow, .data-row';
       const rows = Array.from(document.querySelectorAll(rowSel));
       for (const row of rows) {
         const text = visibleText(row);
         if (!text || text.length > 400) continue;
         if (markersIn.some((m) => text.includes(m))) {
-          const a = row.querySelector('a[href]') as HTMLAnchorElement | null;
+          const a = findRemovalAnchor(row);
           if (a) return a;
         }
       }
 
       /*
        * Strategy 2: find an element whose text contains a marker, then look for
-       * an anchor *inside its row container only*. Walking up by parentElement
-       * is unsafe: when the marker row has no anchor (method not registered),
-       * the walker reaches <tbody> and returns the first anchor in the entire
-       * table - which could be an unrelated link or the wrong method's Remove
-       * link from another row.
+       * a removal anchor *inside its row container only*. Walking up by
+       * parentElement is unsafe: when the marker row has no removal anchor (method
+       * not registered), the walker reaches <tbody> and returns the first anchor
+       * in the entire table - which could be an unrelated link or the wrong
+       * method's Remove link from another row.
        */
       const rowContainerSel = 'tr, [role="row"], li, .detailRow, .data-row';
       const allEls = Array.from(document.querySelectorAll('th, td, span, label, div'));
@@ -440,15 +493,17 @@ async function findMfaAnchor(frame: Frame, method: UnlinkMethodSpec): Promise<an
         if (!markersIn.some((m) => text.includes(m))) continue;
         const rowContainer = el.closest(rowContainerSel);
         if (!rowContainer) continue;
-        const a = rowContainer.querySelector('a[href]') as HTMLAnchorElement | null;
+        const a = findRemovalAnchor(rowContainer);
         if (a) return a;
       }
 
-      /* Strategy 3: href pattern fallback */
+      /* Strategy 3: per-method href pattern fallback (registration links excluded) */
       const anchors = Array.from(document.querySelectorAll('a[href]')) as HTMLAnchorElement[];
       for (const a of anchors) {
+        if (isRegistrationLink(a)) continue;
         const href = a.getAttribute('href') || '';
-        if (hrefRxs.some((rx) => rx.test(href))) {
+        const onclick = a.getAttribute('onclick') || '';
+        if (hrefRxs.some((rx) => rx.test(href) || rx.test(onclick))) {
           return a;
         }
       }
