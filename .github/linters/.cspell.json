@@ -1345,6 +1345,7 @@
     "summarises",
     "totp",
     "voquer",
+    "pastable",
     "webauthn"
   ]
 }
