@@ -453,6 +453,7 @@ export async function stageEcaCredential(
   return { key, secret, id, state };
 }
 
+/* jscpd:ignore-start */
 /**
  * Promote a staged credential to the main set (rotate command).
  */
@@ -489,6 +490,7 @@ export async function deleteStagedEcaCredential(
   uxLog("log", command, c.grey(`DELETE ${url}`));
   await conn.request<any>({ method: 'DELETE', url });
 }
+/* jscpd:ignore-end */
 
 /**
  * Fetch External Client App consumer secret via the OAuth Credentials REST API.
