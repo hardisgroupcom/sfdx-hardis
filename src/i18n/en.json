@@ -244,6 +244,7 @@
   "bitbucketAddingPrComment": "Adding Pull Request Comment on Bitbucket...",
   "bitbucketCannotCreatePrMissingRepoInfo": "Cannot create pull request: missing BITBUCKET_WORKSPACE or BITBUCKET_REPO_SLUG.",
   "bitbucketCreatingPullRequest": "Creating pull request from {{source}} to {{target}}...",
+  "bitbucketErrorFetchingCommit": "Error fetching commit {{commit}}: {{message}}",
   "bitbucketErrorFetchingMergedPrs": "Error fetching merged PRs for branch {{branchName}}: {{message}}",
   "bitbucketErrorListingPullRequests": "Error listing pull requests: {{message}}",
   "bitbucketFetchingMergedPrs": "Fetching merged PRs for branches: {{branches}}",

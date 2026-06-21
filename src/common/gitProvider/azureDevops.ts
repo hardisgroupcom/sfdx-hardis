@@ -549,69 +549,12 @@ ${this.getPipelineVariablesConfig()}
 
       // Create a Set of commit IDs for fast lookup
       const commitIds = new Set(
-        commits.map((c) => c.commitId).filter((id) => id),
+        commits.map((c) => c.commitId).filter((id) => id) as string[],
       );
 
-      // Step 3: Get all completed PRs targeting currentBranch and child branches (parallelized)
+      // Step 3-6: Match completed PRs targeting currentBranch and child branches against those commits
       const allBranches = [currentBranchName, ...childBranchesNames];
-
-      const prPromises = allBranches.map(async (branchName) => {
-        try {
-          const prs = await gitApi.getPullRequests(
-            process.env.BUILD_REPOSITORY_ID!,
-            {
-              targetRefName: `refs/heads/${branchName}`,
-              status: PullRequestStatus.Completed,
-            },
-            process.env.SYSTEM_TEAMPROJECT,
-          );
-          uxLog("log", this, c.grey(`[Azure Integration][listPullRequestsInBranchSinceLastMerge] Found ${prs?.length || 0} completed PRs for branch ${branchName}`));
-          return prs || [];
-        } catch (err) {
-          uxLog(
-            "warning",
-            this,
-            c.yellow(`Error fetching completed PRs for branch ${branchName}: ${String(err)}`),
-          );
-          return [];
-        }
-      });
-
-      const prResults = await Promise.all(prPromises);
-      const allMergedPRs: any[] = prResults.flat();
-
-      // Step 4: Filter PRs whose merge commit is in our commit list
-      const relevantPRs = allMergedPRs.filter((pr) => {
-        // Check if the merge commit ID is in our commits
-        const mergeCommitId = pr.lastMergeCommit?.commitId;
-        if (mergeCommitId && commitIds.has(mergeCommitId)) {
-          return true;
-        }
-
-        // Also check the source commit (last commit from the PR branch before merge)
-        const sourceCommitId = pr.lastMergeSourceCommit?.commitId;
-        if (sourceCommitId && commitIds.has(sourceCommitId)) {
-          return true;
-        }
-
-        return false;
-      });
-
-      // Step 5: Remove duplicates
-      const uniquePRsMap = new Map();
-      for (const pr of relevantPRs) {
-        if (!uniquePRsMap.has(pr.pullRequestId)) {
-          uniquePRsMap.set(pr.pullRequestId, pr);
-        }
-      }
-
-      const uniquePRs = Array.from(uniquePRsMap.values());
-      uxLog("log", this, c.grey(`[Azure Integration][listPullRequestsInBranchSinceLastMerge] Returning ${uniquePRs.length} unique PRs`));
-
-      // Step 6: Convert to CommonPullRequestInfo
-      return uniquePRs.map((pr) =>
-        this.completePullRequestInfo(pr)
-      );
+      return await this.collectMergedPrsForCommits(gitApi, allBranches, commitIds);
     } catch (err) {
       uxLog(
         "warning",
@@ -620,6 +563,107 @@ ${this.getPipelineVariablesConfig()}
       );
       return [];
     }
+  }
+
+  // List the Pull Requests included in a specific "go live" merge commit (e.g. the merge
+  // of preprod into main). Bounds the range by the merge commit's first parent so hotfixes
+  // merged to the target branch at other times are excluded.
+  public async listPullRequestsInGoLive(
+    branchName: string,
+    childBranchesNames: string[],
+    mergeCommitId: string,
+  ): Promise<CommonPullRequestInfo[]> {
+    if (!this.azureApi || !process.env.SYSTEM_TEAMPROJECT || !process.env.BUILD_REPOSITORY_ID || !mergeCommitId) {
+      return [];
+    }
+    try {
+      const gitApi = await this.azureApi.getGitApi();
+
+      // Step 1: Resolve the merge commit's first parent (the mainline before the go live)
+      const mergeCommit = await gitApi.getCommit(mergeCommitId, process.env.BUILD_REPOSITORY_ID, process.env.SYSTEM_TEAMPROJECT);
+      const firstParent = mergeCommit?.parents?.[0];
+      if (!firstParent) {
+        return [];
+      }
+
+      // Step 2: Commits introduced by the go live (firstParent..mergeCommit)
+      const commits = await gitApi.getCommitsBatch(
+        {
+          itemVersion: { version: firstParent, versionType: 2 }, // GitVersionType.Commit
+          compareVersion: { version: mergeCommitId, versionType: 2 }, // GitVersionType.Commit
+        } as any,
+        process.env.BUILD_REPOSITORY_ID,
+        process.env.SYSTEM_TEAMPROJECT,
+      );
+      const commitIds = new Set((commits || []).map((c) => c.commitId).filter((id) => id) as string[]);
+      commitIds.add(mergeCommitId);
+
+      // Step 3-6: Match completed PRs targeting branchName and child branches against those commits
+      const allBranches = [branchName, ...childBranchesNames];
+      return await this.collectMergedPrsForCommits(gitApi, allBranches, commitIds);
+    } catch (err) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(`Error in listPullRequestsInGoLive: ${String(err)}`),
+      );
+      return [];
+    }
+  }
+
+  // Shared tail: fetch completed PRs targeting each branch, keep those whose merge commit
+  // (or source commit) is part of commitIds, dedupe by PR id and convert to the common shape.
+  private async collectMergedPrsForCommits(
+    gitApi: any,
+    allBranches: string[],
+    commitIds: Set<string>,
+  ): Promise<CommonPullRequestInfo[]> {
+    const prPromises = allBranches.map(async (branchName) => {
+      try {
+        const prs = await gitApi.getPullRequests(
+          process.env.BUILD_REPOSITORY_ID!,
+          {
+            targetRefName: `refs/heads/${branchName}`,
+            status: PullRequestStatus.Completed,
+          },
+          process.env.SYSTEM_TEAMPROJECT,
+        );
+        uxLog("log", this, c.grey(`[Azure Integration] Found ${prs?.length || 0} completed PRs for branch ${branchName}`));
+        return prs || [];
+      } catch (err) {
+        uxLog(
+          "warning",
+          this,
+          c.yellow(`Error fetching completed PRs for branch ${branchName}: ${String(err)}`),
+        );
+        return [];
+      }
+    });
+
+    const prResults = await Promise.all(prPromises);
+    const allMergedPRs: any[] = prResults.flat();
+
+    // Keep PRs whose merge commit (or source commit) is in our commit list
+    const relevantPRs = allMergedPRs.filter((pr) => {
+      const mergeCommitId = pr.lastMergeCommit?.commitId;
+      if (mergeCommitId && commitIds.has(mergeCommitId)) {
+        return true;
+      }
+      const sourceCommitId = pr.lastMergeSourceCommit?.commitId;
+      if (sourceCommitId && commitIds.has(sourceCommitId)) {
+        return true;
+      }
+      return false;
+    });
+
+    // Remove duplicates by PR id
+    const uniquePRsMap = new Map();
+    for (const pr of relevantPRs) {
+      if (!uniquePRsMap.has(pr.pullRequestId)) {
+        uniquePRsMap.set(pr.pullRequestId, pr);
+      }
+    }
+    return Array.from(uniquePRsMap.values()).map((pr) => this.completePullRequestInfo(pr));
   }
 
   // Posts a note on the merge request
@@ -742,6 +786,9 @@ ${getBannerMarkdownAndLink()}
         process.env.BUILD_REPOSITORYNAME || "",
       )}/pullrequest/${prData.pullRequestId}`,
       authorName: prData?.createdBy?.displayName || "",
+      createdDate: prData?.creationDate ? new Date(prData.creationDate).toISOString() : undefined,
+      // Azure has no dedicated merge date: closedDate of a completed PR is its merge time
+      mergedDate: prData?.closedDate ? new Date(prData.closedDate).toISOString() : undefined,
       mergeCommitSha: prData?.lastMergeCommit?.commitId || undefined,
       providerInfo: prData,
       customBehaviors: {}

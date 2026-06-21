@@ -17,13 +17,24 @@ CHANGELOG.md entries are read by **end users** (Salesforce admins, devs, ops) de
   - NO: "Translated to all 9 locales (de, en, es, fr, it, ja, nl, pl, pt-BR)." (mention only if it is the change itself, e.g. "Added German translations")
 - **Skip implementation details** unless they directly affect the user: file paths, function names, i18n keys, internal flags, refactor mechanics.
 - **Link the command** when the entry applies to a specific command, using the standard format `[hardis:topic:action](https://sfdx-hardis.cloudity.com/hardis/topic/action/)`.
+- **Always group updates by command.** A command must appear at most once in a section. If it already has an entry (or you are adding several changes to the same command), write the command link once and put each change as a nested bullet under it - never repeat the same command link on multiple top-level lines. A single change stays on one line: `[command](url): <change>.`
 - **Add entries under `## [beta] (main)`** at the top of the file. Do not create version sections - releases set those.
 
 ## Pattern
+
+Single change for a command:
 
 ```markdown
 - [hardis:topic:action](https://sfdx-hardis.cloudity.com/hardis/topic/action/): <one short sentence about user-visible change>.
 - <Site / generic change>: <one short sentence>.
 ```
 
-If a single change has genuinely independent user-facing facets, use nested bullets - but only when each sub-bullet is itself end-user relevant (a new flag, a new channel, a new default). Never use sub-bullets to list affected files or locales.
+Multiple changes for the same command - group them under one command link:
+
+```markdown
+- [hardis:topic:action](https://sfdx-hardis.cloudity.com/hardis/topic/action/):
+  - <one short sentence about the first user-visible change>.
+  - <one short sentence about the second user-visible change>.
+```
+
+Each nested bullet must be end-user relevant (a new flag, a new channel, a new default, a fixed behavior). Never use sub-bullets to list affected files or locales.

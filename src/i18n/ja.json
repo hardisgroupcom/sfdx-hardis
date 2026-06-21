@@ -244,6 +244,7 @@
   "bitbucketAddingPrComment": "Bitbucket に Pull Request コメントを追加しています...",
   "bitbucketCannotCreatePrMissingRepoInfo": "Pull Requestを作成できません: BITBUCKET_WORKSPACEまたはBITBUCKET_REPO_SLUGが設定されていません。",
   "bitbucketCreatingPullRequest": "{{source}}から{{target}}へのPull Requestを作成しています...",
+  "bitbucketErrorFetchingCommit": "commit {{commit}} の取得中にエラーが発生しました: {{message}}",
   "bitbucketErrorFetchingMergedPrs": "branch {{branchName}} の merge 済み PR の取得中にエラーが発生しました: {{message}}",
   "bitbucketErrorListingPullRequests": "Pull Requestの一覧取得エラー: {{message}}",
   "bitbucketFetchingMergedPrs": "branch {{branches}} の merge 済み PR を取得しています",

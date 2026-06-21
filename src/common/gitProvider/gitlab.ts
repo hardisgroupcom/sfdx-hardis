@@ -474,62 +474,100 @@ ${getBannerMarkdownAndLink()}
       // Create a Set of commit SHAs for fast lookup
       const commitSHAs = new Set(commitsSinceLastMerge.map((c) => c.id));
 
-      // Step 3: Get all merged MRs targeting currentBranch and child branches (parallelized)
+      // Step 3-6: Match merged MRs targeting currentBranch and child branches against those commits
       const allBranches = [currentBranchName, ...childBranchesNames];
-
-      const mrPromises = allBranches.map(async (branchName) => {
-        try {
-          const mergedMRs = await this.gitlabApi!.MergeRequests.all({
-            projectId,
-            targetBranch: branchName,
-            state: "merged",
-            perPage: 100,
-          });
-          uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabFetchingMergedMrs', { branchName })));
-          return mergedMRs;
-        } catch (err) {
-          uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorFetchingMergedMrsForBranch', { branchName, message: String(err) })));
-          return [];
-        }
-      });
-
-      const mrResults = await Promise.all(mrPromises);
-      const allMergedMRs: any[] = mrResults.flat();
-
-      // Step 4: Filter MRs whose merge commit SHA is in our commit list
-      const relevantMRs = allMergedMRs.filter((mr) => {
-        // Check if the merge commit SHA is in our commits
-        const mergeCommitSha = mr.mergeCommitSha || mr.merge_commit_sha;
-        if (mergeCommitSha && commitSHAs.has(mergeCommitSha)) {
-          return true;
-        }
-
-        // Also check if the MR's SHA (last commit before merge) is in our commits
-        if (mr.sha && commitSHAs.has(mr.sha)) {
-          return true;
-        }
-
-        return false;
-      });
-
-      // Step 5: Remove duplicates (same MR might be found through different branches)
-      const uniqueMRsMap = new Map<number, any>();
-      for (const mr of relevantMRs) {
-        if (mr.iid && !uniqueMRsMap.has(mr.iid)) {
-          uniqueMRsMap.set(mr.iid, mr);
-        }
-      }
-
-      const uniqueMRs = Array.from(uniqueMRsMap.values());
-
-      // Step 6: Convert to CommonPullRequestInfo
-      return uniqueMRs.map((mr) =>
-        this.completePullRequestInfo(mr)
-      );
+      return await this.collectMergedPrsForCommits(projectId, allBranches, commitSHAs);
     } catch (err) {
       uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })));
       return [];
     }
+  }
+
+  // List the Merge Requests included in a specific "go live" merge commit (e.g. the merge
+  // of preprod into main). Bounds the range by the merge commit's first parent so hotfixes
+  // merged to the target branch at other times are excluded.
+  public async listPullRequestsInGoLive(
+    branchName: string,
+    childBranchesNames: string[],
+    mergeCommitId: string,
+  ): Promise<CommonPullRequestInfo[]> {
+    if (!this.gitlabApi || !mergeCommitId) {
+      return [];
+    }
+    try {
+      const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
+      if (!projectId) {
+        uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabCiProjectIdRequired')));
+        return [];
+      }
+
+      // Step 1: Resolve the merge commit's first parent (the mainline before the go live)
+      const mergeCommit: any = await this.gitlabApi.Commits.show(projectId, mergeCommitId);
+      const firstParent = mergeCommit?.parent_ids?.[0] || mergeCommit?.parentIds?.[0];
+      if (!firstParent) {
+        return [];
+      }
+
+      // Step 2: Commits introduced by the go live (firstParent..mergeCommit)
+      const comparison: any = await this.gitlabApi.Repositories.compare(projectId, firstParent, mergeCommitId, { straight: true });
+      const commitSHAs = new Set<string>((comparison?.commits || []).map((c: any) => c.id));
+      commitSHAs.add(mergeCommitId);
+
+      // Step 3-6: Match merged MRs targeting branchName and child branches against those commits
+      const allBranches = [branchName, ...childBranchesNames];
+      return await this.collectMergedPrsForCommits(projectId, allBranches, commitSHAs);
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })));
+      return [];
+    }
+  }
+
+  // Shared tail: fetch merged MRs targeting each branch, keep those whose merge commit
+  // is part of commitSHAs, dedupe by MR iid and convert to the common shape.
+  private async collectMergedPrsForCommits(
+    projectId: string | number,
+    allBranches: string[],
+    commitSHAs: Set<string>,
+  ): Promise<CommonPullRequestInfo[]> {
+    const mrPromises = allBranches.map(async (branchName) => {
+      try {
+        const mergedMRs = await this.gitlabApi!.MergeRequests.all({
+          projectId,
+          targetBranch: branchName,
+          state: "merged",
+          perPage: 100,
+        });
+        uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabFetchingMergedMrs', { branchName })));
+        return mergedMRs;
+      } catch (err) {
+        uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorFetchingMergedMrsForBranch', { branchName, message: String(err) })));
+        return [];
+      }
+    });
+
+    const mrResults = await Promise.all(mrPromises);
+    const allMergedMRs: any[] = mrResults.flat();
+
+    // Keep MRs whose merge commit SHA (or last commit before merge) is in our commit list
+    const relevantMRs = allMergedMRs.filter((mr) => {
+      const mergeCommitSha = mr.mergeCommitSha || mr.merge_commit_sha;
+      if (mergeCommitSha && commitSHAs.has(mergeCommitSha)) {
+        return true;
+      }
+      if (mr.sha && commitSHAs.has(mr.sha)) {
+        return true;
+      }
+      return false;
+    });
+
+    // Remove duplicates by MR iid
+    const uniqueMRsMap = new Map<number, any>();
+    for (const mr of relevantMRs) {
+      if (mr.iid && !uniqueMRsMap.has(mr.iid)) {
+        uniqueMRsMap.set(mr.iid, mr);
+      }
+    }
+    return Array.from(uniqueMRsMap.values()).map((mr) => this.completePullRequestInfo(mr));
   }
 
   private async findLastMergedMR(
@@ -594,6 +632,8 @@ ${getBannerMarkdownAndLink()}
       description: prData?.description || "",
       authorName: prData?.author?.name || "",
       webUrl: prData?.web_url || "",
+      createdDate: prData?.created_at || undefined,
+      mergedDate: prData?.merged_at || undefined,
       mergeCommitSha: prData?.merge_commit_sha || prData?.mergeCommitSha || undefined,
       providerInfo: prData,
       customBehaviors: {}

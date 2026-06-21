@@ -10,6 +10,11 @@
 - [hardis:org:user:unlink-security-key](https://sfdx-hardis.cloudity.com/hardis/org/user/unlink-security-key/): Send Slack, Teams, email and API notifications summarising which users had their security key / passkey (MFA) unlinked.
 - Bitbucket: support both a repository/workspace Access Token and an Atlassian account API token for authentication.
 - Fix Bitbucket merged Pull Request detection on busy branches by matching abbreviated commit hashes and paginating Pull Request and commit lookups.
+- [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/):
+  - Match the Pull Request and ticket list shown in the VS Code pipeline view when generating from a merge commit: scope to the Pull Requests of that release (excluding unrelated hotfixes merged at other times) and read ticket keys from source branch names and the release Pull Request description. Works across GitHub, GitLab, Azure DevOps and Bitbucket.
+  - Populate the Pull Request merge dates (previously blank) in the generated release notes for all git providers.
+  - Generate the PDF in landscape orientation by default so the wide Pull Request and ticket tables fit, with `--portrait` to switch back.
+  - List only the deployment actions that were processed (skipped ones are excluded) and remove duplicate rows.
 
 ## [7.16.3] 2026-06-15
 

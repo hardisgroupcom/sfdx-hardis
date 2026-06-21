@@ -122,7 +122,13 @@ export async function resolveReleaseScope(
   if (flags["merge-commit"] || flags["source-commit"]) {
     const targetBranch = flags["target-branch"] || (await promptTargetBranch(majorOrgs, agentMode));
     const toCommit = flags["merge-commit"] || "HEAD";
-    const fromCommit = flags["source-commit"] || "";
+    let fromCommit = flags["source-commit"] || "";
+    // When generating from a merge commit without an explicit source commit, bound the
+    // range with the merge commit's first parent (the mainline before the go live), so the
+    // metadata delta covers exactly what the merge introduced.
+    if (!fromCommit && flags["merge-commit"]) {
+      fromCommit = (await getFirstParentCommit(flags["merge-commit"])) || "";
+    }
     return { fromCommit, toCommit, targetBranch, mode };
   }
 
@@ -398,6 +404,19 @@ async function getCommitForTag(tag: string): Promise<string> {
   }
 }
 
+// Resolve the first parent of a (merge) commit: the mainline state before the go live.
+// Uses `--format=%P` (parents are space-separated) rather than `<commit>^1`, because the
+// caret is the escape character in the Windows shell and would corrupt the ref.
+async function getFirstParentCommit(commit: string): Promise<string | undefined> {
+  try {
+    const result = await execCommand(`git show -s --format=%P ${commit}`, null, { fail: true });
+    const sha = result.stdout.trim().split(/\s+/)[0];
+    return sha || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function getReleaseDate(scope: ReleaseNotesScope): Promise<string> {
   if (scope.mode === "prepare") {
     return new Date().toISOString().split("T")[0];
@@ -434,6 +453,9 @@ export async function collectPullRequests(
   const majorBranchNames = new Set(majorOrgs.map((o: any) => o.branchName));
 
   let pullRequests: CommonPullRequestInfo[] = [];
+  // PRs that are the release "go live" merge itself (e.g. preprod -> main). They
+  // are inter-major-branch but must survive the filter below, as they carry the release.
+  const releaseCommitPrIds = new Set<string>();
 
   // Date-based filtering
   if (scope.fromDate || scope.toDate) {
@@ -469,6 +491,36 @@ export async function collectPullRequests(
         { targetBranch: scope.targetBranch, status: "merged" },
       )) || [];
     }
+  } else if (scope.toCommit && scope.toCommit !== "HEAD" && !scope.releaseTag) {
+    // Commit-based (e.g. post mode with --merge-commit): scope PRs to the go-live
+    // introduced by the merge commit. This excludes hotfixes merged directly to the
+    // target branch at other times, which a plain "recent merged PRs" list catches.
+    const childBranches = recursiveGetChildBranches(scope.targetBranch, majorOrgs);
+    try {
+      pullRequests = await gitProvider.listPullRequestsInGoLive(
+        scope.targetBranch,
+        [...childBranches],
+        scope.toCommit,
+      );
+    } catch (e: any) {
+      uxLog("warning", commandRef, c.yellow(t("releaseNotesCouldNotListPrs", { message: e.message })));
+    }
+    if (!pullRequests || pullRequests.length === 0) {
+      // Fallback (e.g. provider without go-live support): list merged PRs for the target branch
+      pullRequests = (await gitProvider.listPullRequests(
+        { targetBranch: scope.targetBranch, status: "merged" },
+      )) || [];
+    } else {
+      // The go-live merge PR itself (e.g. preprod -> main) carries the release and
+      // must survive the inter-major-branch filter below.
+      for (const pr of pullRequests) {
+        const sha = pr.mergeCommitSha;
+        const to = scope.toCommit;
+        if (sha && (sha === to || sha.startsWith(to) || to.startsWith(sha))) {
+          releaseCommitPrIds.add(pr.idStr);
+        }
+      }
+    }
   } else {
     // Tag-based or generic: list merged PRs for the target branch
     pullRequests = (await gitProvider.listPullRequests(
@@ -476,8 +528,11 @@ export async function collectPullRequests(
     )) || [];
   }
 
-  // Filter out inter-major-branch PRs
+  // Filter out inter-major-branch PRs, but always keep the release go-live merge PR
   pullRequests = pullRequests.filter((pr) => {
+    if (releaseCommitPrIds.has(pr.idStr)) {
+      return true;
+    }
     return !(majorBranchNames.has(pr.sourceBranch) && majorBranchNames.has(pr.targetBranch));
   });
 
@@ -519,7 +574,7 @@ export async function collectTickets(
   }
   let allTickets: Ticket[] = [];
   for (const pr of pullRequests) {
-    const text = `${pr.title} ${pr.description || ""}`;
+    const text = [pr.title, pr.description || "", pr.sourceBranch || ""].filter(Boolean).join("\n");
     try {
       const prTickets = await TicketProvider.getProvidersTicketsFromString(text, { commits: [] });
       const ticketIds: string[] = [];
@@ -659,7 +714,9 @@ export async function collectDeploymentActions(
         }
       }
       if (allEntries.length > 0) {
-        return sortDeploymentActions(allEntries);
+        // State exists for these PRs: return the processed actions (skipped excluded, deduped),
+        // even if that leaves the list empty - do not fall back to re-listing action definitions.
+        return filterAndDedupeDeploymentActions(allEntries);
       }
     }
   } catch (e: any) {
@@ -693,7 +750,26 @@ export async function collectDeploymentActions(
       // Ignore per-PR read errors
     }
   }
-  return sortDeploymentActions(fallbackEntries);
+  return filterAndDedupeDeploymentActions(fallbackEntries);
+}
+
+// Keep only processed actions (drop skipped) and remove duplicates: the same action can be
+// recorded once per org branch, which would render as identical rows since the table does not
+// show the org branch. Collapse to one row per action + phase + PR, keeping the most meaningful status.
+function filterAndDedupeDeploymentActions(entries: DeploymentActionStateEntry[]): DeploymentActionStateEntry[] {
+  const statusPriority: Record<string, number> = { success: 3, failed: 2, manual: 1 };
+  const byKey = new Map<string, DeploymentActionStateEntry>();
+  for (const entry of entries) {
+    if (entry.status === "skipped") {
+      continue;
+    }
+    const key = `${entry.actionId}::${entry.when}::${entry.prNumber ?? ""}`;
+    const existing = byKey.get(key);
+    if (!existing || (statusPriority[entry.status] || 0) > (statusPriority[existing.status] || 0)) {
+      byKey.set(key, entry);
+    }
+  }
+  return sortDeploymentActions(Array.from(byKey.values()));
 }
 
 function sortDeploymentActions(entries: DeploymentActionStateEntry[]): DeploymentActionStateEntry[] {

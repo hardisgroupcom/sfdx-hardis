@@ -244,6 +244,7 @@
   "bitbucketAddingPrComment": "Pull Request opmerking toevoegen op Bitbucket...",
   "bitbucketCannotCreatePrMissingRepoInfo": "Kan geen pull request aanmaken: BITBUCKET_WORKSPACE of BITBUCKET_REPO_SLUG ontbreekt.",
   "bitbucketCreatingPullRequest": "Pull request aanmaken van {{source}} naar {{target}}...",
+  "bitbucketErrorFetchingCommit": "Fout bij het ophalen van commit {{commit}}: {{message}}",
   "bitbucketErrorFetchingMergedPrs": "Fout bij ophalen van gemerge PRs voor branch {{branchName}}: {{message}}",
   "bitbucketErrorListingPullRequests": "Fout bij het ophalen van pull requests: {{message}}",
   "bitbucketFetchingMergedPrs": "Gemerge PRs ophalen voor branches: {{branches}}",
