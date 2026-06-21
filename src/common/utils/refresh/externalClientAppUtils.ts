@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import c from 'chalk';
 import open from 'open';
-import { Connection } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
 import { execCommand, execSfdxJson, isCI, createTempDir, uxLog } from '../index.js';
 import { parseXmlFile, writePackageXmlFile, writeXmlFile } from '../xmlUtils.js';
 import { getApiVersion } from '../../../config/index.js';
@@ -10,6 +10,7 @@ import { SfCommand } from '@salesforce/sf-plugins-core';
 import { prompts } from '../prompts.js';
 import { t } from '../i18n.js';
 import { ConnectedApp, deleteConnectedApps } from './connectedAppUtils.js';
+import { WebSocketClient } from '../../websocketClient.js';
 
 // The 5 metadata types that make up an External Client App
 export const ECA_METADATA_TYPES = [
@@ -253,6 +254,242 @@ export async function verifyEcaCredentials(
   }
 }
 
+// An External Client App as returned by the OAuth Usage REST API.
+export interface EcaOAuthApp {
+  developerName: string;
+  identifier: string;
+  label?: string;
+}
+
+// A consumer (OAuth credential) of an External Client App.
+export interface EcaConsumer {
+  id: string;
+  key: string;
+  name: string;
+}
+
+// A staged credential currently attached to a consumer.
+export interface EcaStagedCredential {
+  id: string;
+  state: string;
+}
+
+// A freshly staged credential, including its new key and secret.
+export interface EcaNewCredential {
+  key: string;
+  secret: string;
+  id: string;
+  state: string;
+}
+
+/**
+ * List External Client Apps exposed through the OAuth Usage REST API.
+ * Requires "Allow access to External Client App consumer secrets via REST API" enabled in Setup.
+ */
+export async function listEcaOAuthApps(conn: Connection, command: SfCommand<any>): Promise<EcaOAuthApp[]> {
+  const apiVersion = `v${conn.version}`;
+  const usageUrl = `/services/data/${apiVersion}/apps/oauth/usage`;
+  uxLog("log", command, c.grey(`GET ${usageUrl}`));
+  const usageResponse = await conn.request<{ apps: EcaOAuthApp[] }>({ method: 'GET', url: usageUrl });
+  return usageResponse?.apps || [];
+}
+
+/**
+ * List the consumers (OAuth credentials) of an External Client App.
+ */
+export async function getEcaConsumers(conn: Connection, appId: string, command: SfCommand<any>): Promise<EcaConsumer[]> {
+  const apiVersion = `v${conn.version}`;
+  const credentialsUrl = `/services/data/${apiVersion}/apps/oauth/credentials/${appId}`;
+  uxLog("log", command, c.grey(`GET ${credentialsUrl}`));
+  const credentialsResponse = await conn.request<{ consumers: EcaConsumer[] }>({ method: 'GET', url: credentialsUrl });
+  return credentialsResponse?.consumers || [];
+}
+
+/**
+ * Read the current (main) key and secret of a consumer via the OAuth Credentials REST API.
+ * After a rotate, this returns the freshly promoted credentials.
+ */
+export async function getEcaConsumerKeyAndSecret(
+  conn: Connection,
+  appId: string,
+  consumerId: string,
+  command: SfCommand<any>
+): Promise<{ key: string; secret: string }> {
+  const apiVersion = `v${conn.version}`;
+  const url = `/services/data/${apiVersion}/apps/oauth/credentials/${appId}/${consumerId}?part=keyandsecret`;
+  uxLog("log", command, c.grey(`GET ${url}`));
+  const response = await conn.request<{ key: string; secret: string }>({ method: 'GET', url });
+  return { key: response?.key, secret: response?.secret };
+}
+
+/**
+ * True when an OAuth Credentials REST API error means the org/user has not enabled
+ * "Allow access to External Client App consumer secrets via REST API".
+ */
+export function isEcaRestApiNotEnabledError(e: any): boolean {
+  const msg = (e?.message || String(e) || '').toLowerCase();
+  return msg.includes('not currently enabled') || msg.includes('feature is not enabled') || msg.includes('not enabled for this user');
+}
+
+/**
+ * Build the Setup URL of the External Client App Settings page for an org.
+ */
+export function getEcaSettingsSetupUrl(conn: Connection): string {
+  const base = (conn.instanceUrl || '').replace('.my.salesforce.com', '.my.salesforce-setup.com');
+  return `${base}/lightning/setup/ExternalClientApplicationSettings/home`;
+}
+
+/**
+ * Throw a clear, actionable error telling the user to enable the prerequisite and retry.
+ * Logs the External Client App Settings URL and shows a button in the VS Code UI (does not open it automatically).
+ */
+export function throwEcaRestApiNotEnabled(conn: Connection, command: SfCommand<any>): never {
+  const setupUrl = getEcaSettingsSetupUrl(conn);
+  uxLog("error", command, c.red(t('ecaRestApiNotEnabled')));
+  uxLog("error", command, c.cyan(`${t('openExternalClientAppSettings')}: ${setupUrl}`));
+  WebSocketClient.sendReportFileMessage(setupUrl, t('openExternalClientAppSettings'), "actionUrl");
+  throw new SfError(`${t('ecaRestApiNotEnabled')}\n${setupUrl}`);
+}
+
+/**
+ * Extract the staged credential id from a stagedCredentialsURL (the id is the last path segment).
+ */
+function extractStagedIdFromUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+  const parts = url.split('/').filter(Boolean);
+  const last = parts[parts.length - 1];
+  // Ignore the "staged" segment itself when no resource id is appended
+  return last && last !== 'staged' ? last : undefined;
+}
+
+/**
+ * Normalize the various shapes the OAuth Credentials API may use for a staged credential into { id, state }.
+ */
+function extractStagedCredential(response: any): EcaStagedCredential | null {
+  if (!response) return null;
+  // The payload may be the credential itself, an array, or wrapped under stagedCredentials
+  let staged: any = response;
+  if (Array.isArray(response)) {
+    staged = response[0];
+  } else if (response.stagedCredentials) {
+    staged = Array.isArray(response.stagedCredentials) ? response.stagedCredentials[0] : response.stagedCredentials;
+  }
+  const id =
+    staged?.id ??
+    staged?.stagedCredentialId ??
+    extractStagedIdFromUrl(staged?.stagedCredentialsURL ?? staged?.stagedCredentialsUrl ?? staged?.url);
+  if (!id) return null;
+  return { id, state: staged?.state };
+}
+
+/**
+ * Return the current staged credential of a consumer, or null when none exists.
+ * Throws an actionable error when the REST API prerequisite is not enabled.
+ */
+export async function getStagedEcaCredential(
+  conn: Connection,
+  appId: string,
+  consumerId: string,
+  command: SfCommand<any>
+): Promise<EcaStagedCredential | null> {
+  const apiVersion = `v${conn.version}`;
+  const stagedUrl = `/services/data/${apiVersion}/apps/oauth/credentials/${appId}/${consumerId}/staged`;
+  uxLog("log", command, c.grey(`GET ${stagedUrl}`));
+  try {
+    const response = await conn.request<any>({ method: 'GET', url: stagedUrl });
+    return extractStagedCredential(response);
+  } catch (e: any) {
+    // The prerequisite toggle is off: surface a clear message instead of silently continuing
+    if (isEcaRestApiNotEnabledError(e)) {
+      throwEcaRestApiNotEnabled(conn, command);
+    }
+    // No staged credential yet: the endpoint may answer with a 404 when nothing is staged
+    uxLog("log", command, c.grey(`No staged credential found (${e.message || String(e)})`));
+  }
+  return null;
+}
+
+/**
+ * Stage new credentials for a consumer. Returns the brand new key and secret.
+ */
+export async function stageEcaCredential(
+  conn: Connection,
+  appId: string,
+  consumerId: string,
+  command: SfCommand<any>
+): Promise<EcaNewCredential> {
+  const apiVersion = `v${conn.version}`;
+  const stagedUrl = `/services/data/${apiVersion}/apps/oauth/credentials/${appId}/${consumerId}/staged`;
+  uxLog("log", command, c.grey(`POST ${stagedUrl}`));
+  let response: any;
+  try {
+    response = await conn.request<any>({
+      method: 'POST',
+      url: stagedUrl,
+      // Send an empty JSON body so a Content-Length is set; without a body Salesforce hangs and the socket resets (ECONNRESET)
+      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (e: any) {
+    if (isEcaRestApiNotEnabledError(e)) {
+      throwEcaRestApiNotEnabled(conn, command);
+    }
+    throw e;
+  }
+  // Log field names only (never values) to diagnose unexpected response shapes without leaking the secret
+  uxLog("log", command, c.grey(`Staged credential response fields: ${Object.keys(response || {}).join(', ') || '(none)'}`));
+  const key = response?.key ?? response?.consumerKey;
+  const secret = response?.secret ?? response?.consumerSecret;
+  const state = response?.state;
+  // The POST response does not always expose the staged credential id directly: resolve it from the staged endpoint
+  let id =
+    response?.id ??
+    response?.stagedCredentialId ??
+    extractStagedIdFromUrl(response?.stagedCredentialsURL ?? response?.stagedCredentialsUrl ?? response?.url);
+  if (!id) {
+    const staged = await getStagedEcaCredential(conn, appId, consumerId, command);
+    id = staged?.id;
+  }
+  return { key, secret, id, state };
+}
+
+/**
+ * Promote a staged credential to the main set (rotate command).
+ */
+export async function rotateStagedEcaCredential(
+  conn: Connection,
+  appId: string,
+  consumerId: string,
+  stagedId: string,
+  command: SfCommand<any>
+): Promise<void> {
+  const apiVersion = `v${conn.version}`;
+  const url = `/services/data/${apiVersion}/apps/oauth/credentials/${appId}/${consumerId}/staged/${stagedId}`;
+  uxLog("log", command, c.grey(`PATCH ${url}`));
+  await conn.request<any>({
+    method: 'PATCH',
+    url,
+    body: JSON.stringify({ command: 'rotate' }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+/**
+ * Delete a staged credential of a consumer.
+ */
+export async function deleteStagedEcaCredential(
+  conn: Connection,
+  appId: string,
+  consumerId: string,
+  stagedId: string,
+  command: SfCommand<any>
+): Promise<void> {
+  const apiVersion = `v${conn.version}`;
+  const url = `/services/data/${apiVersion}/apps/oauth/credentials/${appId}/${consumerId}/staged/${stagedId}`;
+  uxLog("log", command, c.grey(`DELETE ${url}`));
+  await conn.request<any>({ method: 'DELETE', url });
+}
+
 /**
  * Fetch External Client App consumer secret via the OAuth Credentials REST API.
  *
@@ -272,14 +509,8 @@ export async function fetchEcaCredentialsViaApi(
   const apiVersion = `v${conn.version}`;
 
   // Step 1: List all OAuth apps to find the app identifier
-  const usageUrl = `/services/data/${apiVersion}/apps/oauth/usage`;
-  uxLog("log", command, c.grey(`GET ${usageUrl}`));
-  const usageResponse = await conn.request<{ apps: Array<{ developerName: string; identifier: string }> }>({
-    method: 'GET',
-    url: usageUrl,
-  });
-
-  const app = usageResponse?.apps?.find(a => a.developerName === appName);
+  const apps = await listEcaOAuthApps(conn, command);
+  const app = apps.find(a => a.developerName === appName);
   if (!app) {
     uxLog("warning", command, c.yellow(t('ecaAppNotFoundInUsageApi', { appName })));
     return null;
@@ -288,14 +519,7 @@ export async function fetchEcaCredentialsViaApi(
   const appId = app.identifier;
 
   // Step 2: Get consumers for this app
-  const credentialsUrl = `/services/data/${apiVersion}/apps/oauth/credentials/${appId}`;
-  uxLog("log", command, c.grey(`GET ${credentialsUrl}`));
-  const credentialsResponse = await conn.request<{ consumers: Array<{ id: string; key: string; name: string }> }>({
-    method: 'GET',
-    url: credentialsUrl,
-  });
-
-  const consumers = credentialsResponse?.consumers || [];
+  const consumers = await getEcaConsumers(conn, appId, command);
   if (consumers.length === 0) {
     uxLog("warning", command, c.yellow(t('ecaNoConsumersFound', { appName })));
     return null;

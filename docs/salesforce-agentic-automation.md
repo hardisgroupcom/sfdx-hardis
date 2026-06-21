@@ -155,6 +155,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:org:diagnose:unused-connected-apps**](hardis/org/diagnose/unused-connected-apps.md)     | Find Connected Apps with no recent OAuth usage                                               |
 | [**hardis:org:diagnose:unusedlicenses**](hardis/org/diagnose/unusedlicenses.md)                   | Identify Permission Set License Assignments no longer linked to an active Permission Set     |
 | [**hardis:org:diagnose:unusedusers**](hardis/org/diagnose/unusedusers.md)                         | List users who have not logged in for N days - flag: `--days` (default 180)                  |
+| [**hardis:org:ext-client-app:rotate-credentials**](hardis/org/ext-client-app/rotate-credentials.md) | Rotate the OAuth credentials of an External Client App - flags: `--name`, `--consumer-key`, `--revoke-previous` |
 | [**hardis:org:monitor:all**](hardis/org/monitor/all.md)                                           | Run all configured monitoring checks, generate reports, and send notifications               |
 | [**hardis:org:monitor:backup**](hardis/org/monitor/backup.md)                                     | Retrieve a full metadata backup of the org                                                   |
 | [**hardis:org:monitor:errors**](hardis/org/monitor/errors.md)                                     | Check for Apex and Flow errors in the org                                                    |
