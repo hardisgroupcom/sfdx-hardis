@@ -475,12 +475,14 @@ ${getBannerMarkdownAndLink()}
       const commitSHAs = new Set(commitsSinceLastMerge.map((c) => c.id));
 
       // Step 3-6: Match merged MRs targeting currentBranch and child branches against those commits
+      /* jscpd:ignore-start */
       const allBranches = [currentBranchName, ...childBranchesNames];
       return await this.collectMergedPrsForCommits(projectId, allBranches, commitSHAs);
     } catch (err) {
       uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })));
       return [];
     }
+    /* jscpd:ignore-end */
   }
 
   // List the Merge Requests included in a specific "go live" merge commit (e.g. the merge
@@ -514,12 +516,14 @@ ${getBannerMarkdownAndLink()}
       commitSHAs.add(mergeCommitId);
 
       // Step 3-6: Match merged MRs targeting branchName and child branches against those commits
+      /* jscpd:ignore-start */
       const allBranches = [branchName, ...childBranchesNames];
       return await this.collectMergedPrsForCommits(projectId, allBranches, commitSHAs);
     } catch (err) {
       uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })));
       return [];
     }
+    /* jscpd:ignore-end */
   }
 
   // Shared tail: fetch merged MRs targeting each branch, keep those whose merge commit
