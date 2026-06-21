@@ -4,7 +4,7 @@ import getPort from "get-port";
 import { uxLog } from "./index.js";
 import { t } from './i18n.js';
 
-export async function generatePdfFileFromMarkdown(markdownFile: string, options: { timeoutMs?: number } = {}): Promise<string | false> {
+export async function generatePdfFileFromMarkdown(markdownFile: string, options: { timeoutMs?: number, landscape?: boolean, extraCss?: string } = {}): Promise<string | false> {
   try {
     const outputPdfFile = markdownFile.replace('.md', '.pdf');
     const timeoutMs = options.timeoutMs || 120000;
@@ -40,11 +40,15 @@ export async function generatePdfFileFromMarkdown(markdownFile: string, options:
               padding: 4px 8px;
               white-space: normal;
               word-break: normal;
-            }`,
+            }
+            ${options.extraCss || ""}`,
       stylesheet_encoding: 'utf-8',
       port: await getPort(),
       basedir: getDir(markdownFile),
     };
+    if (options.landscape) {
+      config.pdf_options = { ...(config.pdf_options || {}), landscape: true };
+    }
     const mergedConfig = {
       ...defaultConfig,
       ...config,

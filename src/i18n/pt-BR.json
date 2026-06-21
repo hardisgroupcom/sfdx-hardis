@@ -240,6 +240,7 @@
   "beforeLaunchingTheDataLoadingPleaseMake": "Antes de iniciar o carregamento de dados, certifique-se de que seu usuário {{orgUsername}} possui os Bypasses / Configurações de Ativação / Permissões Personalizadas / o que for necessário antes de iniciar o carregamento de dados.",
   "beforeRefreshCommandPerformedSuccessfully": "Comando before-refresh executado com sucesso",
   "bitbucketAddingPrComment": "Adicionando Comentário de Pull Request no Bitbucket...",
+  "bitbucketErrorFetchingCommit": "Erro ao buscar o commit {{commit}}: {{message}}",
   "bitbucketErrorFetchingMergedPrs": "Erro ao buscar PRs mesclados para a branch {{branchName}}: {{message}}",
   "bitbucketErrorListingPullRequests": "Erro ao listar pull requests: {{message}}",
   "bitbucketFetchingMergedPrs": "Buscando PRs mesclados para as branches: {{branches}}",

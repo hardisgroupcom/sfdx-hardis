@@ -142,6 +142,10 @@ In agent mode:
       allowNo: true,
       description: "Generate the documentation in PDF format (enabled by default, use --no-pdf to skip)",
     }),
+    portrait: Flags.boolean({
+      default: false,
+      description: "Generate the PDF in portrait orientation (default is landscape, which fits the wide Pull Request and ticket tables better)",
+    }),
     /* jscpd:ignore-start */
     debug: Flags.boolean({
       char: "d",
@@ -297,7 +301,12 @@ In agent mode:
       const pdfMarkdown = markdown.replace(/<details[^>]*>/g, "").replace(/<\/details>/g, "").replace(/<summary>(.*?)<\/summary>/g, "### $1");
       const pdfSourceFile = mdOutputFile.replace(/\.md$/i, `.pdf-source-${Date.now()}.md`);
       await fs.writeFile(pdfSourceFile, pdfMarkdown, "utf8");
-      const pdfResult = await generatePdfFileFromMarkdown(pdfSourceFile);
+      // Landscape by default: the PR and ticket tables are wide and read better in landscape.
+      // Keep the first column (ticket ID / PR number) on a single line so IDs like CLIENT-61034 don't wrap.
+      const pdfResult = await generatePdfFileFromMarkdown(pdfSourceFile, {
+        landscape: flags.portrait !== true,
+        extraCss: "td:first-child, th:first-child { white-space: nowrap; }",
+      });
       if (pdfResult) {
         const defaultPdfFile = mdOutputFile.replace(/\.md$/i, ".pdf");
         try {

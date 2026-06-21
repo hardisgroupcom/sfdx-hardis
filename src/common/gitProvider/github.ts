@@ -510,52 +510,9 @@ ${getBannerMarkdownAndLink()}
 
       const commitSHAs = new Set(comparison.commits.map((c) => c.sha));
 
-      // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
+      // Step 3-6: Match merged PRs targeting currentBranch and child branches against those commits
       const allBranches = [currentBranchName, ...childBranchesNames];
-
-      const prPromises = allBranches.map(async (branchName) => {
-        try {
-          const { data: prs } = await this.octokit!.rest.pulls.list({
-            owner: this.repoOwner!,
-            repo: this.repoName!,
-            state: "closed",
-            base: branchName,
-            per_page: 1000,
-          });
-          uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubFetchingMergedPrs', { branchName })));
-          return prs.filter((pr) => pr.merged_at);
-        } catch (err) {
-          uxLog(
-            "warning",
-            this,
-            c.yellow('[GitHub Integration] ' + t('githubErrorFetchingMergedPrs', { branchName, message: String(err) })),
-          );
-          return [];
-        }
-      });
-
-      const prResults = await Promise.all(prPromises);
-      const allMergedPRs: any[] = prResults.flat();
-
-      // Step 4: Filter PRs whose merge commit is in our commit list
-      const relevantPRs = allMergedPRs.filter((pr) => {
-        return pr.merge_commit_sha && commitSHAs.has(pr.merge_commit_sha);
-      });
-
-      // Step 5: Remove duplicates
-      const uniquePRsMap = new Map();
-      for (const pr of relevantPRs) {
-        if (!uniquePRsMap.has(pr.number)) {
-          uniquePRsMap.set(pr.number, pr);
-        }
-      }
-
-      const uniquePRs = Array.from(uniquePRsMap.values());
-
-      // Step 6: Convert to CommonPullRequestInfo
-      return uniquePRs.map((pr) =>
-        this.completePullRequestInfo(pr)
-      );
+      return await this.collectMergedPrsForCommits(allBranches, commitSHAs);
     } catch (err) {
       uxLog(
         "warning",
@@ -564,6 +521,96 @@ ${getBannerMarkdownAndLink()}
       );
       return [];
     }
+  }
+
+  // List the Pull Requests included in a specific "go live" merge commit (e.g. the merge
+  // of preprod into main). Bounds the range by the merge commit's first parent so hotfixes
+  // merged to the target branch at other times are excluded.
+  public async listPullRequestsInGoLive(
+    branchName: string,
+    childBranchesNames: string[],
+    mergeCommitId: string,
+  ): Promise<CommonPullRequestInfo[]> {
+    if (!this.octokit || !this.repoOwner || !this.repoName || !mergeCommitId) {
+      return [];
+    }
+    try {
+      // Step 1: Resolve the merge commit's first parent (the mainline before the go live)
+      const { data: mergeCommit } = await this.octokit.rest.repos.getCommit({
+        owner: this.repoOwner,
+        repo: this.repoName,
+        ref: mergeCommitId,
+      });
+      const firstParent = mergeCommit?.parents?.[0]?.sha;
+      if (!firstParent) {
+        return [];
+      }
+
+      // Step 2: Commits introduced by the go live
+      const { data: comparison } = await this.octokit.rest.repos.compareCommits({
+        owner: this.repoOwner,
+        repo: this.repoName,
+        base: firstParent,
+        head: mergeCommitId,
+        per_page: 1000,
+      });
+      const commitSHAs = new Set((comparison.commits || []).map((c) => c.sha));
+      commitSHAs.add(mergeCommitId);
+
+      // Step 3-6: Match merged PRs targeting branchName and child branches against those commits
+      const allBranches = [branchName, ...childBranchesNames];
+      return await this.collectMergedPrsForCommits(allBranches, commitSHAs);
+    } catch (err) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow('[GitHub Integration] ' + t('githubErrorListingPrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })),
+      );
+      return [];
+    }
+  }
+
+  // Shared tail: fetch merged PRs targeting each branch, keep those whose merge commit
+  // is part of commitSHAs, dedupe by PR number and convert to the common shape.
+  private async collectMergedPrsForCommits(
+    allBranches: string[],
+    commitSHAs: Set<string>,
+  ): Promise<CommonPullRequestInfo[]> {
+    const prPromises = allBranches.map(async (branchName) => {
+      try {
+        const { data: prs } = await this.octokit!.rest.pulls.list({
+          owner: this.repoOwner!,
+          repo: this.repoName!,
+          state: "closed",
+          base: branchName,
+          per_page: 1000,
+        });
+        uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubFetchingMergedPrs', { branchName })));
+        return prs.filter((pr) => pr.merged_at);
+      } catch (err) {
+        uxLog(
+          "warning",
+          this,
+          c.yellow('[GitHub Integration] ' + t('githubErrorFetchingMergedPrs', { branchName, message: String(err) })),
+        );
+        return [];
+      }
+    });
+
+    const prResults = await Promise.all(prPromises);
+    const allMergedPRs: any[] = prResults.flat();
+
+    // Keep PRs whose merge commit is in our commit list
+    const relevantPRs = allMergedPRs.filter((pr) => pr.merge_commit_sha && commitSHAs.has(pr.merge_commit_sha));
+
+    // Remove duplicates by PR number
+    const uniquePRsMap = new Map();
+    for (const pr of relevantPRs) {
+      if (!uniquePRsMap.has(pr.number)) {
+        uniquePRsMap.set(pr.number, pr);
+      }
+    }
+    return Array.from(uniquePRsMap.values()).map((pr) => this.completePullRequestInfo(pr));
   }
 
   private completePullRequestInfo(prData: any): CommonPullRequestInfo {
@@ -576,6 +623,8 @@ ${getBannerMarkdownAndLink()}
       description: prData?.body || "",
       authorName: prData?.user?.login || "",
       webUrl: prData?.html_url || "",
+      createdDate: prData?.created_at || undefined,
+      mergedDate: prData?.merged_at || undefined,
       mergeCommitSha: prData?.merge_commit_sha || undefined,
       providerInfo: prData,
       customBehaviors: {}

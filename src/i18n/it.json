@@ -244,6 +244,7 @@
   "bitbucketAddingPrComment": "Aggiunta di un commento alla Pull Request su Bitbucket...",
   "bitbucketCannotCreatePrMissingRepoInfo": "Impossibile creare la pull request: BITBUCKET_WORKSPACE o BITBUCKET_REPO_SLUG mancante.",
   "bitbucketCreatingPullRequest": "Creazione pull request da {{source}} a {{target}}...",
+  "bitbucketErrorFetchingCommit": "Errore nel recupero del commit {{commit}}: {{message}}",
   "bitbucketErrorFetchingMergedPrs": "Errore nel recupero delle PR unite per il branch {{branchName}}: {{message}}",
   "bitbucketErrorListingPullRequests": "Errore nell'elencare le pull request: {{message}}",
   "bitbucketFetchingMergedPrs": "Recupero delle PR unite per i branch: {{branches}}",
