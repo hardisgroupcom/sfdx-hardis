@@ -1323,7 +1323,8 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, sens
   }
   // VS Code sfdx-hardis log
   if (WebSocketClient.isAlive() && !text.includes('[command]') && !text.includes('[NotifProvider]')) {
-    if (sensitive && !text.includes('SFDX_CLIENT_ID_') && !text.includes('SFDX_CLIENT_KEY_') && !text.includes('SFDX_CLIENT_CERT_')) {
+    // <copy> marks a value the user must copy from the VS Code UI: show it there but keep it obfuscated in the log file (handled above)
+    if (sensitive && !text.includes('<copy>') && !text.includes('SFDX_CLIENT_ID_') && !text.includes('SFDX_CLIENT_KEY_') && !text.includes('SFDX_CLIENT_CERT_')) {
       WebSocketClient.sendCommandLogLineMessage('OBFUSCATED LOG LINE');
     }
     else {

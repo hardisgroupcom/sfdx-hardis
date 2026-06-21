@@ -294,7 +294,7 @@ Reference: [Salesforce Help - Remove a user's security key](https://help.salesfo
     }
     let notifDetailText = '';
     for (const r of results.filter((res) => res.status === 'unlinked' || res.status === 'error')) {
-      notifDetailText += `- ${r.username}: ${r.status}${r.methodsUnlinked.length > 0 ? ` (${r.methodsUnlinked.join(', ')})` : ''}${r.message ? ` - ${r.message}` : ''}\n`;
+      notifDetailText += `- ${r.username}: ${r.status}${r.methodsUnlinked.length > 0 ? ` (${r.methodsUnlinked.join(', ')})` : ''}${r.status === 'error' && r.message ? ` - ${r.message}` : ''}\n`;
     }
     const notifAttachments = notifDetailText ? [{ text: notifDetailText }] : [];
     const xlsxFile = (reportResult.find((res) => res.type === 'xls') || {}).file;
