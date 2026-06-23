@@ -662,6 +662,123 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
   return true;
 }
 
+export interface GitWorktreeInfo {
+  path: string; // Absolute path of the worktree
+  head?: string; // Commit hash currently checked out
+  branch?: string; // Short branch name checked out (undefined when detached)
+}
+
+// List all git worktrees attached to the current repository
+export async function listGitWorktrees(): Promise<GitWorktreeInfo[]> {
+  let raw = '';
+  try {
+    raw = await git().raw(['worktree', 'list', '--porcelain']);
+  } catch {
+    // git worktree may be unavailable on very old git versions: assume a single worktree
+    return [];
+  }
+  const blocks = raw
+    .split(/\r?\n\r?\n/)
+    .map((block) => block.trim())
+    .filter((block) => block.length > 0);
+  return blocks
+    .map((block) => {
+      const info: GitWorktreeInfo = { path: '' };
+      for (const line of block.split(/\r?\n/)) {
+        if (line.startsWith('worktree ')) {
+          info.path = line.substring('worktree '.length).trim();
+        } else if (line.startsWith('HEAD ')) {
+          info.head = line.substring('HEAD '.length).trim();
+        } else if (line.startsWith('branch ')) {
+          info.branch = line.substring('branch '.length).trim().replace(/^refs\/heads\//, '');
+        }
+      }
+      return info;
+    })
+    .filter((info) => info.path !== '');
+}
+
+// Returns the path of another worktree where branchName is checked out, or null if free
+export async function getBranchWorktreePath(branchName: string): Promise<string | null> {
+  const worktrees = await listGitWorktrees();
+  if (worktrees.length === 0) {
+    return null;
+  }
+  let currentRoot: string | null = null;
+  try {
+    currentRoot = path.resolve(await getGitRepoRoot());
+  } catch {
+    currentRoot = null;
+  }
+  for (const worktree of worktrees) {
+    if (worktree.branch === branchName && (currentRoot === null || path.resolve(worktree.path) !== currentRoot)) {
+      return worktree.path;
+    }
+  }
+  return null;
+}
+
+/**
+ * Create (or check out) a work branch based on the latest state of a target branch, in a way that
+ * is safe when the target branch is checked out in another git worktree.
+ *
+ * - Never checks out the target branch in the current worktree (so it cannot fail with
+ *   "<target> is already checked out at <path>").
+ * - Fetches origin/<target> and creates the new branch from it, falling back to the local <target> ref.
+ * - If the branch already exists and is free, checks it out (resume work).
+ * - If the branch is checked out in another worktree, throws a clear error.
+ */
+export async function createWorkBranchFromTarget(branchName: string, targetBranch: string): Promise<void> {
+  if (!isGitRepo()) {
+    throw new SfError('[sfdx-hardis] You must be within a git repository');
+  }
+
+  // Refuse if the work branch is already checked out in another worktree
+  const branchWorktree = await getBranchWorktreePath(branchName);
+  if (branchWorktree) {
+    throw new SfError(t('branchAlreadyCheckedOutInWorktree', { branch: branchName, worktreePath: branchWorktree }));
+  }
+
+  // Fetch the latest state of the target branch into its remote-tracking ref origin/<target>
+  try {
+    await gitFetch(['origin', targetBranch]);
+  } catch (e) {
+    uxLog("warning", this, c.yellow(t('unableToFetchTargetBranch', { branch: targetBranch, message: (e as Error).message })));
+  }
+
+  const localBranches = await git().branchLocal();
+  // Resume an existing local branch
+  if (localBranches.all.includes(branchName)) {
+    await git().checkout(branchName);
+    uxLog("action", this, c.green(t('checkedOutGitBranch', { branchName: c.bold(branchName) })));
+    return;
+  }
+
+  // Resume a branch that exists only on origin (git creates the local tracking branch)
+  const remoteBranches = await git().branch(['-r']);
+  if (remoteBranches.all.includes(`origin/${branchName}`)) {
+    await git().checkout(branchName);
+    uxLog("action", this, c.green(t('checkedOutGitBranch', { branchName: c.bold(branchName) })));
+    return;
+  }
+
+  // Determine the start point: prefer origin/<target>, fall back to the local <target> ref
+  let startPoint: string | null = null;
+  if (remoteBranches.all.includes(`origin/${targetBranch}`)) {
+    startPoint = `origin/${targetBranch}`;
+  } else if (localBranches.all.includes(targetBranch)) {
+    startPoint = targetBranch;
+  }
+  if (startPoint === null) {
+    throw new SfError(t('unableToFindTargetBranchToBranchFrom', { branch: targetBranch }));
+  }
+
+  // Create the work branch from the start point. --no-track keeps it upstream-less until
+  // hardis:work:save pushes it with -u (matching the behavior of branching from a local ref).
+  await git().checkout(['-b', branchName, '--no-track', startPoint]);
+  uxLog("action", this, c.green(t('createdAndCheckedOutGitBranch', { branchName: c.bold(branchName) })));
+}
+
 // Checks that current git status is clean.
 export async function checkGitClean(options: any) {
   if (!isGitRepo()) {

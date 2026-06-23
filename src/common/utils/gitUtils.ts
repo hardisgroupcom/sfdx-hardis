@@ -111,6 +111,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
 }
 
 export async function getGitDeltaScope(currentBranch: string, targetBranch: string) {
+  // Ref used to compute the delta against the target branch. Defaults to the local <target> ref.
+  let targetRef = targetBranch;
   try {
     await gitFetch(['origin', `${targetBranch}:${targetBranch}`]);
   } catch (e) {
@@ -120,6 +122,19 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
       `[Warning] Unable to fetch target branch ${targetBranch} to prepare call to sfdx-git-delta\n` +
       JSON.stringify(e)
     );
+    // Fallback (e.g. when the target branch is checked out in another git worktree, so the local
+    // ref cannot be updated): refresh the remote-tracking ref and compute the delta against origin/<target>.
+    try {
+      await gitFetch(['origin', targetBranch]);
+      targetRef = `origin/${targetBranch}`;
+    } catch (e2) {
+      uxLog(
+        "other",
+        this,
+        `[Warning] Unable to fetch origin/${targetBranch} to prepare call to sfdx-git-delta\n` +
+        JSON.stringify(e2)
+      );
+    }
   }
   try {
     await gitFetch(['origin', `${currentBranch}:${currentBranch}`]);
@@ -131,9 +146,9 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
       JSON.stringify(e)
     );
   }
-  const logResult = await git().log([`${targetBranch}..${currentBranch}`]);
+  const logResult = await git().log([`${targetRef}..${currentBranch}`]);
   const toCommit = logResult.latest;
-  const mergeBaseCommand = `git merge-base ${targetBranch} ${currentBranch}`;
+  const mergeBaseCommand = `git merge-base ${targetRef} ${currentBranch}`;
   const mergeBaseCommandResult = await execCommand(mergeBaseCommand, this, {
     fail: true,
   });

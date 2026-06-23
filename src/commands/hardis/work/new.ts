@@ -7,12 +7,10 @@ import * as path from 'path';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import {
   checkGitClean,
-  ensureGitBranch,
+  createWorkBranchFromTarget,
   execCommand,
   execSfdxJson,
   getGitRepoUrl,
-  gitCheckOutRemote,
-  gitPull,
   uxLog,
 } from '../../../common/utils/index.js';
 import { buildAvailableTargetBranches, selectTargetBranch } from '../../../common/utils/gitUtils.js';
@@ -49,7 +47,7 @@ This command guides you through the process of preparing your local environment 
 
 Key features include:
 
-- **Git Branch Management:** Ensures your local Git repository is up-to-date with the target branch and creates a new Git branch with a formatted name based on your User Story details. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`.
+- **Git Branch Management:** Creates a new Git branch with a formatted name based on your User Story details, based on the latest version of the target branch. The new branch is created from \`origin/<target>\` instead of checking out the target branch locally, so it works even when the target branch is already checked out in another git worktree. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`.
 
 - **Org Provisioning & Initialization:** Facilitates the creation and initialization of either a scratch org or a source-tracked sandbox. The configuration for org initialization (e.g., package installation, source push, permission set assignments, Apex script execution, data loading) can be defined in \`config/.sfdx-hardis.yml\
 
@@ -101,7 +99,7 @@ Advanced instructions are available in the [Create New User Story documentation]
 
 The command's logic orchestrates various underlying processes:
 
-- **Git Operations:** Utilizes \`checkGitClean\`, \`ensureGitBranch\`, \`gitCheckOutRemote\`, and \`git().pull()\` to manage Git repository state and branches.
+- **Git Operations:** Utilizes \`checkGitClean\` and \`createWorkBranchFromTarget\` to manage Git repository state and branches. \`createWorkBranchFromTarget\` fetches \`origin/<target>\` and creates the new branch from it (falling back to the local target ref), checks out the branch if it already exists, and fails with a clear message if it is checked out in another git worktree.
 - **Interactive Prompts:** Leverages the \`prompts\` library to gather user input for User Story type, source types, and User Story names.
 - **Configuration Management:** Reads and applies project-specific configurations from \`.sfdx-hardis.yml\` using \`getConfig\` and \`setConfig\
 - **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including \`initApexScripts\`, \`initOrgData\`, \`initOrgMetadatas\`, \`initPermissionSetAssignments\`, \`installPackages\`, and \`makeSureOrgIsConnected\
@@ -251,7 +249,9 @@ The command's logic orchestrates various underlying processes:
         : await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
     this.validateTaskNameOrThrow(taskName, config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
 
-    // Checkout development main branch
+    // Create the new branch from the latest version of the target branch.
+    // We branch from origin/<target> instead of checking out <target>, so this works even
+    // when the target branch is checked out in another git worktree.
     const branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
     const repoUrl = await getGitRepoUrl();
     uxLog(
@@ -259,12 +259,8 @@ The command's logic orchestrates various underlying processes:
       this,
       c.cyan(t('checkingOutLatestVersionOfBranch', { branch: c.bold(this.targetBranch), repoUrl }))
     );
-    await gitCheckOutRemote(this.targetBranch);
-    // Pull latest version of target branch
-    await gitPull();
-    // Create new branch
     uxLog("action", this, c.cyan(t('creatingNewBranch', { branchName: c.green(branchName) })));
-    await ensureGitBranch(branchName);
+    await createWorkBranchFromTarget(branchName, this.targetBranch);
     // Update config if necessary
     if (config.developmentBranch !== this.targetBranch && (config.availableTargetBranches || null) == null) {
       let shouldUpdateDefaultTargetBranch = false;
