@@ -7,6 +7,7 @@ import { simpleGit, SimpleGit } from 'simple-git';
 import {
   listGitWorktrees,
   getBranchWorktreePath,
+  assertBranchNotInOtherWorktree,
   createWorkBranchFromTarget,
 } from '../../../src/common/utils/index.js';
 import { getGitDeltaScope } from '../../../src/common/utils/gitUtils.js';
@@ -171,6 +172,38 @@ describe('getBranchWorktreePath()', () => {
 
     expect(await getBranchWorktreePath('feature/unused')).to.be.null;
     expect(await getBranchWorktreePath('does-not-exist')).to.be.null;
+  });
+});
+
+describe('assertBranchNotInOtherWorktree()', () => {
+  it('resolves silently when the branch is free or checked out in the current worktree', async () => {
+    const base = await makeSandbox('assert-free');
+    const { workDir, g } = await setupWithOrigin(base);
+    await g.raw(['branch', 'feature/free', 'main']); // exists but checked out nowhere
+    process.chdir(workDir);
+
+    // main is checked out here (current worktree) => allowed; feature/free is free => allowed
+    await assertBranchNotInOtherWorktree('main');
+    await assertBranchNotInOtherWorktree('feature/free');
+    await assertBranchNotInOtherWorktree('does-not-exist');
+  });
+
+  it('throws a clear worktree error when the branch is checked out in another worktree', async () => {
+    const base = await makeSandbox('assert-busy');
+    const { workDir, g } = await setupWithOrigin(base);
+    const linkedDir = path.join(base, 'linked');
+    await g.raw(['worktree', 'add', '-b', 'feature/busy', linkedDir, 'main']);
+    process.chdir(workDir);
+
+    let err: Error | undefined;
+    try {
+      await assertBranchNotInOtherWorktree('feature/busy');
+    } catch (e) {
+      err = e as Error;
+    }
+    expect(err, 'expected assertBranchNotInOtherWorktree to throw').to.be.instanceOf(Error);
+    expect(err!.message).to.match(/worktree/i);
+    expect(err!.message).to.contain('feature/busy');
   });
 });
 

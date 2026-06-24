@@ -397,6 +397,8 @@ export async function selectGitBranch(
 }
 
 export async function gitCheckOutRemote(branchName: string) {
+  // Fail early with a clear message if the branch is checked out in another git worktree
+  await assertBranchNotInOtherWorktree(branchName);
   await git().checkout(branchName);
   try {
     await gitPull();
@@ -632,7 +634,8 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
   const localBranches = await git().branchLocal();
   if (localBranches.current !== branchName) {
     if (branches.all.includes(branchName)) {
-      // Existing branch: checkout & pull
+      // Existing branch: checkout & pull (fail early if it is checked out in another worktree)
+      await assertBranchNotInOtherWorktree(branchName);
       await git().checkout(branchName);
       if (options.logAsAction) {
         uxLog("action", this, c.green(t('checkedOutGitBranch', { branchName: c.bold(branchName) })));
@@ -718,6 +721,15 @@ export async function getBranchWorktreePath(branchName: string): Promise<string 
   return null;
 }
 
+// Throws a clear error when branchName is checked out in another git worktree, so callers fail with
+// an actionable message instead of a cryptic "'<branch>' is already used by worktree at <path>" git error.
+export async function assertBranchNotInOtherWorktree(branchName: string): Promise<void> {
+  const branchWorktree = await getBranchWorktreePath(branchName);
+  if (branchWorktree) {
+    throw new SfError(t('branchAlreadyCheckedOutInWorktree', { branch: branchName, worktreePath: branchWorktree }));
+  }
+}
+
 /**
  * Create (or check out) a work branch based on the latest state of a target branch, in a way that
  * is safe when the target branch is checked out in another git worktree.
@@ -734,10 +746,7 @@ export async function createWorkBranchFromTarget(branchName: string, targetBranc
   }
 
   // Refuse if the work branch is already checked out in another worktree
-  const branchWorktree = await getBranchWorktreePath(branchName);
-  if (branchWorktree) {
-    throw new SfError(t('branchAlreadyCheckedOutInWorktree', { branch: branchName, worktreePath: branchWorktree }));
-  }
+  await assertBranchNotInOtherWorktree(branchName);
 
   // Fetch the latest state of the target branch into its remote-tracking ref origin/<target>
   try {
