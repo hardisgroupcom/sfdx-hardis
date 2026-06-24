@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Support running sfdx-hardis from git worktrees: [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) and other git operations no longer fail when the target branch is checked out in another worktree, and give a clear error instead of a cryptic git failure (closes #1946).
+
 ## [7.17.0] 2026-06-21
 
 - New [hardis:org:ext-client-app:rotate-credentials](https://sfdx-hardis.cloudity.com/hardis/org/ext-client-app/rotate-credentials/): Rotate the OAuth consumer key and secret of an External Client App directly in the org, with credentials displayed copy-pastable and kept out of logs.

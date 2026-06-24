@@ -6,6 +6,7 @@ import { getConfig } from '../../../../../config/index.js';
 import c from 'chalk';
 // import * as path from "path";
 import {
+  assertBranchNotInOtherWorktree,
   ensureGitRepository,
   gitHasLocalUpdates,
   execCommand,
@@ -192,6 +193,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
         );
       }
       uxLog("action", this, c.cyan(t('checkoutToExistingBranch', { retrofitWorkBranch })));
+      await assertBranchNotInOtherWorktree(retrofitWorkBranch);
       await git().checkout(retrofitWorkBranch, ['--force']);
     } else {
       uxLog("action", this, c.cyan(t('createNewBranchFrom', { retrofitWorkBranch, productionBranch: this.productionBranch })));
