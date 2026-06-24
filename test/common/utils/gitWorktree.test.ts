@@ -27,6 +27,24 @@ async function makeSandbox(name: string): Promise<string> {
   return real;
 }
 
+// Normalise a path for comparison. On Windows CI, `git worktree list --porcelain` reports the
+// LONG canonical form (e.g. ...\runneradmin\...) while paths we build from a realpath'd temp dir
+// can resolve to the 8.3 SHORT form (e.g. ...\RUNNER~1\...). Run both sides through realpath so
+// short/long 8.3 forms collapse to the same value, and compare case-insensitively (Windows FS).
+function normalizePath(p: string): string {
+  let resolved = path.resolve(p);
+  try {
+    resolved = fs.realpathSync.native(resolved);
+  } catch {
+    // path may not exist (e.g. negative assertions) - fall back to the resolved form
+  }
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+}
+
+function samePath(a: string, b: string): boolean {
+  return normalizePath(a) === normalizePath(b);
+}
+
 async function initRepo(dir: string): Promise<SimpleGit> {
   await fs.ensureDir(dir);
   const g = simpleGit(dir);
@@ -109,7 +127,7 @@ describe('listGitWorktrees()', () => {
     const worktrees = await listGitWorktrees();
     expect(worktrees).to.have.lengthOf(1);
     expect(worktrees[0].branch).to.equal('main');
-    expect(path.resolve(worktrees[0].path)).to.equal(path.resolve(workDir));
+    expect(samePath(worktrees[0].path, workDir), 'main worktree path should match').to.be.true;
     expect(worktrees[0].head).to.be.a('string').with.length.greaterThan(0);
   });
 
@@ -125,7 +143,7 @@ describe('listGitWorktrees()', () => {
     expect(branches).to.deep.equal(['feature/linked', 'main']);
     const linked = worktrees.find((w) => w.branch === 'feature/linked');
     expect(linked, 'linked worktree should be listed').to.not.be.undefined;
-    expect(path.resolve(linked!.path)).to.equal(path.resolve(linkedDir));
+    expect(samePath(linked!.path, linkedDir), 'linked worktree path should match').to.be.true;
   });
 
   it('leaves branch undefined for a detached-HEAD worktree', async () => {
@@ -136,7 +154,7 @@ describe('listGitWorktrees()', () => {
     process.chdir(workDir);
 
     const worktrees = await listGitWorktrees();
-    const detached = worktrees.find((w) => path.resolve(w.path) === path.resolve(detachedDir));
+    const detached = worktrees.find((w) => samePath(w.path, detachedDir));
     expect(detached, 'detached worktree should be listed').to.not.be.undefined;
     expect(detached!.branch).to.be.undefined;
     expect(detached!.head).to.equal(mainTip);
@@ -161,7 +179,7 @@ describe('getBranchWorktreePath()', () => {
 
     const result = await getBranchWorktreePath('feature/elsewhere');
     expect(result, 'branch checked out elsewhere should resolve to a path').to.not.be.null;
-    expect(path.resolve(result!)).to.equal(path.resolve(linkedDir));
+    expect(samePath(result!, linkedDir), 'resolved worktree path should match').to.be.true;
   });
 
   it('returns null for a branch that is not checked out anywhere', async () => {
@@ -209,7 +227,7 @@ describe('assertBranchNotInOtherWorktree()', () => {
 
 describe('createWorkBranchFromTarget()', () => {
   it('creates the new branch from origin/<target> with no upstream tracking', async () => {
-    const base = await makeSandbox('cwbft-new');
+    const base = await makeSandbox('create-new');
     const { workDir, mainTip } = await setupWithOrigin(base);
     process.chdir(workDir);
 
@@ -225,7 +243,7 @@ describe('createWorkBranchFromTarget()', () => {
   });
 
   it('creates the branch even when the target branch is checked out in another worktree', async () => {
-    const base = await makeSandbox('cwbft-target-busy');
+    const base = await makeSandbox('target-busy');
     const { workDir, mainTip, g } = await setupWithOrigin(base);
     // Move off main, then check main out in a separate worktree (the scenario this change fixes)
     await g.checkout(['-b', 'scratch']);
@@ -240,7 +258,7 @@ describe('createWorkBranchFromTarget()', () => {
   });
 
   it('refuses when the work branch is already checked out in another worktree', async () => {
-    const base = await makeSandbox('cwbft-dup');
+    const base = await makeSandbox('dup');
     const { workDir, g } = await setupWithOrigin(base);
     const linkedDir = path.join(base, 'linked');
     await g.raw(['worktree', 'add', '-b', 'feature/dup', linkedDir, 'main']);
@@ -259,7 +277,7 @@ describe('createWorkBranchFromTarget()', () => {
   });
 
   it('resumes an existing local branch instead of recreating it from the target', async () => {
-    const base = await makeSandbox('cwbft-resume-local');
+    const base = await makeSandbox('resume-local');
     const { workDir, mainTip, g } = await setupWithOrigin(base);
     await g.checkout(['-b', 'feature/resume', 'main']);
     const resumeTip = await commitFile(workDir, 'work.txt', 'in progress\n', 'feat: wip');
@@ -275,7 +293,7 @@ describe('createWorkBranchFromTarget()', () => {
   });
 
   it('resumes a branch that exists only on origin', async () => {
-    const base = await makeSandbox('cwbft-resume-remote');
+    const base = await makeSandbox('resume-remote');
     const { workDir, g } = await setupWithOrigin(base);
     await g.checkout(['-b', 'feature/remote-only', 'main']);
     const remoteTip = await commitFile(workDir, 'remote.txt', 'remote work\n', 'feat: remote wip');
@@ -291,7 +309,7 @@ describe('createWorkBranchFromTarget()', () => {
   });
 
   it('falls back to the local target ref when origin has no matching branch', async () => {
-    const base = await makeSandbox('cwbft-fallback-local');
+    const base = await makeSandbox('fallback-local');
     const { workDir, mainTip } = await setupWithEmptyOrigin(base);
     process.chdir(workDir);
 
@@ -302,7 +320,7 @@ describe('createWorkBranchFromTarget()', () => {
   });
 
   it('throws when the target branch exists neither locally nor on origin', async () => {
-    const base = await makeSandbox('cwbft-no-target');
+    const base = await makeSandbox('no-target');
     const { workDir } = await setupWithEmptyOrigin(base);
     process.chdir(workDir);
 
