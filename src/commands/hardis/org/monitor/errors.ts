@@ -572,7 +572,7 @@ In agent mode:
         : t('monitorErrorsApexNone', { org: orgMarkdown, days: this.days });
 
     return {
-      type: 'FLOW_ERROR',
+      type: 'APEX_ERROR',
       text: notifText,
       buttons: notifButtons,
       attachments: this.buildApexAttachments(),
@@ -598,7 +598,7 @@ In agent mode:
         : t('monitorErrorsFlowNone', { org: orgMarkdown, days: this.days });
 
     return {
-      type: 'APEX_ERROR',
+      type: 'FLOW_ERROR',
       text: notifText,
       buttons: notifButtons,
       attachments: this.buildFlowAttachments(),
