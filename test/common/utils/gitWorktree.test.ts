@@ -27,9 +27,9 @@ async function makeSandbox(name: string): Promise<string> {
   return real;
 }
 
-// Normalise a path for comparison. On Windows CI, `git worktree list --porcelain` reports the
-// LONG canonical form (e.g. ...\runneradmin\...) while paths we build from a realpath'd temp dir
-// can resolve to the 8.3 SHORT form (e.g. ...\RUNNER~1\...). Run both sides through realpath so
+// Normalize a path for comparison. On Windows CI, `git worktree list --porcelain` reports the
+// LONG canonical form of a user-directory while paths we build from a realpath'd temp dir
+// can resolve to the 8.3 SHORT form. Run both sides through realpath so
 // short/long 8.3 forms collapse to the same value, and compare case-insensitively (Windows FS).
 function normalizePath(p: string): string {
   let resolved = path.resolve(p);
