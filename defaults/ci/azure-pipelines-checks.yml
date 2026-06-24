@@ -98,7 +98,7 @@ jobs:
           JIRA_HOST: $(JIRA_HOST)
           JIRA_EMAIL: $(JIRA_EMAIL)
           JIRA_TOKEN: $(JIRA_TOKEN)
-          JIRA_PAT: $(JIRA_HOST)
+          JIRA_PAT: $(JIRA_PAT)
           JIRA_TICKET_REGEX: $(JIRA_TICKET_REGEX)
           OPENAI_API_KEY: $(OPENAI_API_KEY)
           # Uncomment to provide API keys for coding agent auto-fix of deployment errors
