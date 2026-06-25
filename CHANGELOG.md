@@ -3,6 +3,8 @@
 ## [beta] (main)
 
 - Support running sfdx-hardis from git worktrees: [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) and other git operations no longer fail when the target branch is checked out in another worktree, and give a clear error instead of a cryptic git failure (closes #1946).
+- [hardis:org:monitor:errors](https://sfdx-hardis.cloudity.com/hardis/org/monitor/errors/): Fix swapped Apex and Flow error notification types.
+- CI/CD: Fix the JIRA personal access token being read from the wrong variable in the pipeline templates.
 
 ## [7.17.0] 2026-06-21
 
