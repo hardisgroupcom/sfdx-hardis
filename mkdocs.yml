@@ -269,6 +269,7 @@ nav:
           - agentforce-feedback: hardis/datacloud/extract/agentforce-feedback.md
           - sql-query: hardis/datacloud/sql-query.md
       - hardis:doc:
+          - data-dictionary: hardis/doc/data-dictionary.md
           - extract permsetgroups: hardis/doc/extract/permsetgroups.md
           - fieldusage: hardis/doc/fieldusage.md
           - flow2markdown: hardis/doc/flow2markdown.md

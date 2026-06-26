@@ -2,7 +2,8 @@ import { expect } from 'chai';
 import fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import { countLinesInFile } from '../../../src/common/utils/filesUtils.js';
+import ExcelJS from 'exceljs';
+import { countLinesInFile, createXlsxFromCsvFiles } from '../../../src/common/utils/filesUtils.js';
 
 describe('filesUtils', () => {
   let tmpDir: string;
@@ -51,6 +52,56 @@ describe('filesUtils', () => {
       await fs.writeFile(file, lines);
       const count = await countLinesInFile(file);
       expect(count).to.equal(100);
+    });
+  });
+
+  describe('createXlsxFromCsvFiles() forceTextColumns', () => {
+    let previousNoOpen: string | undefined;
+
+    beforeEach(() => {
+      // Prevent the generated XLSX from being opened in a desktop app during the test
+      previousNoOpen = process.env.NO_OPEN;
+      process.env.NO_OPEN = 'true';
+    });
+
+    afterEach(() => {
+      if (previousNoOpen === undefined) {
+        delete process.env.NO_OPEN;
+      } else {
+        process.env.NO_OPEN = previousNoOpen;
+      }
+    });
+
+    const readXlsx = async (csvPath: string): Promise<ExcelJS.Worksheet> => {
+      const xlsxPath = path.join(path.dirname(csvPath), 'xls', path.basename(csvPath).replace('.csv', '.xlsx'));
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.readFile(xlsxPath);
+      return wb.worksheets[0];
+    };
+
+    it('keeps leading-zero values as text for forced-text columns', async () => {
+      const csvPath = path.join(tmpDir, 'dict.csv');
+      await fs.writeFile(csvPath, 'API Name,Key Prefix,Fields\nAccount,001,534\nContact,003,227\n');
+      await createXlsxFromCsvFiles([csvPath], csvPath, { forceTextColumns: ['Key Prefix'] });
+      const ws = await readXlsx(csvPath);
+      // Row 2 = first data row; column 2 = Key Prefix
+      const keyPrefixCell = ws.getCell(2, 2);
+      expect(keyPrefixCell.value).to.equal('001');
+      expect(typeof keyPrefixCell.value).to.equal('string');
+      // Other numeric columns are still coerced to numbers
+      const fieldsCell = ws.getCell(2, 3);
+      expect(fieldsCell.value).to.equal(534);
+      expect(typeof fieldsCell.value).to.equal('number');
+    });
+
+    it('loses leading zeros without forceTextColumns (default coercion)', async () => {
+      const csvPath = path.join(tmpDir, 'dict-default.csv');
+      await fs.writeFile(csvPath, 'API Name,Key Prefix,Fields\nAccount,001,534\n');
+      await createXlsxFromCsvFiles([csvPath], csvPath, {});
+      const ws = await readXlsx(csvPath);
+      const keyPrefixCell = ws.getCell(2, 2);
+      expect(keyPrefixCell.value).to.equal(1);
+      expect(typeof keyPrefixCell.value).to.equal('number');
     });
   });
 });

@@ -1494,6 +1494,12 @@ export interface ExcelExportOptions {
   noExcel?: boolean;
   columnsCustomStyles?: Record<string, ExcelColumnStyle>;
   skipNotifyToWebSocket?: boolean;
+  // Maps an absolute CSV file path to an explicit worksheet name (overrides the file basename)
+  worksheetNames?: Record<string, string>;
+  // Header names (case-insensitive) whose CSV values must stay as text instead of being auto-typed.
+  // Use for identifier columns with significant leading zeros (e.g. key prefixes "001").
+  // Note: enabling this replaces date auto-detection with number-only coercion for the workbook.
+  forceTextColumns?: string[];
 }
 
 export async function generateCsvFile(
@@ -1603,6 +1609,42 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
   let worksheet: ExcelJS.Worksheet;
   const usedWorksheetNames = new Set<string>();
 
+  // When some columns must stay as text (e.g. "001" key prefixes), install a custom CSV value
+  // mapper so leading zeros survive. It tracks the header row to know which column each cell is in.
+  const forceTextColumns = (options.forceTextColumns ?? []).map((name) => name.trim().toLowerCase());
+  const buildReadOptions = (): any => {
+    if (forceTextColumns.length === 0) {
+      return undefined;
+    }
+    let rowNum = -1;
+    let header: string[] | null = null;
+    return {
+      map: (datum: string, index: number, row: string[]): any => {
+        if (index === 0) {
+          rowNum++;
+        }
+        if (rowNum === 0) {
+          if (header === null) {
+            header = row.map((value) => String(value).trim().toLowerCase());
+          }
+          return datum;
+        }
+        const columnName = header ? header[index] : undefined;
+        if (columnName && forceTextColumns.includes(columnName)) {
+          return datum === '' ? null : String(datum);
+        }
+        if (datum === '') {
+          return null;
+        }
+        const datumNumber = Number(datum);
+        if (!Number.isNaN(datumNumber) && datumNumber !== Infinity) {
+          return datumNumber;
+        }
+        return datum;
+      },
+    };
+  };
+
   const sanitizeWorksheetName = (name: string): string => {
     // Excel constraints: max 31 chars, no : \ / ? * [ ] and no control chars.
     const withoutControlChars = Array.from(name || '')
@@ -1652,11 +1694,21 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
       console.warn(`[csvFilesToXls] Skipping empty csvFile:`, csvFile);
       continue;
     }
-    worksheet = await workbook.csv.readFile(csvFile);
-    const desiredWorksheetName = path.basename(csvFile).replace('.csv', '');
+    worksheet = await workbook.csv.readFile(csvFile, buildReadOptions());
+    const desiredWorksheetName = options.worksheetNames?.[csvFile] ?? path.basename(csvFile).replace('.csv', '');
     const worksheetName = makeUniqueWorksheetName(desiredWorksheetName);
     worksheet.name = worksheetName;
     usedWorksheetNames.add(worksheetName);
+    if (forceTextColumns.length > 0) {
+      // Mark the forced-text columns with Excel's text format so the values are not re-interpreted.
+      const headerRow = worksheet.getRow(1);
+      headerRow.eachCell((cell, colNumber) => {
+        const headerName = (cell?.text ?? (cell.value ?? '')).toString().trim().toLowerCase();
+        if (forceTextColumns.includes(headerName)) {
+          worksheet.getColumn(colNumber).numFmt = '@';
+        }
+      });
+    }
     applyWorksheetFormatting(worksheet, options);
     // Scan only the first row and convert string formulas
     const firstRow = worksheet.getRow(1);
