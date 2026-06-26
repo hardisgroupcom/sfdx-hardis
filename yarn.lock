@@ -2606,7 +2606,7 @@
     string-width "^7.2.0"
     terminal-link "^3.0.0"
 
-"@salesforce/source-deploy-retrieve@^12.20.1":
+"@salesforce/source-deploy-retrieve@12.31.5", "@salesforce/source-deploy-retrieve@^12.20.1":
   version "12.31.5"
   resolved "https://registry.yarnpkg.com/@salesforce/source-deploy-retrieve/-/source-deploy-retrieve-12.31.5.tgz#2765c7422acf064d63dea5d2e83b4072610dfb6f"
   integrity sha512-x5EQJsvLBzg6IAOYvVjPYHNSNOmKNbzjqwwaeMBgxiVfWzmkYjz6igGY4oUkRw9VgBFrzMEK2sq2SOypSEq/+w==
@@ -6461,7 +6461,7 @@ fast-wrap-ansi@^0.2.0:
   dependencies:
     fast-string-width "^3.0.2"
 
-fast-xml-builder@^1.1.5:
+fast-xml-builder@1.2.0, fast-xml-builder@^1.1.5:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/fast-xml-builder/-/fast-xml-builder-1.2.0.tgz#abd2363145a7625d9789ad96da375fabe3cff28c"
   integrity sha512-00aAWieqff+ZJhsXA4g1g7M8k+7AYoMUUHF+/zFb5U6Uv/P0Vl4QZo84/IcufzYalLuEj9928bXN9PbbFzMF0Q==
