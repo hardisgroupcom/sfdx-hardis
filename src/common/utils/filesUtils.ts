@@ -1485,6 +1485,8 @@ export interface ExcelColumnStyle {
   width?: number;
   hyperlinkFromValue?: boolean;
   maxHeight?: number;
+  horizontalAlignment?: 'left' | 'center' | 'right';
+  verticalAlignment?: 'top' | 'middle' | 'bottom';
 }
 
 export interface ExcelExportOptions {
@@ -1494,6 +1496,19 @@ export interface ExcelExportOptions {
   noExcel?: boolean;
   columnsCustomStyles?: Record<string, ExcelColumnStyle>;
   skipNotifyToWebSocket?: boolean;
+  // Maps an absolute CSV file path to an explicit worksheet name (overrides the file basename)
+  worksheetNames?: Record<string, string>;
+  // Header names (case-insensitive) whose CSV values must stay as text instead of being auto-typed.
+  // Use for identifier columns with significant leading zeros (e.g. key prefixes "001").
+  // Note: enabling this replaces date auto-detection with number-only coercion for the workbook.
+  forceTextColumns?: string[];
+  // Called with the fully built workbook just before it is written, so callers can add cross-sheet
+  // navigation (internal hyperlinks) or any other final touch. The context maps each source CSV
+  // file path to its final (sanitized and de-duplicated) worksheet name.
+  postProcessWorkbook?: (
+    workbook: ExcelJS.Workbook,
+    context: { worksheetNameByCsvFile: Record<string, string> }
+  ) => void | Promise<void>;
 }
 
 export async function generateCsvFile(
@@ -1602,6 +1617,43 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
   const workbook = new ExcelJS.Workbook();
   let worksheet: ExcelJS.Worksheet;
   const usedWorksheetNames = new Set<string>();
+  const worksheetNameByCsvFile: Record<string, string> = {};
+
+  // When some columns must stay as text (e.g. "001" key prefixes), install a custom CSV value
+  // mapper so leading zeros survive. It tracks the header row to know which column each cell is in.
+  const forceTextColumns = (options.forceTextColumns ?? []).map((name) => name.trim().toLowerCase());
+  const buildReadOptions = (): any => {
+    if (forceTextColumns.length === 0) {
+      return undefined;
+    }
+    let rowNum = -1;
+    let header: string[] | null = null;
+    return {
+      map: (datum: string, index: number, row: string[]): any => {
+        if (index === 0) {
+          rowNum++;
+        }
+        if (rowNum === 0) {
+          if (header === null) {
+            header = row.map((value) => String(value).trim().toLowerCase());
+          }
+          return datum;
+        }
+        const columnName = header ? header[index] : undefined;
+        if (columnName && forceTextColumns.includes(columnName)) {
+          return datum === '' ? null : String(datum);
+        }
+        if (datum === '') {
+          return null;
+        }
+        const datumNumber = Number(datum);
+        if (!Number.isNaN(datumNumber) && datumNumber !== Infinity) {
+          return datumNumber;
+        }
+        return datum;
+      },
+    };
+  };
 
   const sanitizeWorksheetName = (name: string): string => {
     // Excel constraints: max 31 chars, no : \ / ? * [ ] and no control chars.
@@ -1652,11 +1704,22 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
       console.warn(`[csvFilesToXls] Skipping empty csvFile:`, csvFile);
       continue;
     }
-    worksheet = await workbook.csv.readFile(csvFile);
-    const desiredWorksheetName = path.basename(csvFile).replace('.csv', '');
+    worksheet = await workbook.csv.readFile(csvFile, buildReadOptions());
+    const desiredWorksheetName = options.worksheetNames?.[csvFile] ?? path.basename(csvFile).replace('.csv', '');
     const worksheetName = makeUniqueWorksheetName(desiredWorksheetName);
     worksheet.name = worksheetName;
     usedWorksheetNames.add(worksheetName);
+    worksheetNameByCsvFile[csvFile] = worksheetName;
+    if (forceTextColumns.length > 0) {
+      // Mark the forced-text columns with Excel's text format so the values are not re-interpreted.
+      const headerRow = worksheet.getRow(1);
+      headerRow.eachCell((cell, colNumber) => {
+        const headerName = (cell?.text ?? (cell.value ?? '')).toString().trim().toLowerCase();
+        if (forceTextColumns.includes(headerName)) {
+          worksheet.getColumn(colNumber).numFmt = '@';
+        }
+      });
+    }
     applyWorksheetFormatting(worksheet, options);
     // Scan only the first row and convert string formulas
     const firstRow = worksheet.getRow(1);
@@ -1666,7 +1729,23 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
       }
     });
   }
+  if (options.postProcessWorkbook) {
+    await options.postProcessWorkbook(workbook, { worksheetNameByCsvFile });
+  }
   await workbook.xlsx.writeFile(xslxFile);
+}
+
+// Extra width (in characters) reserved on auto-fit columns so the filter dropdown button does not
+// clip the header text.
+const AUTOFILTER_BUTTON_PADDING = 3;
+
+// Rough estimate of how many wrapped lines a cell text needs at a given column width. Used both to
+// size row heights and to decide vertical alignment (single line vs multi line).
+function estimateLineCount(text: string, width: number): number {
+  const charsPerLine = Math.max(1, Math.floor(width > 0 ? width : 10));
+  return (text || '')
+    .split(/\r?\n/)
+    .reduce((acc, segment) => acc + Math.max(1, Math.ceil(segment.length / charsPerLine)), 0);
 }
 
 export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelExportOptions) {
@@ -1687,6 +1766,12 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       width: typeof style.width === 'number' && style.width > 0 ? style.width : undefined,
       hyperlinkFromValue: style.hyperlinkFromValue === true,
       maxHeight: typeof style.maxHeight === 'number' && style.maxHeight > 0 ? style.maxHeight : undefined,
+      horizontalAlignment: ['left', 'center', 'right'].includes(style.horizontalAlignment as string)
+        ? style.horizontalAlignment
+        : undefined,
+      verticalAlignment: ['top', 'middle', 'bottom'].includes(style.verticalAlignment as string)
+        ? style.verticalAlignment
+        : undefined,
     };
 
     columnStylePreferences.set(normalizedName, sanitizedStyle);
@@ -1729,7 +1814,11 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       tableRows.push(rowData);
     }
 
-    const safeTableName = `Table_${(worksheet.name || 'Sheet').replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 25)}`;
+    // Table names must be unique across the whole workbook. Worksheet names alone are not enough:
+    // two long object names that share their first characters collapse to the same truncated table
+    // name, and Excel flags such duplicates as unreadable content. Appending the worksheet id
+    // (unique per workbook) guarantees uniqueness.
+    const safeTableName = `Table_${(worksheet.name || 'Sheet').replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 25)}_${worksheet.id}`;
 
     try {
       worksheet.addTable({
@@ -1768,7 +1857,9 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       const lengths = (column.values || []).map((value) => (value ?? '').toString().length);
       const filteredLengths = lengths.filter((len) => Number.isFinite(len));
       const maxLength = filteredLengths.length > 0 ? Math.max(...filteredLengths) : 10;
-      column.width = maxLength;
+      // The filter dropdown button overlaps the right side of the header cell, so a width equal to
+      // the longest value (often the header itself) clips the header text. Add room for the button.
+      column.width = maxLength + AUTOFILTER_BUTTON_PADDING;
     }
 
     if (stylePreferences?.wrap) {
@@ -1776,6 +1867,27 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       column.alignment = updatedAlignment;
       column.eachCell?.({ includeEmpty: true }, (cell) => {
         cell.alignment = { ...(cell.alignment || {}), wrapText: true };
+      });
+    }
+
+    if (stylePreferences?.horizontalAlignment) {
+      const horizontal = stylePreferences.horizontalAlignment;
+      column.alignment = { ...(column.alignment || {}), horizontal };
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        cell.alignment = { ...(cell.alignment || {}), horizontal };
+      });
+    }
+
+    if (stylePreferences?.verticalAlignment) {
+      const configured = stylePreferences.verticalAlignment;
+      const columnWidth = typeof column.width === 'number' && column.width > 0 ? column.width : 10;
+      column.alignment = { ...(column.alignment || {}), vertical: configured };
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        // Single-line cells look better vertically centered; multi-line cells keep the configured
+        // alignment (e.g. "top") so the first line stays visible when the content is truncated.
+        const text = (cell.text ?? cell.value ?? '').toString();
+        const vertical = estimateLineCount(text, columnWidth) > 1 ? configured : 'middle';
+        cell.alignment = { ...(cell.alignment || {}), vertical };
       });
     }
 
@@ -1797,26 +1909,33 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
   });
 
   if (columnMaxHeightConstraints.size > 0) {
+    // ExcelJS never computes a row height, so we cannot just "cap" an existing one: we must
+    // estimate the height each wrapped cell needs from its text length and the column width,
+    // then keep the tallest estimate for the row, bounded by the configured maxHeight. This
+    // gives short cells a normal height and only grows (up to the cap) for long content.
+    const DEFAULT_ROW_HEIGHT = 15;
     worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
       if (rowNumber === 1 || !row) {
         return;
       }
-      let enforcedMaxHeight: number | undefined;
+      let estimatedHeight: number | undefined;
       columnMaxHeightConstraints.forEach((maxHeight, columnNumber) => {
         const cell = row.getCell(columnNumber);
         if (!cell) {
           return;
         }
-        const hasValue = cell.value !== null && cell.value !== undefined && cell.value !== '';
-        if (!hasValue) {
+        const text = (cell.text ?? cell.value ?? '').toString();
+        if (!text) {
           return;
         }
-        enforcedMaxHeight = typeof enforcedMaxHeight === 'number' ? Math.min(enforcedMaxHeight, maxHeight) : maxHeight;
+        const column = worksheet.getColumn(columnNumber);
+        const width = typeof column?.width === 'number' && column.width > 0 ? column.width : 10;
+        const lines = estimateLineCount(text, width);
+        const neededHeight = Math.min(maxHeight, lines * DEFAULT_ROW_HEIGHT);
+        estimatedHeight = typeof estimatedHeight === 'number' ? Math.max(estimatedHeight, neededHeight) : neededHeight;
       });
-      if (typeof enforcedMaxHeight === 'number') {
-        if (!row.height || row.height > enforcedMaxHeight) {
-          row.height = enforcedMaxHeight;
-        }
+      if (typeof estimatedHeight === 'number' && estimatedHeight > DEFAULT_ROW_HEIGHT) {
+        row.height = estimatedHeight;
       }
     });
   }

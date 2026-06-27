@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- New [hardis:doc:data-dictionary](https://sfdx-hardis.cloudity.com/hardis/doc/data-dictionary/): Export an Excel data dictionary of one or more Salesforce objects, with their fields, validation rules and record types read live from the org.
+
 ## [7.18.0] 2026-06-25
 
 - Support running sfdx-hardis from git worktrees: [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) and other git operations no longer fail when the target branch is checked out in another worktree, and give a clear error instead of a cryptic git failure (closes #1946).
