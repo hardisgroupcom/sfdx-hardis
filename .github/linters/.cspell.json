@@ -1354,6 +1354,14 @@
     "totp",
     "voquer",
     "pastable",
-    "webauthn"
+    "webauthn",
+    "customizedonly",
+    "richtextarea",
+    "multipicklist",
+    "encryptedstring",
+    "anytype",
+    "datacategorygroupreference",
+    "AUTOFILTER",
+    "lenprec"
   ]
 }
