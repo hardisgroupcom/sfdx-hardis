@@ -1133,6 +1133,7 @@
     "TESTBRANCH",
     "sharingcalc",
     "signkey",
+    "sigstore",
     "singlepackage",
     "skipauth",
     "skiptransfo",
