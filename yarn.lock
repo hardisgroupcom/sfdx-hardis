@@ -1915,10 +1915,10 @@
     uuid "^10.0.0"
     zod "^3.25.76 || ^4"
 
-"@langchain/core@1.2.0":
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-1.2.0.tgz#61fe4aaf1539dc1cdbe3909a9a43a90c7a816dd2"
-  integrity sha512-nXmyH0FbcsASlRmC9sbqX0gjQdxgB9KcS13vkw9PMaH0zzylwZkGFU9sY0XCPa2/AokmaNTU9DOW3IUDfAtQow==
+"@langchain/core@1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-1.2.1.tgz#46751258ee56a6ae47ae578eba7928d3995d11ed"
+  integrity sha512-NNG/cC5FGuHDOAP56h0ddp8Rfk8p+othWzEK5RV9JIG6RvnF5vGa5r0AEGtKfQieed7s1kC42GuIzVOBvMBL/g==
   dependencies:
     "@cfworker/json-schema" "^4.0.2"
     "@standard-schema/spec" "^1.1.0"
