@@ -1500,6 +1500,13 @@ export interface ExcelExportOptions {
   // Use for identifier columns with significant leading zeros (e.g. key prefixes "001").
   // Note: enabling this replaces date auto-detection with number-only coercion for the workbook.
   forceTextColumns?: string[];
+  // Called with the fully built workbook just before it is written, so callers can add cross-sheet
+  // navigation (internal hyperlinks) or any other final touch. The context maps each source CSV
+  // file path to its final (sanitized and de-duplicated) worksheet name.
+  postProcessWorkbook?: (
+    workbook: ExcelJS.Workbook,
+    context: { worksheetNameByCsvFile: Record<string, string> }
+  ) => void | Promise<void>;
 }
 
 export async function generateCsvFile(
@@ -1608,6 +1615,7 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
   const workbook = new ExcelJS.Workbook();
   let worksheet: ExcelJS.Worksheet;
   const usedWorksheetNames = new Set<string>();
+  const worksheetNameByCsvFile: Record<string, string> = {};
 
   // When some columns must stay as text (e.g. "001" key prefixes), install a custom CSV value
   // mapper so leading zeros survive. It tracks the header row to know which column each cell is in.
@@ -1699,6 +1707,7 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
     const worksheetName = makeUniqueWorksheetName(desiredWorksheetName);
     worksheet.name = worksheetName;
     usedWorksheetNames.add(worksheetName);
+    worksheetNameByCsvFile[csvFile] = worksheetName;
     if (forceTextColumns.length > 0) {
       // Mark the forced-text columns with Excel's text format so the values are not re-interpreted.
       const headerRow = worksheet.getRow(1);
@@ -1717,6 +1726,9 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
         cell.value = { formula: cell.value.substring(1) };
       }
     });
+  }
+  if (options.postProcessWorkbook) {
+    await options.postProcessWorkbook(workbook, { worksheetNameByCsvFile });
   }
   await workbook.xlsx.writeFile(xslxFile);
 }
@@ -1781,7 +1793,11 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       tableRows.push(rowData);
     }
 
-    const safeTableName = `Table_${(worksheet.name || 'Sheet').replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 25)}`;
+    // Table names must be unique across the whole workbook. Worksheet names alone are not enough:
+    // two long object names that share their first characters collapse to the same truncated table
+    // name, and Excel flags such duplicates as unreadable content. Appending the worksheet id
+    // (unique per workbook) guarantees uniqueness.
+    const safeTableName = `Table_${(worksheet.name || 'Sheet').replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 25)}_${worksheet.id}`;
 
     try {
       worksheet.addTable({
@@ -1849,26 +1865,36 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
   });
 
   if (columnMaxHeightConstraints.size > 0) {
+    // ExcelJS never computes a row height, so we cannot just "cap" an existing one: we must
+    // estimate the height each wrapped cell needs from its text length and the column width,
+    // then keep the tallest estimate for the row, bounded by the configured maxHeight. This
+    // gives short cells a normal height and only grows (up to the cap) for long content.
+    const DEFAULT_ROW_HEIGHT = 15;
     worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
       if (rowNumber === 1 || !row) {
         return;
       }
-      let enforcedMaxHeight: number | undefined;
+      let estimatedHeight: number | undefined;
       columnMaxHeightConstraints.forEach((maxHeight, columnNumber) => {
         const cell = row.getCell(columnNumber);
         if (!cell) {
           return;
         }
-        const hasValue = cell.value !== null && cell.value !== undefined && cell.value !== '';
-        if (!hasValue) {
+        const text = (cell.text ?? cell.value ?? '').toString();
+        if (!text) {
           return;
         }
-        enforcedMaxHeight = typeof enforcedMaxHeight === 'number' ? Math.min(enforcedMaxHeight, maxHeight) : maxHeight;
+        const column = worksheet.getColumn(columnNumber);
+        const width = typeof column?.width === 'number' && column.width > 0 ? column.width : 10;
+        const charsPerLine = Math.max(1, Math.floor(width));
+        const lines = text
+          .split(/\r?\n/)
+          .reduce((acc, segment) => acc + Math.max(1, Math.ceil(segment.length / charsPerLine)), 0);
+        const neededHeight = Math.min(maxHeight, lines * DEFAULT_ROW_HEIGHT);
+        estimatedHeight = typeof estimatedHeight === 'number' ? Math.max(estimatedHeight, neededHeight) : neededHeight;
       });
-      if (typeof enforcedMaxHeight === 'number') {
-        if (!row.height || row.height > enforcedMaxHeight) {
-          row.height = enforcedMaxHeight;
-        }
+      if (typeof estimatedHeight === 'number' && estimatedHeight > DEFAULT_ROW_HEIGHT) {
+        row.height = estimatedHeight;
       }
     });
   }

@@ -104,4 +104,94 @@ describe('filesUtils', () => {
       expect(typeof keyPrefixCell.value).to.equal('number');
     });
   });
+
+  describe('createXlsxFromCsvFiles() workbook integrity', () => {
+    let previousNoOpen: string | undefined;
+
+    beforeEach(() => {
+      previousNoOpen = process.env.NO_OPEN;
+      process.env.NO_OPEN = 'true';
+    });
+
+    afterEach(() => {
+      if (previousNoOpen === undefined) {
+        delete process.env.NO_OPEN;
+      } else {
+        process.env.NO_OPEN = previousNoOpen;
+      }
+    });
+
+    const readWorkbook = async (csvPath: string): Promise<ExcelJS.Workbook> => {
+      const xlsxPath = path.join(path.dirname(csvPath), 'xls', path.basename(csvPath).replace('.csv', '.xlsx'));
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.readFile(xlsxPath);
+      return wb;
+    };
+
+    it('generates unique table names even when sheet names collide after truncation', async () => {
+      // Two object names that share their first 25 characters would collapse to the same
+      // truncated table name. Excel flags duplicate table names as unreadable content.
+      const aliasA = 'Really_Long_Custom_Object_Alpha__c';
+      const aliasB = 'Really_Long_Custom_Object_Beta__c';
+      const csvA = path.join(tmpDir, 'a.csv');
+      const csvB = path.join(tmpDir, 'b.csv');
+      await fs.writeFile(csvA, 'API Name,Label\nName,Name\n');
+      await fs.writeFile(csvB, 'API Name,Label\nName,Name\n');
+      const outPath = path.join(tmpDir, 'multi.csv');
+      await createXlsxFromCsvFiles([csvA, csvB], outPath, {
+        worksheetNames: { [csvA]: aliasA.substring(0, 31), [csvB]: aliasB.substring(0, 31) },
+      });
+      const wb = await readWorkbook(outPath);
+      const tableNames: string[] = [];
+      for (const ws of wb.worksheets) {
+        for (const table of Object.values((ws as any).tables ?? {})) {
+          tableNames.push((table as any).name);
+        }
+      }
+      expect(tableNames.length).to.equal(2);
+      expect(new Set(tableNames).size).to.equal(tableNames.length);
+    });
+
+    it('sizes row height from content instead of forcing the max on every row', async () => {
+      const csvPath = path.join(tmpDir, 'heights.csv');
+      const shortValue = 'A; B; C';
+      const longValue = Array.from({ length: 80 }, (_, i) => `Value_${i}`).join('; ');
+      await fs.writeFile(
+        csvPath,
+        `API Name,Picklist Values\nShort,${shortValue}\nLong,${longValue}\nEmpty,\n`
+      );
+      await createXlsxFromCsvFiles([csvPath], csvPath, {
+        columnsCustomStyles: { 'picklist values': { wrap: true, width: 45, maxHeight: 150 } },
+      });
+      const wb = await readWorkbook(csvPath);
+      const ws = wb.worksheets[0];
+      const shortHeight = ws.getRow(2).height;
+      const longHeight = ws.getRow(3).height;
+      const emptyHeight = ws.getRow(4).height;
+      // Short content keeps a small height, long content is capped at maxHeight, empty stays default
+      expect(longHeight).to.equal(150);
+      expect(shortHeight === undefined || shortHeight < longHeight).to.equal(true);
+      expect(emptyHeight === undefined || emptyHeight < (longHeight as number)).to.equal(true);
+    });
+
+    it('runs postProcessWorkbook with the final worksheet names before writing', async () => {
+      const csvPath = path.join(tmpDir, 'hook.csv');
+      await fs.writeFile(csvPath, 'API Name,Label\nName,Name\n');
+      let seenNames: Record<string, string> | null = null;
+      await createXlsxFromCsvFiles([csvPath], csvPath, {
+        worksheetNames: { [csvPath]: 'Index' },
+        postProcessWorkbook: (workbook, context) => {
+          seenNames = context.worksheetNameByCsvFile;
+          workbook.getWorksheet('Index')!.getCell('A4').value = {
+            text: 'Back to Index',
+            hyperlink: "#'Index'!A1",
+          };
+        },
+      });
+      expect(seenNames).to.deep.equal({ [csvPath]: 'Index' });
+      const wb = await readWorkbook(csvPath);
+      const cell = wb.getWorksheet('Index')!.getCell('A4');
+      expect((cell.value as any).hyperlink).to.equal("#'Index'!A1");
+    });
+  });
 });

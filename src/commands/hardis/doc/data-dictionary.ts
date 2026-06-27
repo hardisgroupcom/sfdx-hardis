@@ -11,6 +11,7 @@ import {
   collectObjectDictionary,
   fetchRecordTypes,
   fetchValidationRules,
+  hasLocalCustomizations,
   ObjectDataDictionary,
   writeDataDictionaryReports,
 } from '../../../common/utils/dataDictionaryUtils.js';
@@ -28,14 +29,16 @@ This command describes the selected objects and exports their definitions into a
 
 - **Target Org:** Use \`--target-org\` to pick the org connection context.
 - **Object selection:** Provide one or more API names via \`--objects\` (comma-separated, e.g. \`Account,Contact,MyObject__c\`). If omitted in interactive mode, a prompt lists available objects.
+- **Customized objects only:** Use \`--customizedonly\` to exclude objects that have no local customizations. This drops standard objects without custom fields and managed package objects without local custom fields, while keeping local custom objects and any object that has at least one local custom field. In interactive mode, a prompt offers the same filter.
 - **Workbook structure:** One \`Index\` sheet listing the objects, one fields sheet per object, plus consolidated \`Validation Rules\` and \`Record Types\` sheets.
-- **Fields detail:** API name, label, type, required, unique, external id, length/precision, reference target, picklist values, default value, formula, help text, description, and custom flag.
+- **Navigation:** The \`Index\` sheet links to each object, Validation Rules and Record Types sheet, and every other sheet has a "Back to Index" link below its data.
+- **Fields detail:** API name, label, type, required, unique, external id, length/precision, reference target, picklist values, default value, formula, help text, description, and custom flag. Fields are sorted alphabetically by API name.
 - **Output:** The XLSX is generated alongside the intermediate CSV files in the report directory. Use \`--outputfile\` to force the consolidated report path.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- **Fields:** Retrieved with \`connection.describe(objectName)\`. Required is derived from \`nillable === false\`; picklist values are the active values, capped at 50 with an overflow note.
+- **Fields:** Retrieved with \`connection.describe(objectName)\`, then sorted alphabetically by API name. Field types are mapped to their Salesforce names (e.g. \`reference\` becomes \`Lookup\` or \`MasterDetail\`, \`int\`/\`double\` become \`Number\`), and formula / roll-up summary fields are tagged. Required is derived from \`nillable === false\`; picklist values are the active values, capped at 50 with an overflow note.
 - **Validation Rules:** Retrieved via the Metadata API (\`metadata.list\` then \`metadata.read\` in batches of 10) to include the error condition formula, which is not exposed by describe.
 - **Record Types:** Retrieved with a single SOQL query on \`RecordType\` filtered by \`SobjectType\`.
 - **Reporting:** Each sheet is first written as a CSV, then consolidated into one XLSX via \`createXlsxFromCsvFiles\`, with explicit worksheet names.
@@ -53,13 +56,15 @@ sf hardis:doc:data-dictionary --agent --objects Account,Contact
 In agent mode:
 - The \`--objects\` flag is **required** (no interactive prompt for object selection).
 - No other prompt is displayed; the workbook is generated directly.
+- Pass \`--customizedonly\` to restrict the workbook to objects that have local customizations (the prompt is skipped).
 `;
 
   public static examples = [
     '$ sf hardis:doc:data-dictionary',
     '$ sf hardis:doc:data-dictionary --objects Account,Contact',
     '$ sf hardis:doc:data-dictionary --target-org myOrgAlias --objects CustomObject__c',
-    '$ sf hardis:doc:data-dictionary --agent --objects Account,Contact',
+    '$ sf hardis:doc:data-dictionary --customizedonly',
+    '$ sf hardis:doc:data-dictionary --agent --objects Account,Contact --customizedonly',
   ];
 
   public static flags: any = {
@@ -73,6 +78,11 @@ In agent mode:
       char: 'f',
       description: 'Force the path and name of the consolidated output report file (the XLSX is generated alongside)',
       required: false,
+    }),
+    customizedonly: Flags.boolean({
+      default: false,
+      description:
+        'Exclude objects that have no local customizations (standard objects without custom fields and managed package objects without local custom fields). Local custom objects and objects with at least one local custom field are kept.',
     }),
     agent: Flags.boolean({
       default: false,
@@ -91,6 +101,7 @@ In agent mode:
     const conn = flags['target-org'].getConnection();
     const agentMode = flags.agent === true;
     const outputFile = flags.outputfile || null;
+    let customizedOnly = flags.customizedonly === true;
 
     let objectNames: string[] = (flags.objects || '')
       .split(',')
@@ -128,6 +139,18 @@ In agent mode:
 
     objectNames = Array.from(new Set(objectNames)).sort();
 
+    // Offer the "customized objects only" filter interactively when it was not requested via the flag.
+    if (!customizedOnly && !isCI && !agentMode) {
+      const customizedPromptRes = await prompts({
+        type: 'confirm',
+        name: 'value',
+        initial: false,
+        message: t('excludeUncustomizedObjects'),
+        description: t('excludeUncustomizedObjectsDesc'),
+      });
+      customizedOnly = customizedPromptRes.value === true;
+    }
+
     WebSocketClient.sendProgressStartMessage(t('describingObjects', { count: objectNames.length }));
     const objectDicts: ObjectDataDictionary[] = [];
     let counter = 0;
@@ -145,17 +168,30 @@ In agent mode:
       return { outputString: 'No objects could be described; aborting.', cancelled: true };
     }
 
-    const describedObjectNames = objectDicts.map((dict) => dict.apiName);
+    let dictsToReport = objectDicts;
+    if (customizedOnly) {
+      dictsToReport = objectDicts.filter((dict) => hasLocalCustomizations(dict));
+      const excludedCount = objectDicts.length - dictsToReport.length;
+      if (excludedCount > 0) {
+        uxLog("log", this, t('excludedUncustomizedObjects', { count: excludedCount }));
+      }
+      if (dictsToReport.length === 0) {
+        uxLog("warning", this, c.yellow(t('noObjectsWithLocalCustomizations')));
+        return { outputString: 'No objects with local customizations found; aborting.', cancelled: true };
+      }
+    }
+
+    const describedObjectNames = dictsToReport.map((dict) => dict.apiName);
     const validationRules = await fetchValidationRules(conn, describedObjectNames, this);
     const recordTypes = await fetchRecordTypes(conn, describedObjectNames, this);
 
-    uxLog("action", this, c.cyan(t('generatingDataDictionaryForObjects', { count: objectDicts.length })));
-    const reportFiles = await writeDataDictionaryReports(this, objectDicts, validationRules, recordTypes, outputFile);
+    uxLog("action", this, c.cyan(t('generatingDataDictionaryForObjects', { count: dictsToReport.length })));
+    const reportFiles = await writeDataDictionaryReports(this, dictsToReport, validationRules, recordTypes, outputFile);
 
-    uxLog("success", this, c.green(t('dataDictionaryGeneratedForObjects', { count: objectDicts.length })));
+    uxLog("success", this, c.green(t('dataDictionaryGeneratedForObjects', { count: dictsToReport.length })));
 
     return {
-      outputString: `Data dictionary generated for ${objectDicts.length} objects.`,
+      outputString: `Data dictionary generated for ${dictsToReport.length} objects.`,
       reportFiles,
       objects: describedObjectNames,
     };

@@ -27,6 +27,25 @@ const NUMERIC_FIELD_TYPES = new Set(['currency', 'double', 'int', 'percent', 'lo
 
 const yesNo = (value: boolean): string => (value ? 'Yes' : 'No');
 
+// A custom API name is "local" (not from a managed package) when it carries exactly one "__"
+// separator (the suffix, e.g. "__c"). Managed components add a namespace prefix, which produces a
+// second "__" (e.g. "ns__Field__c"). Standard names carry none.
+export function isLocallyCustomApiName(apiName: string): boolean {
+  return ((apiName || '').match(/__/g) || []).length === 1;
+}
+
+// An object has local customizations when it is itself a local custom object, or when it carries at
+// least one local custom field. Standard objects without custom fields and managed package objects
+// without local custom fields return false.
+export function hasLocalCustomizations(dict: ObjectDataDictionary): boolean {
+  if (dict.custom === true && isLocallyCustomApiName(dict.apiName)) {
+    return true;
+  }
+  return dict.fields.some(
+    (field) => field['Custom'] === 'Yes' && isLocallyCustomApiName(field['API Name'] || '')
+  );
+}
+
 export function formatPicklistValues(field: any): string {
   const values = Array.isArray(field?.picklistValues) ? field.picklistValues : [];
   const activeValues = values
@@ -52,6 +71,103 @@ function formatLengthPrecision(field: any): string {
   return field?.length ? String(field.length) : '';
 }
 
+// Maps the technical describe type (e.g. "reference", "int") to the Salesforce field type as named
+// in metadata / Setup (e.g. "Lookup", "MasterDetail", "Number"). Formula and roll-up summary fields
+// keep their return type but are tagged accordingly.
+export function formatFieldType(field: any): string {
+  const type = (field?.type || '').toLowerCase();
+  let base: string;
+  switch (type) {
+    case 'string':
+      base = field?.autoNumber === true ? 'AutoNumber' : 'Text';
+      break;
+    case 'textarea':
+      if (field?.htmlFormatted === true || (field?.extraTypeInfo || '').toLowerCase() === 'richtextarea') {
+        base = 'Html';
+      } else if (typeof field?.length === 'number' && field.length > 255) {
+        base = 'LongTextArea';
+      } else {
+        base = 'TextArea';
+      }
+      break;
+    case 'int':
+    case 'double':
+    case 'long':
+      base = 'Number';
+      break;
+    case 'currency':
+      base = 'Currency';
+      break;
+    case 'percent':
+      base = 'Percent';
+      break;
+    case 'boolean':
+      base = 'Checkbox';
+      break;
+    case 'date':
+      base = 'Date';
+      break;
+    case 'datetime':
+      base = 'DateTime';
+      break;
+    case 'time':
+      base = 'Time';
+      break;
+    case 'email':
+      base = 'Email';
+      break;
+    case 'phone':
+      base = 'Phone';
+      break;
+    case 'url':
+      base = 'Url';
+      break;
+    case 'picklist':
+    case 'combobox':
+      base = 'Picklist';
+      break;
+    case 'multipicklist':
+      base = 'MultiselectPicklist';
+      break;
+    case 'reference':
+      // relationshipOrder is 0/1 on master-detail fields and null on lookups.
+      base =
+        field?.relationshipOrder !== null && field?.relationshipOrder !== undefined ? 'MasterDetail' : 'Lookup';
+      break;
+    case 'encryptedstring':
+      base = 'EncryptedText';
+      break;
+    case 'location':
+      base = 'Location';
+      break;
+    case 'address':
+      base = 'Address';
+      break;
+    case 'base64':
+      base = 'Base64';
+      break;
+    case 'id':
+      base = 'Id';
+      break;
+    case 'anytype':
+      base = 'AnyType';
+      break;
+    case 'datacategorygroupreference':
+      base = 'DataCategoryGroupReference';
+      break;
+    default:
+      base = field?.type || '';
+  }
+  if (field?.calculatedFormula) {
+    return `Formula (${base})`;
+  }
+  // Roll-up summary fields are calculated but carry no user formula.
+  if (field?.calculated === true && type !== 'reference') {
+    return `Roll-Up Summary (${base})`;
+  }
+  return base;
+}
+
 function formatReferenceTo(field: any): string {
   const references = Array.isArray(field?.referenceTo) ? field.referenceTo : [];
   if (references.length === 0) {
@@ -75,7 +191,7 @@ function buildFieldRow(field: any): Record<string, string> {
   return {
     'API Name': field?.name || '',
     'Label': field?.label || '',
-    'Type': field?.type || '',
+    'Type': formatFieldType(field),
     'Required': yesNo(field?.nillable === false),
     'Unique': yesNo(field?.unique === true),
     'External ID': yesNo(field?.externalId === true),
@@ -97,9 +213,11 @@ export async function collectObjectDictionary(
 ): Promise<ObjectDataDictionary | null> {
   try {
     const describeResult: any = await conn.describe(objectName);
-    const fields = (Array.isArray(describeResult?.fields) ? describeResult.fields : []).map((field: any) =>
-      buildFieldRow(field)
-    );
+    const fields = (Array.isArray(describeResult?.fields) ? describeResult.fields : [])
+      .map((field: any) => buildFieldRow(field))
+      .sort((a: Record<string, string>, b: Record<string, string>) =>
+        (a['API Name'] || '').localeCompare(b['API Name'] || '')
+      );
     return {
       apiName: describeResult?.name || objectName,
       label: describeResult?.label || objectName,
@@ -182,6 +300,79 @@ export async function fetchRecordTypes(
   }
 }
 
+// Blue underlined style matching Excel's default hyperlink look.
+const HYPERLINK_FONT = { color: { argb: 'FF0563C1' }, underline: true };
+
+// Adds in-workbook navigation: from the Index sheet to each object / Validation Rules / Record Types
+// sheet, and a "Back to Index" link below every other sheet. Runs after the workbook is built so it
+// can resolve the final (truncated and de-duplicated) worksheet names.
+function addDataDictionaryNavigation(
+  workbook: any,
+  worksheetNameByCsvFile: Record<string, string>,
+  nav: {
+    indexPath: string;
+    objectCsvByApiName: Record<string, string>;
+    vrPath: string | null;
+    rtPath: string | null;
+  }
+): void {
+  const indexName = worksheetNameByCsvFile[nav.indexPath];
+  const indexWs = indexName ? workbook.getWorksheet(indexName) : null;
+
+  const linkCell = (cell: any, sheetName: string) => {
+    if (!cell || !sheetName) {
+      return;
+    }
+    const text = (cell.text ?? cell.value ?? '').toString();
+    cell.value = { text, hyperlink: `#'${sheetName}'!A1` };
+    cell.font = { ...(cell.font || {}), ...HYPERLINK_FONT };
+  };
+
+  if (indexWs) {
+    const headerRow = indexWs.getRow(1);
+    const columnByHeader: Record<string, number> = {};
+    headerRow.eachCell((cell: any, colNumber: number) => {
+      columnByHeader[(cell.text ?? cell.value ?? '').toString().trim()] = colNumber;
+    });
+    const apiNameCol = columnByHeader['API Name'];
+    const vrCol = columnByHeader['Validation Rules'];
+    const rtCol = columnByHeader['Record Types'];
+    const vrName = nav.vrPath ? worksheetNameByCsvFile[nav.vrPath] : null;
+    const rtName = nav.rtPath ? worksheetNameByCsvFile[nav.rtPath] : null;
+
+    for (let rowNumber = 2; rowNumber <= indexWs.rowCount; rowNumber++) {
+      const row = indexWs.getRow(rowNumber);
+      if (apiNameCol) {
+        const cell = row.getCell(apiNameCol);
+        const apiName = (cell.text ?? cell.value ?? '').toString().trim();
+        const targetCsv = nav.objectCsvByApiName[apiName];
+        const targetName = targetCsv ? worksheetNameByCsvFile[targetCsv] : null;
+        if (targetName) {
+          linkCell(cell, targetName);
+        }
+      }
+      if (vrCol && vrName) {
+        linkCell(row.getCell(vrCol), vrName);
+      }
+      if (rtCol && rtName) {
+        linkCell(row.getCell(rtCol), rtName);
+      }
+    }
+  }
+
+  // "Back to Index" link a couple of rows below the data of every other sheet.
+  if (indexName) {
+    workbook.eachSheet((sheet: any) => {
+      if (sheet.name === indexName) {
+        return;
+      }
+      const backCell = sheet.getCell(`A${sheet.rowCount + 2}`);
+      backCell.value = { text: 'Back to Index', hyperlink: `#'${indexName}'!A1` };
+      backCell.font = { ...HYPERLINK_FONT };
+    });
+  }
+}
+
 export async function writeDataDictionaryReports(
   commandThis: any,
   objectDicts: ObjectDataDictionary[],
@@ -192,6 +383,11 @@ export async function writeDataDictionaryReports(
   const reportFiles: any[] = [];
   const csvFiles: string[] = [];
   const worksheetNames: Record<string, string> = {};
+  // Track which CSV file backs each navigation target so the workbook post-processor can turn
+  // Index cells into internal hyperlinks once the final (truncated/de-duplicated) sheet names are known.
+  const objectCsvByApiName: Record<string, string> = {};
+  let vrPath: string | null = null;
+  let rtPath: string | null = null;
 
   const validationRulesByObject = countByObject(validationRules);
   const recordTypesByObject = countByObject(recordTypes);
@@ -200,11 +396,11 @@ export async function writeDataDictionaryReports(
   const indexRows = objectDicts.map((dict) => ({
     'API Name': dict.apiName,
     'Label': dict.label,
-    'Custom': yesNo(dict.custom),
-    'Key Prefix': dict.keyPrefix,
     'Fields': String(dict.fields.length),
     'Validation Rules': String(validationRulesByObject[dict.apiName] || 0),
     'Record Types': String(recordTypesByObject[dict.apiName] || 0),
+    'Custom': yesNo(dict.custom),
+    'Key Prefix': dict.keyPrefix,
   }));
   const indexPath = await generateReportPath('data-dictionary-index', '', { withDate: true });
   await writeSheetCsv(indexRows, indexPath);
@@ -220,13 +416,14 @@ export async function writeDataDictionaryReports(
     const fieldsPath = await generateReportPath(`data-dictionary-${dict.apiName}`, '', { withDate: true });
     await writeSheetCsv(dict.fields, fieldsPath);
     worksheetNames[fieldsPath] = dict.apiName;
+    objectCsvByApiName[dict.apiName] = fieldsPath;
     csvFiles.push(fieldsPath);
     reportFiles.push({ type: 'csv', file: fieldsPath });
   }
 
   // Consolidated Validation Rules sheet
   if (validationRules.length > 0) {
-    const vrPath = await generateReportPath('data-dictionary-validation-rules', '', { withDate: true });
+    vrPath = await generateReportPath('data-dictionary-validation-rules', '', { withDate: true });
     await writeSheetCsv(validationRules, vrPath);
     worksheetNames[vrPath] = 'Validation Rules';
     csvFiles.push(vrPath);
@@ -235,7 +432,7 @@ export async function writeDataDictionaryReports(
 
   // Consolidated Record Types sheet
   if (recordTypes.length > 0) {
-    const rtPath = await generateReportPath('data-dictionary-record-types', '', { withDate: true });
+    rtPath = await generateReportPath('data-dictionary-record-types', '', { withDate: true });
     await writeSheetCsv(recordTypes, rtPath);
     worksheetNames[rtPath] = 'Record Types';
     csvFiles.push(rtPath);
@@ -258,6 +455,13 @@ export async function writeDataDictionaryReports(
     columnsCustomStyles,
     // The Index "Key Prefix" column holds leading-zero identifiers (e.g. "001") that must not be auto-typed.
     forceTextColumns: ['Key Prefix'],
+    postProcessWorkbook: (workbook, context) =>
+      addDataDictionaryNavigation(workbook, context.worksheetNameByCsvFile, {
+        indexPath,
+        objectCsvByApiName,
+        vrPath,
+        rtPath,
+      }),
   });
   const consolidatedXlsx = path.join(
     path.dirname(consolidatedBase),
