@@ -466,13 +466,17 @@ export async function writeDataDictionaryReports(
     'help text': { wrap: true, width: 35, maxHeight: 120 },
     'error message': { wrap: true, width: 45, maxHeight: 120 },
     'reference to': { wrap: true, width: 25 },
+    // Length/Precision holds composite values like "18,2" (precision,scale); keep it text so Excel
+    // does not read it as a number, but right-align it so it still reads like numeric data.
+    'length/precision': { horizontalAlignment: 'right' },
   };
   await createXlsxFromCsvFiles(csvFiles, consolidatedBase, {
     fileTitle: 'Data dictionary',
     worksheetNames,
     columnsCustomStyles,
     // The Index "Key Prefix" column holds leading-zero identifiers (e.g. "001") that must not be auto-typed.
-    forceTextColumns: ['Key Prefix'],
+    // "Length/Precision" holds values such as "18,2" that must stay text, not be coerced to numbers.
+    forceTextColumns: ['Key Prefix', 'Length/Precision'],
     postProcessWorkbook: (workbook, context) =>
       addDataDictionaryNavigation(workbook, context.worksheetNameByCsvFile, {
         indexPath,

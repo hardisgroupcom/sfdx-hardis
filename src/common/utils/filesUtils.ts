@@ -1485,6 +1485,7 @@ export interface ExcelColumnStyle {
   width?: number;
   hyperlinkFromValue?: boolean;
   maxHeight?: number;
+  horizontalAlignment?: 'left' | 'center' | 'right';
 }
 
 export interface ExcelExportOptions {
@@ -1755,6 +1756,9 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       width: typeof style.width === 'number' && style.width > 0 ? style.width : undefined,
       hyperlinkFromValue: style.hyperlinkFromValue === true,
       maxHeight: typeof style.maxHeight === 'number' && style.maxHeight > 0 ? style.maxHeight : undefined,
+      horizontalAlignment: ['left', 'center', 'right'].includes(style.horizontalAlignment as string)
+        ? style.horizontalAlignment
+        : undefined,
     };
 
     columnStylePreferences.set(normalizedName, sanitizedStyle);
@@ -1850,6 +1854,14 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       column.alignment = updatedAlignment;
       column.eachCell?.({ includeEmpty: true }, (cell) => {
         cell.alignment = { ...(cell.alignment || {}), wrapText: true };
+      });
+    }
+
+    if (stylePreferences?.horizontalAlignment) {
+      const horizontal = stylePreferences.horizontalAlignment;
+      column.alignment = { ...(column.alignment || {}), horizontal };
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        cell.alignment = { ...(cell.alignment || {}), horizontal };
       });
     }
 

@@ -174,6 +174,26 @@ describe('filesUtils', () => {
       expect(emptyHeight === undefined || emptyHeight < (longHeight as number)).to.equal(true);
     });
 
+    it('keeps a forced-text column as text and right-aligned', async () => {
+      const csvPath = path.join(tmpDir, 'lenprec.csv');
+      // "18,2" is precision,scale and must not be read as a number; "255" is a length.
+      await fs.writeFile(csvPath, 'API Name,Length/Precision\nAmount,"18,2"\nName,255\n');
+      await createXlsxFromCsvFiles([csvPath], csvPath, {
+        forceTextColumns: ['Length/Precision'],
+        columnsCustomStyles: { 'length/precision': { horizontalAlignment: 'right' } },
+      });
+      const wb = await readWorkbook(csvPath);
+      const ws = wb.worksheets[0];
+      const composite = ws.getCell(2, 2);
+      const length = ws.getCell(3, 2);
+      expect(composite.value).to.equal('18,2');
+      expect(typeof composite.value).to.equal('string');
+      expect(length.value).to.equal('255');
+      expect(typeof length.value).to.equal('string');
+      expect(composite.alignment?.horizontal).to.equal('right');
+      expect(length.alignment?.horizontal).to.equal('right');
+    });
+
     it('runs postProcessWorkbook with the final worksheet names before writing', async () => {
       const csvPath = path.join(tmpDir, 'hook.csv');
       await fs.writeFile(csvPath, 'API Name,Label\nName,Name\n');
