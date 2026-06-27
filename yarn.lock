@@ -904,17 +904,17 @@
   dependencies:
     chalk "^4.1.0"
 
-"@cparra/apex-reflection@3.0.0":
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/@cparra/apex-reflection/-/apex-reflection-3.0.0.tgz#c54baaf0f2bd33f9196f09d0cdad7225b04478ba"
-  integrity sha512-UK70y26R+o6znTvCb85zI47KBPGeFnojNE7VLd8rbhVJeIil9LRxtrlqu5He2+UeohNlN9nkbBvbW0YsWCuhiQ==
+"@cparra/apex-reflection@3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@cparra/apex-reflection/-/apex-reflection-3.1.0.tgz#3cfb5623450350c1f8d440ccf38fbcf68987768f"
+  integrity sha512-IomkjSD5W79pcJeXDpgaGQOXZGuHUxX66XWNwgy0VDwze3RHglbqk4t9kC02x9a6ddcaxAUwbjbyVhrNfGySMA==
 
-"@cparra/apexdocs@3.22.1":
-  version "3.22.1"
-  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.22.1.tgz#7a0a2a5e6bdcf35114c7e43e2a57f7caef237650"
-  integrity sha512-dTfQJOwuk3cH/ZPdLSFgkH6sGYdWCKe6WnEGWezcb744zu+2BaNnBnuqTO+iRtD3CGTdbnnxUpGzxiVum0KZQw==
+"@cparra/apexdocs@3.23.1":
+  version "3.23.1"
+  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.23.1.tgz#188508909c172de662ef7a81e4290cd7b08ae027"
+  integrity sha512-zpPj8o3l2co9j7wnssPv8qNSEe8cuwPAP7xckPXNgt0ADpMe2r0yMqfM1i69HiJFqZByLgpPmrQQeqHIofpwzQ==
   dependencies:
-    "@cparra/apex-reflection" "3.0.0"
+    "@cparra/apex-reflection" "3.1.0"
     "@salesforce/source-deploy-retrieve" "^12.20.1"
     "@types/js-yaml" "^4.0.9"
     "@types/yargs" "^17.0.32"
@@ -5218,10 +5218,10 @@ cosmiconfig-typescript-loader@^5.0.0:
   dependencies:
     jiti "^1.21.6"
 
-cosmiconfig@*, cosmiconfig@9.0.1, cosmiconfig@^9.0.0:
-  version "9.0.1"
-  resolved "https://registry.yarnpkg.com/cosmiconfig/-/cosmiconfig-9.0.1.tgz#df110631a8547b5d1a98915271986f06e3011379"
-  integrity sha512-hr4ihw+DBqcvrsEDioRO31Z17x71pUYoNe/4h6Z0wB72p7MU7/9gH8Q3s12NFhHPfYBBOV3qyfUxmr/Yn3shnQ==
+cosmiconfig@*, cosmiconfig@9.0.2, cosmiconfig@^9.0.0:
+  version "9.0.2"
+  resolved "https://registry.yarnpkg.com/cosmiconfig/-/cosmiconfig-9.0.2.tgz#9e5615163becf6a82211fb33d2f68947c25d0c5e"
+  integrity sha512-gtTZxTDau1wL7Y7zifc2dd8jHSK/k6BTx/2Xp/BpdlAdnlYWFVt7qhJqgwi7637yRwRQ3qL4ZidbB4I8tA5VOg==
   dependencies:
     env-paths "^2.2.1"
     import-fresh "^3.3.0"
