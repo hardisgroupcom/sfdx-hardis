@@ -562,6 +562,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 
 | Command                                                                     | Title |
 |:----------------------------------------------------------------------------|:------|
+| [**hardis:doc:data-dictionary**](hardis/doc/data-dictionary.md)             |       |
 | [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                     |       |
 | [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md) |       |
 | [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                       |       |

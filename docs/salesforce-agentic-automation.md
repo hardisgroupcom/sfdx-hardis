@@ -172,6 +172,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 
 | Command                                                                               | What an agent can do                                                                                                     |
 |---------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:doc:data-dictionary**](hardis/doc/data-dictionary.md)                       | Export an Excel data dictionary of objects with fields, validation rules, and record types - flag: `--objects`           |
 | [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md)           | Generate a detailed report of Permission Set Group assignments and included permission sets                              |
 | [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                                 | Display where custom fields are referenced across metadata components (impact analysis)                                  |
 | [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                           | Convert a Salesforce Flow metadata file into a human-readable Markdown description                                       |
