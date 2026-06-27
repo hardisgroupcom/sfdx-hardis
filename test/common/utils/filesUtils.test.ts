@@ -194,6 +194,21 @@ describe('filesUtils', () => {
       expect(length.alignment?.horizontal).to.equal('right');
     });
 
+    it('top-aligns multi-line cells and middle-aligns single-line cells', async () => {
+      const csvPath = path.join(tmpDir, 'valign.csv');
+      const longValue = Array.from({ length: 80 }, (_, i) => `Value_${i}`).join('; ');
+      await fs.writeFile(csvPath, `API Name,Picklist Values\nBig,"${longValue}"\nSmall,"Yes; No"\n`);
+      await createXlsxFromCsvFiles([csvPath], csvPath, {
+        columnsCustomStyles: { 'picklist values': { wrap: true, width: 45, maxHeight: 150, verticalAlignment: 'top' } },
+      });
+      const wb = await readWorkbook(csvPath);
+      const multiLine = wb.worksheets[0].getCell(2, 2);
+      const singleLine = wb.worksheets[0].getCell(3, 2);
+      expect(multiLine.alignment?.vertical).to.equal('top');
+      expect(multiLine.alignment?.wrapText).to.equal(true);
+      expect(singleLine.alignment?.vertical).to.equal('middle');
+    });
+
     it('runs postProcessWorkbook with the final worksheet names before writing', async () => {
       const csvPath = path.join(tmpDir, 'hook.csv');
       await fs.writeFile(csvPath, 'API Name,Label\nName,Name\n');

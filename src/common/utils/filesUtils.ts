@@ -1486,6 +1486,7 @@ export interface ExcelColumnStyle {
   hyperlinkFromValue?: boolean;
   maxHeight?: number;
   horizontalAlignment?: 'left' | 'center' | 'right';
+  verticalAlignment?: 'top' | 'middle' | 'bottom';
 }
 
 export interface ExcelExportOptions {
@@ -1738,6 +1739,15 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
 // clip the header text.
 const AUTOFILTER_BUTTON_PADDING = 3;
 
+// Rough estimate of how many wrapped lines a cell text needs at a given column width. Used both to
+// size row heights and to decide vertical alignment (single line vs multi line).
+function estimateLineCount(text: string, width: number): number {
+  const charsPerLine = Math.max(1, Math.floor(width > 0 ? width : 10));
+  return (text || '')
+    .split(/\r?\n/)
+    .reduce((acc, segment) => acc + Math.max(1, Math.ceil(segment.length / charsPerLine)), 0);
+}
+
 export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelExportOptions) {
   if (!worksheet.columns) {
     return;
@@ -1758,6 +1768,9 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       maxHeight: typeof style.maxHeight === 'number' && style.maxHeight > 0 ? style.maxHeight : undefined,
       horizontalAlignment: ['left', 'center', 'right'].includes(style.horizontalAlignment as string)
         ? style.horizontalAlignment
+        : undefined,
+      verticalAlignment: ['top', 'middle', 'bottom'].includes(style.verticalAlignment as string)
+        ? style.verticalAlignment
         : undefined,
     };
 
@@ -1865,6 +1878,19 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       });
     }
 
+    if (stylePreferences?.verticalAlignment) {
+      const configured = stylePreferences.verticalAlignment;
+      const columnWidth = typeof column.width === 'number' && column.width > 0 ? column.width : 10;
+      column.alignment = { ...(column.alignment || {}), vertical: configured };
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        // Single-line cells look better vertically centered; multi-line cells keep the configured
+        // alignment (e.g. "top") so the first line stays visible when the content is truncated.
+        const text = (cell.text ?? cell.value ?? '').toString();
+        const vertical = estimateLineCount(text, columnWidth) > 1 ? configured : 'middle';
+        cell.alignment = { ...(cell.alignment || {}), vertical };
+      });
+    }
+
     if (stylePreferences?.hyperlinkFromValue) {
       column.eachCell?.({ includeEmpty: true }, (cell) => {
         const hyperlinkTarget = extractHyperlinkTarget(cell);
@@ -1904,10 +1930,7 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
         }
         const column = worksheet.getColumn(columnNumber);
         const width = typeof column?.width === 'number' && column.width > 0 ? column.width : 10;
-        const charsPerLine = Math.max(1, Math.floor(width));
-        const lines = text
-          .split(/\r?\n/)
-          .reduce((acc, segment) => acc + Math.max(1, Math.ceil(segment.length / charsPerLine)), 0);
+        const lines = estimateLineCount(text, width);
         const neededHeight = Math.min(maxHeight, lines * DEFAULT_ROW_HEIGHT);
         estimatedHeight = typeof estimatedHeight === 'number' ? Math.max(estimatedHeight, neededHeight) : neededHeight;
       });

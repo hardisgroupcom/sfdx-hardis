@@ -459,12 +459,14 @@ export async function writeDataDictionaryReports(
 
   const consolidatedBase =
     outputFile || (await generateReportPath('data-dictionary', '', { withDate: true }));
+  // Wrapped columns are capped in height, so top-align them: when the content is taller than the cap
+  // and gets truncated, the first line stays visible instead of the middle/bottom.
   const columnsCustomStyles: Record<string, ExcelColumnStyle> = {
-    'picklist values': { wrap: true, width: 45, maxHeight: 150 },
-    'formula': { wrap: true, width: 45, maxHeight: 150 },
-    'description': { wrap: true, width: 45, maxHeight: 150 },
-    'help text': { wrap: true, width: 35, maxHeight: 120 },
-    'error message': { wrap: true, width: 45, maxHeight: 120 },
+    'picklist values': { wrap: true, width: 45, maxHeight: 150, verticalAlignment: 'top' },
+    'formula': { wrap: true, width: 45, maxHeight: 150, verticalAlignment: 'top' },
+    'description': { wrap: true, width: 45, maxHeight: 150, verticalAlignment: 'top' },
+    'help text': { wrap: true, width: 35, maxHeight: 120, verticalAlignment: 'top' },
+    'error message': { wrap: true, width: 45, maxHeight: 120, verticalAlignment: 'top' },
     'reference to': { wrap: true, width: 25 },
     // Length/Precision holds composite values like "18,2" (precision,scale); keep it text so Excel
     // does not read it as a number, but right-align it so it still reads like numeric data.
