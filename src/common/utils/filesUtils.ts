@@ -1733,6 +1733,10 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
   await workbook.xlsx.writeFile(xslxFile);
 }
 
+// Extra width (in characters) reserved on auto-fit columns so the filter dropdown button does not
+// clip the header text.
+const AUTOFILTER_BUTTON_PADDING = 3;
+
 export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelExportOptions) {
   if (!worksheet.columns) {
     return;
@@ -1836,7 +1840,9 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       const lengths = (column.values || []).map((value) => (value ?? '').toString().length);
       const filteredLengths = lengths.filter((len) => Number.isFinite(len));
       const maxLength = filteredLengths.length > 0 ? Math.max(...filteredLengths) : 10;
-      column.width = maxLength;
+      // The filter dropdown button overlaps the right side of the header cell, so a width equal to
+      // the longest value (often the header itself) clips the header text. Add room for the button.
+      column.width = maxLength + AUTOFILTER_BUTTON_PADDING;
     }
 
     if (stylePreferences?.wrap) {

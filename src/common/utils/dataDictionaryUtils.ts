@@ -328,6 +328,14 @@ function addDataDictionaryNavigation(
     cell.font = { ...(cell.font || {}), ...HYPERLINK_FONT };
   };
 
+  // The count columns hold numbers; keep them right-aligned even after a count cell is turned into a
+  // hyperlink (which stores it as text and would otherwise left-align it).
+  const rightAlign = (cell: any) => {
+    if (cell) {
+      cell.alignment = { ...(cell.alignment || {}), horizontal: 'right' };
+    }
+  };
+
   if (indexWs) {
     const headerRow = indexWs.getRow(1);
     const columnByHeader: Record<string, number> = {};
@@ -335,6 +343,7 @@ function addDataDictionaryNavigation(
       columnByHeader[(cell.text ?? cell.value ?? '').toString().trim()] = colNumber;
     });
     const apiNameCol = columnByHeader['API Name'];
+    const fieldsCol = columnByHeader['Fields'];
     const vrCol = columnByHeader['Validation Rules'];
     const rtCol = columnByHeader['Record Types'];
     const vrName = nav.vrPath ? worksheetNameByCsvFile[nav.vrPath] : null;
@@ -351,11 +360,20 @@ function addDataDictionaryNavigation(
           linkCell(cell, targetName);
         }
       }
-      if (vrCol && vrName) {
-        linkCell(row.getCell(vrCol), vrName);
+      if (fieldsCol) {
+        rightAlign(row.getCell(fieldsCol));
       }
-      if (rtCol && rtName) {
-        linkCell(row.getCell(rtCol), rtName);
+      if (vrCol) {
+        if (vrName) {
+          linkCell(row.getCell(vrCol), vrName);
+        }
+        rightAlign(row.getCell(vrCol));
+      }
+      if (rtCol) {
+        if (rtName) {
+          linkCell(row.getCell(rtCol), rtName);
+        }
+        rightAlign(row.getCell(rtCol));
       }
     }
   }
