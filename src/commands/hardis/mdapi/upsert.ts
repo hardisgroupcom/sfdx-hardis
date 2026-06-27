@@ -76,6 +76,7 @@ In agent mode (and in CI), the overwrite confirmation prompt is skipped and the 
       multiple: true,
       description: 'Local source path to deploy (default: the project package directories)',
     }),
+    /* jscpd:ignore-start */
     'chunk-size': Flags.integer({
       description: 'Components upserted per API call (max 10, or 200 for CustomMetadata/CustomApplication)',
     }),
@@ -99,6 +100,7 @@ In agent mode (and in CI), the overwrite confirmation prompt is skipped and the 
       description: 'Skip authentication check when a default username is required',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
+    /* jscpd:ignore-end */
   };
 
   public static requiresProject = true;

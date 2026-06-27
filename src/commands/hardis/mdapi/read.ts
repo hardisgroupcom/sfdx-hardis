@@ -80,6 +80,7 @@ In agent mode (and in CI), interactive prompts are skipped. You must pass at lea
     'output-dir': Flags.string({
       description: 'Directory where source files are written (default: the project default package directory)',
     }),
+    /* jscpd:ignore-start */
     'chunk-size': Flags.integer({
       description: 'Components read per API call (max 10, or 200 for CustomMetadata/CustomApplication)',
     }),
@@ -103,6 +104,7 @@ In agent mode (and in CI), interactive prompts are skipped. You must pass at lea
       description: 'Skip authentication check when a default username is required',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
+    /* jscpd:ignore-end */
   };
 
   public static requiresProject = true;

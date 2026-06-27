@@ -141,6 +141,26 @@ export function partitionCrudCompatibility<T extends { type: { name: string }; f
   return { supported, skipped };
 }
 
+// Partition the component set and turn the incompatible components into `skipped` outcome results,
+// while initializing the empty `successes`/`failures` accumulators shared by read and upsert.
+function initCrudOutcome(
+  componentSet: ComponentSet,
+  registry: RegistryAccess
+): {
+  supported: ReturnType<ComponentSet['toArray']>;
+  successes: CrudComponentResult[];
+  failures: CrudComponentResult[];
+  skippedResults: CrudComponentResult[];
+} {
+  const { supported, skipped } = partitionCrudCompatibility(componentSet.toArray(), registry);
+  const skippedResults: CrudComponentResult[] = skipped.map((cmp) => ({
+    type: cmp.type.name,
+    fullName: cmp.fullName,
+    status: 'skipped',
+  }));
+  return { supported, successes: [], failures: [], skippedResults };
+}
+
 // Build a metadata-format XML document string from a read() result object.
 // `rootElementName` is the metadata type name (e.g. "Profile", "CustomObject").
 export function buildMetadataXml(rootElementName: string, data: Record<string, any>): string {
@@ -237,16 +257,9 @@ interface MetadataFileSpec {
 export async function crudReadMetadatas(options: CrudReadOptions): Promise<CrudMetadataOutcome> {
   const { conn, componentSet, outputDir, chunkSizeOverride, commandThis, debug } = options;
   const registry = new RegistryAccess();
-  const successes: CrudComponentResult[] = [];
-  const failures: CrudComponentResult[] = [];
 
   // Set aside types the CRUD Metadata API cannot read (Apex, LWC, StaticResource, ...).
-  const { supported, skipped } = partitionCrudCompatibility(componentSet.toArray(), registry);
-  const skippedResults: CrudComponentResult[] = skipped.map((cmp) => ({
-    type: cmp.type.name,
-    fullName: cmp.fullName,
-    status: 'skipped',
-  }));
+  const { supported, successes, failures, skippedResults } = initCrudOutcome(componentSet, registry);
   const byType = groupByType(supported, (cmp) => cmp.type.name);
 
   // Accumulate metadata-format files (top-level types and parent-wrapped child types).
@@ -383,16 +396,9 @@ export interface CrudUpsertOptions {
 export async function crudUpsertMetadatas(options: CrudUpsertOptions): Promise<CrudMetadataOutcome> {
   const { conn, componentSet, chunkSizeOverride, commandThis, debug } = options;
   const registry = new RegistryAccess();
-  const successes: CrudComponentResult[] = [];
-  const failures: CrudComponentResult[] = [];
 
   // Set aside types the CRUD Metadata API cannot deploy (Apex, LWC, StaticResource, ...).
-  const { supported, skipped } = partitionCrudCompatibility(componentSet.toArray(), registry);
-  const skippedResults: CrudComponentResult[] = skipped.map((cmp) => ({
-    type: cmp.type.name,
-    fullName: cmp.fullName,
-    status: 'skipped',
-  }));
+  const { supported, successes, failures, skippedResults } = initCrudOutcome(componentSet, registry);
   if (supported.length === 0) {
     return { successes, failures, skipped: skippedResults };
   }
