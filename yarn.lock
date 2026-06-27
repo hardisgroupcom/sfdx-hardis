@@ -5218,10 +5218,10 @@ cosmiconfig-typescript-loader@^5.0.0:
   dependencies:
     jiti "^1.21.6"
 
-cosmiconfig@*, cosmiconfig@9.0.1, cosmiconfig@^9.0.0:
-  version "9.0.1"
-  resolved "https://registry.yarnpkg.com/cosmiconfig/-/cosmiconfig-9.0.1.tgz#df110631a8547b5d1a98915271986f06e3011379"
-  integrity sha512-hr4ihw+DBqcvrsEDioRO31Z17x71pUYoNe/4h6Z0wB72p7MU7/9gH8Q3s12NFhHPfYBBOV3qyfUxmr/Yn3shnQ==
+cosmiconfig@*, cosmiconfig@9.0.2, cosmiconfig@^9.0.0:
+  version "9.0.2"
+  resolved "https://registry.yarnpkg.com/cosmiconfig/-/cosmiconfig-9.0.2.tgz#9e5615163becf6a82211fb33d2f68947c25d0c5e"
+  integrity sha512-gtTZxTDau1wL7Y7zifc2dd8jHSK/k6BTx/2Xp/BpdlAdnlYWFVt7qhJqgwi7637yRwRQ3qL4ZidbB4I8tA5VOg==
   dependencies:
     env-paths "^2.2.1"
     import-fresh "^3.3.0"
