@@ -311,7 +311,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 |skipauth|boolean|Skip authentication check when a default username is required||||
 |source-branch|option|Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)||||
 |target-branch|option|Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername)||||
-|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.integci|||
+|target-org<br/>-o|option|undefined||||
 |testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg|
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 

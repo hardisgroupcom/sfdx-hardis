@@ -20,9 +20,11 @@ Key functionalities:
 - **Unsecured App Detection:** Identifies apps that allow users to authorize themselves without admin approval, which can pose security risks.
 - **Phantom App Cleanup (Optional):** Detects unsecured apps not present in the installed Connected Apps or External Client Apps list and offers an interactive option to revoke their OAuth tokens (forces re-authentication if still needed).
 - **Stale Token Cleanup (Optional):** Detects secured apps that still have old unsecured OAuth tokens (authorized before proper hardening) and offers an interactive option to delete them.
-- **Detailed Reporting:** Generates two comprehensive CSV reports:
+- **Detailed Reporting:** Generates several CSV reports:
   - **OAuth Tokens Report:** Lists all OAuth tokens with security status, app type, user information, and usage data
-  - **Connected Apps Summary:** Aggregates unsecured apps with counts of associated OAuth tokens and app type
+  - **Unsecured Connected Apps Summary:** Aggregates unsecured apps with counts of associated OAuth tokens and app type
+  - **OAuth Tokens by User:** Lists each user with the apps they hold a token for and the last usage date
+  - **Connected Apps Usage:** Lists every Connected App and External Client App that has OAuth tokens (secured or not), with its last usage date and the usernames who use it
 - **Visual Indicators:** Uses status icons (❌ for unsecured, ✅ for secured, ⚪ for ignored) to provide immediate visual feedback on security status.
 - **Security Recommendations:** Provides actionable guidance on how to secure Connected Apps and External Client Apps through proper configuration.
 - **Notifications:** Sends alerts to configured channels (Grafana, Slack, MS Teams) with security findings and attached reports.
@@ -66,16 +68,16 @@ In agent mode:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                       |                Default                | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------|:-------------------------------------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation             |                                       |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |                                       |          |         |
-| flags-dir         | option  | undefined                                                         |                                       |          |         |
-| json              | boolean | Format output as json.                                            |                                       |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |                                       |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required     |                                       |          |         |
-| target-org<br/>-o | option  | undefined                                                         | nicolas.vuillamy@cloudity.com.integci |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |                                       |          |         |
+| Name              |  Type   | Description                                                       | Default | Required | Options |
+|:------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |         |          |         |
+| flags-dir         | option  | undefined                                                         |         |          |         |
+| json              | boolean | Format output as json.                                            |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required     |         |          |         |
+| target-org<br/>-o | option  | undefined                                                         |         |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
 
 ## Examples
 

@@ -75,6 +75,7 @@ The default list of commands is the following:
 |            [APEX_FLEX_QUEUE](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/flex-queue)            | Detect **Apex flex queue backlog**                                                  | [sf hardis:org:diagnose:flex-queue](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/flex-queue)                                                           |   daily   |
 |              [APEX_FLOW_ERRORS](https://sfdx-hardis.cloudity.com/hardis/org/monitor/errors)              | Detect **Apex and Flow errors**                                                     | [sf hardis:org:monitor:errors](https://sfdx-hardis.cloudity.com/hardis/org/monitor/errors)                                                                     |   daily   |
 | [UNSECURED_CONNECTED_APPS](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps) | Detect **unsecured Connected Apps** in an org                                       | [sf hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps)                                 |   daily   |
+|                  [MFA_CONFIG](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa)                  | Detect **MFA configuration gaps** in the org                                        | [sf hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa)                                                                         |  weekly   |
 |             [DEPLOYMENTS](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/deployments)              | Analyze **metadata deployments and validations**                                    | [sf hardis:org:diagnose:deployments --period weekly](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/deployments)                                         |   daily   |
 |                [LICENSES](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/licenses)                 | Extract **licenses** information                                                    | [sf hardis:org:diagnose:licenses](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/licenses)                                                               |  weekly   |
 |                    [LINT_ACCESS](https://sfdx-hardis.cloudity.com/hardis/lint/access)                    | Detect **custom elements with no access rights** defined in permission sets         | [sf hardis:lint:access](https://sfdx-hardis.cloudity.com/hardis/lint/access)                                                                                   |  weekly   |
@@ -100,16 +101,16 @@ The default list of commands is the following:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                    |                Default                | Required | Options |
-|:------------------|:-------:|:-------------------------------------------------------------------------------|:-------------------------------------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                          |                                       |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                |                                       |          |         |
-| flags-dir         | option  | undefined                                                                      |                                       |          |         |
-| force-all         | boolean | Force all monitoring commands to run, regardless of their configured frequency |                                       |          |         |
-| json              | boolean | Format output as json.                                                         |                                       |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                  |                                       |          |         |
-| target-org<br/>-o | option  | undefined                                                                      | nicolas.vuillamy@cloudity.com.integci |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                      |                                       |          |         |
+| Name              |  Type   | Description                                                                    | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                          |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                |         |          |         |
+| flags-dir         | option  | undefined                                                                      |         |          |         |
+| force-all         | boolean | Force all monitoring commands to run, regardless of their configured frequency |         |          |         |
+| json              | boolean | Format output as json.                                                         |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                  |         |          |         |
+| target-org<br/>-o | option  | undefined                                                                      |         |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                      |         |          |         |
 
 ## Examples
 

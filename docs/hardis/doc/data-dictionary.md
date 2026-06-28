@@ -10,6 +10,14 @@
 
 This command describes the selected objects and exports their definitions into a single multi-sheet workbook, useful for documentation, audits, and onboarding.
 
+The `Index` sheet lists every documented object with its field, validation rule and record type counts, and links to each object sheet.
+
+![Data dictionary index sheet](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-data-dictionary-index.png)
+
+Each object sheet details its fields (type, required, unique, reference target, picklist values, and more).
+
+![Data dictionary object fields sheet](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-data-dictionary-fields.png)
+
 - **Target Org:** Use `--target-org` to pick the org connection context.
 - **Object selection:** Provide one or more API names via `--objects` (comma-separated, e.g. `Account,Contact,MyObject__c`). If omitted in interactive mode, a prompt lists available objects.
 - **Customized objects only:** Use `--customizedonly` to exclude objects that have no local customizations. This drops standard objects without custom fields and managed package objects without local custom fields, while keeping local custom objects and any object that has at least one local custom field. In interactive mode, a prompt offers the same filter.
@@ -44,17 +52,17 @@ In agent mode:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                                                                                                                                                         |                 Default                 | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                               |                                         |          |         |
-| customizedonly    | boolean | Exclude objects that have no local customizations (standard objects without custom fields and managed package objects without local custom fields). Local custom objects and objects with at least one local custom field are kept. |                                         |          |         |
-| flags-dir         | option  | undefined                                                                                                                                                                                                                           |                                         |          |         |
-| json              | boolean | Format output as json.                                                                                                                                                                                                              |                                         |          |         |
-| objects<br/>-o    | option  | Comma-separated API names of the objects to document (e.g. Account,Contact,CustomObject__c). If omitted, an interactive prompt lists available objects.                                                                             |                                         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of the consolidated output report file (the XLSX is generated alongside)                                                                                                                                    |                                         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                                                                                                                                                       |                                         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                                                                                                                                                           | quentin.tiercelin.ext@vusion.com.devcbi |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                           |                                         |          |         |
+| Name              |  Type   | Description                                                                                                                                                                                                                         | Default | Required | Options |
+|:------------------|:-------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                               |         |          |         |
+| customizedonly    | boolean | Exclude objects that have no local customizations (standard objects without custom fields and managed package objects without local custom fields). Local custom objects and objects with at least one local custom field are kept. |         |          |         |
+| flags-dir         | option  | undefined                                                                                                                                                                                                                           |         |          |         |
+| json              | boolean | Format output as json.                                                                                                                                                                                                              |         |          |         |
+| objects<br/>-o    | option  | Comma-separated API names of the objects to document (e.g. Account,Contact,CustomObject__c). If omitted, an interactive prompt lists available objects.                                                                             |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of the consolidated output report file (the XLSX is generated alongside)                                                                                                                                    |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                                                                                                                                       |         |          |         |
+| target-org<br/>-o | option  | undefined                                                                                                                                                                                                                           |         |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                           |         |          |         |
 
 ## Examples
 
@@ -71,7 +79,11 @@ $ sf hardis:doc:data-dictionary --target-org myOrgAlias --objects CustomObject__
 ```
 
 ```shell
-$ sf hardis:doc:data-dictionary --agent --objects Account,Contact
+$ sf hardis:doc:data-dictionary --customizedonly
+```
+
+```shell
+$ sf hardis:doc:data-dictionary --agent --objects Account,Contact --customizedonly
 ```
 
 
