@@ -78,7 +78,8 @@ In agent mode (and in CI), interactive prompts are skipped. You must pass at lea
       description: 'Local source path whose components should be re-read from the org',
     }),
     'output-dir': Flags.string({
-      description: 'Directory where source files are written (default: the project default package directory)',
+      description:
+        'Directory where source files are written. When set, all files are written here instead of being refreshed in place in the project package directories (default: the project default package directory)',
     }),
     /* jscpd:ignore-start */
     'chunk-size': Flags.integer({
@@ -149,7 +150,8 @@ In agent mode (and in CI), interactive prompts are skipped. You must pass at lea
       (this.project?.getPackageDirectories() || []).find((dir: any) => dir.default)?.fullPath ||
       packageDirs[0] ||
       process.cwd();
-    const outputDir = flags['output-dir'] ? path.resolve(flags['output-dir']) : defaultPackageDir;
+    const outputDirExplicit = Boolean(flags['output-dir']);
+    const outputDir = outputDirExplicit ? path.resolve(flags['output-dir']) : defaultPackageDir;
 
     const conn = flags['target-org'].getConnection();
 
@@ -172,7 +174,10 @@ In agent mode (and in CI), interactive prompts are skipped. You must pass at lea
       conn,
       componentSet,
       outputDir,
-      packageDirs,
+      // packageDirs is used only to merge (overwrite in place) with existing source. When the user
+      // explicitly sets --output-dir, merge within that directory so every file lands there instead
+      // of being written back to wherever it already lives in the project package directories.
+      packageDirs: outputDirExplicit ? [outputDir] : packageDirs,
       chunkSizeOverride: flags['chunk-size'],
       commandThis: this,
       debug: debugMode,

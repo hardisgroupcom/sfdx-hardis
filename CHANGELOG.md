@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - New [hardis:doc:data-dictionary](https://sfdx-hardis.cloudity.com/hardis/doc/data-dictionary/): Export an Excel data dictionary of one or more Salesforce objects, with their fields, validation rules and record types read live from the org.
+- New [hardis:mdapi:read](https://sfdx-hardis.cloudity.com/hardis/mdapi/read/) and [hardis:mdapi:upsert](https://sfdx-hardis.cloudity.com/hardis/mdapi/upsert/): Read and deploy whole metadata components (such as Profiles and Permission Sets) via the CRUD-based Metadata API, so types that file-based retrieve returns incomplete are captured in full.
 
 ## [7.18.0] 2026-06-25
 
