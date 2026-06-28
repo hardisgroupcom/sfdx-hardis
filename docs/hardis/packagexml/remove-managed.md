@@ -47,17 +47,17 @@ The command is fully non-interactive regardless of this flag.
 
 ## Parameters
 
-| Name                |  Type   | Description                                                                                                                                                                                                                        |   Default   | Required |             Options             |
-|:--------------------|:-------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------:|:--------:|:-------------------------------:|
-| agent               | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                              |             |          |                                 |
-| debug<br/>-d        | boolean | debug                                                                                                                                                                                                                              |             |          |                                 |
-| flags-dir           | option  | undefined                                                                                                                                                                                                                          |             |          |                                 |
-| json                | boolean | Format output as json.                                                                                                                                                                                                             |             |          |                                 |
-| namespace-detection | option  | Auto-detection strategy used when --namespaces is not provided. "api-name" (default) infers namespaces from member API name patterns (NS__Name__suffix). "installed-packages" reads InstalledPackage entries from the package.xml. |  api-name   |          | api-name<br/>installed-packages |
-| namespaces<br/>-n   | option  | Comma-separated list of namespace prefixes to remove (e.g. SBQQ,cpq). When provided, --namespace-detection is ignored.                                                                                                             |             |          |                                 |
-| outputfile<br/>-o   | option  | Output package.xml file path. Defaults to <input>-without-managed.xml (e.g. package-without-managed.xml).                                                                                                                          |             |          |                                 |
-| packagexml<br/>-p   | option  | Path to the package.xml file to filter                                                                                                                                                                                             | package.xml |          |                                 |
-| websocket           | option  | websocket                                                                                                                                                                                                                          |             |          |                                 |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|debug||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|namespace-detection|option|Auto-detection strategy used when --namespaces is not provided. "api-name" (default) infers namespaces from member API name patterns (NS__Name__suffix). "installed-packages" reads InstalledPackage entries from the package.xml.|api-name||api-name<br/>installed-packages|
+|namespaces<br/>-n|option|Comma-separated list of namespace prefixes to remove (e.g. SBQQ,cpq). When provided, --namespace-detection is ignored.||||
+|outputfile<br/>-o|option|Output package.xml file path. Defaults to <input>-without-managed.xml (e.g. package-without-managed.xml).||||
+|packagexml<br/>-p|option|Path to the package.xml file to filter|package.xml|||
+|websocket|option|websocket||||
 
 ## Examples
 

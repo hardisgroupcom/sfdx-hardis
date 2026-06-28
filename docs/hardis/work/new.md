@@ -14,7 +14,7 @@ This command guides you through the process of preparing your local environment 
 
 Key features include:
 
-- **Git Branch Management:** Ensures your local Git repository is up-to-date with the target branch and creates a new Git branch with a formatted name based on your User Story details. Branch naming conventions can be customized via the `branchPrefixChoices` property in `.sfdx-hardis.yml`.
+- **Git Branch Management:** Creates a new Git branch with a formatted name based on your User Story details, based on the latest version of the target branch. The new branch is created from `origin/<target>` instead of checking out the target branch locally, so it works even when the target branch is already checked out in another git worktree. Branch naming conventions can be customized via the `branchPrefixChoices` property in `.sfdx-hardis.yml`.
 
 - **Org Provisioning & Initialization:** Facilitates the creation and initialization of either a scratch org or a source-tracked sandbox. The configuration for org initialization (e.g., package installation, source push, permission set assignments, Apex script execution, data loading) can be defined in `config/.sfdx-hardis.yml
 - **Project-Specific Configuration:** Supports defining multiple target branches (`availableTargetBranches`) and projects (`availableProjects`) in `.sfdx-hardis.yml`, allowing for tailored User Stories workflows.
@@ -64,7 +64,7 @@ Advanced instructions are available in the [Create New User Story documentation]
 
 The command's logic orchestrates various underlying processes:
 
-- **Git Operations:** Utilizes `checkGitClean`, `ensureGitBranch`, `gitCheckOutRemote`, and `git().pull()` to manage Git repository state and branches.
+- **Git Operations:** Utilizes `checkGitClean` and `createWorkBranchFromTarget` to manage Git repository state and branches. `createWorkBranchFromTarget` fetches `origin/<target>` and creates the new branch from it (falling back to the local target ref), checks out the branch if it already exists, and fails with a clear message if it is checked out in another git worktree.
 - **Interactive Prompts:** Leverages the `prompts` library to gather user input for User Story type, source types, and User Story names.
 - **Configuration Management:** Reads and applies project-specific configurations from `.sfdx-hardis.yml` using `getConfig` and `setConfig- **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including `initApexScripts`, `initOrgData`, `initOrgMetadatas`, `initPermissionSetAssignments`, `installPackages`, and `makeSureOrgIsConnected- **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., `sf config set target-org`, `sf org open`, `sf project delete tracking`) via `execCommand` and `execSfdxJson- **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling `ScratchCreate.run` or `SandboxCreate.run` as needed.
 - **WebSocket Communication:** Sends refresh status messages via `WebSocketClient.sendRefreshStatusMessage()` to update connected VS Code clients.
@@ -73,20 +73,20 @@ The command's logic orchestrates various underlying processes:
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                                                   |                Default                | Required | Options |
-|:----------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------------------------------------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation                                         |                                       |          |         |
-| branch-prefix         | option  | Branch prefix to use (must be in configured branchPrefixChoices, e.g. feature, fix, retrofit) |                                       |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                               |                                       |          |         |
-| flags-dir             | option  | undefined                                                                                     |                                       |          |         |
-| json                  | boolean | Format output as json.                                                                        |                                       |          |         |
-| open-org              | boolean | Open the selected org in browser                                                              |                                       |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required                                 |                                       |          |         |
-| target-branch         | option  | Target branch to branch from                                                                  |                                       |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                                                     |                                       |          |         |
-| target-org<br/>-o     | option  | undefined                                                                                     | nicolas.vuillamy@cloudity.com.integci |          |         |
-| task-name             | option  | Task name used in created branch name                                                         |                                       |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |                                       |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|branch-prefix|option|Branch prefix to use (must be in configured branchPrefixChoices, e.g. feature, fix, retrofit)||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|open-org|boolean|Open the selected org in browser||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-branch|option|Target branch to branch from||||
+|target-dev-hub<br/>-v|option|undefined||||
+|target-org<br/>-o|option|undefined||||
+|task-name|option|Task name used in created branch name||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

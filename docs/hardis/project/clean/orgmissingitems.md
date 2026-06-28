@@ -50,13 +50,13 @@ In agent mode:
 
 ## Parameters
 
-| Name          |  Type   | Description                                           |  Default  | Required | Options |
-|:--------------|:-------:|:------------------------------------------------------|:---------:|:--------:|:-------:|
-| agent         | boolean | Run in non-interactive mode for agents and automation |           |          |         |
-| debug<br/>-d  | boolean | Activate debug mode (more logs)                       |           |          |         |
-| flags-dir     | option  | undefined                                             |           |          |         |
-| folder<br/>-f | option  | Root folder                                           | force-app |          |         |
-| json          | boolean | Format output as json.                                |           |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|Format output as json.||||
 |packagexmlfull<br/>-p|option|Path to packagexml used for cleaning.
 Must contain also standard CustomObject and CustomField elements.
 If not provided, it will be generated from a remote org||||

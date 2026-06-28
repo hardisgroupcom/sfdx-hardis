@@ -44,17 +44,17 @@ In agent mode:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                                                                                                                                                         |                 Default                 | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                               |                                         |          |         |
-| customizedonly    | boolean | Exclude objects that have no local customizations (standard objects without custom fields and managed package objects without local custom fields). Local custom objects and objects with at least one local custom field are kept. |                                         |          |         |
-| flags-dir         | option  | undefined                                                                                                                                                                                                                           |                                         |          |         |
-| json              | boolean | Format output as json.                                                                                                                                                                                                              |                                         |          |         |
-| objects<br/>-o    | option  | Comma-separated API names of the objects to document (e.g. Account,Contact,CustomObject__c). If omitted, an interactive prompt lists available objects.                                                                             |                                         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of the consolidated output report file (the XLSX is generated alongside)                                                                                                                                    |                                         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                                                                                                                                                       |                                         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                                                                                                                                                           | quentin.tiercelin.ext@vusion.com.devcbi |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                           |                                         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|customizedonly|boolean|Exclude objects that have no local customizations (standard objects without custom fields and managed package objects without local custom fields). Local custom objects and objects with at least one local custom field are kept.||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|objects<br/>-o|option|Comma-separated API names of the objects to document (e.g. Account,Contact,CustomObject__c). If omitted, an interactive prompt lists available objects.||||
+|outputfile<br/>-f|option|Force the path and name of the consolidated output report file (the XLSX is generated alongside)||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
@@ -71,7 +71,11 @@ $ sf hardis:doc:data-dictionary --target-org myOrgAlias --objects CustomObject__
 ```
 
 ```shell
-$ sf hardis:doc:data-dictionary --agent --objects Account,Contact
+$ sf hardis:doc:data-dictionary --customizedonly
+```
+
+```shell
+$ sf hardis:doc:data-dictionary --agent --objects Account,Contact --customizedonly
 ```
 
 

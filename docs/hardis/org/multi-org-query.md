@@ -45,18 +45,18 @@ In agent mode, both `--query` (or `--query-template`) and `--target-orgs` flags 
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                       | Default | Required |          Options           |
-|:----------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:--------------------------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation             |         |          |                            |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                   |         |          |                            |
-| flags-dir             | option  | undefined                                                         |         |          |                            |
-| json                  | boolean | Format output as json.                                            |         |          |                            |
-| outputfile<br/>-f     | option  | Force the path and name of output report file. Must end with .csv |         |          |                            |
-| query<br/>-q          | option  | SOQL Query to run on multiple orgs                                |         |          |                            |
-| query-template<br/>-t | option  | Use one of predefined SOQL Query templates                        |         |          | active-users<br/>all-users |
-| skipauth              | boolean | Skip authentication check when a default username is required     |         |          |                            |
-| target-orgs<br/>-x    | option  | List of org usernames or aliases.                                 |         |          |                            |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |                            |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|query<br/>-q|option|SOQL Query to run on multiple orgs||||
+|query-template<br/>-t|option|Use one of predefined SOQL Query templates|||active-users<br/>all-users|
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-orgs<br/>-x|option|List of org usernames or aliases.||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
