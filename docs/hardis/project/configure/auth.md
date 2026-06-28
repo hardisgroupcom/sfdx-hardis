@@ -51,22 +51,22 @@ prompts
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|app-description|option|Description of the External Client App (only used when --usage other)||||
-|app-name|option|Name of the External Client App to create||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|devhub<br/>-b|boolean|Configure project DevHub||||
-|external-storage|boolean|Do not store the encrypted certificate in a file in the repository. Instead, the user is asked to keep it in a password manager and provide it at authentication time. The other secrets (client id, decryption key) are still stored as CI/CD variables.||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|name|option|Name of the org-based auth config to create in config/branches (skips Git branch selection and merge targets). Auto-derived from the org domain when --name-type=org-domain.||||
-|name-type|option|How to name the auth config: git-branch (select an existing Git branch) or org-domain (derive the name from the org domain)|git-branch||git-branch<br/>org-domain|
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-dev-hub<br/>-v|option|undefined||||
-|target-org<br/>-o|option|undefined||||
-|usage|option|Usage of the External Client App, used to set its description. With "other", the description is taken from --app-description or prompted|cicd||cicd<br/>monitoring<br/>other|
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                  |  Type   | Description                                                                                                                                                                                                                                               |  Default   | Required |            Options            |
+|:----------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------:|:--------:|:-----------------------------:|
+| app-description       | option  | Description of the External Client App (only used when --usage other)                                                                                                                                                                                     |            |          |                               |
+| app-name              | option  | Name of the External Client App to create                                                                                                                                                                                                                 |            |          |                               |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                                                                                                                                                           |            |          |                               |
+| devhub<br/>-b         | boolean | Configure project DevHub                                                                                                                                                                                                                                  |            |          |                               |
+| external-storage      | boolean | Do not store the encrypted certificate in a file in the repository. Instead, the user is asked to keep it in a password manager and provide it at authentication time. The other secrets (client id, decryption key) are still stored as CI/CD variables. |            |          |                               |
+| flags-dir             | option  | undefined                                                                                                                                                                                                                                                 |            |          |                               |
+| json                  | boolean | Format output as json.                                                                                                                                                                                                                                    |            |          |                               |
+| name                  | option  | Name of the org-based auth config to create in config/branches (skips Git branch selection and merge targets). Auto-derived from the org domain when --name-type=org-domain.                                                                              |            |          |                               |
+| name-type             | option  | How to name the auth config: git-branch (select an existing Git branch) or org-domain (derive the name from the org domain)                                                                                                                               | git-branch |          |   git-branch<br/>org-domain   |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                                                                                                                                                             |            |          |                               |
+| target-dev-hub<br/>-v | option  | undefined                                                                                                                                                                                                                                                 |            |          |                               |
+| target-org<br/>-o     | option  | undefined                                                                                                                                                                                                                                                 |            |          |                               |
+| usage                 | option  | Usage of the External Client App, used to set its description. With "other", the description is taken from --app-description or prompted                                                                                                                  |    cicd    |          | cicd<br/>monitoring<br/>other |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                                                 |            |          |                               |
 
 ## Examples
 

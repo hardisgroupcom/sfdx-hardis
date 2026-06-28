@@ -56,18 +56,18 @@ Use `--agent` to disable all prompts. Typical usage:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|no-prompt<br/>-r|boolean|Do not prompt for Org, use default org||||
-|path<br/>-p|option|Path to the sfdmu workspace folder||||
-|project-name<br/>-n|option|Name of the sfdmu project to use (if not defined, you will be prompted to select one)||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                |  Type   | Description                                                                           | Default | Required | Options |
+|:--------------------|:-------:|:--------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent               | boolean | Run in non-interactive mode for agents and automation                                 |         |          |         |
+| debug<br/>-d        | boolean | Activate debug mode (more logs)                                                       |         |          |         |
+| flags-dir           | option  | undefined                                                                             |         |          |         |
+| json                | boolean | Format output as json.                                                                |         |          |         |
+| no-prompt<br/>-r    | boolean | Do not prompt for Org, use default org                                                |         |          |         |
+| path<br/>-p         | option  | Path to the sfdmu workspace folder                                                    |         |          |         |
+| project-name<br/>-n | option  | Name of the sfdmu project to use (if not defined, you will be prompted to select one) |         |          |         |
+| skipauth            | boolean | Skip authentication check when a default username is required                         |         |          |         |
+| target-org<br/>-o   | option  | undefined                                                                             |         |          |         |
+| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                             |         |          |         |
 
 ## Examples
 

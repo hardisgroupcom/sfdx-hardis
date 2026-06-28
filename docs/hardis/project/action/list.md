@@ -32,17 +32,17 @@ Required in agent mode:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|branch|option|Target branch name (for branch scope, defaults to current branch)||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|pr-id|option|Pull request ID (for pr scope, defaults to draft)||||
-|scope|option|Configuration scope: project, branch, or pr|||project<br/>branch<br/>pr|
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
-|when|option|When to run the action: pre-deploy or post-deploy|||pre-deploy<br/>post-deploy|
+| Name         |  Type   | Description                                                       | Default | Required |          Options           |
+|:-------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:--------------------------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation             |         |          |                            |
+| branch       | option  | Target branch name (for branch scope, defaults to current branch) |         |          |                            |
+| debug<br/>-d | boolean | Activate debug mode (more logs)                                   |         |          |                            |
+| flags-dir    | option  | undefined                                                         |         |          |                            |
+| json         | boolean | Format output as json.                                            |         |          |                            |
+| pr-id        | option  | Pull request ID (for pr scope, defaults to draft)                 |         |          |                            |
+| scope        | option  | Configuration scope: project, branch, or pr                       |         |          | project<br/>branch<br/>pr  |
+| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |                            |
+| when         | option  | When to run the action: pre-deploy or post-deploy                 |         |          | pre-deploy<br/>post-deploy |
 
 ## Examples
 

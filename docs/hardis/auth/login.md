@@ -86,19 +86,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|devhub<br/>-h|boolean|Also connect associated DevHub||||
-|encrypted-cert-file|option|Path to a file containing the encrypted certificate. Useful when the certificate is kept out of the repository (e.g. in a password manager, via hardis:project:configure:auth --external-storage). The decryption key is still read from the SFDX_CLIENT_KEY variable.||||
-|flags-dir|option|undefined||||
-|instanceurl<br/>-r|option|URL of org instance||||
-|json|boolean|Format output as json.||||
-|name<br/>-n|option|Name of the auth config (config/branches/.sfdx-hardis.<name>.yml) created by hardis:project:configure:auth, used as org alias and config selector||||
-|scratchorg<br/>-s|boolean|Scratch org||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                |  Type   | Description                                                                                                                                                                                                                                                            | Default | Required | Options |
+|:--------------------|:-------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent               | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                                                                  |         |          |         |
+| debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                                                                                                                                                                                        |         |          |         |
+| devhub<br/>-h       | boolean | Also connect associated DevHub                                                                                                                                                                                                                                         |         |          |         |
+| encrypted-cert-file | option  | Path to a file containing the encrypted certificate. Useful when the certificate is kept out of the repository (e.g. in a password manager, via hardis:project:configure:auth --external-storage). The decryption key is still read from the SFDX_CLIENT_KEY variable. |         |          |         |
+| flags-dir           | option  | undefined                                                                                                                                                                                                                                                              |         |          |         |
+| instanceurl<br/>-r  | option  | URL of org instance                                                                                                                                                                                                                                                    |         |          |         |
+| json                | boolean | Format output as json.                                                                                                                                                                                                                                                 |         |          |         |
+| name<br/>-n         | option  | Name of the auth config (config/branches/.sfdx-hardis.<name>.yml) created by hardis:project:configure:auth, used as org alias and config selector                                                                                                                      |         |          |         |
+| scratchorg<br/>-s   | boolean | Scratch org                                                                                                                                                                                                                                                            |         |          |         |
+| skipauth            | boolean | Skip authentication check when a default username is required                                                                                                                                                                                                          |         |          |         |
+| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                                                              |         |          |         |
 
 ## Examples
 

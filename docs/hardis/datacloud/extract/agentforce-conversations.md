@@ -51,19 +51,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|date-from|option|Optional ISO-8601 timestamp (UTC) to include conversations starting from this date||||
-|date-to|option|Optional ISO-8601 timestamp (UTC) to include conversations up to this date||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|last-n-days|option|Optional rolling window (days) to include only the most recent conversations||||
-|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name              |  Type   | Description                                                                        | Default | Required | Options |
+|:------------------|:-------:|:-----------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                              |         |          |         |
+| date-from         | option  | Optional ISO-8601 timestamp (UTC) to include conversations starting from this date |         |          |         |
+| date-to           | option  | Optional ISO-8601 timestamp (UTC) to include conversations up to this date         |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                    |         |          |         |
+| flags-dir         | option  | undefined                                                                          |         |          |         |
+| json              | boolean | Format output as json.                                                             |         |          |         |
+| last-n-days       | option  | Optional rolling window (days) to include only the most recent conversations       |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                  |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                      |         |          |         |
+| target-org<br/>-o | option  | undefined                                                                          |         |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                          |         |          |         |
 
 ## Examples
 
