@@ -36,3 +36,24 @@ description = "CSV header fixture in filesUtils test"
 matchCondition = "AND"
 paths = ['''test/common/utils/filesUtils\.test\.ts''']
 regexes = ['''(API Name,)?Length/Precision''']
+
+# docs/salesforce-ci-cd-setup-auth.md (~line 90):
+# Documentation listing the supported PEM private-key HEADER formats
+# ("-----BEGIN PRIVATE KEY-----" / "-----BEGIN RSA PRIVATE KEY-----") so users
+# know which formats sfdx-hardis accepts. These are format labels with no key
+# body - no secret material. Flagged by the private-key rule.
+[[allowlists]]
+description = "PEM private-key format labels in CI/CD auth setup docs"
+matchCondition = "AND"
+paths = ['''docs/salesforce-ci-cd-setup-auth\.md''']
+regexes = ['''-----BEGIN (RSA )?PRIVATE KEY-----''']
+
+# docs/salesforce-ci-cd-setup-integration-api.md (~line 213):
+# Example value "NOTIF_API_METRICS_BASIC_AUTH_USERNAME=1596503" - a Grafana Cloud
+# numeric account username shown as a setup example (the doc explicitly says to
+# leave the password empty). Not a token. Flagged by the grafana-cloud-api-token rule.
+[[allowlists]]
+description = "Grafana username example in CI/CD integration API setup docs"
+matchCondition = "AND"
+paths = ['''docs/salesforce-ci-cd-setup-integration-api\.md''']
+regexes = ['''NOTIF_API_METRICS_BASIC_AUTH_USERNAME=\d+''']
