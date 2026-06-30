@@ -1,0 +1,38 @@
+# gitleaks configuration for sfdx-hardis
+#
+# Read by MegaLinter's REPOSITORY_BETTERLEAKS and REPOSITORY_GITLEAKS linters
+# (betterleaks uses gitleaks under the hood and shares this config format).
+#
+# We extend the gitleaks default ruleset and add tightly scoped allowlists for
+# known false positives. Each allowlist requires BOTH the file path AND the
+# secret pattern to match (matchCondition = "AND"), so the same words in any
+# other file, or a real secret in these files, are still reported.
+
+[extend]
+useDefault = true
+
+# test/common/utils/cryptoUtils.test.ts (~lines 6 and 15):
+# fake RSA PEM blocks used as fixtures in the encrypt/decrypt round-trip test.
+# Bodies are placeholders ("MIIEowIBAAKCAQEA...", "FAKEKEYCONTENT"), not real keys.
+[[allowlists]]
+description = "Fake RSA private key fixtures in cryptoUtils round-trip test"
+matchCondition = "AND"
+paths = ['''test/common/utils/cryptoUtils\.test\.ts''']
+regexes = ['''-----BEGIN RSA PRIVATE KEY-----\\n(MIIEowIBAAKCAQEA\.\.\.|FAKEKEYCONTENT)\\n-----END RSA PRIVATE KEY-----''']
+
+# src/common/utils/dataDictionaryUtils.ts (~line 481):
+# "Key Prefix" / "Length/Precision" are spreadsheet column-header literals,
+# flagged by the generic-api-key entropy heuristic. Not secrets.
+[[allowlists]]
+description = "Spreadsheet column-header literals in dataDictionaryUtils"
+matchCondition = "AND"
+paths = ['''src/common/utils/dataDictionaryUtils\.ts''']
+regexes = ['''(Key Prefix|Length/Precision)''']
+
+# test/common/utils/filesUtils.test.ts (~line 180):
+# CSV header fixture "API Name,Length/Precision", flagged by generic-api-key. Not a secret.
+[[allowlists]]
+description = "CSV header fixture in filesUtils test"
+matchCondition = "AND"
+paths = ['''test/common/utils/filesUtils\.test\.ts''']
+regexes = ['''(API Name,)?Length/Precision''']
