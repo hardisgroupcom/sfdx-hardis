@@ -2279,6 +2279,13 @@ export function listMetadataTypes() {
         xmlName: 'IdentityVerificationProcDef',
       },
       {
+        directoryName: 'idpConfigurations',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'idpConfiguration',
+        xmlName: 'IdpConfiguration',
+      },
+      {
         directoryName: 'iframeWhiteListUrlSettings',
         inFolder: false,
         metaFile: false,

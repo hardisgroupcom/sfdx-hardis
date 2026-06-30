@@ -225,9 +225,11 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
           ? options.Command.flags.instanceurl
           : (process.env.INSTANCE_URL || '').startsWith('https')
             ? process.env.INSTANCE_URL
-            : config.instanceUrl
-              ? config.instanceUrl
-              : 'https://login.salesforce.com';
+            : isDevHub && config.devHubInstanceUrl
+              ? config.devHubInstanceUrl
+              : config.instanceUrl
+                ? config.instanceUrl
+                : 'https://login.salesforce.com';
     // Get JWT items clientId and certificate key
     const sfdxClientId = await getSfdxClientId(orgAlias, config);
     const crtKeyfile = await getCertificateKeyFile(orgAlias, config, options);

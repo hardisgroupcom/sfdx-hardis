@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Fix JWT login to a DevHub defaulting to `https://login.salesforce.com`: read `devHubInstanceUrl` from config when authenticating to a DevHub, instead of always reading `instanceUrl` (closes #1979).
+
 ## [7.19.0] 2026-06-28
 
 - New [hardis:doc:data-dictionary](https://sfdx-hardis.cloudity.com/hardis/doc/data-dictionary/): Export an Excel data dictionary of one or more Salesforce objects, with their fields, validation rules and record types read live from the org.
