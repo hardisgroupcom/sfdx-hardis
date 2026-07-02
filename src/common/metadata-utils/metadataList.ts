@@ -3834,6 +3834,12 @@ export function listMetadataTypes() {
         xmlName: 'UiViewDefinition',
       },
       {
+        directoryName: 'uiWidgets',
+        inFolder: false,
+        metaFile: false,
+        xmlName: 'UiWidgetBundle',
+      },
+      {
         directoryName: 'useraccesspolicies',
         inFolder: false,
         metaFile: false,
