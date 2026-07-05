@@ -235,6 +235,7 @@
     "test": "wireit",
     "test:nuts": "c8 mocha \"**/*.nut.ts\" --slow 4500 --timeout 600000 --parallel",
     "test:only": "wireit",
+    "update:docker-pulls": "node scripts/update-docker-pulls.mjs",
     "version": "oclif readme"
   },
   "publishConfig": {
