@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - Fix JWT login to a DevHub defaulting to `https://login.salesforce.com`: read `devHubInstanceUrl` from config when authenticating to a DevHub, instead of always reading `instanceUrl` (closes #1979).
+- Fix broken MegaLinter badge on the README and documentation home page.
 
 ## [7.19.0] 2026-06-28
 
