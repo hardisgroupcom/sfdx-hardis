@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [7.19.1] 2026-07-05
+
 - Fix JWT login to a DevHub defaulting to `https://login.salesforce.com`: read `devHubInstanceUrl` from config when authenticating to a DevHub, instead of always reading `instanceUrl` (closes #1979).
 - Fix broken MegaLinter badge on the README and documentation home page.
 - Fix the Docker Pulls badge count by aggregating pull counts across all sfdx-hardis images on both Docker Hub and ghcr.io, refreshed weekly.
