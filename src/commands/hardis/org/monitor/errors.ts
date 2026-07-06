@@ -129,12 +129,16 @@ In agent mode:
     const orgMarkdown = await getOrgMarkdown(conn?.instanceUrl);
     const notifButtons = await getNotificationButtons();
 
-    await NotifProvider.postNotifications(
-      this.buildApexNotification(orgMarkdown, notifButtons)
-    );
-    await NotifProvider.postNotifications(
-      this.buildFlowNotification(orgMarkdown, notifButtons)
-    );
+    await NotifProvider.postNotifications(this.buildApexNotification(orgMarkdown, notifButtons));
+    await NotifProvider.postNotifications(this.buildFlowNotification(orgMarkdown, notifButtons));
+
+    for (const notif of this.buildFlowByFlowNotifications(orgMarkdown)) {
+      await NotifProvider.postNotifications(notif);
+    }
+
+    for (const notif of this.buildFlowByStepNotifications(orgMarkdown)) {
+      await NotifProvider.postNotifications(notif);
+    }
 
     uxLog('action', this, c.cyan(t('monitorErrorsSummaryTitle')));
     const totalErrors = this.apexErrorsTotalCount + this.flowErrorsTotalCount;
@@ -660,6 +664,78 @@ In agent mode:
         topFailingSteps,
       },
     };
+  }
+
+  protected buildFlowByFlowNotifications(orgMarkdown: string): NotifMessage[] {
+    const topFailingFlows = this.buildFlowCountsByOperation();
+
+    return topFailingFlows.map((entry, index): NotifMessage => {
+      return {
+        type: 'FLOW_ERROR_BY_FLOW',
+        text: `Flow errors by flow on ${orgMarkdown}: ${entry.flowName} (${entry.count})`,
+        buttons: [],
+        attachments: [],
+        severity: 'error',
+        attachedFiles: [],
+        logElements: [
+          {
+            flowName: entry.flowName,
+            count: entry.count,
+            rank: index + 1,
+          },
+        ],
+        metrics: {
+          FlowErrors: entry.count,
+          BreakdownCount: entry.count,
+          Rank: index + 1,
+        },
+        data: {
+          metric: entry.count,
+          flowErrors: entry.count,
+          breakdownType: 'flow',
+          flowName: entry.flowName,
+          count: entry.count,
+          rank: index + 1,
+          days: this.days,
+        },
+      };
+    });
+  }
+
+  protected buildFlowByStepNotifications(orgMarkdown: string): NotifMessage[] {
+    const topFailingSteps = this.buildFlowCountsByStep();
+
+    return topFailingSteps.map((entry, index): NotifMessage => {
+      return {
+        type: 'FLOW_ERROR_BY_STEP',
+        text: `Flow errors by step on ${orgMarkdown}: ${entry.flowStep} (${entry.count})`,
+        buttons: [],
+        attachments: [],
+        severity: 'error',
+        attachedFiles: [],
+        logElements: [
+          {
+            flowStep: entry.flowStep,
+            count: entry.count,
+            rank: index + 1,
+          },
+        ],
+        metrics: {
+          FlowErrors: entry.count,
+          BreakdownCount: entry.count,
+          Rank: index + 1,
+        },
+        data: {
+          metric: entry.count,
+          flowErrors: entry.count,
+          breakdownType: 'step',
+          flowStep: entry.flowStep,
+          count: entry.count,
+          rank: index + 1,
+          days: this.days,
+        },
+      };
+    });
   }
 
   protected buildApexAttachments(): MessageAttachment[] {
