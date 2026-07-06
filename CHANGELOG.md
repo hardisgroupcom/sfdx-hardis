@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Fix Docker images (Alpine and Ubuntu) hanging on Salesforce CLI auth: install a Node.js 24 patch that carries the fix for the CVE-2026-48931 http.Agent regression (24.18.0+), instead of the broken Node 24.17.0 still served by Alpine's package repo (closes #1972).
+
 ## [7.19.1] 2026-07-05
 
 - Fix JWT login to a DevHub defaulting to `https://login.salesforce.com`: read `devHubInstanceUrl` from config when authenticating to a DevHub, instead of always reading `instanceUrl` (closes #1979).

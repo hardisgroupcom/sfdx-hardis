@@ -79,6 +79,24 @@ jobs:
           tags: |
             sfdx-hardis:security-scan
 
+      # Smoke-test the CLI in the built image. Auth is not tested (no org in CI).
+      # Each command is wrapped in `timeout` so the Node "unsettled top-level await"
+      # hang / exit 13 fails the job (https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
+      - name: Run CLI smoke tests
+        run: |
+          set -euo pipefail
+          image=sfdx-hardis:security-scan
+          echo "== node --version =="
+          docker run --rm "$image" node --version
+          echo "== sf --version =="
+          timeout 180 docker run --rm "$image" sf --version
+          echo "== sf org list --json (must succeed with no default org) =="
+          timeout 180 docker run --rm "$image" sf org list --json
+          echo "== sf hardis --help (plugin loads) =="
+          timeout 180 docker run --rm "$image" sf hardis --help
+          echo "== sf hardis:doc:project2markdown --help (command wired) =="
+          timeout 180 docker run --rm "$image" sf hardis:doc:project2markdown --help
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # zizmor: ignore[unpinned-tools] trivy-action downloads the trivy binary at runtime, no version to pin in the workflow
         with:
@@ -170,6 +188,24 @@ jobs:
           push: false
           tags: |
             sfdx-hardis-ubuntu:security-scan
+
+      # Smoke-test the CLI in the built image. Auth is not tested (no org in CI).
+      # Each command is wrapped in `timeout` so the Node "unsettled top-level await"
+      # hang / exit 13 fails the job (https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
+      - name: Run CLI smoke tests (Ubuntu)
+        run: |
+          set -euo pipefail
+          image=sfdx-hardis-ubuntu:security-scan
+          echo "== node --version =="
+          docker run --rm "$image" node --version
+          echo "== sf --version =="
+          timeout 180 docker run --rm "$image" sf --version
+          echo "== sf org list --json (must succeed with no default org) =="
+          timeout 180 docker run --rm "$image" sf org list --json
+          echo "== sf hardis --help (plugin loads) =="
+          timeout 180 docker run --rm "$image" sf hardis --help
+          echo "== sf hardis:doc:project2markdown --help (command wired) =="
+          timeout 180 docker run --rm "$image" sf hardis:doc:project2markdown --help
 
       - name: Run Trivy vulnerability scanner (Ubuntu)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # zizmor: ignore[unpinned-tools] trivy-action downloads the trivy binary at runtime, no version to pin in the workflow
