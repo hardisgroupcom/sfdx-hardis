@@ -1010,6 +1010,7 @@
     "peut",
     "picklist",
     "picomatch",
+    "pipefail",
     "pjson",
     "plantuml",
     "ployer",
