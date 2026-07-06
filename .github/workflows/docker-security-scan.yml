@@ -275,6 +275,8 @@ jobs:
           docker run --rm "$image" node --version
           echo "== sf --version =="
           timeout 180 docker run --rm "$image" sf --version
+          echo "== sf org list --json (must succeed with no default org) =="
+          timeout 180 docker run --rm "$image" sf org list --json
           echo "== sf hardis --help (plugin loads) =="
           timeout 180 docker run --rm "$image" sf hardis --help
           echo "== sf hardis:doc:project2markdown --help (command wired) =="
@@ -323,6 +325,8 @@ jobs:
           docker run --rm "$image" node --version
           echo "== sf --version =="
           timeout 180 docker run --rm "$image" sf --version
+          echo "== sf org list --json (must succeed with no default org) =="
+          timeout 180 docker run --rm "$image" sf org list --json
           echo "== sf hardis --help (plugin loads) =="
           timeout 180 docker run --rm "$image" sf hardis --help
           echo "== sf hardis:doc:project2markdown --help (command wired) =="
