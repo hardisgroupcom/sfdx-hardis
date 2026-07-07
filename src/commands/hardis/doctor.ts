@@ -254,7 +254,9 @@ In agent mode (or in CI):
   private async enrichWithLatestVersions(info: DoctorInfo): Promise<void> {
     // A plugin is worth checking when the user can upgrade it independently.
     // Core plugins are pinned to the Salesforce CLI, so upgrading the CLI covers them.
-    const isCheckable = (plugin: PluginInfo) => plugin.type === 'user' || plugin.name === 'sfdx-hardis';
+    // The Salesforce CLI itself is checked so its "Latest" cell is populated too.
+    const isCheckable = (plugin: PluginInfo) =>
+      plugin.type === 'user' || plugin.name === 'sfdx-hardis' || plugin.name === SF_CLI_NPM_NAME;
     const checkablePlugins = info.plugins.filter(isCheckable);
     const npmNames = [...new Set([...checkablePlugins.map((plugin) => plugin.name), SF_CLI_NPM_NAME])];
 
@@ -324,10 +326,10 @@ In agent mode (or in CI):
     return outdated && latest ? `${current} (latest: ${latest})` : current;
   }
 
-  // Renders the "Latest" cell: latest version when outdated, green check when up to date, empty when not checked.
+  // Renders the "Latest" cell: warning + latest version when outdated, green check when up to date, empty when not checked.
   private latestCell(plugin: PluginInfo): string {
     if (plugin.outdated && plugin.latest) {
-      return plugin.latest;
+      return `⚠️ (${plugin.latest})`;
     }
     return plugin.latest ? '✅' : '';
   }
