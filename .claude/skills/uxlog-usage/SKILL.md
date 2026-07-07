@@ -1,6 +1,6 @@
 ---
 name: uxlog-usage
-description: How to pick the correct uxLog level (action, log, warning, error, success, other), the matching chalk color, sensitive logging, VS Code UI suppression, and uxLogTable. Use when adding or modifying any uxLog call.
+description: How to pick the correct uxLog level (action, log, warning, error, success, other), the matching chalk color, the options object (sensitive, alwaysVisible), VS Code UI suppression, and uxLogTable. Use when adding or modifying any uxLog call.
 user-invocable: false
 ---
 
@@ -66,21 +66,35 @@ uxLog("other", this, JSON.stringify(rawApiResponse, null, 2));
 - Do not use `log` (which goes to the UI in grey) for noisy diagnostic output - prefer `other`.
 - Do not omit chalk - every `uxLog` should be wrapped in the matching color so terminal output stays readable.
 
-## Sensitive logging (`sensitive=true`)
+## Options (4th argument)
 
-Pass `true` as the fourth argument when the line contains credentials, tokens, secrets, or any data that must not land in the file log or the VS Code UI.
+The optional fourth argument is a `UxLogOptions` object: `{ sensitive?: boolean; alwaysVisible?: boolean }`.
 
 ```typescript
-uxLog("log", this, c.grey(`Authenticating with token ${token}`), true);
+uxLog("log", this, c.grey(`Authenticating with token ${token}`), { sensitive: true });
+uxLog("action", this, c.cyan("Installation summary:"), { alwaysVisible: true });
 ```
+
+> Backward compatibility: the 4th argument also still accepts a bare boolean (the legacy `sensitive` flag), because `uxLog` is called by external plugins. `uxLog(..., true)` is equivalent to `uxLog(..., { sensitive: true })`. **For new code, always use the options object.**
+
+### `sensitive`
+
+Set `{ sensitive: true }` when the line contains credentials, tokens, secrets, or any data that must not land in the file log or the VS Code UI. Use it for any line that interpolates an access token, refresh token, client secret, password, or third-party API key.
 
 Behaviour:
 
 - Terminal: shows the real text (so the user running the command can still see it locally).
 - File log (`hardisLogFileStream`): writes the literal string `OBFUSCATED LOG LINE`.
-- VS Code UI: sends `OBFUSCATED LOG LINE`. Exception: lines containing `SFDX_CLIENT_ID_`, `SFDX_CLIENT_KEY_`, or `SFDX_CLIENT_CERT_` are sent as-is even when `sensitive=true`.
+- VS Code UI: sends `OBFUSCATED LOG LINE`. Exception: lines containing `SFDX_CLIENT_ID_`, `SFDX_CLIENT_KEY_`, or `SFDX_CLIENT_CERT_` are sent as-is even when `sensitive` is set.
 
-Use `sensitive=true` for any line that interpolates an access token, refresh token, client secret, password, or third-party API key.
+### `alwaysVisible`
+
+Set `{ alwaysVisible: true }` to keep the enclosing VS Code UI section expanded by default, instead of auto-collapsing when a later section opens (and staying open in the UI's "simple" mode too). A manual collapse by the user still wins.
+
+- On an `action` line: keeps the section that line **starts** expanded.
+- On any other level (`log`, `warning`, `error`, ...): keeps the section that **contains** the line expanded.
+
+Use it for a summary block the user should keep seeing while they act on the next prompt (e.g. an install summary shown just before a confirmation). No effect outside the VS Code LWC UI.
 
 ## VS Code / LWC UI suppression
 

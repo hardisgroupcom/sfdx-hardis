@@ -259,6 +259,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:auth:login**](hardis/auth/login.md)                                           | Log in to a Salesforce org interactively or via JWT / connected-app OAuth                                     |
 | [**hardis:cache:clear**](hardis/cache/clear.md)                                         | Clear the sfdx-hardis local cache (useful when encountering stale metadata or config data)                    |
 | [**hardis:config:get**](hardis/config/get.md)                                           | Read and display the merged project / branch / user configuration for the current project                     |
+| [**hardis:doctor**](hardis/doctor.md)                                                   | Gather local install info and print a ready-to-paste report plus a pre-filled GitHub issue URL                |
 | [**hardis:git:pull-requests:extract**](hardis/git/pull-requests/extract.md)             | Extract pull/merge request data from GitHub, GitLab, or Azure DevOps for reporting and auditing               |
 | [**hardis:mdapi:deploy**](hardis/mdapi/deploy.md)                                       | Deploy a Metadata API format directory or zip to a Salesforce org                                             |
 | [**hardis:misc:custom-label-translations**](hardis/misc/custom-label-translations.md)   | Isolate and export specific custom label translations                                                         |

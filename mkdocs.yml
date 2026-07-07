@@ -281,6 +281,8 @@ nav:
           - packagexml2markdown: hardis/doc/packagexml2markdown.md
           - plugin generate: hardis/doc/plugin/generate.md
           - project2markdown: hardis/doc/project2markdown.md
+      - hardis:doctor:
+          - doctor: hardis/doctor.md
       - hardis:git:
           - pull-requests extract: hardis/git/pull-requests/extract.md
       - hardis:lint:

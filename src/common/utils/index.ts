@@ -1430,7 +1430,20 @@ export async function generateReports(
   ];
 }
 
-export function uxLog(logType: LogType, commandThis: any, textInit: string, sensitive = false): void {
+// Options for uxLog. `sensitive` obfuscates the value in log files; `alwaysVisible` keeps the
+// enclosing VS Code UI section expanded by default.
+export interface UxLogOptions {
+  sensitive?: boolean;
+  alwaysVisible?: boolean;
+}
+
+export function uxLog(logType: LogType, commandThis: any, textInit: string, optionsOrSensitive: boolean | UxLogOptions = {}): void {
+  // Backward compatibility: the 4th argument used to be a boolean "sensitive" flag.
+  // uxLog can be called by external plugins, so keep accepting that legacy form.
+  const options: UxLogOptions =
+    typeof optionsOrSensitive === 'boolean' ? { sensitive: optionsOrSensitive } : (optionsOrSensitive || {});
+  const sensitive = options.sensitive === true;
+  const alwaysVisible = options.alwaysVisible === true;
   const text = textInit.includes('[sfdx-hardis]') ? textInit : '[sfdx-hardis]' + (textInit.startsWith('[') ? '' : ' ') + textInit;
   // Console log
   if (commandThis?.ux) {
@@ -1464,7 +1477,7 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, sens
 
       // Send message to WebSocket client
       if (logType !== "other") {
-        WebSocketClient.sendCommandLogLineMessage(textToSend, logType, isQuestion);
+        WebSocketClient.sendCommandLogLineMessage(textToSend, logType, isQuestion, alwaysVisible);
       }
     }
   }
@@ -1899,7 +1912,7 @@ export async function generateSSLCertificate(
           )}
           - Value: ${c.bold(c.green(idKeyValues.clientIdValueString))}`
         )),
-      true
+      { sensitive: true }
     );
     uxLog(
       "log",
@@ -1910,7 +1923,7 @@ export async function generateSSLCertificate(
         )}
         - Value: ${c.bold(c.green(idKeyValues.clientKeyValueString))}`
       )),
-      true
+      { sensitive: true }
     );
     if (storeCertificateInVariable) {
       uxLog(
@@ -1922,7 +1935,7 @@ export async function generateSSLCertificate(
           )}
           - Value: ${c.bold(c.green(idKeyValues.clientCertValueString))}`
         )),
-        true
+        { sensitive: true }
       );
     }
     uxLog(
@@ -1947,7 +1960,7 @@ export async function generateSSLCertificate(
         "log",
         commandThis,
         c.grey(c.cyanBright(`- ${c.bold(c.green(idKeyValues.clientCertString))}\n- Value: ${c.bold(c.green(idKeyValues.clientCertValueString))}`)),
-        true
+        { sensitive: true }
       );
       uxLog("warning", commandThis, c.yellow(t('externalStorageCertNotCommitted')));
     }
