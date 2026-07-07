@@ -56,9 +56,9 @@
 
 ## hardis:doctor
 
-| Command                                                                     | Title |
-|:----------------------------------------------------------------------------|:------|
-| [**hardis:doctor**](hardis/doctor.md)                                       |       |
+| Command                               | Title |
+|:--------------------------------------|:------|
+| [**hardis:doctor**](hardis/doctor.md) |       |
 
 ## hardis:git
 

@@ -579,9 +579,9 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 
 ### hardis:doctor
 
-| Command                                                                     | Title |
-|:----------------------------------------------------------------------------|:------|
-| [**hardis:doctor**](hardis/doctor.md)                                       |       |
+| Command                               | Title |
+|:--------------------------------------|:------|
+| [**hardis:doctor**](hardis/doctor.md) |       |
 
 ### hardis:git
 
