@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- New [hardis:doctor](https://sfdx-hardis.cloudity.com/hardis/doctor/): Gather your local install info and open a pre-filled GitHub issue to report a bug faster.
+
 ## [7.19.2] 2026-07-06
 
 - Fix Docker images (Alpine and Ubuntu) hanging on Salesforce CLI auth: install a Node.js 24 patch that carries the fix for the CVE-2026-48931 http.Agent regression (24.18.0+), instead of the broken Node 24.17.0 still served by Alpine's package repo (closes #1972).

@@ -577,6 +577,12 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)           |       |
 | [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                 |       |
 
+### hardis:doctor
+
+| Command                                                                     | Title |
+|:----------------------------------------------------------------------------|:------|
+| [**hardis:doctor**](hardis/doctor.md)                                       |       |
+
 ### hardis:git
 
 | Command                                                                     | Title |

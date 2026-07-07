@@ -54,6 +54,12 @@
 | [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)           |       |
 | [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                 |       |
 
+## hardis:doctor
+
+| Command                                                                     | Title |
+|:----------------------------------------------------------------------------|:------|
+| [**hardis:doctor**](hardis/doctor.md)                                       |       |
+
 ## hardis:git
 
 | Command                                                                     | Title |
