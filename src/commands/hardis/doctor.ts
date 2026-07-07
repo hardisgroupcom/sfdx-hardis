@@ -156,17 +156,6 @@ In agent mode (or in CI):
     uxLog("action", this, c.cyan('sfdx-hardis install info (paste this into your GitHub issue):'));
     uxLog("log", this, c.grey(report));
 
-    // Warn if some components are not on their latest version
-    if (info.outdatedItems.length > 0) {
-      uxLog(
-        "warning",
-        this,
-        c.yellow(
-          `Before posting an issue, we detected that you are not using the latest versions of ${info.outdatedItems.join(', ')}. Maybe upgrade them first, to check whether the problem is not already resolved in a more recent version?`
-        )
-      );
-    }
-
     // Build the pre-filled GitHub issue URL
     const issueUrl = this.buildIssueUrl(report);
     uxLog("other", this, c.cyan(`GitHub new issue page: ${c.yellow(issueUrl)}`));
@@ -177,10 +166,21 @@ In agent mode (or in CI):
     }
 
     // Display a readable summary of the gathered info just before prompting.
-    // alwaysVisible keeps this section open in the VS Code UI so the tables stay visible.
+    // alwaysVisible keeps this section open in the VS Code UI so the tables (and the warning below) stay visible.
     uxLog("action", this, c.cyan('Installation summary'), { alwaysVisible: true });
     uxLogTable(this, this.buildEnvironmentRows(info), ['Item', 'Value']);
     uxLogTable(this, this.buildPluginRows(info), ['Plugin', 'Version', 'Type', 'Latest']);
+
+    // Warn (inside the summary section) if some components are not on their latest version
+    if (info.outdatedItems.length > 0) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(
+          `Before posting an issue, we detected that you are not using the latest versions of ${info.outdatedItems.join(', ')}. Maybe upgrade them first, to check whether the problem is not already resolved in a more recent version?`
+        )
+      );
+    }
 
     // Decide whether to open the browser
     let shouldOpen = flags.open === true;
@@ -324,6 +324,14 @@ In agent mode (or in CI):
     return outdated && latest ? `${current} (latest: ${latest})` : current;
   }
 
+  // Renders the "Latest" cell: latest version when outdated, green check when up to date, empty when not checked.
+  private latestCell(plugin: PluginInfo): string {
+    if (plugin.outdated && plugin.latest) {
+      return plugin.latest;
+    }
+    return plugin.latest ? '✅' : '';
+  }
+
   private buildPluginsBlock(info: DoctorInfo): string {
     if (info.plugins.length === 0) {
       return '(none detected)';
@@ -332,8 +340,7 @@ In agent mode (or in CI):
     lines.push('| Plugin | Version | Type | Latest |');
     lines.push('| --- | --- | --- | --- |');
     for (const plugin of info.plugins) {
-      const latest = plugin.outdated && plugin.latest ? plugin.latest : '';
-      lines.push(`| ${plugin.name} | ${plugin.version} | ${plugin.type} | ${latest} |`);
+      lines.push(`| ${plugin.name} | ${plugin.version} | ${plugin.type} | ${this.latestCell(plugin)} |`);
     }
     return lines.join('\n');
   }
@@ -362,7 +369,7 @@ In agent mode (or in CI):
         Version: plugin.version,
         Type: plugin.type,
         // Outdated: show the latest version. Up to date: green check. Not checked: empty.
-        Latest: plugin.outdated && plugin.latest ? plugin.latest : plugin.latest ? '✅' : '',
+        Latest: this.latestCell(plugin),
       }));
   }
 
