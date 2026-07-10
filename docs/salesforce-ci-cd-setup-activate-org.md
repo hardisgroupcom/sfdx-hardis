@@ -34,8 +34,14 @@ You need to have a Salesforce sandbox corresponding to each major branch.
 
 Example:
 
-- Branch `preprod` - create a sandbox named `Preprod`, cloned from Production org
-- Branch `uat` - create a sandbox named `UAT`, cloned from PreProd org
-- Branch `integration` - create a sandbox named `Integration`, cloned from UAT org
+- Branch `preprod` - create a developer named `Preprod`
+- Branch `uat` - create a developer named `UAT`
+- Branch `integration` - create a sandbox named `Integci` (sandbox name has 10 character limit)
+
+If you are in the posession of full/partical copy licenses it is best practice to use the full copy for preprod and the partical copy for uat. If you don't have these licenses use developer sandboxes for all major orgs.
 
 If you are converting an existing project to CI/CD and already have existing orgs, just create an org `Integration`, and you'll refresh later `UAT` and `PreProd`, once your setup will be more advanced.
+
+## Developer sandboxes
+
+The actual development work is done in developer sandboxes that need to be created from the Integration org.
