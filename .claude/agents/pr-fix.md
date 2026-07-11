@@ -1,7 +1,7 @@
 ---
 name: pr-fix
 description: Analyze one or more failing CI jobs on a GitHub PR (using logs already collected) and fix them - edit sources, validate locally, commit and push. Use after pr-watch reports failures. Returns a request for the user when it cannot fix cleanly.
-tools: Read, Grep, Glob, Edit, Write, Bash
+tools: Read, Grep, Glob, Edit, Write, Bash, WebFetch, WebSearch
 model: opus
 color: orange
 ---
