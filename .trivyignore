@@ -256,6 +256,10 @@ CVE-2026-42506
 # Go stdlib v1.26.3 in the pebble binary of the Ubuntu base image (usr/bin/pebble): x509 VerifyHostname matching issue, fixed in Go 1.25.11 / 1.26.4. pebble is never invoked by sfdx-hardis. Depends on the upstream base image rebuild. Added 2026-06-24.
 CVE-2026-27145
 
+# https://avd.aquasec.com/nvd/cve-2026-39822
+# Go stdlib v1.26.3 in the pebble binary of the Ubuntu base image (usr/bin/pebble): os.Root symlink-following vulnerability, fixed in Go 1.25.12 / 1.26.5 / 1.27.0-rc.2. Exploiting it needs the binary to sandbox untrusted filesystem paths with os.Root; pebble is Canonical's service manager and is never invoked by sfdx-hardis (one-shot CI/CD CLI), so the code path is unreachable. Depends on the upstream base image rebuild. Added 2026-07-11.
+CVE-2026-39822
+
 # https://avd.aquasec.com/nvd/cve-2026-50195
 # containerd 2.2.2-0ubuntu1 (from the docker.io apt package in the Ubuntu image): CRI checkpoint import image-cache poisoning on shared Kubernetes nodes (CVSS 8.8). The attack requires a multi-tenant k8s node, pod-creation rights, and CRIU checkpoint/restore enabled. sfdx-hardis runs containerd as a one-shot CI/CD CLI with no CRI plugin and no shared-node tenancy, so it is not exploitable. No fixed version published for Ubuntu 26.04 yet (fix lands in containerd 2.2.4-3). Added 2026-06-24.
 CVE-2026-50195
