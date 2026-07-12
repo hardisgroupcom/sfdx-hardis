@@ -59,3 +59,6 @@ config/user/
 .sfdx/
 .claude/settings.local.json
 site/
+
+# MegaLinter generated GitHub config (branch protection rules fetched at runtime)
+.megalinter_github_conf/

@@ -52,7 +52,7 @@ Depending on the number of "bigger" sandboxes you have available, here are the r
 
 If you are converting an existing project to CI/CD and already have existing orgs, just create an org `Integration`, and you'll refresh later `UAT` and `PreProd`, once your setup will be more advanced.
 
-It is **very important tant Integ is a dev sandbox**, because you'll clone it to create the sandboxes where people will actually perform the implementation (and you can clone only sandboxes of the same type).
+It is **very important that Integ is a dev sandbox**, because you'll clone it to create the sandboxes where people will actually perform the implementation (and you can clone only sandboxes of the same type).
 
 ## Developer sandboxes
 
