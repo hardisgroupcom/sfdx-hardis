@@ -32,6 +32,10 @@ When there is a new state of a major branch (after a merge), a deployment to the
 
 You need to have a Salesforce sandbox corresponding to each major branch.
 
+> Create major orgs sandbox by cloning from Production.
+
+> If you have existing sandboxes, it's is highly recommended to refresh them before activating the pipeline
+
 Example:
 
 - Branch `preprod` - create a developer named `Preprod`
