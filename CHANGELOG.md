@@ -2,7 +2,10 @@
 
 ## [beta] (main)
 
+## [7.20.0] 2026-07-12
+
 - New [hardis:doctor](https://sfdx-hardis.cloudity.com/hardis/doctor/): Gather your local install info and open a pre-filled GitHub issue to report a bug faster.
+- Update instructions to setup sandboxes for CI/CD pipeline
 
 ## [7.19.2] 2026-07-06
 
