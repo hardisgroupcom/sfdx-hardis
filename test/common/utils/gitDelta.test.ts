@@ -92,7 +92,11 @@ describe('Git Delta - callSfdxGitDelta with package filtering', () => {
         expect.fail('Should have thrown an error for missing package directory');
       } catch (error) {
         expect(error).to.be.instanceOf(Error);
-        expect(error.message).to.include('does not exist');
+        if (error instanceof Error) {
+          expect(error.message).to.include('does not exist');
+        } else {
+          throw error;
+        }
       }
     });
 
@@ -119,7 +123,11 @@ describe('Git Delta - callSfdxGitDelta with package filtering', () => {
         expect.fail('Should have thrown an error for missing default package directory');
       } catch (error) {
         expect(error).to.be.instanceOf(Error);
-        expect(error.message).to.include('default');
+        if (error instanceof Error) {
+          expect(error.message).to.include('default');
+        } else {
+          throw error;
+        }
       }
     });
 
