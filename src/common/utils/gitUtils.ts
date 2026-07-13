@@ -4,6 +4,7 @@ import c from 'chalk';
 import fs from "fs-extra";
 import * as path from "path";
 import sortArray from 'sort-array';
+import { SfProject } from '@salesforce/core';
 import {
   arrayUniqueByKey,
   arrayUniqueByKeys,
@@ -156,13 +157,57 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
   return { fromCommit: masterBranchLatestCommit, toCommit: toCommit, logResult: logResult };
 }
 
+async function getPackageDirectoriesFromProject(gitRoot: string): Promise<string[] | null> {
+  const sfdxProjectFile = path.join(gitRoot, 'sfdx-project.json');
+  if (!await fs.pathExists(sfdxProjectFile)) {
+    return null;
+  }
+  try {
+    const project = await SfProject.resolve(gitRoot);
+    const packageDirs = project.getPackageDirectories();
+    if (!packageDirs || packageDirs.length === 0) {
+      return null;
+    }
+    // Validate that all package directories exist
+    for (const dir of packageDirs) {
+      if (!await fs.pathExists(dir.fullPath)) {
+        throw new Error(
+          `Package directory "${dir.path}" defined in sfdx-project.json does not exist at ${dir.fullPath}`
+        );
+      }
+    }
+    // Extract relative paths from package directory objects
+    return packageDirs.map((dir) => dir.path);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Package directory')) {
+      throw error;
+    }
+    // Log other parsing errors but continue
+    uxLog("other", this, `sfdx-project.json found but could not be parsed: ${error}`);
+    return null;
+  }
+}
+
 export async function callSfdxGitDelta(from: string, to: string, outputDir: string, options: any = {}) {
-  const packageXmlGitDeltaCommand = `sf sgd:source:delta --from "${from}" --to "${to}" --output ${outputDir} --ignore-whitespace`;
+  const gitRoot = await getGitRepoRoot();
+  let packageXmlGitDeltaCommand = `sf sgd:source:delta --from "${from}" --to "${to}" --output ${outputDir} --ignore-whitespace`;
+
+  // Check for sfdx-project.json and apply packageDirectories filtering
+  const packageDirs = await getPackageDirectoriesFromProject(gitRoot);
+  if (packageDirs === null) {
+    uxLog("other", this, 'sfdx-project.json not found, processing all delta changes');
+  } else if (packageDirs.length > 0) {
+    // Add --source-dir flag for each package directory
+    packageDirs.forEach((dir) => {
+      packageXmlGitDeltaCommand += ` --source-dir ${dir}`;
+    });
+  }
+
   const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
     output: true,
     fail: false,
     debug: options?.debugMode || false,
-    cwd: await getGitRepoRoot(),
+    cwd: gitRoot,
   });
   // Send results to UI if there is one (skip if caller handles notifications)
   if (WebSocketClient.isAliveWithLwcUI() && !options?.skipWebSocketNotification) {
