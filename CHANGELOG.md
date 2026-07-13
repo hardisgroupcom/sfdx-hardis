@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Git delta operations now filter to only package directories when sfdx-project.json exists, preventing unrelated metadata changes from being deployed.
+
 ## [7.20.0] 2026-07-12
 
 - New [hardis:doctor](https://sfdx-hardis.cloudity.com/hardis/doctor/): Gather your local install info and open a pre-filled GitHub issue to report a bug faster.
