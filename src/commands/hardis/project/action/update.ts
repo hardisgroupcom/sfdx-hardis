@@ -17,6 +17,7 @@ import {
   writeActions,
 } from '../../../../common/utils/actionUtils.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
+import { normalizePackageXmlItems } from '../../../../common/actionsProvider/removePackageXmlItemsAction.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -228,7 +229,7 @@ Required in agent mode:
       const jn = await this.promptText(t('enterJobName'), action.parameters?.jobName || '');
       if (jn) action.parameters = { ...action.parameters, jobName: jn };
     } else if (action.type === 'remove-packagexml-items') {
-      const itemsRaw = await this.promptText(t('enterPackageXmlItems'), (action.parameters?.packageXmlItems || []).join(';'));
+      const itemsRaw = await this.promptText(t('enterPackageXmlItems'), normalizePackageXmlItems(action.parameters?.packageXmlItems).join(';'));
       if (itemsRaw) {
         action.parameters = {
           ...action.parameters,
