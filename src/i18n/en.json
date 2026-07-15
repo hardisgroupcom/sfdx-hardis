@@ -2350,6 +2350,8 @@
   "readmeDocumentationLink": "Read auto-generated documentation of the SFDX project",
   "readyToRefreshSandboxOrg": "You are now ready to refresh your sandbox org. Proceed with the org refresh now.",
   "readyToWorkInBranch": "Ready to work in branch {{branchName}}",
+  "reauthBeforeCommandActionFailed": "Could not re-authenticate before command action, running with the existing session: {{error}}",
+  "reauthenticatingBeforeCommandAction": "Re-authenticating before command action to keep the certificate file available during execution...",
   "rebuildFullDocDescription": "If yes, the whole documentation will be regenerated (slower). If no, only files changed in the last backup will be updated.",
   "recommended": "recommended",
   "recommendedToUseMkdocsMaterialToRead": "It is recommended to use mkdocs-material to read it correctly (see documentation)",
