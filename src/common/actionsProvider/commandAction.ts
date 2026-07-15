@@ -60,9 +60,16 @@ export class CommandAction extends ActionsProvider {
   // Best-effort re-authentication that keeps the certificate file. Returns the kept certificate
   // file path (even if login threw, so a partially created file is still cleaned up), or null.
   private async reauthKeepingCertFile(): Promise<string | null> {
-    const authOptions: AuthOrgOptions = { checkAuth: true, keepCertFile: true, setDefault: false };
+    const authOptions: AuthOrgOptions = { checkAuth: true, keepCertFile: true };
     if (this.customUsernameToUse) {
+      // The command already targets this user via an explicit --target-org, so keep the
+      // existing default org untouched.
       authOptions.forceUsername = this.customUsernameToUse;
+      authOptions.setDefault = false;
+    } else {
+      // No explicit target org on the command: re-authenticate as the default org so the
+      // command (for example "sf agent ...") finds it.
+      authOptions.setDefault = true;
     }
     try {
       const orgAlias = await this.resolveReauthOrgAlias();
