@@ -796,17 +796,21 @@
               },
               "packageXmlItems": {
                 "$id": "#/properties/commandsPreDeploy/items/properties/parameters/packageXmlItems",
-                "description": "List of package.xml items to remove before the metadata deployment for 'remove-packagexml-items' actions. Each entry uses the format TypeName:Member1,Member2 (use * as member to remove the whole type).",
+                "description": "List of package.xml items to remove before the metadata deployment for 'remove-packagexml-items' actions. Each entry uses the format TypeName:Member1,Member2 (use * as member to remove the whole type). A single string is also accepted for a single entry.",
                 "examples": [
                   [
                     "ApexClass:MyClass1,MyClass3",
                     "Layout:MyLayout1,MyLayout2,MyLayout3"
-                  ]
+                  ],
+                  "AiEvaluationDefinition:My_Eval_Definition"
                 ],
                 "items": {
                   "type": "string"
                 },
-                "type": "array"
+                "type": [
+                  "array",
+                  "string"
+                ]
               }
             },
             "additionalProperties": true

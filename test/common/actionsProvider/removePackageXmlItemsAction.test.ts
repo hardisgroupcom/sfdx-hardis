@@ -4,6 +4,7 @@ import * as path from 'path';
 import {
   RemovePackageXmlItemsAction,
   findInvalidPackageXmlItems,
+  normalizePackageXmlItems,
   parsePackageXmlItems,
 } from '../../../src/common/actionsProvider/removePackageXmlItemsAction.js';
 import { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
@@ -27,7 +28,7 @@ const PACKAGE_XML = `<?xml version="1.0" encoding="UTF-8"?>
 </Package>
 `;
 
-function buildCmd(packageXmlItems: string[]): PrePostCommand {
+function buildCmd(packageXmlItems: string[] | string): PrePostCommand {
   return {
     id: 'test-remove',
     label: 'Remove items from package.xml',
@@ -43,6 +44,22 @@ describe('removePackageXmlItemsAction', () => {
 
   afterEach(() => {
     delete globalThis.pendingDeploymentPackageXmlFiles;
+  });
+
+  describe('normalizePackageXmlItems', () => {
+    it('wraps a single string entry in an array', () => {
+      expect(normalizePackageXmlItems('ApexClass:MyClass1')).to.deep.equal(['ApexClass:MyClass1']);
+    });
+
+    it('returns arrays as-is', () => {
+      expect(normalizePackageXmlItems(['ApexClass:MyClass1'])).to.deep.equal(['ApexClass:MyClass1']);
+    });
+
+    it('returns an empty array for blank string, undefined or other types', () => {
+      expect(normalizePackageXmlItems('   ')).to.deep.equal([]);
+      expect(normalizePackageXmlItems(undefined)).to.deep.equal([]);
+      expect(normalizePackageXmlItems({ foo: 'bar' })).to.deep.equal([]);
+    });
   });
 
   describe('parsePackageXmlItems', () => {
@@ -108,6 +125,19 @@ describe('removePackageXmlItemsAction', () => {
       const action = new RemovePackageXmlItemsAction();
       const result = await action.run(buildCmd(['ApexClass:MyClass1']));
       expect(result.statusCode).to.equal('skipped');
+    });
+
+    it('accepts a single string packageXmlItems parameter', async () => {
+      const packageXmlFile = path.join(ctx.getDir(), 'calculated-package.xml');
+      await fs.writeFile(packageXmlFile, PACKAGE_XML);
+      globalThis.pendingDeploymentPackageXmlFiles = [packageXmlFile];
+
+      const action = new RemovePackageXmlItemsAction();
+      const result = await action.run(buildCmd('ApexClass:MyClass1,MyClass3'));
+
+      expect(result.statusCode).to.equal('success');
+      const parsed = await parsePackageXmlFile(packageXmlFile);
+      expect(parsed.ApexClass).to.deep.equal(['MyClass2']);
     });
 
     it('fails when packageXmlItems parameter is missing', async () => {

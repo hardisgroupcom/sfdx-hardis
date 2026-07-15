@@ -112,11 +112,11 @@ export async function validateActionParameters(action: Partial<PrePostCommand>):
       errors.push(t('actionValidationNoCronExpression'));
     }
   } else if (type === 'remove-packagexml-items') {
-    const items = action.parameters?.packageXmlItems || [];
-    if (!Array.isArray(items) || items.length === 0) {
+    const { findInvalidPackageXmlItems, normalizePackageXmlItems } = await import('../actionsProvider/removePackageXmlItemsAction.js');
+    const items = normalizePackageXmlItems(action.parameters?.packageXmlItems);
+    if (items.length === 0) {
       errors.push(t('actionValidationNoPackageXmlItems'));
     } else {
-      const { findInvalidPackageXmlItems } = await import('../actionsProvider/removePackageXmlItemsAction.js');
       const invalidItems = findInvalidPackageXmlItems(items);
       if (invalidItems.length > 0) {
         errors.push(t('actionValidationInvalidPackageXmlItems', { items: invalidItems.join(' | ') }));

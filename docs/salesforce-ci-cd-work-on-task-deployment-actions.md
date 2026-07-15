@@ -267,7 +267,7 @@ Only available as a **pre-deploy** action. The removal applies to the temporary 
 
 | Custom parameter            | Description                                                                                                          | Example                       |
 |-----------------------------|----------------------------------------------------------------------------------------------------------------------|-------------------------------|
-| `parameters.packageXmlItems` | List of items to remove, each in format `TypeName:Member1,Member2`. Use `*` as member to remove a whole type. Member names also support glob wildcards (ex: `Account*`). | `ApexClass:MyClass1,MyClass3` |
+| `parameters.packageXmlItems` | List of items to remove, each in format `TypeName:Member1,Member2`. Use `*` as member to remove a whole type. Member names also support glob wildcards (ex: `Account*`). A single string is also accepted for a single entry. | `ApexClass:MyClass1,MyClass3` |
 
 Example:
 

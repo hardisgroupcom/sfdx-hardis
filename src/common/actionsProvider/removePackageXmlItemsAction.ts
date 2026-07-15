@@ -6,6 +6,14 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import path from 'path';
 
+// Accept a single "TypeName:Member1,Member2" string as well as the documented list format
+export function normalizePackageXmlItems(items: any): string[] {
+  if (typeof items === 'string') {
+    return items.trim() ? [items] : [];
+  }
+  return Array.isArray(items) ? items : [];
+}
+
 // Parse packageXmlItems entries ("TypeName:Member1,Member2") into the inline remove-types
 // structure expected by removePackageXmlFilesContent
 export function parsePackageXmlItems(items: string[]): any[] {
@@ -55,8 +63,8 @@ export class RemovePackageXmlItemsAction extends ActionsProvider {
   }
 
   public async checkParameters(cmd: PrePostCommand): Promise<ActionResult | null> {
-    const items = cmd.parameters?.packageXmlItems || [];
-    if (!Array.isArray(items) || items.length === 0) {
+    const items = normalizePackageXmlItems(cmd.parameters?.packageXmlItems);
+    if (items.length === 0) {
       uxLog('error', this, c.red(`[DeploymentActions] ${t('removePackageXmlItemsNoItems', { id: cmd.id, label: cmd.label })}`));
       return { statusCode: 'failed', skippedReason: 'No packageXmlItems parameter provided' };
     }
@@ -72,7 +80,7 @@ export class RemovePackageXmlItemsAction extends ActionsProvider {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
 
-    const items = (cmd.parameters?.packageXmlItems as string[]) || [];
+    const items = normalizePackageXmlItems(cmd.parameters?.packageXmlItems);
     const packageXmlFiles: string[] = globalThis.pendingDeploymentPackageXmlFiles || [];
     if (packageXmlFiles.length === 0) {
       const reason = t('removePackageXmlItemsNoDeploymentContext');
