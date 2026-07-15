@@ -33,7 +33,7 @@ export default class ActionCreate extends ActionCommandBase {
 
 **Creates a new deployment action in the project configuration.**
 
-Deployment actions are pre- or post-deployment steps that run automatically during CI/CD pipelines. This command lets you define new actions of various types (shell command, data import, Apex script, community publish, manual instructions, or batch scheduling) and store them at project, branch, or pull request scope.
+Deployment actions are pre- or post-deployment steps that run automatically during CI/CD pipelines. This command lets you define new actions of various types (shell command, data import, Apex script, community publish, manual instructions, batch scheduling, or package.xml items removal) and store them at project, branch, or pull request scope.
 
 New actions are appended to the end of the action list. Use \`hardis:project:action:reorder\` to change position.
 
@@ -50,7 +50,7 @@ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type 
 Required in agent mode:
 
 - \`--scope\`, \`--when\`, \`--type\`, \`--label\`
-- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch
+- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--packagexml-items\` for remove-packagexml-items
 
 In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-only-once-by-org\` defaults to \`true\` (use \`--no-run-only-once-by-org\` to disable); other optional boolean flags default to \`false\`.
 
@@ -68,6 +68,7 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
     '$ sf hardis:project:action:create',
     '$ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type command --label "Disable triggers" --command "sf apex run --file scripts/disable-triggers.apex"',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type data --label "Import test data" --sfdmu-project TestData',
+    '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when pre-deploy --type remove-packagexml-items --label "Skip legacy classes" --packagexml-items "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
   ];
 
   public static flags: any = {
@@ -80,7 +81,7 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
       description: 'When to run the action: pre-deploy or post-deploy',
     }),
     type: Flags.string({
-      options: ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch'],
+      options: ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'remove-packagexml-items'],
       description: 'Type of action',
     }),
     label: Flags.string({
@@ -115,6 +116,9 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
     }),
     'job-name': Flags.string({
       description: 'Job name for schedule-batch (optional, defaults to <className>_Schedule)',
+    }),
+    'packagexml-items': Flags.string({
+      description: 'Semicolon-separated list of package.xml items to remove before deployment, each in format TypeName:Member1,Member2 (for remove-packagexml-items type). Example: "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
     }),
     context: Flags.string({
       options: ['all', 'check-deployment-only', 'process-deployment-only'],
@@ -215,10 +219,23 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
           parameters.jobName = jobName;
         }
       }
+    } else if (type === 'remove-packagexml-items') {
+      if (when !== 'pre-deploy') {
+        throw new SfError(t('actionValidationPackageXmlItemsPreDeployOnly'));
+      }
+      const itemsRaw: string = agentMode || isCI
+        ? this.requireFlag(flags['packagexml-items'], 'packagexml-items')
+        : flags['packagexml-items'] || await this.promptText(t('enterPackageXmlItems'), '');
+      parameters.packageXmlItems = itemsRaw
+        .split(/[;\n]/)
+        .map((item: string) => item.trim())
+        .filter(Boolean);
     }
 
     // Collect context
-    const context = (flags.context || (!agentMode && !isCI ? await this.promptContext() : 'process-deployment-only')) as PrePostCommand['context'];
+    // remove-packagexml-items must also run during deployment checks, so it defaults to all contexts
+    const defaultContext = type === 'remove-packagexml-items' ? 'all' : 'process-deployment-only';
+    const context = (flags.context || (!agentMode && !isCI ? await this.promptContext(defaultContext as PrePostCommand['context']) : defaultContext)) as PrePostCommand['context'];
 
     // Collect optional flags (only prompt in interactive mode)
     // skipIfError is meaningless for pre-deploy (deployment hasn't happened yet)
@@ -234,10 +251,16 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
       if (!flags['allow-failure']) {
         allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'));
       }
-      runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), flags['run-only-once-by-org']);
+      if (type !== 'remove-packagexml-items') {
+        runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), flags['run-only-once-by-org']);
+      }
       if (!flags['custom-username']) {
         customUsername = await this.promptText(t('actionPromptCustomUsername'), '');
       }
+    }
+    // remove-packagexml-items only alters the current deployment, so it must run at every deployment
+    if (type === 'remove-packagexml-items') {
+      runOnlyOnceByOrg = false;
     }
 
     // Build the action
@@ -317,13 +340,13 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
     return response.value as PrePostCommand['type'];
   }
 
-  private async promptContext(): Promise<PrePostCommand['context']> {
+  private async promptContext(initialContext: PrePostCommand['context'] = 'process-deployment-only'): Promise<PrePostCommand['context']> {
     const response = await prompts({
       type: 'select',
       name: 'value',
       message: c.cyanBright(t('selectActionContext')),
       choices: ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })),
-      initial: 2, // default to 'process-deployment-only'
+      initial: Math.max(ACTION_CONTEXTS.indexOf(initialContext), 0),
       description: t('selectActionContext'),
     });
     return response.value as PrePostCommand['context'];

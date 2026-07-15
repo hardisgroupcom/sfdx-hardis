@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- New `remove-packagexml-items` pre-deploy action type removes metadata items from package.xml before deployment.
 - Git delta operations now filter to only package directories when sfdx-project.json exists, preventing unrelated metadata changes from being deployed.
 
 ## [7.20.0] 2026-07-12

@@ -286,7 +286,14 @@ export async function smartDeploy(
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Run deployment pre-commands
-  await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+  // Expose the package.xml files of the deployment plan so pre-deploy actions can update them
+  // (ex: remove-packagexml-items actions filter their content before the metadata deploy step)
+  globalThis.pendingDeploymentPackageXmlFiles = splitDeployments.map((deployment) => deployment.packageXmlFile);
+  try {
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+  } finally {
+    delete globalThis.pendingDeploymentPackageXmlFiles;
+  }
   // Process items of deployment plan
   uxLog("action", this, c.cyan(t('processingSplitDeploymentsBuildFromDeploymentPlan')));
   uxLog("other", this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
@@ -1660,3 +1667,9 @@ export function minutesBetween(start: Date | null, end: Date | null): number {
   return (end.getTime() - start.getTime()) / 60000;
 }
 
+
+// Augment globalThis types
+declare global {
+  // eslint-disable-next-line no-var
+  var pendingDeploymentPackageXmlFiles: string[] | undefined;
+}

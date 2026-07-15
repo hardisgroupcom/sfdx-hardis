@@ -11,7 +11,7 @@ export type ActionWhen = 'pre-deploy' | 'post-deploy';
 export interface PrePostCommand {
   id: string;
   label: string;
-  type: 'command' | 'data' | 'apex' | 'publish-community' | 'manual' | 'schedule-batch';
+  type: 'command' | 'data' | 'apex' | 'publish-community' | 'manual' | 'schedule-batch' | 'remove-packagexml-items';
   when?: ActionWhen;
   // Known parameters used by action implementations. Additional keys allowed.
   parameters?: {
@@ -22,6 +22,7 @@ export interface PrePostCommand {
     className?: string;      // for 'schedule-batch' actions
     cronExpression?: string;  // for 'schedule-batch' actions
     jobName?: string;        // for 'schedule-batch' actions (optional, defaults to <className>_Schedule)
+    packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
     [key: string]: any;
   };
   command: string;
@@ -72,6 +73,10 @@ export abstract class ActionsProvider {
       const ScheduleBatchAction = await import('./scheduleBatchAction.js');
       actionInstance = new ScheduleBatchAction.ScheduleBatchAction();
     }
+    else if (type === 'remove-packagexml-items') {
+      const RemovePackageXmlItemsAction = await import('./removePackageXmlItemsAction.js');
+      actionInstance = new RemovePackageXmlItemsAction.RemovePackageXmlItemsAction();
+    }
     else {
       uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
       cmd.result = {
@@ -84,6 +89,12 @@ export abstract class ActionsProvider {
 
   public getLabel(): string {
     throw new SfError('getLabel should be implemented on this call');
+  }
+
+  // Override and return false for action types that must run at every deployment
+  // (for example actions that only alter the current deployment context, not the org)
+  public supportsRunOnlyOnceByOrg(): boolean {
+    return true;
   }
 
   /**
