@@ -94,7 +94,8 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       }
     }
     if (!skipAction) {
-      const runOnlyOnceByOrg = cmd.runOnlyOnceByOrg !== false; // true by default
+      // true by default, except for action types that must run at every deployment
+      const runOnlyOnceByOrg = actionsInstance.supportsRunOnlyOnceByOrg() && cmd.runOnlyOnceByOrg !== false;
       if (runOnlyOnceByOrg) {
         const gitProviderInst = await GitProvider.getInstance();
         if (!gitProviderInst) {

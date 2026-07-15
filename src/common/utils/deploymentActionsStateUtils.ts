@@ -415,10 +415,12 @@ function buildActionPropertiesSection(actionId: string, def?: ActionDef): string
     if (def.parameters?.className) section += `**Class name:** \`${def.parameters.className}\`\n`;
     if (def.parameters?.cronExpression) section += `**Cron expression:** \`${def.parameters.cronExpression}\`\n`;
     if (def.parameters?.jobName) section += `**Job name:** ${def.parameters.jobName}\n`;
+  } else if (def.type === 'remove-packagexml-items' && Array.isArray(def.parameters?.packageXmlItems)) {
+    section += `**Package.xml items to remove:** ${def.parameters.packageXmlItems.map((item: string) => `\`${item}\``).join(', ')}\n`;
   }
 
   if (def.parameters) {
-    const knownParams = new Set(['apexScript', 'sfdmuProject', 'communityName', 'instructions', 'className', 'cronExpression', 'jobName']);
+    const knownParams = new Set(['apexScript', 'sfdmuProject', 'communityName', 'instructions', 'className', 'cronExpression', 'jobName', 'packageXmlItems']);
     for (const [k, v] of Object.entries(def.parameters)) {
       if (!knownParams.has(k)) {
         section += `**${k}:** ${v}\n`;

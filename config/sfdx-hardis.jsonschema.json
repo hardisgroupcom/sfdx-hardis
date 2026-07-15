@@ -702,6 +702,19 @@
               "sfdmuProject": "EmailTemplate"
             },
             "context": "process-deployment-only"
+          },
+          {
+            "id": "removeLegacyItems",
+            "label": "Remove legacy items from deployment package.xml",
+            "type": "remove-packagexml-items",
+            "parameters": {
+              "packageXmlItems": [
+                "ApexClass:MyClass1,MyClass3",
+                "Layout:MyLayout1,MyLayout2,MyLayout3"
+              ]
+            },
+            "context": "all",
+            "runOnlyOnceByOrg": false
           }
         ]
       ],
@@ -734,7 +747,8 @@
               "apex",
               "schedule-batch",
               "publish-community",
-              "manual"
+              "manual",
+              "remove-packagexml-items"
             ],
             "enumNames": [
               "Command",
@@ -742,14 +756,16 @@
               "Apex Script",
               "Schedule Batch",
               "Publish Community",
-              "Manual Action"
+              "Manual Action",
+              "Remove package.xml Items"
             ],
             "examples": [
               "command",
               "data",
               "apex",
               "publish-community",
-              "manual"
+              "manual",
+              "remove-packagexml-items"
             ]
           },
           "parameters": {
@@ -777,6 +793,20 @@
                 "$id": "#/properties/commandsPreDeploy/items/properties/parameters/instructions",
                 "description": "Human-readable instructions for 'manual' actions",
                 "type": "string"
+              },
+              "packageXmlItems": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/packageXmlItems",
+                "description": "List of package.xml items to remove before the metadata deployment for 'remove-packagexml-items' actions. Each entry uses the format TypeName:Member1,Member2 (use * as member to remove the whole type).",
+                "examples": [
+                  [
+                    "ApexClass:MyClass1,MyClass3",
+                    "Layout:MyLayout1,MyLayout2,MyLayout3"
+                  ]
+                ],
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
               }
             },
             "additionalProperties": true

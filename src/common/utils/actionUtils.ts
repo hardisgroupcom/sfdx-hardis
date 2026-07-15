@@ -111,6 +111,20 @@ export async function validateActionParameters(action: Partial<PrePostCommand>):
     if (!action.parameters?.cronExpression) {
       errors.push(t('actionValidationNoCronExpression'));
     }
+  } else if (type === 'remove-packagexml-items') {
+    const items = action.parameters?.packageXmlItems || [];
+    if (!Array.isArray(items) || items.length === 0) {
+      errors.push(t('actionValidationNoPackageXmlItems'));
+    } else {
+      const { findInvalidPackageXmlItems } = await import('../actionsProvider/removePackageXmlItemsAction.js');
+      const invalidItems = findInvalidPackageXmlItems(items);
+      if (invalidItems.length > 0) {
+        errors.push(t('actionValidationInvalidPackageXmlItems', { items: invalidItems.join(' | ') }));
+      }
+    }
+    if (action.when === 'post-deploy') {
+      errors.push(t('actionValidationPackageXmlItemsPreDeployOnly'));
+    }
   }
 
   return errors;
@@ -304,7 +318,7 @@ export async function getPrIdFromUserConfig(): Promise<string | null> {
   }
 }
 
-export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch'];
+export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'remove-packagexml-items'];
 export const ACTION_CONTEXTS: PrePostCommand['context'][] = ['all', 'check-deployment-only', 'process-deployment-only'];
 export const ACTION_SCOPES: ActionScope[] = ['project', 'branch', 'pr'];
 export const ACTION_WHENS: ActionWhen[] = ['pre-deploy', 'post-deploy'];
