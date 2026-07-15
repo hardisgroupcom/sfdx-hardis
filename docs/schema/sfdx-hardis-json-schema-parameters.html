@@ -1942,7 +1942,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
 <span class="description"><p>Type of the action</p>
 </span><div class="enum-value" id="commandsPreDeploy_items_type_enum">
             <h4>Must be one of:</h4>
-            <ul class="list-group"><li class="list-group-item enum-item">"command"</li><li class="list-group-item enum-item">"data"</li><li class="list-group-item enum-item">"apex"</li><li class="list-group-item enum-item">"schedule-batch"</li><li class="list-group-item enum-item">"publish-community"</li><li class="list-group-item enum-item">"manual"</li></ul>
+            <ul class="list-group"><li class="list-group-item enum-item">"command"</li><li class="list-group-item enum-item">"data"</li><li class="list-group-item enum-item">"apex"</li><li class="list-group-item enum-item">"schedule-batch"</li><li class="list-group-item enum-item">"publish-community"</li><li class="list-group-item enum-item">"manual"</li><li class="list-group-item enum-item">"remove-packagexml-items"</li></ul>
             </div>
         
 
@@ -1960,6 +1960,8 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
 </div><div id="commandsPreDeploy_items_type_ex4" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;publish-community&quot;</span>
 </pre></div>
 </div><div id="commandsPreDeploy_items_type_ex5" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;manual&quot;</span>
+</pre></div>
+</div><div id="commandsPreDeploy_items_type_ex6" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;remove-packagexml-items&quot;</span>
 </pre></div>
 </div>
             </div>
@@ -2226,6 +2228,119 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         
 
         
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncommandsPreDeploy_items_parameters_packageXmlItems">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPreDeploy_items_parameters_packageXmlItems">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPreDeploy_items_parameters_packageXmlItems"
+                        aria-expanded="" aria-controls="commandsPreDeploy_items_parameters_packageXmlItems" onclick="setAnchor('#commandsPreDeploy_items_parameters_packageXmlItems')"><span class="property-name">packageXmlItems</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPreDeploy_items_parameters_packageXmlItems"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPreDeploy_items_parameters_packageXmlItems"
+             data-parent="#accordioncommandsPreDeploy_items_parameters_packageXmlItems">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy" onclick="anchorLink('commandsPreDeploy')">commandsPreDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items" onclick="anchorLink('commandsPreDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters" onclick="anchorLink('commandsPreDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters_packageXmlItems" onclick="anchorLink('commandsPreDeploy_items_parameters_packageXmlItems')">packageXmlItems</a></div><span class="badge badge-dark value-type">Type: array of string or string</span><br/>
+<span class="description"><p>List of package.xml items to remove before the metadata deployment for 'remove-packagexml-items' actions. Each entry uses the format TypeName:Member1,Member2 (use * as member to remove the whole type). A single string is also accepted for a single entry.</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="commandsPreDeploy_items_parameters_packageXmlItems_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy" onclick="anchorLink('commandsPreDeploy')">commandsPreDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items" onclick="anchorLink('commandsPreDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters" onclick="anchorLink('commandsPreDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters_packageXmlItems" onclick="anchorLink('commandsPreDeploy_items_parameters_packageXmlItems')">packageXmlItems</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters_packageXmlItems_items" onclick="anchorLink('commandsPreDeploy_items_parameters_packageXmlItems_items')">packageXmlItems items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="commandsPreDeploy_items_parameters_packageXmlItems_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;ApexClass:MyClass1,MyClass3&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Layout:MyLayout1,MyLayout2,MyLayout3&quot;</span>
+<span class="p">]</span>
+</pre></div>
+</div><div id="commandsPreDeploy_items_parameters_packageXmlItems_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;AiEvaluationDefinition:My_Eval_Definition&quot;</span>
+</pre></div>
+</div>
             </div>
         </div>
     </div>
@@ -2558,6 +2673,19 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
 <span class="w">            </span><span class="s2">&quot;sfdmuProject&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;EmailTemplate&quot;</span>
 <span class="w">        </span><span class="p">},</span>
 <span class="w">        </span><span class="s2">&quot;context&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;process-deployment-only&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;removeLegacyItems&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Remove legacy items from deployment package.xml&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;remove-packagexml-items&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="s2">&quot;packageXmlItems&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;ApexClass:MyClass1,MyClass3&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;Layout:MyLayout1,MyLayout2,MyLayout3&quot;</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="s2">&quot;context&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;runOnlyOnceByOrg&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">false</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">]</span>
 </pre></div>

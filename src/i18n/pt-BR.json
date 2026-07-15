@@ -2314,6 +2314,8 @@
   "readmeDocumentationLink": "Leia a documentação gerada automaticamente do projeto SFDX",
   "readyToRefreshSandboxOrg": "Você está pronto para atualizar sua org sandbox. Prossiga com a atualização da org agora.",
   "readyToWorkInBranch": "Pronto para trabalhar na branch {{branchName}}",
+  "reauthBeforeCommandActionFailed": "Não foi possível reautenticar antes da command action, continuando com a sessão existente: {{error}}",
+  "reauthenticatingBeforeCommandAction": "Reautenticando antes da command action para manter o arquivo de certificado disponível durante a execução...",
   "recommended": "recomendado",
   "recommendedToUseMkdocsMaterialToRead": "Recomenda-se usar mkdocs-material para lê-la corretamente (consulte a documentação)",
   "reconnectingToOrg": "Reconectando a org {{org}}...",

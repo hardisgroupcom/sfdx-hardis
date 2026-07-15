@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- Fix deployment command actions that refresh their session mid-run (like `sf agent publish`) crashing in CI because the JWT certificate file was deleted too early.
 - New `remove-packagexml-items` pre-deploy action type removes metadata items from package.xml before deployment.
 - Git delta operations now filter to only package directories when sfdx-project.json exists, preventing unrelated metadata changes from being deployed.
 

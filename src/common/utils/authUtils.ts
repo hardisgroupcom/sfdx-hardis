@@ -32,6 +32,12 @@ export interface AuthOrgOptions {
   setDefault?: boolean;
   forceUsername?: string;
   encryptedCertContent?: string;
+  // When true, do not delete the JWT certificate temp file after login (the caller is
+  // responsible for deleting it later using safeDeleteAuthTempFile). Used by deployment
+  // command actions that refresh their session mid-run (for example "sf agent ...").
+  keepCertFile?: boolean;
+  // Output: when keepCertFile is true, authOrg writes the kept certificate file path here.
+  keptCertFilePath?: string;
   Command?: {
     flags?: Record<string, any>;
     id?: string;
@@ -258,7 +264,13 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         uxLog("error", this, c.red(`JWT login failed for org ${orgAlias}. Error: ${(e as Error).message}`));
       }
       finally {
-        await safeDeleteAuthTempFile(crtKeyfile);
+        if (options.keepCertFile) {
+          // Keep the certificate file so the caller (for example a deployment command action)
+          // can use it while its command runs, then delete it afterwards.
+          options.keptCertFilePath = crtKeyfile;
+        } else {
+          await safeDeleteAuthTempFile(crtKeyfile);
+        }
       }
     } else if (!isCI && !isAgentMode()) {
       // Login with web auth
@@ -393,7 +405,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
   return false;
 }
 
-async function safeDeleteAuthTempFile(filePath?: string | null): Promise<void> {
+export async function safeDeleteAuthTempFile(filePath?: string | null): Promise<void> {
   if (!filePath) {
     return;
   }
