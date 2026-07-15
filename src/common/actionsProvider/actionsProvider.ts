@@ -22,7 +22,7 @@ export interface PrePostCommand {
     className?: string;      // for 'schedule-batch' actions
     cronExpression?: string;  // for 'schedule-batch' actions
     jobName?: string;        // for 'schedule-batch' actions (optional, defaults to <className>_Schedule)
-    packageXmlItems?: string[]; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2")
+    packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
     [key: string]: any;
   };
   command: string;
