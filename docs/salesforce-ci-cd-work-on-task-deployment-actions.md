@@ -144,15 +144,15 @@ When `runOnlyOnceByOrg` is `true` (the default), the "Deployment Actions" PR com
 
 ### Action implementations
 
-| Action type                                     | Purpose                                                          |
-|-------------------------------------------------|------------------------------------------------------------------|
-| [`command`](#run-command)                       | Run an arbitrary shell or `sf` command.                          |
-| [`data`](#import-sfdmu-project)                 | Import a SFDMU project.                                          |
-| [`apex`](#run-apex-script)                      | Run an Apex script file through the local `sf apex` integration. |
-| [`publish-community`](#publish-experience-site) | Publish an Experience Cloud (community) site.                    |
-| [`schedule-batch`](#schedule-batch)             | Schedule an Apex batch job with a cron expression.               |
+| Action type                                           | Purpose                                                                |
+|-------------------------------------------------------|------------------------------------------------------------------------|
+| [`command`](#run-command)                             | Run an arbitrary shell or `sf` command.                                |
+| [`data`](#import-sfdmu-project)                       | Import a SFDMU project.                                                |
+| [`apex`](#run-apex-script)                            | Run an Apex script file through the local `sf apex` integration.       |
+| [`publish-community`](#publish-experience-site)       | Publish an Experience Cloud (community) site.                          |
+| [`schedule-batch`](#schedule-batch)                   | Schedule an Apex batch job with a cron expression.                     |
 | [`remove-packagexml-items`](#remove-packagexml-items) | Remove metadata items from package.xml before the metadata deployment. |
-| [`manual`](#manual-step)                        | Represent a manual step (no CLI execution).                      |
+| [`manual`](#manual-step)                              | Represent a manual step (no CLI execution).                            |
 
 #### Run command
 
@@ -265,8 +265,8 @@ Only available as a **pre-deploy** action. The removal applies to the temporary 
 
 `runOnlyOnceByOrg` is ignored for this action type: since it only alters the current deployment, it runs at every deployment (check and process).
 
-| Custom parameter            | Description                                                                                                          | Example                       |
-|-----------------------------|----------------------------------------------------------------------------------------------------------------------|-------------------------------|
+| Custom parameter             | Description                                                                                                                                                              | Example                       |
+|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
 | `parameters.packageXmlItems` | List of items to remove, each in format `TypeName:Member1,Member2`. Use `*` as member to remove a whole type. Member names also support glob wildcards (ex: `Account*`). A single string is also accepted for a single entry. | `ApexClass:MyClass1,MyClass3` |
 
 Example:
