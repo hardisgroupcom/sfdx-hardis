@@ -1389,6 +1389,7 @@
   "flowDocAfter": "FLOW DOC NA:\n",
   "flowDocBefore": "FLOW DOC VOOR:\n",
   "flowErrorsFound": "{{count}} Flow-fout(en) gevonden in de laatste {{days}} dag(en).",
+  "flowGitDiffFlowFileNotFound": "Flow-bestand voor {{flowName}} niet gevonden in de pakketmappen: Flow-diff wordt niet gegenereerd",
   "flowGitDiffUnableToGenerate": "Kan geen Flow-diff genereren voor {{flowName}}: {{message}}",
   "flowVersionsDeletionResultsReportTitle": "Resultaten van verwijdering van Flow-versies",
   "flowVersionsToDeleteReportTitle": "Te verwijderen Flow-versies",

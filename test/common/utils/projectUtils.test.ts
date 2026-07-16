@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import { listApexFiles, listFlowFiles, listPageFiles } from '../../../src/common/utils/projectUtils.js';
+import { getSfdxProjectPackageDirectories, listApexFiles, listFlowFiles, listPageFiles } from '../../../src/common/utils/projectUtils.js';
 
 describe('projectUtils', () => {
   let tmpDir: string;
@@ -14,6 +14,35 @@ describe('projectUtils', () => {
 
   afterEach(async () => {
     await fs.remove(tmpDir);
+  });
+
+  describe('getSfdxProjectPackageDirectories()', () => {
+    it('returns package directories declared in sfdx-project.json', async () => {
+      await fs.writeJson(path.join(tmpDir, 'sfdx-project.json'), {
+        packageDirectories: [{ path: 'src-dx', default: true }, { path: 'src-extra' }],
+      });
+
+      const packageDirectories = await getSfdxProjectPackageDirectories(tmpDir);
+
+      expect(packageDirectories).to.deep.equal([
+        { path: 'src-dx', fullPath: path.join(tmpDir, 'src-dx') },
+        { path: 'src-extra', fullPath: path.join(tmpDir, 'src-extra') },
+      ]);
+    });
+
+    it('falls back to force-app when sfdx-project.json is missing', async () => {
+      const packageDirectories = await getSfdxProjectPackageDirectories(tmpDir);
+
+      expect(packageDirectories).to.deep.equal([{ path: 'force-app', fullPath: path.join(tmpDir, 'force-app') }]);
+    });
+
+    it('falls back to force-app when sfdx-project.json has no package directories', async () => {
+      await fs.writeJson(path.join(tmpDir, 'sfdx-project.json'), { name: 'empty-project' });
+
+      const packageDirectories = await getSfdxProjectPackageDirectories(tmpDir);
+
+      expect(packageDirectories).to.deep.equal([{ path: 'force-app', fullPath: path.join(tmpDir, 'force-app') }]);
+    });
   });
 
   describe('listFlowFiles()', () => {

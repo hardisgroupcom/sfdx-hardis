@@ -1365,6 +1365,7 @@
   "flowDocAfter": "DOC DO FLUXO DEPOIS:\n",
   "flowDocBefore": "DOC DO FLUXO ANTES:\n",
   "flowErrorsFound": "{{count}} erro(s) de Fluxo encontrado(s) nos últimos {{days}} dia(s).",
+  "flowGitDiffFlowFileNotFound": "Não foi possível encontrar o arquivo do Fluxo {{flowName}} nos diretórios de pacote: o diff de Fluxo não será gerado",
   "flowGitDiffUnableToGenerate": "Não foi possível gerar o diff de Fluxo para {{flowName}}: {{message}}",
   "flowVersionsDeletionResultsReportTitle": "Resultados da Exclusão de Versões de Fluxo",
   "flowVersionsToDeleteReportTitle": "Versões de Fluxo a Excluir",
