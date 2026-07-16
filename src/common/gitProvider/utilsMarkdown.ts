@@ -111,6 +111,10 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
   for (const flowName of flowNames) {
     flowDiffFilesSummary += `- [${flowName}](#${flowName})\n`;
     const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
+    if (fileMetadata == null) {
+      uxLog("warning", this, c.yellow('[FlowGitDiff] ' + t('flowGitDiffFlowFileNotFound', { flowName })));
+      continue;
+    }
     try {
       // Markdown with pure MermaidJS
       if (supportsMermaidInPrMarkdown) {

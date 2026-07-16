@@ -20,7 +20,7 @@ import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { getCache, setCache } from '../cache/index.js';
 import { buildOrgManifest } from '../utils/deployUtils.js';
 import { listMajorOrgs } from '../utils/orgConfigUtils.js';
-import { GLOB_IGNORE_PATTERNS, METADATA_DOC_GLOB_IGNORE_PATTERNS, isSfdxProject } from '../utils/projectUtils.js';
+import { GLOB_IGNORE_PATTERNS, METADATA_DOC_GLOB_IGNORE_PATTERNS, getSfdxProjectPackageDirectories, isSfdxProject } from '../utils/projectUtils.js';
 import { prompts } from '../utils/prompts.js';
 import { parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { listMetadataTypes } from './metadataList.js';
@@ -454,14 +454,9 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
   }
 
   public static async findMetaFileFromTypeAndName(packageXmlType: string, packageXmlName: string, packageDirectories: any[] = []) {
-    // Handle default package directory if not provided as input
+    // Handle package directories declared in sfdx-project.json if not provided as input
     if (packageDirectories.length === 0) {
-      packageDirectories = [
-        {
-          fullPath: path.join(process.cwd(), "force-app"),
-          path: "force-app"
-        }
-      ]
+      packageDirectories = await getSfdxProjectPackageDirectories();
     }
     // Find metadata type from packageXmlName
     const metadataList = listMetadataTypes();

@@ -1387,6 +1387,7 @@
   "flowDocAfter": "フロードキュメント（変更後）:\n",
   "flowDocBefore": "フロードキュメント（変更前）:\n",
   "flowErrorsFound": "過去 {{days}} 日間にフロー エラーが {{count}} 件見つかりました。",
+  "flowGitDiffFlowFileNotFound": "パッケージディレクトリ内にフロー{{flowName}}のファイルが見つかりません: フロー差分は生成されません",
   "flowGitDiffUnableToGenerate": "フロー{{flowName}}の差分を生成できません: {{message}}",
   "flowVersionsDeletionResultsReportTitle": "フローバージョン削除結果",
   "flowVersionsToDeleteReportTitle": "削除するフローバージョン",

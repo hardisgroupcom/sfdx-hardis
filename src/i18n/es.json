@@ -1389,6 +1389,7 @@
   "flowDocAfter": "DOC DE FLOW DESPUÉS:\n",
   "flowDocBefore": "DOC DE FLOW ANTES:\n",
   "flowErrorsFound": "Se encontraron {{count}} error(es) de Flow en los últimos {{days}} día(s).",
+  "flowGitDiffFlowFileNotFound": "No se encuentra el archivo del Flow {{flowName}} en los directorios de packages: no se generará el diff del Flow",
   "flowGitDiffUnableToGenerate": "No se puede generar el diff del Flow para {{flowName}}: {{message}}",
   "flowVersionsDeletionResultsReportTitle": "Resultados de eliminación de versiones de Flow",
   "flowVersionsToDeleteReportTitle": "Versiones de Flow a eliminar",
