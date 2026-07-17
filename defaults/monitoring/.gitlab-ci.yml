@@ -36,7 +36,7 @@ backup:
     # Commit and push new state
     - git status
     - git add --all
-    - git commit -m "Org state on $(date -u +'%Y-%m-%d %H:%M') for $CI_COMMIT_REF_NAME [skip ci]" || echo "No changes to commit"
+    - 'git commit -m "chore(monitoring): org state on $(date -u +''%Y-%m-%d %H:%M'') for $CI_COMMIT_REF_NAME [skip ci]" || echo "No changes to commit"'
     - git push -o ci-skip https://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:$CI_COMMIT_REF_NAME
   artifacts:
     when: always

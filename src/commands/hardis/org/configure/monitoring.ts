@@ -24,6 +24,7 @@ import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
+import { buildConventionalCommitMessage } from '../../../../common/utils/gitUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -230,7 +231,7 @@ The command's technical implementation involves a series of Git operations, file
       if (confirmPushToRemote.value === true) {
         uxLog("action", this, c.cyan(t('pushingBranchToGitRemoteServer', { branchName: c.bold(branchName) })));
         await gitAddCommitPush({
-          message: '[sfdx-hardis] Update monitoring configuration',
+          commitMessage: buildConventionalCommitMessage({ subject: 'update monitoring configuration' }),
         });
       }
     }
@@ -251,7 +252,7 @@ The command's technical implementation involves a series of Git operations, file
 
     if (confirmPush.value === true) {
       await gitAddCommitPush({
-        message: '[sfdx-hardis] Update monitoring configuration',
+        commitMessage: buildConventionalCommitMessage({ subject: 'update monitoring configuration' }),
       });
       uxLog("success", this, c.green(t('yourConfigurationForOrgMonitoringIsNow')));
     } else {

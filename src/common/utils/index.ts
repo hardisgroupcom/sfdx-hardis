@@ -827,7 +827,7 @@ export async function gitAddCommitPush(
   options: any = {
     init: false,
     pattern: './*',
-    commitMessage: 'Updated by sfdx-hardis',
+    commitMessage: 'chore(sfdx-hardis): automated update',
     branch: null,
   }
 ) {
@@ -843,7 +843,7 @@ export async function gitAddCommitPush(
   const currentgitBranch = (await git().branchLocal()).current;
   await git()
     .add(options.pattern || './*')
-    .commit(options.commitMessage || 'Updated by sfdx-hardis');
+    .commit(options.commitMessage || 'chore(sfdx-hardis): automated update');
   await gitPush(['-u', 'origin', currentgitBranch]);
 }
 

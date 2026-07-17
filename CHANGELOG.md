@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- All generated commits now follow Conventional Commits format so they pass commitlint.
+- [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): Fix incorrect option name passed to git operations so configured commit messages are applied.
 - [hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa/):
   - Fix crash when the MFA-bypass field is unavailable in the target org edition.
   - Update MFA enforcement dates to Salesforce's revised schedule (sandboxes since July 10 2026, production starting July 20 2026).

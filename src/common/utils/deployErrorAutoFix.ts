@@ -3,6 +3,7 @@ import { getCurrentGitBranch, git, uxLog } from "./index.js";
 import { CodingAgentProvider } from "../aiProvider/codingAgentProvider.js";
 import { buildPromptFromTemplate } from "../aiProvider/promptTemplates.js";
 import { GitProvider } from "../gitProvider/index.js";
+import { buildConventionalCommitMessage } from "./gitUtils.js";
 import { t } from "./i18n.js";
 
 export interface AutoFixResult {
@@ -95,7 +96,12 @@ export async function autoFixDeployErrors(
     await git().raw(["add", "--all", "--", ".", ":!docs"]);
     await git().addConfig("user.email", "sfdx-hardis-bot@cloudity.com", false, "global");
     await git().addConfig("user.name", "sfdx-hardis Bot", false, "global");
-    const commitMessage = `fix: auto-fix deployment errors using ${agentResult.agent}\n\n${agentResult.fixesDescription.substring(0, 500)}`;
+    const commitMessage = buildConventionalCommitMessage({
+      type: "fix",
+      scope: null,
+      subject: `auto-fix deployment errors using ${agentResult.agent}`,
+      body: agentResult.fixesDescription.substring(0, 500),
+    });
     await git().commit(commitMessage, ["--no-verify"]);
 
     // Push the fix branch
