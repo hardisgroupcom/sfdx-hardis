@@ -2,6 +2,9 @@
 
 ## [beta] (main)
 
+- [hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa/):
+  - Fix crash when the MFA-bypass field is unavailable in the target org edition.
+  - Update MFA enforcement dates to Salesforce's revised schedule (sandboxes since July 10 2026, production starting July 20 2026).
 - Fix deployment command actions that refresh their session mid-run (like `sf agent publish`) crashing in CI because the JWT certificate file was deleted too early.
 - New `remove-packagexml-items` pre-deploy action type removes metadata items from package.xml before deployment.
 - Git delta operations now filter to only package directories when sfdx-project.json exists, preventing unrelated metadata changes from being deployed.
