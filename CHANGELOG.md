@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [7.21.0] 2026-07-17
+
 - All generated commits now follow Conventional Commits format so they pass commitlint.
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): Fix incorrect option name passed to git operations so configured commit messages are applied.
 - [hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa/):
