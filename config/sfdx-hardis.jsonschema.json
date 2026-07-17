@@ -1231,6 +1231,38 @@
       "title": "Custom Org Colors",
       "type": "object"
     },
+    "dangerousPermissionsExtra": {
+      "$id": "#/properties/dangerousPermissionsExtra",
+      "description": "Additional dangerous permissions to audit with hardis:org:diagnose:unsecure-permissions, on top of the built-in list. Use the permission API name (with or without the 'Permissions' prefix).",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions/",
+      "examples": [
+        [
+          "PermissionsManageDataIntegrations",
+          "EditPublicDocuments"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Extra dangerous permissions to audit",
+      "type": "array"
+    },
+    "dangerousPermissionsIgnore": {
+      "$id": "#/properties/dangerousPermissionsIgnore",
+      "description": "Built-in dangerous permissions to exclude from hardis:org:diagnose:unsecure-permissions. Use the permission API name (with or without the 'Permissions' prefix).",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions/",
+      "examples": [
+        [
+          "PermissionsApiEnabled",
+          "ViewSetup"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Dangerous permissions to ignore",
+      "type": "array"
+    },
     "mermaidTheme": {
       "$id": "#/properties/mermaidTheme",
       "description": "Overrides Flow Mermaid colors for generated Flow documentation and Flow diffs. Any value not provided keeps the default from the built-in Flow Mermaid renderConfig.",
