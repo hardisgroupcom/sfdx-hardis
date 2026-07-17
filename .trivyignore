@@ -267,3 +267,7 @@ CVE-2026-53488
 CVE-2026-53489
 CVE-2026-53492
 
+# https://avd.aquasec.com/nvd/cve-2026-54466
+# websocket-driver 0.7.4 (message corruption via abuse of protocol length headers, CRITICAL). sfdx-hardis own tree is already pinned to 0.7.5 in yarn.lock; the residual 0.7.4 comes from the globally npm-installed Salesforce CLI (usr/lib/node_modules/@salesforce/cli/node_modules/websocket-driver), which our yarn resolutions cannot reach, so it is not remediable from this repo; the Salesforce CLI team will pick up the upgrade. websocket-driver is used as a streaming client, not a server parsing untrusted frames, so harmless for sfdx-hardis usage. Added 2026-07-17.
+CVE-2026-54466
+
