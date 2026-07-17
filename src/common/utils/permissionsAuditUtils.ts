@@ -97,7 +97,7 @@ export const DANGEROUS_USER_PERMISSIONS: DangerousUserPermission[] = [
   up('ManageChatterMessages', 'Manage Chatter Messages and Direct Messages', 2),
   up('ManageUnlistedGroups', 'Manage Unlisted Groups', 2),
   up('ManageDynamicDashboards', 'Manage Dynamic Dashboards', 2),
-  // Tier 3 - exfiltration
+  // Tier 3 - data theft
   up('DataExport', 'Weekly Data Export', 3),
   up('ExportReport', 'Export Reports', 3),
   up('ApiEnabled', 'API Enabled', 3),
@@ -134,7 +134,7 @@ export const TIER_DESCRIPTIONS: Record<string, string> = {
   '0': 'Full org compromise',
   '1': 'Identity takeover',
   '2': 'Sharing model bypass',
-  '3': 'Data exfiltration',
+  '3': 'Data theft',
   '4': 'Control weakening',
   Custom: 'Custom (added via config)',
 };

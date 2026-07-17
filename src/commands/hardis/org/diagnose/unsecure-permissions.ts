@@ -27,7 +27,7 @@ export default class DiagnoseUnsecurePermissions extends SfCommand<any> {
 
 **Audits dangerous permissions granted through Profiles, Permission Sets and Permission Set Groups, and resolves which active users hold them.**
 
-Dangerous permissions are broad administrative, identity, sharing-bypass, exfiltration or control-weakening rights (for example Modify All Data, Author Apex, Manage Users, View All Data, Weekly Data Export). They are grouped into criticality tiers, from Tier 0 (full org compromise) to Tier 4 (control weakening).
+Dangerous permissions are broad administrative, identity, sharing-bypass, data-theft or control-weakening rights (for example Modify All Data, Author Apex, Manage Users, View All Data, Weekly Data Export). They are grouped into criticality tiers, from Tier 0 (full org compromise) to Tier 4 (control weakening).
 
 Key functionalities:
 
