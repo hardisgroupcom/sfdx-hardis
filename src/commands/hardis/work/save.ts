@@ -20,7 +20,7 @@ import {
 } from '../../../common/utils/index.js';
 import { exportData } from '../../../common/utils/dataUtils.js';
 import { forceSourcePull } from '../../../common/utils/deployUtils.js';
-import { buildAvailableTargetBranches, callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from '../../../common/utils/gitUtils.js';
+import { buildAvailableTargetBranches, buildConventionalCommitMessage, callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from '../../../common/utils/gitUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import {
   appendPackageXmlFilesContent,
@@ -480,7 +480,7 @@ The command's technical implementation involves a series of orchestrated steps:
     // Commit updates
     let gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
-      const commitMessage = '[sfdx-hardis] Update package content';
+      const commitMessage = buildConventionalCommitMessage({ subject: 'update package content' });
       uxLog("action", this, c.cyan(t('addingNewCommitPackageXmlUpdates', { commitMessage })));
 
       // Build files list for table
@@ -541,7 +541,7 @@ The command's technical implementation involves a series of orchestrated steps:
           try {
             await git().add(cleanedFiles);
 
-            const commitMessage = '[sfdx-hardis] Clean sfdx project';
+            const commitMessage = buildConventionalCommitMessage({ subject: 'clean sfdx project' });
             uxLog("action", this, c.cyan(t('addingNewCommitCleanedFiles', { commitMessage })));
 
             // Build files list for table
@@ -662,7 +662,7 @@ The command's technical implementation involves a series of orchestrated steps:
     }
     let gitStatusAfterDeployPlan = await git().status();
     if (gitStatusAfterDeployPlan.staged.length > 0 && !this.noGit) {
-      const commitMessage = '[sfdx-hardis] Update deployment plan';
+      const commitMessage = buildConventionalCommitMessage({ subject: 'update deployment plan' });
       uxLog("action", this, c.cyan(t('addingNewCommitDeploymentPlan', { commitMessage })));
 
       // Build files list for table

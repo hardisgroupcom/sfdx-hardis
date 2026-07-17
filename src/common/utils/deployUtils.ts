@@ -1001,7 +1001,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   await git().addConfig('user.email', 'bot@hardis.com', false, 'global');
   await git().addConfig('user.name', 'Hardis', false, 'global');
   await git().add('--all');
-  await git().commit('"temp"', ['--no-verify']);
+  await git().commit('chore(sfdx-hardis): temp commit for delta computation', ['--no-verify']);
 
   // Generate package.xml git delta
   const tmpDir = await createTempDir();
