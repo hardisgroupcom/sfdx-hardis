@@ -103,6 +103,7 @@ export type NotifMessageType =
   | "APEX_FLEX_QUEUE"
   | "CONNECTED_APPS"
   | "UNSECURED_CONNECTED_APPS"
+  | "DANGEROUS_PERMISSIONS"
   | "ORG_HEALTH_CHECK"
   | "ORG_INFO"
   | "ORG_LIMITS"
@@ -329,6 +330,13 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
   MFA_CONFIG: {
     category: "apexTestsSecurity",
     icon: "utility:shield",
+    colorClass: "security",
+    emittedSeverities: ["error", "warning", "log"],
+    defaults: { messaging: "warning", email: "error", api: "log" },
+  },
+  DANGEROUS_PERMISSIONS: {
+    category: "apexTestsSecurity",
+    icon: "utility:lock",
     colorClass: "security",
     emittedSeverities: ["error", "warning", "log"],
     defaults: { messaging: "warning", email: "error", api: "log" },

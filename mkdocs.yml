@@ -319,6 +319,7 @@ nav:
           - diagnose storage-stats: hardis/org/diagnose/storage-stats.md
           - diagnose underusedpermsets: hardis/org/diagnose/underusedpermsets.md
           - diagnose unsecure-connected-apps: hardis/org/diagnose/unsecure-connected-apps.md
+          - diagnose unsecure-permissions: hardis/org/diagnose/unsecure-permissions.md
           - diagnose unused-apex-classes: hardis/org/diagnose/unused-apex-classes.md
           - diagnose unused-connected-apps: hardis/org/diagnose/unused-connected-apps.md
           - diagnose unusedlicenses: hardis/org/diagnose/unusedlicenses.md
