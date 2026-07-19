@@ -210,7 +210,7 @@ describe('filesUtils', () => {
     });
 
     it('auto-wraps long free-text columns and caps their width, leaving short columns unwrapped', async () => {
-      const csvPath = path.join(tmpDir, 'autowrap.csv');
+      const csvPath = path.join(tmpDir, 'auto-wrap.csv');
       const longValue = 'A'.repeat(200);
       await fs.writeFile(csvPath, `Short,LongText\nok,"${longValue}"\n`);
       await createXlsxFromCsvFiles([csvPath], csvPath, {});
@@ -232,7 +232,7 @@ describe('filesUtils', () => {
     });
 
     it('does not auto-wrap when autoWrapLongText is disabled', async () => {
-      const csvPath = path.join(tmpDir, 'nowrap.csv');
+      const csvPath = path.join(tmpDir, 'no-wrap.csv');
       const longValue = 'B'.repeat(200);
       await fs.writeFile(csvPath, `Short,LongText\nok,"${longValue}"\n`);
       await createXlsxFromCsvFiles([csvPath], csvPath, { autoWrapLongText: false });
