@@ -1835,6 +1835,8 @@
   "monitoringAiSummaryNotifTitle": "Podsumowanie AI monitorowania dla {{orgUrl}}",
   "monitoringAiSummaryStarting": "Generowanie podsumowania monitorowania z użyciem AI...",
   "monitoringBackupSkipMetadataTypesFound": "Znaleziono zmienną środowiskową MONITORING_BACKUP_SKIP_METADATA_TYPES, zmniejszenie zawartości {{packageXmlFullFile}} przez pominięcie {{types}} typów metadanych",
+  "monitoringCommandDescAgentTests": "Uruchamia wszystkie agent tests Agentforce (AiEvaluationDefinition) w org i raportuje wyniki zaliczenia/niezaliczenia dla każdego przypadku testowego.",
+  "monitoringCommandTitleAgentTests": "Agent tests",
   "monitoringNotifReadError": "Nie udało się odczytać pliku powiadomienia monitorowania {{file}}: {{message}}",
   "monitoringNotifWriteError": "Nie udało się zapisać pliku powiadomienia monitorowania: {{message}}",
   "monitoringNotifWritten": "Zapisano plik powiadomienia monitorowania {{file}}",

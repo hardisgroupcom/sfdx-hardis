@@ -1833,6 +1833,8 @@
   "monitoringAiSummaryNotifTitle": "{{orgUrl}} のAI監視サマリー",
   "monitoringAiSummaryStarting": "AIを使用して監視サマリーを生成しています...",
   "monitoringBackupSkipMetadataTypesFound": "環境変数 MONITORING_BACKUP_SKIP_METADATA_TYPES が見つかりました。{{types}} メタデータタイプをスキップして {{packageXmlFullFile}} の内容を削減します",
+  "monitoringCommandDescAgentTests": "org内のすべてのAgentforce agent tests（AiEvaluationDefinition）を実行し、各テストケースの合格 / 不合格の結果を報告します。",
+  "monitoringCommandTitleAgentTests": "Agent tests",
   "monitoringNotifReadError": "監視通知ファイル {{file}} の読み取りに失敗しました: {{message}}",
   "monitoringNotifWriteError": "監視通知ファイルの書き込みに失敗しました: {{message}}",
   "monitoringNotifWritten": "監視通知ファイル {{file}} を書き込みました",

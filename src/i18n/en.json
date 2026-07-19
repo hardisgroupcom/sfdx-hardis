@@ -1839,6 +1839,8 @@
   "monitoringAiSummaryNotifTitle": "AI Monitoring Summary for {{orgUrl}}",
   "monitoringAiSummaryStarting": "Generating AI-powered monitoring summary...",
   "monitoringBackupSkipMetadataTypesFound": "MONITORING_BACKUP_SKIP_METADATA_TYPES env var found, also reducing the content of {{packageXmlFullFile}} by skipping {{types}} metadata types",
+  "monitoringCommandDescAgentTests": "Run all Agentforce agent tests (AiEvaluationDefinition) in the org and report pass / fail results for each test case.",
+  "monitoringCommandTitleAgentTests": "Agent tests",
   "monitoringNotifReadError": "Failed to read monitoring notification file {{file}}: {{message}}",
   "monitoringNotifWriteError": "Failed to write monitoring notification file: {{message}}",
   "monitoringNotifWritten": "Written monitoring notification file {{file}}",

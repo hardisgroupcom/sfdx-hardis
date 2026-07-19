@@ -1835,6 +1835,8 @@
   "monitoringAiSummaryNotifTitle": "Résumé AI de monitoring pour {{orgUrl}}",
   "monitoringAiSummaryStarting": "Génération du résumé de monitoring par AI...",
   "monitoringBackupSkipMetadataTypesFound": "Variable MONITORING_BACKUP_SKIP_METADATA_TYPES trouvée, réduction du contenu de {{packageXmlFullFile}} en ignorant {{types}} types de métadonnées",
+  "monitoringCommandDescAgentTests": "Exécute tous les agent tests Agentforce (AiEvaluationDefinition) de l'org et rapporte les résultats de réussite / échec pour chaque cas de test.",
+  "monitoringCommandTitleAgentTests": "Agent tests",
   "monitoringNotifReadError": "Impossible de lire le fichier de notification de monitoring {{file}} : {{message}}",
   "monitoringNotifWriteError": "Impossible d'écrire le fichier de notification de monitoring : {{message}}",
   "monitoringNotifWritten": "Fichier de notification de monitoring écrit : {{file}}",

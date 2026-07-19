@@ -1834,6 +1834,8 @@
   "monitoringAiSummaryNotifTitle": "AI-Monitoring-Zusammenfassung für {{orgUrl}}",
   "monitoringAiSummaryStarting": "AI-gestützte Monitoring-Zusammenfassung wird erstellt...",
   "monitoringBackupSkipMetadataTypesFound": "Umgebungsvariable MONITORING_BACKUP_SKIP_METADATA_TYPES gefunden, Inhalt von {{packageXmlFullFile}} wird durch Überspringen von {{types}} Metadatentypen reduziert",
+  "monitoringCommandDescAgentTests": "Führt alle Agentforce agent tests (AiEvaluationDefinition) in der Org aus und meldet die bestanden/fehlgeschlagen-Ergebnisse für jeden Testfall.",
+  "monitoringCommandTitleAgentTests": "Agent tests",
   "monitoringNotifReadError": "Monitoring-Benachrichtigungsdatei {{file}} konnte nicht gelesen werden: {{message}}",
   "monitoringNotifWriteError": "Monitoring-Benachrichtigungsdatei konnte nicht geschrieben werden: {{message}}",
   "monitoringNotifWritten": "Monitoring-Benachrichtigungsdatei {{file}} wurde geschrieben",
