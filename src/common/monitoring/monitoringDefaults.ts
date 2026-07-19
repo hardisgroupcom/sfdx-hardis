@@ -64,6 +64,14 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     icon: "utility:warning",
   },
   {
+    key: "AGENT_TESTS",
+    command: "sf hardis:org:test:agents",
+    frequency: "weekly",
+    notificationTypes: ["AGENT_TESTS"],
+    category: "apexTestsSecurity",
+    icon: "utility:einstein",
+  },
+  {
     key: "UNSECURED_CONNECTED_APPS",
     command: "sf hardis:org:diagnose:unsecure-connected-apps",
     frequency: "daily",
@@ -88,14 +96,6 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     notificationTypes: ["DANGEROUS_PERMISSIONS"],
     category: "apexTestsSecurity",
     icon: "utility:lock",
-  },
-  {
-    key: "AGENT_TESTS",
-    command: "sf hardis:org:test:agents",
-    frequency: "weekly",
-    notificationTypes: ["AGENT_TESTS"],
-    category: "apexTestsSecurity",
-    icon: "utility:einstein",
   },
   {
     key: "DEPLOYMENTS",
