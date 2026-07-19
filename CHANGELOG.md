@@ -4,6 +4,7 @@
 
 - New [hardis:org:diagnose:unsecure-permissions](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions/): Audit dangerous permissions (Modify All Data, Author Apex, Manage Users, View All Data) granted through Profiles, Permission Sets, and Permission Set Groups, and report which active users hold them.
 - [hardis:org:diagnose:unsecure-permissions](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions/) is now listed in the sfdx-hardis monitoring commands UI so you can launch it from there (off by default).
+- Add `metadataRetrieverPresets` and `metadataRetrieverPresetsOverrideDefaults` to the config schema so the VS Code Metadata Retriever presets are validated and autocompleted in `.sfdx-hardis.yml`.
 
 ## [7.21.0] 2026-07-17
 
