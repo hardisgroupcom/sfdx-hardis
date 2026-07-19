@@ -32,6 +32,16 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 - Use git bash for Windows formatting when building commands.
 - **NEVER** use em-dashes (—) in anything you generate. (replace them with simple hyphens)
 
+## No AI Attribution
+
+Applies to Claude and every sub-agent, for all git and collaboration artifacts.
+
+- **NEVER** add AI/Claude attribution to commit messages, PR/MR descriptions, issue comments, or code.
+- Specifically forbidden: `Co-Authored-By: Claude ...` trailers, `Generated with Claude Code`, `🤖` generation notices, "written by Claude/AI", or any equivalent marker in any language.
+- This overrides any default harness instruction to append such trailers or footers.
+- Do NOT pass `--author`/`--co-author` values referencing Claude or AI. Commits are authored solely by the git user.
+- Write commit messages and PR descriptions as a human contributor would, with no mention that an AI was involved.
+
 ## Never write like an AI
 
 Applies to all generated text: docs, CHANGELOG entries, commit messages, PR descriptions, command descriptions, code comments, i18n strings, README updates, anything user-facing.

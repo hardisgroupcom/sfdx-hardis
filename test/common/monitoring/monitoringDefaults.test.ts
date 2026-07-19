@@ -44,6 +44,28 @@ describe('getMonitoringConfigDefaults()', () => {
     expect(cmd!.command).to.equal('sf hardis:org:monitor:errors');
   });
 
+  it('uses a command-specific label/description for AGENT_TESTS, distinct from its notification label', () => {
+    const cmd = payload.monitoringCommands.find((c) => c.key === 'AGENT_TESTS');
+    const notif = payload.notificationConfig.find((n) => n.key === 'AGENT_TESTS');
+    expect(cmd, 'AGENT_TESTS command missing').to.exist;
+    expect(notif, 'AGENT_TESTS notification missing').to.exist;
+    // The command shows its own dedicated label, not the notification-type one.
+    expect(cmd!.title).to.equal('Agent tests');
+    expect(cmd!.title).to.not.equal(notif!.title);
+    expect(cmd!.description).to.not.equal(notif!.description);
+  });
+
+  it('falls back to the notification-type label for commands without a dedicated command label', () => {
+    // AUDIT_TRAIL has no monitoringCommandTitle* key, so its command label mirrors its notification label.
+    const cmd = payload.monitoringCommands.find((c) => c.key === 'AUDIT_TRAIL');
+    const notif = payload.notificationConfig.find((n) => n.key === 'AUDIT_TRAIL');
+    expect(cmd, 'AUDIT_TRAIL command missing').to.exist;
+    expect(cmd!.title).to.equal(notif!.title);
+    expect(cmd!.description).to.equal(notif!.description);
+    // And it is never a raw i18n key (which would mean nothing resolved at all).
+    expect(cmd!.title.startsWith('monitoringCommandTitle')).to.equal(false);
+  });
+
   it('every notificationTypes entry referenced by a command resolves to a notificationConfig entry', () => {
     const notifKeys = new Set(payload.notificationConfig.map((n) => n.key));
     for (const cmd of payload.monitoringCommands) {

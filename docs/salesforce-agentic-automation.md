@@ -205,6 +205,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                                                   | Delete accumulated Apex debug logs from an org                                      |
 | [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                                         | Delete obsolete Flow versions to reduce storage and technical debt                  |
 | [**hardis:org:purge:profile**](hardis/org/purge/profile.md)                                                   | Remove permission attributes from Profiles after migrating to Permission Sets       |
+| [**hardis:org:test:agents**](hardis/org/test/agents.md)                                                       | Run Agentforce agent tests in the target org and report pass / fail results         |
 | [**hardis:org:test:apex**](hardis/org/test/apex.md)                                                           | Run Apex tests in the target org and report pass / fail / coverage results          |
 | [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)                                     | Fix `.invalid` email suffixes on sandbox users so they can log in                   |
 | [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                                                       | Freeze user logins (temporarily suspend access without deactivating)                |
