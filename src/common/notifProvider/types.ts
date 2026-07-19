@@ -84,6 +84,7 @@ export type NotifMessageType =
   | "UNUSED_USERS_EXPERIENCE_6_MONTHS"
   | "AUDIT_TRAIL"
   | "APEX_TESTS"
+  | "AGENT_TESTS"
   | "BACKUP"
   | "DEPLOYMENT"
   | "LEGACY_API"
@@ -302,6 +303,13 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
   APEX_TESTS: {
     category: "apexTestsSecurity",
     icon: "utility:check",
+    colorClass: "tests",
+    emittedSeverities: ["error", "log"],
+    defaults: { messaging: "error", email: "error", api: "log" },
+  },
+  AGENT_TESTS: {
+    category: "apexTestsSecurity",
+    icon: "utility:einstein",
     colorClass: "tests",
     emittedSeverities: ["error", "log"],
     defaults: { messaging: "error", email: "error", api: "log" },

@@ -90,6 +90,14 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     icon: "utility:lock",
   },
   {
+    key: "AGENT_TESTS",
+    command: "sf hardis:org:test:agents",
+    frequency: "weekly",
+    notificationTypes: ["AGENT_TESTS"],
+    category: "apexTestsSecurity",
+    icon: "utility:einstein",
+  },
+  {
     key: "DEPLOYMENTS",
     command: "sf hardis:org:diagnose:deployments --period weekly",
     frequency: "daily",

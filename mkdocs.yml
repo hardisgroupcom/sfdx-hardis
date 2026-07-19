@@ -147,6 +147,7 @@ nav:
           - Metadata Backup: salesforce-monitoring-metadata-backup.md
           - Suspect Setup Actions: salesforce-monitoring-suspect-audit-trail.md
           - Apex tests: salesforce-monitoring-apex-tests.md
+          - Agent tests: salesforce-monitoring-agent-tests.md
           - Quality Checks with MegaLinter: salesforce-monitoring-quality-checks.md
           - Apex and Flow errors: salesforce-monitoring-apex-flow-errors.md
           - Limits issues: salesforce-monitoring-org-limits.md
@@ -346,6 +347,7 @@ nav:
           - retrieve sources metadata: hardis/org/retrieve/sources/metadata.md
           - retrieve sources retrofit: hardis/org/retrieve/sources/retrofit.md
           - select: hardis/org/select.md
+          - test agents: hardis/org/test/agents.md
           - test apex: hardis/org/test/apex.md
           - user activateinvalid: hardis/org/user/activateinvalid.md
           - user freeze: hardis/org/user/freeze.md
