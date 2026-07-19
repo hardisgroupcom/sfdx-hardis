@@ -1766,6 +1766,9 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
 
   const columnStylePreferences = new Map<string, ExcelColumnStyle>();
   const columnMaxHeightConstraints = new Map<number, number>();
+  // Set to true when at least one column gets auto-wrapped, so we can top-align the whole sheet
+  // afterwards (short cells otherwise float at the bottom of rows made tall by a wrapped neighbor).
+  let sheetDidAutoWrap = false;
   Object.entries(options?.columnsCustomStyles ?? {}).forEach(([columnName, style]) => {
     if (!columnName || !style) {
       return;
@@ -1884,6 +1887,7 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
         column.eachCell?.({ includeEmpty: true }, (cell) => {
           cell.alignment = { ...(cell.alignment || {}), wrapText: true, vertical: 'top' };
         });
+        sheetDidAutoWrap = true;
         if (columnNumber) {
           columnMaxHeightConstraints.set(columnNumber, autoWrapMaxHeight);
         }
@@ -1939,6 +1943,22 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       columnMaxHeightConstraints.set(columnNumber, stylePreferences.maxHeight);
     }
   });
+
+  if (sheetDidAutoWrap) {
+    // A wrapped column makes its row tall. Cells in the other columns default to bottom alignment,
+    // so they float at the bottom of the row, detached from the first line of the wrapped content.
+    // Top-align every data cell that has no explicit vertical alignment so each row reads as one
+    // coherent horizontal record. Cells already aligned (wrapped columns, or columns with an explicit
+    // verticalAlignment style) are left untouched.
+    worksheet.columns.forEach((column) => {
+      column?.eachCell?.({ includeEmpty: true }, (cell, rowNumber) => {
+        if (rowNumber === 1 || cell.alignment?.vertical) {
+          return;
+        }
+        cell.alignment = { ...(cell.alignment || {}), vertical: 'top' };
+      });
+    });
+  }
 
   if (columnMaxHeightConstraints.size > 0) {
     // ExcelJS never computes a row height, so we cannot just "cap" an existing one: we must

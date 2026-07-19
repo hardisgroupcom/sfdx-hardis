@@ -229,6 +229,10 @@ describe('filesUtils', () => {
       // The short column keeps a small width and no wrap
       expect((shortCol.width as number) < 60).to.equal(true);
       expect(ws.getCell(2, 1).alignment?.wrapText).to.not.equal(true);
+      // Short cell in the tall row is top-aligned so it lines up with the first line of the wrapped
+      // neighbor instead of floating at the bottom of the row.
+      expect(ws.getCell(2, 1).alignment?.vertical).to.equal('top');
+      expect(ws.getCell(2, 2).alignment?.vertical).to.equal('top');
     });
 
     it('does not auto-wrap when autoWrapLongText is disabled', async () => {
