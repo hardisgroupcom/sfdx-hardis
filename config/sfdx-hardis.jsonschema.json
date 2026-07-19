@@ -1985,6 +1985,73 @@
       "title": "Merge target branches",
       "type": "array"
     },
+    "metadataRetrieverPresets": {
+      "$id": "#/properties/metadataRetrieverPresets",
+      "description": "Named groups of Metadata API types used by the Metadata Retriever panel of the VS Code extension to retrieve several metadata types at once instead of one at a time.\nEach preset needs an id, a label and a list of Metadata API types (xmlName). A user preset that declares the same id as a built-in one replaces it.",
+      "examples": [
+        [
+          {
+            "id": "developerMetadata",
+            "label": "Developer Metadata",
+            "description": "Apex, Flows, LWCs and other code metadata",
+            "types": [
+              "ApexClass",
+              "ApexTrigger",
+              "Flow",
+              "LightningComponentBundle"
+            ]
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/metadataRetrieverPresets/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A Metadata Retriever preset: a named group of Metadata API types.",
+        "required": [
+          "label",
+          "types"
+        ],
+        "properties": {
+          "id": {
+            "$id": "#/properties/metadataRetrieverPresets/items/properties/id",
+            "description": "Unique identifier of the preset. Use the id of a built-in preset to override it. Defaults to the label when omitted.",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "$id": "#/properties/metadataRetrieverPresets/items/properties/label",
+            "description": "Display label shown in the preset dropdown.",
+            "title": "Label",
+            "type": "string"
+          },
+          "description": {
+            "$id": "#/properties/metadataRetrieverPresets/items/properties/description",
+            "description": "Optional description shown as a tooltip.",
+            "title": "Description",
+            "type": "string"
+          },
+          "types": {
+            "$id": "#/properties/metadataRetrieverPresets/items/properties/types",
+            "description": "List of Metadata API types (xmlName) included in the preset, for example ApexClass, Flow, CustomObject. Unknown types are ignored.",
+            "title": "Metadata types",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "title": "Metadata Retriever presets",
+      "type": "array"
+    },
+    "metadataRetrieverPresetsOverrideDefaults": {
+      "$id": "#/properties/metadataRetrieverPresetsOverrideDefaults",
+      "description": "Set to true to hide the built-in Metadata Retriever presets shipped with the VS Code extension, so only the presets defined in metadataRetrieverPresets are shown.",
+      "title": "Override default Metadata Retriever presets",
+      "type": "boolean",
+      "default": false
+    },
     "monitoringBackupSkipDataCloud": {
       "$id": "#/properties/monitoringBackupSkipDataCloud",
       "description": "Set to true to skip the backup of Data Cloud objects (__dlm and __dll CustomObjects) during hardis:org:monitor:backup. Can also be set via MONITORING_BACKUP_SKIP_DATA_CLOUD env variable.",
