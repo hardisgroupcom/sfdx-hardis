@@ -209,6 +209,40 @@ describe('filesUtils', () => {
       expect(singleLine.alignment?.vertical).to.equal('middle');
     });
 
+    it('auto-wraps long free-text columns and caps their width, leaving short columns unwrapped', async () => {
+      const csvPath = path.join(tmpDir, 'autowrap.csv');
+      const longValue = 'A'.repeat(200);
+      await fs.writeFile(csvPath, `Short,LongText\nok,"${longValue}"\n`);
+      await createXlsxFromCsvFiles([csvPath], csvPath, {});
+      const wb = await readWorkbook(csvPath);
+      const ws = wb.worksheets[0];
+      const longCol = ws.getColumn(2);
+      const shortCol = ws.getColumn(1);
+      // Long column is capped to the default auto-wrap width (60), far below the 200-char value length
+      expect(longCol.width).to.equal(60);
+      // The long value cell wraps
+      expect(ws.getCell(2, 2).alignment?.wrapText).to.equal(true);
+      // Row height grows for the wrapped content but stays bounded by the default max height (150)
+      const rowHeight = ws.getRow(2).height as number;
+      expect(rowHeight).to.be.greaterThan(15);
+      expect(rowHeight).to.be.at.most(150);
+      // The short column keeps a small width and no wrap
+      expect((shortCol.width as number) < 60).to.equal(true);
+      expect(ws.getCell(2, 1).alignment?.wrapText).to.not.equal(true);
+    });
+
+    it('does not auto-wrap when autoWrapLongText is disabled', async () => {
+      const csvPath = path.join(tmpDir, 'nowrap.csv');
+      const longValue = 'B'.repeat(200);
+      await fs.writeFile(csvPath, `Short,LongText\nok,"${longValue}"\n`);
+      await createXlsxFromCsvFiles([csvPath], csvPath, { autoWrapLongText: false });
+      const wb = await readWorkbook(csvPath);
+      const ws = wb.worksheets[0];
+      // Legacy behavior: width stretches to the full value length
+      expect((ws.getColumn(2).width as number) > 100).to.equal(true);
+      expect(ws.getCell(2, 2).alignment?.wrapText).to.not.equal(true);
+    });
+
     it('runs postProcessWorkbook with the final worksheet names before writing', async () => {
       const csvPath = path.join(tmpDir, 'hook.csv');
       await fs.writeFile(csvPath, 'API Name,Label\nName,Name\n');

@@ -1509,6 +1509,17 @@ export interface ExcelExportOptions {
     workbook: ExcelJS.Workbook,
     context: { worksheetNameByCsvFile: Record<string, string> }
   ) => void | Promise<void>;
+  // Auto-wrap long free-text columns for readability (on by default). When a column has no explicit
+  // style in columnsCustomStyles and its longest value exceeds autoWrapThreshold characters, its width
+  // is capped to autoWrapWidth, word-wrap is enabled, and its rows are bounded to autoWrapMaxHeight.
+  // Set to false to keep the legacy behavior (width = longest value, no wrap).
+  autoWrapLongText?: boolean;
+  // Longest-value length (in characters) above which a column is considered long free text. Default 50.
+  autoWrapThreshold?: number;
+  // Capped width (in characters) applied to auto-wrapped columns. Default 60.
+  autoWrapWidth?: number;
+  // Maximum row height (in points) for auto-wrapped columns, so tall cells stay bounded. Default 150.
+  autoWrapMaxHeight?: number;
 }
 
 export async function generateCsvFile(
@@ -1857,9 +1868,30 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       const lengths = (column.values || []).map((value) => (value ?? '').toString().length);
       const filteredLengths = lengths.filter((len) => Number.isFinite(len));
       const maxLength = filteredLengths.length > 0 ? Math.max(...filteredLengths) : 10;
-      // The filter dropdown button overlaps the right side of the header cell, so a width equal to
-      // the longest value (often the header itself) clips the header text. Add room for the button.
-      column.width = maxLength + AUTOFILTER_BUTTON_PADDING;
+      const autoWrapEnabled = options?.autoWrapLongText !== false;
+      const autoWrapThreshold =
+        typeof options?.autoWrapThreshold === 'number' && options.autoWrapThreshold > 0 ? options.autoWrapThreshold : 50;
+      if (autoWrapEnabled && maxLength > autoWrapThreshold) {
+        // Long free-text column (utterances, expected/actual values, descriptions, error messages...):
+        // cap the width and word-wrap instead of stretching the column to the full string length, which
+        // would make the sheet unreadable. Row height is bounded below via columnMaxHeightConstraints.
+        const autoWrapWidth =
+          typeof options?.autoWrapWidth === 'number' && options.autoWrapWidth > 0 ? options.autoWrapWidth : 60;
+        const autoWrapMaxHeight =
+          typeof options?.autoWrapMaxHeight === 'number' && options.autoWrapMaxHeight > 0 ? options.autoWrapMaxHeight : 150;
+        column.width = autoWrapWidth;
+        column.alignment = { ...(column.alignment || {}), wrapText: true, vertical: 'top' };
+        column.eachCell?.({ includeEmpty: true }, (cell) => {
+          cell.alignment = { ...(cell.alignment || {}), wrapText: true, vertical: 'top' };
+        });
+        if (columnNumber) {
+          columnMaxHeightConstraints.set(columnNumber, autoWrapMaxHeight);
+        }
+      } else {
+        // The filter dropdown button overlaps the right side of the header cell, so a width equal to
+        // the longest value (often the header itself) clips the header text. Add room for the button.
+        column.width = maxLength + AUTOFILTER_BUTTON_PADDING;
+      }
     }
 
     if (stylePreferences?.wrap) {
