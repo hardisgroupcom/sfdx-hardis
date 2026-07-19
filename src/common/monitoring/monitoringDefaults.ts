@@ -80,6 +80,16 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     icon: "utility:shield",
   },
   {
+    key: "DANGEROUS_PERMISSIONS",
+    command: "sf hardis:org:diagnose:unsecure-permissions",
+    // Off by default: this audit is opt-in. It still appears in the monitoring UI so users can
+    // switch it on (e.g. to weekly) when they want it scheduled by hardis:org:monitor:all.
+    frequency: "off",
+    notificationTypes: ["DANGEROUS_PERMISSIONS"],
+    category: "apexTestsSecurity",
+    icon: "utility:lock",
+  },
+  {
     key: "DEPLOYMENTS",
     command: "sf hardis:org:diagnose:deployments --period weekly",
     frequency: "daily",
