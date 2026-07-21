@@ -245,7 +245,7 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     icon: "utility:upload",
     colorClass: "audit",
     emittedSeverities: ["critical", "error", "warning", "info", "success", "log"],
-    defaults: { messaging: "info", email: "warning", api: "log" },
+    defaults: { messaging: "log", email: "warning", api: "log" },
   },
   DEPLOYMENTS: {
     category: "orgActivity",

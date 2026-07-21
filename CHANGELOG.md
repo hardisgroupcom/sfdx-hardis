@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): Flag SOAP/REST/Bulk API versions 31.0-40.0, deprecated in Summer 27 and retired in Summer 28.
+- Successful deployment notifications are now sent to messaging channels (Slack, Teams, Google Chat) by default, instead of being filtered out by the severity threshold.
 
 ## [7.22.0] 2026-07-19
 
