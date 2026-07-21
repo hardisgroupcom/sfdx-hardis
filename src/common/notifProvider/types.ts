@@ -239,7 +239,7 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     emittedSeverities: ["info", "log"],
     defaults: { messaging: "info", email: "off", api: "log" },
   },
-  // Reserved/placeholder - not currently emitted; expose every severity so UIs do not lock users in.
+  // Emitted once per successful deployment by the deploy pipeline (see handlePostDeploymentNotifications in gitUtils). Exposes every severity so UIs do not lock users in.
   DEPLOYMENT: {
     category: "orgActivity",
     icon: "utility:upload",
@@ -483,7 +483,7 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     emittedSeverities: ["info"],
     defaults: { messaging: "info", email: "info", api: "log" },
   },
-  // Reserved/placeholder - not currently emitted; expose every severity.
+  // Emitted by release notes generation (see releaseNotesUtils). Exposes every severity so UIs do not lock users in.
   RELEASE_NOTES: {
     category: "other",
     icon: "utility:note",
