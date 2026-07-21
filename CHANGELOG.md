@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Successful deployment notifications are now sent to messaging channels (Slack, Teams, Google Chat) by default, instead of being filtered out by the severity threshold.
+
 ## [7.22.0] 2026-07-19
 
 - New [hardis:org:test:agents](https://sfdx-hardis.cloudity.com/hardis/org/test/agents/): Run Agentforce agent tests in your org and report test results through your monitoring channels.
