@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): Flag SOAP/REST/Bulk API versions 31.0-40.0, deprecated in Summer 27 and retired in Summer 28.
+
 ## [7.22.0] 2026-07-19
 
 - New [hardis:org:test:agents](https://sfdx-hardis.cloudity.com/hardis/org/test/agents/): Run Agentforce agent tests in your org and report test results through your monitoring channels.
