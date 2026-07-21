@@ -82,6 +82,7 @@
     "Pricebook",
     "anonymization",
     "upserts",
+    "linkify",
     "Backpromote",
     "backpromote",
     "backpromoted",
