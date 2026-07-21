@@ -18,6 +18,8 @@ The branch name, PR number, current HEAD SHA, and the list of failures with thei
 
 If multiple jobs fail with **different** errors, fix in this order: build/compile (`yarn compile`) -> unit tests (`yarn test:only`) -> nuts (`yarn test:nuts`) -> lint (ESLint, MegaLinter) -> docs build -> security scan. Group jobs failing with the **same** error and treat them as one fix.
 
+**Fix security-scan failures even when they are unrelated to the PR's diff.** osv-scanner / trivy / MegaLinter security linters / Docker image scans routinely fail on `yarn.lock`, workflow files, or base images the current branch never changed - they run against live vulnerability databases, so a scan that passed on `main` last week can fail today. Do NOT return `NEEDS-USER-INPUT` just because the finding predates the branch; upgrade the dependency and bundle it into this PR by default (follow `.claude/skills/fix-security-issue/SKILL.md`). Reserve `NEEDS-USER-INPUT` for security fixes that are genuinely risky - a major-version bump requiring source changes, or an advisory with no non-breaking patched version.
+
 ## Step 1 - Can I fix this cleanly?
 
 Apply the test before editing:
