@@ -111,8 +111,6 @@ export type NotifMessageType =
   | "AGENTFORCE_FEEDBACK"
   | "APEX_ERROR"
   | "FLOW_ERROR"
-  | "FLOW_ERROR_BY_FLOW"
-  | "FLOW_ERROR_BY_STEP"
   | "DEPLOYMENTS"
   | "DORA_REPORT"
   | "MONITORING_SUMMARY"
@@ -231,20 +229,6 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     colorClass: "alerts",
     emittedSeverities: ["error", "success"],
     defaults: { messaging: "error", email: "error", api: "log" },
-  },
-  FLOW_ERROR_BY_FLOW: {
-    category: "orgActivity",
-    icon: "utility:flow",
-    colorClass: "alerts",
-    emittedSeverities: ["error"],
-    defaults: { messaging: "off", email: "off", api: "log" },
-  },
-  FLOW_ERROR_BY_STEP: {
-    category: "orgActivity",
-    icon: "utility:flow",
-    colorClass: "alerts",
-    emittedSeverities: ["error"],
-    defaults: { messaging: "off", email: "off", api: "log" },
   },
   BACKUP: {
     category: "orgActivity",

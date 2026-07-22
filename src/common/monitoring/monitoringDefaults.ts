@@ -59,7 +59,7 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     key: "APEX_FLOW_ERRORS",
     command: "sf hardis:org:monitor:errors",
     frequency: "daily",
-    notificationTypes: ["APEX_ERROR", "FLOW_ERROR", "FLOW_ERROR_BY_FLOW", "FLOW_ERROR_BY_STEP"],
+    notificationTypes: ["APEX_ERROR", "FLOW_ERROR"],
     category: "orgActivity",
     icon: "utility:warning",
   },

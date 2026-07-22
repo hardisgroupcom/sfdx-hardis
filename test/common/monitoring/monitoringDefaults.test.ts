@@ -37,10 +37,10 @@ describe('getMonitoringConfigDefaults()', () => {
     }
   });
 
-  it('models APEX_FLOW_ERRORS as a single command emitting four notification types', () => {
+  it('models APEX_FLOW_ERRORS as a single command emitting two notification types', () => {
     const cmd = payload.monitoringCommands.find((c) => c.key === 'APEX_FLOW_ERRORS');
     expect(cmd, 'APEX_FLOW_ERRORS command missing').to.exist;
-    expect(cmd!.notificationTypes).to.have.members(['APEX_ERROR', 'FLOW_ERROR', "FLOW_ERROR_BY_FLOW", "FLOW_ERROR_BY_STEP",]);
+    expect(cmd!.notificationTypes).to.have.members(['APEX_ERROR', 'FLOW_ERROR']);
     expect(cmd!.command).to.equal('sf hardis:org:monitor:errors');
   });
 
