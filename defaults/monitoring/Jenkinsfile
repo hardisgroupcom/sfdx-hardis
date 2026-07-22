@@ -122,7 +122,7 @@ pipeline {
                         BUILD_DATE=$(date -u +'%Y-%m-%d %H:%M')
                         git status
                         git add --all
-                        git commit -m "Org state on ${BUILD_DATE} for ${BRANCH_NAME_CLEAN} [skip ci]" || echo "No changes to commit"
+                        git commit -m "chore(monitoring): org state on ${BUILD_DATE} for ${BRANCH_NAME_CLEAN} [skip ci]" || echo "No changes to commit"
 
                         # Push using token-based HTTPS authentication (works for GitHub, GitLab, Azure DevOps, Bitbucket)
                         REMOTE_URL=$(git remote get-url origin)

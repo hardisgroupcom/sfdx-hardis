@@ -37,7 +37,7 @@ pipelines:
           # Commit & push
           - git status
           - git add --all
-          - git commit -m "Org state on $(date -u +'%Y-%m-%d %H:%M') for $BRANCH_NAME [skip ci]" || echo "No changes to commit"
+          - 'git commit -m "chore(monitoring): org state on $(date -u +''%Y-%m-%d %H:%M'') for $BRANCH_NAME [skip ci]" || echo "No changes to commit"'
           - git push --set-upstream origin "$BRANCH_NAME"
         artifacts:
           - hardis-report/**

@@ -169,6 +169,37 @@ describe('actionUtils', () => {
       const errors = await validateActionParameters({ type: 'schedule-batch', parameters: { className: 'MyBatch', cronExpression: '0 0 * * *' } });
       expect(errors).to.deep.equal([]);
     });
+
+    it('returns error when packageXmlItems is missing for remove-packagexml-items type', async () => {
+      const errors = await validateActionParameters({ type: 'remove-packagexml-items', parameters: {} });
+      expect(errors).to.have.lengthOf(1);
+    });
+
+    it('returns error when packageXmlItems entries have an invalid format', async () => {
+      const errors = await validateActionParameters({
+        type: 'remove-packagexml-items',
+        parameters: { packageXmlItems: ['ApexClass:MyClass1', 'NoColonHere'] },
+      });
+      expect(errors).to.have.lengthOf(1);
+    });
+
+    it('returns error when remove-packagexml-items action is post-deploy', async () => {
+      const errors = await validateActionParameters({
+        type: 'remove-packagexml-items',
+        when: 'post-deploy',
+        parameters: { packageXmlItems: ['ApexClass:MyClass1'] },
+      });
+      expect(errors).to.have.lengthOf(1);
+    });
+
+    it('returns no errors for valid remove-packagexml-items action', async () => {
+      const errors = await validateActionParameters({
+        type: 'remove-packagexml-items',
+        when: 'pre-deploy',
+        parameters: { packageXmlItems: ['ApexClass:MyClass1,MyClass3', 'Layout:MyLayout1,MyLayout2,MyLayout3'] },
+      });
+      expect(errors).to.deep.equal([]);
+    });
   });
 
   describe('findActionById', () => {

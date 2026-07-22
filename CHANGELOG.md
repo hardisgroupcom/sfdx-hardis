@@ -2,7 +2,43 @@
 
 ## [beta] (main)
 
+## [7.22.1] 2026-07-22
+
+- [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): Flag SOAP/REST/Bulk API versions 31.0-40.0, deprecated in Summer 27 and retired in Summer 28.
+- Successful deployment notifications are now sent to messaging channels (Slack, Teams, Google Chat) by default, instead of being filtered out by the severity threshold.
+
+## [7.22.0] 2026-07-19
+
+- New [hardis:org:test:agents](https://sfdx-hardis.cloudity.com/hardis/org/test/agents/): Run Agentforce agent tests in your org and report test results through your monitoring channels.
+- New [hardis:org:diagnose:unsecure-permissions](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions/): Audit dangerous permissions (Modify All Data, Author Apex, Manage Users, View All Data) granted through Profiles, Permission Sets, and Permission Set Groups, and report which active users hold them.
+- Add `metadataRetrieverPresets` and `metadataRetrieverPresetsOverrideDefaults` to the config schema so the VS Code Metadata Retriever presets are validated and autocompleted in `.sfdx-hardis.yml`.
+- Generated Excel reports now word-wrap long text columns at a capped width instead of stretching them, making reports easier to read.
+
+## [7.21.0] 2026-07-17
+
+- All generated commits now follow Conventional Commits format so they pass commitlint.
+- [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): Fix incorrect option name passed to git operations so configured commit messages are applied.
+- [hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa/):
+  - Fix crash when the MFA-bypass field is unavailable in the target org edition.
+  - Update MFA enforcement dates to Salesforce's revised schedule (sandboxes since July 10 2026, production starting July 20 2026).
+- Fix deployment command actions that refresh their session mid-run (like `sf agent publish`) crashing in CI because the JWT certificate file was deleted too early.
+- New `remove-packagexml-items` pre-deploy action type removes metadata items from package.xml before deployment.
+- Git delta operations now filter to only package directories when sfdx-project.json exists, preventing unrelated metadata changes from being deployed.
+
+## [7.20.0] 2026-07-12
+
+- New [hardis:doctor](https://sfdx-hardis.cloudity.com/hardis/doctor/): Gather your local install info and open a pre-filled GitHub issue to report a bug faster.
+- Update instructions to setup sandboxes for CI/CD pipeline
+
+## [7.19.2] 2026-07-06
+
+- Fix Docker images (Alpine and Ubuntu) hanging on Salesforce CLI auth: install a Node.js 24 patch that carries the fix for the CVE-2026-48931 http.Agent regression (24.18.0+), instead of the broken Node 24.17.0 still served by Alpine's package repo (closes #1972).
+
+## [7.19.1] 2026-07-05
+
 - Fix JWT login to a DevHub defaulting to `https://login.salesforce.com`: read `devHubInstanceUrl` from config when authenticating to a DevHub, instead of always reading `instanceUrl` (closes #1979).
+- Fix broken MegaLinter badge on the README and documentation home page.
+- Fix the Docker Pulls badge count by aggregating pull counts across all sfdx-hardis images on both Docker Hub and ghcr.io, refreshed weekly.
 
 ## [7.19.0] 2026-06-28
 

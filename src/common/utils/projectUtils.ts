@@ -27,6 +27,30 @@ export function isSfdxProject(cwd = process.cwd()) {
   return fs.existsSync(path.join(cwd, 'sfdx-project.json'));
 }
 
+// List package directories declared in sfdx-project.json, with fallback to default force-app
+export async function getSfdxProjectPackageDirectories(cwd = process.cwd()): Promise<{ path: string; fullPath: string }[]> {
+  const defaultPackageDirectories = [{ path: 'force-app', fullPath: path.join(cwd, 'force-app') }];
+  const sfdxProjectFile = path.join(cwd, 'sfdx-project.json');
+  if (!(await fs.pathExists(sfdxProjectFile))) {
+    return defaultPackageDirectories;
+  }
+  try {
+    const sfdxProject = await fs.readJson(sfdxProjectFile);
+    const packageDirectories = (sfdxProject?.packageDirectories || [])
+      .filter((packageDirectory) => packageDirectory?.path)
+      .map((packageDirectory) => ({
+        path: packageDirectory.path,
+        fullPath: path.join(cwd, packageDirectory.path),
+      }));
+    if (packageDirectories.length > 0) {
+      return packageDirectories;
+    }
+  } catch (e: any) {
+    uxLog("warning", this, c.yellow(t('warningUnableToReadPackageDirectoriesFrom', { error: e.message })));
+  }
+  return defaultPackageDirectories;
+}
+
 export async function createBlankSfdxProject(cwd = process.cwd(), debug = false) {
   uxLog("log", this, c.cyan(t('creatingBlankSfdxProject')));
   const projectCreateCommand = 'sf project generate --name "sfdx-hardis-blank-project"';

@@ -151,6 +151,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:org:diagnose:storage-stats**](hardis/org/diagnose/storage-stats.md)                       | Analyze data storage consumption by object with flexible grouping                                               |
 | [**hardis:org:diagnose:underusedpermsets**](hardis/org/diagnose/underusedpermsets.md)               | Identify permission sets and groups that are rarely assigned                                                    |
 | [**hardis:org:diagnose:unsecure-connected-apps**](hardis/org/diagnose/unsecure-connected-apps.md)   | Find Connected Apps with insecure OAuth settings                                                                |
+| [**hardis:org:diagnose:unsecure-permissions**](hardis/org/diagnose/unsecure-permissions.md)         | Audit dangerous permissions on Profiles, Permission Sets and groups, and who holds them - flag: `--source`      |
 | [**hardis:org:diagnose:unused-apex-classes**](hardis/org/diagnose/unused-apex-classes.md)           | List async Apex classes (Batch/Queueable/Schedulable) not called for 365+ days                                  |
 | [**hardis:org:diagnose:unused-connected-apps**](hardis/org/diagnose/unused-connected-apps.md)       | Find Connected Apps with no recent OAuth usage                                                                  |
 | [**hardis:org:diagnose:unusedlicenses**](hardis/org/diagnose/unusedlicenses.md)                     | Identify Permission Set License Assignments no longer linked to an active Permission Set                        |
@@ -204,6 +205,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                                                   | Delete accumulated Apex debug logs from an org                                      |
 | [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                                         | Delete obsolete Flow versions to reduce storage and technical debt                  |
 | [**hardis:org:purge:profile**](hardis/org/purge/profile.md)                                                   | Remove permission attributes from Profiles after migrating to Permission Sets       |
+| [**hardis:org:test:agents**](hardis/org/test/agents.md)                                                       | Run Agentforce agent tests in the target org and report pass / fail results         |
 | [**hardis:org:test:apex**](hardis/org/test/apex.md)                                                           | Run Apex tests in the target org and report pass / fail / coverage results          |
 | [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)                                     | Fix `.invalid` email suffixes on sandbox users so they can log in                   |
 | [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                                                       | Freeze user logins (temporarily suspend access without deactivating)                |
@@ -259,6 +261,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:auth:login**](hardis/auth/login.md)                                           | Log in to a Salesforce org interactively or via JWT / connected-app OAuth                                     |
 | [**hardis:cache:clear**](hardis/cache/clear.md)                                         | Clear the sfdx-hardis local cache (useful when encountering stale metadata or config data)                    |
 | [**hardis:config:get**](hardis/config/get.md)                                           | Read and display the merged project / branch / user configuration for the current project                     |
+| [**hardis:doctor**](hardis/doctor.md)                                                   | Gather local install info and print a ready-to-paste report plus a pre-filled GitHub issue URL                |
 | [**hardis:git:pull-requests:extract**](hardis/git/pull-requests/extract.md)             | Extract pull/merge request data from GitHub, GitLab, or Azure DevOps for reporting and auditing               |
 | [**hardis:mdapi:deploy**](hardis/mdapi/deploy.md)                                       | Deploy a Metadata API format directory or zip to a Salesforce org                                             |
 | [**hardis:misc:custom-label-translations**](hardis/misc/custom-label-translations.md)   | Isolate and export specific custom label translations                                                         |

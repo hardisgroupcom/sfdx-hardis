@@ -17,6 +17,7 @@ import {
   writeActions,
 } from '../../../../common/utils/actionUtils.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
+import { normalizePackageXmlItems } from '../../../../common/actionsProvider/removePackageXmlItemsAction.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -76,7 +77,7 @@ Required in agent mode:
       description: 'Pull request ID (for pr scope, defaults to draft)',
     }),
     type: Flags.string({
-      options: ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch'],
+      options: ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'remove-packagexml-items'],
       description: 'New type of action',
     }),
     label: Flags.string({
@@ -105,6 +106,9 @@ Required in agent mode:
     }),
     'job-name': Flags.string({
       description: 'New job name for schedule-batch',
+    }),
+    'packagexml-items': Flags.string({
+      description: 'New semicolon-separated list of package.xml items to remove, each in format TypeName:Member1,Member2 (for remove-packagexml-items type)',
     }),
     context: Flags.string({
       options: ['all', 'check-deployment-only', 'process-deployment-only'],
@@ -224,6 +228,14 @@ Required in agent mode:
       if (ce) action.parameters = { ...action.parameters, cronExpression: ce };
       const jn = await this.promptText(t('enterJobName'), action.parameters?.jobName || '');
       if (jn) action.parameters = { ...action.parameters, jobName: jn };
+    } else if (action.type === 'remove-packagexml-items') {
+      const itemsRaw = await this.promptText(t('enterPackageXmlItems'), normalizePackageXmlItems(action.parameters?.packageXmlItems).join(';'));
+      if (itemsRaw) {
+        action.parameters = {
+          ...action.parameters,
+          packageXmlItems: itemsRaw.split(/[;\n]/).map((item: string) => item.trim()).filter(Boolean),
+        };
+      }
     }
 
     const newContext = await this.promptSelect(t('selectActionContext'), ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })), action.context);
@@ -233,7 +245,12 @@ Required in agent mode:
       action.skipIfError = await this.promptConfirm(t('actionPromptSkipIfError'), action.skipIfError || false);
     }
     action.allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'), action.allowFailure || false);
-    action.runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), action.runOnlyOnceByOrg || false);
+    if (action.type === 'remove-packagexml-items') {
+      // Filtering package.xml only affects the current deployment, so it must run every time
+      action.runOnlyOnceByOrg = false;
+    } else {
+      action.runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), action.runOnlyOnceByOrg || false);
+    }
     const cu = await this.promptText(t('actionPromptCustomUsername'), action.customUsername || '');
     action.customUsername = cu || undefined;
   }
@@ -253,10 +270,17 @@ Required in agent mode:
     if (flags['class-name']) action.parameters = { ...action.parameters, className: flags['class-name'] };
     if (flags['cron-expression']) action.parameters = { ...action.parameters, cronExpression: flags['cron-expression'] };
     if (flags['job-name']) action.parameters = { ...action.parameters, jobName: flags['job-name'] };
+    if (flags['packagexml-items']) {
+      action.parameters = {
+        ...action.parameters,
+        packageXmlItems: flags['packagexml-items'].split(/[;\n]/).map((item: string) => item.trim()).filter(Boolean),
+      };
+    }
     if (flags.context) action.context = flags.context;
     if (when !== 'pre-deploy' && flags['skip-if-error'] !== undefined) action.skipIfError = flags['skip-if-error'];
     if (flags['allow-failure'] !== undefined) action.allowFailure = flags['allow-failure'];
     if (flags['run-only-once-by-org'] !== undefined) action.runOnlyOnceByOrg = flags['run-only-once-by-org'];
+    if (action.type === 'remove-packagexml-items') action.runOnlyOnceByOrg = false;
     if (flags['custom-username']) action.customUsername = flags['custom-username'];
   }
 }

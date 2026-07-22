@@ -20,6 +20,7 @@ import CleanReferences from '../../../project/clean/references.js';
 import SaveTask from '../../../work/save.js';
 import CleanXml from '../../../project/clean/xml.js';
 import { t } from '../../../../../common/utils/i18n.js';
+import { buildConventionalCommitMessage } from '../../../../../common/utils/gitUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -242,7 +243,9 @@ In agent mode, all interactive prompts are skipped and default values are used.
   }
 
   async doCommit(flags) {
-    await git().commit(`[sfdx-hardis] Changes retrofited from ${flags['target-org'].getUsername()}`);
+    await git().commit(
+      buildConventionalCommitMessage({ subject: `retrofit changes from ${flags['target-org'].getUsername()}` })
+    );
   }
 
   // Push changes and add merge request options if requested

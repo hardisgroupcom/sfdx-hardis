@@ -308,13 +308,13 @@ In agent mode:
       "log",
       this,
       c.grey(c.cyanBright(`- Consumer Key: ${c.bold(c.green(keyDisplay))}`)),
-      true
+      { sensitive: true }
     );
     uxLog(
       "log",
       this,
       c.grey(c.cyanBright(`- Consumer Secret: ${c.bold(c.green(secretDisplay))}`)),
-      true
+      { sensitive: true }
     );
     uxLog("warning", this, c.yellow(t('ecaRotateUpdateCiReminder')));
   }

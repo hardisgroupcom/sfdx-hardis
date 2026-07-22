@@ -45,6 +45,8 @@ Trust its `state`, but remember the rule it encodes: "done" requires BOTH zero p
 - **`failures`** -> go to step 5 (fix).
 - **`running`** -> go to step 4 (wait).
 
+**Security-scan failures are fixed by default, even when unrelated to the branch/PR.** Dependency/vulnerability failures (osv-scanner, trivy, MegaLinter security linters, Docker image scans, GitHub advisory bumps) often come from `yarn.lock`, workflow files, or base images that the current diff never touched - they surface because the scanners run against live vulnerability databases. Do **not** ask the user whether to fix these and do **not** treat "unrelated to the diff" as a reason to skip them: send them straight to `pr-fix` like any other failure. Bundling the security bump into the current PR is the default. Only pause and ask the user when the fix itself is genuinely ambiguous or risky (e.g. a major-version upgrade that would require code changes, or a `pr-fix` `NEEDS-USER-INPUT` block) - not merely because the finding predates the branch.
+
 ### 4. Wait for running jobs
 
 Poll every **5 minutes**, fixed interval, no backoff - the user wants a 5-minute cadence so failures surface fast. Use a persistent `Monitor` with a description starting with `PR watch:` so step 0 of a future invocation can find and stop it. The Monitor does plain `gh`/`jq` polling (no model) and emits only on state changes (new failures or completion), not every 5 minutes.

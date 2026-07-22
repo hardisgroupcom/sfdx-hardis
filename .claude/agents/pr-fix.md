@@ -1,7 +1,7 @@
 ---
 name: pr-fix
 description: Analyze one or more failing CI jobs on a GitHub PR (using logs already collected) and fix them - edit sources, validate locally, commit and push. Use after pr-watch reports failures. Returns a request for the user when it cannot fix cleanly.
-tools: Read, Grep, Glob, Edit, Write, Bash
+tools: Read, Grep, Glob, Edit, Write, Bash, WebFetch, WebSearch
 model: opus
 color: orange
 ---
@@ -17,6 +17,8 @@ The branch name, PR number, current HEAD SHA, and the list of failures with thei
 ## Priority order
 
 If multiple jobs fail with **different** errors, fix in this order: build/compile (`yarn compile`) -> unit tests (`yarn test:only`) -> nuts (`yarn test:nuts`) -> lint (ESLint, MegaLinter) -> docs build -> security scan. Group jobs failing with the **same** error and treat them as one fix.
+
+**Fix security-scan failures even when they are unrelated to the PR's diff.** osv-scanner / trivy / MegaLinter security linters / Docker image scans routinely fail on `yarn.lock`, workflow files, or base images the current branch never changed - they run against live vulnerability databases, so a scan that passed on `main` last week can fail today. Do NOT return `NEEDS-USER-INPUT` just because the finding predates the branch; upgrade the dependency and bundle it into this PR by default (follow `.claude/skills/fix-security-issue/SKILL.md`). Reserve `NEEDS-USER-INPUT` for security fixes that are genuinely risky - a major-version bump requiring source changes, or an advisory with no non-breaking patched version.
 
 ## Step 1 - Can I fix this cleanly?
 
@@ -72,7 +74,6 @@ git add <specific files>      # never git add -A
 git commit -m "$(cat <<'EOF'
 Fix CI: <one-line summary of the failure>
 
-Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 EOF
 )"
 ```

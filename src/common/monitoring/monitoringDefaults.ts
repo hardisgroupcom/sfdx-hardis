@@ -64,6 +64,14 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     icon: "utility:warning",
   },
   {
+    key: "AGENT_TESTS",
+    command: "sf hardis:org:test:agents",
+    frequency: "weekly",
+    notificationTypes: ["AGENT_TESTS"],
+    category: "apexTestsSecurity",
+    icon: "utility:einstein",
+  },
+  {
     key: "UNSECURED_CONNECTED_APPS",
     command: "sf hardis:org:diagnose:unsecure-connected-apps",
     frequency: "daily",
@@ -78,6 +86,16 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     notificationTypes: ["MFA_CONFIG"],
     category: "apexTestsSecurity",
     icon: "utility:shield",
+  },
+  {
+    key: "DANGEROUS_PERMISSIONS",
+    command: "sf hardis:org:diagnose:unsecure-permissions",
+    // Off by default: this audit is opt-in. It still appears in the monitoring UI so users can
+    // switch it on (e.g. to weekly) when they want it scheduled by hardis:org:monitor:all.
+    frequency: "off",
+    notificationTypes: ["DANGEROUS_PERMISSIONS"],
+    category: "apexTestsSecurity",
+    icon: "utility:lock",
   },
   {
     key: "DEPLOYMENTS",
@@ -255,6 +273,42 @@ export function getTitleI18nKey(key: string): string {
 
 export function getDescriptionI18nKey(key: string): string {
   return `notifTypeDesc${toPascalSlug(key)}`;
+}
+
+// A monitoring command describes the *check that runs* (e.g. "Agent tests"), which is a different
+// thing from the notification it emits (e.g. "Agent tests run results"). These keys let a command
+// carry its own label/description; when absent, the resolvers below fall back to the command's
+// notification-type label so existing commands keep working without new keys.
+export function getMonitoringCommandTitleI18nKey(key: string): string {
+  return `monitoringCommandTitle${toPascalSlug(key)}`;
+}
+
+export function getMonitoringCommandDescriptionI18nKey(key: string): string {
+  return `monitoringCommandDesc${toPascalSlug(key)}`;
+}
+
+// t() returns the key itself when the translation is missing, so an unchanged result means "no
+// command-specific label defined". In that case we fall back to the entry's literal title, then to
+// the notification-type label.
+function resolveMonitoringCommandTitle(cmd: MonitoringCommandEntry): string {
+  const commandKey = getMonitoringCommandTitleI18nKey(cmd.key);
+  const commandTitle = t(commandKey);
+  if (commandTitle && commandTitle !== commandKey) {
+    return commandTitle;
+  }
+  if (cmd.title) {
+    return cmd.title;
+  }
+  return t(getTitleI18nKey(cmd.key));
+}
+
+function resolveMonitoringCommandDescription(cmd: MonitoringCommandEntry): string {
+  const commandKey = getMonitoringCommandDescriptionI18nKey(cmd.key);
+  const commandDescription = t(commandKey);
+  if (commandDescription && commandDescription !== commandKey) {
+    return commandDescription;
+  }
+  return t(getDescriptionI18nKey(cmd.key));
 }
 
 // Converts a category key like "orgActivity" to the PascalCase slug used in i18n keys.
@@ -467,8 +521,8 @@ export function getMonitoringConfigDefaults(): MonitoringConfigDefaultsPayload {
     const category = resolveMonitoringCommandCategory(cmd);
     return {
       key: cmd.key,
-      title: t(getTitleI18nKey(cmd.key)),
-      description: t(getDescriptionI18nKey(cmd.key)),
+      title: resolveMonitoringCommandTitle(cmd),
+      description: resolveMonitoringCommandDescription(cmd),
       category,
       icon: resolveMonitoringCommandIcon(cmd),
       colorClass: resolveMonitoringCommandColorClass(cmd, category),

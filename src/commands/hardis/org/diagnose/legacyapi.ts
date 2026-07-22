@@ -152,6 +152,16 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       ipCounts: {},
       apiResources: ['login'],
     },
+    {
+      apiFamily: ['SOAP', 'REST', 'BULK_API'],
+      minApiVersion: 31.0,
+      maxApiVersion: 40.0,
+      severity: 'WARNING',
+      deprecationRelease: 'Summer 28 - retirement of 31 to 40 (deprecated Summer 27)',
+      errors: [] as any[],
+      totalErrors: 0,
+      ipCounts: {},
+    },
   ];
 
   protected allErrors: any[] = [];

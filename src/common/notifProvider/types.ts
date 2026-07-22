@@ -84,6 +84,7 @@ export type NotifMessageType =
   | "UNUSED_USERS_EXPERIENCE_6_MONTHS"
   | "AUDIT_TRAIL"
   | "APEX_TESTS"
+  | "AGENT_TESTS"
   | "BACKUP"
   | "DEPLOYMENT"
   | "LEGACY_API"
@@ -103,6 +104,7 @@ export type NotifMessageType =
   | "APEX_FLEX_QUEUE"
   | "CONNECTED_APPS"
   | "UNSECURED_CONNECTED_APPS"
+  | "DANGEROUS_PERMISSIONS"
   | "ORG_HEALTH_CHECK"
   | "ORG_INFO"
   | "ORG_LIMITS"
@@ -237,13 +239,13 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     emittedSeverities: ["info", "log"],
     defaults: { messaging: "info", email: "off", api: "log" },
   },
-  // Reserved/placeholder - not currently emitted; expose every severity so UIs do not lock users in.
+  // Emitted once per successful deployment by the deploy pipeline (see handlePostDeploymentNotifications in gitUtils). Exposes every severity so UIs do not lock users in.
   DEPLOYMENT: {
     category: "orgActivity",
     icon: "utility:upload",
     colorClass: "audit",
     emittedSeverities: ["critical", "error", "warning", "info", "success", "log"],
-    defaults: { messaging: "info", email: "warning", api: "log" },
+    defaults: { messaging: "log", email: "warning", api: "log" },
   },
   DEPLOYMENTS: {
     category: "orgActivity",
@@ -305,6 +307,13 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     emittedSeverities: ["error", "log"],
     defaults: { messaging: "error", email: "error", api: "log" },
   },
+  AGENT_TESTS: {
+    category: "apexTestsSecurity",
+    icon: "utility:einstein",
+    colorClass: "tests",
+    emittedSeverities: ["error", "log"],
+    defaults: { messaging: "error", email: "error", api: "log" },
+  },
   ORG_HEALTH_CHECK: {
     category: "apexTestsSecurity",
     icon: "utility:heart",
@@ -329,6 +338,13 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
   MFA_CONFIG: {
     category: "apexTestsSecurity",
     icon: "utility:shield",
+    colorClass: "security",
+    emittedSeverities: ["error", "warning", "log"],
+    defaults: { messaging: "warning", email: "error", api: "log" },
+  },
+  DANGEROUS_PERMISSIONS: {
+    category: "apexTestsSecurity",
+    icon: "utility:lock",
     colorClass: "security",
     emittedSeverities: ["error", "warning", "log"],
     defaults: { messaging: "warning", email: "error", api: "log" },
@@ -467,7 +483,7 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     emittedSeverities: ["info"],
     defaults: { messaging: "info", email: "info", api: "log" },
   },
-  // Reserved/placeholder - not currently emitted; expose every severity.
+  // Emitted by release notes generation (see releaseNotesUtils). Exposes every severity so UIs do not lock users in.
   RELEASE_NOTES: {
     category: "other",
     icon: "utility:note",

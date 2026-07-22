@@ -18,12 +18,12 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: yarn
@@ -38,7 +38,7 @@ jobs:
         run: yarn pack --filename sfdx-hardis-local.tgz
 
       - name: Upload packaged plugin
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: sfdx-hardis-local
           path: sfdx-hardis-local.tgz
@@ -52,7 +52,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
 
@@ -62,10 +62,10 @@ jobs:
           name: sfdx-hardis-local
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Build Docker image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile
@@ -78,6 +78,24 @@ jobs:
           push: false
           tags: |
             sfdx-hardis:security-scan
+
+      # Smoke-test the CLI in the built image. Auth is not tested (no org in CI).
+      # Each command is wrapped in `timeout` so the Node "unsettled top-level await"
+      # hang / exit 13 fails the job (https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
+      - name: Run CLI smoke tests
+        run: |
+          set -euo pipefail
+          image=sfdx-hardis:security-scan
+          echo "== node --version =="
+          docker run --rm "$image" node --version
+          echo "== sf --version =="
+          timeout 180 docker run --rm "$image" sf --version
+          echo "== sf org list --json (must succeed with no default org) =="
+          timeout 180 docker run --rm "$image" sf org list --json
+          echo "== sf hardis --help (plugin loads) =="
+          timeout 180 docker run --rm "$image" sf hardis --help
+          echo "== sf hardis:doc:project2markdown --help (command wired) =="
+          timeout 180 docker run --rm "$image" sf hardis:doc:project2markdown --help
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # zizmor: ignore[unpinned-tools] trivy-action downloads the trivy binary at runtime, no version to pin in the workflow
@@ -125,7 +143,7 @@ jobs:
           category: "trivy"
 
       - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: security-and-sbom-documents
@@ -144,7 +162,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
 
@@ -154,10 +172,10 @@ jobs:
           name: sfdx-hardis-local
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Build Docker Ubuntu image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile-ubuntu
@@ -170,6 +188,24 @@ jobs:
           push: false
           tags: |
             sfdx-hardis-ubuntu:security-scan
+
+      # Smoke-test the CLI in the built image. Auth is not tested (no org in CI).
+      # Each command is wrapped in `timeout` so the Node "unsettled top-level await"
+      # hang / exit 13 fails the job (https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
+      - name: Run CLI smoke tests (Ubuntu)
+        run: |
+          set -euo pipefail
+          image=sfdx-hardis-ubuntu:security-scan
+          echo "== node --version =="
+          docker run --rm "$image" node --version
+          echo "== sf --version =="
+          timeout 180 docker run --rm "$image" sf --version
+          echo "== sf org list --json (must succeed with no default org) =="
+          timeout 180 docker run --rm "$image" sf org list --json
+          echo "== sf hardis --help (plugin loads) =="
+          timeout 180 docker run --rm "$image" sf hardis --help
+          echo "== sf hardis:doc:project2markdown --help (command wired) =="
+          timeout 180 docker run --rm "$image" sf hardis:doc:project2markdown --help
 
       - name: Run Trivy vulnerability scanner (Ubuntu)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # zizmor: ignore[unpinned-tools] trivy-action downloads the trivy binary at runtime, no version to pin in the workflow
@@ -217,7 +253,7 @@ jobs:
           category: "trivy-ubuntu"
 
       - name: Upload SBOM artifacts (Ubuntu)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: security-and-sbom-documents-ubuntu

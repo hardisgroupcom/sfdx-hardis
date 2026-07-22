@@ -54,6 +54,12 @@
 | [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)           |       |
 | [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                 |       |
 
+## hardis:doctor
+
+| Command                               | Title |
+|:--------------------------------------|:------|
+| [**hardis:doctor**](hardis/doctor.md) |       |
+
 ## hardis:git
 
 | Command                                                                     | Title |
@@ -113,6 +119,7 @@
 | [**hardis:org:diagnose:storage-stats**](hardis/org/diagnose/storage-stats.md)                       |       |
 | [**hardis:org:diagnose:underusedpermsets**](hardis/org/diagnose/underusedpermsets.md)               |       |
 | [**hardis:org:diagnose:unsecure-connected-apps**](hardis/org/diagnose/unsecure-connected-apps.md)   |       |
+| [**hardis:org:diagnose:unsecure-permissions**](hardis/org/diagnose/unsecure-permissions.md)         |       |
 | [**hardis:org:diagnose:unused-apex-classes**](hardis/org/diagnose/unused-apex-classes.md)           |       |
 | [**hardis:org:diagnose:unused-connected-apps**](hardis/org/diagnose/unused-connected-apps.md)       |       |
 | [**hardis:org:diagnose:unusedlicenses**](hardis/org/diagnose/unusedlicenses.md)                     |       |

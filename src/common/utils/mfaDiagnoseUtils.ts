@@ -81,6 +81,16 @@ interface PrivilegedUserContext {
   twoFactorApiUsernames: Set<string>;
 }
 
+/*
+ * PermissionsBypassMFAForUiLogins is not provisioned in every org edition. Querying it
+ * where it does not exist throws INVALID_FIELD, so its availability is checked with a
+ * describe call before building any SOQL that references it.
+ */
+interface BypassFieldAvailability {
+  permissionSet: boolean;
+  profile: boolean;
+}
+
 export interface MfaDiagnoseResult {
   checks: MfaCheckResult[];
   metrics: MfaDiagnoseMetrics;
@@ -104,6 +114,11 @@ export async function diagnoseMfa(options: MfaDiagnoseOptions): Promise<MfaDiagn
 
   const securityMetadata = await fetchSecurityMetadata(options.conn);
 
+  const bypassField: BypassFieldAvailability = {
+    permissionSet: await isFieldOnObject(options.conn, 'PermissionSet', 'PermissionsBypassMFAForUiLogins'),
+    profile: await isFieldOnObject(options.conn, 'Profile', 'PermissionsBypassMFAForUiLogins'),
+  };
+
   /*
    * Build the privileged-user context once so checkPhishingResistantReadiness (primary check) and
    * checkPrivilegedUsersAudit share the same source of truth and we save a round-trip to the org.
@@ -111,13 +126,15 @@ export async function diagnoseMfa(options: MfaDiagnoseOptions): Promise<MfaDiagn
   const privilegedContext = await buildPrivilegedUserContext(
     options.conn,
     options.privilegedPermFields,
-    ignoreSet
+    ignoreSet,
+    bypassField
   );
 
   /*
-   * Order matters: phishing-resistant readiness is the PRIMARY check for the July 1 2026
-   * Salesforce enforcement deadline. It appears first in the summary table, the per-check detail
-   * tables, and the "Actions to take" group (which is already severity-sorted).
+   * Order matters: phishing-resistant readiness is the PRIMARY check for the Salesforce
+   * enforcement rolling out July-September 2026 (Help article 005321563). It appears first
+   * in the summary table, the per-check detail tables, and the "Actions to take" group
+   * (which is already severity-sorted).
    */
   const phishingResistant = await checkPhishingResistantReadiness(
     options.conn,
@@ -126,7 +143,7 @@ export async function diagnoseMfa(options: MfaDiagnoseOptions): Promise<MfaDiagn
     securityMetadata
   );
   const orgEnforcement = await checkOrgEnforcement(options.conn, securityMetadata, options.lookbackDays);
-  const mfaBypassUsers = await checkMfaBypassUsers(options.conn, ignoreSet);
+  const mfaBypassUsers = await checkMfaBypassUsers(options.conn, ignoreSet, bypassField);
   const privilegedUsersAudit = checkPrivilegedUsersAuditFromContext(privilegedContext);
   const sso = checkSso(securityMetadata);
   const nonMfaLogins = await checkNonMfaLogins(options.conn, options.lookbackDays, ignoreSet);
@@ -201,6 +218,16 @@ function buildActionItems(
   /* Order: error first, then warning, then info */
   const order: Record<string, number> = { error: 0, warning: 1, info: 2 };
   return Object.values(groups).sort((a, b) => order[a.severity] - order[b.severity]);
+}
+
+/* Describe the sObject and confirm the field exists; on describe failure assume absent so no query crashes */
+async function isFieldOnObject(conn: Connection, sobjectName: string, fieldName: string): Promise<boolean> {
+  try {
+    const describeResult = await conn.sobject(sobjectName).describe();
+    return (describeResult.fields || []).some((f: any) => f.name === fieldName);
+  } catch {
+    return false;
+  }
 }
 
 async function fetchSecurityMetadata(conn: Connection): Promise<any> {
@@ -338,17 +365,49 @@ async function queryActiveStandardUsersByProfiles(conn: Connection, profiles: an
   return ((userRes.records || []) as any[]).filter((u) => u.UserType === 'Standard');
 }
 
-async function checkMfaBypassUsers(conn: Connection, ignoreSet: Set<string>): Promise<MfaCheckResult> {
+async function checkMfaBypassUsers(
+  conn: Connection,
+  ignoreSet: Set<string>,
+  bypassField: BypassFieldAvailability
+): Promise<MfaCheckResult> {
   const checkTitle = t('mfaCheckBypassUsersTitle');
   const checkKey: MfaCheckKey = 'mfaBypassUsers';
 
-  const psQuery = `SELECT Id, Label FROM PermissionSet WHERE PermissionsBypassMFAForUiLogins = true`;
-  const psRes = await soqlQuery(psQuery, conn);
-  const bypassPermSets = (psRes.records || []) as any[];
+  /* Field absent on both objects: the bypass permission cannot be granted in this org at all */
+  if (!bypassField.permissionSet && !bypassField.profile) {
+    const detail = t('mfaCheckBypassFieldNotAvailable');
+    return {
+      key: 'mfaBypassUsers',
+      status: 'success',
+      title: checkTitle,
+      detail,
+      rows: [
+        {
+          Check: checkTitle,
+          CheckKey: checkKey,
+          Severity: 'success',
+          Item: 'PermissionsBypassMFAForUiLogins',
+          Details: detail,
+          Recommendation: '',
+        },
+      ],
+      metric: 0,
+    };
+  }
 
-  const profileQuery = `SELECT Id, Name FROM Profile WHERE PermissionsBypassMFAForUiLogins = true`;
-  const profileRes = await soqlQuery(profileQuery, conn);
-  const bypassProfiles = (profileRes.records || []) as any[];
+  let bypassPermSets: any[] = [];
+  if (bypassField.permissionSet) {
+    const psQuery = `SELECT Id, Label FROM PermissionSet WHERE PermissionsBypassMFAForUiLogins = true`;
+    const psRes = await soqlQuery(psQuery, conn);
+    bypassPermSets = (psRes.records || []) as any[];
+  }
+
+  let bypassProfiles: any[] = [];
+  if (bypassField.profile) {
+    const profileQuery = `SELECT Id, Name FROM Profile WHERE PermissionsBypassMFAForUiLogins = true`;
+    const profileRes = await soqlQuery(profileQuery, conn);
+    bypassProfiles = (profileRes.records || []) as any[];
+  }
 
   const rows: MfaReportRow[] = [];
 
@@ -425,10 +484,14 @@ async function checkMfaBypassUsers(conn: Connection, ignoreSet: Set<string>): Pr
 async function buildPrivilegedUserContext(
   conn: Connection,
   privilegedPermFields: string[],
-  ignoreSet: Set<string>
+  ignoreSet: Set<string>,
+  bypassField: BypassFieldAvailability
 ): Promise<PrivilegedUserContext> {
   const orClause = privilegedPermFields.map((f) => `${f} = true`).join(' OR ');
-  const selectClause = `Id, Label, ${privilegedPermFields.join(', ')}, PermissionsBypassMFAForUiLogins, PermissionsTwoFactorApi`;
+  const psFlagFields = bypassField.permissionSet
+    ? 'PermissionsBypassMFAForUiLogins, PermissionsTwoFactorApi'
+    : 'PermissionsTwoFactorApi';
+  const selectClause = `Id, Label, ${privilegedPermFields.join(', ')}, ${psFlagFields}`;
 
   const psQuery = `SELECT ${selectClause}, Type FROM PermissionSet WHERE ${orClause}`;
   const psRes = await soqlQuery(psQuery, conn);
@@ -493,7 +556,10 @@ async function buildPrivilegedUserContext(
   if (privilegedUsernames.length > 0) {
     const usernameList = privilegedUsernames.map((u) => `'${u.replace(/'/g, "\\'")}'`).join(',');
 
-    const psaFlagsQuery = `SELECT Assignee.Username, PermissionSet.PermissionsBypassMFAForUiLogins, PermissionSet.PermissionsTwoFactorApi FROM PermissionSetAssignment WHERE Assignee.Username IN (${usernameList})`;
+    const psaFlagFields = bypassField.permissionSet
+      ? 'PermissionSet.PermissionsBypassMFAForUiLogins, PermissionSet.PermissionsTwoFactorApi'
+      : 'PermissionSet.PermissionsTwoFactorApi';
+    const psaFlagsQuery = `SELECT Assignee.Username, ${psaFlagFields} FROM PermissionSetAssignment WHERE Assignee.Username IN (${usernameList})`;
     const psaFlagsRes = await soqlQuery(psaFlagsQuery, conn);
     for (const a of (psaFlagsRes.records || []) as any[]) {
       const username = a.Assignee?.Username;
@@ -502,7 +568,10 @@ async function buildPrivilegedUserContext(
       if (a.PermissionSet?.PermissionsTwoFactorApi === true) twoFactorApiUsernames.add(username);
     }
 
-    const profileFlagsQuery = `SELECT Id, PermissionsBypassMFAForUiLogins, PermissionsTwoFactorApi FROM Profile WHERE Id IN (SELECT ProfileId FROM User WHERE Username IN (${usernameList}))`;
+    const profileFlagFields = bypassField.profile
+      ? 'PermissionsBypassMFAForUiLogins, PermissionsTwoFactorApi'
+      : 'PermissionsTwoFactorApi';
+    const profileFlagsQuery = `SELECT Id, ${profileFlagFields} FROM Profile WHERE Id IN (SELECT ProfileId FROM User WHERE Username IN (${usernameList}))`;
     const profileFlagsRes = await soqlQuery(profileFlagsQuery, conn);
     const flaggedProfileIds = new Map<string, { bypass: boolean; api: boolean }>();
     for (const p of (profileFlagsRes.records || []) as any[]) {
@@ -546,7 +615,9 @@ async function checkPhishingResistantReadiness(
 
   /*
    * General enforcement row: Salesforce does NOT expose a direct "require phishing-resistant
-   * MFA for privileged users" toggle today. The platform-side enforcement starts July 1 2026.
+   * MFA for privileged users" toggle today. The platform-side enforcement rolls out per
+   * release group (sandboxes since July 10 2026, production starting July 20 2026 -
+   * see Salesforce Help article 005321563).
    * As a proxy, we flag the org if SMS-based identity verification is still permitted - because
    * if SMS is on, a privileged user could fall back to a non-phishing-resistant flow. The
    * recommendation always points to the Identity Verification Methods Setup page.
@@ -589,7 +660,8 @@ async function checkPhishingResistantReadiness(
    * If the latest verification used a phishing-resistant method, the user is ready,
    * regardless of older non-resistant verifications (they have evidently migrated).
    * If the latest was a non-resistant method (or there is no verification at all
-   * in the window), flag them - they will be blocked on July 1 2026.
+   * in the window), flag them - the live Salesforce enforcement blocks them as its
+   * rollout wave reaches the org.
    */
   const latestByUserId: Record<string, { method: string; time: string }> = {};
   const userIdList = ctx.privilegedUsernames

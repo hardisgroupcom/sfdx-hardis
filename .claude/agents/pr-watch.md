@@ -1,7 +1,7 @@
 ---
 name: pr-watch
 description: Collect the current CI state of a GitHub PR and the logs of any failing jobs. Mechanical data-gathering only - it classifies and reports, it does not fix anything. Use to snapshot PR status before deciding what to do.
-tools: Bash, Read, Grep, Glob
+tools: Bash, Read, Grep, Glob, WebFetch, WebSearch
 model: haiku
 color: yellow
 ---

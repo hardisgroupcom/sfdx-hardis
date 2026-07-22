@@ -147,6 +147,7 @@ nav:
           - Metadata Backup: salesforce-monitoring-metadata-backup.md
           - Suspect Setup Actions: salesforce-monitoring-suspect-audit-trail.md
           - Apex tests: salesforce-monitoring-apex-tests.md
+          - Agent tests: salesforce-monitoring-agent-tests.md
           - Quality Checks with MegaLinter: salesforce-monitoring-quality-checks.md
           - Apex and Flow errors: salesforce-monitoring-apex-flow-errors.md
           - Limits issues: salesforce-monitoring-org-limits.md
@@ -281,6 +282,8 @@ nav:
           - packagexml2markdown: hardis/doc/packagexml2markdown.md
           - plugin generate: hardis/doc/plugin/generate.md
           - project2markdown: hardis/doc/project2markdown.md
+      - hardis:doctor:
+          - doctor: hardis/doctor.md
       - hardis:git:
           - pull-requests extract: hardis/git/pull-requests/extract.md
       - hardis:lint:
@@ -317,6 +320,7 @@ nav:
           - diagnose storage-stats: hardis/org/diagnose/storage-stats.md
           - diagnose underusedpermsets: hardis/org/diagnose/underusedpermsets.md
           - diagnose unsecure-connected-apps: hardis/org/diagnose/unsecure-connected-apps.md
+          - diagnose unsecure-permissions: hardis/org/diagnose/unsecure-permissions.md
           - diagnose unused-apex-classes: hardis/org/diagnose/unused-apex-classes.md
           - diagnose unused-connected-apps: hardis/org/diagnose/unused-connected-apps.md
           - diagnose unusedlicenses: hardis/org/diagnose/unusedlicenses.md
@@ -343,6 +347,7 @@ nav:
           - retrieve sources metadata: hardis/org/retrieve/sources/metadata.md
           - retrieve sources retrofit: hardis/org/retrieve/sources/retrofit.md
           - select: hardis/org/select.md
+          - test agents: hardis/org/test/agents.md
           - test apex: hardis/org/test/apex.md
           - user activateinvalid: hardis/org/user/activateinvalid.md
           - user freeze: hardis/org/user/freeze.md

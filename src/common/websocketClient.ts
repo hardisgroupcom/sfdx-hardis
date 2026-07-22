@@ -48,6 +48,7 @@ export class WebSocketClient {
   private isDead = false;
   private isInitialized = false;
   private userInput: string | null = null;
+  private extensionVersionResponse: string | null = null;
 
   /**
    * Returns the active WebSocketClient instance.
@@ -98,6 +99,16 @@ export class WebSocketClient {
 
   static isAliveWithLwcUI(): boolean {
     return WebSocketClient.isAlive() && WebSocketClient.activeInstance?.userInput === 'ui-lwc';
+  }
+
+  // Best-effort request of the connected VS Code extension version.
+  // Returns null when no VS Code extension is linked or when it does not answer in time.
+  static async getExtensionVersion(): Promise<string | null> {
+    const instance = WebSocketClient.activeInstance;
+    if (!WebSocketClient.isAlive() || !instance) {
+      return null;
+    }
+    return instance.requestExtensionVersion();
   }
 
 static sendMessage(data: any) {
@@ -195,12 +206,13 @@ static sendMessage(data: any) {
   }
 
   // Send command log line message
-  static sendCommandLogLineMessage(message: string, logType?: LogType, isQuestion?: boolean) {
+  static sendCommandLogLineMessage(message: string, logType?: LogType, isQuestion?: boolean, alwaysVisible?: boolean) {
     WebSocketClient.sendMessage({
       event: 'commandLogLine',
       logType: logType,
       message: message,
       isQuestion: isQuestion,
+      alwaysVisible: alwaysVisible,
     });
   }
 
@@ -364,6 +376,9 @@ static sendMessage(data: any) {
       this.userInput = data.userInput;
       this.isInitialized = true;
     }
+    else if (data.event === 'extensionVersionResponse') {
+      this.extensionVersionResponse = data.extensionVersion ?? 'unknown';
+    }
     else if (data.event === 'cancelCommand') {
       if (this.wsContext?.command === data?.context?.command && this.wsContext.id === data?.context?.id) {
         uxLog("error", this, c.red(t('commandCancelledByUser')));
@@ -375,6 +390,27 @@ static sendMessage(data: any) {
   sendMessageToServer(data: any) {
     data.context = this.wsContext;
     this.ws.send(JSON.stringify(data));
+  }
+
+  // Sends a getExtensionVersion request and waits (with a short timeout) for the response.
+  // Resolves null on timeout so the caller never blocks on a missing/older extension.
+  requestExtensionVersion(): Promise<string | null> {
+    this.extensionVersionResponse = null;
+    this.sendMessageToServer({ event: 'getExtensionVersion' });
+    return new Promise((resolve) => {
+      let interval: any = null;
+      const timeout = setTimeout(() => {
+        clearInterval(interval as NodeJS.Timeout);
+        resolve(this.extensionVersionResponse);
+      }, 5000);
+      interval = setInterval(() => {
+        if (this.extensionVersionResponse != null) {
+          clearInterval(interval as NodeJS.Timeout);
+          clearTimeout(timeout as NodeJS.Timeout);
+          resolve(this.extensionVersionResponse);
+        }
+      }, 200);
+    });
   }
 
   promptServer(prompts: any): Promise<any> {

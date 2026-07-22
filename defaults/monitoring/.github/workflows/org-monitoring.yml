@@ -122,7 +122,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           branch: ${{ matrix.branch }}
-          commit_message: "Org state on ${{ env.BUILD_DATE }} for ${{ matrix.branch }} [skip ci]"
+          commit_message: "chore(monitoring): org state on ${{ env.BUILD_DATE }} for ${{ matrix.branch }} [skip ci]"
           commit_user_name: sfdx-hardis-bot
           commit_user_email: contact@cloudity.com
 
