@@ -203,7 +203,7 @@ pipeline {
                             // Run MegaLinter as a sibling container (Docker socket must be mounted in the agent)
                             // All available variables: https://megalinter.io/latest/config-file/
                             sh '''
-                                docker pull oxsecurity/megalinter-salesforce:latest
+                                docker pull ghcr.io/oxsecurity/megalinter-salesforce:latest
                                 docker run --rm \
                                   -v "${WORKSPACE}:/tmp/lint" \
                                   -e DEFAULT_WORKSPACE=/tmp/lint \
@@ -215,7 +215,7 @@ pipeline {
                                   -e NOTIF_API_METRICS_URL="${NOTIF_API_METRICS_URL}" \
                                   -e NOTIF_API_METRICS_BASIC_AUTH_USERNAME="${NOTIF_API_METRICS_BASIC_AUTH_USERNAME}" \
                                   -e NOTIF_API_METRICS_BASIC_AUTH_PASSWORD="${NOTIF_API_METRICS_BASIC_AUTH_PASSWORD}" \
-                                  oxsecurity/megalinter-salesforce:latest || true
+                                  ghcr.io/oxsecurity/megalinter-salesforce:latest || true
                             '''
                         }
                     }

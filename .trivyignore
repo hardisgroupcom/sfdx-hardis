@@ -287,3 +287,15 @@ CVE-2026-59873
 # https://avd.aquasec.com/nvd/cve-2026-59874
 # tar (node-tar) Denial of Service via malformed tar archive header (HIGH). Same root cause as CVE-2026-59873: sfdx-hardis own tree is already pinned to 7.5.19 in yarn.lock; the residual 7.5.15 in the image comes from the globally npm-installed Salesforce CLI, not under sfdx-hardis control. DoS only, harmless for sfdx-hardis usage. Added 2026-07-21.
 CVE-2026-59874
+
+# https://avd.aquasec.com/nvd/cve-2026-13676 + cve-2026-16221
+# fast-uri host parsing differs from Node WHATWG URL: Unicode/IDN hostnames are not canonicalized (CVE-2026-13676), and a literal backslash is not treated as an authority delimiter (CVE-2026-16221). Both allow host-based policy (allowlist, SSRF or loopback filtering, redirect validation) to be bypassed.
+# sfdx-hardis own tree is already pinned to fast-uri 3.1.4 (fixed for both) in yarn.lock. The residual 3.1.2 in the image comes from the npm-shrinkwrapped @salesforce/cli and from the sfdx-git-delta plugin, both installed globally by the Dockerfile at their latest published version, so not remediable from this repo.
+# sfdx-hardis never uses fast-uri to make host-based security decisions: it is pulled in transitively by ajv for JSON schema $ref resolution over schemas we ship ourselves, not attacker-controlled URLs. Added 2026-07-23.
+CVE-2026-13676
+CVE-2026-16221
+
+# https://github.com/advisories/GHSA-8r6m-32jq-jx6q
+# fast-xml-parser: repeated DOCTYPE declarations reset the entity expansion counters, so a crafted XML document can blow past the expansion limits (CPU / memory exhaustion, DoS). Fixed in 5.10.1.
+# sfdx-hardis own tree is already pinned to fast-xml-parser 5.10.1 in yarn.lock; the residual 5.9.3 in the image comes from the npm-shrinkwrapped @salesforce/cli, which our yarn resolutions cannot reach, so not remediable from this repo. DoS only, and the XML parsed comes from Salesforce APIs and from the repository metadata, not from untrusted sources. Added 2026-07-23.
+GHSA-8r6m-32jq-jx6q
