@@ -22,7 +22,7 @@ check_quality:
   only:
     - merge_requests
     - web
-  image: oxsecurity/megalinter-salesforce:latest
+  image: ghcr.io/oxsecurity/megalinter-salesforce:latest
   script: ["true"]
   variables:
     # All available variables are described in documentation

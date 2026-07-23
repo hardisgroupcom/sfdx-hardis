@@ -74,7 +74,7 @@ pipelines:
         ############################################################
         - step:
             name: Run MegaLinter
-            image: oxsecurity/megalinter-salesforce:latest
+            image: ghcr.io/oxsecurity/megalinter-salesforce:latest
 
             script:
               # Get latest commit of the branch

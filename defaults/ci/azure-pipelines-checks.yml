@@ -130,7 +130,7 @@ jobs:
       vmImage: ubuntu-latest
     steps:
       # Pull MegaLinter docker image
-      - script: docker pull oxsecurity/megalinter-salesforce:latest
+      - script: docker pull ghcr.io/oxsecurity/megalinter-salesforce:latest
         displayName: Pull MegaLinter
       # Run MegaLinter
       - script: |
@@ -142,7 +142,7 @@ jobs:
             -e SYSTEM_PULLREQUEST_SOURCECOMMITID=$(System.PullRequest.SourceCommitId) \
             -e SYSTEM_PULLREQUEST_TARGETBRANCH=$(System.PullRequest.TargetBranch) \
             -e BUILD_REASON=$(Build.Reason) \
-            oxsecurity/megalinter-salesforce:latest
+            ghcr.io/oxsecurity/megalinter-salesforce:latest
         displayName: Run MegaLinter
       # Publish Megalinter reports
       - publish: $(System.DefaultWorkingDirectory)/megalinter-reports/

@@ -211,7 +211,7 @@ jobs:
         displayName: Git config & pull latest commit
 
       # Pull MegaLinter docker image
-      - script: docker pull oxsecurity/megalinter-salesforce:latest
+      - script: docker pull ghcr.io/oxsecurity/megalinter-salesforce:latest
         displayName: Pull MegaLinter
       # Run MegaLinter
       - script: |
@@ -227,7 +227,7 @@ jobs:
             -e NOTIF_API_METRICS_URL=$(NOTIF_API_METRICS_URL) \
             -e NOTIF_API_METRICS_BASIC_AUTH_USERNAME=$(NOTIF_API_METRICS_BASIC_AUTH_USERNAME) \
             -e NOTIF_API_METRICS_BASIC_AUTH_PASSWORD=$(NOTIF_API_METRICS_BASIC_AUTH_PASSWORD) \
-            oxsecurity/megalinter-salesforce:latest
+            ghcr.io/oxsecurity/megalinter-salesforce:latest
         continueOnError: "true"
         displayName: Run MegaLinter
 

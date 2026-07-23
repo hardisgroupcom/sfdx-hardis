@@ -13,7 +13,7 @@ pipelines:
           # Run MegaLinter
           - step:
               name: Run MegaLinter
-              image: oxsecurity/megalinter-salesforce:latest
+              image: ghcr.io/oxsecurity/megalinter-salesforce:latest
               script:
                 - export DEFAULT_WORKSPACE=$BITBUCKET_CLONE_DIR && bash
                   /entrypoint.sh
