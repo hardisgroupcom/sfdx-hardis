@@ -3,6 +3,7 @@ import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import type { NotifMessage } from "./types.js";
 import { getEnvVar } from "../../config/index.js";
+import { applyMessageSizeGuard, SizeGuardLimits } from "./messageSizeGuard.js";
 
 const ERROR_SEVERITIES = ["critical", "error", "warning"];
 
@@ -11,6 +12,8 @@ export abstract class WebhookNotifProviderRoot extends NotifProviderRoot {
   protected abstract getErrorsWarningsEnvVar(): string;
   protected abstract getLogPrefix(): string;
   protected abstract buildPayload(notifMessage: NotifMessage): object;
+  // Platform payload limits. Declared per provider because the numbers are platform facts.
+  protected abstract getSizeLimits(): SizeGuardLimits;
   protected getContentType(): string {
     return "application/json";
   }
@@ -22,7 +25,9 @@ export abstract class WebhookNotifProviderRoot extends NotifProviderRoot {
       return;
     }
 
-    const payload = this.buildPayload(notifMessage);
+    // Trim oversized attachments before building the payload, so the platform does not reject the
+    // whole message. Messages already under budget are passed through untouched.
+    const payload = this.buildPayload(applyMessageSizeGuard(notifMessage, this.getSizeLimits()));
     await this.sendToWebhooks(webhookUrls, payload);
   }
 

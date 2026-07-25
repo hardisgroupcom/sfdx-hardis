@@ -2398,6 +2398,13 @@
       "title": "Disabled notification types",
       "type": "array"
     },
+    "notifTranslateDeploymentMessages": {
+      "$id": "#/properties/notifTranslateDeploymentMessages",
+      "default": false,
+      "description": "Defines if deployment notification messages sent to Slack, Teams and Google Chat follow the locale defined by SFDX_HARDIS_LANG.\nDeployment notifications land in shared team channels that are often read by people in several countries, so by default they stay in English whatever the locale of the machine running the pipeline.\nCan also be set with environment variable NOTIF_TRANSLATE_DEPLOYMENT_MESSAGES.",
+      "title": "Translate deployment notification messages",
+      "type": "boolean"
+    },
     "orgAuthenticationMode": {
       "$id": "#/properties/orgAuthenticationMode",
       "default": "encryptedCert",

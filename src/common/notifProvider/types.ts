@@ -517,6 +517,13 @@ export interface NotifMessage {
   type: NotifMessageType;
   buttons?: NotifButton[];
   attachments?: any[];
+  // Set when the notification relates to a Pull Request. Used by the message size guard to point
+  // readers at the Pull Request when attachment content had to be truncated.
+  pullRequestUrl?: string;
+  // When false, messages generated for this notification stay in English instead of following
+  // SFDX_HARDIS_LANG. Deployment notifications set this from the notifTranslateDeploymentMessages
+  // config property / NOTIF_TRANSLATE_DEPLOYMENT_MESSAGES env var. Undefined means "translate".
+  translateMessages?: boolean;
   severity: NotifSeverity;
   sideImage?: string;
   attachedFiles?: string[];

@@ -72,3 +72,27 @@ export function t(key: string, vars?: Record<string, unknown>): string {
   // If i18next returns the key itself (not found), return the key as fallback
   return result as string;
 }
+
+/**
+ * Translate a message key in English, whatever SFDX_HARDIS_LANG is set to.
+ * Used for messages that must stay in a single shared language regardless of the local machine,
+ * typically notifications posted to a team channel read by people in several countries.
+ * @param key - Translation key
+ * @param vars - Optional interpolation variables
+ * @returns English string, or the key if not found
+ */
+export function tEn(key: string, vars?: Record<string, unknown>): string {
+  if (!initialized) {
+    initI18n();
+  }
+  // The "en" resource bundle is always loaded by initI18n(), so this never falls back to the key
+  // just because the active locale differs.
+  return i18next.t(key, { ...(vars || {}), lng: 'en' } as any) as string;
+}
+
+/**
+ * Pick between the active locale and English, for call sites where translation is opt-in.
+ */
+export function tMaybe(translate: boolean, key: string, vars?: Record<string, unknown>): string {
+  return translate ? t(key, vars) : tEn(key, vars);
+}

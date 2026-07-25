@@ -37,6 +37,7 @@ import { isProductionOrg } from './orgUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { executePrePostCommands } from './prePostCommandUtils.js';
+import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import { t } from './i18n.js';
 import { autoFixDeployErrors } from './deployErrorAutoFix.js';
 
@@ -200,6 +201,8 @@ function setNoMetadataDeploymentSuccess(check: boolean): void {
 
 export interface DeploymentMetrics {
   componentsDeployed: number;
+  // Subset of componentsDeployed that were deletions (destructive changes).
+  componentsDeleted: number;
   componentsTotal: number;
   componentsFailed: number;
   testsRun: number;
@@ -212,9 +215,32 @@ export interface DeploymentMetrics {
   durationSeconds: number;
 }
 
+/**
+ * Count how many components of a deploy result were deletions.
+ *
+ * numberComponentsDeployed lumps deletions in with creations and updates, so the split has to come
+ * from the per-component details: `details.componentSuccesses[].deleted` when present, falling back
+ * to the source-tracking style `files[].state`. The package.xml manifest entry that Salesforce adds
+ * to componentSuccesses is excluded.
+ */
+function countDeletedComponents(deployResultJson: any): number {
+  const componentSuccesses = deployResultJson?.details?.componentSuccesses;
+  if (Array.isArray(componentSuccesses) && componentSuccesses.length > 0) {
+    return componentSuccesses.filter(
+      (item: any) => item?.deleted === true && item?.fullName !== 'package.xml'
+    ).length;
+  }
+  const files = deployResultJson?.files;
+  if (Array.isArray(files)) {
+    return files.filter((item: any) => item?.state === 'Deleted').length;
+  }
+  return 0;
+}
+
 function buildEmptyDeploymentMetrics(options: { quickDeploy: boolean; delta: boolean; startTime: number }): DeploymentMetrics {
   return {
     componentsDeployed: 0,
+    componentsDeleted: 0,
     componentsTotal: 0,
     componentsFailed: 0,
     testsRun: 0,
@@ -246,6 +272,8 @@ export async function smartDeploy(
   }
 ): Promise<any> {
   elapseStart('all deployments');
+  // Start from a clean slate so the post-deployment notification only reports this run's actions
+  resetExecutedDeploymentActions();
   const deployStartTime = Date.now();
   let quickDeploy = false;
   const deploymentMetrics: DeploymentMetrics = buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime });
@@ -414,6 +442,7 @@ export async function smartDeploy(
             const quickDeployResultJson = quickDeployRes.result;
             if (quickDeployResultJson) {
               deploymentMetrics.componentsDeployed += Number(quickDeployResultJson.numberComponentsDeployed || 0);
+              deploymentMetrics.componentsDeleted += countDeletedComponents(quickDeployResultJson);
               deploymentMetrics.componentsTotal += Number(quickDeployResultJson.numberComponentsTotal || 0);
               deploymentMetrics.componentsFailed += Number(quickDeployResultJson.numberComponentErrors || 0);
               deploymentMetrics.testsRun += Number(quickDeployResultJson.numberTestsCompleted || 0);
@@ -537,6 +566,7 @@ export async function smartDeploy(
         const deployResultJson = deployRes.result ?? JSON.parse(deployRes.stdout || '{}')?.result;
         if (deployResultJson) {
           deploymentMetrics.componentsDeployed += Number(deployResultJson.numberComponentsDeployed || 0);
+          deploymentMetrics.componentsDeleted += countDeletedComponents(deployResultJson);
           deploymentMetrics.componentsTotal += Number(deployResultJson.numberComponentsTotal || 0);
           deploymentMetrics.componentsFailed += Number(deployResultJson.numberComponentErrors || 0);
           deploymentMetrics.testsRun += Number(deployResultJson.numberTestsCompleted || 0);

@@ -2,6 +2,7 @@ import { WebhookNotifProviderRoot } from "./webhookNotifProviderRoot.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
 import { convertMarkdownToTeamsMrkdwn } from "./teamsMarkdown.js";
+import { SizeGuardLimits } from "./messageSizeGuard.js";
 
 interface AdaptiveCardElement {
   type: string;
@@ -19,6 +20,14 @@ const ADAPTIVE_CARD_VERSION = "1.0";
 const CONTENT_TYPE_ADAPTIVE_CARD = "application/vnd.microsoft.card.adaptive";
 const DETAILS_CONTAINER_ID = "detailsContainer";
 const LOG_PREFIX = "[TeamsProvider]";
+
+// Teams rejects an Adaptive Card payload over roughly 28 KB. TextBlock has no documented
+// per-element cap, so the payload budget governs. Overridable for orgs on different limits.
+const TEAMS_SIZE_LIMITS: SizeGuardLimits = {
+  maxAttachmentsChars: Number(process.env.TEAMS_MAX_ATTACHMENTS_CHARS || 18000),
+  maxBlockChars: Number(process.env.TEAMS_MAX_BLOCK_CHARS || 18000),
+  maxBlocks: Number(process.env.TEAMS_MAX_BLOCKS || 100),
+};
 
 export class TeamsProvider extends WebhookNotifProviderRoot {
   public getLabel(): string {
@@ -39,6 +48,10 @@ export class TeamsProvider extends WebhookNotifProviderRoot {
 
   protected getLogPrefix(): string {
     return LOG_PREFIX;
+  }
+
+  protected getSizeLimits(): SizeGuardLimits {
+    return TEAMS_SIZE_LIMITS;
   }
 
   protected buildPayload(notifMessage: NotifMessage): object {
