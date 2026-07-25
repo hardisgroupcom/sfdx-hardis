@@ -24,6 +24,7 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class MonitorErrors extends SfCommand<any> {
   private static readonly maxProcessedErrors = 10000;
+  private static readonly maxTopBreakdownItems = 10;
   private static readonly unifiedErrorColumns = [
     'Source',
     'Status',
@@ -421,7 +422,7 @@ In agent mode:
 
     for (const record of this.flowErrors) {
       const rawOperation = (record.Operation ?? '').trim();
-      const operation = rawOperation.replace(/\s+\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}.*$/, '').trim();
+      const operation = this.normalizeFlowOperation(rawOperation);
       const key = `Flow\0${operation}`;
       countMap.set(key, (countMap.get(key) ?? 0) + 1);
     }
@@ -436,6 +437,45 @@ In agent mode:
         };
       })
       .sort((a, b) => b['Number of errors'] - a['Number of errors']);
+  }
+
+  protected normalizeFlowOperation(operation?: string): string {
+    const raw = (operation ?? '').trim();
+    return raw.replace(/\s+\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}.*$/, '').trim();
+  }
+
+  protected buildFlowCountsByOperation(): Array<{ flowName: string; count: number }> {
+    const countMap = new Map<string, number>();
+
+    for (const record of this.flowErrors) {
+      const flowName = this.normalizeFlowOperation(record.Operation);
+      if (!flowName) {
+        continue;
+      }
+      countMap.set(flowName, (countMap.get(flowName) ?? 0) + 1);
+    }
+
+    return Array.from(countMap.entries())
+      .map(([flowName, count]) => ({ flowName, count }))
+      .sort((a, b) => b.count - a.count || a.flowName.localeCompare(b.flowName))
+      .slice(0, MonitorErrors.maxTopBreakdownItems);
+  }
+
+  protected buildFlowCountsByStep(): Array<{ flowStep: string; count: number }> {
+    const countMap = new Map<string, number>();
+
+    for (const record of this.flowErrors) {
+      const flowStep = (record.ErrorStep ?? '').trim();
+      if (!flowStep) {
+        continue;
+      }
+      countMap.set(flowStep, (countMap.get(flowStep) ?? 0) + 1);
+    }
+
+    return Array.from(countMap.entries())
+      .map(([flowStep, count]) => ({ flowStep, count }))
+      .sort((a, b) => b.count - a.count || a.flowStep.localeCompare(b.flowStep))
+      .slice(0, MonitorErrors.maxTopBreakdownItems);
   }
 
   protected removeAlwaysNullColumns(records: any[]): any[] {
@@ -597,6 +637,9 @@ In agent mode:
         ? t('monitorErrorsFlowDetected', { org: orgMarkdown, count, days: this.days })
         : t('monitorErrorsFlowNone', { org: orgMarkdown, days: this.days });
 
+    const topFailingFlows = this.buildFlowCountsByOperation();
+    const topFailingSteps = this.buildFlowCountsByStep();
+
     return {
       type: 'FLOW_ERROR',
       text: notifText,
@@ -607,10 +650,14 @@ In agent mode:
       logElements: this.flowErrors,
       metrics: {
         FlowErrors: count,
+        TopFailingFlowCount: topFailingFlows[0]?.count ?? 0,
+        TopFailingStepCount: topFailingSteps[0]?.count ?? 0,
       },
       data: {
         metric: count,
         flowErrors: count,
+        topFailingFlows,
+        topFailingSteps,
       },
     };
   }
