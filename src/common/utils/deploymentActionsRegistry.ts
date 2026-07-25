@@ -24,10 +24,6 @@ export function recordExecutedDeploymentActions(commands: PrePostCommand[]): voi
   executedDeploymentActions.push(...commands);
 }
 
-export function getExecutedDeploymentActions(): PrePostCommand[] {
-  return executedDeploymentActions;
-}
-
 export function resetExecutedDeploymentActions(): void {
   executedDeploymentActions = [];
 }

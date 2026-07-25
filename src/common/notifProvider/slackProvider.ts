@@ -103,7 +103,10 @@ export class SlackProvider extends NotifProviderRoot {
         "alt_text": "sfdx-hardis"
       }
     } */
-    // Add action blocks
+    // Build the action block. It is kept aside from the content blocks and appended last, after the
+    // block count has been capped: the buttons (View Org, View Pull Request) are the most useful
+    // part of the notification and must never be the ones dropped.
+    let actionsBlock: ActionsBlock | null = null;
     if (notifMessage.buttons?.length && notifMessage.buttons?.length > 0) {
       const actionElements: any[] = [];
       for (const button of notifMessage.buttons) {
@@ -121,11 +124,10 @@ export class SlackProvider extends NotifProviderRoot {
           actionElements.push(actionsElement);
         }
       }
-      const actionsBlock: ActionsBlock = {
+      actionsBlock = {
         type: "actions",
         elements: actionElements,
       };
-      blocks.push(actionsBlock);
     }
     // Clamp section text and block count so Slack does not reject the message with invalid_blocks
     for (const block of blocks) {
@@ -140,7 +142,12 @@ export class SlackProvider extends NotifProviderRoot {
         }
       }
     }
-    const cappedBlocks = blocks.length > SLACK_SIZE_LIMITS.maxBlocks ? blocks.slice(0, SLACK_SIZE_LIMITS.maxBlocks) : blocks;
+    // Reserve one slot for the action block so the buttons always fit within the block count limit
+    const maxContentBlocks = Math.max(0, SLACK_SIZE_LIMITS.maxBlocks - (actionsBlock ? 1 : 0));
+    const cappedBlocks = blocks.length > maxContentBlocks ? blocks.slice(0, maxContentBlocks) : [...blocks];
+    if (actionsBlock) {
+      cappedBlocks.push(actionsBlock);
+    }
     // Post messages
     for (const slackChannelId of slackChannelsIds) {
       const slackMessage = {

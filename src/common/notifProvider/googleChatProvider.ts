@@ -33,6 +33,7 @@ const LOG_PREFIX = "[GoogleChatProvider]";
 const GOOGLE_CHAT_SIZE_LIMITS: SizeGuardLimits = {
   maxAttachmentsChars: Number(process.env.GOOGLE_CHAT_MAX_ATTACHMENTS_CHARS || 20000),
   maxBlockChars: Number(process.env.GOOGLE_CHAT_MAX_BLOCK_CHARS || 4000),
+  // NOT ENFORCED: Google Chat documents no widget count cap for a card. The payload budget governs.
   maxBlocks: Number(process.env.GOOGLE_CHAT_MAX_BLOCKS || 100),
 };
 

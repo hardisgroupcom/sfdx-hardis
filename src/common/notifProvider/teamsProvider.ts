@@ -25,7 +25,10 @@ const LOG_PREFIX = "[TeamsProvider]";
 // per-element cap, so the payload budget governs. Overridable for orgs on different limits.
 const TEAMS_SIZE_LIMITS: SizeGuardLimits = {
   maxAttachmentsChars: Number(process.env.TEAMS_MAX_ATTACHMENTS_CHARS || 18000),
+  // NOT ENFORCED: a TextBlock has no documented per-element cap, so nothing clamps individual
+  // elements here. Declared only because SizeGuardLimits requires it; mirrors the payload budget.
   maxBlockChars: Number(process.env.TEAMS_MAX_BLOCK_CHARS || 18000),
+  // NOT ENFORCED: an Adaptive Card has no documented element count cap. The payload budget governs.
   maxBlocks: Number(process.env.TEAMS_MAX_BLOCKS || 100),
 };
 
