@@ -28,6 +28,7 @@ import { NotifProvider, UtilsNotifs } from '../notifProvider/index.js';
 import { setConnectionVariables } from './orgUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { countPackageXmlItems } from './xmlUtils.js';
+import type { DeploymentMetrics } from './deployUtils.js';
 import { t } from './i18n.js';
 
 // Builds a commit message following the Conventional Commits v1.0.0 specification
@@ -451,7 +452,7 @@ export async function buildCheckDeployCommitSummary() {
   }
 }
 
-export async function handlePostDeploymentNotifications(flags, targetUsername: any, quickDeploy: any, delta: boolean, debugMode: boolean, additionalMessage = "") {
+export async function handlePostDeploymentNotifications(flags, targetUsername: any, quickDeploy: any, delta: boolean, debugMode: boolean, additionalMessage = "", deploymentMetrics: DeploymentMetrics | null = null) {
   const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
   const attachments: MessageAttachment[] = [];
   try {
@@ -506,9 +507,19 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
     severity: 'success',
     attachments: attachments,
     logElements: [],
-    data: { metric: 0 }, // Todo: if delta used, count the number of items deployed
+    data: { metric: deploymentMetrics?.componentsDeployed ?? 0 },
     metrics: {
-      DeployedItems: 0,
+      DeployedItems: deploymentMetrics?.componentsDeployed ?? 0,
+      DeploymentComponentsTotal: deploymentMetrics?.componentsTotal ?? 0,
+      DeploymentComponentsFailed: deploymentMetrics?.componentsFailed ?? 0,
+      DeploymentTestsRun: deploymentMetrics?.testsRun ?? 0,
+      DeploymentTestsFailed: deploymentMetrics?.testsFailed ?? 0,
+      DeploymentTestsTotal: deploymentMetrics?.testsTotal ?? 0,
+      DeploymentCodeCoverage: deploymentMetrics?.codeCoveragePercent ?? 0,
+      DeploymentDurationSeconds: deploymentMetrics?.durationSeconds ?? 0,
+      DeploymentQuickDeploy: deploymentMetrics?.quickDeploy ? 1 : 0,
+      DeploymentDelta: deploymentMetrics?.delta ? 1 : 0,
+      DeploymentSuccess: deploymentMetrics?.success === false ? 0 : 1,
     },
   });
 }

@@ -97,7 +97,7 @@ megalinter:
   allow_failure: true
   #tags:
   #  - ubuntu
-  image: oxsecurity/megalinter-salesforce:latest
+  image: ghcr.io/oxsecurity/megalinter-salesforce:latest
   script: ["true"]
   before_script:
     - git config --global user.name "${GITLAB_USER_NAME}"

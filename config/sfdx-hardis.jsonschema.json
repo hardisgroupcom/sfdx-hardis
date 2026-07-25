@@ -773,6 +773,24 @@
               "remove-packagexml-items"
             ]
           },
+          "when": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/when",
+            "description": "Deployment phase the action belongs to. Written automatically by sfdx-hardis when it saves actions, so you normally do not need to set it by hand.",
+            "title": "When",
+            "default": "pre-deploy",
+            "type": "string",
+            "enum": [
+              "pre-deploy",
+              "post-deploy"
+            ],
+            "enumNames": [
+              "Pre-Deployment",
+              "Post-Deployment"
+            ],
+            "examples": [
+              "pre-deploy"
+            ]
+          },
           "parameters": {
             "$id": "#/properties/commandsPreDeploy/items/properties/parameters",
             "description": "Known parameters used by action implementations. Additional keys allowed.",
@@ -949,6 +967,24 @@
               "apex",
               "publish-community",
               "manual"
+            ]
+          },
+          "when": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/when",
+            "description": "Deployment phase the action belongs to. Written automatically by sfdx-hardis when it saves actions, so you normally do not need to set it by hand.",
+            "title": "When",
+            "default": "post-deploy",
+            "type": "string",
+            "enum": [
+              "pre-deploy",
+              "post-deploy"
+            ],
+            "enumNames": [
+              "Pre-Deployment",
+              "Post-Deployment"
+            ],
+            "examples": [
+              "post-deploy"
             ]
           },
           "parameters": {
