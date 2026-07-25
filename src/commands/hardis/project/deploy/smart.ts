@@ -493,7 +493,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     await this.setAdditionalOptions(targetUsername);
 
     // Process deployment (or deployment check)
-    const { messages, quickDeploy, deployXmlCount } = await smartDeploy(
+    const { messages, quickDeploy, deployXmlCount, deploymentMetrics } = await smartDeploy(
       this.packageXmlFile,
       this.checkOnly,
       this.testLevel,
@@ -513,7 +513,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     // Send notification of deployment success
     if (!this.checkOnly) {
-      await handlePostDeploymentNotifications(flags, targetUsername, quickDeploy, this.delta, this.debugMode);
+      await handlePostDeploymentNotifications(flags, targetUsername, quickDeploy, this.delta, this.debugMode, "", deploymentMetrics);
     }
     // Return result
     return { orgId: flags['target-org'].getOrgId(), outputString: messages.join('\n') };

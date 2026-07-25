@@ -198,6 +198,36 @@ function setNoMetadataDeploymentSuccess(check: boolean): void {
   setPullRequestData(prData);
 }
 
+export interface DeploymentMetrics {
+  componentsDeployed: number;
+  componentsTotal: number;
+  componentsFailed: number;
+  testsRun: number;
+  testsFailed: number;
+  testsTotal: number;
+  codeCoveragePercent: number | null;
+  quickDeploy: boolean;
+  delta: boolean;
+  success: boolean;
+  durationSeconds: number;
+}
+
+function buildEmptyDeploymentMetrics(options: { quickDeploy: boolean; delta: boolean; startTime: number }): DeploymentMetrics {
+  return {
+    componentsDeployed: 0,
+    componentsTotal: 0,
+    componentsFailed: 0,
+    testsRun: 0,
+    testsFailed: 0,
+    testsTotal: 0,
+    codeCoveragePercent: null,
+    quickDeploy: options.quickDeploy,
+    delta: options.delta,
+    success: true,
+    durationSeconds: Math.round((Date.now() - options.startTime) / 1000),
+  };
+}
+
 export async function smartDeploy(
   packageXmlFile: string,
   check = false,
@@ -216,7 +246,9 @@ export async function smartDeploy(
   }
 ): Promise<any> {
   elapseStart('all deployments');
+  const deployStartTime = Date.now();
   let quickDeploy = false;
+  const deploymentMetrics: DeploymentMetrics = buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime });
 
   // Check package.xml emptiness
   const packageXmlIsEmpty = !fs.existsSync(packageXmlFile) || await isPackageXmlEmpty(packageXmlFile);
@@ -244,7 +276,7 @@ export async function smartDeploy(
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
     await GitProvider.managePostPullRequestComment(check);
-    return { messages: [], quickDeploy, deployXmlCount: 0 };
+    return { messages: [], quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
 
   // If we have empty package.xml and no destructive changes, there's nothing to do
@@ -254,7 +286,7 @@ export async function smartDeploy(
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
     await GitProvider.managePostPullRequestComment(check);
-    return { messages: [], quickDeploy, deployXmlCount: 0 };
+    return { messages: [], quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
 
   // If we have empty package.xml but destructive changes, log it
@@ -281,7 +313,7 @@ export async function smartDeploy(
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
     await GitProvider.managePostPullRequestComment(check);
-    return { messages, quickDeploy, deployXmlCount };
+    return { messages, quickDeploy, deployXmlCount, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
@@ -378,6 +410,16 @@ export async function smartDeploy(
               )
             );
             quickDeploy = true;
+            deploymentMetrics.quickDeploy = true;
+            const quickDeployResultJson = quickDeployRes.result;
+            if (quickDeployResultJson) {
+              deploymentMetrics.componentsDeployed += Number(quickDeployResultJson.numberComponentsDeployed || 0);
+              deploymentMetrics.componentsTotal += Number(quickDeployResultJson.numberComponentsTotal || 0);
+              deploymentMetrics.componentsFailed += Number(quickDeployResultJson.numberComponentErrors || 0);
+              deploymentMetrics.testsRun += Number(quickDeployResultJson.numberTestsCompleted || 0);
+              deploymentMetrics.testsFailed += Number(quickDeployResultJson.numberTestErrors || 0);
+              deploymentMetrics.testsTotal += Number(quickDeployResultJson.numberTestsTotal || 0);
+            }
             continue;
           } else {
             uxLog(
@@ -490,6 +532,22 @@ export async function smartDeploy(
         }
       }
 
+      // Accumulate deploy result metrics for this split deployment (before deployRes.stdout gets overwritten below)
+      try {
+        const deployResultJson = deployRes.result ?? JSON.parse(deployRes.stdout || '{}')?.result;
+        if (deployResultJson) {
+          deploymentMetrics.componentsDeployed += Number(deployResultJson.numberComponentsDeployed || 0);
+          deploymentMetrics.componentsTotal += Number(deployResultJson.numberComponentsTotal || 0);
+          deploymentMetrics.componentsFailed += Number(deployResultJson.numberComponentErrors || 0);
+          deploymentMetrics.testsRun += Number(deployResultJson.numberTestsCompleted || 0);
+          deploymentMetrics.testsFailed += Number(deployResultJson.numberTestErrors || 0);
+          deploymentMetrics.testsTotal += Number(deployResultJson.numberTestsTotal || 0);
+        }
+      } catch {
+        // Deploy result JSON not parseable for this split deployment: metrics for it are skipped
+      }
+      deploymentMetrics.success = deploymentMetrics.success && deployRes.status === 0;
+
       if (typeof deployRes === 'object') {
         deployRes.stdout = JSON.stringify(deployRes);
       }
@@ -501,6 +559,7 @@ export async function smartDeploy(
       // Check org coverage if found in logs
       const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || '');
       if (orgCoveragePercent) {
+        deploymentMetrics.codeCoveragePercent = Number(orgCoveragePercent);
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: check, testlevel: testlevel, testClasses: options.testClasses });
         } catch (errCoverage) {
@@ -574,7 +633,9 @@ export async function smartDeploy(
   // Post pull request comment if available
   await GitProvider.managePostPullRequestComment(check);
   elapseEnd('all deployments');
-  return { messages, quickDeploy, deployXmlCount };
+  deploymentMetrics.quickDeploy = quickDeploy;
+  deploymentMetrics.durationSeconds = Math.round((Date.now() - deployStartTime) / 1000);
+  return { messages, quickDeploy, deployXmlCount, deploymentMetrics };
 }
 
 async function handleDeployError(
