@@ -100,6 +100,7 @@
 |[**hardis:org:configure:data**](hardis/org/configure/data.md)||
 |[**hardis:org:configure:files**](hardis/org/configure/files.md)||
 |[**hardis:org:configure:generic-prompt**](hardis/org/configure/generic-prompt.md)||
+|[**hardis:org:configure:grafana-dashboards**](hardis/org/configure/grafana-dashboards.md)||
 |[**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)||
 |[**hardis:org:connect**](hardis/org/connect.md)||
 |[**hardis:org:create**](hardis/org/create.md)||
