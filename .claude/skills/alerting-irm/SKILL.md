@@ -142,14 +142,14 @@ curl https://grafana.example.com/api/alertmanager/grafana/api/v2/silences \
 
 ## Alert rule states
 
-| State | Description |
-|-------|-------------|
-| **Normal** | Condition not met |
-| **Pending** | Condition met, waiting for `for` duration |
-| **Firing** | Condition met for full `for` duration |
-| **NoData** | Query returned no data |
-| **Error** | Query/evaluation error |
-| **Recovering** | Was firing, condition no longer met |
+| State          | Description                               |
+|----------------|-------------------------------------------|
+| **Normal**     | Condition not met                         |
+| **Pending**    | Condition met, waiting for `for` duration |
+| **Firing**     | Condition met for full `for` duration     |
+| **NoData**     | Query returned no data                    |
+| **Error**      | Query/evaluation error                    |
+| **Recovering** | Was firing, condition no longer met       |
 
 ## Provisioning directory layout
 

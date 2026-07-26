@@ -98,28 +98,28 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build -v || 
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|diff-only|boolean|Generate documentation only for changed files (used for monitoring)||||
-|excel|boolean|Also generate an Excel file with all metadata in separate tabs||||
-|flags-dir|option|undefined||||
-|generate-apex-doc|boolean|Generate Apex documentation||||
-|generate-automations-doc|boolean|Generate Automations documentation (Approval Processes, Assignment Rules, AutoResponse Rules, Escalation Rules)||||
-|generate-flow-doc|boolean|Generate Flows, Process Builders and Workflow Rules documentation||||
-|generate-lwc-doc|boolean|Generate Lightning Web Components documentation||||
-|generate-objects-doc|boolean|Generate Objects documentation||||
-|generate-packages-doc|boolean|Generate Installed Packages documentation||||
-|generate-pages-doc|boolean|Generate Lightning Pages documentation||||
-|generate-profiles-doc|boolean|Generate Profiles, Permission Sets, Permission Set Groups and Roles documentation||||
-|hide-apex-code|boolean|Hide Apex code in the generated documentation for Apex classes.||||
-|json|boolean|Format output as json.||||
-|pdf|boolean|Also generate the documentation in PDF format||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
-|with-history|boolean|Generate a markdown file with the history diff of the Flow||||
+| Name                     |  Type   | Description                                                                                                     | Default | Required | Options |
+|:-------------------------|:-------:|:----------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                    | boolean | Run in non-interactive mode for agents and automation                                                           |         |          |         |
+| debug<br/>-d             | boolean | Activate debug mode (more logs)                                                                                 |         |          |         |
+| diff-only                | boolean | Generate documentation only for changed files (used for monitoring)                                             |         |          |         |
+| excel                    | boolean | Also generate an Excel file with all metadata in separate tabs                                                  |         |          |         |
+| flags-dir                | option  | undefined                                                                                                       |         |          |         |
+| generate-apex-doc        | boolean | Generate Apex documentation                                                                                     |         |          |         |
+| generate-automations-doc | boolean | Generate Automations documentation (Approval Processes, Assignment Rules, AutoResponse Rules, Escalation Rules) |         |          |         |
+| generate-flow-doc        | boolean | Generate Flows, Process Builders and Workflow Rules documentation                                               |         |          |         |
+| generate-lwc-doc         | boolean | Generate Lightning Web Components documentation                                                                 |         |          |         |
+| generate-objects-doc     | boolean | Generate Objects documentation                                                                                  |         |          |         |
+| generate-packages-doc    | boolean | Generate Installed Packages documentation                                                                       |         |          |         |
+| generate-pages-doc       | boolean | Generate Lightning Pages documentation                                                                          |         |          |         |
+| generate-profiles-doc    | boolean | Generate Profiles, Permission Sets, Permission Set Groups and Roles documentation                               |         |          |         |
+| hide-apex-code           | boolean | Hide Apex code in the generated documentation for Apex classes.                                                 |         |          |         |
+| json                     | boolean | Format output as json.                                                                                          |         |          |         |
+| pdf                      | boolean | Also generate the documentation in PDF format                                                                   |         |          |         |
+| skipauth                 | boolean | Skip authentication check when a default username is required                                                   |         |          |         |
+| target-org<br/>-o        | option  | undefined                                                                                                       |         |          |         |
+| websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                       |         |          |         |
+| with-history             | boolean | Generate a markdown file with the history diff of the Flow                                                      |         |          |         |
 
 ## Examples
 

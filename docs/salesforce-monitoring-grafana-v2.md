@@ -188,13 +188,13 @@ _(screenshot coming soon)_
 
 On weekly monitoring runs, `hardis:org:monitor:all` computes a composite score (0-100) from the run's collected notifications, with no extra Salesforce API call:
 
-| Sub-score | Weight | Based on |
-|-----------|--------|----------|
-| Reliability | 30 | Apex + Flow error counts |
-| Security | 25 | Security Health Check score, unsecured Connected Apps, suspect setup actions, legacy API calls, dangerous permissions |
-| Limits | 20 | Worst org limit usage percentage |
-| Tests | 15 | Apex coverage vs 75%, failing test classes |
-| Technical debt | 10 | Unused metadata/Apex, inactive automations, missing descriptions, access gaps |
+| Sub-score      | Weight | Based on                                                                                                              |
+|----------------|--------|-----------------------------------------------------------------------------------------------------------------------|
+| Reliability    | 30     | Apex + Flow error counts                                                                                              |
+| Security       | 25     | Security Health Check score, unsecured Connected Apps, suspect setup actions, legacy API calls, dangerous permissions |
+| Limits         | 20     | Worst org limit usage percentage                                                                                      |
+| Tests          | 15     | Apex coverage vs 75%, failing test classes                                                                            |
+| Technical debt | 10     | Unused metadata/Apex, inactive automations, missing descriptions, access gaps                                         |
 
 A sub-score is omitted (not counted as zero) when its source command did not run that week. A **failed metadata backup caps the global score at 50**: monitoring data is only trustworthy when the backup pipeline works.
 
@@ -208,14 +208,14 @@ Health score panels use an 8-day lookback so the weekly value displays all week.
 
 The alert pack lives in [docs/grafana/alerts-v2](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/docs/grafana/alerts-v2):
 
-| Alert | Fires when |
-|-------|-----------|
-| Org limit above 90% | Any limit of any org exceeds 90% usage |
-| Storage projected full within 14 days | Data or File storage trends toward 100% (30-day linear regression) |
-| Apex/Flow error spike | Daily errors exceed twice the 7-day average |
-| Metadata backup failed | A BACKUP notification with error severity was received |
-| Org monitoring is silent | An org sent nothing for 36 hours (its monitoring job probably failed) |
-| Health score degraded | Score below 60, or dropped by more than 20 points |
+| Alert                                 | Fires when                                                            |
+|---------------------------------------|-----------------------------------------------------------------------|
+| Org limit above 90%                   | Any limit of any org exceeds 90% usage                                |
+| Storage projected full within 14 days | Data or File storage trends toward 100% (30-day linear regression)    |
+| Apex/Flow error spike                 | Daily errors exceed twice the 7-day average                           |
+| Metadata backup failed                | A BACKUP notification with error severity was received                |
+| Org monitoring is silent              | An org sent nothing for 36 hours (its monitoring job probably failed) |
+| Health score degraded                 | Score below 60, or dropped by more than 20 points                     |
 
 All rules are **paused by default** (`isPaused: true`), so importing them triggers no evaluation and no cost on Grafana Cloud free tier.
 
@@ -247,16 +247,16 @@ Dashboards only display aggregates, counts, and (for detail tables) the pseudony
 
 ## Troubleshooting
 
-| Symptom | Likely cause |
-|---------|--------------|
-| Everything shows "No data" | `NOTIF_API_METRICS_URL` not configured (Prometheus feeds all trend/average panels), or the datasource variables resolved to the wrong datasource (see [Import the dashboards](#import-the-dashboards)) |
-| Detail tables are empty but stats show values | `NOTIF_API_URL` (Loki) not configured, or logs skipped via `NOTIF_API_SKIP_LOGS` |
-| Health score, impacted users, or top failing Apex panels are empty | The monitoring pipeline runs an older sfdx-hardis version: these panels need recently added metrics |
-| Health score panel empty on some days | Normal: the score is computed on weekly runs only, and panels look back 8 days |
-| DORA panels show "Schedule dora-report" | [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/) is not scheduled on the monitoring pipeline |
-| Indicator Detail shows the graph and value but no detail rows | Detail rows come from Loki logs (~30 days retention on Grafana Cloud) while metrics keep 13 months: the last run of that indicator is older than the logs retention. Fix the monitoring job so the command runs again |
-| An org appears twice or values look doubled | Not expected in v2 (queries aggregate per org); check that two different monitoring repos are not both pushing with different `SFDX_HARDIS_MONITORING_KEY` values for the same org |
-| Old entries still show readable usernames | Anonymization only applies to new entries; older ones keep their values until logs retention expires |
+| Symptom                                                            | Likely cause                                                                                                                                                                                                          |
+|--------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Everything shows "No data"                                         | `NOTIF_API_METRICS_URL` not configured (Prometheus feeds all trend/average panels), or the datasource variables resolved to the wrong datasource (see [Import the dashboards](#import-the-dashboards))                |
+| Detail tables are empty but stats show values                      | `NOTIF_API_URL` (Loki) not configured, or logs skipped via `NOTIF_API_SKIP_LOGS`                                                                                                                                      |
+| Health score, impacted users, or top failing Apex panels are empty | The monitoring pipeline runs an older sfdx-hardis version: these panels need recently added metrics                                                                                                                   |
+| Health score panel empty on some days                              | Normal: the score is computed on weekly runs only, and panels look back 8 days                                                                                                                                        |
+| DORA panels show "Schedule dora-report"                            | [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/) is not scheduled on the monitoring pipeline                                                                                        |
+| Indicator Detail shows the graph and value but no detail rows      | Detail rows come from Loki logs (~30 days retention on Grafana Cloud) while metrics keep 13 months: the last run of that indicator is older than the logs retention. Fix the monitoring job so the command runs again |
+| An org appears twice or values look doubled                        | Not expected in v2 (queries aggregate per org); check that two different monitoring repos are not both pushing with different `SFDX_HARDIS_MONITORING_KEY` values for the same org                                    |
+| Old entries still show readable usernames                          | Anonymization only applies to new entries; older ones keep their values until logs retention expires                                                                                                                  |
 
 ## Contributing
 

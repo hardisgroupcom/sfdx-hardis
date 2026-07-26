@@ -52,21 +52,21 @@ Reference: [Salesforce Help - Remove a user's security key](https://help.salesfo
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|dump-anchors|boolean|Diagnostic: print every anchor found on each user detail page (use with --debug to refine markers)||||
-|flags-dir|option|undefined||||
-|include-salesforce-authenticator|boolean|Also unlink the Salesforce Authenticator mobile app registration||||
-|include-security-key|boolean|Unlink the Security Key (U2F + WebAuthn combined) registration (default: true). Use --no-include-security-key to skip.||||
-|include-totp|boolean|Also unlink the One-Time Password Authenticator (TOTP) registration||||
-|json|boolean|Format output as json.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|text-markers|option|JSON object adding text markers per method, useful on non-English orgs. Example: --text-markers '{"salesforceAuthenticator":["Authentificateur Salesforce"]}'||||
-|usernames<br/>-u|option|Comma-separated list of Salesforce usernames whose security keys should be unlinked||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                             |  Type   | Description                                                                                                                                                   | Default | Required | Options |
+|:---------------------------------|:-------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                            | boolean | Run in non-interactive mode for agents and automation                                                                                                         |         |          |         |
+| debug<br/>-d                     | boolean | Activate debug mode (more logs)                                                                                                                               |         |          |         |
+| dump-anchors                     | boolean | Diagnostic: print every anchor found on each user detail page (use with --debug to refine markers)                                                            |         |          |         |
+| flags-dir                        | option  | undefined                                                                                                                                                     |         |          |         |
+| include-salesforce-authenticator | boolean | Also unlink the Salesforce Authenticator mobile app registration                                                                                              |         |          |         |
+| include-security-key             | boolean | Unlink the Security Key (U2F + WebAuthn combined) registration (default: true). Use --no-include-security-key to skip.                                        |         |          |         |
+| include-totp                     | boolean | Also unlink the One-Time Password Authenticator (TOTP) registration                                                                                           |         |          |         |
+| json                             | boolean | Format output as json.                                                                                                                                        |         |          |         |
+| skipauth                         | boolean | Skip authentication check when a default username is required                                                                                                 |         |          |         |
+| target-org<br/>-o                | option  | undefined                                                                                                                                                     |         |          |         |
+| text-markers                     | option  | JSON object adding text markers per method, useful on non-English orgs. Example: --text-markers '{"salesforceAuthenticator":["Authentificateur Salesforce"]}' |         |          |         |
+| usernames<br/>-u                 | option  | Comma-separated list of Salesforce usernames whose security keys should be unlinked                                                                           |         |          |         |
+| websocket                        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                     |         |          |         |
 
 ## Examples
 

@@ -10,14 +10,14 @@
 
 ## Integration sources
 
-| Source | Setup |
-|--------|-------|
-| Grafana Alerting | Native — configure in contact points (use IRM webhook receiver type) |
-| Prometheus Alertmanager | Webhook URL from IRM |
-| Datadog | Webhook integration |
-| PagerDuty | Event integration |
-| Jira | Issue-triggered alerts |
-| Custom | Generic webhook |
+| Source                  | Setup                                                                |
+|-------------------------|----------------------------------------------------------------------|
+| Grafana Alerting        | Native — configure in contact points (use IRM webhook receiver type) |
+| Prometheus Alertmanager | Webhook URL from IRM                                                 |
+| Datadog                 | Webhook integration                                                  |
+| PagerDuty               | Event integration                                                    |
+| Jira                    | Issue-triggered alerts                                               |
+| Custom                  | Generic webhook                                                      |
 
 ## Routing from Grafana Alerting to IRM
 
@@ -49,8 +49,8 @@ Then route alerts to this contact point via a notification policy matcher (e.g. 
 
 ## Common failure modes
 
-| Symptom | Likely cause |
-|---|---|
-| Alert fires in Grafana but never reaches IRM | Notification policy doesn't match the alert's labels; check matchers in `policies.yaml` |
+| Symptom                                       | Likely cause                                                                               |
+|-----------------------------------------------|--------------------------------------------------------------------------------------------|
+| Alert fires in Grafana but never reaches IRM  | Notification policy doesn't match the alert's labels; check matchers in `policies.yaml`    |
 | Alert reaches IRM but no on-call notification | Escalation chain misconfigured (e.g. no users in the rotation, or quiet hours suppressing) |
-| Same alert opens duplicate IRM incidents | Group_by on the notification policy isn't including the unique-ifying labels |
+| Same alert opens duplicate IRM incidents      | Group_by on the notification policy isn't including the unique-ifying labels               |
