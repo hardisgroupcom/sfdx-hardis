@@ -32,13 +32,33 @@ describe('buildDeploymentActionsAttachmentText()', () => {
     expect(buildDeploymentActionsAttachmentText(false, NO_DEPLOY)).to.equal(null);
   });
 
-  it('returns a single metadata row when a deploy happened without any action', () => {
+  it('returns a single metadata line when a deploy happened without any action', () => {
     const text = buildDeploymentActionsAttachmentText(false, WITH_DEPLOY) || '';
-    expect(text).to.contain('42');
-    expect(text).to.contain('3');
-    expect(text).to.contain('| metadata |');
-    // Header row, separator row, and exactly one data row
-    expect(text.split('\n').filter((line) => line.startsWith('| ')).length).to.equal(2);
+    expect(text).to.contain('Metadata deployment (42 deployed, 3 deleted)');
+    expect(text).to.contain('_deploy_');
+    // Exactly one action line, and no pre-deploy / post-deploy heading for the empty phases
+    expect(text.split('\n').filter((line) => line.startsWith('✅')).length).to.equal(1);
+    expect(text).to.not.contain('_pre-deploy_');
+    expect(text).to.not.contain('_post-deploy_');
+  });
+
+  it('renders no markdown table, which chat renderers would fence as ragged monospace', () => {
+    recordExecutedDeploymentActions([
+      action({ label: 'Some action', result: { statusCode: 'success' } }),
+    ]);
+    const text = buildDeploymentActionsAttachmentText(false, WITH_DEPLOY) || '';
+    expect(text).to.not.contain('|');
+  });
+
+  it('omits the status word when the icon already carries it', () => {
+    recordExecutedDeploymentActions([
+      action({ label: 'Ran fine', result: { statusCode: 'success' } }),
+      action({ label: 'To do by hand', type: 'manual', result: { statusCode: 'manual' } }),
+    ]);
+    const text = buildDeploymentActionsAttachmentText(false, NO_DEPLOY) || '';
+    expect(text).to.contain('✅ Ran fine (command)');
+    expect(text).to.contain('👋 To do by hand (manual)');
+    expect(text).to.not.contain('success');
   });
 
   it('omits skipped actions and actions that never ran', () => {
@@ -61,8 +81,22 @@ describe('buildDeploymentActionsAttachmentText()', () => {
       action({ label: 'After', when: 'post-deploy', result: { statusCode: 'success' } }),
     ]);
     const text = buildDeploymentActionsAttachmentText(false, WITH_DEPLOY) || '';
-    expect(text.indexOf('Before')).to.be.lessThan(text.indexOf('| metadata |'));
-    expect(text.indexOf('| metadata |')).to.be.lessThan(text.indexOf('After'));
+    expect(text.indexOf('Before')).to.be.lessThan(text.indexOf('Metadata deployment'));
+    expect(text.indexOf('Metadata deployment')).to.be.lessThan(text.indexOf('After'));
+    // Phase headings appear in execution order
+    expect(text.indexOf('_pre-deploy_')).to.be.lessThan(text.indexOf('_deploy_'));
+    expect(text.indexOf('_deploy_')).to.be.lessThan(text.indexOf('_post-deploy_'));
+  });
+
+  it('groups actions of the same phase under a single heading', () => {
+    recordExecutedDeploymentActions([
+      action({ label: 'First', when: 'pre-deploy', result: { statusCode: 'success' } }),
+      action({ label: 'Second', when: 'pre-deploy', result: { statusCode: 'success' } }),
+    ]);
+    const text = buildDeploymentActionsAttachmentText(false, NO_DEPLOY) || '';
+    expect(text.split('_pre-deploy_').length - 1).to.equal(1);
+    expect(text).to.contain('First');
+    expect(text).to.contain('Second');
   });
 
   it('distinguishes an allowed failure from a hard failure', () => {
@@ -84,28 +118,29 @@ describe('buildDeploymentActionsAttachmentText()', () => {
       }),
     ]);
     const text = buildDeploymentActionsAttachmentText(false, NO_DEPLOY) || '';
-    expect(text).to.contain('From other PR (PR 123)');
+    expect(text).to.contain('[PR 123](https://example.com/pr/123)');
   });
 
-  it('does not emit a markdown link in the table, which renderers would fence as literal text', () => {
+  it('falls back to a plain Pull Request id when the provider gave no URL', () => {
     recordExecutedDeploymentActions([
       action({
         label: 'From other PR',
         result: { statusCode: 'success' },
-        pullRequest: { idStr: '123', webUrl: 'https://example.com/pr/123' } as any,
+        pullRequest: { idStr: '123' } as any,
       }),
     ]);
     const text = buildDeploymentActionsAttachmentText(false, NO_DEPLOY) || '';
+    expect(text).to.contain('PR 123');
     expect(text).to.not.contain('](');
-    expect(text).to.not.contain('https://example.com/pr/123');
   });
 
-  it('escapes pipe characters so a label cannot break the table', () => {
+  it('keeps one action on exactly one line so the size guard cannot cut it in half', () => {
     recordExecutedDeploymentActions([
-      action({ label: 'A | B', result: { statusCode: 'success' } }),
+      action({ label: 'Multi\nline\r\nlabel', result: { statusCode: 'success' } }),
     ]);
     const text = buildDeploymentActionsAttachmentText(false, NO_DEPLOY) || '';
-    expect(text).to.contain('A \\| B');
+    expect(text).to.contain('Multi line label');
+    expect(text.split('\n').filter((line) => line.startsWith('✅')).length).to.equal(1);
   });
 
   it('reset clears previously recorded actions', () => {
