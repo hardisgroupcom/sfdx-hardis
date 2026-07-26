@@ -28,7 +28,7 @@ It is free and Open-Source, and will allow you to simply:
 
 - [**Backup Metadatas** and **Monitor your Salesforce orgs**](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
 
-![Monitoring with Grafana](https://sfdx-hardis.cloudity.com/assets/images/grafana-screenshot.jpg)
+![Monitoring with Grafana](https://sfdx-hardis.cloudity.com/assets/images/grafana-v2-fleet.png)
 
 - [Generate your **Project Documentation** with AI](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/)
 
@@ -623,6 +623,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:org:configure:data**](hardis/org/configure/data.md)                                       |       |
 | [**hardis:org:configure:files**](hardis/org/configure/files.md)                                     |       |
 | [**hardis:org:configure:generic-prompt**](hardis/org/configure/generic-prompt.md)                   |       |
+| [**hardis:org:configure:grafana-dashboards**](hardis/org/configure/grafana-dashboards.md)           |       |
 | [**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)                           |       |
 | [**hardis:org:connect**](hardis/org/connect.md)                                                     |       |
 | [**hardis:org:create**](hardis/org/create.md)                                                       |       |
@@ -642,6 +643,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:org:diagnose:storage-stats**](hardis/org/diagnose/storage-stats.md)                       |       |
 | [**hardis:org:diagnose:underusedpermsets**](hardis/org/diagnose/underusedpermsets.md)               |       |
 | [**hardis:org:diagnose:unsecure-connected-apps**](hardis/org/diagnose/unsecure-connected-apps.md)   |       |
+| [**hardis:org:diagnose:unsecure-permissions**](hardis/org/diagnose/unsecure-permissions.md)         |       |
 | [**hardis:org:diagnose:unused-apex-classes**](hardis/org/diagnose/unused-apex-classes.md)           |       |
 | [**hardis:org:diagnose:unused-connected-apps**](hardis/org/diagnose/unused-connected-apps.md)       |       |
 | [**hardis:org:diagnose:unusedlicenses**](hardis/org/diagnose/unusedlicenses.md)                     |       |
@@ -669,6 +671,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:org:retrieve:sources:metadata**](hardis/org/retrieve/sources/metadata.md)                 |       |
 | [**hardis:org:retrieve:sources:retrofit**](hardis/org/retrieve/sources/retrofit.md)                 |       |
 | [**hardis:org:select**](hardis/org/select.md)                                                       |       |
+| [**hardis:org:test:agents**](hardis/org/test/agents.md)                                             |       |
 | [**hardis:org:test:apex**](hardis/org/test/apex.md)                                                 |       |
 | [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)                           |       |
 | [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                                             |       |

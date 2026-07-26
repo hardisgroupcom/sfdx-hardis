@@ -27,7 +27,7 @@ It is free and Open-Source, and will allow you to simply:
 
 - [**Backup Metadatas** and **Monitor your Salesforce orgs**](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
 
-![Monitoring with Grafana](https://sfdx-hardis.cloudity.com/assets/images/grafana-screenshot.jpg)
+![Monitoring with Grafana](https://sfdx-hardis.cloudity.com/assets/images/grafana-v2-fleet.png)
 
 - [Generate your **Project Documentation** with AI](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/)
 

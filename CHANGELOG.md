@@ -2,6 +2,14 @@
 
 ## [beta] (main)
 
+- New [Grafana dashboard set v2 Org Monitoring by sfdx-hardis](https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/) with fleet overview, trends, limit forecasts, org health score, and paused alerts.
+- New [hardis:org:configure:grafana-dashboards](https://sfdx-hardis.cloudity.com/hardis/org/configure/grafana-dashboards/): Install the Org Monitoring Grafana dashboards and alert pack on any Grafana instance through its HTTP API.
+- [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): Always sends a summary notification (daily heartbeat, sent to observability backends only unless an AI executive summary is generated) and computes a weekly org health score.
+- Notifications to API channels in CI now anonymize user-identifying fields by default (set NOTIF_API_ANONYMIZE=false to disable).
+- [hardis:org:monitor:errors](https://sfdx-hardis.cloudity.com/hardis/org/monitor/errors/): Now reports impacted user counts and a top failing Apex operations breakdown.
+- [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/): DORA metrics are now sent with stable locale-independent names, so they reach Grafana whatever the configured language (series previously sent under translated names keep their history under the old name).
+- API notifications can now be written to a local JSON file only, without an API endpoint (NOTIF_API_LOGS_JSON_FILE without NOTIF_API_URL).
+- Fix: a misconfigured notification channel (like email without NOTIF_EMAIL_ADDRESS) no longer fails monitoring commands nor blocks the other channels from receiving notifications (failures are counted in a ChannelsFailed metric on the monitoring summary).
 - MegaLinter no longer overwrites your local `code-analyzer.yml` and `pmd-ruleset.xml`: they are downloaded only when missing, so your custom rules are kept.
 - Default CI/CD and monitoring pipelines now pull the MegaLinter image from GitHub Container Registry (`ghcr.io`), avoiding Docker Hub pull rate limits.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Send real deployment metrics (components, Apex tests, code coverage, duration, quick deploy and delta flags) in DEPLOYMENT notifications, instead of always zero.

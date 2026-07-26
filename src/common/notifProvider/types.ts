@@ -480,7 +480,8 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     category: "other",
     icon: "utility:summarydetail",
     colorClass: "backup",
-    emittedSeverities: ["info"],
+    // info = AI executive summary (user-facing), log = plain daily heartbeat (api only)
+    emittedSeverities: ["info", "log"],
     defaults: { messaging: "info", email: "info", api: "log" },
   },
   // Emitted by release notes generation (see releaseNotesUtils). Exposes every severity so UIs do not lock users in.

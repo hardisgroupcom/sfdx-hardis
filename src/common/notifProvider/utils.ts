@@ -45,7 +45,7 @@ export class UtilsNotifs {
   }
 
   public static isApiAvailable() {
-    if (getEnvVar("NOTIF_API_URL")) {
+    if (getEnvVar("NOTIF_API_URL") || getEnvVar("NOTIF_API_LOGS_JSON_FILE")) {
       return true;
     }
     return false;

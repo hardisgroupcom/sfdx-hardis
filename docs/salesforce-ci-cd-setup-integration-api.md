@@ -124,6 +124,27 @@ NOTIF_API_SKIP_LOGS=all
 NOTIF_API_SKIP_METRICS=APEX_TESTS,DEPLOYMENT
 ```
 
+## Data anonymization
+
+When running in CI (which is the case for scheduled monitoring jobs), sfdx-hardis anonymizes end-user identifying fields before sending notifications to the API channel: `Username`, `Email`, `FirstName`, `LastName` values in log elements are replaced by stable pseudonyms like `user_a1b2c3d4e5`, and the same values are scrubbed from notification texts.
+
+Key points:
+
+- Pseudonyms are stable per org (same user always gets the same hash), so distinct-user counts and per-user drill-downs keep working in dashboards. They are salted per org, so the same user is not linkable across orgs.
+- `LastLoginDate` and other dates are kept: they are needed for inactive-user reports and are not personal identifiers.
+- Actor fields of setup actions (`CreatedBy`, `LastModifiedBy`, `DelegateUser` in audit trail entries) are kept readable: they identify administrators acting in Setup, which is exactly what an audit trail is for.
+- Local runs (outside CI) are not anonymized, so locally generated report files stay directly analyzable.
+- Other notification channels (Slack, Teams, Email) are never anonymized.
+
+Override the default behavior with the env var **NOTIF_API_ANONYMIZE**:
+
+```sh
+NOTIF_API_ANONYMIZE=false   # send raw values even in CI
+NOTIF_API_ANONYMIZE=true    # anonymize even in local runs
+```
+
+Note: anonymization only applies to new entries. Entries sent before enabling it keep their original values until your logs retention expires (you can use the Loki delete API to purge them earlier).
+
 ## Troubleshooting
 
 If you want to see the content of the API notifications in execution logs, you can define `NOTIF_API_DEBUG=true`
@@ -274,57 +295,12 @@ Optionally , you can look in the logs, you should see \[ApiProvider\] and \[ApiM
 
 ![](assets/images/grafana-config-13.jpg)
 
-### Download sfdx-hardis dashboards
+### Import sfdx-hardis dashboards
 
-Download all sfdx-hardis Dashboard JSON files from [this sfdx-hardis repo folder](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/docs/grafana/dashboards)
+Your Grafana now receives sfdx-hardis logs and metrics. Import the dashboards:
 
-![](assets/images/grafana-config-16.jpg)
+- **[Org Monitoring by sfdx-hardis (Dashboards v2)](salesforce-monitoring-grafana-v2.md)** - the current set: fleet overview, trends and averages, limit forecasts, org health score, drill-down navigation, and a ready-to-enable alert pack
+- [Legacy Grafana Dashboards (v1)](salesforce-monitoring-grafana-v1-legacy.md) - frozen, kept for existing installations
 
-### Create Dashboard folder
-
-Go in menu **Dashboards** then click on **New** then **New folder**
-
-![](assets/images/grafana-config-14.jpg)
-
-___
-
-Create folder `Sfdx-hardis Dashboards`
-
-![](assets/images/grafana-config-15.jpg)
-
-### Import default sfdx-hardis Grafana Dashboards
-
-For each downloaded Dashboard JSON file, process the following actions.
-
-Click **New** then **Import**
-
-![](assets/images/grafana-config-17.jpg)
-
-___
-
-Click on **Upload Dashboard JSON File** and select one of the Dashboards JSON files you downloaded on your computer.
-
-![](assets/images/grafana-config-18.jpg)
-
-___
-
-- Let Name, Folder and UID default values
-- Select your Loki or Prometheus source. They can be:
-  - **grafanacloud-YOURORGNAME-logs (Loki)**
-  - **grafanacloud-YOURORGNAME-prom (Prometheus)**
-
-![](assets/images/grafana-config-19.jpg)
-
-___
-
-Click **Import**
-
-![](assets/images/grafana-config-20.jpg)
-
-__
-
-Repeat the operation for all Dashboard JSON files, and you're all set !
-
-![](assets/images/grafana-config-21.jpg)
-
+![Fleet Overview](assets/images/grafana-v2-fleet.png)
 

@@ -25,6 +25,7 @@ The report is always printed in your terminal, so you can copy it manually if th
 
 - **oclif Config:** Install info is read from the oclif `Config` object (`config.version`, `config.shell`, `config.plugins`), so no shell command is executed to list plugins.
 - **Node & OS:** Node version comes from `process.version`; OS details come from the Node.js `os` module.
+- **Latest versions:** Queried from the npm registry (`registry.npmjs.org`) in parallel, with a short timeout and full best-effort handling, then compared with `semver`. Core plugins are not flagged, as they are pinned to the Salesforce CLI.
 - **VS Code extension version:** Requested over the existing WebSocket connection (`getExtensionVersion` event). The extension answers with its version; the request times out gracefully after a few seconds and reports "not available" if no compatible extension is linked.
 - **Issue URL:** Built as `https://github.com/hardisgroupcom/sfdx-hardis/issues/new` with `title` and `body` query parameters. If the encoded URL would exceed the browser limit, the plugin list is trimmed from the URL body (the full report stays in the terminal).
 - **Browser:** Uses the `open` package to launch the default browser after user confirmation.

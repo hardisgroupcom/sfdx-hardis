@@ -1399,7 +1399,7 @@ In agent mode:
         ? await prepareOrgNotificationContext(conn)
         : { orgMarkdown: "N/A", notifButtons: [] };
 
-      const [df, lt, cfRate, mttr] = coreMetrics;
+      const [df, lt, cfRate, mttr, rework] = coreMetrics;
       const notifText = t("doraReportNotifSummary", {
         period: periodDays,
         org: orgMarkdown,
@@ -1428,9 +1428,29 @@ In agent mode:
         logElements: coreMetrics,
         data: {
           periodDays,
-          metrics: Object.fromEntries(coreMetrics.map((m) => [m.name, { value: m.value, level: m.classification.level }])),
+          // Same stable keys as `metrics` below so Loki and Prometheus consumers see
+          // consistent identifiers; the translated display name stays in `label`
+          metrics: Object.fromEntries(
+            ([
+              ['DoraDeploymentFrequency', df],
+              ['DoraLeadTimeDays', lt],
+              ['DoraChangeFailureRatePercent', cfRate],
+              ['DoraMttrHours', mttr],
+              ['DoraReworkRatePercent', rework],
+            ] as Array<[string, any]>).map(([key, m]) => [key, { label: m.name, value: m.value, level: m.classification.level }])
+          ),
         },
-        metrics: Object.fromEntries(coreMetrics.map((m) => [m.name, m.rawValue])),
+        // Stable metric keys (not the translated display names): metric names must be
+        // locale-independent and contain no spaces (InfluxDB line protocol / Prometheus)
+        metrics: Object.fromEntries(
+          Object.entries({
+            DoraDeploymentFrequency: df.rawValue,
+            DoraLeadTimeDays: lt.rawValue,
+            DoraChangeFailureRatePercent: cfRate.rawValue,
+            DoraMttrHours: mttr.rawValue,
+            DoraReworkRatePercent: rework.rawValue,
+          }).filter(([, value]) => typeof value === 'number' && Number.isFinite(value))
+        ),
       });
     } catch (e: any) {
       uxLog("warning", this, c.yellow(`[DORA] Notification error: ${e?.message || e}`));

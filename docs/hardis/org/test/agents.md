@@ -13,7 +13,7 @@ Run Agentforce agent tests (AiEvaluationDefinition metadata) in a Salesforce org
 - **CSV report:** Generates a report listing every assertion with its expected and actual values.
 - **Notifications:** Sends alerts to Grafana, Slack and MS Teams when agent tests fail.
 
-Use `--tests` to run only specific agent tests (comma-separated API names) instead of all of them.
+Use `--tests` to run only specific agent tests (comma-separated API names) instead of all of them. In interactive mode (not `--agent`, not in CI), a prompt lets you unselect the agent tests you want to skip, with all of them selected by default.
 
 This command requires the `@salesforce/plugin-agent` Salesforce CLI plugin. Install it with `sf plugins install @salesforce/plugin-agent`.
 

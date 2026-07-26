@@ -1,6 +1,6 @@
 ---
 name: monitoring-notifications
-description: How sfdx-hardis monitoring commands, notification types, frequency, and per-channel routing fit together. Use when adding a new monitoring command, adding a new notification type, changing default routing thresholds, or wiring a new channel.
+description: How sfdx-hardis monitoring commands, notification types, frequency, and per-channel routing fit together. Use when adding a new monitoring command, adding a new notification type, changing default routing thresholds, wiring a new channel, or changing/removing an indicator's metrics or logElements (which also requires the grafana-dashboards skill for dashboard impact).
 user-invocable: false
 ---
 
@@ -106,6 +106,8 @@ Touch these files, in this order. The new command will be picked up on every exi
 
 6. **CHANGELOG.md** -- add a bullet under `## [beta] (main)` pointing at the new command.
 
+7. **Grafana dashboards impact** -- load the `grafana-dashboards` skill and follow its "When a monitoring indicator changes" checklist. Every new indicator (and every new `metrics` key) must be evaluated for the v2 dashboards in `docs/grafana/dashboards-v2/`: dedicated panel, fleet column, or generic Indicator Detail only.
+
 You usually do **not** need to touch `src/commands/hardis/org/monitor/all.ts` -- it imports `monitoringCommandsDefault` from the shared module.
 
 ## Adding a new notification type (not bound to a scheduled command)
@@ -119,9 +121,15 @@ For notification types emitted outside `monitor:all` (e.g. `BACKUP`, `DEPLOYMENT
 
 The new type appears automatically in `notificationConfig[]` of the `hardis:config:monitoring-defaults` payload because that list is derived from `notificationTypesDefault`.
 
+5. **Grafana dashboards impact** -- load the `grafana-dashboards` skill: the type appears automatically in the Indicator Detail dashboard, but decide whether it deserves dedicated panels, and check alert rules if it carries actionable metrics.
+
 ## Changing default routing for an existing key (or its icon / colorClass / category / emitted severities)
 
 Edit `notificationTypesDefault[KEY]` in `src/common/notifProvider/types.ts`. The five sub-fields (`category`, `icon`, `colorClass`, `emittedSeverities`, `defaults`) live in the same place; updating one does not require touching any other file. Existing installations pick the change up automatically for any channel the user did not explicitly override.
+
+## Changing an indicator's metrics or logElements (or deleting an indicator)
+
+Renaming/removing a `metrics` key, changing the `logElements` row shape, or deleting a notification type breaks Grafana panels that query it. Load the `grafana-dashboards` skill and follow its "When a monitoring indicator changes" checklist (grep the generator for the metric name, check `docs/grafana/alerts-v2/`, regenerate, lint, re-import).
 
 If you change a default that a user has fully overridden in their YAML (`notificationConfig:` entry), their override wins. That's intentional.
 

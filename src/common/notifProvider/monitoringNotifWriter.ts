@@ -9,7 +9,7 @@ import { t } from '../utils/i18n.js';
  * Write a NotifMessage to a JSON file in the monitoring notifications output directory.
  * Called by NotifProvider.postNotifications() when MONITORING_NOTIF_OUTPUT_DIR is set.
  */
-export async function writeMonitoringNotifFile(outputDir: string, notifMessage: NotifMessage): Promise<void> {
+export async function writeMonitoringNotifFile(outputDir: string, notifMessage: NotifMessage, failedChannels: string[] = []): Promise<void> {
   try {
     const csvsFoundFromXlsxFiles = notifMessage.attachedFiles?.filter(file => file.endsWith('.xlsx'))
       .map(file => file.replace('.xlsx', '.csv').replace("/xls/", "/").replace("\\xls\\", "\\"))
@@ -25,6 +25,7 @@ export async function writeMonitoringNotifFile(outputDir: string, notifMessage: 
       metrics: notifMessage.metrics,
       textDetails: notifMessage.attachments,
       csvReportFiles: csvsFoundFromXlsxFiles,
+      failedChannels: failedChannels,
     };
     const fileName = `${notifMessage.type}_${Date.now()}.json`;
     await fs.writeJson(path.join(outputDir, fileName), sanitized, { spaces: 2 });

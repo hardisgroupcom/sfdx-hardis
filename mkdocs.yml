@@ -255,7 +255,9 @@ nav:
           - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
           - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
       - Monitoring Backends:
-          - Grafana: salesforce-ci-cd-setup-integration-api.md
+          - Grafana Dashboards: salesforce-monitoring-grafana-v2.md
+          - Grafana Setup: salesforce-ci-cd-setup-integration-api.md
+          - Grafana Dashboards v1 (legacy): salesforce-monitoring-grafana-v1-legacy.md
           - Vector.dev: salesforce-monitoring-config-vector.md
   - Commands Reference:
       - All commands: commands.md
@@ -302,6 +304,8 @@ nav:
           - community update: hardis/org/community/update.md
           - configure data: hardis/org/configure/data.md
           - configure files: hardis/org/configure/files.md
+          - configure generic-prompt: hardis/org/configure/generic-prompt.md
+          - configure grafana-dashboards: hardis/org/configure/grafana-dashboards.md
           - configure monitoring: hardis/org/configure/monitoring.md
           - connect: hardis/org/connect.md
           - create: hardis/org/create.md

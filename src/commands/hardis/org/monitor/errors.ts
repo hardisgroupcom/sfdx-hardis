@@ -100,7 +100,11 @@ In agent mode:
   protected days = 1;
 
   protected apexErrors: any[] = [];
+  // Untruncated list: metrics (impacted users, top failing Apex) must be computed on the
+  // full data set so they stay consistent with ApexErrors (the untruncated total)
+  protected apexErrorsAll: any[] = [];
   protected flowErrors: any[] = [];
+  protected flowErrorsAll: any[] = [];
   protected apexErrorsTotalCount = 0;
   protected flowErrorsTotalCount = 0;
 
@@ -222,6 +226,7 @@ In agent mode:
     });
     await this.resolveEventLogUsernames(conn);
     this.apexErrors = this.deduplicateByRecordId(this.apexErrors);
+    this.apexErrorsAll = this.apexErrors;
     this.apexErrorsTotalCount = this.apexErrors.length;
     if (this.apexErrors.length > MonitorErrors.maxProcessedErrors) {
       this.apexErrors = this.apexErrors.slice(0, MonitorErrors.maxProcessedErrors);
@@ -379,6 +384,7 @@ In agent mode:
       };
     });
     this.flowErrors = this.deduplicateByRecordId(this.flowErrors);
+    this.flowErrorsAll = this.flowErrors;
     this.flowErrorsTotalCount = this.flowErrors.length;
     if (this.flowErrors.length > MonitorErrors.maxProcessedErrors) {
       this.flowErrors = this.flowErrors.slice(0, MonitorErrors.maxProcessedErrors);
@@ -447,7 +453,7 @@ In agent mode:
   protected buildFlowCountsByOperation(): Array<{ flowName: string; count: number }> {
     const countMap = new Map<string, number>();
 
-    for (const record of this.flowErrors) {
+    for (const record of this.flowErrorsAll) {
       const flowName = this.normalizeFlowOperation(record.Operation);
       if (!flowName) {
         continue;
@@ -461,10 +467,38 @@ In agent mode:
       .slice(0, MonitorErrors.maxTopBreakdownItems);
   }
 
+  protected buildApexCountsByOperation(): Array<{ apexName: string; count: number }> {
+    const countMap = new Map<string, number>();
+
+    for (const record of this.apexErrorsAll) {
+      const apexName = (record.Operation ?? '').trim();
+      if (!apexName) {
+        continue;
+      }
+      countMap.set(apexName, (countMap.get(apexName) ?? 0) + 1);
+    }
+
+    return Array.from(countMap.entries())
+      .map(([apexName, count]) => ({ apexName, count }))
+      .sort((a, b) => b.count - a.count || a.apexName.localeCompare(b.apexName))
+      .slice(0, MonitorErrors.maxTopBreakdownItems);
+  }
+
+  protected countDistinctImpactedUsers(records: any[]): number {
+    const users = new Set<string>();
+    for (const record of records) {
+      const userKey = record.UserName || record.UserEmail || record.UserId;
+      if (userKey) {
+        users.add(userKey);
+      }
+    }
+    return users.size;
+  }
+
   protected buildFlowCountsByStep(): Array<{ flowStep: string; count: number }> {
     const countMap = new Map<string, number>();
 
-    for (const record of this.flowErrors) {
+    for (const record of this.flowErrorsAll) {
       const flowStep = (record.ErrorStep ?? '').trim();
       if (!flowStep) {
         continue;
@@ -605,6 +639,7 @@ In agent mode:
 
   protected buildApexNotification(orgMarkdown: string, notifButtons: any[]): NotifMessage {
     const count = this.apexErrorsTotalCount;
+    const topFailingApex = this.buildApexCountsByOperation();
     const notifSeverity: NotifSeverity = count > 0 ? 'error' : 'success';
     const notifText =
       count > 0
@@ -621,10 +656,13 @@ In agent mode:
       logElements: this.apexErrors,
       metrics: {
         ApexErrors: count,
+        ApexErrorsImpactedUsers: this.countDistinctImpactedUsers(this.apexErrorsAll),
+        TopFailingApexCount: topFailingApex[0]?.count ?? 0,
       },
       data: {
         metric: count,
         apexErrors: count,
+        topFailingApex: topFailingApex,
       },
     };
   }
@@ -650,6 +688,7 @@ In agent mode:
       logElements: this.flowErrors,
       metrics: {
         FlowErrors: count,
+        FlowErrorsImpactedUsers: this.countDistinctImpactedUsers(this.flowErrorsAll),
         TopFailingFlowCount: topFailingFlows[0]?.count ?? 0,
         TopFailingStepCount: topFailingSteps[0]?.count ?? 0,
       },
