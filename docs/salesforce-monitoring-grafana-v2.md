@@ -140,8 +140,6 @@ Single-org overview, the hub for one org.
 
 ### 04 - DevOps & DORA
 
-![DevOps and DORA](assets/images/grafana-v2-devops.png)
-
 - Deployment counts, success rates, average duration, validation success rate
 - Deployments per week and per-deployment duration trends
 - **DORA metrics** (deployment frequency, lead time, change failure rate, MTTR, rework rate): requires scheduling [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/)
@@ -180,7 +178,7 @@ The generic drill-down: pick any org and any notification type, see the metric e
 
 ### 90/91/92 - Search
 
-![Search orgs](assets/images/grafana-v2-search.png)
+![Search: orgs holding a license](assets/images/grafana-v2-search.png)
 
 Find orgs across the fleet by identifier fragment, by held license, or by installed package. Results link to each org's dashboard.
 
