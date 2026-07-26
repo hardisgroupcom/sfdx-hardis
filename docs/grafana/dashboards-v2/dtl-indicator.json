@@ -336,6 +336,7 @@
           "maxLines": 1
         }
       ],
+      "description": "Rows of the latest run found within the selected time range. If empty, the org did not send this indicator recently: check the monitoring job.",
       "transformations": [
         {
           "id": "extractFields",
@@ -499,7 +500,7 @@
         "query": {
           "label": "type",
           "refId": "LokiVariableQueryEditor-VariableQuery",
-          "stream": "{source=\"sfdx-hardis\"}",
+          "stream": "{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}",
           "type": 1
         },
         "current": {},

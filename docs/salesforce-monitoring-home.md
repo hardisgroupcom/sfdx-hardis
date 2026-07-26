@@ -76,13 +76,13 @@ Inspect diffs with **GitLens** to see exactly what was added, removed, or modifi
 
 ![Diff visualization with GitLens](assets/images/screenshot-monitoring-backup.jpg)
 
-Build dashboards in **Grafana** to track trends across all your orgs.
+Track trends across all your orgs with the **[Org Monitoring by sfdx-hardis Grafana dashboards](salesforce-monitoring-grafana-v2.md)**: fleet overview, averages, limit forecasts, org health score, and a ready-to-enable alert pack.
 
-![Grafana monitoring dashboard](assets/images/grafana-screenshot.jpg)
+![Fleet Overview dashboard](assets/images/grafana-v2-fleet.png)
 
-![Grafana monitoring dashboard, second view](assets/images/grafana-screenshot-1.jpg)
+![Org Home dashboard](assets/images/grafana-v2-org-home.png)
 
-![Grafana monitoring dashboard, third view](assets/images/grafana-screenshot-2.png)
+![Reliability dashboard](assets/images/grafana-v2-reliability.png)
 
 Get **Slack** or **Teams** notifications when something needs attention.
 

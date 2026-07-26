@@ -76,6 +76,13 @@
       ],
       "transformations": [
         {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "(.*)_percent",
+            "renamePattern": "$1"
+          }
+        },
+        {
           "id": "organize",
           "options": {
             "excludeByName": {
@@ -428,6 +435,15 @@
           "expr": "max by (__name__) (last_over_time({__name__=~\".+_percent\", source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
           "refId": "A",
           "legendFormat": "{{__name__}}"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "(.*)_percent",
+            "renamePattern": "$1"
+          }
         }
       ],
       "fieldConfig": {

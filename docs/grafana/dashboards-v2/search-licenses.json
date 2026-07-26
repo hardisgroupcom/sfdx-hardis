@@ -54,7 +54,7 @@
             "type": "loki",
             "uid": "${ds_loki}"
           },
-          "expr": "{source=\"sfdx-hardis\", type=\"LICENSES\"} |~ `(?i)$license`",
+          "expr": "{source=\"sfdx-hardis\", type=\"LICENSES\", $env} |~ `(?i)$license`",
           "queryType": "range",
           "direction": "backward",
           "refId": "A",
@@ -181,6 +181,39 @@
         "options": [],
         "refresh": 1,
         "regex": "/^(?!.*(alert-state-history|usage-insights|ml-metrics)).*/",
+        "skipUrlSync": false
+      },
+      {
+        "name": "env",
+        "label": "Environment",
+        "description": "Filter orgs by environment type (sandboxes are recognized by their org identifier)",
+        "type": "custom",
+        "query": "All : orgIdentifier=~\".+\", Production only : orgIdentifier!~\".*sandbox.*\", Sandboxes only : orgIdentifier=~\".*sandbox.*\"",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "orgIdentifier=~\".+\""
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "orgIdentifier=~\".+\""
+          },
+          {
+            "selected": false,
+            "text": "Production only",
+            "value": "orgIdentifier!~\".*sandbox.*\""
+          },
+          {
+            "selected": false,
+            "text": "Sandboxes only",
+            "value": "orgIdentifier=~\".*sandbox.*\""
+          }
+        ],
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
         "skipUrlSync": false
       },
       {

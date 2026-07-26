@@ -295,59 +295,13 @@ Optionally , you can look in the logs, you should see \[ApiProvider\] and \[ApiM
 
 ![](assets/images/grafana-config-13.jpg)
 
-### Download sfdx-hardis dashboards
+### Import sfdx-hardis dashboards
 
-> New: a v2 dashboard set (**Org Monitoring by sfdx-hardis**) with fleet overview, trends, forecasts, health score and a ready-to-enable alert pack is available. See [Grafana Dashboards v2](salesforce-monitoring-grafana-v2.md).
+Your Grafana now receives sfdx-hardis logs and metrics. Import the dashboards:
 
-Download all sfdx-hardis Dashboard JSON files from [this sfdx-hardis repo folder](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/docs/grafana/dashboards)
+- **[Org Monitoring by sfdx-hardis (Dashboards v2)](salesforce-monitoring-grafana-v2.md)** - the current set: fleet overview, trends and averages, limit forecasts, org health score, drill-down navigation, and a ready-to-enable alert pack
 
-![](assets/images/grafana-config-16.jpg)
+![Fleet Overview](assets/images/grafana-v2-fleet.png)
 
-### Create Dashboard folder
-
-Go in menu **Dashboards** then click on **New** then **New folder**
-
-![](assets/images/grafana-config-14.jpg)
-
-___
-
-Create folder `Sfdx-hardis Dashboards`
-
-![](assets/images/grafana-config-15.jpg)
-
-### Import default sfdx-hardis Grafana Dashboards
-
-For each downloaded Dashboard JSON file, process the following actions.
-
-Click **New** then **Import**
-
-![](assets/images/grafana-config-17.jpg)
-
-___
-
-Click on **Upload Dashboard JSON File** and select one of the Dashboards JSON files you downloaded on your computer.
-
-![](assets/images/grafana-config-18.jpg)
-
-___
-
-- Let Name, Folder and UID default values
-- Select your Loki or Prometheus source. They can be:
-  - **grafanacloud-YOURORGNAME-logs (Loki)**
-  - **grafanacloud-YOURORGNAME-prom (Prometheus)**
-
-![](assets/images/grafana-config-19.jpg)
-
-___
-
-Click **Import**
-
-![](assets/images/grafana-config-20.jpg)
-
-__
-
-Repeat the operation for all Dashboard JSON files, and you're all set !
-
-![](assets/images/grafana-config-21.jpg)
-
+- [Legacy Grafana Dashboards (v1)](salesforce-monitoring-grafana-v1-legacy.md) - frozen, kept for existing installations
 

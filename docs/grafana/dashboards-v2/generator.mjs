@@ -1077,6 +1077,7 @@ const limitsDashboard = dashboard({
           gridPos: { w: 12, h: 12 },
           targets: [promTarget(`max by (__name__) (last_over_time({__name__=~".+_percent", ${SRC}, orgIdentifier="$org"}[2d]))`, { instant: true, format: 'table' })],
           transformations: [
+            { id: 'renameByRegex', options: { regex: '(.*)_percent', renamePattern: '$1' } },
             organize({
               excludeByName: { Time: true },
               renameByName: { __name__: 'Limit', Value: 'Used %' },
@@ -1140,6 +1141,7 @@ const limitsDashboard = dashboard({
           targets: [
             promTarget(`max by (__name__) (last_over_time({__name__=~".+_percent", ${SRC}, orgIdentifier="$org"}[1d]))`, { legendFormat: '{{__name__}}' }),
           ],
+          transformations: [{ id: 'renameByRegex', options: { regex: '(.*)_percent', renamePattern: '$1' } }],
           thresholds: thresholdSteps([[null, 'green'], [90, 'red']]),
           showThresholdLine: true,
           links: indicatorLink('ORG_LIMITS'),
@@ -1495,7 +1497,8 @@ const dtlIndicatorDashboard = dashboard({
       label: 'Indicator',
       type: 'query',
       datasource: DS_LOKI,
-      query: { label: 'type', refId: 'LokiVariableQueryEditor-VariableQuery', stream: `{${SRC}}`, type: 1 },
+      // Scoped to the selected org so only indicators with data are offered
+      query: { label: 'type', refId: 'LokiVariableQueryEditor-VariableQuery', stream: `{${SRC}, orgIdentifier="$org"}`, type: 1 },
       current: {},
       hide: 0,
       includeAll: false,
@@ -1534,6 +1537,7 @@ const dtlIndicatorDashboard = dashboard({
         tablePanel('Detailed elements (latest run)', {
           datasource: DS_LOKI,
           gridPos: { w: 24, h: 14 },
+          description: 'Rows of the latest run found within the selected time range. If empty, the org did not send this indicator recently: check the monitoring job.',
           targets: [lokiTarget(`{${SRC}, type="$type", orgIdentifier="$org"} |= \`\``, { maxLines: 1 })],
           transformations: jsonArrayToRows('_logElements'),
         }),
@@ -1551,14 +1555,14 @@ const searchOrgDashboard = dashboard({
   title: '90 - Search: Org',
   description: 'Find a monitored org by any identifier fragment (org id, instance, domain).',
   time: 'now-30d',
-  variables: [textboxVar('orgId', 'Org identifier', 'Any fragment of the org id / instance / domain', '')],
+  variables: [envVar(), textboxVar('orgId', 'Org identifier', 'Any fragment of the org id / instance / domain', '')],
   sections: [
     {
       panels: [
         tablePanel('Matching orgs', {
           datasource: DS_LOKI,
           gridPos: { w: 24, h: 14 },
-          targets: [lokiTarget(`{${SRC}, type="ORG_INFO"} |~ \`(?i)$orgId\``, { maxLines: 1000 })],
+          targets: [lokiTarget(`{${SRC}, type="ORG_INFO", $env} |~ \`(?i)$orgId\``, { maxLines: 1000 })],
           transformations: [
             extractJson(['orgIdentifier'], { source: 'labels', replace: true }),
             { id: 'groupBy', options: { fields: { orgIdentifier: { aggregations: [], operation: 'groupby' } } } },
@@ -1576,14 +1580,14 @@ const searchLicensesDashboard = dashboard({
   title: '91 - Search: Licenses',
   description: 'Find which monitored orgs hold a given license.',
   time: 'now-30d',
-  variables: [textboxVar('license', 'License', 'License name fragment (e.g. Sales Cloud)', '')],
+  variables: [envVar(), textboxVar('license', 'License', 'License name fragment (e.g. Sales Cloud)', '')],
   sections: [
     {
       panels: [
         tablePanel('Orgs holding license "$license"', {
           datasource: DS_LOKI,
           gridPos: { w: 24, h: 14 },
-          targets: [lokiTarget(`{${SRC}, type="LICENSES"} |~ \`(?i)$license\``, { maxLines: 1000 })],
+          targets: [lokiTarget(`{${SRC}, type="LICENSES", $env} |~ \`(?i)$license\``, { maxLines: 1000 })],
           transformations: [
             extractJson(['orgIdentifier'], { source: 'labels', replace: true }),
             { id: 'groupBy', options: { fields: { orgIdentifier: { aggregations: [], operation: 'groupby' } } } },
@@ -1601,14 +1605,14 @@ const searchPackagesDashboard = dashboard({
   title: '92 - Search: Packages',
   description: 'Find which monitored orgs have a given installed package.',
   time: 'now-30d',
-  variables: [textboxVar('package', 'Package', 'Installed package name fragment', '')],
+  variables: [envVar(), textboxVar('package', 'Package', 'Installed package name fragment', '')],
   sections: [
     {
       panels: [
         tablePanel('Orgs with package "$package"', {
           datasource: DS_LOKI,
           gridPos: { w: 24, h: 14 },
-          targets: [lokiTarget(`{${SRC}, type="BACKUP"} |~ \`(?i)$package\``, { maxLines: 1000 })],
+          targets: [lokiTarget(`{${SRC}, type="BACKUP", $env} |~ \`(?i)$package\``, { maxLines: 1000 })],
           transformations: [
             extractJson(['orgIdentifier'], { source: 'labels', replace: true }),
             { id: 'groupBy', options: { fields: { orgIdentifier: { aggregations: [], operation: 'groupby' } } } },
