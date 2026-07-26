@@ -1,4 +1,3 @@
-import { SfError } from "@salesforce/core";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
@@ -37,7 +36,11 @@ export class EmailProvider extends NotifProviderRoot {
     } else {
       const mainEmailAddress = getEnvVar("NOTIF_EMAIL_ADDRESS");
       if (mainEmailAddress == null && sanitizedYamlRecipients.length === 0) {
-        throw new SfError("[EmailProvider] You need to define a variable NOTIF_EMAIL_ADDRESS to use sfdx-hardis Email notifications");
+        // No recipient for this notification type: skip the email channel with a warning.
+        // Never throw: it would fail the whole command and prevent the remaining
+        // channels (like the API/Grafana one) from receiving the notification.
+        uxLog("warning", this, c.yellow(t('emailProviderNoRecipientSkip', { type: notifMessage.type })));
+        return;
       }
       if (mainEmailAddress != null) {
         emailAddresses.push(...mainEmailAddress.split(","));

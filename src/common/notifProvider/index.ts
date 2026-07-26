@@ -103,7 +103,18 @@ export abstract class NotifProvider {
       }
       // Do not send notifs for level "log" to Users, but just to logs/metrics API
       if (notifProvider.isApplicableForNotif(notifMessage)) {
-        await notifProvider.postNotification(notifMessage);
+        // Isolate each provider: a misconfigured or failing channel (e.g. email without
+        // NOTIF_EMAIL_ADDRESS, Slack token expired...) must not prevent the other channels
+        // from receiving the notification, nor make the calling command fail.
+        try {
+          await notifProvider.postNotification(notifMessage);
+        } catch (e) {
+          uxLog(
+            "warning",
+            this,
+            c.yellow(t('notifProviderSendFailed', { label: notifProvider.getLabel(), type: notifMessage.type, message: (e as Error).message })),
+          );
+        }
       } else {
         uxLog("error", this, c.grey(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
       }
