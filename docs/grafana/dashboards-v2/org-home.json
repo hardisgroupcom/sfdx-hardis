@@ -101,7 +101,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=MONITORING_SUMMARY&var-metric=HealthScore_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=MONITORING_SUMMARY&var-metric=HealthScore_metric"
             }
           ]
         },
@@ -216,7 +216,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=MONITORING_SUMMARY"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=MONITORING_SUMMARY"
             }
           ]
         },
@@ -400,7 +400,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-limits/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-limits/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -477,7 +477,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-limits/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-limits/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -554,7 +554,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-limits/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-limits/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -631,7 +631,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-limits/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-limits/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -708,7 +708,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-limits/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-limits/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -785,7 +785,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-limits/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-limits/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -869,7 +869,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-reliability/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-reliability/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -940,7 +940,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-reliability/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-reliability/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -1011,7 +1011,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-reliability/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-reliability/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -1082,7 +1082,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-reliability/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-reliability/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -1144,7 +1144,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=BACKUP&var-metric=UpdatedMetadatas_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=BACKUP&var-metric=UpdatedMetadatas_metric"
             }
           ]
         },
@@ -1215,7 +1215,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-security/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-security/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -1285,7 +1285,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-security/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-security/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -1355,7 +1355,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=RELEASE_UPDATES&var-metric=ReleaseUpdates_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=RELEASE_UPDATES&var-metric=ReleaseUpdates_metric"
             }
           ]
         },
@@ -1430,7 +1430,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-adoption/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-adoption/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -1492,7 +1492,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-adoption/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-adoption/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -1562,7 +1562,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-adoption/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-adoption/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -1632,7 +1632,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-adoption/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-adoption/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -1702,7 +1702,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-adoption/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-adoption/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -1786,7 +1786,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-debt/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-debt/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -1856,7 +1856,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_TESTS&var-metric=ApexTestsFailingClasses_metric"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=APEX_TESTS&var-metric=ApexTestsFailingClasses_metric"
             }
           ]
         },
@@ -1930,7 +1930,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-security/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-security/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -2000,7 +2000,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-security/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-security/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },
@@ -2070,7 +2070,7 @@
           "links": [
             {
               "title": "Open details",
-              "url": "/d/sfdx-hardis-v2-org-security/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-security/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ]
         },

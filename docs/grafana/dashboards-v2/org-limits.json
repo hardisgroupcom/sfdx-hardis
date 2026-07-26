@@ -120,7 +120,7 @@
           "links": [
             {
               "title": "Open limit evolution",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&var-type=ORG_LIMITS&var-metric=${__data.fields.Limit}_percent&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&var-type=ORG_LIMITS&var-metric=${__data.fields.Limit}_percent&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ],
           "custom": {
@@ -345,7 +345,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ORG_LIMITS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=ORG_LIMITS"
             }
           ],
           "custom": {
@@ -462,7 +462,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ORG_LIMITS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=ORG_LIMITS"
             }
           ],
           "custom": {
@@ -571,7 +571,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ORG_LIMITS&var-metric=DataStorageMB_percent"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=ORG_LIMITS&var-metric=DataStorageMB_percent"
             }
           ]
         },
@@ -635,7 +635,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ORG_LIMITS&var-metric=DataStorageMB_percent"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=ORG_LIMITS&var-metric=DataStorageMB_percent"
             }
           ],
           "custom": {
@@ -731,7 +731,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ORG_LIMITS&var-metric=FileStorageMB_percent"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=ORG_LIMITS&var-metric=FileStorageMB_percent"
             }
           ]
         },
@@ -795,7 +795,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ORG_LIMITS&var-metric=FileStorageMB_percent"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=ORG_LIMITS&var-metric=FileStorageMB_percent"
             }
           ],
           "custom": {

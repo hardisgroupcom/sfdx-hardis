@@ -453,9 +453,10 @@ function dashboard({ uid, title, description, tags = [], variables = [], section
   };
 }
 
-// Data links always carry the datasource variables (\${ds_*:queryparam}) so navigating
-// between dashboards keeps the Prometheus/Loki datasources selected by the user.
-const DS_QUERYPARAMS = '${ds_prom:queryparam}&${ds_loki:queryparam}';
+// Data links always carry the datasource variables (\${ds_*:queryparam}) AND the current
+// time range (\${__url_time_range}) so the landing page shows the same data as the number
+// that was clicked (a stat viewed over 180d must not open a 30d detail view).
+const DS_QUERYPARAMS = '${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}';
 
 /** Link from a table row to the Org Home dashboard of that row's org */
 const orgHomeLink = (field = 'orgIdentifier') => [
@@ -472,7 +473,7 @@ const indicatorLink = (type) => detailLink('dtl-indicator', 'Open indicator deta
 
 /** Link from a stat to a full-screen view of another panel of the same dashboard */
 const viewPanelLink = (dashSlug, panel, title = 'Show details') => [
-  { title, url: `/d/sfdx-hardis-v2-${dashSlug}/?viewPanel=${panel.id}&\${__all_variables}` },
+  { title, url: `/d/sfdx-hardis-v2-${dashSlug}/?viewPanel=${panel.id}&\${__all_variables}&\${__url_time_range}` },
 ];
 
 const RECENT_CLI_NOTE = 'Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).';
@@ -562,7 +563,7 @@ const fleetDashboard = dashboard({
           noValue: '0',
           description: 'Orgs seen in the last 7 days but silent for 36h: their monitoring job probably failed. Click to see the list.',
           links: [
-            { title: 'Show silent orgs', url: `/d/sfdx-hardis-v2-fleet/?viewPanel=${silentOrgsTable.id}&\${__all_variables}` },
+            { title: 'Show silent orgs', url: `/d/sfdx-hardis-v2-fleet/?viewPanel=${silentOrgsTable.id}&\${__all_variables}&\${__url_time_range}` },
           ],
         }),
       ],
@@ -791,7 +792,7 @@ function linkStatToPanel(dash, statTitle, targetTitleStart, linkTitle = 'Show de
   if (!stat || !target) {
     throw new Error(`linkStatToPanel: could not resolve "${statTitle}" -> "${targetTitleStart}" on ${dash.uid}`);
   }
-  stat.fieldConfig.defaults.links = [{ title: linkTitle, url: `/d/${dash.uid}/?viewPanel=${target.id}&\${__all_variables}` }];
+  stat.fieldConfig.defaults.links = [{ title: linkTitle, url: `/d/${dash.uid}/?viewPanel=${target.id}&\${__all_variables}&\${__url_time_range}` }];
 }
 linkStatToPanel(fleetDashboard, 'Monitored orgs', 'Monitored orgs (click', 'Show all orgs');
 linkStatToPanel(fleetDashboard, 'Fleet avg health score', 'Health sub-scores', 'Show scores by org');

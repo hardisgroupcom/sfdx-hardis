@@ -116,7 +116,7 @@
           "links": [
             {
               "title": "Open org dashboard",
-              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ],
           "custom": {

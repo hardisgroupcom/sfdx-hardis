@@ -88,7 +88,7 @@
           "links": [
             {
               "title": "Show all orgs",
-              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=9&${__all_variables}"
+              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=9&${__all_variables}&${__url_time_range}"
             }
           ]
         },
@@ -164,7 +164,7 @@
           "links": [
             {
               "title": "Show scores by org",
-              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=10&${__all_variables}"
+              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=10&${__all_variables}&${__url_time_range}"
             }
           ]
         },
@@ -234,7 +234,7 @@
           "links": [
             {
               "title": "Show errors by org",
-              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=9&${__all_variables}"
+              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=9&${__all_variables}&${__url_time_range}"
             }
           ]
         },
@@ -308,7 +308,7 @@
           "links": [
             {
               "title": "Show failing orgs",
-              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=2&${__all_variables}"
+              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=2&${__all_variables}&${__url_time_range}"
             }
           ]
         },
@@ -373,7 +373,7 @@
           "links": [
             {
               "title": "Show reporting orgs",
-              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=17&${__all_variables}"
+              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=17&${__all_variables}&${__url_time_range}"
             }
           ]
         },
@@ -447,7 +447,7 @@
           "links": [
             {
               "title": "Show silent orgs",
-              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=1&${__all_variables}"
+              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=1&${__all_variables}&${__url_time_range}"
             }
           ]
         },
@@ -606,7 +606,7 @@
           "links": [
             {
               "title": "Open org dashboard",
-              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ],
           "custom": {
@@ -912,7 +912,7 @@
           "links": [
             {
               "title": "Open org dashboard",
-              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ],
           "custom": {
@@ -1110,7 +1110,7 @@
           "links": [
             {
               "title": "Show averages by org",
-              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=9&${__all_variables}"
+              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=9&${__all_variables}&${__url_time_range}"
             }
           ]
         },
@@ -1182,7 +1182,7 @@
           "links": [
             {
               "title": "Show averages by org",
-              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=9&${__all_variables}"
+              "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=9&${__all_variables}&${__url_time_range}"
             }
           ]
         },
@@ -1325,7 +1325,7 @@
           "links": [
             {
               "title": "Open org dashboard",
-              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ],
           "custom": {
@@ -1490,7 +1490,7 @@
           "links": [
             {
               "title": "Open org dashboard",
-              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ],
           "custom": {
@@ -1600,7 +1600,7 @@
           "links": [
             {
               "title": "Open org dashboard",
-              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ],
           "custom": {
@@ -1700,7 +1700,7 @@
           "links": [
             {
               "title": "Open org dashboard",
-              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ],
           "custom": {
@@ -1785,7 +1785,7 @@
           "links": [
             {
               "title": "Open org dashboard",
-              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ],
           "custom": {
@@ -1878,7 +1878,7 @@
           "links": [
             {
               "title": "Open org dashboard",
-              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}"
+              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ],
           "custom": {
