@@ -298,7 +298,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_ERROR"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_ERROR&var-metric=ApexErrors_metric"
             }
           ]
         },
@@ -369,7 +369,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_ERROR"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_ERROR&var-metric=ApexErrors_metric"
             }
           ]
         },
@@ -439,7 +439,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_ERROR"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_ERROR&var-metric=ApexErrors_metric"
             }
           ]
         },
@@ -510,7 +510,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=FLOW_ERROR"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=FLOW_ERROR&var-metric=FlowErrors_metric"
             }
           ]
         },
@@ -581,7 +581,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=FLOW_ERROR"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=FLOW_ERROR&var-metric=FlowErrors_metric"
             }
           ]
         },
@@ -651,7 +651,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=FLOW_ERROR"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=FLOW_ERROR&var-metric=FlowErrors_metric"
             }
           ]
         },
@@ -735,7 +735,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_ERROR"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_ERROR&var-metric=ApexErrorsImpactedUsers_metric"
             }
           ]
         },
@@ -806,7 +806,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=FLOW_ERROR"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=FLOW_ERROR&var-metric=FlowErrorsImpactedUsers_metric"
             }
           ]
         },
@@ -876,7 +876,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=FLOW_ERROR"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=FLOW_ERROR&var-metric=TopFailingFlowCount_metric"
             }
           ]
         },
@@ -947,7 +947,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_ERROR"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_ERROR&var-metric=TopFailingApexCount_metric"
             }
           ]
         },

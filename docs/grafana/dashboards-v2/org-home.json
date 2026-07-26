@@ -101,7 +101,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=MONITORING_SUMMARY"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=MONITORING_SUMMARY&var-metric=HealthScore_metric"
             }
           ]
         },
@@ -1144,7 +1144,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=BACKUP"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=BACKUP&var-metric=UpdatedMetadatas_metric"
             }
           ]
         },
@@ -1355,7 +1355,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=RELEASE_UPDATES"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=RELEASE_UPDATES&var-metric=ReleaseUpdates_metric"
             }
           ]
         },
@@ -1856,7 +1856,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_TESTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=APEX_TESTS&var-metric=ApexTestsFailingClasses_metric"
             }
           ]
         },

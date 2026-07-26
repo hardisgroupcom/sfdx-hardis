@@ -88,7 +88,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DEPLOYMENTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DEPLOYMENTS&var-metric=deploymentsTotal_metric"
             }
           ]
         },
@@ -159,7 +159,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DEPLOYMENTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DEPLOYMENTS&var-metric=deploymentSuccessRate_metric"
             }
           ]
         },
@@ -222,7 +222,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DEPLOYMENTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DEPLOYMENTS&var-metric=avgDeploymentMinutes_metric"
             }
           ]
         },
@@ -293,7 +293,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DEPLOYMENTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DEPLOYMENTS&var-metric=validationSuccessRate_metric"
             }
           ]
         },
@@ -454,7 +454,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DEPLOYMENT"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DEPLOYMENT&var-metric=DeploymentDurationSeconds_metric"
             }
           ],
           "custom": {
@@ -549,7 +549,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DORA_REPORT"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DORA_REPORT&var-metric=DoraDeploymentFrequency_metric"
             }
           ]
         },
@@ -620,7 +620,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DORA_REPORT"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DORA_REPORT&var-metric=DoraLeadTimeDays_metric"
             }
           ]
         },
@@ -692,7 +692,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DORA_REPORT"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DORA_REPORT&var-metric=DoraChangeFailureRatePercent_metric"
             }
           ]
         },
@@ -763,7 +763,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DORA_REPORT"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DORA_REPORT&var-metric=DoraMttrHours_metric"
             }
           ]
         },
@@ -835,7 +835,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DORA_REPORT"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=DORA_REPORT&var-metric=DoraReworkRatePercent_metric"
             }
           ]
         },

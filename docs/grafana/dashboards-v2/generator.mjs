@@ -1085,7 +1085,13 @@ const limitsDashboard = dashboard({
           ],
           unit: 'percent',
           thresholds: THRESHOLDS_PERCENT_USED,
-          links: indicatorLink('ORG_LIMITS'),
+          // Row-level link: open the detail of the clicked limit, not all limits
+          links: [
+            {
+              title: 'Open limit evolution',
+              url: `/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&var-type=ORG_LIMITS&var-metric=\${__data.fields.Limit}_percent&${DS_QUERYPARAMS}`,
+            },
+          ],
           custom: { cellOptions: { type: 'auto' } },
           overrides: [
             {
@@ -1488,7 +1494,7 @@ const adoptionDashboard = dashboard({
 const dtlIndicatorDashboard = dashboard({
   uid: 'sfdx-hardis-v2-dtl-indicator',
   title: '80 - Indicator Detail',
-  description: 'Generic drill-down for any sfdx-hardis notification type: metric evolution and detailed rows.',
+  description: 'Generic drill-down for any sfdx-hardis indicator: pick the org, the notification type and the exact metric to see its value, its evolution and the detailed rows.',
   time: 'now-30d',
   variables: [
     orgVar(),
@@ -1509,25 +1515,39 @@ const dtlIndicatorDashboard = dashboard({
       skipUrlSync: false,
       sort: 1,
     },
+    {
+      // The exact Prometheus series to display. Links from other dashboards pass it
+      // (var-metric=...) so the landing page shows the same number that was clicked.
+      name: 'metric',
+      label: 'Metric',
+      type: 'query',
+      datasource: DS_PROM,
+      definition: `label_values({${SRC}, type="$type", orgIdentifier="$org"}, __name__)`,
+      query: { qryType: 1, query: `label_values({${SRC}, type="$type", orgIdentifier="$org"}, __name__)`, refId: 'PrometheusVariableQueryEditor-VariableQuery' },
+      current: {},
+      hide: 0,
+      includeAll: false,
+      multi: false,
+      options: [],
+      refresh: 2,
+      regex: '/^(?!.*_max$).*/',
+      skipUrlSync: false,
+      sort: 1,
+    },
   ],
   sections: [
     {
-      row: '$type on $org',
+      row: '$metric ($type) on $org',
       panels: [
         statPanel('Latest value', {
-          datasource: DS_LOKI,
+          sparkline: true,
           gridPos: { w: 5, h: 7 },
-          fields: '/^metric$/',
-          targets: [lokiTarget(`{${SRC}, type="$type", orgIdentifier="$org"} |= \`\``, { maxLines: 1 })],
-          transformations: [extractJson(['metric', { alias: 'metricName', path: '_metricsKeys[0]' }])],
+          targets: [promTarget(`max by (orgIdentifier) (last_over_time(\${metric}{${SRC}, orgIdentifier="$org"}[8d]))`)],
           thresholds: THRESHOLDS_NONE,
-          extra: { options: { colorMode: 'value', graphMode: 'none', justifyMode: 'auto', orientation: 'auto', reduceOptions: { calcs: ['lastNotNull'], fields: '/^metric$/', values: false }, textMode: 'auto' } },
         }),
-        timeseriesPanel('Metric evolution', {
-          datasource: DS_LOKI,
+        timeseriesPanel('Evolution', {
           gridPos: { w: 14, h: 7 },
-          targets: [lokiTarget(`{${SRC}, type="$type", orgIdentifier="$org"} |= \`\``, {})],
-          transformations: [extractJson(['metric'], { keepTime: true, replace: true })],
+          targets: [promTarget(`max by (orgIdentifier) (last_over_time(\${metric}{${SRC}, orgIdentifier="$org"}[1d]))`, { legendFormat: '$metric' })],
         }),
         statsDatePanel('$type', { w: 5, h: 7 }),
       ],
@@ -1626,6 +1646,36 @@ const searchPackagesDashboard = dashboard({
 });
 
 // ===========================================================================
+// Post-pass: make Indicator Detail links metric-aware
+// ===========================================================================
+// When a stat/gauge shows a single Prometheus series and links to the Indicator
+// Detail dashboard, pass the exact metric name (var-metric=...) so the landing
+// page shows the same number that was clicked, not the type's default metric.
+function addMetricToIndicatorLinks(dash) {
+  for (const panel of dash.panels || []) {
+    if (!['stat', 'gauge', 'timeseries'].includes(panel.type)) {
+      continue;
+    }
+    const promTargets = (panel.targets || []).filter((t) => t.datasource?.uid === '${ds_prom}');
+    if (promTargets.length !== 1) {
+      continue;
+    }
+    const metricMatch = promTargets[0].expr.match(/([A-Za-z][A-Za-z0-9_]*(?:_metric|_percent))\s*\{/);
+    if (!metricMatch) {
+      continue;
+    }
+    // Only when the panel has a single Indicator Detail link: with several links
+    // (e.g. Apex + Flow), one metric name cannot be right for all of them
+    const dtlLinks = (panel.fieldConfig?.defaults?.links || []).filter(
+      (link) => link.url.includes('sfdx-hardis-v2-dtl-indicator') && !link.url.includes('var-metric=')
+    );
+    if (dtlLinks.length === 1) {
+      dtlLinks[0].url += `&var-metric=${metricMatch[1]}`;
+    }
+  }
+}
+
+// ===========================================================================
 // Write files
 // ===========================================================================
 
@@ -1645,6 +1695,7 @@ const dashboards = [
 ];
 
 for (const dash of dashboards) {
+  addMetricToIndicatorLinks(dash);
   const fileName = `${dash.uid.replace('sfdx-hardis-v2-', '')}.json`;
   fs.writeFileSync(path.join(OUT_DIR, fileName), JSON.stringify(dash, null, 2) + '\n');
   console.log(`Generated ${fileName} (${dash.panels.length} panels)`);

@@ -88,7 +88,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ACTIVE_USERS_CRM_WEEKLY"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ACTIVE_USERS_CRM_WEEKLY&var-metric=ACTIVE_USERS_CRM_WEEKLY_metric"
             }
           ]
         },
@@ -150,7 +150,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ACTIVE_USERS_EXPERIENCE_MONTHLY"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ACTIVE_USERS_EXPERIENCE_MONTHLY&var-metric=ACTIVE_USERS_EXPERIENCE_MONTHLY_metric"
             }
           ]
         },
@@ -220,7 +220,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=UNUSED_USERS_CRM_6_MONTHS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=UNUSED_USERS_CRM_6_MONTHS&var-metric=UNUSED_USERS_CRM_6_MONTHS_metric"
             }
           ]
         },
@@ -290,7 +290,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=UNUSED_USERS_EXPERIENCE_6_MONTHS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=UNUSED_USERS_EXPERIENCE_6_MONTHS&var-metric=UNUSED_USERS_EXPERIENCE_6_MONTHS_metric"
             }
           ]
         },

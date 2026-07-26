@@ -100,7 +100,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ORG_HEALTH_CHECK"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ORG_HEALTH_CHECK&var-metric=Score_metric"
             }
           ]
         },
@@ -373,7 +373,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=AUDIT_TRAIL"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=AUDIT_TRAIL&var-metric=SuspectMetadataUpdates_metric"
             }
           ]
         },
@@ -443,7 +443,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=UNSECURED_CONNECTED_APPS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=UNSECURED_CONNECTED_APPS&var-metric=UnsecuredConnectedApps_metric"
             }
           ]
         },
@@ -513,7 +513,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ORG_HEALTH_CHECK"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=ORG_HEALTH_CHECK&var-metric=HighRisk_metric"
             }
           ]
         },
@@ -583,7 +583,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=LEGACY_API"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=LEGACY_API&var-metric=LegacyApiCalls_metric"
             }
           ]
         },
@@ -653,7 +653,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=MFA_CONFIG"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=MFA_CONFIG&var-metric=MfaBypassUsers_metric"
             }
           ]
         },
@@ -723,7 +723,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=MFA_CONFIG"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=MFA_CONFIG&var-metric=NonMfaLogins_metric"
             }
           ]
         },
@@ -799,7 +799,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=AUDIT_TRAIL"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=AUDIT_TRAIL&var-metric=SuspectMetadataUpdates_metric"
             }
           ],
           "custom": {
@@ -881,7 +881,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=LEGACY_API"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&var-type=LEGACY_API&var-metric=LegacyApiCalls_metric"
             }
           ],
           "custom": {
