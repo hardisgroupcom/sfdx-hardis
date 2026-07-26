@@ -7,6 +7,15 @@ import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
 import { convertMarkdownToSlackBlocks, convertMarkdownToSlackMrkdwn } from "./slackMarkdown.js";
 import { getEnvVar } from "../../config/index.js";
+import { applyMessageSizeGuard, clampBlockText, SizeGuardLimits } from "./messageSizeGuard.js";
+
+// Slack refuses a chat.postMessage call when a section block's text exceeds 3000 characters or the
+// message carries more than 50 blocks (invalid_blocks). Overridable for orgs on different limits.
+const SLACK_SIZE_LIMITS: SizeGuardLimits = {
+  maxAttachmentsChars: Number(process.env.SLACK_MAX_ATTACHMENTS_CHARS || 12000),
+  maxBlockChars: Number(process.env.SLACK_MAX_BLOCK_CHARS || 2900),
+  maxBlocks: Number(process.env.SLACK_MAX_BLOCKS || 45),
+};
 
 export class SlackProvider extends NotifProviderRoot {
   private slackClient: InstanceType<typeof WebClient>;
@@ -26,7 +35,10 @@ export class SlackProvider extends NotifProviderRoot {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async postNotification(notifMessage: NotifMessage): Promise<void> {
+  public async postNotification(inputNotifMessage: NotifMessage): Promise<void> {
+    // Trim oversized attachments before conversion. Slack is not a webhook provider, so it applies
+    // the guard itself instead of inheriting it from WebhookNotifProviderRoot.
+    const notifMessage = applyMessageSizeGuard(inputNotifMessage, SLACK_SIZE_LIMITS);
     const mainNotifsChannelId = getEnvVar("SLACK_CHANNEL_ID");
     if (mainNotifsChannelId == null) {
       throw new SfError(
@@ -91,7 +103,10 @@ export class SlackProvider extends NotifProviderRoot {
         "alt_text": "sfdx-hardis"
       }
     } */
-    // Add action blocks
+    // Build the action block. It is kept aside from the content blocks and appended last, after the
+    // block count has been capped: the buttons (View Org, View Pull Request) are the most useful
+    // part of the notification and must never be the ones dropped.
+    let actionsBlock: ActionsBlock | null = null;
     if (notifMessage.buttons?.length && notifMessage.buttons?.length > 0) {
       const actionElements: any[] = [];
       for (const button of notifMessage.buttons) {
@@ -109,18 +124,36 @@ export class SlackProvider extends NotifProviderRoot {
           actionElements.push(actionsElement);
         }
       }
-      const actionsBlock: ActionsBlock = {
+      actionsBlock = {
         type: "actions",
         elements: actionElements,
       };
-      blocks.push(actionsBlock);
+    }
+    // Clamp section text and block count so Slack does not reject the message with invalid_blocks
+    for (const block of blocks) {
+      if (block.type === "section") {
+        const sectionBlock = block as SectionBlock;
+        if (sectionBlock.text?.text) {
+          sectionBlock.text.text = clampBlockText(
+            sectionBlock.text.text,
+            SLACK_SIZE_LIMITS.maxBlockChars,
+            notifMessage.translateMessages !== false,
+          );
+        }
+      }
+    }
+    // Reserve one slot for the action block so the buttons always fit within the block count limit
+    const maxContentBlocks = Math.max(0, SLACK_SIZE_LIMITS.maxBlocks - (actionsBlock ? 1 : 0));
+    const cappedBlocks = blocks.length > maxContentBlocks ? blocks.slice(0, maxContentBlocks) : [...blocks];
+    if (actionsBlock) {
+      cappedBlocks.push(actionsBlock);
     }
     // Post messages
     for (const slackChannelId of slackChannelsIds) {
       const slackMessage = {
         text: slackText,
         attachments: slackAttachments,
-        blocks: blocks,
+        blocks: cappedBlocks,
         channel: slackChannelId,
         unfurl_links: false,
         unfurl_media: false,

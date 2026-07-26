@@ -1372,6 +1372,11 @@
     "anytype",
     "datacategorygroupreference",
     "AUTOFILTER",
-    "lenprec"
+    "lenprec",
+    "accordionnotif",
+    "métadonnées",
+    "déployées",
+    "supprimées",
+    "uncatchable"
   ]
 }

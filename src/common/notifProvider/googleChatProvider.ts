@@ -2,6 +2,7 @@ import { WebhookNotifProviderRoot } from "./webhookNotifProviderRoot.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
 import { convertMarkdownToGoogleChatMarkup } from "./googleChatMarkup.js";
+import { clampBlockText, SizeGuardLimits } from "./messageSizeGuard.js";
 
 interface CardV2Widget {
   [key: string]: any;
@@ -26,6 +27,15 @@ interface CardV2 {
 
 const CARD_ID = "sfdx-hardis-notif";
 const LOG_PREFIX = "[GoogleChatProvider]";
+
+// Google Chat caps a card message payload at 32 KB, and a single textParagraph widget at 4096
+// characters. Overridable for orgs on different limits.
+const GOOGLE_CHAT_SIZE_LIMITS: SizeGuardLimits = {
+  maxAttachmentsChars: Number(process.env.GOOGLE_CHAT_MAX_ATTACHMENTS_CHARS || 20000),
+  maxBlockChars: Number(process.env.GOOGLE_CHAT_MAX_BLOCK_CHARS || 4000),
+  // NOT ENFORCED: Google Chat documents no widget count cap for a card. The payload budget governs.
+  maxBlocks: Number(process.env.GOOGLE_CHAT_MAX_BLOCKS || 100),
+};
 
 export class GoogleChatProvider extends WebhookNotifProviderRoot {
   public getLabel(): string {
@@ -52,6 +62,10 @@ export class GoogleChatProvider extends WebhookNotifProviderRoot {
     return "application/json; charset=UTF-8";
   }
 
+  protected getSizeLimits(): SizeGuardLimits {
+    return GOOGLE_CHAT_SIZE_LIMITS;
+  }
+
   protected buildPayload(notifMessage: NotifMessage): object {
     const card = this.buildCardV2(notifMessage);
     return { cardsV2: [{ cardId: CARD_ID, card }] };
@@ -63,7 +77,18 @@ export class GoogleChatProvider extends WebhookNotifProviderRoot {
     const sections: CardV2Section[] = [];
     if (bodyMarkup) {
       sections.push({
-        widgets: [{ textParagraph: { text: bodyMarkup, textSyntax: "MARKDOWN" } }],
+        widgets: [
+          {
+            textParagraph: {
+              text: clampBlockText(
+                bodyMarkup,
+                GOOGLE_CHAT_SIZE_LIMITS.maxBlockChars,
+                notifMessage.translateMessages !== false,
+              ),
+              textSyntax: "MARKDOWN",
+            },
+          },
+        ],
       });
     }
 
@@ -126,7 +151,16 @@ export class GoogleChatProvider extends WebhookNotifProviderRoot {
     const widgets: CardV2Widget[] = notifMessage.attachments
       .filter((attachment) => attachment && typeof attachment.text === "string" && attachment.text.length > 0)
       .map((attachment) => ({
-        textParagraph: { text: convertMarkdownToGoogleChatMarkup(attachment.text), textSyntax: "MARKDOWN" },
+        textParagraph: {
+          // A textParagraph widget is capped at 4096 characters on its own, independently of the
+          // whole-payload budget already applied by the size guard.
+          text: clampBlockText(
+            convertMarkdownToGoogleChatMarkup(attachment.text),
+            GOOGLE_CHAT_SIZE_LIMITS.maxBlockChars,
+            notifMessage.translateMessages !== false,
+          ),
+          textSyntax: "MARKDOWN",
+        },
       }));
 
     if (widgets.length === 0) {

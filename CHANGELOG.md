@@ -5,6 +5,10 @@
 - MegaLinter no longer overwrites your local `code-analyzer.yml` and `pmd-ruleset.xml`: they are downloaded only when missing, so your custom rules are kept.
 - Default CI/CD and monitoring pipelines now pull the MegaLinter image from GitHub Container Registry (`ghcr.io`), avoiding Docker Hub pull rate limits.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Send real deployment metrics (components, Apex tests, code coverage, duration, quick deploy and delta flags) in DEPLOYMENT notifications, instead of always zero.
+- Successful deployment notifications now list the pre and post-deployment actions that ran, grouped by phase, alongside an entry for the metadata deployment with its deployed and deleted counts.
+- Slack, Teams and Google Chat notifications are now trimmed when too long for the platform to accept, instead of being silently dropped.
+- Deployment notification messages now stay in English by default: set `notifTranslateDeploymentMessages` to follow the configured locale.
+- `MANUAL ACTION:` commit markers are now flagged as legacy in notifications, pointing to [deployment actions](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/) instead.
 
 ## [7.22.1] 2026-07-22
 

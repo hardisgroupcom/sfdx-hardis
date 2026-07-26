@@ -13,6 +13,7 @@ import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvi
 import { getPullRequestScopedSfdxHardisConfig, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
 import { t } from './i18n.js';
 import { ActionWhen, getPrIdFromUserConfig } from './actionUtils.js';
+import { recordExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, extraCommands?: any[] }) {
   const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
@@ -159,6 +160,8 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     }
   }
   manageResultMarkdownBody(property, commands, options.checkOnly);
+  // Expose the executed actions so the post-deployment notification can report them
+  recordExecutedDeploymentActions(commands);
   // Check commands results
   const failedCommands = commands.filter(c => c.result?.statusCode === "failed");
   if (failedCommands.length > 0) {
