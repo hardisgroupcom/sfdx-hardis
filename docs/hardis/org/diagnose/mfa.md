@@ -61,19 +61,19 @@ Reference: [Salesforce MFA Requirement](https://help.salesforce.com/s/articleVie
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|ignore-users|option|Comma-separated list of usernames to exclude from MFA checks (merged with monitoringMfaIgnoreUsers config and MONITORING_MFA_IGNORE_USERS env var).||||
-|json|boolean|Format output as json.||||
-|lookback-days|option|Number of days back to scan LoginHistory for non-MFA direct UI logins. Overrides monitoringMfaLoginHistoryLookbackDays from config.||||
-|phishing-resistant-lookback-days|option|Number of days back to scan VerificationHistory for phishing-resistant MFA registration / usage per privileged user. Overrides monitoringMfaPhishingResistantLookbackDays from config (default: 180).||||
-|privileged-permissions|option|Comma-separated list of PermissionSet/Profile permission API names that define a privileged user. Defaults to PermissionsModifyAllData,PermissionsViewAllData,PermissionsCustomizeApplication,PermissionsAuthorApex.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                             |  Type   | Description                                                                                                                                                                                                          | Default | Required | Options |
+|:---------------------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                            | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                |         |          |         |
+| debug<br/>-d                     | boolean | Activate debug mode (more logs)                                                                                                                                                                                      |         |          |         |
+| flags-dir                        | option  | undefined                                                                                                                                                                                                            |         |          |         |
+| ignore-users                     | option  | Comma-separated list of usernames to exclude from MFA checks (merged with monitoringMfaIgnoreUsers config and MONITORING_MFA_IGNORE_USERS env var).                                                                  |         |          |         |
+| json                             | boolean | Format output as json.                                                                                                                                                                                               |         |          |         |
+| lookback-days                    | option  | Number of days back to scan LoginHistory for non-MFA direct UI logins. Overrides monitoringMfaLoginHistoryLookbackDays from config.                                                                                  |         |          |         |
+| phishing-resistant-lookback-days | option  | Number of days back to scan VerificationHistory for phishing-resistant MFA registration / usage per privileged user. Overrides monitoringMfaPhishingResistantLookbackDays from config (default: 180).                |         |          |         |
+| privileged-permissions           | option  | Comma-separated list of PermissionSet/Profile permission API names that define a privileged user. Defaults to PermissionsModifyAllData,PermissionsViewAllData,PermissionsCustomizeApplication,PermissionsAuthorApex. |         |          |         |
+| skipauth                         | boolean | Skip authentication check when a default username is required                                                                                                                                                        |         |          |         |
+| target-org<br/>-o                | option  | undefined                                                                                                                                                                                                            |         |          |         |
+| websocket                        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                            |         |          |         |
 
 ## Examples
 

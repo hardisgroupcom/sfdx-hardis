@@ -36,20 +36,20 @@ The command's technical implementation involves:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|devhub<br/>-h|boolean|Also connect associated DevHub||||
-|flags-dir|option|undefined||||
-|instance-url|option|Instance URL to use for login when reconnecting (e.g. https://myorg.salesforce.com). Required with --reconnect.||||
-|json|boolean|Format output as json.||||
-|reconnect<br/>-r|boolean|Force re-authentication (skip connection check and go straight to login)||||
-|scratch<br/>-s|boolean|Select scratch org related to default DevHub||||
-|set-default|boolean|Set the selected org as default target-org (or target-dev-hub if --devhub is used). Use --no-set-default to skip. If omitted, you will be prompted.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|username<br/>-t|option|Username of the org you want to authenticate (overrides the interactive prompt)||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name             |  Type   | Description                                                                                                                                         | Default | Required | Options |
+|:-----------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent            | boolean | Run in non-interactive mode for agents and automation                                                                                               |         |          |         |
+| debug<br/>-d     | boolean | Activate debug mode (more logs)                                                                                                                     |         |          |         |
+| devhub<br/>-h    | boolean | Also connect associated DevHub                                                                                                                      |         |          |         |
+| flags-dir        | option  | undefined                                                                                                                                           |         |          |         |
+| instance-url     | option  | Instance URL to use for login when reconnecting (e.g. https://myorg.salesforce.com). Required with --reconnect.                                     |         |          |         |
+| json             | boolean | Format output as json.                                                                                                                              |         |          |         |
+| reconnect<br/>-r | boolean | Force re-authentication (skip connection check and go straight to login)                                                                            |         |          |         |
+| scratch<br/>-s   | boolean | Select scratch org related to default DevHub                                                                                                        |         |          |         |
+| set-default      | boolean | Set the selected org as default target-org (or target-dev-hub if --devhub is used). Use --no-set-default to skip. If omitted, you will be prompted. |         |          |         |
+| skipauth         | boolean | Skip authentication check when a default username is required                                                                                       |         |          |         |
+| username<br/>-t  | option  | Username of the org you want to authenticate (overrides the interactive prompt)                                                                     |         |          |         |
+| websocket        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                           |         |          |         |
 
 ## Examples
 

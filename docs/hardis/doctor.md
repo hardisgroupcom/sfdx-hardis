@@ -46,16 +46,16 @@ In agent mode (or in CI):
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|open<br/>-o|boolean|Open the GitHub new issue page directly without prompting||||
-|skip-version-check|boolean|Do not query npm for the latest versions (faster, works offline)||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name               |  Type   | Description                                                      | Default | Required | Options |
+|:-------------------|:-------:|:-----------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent              | boolean | Run in non-interactive mode for agents and automation            |         |          |         |
+| debug<br/>-d       | boolean | Activate debug mode (more logs)                                  |         |          |         |
+| flags-dir          | option  | undefined                                                        |         |          |         |
+| json               | boolean | Format output as json.                                           |         |          |         |
+| open<br/>-o        | boolean | Open the GitHub new issue page directly without prompting        |         |          |         |
+| skip-version-check | boolean | Do not query npm for the latest versions (faster, works offline) |         |          |         |
+| skipauth           | boolean | Skip authentication check when a default username is required    |         |          |         |
+| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration        |         |          |         |
 
 ## Examples
 

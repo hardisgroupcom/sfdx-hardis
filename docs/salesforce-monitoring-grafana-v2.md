@@ -204,14 +204,14 @@ The summary also carries a `ChannelsFailed` metric: notification channel failure
 
 The alert pack lives in [docs/grafana/alerts-v2](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/docs/grafana/alerts-v2):
 
-| Alert                                 | Fires when                                                            |
-|---------------------------------------|-----------------------------------------------------------------------|
-| Salesforce org limit above 90%                    | Any limit of any org exceeds 90% usage                                |
-| Salesforce storage projected full within 14 days  | Data or File storage trends toward 100% (30-day linear regression)    |
-| Salesforce Apex/Flow error spike                  | Daily errors exceed twice the 7-day average                           |
-| Salesforce metadata backup failed                 | A BACKUP notification with error severity was received                |
-| Salesforce org monitoring is silent               | An org sent nothing for 36 hours (its monitoring job probably failed) |
-| Salesforce org health score degraded              | Score below 60, or dropped by more than 20 points                     |
+| Alert                                            | Fires when                                                            |
+|--------------------------------------------------|-----------------------------------------------------------------------|
+| Salesforce org limit above 90%                   | Any limit of any org exceeds 90% usage                                |
+| Salesforce storage projected full within 14 days | Data or File storage trends toward 100% (30-day linear regression)    |
+| Salesforce Apex/Flow error spike                 | Daily errors exceed twice the 7-day average                           |
+| Salesforce metadata backup failed                | A BACKUP notification with error severity was received                |
+| Salesforce org monitoring is silent              | An org sent nothing for 36 hours (its monitoring job probably failed) |
+| Salesforce org health score degraded             | Score below 60, or dropped by more than 20 points                     |
 
 All rules are **paused by default** (`isPaused: true`), so importing them triggers no evaluation and no cost on Grafana Cloud free tier.
 

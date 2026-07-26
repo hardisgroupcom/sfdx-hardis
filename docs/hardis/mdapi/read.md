@@ -42,21 +42,21 @@ In agent mode (and in CI), interactive prompts are skipped. You must pass at lea
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|chunk-size|option|Components read per API call (max 10, or 200 for CustomMetadata/CustomApplication)||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|ignore-errors|boolean|Report component failures but exit with code 0||||
-|json|boolean|Format output as json.||||
-|manifest<br/>-x|option|Path to a package.xml listing the metadata to read||||
-|metadata<br/>-m|option|Metadata to read, as Type or Type:Name (e.g. Profile, "Profile:Admin"). Repeatable.||||
-|output-dir|option|Directory where source files are written. When set, all files are written here instead of being refreshed in place in the project package directories (default: the project default package directory)||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|source-dir|option|Local source path whose components should be re-read from the org||||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name              |  Type   | Description                                                                                                                                                                                            | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                  |         |          |         |
+| chunk-size        | option  | Components read per API call (max 10, or 200 for CustomMetadata/CustomApplication)                                                                                                                     |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                                                                                        |         |          |         |
+| flags-dir         | option  | undefined                                                                                                                                                                                              |         |          |         |
+| ignore-errors     | boolean | Report component failures but exit with code 0                                                                                                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                                                                                                                 |         |          |         |
+| manifest<br/>-x   | option  | Path to a package.xml listing the metadata to read                                                                                                                                                     |         |          |         |
+| metadata<br/>-m   | option  | Metadata to read, as Type or Type:Name (e.g. Profile, "Profile:Admin"). Repeatable.                                                                                                                    |         |          |         |
+| output-dir        | option  | Directory where source files are written. When set, all files are written here instead of being refreshed in place in the project package directories (default: the project default package directory) |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                                                                                                          |         |          |         |
+| source-dir        | option  | Local source path whose components should be re-read from the org                                                                                                                                      |         |          |         |
+| target-org<br/>-o | option  | undefined                                                                                                                                                                                              |         |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                              |         |          |         |
 
 ## Examples
 

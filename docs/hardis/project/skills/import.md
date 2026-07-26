@@ -34,16 +34,16 @@ Key functionalities:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|addon|boolean|Persist the repository URL to the skillsRepoAddOns array config property instead of the main skillsRepo property||||
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|repo<br/>-r|option|Git repository URL containing .claude/ skills, agents, and rules to import||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name         |  Type   | Description                                                                                                      | Default | Required | Options |
+|:-------------|:-------:|:-----------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| addon        | boolean | Persist the repository URL to the skillsRepoAddOns array config property instead of the main skillsRepo property |         |          |         |
+| agent        | boolean | Run in non-interactive mode for agents and automation                                                            |         |          |         |
+| debug<br/>-d | boolean | Activate debug mode (more logs)                                                                                  |         |          |         |
+| flags-dir    | option  | undefined                                                                                                        |         |          |         |
+| json         | boolean | Format output as json.                                                                                           |         |          |         |
+| repo<br/>-r  | option  | Git repository URL containing .claude/ skills, agents, and rules to import                                       |         |          |         |
+| skipauth     | boolean | Skip authentication check when a default username is required                                                    |         |          |         |
+| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                        |         |          |         |
 
 ## Examples
 
