@@ -7,6 +7,7 @@ import { UtilsNotifs } from "./utils.js";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 
 import { getSeverityIcon } from "../utils/notifUtils.js";
+import { anonymizeApiPayloadData, shouldAnonymizeApiData } from "./apiAnonymizer.js";
 import { convertMarkdownToPlainText } from "./markdownToPlainText.js";
 import { GitProvider } from "../gitProvider/index.js";
 import axios, { AxiosRequestConfig } from "axios";
@@ -172,6 +173,11 @@ export class ApiProvider extends NotifProviderRoot {
     const jobUrl = await GitProvider.getJobUrl();
     if (jobUrl) {
       this.payload.data._jobUrl = jobUrl;
+    }
+    // Anonymize end-user identifying fields (default: only in CI, override with NOTIF_API_ANONYMIZE)
+    if (shouldAnonymizeApiData()) {
+      this.payload.data = anonymizeApiPayloadData(this.payload.data, orgIdentifier);
+      uxLog("log", this, c.grey(t('apiAnonymizationActive')));
     }
   }
 

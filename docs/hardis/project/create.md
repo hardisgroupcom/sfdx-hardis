@@ -44,18 +44,18 @@ Optional flag:
 
 ## Parameters
 
-| Name             |  Type   | Description                                                                                                                                                                                                                                                  | Default | Required |                  Options                  |
-|:-----------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------:|
-| agent            | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                                                        |         |          |                                           |
-| debug<br/>-d     | boolean | Activate debug mode (more logs)                                                                                                                                                                                                                              |         |          |                                           |
-| devbranch        | option  | Name of the default development branch (required with --agent)                                                                                                                                                                                               |         |          |                                           |
-| flags-dir        | option  | undefined                                                                                                                                                                                                                                                    |         |          |                                           |
-| json             | boolean | Format output as json.                                                                                                                                                                                                                                       |         |          |                                           |
-| minimizeprofiles | boolean | Activate the minimizeProfiles auto-clean type. Use only for Permission Set-based projects: removes from profiles any attribute (object/field access, etc.) already granted by a Permission Set. Off by default in agent mode; always on in interactive mode. |         |          |                                           |
-| orgtype          | option  | Type of development orgs: scratch, sandbox, or sandboxAndScratch (required with --agent)                                                                                                                                                                     |         |          | scratch<br/>sandbox<br/>sandboxAndScratch |
-| projectname      | option  | Name of the SFDX project (required with --agent)                                                                                                                                                                                                             |         |          |                                           |
-| skipauth         | boolean | Skip authentication check when a default username is required                                                                                                                                                                                                |         |          |                                           |
-| websocket        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                                                    |         |          |                                           |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|devbranch|option|Name of the default development branch (required with --agent)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|minimizeprofiles|boolean|Activate the minimizeProfiles auto-clean type. Use only for Permission Set-based projects: removes from profiles any attribute (object/field access, etc.) already granted by a Permission Set. Off by default in agent mode; always on in interactive mode.||||
+|orgtype|option|Type of development orgs: scratch, sandbox, or sandboxAndScratch (required with --agent)|||scratch<br/>sandbox<br/>sandboxAndScratch|
+|projectname|option|Name of the SFDX project (required with --agent)||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

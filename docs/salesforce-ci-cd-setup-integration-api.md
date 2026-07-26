@@ -124,6 +124,27 @@ NOTIF_API_SKIP_LOGS=all
 NOTIF_API_SKIP_METRICS=APEX_TESTS,DEPLOYMENT
 ```
 
+## Data anonymization
+
+When running in CI (which is the case for scheduled monitoring jobs), sfdx-hardis anonymizes end-user identifying fields before sending notifications to the API channel: `Username`, `Email`, `FirstName`, `LastName` values in log elements are replaced by stable pseudonyms like `user_a1b2c3d4e5`, and the same values are scrubbed from notification texts.
+
+Key points:
+
+- Pseudonyms are stable per org (same user always gets the same hash), so distinct-user counts and per-user drill-downs keep working in dashboards. They are salted per org, so the same user is not linkable across orgs.
+- `LastLoginDate` and other dates are kept: they are needed for inactive-user reports and are not personal identifiers.
+- Actor fields of setup actions (`CreatedBy`, `LastModifiedBy`, `DelegateUser` in audit trail entries) are kept readable: they identify administrators acting in Setup, which is exactly what an audit trail is for.
+- Local runs (outside CI) are not anonymized, so locally generated report files stay directly analyzable.
+- Other notification channels (Slack, Teams, Email) are never anonymized.
+
+Override the default behavior with the env var **NOTIF_API_ANONYMIZE**:
+
+```sh
+NOTIF_API_ANONYMIZE=false   # send raw values even in CI
+NOTIF_API_ANONYMIZE=true    # anonymize even in local runs
+```
+
+Note: anonymization only applies to new entries. Entries sent before enabling it keep their original values until your logs retention expires (you can use the Loki delete API to purge them earlier).
+
 ## Troubleshooting
 
 If you want to see the content of the API notifications in execution logs, you can define `NOTIF_API_DEBUG=true`
@@ -275,6 +296,8 @@ Optionally , you can look in the logs, you should see \[ApiProvider\] and \[ApiM
 ![](assets/images/grafana-config-13.jpg)
 
 ### Download sfdx-hardis dashboards
+
+> New: a v2 dashboard set (**Org Monitoring by sfdx-hardis**) with fleet overview, trends, forecasts, health score and a ready-to-enable alert pack is available. See [Grafana Dashboards v2](salesforce-monitoring-grafana-v2.md).
 
 Download all sfdx-hardis Dashboard JSON files from [this sfdx-hardis repo folder](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/docs/grafana/dashboards)
 

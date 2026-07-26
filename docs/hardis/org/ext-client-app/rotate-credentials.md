@@ -56,18 +56,18 @@ In agent mode:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                                                                                                                         | Default | Required | Options |
-|:------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                                                                                                                                               |         |          |         |
-| consumer-key      | option  | Consumer key of the credential to rotate, used when the app has more than one consumer (required in CI or agent mode in that case).                                                                 |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                                                                                     |         |          |         |
-| flags-dir         | option  | undefined                                                                                                                                                                                           |         |          |         |
-| json              | boolean | Format output as json.                                                                                                                                                                              |         |          |         |
-| name<br/>-n       | option  | Developer name of the External Client App to rotate. Required in CI or agent mode.                                                                                                                  |         |          |         |
-| revoke-previous   | boolean | Immediately revoke the previous credentials after rotation instead of keeping the 30-day overlap. Use for security (e.g. a leaked secret): integrations still using the old credentials will break. |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                                                                                                                       |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                                                                                                                           |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                           |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|consumer-key|option|Consumer key of the credential to rotate, used when the app has more than one consumer (required in CI or agent mode in that case).||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|name<br/>-n|option|Developer name of the External Client App to rotate. Required in CI or agent mode.||||
+|revoke-previous|boolean|Immediately revoke the previous credentials after rotation instead of keeping the 30-day overlap. Use for security (e.g. a leaked secret): integrations still using the old credentials will break.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

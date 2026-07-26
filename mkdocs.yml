@@ -256,6 +256,7 @@ nav:
           - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
       - Monitoring Backends:
           - Grafana: salesforce-ci-cd-setup-integration-api.md
+          - Grafana Dashboards v2: salesforce-monitoring-grafana-v2.md
           - Vector.dev: salesforce-monitoring-config-vector.md
   - Commands Reference:
       - All commands: commands.md

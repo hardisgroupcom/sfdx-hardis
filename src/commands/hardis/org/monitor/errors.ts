@@ -461,6 +461,34 @@ In agent mode:
       .slice(0, MonitorErrors.maxTopBreakdownItems);
   }
 
+  protected buildApexCountsByOperation(): Array<{ apexName: string; count: number }> {
+    const countMap = new Map<string, number>();
+
+    for (const record of this.apexErrors) {
+      const apexName = (record.Operation ?? '').trim();
+      if (!apexName) {
+        continue;
+      }
+      countMap.set(apexName, (countMap.get(apexName) ?? 0) + 1);
+    }
+
+    return Array.from(countMap.entries())
+      .map(([apexName, count]) => ({ apexName, count }))
+      .sort((a, b) => b.count - a.count || a.apexName.localeCompare(b.apexName))
+      .slice(0, MonitorErrors.maxTopBreakdownItems);
+  }
+
+  protected countDistinctImpactedUsers(records: any[]): number {
+    const users = new Set<string>();
+    for (const record of records) {
+      const userKey = record.UserName || record.UserEmail || record.UserId;
+      if (userKey) {
+        users.add(userKey);
+      }
+    }
+    return users.size;
+  }
+
   protected buildFlowCountsByStep(): Array<{ flowStep: string; count: number }> {
     const countMap = new Map<string, number>();
 
@@ -605,6 +633,7 @@ In agent mode:
 
   protected buildApexNotification(orgMarkdown: string, notifButtons: any[]): NotifMessage {
     const count = this.apexErrorsTotalCount;
+    const topFailingApex = this.buildApexCountsByOperation();
     const notifSeverity: NotifSeverity = count > 0 ? 'error' : 'success';
     const notifText =
       count > 0
@@ -621,10 +650,13 @@ In agent mode:
       logElements: this.apexErrors,
       metrics: {
         ApexErrors: count,
+        ApexErrorsImpactedUsers: this.countDistinctImpactedUsers(this.apexErrors),
+        TopFailingApexCount: topFailingApex[0]?.count ?? 0,
       },
       data: {
         metric: count,
         apexErrors: count,
+        topFailingApex: topFailingApex,
       },
     };
   }
@@ -650,6 +682,7 @@ In agent mode:
       logElements: this.flowErrors,
       metrics: {
         FlowErrors: count,
+        FlowErrorsImpactedUsers: this.countDistinctImpactedUsers(this.flowErrors),
         TopFailingFlowCount: topFailingFlows[0]?.count ?? 0,
         TopFailingStepCount: topFailingSteps[0]?.count ?? 0,
       },

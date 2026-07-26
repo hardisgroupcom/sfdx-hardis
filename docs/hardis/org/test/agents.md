@@ -13,7 +13,7 @@ Run Agentforce agent tests (AiEvaluationDefinition metadata) in a Salesforce org
 - **CSV report:** Generates a report listing every assertion with its expected and actual values.
 - **Notifications:** Sends alerts to Grafana, Slack and MS Teams when agent tests fail.
 
-Use `--tests` to run only specific agent tests (comma-separated API names) instead of all of them.
+Use `--tests` to run only specific agent tests (comma-separated API names) instead of all of them. In interactive mode (not `--agent`, not in CI), a prompt lets you unselect the agent tests you want to skip, with all of them selected by default.
 
 This command requires the `@salesforce/plugin-agent` Salesforce CLI plugin. Install it with `sf plugins install @salesforce/plugin-agent`.
 
@@ -40,17 +40,17 @@ In agent mode the command runs fully automatically. There are no interactive pro
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                             | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                                                   |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                         |         |          |         |
-| flags-dir         | option  | undefined                                                                                               |         |          |         |
-| json              | boolean | Format output as json.                                                                                  |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                       |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                           |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                               |         |          |         |
-| tests<br/>-t      | option  | Comma-separated list of agent test API names to run. Runs all tests found in the org when not provided. |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                               |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|tests<br/>-t|option|Comma-separated list of agent test API names to run. Runs all tests found in the org when not provided.||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

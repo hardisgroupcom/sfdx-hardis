@@ -66,14 +66,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-| Name         |  Type   | Description                                                                    | Default | Required |     Options     |
-|:-------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:---------------:|
-| agent        | boolean | Run in non-interactive mode for agents and automation                          |         |          |                 |
-| commit       | boolean | If true, a commit will be performed after the retrofit                         |         |          |                 |
-| commitmode   | option  | Defines if we commit all retrieved updates, or all updates including creations | updated |          | updated<br/>all |
-| debug<br/>-d | boolean | Activate debug mode (more logs)                                                |         |          |                 |
-| flags-dir    | option  | undefined                                                                      |         |          |                 |
-| json         | boolean | Format output as json.                                                         |         |          |                 |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|commit|boolean|If true, a commit will be performed after the retrofit||||
+|commitmode|option|Defines if we commit all retrieved updates, or all updates including creations|updated||updated<br/>all|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
 |productionbranch|option|Name of the git branch corresponding to the org we want to perform the retrofit on.
 Can be defined in productionBranch property in .sfdx-hardis.yml||||
 |push|boolean|If true, a push will be performed after the retrofit||||

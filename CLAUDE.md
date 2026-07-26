@@ -26,6 +26,12 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 3. `/implement` -- Implement the changes in source code
 4. `/test` -- Build, lint, and run tests
 
+## Monitoring and Grafana Skills
+
+- `monitoring-notifications` skill: load it whenever a monitoring command, notification type, routing threshold, metric key, or logElements shape is created, updated, or deleted.
+- `grafana-dashboards` skill: rules and workflow for the "Org Monitoring by sfdx-hardis" v2 dashboards (`docs/grafana/dashboards-v2`). Load it for any dashboard or alert-rule work, and for every indicator evolution: **any change to a monitoring indicator must also handle its impact on the Grafana dashboards.**
+- Generic Grafana skills (`dashboarding`, `promql`, `loki`, `alerting-irm`) are vendored in `.claude/skills/` from [grafana/skills](https://github.com/grafana/skills) via `npx skills` (tracked in `skills-lock.json`, refresh with `npx skills update`). They are agent-agnostic: any coding agent reading `.claude/skills/` can use them.
+
 ## Behavior Preferences
 
 - Always continue iterating until the task is complete -- do not ask to continue.
