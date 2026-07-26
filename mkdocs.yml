@@ -304,6 +304,8 @@ nav:
           - community update: hardis/org/community/update.md
           - configure data: hardis/org/configure/data.md
           - configure files: hardis/org/configure/files.md
+          - configure generic-prompt: hardis/org/configure/generic-prompt.md
+          - configure grafana-dashboards: hardis/org/configure/grafana-dashboards.md
           - configure monitoring: hardis/org/configure/monitoring.md
           - connect: hardis/org/connect.md
           - create: hardis/org/create.md

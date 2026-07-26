@@ -16,7 +16,7 @@ What it brings:
 - **Trends and averages** on every indicator (7d/30d averages, week-over-week comparisons)
 - **Forecasts**: projected date when each org limit or storage will be reached (30-day linear trend)
 - A weekly **org health score** (0-100) with reliability / limits / security / tests / debt sub-scores
-- **DORA metrics** panels (deployment frequency, lead time, change failure rate, MTTR)
+- **DORA metrics** panels (deployment frequency, lead time, change failure rate, MTTR, rework rate)
 - **Drill-down navigation**: every number is clickable and leads to its detail view
 - A ready-to-enable **alert pack** (shipped paused, so it costs nothing until you activate it)
 - **No personal data**: combined with [API data anonymization](salesforce-ci-cd-setup-integration-api.md#data-anonymization), dashboards display counts, aggregates and pseudonyms, never readable usernames
@@ -140,8 +140,6 @@ Single-org overview, the hub for one org.
 
 ### 04 - DevOps & DORA
 
-_(screenshot coming soon)_
-
 - Deployment counts, success rates, average duration, validation success rate
 - Deployments per week and per-deployment duration trends
 - **DORA metrics** (deployment frequency, lead time, change failure rate, MTTR, rework rate): requires scheduling [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/)
@@ -176,13 +174,9 @@ _(screenshot coming soon)_
 
 The generic drill-down: pick any org and any notification type, see the metric evolution and the detailed rows of the latest run. Every indicator lands here even when it has no dedicated panel.
 
-_(screenshot coming soon)_
-
 ### 90/91/92 - Search
 
 Find orgs across the fleet by identifier fragment, by held license, or by installed package. Results link to each org's dashboard.
-
-_(screenshot coming soon)_
 
 ## The org health score
 
@@ -202,7 +196,9 @@ Health score panels use an 8-day lookback so the weekly value displays all week.
 
 ## Data freshness and silent orgs
 
-`hardis:org:monitor:all` always sends a `MONITORING_SUMMARY` notification at the end of each run, which doubles as a daily heartbeat per org. The Fleet Overview compares recent activity (36h) against the last 7 days to list orgs whose monitoring job stopped running: a silent org means broken monitoring, not a healthy org.
+`hardis:org:monitor:all` always sends a `MONITORING_SUMMARY` notification at the end of each run, which doubles as a daily heartbeat per org. The plain heartbeat has severity `log`, so it only reaches observability backends: your Slack/Teams/email channels are not spammed daily (when an AI executive summary is generated, it is sent with severity `info` and reaches them). The Fleet Overview compares recent activity (36h) against the last 7 days to list orgs whose monitoring job stopped running: a silent org means broken monitoring, not a healthy org.
+
+The summary also carries a `ChannelsFailed` metric: notification channel failures (expired Slack token, wrong email configuration...) are logged as warnings without failing the monitoring jobs, so chart or alert on `ChannelsFailed_metric` to detect them.
 
 ## Import the alerts (optional)
 
@@ -210,18 +206,16 @@ The alert pack lives in [docs/grafana/alerts-v2](https://github.com/hardisgroupc
 
 | Alert                                 | Fires when                                                            |
 |---------------------------------------|-----------------------------------------------------------------------|
-| Org limit above 90%                   | Any limit of any org exceeds 90% usage                                |
-| Storage projected full within 14 days | Data or File storage trends toward 100% (30-day linear regression)    |
-| Apex/Flow error spike                 | Daily errors exceed twice the 7-day average                           |
-| Metadata backup failed                | A BACKUP notification with error severity was received                |
-| Org monitoring is silent              | An org sent nothing for 36 hours (its monitoring job probably failed) |
-| Health score degraded                 | Score below 60, or dropped by more than 20 points                     |
+| Salesforce org limit above 90%                    | Any limit of any org exceeds 90% usage                                |
+| Salesforce storage projected full within 14 days  | Data or File storage trends toward 100% (30-day linear regression)    |
+| Salesforce Apex/Flow error spike                  | Daily errors exceed twice the 7-day average                           |
+| Salesforce metadata backup failed                 | A BACKUP notification with error severity was received                |
+| Salesforce org monitoring is silent               | An org sent nothing for 36 hours (its monitoring job probably failed) |
+| Salesforce org health score degraded              | Score below 60, or dropped by more than 20 points                     |
 
 All rules are **paused by default** (`isPaused: true`), so importing them triggers no evaluation and no cost on Grafana Cloud free tier.
 
 Once imported, the rules appear in **Alerting** -> **Alert rules** (grouped under the dashboards folder), and in the **Alert rules** tab of the dashboards folder itself.
-
-_(screenshot coming soon)_
 
 The easiest way to import them is the automated installer (the service account token then also needs alert provisioning permissions):
 

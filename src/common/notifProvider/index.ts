@@ -62,6 +62,7 @@ export abstract class NotifProvider {
     }
     // Resolve the effective per-channel routing config for this notification type once
     const effectiveConfig = await getEffectiveNotificationConfig(notifMessage.type);
+    const failedChannels: string[] = [];
     for (const notifProvider of notifProviders) {
       uxLog("log", this, c.grey(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
       // Skip if matching NOTIFICATIONS_DISABLE except for Api
@@ -109,6 +110,7 @@ export abstract class NotifProvider {
         try {
           await notifProvider.postNotification(notifMessage);
         } catch (e) {
+          failedChannels.push(notifProvider.getLabel());
           uxLog(
             "warning",
             this,
@@ -119,10 +121,12 @@ export abstract class NotifProvider {
         uxLog("error", this, c.grey(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
       }
     }
-    // Write notification to file if monitoring aggregation is active
+    // Write notification to file if monitoring aggregation is active. Failed channels are
+    // persisted so monitor:all can expose a ChannelsFailed metric: channel failures no
+    // longer fail commands, so they must stay detectable in observability backends.
     const notifOutputDir = process.env.MONITORING_NOTIF_OUTPUT_DIR;
     if (notifOutputDir) {
-      await writeMonitoringNotifFile(notifOutputDir, notifMessage);
+      await writeMonitoringNotifFile(notifOutputDir, notifMessage, failedChannels);
     }
   }
 

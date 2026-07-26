@@ -38,8 +38,31 @@ const hook: Hook<'init'> = async (options) => {
     const logFileName = (new Date().toJSON().slice(0, 19) + '-' + commandId + '.log').replace(/:/g, '-');
     const hardisLogFile = path.resolve(path.join(commandsLogFolder, logFileName));
     globalThis.hardisLogFileStream = fs.createWriteStream(hardisLogFile, { flags: 'a' });
-    globalThis.hardisLogFileStream.write(commandId + ' ' + globalThis.processArgv.join(' ') + '\n');
+    globalThis.hardisLogFileStream.write(commandId + ' ' + maskSecretArgs(globalThis.processArgv).join(' ') + '\n');
   }
 };
+
+// Values of secret-carrying flags (--grafana-token, --password, --client-secret=xxx, ...)
+// must not land in the persisted command log
+function maskSecretArgs(argv: string[]): string[] {
+  const secretFlagRegex = /^--?[\w-]*(token|password|secret|api-?key)[\w-]*$/i;
+  const masked: string[] = [];
+  let previousIsSecretFlag = false;
+  for (const arg of argv) {
+    if (previousIsSecretFlag) {
+      masked.push('***');
+      previousIsSecretFlag = false;
+      continue;
+    }
+    const inlineMatch = /^(--?[\w-]*(?:token|password|secret|api-?key)[\w-]*)=(.*)$/i.exec(arg);
+    if (inlineMatch) {
+      masked.push(`${inlineMatch[1]}=***`);
+      continue;
+    }
+    previousIsSecretFlag = secretFlagRegex.test(arg);
+    masked.push(arg);
+  }
+  return masked;
+}
 
 export default hook;

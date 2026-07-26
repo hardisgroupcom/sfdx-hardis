@@ -32,7 +32,7 @@ groups:
         labels:
           source: sfdx-hardis
         annotations:
-          summary: 'Org {{ $labels.orgIdentifier }} has at least one limit above 90% usage'
+          summary: 'Org {{ $labels.orgIdentifier }}: limit {{ $labels.limit }} is above 90% usage'
         data:
           - refId: A
             relativeTimeRange:
@@ -43,7 +43,8 @@ groups:
               refId: A
               instant: true
               range: false
-              expr: 'max by (orgIdentifier) (last_over_time({__name__=~".+_percent", source="sfdx-hardis"}[2d]))'
+              # The "limit" label carries the limit name so the alert says which limit fired
+              expr: 'max by (orgIdentifier, limit) (label_replace(last_over_time({__name__=~".+_percent", source="sfdx-hardis"}[2d]), "limit", "$1", "__name__", "(.+)_percent"))'
           - refId: B
             datasourceUid: __expr__
             model:
@@ -85,12 +86,19 @@ groups:
               refId: A
               instant: true
               range: false
+              # A returns the worst days-until-full value per org (unfiltered), and C fires
+              # on "lt 14": an org already at or above 100% yields 0 or a negative value and
+              # still fires. Shrinking storage is clamped to a tiny positive growth, which
+              # yields a huge days value and never fires. The "storage" label prevents the
+              # data/file series from shadowing each other in the "or" union.
               expr: >-
-                ((100 - last_over_time(DataStorageMB_percent{source="sfdx-hardis"}[2d]))
-                / clamp_min(deriv(DataStorageMB_percent{source="sfdx-hardis"}[30d]) * 86400, 0.000001) < 14)
+                min by (orgIdentifier) (
+                label_replace((100 - last_over_time(DataStorageMB_percent{source="sfdx-hardis"}[2d]))
+                / clamp_min(deriv(DataStorageMB_percent{source="sfdx-hardis"}[30d]) * 86400, 0.000001), "storage", "data", "", "")
                 or
-                ((100 - last_over_time(FileStorageMB_percent{source="sfdx-hardis"}[2d]))
-                / clamp_min(deriv(FileStorageMB_percent{source="sfdx-hardis"}[30d]) * 86400, 0.000001) < 14)
+                label_replace((100 - last_over_time(FileStorageMB_percent{source="sfdx-hardis"}[2d]))
+                / clamp_min(deriv(FileStorageMB_percent{source="sfdx-hardis"}[30d]) * 86400, 0.000001), "storage", "file", "", "")
+                )
           - refId: B
             datasourceUid: __expr__
             model:
@@ -106,8 +114,8 @@ groups:
               expression: B
               conditions:
                 - evaluator:
-                    params: [0]
-                    type: gt
+                    params: [14]
+                    type: lt
       # ----------------------------------------------------------------------
       # 3. Apex + Flow error spike (more than 2x the 7-day average + 5)
       # ----------------------------------------------------------------------
@@ -132,12 +140,13 @@ groups:
               refId: A
               instant: true
               range: false
+              # Single multi-metric selector summed per org: an org missing one of the two
+              # series (e.g. Flow errors never sent) is still covered by the other, unlike a
+              # vector addition which silently drops it. [2d] lookback tolerates cron drift.
               expr: >-
-                (sum by (orgIdentifier) (last_over_time(ApexErrors_metric{source="sfdx-hardis"}[1d]))
-                + sum by (orgIdentifier) (last_over_time(FlowErrors_metric{source="sfdx-hardis"}[1d])))
+                sum by (orgIdentifier) (last_over_time({__name__=~"(ApexErrors|FlowErrors)_metric", source="sfdx-hardis"}[2d]))
                 >
-                ((2 * (sum by (orgIdentifier) (avg_over_time(ApexErrors_metric{source="sfdx-hardis"}[7d]))
-                + sum by (orgIdentifier) (avg_over_time(FlowErrors_metric{source="sfdx-hardis"}[7d])))) + 5)
+                ((2 * sum by (orgIdentifier) (avg_over_time({__name__=~"(ApexErrors|FlowErrors)_metric", source="sfdx-hardis"}[7d]))) + 5)
           - refId: B
             datasourceUid: __expr__
             model:
@@ -264,11 +273,15 @@ groups:
               refId: A
               instant: true
               range: false
+              # Each branch emits a 1 marker per firing org (the "* 0 + 1" turns the filtered
+              # value into a constant), so a score of exactly 0 still fires the "< 60" branch.
+              # The drop branch compares the latest weekly sample with the previous week's
+              # sample ([8d] offset 7d), not two windows containing the same sample.
               expr: >-
-                (last_over_time(HealthScore_metric{source="sfdx-hardis"}[8d]) < 60)
+                ((max by (orgIdentifier) (last_over_time(HealthScore_metric{source="sfdx-hardis"}[8d])) < 60) * 0 + 1)
                 or
-                ((last_over_time(HealthScore_metric{source="sfdx-hardis"}[8d] offset 1d)
-                - last_over_time(HealthScore_metric{source="sfdx-hardis"}[8d])) > 20)
+                (((max by (orgIdentifier) (last_over_time(HealthScore_metric{source="sfdx-hardis"}[8d] offset 7d))
+                - max by (orgIdentifier) (last_over_time(HealthScore_metric{source="sfdx-hardis"}[8d]))) > 20) * 0 + 1)
           - refId: B
             datasourceUid: __expr__
             model:

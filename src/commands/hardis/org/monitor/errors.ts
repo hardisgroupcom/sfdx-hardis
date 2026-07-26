@@ -100,7 +100,11 @@ In agent mode:
   protected days = 1;
 
   protected apexErrors: any[] = [];
+  // Untruncated list: metrics (impacted users, top failing Apex) must be computed on the
+  // full data set so they stay consistent with ApexErrors (the untruncated total)
+  protected apexErrorsAll: any[] = [];
   protected flowErrors: any[] = [];
+  protected flowErrorsAll: any[] = [];
   protected apexErrorsTotalCount = 0;
   protected flowErrorsTotalCount = 0;
 
@@ -222,6 +226,7 @@ In agent mode:
     });
     await this.resolveEventLogUsernames(conn);
     this.apexErrors = this.deduplicateByRecordId(this.apexErrors);
+    this.apexErrorsAll = this.apexErrors;
     this.apexErrorsTotalCount = this.apexErrors.length;
     if (this.apexErrors.length > MonitorErrors.maxProcessedErrors) {
       this.apexErrors = this.apexErrors.slice(0, MonitorErrors.maxProcessedErrors);
@@ -379,6 +384,7 @@ In agent mode:
       };
     });
     this.flowErrors = this.deduplicateByRecordId(this.flowErrors);
+    this.flowErrorsAll = this.flowErrors;
     this.flowErrorsTotalCount = this.flowErrors.length;
     if (this.flowErrors.length > MonitorErrors.maxProcessedErrors) {
       this.flowErrors = this.flowErrors.slice(0, MonitorErrors.maxProcessedErrors);
@@ -447,7 +453,7 @@ In agent mode:
   protected buildFlowCountsByOperation(): Array<{ flowName: string; count: number }> {
     const countMap = new Map<string, number>();
 
-    for (const record of this.flowErrors) {
+    for (const record of this.flowErrorsAll) {
       const flowName = this.normalizeFlowOperation(record.Operation);
       if (!flowName) {
         continue;
@@ -464,7 +470,7 @@ In agent mode:
   protected buildApexCountsByOperation(): Array<{ apexName: string; count: number }> {
     const countMap = new Map<string, number>();
 
-    for (const record of this.apexErrors) {
+    for (const record of this.apexErrorsAll) {
       const apexName = (record.Operation ?? '').trim();
       if (!apexName) {
         continue;
@@ -492,7 +498,7 @@ In agent mode:
   protected buildFlowCountsByStep(): Array<{ flowStep: string; count: number }> {
     const countMap = new Map<string, number>();
 
-    for (const record of this.flowErrors) {
+    for (const record of this.flowErrorsAll) {
       const flowStep = (record.ErrorStep ?? '').trim();
       if (!flowStep) {
         continue;
@@ -650,7 +656,7 @@ In agent mode:
       logElements: this.apexErrors,
       metrics: {
         ApexErrors: count,
-        ApexErrorsImpactedUsers: this.countDistinctImpactedUsers(this.apexErrors),
+        ApexErrorsImpactedUsers: this.countDistinctImpactedUsers(this.apexErrorsAll),
         TopFailingApexCount: topFailingApex[0]?.count ?? 0,
       },
       data: {
@@ -682,7 +688,7 @@ In agent mode:
       logElements: this.flowErrors,
       metrics: {
         FlowErrors: count,
-        FlowErrorsImpactedUsers: this.countDistinctImpactedUsers(this.flowErrors),
+        FlowErrorsImpactedUsers: this.countDistinctImpactedUsers(this.flowErrorsAll),
         TopFailingFlowCount: topFailingFlows[0]?.count ?? 0,
         TopFailingStepCount: topFailingSteps[0]?.count ?? 0,
       },

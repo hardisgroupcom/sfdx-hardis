@@ -51,10 +51,20 @@ export interface AlertRuleGroupPayload {
   rules: any[];
 }
 
+export const GRAFANA_HTTP_TIMEOUT_MS = 30000;
+
 export function normalizeGrafanaUrl(url: string): string {
   let normalized = url.trim().replace(/\/+$/, '');
   if (!/^https?:\/\//i.test(normalized)) {
     normalized = 'https://' + normalized;
+  }
+  try {
+    const parsed = new URL(normalized);
+    if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname) {
+      throw new Error('invalid');
+    }
+  } catch {
+    throw new Error(`Invalid Grafana URL: ${url}`);
   }
   return normalized;
 }
@@ -62,6 +72,7 @@ export function normalizeGrafanaUrl(url: string): string {
 export function createGrafanaClient(grafanaUrl: string, token: string): AxiosInstance {
   return axios.create({
     baseURL: normalizeGrafanaUrl(grafanaUrl),
+    timeout: GRAFANA_HTTP_TIMEOUT_MS,
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -119,6 +130,9 @@ export function buildAlertRuleGroups(
     .join(lokiUid);
   const parsed: any = yaml.load(substituted);
   const groups = parsed?.groups || [];
+  if (groups.length === 0 || groups.every((group: any) => !(group.rules?.length > 0))) {
+    throw new Error('No alert rule group found in the alert pack YAML');
+  }
   return groups.map((group: any) => ({
     name: group.name,
     interval: parseDurationSeconds(group.interval || '6h'),
@@ -133,7 +147,10 @@ export function buildAlertRuleGroups(
 export async function listDashboardFiles(ref: string): Promise<{ files: DashboardFileRef[]; fromFallback: boolean }> {
   try {
     const listUrl = `https://api.github.com/repos/${GRAFANA_V2_REPO}/contents/${GRAFANA_V2_DASHBOARDS_PATH}?ref=${encodeURIComponent(ref)}`;
-    const response = await axios.get(listUrl, { headers: { Accept: 'application/vnd.github+json' } });
+    const response = await axios.get(listUrl, {
+      timeout: GRAFANA_HTTP_TIMEOUT_MS,
+      headers: { Accept: 'application/vnd.github+json' },
+    });
     const files = (response.data || [])
       .filter((entry: any) => entry?.name?.endsWith('.json') && entry?.download_url)
       .map((entry: any) => ({ name: entry.name, downloadUrl: entry.download_url }));
@@ -154,7 +171,15 @@ export async function listDashboardFiles(ref: string): Promise<{ files: Dashboar
 
 export async function fetchGitHubRawFile(ref: string, filePath: string): Promise<string> {
   const url = `https://raw.githubusercontent.com/${GRAFANA_V2_REPO}/${ref}/${filePath}`;
-  const response = await axios.get(url, { responseType: 'text', transformResponse: [(data) => data] });
+  return fetchRawUrl(url);
+}
+
+export async function fetchRawUrl(url: string): Promise<string> {
+  const response = await axios.get(url, {
+    timeout: GRAFANA_HTTP_TIMEOUT_MS,
+    responseType: 'text',
+    transformResponse: [(data) => data],
+  });
   return response.data;
 }
 
@@ -163,13 +188,14 @@ export async function getGrafanaDatasources(client: AxiosInstance): Promise<Graf
   return response.data || [];
 }
 
-// Idempotent: returns the folder if it already exists
+// Idempotent: returns the folder if it already exists (409/412 = uid or title conflict).
+// A 400 is NOT swallowed: it means the create request itself is invalid.
 export async function ensureGrafanaFolder(client: AxiosInstance, uid: string, title: string): Promise<any> {
   try {
     const response = await client.post('/api/folders', { uid, title });
     return response.data;
   } catch (e: any) {
-    if ([400, 409, 412].includes(e?.response?.status)) {
+    if ([409, 412].includes(e?.response?.status)) {
       const existing = await client.get(`/api/folders/${uid}`);
       return existing.data;
     }
@@ -179,9 +205,10 @@ export async function ensureGrafanaFolder(client: AxiosInstance, uid: string, ti
 
 // Idempotent thanks to overwrite: true + stable dashboard uids: re-running upgrades in place
 export async function importGrafanaDashboard(client: AxiosInstance, dashboard: any, folderUid: string): Promise<any> {
-  delete dashboard.id;
+  const payload = { ...dashboard };
+  delete payload.id;
   const response = await client.post('/api/dashboards/db', {
-    dashboard,
+    dashboard: payload,
     folderUid,
     overwrite: true,
     message: 'Imported by sfdx-hardis',
@@ -212,4 +239,8 @@ export function grafanaApiErrorMessage(e: any): string {
   const status = e?.response?.status;
   const detail = e?.response?.data?.message || e?.response?.data?.error || e?.message || String(e);
   return status ? `HTTP ${status}: ${detail}` : detail;
+}
+
+export function isGrafanaAuthError(e: any): boolean {
+  return [401, 403].includes(e?.response?.status);
 }

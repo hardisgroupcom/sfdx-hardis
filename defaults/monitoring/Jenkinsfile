@@ -47,6 +47,8 @@ pipeline {
 
     environment {
         FORCE_COLOR = '1'
+        // Jenkins does not set CI: sfdx-hardis relies on it (non-interactive mode, API data anonymization)
+        CI = 'true'
         // Normalize branch name: strip the "origin/" prefix added by Jenkins
         BRANCH_NAME_CLEAN = "${env.BRANCH_NAME ?: env.GIT_BRANCH?.replaceAll('^origin/', '')}"
         CI_COMMIT_REF_NAME = "${BRANCH_NAME_CLEAN}"

@@ -72,7 +72,7 @@ You can wire any combination of the following targets - they are fully independe
 - [Slack instructions](salesforce-ci-cd-setup-integration-slack.md) - post to one or several Slack channels (global, branch-scoped, errors-only)
 - [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md) - post to Teams channels via incoming webhooks
 - [Email instructions](salesforce-ci-cd-setup-integration-email.md) - send to any recipient list, with per-notification-type overrides
-- [API / Grafana instructions](salesforce-ci-cd-setup-integration-api.md) - stream logs and Prometheus metrics to Grafana Loki, Prometheus, or any HTTP endpoint (used to build [Grafana dashboards](salesforce-ci-cd-setup-integration-api.md#grafana-setup))
+- [API / Grafana instructions](salesforce-ci-cd-setup-integration-api.md) - stream logs and Prometheus metrics to Grafana Loki, Prometheus, or any HTTP endpoint (used to build the [Org Monitoring by sfdx-hardis Grafana dashboards](salesforce-monitoring-grafana-v2.md))
 
 sfdx-hardis groups these targets into three channels, and you can configure each channel independently per notification type:
 

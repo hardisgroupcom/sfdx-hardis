@@ -74,7 +74,10 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]): Pro
       const answerKey = Object.keys(questionAnswer)[0];
       const answerValue = questionAnswer[answerKey];
       const answerLabel = getAnswerLabel(answerValue, question.choices);
-      if (JSON.stringify(answerLabel).toLowerCase().includes("token")) {
+      // A secret value rarely contains the word "token" itself, so also detect
+      // sensitive answers from the question wording (token, password, secret, api key)
+      const sensitiveQuestion = /token|password|secret|api.?key/i.test(question.message || '');
+      if (sensitiveQuestion || JSON.stringify(answerLabel).toLowerCase().includes("token")) {
         uxLog("log", this, c.grey(t('selectionHiddenBecauseItContainsSensitiveInformation')));
       } else {
         uxLog("log", this, c.grey(answerLabel));

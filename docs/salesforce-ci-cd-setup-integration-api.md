@@ -300,8 +300,7 @@ Optionally , you can look in the logs, you should see \[ApiProvider\] and \[ApiM
 Your Grafana now receives sfdx-hardis logs and metrics. Import the dashboards:
 
 - **[Org Monitoring by sfdx-hardis (Dashboards v2)](salesforce-monitoring-grafana-v2.md)** - the current set: fleet overview, trends and averages, limit forecasts, org health score, drill-down navigation, and a ready-to-enable alert pack
+- [Legacy Grafana Dashboards (v1)](salesforce-monitoring-grafana-v1-legacy.md) - frozen, kept for existing installations
 
 ![Fleet Overview](assets/images/grafana-v2-fleet.png)
-
-- [Legacy Grafana Dashboards (v1)](salesforce-monitoring-grafana-v1-legacy.md) - frozen, kept for existing installations
 

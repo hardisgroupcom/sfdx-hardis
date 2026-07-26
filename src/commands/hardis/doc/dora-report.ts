@@ -1428,7 +1428,17 @@ In agent mode:
         logElements: coreMetrics,
         data: {
           periodDays,
-          metrics: Object.fromEntries(coreMetrics.map((m) => [m.name, { value: m.value, level: m.classification.level }])),
+          // Same stable keys as `metrics` below so Loki and Prometheus consumers see
+          // consistent identifiers; the translated display name stays in `label`
+          metrics: Object.fromEntries(
+            ([
+              ['DoraDeploymentFrequency', df],
+              ['DoraLeadTimeDays', lt],
+              ['DoraChangeFailureRatePercent', cfRate],
+              ['DoraMttrHours', mttr],
+              ['DoraReworkRatePercent', rework],
+            ] as Array<[string, any]>).map(([key, m]) => [key, { label: m.name, value: m.value, level: m.classification.level }])
+          ),
         },
         // Stable metric keys (not the translated display names): metric names must be
         // locale-independent and contain no spaces (InfluxDB line protocol / Prometheus)

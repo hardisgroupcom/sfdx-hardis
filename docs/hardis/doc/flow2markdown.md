@@ -48,19 +48,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                    | Default | Required | Options |
-|:------------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                          |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                |         |          |         |
-| flags-dir         | option  | undefined                                                                      |         |          |         |
-| inputfile<br/>-x  | option  | Path to Flow metadata file. If not specified, the command will prompt the user |         |          |         |
-| json              | boolean | Format output as json.                                                         |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output markdown file. Must end with .md             |         |          |         |
-| pdf               | boolean | Also generate the documentation in PDF format                                  |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                  |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                      |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                      |         |          |         |
-| with-history      | boolean | Generate a markdown file with the history diff of the Flow                     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|inputfile<br/>-x|option|Path to Flow metadata file. If not specified, the command will prompt the user||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output markdown file. Must end with .md||||
+|pdf|boolean|Also generate the documentation in PDF format||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+|with-history|boolean|Generate a markdown file with the history diff of the Flow||||
 
 ## Examples
 

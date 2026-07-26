@@ -23,11 +23,12 @@ const PSEUDONYM_PREFIX = 'user_';
 const PSEUDONYM_HASH_LENGTH = 10;
 
 export function shouldAnonymizeApiData(): boolean {
-  const override = getEnvVar('NOTIF_API_ANONYMIZE');
-  if (override === 'true') {
+  // Tolerant parsing: users set true/True/TRUE/1 or false/False/0 depending on their CI tooling
+  const override = (getEnvVar('NOTIF_API_ANONYMIZE') || '').trim().toLowerCase();
+  if (['true', '1', 'yes'].includes(override)) {
     return true;
   }
-  if (override === 'false') {
+  if (['false', '0', 'no'].includes(override)) {
     return false;
   }
   return isCI;
@@ -127,7 +128,10 @@ function scrubText(text: string, replacementMap: Map<string, string>): string {
   const originals = [...replacementMap.keys()].sort((a, b) => b.length - a.length);
   for (const original of originals) {
     if (result.includes(original)) {
-      result = result.split(original).join(replacementMap.get(original) || original);
+      // Word-boundary match so a user named "Support" does not mangle "Support_Flow"
+      // or unrelated sentences containing the same word
+      const escaped = original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      result = result.replace(new RegExp(`(?<![\\w@.])${escaped}(?![\\w@.])`, 'g'), replacementMap.get(original) || original);
     }
   }
   return result;

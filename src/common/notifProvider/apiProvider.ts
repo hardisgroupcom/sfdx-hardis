@@ -150,7 +150,7 @@ export class ApiProvider extends NotifProviderRoot {
     const monitoringKeyOverride = getEnvVar("SFDX_HARDIS_MONITORING_KEY") || getEnvVar("MONITORING_KEY");
     const orgIdentifier = monitoringKeyOverride
       ? monitoringKeyOverride
-      : (conn.instanceUrl) ? conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__") : currentGitBranch || "ERROR apiProvider";
+      : (conn?.instanceUrl) ? conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__") : currentGitBranch || "ERROR apiProvider";
     const notifKey = orgIdentifier + "!!" + notifMessage.type;
     this.payload = {
       source: "sfdx-hardis",
