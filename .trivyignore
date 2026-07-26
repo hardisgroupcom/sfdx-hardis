@@ -299,3 +299,10 @@ CVE-2026-16221
 # fast-xml-parser: repeated DOCTYPE declarations reset the entity expansion counters, so a crafted XML document can blow past the expansion limits (CPU / memory exhaustion, DoS). Fixed in 5.10.1.
 # sfdx-hardis own tree is already pinned to fast-xml-parser 5.10.1 in yarn.lock; the residual 5.9.3 in the image comes from the npm-shrinkwrapped @salesforce/cli, which our yarn resolutions cannot reach, so not remediable from this repo. DoS only, and the XML parsed comes from Salesforce APIs and from the repository metadata, not from untrusted sources. Added 2026-07-23.
 GHSA-8r6m-32jq-jx6q
+
+# https://avd.aquasec.com/nvd/cve-2026-14257
+# brace-expansion: expand() caps the number of results but not their length, so chaining many brace groups exhausts memory and crashes Node with an uncatchable OOM (DoS, HIGH).
+# Only fixed in brace-expansion 5.0.8; no 1.x or 2.x backport exists (latest published are 1.1.16 and 2.1.2, both still affected). The vulnerable copies come from minimatch 3.1.5 (brace-expansion ^1.1.7) and minimatch 5.1.9 / 9.0.x (brace-expansion ^2.0.x), which are the latest releases of those lines and still pin the affected ranges. Only minimatch 10.x moved to brace-expansion 5.x.
+# Forcing 5.0.8 through yarn resolutions is not possible: v5 is a breaking change that exports { expand } instead of a callable default, so minimatch 3.x/5.x/9.x and glob 7.x/8.x would break at runtime. Remediation depends on upstream packages moving to minimatch 10.
+# DoS only, and the brace patterns we pass to glob/minimatch are our own or come from release-manager-defined config, never from untrusted input. Added 2026-07-26.
+CVE-2026-14257
