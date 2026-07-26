@@ -231,6 +231,7 @@ Dashboards only display aggregates, counts, and (for detail tables) the pseudony
 | Health score, impacted users, or top failing Apex panels are empty | The monitoring pipeline runs an older sfdx-hardis version: these panels need recently added metrics |
 | Health score panel empty on some days | Normal: the score is computed on weekly runs only, and panels look back 8 days |
 | DORA panels show "Schedule dora-report" | [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/) is not scheduled on the monitoring pipeline |
+| Indicator Detail shows the graph and value but no detail rows | Detail rows come from Loki logs (~30 days retention on Grafana Cloud) while metrics keep 13 months: the last run of that indicator is older than the logs retention. Fix the monitoring job so the command runs again |
 | An org appears twice or values look doubled | Not expected in v2 (queries aggregate per org); check that two different monitoring repos are not both pushing with different `SFDX_HARDIS_MONITORING_KEY` values for the same org |
 | Old entries still show readable usernames | Anonymization only applies to new entries; older ones keep their values until logs retention expires |
 

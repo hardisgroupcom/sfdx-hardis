@@ -1565,7 +1565,8 @@ const dtlIndicatorDashboard = dashboard({
         tablePanel('Detailed elements (latest run)', {
           datasource: DS_LOKI,
           gridPos: { w: 24, h: 14 },
-          description: 'Rows of the latest run found within the selected time range. If empty, the org did not send this indicator recently: check the monitoring job.',
+          description:
+            'Rows of the latest run found within the selected time range. Detail rows come from logs (Loki), which usually keep ~30 days: if the graph shows history but this table is empty, the last run is older than the logs retention. Check the org monitoring job.',
           targets: [lokiTarget(`{${SRC}, type="$type", orgIdentifier="$org"} |= \`\``, { maxLines: 1 })],
           transformations: jsonArrayToRows('_logElements'),
         }),
