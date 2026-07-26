@@ -17,6 +17,8 @@ export interface PromptsQuestion {
   description: string;
   placeholder?: string;
   type: "select" | "multiselect" | "confirm" | "text" | "number";
+  /** Set to true when the answer is a secret (token, password...): the echo of the answer is hidden */
+  sensitive?: boolean;
   name?: string;
   /** Array of choices. Use `PromptChoice` for proper typing. */
   choices?: Array<any>;
@@ -74,10 +76,9 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]): Pro
       const answerKey = Object.keys(questionAnswer)[0];
       const answerValue = questionAnswer[answerKey];
       const answerLabel = getAnswerLabel(answerValue, question.choices);
-      // A secret value rarely contains the word "token" itself, so also detect
-      // sensitive answers from the question wording (token, password, secret, api key)
-      const sensitiveQuestion = /token|password|secret|api.?key/i.test(question.message || '');
-      if (sensitiveQuestion || JSON.stringify(answerLabel).toLowerCase().includes("token")) {
+      // question.sensitive is locale-independent (a translated message may not contain
+      // the word "token"); the answer-content check stays as a safety net
+      if (question.sensitive === true || JSON.stringify(answerLabel).toLowerCase().includes("token")) {
         uxLog("log", this, c.grey(t('selectionHiddenBecauseItContainsSensitiveInformation')));
       } else {
         uxLog("log", this, c.grey(answerLabel));

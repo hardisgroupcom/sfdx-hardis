@@ -1589,6 +1589,7 @@
   "grafanaDashboardImported": "Dashboard importado: {{title}}",
   "grafanaDashboardsListFallback": "No se han podido listar los archivos de dashboards mediante la API de GitHub, se utiliza la lista de archivos integrada.",
   "grafanaDatasourceAmbiguous": "Se han encontrado varias datasources de {{type}}: se utiliza {{name}} (uid: {{uid}}). Use {{flag}} si esta no es la correcta.",
+  "grafanaDatasourceFlagsIgnored": "--prom-uid y --loki-uid solo se usan con --with-alerts: se ignoran en esta ejecución.",
   "grafanaDatasourceOverrideNotFound": "No se ha encontrado la datasource con uid {{uid}} entre las datasources de {{type}} de la instancia: se utilizará igualmente.",
   "grafanaDatasourceSelected": "Usando la datasource de {{type}}: {{name}} (uid: {{uid}})",
   "grafanaFetchingDashboards": "Descargando e importando dashboards desde GitHub (ref: {{ref}}) ...",

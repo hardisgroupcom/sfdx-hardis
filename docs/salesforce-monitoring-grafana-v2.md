@@ -194,6 +194,8 @@ A sub-score is omitted (not counted as zero) when its source command did not run
 
 Health score panels use an 8-day lookback so the weekly value displays all week.
 
+The score travels with the `MONITORING_SUMMARY` notification, which reaches messaging/email channels only when an AI executive summary is generated (severity `info`). To receive the weekly score in Slack/Teams/email without AI, set the `MONITORING_SUMMARY` messaging threshold to `log` in your `notificationConfig`.
+
 ## Data freshness and silent orgs
 
 `hardis:org:monitor:all` always sends a `MONITORING_SUMMARY` notification at the end of each run, which doubles as a daily heartbeat per org. The plain heartbeat has severity `log`, so it only reaches observability backends: your Slack/Teams/email channels are not spammed daily (when an AI executive summary is generated, it is sent with severity `info` and reaches them). The Fleet Overview compares recent activity (36h) against the last 7 days to list orgs whose monitoring job stopped running: a silent org means broken monitoring, not a healthy org.

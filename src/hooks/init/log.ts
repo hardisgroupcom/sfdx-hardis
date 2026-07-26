@@ -49,11 +49,14 @@ function maskSecretArgs(argv: string[]): string[] {
   const masked: string[] = [];
   let previousIsSecretFlag = false;
   for (const arg of argv) {
-    if (previousIsSecretFlag) {
+    // Mask only actual values: a boolean secret flag followed by another flag must not
+    // swallow that flag from the log
+    if (previousIsSecretFlag && !arg.startsWith('-')) {
       masked.push('***');
       previousIsSecretFlag = false;
       continue;
     }
+    previousIsSecretFlag = false;
     const inlineMatch = /^(--?[\w-]*(?:token|password|secret|api-?key)[\w-]*)=(.*)$/i.exec(arg);
     if (inlineMatch) {
       masked.push(`${inlineMatch[1]}=***`);

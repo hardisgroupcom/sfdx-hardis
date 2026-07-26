@@ -73,6 +73,25 @@ describe('apiAnonymizer', () => {
       assert.ok(result._logBodyText.includes(row.Username));
     });
 
+    it('scrubs values at sentence boundaries but not inside identifiers', () => {
+      const data = {
+        _logElements: [
+          { Username: 'jane.doe@acme.com', LastName: 'Support', FirstName: "O'Brien (Admin)" },
+        ],
+        _title: 'Errors',
+        _logBodyText: 'Contact jane.doe@acme.com. Assigned to Support. Flow Support_Flow failed, notify Support!',
+      };
+      const result = anonymizeApiPayloadData(data, 'org1');
+      // Value followed by a period (end of sentence) is scrubbed
+      assert.ok(!result._logBodyText.includes('jane.doe@acme.com'), result._logBodyText);
+      assert.ok(!result._logBodyText.includes('to Support.'), result._logBodyText);
+      assert.ok(!result._logBodyText.includes('Support!'), result._logBodyText);
+      // Identifier containing the value as a word part stays intact
+      assert.ok(result._logBodyText.includes('Support_Flow'), result._logBodyText);
+      // Regex special characters in values must not throw
+      assert.ok(result._logElements[0].FirstName.startsWith('user_'));
+    });
+
     it('keeps actor fields raw (audit trail shape)', () => {
       const data = {
         _logElements: [

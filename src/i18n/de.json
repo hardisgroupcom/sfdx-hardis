@@ -1588,6 +1588,7 @@
   "grafanaDashboardImported": "Dashboard importiert: {{title}}",
   "grafanaDashboardsListFallback": "Die Dashboard-Dateien konnten nicht über die GitHub-API aufgelistet werden, es wird die integrierte Dateiliste verwendet.",
   "grafanaDatasourceAmbiguous": "Mehrere {{type}}-Datasources gefunden: Verwendung von {{name}} (uid: {{uid}}). Verwenden Sie {{flag}}, falls dies nicht die richtige ist.",
+  "grafanaDatasourceFlagsIgnored": "--prom-uid und --loki-uid werden nur mit --with-alerts verwendet: Sie werden für diesen Lauf ignoriert.",
   "grafanaDatasourceOverrideNotFound": "Die Datasource mit der uid {{uid}} wurde unter den {{type}}-Datasources der Instanz nicht gefunden: Sie wird trotzdem verwendet.",
   "grafanaDatasourceSelected": "Verwendung der {{type}}-Datasource: {{name}} (uid: {{uid}})",
   "grafanaFetchingDashboards": "Dashboards werden von GitHub heruntergeladen und importiert (ref: {{ref}}) ...",

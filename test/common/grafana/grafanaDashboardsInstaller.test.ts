@@ -21,6 +21,13 @@ describe('grafanaDashboardsInstaller', () => {
     it('keeps an explicit http scheme', () => {
       assert.equal(normalizeGrafanaUrl('http://localhost:3000/'), 'http://localhost:3000');
     });
+
+    it('rejects non-http schemes and unparseable input', () => {
+      assert.throws(() => normalizeGrafanaUrl('htp://grafana.corp'));
+      assert.throws(() => normalizeGrafanaUrl('ftp://foo.com'));
+      assert.throws(() => normalizeGrafanaUrl('http://'));
+      assert.throws(() => normalizeGrafanaUrl('https://a b.com'));
+    });
   });
 
   describe('pickDatasource', () => {

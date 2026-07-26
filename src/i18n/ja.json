@@ -1587,6 +1587,7 @@
   "grafanaDashboardImported": "ダッシュボードをインポートしました: {{title}}",
   "grafanaDashboardsListFallback": "GitHub API経由でダッシュボードファイルの一覧を取得できなかったため、組み込みのファイルリストを使用します。",
   "grafanaDatasourceAmbiguous": "複数の{{type}}のdatasourceが見つかりました。{{name}}（uid: {{uid}}）を使用します。正しくない場合は{{flag}}を使用してください。",
+  "grafanaDatasourceFlagsIgnored": "--prom-uid と --loki-uid は --with-alerts と併用した場合のみ使用されます。今回の実行では無視されます。",
   "grafanaDatasourceOverrideNotFound": "uidが{{uid}}のdatasourceは、インスタンスの{{type}}のdatasourceの中に見つかりませんでした。それでも使用します。",
   "grafanaDatasourceSelected": "{{type}}のdatasourceを使用します: {{name}}（uid: {{uid}}）",
   "grafanaFetchingDashboards": "GitHubからダッシュボードをダウンロードしてインポートしています（ref: {{ref}}）...",

@@ -54,19 +54,22 @@ export interface AlertRuleGroupPayload {
 export const GRAFANA_HTTP_TIMEOUT_MS = 30000;
 
 export function normalizeGrafanaUrl(url: string): string {
-  let normalized = url.trim().replace(/\/+$/, '');
-  if (!/^https?:\/\//i.test(normalized)) {
-    normalized = 'https://' + normalized;
+  // Validate BEFORE any rewriting: stripping slashes or prepending https:// first would
+  // hide typos like "htp://x" (parsed as host "htp") or turn "http://" into "http:"
+  const trimmed = url.trim();
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) && !/^https?:\/\//i.test(trimmed)) {
+    throw new Error(`Invalid Grafana URL: ${url}`);
   }
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
   try {
-    const parsed = new URL(normalized);
+    const parsed = new URL(withScheme);
     if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname) {
       throw new Error('invalid');
     }
   } catch {
     throw new Error(`Invalid Grafana URL: ${url}`);
   }
-  return normalized;
+  return withScheme.replace(/\/+$/, '');
 }
 
 export function createGrafanaClient(grafanaUrl: string, token: string): AxiosInstance {
@@ -188,14 +191,17 @@ export async function getGrafanaDatasources(client: AxiosInstance): Promise<Graf
   return response.data || [];
 }
 
-// Idempotent: returns the folder if it already exists (409/412 = uid or title conflict).
-// A 400 is NOT swallowed: it means the create request itself is invalid.
+// Idempotent: returns the folder if it already exists (409/412 = uid or title conflict;
+// Grafana versions before 9 answer 400 with an "already exists" message for the same case).
+// Any other 400 is NOT swallowed: it means the create request itself is invalid.
 export async function ensureGrafanaFolder(client: AxiosInstance, uid: string, title: string): Promise<any> {
   try {
     const response = await client.post('/api/folders', { uid, title });
     return response.data;
   } catch (e: any) {
-    if ([409, 412].includes(e?.response?.status)) {
+    const status = e?.response?.status;
+    const alreadyExists400 = status === 400 && /already exists|same uid/i.test(e?.response?.data?.message || '');
+    if ([409, 412].includes(status) || alreadyExists400) {
       const existing = await client.get(`/api/folders/${uid}`);
       return existing.data;
     }

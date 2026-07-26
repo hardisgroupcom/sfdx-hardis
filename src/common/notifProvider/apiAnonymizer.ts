@@ -129,9 +129,10 @@ function scrubText(text: string, replacementMap: Map<string, string>): string {
   for (const original of originals) {
     if (result.includes(original)) {
       // Word-boundary match so a user named "Support" does not mangle "Support_Flow"
-      // or unrelated sentences containing the same word
+      // or unrelated sentences containing the same word. "." is intentionally NOT part of
+      // the boundary classes: a value at the end of a sentence must still be scrubbed.
       const escaped = original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      result = result.replace(new RegExp(`(?<![\\w@.])${escaped}(?![\\w@.])`, 'g'), replacementMap.get(original) || original);
+      result = result.replace(new RegExp(`(?<![\\w@])${escaped}(?![\\w@])`, 'g'), replacementMap.get(original) || original);
     }
   }
   return result;

@@ -152,8 +152,12 @@ In agent mode:
       'GRAFANA_API_TOKEN',
       t('promptGrafanaToken'),
       t('promptGrafanaTokenDescription'),
-      t('errorGrafanaTokenMissing')
+      t('errorGrafanaTokenMissing'),
+      true
     );
+    if (flags['with-alerts'] !== true && (flags['prom-uid'] || flags['loki-uid'])) {
+      uxLog("warning", this, c.yellow(t('grafanaDatasourceFlagsIgnored')));
+    }
     const client = createGrafanaClient(grafanaUrl, grafanaToken);
 
     uxLog("action", this, c.cyan(t('grafanaInstallStart', { url: grafanaUrl })));
@@ -257,7 +261,8 @@ In agent mode:
     envVarName: string,
     promptMessage: string,
     promptDescription: string,
-    errorMessage: string
+    errorMessage: string,
+    sensitive = false
   ): Promise<string> {
     if (flagValue) {
       return flagValue;
@@ -272,6 +277,7 @@ In agent mode:
         name: 'value',
         message: promptMessage,
         description: promptDescription,
+        sensitive: sensitive,
       });
       if (response.value) {
         return response.value;
