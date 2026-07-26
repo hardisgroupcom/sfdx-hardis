@@ -47,20 +47,20 @@ In agent mode:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|grafana-token|option|Grafana service account token with Editor role (defaults to GRAFANA_API_TOKEN environment variable)||||
-|grafana-url|option|Grafana instance URL (defaults to GRAFANA_API_URL environment variable)||||
-|json|boolean|Format output as json.||||
-|loki-uid|option|Uid of the Loki datasource used by the alert pack (--with-alerts only, auto-detected when not set)||||
-|prom-uid|option|Uid of the Prometheus/Mimir datasource used by the alert pack (--with-alerts only, auto-detected when not set)||||
-|ref|option|Git branch or tag of the sfdx-hardis repository to fetch the dashboards from|main|||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
-|with-alerts|boolean|Also import the sfdx-hardis alert rules pack (all rules imported paused)||||
+| Name          |  Type   | Description                                                                                                    | Default | Required | Options |
+|:--------------|:-------:|:---------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent         | boolean | Run in non-interactive mode for agents and automation                                                          |         |          |         |
+| debug<br/>-d  | boolean | Activate debug mode (more logs)                                                                                |         |          |         |
+| flags-dir     | option  | undefined                                                                                                      |         |          |         |
+| grafana-token | option  | Grafana service account token with Editor role (defaults to GRAFANA_API_TOKEN environment variable)            |         |          |         |
+| grafana-url   | option  | Grafana instance URL (defaults to GRAFANA_API_URL environment variable)                                        |         |          |         |
+| json          | boolean | Format output as json.                                                                                         |         |          |         |
+| loki-uid      | option  | Uid of the Loki datasource used by the alert pack (--with-alerts only, auto-detected when not set)             |         |          |         |
+| prom-uid      | option  | Uid of the Prometheus/Mimir datasource used by the alert pack (--with-alerts only, auto-detected when not set) |         |          |         |
+| ref           | option  | Git branch or tag of the sfdx-hardis repository to fetch the dashboards from                                   |  main   |          |         |
+| skipauth      | boolean | Skip authentication check when a default username is required                                                  |         |          |         |
+| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                      |         |          |         |
+| with-alerts   | boolean | Also import the sfdx-hardis alert rules pack (all rules imported paused)                                       |         |          |         |
 
 ## Examples
 
