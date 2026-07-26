@@ -6,6 +6,8 @@
 - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): Always sends a summary notification (daily heartbeat) and computes a weekly org health score.
 - Notifications to API channels in CI now anonymize user-identifying fields by default (set NOTIF_API_ANONYMIZE=false to disable).
 - [hardis:org:monitor:errors](https://sfdx-hardis.cloudity.com/hardis/org/monitor/errors/): Now reports impacted user counts and top failing Apex classes.
+- [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/): DORA metrics are now sent with stable locale-independent names, so they reach Grafana whatever the configured language.
+- API notifications can now be written to a local JSON file only, without an API endpoint (NOTIF_API_LOGS_JSON_FILE without NOTIF_API_URL).
 - Fix: a misconfigured notification channel (like email without NOTIF_EMAIL_ADDRESS) no longer fails monitoring commands nor blocks the other channels from receiving notifications.
 - MegaLinter no longer overwrites your local `code-analyzer.yml` and `pmd-ruleset.xml`: they are downloaded only when missing, so your custom rules are kept.
 - Default CI/CD and monitoring pipelines now pull the MegaLinter image from GitHub Container Registry (`ghcr.io`), avoiding Docker Hub pull rate limits.
