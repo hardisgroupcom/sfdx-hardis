@@ -10,6 +10,7 @@
 
 Key functionalities:
 
+- **Guided start:** in interactive mode, the command first asks whether a Grafana instance is already available. If not, it opens the [Grafana free-tier setup guide](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-api/#grafana-setup) (Grafana Cloud free tier: free forever, no credit card required) instead of asking for a URL.
 - **Folder creation:** creates the `Org Monitoring by sfdx-hardis` folder (uid `sfdx-hardis-v2`) if missing.
 - **Dashboard import:** downloads the dashboard definitions from the sfdx-hardis GitHub repository (`--ref` selects the branch or tag, default `main`) and imports them with `overwrite: true`. Re-running the command upgrades the dashboards in place: uids are stable, bookmarks and links keep working. The dashboards resolve their Prometheus and Loki datasources by themselves (hidden variables), so no datasource configuration is needed for this part.
 - **Optional alert pack:** with `--with-alerts`, imports the 6 alert rules (org limit above 90%, storage exhaustion forecast, error spike, backup failure, silent org, health score degradation). All rules are imported **paused**, so they trigger no evaluation and no cost until you enable them from **Alerting -> Alert rules** and configure your contact points. Alert rules need explicit datasource uids: the command auto-detects the Prometheus/Mimir and Loki datasources receiving sfdx-hardis data (Grafana Cloud internal datasources are filtered out), and `--prom-uid` / `--loki-uid` pin the choice when several candidates exist.
@@ -29,7 +30,7 @@ GRAFANA_API_URL=https://mycompany.grafana.net GRAFANA_API_TOKEN=$MY_TOKEN sf har
 
 In agent mode:
 
-- The Grafana URL and token (flags or the `GRAFANA_API_URL` / `GRAFANA_API_TOKEN` environment variables) are required: the interactive prompts asking for them are skipped.
+- The Grafana URL and token (flags or the `GRAFANA_API_URL` / `GRAFANA_API_TOKEN` environment variables) are required: the interactive prompts asking for them are skipped, as is the initial "do you already have a Grafana instance" question.
 - With `--with-alerts`, when several Prometheus or Loki datasources are eligible, the datasource selection prompt is skipped: the Grafana default datasource is used, or the first candidate, with a warning. Use `--prom-uid` / `--loki-uid` to pin the choice.
 - `--ref` defaults to `main` and `--with-alerts` defaults to false, like in interactive mode.
 
@@ -46,20 +47,20 @@ In agent mode:
 
 ## Parameters
 
-| Name          |  Type   | Description                                                                                                    | Default | Required | Options |
-|:--------------|:-------:|:---------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent         | boolean | Run in non-interactive mode for agents and automation                                                          |         |          |         |
-| debug<br/>-d  | boolean | Activate debug mode (more logs)                                                                                |         |          |         |
-| flags-dir     | option  | undefined                                                                                                      |         |          |         |
-| grafana-token | option  | Grafana service account token with Editor role (defaults to GRAFANA_API_TOKEN environment variable)            |         |          |         |
-| grafana-url   | option  | Grafana instance URL (defaults to GRAFANA_API_URL environment variable)                                        |         |          |         |
-| json          | boolean | Format output as json.                                                                                         |         |          |         |
-| loki-uid      | option  | Uid of the Loki datasource used by the alert pack (--with-alerts only, auto-detected when not set)             |         |          |         |
-| prom-uid      | option  | Uid of the Prometheus/Mimir datasource used by the alert pack (--with-alerts only, auto-detected when not set) |         |          |         |
-| ref           | option  | Git branch or tag of the sfdx-hardis repository to fetch the dashboards from                                   |  main   |          |         |
-| skipauth      | boolean | Skip authentication check when a default username is required                                                  |         |          |         |
-| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                      |         |          |         |
-| with-alerts   | boolean | Also import the sfdx-hardis alert rules pack (all rules imported paused)                                       |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|grafana-token|option|Grafana service account token with Editor role (defaults to GRAFANA_API_TOKEN environment variable)||||
+|grafana-url|option|Grafana instance URL (defaults to GRAFANA_API_URL environment variable)||||
+|json|boolean|Format output as json.||||
+|loki-uid|option|Uid of the Loki datasource used by the alert pack (--with-alerts only, auto-detected when not set)||||
+|prom-uid|option|Uid of the Prometheus/Mimir datasource used by the alert pack (--with-alerts only, auto-detected when not set)||||
+|ref|option|Git branch or tag of the sfdx-hardis repository to fetch the dashboards from|main|||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+|with-alerts|boolean|Also import the sfdx-hardis alert rules pack (all rules imported paused)||||
 
 ## Examples
 
