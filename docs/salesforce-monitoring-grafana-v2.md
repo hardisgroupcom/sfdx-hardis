@@ -35,19 +35,31 @@ What it brings:
 
 The dashboards are instance-agnostic: no datasource UID is hardcoded. Each dashboard carries two hidden datasource variables (`ds_prom`, `ds_loki`) that resolve automatically to your Prometheus and Loki datasources: since sfdx-hardis data is sent to a single Prometheus and a single Loki, no picker is shown.
 
+### Automated install (recommended)
+
+Run [hardis:org:configure:grafana-dashboards](hardis/org/configure/grafana-dashboards.md):
+
+```sh
+sf hardis:org:configure:grafana-dashboards
+```
+
+The command asks for your Grafana instance URL and a service account token (Editor role; create one in **Administration** -> **Users and access** -> **Service accounts**), detects your Prometheus and Loki datasources, creates the `Org Monitoring by sfdx-hardis` folder and imports all the dashboards through the Grafana HTTP API. It works the same on Grafana Cloud and self-hosted instances.
+
+Re-run the command after upgrading sfdx-hardis: dashboards are updated in place (stable uids, bookmarks and links keep working).
+
+Non-interactive mode for CI and agents:
+
+```sh
+sf hardis:org:configure:grafana-dashboards --agent --grafana-url https://mycompany.grafana.net --grafana-token $GRAFANA_API_TOKEN
+```
+
+### Manual import
+
 1. Download the JSON files from [docs/grafana/dashboards-v2](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/docs/grafana/dashboards-v2)
 2. In Grafana, create a folder (suggested name: `Org Monitoring by sfdx-hardis`)
 3. **Dashboards** -> **New** -> **Import** -> upload each JSON file into that folder
 
 If your instance has several Prometheus or Loki datasources and the automatic pick is wrong (Grafana Cloud internal datasources like alert state history are already filtered out), override it once per dashboard in **Dashboard settings** -> **Variables**, or pass `?var-ds_prom=<uid>&var-ds_loki=<uid>` in the URL.
-
-Alternative for automation (HTTP API):
-
-```sh
-curl -X POST https://YOUR_GRAFANA/api/dashboards/db \
-  -H "Authorization: Bearer $GRAFANA_TOKEN" -H "Content-Type: application/json" \
-  -d "{\"dashboard\": $(cat fleet.json), \"folderUid\": \"sfdx-hardis-v2\", \"overwrite\": true}"
-```
 
 Self-hosted instances can also use [file provisioning](https://grafana.com/docs/grafana/latest/administration/provisioning/#dashboards): copy the JSON files in your dashboards provisioning folder.
 
@@ -211,12 +223,23 @@ Once imported, the rules appear in **Alerting** -> **Alert rules** (grouped unde
 
 _(screenshot coming soon)_
 
-To import:
+The easiest way to import them is the automated installer (the service account token then also needs alert provisioning permissions):
+
+```sh
+sf hardis:org:configure:grafana-dashboards --with-alerts
+```
+
+It substitutes the datasource placeholders with your datasource UIDs and imports every rule paused, editable from the Grafana UI.
+
+To import manually:
 
 1. Replace the `${DS_PROMETHEUS}` and `${DS_LOKI}` placeholders in the YAML with your datasource UIDs (found in **Connections** -> **Data sources**, in the datasource page URL)
 2. Self-hosted: drop the file in your [alerting provisioning folder](https://grafana.com/docs/grafana/latest/alerting/set-up/provision-alerting-resources/file-provisioning/). Grafana Cloud: import through the [provisioning HTTP API](https://grafana.com/docs/grafana/latest/alerting/set-up/provision-alerting-resources/http-api-provisioning/) or Terraform
-3. In **Alerting** -> **Alert rules**, unpause the rules you want
-4. Configure your [contact points and notification policies](https://grafana.com/docs/grafana/latest/alerting/configure-notifications/) (Slack, email, ...)
+
+Then, in both cases:
+
+1. In **Alerting** -> **Alert rules**, unpause the rules you want
+2. Configure your [contact points and notification policies](https://grafana.com/docs/grafana/latest/alerting/configure-notifications/) (Slack, email, ...)
 
 ## Privacy
 

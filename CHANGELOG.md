@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - New [Grafana dashboard set v2 Org Monitoring by sfdx-hardis](https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/) with fleet overview, trends, limit forecasts, org health score, and paused alerts.
+- New [hardis:org:configure:grafana-dashboards](https://sfdx-hardis.cloudity.com/hardis/org/configure/grafana-dashboards/): Install the Org Monitoring Grafana dashboards and alert pack on any Grafana instance through its HTTP API.
 - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): Always sends a summary notification (daily heartbeat) and computes a weekly org health score.
 - Notifications to API channels in CI now anonymize user-identifying fields by default (set NOTIF_API_ANONYMIZE=false to disable).
 - [hardis:org:monitor:errors](https://sfdx-hardis.cloudity.com/hardis/org/monitor/errors/): Now reports impacted user counts and top failing Apex classes.

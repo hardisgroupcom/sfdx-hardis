@@ -15,6 +15,7 @@ Everything needed to build, modify and validate the v2 Grafana dashboards withou
 - Alert pack: `docs/grafana/alerts-v2/sfdx-hardis-alerts.yaml` (hand-written YAML, all rules `isPaused: true`).
 - Lint suite: `test/grafana-dashboards-v2.test.ts` - enforces most rules below; run with `npx mocha "test/grafana-dashboards-v2.test.ts"`.
 - Docs page: `docs/salesforce-monitoring-grafana-v2.md`.
+- Installer command: `hardis:org:configure:grafana-dashboards` (`src/common/grafana/grafanaDashboardsInstaller.ts`) fetches the dashboards from GitHub raw at runtime and imports them via the Grafana HTTP API. When adding or removing a dashboard JSON, update `GRAFANA_V2_FALLBACK_DASHBOARD_FILES` there (enforced by the lint suite).
 - v1 dashboards (`docs/grafana/dashboards/`) are frozen: never modify them.
 
 ## Data model reminder

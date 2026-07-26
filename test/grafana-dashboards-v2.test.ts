@@ -57,6 +57,15 @@ describe('Grafana dashboards v2 (portability lint)', () => {
     assert.ok(files.length >= 12, `Expected at least 12 dashboards, found ${files.length}`);
   });
 
+  it('matches the installer fallback file list (hardis:org:configure:grafana-dashboards)', async () => {
+    const { GRAFANA_V2_FALLBACK_DASHBOARD_FILES } = await import('../src/common/grafana/grafanaDashboardsInstaller.js');
+    assert.deepEqual(
+      [...GRAFANA_V2_FALLBACK_DASHBOARD_FILES].sort(),
+      [...files].sort(),
+      'Update GRAFANA_V2_FALLBACK_DASHBOARD_FILES in src/common/grafana/grafanaDashboardsInstaller.ts when adding/removing a dashboard'
+    );
+  });
+
   for (const file of files) {
     describe(file, () => {
       const raw = fs.readFileSync(path.join(DASHBOARDS_DIR, file), 'utf8');
