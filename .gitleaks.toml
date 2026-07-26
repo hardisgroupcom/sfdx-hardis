@@ -4,12 +4,25 @@
 # (betterleaks uses gitleaks under the hood and shares this config format).
 #
 # We extend the gitleaks default ruleset and add tightly scoped allowlists for
-# known false positives. Each allowlist requires BOTH the file path AND the
-# secret pattern to match (matchCondition = "AND"), so the same words in any
+# known false positives. Each pattern allowlist requires BOTH the file path AND
+# the secret pattern to match (matchCondition = "AND"), so the same words in any
 # other file, or a real secret in these files, are still reported.
+# The only path-only allowlist is the one for vendored third-party skills below.
 
 [extend]
 useDefault = true
+
+# .claude/skills/{alerting-irm,dashboarding,loki,promql}:
+# Generic Grafana skills vendored from github.com/grafana/skills with `npx skills`
+# and pinned by content hash in skills-lock.json. They are public upstream
+# documentation, refreshed wholesale by `npx skills update`, so local edits would
+# be lost. Their code samples use placeholder credentials
+# (e.g. `curl -u "user:apikey"` in the Loki push API example), which the
+# curl-auth-user and generic-api-key rules flag. Scoped to these four directories
+# only: any other file under .claude/ is still scanned.
+[[allowlists]]
+description = "Placeholder credentials in vendored grafana/skills documentation"
+paths = ['''\.claude/skills/(alerting-irm|dashboarding|loki|promql)/''']
 
 # test/common/utils/cryptoUtils.test.ts (~lines 6 and 15):
 # fake RSA PEM blocks used as fixtures in the encrypt/decrypt round-trip test.

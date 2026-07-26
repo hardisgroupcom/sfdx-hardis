@@ -1377,6 +1377,18 @@
     "métadonnées",
     "déployées",
     "supprimées",
-    "uncatchable"
+    "uncatchable",
+    "bargauge",
+    "createdby",
+    "dashboarding",
+    "delegateuser",
+    "glsa",
+    "lastmodifiedby",
+    "lastname",
+    "npmjs",
+    "pseudonymized",
+    "uids",
+    "unpausable",
+    "useremail"
   ]
 }
