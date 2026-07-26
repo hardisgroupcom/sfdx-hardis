@@ -1075,12 +1075,19 @@ const limitsDashboard = dashboard({
       panels: [
         tablePanel('All limits', {
           gridPos: { w: 12, h: 12 },
-          targets: [promTarget(`max by (__name__) (last_over_time({__name__=~".+_percent", ${SRC}, orgIdentifier="$org"}[2d]))`, { instant: true, format: 'table' })],
+          targets: [
+            promTarget(
+              // label_replace exposes the limit name without the _percent suffix as a
+              // "limit" label: it must be clean in cell VALUES (renameByRegex only
+              // renames column headers), because the row link appends _percent back
+              `label_replace(max by (__name__) (last_over_time({__name__=~".+_percent", ${SRC}, orgIdentifier="$org"}[2d])), "limit", "$1", "__name__", "(.+)_percent")`,
+              { instant: true, format: 'table' }
+            ),
+          ],
           transformations: [
-            { id: 'renameByRegex', options: { regex: '(.*)_percent', renamePattern: '$1' } },
             organize({
-              excludeByName: { Time: true },
-              renameByName: { __name__: 'Limit', Value: 'Used %' },
+              excludeByName: { Time: true, __name__: true },
+              renameByName: { limit: 'Limit', Value: 'Used %' },
             }),
           ],
           unit: 'percent',

@@ -67,7 +67,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (__name__) (last_over_time({__name__=~\".+_percent\", source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "label_replace(max by (__name__) (last_over_time({__name__=~\".+_percent\", source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d])), \"limit\", \"$1\", \"__name__\", \"(.+)_percent\")",
           "refId": "A",
           "instant": true,
           "range": false,
@@ -76,21 +76,15 @@
       ],
       "transformations": [
         {
-          "id": "renameByRegex",
-          "options": {
-            "regex": "(.*)_percent",
-            "renamePattern": "$1"
-          }
-        },
-        {
           "id": "organize",
           "options": {
             "excludeByName": {
               "__proxy_source__": true,
-              "Time": true
+              "Time": true,
+              "__name__": true
             },
             "renameByName": {
-              "__name__": "Limit",
+              "limit": "Limit",
               "Value": "Used %"
             }
           }
