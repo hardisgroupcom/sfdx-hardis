@@ -54,7 +54,7 @@
             "type": "loki",
             "uid": "${ds_loki}"
           },
-          "expr": "{source=\"sfdx-hardis\", type=\"ORG_INFO\", $env} |~ `(?i)$orgId`",
+          "expr": "{source=\"sfdx-hardis\", type=\"ORG_INFO\", $env} |~ `(?i)$orgId` | json orgName=\"_logElements[0].Name\", orgSfId=\"_logElements[0].Id\", country=\"_logElements[0].Country\"",
           "queryType": "range",
           "direction": "backward",
           "refId": "A",
@@ -69,6 +69,15 @@
             "jsonPaths": [
               {
                 "path": "orgIdentifier"
+              },
+              {
+                "path": "orgName"
+              },
+              {
+                "path": "orgSfId"
+              },
+              {
+                "path": "country"
               }
             ],
             "keepTime": false,
@@ -83,6 +92,18 @@
               "orgIdentifier": {
                 "aggregations": [],
                 "operation": "groupby"
+              },
+              "orgName": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "orgSfId": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "country": {
+                "aggregations": [],
+                "operation": "groupby"
               }
             }
           }
@@ -91,7 +112,16 @@
           "id": "organize",
           "options": {
             "renameByName": {
-              "orgIdentifier": "Org"
+              "orgIdentifier": "Org",
+              "orgName": "Organization name",
+              "orgSfId": "Org Id",
+              "country": "Country"
+            },
+            "indexByName": {
+              "orgIdentifier": 0,
+              "orgName": 1,
+              "orgSfId": 2,
+              "country": 3
             },
             "excludeByName": {
               "__proxy_source__": true

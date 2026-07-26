@@ -180,7 +180,13 @@ The generic drill-down: pick any org and any notification type, see the metric e
 
 ![Search: orgs holding a license](assets/images/grafana-v2-search.png)
 
-Find orgs across the fleet by identifier fragment, by held license, or by installed package. Results link to each org's dashboard.
+Find orgs across the fleet by identifier fragment, by held license, or by installed package. Results show what matched, not just the org list:
+
+- **Org search**: organization name, Salesforce org id and country next to each matching org
+- **License search**: the matching license names (e.g. searching `Voice` shows `Salesforce Voice User (Partner Telephony)`); clicking a row opens the org's **Adoption & Licenses** dashboard
+- **Package search**: the matching package names with their installed version
+
+Rows link to the relevant org dashboard.
 
 ## The org health score
 

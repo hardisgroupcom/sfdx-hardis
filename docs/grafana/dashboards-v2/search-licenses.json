@@ -54,13 +54,14 @@
             "type": "loki",
             "uid": "${ds_loki}"
           },
-          "expr": "{source=\"sfdx-hardis\", type=\"LICENSES\", $env} |~ `(?i)$license`",
+          "expr": "{source=\"sfdx-hardis\", type=\"LICENSES\", $env} |~ `\"MasterLabel\":\"[^\"]*(?i:$license)` | line_format `{{ regexReplaceAll \"(?s).*?\\\"MasterLabel\\\":\\\"([^\\\"]*(?i:$license)[^\\\"]*)\\\"\" __line__ \"$1 ¦ \" }}` | line_format `{{ regexReplaceAll \"(?s) ¦ [^¦]*$\" __line__ \"\" }}`",
           "queryType": "range",
           "direction": "backward",
           "refId": "A",
           "maxLines": 1000
         }
       ],
+      "description": "Click a row to open the Adoption & Licenses dashboard of the org.",
       "transformations": [
         {
           "id": "extractFields",
@@ -72,7 +73,7 @@
               }
             ],
             "keepTime": false,
-            "replace": true,
+            "replace": false,
             "source": "labels"
           }
         },
@@ -83,6 +84,10 @@
               "orgIdentifier": {
                 "aggregations": [],
                 "operation": "groupby"
+              },
+              "Line": {
+                "aggregations": [],
+                "operation": "groupby"
               }
             }
           }
@@ -91,7 +96,12 @@
           "id": "organize",
           "options": {
             "renameByName": {
-              "orgIdentifier": "Org"
+              "orgIdentifier": "Org",
+              "Line": "Matching licenses"
+            },
+            "indexByName": {
+              "orgIdentifier": 0,
+              "Line": 1
             },
             "excludeByName": {
               "__proxy_source__": true
@@ -115,8 +125,8 @@
           },
           "links": [
             {
-              "title": "Open org dashboard",
-              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
+              "title": "Open Adoption & Licenses",
+              "url": "/d/sfdx-hardis-v2-org-adoption/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
             }
           ],
           "custom": {

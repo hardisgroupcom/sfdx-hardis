@@ -458,10 +458,13 @@ function dashboard({ uid, title, description, tags = [], variables = [], section
 // that was clicked (a stat viewed over 180d must not open a 30d detail view).
 const DS_QUERYPARAMS = '${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}';
 
-/** Link from a table row to the Org Home dashboard of that row's org */
-const orgHomeLink = (field = 'orgIdentifier') => [
-  { title: 'Open org dashboard', url: `/d/sfdx-hardis-v2-org-home/?var-org=\${__data.fields["${field}"]}&${DS_QUERYPARAMS}` },
+/** Link from a table row to a dashboard of that row's org */
+const orgRowLink = (slug, title, field = 'orgIdentifier') => [
+  { title, url: `/d/sfdx-hardis-v2-${slug}/?var-org=\${__data.fields["${field}"]}&${DS_QUERYPARAMS}` },
 ];
+
+/** Link from a table row to the Org Home dashboard of that row's org */
+const orgHomeLink = (field = 'orgIdentifier') => orgRowLink('org-home', 'Open org dashboard', field);
 
 /** Link from a value to a detail dashboard, keeping the current org and datasources */
 const detailLink = (slug, title = 'Open details', extraParams = '') => [
@@ -1591,11 +1594,30 @@ const searchOrgDashboard = dashboard({
         tablePanel('Matching orgs', {
           datasource: DS_LOKI,
           gridPos: { w: 24, h: 14 },
-          targets: [lokiTarget(`{${SRC}, type="ORG_INFO", $env} |~ \`(?i)$orgId\``, { maxLines: 1000 })],
+          targets: [
+            lokiTarget(
+              `{${SRC}, type="ORG_INFO", $env} |~ \`(?i)$orgId\` ` +
+              '| json orgName="_logElements[0].Name", orgSfId="_logElements[0].Id", country="_logElements[0].Country"',
+              { maxLines: 1000 }
+            ),
+          ],
           transformations: [
-            extractJson(['orgIdentifier'], { source: 'labels', replace: true }),
-            { id: 'groupBy', options: { fields: { orgIdentifier: { aggregations: [], operation: 'groupby' } } } },
-            organize({ renameByName: { orgIdentifier: 'Org' } }),
+            extractJson(['orgIdentifier', 'orgName', 'orgSfId', 'country'], { source: 'labels', replace: true }),
+            {
+              id: 'groupBy',
+              options: {
+                fields: {
+                  orgIdentifier: { aggregations: [], operation: 'groupby' },
+                  orgName: { aggregations: [], operation: 'groupby' },
+                  orgSfId: { aggregations: [], operation: 'groupby' },
+                  country: { aggregations: [], operation: 'groupby' },
+                },
+              },
+            },
+            organize({
+              renameByName: { orgIdentifier: 'Org', orgName: 'Organization name', orgSfId: 'Org Id', country: 'Country' },
+              indexByName: { orgIdentifier: 0, orgName: 1, orgSfId: 2, country: 3 },
+            }),
           ],
           links: orgHomeLink('Org'),
         }),
@@ -1604,6 +1626,10 @@ const searchOrgDashboard = dashboard({
   ],
 });
 
+// The line_format stages turn each matching Loki line into the list of matched item
+// names: regexReplaceAll replaces every `"<Key>":"<match>"` occurrence with `<match> ¦ `,
+// then the second stage drops the JSON tail after the last match. The leading line filter
+// guarantees at least one match so no unprocessed JSON line ever reaches the table.
 const searchLicensesDashboard = dashboard({
   uid: 'sfdx-hardis-v2-search-licenses',
   title: '91 - Search: Licenses',
@@ -1616,13 +1642,33 @@ const searchLicensesDashboard = dashboard({
         tablePanel('Orgs holding license "$license"', {
           datasource: DS_LOKI,
           gridPos: { w: 24, h: 14 },
-          targets: [lokiTarget(`{${SRC}, type="LICENSES", $env} |~ \`(?i)$license\``, { maxLines: 1000 })],
-          transformations: [
-            extractJson(['orgIdentifier'], { source: 'labels', replace: true }),
-            { id: 'groupBy', options: { fields: { orgIdentifier: { aggregations: [], operation: 'groupby' } } } },
-            organize({ renameByName: { orgIdentifier: 'Org' } }),
+          description: 'Click a row to open the Adoption & Licenses dashboard of the org.',
+          targets: [
+            lokiTarget(
+              `{${SRC}, type="LICENSES", $env} ` +
+              '|~ `"MasterLabel":"[^"]*(?i:$license)` ' +
+              '| line_format `{{ regexReplaceAll "(?s).*?\\"MasterLabel\\":\\"([^\\"]*(?i:$license)[^\\"]*)\\"" __line__ "$1 ¦ " }}` ' +
+              '| line_format `{{ regexReplaceAll "(?s) ¦ [^¦]*$" __line__ "" }}`',
+              { maxLines: 1000 }
+            ),
           ],
-          links: orgHomeLink('Org'),
+          transformations: [
+            extractJson(['orgIdentifier'], { source: 'labels', replace: false }),
+            {
+              id: 'groupBy',
+              options: {
+                fields: {
+                  orgIdentifier: { aggregations: [], operation: 'groupby' },
+                  Line: { aggregations: [], operation: 'groupby' },
+                },
+              },
+            },
+            organize({
+              renameByName: { orgIdentifier: 'Org', Line: 'Matching licenses' },
+              indexByName: { orgIdentifier: 0, Line: 1 },
+            }),
+          ],
+          links: orgRowLink('org-adoption', 'Open Adoption & Licenses', 'Org'),
         }),
       ],
     },
@@ -1641,11 +1687,31 @@ const searchPackagesDashboard = dashboard({
         tablePanel('Orgs with package "$package"', {
           datasource: DS_LOKI,
           gridPos: { w: 24, h: 14 },
-          targets: [lokiTarget(`{${SRC}, type="BACKUP", $env} |~ \`(?i)$package\``, { maxLines: 1000 })],
+          description: 'Click a row to open the org dashboard.',
+          targets: [
+            lokiTarget(
+              `{${SRC}, type="BACKUP", $env} ` +
+              '|~ `"SubscriberPackageName":"[^"]*(?i:$package)` ' +
+              '| line_format `{{ regexReplaceAll "(?s).*?\\"SubscriberPackageName\\":\\"([^\\"]*(?i:$package)[^\\"]*)\\",\\"SubscriberPackageNamespace\\":\\"[^\\"]*\\",\\"SubscriberPackageVersionId\\":\\"[^\\"]*\\",\\"SubscriberPackageVersionName\\":\\"[^\\"]*\\",\\"SubscriberPackageVersionNumber\\":\\"([^\\"]*)\\"" __line__ "$1 (v$2) ¦ " }}` ' +
+              '| line_format `{{ regexReplaceAll "(?s) ¦ [^¦]*$" __line__ "" }}`',
+              { maxLines: 1000 }
+            ),
+          ],
           transformations: [
-            extractJson(['orgIdentifier'], { source: 'labels', replace: true }),
-            { id: 'groupBy', options: { fields: { orgIdentifier: { aggregations: [], operation: 'groupby' } } } },
-            organize({ renameByName: { orgIdentifier: 'Org' } }),
+            extractJson(['orgIdentifier'], { source: 'labels', replace: false }),
+            {
+              id: 'groupBy',
+              options: {
+                fields: {
+                  orgIdentifier: { aggregations: [], operation: 'groupby' },
+                  Line: { aggregations: [], operation: 'groupby' },
+                },
+              },
+            },
+            organize({
+              renameByName: { orgIdentifier: 'Org', Line: 'Matching packages (version)' },
+              indexByName: { orgIdentifier: 0, Line: 1 },
+            }),
           ],
           links: orgHomeLink('Org'),
         }),

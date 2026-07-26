@@ -54,13 +54,14 @@
             "type": "loki",
             "uid": "${ds_loki}"
           },
-          "expr": "{source=\"sfdx-hardis\", type=\"BACKUP\", $env} |~ `(?i)$package`",
+          "expr": "{source=\"sfdx-hardis\", type=\"BACKUP\", $env} |~ `\"SubscriberPackageName\":\"[^\"]*(?i:$package)` | line_format `{{ regexReplaceAll \"(?s).*?\\\"SubscriberPackageName\\\":\\\"([^\\\"]*(?i:$package)[^\\\"]*)\\\",\\\"SubscriberPackageNamespace\\\":\\\"[^\\\"]*\\\",\\\"SubscriberPackageVersionId\\\":\\\"[^\\\"]*\\\",\\\"SubscriberPackageVersionName\\\":\\\"[^\\\"]*\\\",\\\"SubscriberPackageVersionNumber\\\":\\\"([^\\\"]*)\\\"\" __line__ \"$1 (v$2) ¦ \" }}` | line_format `{{ regexReplaceAll \"(?s) ¦ [^¦]*$\" __line__ \"\" }}`",
           "queryType": "range",
           "direction": "backward",
           "refId": "A",
           "maxLines": 1000
         }
       ],
+      "description": "Click a row to open the org dashboard.",
       "transformations": [
         {
           "id": "extractFields",
@@ -72,7 +73,7 @@
               }
             ],
             "keepTime": false,
-            "replace": true,
+            "replace": false,
             "source": "labels"
           }
         },
@@ -83,6 +84,10 @@
               "orgIdentifier": {
                 "aggregations": [],
                 "operation": "groupby"
+              },
+              "Line": {
+                "aggregations": [],
+                "operation": "groupby"
               }
             }
           }
@@ -91,7 +96,12 @@
           "id": "organize",
           "options": {
             "renameByName": {
-              "orgIdentifier": "Org"
+              "orgIdentifier": "Org",
+              "Line": "Matching packages (version)"
+            },
+            "indexByName": {
+              "orgIdentifier": 0,
+              "Line": 1
             },
             "excludeByName": {
               "__proxy_source__": true
