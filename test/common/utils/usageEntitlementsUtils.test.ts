@@ -9,6 +9,7 @@ import {
   resolveEntitlementPeriod,
   resolveEntitlementSeverity,
   sortUsageEntitlementRows,
+  toNumberOrNull,
   UsageEntitlementsConfig,
 } from '../../../src/common/utils/usageEntitlementsUtils.js';
 
@@ -23,6 +24,31 @@ const baseConfig: UsageEntitlementsConfig = {
 const NOW = new Date('2026-08-01T00:00:00.000Z');
 
 describe('usageEntitlementsUtils', () => {
+  // getEnvVar() returns null for an unset variable and Number(null) is 0, which is finite.
+  // Treating that as a configured value silently set every threshold to 0 and flagged any
+  // entitlement above 0% consumption as an error on a real org.
+  describe('toNumberOrNull', () => {
+    it('treats an unset env var (null) as absent, not as zero', () => {
+      expect(toNumberOrNull(null)).to.equal(null);
+    });
+
+    it('treats undefined and empty string as absent', () => {
+      expect(toNumberOrNull(undefined)).to.equal(null);
+      expect(toNumberOrNull('')).to.equal(null);
+    });
+
+    it('parses real numeric values, including numeric strings', () => {
+      expect(toNumberOrNull(120)).to.equal(120);
+      expect(toNumberOrNull('150')).to.equal(150);
+      expect(toNumberOrNull(0)).to.equal(0);
+    });
+
+    it('rejects non-numeric values', () => {
+      expect(toNumberOrNull('abc')).to.equal(null);
+      expect(toNumberOrNull({})).to.equal(null);
+    });
+  });
+
   describe('parseSettingKey', () => {
     it('extracts the trailing token of a Setting value', () => {
       expect(parseSettingKey('setting/force.com/orgValue.MaxCdpProfiles')).to.equal('MaxCdpProfiles');
@@ -39,13 +65,60 @@ describe('usageEntitlementsUtils', () => {
   });
 
   describe('resolveEntitlementPeriod', () => {
-    it('uses an explicit EndDate when Salesforce provides one', () => {
+    // EndDate is the contract expiry, not the end of the current billing window. Real orgs
+    // carry rows like Frequency "Daily" with EndDate three years out; treating that as the
+    // period would flatten every projection to the raw consumption percentage.
+    it('ignores a far-future EndDate and keeps the recurring window', () => {
       const period = resolveEntitlementPeriod(
-        { StartDate: '2026-01-01', EndDate: '2026-12-31', Frequency: 'Yearly' },
+        { StartDate: '2024-02-11', EndDate: '2027-02-11', Frequency: 'Daily' },
         NOW
       );
-      expect(period?.start.toISOString().slice(0, 10)).to.equal('2026-01-01');
-      expect(period?.end.toISOString().slice(0, 10)).to.equal('2026-12-31');
+      expect(period?.start.toISOString().slice(0, 10)).to.equal('2026-08-01');
+      expect(period?.end.toISOString().slice(0, 10)).to.equal('2026-08-02');
+    });
+
+    it('keeps the monthly window when EndDate is the contract expiry years away', () => {
+      const period = resolveEntitlementPeriod(
+        { StartDate: '2019-02-28', EndDate: '2027-02-11', Frequency: 'Monthly' },
+        NOW
+      );
+      expect(period?.start.toISOString().slice(0, 10)).to.equal('2026-07-28');
+      expect(period?.end.toISOString().slice(0, 10)).to.equal('2026-08-28');
+    });
+
+    it('clamps the window when the contract ends partway through the current cycle', () => {
+      // Cycle would run 2026-07-05 -> 2026-08-05, but the contract stops on 2026-07-20
+      const period = resolveEntitlementPeriod(
+        { StartDate: '2026-01-05', EndDate: '2026-07-20', Frequency: 'Monthly' },
+        NOW
+      );
+      expect(period?.start.toISOString().slice(0, 10)).to.equal('2026-07-05');
+      expect(period?.end.toISOString().slice(0, 10)).to.equal('2026-07-20');
+    });
+
+    it('leaves the window intact when the contract ends after the current cycle', () => {
+      const period = resolveEntitlementPeriod(
+        { StartDate: '2026-01-05', EndDate: '2026-08-10', Frequency: 'Monthly' },
+        NOW
+      );
+      expect(period?.start.toISOString().slice(0, 10)).to.equal('2026-07-05');
+      expect(period?.end.toISOString().slice(0, 10)).to.equal('2026-08-05');
+    });
+
+    it('returns null when the contract has already expired', () => {
+      const period = resolveEntitlementPeriod(
+        { StartDate: '2016-06-05', EndDate: '2026-01-05', Frequency: 'Monthly' },
+        NOW
+      );
+      expect(period).to.equal(null);
+    });
+
+    it('returns null for Once even when a contract window is present', () => {
+      const period = resolveEntitlementPeriod(
+        { StartDate: '2020-02-11', EndDate: '2024-02-11', Frequency: 'Once' },
+        NOW
+      );
+      expect(period).to.equal(null);
     });
 
     it('rolls a monthly period forward to the window containing today', () => {

@@ -26,6 +26,8 @@ By default the command reports the last 30 days. Use `--days` to change the wind
 
 Set `AI_USAGE_CREDITS_THRESHOLD` to raise a warning when total credit consumption over the window exceeds a value. Without it the command reports consumption without alerting.
 
+Credit totals come from their own aggregate query, so they stay exact even on orgs with more agent and action combinations than the detail listing shows. When the listing is capped, the command says so.
+
 ```sh
 sf hardis:org:diagnose:ai-usage --days 7
 ```

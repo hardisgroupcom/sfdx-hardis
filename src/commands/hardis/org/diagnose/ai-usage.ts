@@ -131,6 +131,16 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       uxLog('warning', this, c.yellow(t('aiUsageCreditColumnNotIdentified')));
     }
 
+    // Say it out loud when the detail listing is capped: the totals stay exact, but the
+    // per-agent breakdown below is not the whole picture.
+    if (this.usageResult.truncatedRows) {
+      uxLog(
+        'warning',
+        this,
+        c.yellow(t('aiUsageDetailRowsTruncated', { count: this.usageResult.truncatedRows }))
+      );
+    }
+
     uxLogTable(this, this.usageResult.aiRows);
 
     this.outputFile = await generateReportPath('ai-usage', this.outputFile);

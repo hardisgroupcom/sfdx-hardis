@@ -148,8 +148,27 @@ export interface EntitlementPeriod {
   end: Date;
 }
 
+const DAY_STEP: Record<string, number> = { Daily: 1, Weekly: 7, Fortnightly: 14 };
+const MONTH_STEP: Record<string, number> = { Monthly: 1, Quarterly: 3, Yearly: 12 };
+
+export function isRecurringFrequency(frequency: string): boolean {
+  return Boolean(DAY_STEP[frequency] || MONTH_STEP[frequency]);
+}
+
 // Rolls the entitlement window forward from StartDate until it contains `now`.
-// Returns null when no period applies (Frequency "Once", missing StartDate, or a future StartDate).
+//
+// EndDate is the CONTRACT expiry, not the end of the current billing window. Real orgs show
+// rows like Frequency "Daily" with EndDate three years out, or "Monthly" running to 2027: the
+// allowance still resets on its own cycle. Using EndDate as the period end would spread the
+// elapsed share across the whole contract and flatten every projection to the raw consumption
+// percentage, which silently disables the pace alerting.
+//
+// So: recurring frequencies derive their window from StartDate + Frequency, and EndDate only
+// acts as an upper bound (a contract ending mid-period shortens it; an expired contract yields
+// no period at all). Non-recurring rows ("Once") are flat capacity with no pace to project.
+//
+// Returns null when no period applies: Frequency "Once" or unknown, missing StartDate, a future
+// StartDate, or a contract that has already expired.
 export function resolveEntitlementPeriod(
   record: { StartDate?: string | null; EndDate?: string | null; Frequency?: string | null },
   now: Date = new Date(),
@@ -158,27 +177,26 @@ export function resolveEntitlementPeriod(
   if (!start) {
     return null;
   }
-  const explicitEnd = parseDateOnly(record.EndDate);
-  if (explicitEnd) {
-    return explicitEnd > start ? { start, end: explicitEnd } : null;
+  const contractEnd = parseDateOnly(record.EndDate);
+  const frequency = String(record.Frequency || "");
+
+  // "Once" and any unknown frequency: flat capacity, no recurring window, no projection.
+  if (!isRecurringFrequency(frequency)) {
+    return null;
   }
+
   if (start > now) {
     return null;
   }
 
-  const frequency = String(record.Frequency || "");
-  const dayStep: Record<string, number> = { Daily: 1, Weekly: 7, Fortnightly: 14 };
-  const monthStep: Record<string, number> = { Monthly: 1, Quarterly: 3, Yearly: 12 };
-
-  if (dayStep[frequency]) {
-    const step = dayStep[frequency];
+  let period: EntitlementPeriod;
+  if (DAY_STEP[frequency]) {
+    const step = DAY_STEP[frequency];
     const elapsedPeriods = Math.floor((now.getTime() - start.getTime()) / (step * MS_PER_DAY));
     const periodStart = addDaysUtc(start, elapsedPeriods * step);
-    return { start: periodStart, end: addDaysUtc(periodStart, step) };
-  }
-
-  if (monthStep[frequency]) {
-    const step = monthStep[frequency];
+    period = { start: periodStart, end: addDaysUtc(periodStart, step) };
+  } else {
+    const step = MONTH_STEP[frequency];
     // Walk forward month-by-month rather than estimating, so month lengths stay exact.
     let periodStart = start;
     let periodEnd = addMonthsUtc(periodStart, step);
@@ -188,11 +206,21 @@ export function resolveEntitlementPeriod(
       periodEnd = addMonthsUtc(periodStart, step);
       guard++;
     }
-    return { start: periodStart, end: periodEnd };
+    period = { start: periodStart, end: periodEnd };
   }
 
-  // "Once" and any unknown frequency: flat capacity, no period.
-  return null;
+  if (contractEnd) {
+    // Contract already over: there is no live allowance left to project against.
+    if (contractEnd <= period.start) {
+      return null;
+    }
+    // Contract stops partway through the current cycle: the window ends with the contract.
+    if (contractEnd < period.end) {
+      period = { start: period.start, end: contractEnd };
+    }
+  }
+
+  return period;
 }
 
 export function computePercentPeriodElapsed(
@@ -246,7 +274,16 @@ function maxSeverity(a: NotifSeverity, b: NotifSeverity): NotifSeverity {
   return SEVERITY_RANK[a] >= SEVERITY_RANK[b] ? a : b;
 }
 
-function toPositiveNumber(value: any): number | null {
+// Coerces a config/env value to a number, or null when it is absent.
+//
+// Careful with the absent cases: getEnvVar() returns null for an unset variable and
+// Number(null) is 0, which is both finite and a perfectly plausible threshold. Falling through
+// on that would silently set every threshold to 0 and flag any entitlement above 0% as an
+// error. Absent must stay absent so the documented defaults apply.
+export function toNumberOrNull(value: any): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
@@ -269,21 +306,21 @@ export async function resolveUsageEntitlementsConfig(): Promise<UsageEntitlement
 
   return {
     projectionThresholdWarning:
-      toPositiveNumber(getEnvVar("USAGE_PROJECTION_THRESHOLD_WARNING")) ??
-      toPositiveNumber(block.projectionThresholdWarning) ??
+      toNumberOrNull(getEnvVar("USAGE_PROJECTION_THRESHOLD_WARNING")) ??
+      toNumberOrNull(block.projectionThresholdWarning) ??
       DEFAULT_PROJECTION_THRESHOLD_WARNING,
     projectionThresholdError:
-      toPositiveNumber(getEnvVar("USAGE_PROJECTION_THRESHOLD_ERROR")) ??
-      toPositiveNumber(block.projectionThresholdError) ??
+      toNumberOrNull(getEnvVar("USAGE_PROJECTION_THRESHOLD_ERROR")) ??
+      toNumberOrNull(block.projectionThresholdError) ??
       DEFAULT_PROJECTION_THRESHOLD_ERROR,
     // Reuse the org-limits thresholds so both limit-style commands stay consistent.
     percentThresholdWarning:
-      toPositiveNumber(getEnvVar("LIMIT_THRESHOLD_WARNING")) ??
-      toPositiveNumber(block.percentThresholdWarning) ??
+      toNumberOrNull(getEnvVar("LIMIT_THRESHOLD_WARNING")) ??
+      toNumberOrNull(block.percentThresholdWarning) ??
       50,
     percentThresholdError:
-      toPositiveNumber(getEnvVar("LIMIT_THRESHOLD_ERROR")) ??
-      toPositiveNumber(block.percentThresholdError) ??
+      toNumberOrNull(getEnvVar("LIMIT_THRESHOLD_ERROR")) ??
+      toNumberOrNull(block.percentThresholdError) ??
       75,
     resources,
   };

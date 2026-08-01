@@ -13,13 +13,18 @@ import { escapeSqlLiteral, AgentforceQueryFilters } from "./agentforceQueryUtils
 // listing (with a regex fallback so a Salesforce rename does not silently break the command) and
 // columns are read from the metadata the query API returns.
 
+// Real orgs publish the model as `AiAgentGenerativeAiUsage_std__dlm`. The other spellings are
+// kept because Salesforce has shipped `ssot__`-prefixed variants for neighbouring Agentforce
+// DMOs, and the regex fallback below covers anything not listed here.
 export const CANDIDATE_AI_USAGE_MODELS = [
+  "AiAgentGenerativeAiUsage_std__dlm",
   "ssot__AiAgentGenerativeAiUsage__dlm",
   "AiAgentGenerativeAiUsage__dlm",
   "ssot__GenerativeAiUsage__dlm",
 ];
 
 export const CANDIDATE_DATA_CREDIT_MODELS = [
+  "TenantEnrichedUsageEvent_std__dlm",
   "ssot__TenantEnrichedUsageEvent__dlm",
   "TenantEnrichedUsageEvent__dlm",
 ];
@@ -27,15 +32,27 @@ export const CANDIDATE_DATA_CREDIT_MODELS = [
 const AI_USAGE_MODEL_PATTERN = /(generativeaiusage|aiagentusage|aiagentgenerativeai)/i;
 const DATA_CREDIT_MODEL_PATTERN = /tenantenrichedusageevent/i;
 
-// Column role detection. Ordered from most to least specific: the first pattern that matches a
-// column name wins, so "creditsConsumed" is preferred over a bare "amount".
+// Column role detection. Patterns are tried in order and the FIRST PATTERN that matches any
+// column wins, so specific names beat generic ones regardless of where they sit in the schema
+// (e.g. `AiAgentToolName__c` is preferred over `AiAgentToolIdentifier__c` even though the
+// identifier column comes first).
+//
+// The credits patterns matter most: on a real org the billed quantity is `UsageQuantity__c`,
+// which none of the credit/amount spellings match. Missing it drops the command to its
+// unaggregated fallback, so keep the quantity spellings in this list.
 const COLUMN_PATTERNS: { role: AiUsageColumnRole; patterns: RegExp[] }[] = [
-  { role: "credits", patterns: [/credit/i, /consumedunits?/i, /usageamount/i, /\bamount\b/i] },
-  { role: "agent", patterns: [/agentname/i, /agentlabel/i, /\bagent/i, /botname/i] },
-  { role: "action", patterns: [/actionname/i, /\baction/i, /functionname/i, /capability/i] },
-  { role: "metered", patterns: [/metered/i, /billable/i, /chargeable/i] },
+  {
+    role: "credits",
+    patterns: [/credit/i, /usagequantity/i, /consumedunits?/i, /usageamount/i, /quantity/i, /\bamount\b/i],
+  },
+  { role: "agent", patterns: [/agentname/i, /agentdevelopername/i, /agentlabel/i, /\bagent/i, /botname/i] },
+  {
+    role: "action",
+    patterns: [/actionname/i, /toolname/i, /\baction/i, /functionname/i, /capability/i, /tool/i],
+  },
+  { role: "metered", patterns: [/ismeteredindicator/i, /metered/i, /billable/i, /chargeable/i] },
   { role: "usageType", patterns: [/usagetype/i, /servicetype/i, /resourcetype/i, /featurename/i] },
-  { role: "timestamp", patterns: [/timestamp/i, /usagedate/i, /eventdate/i, /createddate/i] },
+  { role: "timestamp", patterns: [/^timestamp/i, /timestamp/i, /usagedate/i, /eventdate/i, /createddate/i] },
 ];
 
 export type AiUsageColumnRole = "credits" | "agent" | "action" | "metered" | "usageType" | "timestamp";
@@ -59,6 +76,16 @@ export interface AiUsageRow {
   events: number | null;
 }
 
+// Org-wide totals, computed by a dedicated aggregate query rather than by summing the detail
+// rows. The detail query is capped by `rowLimit`, so summing it would silently under-report on
+// any org with more distinct agent/action combinations than the cap.
+export interface AiUsageTotals {
+  credits: number;
+  creditsMetered: number;
+  creditsUnmetered: number;
+  events: number;
+}
+
 export interface AiUsageResult {
   // False when Data Cloud is absent, or present without any consumption model provisioned.
   available: boolean;
@@ -69,6 +96,11 @@ export interface AiUsageResult {
   degraded: boolean;
   aiRows: AiUsageRow[];
   dataCreditRows: Record<string, AnyJson>[];
+  // Authoritative totals. Undefined only when no credits column could be identified.
+  aiTotals?: AiUsageTotals;
+  dataCreditTotals?: AiUsageTotals;
+  // Number of detail rows dropped by the row cap, so the caller can say so out loud.
+  truncatedRows?: number;
 }
 
 export function findModelName(
@@ -88,11 +120,16 @@ export function findModelName(
 export function mapUsageColumns(columns: DataCloudQueryColumnMetadata[]): AiUsageColumnMapping {
   const mapping: AiUsageColumnMapping = {};
   for (const { role, patterns } of COLUMN_PATTERNS) {
-    const match = columns.find(
-      (column) => patterns.some((pattern) => pattern.test(column.name)) && !isRoleTaken(mapping, column.name),
-    );
-    if (match) {
-      mapping[role] = match.name;
+    // Pattern priority wins over column order: walk the patterns outermost so a later, more
+    // specific column still beats an earlier, vaguer one.
+    for (const pattern of patterns) {
+      const match = columns.find(
+        (column) => pattern.test(column.name) && !isRoleTaken(mapping, column.name),
+      );
+      if (match) {
+        mapping[role] = match.name;
+        break;
+      }
     }
   }
   return mapping;
@@ -153,6 +190,50 @@ export function buildAiUsageQuery(
     `SELECT ${selectParts.join(", ")} FROM ${model} ${whereClause}${groupByClause} ` +
     `ORDER BY credits DESC LIMIT ${rowLimit}`
   );
+}
+
+// Totals query: grouped only by the metered flag, so the result is at most a couple of rows and
+// can never hit the detail row cap. This is what feeds the metrics.
+export function buildAiUsageTotalsQuery(
+  info: AiUsageModelInfo,
+  filters: AgentforceQueryFilters,
+): string | null {
+  const { mapping, model } = info;
+  if (!mapping.credits) {
+    return null;
+  }
+  const selectParts: string[] = [];
+  const groupParts: string[] = [];
+  if (mapping.metered) {
+    selectParts.push(`${mapping.metered} AS metered`);
+    groupParts.push(mapping.metered);
+  }
+  selectParts.push(`SUM(${mapping.credits}) AS credits`);
+  selectParts.push(`COUNT(1) AS events`);
+
+  const whereClause = `WHERE 1 = 1${buildDateClause(filters, mapping.timestamp)}`;
+  const groupByClause = groupParts.length ? ` GROUP BY ${groupParts.join(", ")}` : "";
+  return `SELECT ${selectParts.join(", ")} FROM ${model} ${whereClause}${groupByClause}`;
+}
+
+export function accumulateTotals(records: Record<string, AnyJson>[]): AiUsageTotals {
+  const totals: AiUsageTotals = { credits: 0, creditsMetered: 0, creditsUnmetered: 0, events: 0 };
+  for (const record of records) {
+    const credits = pickNumber(record, "credits") ?? 0;
+    const events = pickNumber(record, "events") ?? 0;
+    totals.credits += credits;
+    totals.events += events;
+    const metered = pick(record, "metered");
+    if (metered && isMetered(metered)) {
+      totals.creditsMetered += credits;
+    } else if (metered) {
+      totals.creditsUnmetered += credits;
+    }
+  }
+  totals.credits = round2(totals.credits);
+  totals.creditsMetered = round2(totals.creditsMetered);
+  totals.creditsUnmetered = round2(totals.creditsUnmetered);
+  return totals;
 }
 
 function pick(record: Record<string, AnyJson>, key: string): string {
@@ -223,6 +304,15 @@ export async function collectAiUsage(
     if (query) {
       const queryResult = await dataCloudSqlQuery(query, conn, { rowLimit });
       result.aiRows = queryResult.records.map((record) => toAiUsageRow(record));
+      // Detail rows are capped; totals must not be, so they come from their own query.
+      const totalsQuery = buildAiUsageTotalsQuery(info, filters);
+      if (totalsQuery) {
+        const totalsResult = await dataCloudSqlQuery(totalsQuery, conn, { rowLimit: 100 });
+        result.aiTotals = accumulateTotals(totalsResult.records);
+      }
+      if (result.aiRows.length >= rowLimit) {
+        result.truncatedRows = result.aiRows.length;
+      }
     } else {
       // No credits column recognized: return raw rows rather than inventing an aggregation.
       result.degraded = true;
@@ -238,6 +328,11 @@ export async function collectAiUsage(
     const effectiveQuery = query ?? `SELECT * FROM ${dataCreditModel} LIMIT ${rowLimit}`;
     const queryResult = await dataCloudSqlQuery(effectiveQuery, conn, { rowLimit });
     result.dataCreditRows.push(...queryResult.records);
+    const totalsQuery = buildAiUsageTotalsQuery(info, filters);
+    if (totalsQuery) {
+      const totalsResult = await dataCloudSqlQuery(totalsQuery, conn, { rowLimit: 100 });
+      result.dataCreditTotals = accumulateTotals(totalsResult.records);
+    }
   }
 
   return result;
@@ -248,37 +343,17 @@ function isMetered(value: string): boolean {
   return normalized === "true" || normalized === "1" || normalized === "metered" || normalized === "yes";
 }
 
+// Metrics read the dedicated totals queries, never the capped detail rows, so a busy org with
+// more agent/action combinations than the row cap still reports its true consumption.
 export function buildAiUsageMetrics(result: AiUsageResult): any {
-  let creditsTotal = 0;
-  let creditsMetered = 0;
-  let creditsUnmetered = 0;
-  let actions = 0;
-
-  for (const row of result.aiRows) {
-    const credits = row.credits ?? 0;
-    creditsTotal += credits;
-    if (row.metered && isMetered(row.metered)) {
-      creditsMetered += credits;
-    } else if (row.metered) {
-      creditsUnmetered += credits;
-    }
-    actions += row.events ?? 0;
-  }
-
-  let dataCloudCredits = 0;
-  for (const row of result.dataCreditRows) {
-    const credits = pickNumber(row, "credits");
-    if (credits !== null) {
-      dataCloudCredits += credits;
-    }
-  }
-
+  const ai = result.aiTotals;
+  const dataCloud = result.dataCreditTotals;
   return {
-    AiUsageCreditsTotal: round2(creditsTotal),
-    AiUsageCreditsMetered: round2(creditsMetered),
-    AiUsageCreditsUnmetered: round2(creditsUnmetered),
-    AiUsageActions: actions,
-    DataCloudCreditsTotal: round2(dataCloudCredits),
+    AiUsageCreditsTotal: ai?.credits ?? 0,
+    AiUsageCreditsMetered: ai?.creditsMetered ?? 0,
+    AiUsageCreditsUnmetered: ai?.creditsUnmetered ?? 0,
+    AiUsageActions: ai?.events ?? 0,
+    DataCloudCreditsTotal: dataCloud?.credits ?? 0,
   };
 }
 

@@ -59,7 +59,9 @@ The same thresholds can be set with environment variables, which take precedence
 
 ## How the billing period is computed
 
-Salesforce rarely populates an end date on an entitlement, so the current window is derived from the start date and the frequency (`Daily`, `Weekly`, `Fortnightly`, `Monthly`, `Quarterly`, `Yearly`). The window is rolled forward from the start date until it contains today, using calendar arithmetic for monthly, quarterly and yearly frequencies.
+The current window is derived from the entitlement start date and its frequency (`Daily`, `Weekly`, `Fortnightly`, `Monthly`, `Quarterly`, `Yearly`), rolled forward until it contains today, using calendar arithmetic for monthly, quarterly and yearly frequencies.
+
+The end date on an entitlement is the **contract expiry, not the end of the current billing window**. Orgs routinely carry a `Daily` allowance with an end date three years out, or a `Monthly` one running until the contract renews. It is therefore used only as an upper bound: a contract ending partway through a cycle shortens that cycle, and an expired contract produces no window at all.
 
 Entitlements with a frequency of `Once` are flat capacity rather than a recurring allowance. They have no period, so no projection is computed and only the consumption thresholds apply.
 

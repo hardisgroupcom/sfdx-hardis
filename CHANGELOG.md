@@ -6,6 +6,7 @@
 - New [hardis:org:diagnose:consumption-alerts](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/consumption-alerts/): Report the consumption and license utilization alerts Salesforce raises on the org.
 - New [hardis:org:diagnose:ai-usage](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/ai-usage/): Break down Agentforce and Data 360 credit consumption by agent and action (requires Data 360).
 - New "08 - Usage & Cost" Grafana v2 dashboard for entitlement consumption, projected overage, utilization alerts and AI credit usage.
+- Fix usage-based entitlement alerting: billing periods now follow the entitlement frequency instead of the contract expiry, and thresholds no longer default to zero when their environment variables are unset.
 
 ## [7.23.0] 2026-07-26
 
