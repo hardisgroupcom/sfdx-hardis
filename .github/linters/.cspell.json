@@ -1390,6 +1390,27 @@
     "smhd",
     "uids",
     "unpausable",
-    "useremail"
+    "useremail",
+    "accordionusage",
+    "actionname",
+    "agentlabel",
+    "agentname",
+    "aiagentgenerativeai",
+    "aiagentusage",
+    "botname",
+    "consumedunits",
+    "createddate",
+    "eventdate",
+    "featurename",
+    "functionname",
+    "generativeaiusage",
+    "resourcetype",
+    "servicetype",
+    "tenantconsumptionalert",
+    "tenantenrichedusageevent",
+    "unmetered",
+    "usageamount",
+    "usagedate",
+    "usagetype"
   ]
 }
