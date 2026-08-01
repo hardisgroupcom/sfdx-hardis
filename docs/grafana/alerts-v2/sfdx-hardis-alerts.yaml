@@ -300,10 +300,10 @@ groups:
                     params: [0]
                     type: gt
       # ----------------------------------------------------------------------
-      # 7. Usage-based entitlement projected to exceed its allowance
+      # 7. Usage-based entitlement over, or projected to exceed, its allowance
       # ----------------------------------------------------------------------
       - uid: sfdx-hardis-v2-usage-entitlement-overage
-        title: Salesforce usage-based entitlement projected to be exceeded
+        title: Salesforce usage-based entitlement over or projected over allowance
         condition: C
         isPaused: true
         for: 0s
@@ -323,10 +323,9 @@ groups:
               refId: A
               instant: true
               range: false
-              # UsageEntProjected_* holds the consumption projected to the end of the billing
-              # period, as a percentage of the allowance. Above 150 means the allowance is on
-              # track to be overshot by half again. Aggregated per org so one alert fires per
-              # org rather than one per resource.
+              # Two branches: an allowance already fully consumed (overage is being billed
+              # now), or a projection heading past 150% of the allowance before the period
+              # ends. Aggregated per org so one alert fires per org, not one per resource.
               expr: >-
                 (max by (orgIdentifier) (last_over_time(UsageEntitlementsOverAllowance{source="sfdx-hardis"}[2d])) > 0)
                 or
@@ -349,7 +348,7 @@ groups:
                     params: [0]
                     type: gt
       # ----------------------------------------------------------------------
-      # 8. Salesforce raised a utilization alert reaching the full allowance
+      # 8. Consumption card approaching its full allowance
       # ----------------------------------------------------------------------
       - uid: sfdx-hardis-v2-consumption-alert-critical
         title: Salesforce consumption card near its full allowance

@@ -10411,6 +10411,431 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionusageCost">
+    <div class="card">
+        <div class="card-header" id="headingusageCost">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#usageCost"
+                        aria-expanded="" aria-controls="usageCost" onclick="setAnchor('#usageCost')"><span class="property-name">usageCost</span></button>
+            </h2>
+        </div>
+
+        <div id="usageCost"
+             class="collapse property-definition-div" aria-labelledby="headingusageCost"
+             data-parent="#accordionusageCost">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost" onclick="anchorLink('usageCost')">usageCost</a></div><h4>Usage cost estimation</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Optional cost estimation for consumption-billed Salesforce products. Salesforce publishes no prices through any API, so every rate here comes from your own contract and the resulting figures are ESTIMATES, not invoices. Nothing is costed unless a rate is declared for it: resources without a rate simply report no cost. Cost is reporting only and never influences notification severity.</p>
+</span> <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#usageCost_ex1" aria-controls="usageCost_ex1"></button><div id="usageCost_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;currency&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;EUR&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;flexCredits&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;unitPrice&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">0.005</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="s2">&quot;resources&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;MaxCustomerNetworkLogins&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">&quot;unitPrice&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">0.12</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">&quot;model&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;overage&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="accordion" id="accordionusageCost_currency">
+    <div class="card">
+        <div class="card-header" id="headingusageCost_currency">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#usageCost_currency"
+                        aria-expanded="" aria-controls="usageCost_currency" onclick="setAnchor('#usageCost_currency')"><span class="property-name">currency</span></button>
+            </h2>
+        </div>
+
+        <div id="usageCost_currency"
+             class="collapse property-definition-div" aria-labelledby="headingusageCost_currency"
+             data-parent="#accordionusageCost_currency">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost" onclick="anchorLink('usageCost')">usageCost</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_currency" onclick="anchorLink('usageCost_currency')">currency</a></div><h4>Currency</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: "USD"</span><br/>
+<span class="description"><p>Currency code used to display every estimated cost. No conversion is performed: all rates must be expressed in this currency.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionusageCost_flexCredits">
+    <div class="card">
+        <div class="card-header" id="headingusageCost_flexCredits">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#usageCost_flexCredits"
+                        aria-expanded="" aria-controls="usageCost_flexCredits" onclick="setAnchor('#usageCost_flexCredits')"><span class="property-name">flexCredits</span></button>
+            </h2>
+        </div>
+
+        <div id="usageCost_flexCredits"
+             class="collapse property-definition-div" aria-labelledby="headingusageCost_flexCredits"
+             data-parent="#accordionusageCost_flexCredits">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost" onclick="anchorLink('usageCost')">usageCost</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_flexCredits" onclick="anchorLink('usageCost_flexCredits')">flexCredits</a></div><h4>Flex Credits rate</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Rate applied to Agentforce and Data 360 credits. Flex Credits tier down with volume, so a flat rate is an upper bound: the real charge is at most the reported figure.</p>
+</span> <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordionusageCost_flexCredits_unitPrice">
+    <div class="card">
+        <div class="card-header" id="headingusageCost_flexCredits_unitPrice">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#usageCost_flexCredits_unitPrice"
+                        aria-expanded="" aria-controls="usageCost_flexCredits_unitPrice" onclick="setAnchor('#usageCost_flexCredits_unitPrice')"><span class="property-name">unitPrice</span></button>
+            </h2>
+        </div>
+
+        <div id="usageCost_flexCredits_unitPrice"
+             class="collapse property-definition-div" aria-labelledby="headingusageCost_flexCredits_unitPrice"
+             data-parent="#accordionusageCost_flexCredits_unitPrice">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost" onclick="anchorLink('usageCost')">usageCost</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_flexCredits" onclick="anchorLink('usageCost_flexCredits')">flexCredits</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_flexCredits_unitPrice" onclick="anchorLink('usageCost_flexCredits_unitPrice')">unitPrice</a></div><h4>Credit unit price</h4><span class="badge badge-dark value-type">Type: number</span><br/>
+<span class="description"><p>Price of a single credit, in the configured currency.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionusageCost_resources">
+    <div class="card">
+        <div class="card-header" id="headingusageCost_resources">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#usageCost_resources"
+                        aria-expanded="" aria-controls="usageCost_resources" onclick="setAnchor('#usageCost_resources')"><span class="property-name">resources</span></button>
+            </h2>
+        </div>
+
+        <div id="usageCost_resources"
+             class="collapse property-definition-div" aria-labelledby="headingusageCost_resources"
+             data-parent="#accordionusageCost_resources">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost" onclick="anchorLink('usageCost')">usageCost</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_resources" onclick="anchorLink('usageCost_resources')">resources</a></div><h4>Per-resource rates</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
+<span class="description"><p>Per-resource rates. Only entitlements listed here are costed, which avoids inventing charges for hard caps such as 'B2B Commerce Total Storefronts' that are not metered at all.</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="usageCost_resources_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost" onclick="anchorLink('usageCost')">usageCost</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_resources" onclick="anchorLink('usageCost_resources')">resources</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_resources_items" onclick="anchorLink('usageCost_resources_items')">resources items</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Rate applied to a single usage-based entitlement.</p>
+</span> <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordionusageCost_resources_items_key">
+    <div class="card">
+        <div class="card-header" id="headingusageCost_resources_items_key">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#usageCost_resources_items_key"
+                        aria-expanded="" aria-controls="usageCost_resources_items_key" onclick="setAnchor('#usageCost_resources_items_key')"><span class="property-name">key</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="usageCost_resources_items_key"
+             class="collapse property-definition-div" aria-labelledby="headingusageCost_resources_items_key"
+             data-parent="#accordionusageCost_resources_items_key">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost" onclick="anchorLink('usageCost')">usageCost</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_resources" onclick="anchorLink('usageCost_resources')">resources</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_resources_items" onclick="anchorLink('usageCost_resources_items')">resources items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_resources_items_key" onclick="anchorLink('usageCost_resources_items_key')">key</a></div><h4>Resource key</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Resource identifier, taken from the Setting field of the entitlement. Both the full value and its trailing token are accepted.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionusageCost_resources_items_unitPrice">
+    <div class="card">
+        <div class="card-header" id="headingusageCost_resources_items_unitPrice">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#usageCost_resources_items_unitPrice"
+                        aria-expanded="" aria-controls="usageCost_resources_items_unitPrice" onclick="setAnchor('#usageCost_resources_items_unitPrice')"><span class="property-name">unitPrice</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="usageCost_resources_items_unitPrice"
+             class="collapse property-definition-div" aria-labelledby="headingusageCost_resources_items_unitPrice"
+             data-parent="#accordionusageCost_resources_items_unitPrice">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost" onclick="anchorLink('usageCost')">usageCost</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_resources" onclick="anchorLink('usageCost_resources')">resources</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_resources_items" onclick="anchorLink('usageCost_resources_items')">resources items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_resources_items_unitPrice" onclick="anchorLink('usageCost_resources_items_unitPrice')">unitPrice</a></div><h4>Unit price</h4><span class="badge badge-dark value-type">Type: number</span><br/>
+<span class="description"><p>Price of a single consumed unit, in the configured currency.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionusageCost_resources_items_model">
+    <div class="card">
+        <div class="card-header" id="headingusageCost_resources_items_model">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#usageCost_resources_items_model"
+                        aria-expanded="" aria-controls="usageCost_resources_items_model" onclick="setAnchor('#usageCost_resources_items_model')"><span class="property-name">model</span></button>
+            </h2>
+        </div>
+
+        <div id="usageCost_resources_items_model"
+             class="collapse property-definition-div" aria-labelledby="headingusageCost_resources_items_model"
+             data-parent="#accordionusageCost_resources_items_model">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost" onclick="anchorLink('usageCost')">usageCost</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_resources" onclick="anchorLink('usageCost_resources')">resources</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_resources_items" onclick="anchorLink('usageCost_resources_items')">resources items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#usageCost_resources_items_model" onclick="anchorLink('usageCost_resources_items_model')">model</a></div><h4>Cost model</h4><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "overage"</span><br/>
+<span class="description"><p>How consumption converts to money. 'overage' charges only the units consumed beyond the purchased allowance (the common case). 'total' charges every unit consumed.</p>
+</span><div class="enum-value" id="usageCost_resources_items_model_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"overage"</li><li class="list-group-item enum-item">"total"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionmonitoringAllowedSectionsActions">
     <div class="card">
         <div class="card-header" id="headingmonitoringAllowedSectionsActions">

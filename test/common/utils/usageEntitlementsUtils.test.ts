@@ -352,6 +352,67 @@ describe('usageEntitlementsUtils', () => {
       expect(row.severity).to.equal('error');
     });
 
+    // Muting silences alerting, not spending. Dropping a muted resource from the cost total
+    // would understate the bill for exactly the resources a user chose to stop being nagged about.
+    it('still costs a muted resource', () => {
+      const config: UsageEntitlementsConfig = {
+        ...baseConfig,
+        resources: { MaxCustomerNetworkLogins: { key: 'MaxCustomerNetworkLogins', mute: true } },
+      };
+      const costConfig = {
+        enabled: true,
+        currency: 'EUR',
+        flexCreditUnitPrice: null,
+        resources: {
+          MaxCustomerNetworkLogins: {
+            key: 'MaxCustomerNetworkLogins',
+            unitPrice: 0.12,
+            model: 'overage' as const,
+          },
+        },
+      };
+      const row = buildUsageEntitlementRow(
+        {
+          Setting: 'setting/force.com/orgValue.MaxCustomerNetworkLogins',
+          CurrentAmountAllowed: 600,
+          AmountUsed: 828,
+        },
+        config,
+        NOW,
+        costConfig
+      );
+      expect(row.status).to.equal('muted');
+      expect(row.severity).to.equal('log');
+      expect(row.estimatedCost).to.equal(27.36);
+    });
+
+    it('leaves cost null for an unmetered resource even when a rate exists', () => {
+      const costConfig = {
+        enabled: true,
+        currency: 'EUR',
+        flexCreditUnitPrice: null,
+        resources: {
+          MaxCustomerNetworkLogins: {
+            key: 'MaxCustomerNetworkLogins',
+            unitPrice: 0.12,
+            model: 'overage' as const,
+          },
+        },
+      };
+      const row = buildUsageEntitlementRow(
+        {
+          Setting: 'setting/force.com/orgValue.MaxCustomerNetworkLogins',
+          CurrentAmountAllowed: 600,
+          AmountUsed: null,
+        },
+        baseConfig,
+        NOW,
+        costConfig
+      );
+      expect(row.status).to.equal('not-metered');
+      expect(row.estimatedCost).to.equal(null);
+    });
+
     it('mutes a resource configured with mute true', () => {
       const config: UsageEntitlementsConfig = {
         ...baseConfig,

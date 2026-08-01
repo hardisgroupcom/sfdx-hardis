@@ -184,15 +184,18 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       const remaining = this.usageResult.aiRows.length - topConsumers.length;
       let text = `**Top consumers**\n${topConsumers.map(formatAiUsageLine).join('\n')}`;
       if (remaining > 0) {
-        // Never let the top-10 read as the whole picture.
-        text += `\n- ...and ${remaining} more, totalling ${Math.max(0, Math.round((totalCredits - listed) * 100) / 100)} credits`;
+        // Never let the top-10 read as the whole picture. The listed rows come from the AI
+        // model only, so the remainder is measured against the AI total, not the combined
+        // total which also carries Data 360 credits.
+        const tail = Math.max(0, Math.round((metrics.AiUsageCreditsTotal - listed) * 100) / 100);
+        text += `\n- ...and ${remaining} more, totalling ${tail} credits`;
       }
       notifAttachments.push({ text });
     }
 
     if (creditsThreshold > 0 && billedCredits > creditsThreshold) {
       notifSeverity = 'warning';
-      notifText = `Billed credit consumption exceeded the configured threshold in ${orgMarkdown}: **${billedCredits}** credits over the last ${flags.days} days (threshold: **${creditsThreshold}**)`;
+      notifText = `Billed credit consumption exceeded the configured threshold in ${orgMarkdown}: **${billedCredits}** credits over the last ${flags.days} days${costSuffix} (threshold: **${creditsThreshold}**)`;
       uxLog('warning', this, c.yellow(notifText));
     } else {
       uxLog('success', this, c.green(notifText));

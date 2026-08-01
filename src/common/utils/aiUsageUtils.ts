@@ -6,6 +6,7 @@ import {
   getDataCloudAvailability,
 } from "./dataCloudUtils.js";
 import { escapeSqlLiteral, AgentforceQueryFilters } from "./agentforceQueryUtils.js";
+import { round2 as roundMoney } from "./usageCostUtils.js";
 
 // Agentforce and Data 360 consumption live in Data 360 data model objects, not in SOQL.
 // Their exact names and columns ship with a paid Agentforce / Data 360 SKU and are not present on
@@ -357,9 +358,9 @@ export function buildAiUsageMetrics(result: AiUsageResult): any {
   };
 }
 
-function round2(value: number): number {
-  return parseFloat(value.toFixed(2));
-}
+// Credits are the billing unit, so they round like money: half up, never through toFixed(2)
+// which drops 35.985 to 35.98. Shared with the cost helpers so there is one rounding rule.
+const round2 = roundMoney;
 
 export function formatAiUsageLine(row: AiUsageRow): string {
   const label = [row.agent, row.action].filter(Boolean).join(" / ") || row.usageType || "Unknown";

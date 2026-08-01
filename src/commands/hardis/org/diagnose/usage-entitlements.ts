@@ -167,10 +167,10 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     // Cost is reporting only: severity keeps coming from what Salesforce reports, never from
     // rates typed into a config file, so a stale rate can neither invent nor mute an alert.
     const estimatedCost = sumEstimatedCosts(this.entitlementRows.map((row) => row.estimatedCost));
+    // "Estimated cost" rather than "overage": resources priced with `model: total` are charged
+    // on every unit consumed, not only on what exceeds the allowance.
     const costSuffix =
-      estimatedCost !== null
-        ? `. Estimated overage: **${formatCost(estimatedCost, costConfig)}**`
-        : '';
+      estimatedCost !== null ? `. Estimated cost: **${formatCost(estimatedCost, costConfig)}**` : '';
 
     if (overRows.length > 0) {
       notifSeverity = 'critical';
@@ -191,6 +191,9 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       notifText = `Usage-based entitlements are consumed faster than expected in ${orgMarkdown} (**${warningRows.length}**)${costSuffix}`;
       uxLog('warning', this, c.yellow(notifText));
     } else {
+      // Nothing at risk still does not mean nothing is being spent: resources priced with
+      // `model: total` cost money while sitting comfortably inside their allowance.
+      notifText = `No usage-based entitlement is at risk in ${orgMarkdown}${costSuffix}`;
       uxLog('success', this, c.green(t('noUsageEntitlementAtRisk')));
     }
 

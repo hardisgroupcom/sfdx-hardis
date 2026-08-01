@@ -1378,7 +1378,8 @@
               "daysRemaining": true,
               "frequency": true,
               "status": true,
-              "severity": true
+              "severity": true,
+              "estimatedCost": true
             },
             "renameByName": {
               "label": "Entitlement",
@@ -1391,7 +1392,8 @@
               "daysRemaining": "Days left",
               "frequency": "Frequency",
               "status": "Status",
-              "severity": "Severity"
+              "severity": "Severity",
+              "estimatedCost": "Est. cost"
             },
             "excludeByName": {
               "__proxy_source__": true

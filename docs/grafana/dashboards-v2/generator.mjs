@@ -1978,6 +1978,7 @@ const usageDashboard = dashboard({
                 frequency: true,
                 status: true,
                 severity: true,
+                estimatedCost: true,
               },
               renameByName: {
                 label: 'Entitlement',
@@ -1991,6 +1992,7 @@ const usageDashboard = dashboard({
                 frequency: 'Frequency',
                 status: 'Status',
                 severity: 'Severity',
+                estimatedCost: 'Est. cost',
               },
             }),
           ],

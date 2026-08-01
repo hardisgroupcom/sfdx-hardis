@@ -410,8 +410,12 @@ export function buildUsageEntitlementRow(
 
   const partialRow = { percentUsed, projectedPercent, status };
   const severity = resolveEntitlementSeverity(partialRow, config, resourceConfig);
+  // Muting silences alerting, not spending: a muted resource still costs what it costs, so it
+  // stays in the cost total. Only rows with no usable numbers are excluded (`not-metered` has
+  // no consumption, `no-allowance` has nothing to measure overage against).
+  const costableStatus = status === "ok" || status === "muted";
   const estimatedCost =
-    costConfig?.enabled && status === "ok"
+    costConfig?.enabled && costableStatus
       ? estimateEntitlementCost({ settingKey, setting, amountUsed, amountAllowed }, costConfig)
       : null;
 
