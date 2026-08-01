@@ -60,6 +60,31 @@ The same thresholds can be set with environment variables, which take precedence
 | `LIMIT_THRESHOLD_WARNING`            | 50      | Consumption percentage raising a warning              |
 | `LIMIT_THRESHOLD_ERROR`              | 75      | Consumption percentage raising an error               |
 
+## Estimated cost
+
+Consumption percentages tell you something is wrong; a euro figure tells you how much it matters. The command can turn overage into money, but the rates have to come from you.
+
+**Salesforce publishes no prices through any API.** `TenantUsageEntitlement` carries quantities and no rates, and your contracted prices live in your order form. Every cost reported here is therefore an **estimate computed from rates you declare**, not an invoice.
+
+```yaml
+usageCost:
+  currency: EUR
+  resources:
+    - key: MaxCustomerNetworkLogins
+      unitPrice: 0.12
+      model: overage
+    - key: MaxRegularNetworkMembers
+      unitPrice: 2.5
+```
+
+`model: overage` (the default) charges only the units consumed beyond the allowance, which is how prepaid allowances usually work. `model: total` charges every unit consumed, for pay-as-you-go resources.
+
+Rates are opt-in per resource on purpose. Plenty of entitlements are hard caps rather than meters ("B2B Commerce Total Storefronts: 2 of 5"), and applying a blanket rate to those would invent charges that do not exist. A resource with no rate reports **no cost at all**, which is deliberately different from a cost of zero.
+
+With the example above, an org consuming 828 Customer Community Logins against an allowance of 600 reports 228 units of overage at 0.12, so `27.36 EUR`.
+
+Cost is **reporting only**. Severity keeps coming from consumption and projection percentages, so a stale rate can never invent an alert or silence a real one.
+
 ## How the billing period is computed
 
 The current window is derived from the entitlement start date and its frequency (`Daily`, `Weekly`, `Fortnightly`, `Monthly`, `Quarterly`, `Yearly`), rolled forward until it contains today, using calendar arithmetic for monthly, quarterly and yearly frequencies.

@@ -1734,6 +1734,12 @@ const USAGE_NOTE =
   'Usage-based entitlements are what Salesforce bills on, unlike org limits which throttle. ' +
   RECENT_CLI_NOTE;
 
+// Salesforce exposes no prices through any API, so costs are computed from rates declared in
+// .sfdx-hardis.yml. They are estimates, not invoices, and are empty until rates are configured.
+const COST_NOTE =
+  'Estimate computed from the rates configured in usageCost, not a figure published by Salesforce. ' +
+  RECENT_CLI_NOTE;
+
 const usageDashboard = dashboard({
   uid: 'sfdx-hardis-v2-org-usage',
   title: '08 - Usage & Cost',
@@ -1796,6 +1802,56 @@ const usageDashboard = dashboard({
           targets: [promTarget(promLast('ConsumptionAlertsMaxThreshold'))],
           noValue: 'Schedule consumption-alerts',
           links: indicatorLink('CONSUMPTION_ALERTS'),
+        }),
+      ],
+    },
+    {
+      // Cost is an estimate built from rates the user configures: Salesforce publishes no
+      // prices through any API. Panels stay empty until usageCost is set up, and the unit is
+      // deliberately generic because the currency is per-org configuration.
+      row: 'Estimated cost',
+      panels: [
+        statPanel('Overage cost', {
+          gridPos: { w: 4, h: 5 },
+          description:
+            'Estimated cost of consumption beyond purchased allowances, in the currency configured for the org. ' +
+            COST_NOTE,
+          targets: [promTarget(promLast('UsageEntitlementsCost'))],
+          decimals: 2,
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Configure usageCost',
+          links: indicatorLink('USAGE_ENTITLEMENTS'),
+        }),
+        statPanel('AI credit cost', {
+          gridPos: { w: 4, h: 5 },
+          description:
+            'Estimated cost of billed Agentforce and Data 360 credits, in the currency configured for the org. ' +
+            COST_NOTE,
+          targets: [promTarget(promLast('AiUsageCost'))],
+          decimals: 2,
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Configure usageCost',
+          links: indicatorLink('AI_USAGE'),
+        }),
+        avgStat('Overage avg (30d)', 'UsageEntitlementsCost', '30d', {
+          description: 'Average estimated overage cost over 30 days. ' + COST_NOTE,
+          thresholds: THRESHOLDS_NONE,
+          links: indicatorLink('USAGE_ENTITLEMENTS'),
+        }),
+        timeseriesPanel('Estimated cost evolution', {
+          gridPos: { w: 12, h: 5 },
+          decimals: 2,
+          description: 'Estimated overage and AI credit cost over time. ' + COST_NOTE,
+          targets: [
+            promTarget(promLast('UsageEntitlementsCost', 'orgIdentifier="$org"', '1d'), {
+              legendFormat: 'Entitlement overage',
+            }),
+            promTarget(promLast('AiUsageCost', 'orgIdentifier="$org"', '1d'), {
+              legendFormat: 'AI credits',
+              refId: 'B',
+            }),
+          ],
+          links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
       ],
     },

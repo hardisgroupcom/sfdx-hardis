@@ -35,7 +35,7 @@
   ],
   "panels": [
     {
-      "id": 173,
+      "id": 177,
       "type": "row",
       "title": "At a glance",
       "collapsed": false,
@@ -494,9 +494,9 @@
       }
     },
     {
-      "id": 174,
+      "id": 178,
       "type": "row",
-      "title": "Freshness",
+      "title": "Estimated cost",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -509,6 +509,306 @@
     {
       "id": 162,
       "type": "stat",
+      "title": "Overage cost",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsCost{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Estimated cost of consumption beyond purchased allowances, in the currency configured for the org. Estimate computed from the rates configured in usageCost, not a figure published by Salesforce. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          },
+          "decimals": 2,
+          "noValue": "Configure usageCost",
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 163,
+      "type": "stat",
+      "title": "AI credit cost",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(AiUsageCost{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Estimated cost of billed Agentforce and Data 360 credits, in the currency configured for the org. Estimate computed from the rates configured in usageCost, not a figure published by Salesforce. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          },
+          "decimals": 2,
+          "noValue": "Configure usageCost",
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AI_USAGE"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 164,
+      "type": "stat",
+      "title": "Overage avg (30d)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (avg_over_time(UsageEntitlementsCost{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[30d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Average estimated overage cost over 30 days. Estimate computed from the rates configured in usageCost, not a figure published by Salesforce. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          },
+          "decimals": 1,
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 165,
+      "type": "timeseries",
+      "title": "Estimated cost evolution",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsCost{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
+          "refId": "A",
+          "legendFormat": "Entitlement overage"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(AiUsageCost{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
+          "refId": "B",
+          "legendFormat": "AI credits"
+        }
+      ],
+      "description": "Estimated overage and AI credit cost over time. Estimate computed from the rates configured in usageCost, not a figure published by Salesforce. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          },
+          "decimals": 2,
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS"
+            }
+          ],
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 179,
+      "type": "row",
+      "title": "Freshness",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "panels": []
+    },
+    {
+      "id": 166,
+      "type": "stat",
       "title": "Stats generation date",
       "datasource": {
         "type": "loki",
@@ -518,7 +818,7 @@
         "h": 5,
         "w": 4,
         "x": 0,
-        "y": 7
+        "y": 13
       },
       "targets": [
         {
@@ -597,7 +897,7 @@
       }
     },
     {
-      "id": 175,
+      "id": 180,
       "type": "row",
       "title": "Consumption vs allowance",
       "collapsed": false,
@@ -605,12 +905,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 18
       },
       "panels": []
     },
     {
-      "id": 163,
+      "id": 167,
       "type": "table",
       "title": "Entitlement consumption",
       "datasource": {
@@ -621,7 +921,7 @@
         "h": 12,
         "w": 12,
         "x": 0,
-        "y": 13
+        "y": 19
       },
       "targets": [
         {
@@ -742,7 +1042,7 @@
       }
     },
     {
-      "id": 164,
+      "id": 168,
       "type": "table",
       "title": "Projected consumption at period end",
       "datasource": {
@@ -753,7 +1053,7 @@
         "h": 12,
         "w": 12,
         "x": 12,
-        "y": 13
+        "y": 19
       },
       "targets": [
         {
@@ -865,7 +1165,7 @@
       }
     },
     {
-      "id": 176,
+      "id": 181,
       "type": "row",
       "title": "Trends",
       "collapsed": false,
@@ -873,12 +1173,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 31
       },
       "panels": []
     },
     {
-      "id": 165,
+      "id": 169,
       "type": "timeseries",
       "title": "Entitlement consumption (% used)",
       "datasource": {
@@ -889,7 +1189,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 32
       },
       "targets": [
         {
@@ -975,7 +1275,7 @@
       }
     },
     {
-      "id": 177,
+      "id": 182,
       "type": "row",
       "title": "Details",
       "collapsed": false,
@@ -983,12 +1283,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 42
       },
       "panels": []
     },
     {
-      "id": 166,
+      "id": 170,
       "type": "table",
       "title": "Entitlements detail (latest run)",
       "datasource": {
@@ -999,7 +1299,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 43
       },
       "targets": [
         {
@@ -1138,7 +1438,7 @@
       }
     },
     {
-      "id": 167,
+      "id": 171,
       "type": "table",
       "title": "Active utilization alerts (latest run)",
       "datasource": {
@@ -1149,7 +1449,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 49
+        "y": 55
       },
       "targets": [
         {
@@ -1278,7 +1578,7 @@
       }
     },
     {
-      "id": 178,
+      "id": 183,
       "type": "row",
       "title": "Agentforce & Data 360 credits",
       "collapsed": false,
@@ -1286,12 +1586,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 57
+        "y": 63
       },
       "panels": []
     },
     {
-      "id": 168,
+      "id": 172,
       "type": "stat",
       "title": "AI credits",
       "datasource": {
@@ -1302,7 +1602,7 @@
         "h": 5,
         "w": 4,
         "x": 0,
-        "y": 58
+        "y": 64
       },
       "targets": [
         {
@@ -1355,7 +1655,7 @@
       }
     },
     {
-      "id": 169,
+      "id": 173,
       "type": "stat",
       "title": "Metered credits",
       "datasource": {
@@ -1366,7 +1666,7 @@
         "h": 5,
         "w": 4,
         "x": 4,
-        "y": 58
+        "y": 64
       },
       "targets": [
         {
@@ -1419,7 +1719,7 @@
       }
     },
     {
-      "id": 170,
+      "id": 174,
       "type": "stat",
       "title": "AI actions",
       "datasource": {
@@ -1430,7 +1730,7 @@
         "h": 5,
         "w": 4,
         "x": 8,
-        "y": 58
+        "y": 64
       },
       "targets": [
         {
@@ -1483,7 +1783,7 @@
       }
     },
     {
-      "id": 171,
+      "id": 175,
       "type": "stat",
       "title": "Data 360 credits",
       "datasource": {
@@ -1494,7 +1794,7 @@
         "h": 5,
         "w": 4,
         "x": 12,
-        "y": 58
+        "y": 64
       },
       "targets": [
         {
@@ -1547,7 +1847,7 @@
       }
     },
     {
-      "id": 172,
+      "id": 176,
       "type": "timeseries",
       "title": "Credit consumption evolution",
       "datasource": {
@@ -1558,7 +1858,7 @@
         "h": 5,
         "w": 8,
         "x": 16,
-        "y": 58
+        "y": 64
       },
       "targets": [
         {

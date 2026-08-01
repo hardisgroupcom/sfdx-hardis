@@ -18,6 +18,7 @@ import {
   collectAiUsage,
   formatAiUsageLine,
 } from '../../../../common/utils/aiUsageUtils.js';
+import { estimateCreditCost, formatCost, resolveUsageCostConfig } from '../../../../common/utils/usageCostUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -163,8 +164,18 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     const notifButtons = await getNotificationButtons();
     const notifAttachments: MessageAttachment[] = [];
     let notifSeverity: NotifSeverity = 'log';
+    // Flat-rate estimate, deliberately an upper bound: Flex Credits tier down with volume, so
+    // the real charge is at most this. Reporting only, it never influences severity.
+    const costConfig = await resolveUsageCostConfig();
+    const estimatedCost = estimateCreditCost(billedCredits, costConfig);
+    if (estimatedCost !== null) {
+      metrics.AiUsageCost = estimatedCost;
+    }
+    const costSuffix =
+      estimatedCost !== null ? `, up to **${formatCost(estimatedCost, costConfig)}**` : '';
+
     let notifText =
-      `**${billedCredits}** billed credits over the last ${flags.days} days in ${orgMarkdown} ` +
+      `**${billedCredits}** billed credits over the last ${flags.days} days in ${orgMarkdown}${costSuffix} ` +
       `(**${totalCredits}** consumed in total, ${metrics.AiUsageCreditsUnmetered} unmetered)`;
 
     const topConsumers = this.usageResult.aiRows.slice(0, 10);

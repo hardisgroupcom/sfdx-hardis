@@ -5,6 +5,7 @@ import { uxLog } from "./index.js";
 import { getSeverityIcon } from "./notifUtils.js";
 import { getConfig, getEnvVar } from "../../config/index.js";
 import { NotifSeverity } from "../notifProvider/types.js";
+import { estimateEntitlementCost, sumEstimatedCosts, UsageCostConfig } from "./usageCostUtils.js";
 
 // Usage-based entitlements are the contractual consumption meters shown in
 // Setup > Company Information > Usage-Based Entitlements. Unlike `sf org limits list`
@@ -53,6 +54,9 @@ export interface UsageEntitlementRow {
   status: EntitlementStatus;
   severity: NotifSeverity;
   severityIcon: string;
+  // Estimated cost from user-configured rates. Null when no rate is configured for this
+  // resource, which is deliberately different from a cost of zero.
+  estimatedCost: number | null;
 }
 
 export interface UsageEntitlementResourceConfig {
@@ -374,6 +378,7 @@ export function buildUsageEntitlementRow(
   record: any,
   config: UsageEntitlementsConfig,
   now: Date = new Date(),
+  costConfig?: UsageCostConfig,
 ): UsageEntitlementRow {
   const setting = String(record.Setting ?? "");
   const settingKey = parseSettingKey(setting);
@@ -405,6 +410,10 @@ export function buildUsageEntitlementRow(
 
   const partialRow = { percentUsed, projectedPercent, status };
   const severity = resolveEntitlementSeverity(partialRow, config, resourceConfig);
+  const estimatedCost =
+    costConfig?.enabled && status === "ok"
+      ? estimateEntitlementCost({ settingKey, setting, amountUsed, amountAllowed }, costConfig)
+      : null;
 
   return {
     settingKey,
@@ -425,6 +434,7 @@ export function buildUsageEntitlementRow(
     status,
     severity,
     severityIcon: getSeverityIcon(severity),
+    estimatedCost,
   };
 }
 
@@ -483,6 +493,13 @@ export function buildUsageEntitlementMetrics(rows: UsageEntitlementRow[]): any {
   // Single per-org headline figures, so fleet dashboards do not have to scan every resource.
   metrics.UsageEntitlementsWorstPercent = worstPercent;
   metrics.UsageEntitlementsWorstProjected = worstProjected;
+
+  // Estimated overage cost, emitted only when rates were configured. A zero here would read as
+  // "nothing is costing you anything", which is not the same as "no rates were declared".
+  const estimatedCost = sumEstimatedCosts(rows.map((row) => row.estimatedCost));
+  if (estimatedCost !== null) {
+    metrics.UsageEntitlementsCost = estimatedCost;
+  }
   return metrics;
 }
 

@@ -2392,6 +2392,98 @@
       "title": "Usage-based entitlements monitoring",
       "type": "object"
     },
+    "usageCost": {
+      "$id": "#/properties/usageCost",
+      "additionalProperties": false,
+      "description": "Optional cost estimation for consumption-billed Salesforce products. Salesforce publishes no prices through any API, so every rate here comes from your own contract and the resulting figures are ESTIMATES, not invoices. Nothing is costed unless a rate is declared for it: resources without a rate simply report no cost. Cost is reporting only and never influences notification severity.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-usage-entitlements/",
+      "examples": [
+        {
+          "currency": "EUR",
+          "flexCredits": {
+            "unitPrice": 0.005
+          },
+          "resources": [
+            {
+              "key": "MaxCustomerNetworkLogins",
+              "unitPrice": 0.12,
+              "model": "overage"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "currency": {
+          "$id": "#/properties/usageCost/properties/currency",
+          "default": "USD",
+          "description": "Currency code used to display every estimated cost. No conversion is performed: all rates must be expressed in this currency.",
+          "title": "Currency",
+          "type": "string"
+        },
+        "flexCredits": {
+          "$id": "#/properties/usageCost/properties/flexCredits",
+          "additionalProperties": false,
+          "description": "Rate applied to Agentforce and Data 360 credits. Flex Credits tier down with volume, so a flat rate is an upper bound: the real charge is at most the reported figure.",
+          "properties": {
+            "unitPrice": {
+              "$id": "#/properties/usageCost/properties/flexCredits/properties/unitPrice",
+              "description": "Price of a single credit, in the configured currency.",
+              "title": "Credit unit price",
+              "type": "number"
+            }
+          },
+          "title": "Flex Credits rate",
+          "type": "object"
+        },
+        "resources": {
+          "$id": "#/properties/usageCost/properties/resources",
+          "description": "Per-resource rates. Only entitlements listed here are costed, which avoids inventing charges for hard caps such as 'B2B Commerce Total Storefronts' that are not metered at all.",
+          "items": {
+            "$id": "#/properties/usageCost/properties/resources/items",
+            "additionalProperties": false,
+            "description": "Rate applied to a single usage-based entitlement.",
+            "properties": {
+              "key": {
+                "$id": "#/properties/usageCost/properties/resources/items/properties/key",
+                "description": "Resource identifier, taken from the Setting field of the entitlement. Both the full value and its trailing token are accepted.",
+                "title": "Resource key",
+                "type": "string"
+              },
+              "unitPrice": {
+                "$id": "#/properties/usageCost/properties/resources/items/properties/unitPrice",
+                "description": "Price of a single consumed unit, in the configured currency.",
+                "title": "Unit price",
+                "type": "number"
+              },
+              "model": {
+                "$id": "#/properties/usageCost/properties/resources/items/properties/model",
+                "default": "overage",
+                "description": "How consumption converts to money. 'overage' charges only the units consumed beyond the purchased allowance (the common case). 'total' charges every unit consumed.",
+                "enum": [
+                  "overage",
+                  "total"
+                ],
+                "enumNames": [
+                  "Charge consumption beyond the allowance",
+                  "Charge all consumption"
+                ],
+                "title": "Cost model",
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "unitPrice"
+            ],
+            "type": "object"
+          },
+          "title": "Per-resource rates",
+          "type": "array"
+        }
+      },
+      "title": "Usage cost estimation",
+      "type": "object"
+    },
     "monitoringAllowedSectionsActions": {
       "$id": "#/properties/monitoringAllowedSectionsActions",
       "description": "Override list of Setup Audit Trail elements that won't be considered as suspect by monitoring tools",

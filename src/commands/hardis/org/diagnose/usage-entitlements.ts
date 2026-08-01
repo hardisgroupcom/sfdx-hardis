@@ -21,6 +21,7 @@ import {
   sortUsageEntitlementRows,
   UsageEntitlementRow,
 } from '../../../../common/utils/usageEntitlementsUtils.js';
+import { formatCost, resolveUsageCostConfig, sumEstimatedCosts } from '../../../../common/utils/usageCostUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -122,11 +123,12 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
     uxLog('action', this, c.cyan(t('checkingUsageBasedEntitlements')));
     const config = await resolveUsageEntitlementsConfig();
+    const costConfig = await resolveUsageCostConfig();
     const records = await queryUsageEntitlements(conn);
 
     const now = new Date();
     this.entitlementRows = sortUsageEntitlementRows(
-      records.map((record: any) => buildUsageEntitlementRow(record, config, now))
+      records.map((record: any) => buildUsageEntitlementRow(record, config, now, costConfig))
     );
 
     uxLogTable(this, this.entitlementRows);
@@ -162,22 +164,31 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       });
     }
 
+    // Cost is reporting only: severity keeps coming from what Salesforce reports, never from
+    // rates typed into a config file, so a stale rate can neither invent nor mute an alert.
+    const estimatedCost = sumEstimatedCosts(this.entitlementRows.map((row) => row.estimatedCost));
+    const costSuffix =
+      estimatedCost !== null
+        ? `. Estimated overage: **${formatCost(estimatedCost, costConfig)}**`
+        : '';
+
     if (overRows.length > 0) {
       notifSeverity = 'critical';
       notifText = `**${overRows.length}** usage-based entitlement(s) already exceed their allowance in ${orgMarkdown}`;
       if (errorRows.length + warningRows.length > 0) {
         notifText += ` (**${errorRows.length + warningRows.length}** more on track to)`;
       }
+      notifText += costSuffix;
       uxLog('error', this, c.red(notifText));
       process.exitCode = 1;
     } else if (errorRows.length > 0) {
       notifSeverity = 'error';
-      notifText = `Usage-based entitlements are projected to be exceeded in ${orgMarkdown} (error: **${errorRows.length}**, warning: **${warningRows.length}**)`;
+      notifText = `Usage-based entitlements are projected to be exceeded in ${orgMarkdown} (error: **${errorRows.length}**, warning: **${warningRows.length}**)${costSuffix}`;
       uxLog('error', this, c.red(notifText));
       process.exitCode = 1;
     } else if (warningRows.length > 0) {
       notifSeverity = 'warning';
-      notifText = `Usage-based entitlements are consumed faster than expected in ${orgMarkdown} (**${warningRows.length}**)`;
+      notifText = `Usage-based entitlements are consumed faster than expected in ${orgMarkdown} (**${warningRows.length}**)${costSuffix}`;
       uxLog('warning', this, c.yellow(notifText));
     } else {
       uxLog('success', this, c.green(t('noUsageEntitlementAtRisk')));
