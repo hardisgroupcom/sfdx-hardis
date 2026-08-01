@@ -50,12 +50,12 @@ Resources are identified by the `Setting` value of the entitlement. Both the ful
 
 The same thresholds can be set with environment variables, which take precedence over the YAML file:
 
-| Variable                             | Default | Description                                            |
-|--------------------------------------|---------|--------------------------------------------------------|
-| `USAGE_PROJECTION_THRESHOLD_WARNING` | 120     | Projected end-of-period consumption raising a warning   |
-| `USAGE_PROJECTION_THRESHOLD_ERROR`   | 150     | Projected end-of-period consumption raising an error    |
-| `LIMIT_THRESHOLD_WARNING`            | 50      | Consumption percentage raising a warning                |
-| `LIMIT_THRESHOLD_ERROR`              | 75      | Consumption percentage raising an error                 |
+| Variable                             | Default | Description                                           |
+|--------------------------------------|---------|-------------------------------------------------------|
+| `USAGE_PROJECTION_THRESHOLD_WARNING` | 120     | Projected end-of-period consumption raising a warning |
+| `USAGE_PROJECTION_THRESHOLD_ERROR`   | 150     | Projected end-of-period consumption raising an error  |
+| `LIMIT_THRESHOLD_WARNING`            | 50      | Consumption percentage raising a warning              |
+| `LIMIT_THRESHOLD_ERROR`              | 75      | Consumption percentage raising an error               |
 
 ## How the billing period is computed
 
