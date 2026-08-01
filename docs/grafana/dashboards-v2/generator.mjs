@@ -1084,7 +1084,9 @@ const limitsDashboard = dashboard({
               // label_replace exposes the limit name without the _percent suffix as a
               // "limit" label: it must be clean in cell VALUES (renameByRegex only
               // renames column headers), because the row link appends _percent back
-              `label_replace(max by (__name__) (last_over_time({__name__=~".+_percent", ${SRC}, orgIdentifier="$org"}[2d])), "limit", "$1", "__name__", "(.+)_percent")`,
+              // type="ORG_LIMITS" keeps this table scoped to org limits: other indicators
+              // (e.g. USAGE_ENTITLEMENTS) also publish *_percent metrics.
+              `label_replace(max by (__name__) (last_over_time({__name__=~".+_percent", ${SRC}, type="ORG_LIMITS", orgIdentifier="$org"}[2d])), "limit", "$1", "__name__", "(.+)_percent")`,
               { instant: true, format: 'table' }
             ),
           ],
@@ -1156,7 +1158,8 @@ const limitsDashboard = dashboard({
           gridPos: { w: 24, h: 10 },
           unit: 'percent',
           targets: [
-            promTarget(`max by (__name__) (last_over_time({__name__=~".+_percent", ${SRC}, orgIdentifier="$org"}[1d]))`, { legendFormat: '{{__name__}}' }),
+            // type="ORG_LIMITS": other indicators also publish *_percent metrics
+            promTarget(`max by (__name__) (last_over_time({__name__=~".+_percent", ${SRC}, type="ORG_LIMITS", orgIdentifier="$org"}[1d]))`, { legendFormat: '{{__name__}}' }),
           ],
           transformations: [{ id: 'renameByRegex', options: { regex: '(.*)_percent', renamePattern: '$1' } }],
           thresholds: thresholdSteps([[null, 'green'], [90, 'red']]),
@@ -1721,6 +1724,286 @@ const searchPackagesDashboard = dashboard({
 });
 
 // ===========================================================================
+// 8. Usage & Cost
+// ===========================================================================
+
+// Consumption-billed products: contractual meters (USAGE_ENTITLEMENTS), the utilization alerts
+// Salesforce raises itself (CONSUMPTION_ALERTS) and Agentforce / Data 360 credits (AI_USAGE).
+// Distinct from "03 - Limits & Capacity", which tracks daily/hourly throttling rather than billing.
+const USAGE_NOTE =
+  'Usage-based entitlements are what Salesforce bills on, unlike org limits which throttle. ' +
+  RECENT_CLI_NOTE;
+
+const usageDashboard = dashboard({
+  uid: 'sfdx-hardis-v2-org-usage',
+  title: '08 - Usage & Cost',
+  description:
+    'Consumption of usage-based (billed) Salesforce products: contractual entitlements, projected end-of-period overage, utilization alerts and Agentforce / Data 360 credits.',
+  time: 'now-90d',
+  variables: [orgVar()],
+  sections: [
+    {
+      row: 'At a glance',
+      panels: [
+        statPanel('Entitlements at risk', {
+          gridPos: { w: 4, h: 5 },
+          description: 'Usage-based entitlements currently in warning or error state. ' + USAGE_NOTE,
+          targets: [promTarget(promLast('UsageEntitlementsAtRisk'))],
+          thresholds: THRESHOLDS_COUNT,
+          noValue: 'Schedule usage-entitlements',
+          links: indicatorLink('USAGE_ENTITLEMENTS'),
+        }),
+        statPanel('Metered entitlements', {
+          gridPos: { w: 4, h: 5 },
+          description: 'Entitlements for which Salesforce reports consumption data. ' + USAGE_NOTE,
+          targets: [promTarget(promLast('UsageEntitlementsMetered'))],
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Schedule usage-entitlements',
+          links: indicatorLink('USAGE_ENTITLEMENTS'),
+        }),
+        avgStat('At risk avg (30d)', 'UsageEntitlementsAtRisk', '30d', {
+          description: 'Average number of entitlements at risk over 30 days. ' + RECENT_CLI_NOTE,
+          links: indicatorLink('USAGE_ENTITLEMENTS'),
+        }),
+        statPanel('Utilization alerts', {
+          gridPos: { w: 4, h: 5 },
+          description: 'Active consumption and license utilization alerts raised by Salesforce. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('ConsumptionAlertsActive'))],
+          thresholds: THRESHOLDS_COUNT,
+          noValue: 'Schedule consumption-alerts',
+          links: indicatorLink('CONSUMPTION_ALERTS'),
+        }),
+        statPanel('Allowance reached', {
+          gridPos: { w: 4, h: 5 },
+          description: 'Utilization alerts whose trigger value reached the full allowance. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('ConsumptionAlertsCritical'))],
+          thresholds: THRESHOLDS_COUNT,
+          noValue: 'Schedule consumption-alerts',
+          links: indicatorLink('CONSUMPTION_ALERTS'),
+        }),
+        statsDatePanel('USAGE_ENTITLEMENTS', { w: 4, h: 5 }),
+      ],
+    },
+    {
+      row: 'Consumption vs allowance',
+      panels: [
+        tablePanel('Entitlement consumption', {
+          gridPos: { w: 12, h: 12 },
+          description: 'Share of each purchased allowance already consumed in the current period. ' + USAGE_NOTE,
+          targets: [
+            promTarget(
+              `label_replace(max by (__name__) (last_over_time({__name__=~"UsageEnt_.+_percent", ${SRC}, type="USAGE_ENTITLEMENTS", orgIdentifier="$org"}[2d])), "resource", "$1", "__name__", "UsageEnt_(.+)_percent")`,
+              { instant: true, format: 'table' }
+            ),
+          ],
+          transformations: [
+            organize({
+              excludeByName: { Time: true, __name__: true },
+              renameByName: { resource: 'Resource', Value: 'Consumed %' },
+            }),
+          ],
+          unit: 'percent',
+          thresholds: THRESHOLDS_PERCENT_USED,
+          links: [
+            {
+              title: 'Open entitlement evolution',
+              url: `/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&var-type=USAGE_ENTITLEMENTS&var-metric=UsageEnt_\${__data.fields.Resource}_percent&${DS_QUERYPARAMS}`,
+            },
+          ],
+          custom: { cellOptions: { type: 'auto' } },
+          overrides: [
+            {
+              matcher: { id: 'byName', options: 'Consumed %' },
+              properties: [
+                { id: 'custom.cellOptions', value: { type: 'gauge', mode: 'gradient', valueDisplayMode: 'text' } },
+                { id: 'max', value: 100 },
+                { id: 'min', value: 0 },
+              ],
+            },
+          ],
+          sortBy: [{ displayName: 'Consumed %', desc: true }],
+        }),
+        tablePanel('Projected consumption at period end', {
+          gridPos: { w: 12, h: 12 },
+          description:
+            'Consumption projected to the end of the billing period, from the share consumed versus the share of the period elapsed. Above 100% means the allowance is on track to be exceeded. ' +
+            USAGE_NOTE,
+          targets: [
+            promTarget(
+              `label_replace(max by (__name__) (last_over_time({__name__=~"UsageEntProjected_.+", ${SRC}, type="USAGE_ENTITLEMENTS", orgIdentifier="$org"}[2d])), "resource", "$1", "__name__", "UsageEntProjected_(.+)")`,
+              { instant: true, format: 'table' }
+            ),
+          ],
+          transformations: [
+            organize({
+              excludeByName: { Time: true, __name__: true },
+              renameByName: { resource: 'Resource', Value: 'Projected %' },
+            }),
+          ],
+          unit: 'percent',
+          decimals: 0,
+          thresholds: thresholdSteps([[null, 'green'], [100, 'yellow'], [120, 'orange'], [150, 'red']]),
+          links: indicatorLink('USAGE_ENTITLEMENTS'),
+          overrides: [
+            {
+              matcher: { id: 'byName', options: 'Projected %' },
+              properties: [{ id: 'custom.cellOptions', value: { type: 'color-background' } }],
+            },
+          ],
+          sortBy: [{ displayName: 'Projected %', desc: true }],
+        }),
+      ],
+    },
+    {
+      row: 'Trends',
+      panels: [
+        timeseriesPanel('Entitlement consumption (% used)', {
+          gridPos: { w: 24, h: 10 },
+          unit: 'percent',
+          description: 'Consumption of every metered entitlement over time. ' + USAGE_NOTE,
+          targets: [
+            promTarget(
+              `max by (__name__) (last_over_time({__name__=~"UsageEnt_.+_percent", ${SRC}, type="USAGE_ENTITLEMENTS", orgIdentifier="$org"}[1d]))`,
+              { legendFormat: '{{__name__}}' }
+            ),
+          ],
+          transformations: [
+            { id: 'renameByRegex', options: { regex: 'UsageEnt_(.*)_percent', renamePattern: '$1' } },
+          ],
+          thresholds: thresholdSteps([[null, 'green'], [90, 'red']]),
+          showThresholdLine: true,
+          links: indicatorLink('USAGE_ENTITLEMENTS'),
+        }),
+      ],
+    },
+    {
+      row: 'Details',
+      panels: [
+        tablePanel('Entitlements detail (latest run)', {
+          gridPos: { w: 24, h: 12 },
+          description:
+            'Every usage-based entitlement of the latest run, including resources Salesforce reports no consumption for. ' +
+            USAGE_NOTE,
+          datasource: DS_LOKI,
+          targets: [
+            lokiTarget(`{${SRC}, type="USAGE_ENTITLEMENTS", orgIdentifier="$org"} |= \`\``, { maxLines: 1 }),
+          ],
+          transformations: [
+            ...jsonArrayToRows('_logElements'),
+            organize({
+              includeByName: {
+                label: true,
+                settingKey: true,
+                amountUsed: true,
+                amountAllowed: true,
+                percentUsed: true,
+                percentPeriodElapsed: true,
+                projectedPercent: true,
+                daysRemaining: true,
+                frequency: true,
+                status: true,
+                severity: true,
+              },
+              renameByName: {
+                label: 'Entitlement',
+                settingKey: 'Resource',
+                amountUsed: 'Used',
+                amountAllowed: 'Allowance',
+                percentUsed: 'Consumed %',
+                percentPeriodElapsed: 'Period elapsed %',
+                projectedPercent: 'Projected %',
+                daysRemaining: 'Days left',
+                frequency: 'Frequency',
+                status: 'Status',
+                severity: 'Severity',
+              },
+            }),
+          ],
+        }),
+        tablePanel('Active utilization alerts (latest run)', {
+          gridPos: { w: 24, h: 8 },
+          description: 'Consumption and license utilization alerts Salesforce raised on the org. ' + RECENT_CLI_NOTE,
+          datasource: DS_LOKI,
+          targets: [
+            lokiTarget(`{${SRC}, type="CONSUMPTION_ALERTS", orgIdentifier="$org"} |= \`\``, { maxLines: 1 }),
+          ],
+          transformations: [
+            ...jsonArrayToRows('_logElements'),
+            organize({
+              includeByName: {
+                alertType: true,
+                alertScope: true,
+                alertSubScope1: true,
+                triggerValue: true,
+                triggerType: true,
+                alertTimestamp: true,
+              },
+              renameByName: {
+                alertType: 'Alert type',
+                alertScope: 'Scope',
+                alertSubScope1: 'Sub scope',
+                triggerValue: 'Trigger value',
+                triggerType: 'Trigger type',
+                alertTimestamp: 'Raised at',
+              },
+            }),
+          ],
+        }),
+      ],
+    },
+    {
+      row: 'Agentforce & Data 360 credits',
+      panels: [
+        statPanel('AI credits', {
+          gridPos: { w: 4, h: 5 },
+          description: 'Generative AI credits consumed over the reported window. Requires Data 360. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('AiUsageCreditsTotal'))],
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Requires Data 360',
+          links: indicatorLink('AI_USAGE'),
+        }),
+        statPanel('Metered credits', {
+          gridPos: { w: 4, h: 5 },
+          description: 'Share of AI credits that is billed. Requires Data 360. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('AiUsageCreditsMetered'))],
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Requires Data 360',
+          links: indicatorLink('AI_USAGE'),
+        }),
+        statPanel('AI actions', {
+          gridPos: { w: 4, h: 5 },
+          description: 'Number of billed agent actions over the reported window. Requires Data 360. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('AiUsageActions'))],
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Requires Data 360',
+          links: indicatorLink('AI_USAGE'),
+        }),
+        statPanel('Data 360 credits', {
+          gridPos: { w: 4, h: 5 },
+          description: 'Data 360 credits consumed over the reported window. Requires Data 360. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('DataCloudCreditsTotal'))],
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Requires Data 360',
+          links: indicatorLink('AI_USAGE'),
+        }),
+        timeseriesPanel('Credit consumption evolution', {
+          gridPos: { w: 8, h: 5 },
+          description: 'Agentforce and Data 360 credit consumption over time. Requires Data 360. ' + RECENT_CLI_NOTE,
+          targets: [
+            promTarget(promLast('AiUsageCreditsTotal', 'orgIdentifier="$org"', '1d'), { legendFormat: 'AI credits' }),
+            promTarget(promLast('DataCloudCreditsTotal', 'orgIdentifier="$org"', '1d'), {
+              legendFormat: 'Data 360 credits',
+              refId: 'B',
+            }),
+          ],
+          links: indicatorLink('AI_USAGE'),
+        }),
+      ],
+    },
+  ],
+});
+
+// ===========================================================================
 // Post-pass: make Indicator Detail links metric-aware
 // ===========================================================================
 // When a stat/gauge shows a single Prometheus series and links to the Indicator
@@ -1763,6 +2046,7 @@ const dashboards = [
   securityDashboard,
   debtDashboard,
   adoptionDashboard,
+  usageDashboard,
   dtlIndicatorDashboard,
   searchOrgDashboard,
   searchLicensesDashboard,

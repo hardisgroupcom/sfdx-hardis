@@ -6,6 +6,7 @@ import path from "path";
 
 export const DATA_CLOUD_QUERIES_FOLDER_ROOT = path.join(process.cwd(), 'scripts', 'data-cloud-queries');
 const QUERY_CONNECT_PATH = "ssot/query-sql";
+const METADATA_CONNECT_PATH = "ssot/metadata";
 const DEFAULT_DATASPACE = "default";
 const DEFAULT_WORKLOAD_NAME = "sfdx-hardis-cli";
 const DEFAULT_ROW_LIMIT = 2000;
@@ -80,6 +81,81 @@ interface QueryConnectRowsResponse {
   returnedRows?: number;
   metadata?: DataCloudQueryColumnMetadata[];
   data?: AnyJson[][];
+}
+
+export type DataCloudEntityType = "DataModelObject" | "DataLakeObject" | "CalculatedInsight";
+
+export interface DataCloudObjectSummary {
+  name: string;
+  displayName?: string;
+}
+
+export interface DataCloudAvailability {
+  available: boolean;
+  // Human readable explanation when `available` is false, safe to log at "log" level.
+  reason?: string;
+  objectNames: string[];
+}
+
+// Salesforce answers with this message on every Data Cloud endpoint when Data Cloud (CDP) has
+// never been provisioned on the org. It is the reliable "not enabled here" signal, as opposed to
+// a transient failure which callers should still surface.
+const CDP_NOT_ENABLED_MARKER = "cdp tenant id";
+
+function errorText(error: unknown): string {
+  const err = error as { message?: string; body?: any } | undefined;
+  const parts: string[] = [];
+  if (err?.message) {
+    parts.push(String(err.message));
+  }
+  if (err?.body) {
+    parts.push(typeof err.body === "string" ? err.body : JSON.stringify(err.body));
+  }
+  return parts.join(" ");
+}
+
+export function isDataCloudNotEnabledError(error: unknown): boolean {
+  return errorText(error).toLowerCase().includes(CDP_NOT_ENABLED_MARKER);
+}
+
+// Lists the Data Cloud objects of a given type. This is the only enumeration mechanism available:
+// SHOW TABLES is disabled (PERMISSION_DENIED) and information_schema does not exist on the
+// Data Cloud SQL engine, so table existence has to be checked against this listing.
+export async function listDataCloudObjects(
+  conn: Connection,
+  entityType: DataCloudEntityType = "DataModelObject",
+): Promise<DataCloudObjectSummary[]> {
+  const base = conn.baseUrl().replace(/\/$/, "");
+  const response = await conn.request<any>({
+    method: "GET",
+    url: `${base}/${METADATA_CONNECT_PATH}?entityType=${encodeURIComponent(entityType)}`,
+  });
+  const items = Array.isArray(response) ? response : (response?.metadata ?? []);
+  return (items as any[])
+    .filter((item) => item && item.name)
+    .map((item) => ({ name: String(item.name), displayName: item.displayName ? String(item.displayName) : undefined }));
+}
+
+// Probes whether Data Cloud can be queried on this org, without ever throwing for the
+// "not provisioned" case. Monitoring runs on many orgs without Data Cloud, so callers are
+// expected to skip quietly rather than fail the job.
+export async function getDataCloudAvailability(
+  conn: Connection,
+  entityType: DataCloudEntityType = "DataModelObject",
+): Promise<DataCloudAvailability> {
+  try {
+    const objects = await listDataCloudObjects(conn, entityType);
+    return { available: true, objectNames: objects.map((obj) => obj.name) };
+  } catch (error: any) {
+    if (isDataCloudNotEnabledError(error)) {
+      return { available: false, reason: "Data Cloud (Data 360) is not enabled on this org", objectNames: [] };
+    }
+    return {
+      available: false,
+      reason: `Unable to reach Data Cloud: ${error?.message || error}`,
+      objectNames: [],
+    };
+  }
 }
 
 export async function listAvailableDataCloudQueries(): Promise<string[]> {

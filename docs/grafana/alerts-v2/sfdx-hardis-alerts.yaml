@@ -299,3 +299,93 @@ groups:
                 - evaluator:
                     params: [0]
                     type: gt
+      # ----------------------------------------------------------------------
+      # 7. Usage-based entitlement projected to exceed its allowance
+      # ----------------------------------------------------------------------
+      - uid: sfdx-hardis-v2-usage-entitlement-overage
+        title: Salesforce usage-based entitlement projected to be exceeded
+        condition: C
+        isPaused: true
+        for: 0s
+        noDataState: OK
+        execErrState: OK
+        labels:
+          source: sfdx-hardis
+        annotations:
+          summary: 'Org {{ $labels.orgIdentifier }}: a usage-based entitlement is on track to exceed its allowance before the end of the billing period'
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 172800
+              to: 0
+            datasourceUid: ${DS_PROMETHEUS}
+            model:
+              refId: A
+              instant: true
+              range: false
+              # UsageEntProjected_* holds the consumption projected to the end of the billing
+              # period, as a percentage of the allowance. Above 150 means the allowance is on
+              # track to be overshot by half again. Aggregated per org so one alert fires per
+              # org rather than one per resource.
+              expr: >-
+                max by (orgIdentifier) (last_over_time({__name__=~"UsageEntProjected_.+", source="sfdx-hardis", type="USAGE_ENTITLEMENTS"}[2d])) > 150
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+      # ----------------------------------------------------------------------
+      # 8. Salesforce raised a utilization alert reaching the full allowance
+      # ----------------------------------------------------------------------
+      - uid: sfdx-hardis-v2-consumption-alert-critical
+        title: Salesforce utilization alert reached the full allowance
+        condition: C
+        isPaused: true
+        for: 0s
+        noDataState: OK
+        execErrState: OK
+        labels:
+          source: sfdx-hardis
+        annotations:
+          summary: 'Org {{ $labels.orgIdentifier }}: Salesforce raised a utilization alert whose trigger value reached the full allowance'
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 172800
+              to: 0
+            datasourceUid: ${DS_PROMETHEUS}
+            model:
+              refId: A
+              instant: true
+              range: false
+              expr: >-
+                max by (orgIdentifier) (last_over_time(ConsumptionAlertsCritical{source="sfdx-hardis"}[2d])) > 0
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt

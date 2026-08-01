@@ -75,12 +75,14 @@ flowchart TD
     HOME -->|security numbers| SEC["05 - Security Posture"]
     HOME -->|coverage & tests| DEBT["06 - Technical Debt"]
     HOME -->|user numbers| ADO["07 - Adoption & Licenses"]
+    HOME -->|consumption numbers| USAGE["08 - Usage & Cost"]
     HOME -->|other indicators| DTL["80 - Indicator Detail<br/>(any notification type)"]
     REL --> DTL
     LIM --> DTL
     SEC --> DTL
     DEBT --> DTL
     ADO --> DTL
+    USAGE --> DTL
     DEVOPS["04 - DevOps & DORA"] --> DTL
     HOME -->|deployment numbers| DEVOPS
 ```
@@ -170,6 +172,17 @@ Single-org overview, the hub for one org.
 - Inactive user counts (6 months)
 - License usage table (used vs total per license)
 
+### 08 - Usage & Cost
+
+What Salesforce bills by consumption, as opposed to the throttling limits of **03 - Limits & Capacity**.
+
+- **Entitlement consumption**: share of each purchased allowance already used in the current billing period
+- **Projected consumption at period end**: where consumption is heading, from the share consumed against the share of the period elapsed. Above 100% means the allowance is on track to be exceeded
+- **Utilization alerts** raised by Salesforce itself, including those that reached the full allowance
+- **Agentforce and Data 360 credits**: total, metered and unmetered credits, action counts and their evolution (requires Data 360)
+
+See [usage-based entitlements](salesforce-monitoring-usage-entitlements.md), [consumption utilization alerts](salesforce-monitoring-consumption-alerts.md) and [Agentforce and Data 360 credits](salesforce-monitoring-ai-usage.md).
+
 ### 80 - Indicator Detail
 
 ![Indicator Detail](assets/images/grafana-v2-indicator-detail.png)
@@ -224,6 +237,8 @@ The alert pack lives in [docs/grafana/alerts-v2](https://github.com/hardisgroupc
 | Salesforce metadata backup failed                | A BACKUP notification with error severity was received                |
 | Salesforce org monitoring is silent              | An org sent nothing for 36 hours (its monitoring job probably failed) |
 | Salesforce org health score degraded             | Score below 60, or dropped by more than 20 points                     |
+| Salesforce usage-based entitlement projected to be exceeded | An entitlement is on track to consume more than 150% of its allowance before the period ends |
+| Salesforce utilization alert reached the full allowance | Salesforce raised a utilization alert whose trigger value reached the full allowance |
 
 All rules are **paused by default** (`isPaused: true`), so importing them triggers no evaluation and no cost on Grafana Cloud free tier.
 

@@ -11,6 +11,7 @@
         "AGENT_TESTS",
         "AGENTFORCE_CONVERSATIONS",
         "AGENTFORCE_FEEDBACK",
+        "AI_USAGE",
         "APEX_API_VERSION",
         "APEX_ERROR",
         "APEX_FLEX_QUEUE",
@@ -18,6 +19,7 @@
         "AUDIT_TRAIL",
         "BACKUP",
         "CONNECTED_APPS",
+        "CONSUMPTION_ALERTS",
         "DANGEROUS_PERMISSIONS",
         "DEPLOYMENT",
         "DEPLOYMENTS",
@@ -45,14 +47,17 @@
         "UNUSED_METADATAS",
         "UNUSED_USERS",
         "UNUSED_USERS_CRM_6_MONTHS",
-        "UNUSED_USERS_EXPERIENCE_6_MONTHS"
+        "UNUSED_USERS_EXPERIENCE_6_MONTHS",
+        "USAGE_ENTITLEMENTS"
       ],
       "enumNames": [
         "Active Users",
         "Active Users CRM (weekly)",
         "Active Users Experience (monthly)",
+        "Agent Tests",
         "Agentforce Conversations",
         "Agentforce Feedback",
+        "AI Credit Usage",
         "Apex API Version",
         "Apex Error",
         "Apex Flex Queue",
@@ -60,6 +65,7 @@
         "Audit Trail",
         "Backup",
         "Connected Apps",
+        "Consumption Alerts",
         "Dangerous Permissions",
         "Deployment",
         "Deployments",
@@ -87,7 +93,8 @@
         "Unused Metadatas",
         "Unused Users",
         "Unused Users CRM (6 months)",
-        "Unused Users Experience (6 months)"
+        "Unused Users Experience (6 months)",
+        "Usage-Based Entitlements"
       ],
       "type": "string"
     },
@@ -95,11 +102,14 @@
       "enum": [
         "ACTIVE_USERS_CRM_WEEKLY",
         "ACTIVE_USERS_EXPERIENCE_MONTHLY",
+        "AGENT_TESTS",
+        "AI_USAGE",
         "APEX_API_VERSION",
         "APEX_FLEX_QUEUE",
         "APEX_FLOW_ERRORS",
         "AUDIT_TRAIL",
         "CONNECTED_APPS",
+        "CONSUMPTION_ALERTS",
         "DANGEROUS_PERMISSIONS",
         "DEPLOYMENTS",
         "LEGACY_API",
@@ -120,16 +130,20 @@
         "UNUSED_METADATAS",
         "UNUSED_USERS",
         "UNUSED_USERS_CRM_6_MONTHS",
-        "UNUSED_USERS_EXPERIENCE_6_MONTHS"
+        "UNUSED_USERS_EXPERIENCE_6_MONTHS",
+        "USAGE_ENTITLEMENTS"
       ],
       "enumNames": [
         "Active Users CRM (weekly)",
         "Active Users Experience (monthly)",
+        "Agent Tests",
+        "AI Credit Usage",
         "Apex API Version",
         "Apex Flex Queue",
         "Apex and Flow Errors",
         "Audit Trail",
         "Connected Apps",
+        "Consumption Alerts",
         "Dangerous Permissions",
         "Deployments",
         "Legacy API",
@@ -150,7 +164,8 @@
         "Unused Metadatas",
         "Unused Users",
         "Unused Users CRM (6 months)",
-        "Unused Users Experience (6 months)"
+        "Unused Users Experience (6 months)",
+        "Usage-Based Entitlements"
       ],
       "type": "string"
     },
@@ -2267,6 +2282,115 @@
       },
       "title": "Notification routing configuration",
       "type": "array"
+    },
+    "usageEntitlements": {
+      "$id": "#/properties/usageEntitlements",
+      "additionalProperties": false,
+      "description": "Alerting configuration for hardis:org:diagnose:usage-entitlements. Thresholds are expressed as projected end-of-period consumption: 120 means \"on track to consume 120% of the allowance before the period ends\". Per-resource entries override the global values and can mute a resource entirely.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-usage-entitlements/",
+      "examples": [
+        {
+          "projectionThresholdWarning": 120,
+          "projectionThresholdError": 150,
+          "resources": [
+            {
+              "key": "MaxCdpProfiles",
+              "projectionThresholdWarning": 110,
+              "projectionThresholdError": 130
+            },
+            {
+              "key": "MaxExtIdentityLogins",
+              "mute": true
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "projectionThresholdWarning": {
+          "$id": "#/properties/usageEntitlements/properties/projectionThresholdWarning",
+          "default": 120,
+          "description": "Projected end-of-period consumption percentage above which an entitlement raises a warning.",
+          "title": "Projection warning threshold",
+          "type": "number"
+        },
+        "projectionThresholdError": {
+          "$id": "#/properties/usageEntitlements/properties/projectionThresholdError",
+          "default": 150,
+          "description": "Projected end-of-period consumption percentage above which an entitlement raises an error.",
+          "title": "Projection error threshold",
+          "type": "number"
+        },
+        "percentThresholdWarning": {
+          "$id": "#/properties/usageEntitlements/properties/percentThresholdWarning",
+          "default": 50,
+          "description": "Consumption percentage above which an entitlement raises a warning, regardless of the projection. Acts as a floor so a nearly exhausted allowance still alerts late in the period.",
+          "title": "Consumption warning threshold",
+          "type": "number"
+        },
+        "percentThresholdError": {
+          "$id": "#/properties/usageEntitlements/properties/percentThresholdError",
+          "default": 75,
+          "description": "Consumption percentage above which an entitlement raises an error, regardless of the projection.",
+          "title": "Consumption error threshold",
+          "type": "number"
+        },
+        "resources": {
+          "$id": "#/properties/usageEntitlements/properties/resources",
+          "description": "Per-resource overrides. Resources are identified by their Setting value, either in full (setting/force.com/orgValue.MaxCdpProfiles) or by its trailing token (MaxCdpProfiles).",
+          "items": {
+            "$id": "#/properties/usageEntitlements/properties/resources/items",
+            "additionalProperties": false,
+            "description": "Threshold override for a single usage-based entitlement.",
+            "properties": {
+              "key": {
+                "$id": "#/properties/usageEntitlements/properties/resources/items/properties/key",
+                "description": "Resource identifier, taken from the Setting field of the entitlement. Both the full value and its trailing token are accepted.",
+                "title": "Resource key",
+                "type": "string"
+              },
+              "projectionThresholdWarning": {
+                "$id": "#/properties/usageEntitlements/properties/resources/items/properties/projectionThresholdWarning",
+                "description": "Overrides the global projection warning threshold for this resource.",
+                "title": "Projection warning threshold",
+                "type": "number"
+              },
+              "projectionThresholdError": {
+                "$id": "#/properties/usageEntitlements/properties/resources/items/properties/projectionThresholdError",
+                "description": "Overrides the global projection error threshold for this resource.",
+                "title": "Projection error threshold",
+                "type": "number"
+              },
+              "percentThresholdWarning": {
+                "$id": "#/properties/usageEntitlements/properties/resources/items/properties/percentThresholdWarning",
+                "description": "Overrides the global consumption warning threshold for this resource.",
+                "title": "Consumption warning threshold",
+                "type": "number"
+              },
+              "percentThresholdError": {
+                "$id": "#/properties/usageEntitlements/properties/resources/items/properties/percentThresholdError",
+                "description": "Overrides the global consumption error threshold for this resource.",
+                "title": "Consumption error threshold",
+                "type": "number"
+              },
+              "mute": {
+                "$id": "#/properties/usageEntitlements/properties/resources/items/properties/mute",
+                "default": false,
+                "description": "When true, this resource is still reported but never raises a notification.",
+                "title": "Mute resource",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "key"
+            ],
+            "type": "object"
+          },
+          "title": "Per-resource overrides",
+          "type": "array"
+        }
+      },
+      "title": "Usage-based entitlements monitoring",
+      "type": "object"
     },
     "monitoringAllowedSectionsActions": {
       "$id": "#/properties/monitoringAllowedSectionsActions",
