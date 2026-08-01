@@ -458,11 +458,13 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
   },
   // Contractual consumption meters (TenantUsageEntitlement): what Salesforce actually bills on,
   // as opposed to ORG_LIMITS which tracks daily/hourly throttling.
+  // `critical` is reserved for allowances already spent (overage is being billed right now),
+  // as opposed to `error` which is a projection.
   USAGE_ENTITLEMENTS: {
     category: "licensesPackages",
     icon: "utility:currency",
     colorClass: "licenses",
-    emittedSeverities: ["error", "warning", "success", "log"],
+    emittedSeverities: ["critical", "error", "warning", "success", "log"],
     defaults: { messaging: "warning", email: "error", api: "log" },
   },
   // Utilization alerts Salesforce itself raised on the org (the Digital Wallet alerting surface).
@@ -470,7 +472,7 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     category: "licensesPackages",
     icon: "utility:notification",
     colorClass: "licenses",
-    emittedSeverities: ["error", "warning", "log"],
+    emittedSeverities: ["critical", "error", "warning", "log"],
     defaults: { messaging: "warning", email: "error", api: "log" },
   },
   // Agentforce / Data 360 credit consumption. Only emitted on orgs with a Data 360 consumption

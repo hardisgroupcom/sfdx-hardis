@@ -41,6 +41,7 @@ Key functionalities:
 - **Period Derivation:** Salesforce rarely populates an end date, so the current billing window is derived from the entitlement start date and its frequency (daily, weekly, fortnightly, monthly, quarterly, yearly).
 - **Consumption Projection:** Compares the share of the allowance consumed against the share of the period elapsed, and projects consumption at period end. A resource at 60% consumption when only 30% of the period has passed projects to 200%, and is flagged even though a flat percentage rule would stay silent.
 - **Threshold-Based Alerting:** Warns above 120% projected consumption and errors above 150%, both configurable. Flat consumption thresholds act as a floor so a nearly exhausted allowance still alerts late in the period.
+- **Already-Exceeded Detection:** An allowance consumed past 100% is reported as critical and listed separately from the forecasts. Everything below that level is a prediction; above it the allowance is already spent and overage is accruing.
 - **Per-Resource Configuration:** Thresholds can be tightened, loosened or muted per resource in \`.sfdx-hardis.yml\`.
 - **CSV Report Generation:** Produces a report with consumption, allowance, period boundaries, elapsed share, projection and severity for every entitlement.
 - **Notifications:** Sends notifications to configured channels (Grafana, Slack, MS Teams) summarizing entitlements at risk.
@@ -136,6 +137,10 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       fileTitle: 'Usage-Based Entitlements',
     });
 
+    // "Already over the allowance" is a different message from "on track to exceed it": the
+    // first is money being spent right now, the second is a forecast. Real orgs carry both at
+    // once, so they are reported as separate blocks rather than merged into one count.
+    const overRows = this.entitlementRows.filter((row) => row.severity === 'critical');
     const errorRows = this.entitlementRows.filter((row) => row.severity === 'error');
     const warningRows = this.entitlementRows.filter((row) => row.severity === 'warning');
 
@@ -145,19 +150,35 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     let notifText = `No usage-based entitlement is at risk in ${orgMarkdown}`;
     const notifAttachments: MessageAttachment[] = [];
 
-    if (errorRows.length > 0) {
+    if (overRows.length > 0) {
+      notifAttachments.push({
+        text: `**Allowance already exceeded**\n${overRows.map(formatUsageEntitlementLine).join('\n')}`,
+      });
+    }
+    if (errorRows.length > 0 || warningRows.length > 0) {
+      const forecastRows = [...errorRows, ...warningRows];
+      notifAttachments.push({
+        text: `**On track to exceed the allowance**\n${forecastRows.map(formatUsageEntitlementLine).join('\n')}`,
+      });
+    }
+
+    if (overRows.length > 0) {
+      notifSeverity = 'critical';
+      notifText = `**${overRows.length}** usage-based entitlement(s) already exceed their allowance in ${orgMarkdown}`;
+      if (errorRows.length + warningRows.length > 0) {
+        notifText += ` (**${errorRows.length + warningRows.length}** more on track to)`;
+      }
+      uxLog('error', this, c.red(notifText));
+      process.exitCode = 1;
+    } else if (errorRows.length > 0) {
       notifSeverity = 'error';
       notifText = `Usage-based entitlements are projected to be exceeded in ${orgMarkdown} (error: **${errorRows.length}**, warning: **${warningRows.length}**)`;
-      const errorText = `**Projected to exceed the allowance**\n${errorRows.map(formatUsageEntitlementLine).join('\n')}`;
-      notifAttachments.push({ text: errorText });
-      uxLog('error', this, c.red(notifText + '\n' + errorText));
+      uxLog('error', this, c.red(notifText));
       process.exitCode = 1;
     } else if (warningRows.length > 0) {
       notifSeverity = 'warning';
       notifText = `Usage-based entitlements are consumed faster than expected in ${orgMarkdown} (**${warningRows.length}**)`;
-      const warningText = `**Consumed faster than expected**\n${warningRows.map(formatUsageEntitlementLine).join('\n')}`;
-      notifAttachments.push({ text: warningText });
-      uxLog('warning', this, c.yellow(notifText + '\n' + warningText));
+      uxLog('warning', this, c.yellow(notifText));
     } else {
       uxLog('success', this, c.green(t('noUsageEntitlementAtRisk')));
     }
@@ -176,7 +197,10 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       severity: notifSeverity,
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.entitlementRows,
-      data: { metric: errorRows.length + warningRows.length, entitlements: entitlementsMap },
+      data: {
+        metric: overRows.length + errorRows.length + warningRows.length,
+        entitlements: entitlementsMap,
+      },
       metrics: buildUsageEntitlementMetrics(this.entitlementRows),
     });
 

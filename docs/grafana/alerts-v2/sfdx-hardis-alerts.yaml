@@ -312,7 +312,7 @@ groups:
         labels:
           source: sfdx-hardis
         annotations:
-          summary: 'Org {{ $labels.orgIdentifier }}: a usage-based entitlement is on track to exceed its allowance before the end of the billing period'
+          summary: 'Org {{ $labels.orgIdentifier }}: a usage-based entitlement is already over its allowance, or on track to exceed it before the period ends'
         data:
           - refId: A
             relativeTimeRange:
@@ -328,7 +328,9 @@ groups:
               # track to be overshot by half again. Aggregated per org so one alert fires per
               # org rather than one per resource.
               expr: >-
-                max by (orgIdentifier) (last_over_time({__name__=~"UsageEntProjected_.+", source="sfdx-hardis", type="USAGE_ENTITLEMENTS"}[2d])) > 150
+                (max by (orgIdentifier) (last_over_time(UsageEntitlementsOverAllowance{source="sfdx-hardis"}[2d])) > 0)
+                or
+                (max by (orgIdentifier) (last_over_time(UsageEntitlementsWorstProjected{source="sfdx-hardis"}[2d])) > 150)
           - refId: B
             datasourceUid: __expr__
             model:
@@ -350,7 +352,7 @@ groups:
       # 8. Salesforce raised a utilization alert reaching the full allowance
       # ----------------------------------------------------------------------
       - uid: sfdx-hardis-v2-consumption-alert-critical
-        title: Salesforce utilization alert reached the full allowance
+        title: Salesforce consumption card near its full allowance
         condition: C
         isPaused: true
         for: 0s
@@ -359,7 +361,7 @@ groups:
         labels:
           source: sfdx-hardis
         annotations:
-          summary: 'Org {{ $labels.orgIdentifier }}: Salesforce raised a utilization alert whose trigger value reached the full allowance'
+          summary: 'Org {{ $labels.orgIdentifier }}: a consumption card has passed 90% of its allowance'
         data:
           - refId: A
             relativeTimeRange:
@@ -371,7 +373,7 @@ groups:
               instant: true
               range: false
               expr: >-
-                max by (orgIdentifier) (last_over_time(ConsumptionAlertsCritical{source="sfdx-hardis"}[2d])) > 0
+                max by (orgIdentifier) (last_over_time(ConsumptionAlertsMaxThreshold{source="sfdx-hardis"}[2d])) >= 90
           - refId: B
             datasourceUid: __expr__
             model:

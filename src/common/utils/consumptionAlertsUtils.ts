@@ -32,10 +32,16 @@ export interface ConsumptionAlertsResult {
   alerts: ConsumptionAlertRow[];
 }
 
-// TriggerValue is an int and the Digital Wallet threshold alerts are expressed in percent, so a
-// value at or above 100 means the allowance itself was reached rather than a warning threshold.
-// Isolated here so it is a one-line change if a real org shows different semantics.
+// Confirmed against a production org: TriggerType is "ThresholdPercent" and TriggerValue holds
+// the percentage crossed (25 / 50 / 75 observed).
+//
+// Salesforce raises one alert per threshold and leaves the earlier ones Active, so a single
+// consumption card that has passed 75% shows up as three rows (25, 50, 75). Counting rows would
+// report "3 alerts" for what is really one card at 75%, and would make a card that crossed more
+// thresholds look worse than one that crossed fewer. Severity and the headline count are
+// therefore driven by the highest threshold reached per scope.
 const CRITICAL_TRIGGER_VALUE = 100;
+const ERROR_TRIGGER_VALUE = 75;
 
 const CONSUMPTION_ALERT_FIELDS = [
   "Id",
@@ -83,8 +89,7 @@ export async function queryConsumptionAlerts(conn: Connection): Promise<Consumpt
 export function buildConsumptionAlertRow(record: any): ConsumptionAlertRow {
   const triggerValue =
     record.TriggerValue === null || record.TriggerValue === undefined ? null : Number(record.TriggerValue);
-  const severity: NotifSeverity =
-    triggerValue !== null && triggerValue >= CRITICAL_TRIGGER_VALUE ? "error" : "warning";
+  const severity: NotifSeverity = severityForTrigger(triggerValue);
   return {
     name: String(record.Name ?? ""),
     alertType: String(record.AlertType ?? ""),
@@ -101,22 +106,99 @@ export function buildConsumptionAlertRow(record: any): ConsumptionAlertRow {
   };
 }
 
-export function resolveAlertsSeverity(alerts: ConsumptionAlertRow[]): NotifSeverity {
-  if (alerts.length === 0) {
-    return "log";
-  }
-  return alerts.some((alert) => alert.severity === "error") ? "error" : "warning";
+export interface ConsumptionAlertScope {
+  scope: string;
+  alertType: string;
+  // Highest threshold reached on this scope, which is the one that matters.
+  maxTriggerValue: number | null;
+  triggerType: string;
+  // How many threshold alerts Salesforce raised on this scope (the 25/50/75 ladder).
+  alertCount: number;
+  latestTimestamp: string | null;
+  severity: NotifSeverity;
 }
 
-export function buildConsumptionAlertMetrics(alerts: ConsumptionAlertRow[]): any {
+export function scopeKey(alert: ConsumptionAlertRow): string {
+  return [alert.alertScope, alert.alertSubScope1, alert.alertSubScope2].filter(Boolean).join(" / ");
+}
+
+function severityForTrigger(triggerValue: number | null): NotifSeverity {
+  if (triggerValue === null) {
+    return "warning";
+  }
+  if (triggerValue >= CRITICAL_TRIGGER_VALUE) {
+    return "critical";
+  }
+  return triggerValue >= ERROR_TRIGGER_VALUE ? "error" : "warning";
+}
+
+// Collapses the per-threshold ladder into one row per consumption scope.
+export function groupAlertsByScope(alerts: ConsumptionAlertRow[]): ConsumptionAlertScope[] {
+  const byScope = new Map<string, ConsumptionAlertScope>();
+  for (const alert of alerts) {
+    const key = scopeKey(alert) || alert.alertType || alert.name;
+    const existing = byScope.get(key);
+    if (!existing) {
+      byScope.set(key, {
+        scope: key,
+        alertType: alert.alertType,
+        maxTriggerValue: alert.triggerValue,
+        triggerType: alert.triggerType,
+        alertCount: 1,
+        latestTimestamp: alert.alertTimestamp,
+        severity: severityForTrigger(alert.triggerValue),
+      });
+      continue;
+    }
+    existing.alertCount++;
+    if ((alert.triggerValue ?? -1) > (existing.maxTriggerValue ?? -1)) {
+      existing.maxTriggerValue = alert.triggerValue;
+      existing.triggerType = alert.triggerType;
+      existing.severity = severityForTrigger(alert.triggerValue);
+    }
+    if (
+      alert.alertTimestamp &&
+      (!existing.latestTimestamp || alert.alertTimestamp > existing.latestTimestamp)
+    ) {
+      existing.latestTimestamp = alert.alertTimestamp;
+    }
+  }
+  return [...byScope.values()].sort(
+    (a, b) => (b.maxTriggerValue ?? -1) - (a.maxTriggerValue ?? -1) || a.scope.localeCompare(b.scope),
+  );
+}
+
+export function resolveAlertsSeverity(scopes: ConsumptionAlertScope[]): NotifSeverity {
+  if (scopes.length === 0) {
+    return "log";
+  }
+  if (scopes.some((scope) => scope.severity === "critical")) {
+    return "critical";
+  }
+  return scopes.some((scope) => scope.severity === "error") ? "error" : "warning";
+}
+
+export function buildConsumptionAlertMetrics(
+  alerts: ConsumptionAlertRow[],
+  scopes: ConsumptionAlertScope[],
+): any {
+  const thresholds = scopes
+    .map((scope) => scope.maxTriggerValue)
+    .filter((value): value is number => value !== null);
   return {
+    // Raw alert rows, kept so the ladder itself stays visible.
     ConsumptionAlertsActive: alerts.length,
-    ConsumptionAlertsCritical: alerts.filter((alert) => alert.severity === "error").length,
+    // Distinct consumption scopes in alert: the number that reflects reality.
+    ConsumptionAlertsScopes: scopes.length,
+    // Highest consumption threshold reached across every scope.
+    ConsumptionAlertsMaxThreshold: thresholds.length ? Math.max(...thresholds) : 0,
+    ConsumptionAlertsCritical: scopes.filter((scope) => scope.severity === "critical").length,
   };
 }
 
-export function formatConsumptionAlertLine(alert: ConsumptionAlertRow): string {
-  const scope = [alert.alertScope, alert.alertSubScope1, alert.alertSubScope2].filter(Boolean).join(" / ");
-  const trigger = alert.triggerValue !== null ? ` (**${alert.triggerValue}** ${alert.triggerType})` : "";
-  return `- ${alert.alertType || alert.name}${scope ? `: ${scope}` : ""}${trigger}`;
+export function formatConsumptionAlertScopeLine(scope: ConsumptionAlertScope): string {
+  const trigger =
+    scope.maxTriggerValue !== null ? ` at **${scope.maxTriggerValue}%**` : "";
+  const ladder = scope.alertCount > 1 ? ` (${scope.alertCount} thresholds crossed)` : "";
+  return `- ${scope.scope}${trigger}${ladder}`;
 }

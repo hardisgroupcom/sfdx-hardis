@@ -270,6 +270,26 @@ describe('usageEntitlementsUtils', () => {
       );
     });
 
+    // Real orgs routinely sit past 100% (the reference org had entitlements at 138% and 172%).
+    // That is money already being spent, so it must outrank any forecast-based level.
+    it('returns critical when the allowance is already exceeded', () => {
+      expect(
+        resolveEntitlementSeverity({ percentUsed: 138, projectedPercent: 195, status: 'ok' }, baseConfig)
+      ).to.equal('critical');
+    });
+
+    it('does not return critical for a projection alone', () => {
+      expect(
+        resolveEntitlementSeverity({ percentUsed: 80, projectedPercent: 400, status: 'ok' }, baseConfig)
+      ).to.equal('error');
+    });
+
+    it('treats exactly 100% consumed as error, not critical', () => {
+      expect(
+        resolveEntitlementSeverity({ percentUsed: 100, projectedPercent: null, status: 'ok' }, baseConfig)
+      ).to.equal('error');
+    });
+
     it('honours per-resource threshold overrides', () => {
       const severity = resolveEntitlementSeverity(
         { percentUsed: 30, projectedPercent: 115, status: 'ok' },

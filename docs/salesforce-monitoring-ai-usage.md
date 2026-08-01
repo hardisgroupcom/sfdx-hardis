@@ -10,6 +10,8 @@ Agentforce actions and Data 360 operations are billed in Flex Credits. A single 
 
 This command reads the consumption models Salesforce publishes in Data 360 and reports credits consumed and event counts per agent, per action, and per usage type, splitting metered from unmetered usage.
 
+**Only metered usage is charged.** Standard generative AI features and Prompt Builder templates covered by an Agentforce add-on run unmetered, and on a real org they are usually the bulk of consumption. The command therefore leads with billed credits and reports the total alongside, so the headline figure matches what actually lands on the invoice.
+
 Sfdx-hardis command: [sf hardis:org:diagnose:ai-usage](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/ai-usage/)
 
 Key: **AI_USAGE**

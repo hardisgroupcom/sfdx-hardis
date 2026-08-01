@@ -35,7 +35,7 @@
   ],
   "panels": [
     {
-      "id": 172,
+      "id": 173,
       "type": "row",
       "title": "At a glance",
       "collapsed": false,
@@ -50,7 +50,7 @@
     {
       "id": 156,
       "type": "stat",
-      "title": "Entitlements at risk",
+      "title": "Over allowance",
       "datasource": {
         "type": "prometheus",
         "uid": "${ds_prom}"
@@ -67,11 +67,11 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsAtRisk{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsOverAllowance{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
-      "description": "Usage-based entitlements currently in warning or error state. Usage-based entitlements are what Salesforce bills on, unlike org limits which throttle. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "description": "Entitlements whose paid allowance is already fully consumed, so overage is accruing now. Usage-based entitlements are what Salesforce bills on, unlike org limits which throttle. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -121,8 +121,8 @@
     },
     {
       "id": 157,
-      "type": "stat",
-      "title": "Metered entitlements",
+      "type": "gauge",
+      "title": "Worst consumption",
       "datasource": {
         "type": "prometheus",
         "uid": "${ds_prom}"
@@ -139,11 +139,11 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsMetered{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsWorstPercent{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
-      "description": "Entitlements for which Salesforce reports consumption data. Usage-based entitlements are what Salesforce bills on, unlike org limits which throttle. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "description": "Highest share of any single allowance consumed this period. Usage-based entitlements are what Salesforce bills on, unlike org limits which throttle. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -154,7 +154,94 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue"
+                "color": "green"
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "orange",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 200,
+          "noValue": "Schedule usage-entitlements",
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
+    },
+    {
+      "id": 158,
+      "type": "stat",
+      "title": "Entitlements at risk",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsAtRisk{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Entitlements over allowance or on track to exceed it before the period ends. Usage-based entitlements are what Salesforce bills on, unlike org limits which throttle. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
               }
             ]
           },
@@ -184,7 +271,7 @@
       }
     },
     {
-      "id": 158,
+      "id": 159,
       "type": "stat",
       "title": "At risk avg (30d)",
       "datasource": {
@@ -194,7 +281,7 @@
       "gridPos": {
         "h": 5,
         "w": 4,
-        "x": 8,
+        "x": 12,
         "y": 1
       },
       "targets": [
@@ -256,81 +343,9 @@
       }
     },
     {
-      "id": 159,
-      "type": "stat",
-      "title": "Utilization alerts",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${ds_prom}"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 12,
-        "y": 1
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${ds_prom}"
-          },
-          "expr": "max by (orgIdentifier) (last_over_time(ConsumptionAlertsActive{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
-          "refId": "A"
-        }
-      ],
-      "description": "Active consumption and license utilization alerts raised by Salesforce. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "orange",
-                "value": 1
-              },
-              {
-                "color": "red",
-                "value": 10
-              }
-            ]
-          },
-          "noValue": "Schedule consumption-alerts",
-          "links": [
-            {
-              "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=CONSUMPTION_ALERTS"
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      }
-    },
-    {
       "id": 160,
       "type": "stat",
-      "title": "Allowance reached",
+      "title": "Cards in alert",
       "datasource": {
         "type": "prometheus",
         "uid": "${ds_prom}"
@@ -347,11 +362,11 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(ConsumptionAlertsCritical{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(ConsumptionAlertsScopes{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
-      "description": "Utilization alerts whose trigger value reached the full allowance. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "description": "Distinct consumption cards for which Salesforce raised a utilization alert. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -401,6 +416,98 @@
     },
     {
       "id": 161,
+      "type": "gauge",
+      "title": "Highest alert",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(ConsumptionAlertsMaxThreshold{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Highest consumption threshold Salesforce has flagged across every card. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "orange",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "noValue": "Schedule consumption-alerts",
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=CONSUMPTION_ALERTS"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
+    },
+    {
+      "id": 174,
+      "type": "row",
+      "title": "Freshness",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "panels": []
+    },
+    {
+      "id": 162,
       "type": "stat",
       "title": "Stats generation date",
       "datasource": {
@@ -410,8 +517,8 @@
       "gridPos": {
         "h": 5,
         "w": 4,
-        "x": 20,
-        "y": 1
+        "x": 0,
+        "y": 7
       },
       "targets": [
         {
@@ -490,7 +597,7 @@
       }
     },
     {
-      "id": 173,
+      "id": 175,
       "type": "row",
       "title": "Consumption vs allowance",
       "collapsed": false,
@@ -498,12 +605,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 12
       },
       "panels": []
     },
     {
-      "id": 162,
+      "id": 163,
       "type": "table",
       "title": "Entitlement consumption",
       "datasource": {
@@ -514,7 +621,7 @@
         "h": 12,
         "w": 12,
         "x": 0,
-        "y": 7
+        "y": 13
       },
       "targets": [
         {
@@ -635,7 +742,7 @@
       }
     },
     {
-      "id": 163,
+      "id": 164,
       "type": "table",
       "title": "Projected consumption at period end",
       "datasource": {
@@ -646,7 +753,7 @@
         "h": 12,
         "w": 12,
         "x": 12,
-        "y": 7
+        "y": 13
       },
       "targets": [
         {
@@ -758,7 +865,7 @@
       }
     },
     {
-      "id": 174,
+      "id": 176,
       "type": "row",
       "title": "Trends",
       "collapsed": false,
@@ -766,12 +873,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 25
       },
       "panels": []
     },
     {
-      "id": 164,
+      "id": 165,
       "type": "timeseries",
       "title": "Entitlement consumption (% used)",
       "datasource": {
@@ -782,7 +889,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 26
       },
       "targets": [
         {
@@ -868,7 +975,7 @@
       }
     },
     {
-      "id": 175,
+      "id": 177,
       "type": "row",
       "title": "Details",
       "collapsed": false,
@@ -876,12 +983,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 36
       },
       "panels": []
     },
     {
-      "id": 165,
+      "id": 166,
       "type": "table",
       "title": "Entitlements detail (latest run)",
       "datasource": {
@@ -892,7 +999,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 31
+        "y": 37
       },
       "targets": [
         {
@@ -1031,7 +1138,7 @@
       }
     },
     {
-      "id": 166,
+      "id": 167,
       "type": "table",
       "title": "Active utilization alerts (latest run)",
       "datasource": {
@@ -1042,7 +1149,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 49
       },
       "targets": [
         {
@@ -1171,7 +1278,7 @@
       }
     },
     {
-      "id": 176,
+      "id": 178,
       "type": "row",
       "title": "Agentforce & Data 360 credits",
       "collapsed": false,
@@ -1179,12 +1286,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 51
+        "y": 57
       },
       "panels": []
     },
     {
-      "id": 167,
+      "id": 168,
       "type": "stat",
       "title": "AI credits",
       "datasource": {
@@ -1195,7 +1302,7 @@
         "h": 5,
         "w": 4,
         "x": 0,
-        "y": 52
+        "y": 58
       },
       "targets": [
         {
@@ -1248,7 +1355,7 @@
       }
     },
     {
-      "id": 168,
+      "id": 169,
       "type": "stat",
       "title": "Metered credits",
       "datasource": {
@@ -1259,7 +1366,7 @@
         "h": 5,
         "w": 4,
         "x": 4,
-        "y": 52
+        "y": 58
       },
       "targets": [
         {
@@ -1312,7 +1419,7 @@
       }
     },
     {
-      "id": 169,
+      "id": 170,
       "type": "stat",
       "title": "AI actions",
       "datasource": {
@@ -1323,7 +1430,7 @@
         "h": 5,
         "w": 4,
         "x": 8,
-        "y": 52
+        "y": 58
       },
       "targets": [
         {
@@ -1376,7 +1483,7 @@
       }
     },
     {
-      "id": 170,
+      "id": 171,
       "type": "stat",
       "title": "Data 360 credits",
       "datasource": {
@@ -1387,7 +1494,7 @@
         "h": 5,
         "w": 4,
         "x": 12,
-        "y": 52
+        "y": 58
       },
       "targets": [
         {
@@ -1440,7 +1547,7 @@
       }
     },
     {
-      "id": 171,
+      "id": 172,
       "type": "timeseries",
       "title": "Credit consumption evolution",
       "datasource": {
@@ -1451,7 +1558,7 @@
         "h": 5,
         "w": 8,
         "x": 16,
-        "y": 52
+        "y": 58
       },
       "targets": [
         {

@@ -326,6 +326,11 @@ export async function resolveUsageEntitlementsConfig(): Promise<UsageEntitlement
   };
 }
 
+// Consumption above this is no longer a forecast: the paid allowance is already spent and the
+// org is accruing overage. Real orgs sit here routinely (the reference org had entitlements at
+// 138% and 172%), so it needs to outrank a mere projection.
+export const OVER_ALLOWANCE_PERCENT = 100;
+
 export function resolveEntitlementSeverity(
   row: Pick<UsageEntitlementRow, "percentUsed" | "projectedPercent" | "status">,
   config: UsageEntitlementsConfig,
@@ -344,7 +349,10 @@ export function resolveEntitlementSeverity(
   let severity: NotifSeverity = "success";
 
   if (row.percentUsed !== null) {
-    if (row.percentUsed > percentError) {
+    // "Already over" beats every forecast-based level: it is a fact, not a trend.
+    if (row.percentUsed > OVER_ALLOWANCE_PERCENT) {
+      severity = maxSeverity(severity, "critical");
+    } else if (row.percentUsed > percentError) {
       severity = maxSeverity(severity, "error");
     } else if (row.percentUsed > percentWarning) {
       severity = maxSeverity(severity, "warning");
@@ -438,15 +446,24 @@ export function buildUsageEntitlementMetrics(rows: UsageEntitlementRow[]): any {
   const metrics: any = {};
   let metered = 0;
   let atRisk = 0;
+  let overAllowance = 0;
+  let worstPercent = 0;
+  let worstProjected = 0;
 
   for (const row of rows) {
     if (row.status !== "ok" || row.amountUsed === null) {
       continue;
     }
     metered++;
-    if (row.severity === "warning" || row.severity === "error") {
+    if (row.severity === "warning" || row.severity === "error" || row.severity === "critical") {
       atRisk++;
     }
+    if ((row.percentUsed ?? 0) > OVER_ALLOWANCE_PERCENT) {
+      overAllowance++;
+    }
+    worstPercent = Math.max(worstPercent, row.percentUsed ?? 0);
+    worstProjected = Math.max(worstProjected, row.projectedPercent ?? 0);
+
     const safeKey = row.settingKey.replace(/[^a-zA-Z0-9_]/g, "_");
     metrics[`UsageEnt_${safeKey}`] = {
       value: row.amountUsed,
@@ -459,8 +476,13 @@ export function buildUsageEntitlementMetrics(rows: UsageEntitlementRow[]): any {
   }
 
   metrics.UsageEntitlementsAtRisk = atRisk;
+  // Entitlements whose paid allowance is already spent: the number that costs money today.
+  metrics.UsageEntitlementsOverAllowance = overAllowance;
   metrics.UsageEntitlementsMetered = metered;
   metrics.UsageEntitlementsTotal = rows.length;
+  // Single per-org headline figures, so fleet dashboards do not have to scan every resource.
+  metrics.UsageEntitlementsWorstPercent = worstPercent;
+  metrics.UsageEntitlementsWorstProjected = worstProjected;
   return metrics;
 }
 

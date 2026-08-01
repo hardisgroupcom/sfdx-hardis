@@ -14,7 +14,9 @@ import { t } from '../../../../common/utils/i18n.js';
 import {
   buildConsumptionAlertMetrics,
   ConsumptionAlertRow,
-  formatConsumptionAlertLine,
+  ConsumptionAlertScope,
+  formatConsumptionAlertScopeLine,
+  groupAlertsByScope,
   queryConsumptionAlerts,
   resolveAlertsSeverity,
 } from '../../../../common/utils/consumptionAlertsUtils.js';
@@ -35,7 +37,8 @@ Salesforce raises utilization alerts when consumption of a billed product approa
 Key functionalities:
 
 - **Active Alert Retrieval:** Lists every alert currently in an active state, most recent first.
-- **Severity Assignment:** Any active alert raises a warning. An alert whose trigger value reached the full allowance raises an error.
+- **Grouping by Consumption Card:** Salesforce raises one alert per threshold crossed and leaves the earlier ones active, so a card past 75% appears as three records (25%, 50%, 75%). Alerts are grouped by card and reported at the highest threshold reached, so the count reflects cards in trouble rather than thresholds crossed.
+- **Severity Assignment:** Any card in alert raises a warning, a card past 75% raises an error, and a card at its full allowance raises a critical.
 - **CSV Report Generation:** Produces a report with the alert type, scope, trigger value, trigger type and timestamp.
 - **Notifications:** Sends notifications to configured channels (Grafana, Slack, MS Teams) summarizing the active alerts.
 
@@ -101,6 +104,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
   protected static triggerNotification = true;
 
   protected alerts: ConsumptionAlertRow[] = [];
+  protected scopes: ConsumptionAlertScope[] = [];
   protected outputFile;
   protected outputFilesRes: any = {};
   protected debugMode = false;
@@ -122,6 +126,9 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     }
 
     this.alerts = queryResult.alerts;
+    // Salesforce leaves every crossed threshold Active, so one card at 75% arrives as three
+    // rows. Group by scope before reporting anything.
+    this.scopes = groupAlertsByScope(this.alerts);
     uxLogTable(this, this.alerts);
 
     this.outputFile = await generateReportPath('consumption-alerts', this.outputFile);
@@ -131,23 +138,24 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
     const orgMarkdown = await getOrgMarkdown(conn?.instanceUrl);
     const notifButtons = await getNotificationButtons();
-    const notifSeverity: NotifSeverity = resolveAlertsSeverity(this.alerts);
+    const notifSeverity: NotifSeverity = resolveAlertsSeverity(this.scopes);
     const notifAttachments: MessageAttachment[] = [];
     let notifText = `No active consumption alert in ${orgMarkdown}`;
 
-    if (this.alerts.length > 0) {
-      const criticalCount = this.alerts.filter((alert) => alert.severity === 'error').length;
-      notifText = `Salesforce raised **${this.alerts.length}** consumption alert(s) in ${orgMarkdown}`;
-      const alertsText = `**Active utilization alerts**\n${this.alerts.map(formatConsumptionAlertLine).join('\n')}`;
+    if (this.scopes.length > 0) {
+      const maxThreshold = Math.max(...this.scopes.map((scope) => scope.maxTriggerValue ?? 0));
+      notifText =
+        `**${this.scopes.length}** consumption card(s) in alert in ${orgMarkdown}, ` +
+        `highest at **${maxThreshold}%** of the allowance`;
+      const alertsText = `**Consumption cards in alert**\n${this.scopes
+        .map(formatConsumptionAlertScopeLine)
+        .join('\n')}`;
       notifAttachments.push({ text: alertsText });
-      if (notifSeverity === 'error') {
+      if (notifSeverity === 'critical' || notifSeverity === 'error') {
         uxLog('error', this, c.red(notifText + '\n' + alertsText));
         process.exitCode = 1;
       } else {
         uxLog('warning', this, c.yellow(notifText + '\n' + alertsText));
-      }
-      if (criticalCount > 0) {
-        notifText += ` (allowance reached: **${criticalCount}**)`;
       }
     } else {
       uxLog('success', this, c.green(t('noActiveConsumptionAlert')));
@@ -162,8 +170,8 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       severity: notifSeverity,
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.alerts,
-      data: { metric: this.alerts.length },
-      metrics: buildConsumptionAlertMetrics(this.alerts),
+      data: { metric: this.scopes.length, scopes: this.scopes },
+      metrics: buildConsumptionAlertMetrics(this.alerts, this.scopes),
     });
 
     return {

@@ -13,10 +13,13 @@ This is a different concern from [org limits](salesforce-monitoring-org-limits.m
 Watching a raw percentage is not enough. An entitlement at 60% consumption looks healthy, but if only 30% of the billing period has elapsed it is on track to reach 200% of the allowance. This command projects consumption to the end of the period and alerts on that projection.
 
 - Success: projected consumption below 120%
-- Warning: projected consumption above 120%
-- Error: projected consumption above 150%
+- Warning: projected consumption above 120%, or more than 50% of the allowance consumed
+- Error: projected consumption above 150%, or more than 75% consumed
+- **Critical: more than 100% consumed**
 
-Flat consumption thresholds (50% warning, 75% error, same as org limits) act as a floor, so an almost exhausted allowance still alerts late in the period when the projection alone would stay quiet.
+The critical level is deliberately separate. Everything below it is a forecast; above it the paid allowance is already spent and overage is accruing right now. Real orgs sit there routinely, so the notification reports the two groups separately rather than merging them into one count.
+
+Flat consumption thresholds act as a floor, so an almost exhausted allowance still alerts late in the period when the projection alone would stay quiet.
 
 Sfdx-hardis command: [sf hardis:org:diagnose:usage-entitlements](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/usage-entitlements/)
 

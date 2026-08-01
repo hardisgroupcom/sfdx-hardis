@@ -1745,19 +1745,32 @@ const usageDashboard = dashboard({
     {
       row: 'At a glance',
       panels: [
-        statPanel('Entitlements at risk', {
+        // Leads with money already being spent, not with a forecast: on a real org several
+        // entitlements sit past 100% at any time and that is the number to act on.
+        statPanel('Over allowance', {
           gridPos: { w: 4, h: 5 },
-          description: 'Usage-based entitlements currently in warning or error state. ' + USAGE_NOTE,
-          targets: [promTarget(promLast('UsageEntitlementsAtRisk'))],
+          description:
+            'Entitlements whose paid allowance is already fully consumed, so overage is accruing now. ' +
+            USAGE_NOTE,
+          targets: [promTarget(promLast('UsageEntitlementsOverAllowance'))],
           thresholds: THRESHOLDS_COUNT,
           noValue: 'Schedule usage-entitlements',
           links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
-        statPanel('Metered entitlements', {
+        gaugePanel('Worst consumption', {
           gridPos: { w: 4, h: 5 },
-          description: 'Entitlements for which Salesforce reports consumption data. ' + USAGE_NOTE,
-          targets: [promTarget(promLast('UsageEntitlementsMetered'))],
-          thresholds: THRESHOLDS_NONE,
+          description: 'Highest share of any single allowance consumed this period. ' + USAGE_NOTE,
+          targets: [promTarget(promLast('UsageEntitlementsWorstPercent'))],
+          max: 200,
+          noValue: 'Schedule usage-entitlements',
+          links: indicatorLink('USAGE_ENTITLEMENTS'),
+        }),
+        statPanel('Entitlements at risk', {
+          gridPos: { w: 4, h: 5 },
+          description:
+            'Entitlements over allowance or on track to exceed it before the period ends. ' + USAGE_NOTE,
+          targets: [promTarget(promLast('UsageEntitlementsAtRisk'))],
+          thresholds: THRESHOLDS_COUNT,
           noValue: 'Schedule usage-entitlements',
           links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
@@ -1765,24 +1778,30 @@ const usageDashboard = dashboard({
           description: 'Average number of entitlements at risk over 30 days. ' + RECENT_CLI_NOTE,
           links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
-        statPanel('Utilization alerts', {
+        // Salesforce leaves every crossed threshold active, so the raw alert count double
+        // counts one card. Scopes is the honest number.
+        statPanel('Cards in alert', {
           gridPos: { w: 4, h: 5 },
-          description: 'Active consumption and license utilization alerts raised by Salesforce. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('ConsumptionAlertsActive'))],
+          description:
+            'Distinct consumption cards for which Salesforce raised a utilization alert. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('ConsumptionAlertsScopes'))],
           thresholds: THRESHOLDS_COUNT,
           noValue: 'Schedule consumption-alerts',
           links: indicatorLink('CONSUMPTION_ALERTS'),
         }),
-        statPanel('Allowance reached', {
+        gaugePanel('Highest alert', {
           gridPos: { w: 4, h: 5 },
-          description: 'Utilization alerts whose trigger value reached the full allowance. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('ConsumptionAlertsCritical'))],
-          thresholds: THRESHOLDS_COUNT,
+          description:
+            'Highest consumption threshold Salesforce has flagged across every card. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('ConsumptionAlertsMaxThreshold'))],
           noValue: 'Schedule consumption-alerts',
           links: indicatorLink('CONSUMPTION_ALERTS'),
         }),
-        statsDatePanel('USAGE_ENTITLEMENTS', { w: 4, h: 5 }),
       ],
+    },
+    {
+      row: 'Freshness',
+      panels: [statsDatePanel('USAGE_ENTITLEMENTS', { w: 4, h: 5 })],
     },
     {
       row: 'Consumption vs allowance',

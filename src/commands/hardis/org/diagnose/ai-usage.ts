@@ -35,6 +35,7 @@ Agentforce actions and Data 360 operations are billed in Flex Credits. This comm
 Key functionalities:
 
 - **Consumption Breakdown:** Aggregates credits consumed and event counts per agent, action, usage type and metered flag.
+- **Billed vs Covered Usage:** Only metered usage is charged. Standard generative AI features covered by an add-on run unmetered and are usually the bulk of consumption, so the report leads with billed credits and shows the total alongside.
 - **Data 360 Credits:** Reports Data 360 credit consumption alongside Agentforce usage.
 - **Date Windowing:** Restricts the analysis to a recent period, 30 days by default.
 - **CSV Report Generation:** Produces a report of the aggregated consumption rows.
@@ -154,23 +155,33 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     const metrics = buildAiUsageMetrics(this.usageResult);
     const creditsThreshold = Number(getEnvVar('AI_USAGE_CREDITS_THRESHOLD') || 0);
     const totalCredits = metrics.AiUsageCreditsTotal + metrics.DataCloudCreditsTotal;
+    // Only metered usage is charged. On a real org most consumption is covered by the
+    // subscription, so leading with the raw total would overstate the bill several times over.
+    const billedCredits = metrics.AiUsageCreditsMetered + metrics.DataCloudCreditsTotal;
 
     const orgMarkdown = await getOrgMarkdown(conn?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     const notifAttachments: MessageAttachment[] = [];
     let notifSeverity: NotifSeverity = 'log';
-    let notifText = `**${totalCredits}** credits consumed over the last ${flags.days} days in ${orgMarkdown}`;
+    let notifText =
+      `**${billedCredits}** billed credits over the last ${flags.days} days in ${orgMarkdown} ` +
+      `(**${totalCredits}** consumed in total, ${metrics.AiUsageCreditsUnmetered} unmetered)`;
 
     const topConsumers = this.usageResult.aiRows.slice(0, 10);
     if (topConsumers.length > 0) {
-      notifAttachments.push({
-        text: `**Top consumers**\n${topConsumers.map(formatAiUsageLine).join('\n')}`,
-      });
+      const listed = topConsumers.reduce((sum, row) => sum + (row.credits ?? 0), 0);
+      const remaining = this.usageResult.aiRows.length - topConsumers.length;
+      let text = `**Top consumers**\n${topConsumers.map(formatAiUsageLine).join('\n')}`;
+      if (remaining > 0) {
+        // Never let the top-10 read as the whole picture.
+        text += `\n- ...and ${remaining} more, totalling ${Math.max(0, Math.round((totalCredits - listed) * 100) / 100)} credits`;
+      }
+      notifAttachments.push({ text });
     }
 
-    if (creditsThreshold > 0 && totalCredits > creditsThreshold) {
+    if (creditsThreshold > 0 && billedCredits > creditsThreshold) {
       notifSeverity = 'warning';
-      notifText = `Credit consumption exceeded the configured threshold in ${orgMarkdown}: **${totalCredits}** credits over the last ${flags.days} days (threshold: **${creditsThreshold}**)`;
+      notifText = `Billed credit consumption exceeded the configured threshold in ${orgMarkdown}: **${billedCredits}** credits over the last ${flags.days} days (threshold: **${creditsThreshold}**)`;
       uxLog('warning', this, c.yellow(notifText));
     } else {
       uxLog('success', this, c.green(notifText));
@@ -186,7 +197,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: reportRows,
       data: {
-        metric: totalCredits,
+        metric: billedCredits,
         aiModel: this.usageResult.aiModel,
         dataCreditModel: this.usageResult.dataCreditModel,
       },
