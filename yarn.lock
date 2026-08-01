@@ -5341,10 +5341,10 @@ csv-parse@^5.5.2:
   resolved "https://registry.yarnpkg.com/csv-parse/-/csv-parse-5.6.0.tgz#219beace2a3e9f28929999d2aa417d3fb3071c7f"
   integrity sha512-l3nz3euub2QMg5ouu5U09Ew9Wf6/wQ8I++ch1loQ0ljmzhmfZYrH9fflS22i/PQEvsPvxCwxgz5q7UB8K1JO4Q==
 
-csv-stringify@6.7.0, csv-stringify@^6.6.0:
-  version "6.7.0"
-  resolved "https://registry.yarnpkg.com/csv-stringify/-/csv-stringify-6.7.0.tgz#74c657f278e7ac6ebc8f6812d098dfe0ea0b7e14"
-  integrity sha512-UdtziYp5HuTz7e5j8Nvq+a/3HQo+2/aJZ9xntNTpmRRIg/3YYqDVgiS9fvAhtNbnyfbv2ZBe0bqCHqzhE7FqWQ==
+csv-stringify@6.8.1, csv-stringify@^6.6.0:
+  version "6.8.1"
+  resolved "https://registry.yarnpkg.com/csv-stringify/-/csv-stringify-6.8.1.tgz#4f79eebedaa421ca1bae88fddae92cdb4a11008f"
+  integrity sha512-tZ6X6TKQyQgCo5OptXcyAbfN1pwmoxEqELPQ7KFazNErx7kiVsDK8o+VYRXhfMl4N9vvOOLXuioquR2MeP847A==
 
 current-module-paths@^1.1.2:
   version "1.1.2"
