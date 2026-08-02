@@ -81,6 +81,12 @@ function resolveDevHubUsername(session: TestSession): string {
  * `scenario` is only used to name the scratch org, to make CI logs readable.
  */
 export async function createNutOrgSession(scenario: string): Promise<NutOrgContext> {
+  // The testkit runs ./bin/run.js by default, which only exposes the hardis commands.
+  // Point it at the real sf binary so plain "sf data query" style commands work too.
+  if (!process.env.TESTKIT_EXECUTABLE_PATH) {
+    process.env.TESTKIT_EXECUTABLE_PATH = 'sf';
+  }
+
   const session = await TestSession.create({
     project: { sourceDir: FIXTURE_PROJECT_DIR },
     devhubAuthStrategy: 'AUTO',
@@ -95,6 +101,14 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
   git(projectDir, 'config commit.gpgsign false');
   git(projectDir, 'add -A');
   git(projectDir, 'commit -m "chore: initial NUT fixture project" --no-verify');
+
+  // sfdx-git-delta and the commits summary both run `git fetch origin`, which fails without
+  // a remote. Give the fixture a local bare remote so the delta scenarios really work.
+  const remoteDir = path.join(path.dirname(projectDir), `${path.basename(projectDir)}-remote.git`);
+  await fs.ensureDir(remoteDir);
+  execSync('git init --bare', { cwd: remoteDir, stdio: ['ignore', 'pipe', 'pipe'] });
+  git(projectDir, `remote add origin "${remoteDir.replace(/\\/g, '/')}"`);
+  git(projectDir, 'push -u origin main');
 
   await fs.ensureDir(path.join(projectDir, 'config', 'user'));
 
@@ -161,12 +175,12 @@ export async function addBrokenApexClass(projectDir: string): Promise<void> {
  * Run a hardis (or plain sf) command inside the fixture project.
  * `ensureExitCode` is left to the caller: failing-deployment scenarios expect a non-zero code.
  */
-export function runHardis(
+export function runHardis<T = any>(
   ctx: NutOrgContext,
   command: string,
   options: { ensureExitCode?: number | 'nonZero'; env?: Record<string, string>; timeout?: number } = {}
 ) {
-  return execCmd(command, {
+  return execCmd<T>(command, {
     cwd: ctx.projectDir,
     ensureExitCode: options.ensureExitCode,
     timeout: options.timeout ?? 1800000,

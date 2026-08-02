@@ -20,7 +20,8 @@ on:
     - cron: "17 3 * * *"
   workflow_dispatch:
 
-permissions: read-all
+permissions:
+  contents: read
 
 concurrency:
   # Never run two org test jobs at once: they would compete for the scratch org quota
@@ -33,6 +34,8 @@ jobs:
   # the org credentials to untrusted code) and for dependency bot Pull Requests.
   should-run:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       run: ${{ steps.check.outputs.run }}
     steps:
@@ -48,13 +51,11 @@ jobs:
               echo "run=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            case "$PR_AUTHOR" in
-              dependabot\[bot\]|renovate\[bot\]|github-actions\[bot\])
-                echo "Dependency bot Pull Request ($PR_AUTHOR): skipping org tests to preserve the scratch org quota."
-                echo "run=false" >> "$GITHUB_OUTPUT"
-                exit 0
-                ;;
-            esac
+            if [ "$PR_AUTHOR" = "dependabot[bot]" ] || [ "$PR_AUTHOR" = "renovate[bot]" ] || [ "$PR_AUTHOR" = "github-actions[bot]" ]; then
+              echo "Dependency bot Pull Request ($PR_AUTHOR): skipping org tests to preserve the scratch org quota."
+              echo "run=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
           fi
           echo "run=true" >> "$GITHUB_OUTPUT"
 
@@ -66,9 +67,11 @@ jobs:
       contents: read
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: lts/*
           cache: yarn
@@ -97,14 +100,18 @@ jobs:
             echo "::error::TESTKIT_AUTH_URL secret is not set. Add it with the SFDX auth URL of a Dev Hub enabled org."
             exit 1
           fi
-          printf '%s' "$TESTKIT_AUTH_URL" > ./authurl.txt
-          sf org login sfdx-url --sfdx-url-file ./authurl.txt --set-default-dev-hub --alias nut-devhub
-          rm -f ./authurl.txt
+          printf '%s' "$TESTKIT_AUTH_URL" > ./sfdx-auth-url.txt
+          sf org login sfdx-url --sfdx-url-file ./sfdx-auth-url.txt --set-default-dev-hub --alias nut-devhub
+          rm -f ./sfdx-auth-url.txt
           sf org list --all
 
       - name: Run org integration tests
         env:
           TESTKIT_AUTH_URL: ${{ secrets.TESTKIT_AUTH_URL }}
+          # Without this, the testkit runs ./bin/run.js, which only exposes the hardis
+          # commands: every plain "sf data query" / "sf org display" would fail with
+          # "command not found". The plugin is linked, so the real sf runs both.
+          TESTKIT_EXECUTABLE_PATH: sf
           SF_DISABLE_TELEMETRY: "true"
           FORCE_COLOR: "1"
         run: yarn test:nuts:org

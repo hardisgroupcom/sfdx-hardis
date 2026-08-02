@@ -86,6 +86,7 @@ describe('hardis:project:deploy:smart against a real org', () => {
           '    type: command',
           '    command: node -e "console.log(\'HARDIS_NUT_COMMAND_ACTION_RAN\')"',
           '    context: all',
+          '    runOnlyOnceByOrg: false',
           'commandsPostDeploy:',
           '  - id: nut-apex-post',
           '    label: NUT apex action (post-deploy)',
@@ -94,6 +95,7 @@ describe('hardis:project:deploy:smart against a real org', () => {
           '    parameters:',
           '      apexScript: scripts/apex/deploy-action.apex',
           '    context: all',
+          '    runOnlyOnceByOrg: false',
           '  - id: nut-data-post',
           '    label: NUT data action (post-deploy)',
           '    type: data',
@@ -101,6 +103,7 @@ describe('hardis:project:deploy:smart against a real org', () => {
           '    parameters:',
           '      sfdmuProject: HardisNutDeployData',
           '    context: all',
+          '    runOnlyOnceByOrg: false',
           '  - id: nut-manual-post',
           '    label: NUT manual action (post-deploy)',
           '    type: manual',
@@ -108,6 +111,7 @@ describe('hardis:project:deploy:smart against a real org', () => {
           '    parameters:',
           '      instructions: Nothing to do, this action only documents a manual step',
           '    context: all',
+          '    runOnlyOnceByOrg: false',
           '',
         ].join('\n')
       );
@@ -176,6 +180,7 @@ describe('hardis:project:deploy:smart against a real org', () => {
           '    type: command',
           '    command: node -e "console.log(\'HARDIS_NUT_PROCESS_ONLY_RAN\')"',
           '    context: process-deployment-only',
+          '    runOnlyOnceByOrg: false',
           '',
         ].join('\n')
       );
@@ -203,6 +208,7 @@ describe('hardis:project:deploy:smart against a real org', () => {
           '    type: command',
           '    command: node -e "process.exit(3)"',
           '    context: all',
+          '    runOnlyOnceByOrg: false',
           '',
         ].join('\n')
       );
@@ -229,6 +235,7 @@ describe('hardis:project:deploy:smart against a real org', () => {
           '    type: command',
           '    command: node -e "process.exit(3)"',
           '    context: all',
+          '    runOnlyOnceByOrg: false',
           '    allowFailure: true',
           '',
         ].join('\n')
