@@ -12,9 +12,8 @@ import * as path from 'path';
 import {
   addBrokenApexClass,
   clearBranchConfig,
-  cleanNutOrgSession,
-  countAccounts,
-  createNutOrgSession,
+    countAccounts,
+    getSharedNutOrgSession,
   git,
   NutOrgContext,
   queryTooling,
@@ -28,12 +27,7 @@ describe('hardis:project:deploy:smart against a real org', () => {
 
   before(async function () {
     this.timeout(1800000);
-    ctx = await createNutOrgSession('deploy');
-  });
-
-  after(async function () {
-    this.timeout(600000);
-    await cleanNutOrgSession(ctx);
+    ctx = await getSharedNutOrgSession();
   });
 
   describe('validation (--check)', () => {

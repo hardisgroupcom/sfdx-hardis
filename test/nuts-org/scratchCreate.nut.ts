@@ -9,9 +9,8 @@
  */
 import { expect } from 'chai';
 import {
-  cleanNutOrgSession,
-  countAccounts,
-  createNutOrgSession,
+    countAccounts,
+    getSharedNutOrgSession,
   NutOrgContext,
   queryRecords,
   queryTooling,
@@ -23,12 +22,7 @@ describe('hardis:scratch:create against a real Dev Hub', () => {
 
   before(async function () {
     this.timeout(1800000); // scratch org creation + full initialization is slow
-    ctx = await createNutOrgSession('scratch');
-  });
-
-  after(async function () {
-    this.timeout(600000);
-    await cleanNutOrgSession(ctx);
+    ctx = await getSharedNutOrgSession();
   });
 
   it('created a usable scratch org', () => {

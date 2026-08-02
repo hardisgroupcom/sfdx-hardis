@@ -93,6 +93,36 @@ export function runSf<T = any>(
   }
 }
 
+/** Username prefix of every scratch org created by these tests, used to target cleanup safely */
+export const NUT_SCRATCH_USERNAME_PREFIX = 'nut@hardis-scratch-';
+
+/**
+ * Delete the scratch orgs previously created by the NUTs, to free slots on the Dev Hub.
+ *
+ * A Developer Edition Dev Hub only allows 3 active scratch orgs, and a crashed job leaks its
+ * org. Deleting the ScratchOrgInfo record on the Dev Hub frees the slot even when the scratch
+ * org is not authenticated locally, which is always the case on a fresh CI runner.
+ * Only orgs matching the NUT username prefix are deleted, never anything else on the Dev Hub.
+ */
+export function freeNutScratchOrgSlots(devHubUsername: string): number {
+  const res = runSf<any>(
+    `data query --query "SELECT Id, SignupUsername FROM ScratchOrgInfo WHERE Status = 'Active' AND SignupUsername LIKE '${NUT_SCRATCH_USERNAME_PREFIX}%'" --json --target-org ${devHubUsername}`
+  );
+  const records: any[] = res.result?.records ?? [];
+  let deleted = 0;
+  for (const record of records) {
+    const del = runSf(
+      `data delete record --sobject ScratchOrgInfo --record-id ${record.Id} --json --target-org ${devHubUsername}`
+    );
+    if (del.status === 0) {
+      deleted++;
+      // eslint-disable-next-line no-console
+      console.log(`[nuts-org] Freed scratch org slot: ${record.SignupUsername}`);
+    }
+  }
+  return deleted;
+}
+
 /** Resolve the Dev Hub username authenticated by the testkit (TESTKIT_AUTH_URL) */
 function resolveDevHubUsername(session: TestSession): string {
   const fromSession = (session as any)?.hubOrg?.username;
@@ -151,23 +181,67 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
     const requestedAlias = `hardis-nut-${scenario}`;
     const orgAlias = `CI-${requestedAlias}`;
 
-    const createResult = execCmd(`hardis:scratch:create --target-dev-hub ${devHubUsername} --agent`, {
-      cwd: projectDir,
-      ensureExitCode: 0,
-      timeout: 1800000,
-      env: {
-        ...process.env,
-        ...baseEnv(devHubUsername),
-        SCRATCH_ORG_ALIAS: requestedAlias,
-      } as Record<string, string>,
-    });
-    const scratchCreateOutput = createResult.shellOutput.stdout + createResult.shellOutput.stderr;
+    const createScratchOrg = (ensureExitCode: number | undefined) =>
+      execCmd(`hardis:scratch:create --target-dev-hub ${devHubUsername} --agent`, {
+        cwd: projectDir,
+        ensureExitCode,
+        timeout: 1800000,
+        env: {
+          ...process.env,
+          ...baseEnv(devHubUsername),
+          SCRATCH_ORG_ALIAS: requestedAlias,
+        } as Record<string, string>,
+      });
+
+    let createResult = createScratchOrg(undefined);
+    let scratchCreateOutput = createResult.shellOutput.stdout + createResult.shellOutput.stderr;
+
+    // The Dev Hub allows a limited number of active scratch orgs, and a crashed job leaks its
+    // own. When we hit the limit, free the slots taken by previous NUT runs and try once more.
+    if (createResult.shellOutput.code !== 0) {
+      if (/LIMIT_EXCEEDED|active scratch org limit|no more scratch orgs available/i.test(scratchCreateOutput)) {
+        // eslint-disable-next-line no-console
+        console.log('[nuts-org] Scratch org limit reached, deleting the orgs left by previous runs...');
+        const freed = freeNutScratchOrgSlots(devHubUsername);
+        if (freed === 0) {
+          throw new Error(
+            'Scratch org limit reached on the Dev Hub, and no NUT scratch org could be freed. ' +
+            'Delete some orgs in the "Active Scratch Orgs" tab of the Dev Hub.'
+          );
+        }
+        createResult = createScratchOrg(0);
+        scratchCreateOutput = createResult.shellOutput.stdout + createResult.shellOutput.stderr;
+      } else {
+        throw new Error(`hardis:scratch:create failed:\n${scratchCreateOutput}`);
+      }
+    }
 
     return { session, projectDir, orgAlias, devHubUsername, scratchCreateOutput };
   } catch (e) {
     await session.clean().catch(() => undefined);
     throw e;
   }
+}
+
+/**
+ * One scratch org is shared by every NUT file of the run.
+ *
+ * Creating one org per file would need 3 of the 3 slots a Developer Edition Dev Hub allows,
+ * and would burn half the daily creation quota on a single run. The files run sequentially in
+ * the same mocha process (never with --parallel), so a single session is safe, and it also
+ * avoids TestSession stubbing process.cwd more than once.
+ *
+ * The org is NOT deleted between files: the CI job deletes it in its always() cleanup step,
+ * which also catches orgs leaked by a crashed run.
+ */
+let sharedSession: NutOrgContext | null = null;
+
+export async function getSharedNutOrgSession(): Promise<NutOrgContext> {
+  if (sharedSession) {
+    return sharedSession;
+  }
+  sharedSession = await createNutOrgSession('shared');
+  return sharedSession;
 }
 
 /** Delete the scratch org created by hardis:scratch:create, then clean the test session */

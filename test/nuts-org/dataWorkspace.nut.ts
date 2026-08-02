@@ -9,9 +9,8 @@ import { expect } from 'chai';
 import fs from 'fs-extra';
 import * as path from 'path';
 import {
-  cleanNutOrgSession,
-  countAccounts,
-  createNutOrgSession,
+    countAccounts,
+    getSharedNutOrgSession,
   NutOrgContext,
   runHardis,
 } from './helpers/nutOrgProject.js';
@@ -23,13 +22,8 @@ describe('hardis:org:data export and import against a real org', () => {
 
   before(async function () {
     this.timeout(1800000);
-    ctx = await createNutOrgSession('data');
+    ctx = await getSharedNutOrgSession();
     workspaceDir = path.join(ctx.projectDir, 'scripts', 'data', workspaceName);
-  });
-
-  after(async function () {
-    this.timeout(600000);
-    await cleanNutOrgSession(ctx);
   });
 
   it('imports the data workspace into the org', () => {

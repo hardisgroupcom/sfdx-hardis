@@ -105,6 +105,24 @@ jobs:
           rm -f ./sfdx-auth-url.txt
           sf org list --all
 
+      # A Developer Edition Dev Hub allows only 3 active scratch orgs, and a crashed run leaks
+      # its own. Free the slots taken by previous NUT runs before creating a new org.
+      # Only orgs matching the NUT username prefix are deleted, never anything else.
+      - name: Free scratch org slots left by previous runs
+        run: |
+          ids="$(sf data query \
+            --query "SELECT Id, SignupUsername FROM ScratchOrgInfo WHERE Status = 'Active' AND SignupUsername LIKE 'nut@hardis-scratch-%'" \
+            --json --target-org nut-devhub 2>/dev/null | jq -r '.result.records[]? | "\(.Id) \(.SignupUsername)"')"
+          if [ -z "$ids" ]; then
+            echo "No leftover NUT scratch org to delete."
+          else
+            echo "$ids" | while read -r id username; do
+              echo "Deleting leftover scratch org $username ($id)"
+              sf data delete record --sobject ScratchOrgInfo --record-id "$id" --json --target-org nut-devhub || true
+            done
+          fi
+          sf data query --query "SELECT COUNT(Id) total FROM ScratchOrgInfo WHERE Status = 'Active'" --json --target-org nut-devhub | jq -r '"Active scratch orgs remaining: \(.result.records[0].total)"'
+
       - name: Run org integration tests
         env:
           TESTKIT_AUTH_URL: ${{ secrets.TESTKIT_AUTH_URL }}
@@ -115,11 +133,20 @@ jobs:
           FORCE_COLOR: "1"
         run: yarn test:nuts:org
 
-      - name: Delete any scratch org left behind
+      # The tests do not delete their scratch org: they share a single one, and the job owns
+      # its lifecycle. Deleting the ScratchOrgInfo record on the Dev Hub frees the slot even
+      # when the org is no longer authenticated locally (crashed run, cancelled job).
+      - name: Delete the scratch orgs used by this run
         if: always()
         run: |
-          # Best effort: the tests delete their own org, this only catches crashed runs.
-          for alias in $(sf org list --json 2>/dev/null | jq -r '.result.scratchOrgs[]?.alias // empty' | grep '^CI-hardis-nut-' || true); do
-            echo "Deleting leftover scratch org $alias"
-            sf org delete scratch --no-prompt --target-org "$alias" || true
-          done
+          ids="$(sf data query \
+            --query "SELECT Id, SignupUsername FROM ScratchOrgInfo WHERE Status = 'Active' AND SignupUsername LIKE 'nut@hardis-scratch-%'" \
+            --json --target-org nut-devhub 2>/dev/null | jq -r '.result.records[]? | "\(.Id) \(.SignupUsername)"')"
+          if [ -z "$ids" ]; then
+            echo "No NUT scratch org to delete."
+          else
+            echo "$ids" | while read -r id username; do
+              echo "Deleting scratch org $username ($id)"
+              sf data delete record --sobject ScratchOrgInfo --record-id "$id" --json --target-org nut-devhub || true
+            done
+          fi
