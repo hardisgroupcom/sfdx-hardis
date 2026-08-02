@@ -327,9 +327,9 @@ groups:
               # now), or a projection heading past 150% of the allowance before the period
               # ends. Aggregated per org so one alert fires per org, not one per resource.
               expr: >-
-                (max by (orgIdentifier) (last_over_time(UsageEntitlementsOverAllowance{source="sfdx-hardis"}[2d])) > 0)
+                (max by (orgIdentifier) (last_over_time(UsageEntitlementsOverAllowance_metric{source="sfdx-hardis"}[2d])) > 0)
                 or
-                (max by (orgIdentifier) (last_over_time(UsageEntitlementsWorstProjected{source="sfdx-hardis"}[2d])) > 150)
+                (max by (orgIdentifier) (last_over_time(UsageEntitlementsWorstProjected_metric{source="sfdx-hardis"}[2d])) > 150)
           - refId: B
             datasourceUid: __expr__
             model:
@@ -372,7 +372,7 @@ groups:
               instant: true
               range: false
               expr: >-
-                max by (orgIdentifier) (last_over_time(ConsumptionAlertsMaxThreshold{source="sfdx-hardis"}[2d])) >= 90
+                max by (orgIdentifier) (last_over_time(ConsumptionAlertsMaxThreshold_metric{source="sfdx-hardis"}[2d])) >= 90
           - refId: B
             datasourceUid: __expr__
             model:

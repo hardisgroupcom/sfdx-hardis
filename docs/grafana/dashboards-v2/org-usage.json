@@ -67,7 +67,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsOverAllowance{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsOverAllowance_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
@@ -98,7 +98,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS&var-metric=UsageEntitlementsOverAllowance_metric"
             }
           ]
         },
@@ -139,7 +139,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsWorstPercent{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsWorstPercent_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
@@ -177,7 +177,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS&var-metric=UsageEntitlementsWorstPercent_metric"
             }
           ]
         },
@@ -218,7 +218,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsAtRisk{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsAtRisk_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
@@ -249,7 +249,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS&var-metric=UsageEntitlementsAtRisk_metric"
             }
           ]
         },
@@ -290,7 +290,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (avg_over_time(UsageEntitlementsAtRisk{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[30d]))",
+          "expr": "max by (orgIdentifier) (avg_over_time(UsageEntitlementsAtRisk_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[30d]))",
           "refId": "A"
         }
       ],
@@ -321,7 +321,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS&var-metric=UsageEntitlementsAtRisk_metric"
             }
           ]
         },
@@ -362,7 +362,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(ConsumptionAlertsScopes{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(ConsumptionAlertsScopes_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
@@ -393,7 +393,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=CONSUMPTION_ALERTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=CONSUMPTION_ALERTS&var-metric=ConsumptionAlertsScopes_metric"
             }
           ]
         },
@@ -434,7 +434,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(ConsumptionAlertsMaxThreshold{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(ConsumptionAlertsMaxThreshold_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
@@ -472,7 +472,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=CONSUMPTION_ALERTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=CONSUMPTION_ALERTS&var-metric=ConsumptionAlertsMaxThreshold_metric"
             }
           ]
         },
@@ -526,7 +526,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsCost{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsCost_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
@@ -550,7 +550,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS&var-metric=UsageEntitlementsCost_metric"
             }
           ]
         },
@@ -591,7 +591,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(AiUsageCost{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(AiUsageCost_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
@@ -615,7 +615,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AI_USAGE"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AI_USAGE&var-metric=AiUsageCost_metric"
             }
           ]
         },
@@ -656,7 +656,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (avg_over_time(UsageEntitlementsCost{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[30d]))",
+          "expr": "max by (orgIdentifier) (avg_over_time(UsageEntitlementsCost_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[30d]))",
           "refId": "A"
         }
       ],
@@ -679,7 +679,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=USAGE_ENTITLEMENTS&var-metric=UsageEntitlementsCost_metric"
             }
           ]
         },
@@ -720,7 +720,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsCost{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(UsageEntitlementsCost_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
           "refId": "A",
           "legendFormat": "Entitlement overage"
         },
@@ -729,7 +729,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(AiUsageCost{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(AiUsageCost_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
           "refId": "B",
           "legendFormat": "AI credits"
         }
@@ -958,7 +958,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "label_replace(max by (__name__) (last_over_time({__name__=~\"UsageEntProjected_.+\", source=\"sfdx-hardis\", type=\"USAGE_ENTITLEMENTS\", orgIdentifier=\"$org\"}[2d])), \"resource\", \"$1\", \"__name__\", \"UsageEntProjected_(.+)\")",
+          "expr": "label_replace(max by (__name__) (last_over_time({__name__=~\"UsageEntProjected_.+_metric\", source=\"sfdx-hardis\", type=\"USAGE_ENTITLEMENTS\", orgIdentifier=\"$org\"}[2d])), \"resource\", \"$1\", \"__name__\", \"UsageEntProjected_(.+)_metric\")",
           "refId": "A",
           "instant": true,
           "range": false,
@@ -1509,7 +1509,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(AiUsageCreditsTotal{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(AiUsageCreditsTotal_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
@@ -1532,7 +1532,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AI_USAGE"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AI_USAGE&var-metric=AiUsageCreditsTotal_metric"
             }
           ]
         },
@@ -1573,7 +1573,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(AiUsageCreditsMetered{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(AiUsageCreditsMetered_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
@@ -1596,7 +1596,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AI_USAGE"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AI_USAGE&var-metric=AiUsageCreditsMetered_metric"
             }
           ]
         },
@@ -1637,7 +1637,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(AiUsageActions{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(AiUsageActions_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
@@ -1660,7 +1660,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AI_USAGE"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AI_USAGE&var-metric=AiUsageActions_metric"
             }
           ]
         },
@@ -1701,7 +1701,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(DataCloudCreditsTotal{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(DataCloudCreditsTotal_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
           "refId": "A"
         }
       ],
@@ -1724,7 +1724,7 @@
           "links": [
             {
               "title": "Open indicator detail",
-              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AI_USAGE"
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=AI_USAGE&var-metric=DataCloudCreditsTotal_metric"
             }
           ]
         },
@@ -1765,7 +1765,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(AiUsageCreditsTotal{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(AiUsageCreditsTotal_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
           "refId": "A",
           "legendFormat": "AI credits"
         },
@@ -1774,7 +1774,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max by (orgIdentifier) (last_over_time(DataCloudCreditsTotal{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
+          "expr": "max by (orgIdentifier) (last_over_time(DataCloudCreditsTotal_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
           "refId": "B",
           "legendFormat": "Data 360 credits"
         }

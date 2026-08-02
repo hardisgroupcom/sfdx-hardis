@@ -1758,7 +1758,7 @@ const usageDashboard = dashboard({
           description:
             'Entitlements whose paid allowance is already fully consumed, so overage is accruing now. ' +
             USAGE_NOTE,
-          targets: [promTarget(promLast('UsageEntitlementsOverAllowance'))],
+          targets: [promTarget(promLast('UsageEntitlementsOverAllowance_metric'))],
           thresholds: THRESHOLDS_COUNT,
           noValue: 'Schedule usage-entitlements',
           links: indicatorLink('USAGE_ENTITLEMENTS'),
@@ -1766,7 +1766,7 @@ const usageDashboard = dashboard({
         gaugePanel('Worst consumption', {
           gridPos: { w: 4, h: 5 },
           description: 'Highest share of any single allowance consumed this period. ' + USAGE_NOTE,
-          targets: [promTarget(promLast('UsageEntitlementsWorstPercent'))],
+          targets: [promTarget(promLast('UsageEntitlementsWorstPercent_metric'))],
           max: 200,
           noValue: 'Schedule usage-entitlements',
           links: indicatorLink('USAGE_ENTITLEMENTS'),
@@ -1775,12 +1775,12 @@ const usageDashboard = dashboard({
           gridPos: { w: 4, h: 5 },
           description:
             'Entitlements over allowance or on track to exceed it before the period ends. ' + USAGE_NOTE,
-          targets: [promTarget(promLast('UsageEntitlementsAtRisk'))],
+          targets: [promTarget(promLast('UsageEntitlementsAtRisk_metric'))],
           thresholds: THRESHOLDS_COUNT,
           noValue: 'Schedule usage-entitlements',
           links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
-        avgStat('At risk avg (30d)', 'UsageEntitlementsAtRisk', '30d', {
+        avgStat('At risk avg (30d)', 'UsageEntitlementsAtRisk_metric', '30d', {
           description: 'Average number of entitlements at risk over 30 days. ' + RECENT_CLI_NOTE,
           links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
@@ -1790,7 +1790,7 @@ const usageDashboard = dashboard({
           gridPos: { w: 4, h: 5 },
           description:
             'Distinct consumption cards for which Salesforce raised a utilization alert. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('ConsumptionAlertsScopes'))],
+          targets: [promTarget(promLast('ConsumptionAlertsScopes_metric'))],
           thresholds: THRESHOLDS_COUNT,
           noValue: 'Schedule consumption-alerts',
           links: indicatorLink('CONSUMPTION_ALERTS'),
@@ -1799,7 +1799,7 @@ const usageDashboard = dashboard({
           gridPos: { w: 4, h: 5 },
           description:
             'Highest consumption threshold Salesforce has flagged across every card. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('ConsumptionAlertsMaxThreshold'))],
+          targets: [promTarget(promLast('ConsumptionAlertsMaxThreshold_metric'))],
           noValue: 'Schedule consumption-alerts',
           links: indicatorLink('CONSUMPTION_ALERTS'),
         }),
@@ -1816,7 +1816,7 @@ const usageDashboard = dashboard({
           description:
             'Estimated cost of consumption beyond purchased allowances, in the currency configured for the org. ' +
             COST_NOTE,
-          targets: [promTarget(promLast('UsageEntitlementsCost'))],
+          targets: [promTarget(promLast('UsageEntitlementsCost_metric'))],
           decimals: 2,
           thresholds: THRESHOLDS_NONE,
           noValue: 'Configure usageCost',
@@ -1827,13 +1827,13 @@ const usageDashboard = dashboard({
           description:
             'Estimated cost of billed Agentforce and Data 360 credits, in the currency configured for the org. ' +
             COST_NOTE,
-          targets: [promTarget(promLast('AiUsageCost'))],
+          targets: [promTarget(promLast('AiUsageCost_metric'))],
           decimals: 2,
           thresholds: THRESHOLDS_NONE,
           noValue: 'Configure usageCost',
           links: indicatorLink('AI_USAGE'),
         }),
-        avgStat('Overage avg (30d)', 'UsageEntitlementsCost', '30d', {
+        avgStat('Overage avg (30d)', 'UsageEntitlementsCost_metric', '30d', {
           description: 'Average estimated overage cost over 30 days. ' + COST_NOTE,
           thresholds: THRESHOLDS_NONE,
           links: indicatorLink('USAGE_ENTITLEMENTS'),
@@ -1843,10 +1843,10 @@ const usageDashboard = dashboard({
           decimals: 2,
           description: 'Estimated overage and AI credit cost over time. ' + COST_NOTE,
           targets: [
-            promTarget(promLast('UsageEntitlementsCost', 'orgIdentifier="$org"', '1d'), {
+            promTarget(promLast('UsageEntitlementsCost_metric', 'orgIdentifier="$org"', '1d'), {
               legendFormat: 'Entitlement overage',
             }),
-            promTarget(promLast('AiUsageCost', 'orgIdentifier="$org"', '1d'), {
+            promTarget(promLast('AiUsageCost_metric', 'orgIdentifier="$org"', '1d'), {
               legendFormat: 'AI credits',
               refId: 'B',
             }),
@@ -1901,7 +1901,7 @@ const usageDashboard = dashboard({
             USAGE_NOTE,
           targets: [
             promTarget(
-              `label_replace(max by (__name__) (last_over_time({__name__=~"UsageEntProjected_.+", ${SRC}, type="USAGE_ENTITLEMENTS", orgIdentifier="$org"}[2d])), "resource", "$1", "__name__", "UsageEntProjected_(.+)")`,
+              `label_replace(max by (__name__) (last_over_time({__name__=~"UsageEntProjected_.+_metric", ${SRC}, type="USAGE_ENTITLEMENTS", orgIdentifier="$org"}[2d])), "resource", "$1", "__name__", "UsageEntProjected_(.+)_metric")`,
               { instant: true, format: 'table' }
             ),
           ],
@@ -2030,7 +2030,7 @@ const usageDashboard = dashboard({
         statPanel('AI credits', {
           gridPos: { w: 4, h: 5 },
           description: 'Generative AI credits consumed over the reported window. Requires Data 360. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('AiUsageCreditsTotal'))],
+          targets: [promTarget(promLast('AiUsageCreditsTotal_metric'))],
           thresholds: THRESHOLDS_NONE,
           noValue: 'Requires Data 360',
           links: indicatorLink('AI_USAGE'),
@@ -2038,7 +2038,7 @@ const usageDashboard = dashboard({
         statPanel('Metered credits', {
           gridPos: { w: 4, h: 5 },
           description: 'Share of AI credits that is billed. Requires Data 360. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('AiUsageCreditsMetered'))],
+          targets: [promTarget(promLast('AiUsageCreditsMetered_metric'))],
           thresholds: THRESHOLDS_NONE,
           noValue: 'Requires Data 360',
           links: indicatorLink('AI_USAGE'),
@@ -2046,7 +2046,7 @@ const usageDashboard = dashboard({
         statPanel('AI actions', {
           gridPos: { w: 4, h: 5 },
           description: 'Number of billed agent actions over the reported window. Requires Data 360. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('AiUsageActions'))],
+          targets: [promTarget(promLast('AiUsageActions_metric'))],
           thresholds: THRESHOLDS_NONE,
           noValue: 'Requires Data 360',
           links: indicatorLink('AI_USAGE'),
@@ -2054,7 +2054,7 @@ const usageDashboard = dashboard({
         statPanel('Data 360 credits', {
           gridPos: { w: 4, h: 5 },
           description: 'Data 360 credits consumed over the reported window. Requires Data 360. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('DataCloudCreditsTotal'))],
+          targets: [promTarget(promLast('DataCloudCreditsTotal_metric'))],
           thresholds: THRESHOLDS_NONE,
           noValue: 'Requires Data 360',
           links: indicatorLink('AI_USAGE'),
@@ -2063,8 +2063,8 @@ const usageDashboard = dashboard({
           gridPos: { w: 8, h: 5 },
           description: 'Agentforce and Data 360 credit consumption over time. Requires Data 360. ' + RECENT_CLI_NOTE,
           targets: [
-            promTarget(promLast('AiUsageCreditsTotal', 'orgIdentifier="$org"', '1d'), { legendFormat: 'AI credits' }),
-            promTarget(promLast('DataCloudCreditsTotal', 'orgIdentifier="$org"', '1d'), {
+            promTarget(promLast('AiUsageCreditsTotal_metric', 'orgIdentifier="$org"', '1d'), { legendFormat: 'AI credits' }),
+            promTarget(promLast('DataCloudCreditsTotal_metric', 'orgIdentifier="$org"', '1d'), {
               legendFormat: 'Data 360 credits',
               refId: 'B',
             }),
