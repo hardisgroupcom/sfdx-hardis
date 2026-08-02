@@ -108,10 +108,9 @@ jobs:
       - name: Run org integration tests
         env:
           TESTKIT_AUTH_URL: ${{ secrets.TESTKIT_AUTH_URL }}
-          # Without this, the testkit runs ./bin/run.js, which only exposes the hardis
-          # commands: every plain "sf data query" / "sf org display" would fail with
-          # "command not found". The plugin is linked, so the real sf runs both.
-          TESTKIT_EXECUTABLE_PATH: sf
+          # TESTKIT_EXECUTABLE_PATH is deliberately NOT set: the testkit runs ./bin/run.js,
+          # which is where the sfdx-hardis commands live. Plain `sf` commands are run through
+          # the runSf helper instead, so the tests do not depend on `sf plugins link`.
           SF_DISABLE_TELEMETRY: "true"
           FORCE_COLOR: "1"
         run: yarn test:nuts:org

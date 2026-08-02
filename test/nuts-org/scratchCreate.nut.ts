@@ -8,7 +8,15 @@
  * Runs only via `yarn test:nuts:org`.
  */
 import { expect } from 'chai';
-import { cleanNutOrgSession, countAccounts, createNutOrgSession, NutOrgContext, runHardis } from './helpers/nutOrgProject.js';
+import {
+  cleanNutOrgSession,
+  countAccounts,
+  createNutOrgSession,
+  NutOrgContext,
+  queryRecords,
+  queryTooling,
+  runSf,
+} from './helpers/nutOrgProject.js';
 
 describe('hardis:scratch:create against a real Dev Hub', () => {
   let ctx: NutOrgContext;
@@ -24,27 +32,25 @@ describe('hardis:scratch:create against a real Dev Hub', () => {
   });
 
   it('created a usable scratch org', () => {
-    const res = runHardis(ctx, `org display --target-org ${ctx.orgAlias} --json`, { ensureExitCode: 0 });
-    expect(res.jsonOutput?.result?.connectedStatus).to.equal('Connected');
-    expect(res.jsonOutput?.result?.username).to.be.a('string');
+    const res = runSf<any>(`org display --target-org ${ctx.orgAlias} --json`, { cwd: ctx.projectDir });
+    expect(res.result?.connectedStatus).to.equal('Connected');
+    expect(res.result?.username).to.be.a('string');
   });
 
   it('pushed the project sources to the scratch org', () => {
-    const res = runHardis(
+    const records = queryTooling(
       ctx,
-      `data query --query "SELECT QualifiedApiName FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName='Account' AND QualifiedApiName='HardisNutFlag__c'" --use-tooling-api --json --target-org ${ctx.orgAlias}`,
-      { ensureExitCode: 0 }
+      "SELECT QualifiedApiName FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName='Account' AND QualifiedApiName='HardisNutFlag__c'"
     );
-    expect((res.jsonOutput?.result?.records ?? []).length, 'custom field should have been pushed').to.equal(1);
+    expect(records.length, 'custom field should have been pushed').to.equal(1);
   });
 
   it('assigned the permission sets declared in initPermissionSets', () => {
-    const res = runHardis(
+    const records = queryRecords(
       ctx,
-      `data query --query "SELECT PermissionSet.Name FROM PermissionSetAssignment WHERE PermissionSet.Name = 'HardisNutPermSet'" --json --target-org ${ctx.orgAlias}`,
-      { ensureExitCode: 0 }
+      "SELECT PermissionSet.Name FROM PermissionSetAssignment WHERE PermissionSet.Name = 'HardisNutPermSet'"
     );
-    expect((res.jsonOutput?.result?.records ?? []).length, 'HardisNutPermSet should be assigned').to.be.greaterThan(0);
+    expect(records.length, 'HardisNutPermSet should be assigned').to.be.greaterThan(0);
   });
 
   it('ran the Apex initialization scripts declared in scratchOrgInitApexScripts', () => {

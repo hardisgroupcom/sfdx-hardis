@@ -17,6 +17,7 @@ import {
   createNutOrgSession,
   git,
   NutOrgContext,
+  queryTooling,
   readDeployResultReport,
   runHardis,
   writeBranchConfig,
@@ -159,12 +160,11 @@ describe('hardis:project:deploy:smart against a real org', () => {
     });
 
     it('deployed the metadata itself', () => {
-      const res = runHardis(
+      const records = queryTooling(
         ctx,
-        `data query --query "SELECT QualifiedApiName FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName='Account' AND QualifiedApiName='HardisNutFlag__c'" --use-tooling-api --json --target-org ${ctx.orgAlias}`,
-        { ensureExitCode: 0 }
+        "SELECT QualifiedApiName FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName='Account' AND QualifiedApiName='HardisNutFlag__c'"
       );
-      expect((res.jsonOutput?.result?.records ?? []).length).to.equal(1);
+      expect(records.length).to.equal(1);
     });
   });
 

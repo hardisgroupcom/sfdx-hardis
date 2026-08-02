@@ -57,6 +57,42 @@ function baseEnv(devHubUsername: string): Record<string, string> {
   };
 }
 
+/**
+ * Run a plain `sf` command (not an sfdx-hardis one).
+ *
+ * The testkit invokes ./bin/run.js, which only exposes the sfdx-hardis commands, so
+ * `sf data query` style commands have to go through the real CLI binary instead.
+ * Returns the parsed --json payload, or null when the command failed.
+ */
+export function runSf<T = any>(
+  command: string,
+  options: { cwd?: string; devHubUsername?: string } = {}
+): { status: number; result: T | null; output: string } {
+  const env = {
+    ...process.env,
+    ...(options.devHubUsername ? baseEnv(options.devHubUsername) : {}),
+  } as Record<string, string>;
+  try {
+    const output = execSync(`sf ${command}`, {
+      cwd: options.cwd ?? process.cwd(),
+      encoding: 'utf8',
+      env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      maxBuffer: 50 * 1024 * 1024,
+    });
+    const parsed = JSON.parse(output);
+    return { status: parsed.status ?? 0, result: (parsed.result ?? null) as T | null, output };
+  } catch (e: any) {
+    const output = `${e?.stdout ?? ''}${e?.stderr ?? ''}`;
+    try {
+      const parsed = JSON.parse(e?.stdout ?? '');
+      return { status: parsed.status ?? 1, result: (parsed.result ?? null) as T | null, output };
+    } catch {
+      return { status: 1, result: null, output };
+    }
+  }
+}
+
 /** Resolve the Dev Hub username authenticated by the testkit (TESTKIT_AUTH_URL) */
 function resolveDevHubUsername(session: TestSession): string {
   const fromSession = (session as any)?.hubOrg?.username;
@@ -67,8 +103,8 @@ function resolveDevHubUsername(session: TestSession): string {
     return process.env.TESTKIT_HUB_USERNAME;
   }
   // Last resort: ask the CLI for the default Dev Hub
-  const res = execCmd<any>('org list --json', { ensureExitCode: 0 });
-  const devHub = (res.jsonOutput?.result?.devHubs ?? []).find((o: any) => o.username);
+  const res = runSf<any>('org list --json');
+  const devHub = (res.result?.devHubs ?? []).find((o: any) => o.username);
   if (!devHub?.username) {
     throw new Error('Unable to resolve a Dev Hub username. Is TESTKIT_AUTH_URL set and is the org a Dev Hub?');
   }
@@ -81,45 +117,41 @@ function resolveDevHubUsername(session: TestSession): string {
  * `scenario` is only used to name the scratch org, to make CI logs readable.
  */
 export async function createNutOrgSession(scenario: string): Promise<NutOrgContext> {
-  // The testkit runs ./bin/run.js by default, which only exposes the hardis commands.
-  // Point it at the real sf binary so plain "sf data query" style commands work too.
-  if (!process.env.TESTKIT_EXECUTABLE_PATH) {
-    process.env.TESTKIT_EXECUTABLE_PATH = 'sf';
-  }
-
   const session = await TestSession.create({
     project: { sourceDir: FIXTURE_PROJECT_DIR },
     devhubAuthStrategy: 'AUTO',
   });
-  const projectDir = session.project.dir;
-  const devHubUsername = resolveDevHubUsername(session);
+  // Everything below can throw. The session must always be cleaned, otherwise the sinon stub
+  // TestSession puts on process.cwd survives and every later TestSession.create() fails with
+  // "Attempted to wrap cwd which is already wrapped", turning one failure into a cascade.
+  try {
+    const projectDir = session.project.dir;
+    const devHubUsername = resolveDevHubUsername(session);
 
-  // hardis:project:deploy:smart reads the git history, so the fixture needs to be a real repo
-  git(projectDir, 'init -b main');
-  git(projectDir, 'config user.email "nut@sfdx-hardis.test"');
-  git(projectDir, 'config user.name "sfdx-hardis NUT"');
-  git(projectDir, 'config commit.gpgsign false');
-  git(projectDir, 'add -A');
-  git(projectDir, 'commit -m "chore: initial NUT fixture project" --no-verify');
+    // hardis:project:deploy:smart reads the git history, so the fixture needs to be a real repo
+    git(projectDir, 'init -b main');
+    git(projectDir, 'config user.email "nut@sfdx-hardis.test"');
+    git(projectDir, 'config user.name "sfdx-hardis NUT"');
+    git(projectDir, 'config commit.gpgsign false');
+    git(projectDir, 'add -A');
+    git(projectDir, 'commit -m "chore: initial NUT fixture project" --no-verify');
 
-  // sfdx-git-delta and the commits summary both run `git fetch origin`, which fails without
-  // a remote. Give the fixture a local bare remote so the delta scenarios really work.
-  const remoteDir = path.join(path.dirname(projectDir), `${path.basename(projectDir)}-remote.git`);
-  await fs.ensureDir(remoteDir);
-  execSync('git init --bare', { cwd: remoteDir, stdio: ['ignore', 'pipe', 'pipe'] });
-  git(projectDir, `remote add origin "${remoteDir.replace(/\\/g, '/')}"`);
-  git(projectDir, 'push -u origin main');
+    // sfdx-git-delta and the commits summary both run `git fetch origin`, which fails without
+    // a remote. Give the fixture a local bare remote so the delta scenarios really work.
+    const remoteDir = path.join(path.dirname(projectDir), `${path.basename(projectDir)}-remote.git`);
+    await fs.ensureDir(remoteDir);
+    execSync('git init --bare', { cwd: remoteDir, stdio: ['ignore', 'pipe', 'pipe'] });
+    git(projectDir, `remote add origin "${remoteDir.replace(/\\/g, '/')}"`);
+    git(projectDir, 'push -u origin main');
 
-  await fs.ensureDir(path.join(projectDir, 'config', 'user'));
+    await fs.ensureDir(path.join(projectDir, 'config', 'user'));
 
-  // hardis:scratch:create prefixes the alias with "CI-" when it detects a CI context,
-  // and we always run with CI=true so the command never prompts.
-  const requestedAlias = `hardis-nut-${scenario}`;
-  const orgAlias = `CI-${requestedAlias}`;
+    // hardis:scratch:create prefixes the alias with "CI-" when it detects a CI context,
+    // and we always run with CI=true so the command never prompts.
+    const requestedAlias = `hardis-nut-${scenario}`;
+    const orgAlias = `CI-${requestedAlias}`;
 
-  const createResult = execCmd(
-    `hardis:scratch:create --target-dev-hub ${devHubUsername} --agent`,
-    {
+    const createResult = execCmd(`hardis:scratch:create --target-dev-hub ${devHubUsername} --agent`, {
       cwd: projectDir,
       ensureExitCode: 0,
       timeout: 1800000,
@@ -128,11 +160,14 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
         ...baseEnv(devHubUsername),
         SCRATCH_ORG_ALIAS: requestedAlias,
       } as Record<string, string>,
-    }
-  );
-  const scratchCreateOutput = createResult.shellOutput.stdout + createResult.shellOutput.stderr;
+    });
+    const scratchCreateOutput = createResult.shellOutput.stdout + createResult.shellOutput.stderr;
 
-  return { session, projectDir, orgAlias, devHubUsername, scratchCreateOutput };
+    return { session, projectDir, orgAlias, devHubUsername, scratchCreateOutput };
+  } catch (e) {
+    await session.clean().catch(() => undefined);
+    throw e;
+  }
 }
 
 /** Delete the scratch org created by hardis:scratch:create, then clean the test session */
@@ -142,14 +177,12 @@ export async function cleanNutOrgSession(ctx: NutOrgContext | undefined): Promis
   }
   try {
     // The scratch org was created by sfdx-hardis, so TestSession.clean() does not know about it
-    execCmd(`org delete scratch --no-prompt --target-org ${ctx.orgAlias}`, {
-      cwd: ctx.projectDir,
-      ensureExitCode: undefined,
-    });
+    runSf(`org delete scratch --no-prompt --target-org ${ctx.orgAlias} --json`, { cwd: ctx.projectDir });
   } catch {
     // Best effort: a leaked scratch org expires on its own after SCRATCH_ORG_DURATION days
   }
-  await ctx.session?.clean();
+  // Always unstub process.cwd, even if the org deletion misbehaved
+  await ctx.session?.clean().catch(() => undefined);
 }
 
 /** Write a branch-level sfdx-hardis config as YAML (used to declare deployment actions) */
@@ -194,12 +227,29 @@ export function runHardis<T = any>(
 
 /** Count Account records matching a name, to assert that an action really touched the org */
 export function countAccounts(ctx: NutOrgContext, namePattern: string): number {
-  const res = runHardis(
-    ctx,
+  const res = runSf<any>(
     `data query --query "SELECT COUNT(Id) total FROM Account WHERE Name LIKE '${namePattern}'" --json --target-org ${ctx.orgAlias}`,
-    { ensureExitCode: 0 }
+    { cwd: ctx.projectDir, devHubUsername: ctx.devHubUsername }
   );
-  return Number(res.jsonOutput?.result?.records?.[0]?.total ?? 0);
+  return Number(res.result?.records?.[0]?.total ?? 0);
+}
+
+/** Run a tooling API query and return the records, to assert metadata really exists in the org */
+export function queryTooling(ctx: NutOrgContext, soql: string): any[] {
+  const res = runSf<any>(`data query --query "${soql}" --use-tooling-api --json --target-org ${ctx.orgAlias}`, {
+    cwd: ctx.projectDir,
+    devHubUsername: ctx.devHubUsername,
+  });
+  return res.result?.records ?? [];
+}
+
+/** Run a standard SOQL query and return the records */
+export function queryRecords(ctx: NutOrgContext, soql: string): any[] {
+  const res = runSf<any>(`data query --query "${soql}" --json --target-org ${ctx.orgAlias}`, {
+    cwd: ctx.projectDir,
+    devHubUsername: ctx.devHubUsername,
+  });
+  return res.result?.records ?? [];
 }
 
 /** Read the deployment result report file written by hardis:project:deploy:smart */
