@@ -72,6 +72,7 @@
   "aiProviderUnableToInitialize": "{{provider}} コネクタの初期化に失敗しました: {{message}}",
   "aiUsageCreditColumnNotIdentified": "Data 360の使用状況モデル内でクレジット列を特定できませんでした。集計を行わずに生の行データを返します。",
   "aiUsageDetailRowsTruncated": "明細行は{{count}}件に制限されています。合計値は正確ですが、エージェント別の内訳は一部のみです。",
+  "aiUsageMeteredColumnNotIdentified": "Data 360の使用状況モデル内でmeteredフラグを特定できませんでした。すべてのクレジットを課金対象として集計するため、数値は上限値となります。",
   "allApexClassesCalledInLastDays": "すべての Apex クラスが過去 {{days}} 日間に呼び出されています",
   "allFlows": "すべてのフロー",
   "allLicensesTypes": "すべてのライセンスタイプ",

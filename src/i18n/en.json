@@ -72,6 +72,7 @@
   "aiProviderUnableToInitialize": "Unable to initialize {{provider}} connector: {{message}}",
   "aiUsageCreditColumnNotIdentified": "Could not identify a credits column in the Data 360 usage model. Returning raw rows without aggregation.",
   "aiUsageDetailRowsTruncated": "Detail rows are capped at {{count}}: totals are exact but the per-agent breakdown is partial.",
+  "aiUsageMeteredColumnNotIdentified": "Could not identify a metered flag in the Data 360 usage model. Every credit is counted as billed, so the figures are an upper bound.",
   "allApexClassesCalledInLastDays": "All Apex classes have been called in the last {{days}} days",
   "allFlows": "All flows",
   "allLicensesTypes": "All license types",

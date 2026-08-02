@@ -72,6 +72,7 @@
   "aiProviderUnableToInitialize": "Impossible d'initialiser le connecteur {{provider}} : {{message}}",
   "aiUsageCreditColumnNotIdentified": "Impossible d'identifier une colonne de crédits dans le modèle d'utilisation Data 360. Renvoi des lignes brutes sans agrégation.",
   "aiUsageDetailRowsTruncated": "Les lignes de detail sont limitees a {{count}} : les totaux sont exacts mais la repartition par agent est partielle.",
+  "aiUsageMeteredColumnNotIdentified": "Impossible d'identifier un flag metered dans le modèle d'utilisation Data 360. Chaque crédit est compté comme facturé, les chiffres constituent donc une borne supérieure.",
   "allApexClassesCalledInLastDays": "Toutes les classes Apex ont été appelées au cours des {{days}} derniers jours",
   "allFlows": "Tous les flux",
   "allLicensesTypes": "Tous les types de licences",

@@ -85,6 +85,9 @@ export interface AiUsageTotals {
   creditsMetered: number;
   creditsUnmetered: number;
   events: number;
+  // False when the model exposes no metered flag, so billed and total consumption cannot be
+  // told apart. Callers must say so rather than presenting the split as fact.
+  meteringKnown: boolean;
 }
 
 export interface AiUsageResult {
@@ -96,11 +99,16 @@ export interface AiUsageResult {
   // True when the credits column could not be identified and rows are returned unaggregated.
   degraded: boolean;
   aiRows: AiUsageRow[];
+  // Raw, unaggregated rows of the AI model, populated only on the degraded path. Kept apart from
+  // dataCreditRows: the two models have different schemas and merging them produces a CSV whose
+  // columns belong to neither.
+  rawAiRows: Record<string, AnyJson>[];
   dataCreditRows: Record<string, AnyJson>[];
   // Authoritative totals. Undefined only when no credits column could be identified.
   aiTotals?: AiUsageTotals;
   dataCreditTotals?: AiUsageTotals;
-  // Number of detail rows dropped by the row cap, so the caller can say so out loud.
+  // The cap the detail listing hit, so the caller can say the breakdown is partial. Set only
+  // when the cap was reached; the totals stay exact either way.
   truncatedRows?: number;
 }
 
@@ -217,15 +225,30 @@ export function buildAiUsageTotalsQuery(
   return `SELECT ${selectParts.join(", ")} FROM ${model} ${whereClause}${groupByClause}`;
 }
 
-export function accumulateTotals(records: Record<string, AnyJson>[]): AiUsageTotals {
-  const totals: AiUsageTotals = { credits: 0, creditsMetered: 0, creditsUnmetered: 0, events: 0 };
+// `meteringKnown` is false when no metered column could be identified in the model. In that case
+// every credit counts as billed instead of none: "we could not tell what is metered" must never
+// render as "nothing is billed", which is the one direction a cost report may not round toward.
+// The result is an upper bound, consistent with how the credit cost estimate errs high.
+export function accumulateTotals(
+  records: Record<string, AnyJson>[],
+  meteringKnown = true,
+): AiUsageTotals {
+  const totals: AiUsageTotals = {
+    credits: 0,
+    creditsMetered: 0,
+    creditsUnmetered: 0,
+    events: 0,
+    meteringKnown,
+  };
   for (const record of records) {
     const credits = pickNumber(record, "credits") ?? 0;
     const events = pickNumber(record, "events") ?? 0;
     totals.credits += credits;
     totals.events += events;
     const metered = pick(record, "metered");
-    if (metered && isMetered(metered)) {
+    if (!meteringKnown) {
+      totals.creditsMetered += credits;
+    } else if (metered && isMetered(metered)) {
       totals.creditsMetered += credits;
     } else if (metered) {
       totals.creditsUnmetered += credits;
@@ -269,7 +292,14 @@ export async function collectAiUsage(
 ): Promise<AiUsageResult> {
   const availability = await getDataCloudAvailability(conn);
   if (!availability.available) {
-    return { available: false, reason: availability.reason, degraded: false, aiRows: [], dataCreditRows: [] };
+    return {
+      available: false,
+      reason: availability.reason,
+      degraded: false,
+      aiRows: [],
+      rawAiRows: [],
+      dataCreditRows: [],
+    };
   }
 
   const aiModel = findModelName(availability.objectNames, CANDIDATE_AI_USAGE_MODELS, AI_USAGE_MODEL_PATTERN);
@@ -286,6 +316,7 @@ export async function collectAiUsage(
         "Data Cloud is enabled but no Agentforce or Data 360 consumption model is provisioned on this org",
       degraded: false,
       aiRows: [],
+      rawAiRows: [],
       dataCreditRows: [],
     };
   }
@@ -296,6 +327,7 @@ export async function collectAiUsage(
     dataCreditModel: dataCreditModel ?? undefined,
     degraded: false,
     aiRows: [],
+    rawAiRows: [],
     dataCreditRows: [],
   };
 
@@ -309,7 +341,7 @@ export async function collectAiUsage(
       const totalsQuery = buildAiUsageTotalsQuery(info, filters);
       if (totalsQuery) {
         const totalsResult = await dataCloudSqlQuery(totalsQuery, conn, { rowLimit: 100 });
-        result.aiTotals = accumulateTotals(totalsResult.records);
+        result.aiTotals = accumulateTotals(totalsResult.records, Boolean(info.mapping.metered));
       }
       if (result.aiRows.length >= rowLimit) {
         result.truncatedRows = result.aiRows.length;
@@ -319,7 +351,7 @@ export async function collectAiUsage(
       result.degraded = true;
       const rawQuery = `SELECT * FROM ${aiModel} LIMIT ${rowLimit}`;
       const queryResult = await dataCloudSqlQuery(rawQuery, conn, { rowLimit });
-      result.dataCreditRows.push(...queryResult.records);
+      result.rawAiRows.push(...queryResult.records);
     }
   }
 
@@ -332,7 +364,7 @@ export async function collectAiUsage(
     const totalsQuery = buildAiUsageTotalsQuery(info, filters);
     if (totalsQuery) {
       const totalsResult = await dataCloudSqlQuery(totalsQuery, conn, { rowLimit: 100 });
-      result.dataCreditTotals = accumulateTotals(totalsResult.records);
+      result.dataCreditTotals = accumulateTotals(totalsResult.records, Boolean(info.mapping.metered));
     }
   }
 
@@ -354,7 +386,12 @@ export function buildAiUsageMetrics(result: AiUsageResult): any {
   if (result.aiTotals) {
     metrics.AiUsageCreditsTotal = result.aiTotals.credits;
     metrics.AiUsageCreditsMetered = result.aiTotals.creditsMetered;
-    metrics.AiUsageCreditsUnmetered = result.aiTotals.creditsUnmetered;
+    // Only when the model actually exposes a metered flag. Without one every credit is counted
+    // as billed, and a hardcoded 0 here would claim "nothing is covered by the subscription"
+    // when the truth is that the split is unknown.
+    if (result.aiTotals.meteringKnown) {
+      metrics.AiUsageCreditsUnmetered = result.aiTotals.creditsUnmetered;
+    }
     metrics.AiUsageActions = result.aiTotals.events;
   }
   if (result.dataCreditTotals) {

@@ -72,6 +72,7 @@
   "aiProviderUnableToInitialize": "Der {{provider}}-Connector konnte nicht initialisiert werden: {{message}}",
   "aiUsageCreditColumnNotIdentified": "In dem Data 360-Nutzungsmodell konnte keine Guthabenspalte identifiziert werden. Es werden Rohdaten ohne Aggregation zurückgegeben.",
   "aiUsageDetailRowsTruncated": "Detailzeilen sind auf {{count}} begrenzt: Die Summen sind exakt, die Aufschlusselung pro Agent ist jedoch unvollstandig.",
+  "aiUsageMeteredColumnNotIdentified": "Im Data 360-Nutzungsmodell konnte kein Metered-Flag identifiziert werden. Jeder Credit wird als abgerechnet gezählt, die Zahlen sind daher eine Obergrenze.",
   "allApexClassesCalledInLastDays": "Alle Apex-Klassen wurden in den letzten {{days}} Tagen aufgerufen",
   "allFlows": "Alle Flows",
   "allLicensesTypes": "Alle Lizenztypen",

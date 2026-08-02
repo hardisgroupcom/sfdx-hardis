@@ -475,4 +475,48 @@ describe('usageEntitlementsUtils', () => {
       expect(sorted.map((row) => row.label)).to.deep.equal(['C', 'A', 'B']);
     });
   });
+
+  // Overrides are indexed under both the full Setting and its trailing token. Two different
+  // Settings can share a token, so the exact value has to win the lookup.
+  describe('per-resource override lookup', () => {
+    it('prefers an exact Setting match over a trailing-token shorthand', () => {
+      const exact = { key: 'setting/force.com/orgValue.MaxLimit', mute: true };
+      const shorthand = { key: 'MaxLimit', mute: false };
+      const config: UsageEntitlementsConfig = {
+        ...baseConfig,
+        resources: {
+          MaxLimit: shorthand,
+          'setting/force.com/orgValue.MaxLimit': exact,
+        },
+      };
+      const row = buildUsageEntitlementRow(
+        {
+          Setting: 'setting/force.com/orgValue.MaxLimit',
+          MasterLabel: 'Max Limit',
+          AmountUsed: 10,
+          CurrentAmountAllowed: 100,
+        },
+        config
+      );
+      // The exact entry mutes this resource; the shorthand does not.
+      expect(row.status).to.equal('muted');
+    });
+
+    it('still resolves an override declared only by its trailing token', () => {
+      const config: UsageEntitlementsConfig = {
+        ...baseConfig,
+        resources: { MaxLimit: { key: 'MaxLimit', mute: true } },
+      };
+      const row = buildUsageEntitlementRow(
+        {
+          Setting: 'setting/force.com/orgValue.MaxLimit',
+          MasterLabel: 'Max Limit',
+          AmountUsed: 10,
+          CurrentAmountAllowed: 100,
+        },
+        config
+      );
+      expect(row.status).to.equal('muted');
+    });
+  });
 });

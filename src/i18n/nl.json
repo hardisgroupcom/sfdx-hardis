@@ -72,6 +72,7 @@
   "aiProviderUnableToInitialize": "Kan {{provider}} connector niet initialiseren: {{message}}",
   "aiUsageCreditColumnNotIdentified": "Kon geen creditskolom identificeren in het Data 360-gebruiksmodel. Ruwe rijen worden zonder aggregatie geretourneerd.",
   "aiUsageDetailRowsTruncated": "Detailregels zijn beperkt tot {{count}}: de totalen zijn exact maar de uitsplitsing per agent is gedeeltelijk.",
+  "aiUsageMeteredColumnNotIdentified": "Kon geen metered-vlag identificeren in het Data 360-gebruiksmodel. Elk credit wordt als gefactureerd geteld, dus de cijfers zijn een bovengrens.",
   "allApexClassesCalledInLastDays": "Alle Apex classes zijn aangeroepen in de afgelopen {{days}} dagen",
   "allFlows": "Alle flows",
   "allLicensesTypes": "Alle licentietypes",

@@ -1,5 +1,5 @@
 import { Connection } from "@salesforce/core";
-import { soqlQuery } from "./apiUtils.js";
+import { isUnsupportedSObjectError, soqlQuery } from "./apiUtils.js";
 import { getSeverityIcon } from "./notifUtils.js";
 import { NotifSeverity } from "../notifProvider/types.js";
 
@@ -57,15 +57,6 @@ const CONSUMPTION_ALERT_FIELDS = [
   "AlertTimestamp",
 ];
 
-function isUnsupportedObjectError(error: unknown): boolean {
-  const message = String((error as { message?: string })?.message ?? error).toLowerCase();
-  return (
-    message.includes("invalid_type") ||
-    message.includes("is not supported") ||
-    message.includes("sobject type 'tenantconsumptionalert'")
-  );
-}
-
 export async function queryConsumptionAlerts(conn: Connection): Promise<ConsumptionAlertsResult> {
   const query =
     `SELECT ${CONSUMPTION_ALERT_FIELDS.join(", ")} FROM TenantConsumptionAlert ` +
@@ -75,7 +66,7 @@ export async function queryConsumptionAlerts(conn: Connection): Promise<Consumpt
     const alerts = (res?.records ?? []).map((record: any) => buildConsumptionAlertRow(record));
     return { supported: true, alerts };
   } catch (error: any) {
-    if (isUnsupportedObjectError(error)) {
+    if (isUnsupportedSObjectError(error, "TenantConsumptionAlert")) {
       return {
         supported: false,
         reason: "TenantConsumptionAlert is not available on this org",

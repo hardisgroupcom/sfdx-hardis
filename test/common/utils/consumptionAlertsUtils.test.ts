@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { isUnsupportedSObjectError } from '../../../src/common/utils/apiUtils.js';
 import {
   buildConsumptionAlertMetrics,
   buildConsumptionAlertRow,
@@ -121,7 +122,7 @@ describe('consumptionAlertsUtils', () => {
     });
 
     // Digital Wallet consumption cards are the only programmatic view of Data 360 credit burn,
-    // so each card needs its own series to be chartable over time.
+    // so each card needs its own series to be charted over time.
     it('emits one series per consumption card', () => {
       const metrics = buildConsumptionAlertMetrics(REAL_ALERTS, groupAlertsByScope(REAL_ALERTS));
       expect(metrics.ConsumptionAlertPct_PlatformServicesCard_Production_PrePurchased).to.equal(75);
@@ -132,6 +133,21 @@ describe('consumptionAlertsUtils', () => {
       const metrics = buildConsumptionAlertMetrics([], []);
       expect(metrics.ConsumptionAlertsScopes).to.equal(0);
       expect(metrics.ConsumptionAlertsMaxThreshold).to.equal(0);
+    });
+  });
+
+  // Shared by the consumption-alerts and usage-entitlements commands: an edition that never
+  // provisions the object must let the monitoring job skip, while anything else keeps throwing.
+  describe('isUnsupportedSObjectError', () => {
+    it('recognizes the INVALID_TYPE answer for a missing object', () => {
+      const error = { message: "INVALID_TYPE: sObject type 'TenantConsumptionAlert' is not supported." };
+      expect(isUnsupportedSObjectError(error, 'TenantConsumptionAlert')).to.equal(true);
+      expect(isUnsupportedSObjectError(error, 'TenantUsageEntitlement')).to.equal(true);
+    });
+
+    it('does not swallow an unrelated failure', () => {
+      const error = { message: 'INSUFFICIENT_ACCESS: insufficient access rights on object id' };
+      expect(isUnsupportedSObjectError(error, 'TenantUsageEntitlement')).to.equal(false);
     });
   });
 });

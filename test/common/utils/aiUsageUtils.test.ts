@@ -1,5 +1,8 @@
 import { expect } from 'chai';
 import {
+  accumulateTotals,
+  AiUsageResult,
+  buildAiUsageMetrics,
   buildAiUsageQuery,
   CANDIDATE_AI_USAGE_MODELS,
   findModelName,
@@ -178,6 +181,58 @@ describe('aiUsageUtils', () => {
       const row = toAiUsageRow({ agent: null, action: null, credits: 2551, events: 365 });
       expect(row.agent).to.equal('');
       expect(row.credits).to.equal(2551);
+    });
+  });
+
+  describe('accumulateTotals', () => {
+    it('splits billed from covered usage when the model exposes a metered flag', () => {
+      const totals = accumulateTotals(
+        [
+          { metered: 'true', credits: 780, events: 780 },
+          { metered: 'false', credits: 2551, events: 365 },
+        ],
+        true
+      );
+      expect(totals.credits).to.equal(3331);
+      expect(totals.creditsMetered).to.equal(780);
+      expect(totals.creditsUnmetered).to.equal(2551);
+      expect(totals.meteringKnown).to.equal(true);
+    });
+
+    // The important one: "we cannot tell what is metered" must never render as "nothing is
+    // billed". Counting everything as billed overstates rather than understates the bill.
+    it('counts every credit as billed when no metered flag exists, instead of reporting zero', () => {
+      const totals = accumulateTotals([{ credits: 1200, events: 400 }], false);
+      expect(totals.credits).to.equal(1200);
+      expect(totals.creditsMetered).to.equal(1200);
+      expect(totals.creditsUnmetered).to.equal(0);
+      expect(totals.meteringKnown).to.equal(false);
+    });
+  });
+
+  describe('buildAiUsageMetrics', () => {
+    const baseResult = { available: true, degraded: false, aiRows: [], rawAiRows: [], dataCreditRows: [] };
+
+    it('emits the metered split when the flag was discovered', () => {
+      const metrics = buildAiUsageMetrics({
+        ...baseResult,
+        aiTotals: { credits: 3331, creditsMetered: 780, creditsUnmetered: 2551, events: 1145, meteringKnown: true },
+      } as AiUsageResult);
+      expect(metrics.AiUsageCreditsTotal).to.equal(3331);
+      expect(metrics.AiUsageCreditsMetered).to.equal(780);
+      expect(metrics.AiUsageCreditsUnmetered).to.equal(2551);
+    });
+
+    // A zero here would claim nothing is covered by the subscription, when the split is simply
+    // unknown. No metric at all is the honest answer.
+    it('emits no unmetered metric when the split is unknown', () => {
+      const metrics = buildAiUsageMetrics({
+        ...baseResult,
+        aiTotals: { credits: 1200, creditsMetered: 1200, creditsUnmetered: 0, events: 400, meteringKnown: false },
+      } as AiUsageResult);
+      expect(metrics.AiUsageCreditsTotal).to.equal(1200);
+      expect(metrics.AiUsageCreditsMetered).to.equal(1200);
+      expect(metrics).to.not.have.property('AiUsageCreditsUnmetered');
     });
   });
 });

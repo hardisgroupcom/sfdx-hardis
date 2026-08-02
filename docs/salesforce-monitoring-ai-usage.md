@@ -12,6 +12,8 @@ This command reads the consumption models Salesforce publishes in Data 360 and r
 
 **Only metered usage is charged.** Standard generative AI features and Prompt Builder templates covered by an Agentforce add-on run unmetered, and on a real org they are usually the bulk of consumption. The command therefore leads with billed credits and reports the total alongside, so the headline figure matches what actually lands on the invoice.
 
+If the org's usage model exposes no metered flag, the billed share cannot be told apart from the covered one. The command then counts every credit as billed and says so in the report, rather than reporting zero billed credits. The figure is an upper bound: understating a bill is worse than overstating it.
+
 Sfdx-hardis command: [sf hardis:org:diagnose:ai-usage](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/ai-usage/)
 
 Key: **AI_USAGE**

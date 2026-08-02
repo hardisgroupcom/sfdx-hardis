@@ -71,6 +71,7 @@
   "aiProviderUnableToInitialize": "Não foi possível inicializar o conector {{provider}}: {{message}}",
   "aiUsageCreditColumnNotIdentified": "Não foi possível identificar uma coluna de créditos no modelo de uso do Data 360. Retornando as linhas brutas sem agregação.",
   "aiUsageDetailRowsTruncated": "As linhas de detalhe estao limitadas a {{count}}: os totais sao exatos, mas o detalhamento por agent e parcial.",
+  "aiUsageMeteredColumnNotIdentified": "Não foi possível identificar um flag metered no modelo de uso do Data 360. Cada crédito é contado como faturado, portanto os números são um limite superior.",
   "allApexClassesCalledInLastDays": "Todas as classes Apex foram chamadas nos últimos {{days}} dias",
   "allFlows": "Todos os fluxos",
   "allLicensesTypes": "Todos os tipos de licença",

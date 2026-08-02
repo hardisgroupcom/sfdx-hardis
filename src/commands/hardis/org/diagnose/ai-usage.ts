@@ -36,7 +36,7 @@ Agentforce actions and Data 360 operations are billed in Flex Credits. This comm
 Key functionalities:
 
 - **Consumption Breakdown:** Aggregates credits consumed and event counts per agent, action, usage type and metered flag.
-- **Billed vs Covered Usage:** Only metered usage is charged. Standard generative AI features covered by an add-on run unmetered and are usually the bulk of consumption, so the report leads with billed credits and shows the total alongside.
+- **Billed vs Covered Usage:** Only metered usage is charged. Standard generative AI features covered by an add-on run unmetered and are usually the bulk of consumption, so the report leads with billed credits and shows the total alongside. If the org's usage model exposes no metered flag, every credit is counted as billed and the report says so, rather than reporting zero billed credits.
 - **Data 360 Credits:** Reports Data 360 credit consumption alongside Agentforce usage.
 - **Date Windowing:** Restricts the analysis to a recent period, 30 days by default.
 - **CSV Report Generation:** Produces a report of the aggregated consumption rows.
@@ -143,12 +143,24 @@ In agent mode, the command runs fully automatically with no interactive prompts.
       );
     }
 
+    // The metered flag is what separates billed credits from usage covered by the subscription.
+    // Without it every credit is counted as billed, so the figures below are an upper bound.
+    const meteringKnown = this.usageResult.aiTotals?.meteringKnown ?? true;
+    if (this.usageResult.aiTotals && !meteringKnown) {
+      uxLog('warning', this, c.yellow(t('aiUsageMeteredColumnNotIdentified')));
+    }
+
     uxLogTable(this, this.usageResult.aiRows);
 
     this.outputFile = await generateReportPath('ai-usage', this.outputFile);
+    // One schema per report: aggregated rows when available, otherwise the raw rows of whichever
+    // single model produced them. Mixing the AI and Data 360 schemas would yield a CSV whose
+    // columns belong to neither.
     const reportRows = this.usageResult.aiRows.length
       ? this.usageResult.aiRows
-      : this.usageResult.dataCreditRows;
+      : this.usageResult.rawAiRows.length
+        ? this.usageResult.rawAiRows
+        : this.usageResult.dataCreditRows;
     this.outputFilesRes = await generateCsvFile(reportRows, this.outputFile, {
       fileTitle: 'Agentforce and Data 360 Credit Usage',
     });
@@ -180,9 +192,11 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     const costSuffix =
       estimatedCost !== null ? `, up to **${formatCost(estimatedCost, costConfig)}**` : '';
 
-    let notifText =
-      `**${billedCredits}** billed credits over the last ${flags.days} days in ${orgMarkdown}${costSuffix} ` +
-      `(**${totalCredits}** consumed in total, ${aiUnmetered} unmetered)`;
+    let notifText = meteringKnown
+      ? `**${billedCredits}** billed credits over the last ${flags.days} days in ${orgMarkdown}${costSuffix} ` +
+        `(**${totalCredits}** consumed in total, ${aiUnmetered} unmetered)`
+      : `**${totalCredits}** credits consumed over the last ${flags.days} days in ${orgMarkdown}${costSuffix}, ` +
+        `all counted as billed (this org's usage model exposes no metered flag, so the billed share cannot be told apart)`;
 
     const topConsumers = this.usageResult.aiRows.slice(0, 10);
     if (topConsumers.length > 0) {

@@ -1,6 +1,6 @@
 import { Connection } from "@salesforce/core";
 import c from "chalk";
-import { soqlQuery } from "./apiUtils.js";
+import { isUnsupportedSObjectError, soqlQuery } from "./apiUtils.js";
 import { uxLog } from "./index.js";
 import { getSeverityIcon } from "./notifUtils.js";
 import { getConfig, getEnvVar } from "../../config/index.js";
@@ -103,12 +103,34 @@ const USAGE_ENTITLEMENT_FIELDS = [
   "UsageDate",
 ];
 
+export interface UsageEntitlementsQueryResult {
+  // False when the org edition does not expose TenantUsageEntitlement at all.
+  supported: boolean;
+  reason?: string;
+  records: any[];
+}
+
 // No ORDER BY: MasterLabel is not sortable and Salesforce rejects the query. Sorting is done
 // client-side once projections are computed.
-export async function queryUsageEntitlements(conn: Connection): Promise<any[]> {
+//
+// Not every edition provisions TenantUsageEntitlement. This command is scheduled daily across
+// whole fleets, so a missing object has to skip rather than fail the run, exactly like
+// `queryConsumptionAlerts` does for TenantConsumptionAlert.
+export async function queryUsageEntitlements(conn: Connection): Promise<UsageEntitlementsQueryResult> {
   const query = `SELECT ${USAGE_ENTITLEMENT_FIELDS.join(", ")} FROM TenantUsageEntitlement`;
-  const res = await soqlQuery(query, conn);
-  return res?.records ?? [];
+  try {
+    const res = await soqlQuery(query, conn);
+    return { supported: true, records: res?.records ?? [] };
+  } catch (error: any) {
+    if (isUnsupportedSObjectError(error, "TenantUsageEntitlement")) {
+      return {
+        supported: false,
+        reason: "TenantUsageEntitlement is not available on this org",
+        records: [],
+      };
+    }
+    throw error;
+  }
 }
 
 // "setting/force.com/orgValue.MaxCdpProfiles" -> "MaxCdpProfiles"
@@ -305,7 +327,14 @@ export async function resolveUsageEntitlementsConfig(): Promise<UsageEntitlement
     }
     // Index by both the trailing token and the full Setting string so either form works in YAML.
     resources[resource.key] = resource;
-    resources[parseSettingKey(resource.key)] = resource;
+    const token = parseSettingKey(resource.key);
+    // Two different Setting values can end in the same token. The shorthand goes to whichever
+    // was declared first and is never overwritten, so a later entry cannot silently steal the
+    // override of an earlier one. Both keep their unambiguous full-Setting entry, and lookup
+    // tries that first.
+    if (token !== resource.key && !(token in resources)) {
+      resources[token] = resource;
+    }
   }
 
   return {
@@ -382,7 +411,8 @@ export function buildUsageEntitlementRow(
 ): UsageEntitlementRow {
   const setting = String(record.Setting ?? "");
   const settingKey = parseSettingKey(setting);
-  const resourceConfig = config.resources[settingKey] ?? config.resources[setting];
+  // Full Setting first: an exact match always beats the trailing-token shorthand.
+  const resourceConfig = config.resources[setting] ?? config.resources[settingKey];
 
   const amountUsed = record.AmountUsed === null || record.AmountUsed === undefined ? null : Number(record.AmountUsed);
   const amountAllowed =

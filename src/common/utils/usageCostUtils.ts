@@ -64,7 +64,13 @@ export async function resolveUsageCostConfig(): Promise<UsageCostConfig> {
     };
     // Accept both the full Setting value and its trailing token, like the threshold overrides.
     resources[entry.key] = rate;
-    resources[trailingToken(entry.key)] = rate;
+    const token = trailingToken(entry.key);
+    // Two different Setting values can end in the same token. First declaration wins the
+    // shorthand rather than being silently overwritten; the full Setting entry stays exact for
+    // both, and lookup tries that first.
+    if (token !== entry.key && !(token in resources)) {
+      resources[token] = rate;
+    }
   }
 
   const flexCreditUnitPrice =
@@ -90,7 +96,8 @@ export function estimateEntitlementCost(
   row: { settingKey: string; setting: string; amountUsed: number | null; amountAllowed: number | null },
   config: UsageCostConfig,
 ): number | null {
-  const rate = config.resources[row.settingKey] ?? config.resources[row.setting];
+  // Full Setting first: an exact match always beats the trailing-token shorthand.
+  const rate = config.resources[row.setting] ?? config.resources[row.settingKey];
   if (!rate || row.amountUsed === null) {
     return null;
   }

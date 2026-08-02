@@ -49,6 +49,8 @@ Key functionalities:
 
 Resources for which Salesforce reports no consumption data are listed in the report but never alert, and never emit metrics.
 
+On an org whose edition does not expose usage-based entitlements, the command logs why it cannot run, sends no notification, and exits successfully, so it is safe to schedule across a whole fleet.
+
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-usage-entitlements/) and can output Grafana, Slack and MsTeams Notifications.
 
 <details markdown="1">
@@ -124,11 +126,21 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     uxLog('action', this, c.cyan(t('checkingUsageBasedEntitlements')));
     const config = await resolveUsageEntitlementsConfig();
     const costConfig = await resolveUsageCostConfig();
-    const records = await queryUsageEntitlements(conn);
+    const queryResult = await queryUsageEntitlements(conn);
+
+    // Not every edition provisions TenantUsageEntitlement: skip quietly instead of failing the
+    // run, so this stays safe to schedule fleet-wide.
+    if (!queryResult.supported) {
+      uxLog('log', this, c.grey(queryResult.reason || 'Usage-based entitlements are not available on this org'));
+      return {
+        outputString: 'Usage-based entitlements not available on org ' + conn.instanceUrl,
+        entitlementRows: [],
+      };
+    }
 
     const now = new Date();
     this.entitlementRows = sortUsageEntitlementRows(
-      records.map((record: any) => buildUsageEntitlementRow(record, config, now, costConfig))
+      queryResult.records.map((record: any) => buildUsageEntitlementRow(record, config, now, costConfig))
     );
 
     uxLogTable(this, this.entitlementRows);

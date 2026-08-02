@@ -73,6 +73,28 @@ describe('usageCostUtils', () => {
       expect(cost).to.equal(null);
     });
 
+    // Two different Settings can share a trailing token, so an exact match must win.
+    it('prefers the rate keyed by the full Setting over the trailing-token shorthand', () => {
+      const collidingConfig: UsageCostConfig = {
+        ...config,
+        resources: {
+          MaxLimit: rate('MaxLimit', 1),
+          'setting/force.com/orgValue.MaxLimit': rate('setting/force.com/orgValue.MaxLimit', 10),
+        },
+      };
+      const cost = estimateEntitlementCost(
+        {
+          settingKey: 'MaxLimit',
+          setting: 'setting/force.com/orgValue.MaxLimit',
+          amountUsed: 12,
+          amountAllowed: 10,
+        },
+        collidingConfig
+      );
+      // 2 over the allowance at the exact rate of 10, not the shorthand rate of 1.
+      expect(cost).to.equal(20);
+    });
+
     it('resolves a rate by the full Setting value as well as the trailing token', () => {
       const cost = estimateEntitlementCost(
         {

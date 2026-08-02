@@ -22,6 +22,8 @@ Key functionalities:
 
 Resources for which Salesforce reports no consumption data are listed in the report but never alert, and never emit metrics.
 
+On an org whose edition does not expose usage-based entitlements, the command logs why it cannot run, sends no notification, and exits successfully, so it is safe to schedule across a whole fleet.
+
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-usage-entitlements/) and can output Grafana, Slack and MsTeams Notifications.
 
 <details markdown="1">
