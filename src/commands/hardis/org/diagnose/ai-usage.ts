@@ -155,10 +155,16 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
     const metrics = buildAiUsageMetrics(this.usageResult);
     const creditsThreshold = Number(getEnvVar('AI_USAGE_CREDITS_THRESHOLD') || 0);
-    const totalCredits = metrics.AiUsageCreditsTotal + metrics.DataCloudCreditsTotal;
+    // Metrics omit any model that is not provisioned, so default to 0 for the arithmetic here
+    // while the emitted payload stays silent about what does not exist.
+    const aiTotal = metrics.AiUsageCreditsTotal ?? 0;
+    const aiMetered = metrics.AiUsageCreditsMetered ?? 0;
+    const aiUnmetered = metrics.AiUsageCreditsUnmetered ?? 0;
+    const dataCloudTotal = metrics.DataCloudCreditsTotal ?? 0;
+    const totalCredits = aiTotal + dataCloudTotal;
     // Only metered usage is charged. On a real org most consumption is covered by the
     // subscription, so leading with the raw total would overstate the bill several times over.
-    const billedCredits = metrics.AiUsageCreditsMetered + metrics.DataCloudCreditsTotal;
+    const billedCredits = aiMetered + dataCloudTotal;
 
     const orgMarkdown = await getOrgMarkdown(conn?.instanceUrl);
     const notifButtons = await getNotificationButtons();
@@ -176,7 +182,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
     let notifText =
       `**${billedCredits}** billed credits over the last ${flags.days} days in ${orgMarkdown}${costSuffix} ` +
-      `(**${totalCredits}** consumed in total, ${metrics.AiUsageCreditsUnmetered} unmetered)`;
+      `(**${totalCredits}** consumed in total, ${aiUnmetered} unmetered)`;
 
     const topConsumers = this.usageResult.aiRows.slice(0, 10);
     if (topConsumers.length > 0) {
@@ -187,7 +193,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
         // Never let the top-10 read as the whole picture. The listed rows come from the AI
         // model only, so the remainder is measured against the AI total, not the combined
         // total which also carries Data 360 credits.
-        const tail = Math.max(0, Math.round((metrics.AiUsageCreditsTotal - listed) * 100) / 100);
+        const tail = Math.max(0, Math.round((aiTotal - listed) * 100) / 100);
         text += `\n- ...and ${remaining} more, totalling ${tail} credits`;
       }
       notifAttachments.push({ text });

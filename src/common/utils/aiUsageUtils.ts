@@ -347,15 +347,20 @@ function isMetered(value: string): boolean {
 // Metrics read the dedicated totals queries, never the capped detail rows, so a busy org with
 // more agent/action combinations than the row cap still reports its true consumption.
 export function buildAiUsageMetrics(result: AiUsageResult): any {
-  const ai = result.aiTotals;
-  const dataCloud = result.dataCreditTotals;
-  return {
-    AiUsageCreditsTotal: ai?.credits ?? 0,
-    AiUsageCreditsMetered: ai?.creditsMetered ?? 0,
-    AiUsageCreditsUnmetered: ai?.creditsUnmetered ?? 0,
-    AiUsageActions: ai?.events ?? 0,
-    DataCloudCreditsTotal: dataCloud?.credits ?? 0,
-  };
+  const metrics: any = {};
+  // Emit nothing for a model that is not provisioned. A zero would read as "no credits were
+  // consumed" when the truth is "this org has no Data 360 credit subscription", and the panel
+  // would show a confident 0 instead of its "Requires Data 360" empty state.
+  if (result.aiTotals) {
+    metrics.AiUsageCreditsTotal = result.aiTotals.credits;
+    metrics.AiUsageCreditsMetered = result.aiTotals.creditsMetered;
+    metrics.AiUsageCreditsUnmetered = result.aiTotals.creditsUnmetered;
+    metrics.AiUsageActions = result.aiTotals.events;
+  }
+  if (result.dataCreditTotals) {
+    metrics.DataCloudCreditsTotal = result.dataCreditTotals.credits;
+  }
+  return metrics;
 }
 
 // Credits are the billing unit, so they round like money: half up, never through toFixed(2)
