@@ -755,6 +755,14 @@ ${getBannerMarkdownAndLink()}
     }
   }
 
+  // Bitbucket Pipelines only exposes the triggering account as an opaque UUID
+  // (BITBUCKET_STEP_TRIGGERER_UUID), so a lookup is the only way to show a readable name in
+  // notifications. The API never returns another account's email, hence email is always null.
+  public async resolveUserIdentity(uuid: string): Promise<{ name: string | null; email: string | null } | null> {
+    const { data } = await this.bitbucket.users.get({ selected_user: uuid });
+    return { name: data?.display_name || (data as any)?.nickname || null, email: null };
+  }
+
   private completePullRequestInfo(prData: Schema.Pullrequest): CommonPullRequestInfo {
     const prInfo: CommonPullRequestInfo = {
       idNumber: prData?.id || 0,

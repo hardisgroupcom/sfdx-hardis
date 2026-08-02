@@ -228,6 +228,16 @@ export abstract class GitProvider {
     return gitProvider.getCurrentJobUrl();
   }
 
+  // Used to turn a CI actor identifier into a displayable identity in notifications.
+  // Returns null when no provider is configured: callers fall back to other sources.
+  static async resolveUserIdentity(identifier: string): Promise<{ name: string | null; email: string | null } | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    return gitProvider.resolveUserIdentity(identifier);
+  }
+
   static async tryGetDeploymentActionsCommentBody(): Promise<string | null> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
