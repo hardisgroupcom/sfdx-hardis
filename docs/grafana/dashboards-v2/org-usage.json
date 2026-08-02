@@ -35,7 +35,7 @@
   ],
   "panels": [
     {
-      "id": 177,
+      "id": 179,
       "type": "row",
       "title": "At a glance",
       "collapsed": false,
@@ -494,7 +494,7 @@
       }
     },
     {
-      "id": 178,
+      "id": 180,
       "type": "row",
       "title": "Estimated cost",
       "collapsed": false,
@@ -794,7 +794,7 @@
       }
     },
     {
-      "id": 179,
+      "id": 181,
       "type": "row",
       "title": "Consumption vs allowance",
       "collapsed": false,
@@ -1062,9 +1062,9 @@
       }
     },
     {
-      "id": 180,
+      "id": 182,
       "type": "row",
-      "title": "Trends",
+      "title": "Consumption cards (Data 360 & platform)",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -1076,6 +1076,235 @@
     },
     {
       "id": 168,
+      "type": "table",
+      "title": "Consumption card thresholds",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "label_replace(max by (__name__) (last_over_time({__name__=~\"ConsumptionAlertPct_.+\", source=\"sfdx-hardis\", type=\"CONSUMPTION_ALERTS\", orgIdentifier=\"$org\"}[2d])), \"card\", \"$1\", \"__name__\", \"ConsumptionAlertPct_(.+)_metric\")",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "description": "Highest consumption threshold Salesforce has flagged on each Digital Wallet card. Salesforce exposes threshold crossings only, so a card reading 75% has passed 75%, not necessarily reached 78%. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "__proxy_source__": true,
+              "Time": true,
+              "__name__": true
+            },
+            "renameByName": {
+              "card": "Consumption card",
+              "Value": "Threshold reached %"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "orange",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 0,
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=CONSUMPTION_ALERTS"
+            }
+          ],
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Threshold reached %"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Threshold reached %",
+            "desc": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 169,
+      "type": "timeseries",
+      "title": "Consumption card evolution",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (__name__) (last_over_time({__name__=~\"ConsumptionAlertPct_.+\", source=\"sfdx-hardis\", type=\"CONSUMPTION_ALERTS\", orgIdentifier=\"$org\"}[1d]))",
+          "refId": "A",
+          "legendFormat": "{{__name__}}"
+        }
+      ],
+      "description": "How each consumption card has climbed through its thresholds over time. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "ConsumptionAlertPct_(.*)_metric",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          },
+          "unit": "percent",
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=CONSUMPTION_ALERTS"
+            }
+          ],
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 183,
+      "type": "row",
+      "title": "Trends",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
+      "panels": []
+    },
+    {
+      "id": 170,
       "type": "timeseries",
       "title": "Entitlement consumption (% used)",
       "datasource": {
@@ -1086,7 +1315,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 35
       },
       "targets": [
         {
@@ -1172,7 +1401,7 @@
       }
     },
     {
-      "id": 181,
+      "id": 184,
       "type": "row",
       "title": "Details",
       "collapsed": false,
@@ -1180,12 +1409,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 45
       },
       "panels": []
     },
     {
-      "id": 169,
+      "id": 171,
       "type": "table",
       "title": "Entitlements detail (latest run)",
       "datasource": {
@@ -1196,7 +1425,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 46
       },
       "targets": [
         {
@@ -1337,7 +1566,7 @@
       }
     },
     {
-      "id": 170,
+      "id": 172,
       "type": "table",
       "title": "Active utilization alerts (latest run)",
       "datasource": {
@@ -1348,7 +1577,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 49
+        "y": 58
       },
       "targets": [
         {
@@ -1477,7 +1706,7 @@
       }
     },
     {
-      "id": 182,
+      "id": 185,
       "type": "row",
       "title": "Agentforce & Data 360 credits",
       "collapsed": false,
@@ -1485,12 +1714,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 57
+        "y": 66
       },
       "panels": []
     },
     {
-      "id": 171,
+      "id": 173,
       "type": "stat",
       "title": "AI credits",
       "datasource": {
@@ -1501,7 +1730,7 @@
         "h": 5,
         "w": 4,
         "x": 0,
-        "y": 58
+        "y": 67
       },
       "targets": [
         {
@@ -1554,7 +1783,7 @@
       }
     },
     {
-      "id": 172,
+      "id": 174,
       "type": "stat",
       "title": "Metered credits",
       "datasource": {
@@ -1565,7 +1794,7 @@
         "h": 5,
         "w": 4,
         "x": 4,
-        "y": 58
+        "y": 67
       },
       "targets": [
         {
@@ -1618,7 +1847,7 @@
       }
     },
     {
-      "id": 173,
+      "id": 175,
       "type": "stat",
       "title": "AI actions",
       "datasource": {
@@ -1629,7 +1858,7 @@
         "h": 5,
         "w": 4,
         "x": 8,
-        "y": 58
+        "y": 67
       },
       "targets": [
         {
@@ -1682,7 +1911,7 @@
       }
     },
     {
-      "id": 174,
+      "id": 176,
       "type": "stat",
       "title": "Data 360 credits",
       "datasource": {
@@ -1693,7 +1922,7 @@
         "h": 5,
         "w": 4,
         "x": 12,
-        "y": 58
+        "y": 67
       },
       "targets": [
         {
@@ -1746,7 +1975,7 @@
       }
     },
     {
-      "id": 175,
+      "id": 177,
       "type": "timeseries",
       "title": "Credit consumption evolution",
       "datasource": {
@@ -1757,7 +1986,7 @@
         "h": 5,
         "w": 8,
         "x": 16,
-        "y": 58
+        "y": 67
       },
       "targets": [
         {
@@ -1838,7 +2067,7 @@
       }
     },
     {
-      "id": 183,
+      "id": 186,
       "type": "row",
       "title": "Freshness",
       "collapsed": false,
@@ -1846,12 +2075,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 63
+        "y": 72
       },
       "panels": []
     },
     {
-      "id": 176,
+      "id": 178,
       "type": "stat",
       "title": "Stats generation date",
       "datasource": {
@@ -1862,7 +2091,7 @@
         "h": 5,
         "w": 4,
         "x": 0,
-        "y": 64
+        "y": 73
       },
       "targets": [
         {

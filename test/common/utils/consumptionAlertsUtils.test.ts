@@ -120,6 +120,14 @@ describe('consumptionAlertsUtils', () => {
       expect(metrics.ConsumptionAlertsCritical).to.equal(0);
     });
 
+    // Digital Wallet consumption cards are the only programmatic view of Data 360 credit burn,
+    // so each card needs its own series to be chartable over time.
+    it('emits one series per consumption card', () => {
+      const metrics = buildConsumptionAlertMetrics(REAL_ALERTS, groupAlertsByScope(REAL_ALERTS));
+      expect(metrics.ConsumptionAlertPct_PlatformServicesCard_Production_PrePurchased).to.equal(75);
+      expect(metrics.ConsumptionAlertPct_SegmentationsActivations_Production_PrePurchased).to.equal(50);
+    });
+
     it('reports zeroes when nothing is active', () => {
       const metrics = buildConsumptionAlertMetrics([], []);
       expect(metrics.ConsumptionAlertsScopes).to.equal(0);

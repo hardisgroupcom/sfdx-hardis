@@ -178,6 +178,12 @@ export function resolveAlertsSeverity(scopes: ConsumptionAlertScope[]): NotifSev
   return scopes.some((scope) => scope.severity === "error") ? "error" : "warning";
 }
 
+// Metric-name-safe form of a scope: "PlatformServicesCard / Production / PrePurchased"
+// becomes "PlatformServicesCard_Production_PrePurchased".
+export function scopeMetricKey(scope: string): string {
+  return scope.replace(/\s*\/\s*/g, "_").replace(/[^a-zA-Z0-9_]/g, "_");
+}
+
 export function buildConsumptionAlertMetrics(
   alerts: ConsumptionAlertRow[],
   scopes: ConsumptionAlertScope[],
@@ -185,7 +191,18 @@ export function buildConsumptionAlertMetrics(
   const thresholds = scopes
     .map((scope) => scope.maxTriggerValue)
     .filter((value): value is number => value !== null);
+  // One series per consumption card, so each can be charted on its own. These are the Digital
+  // Wallet cards (Data 360 Segmentation & Activation, Platform Services, ...), which is the only
+  // programmatic visibility Salesforce gives into consumption-card burn: the card balances
+  // themselves are UI-only. Cards are few, so per-card series carry no cardinality risk.
+  const perScope: any = {};
+  for (const scope of scopes) {
+    if (scope.maxTriggerValue !== null) {
+      perScope[`ConsumptionAlertPct_${scopeMetricKey(scope.scope)}`] = scope.maxTriggerValue;
+    }
+  }
   return {
+    ...perScope,
     // Raw alert rows, kept so the ladder itself stays visible.
     ConsumptionAlertsActive: alerts.length,
     // Distinct consumption scopes in alert: the number that reflects reality.

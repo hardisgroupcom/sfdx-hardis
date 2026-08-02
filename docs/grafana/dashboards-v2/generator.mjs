@@ -1926,6 +1926,59 @@ const usageDashboard = dashboard({
       ],
     },
     {
+      // Digital Wallet consumption cards (Data 360 Segmentation & Activation, Platform
+      // Services, ...). Salesforce publishes only the threshold crossings, never the card
+      // balance, so these are step values: "has passed 75%", not "is at 78%".
+      row: 'Consumption cards (Data 360 & platform)',
+      panels: [
+        tablePanel('Consumption card thresholds', {
+          gridPos: { w: 12, h: 8 },
+          description:
+            'Highest consumption threshold Salesforce has flagged on each Digital Wallet card. ' +
+            'Salesforce exposes threshold crossings only, so a card reading 75% has passed 75%, not necessarily reached 78%. ' +
+            RECENT_CLI_NOTE,
+          targets: [
+            promTarget(
+              `label_replace(max by (__name__) (last_over_time({__name__=~"ConsumptionAlertPct_.+", ${SRC}, type="CONSUMPTION_ALERTS", orgIdentifier="$org"}[2d])), "card", "$1", "__name__", "ConsumptionAlertPct_(.+)_metric")`,
+              { instant: true, format: 'table' }
+            ),
+          ],
+          transformations: [
+            organize({
+              excludeByName: { Time: true, __name__: true },
+              renameByName: { card: 'Consumption card', Value: 'Threshold reached %' },
+            }),
+          ],
+          unit: 'percent',
+          decimals: 0,
+          thresholds: thresholdSteps([[null, 'green'], [50, 'yellow'], [75, 'orange'], [90, 'red']]),
+          links: indicatorLink('CONSUMPTION_ALERTS'),
+          overrides: [
+            {
+              matcher: { id: 'byName', options: 'Threshold reached %' },
+              properties: [{ id: 'custom.cellOptions', value: { type: 'color-background' } }],
+            },
+          ],
+          sortBy: [{ displayName: 'Threshold reached %', desc: true }],
+        }),
+        timeseriesPanel('Consumption card evolution', {
+          gridPos: { w: 12, h: 8 },
+          unit: 'percent',
+          description: 'How each consumption card has climbed through its thresholds over time. ' + RECENT_CLI_NOTE,
+          targets: [
+            promTarget(
+              `max by (__name__) (last_over_time({__name__=~"ConsumptionAlertPct_.+", ${SRC}, type="CONSUMPTION_ALERTS", orgIdentifier="$org"}[1d]))`,
+              { legendFormat: '{{__name__}}' }
+            ),
+          ],
+          transformations: [
+            { id: 'renameByRegex', options: { regex: 'ConsumptionAlertPct_(.*)_metric', renamePattern: '$1' } },
+          ],
+          links: indicatorLink('CONSUMPTION_ALERTS'),
+        }),
+      ],
+    },
+    {
       row: 'Trends',
       panels: [
         timeseriesPanel('Entitlement consumption (% used)', {
