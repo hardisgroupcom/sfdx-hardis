@@ -130,7 +130,9 @@ jobs:
           # which is where the sfdx-hardis commands live. Plain `sf` commands are run through
           # the runSf helper instead, so the tests do not depend on `sf plugins link`.
           SF_DISABLE_TELEMETRY: "true"
-          FORCE_COLOR: "1"
+          # FORCE_COLOR is deliberately NOT set: it makes the CLI colorize even its --json
+          # output, and the escape codes break JSON.parse on output that looks perfectly
+          # valid in the job log, because log viewers hide the codes.
         run: yarn test:nuts:org
 
       # The tests do not delete their scratch org: they share a single one, and the job owns

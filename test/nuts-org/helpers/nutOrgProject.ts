@@ -89,15 +89,22 @@ export function runSf<T = any>(
     execErrorMessage = e?.message ?? '';
   }
 
-  // The CLI can prefix its JSON with a banner (for instance an "update available" warning),
+  // Strip ANSI escape sequences before parsing: when the job runs with FORCE_COLOR the CLI
+  // colorizes even its --json output, and the escape codes make JSON.parse fail on what looks
+  // like perfectly valid JSON in the logs (log viewers hide the codes).
+  // The CLI can also prefix its JSON with a banner (an "update available" warning for example),
   // so start parsing at the first brace rather than assuming the output is pure JSON.
+  // eslint-disable-next-line no-control-regex
+  const cleanOutput = output.replace(/\u001b\[[0-9;]*[A-Za-z]/g, '');
   let parsed: any = null;
-  const jsonStart = output.indexOf('{');
+  let parseErrorMessage = '';
+  const jsonStart = cleanOutput.indexOf('{');
   if (jsonStart >= 0) {
     try {
-      parsed = JSON.parse(output.slice(jsonStart));
-    } catch {
+      parsed = JSON.parse(cleanOutput.slice(jsonStart));
+    } catch (e: any) {
       parsed = null;
+      parseErrorMessage = e?.message ?? '';
     }
   }
 
@@ -108,7 +115,8 @@ export function runSf<T = any>(
     throw new Error(
       `sf ${command}\nfailed with status ${status}` +
       (execErrorMessage ? `\nexec error: ${execErrorMessage.slice(0, 500)}` : '') +
-      `\noutput: ${output.slice(0, 2000) || '(empty)'}`
+      (parseErrorMessage ? `\nparse error: ${parseErrorMessage.slice(0, 300)}` : '') +
+      `\noutput: ${cleanOutput.slice(0, 2000) || '(empty)'}`
     );
   }
   return { status, result: (parsed?.result ?? null) as T | null, output };
