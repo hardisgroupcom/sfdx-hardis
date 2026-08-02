@@ -185,9 +185,12 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
 
     await fs.ensureDir(path.join(projectDir, 'config', 'user'));
 
-    // hardis:scratch:create prefixes the alias with "CI-" when it detects a CI context,
-    // and we always run with CI=true so the command never prompts.
-    const requestedAlias = `hardis-nut-${scenario}`;
+    // hardis:scratch:create derives the scratch org username from the alias
+    // (nut@hardis-scratch-<alias>.com). Salesforce refuses to reuse a scratch org username,
+    // even once the org has been deleted, so the alias must be unique on every run.
+    // Kept short: the command truncates aliases longer than 30 characters.
+    const runSuffix = (process.env.GITHUB_RUN_ID || Date.now().toString(36)).slice(-8);
+    const requestedAlias = `hardis-nut-${scenario}-${runSuffix}`;
     const orgAlias = `CI-${requestedAlias}`;
 
     const createScratchOrg = (ensureExitCode: number | undefined) =>
