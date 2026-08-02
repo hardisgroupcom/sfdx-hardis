@@ -17,8 +17,9 @@ Key functionalities:
 - **Inactive users are skipped:** Inactive users (`IsActive = false`) are reported with status `inactive` and no browser action is attempted for them.
 - **Per-user result:** Each username receives one of the following statuses: `unlinked`, `notLinked`, `notFound`, `inactive`, or `error`.
 - **Locale-independent detection:** Disconnect links are located by the brand / spec tokens (`U2F`, `WebAuthn`, `Salesforce Authenticator`, `One-Time Password Authenticator`, `TOTP`) that Salesforce does not translate, plus known French section labels and removal-action words (`Supprimer`, `Déconnecter`), so English and French orgs work out of the box. For other languages, extend the matching set with `--text-markers`.
-- **Reporting:** A console table summarises the run, and CSV / XLSX reports are generated for audit trails.
+- **Reporting:** A console table summarises the run, and CSV / XLSX reports are generated for audit trails, including a `TriggeredBy` column naming who ran the command.
 - **Notifications:** Sends a notification (Slack, Microsoft Teams, email, API/Grafana) summarising which users had MFA methods unlinked, so security admins are alerted. Routing thresholds follow the `SECURITY_KEY_UNLINK` notification type configuration.
+- **Triggering user:** The notification ends with a line naming the person behind the run and whether it came from a CI pipeline or a manual run. Set `SFDX_HARDIS_TRIGGERED_BY` to override the detected value.
 
 ### Agent Mode
 
@@ -45,6 +46,7 @@ The command's technical implementation involves:
 - **Removal vs registration:** When a method is not connected, the same row shows a registration link instead (id `AddU2FOrWebAuthn`, label `Register` / `Inscrire`, navigating to `registrationInterstitial.apexp`). The command only clicks genuine removal links (id `DisableU2FOrWebAuthn`, the `deleteredirect.jsp` URL, or label `Remove` / `Retirer`) and reports `notLinked` otherwise, so it never enrolls a new key by mistake.
 - **Salesforce labels reference (en / fr):** `Security Key (U2F or WebAuthn)` / `Clé de sécurité (U2F ou WebAuthn)` with a `Remove` / `Retirer` link, `App Registration: Salesforce Authenticator` (Disconnect), `App Registration: One-Time Password Authenticator` (Disconnect).
 - **Reporting:** Generates CSV and XLSX files (`users-security-key-unlink-<date>`) via `generateReports` and prints a console table via `uxLogTable`.
+- **Triggering user resolution:** `getTriggeringUser()` walks a priority chain and keeps the first value that actually identifies a person: `SFDX_HARDIS_TRIGGERED_BY`, then the CI actor (GitHub, GitLab, Azure Pipelines, Jenkins, Bitbucket), then `CI_USER_NAME` / `USER_EMAIL` / the `userEmail` config property, then the git config identity, then the last commit author, then the OS user. Opaque values such as a Bitbucket account UUID, generic runner accounts (`runner`, `root`) and purely numeric logins are rejected so the chain keeps looking. GitHub logins and Bitbucket UUIDs are resolved to real names through the provider API when a token is already configured. The value is added to the notification text, to the `TriggeredBy` report column, and to the `_triggeredBy` field of the API payload.
 
 Reference: [Salesforce Help - Remove a user's security key](https://help.salesforce.com/s/articleView?id=xcloud.security_u2f_remove_users_security_key.htm).
 </details>

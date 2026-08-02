@@ -1418,6 +1418,11 @@
     "ismeteredindicator",
     "Segmentations",
     "toolname",
-    "usagequantity"
+    "usagequantity",
+    "azureuser",
+    "REQUESTEDFOR",
+    "REQUESTEDFOREMAIL",
+    "TRIGGERER",
+    "vsts"
   ]
 }

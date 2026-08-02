@@ -171,6 +171,14 @@ export abstract class GitProviderRoot {
     // Default no-op - providers may override
   }
 
+  // Resolve a CI actor identifier (a GitHub login, a Bitbucket account UUID) into a real
+  // identity, so notifications can name the person who triggered a run. Best-effort by design:
+  // callers must tolerate null and fall back to another source.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async resolveUserIdentity(identifier: string): Promise<{ name: string | null; email: string | null } | null> {
+    return null;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
     uxLog("other", this, `Method getPullRequestCommentByMarker is not implemented yet on ${this.getLabel()}`);

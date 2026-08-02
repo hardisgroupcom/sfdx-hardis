@@ -613,6 +613,14 @@ ${getBannerMarkdownAndLink()}
     return Array.from(uniquePRsMap.values()).map((pr) => this.completePullRequestInfo(pr));
   }
 
+  // Upgrade a GitHub login (GITHUB_ACTOR) to the account's full name and public email, so
+  // notifications can name the person who triggered the run rather than showing a bare handle.
+  // Most accounts hide their email, in which case only the name is returned.
+  public async resolveUserIdentity(login: string): Promise<{ name: string | null; email: string | null } | null> {
+    const { data } = await this.octokit.rest.users.getByUsername({ username: login });
+    return { name: data?.name || null, email: data?.email || null };
+  }
+
   private completePullRequestInfo(prData: any): CommonPullRequestInfo {
     const prInfo: CommonPullRequestInfo = {
       idNumber: prData?.number || 0,
