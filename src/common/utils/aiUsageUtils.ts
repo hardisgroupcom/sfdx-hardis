@@ -15,7 +15,7 @@ import { round2 as roundMoney } from "./usageCostUtils.js";
 // columns are read from the metadata the query API returns.
 
 // Real orgs publish the model as `AiAgentGenerativeAiUsage_std__dlm`. The other spellings are
-// kept because Salesforce has shipped `ssot__`-prefixed variants for neighbouring Agentforce
+// kept because Salesforce has shipped `ssot__`-prefixed variants for related Agentforce
 // DMOs, and the regex fallback below covers anything not listed here.
 export const CANDIDATE_AI_USAGE_MODELS = [
   "AiAgentGenerativeAiUsage_std__dlm",

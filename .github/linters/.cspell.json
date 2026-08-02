@@ -1411,6 +1411,13 @@
     "unmetered",
     "usageamount",
     "usagedate",
-    "usagetype"
+    "usagetype",
+    "agentdevelopername",
+    "bcomm",
+    "GHWL",
+    "ismeteredindicator",
+    "Segmentations",
+    "toolname",
+    "usagequantity"
   ]
 }
