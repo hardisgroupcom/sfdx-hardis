@@ -73,7 +73,9 @@ export function runSf<T = any>(
     ...(options.devHubUsername ? baseEnv(options.devHubUsername) : {}),
   } as Record<string, string>;
   let output = '';
-  let parsed: any = null;
+  let execErrorMessage = '';
+  // Parsing must stay out of this try: a JSON syntax error is not an exec error, and its
+  // exception carries no stdout/stderr, so handling both in one catch loses the real output.
   try {
     output = execSync(`sf ${command}`, {
       cwd: options.cwd ?? process.cwd(),
@@ -82,20 +84,32 @@ export function runSf<T = any>(
       stdio: ['ignore', 'pipe', 'pipe'],
       maxBuffer: 50 * 1024 * 1024,
     });
-    parsed = JSON.parse(output);
   } catch (e: any) {
     output = `${e?.stdout ?? ''}${e?.stderr ?? ''}`;
+    execErrorMessage = e?.message ?? '';
+  }
+
+  // The CLI can prefix its JSON with a banner (for instance an "update available" warning),
+  // so start parsing at the first brace rather than assuming the output is pure JSON.
+  let parsed: any = null;
+  const jsonStart = output.indexOf('{');
+  if (jsonStart >= 0) {
     try {
-      parsed = JSON.parse(e?.stdout ?? '');
+      parsed = JSON.parse(output.slice(jsonStart));
     } catch {
       parsed = null;
     }
   }
+
   const status = parsed?.status ?? 1;
   // Never fail silently: a helper that returns an empty result on error makes every assertion
   // built on it fail with a meaningless "expected 0 to equal 2" and no way to tell why.
   if (!options.tolerateFailure && (status !== 0 || parsed === null)) {
-    throw new Error(`sf ${command}\nfailed with status ${status}:\n${output.slice(0, 2000)}`);
+    throw new Error(
+      `sf ${command}\nfailed with status ${status}` +
+      (execErrorMessage ? `\nexec error: ${execErrorMessage.slice(0, 500)}` : '') +
+      `\noutput: ${output.slice(0, 2000) || '(empty)'}`
+    );
   }
   return { status, result: (parsed?.result ?? null) as T | null, output };
 }
