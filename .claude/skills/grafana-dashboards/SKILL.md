@@ -27,6 +27,11 @@ sfdx-hardis pushes to two backends (see `src/common/notifProvider/apiProvider.ts
 
 PII: in CI, user fields in `_logElements` are pseudonymized (`user_xxxxxxxxxx`) by `apiAnonymizer.ts`. Dashboards must never rely on readable usernames.
 
+Two emission rules decide whether a panel can show a number at all:
+
+- **A value of exactly `0` IS emitted.** `apiProvider` used to test `min`/`max`/`percent`/`value` for truthiness, so a metric sitting at zero produced no field and the series disappeared: a limit at 0% read as "no data" instead of charting a zero. Fixed in 7.24; older CLI versions still drop it, which is what `RECENT_CLI_NOTE` warns about.
+- **A feature that is not provisioned emits NO metric**, rather than a zero (no `AiUsageCreditsTotal` on an org without a Data 360 consumption model). A confident `0` would claim "nothing consumed" when the truth is "not available here". Such panels need a `noValue` empty state ("Requires Data 360"), never a threshold that treats 0 as good news.
+
 ## DOs
 
 - **DO wrap every Prometheus selector in a lookback window**: `last_over_time(M{...}[2d])`, `avg_over_time(M{...}[7d])`, etc. Metrics arrive ONCE PER DAY; a bare selector returns "no data" (5-minute default lookback). Enforced by lint.
@@ -39,7 +44,7 @@ PII: in CI, user fields in `_logElements` are pseudonymized (`user_xxxxxxxxxx`) 
 - **DO use whitelist `organize` transformations on Loki tables** (`includeByName`) so backend noise columns (`labels`, `traceID`, `detected_level`) can never appear. `__proxy_source__` is excluded centrally by the `organize()` helper.
 - **DO reuse the v1-proven `jsonArrayToRows('<field>')` chain** to render a JSON array field of the latest Loki entry as table rows (`_logElements`, `topFailingFlows`, ...).
 - **DO keep tables vertical**: one row per item, 2-4 columns. Wide "one column per item" layouts cause horizontal scrollbars (the days-until-limit table uses `reduce` seriesToRows + `legendFormat` per query for this).
-- **DO keep stat titles short** (fits a 4-unit-wide box, ~15 chars): "Apex avg/day (30d)", not "Apex errors average per day (30 days)". Longer context goes in the panel `description`.
+- **DO keep stat titles short** (fits a 4-unit-wide box, ~15 chars): "Apex avg/day (30d)", not "Apex errors average per day (30 days)". Longer context goes in the panel `description`. The ~15 char budget is tied to the box width, so scale it with `gridPos.w`: on a wider panel a longer title is fine, and when a title reads as clipped mid-word the fix is to widen the panel or shorten the words, never to let Grafana truncate it.
 - **DO handle no-data**: `noValue` text on stats (e.g. "Schedule dora-report"), range mappings for degenerate values ("Limit exceeded" for negative forecast days, "No growth" above 3650), and a `description` mentioning "Requires a recent sfdx-hardis version" for panels fed by newly added metrics (`RECENT_CLI_NOTE`).
 - **DO validate live before delivering**: `.env` contains `GRAFANA_TOKEN` (service account for cloudity.grafana.net). Test queries through the datasource proxy (`/api/datasources/proxy/uid/grafanacloud-prom/api/v1/query`, `.../grafanacloud-logs/loki/api/v1/query`), then import into folder uid `sfdx-hardis-v2` via `POST /api/dashboards/db` with `overwrite: true`.
 - **DO run the lint suite** after regenerating - it checks JSON validity, v2 uids/tags, ds variables, no hardcoded stack references, `*_over_time` wrappers, unique panel ids, and detail links on every number.
@@ -51,6 +56,7 @@ PII: in CI, user fields in `_logElements` are pseudonymized (`user_xxxxxxxxxx`) 
 - **DON'T use Grafana Cloud-only features**: no ML forecasting (use PromQL `predict_linear`/`deriv`), no Cloud-only datasources or panel plugins. Core panels only: stat, gauge, timeseries, table, bargauge, text, row.
 - **DON'T display usernames or user lists** on dashboards - counts, aggregates and pseudonymized IDs only.
 - **DON'T create per-user or per-flow Prometheus label cardinality** - per-item detail belongs in Loki `_logElements`, not in metric labels.
+- **DON'T write a `{__name__=~"..."}` selector without a `type="<NOTIF_TYPE>"` matcher.** A name regex matches across every indicator, so any metric shipped later whose name happens to fit silently joins the panel. The limits dashboard queried `{__name__=~".+_percent", source="sfdx-hardis"}` with no `type`, and the day usage entitlements shipped their `percent` fields they landed in the "All limits" table and timeseries. Scoping each name-regex query to its own notification type also documents which indicator a panel belongs to. When adding an indicator that emits `percent`/`max` fields, grep the generator for `__name__=~` and check whether an existing panel would swallow it.
 - **DON'T do binary operations across `{__name__=~...}` multi-metric selectors** - vector matching collides (same label sets after name is ignored). Use one query per metric, or `label_replace` tricks, or per-metric explicit queries (see days-until-limit).
 - **DON'T touch the v1 dashboards or their Grafana folder** (`cdklj9xhp8074d`).
 - **DON'T activate alert rules by default** - the alert pack ships `isPaused: true` (Grafana Cloud free-tier cost), with `${DS_PROMETHEUS}`/`${DS_LOKI}` placeholders documented for replacement at import.
