@@ -796,7 +796,7 @@
     {
       "id": 179,
       "type": "row",
-      "title": "Freshness",
+      "title": "Consumption vs allowance",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -808,109 +808,6 @@
     },
     {
       "id": 166,
-      "type": "stat",
-      "title": "Stats generation date",
-      "datasource": {
-        "type": "loki",
-        "uid": "${ds_loki}"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 0,
-        "y": 13
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${ds_loki}"
-          },
-          "expr": "{source=\"sfdx-hardis\", type=\"USAGE_ENTITLEMENTS\", orgIdentifier=\"$org\"} |= ``",
-          "queryType": "range",
-          "direction": "backward",
-          "refId": "A",
-          "maxLines": 1
-        }
-      ],
-      "transformations": [
-        {
-          "id": "extractFields",
-          "options": {
-            "format": "json",
-            "jsonPaths": [
-              {
-                "path": "_dateTime"
-              },
-              {
-                "path": "_jobUrl"
-              }
-            ],
-            "keepTime": false,
-            "replace": true,
-            "source": "Line"
-          }
-        },
-        {
-          "id": "convertFieldType",
-          "options": {
-            "conversions": [
-              {
-                "destinationType": "time",
-                "targetField": "_dateTime"
-              }
-            ],
-            "fields": {}
-          }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue"
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "none",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^_dateTime$/",
-          "values": false
-        },
-        "textMode": "auto"
-      }
-    },
-    {
-      "id": 180,
-      "type": "row",
-      "title": "Consumption vs allowance",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 18
-      },
-      "panels": []
-    },
-    {
-      "id": 167,
       "type": "table",
       "title": "Entitlement consumption",
       "datasource": {
@@ -921,7 +818,7 @@
         "h": 12,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 13
       },
       "targets": [
         {
@@ -1042,7 +939,7 @@
       }
     },
     {
-      "id": 168,
+      "id": 167,
       "type": "table",
       "title": "Projected consumption at period end",
       "datasource": {
@@ -1053,7 +950,7 @@
         "h": 12,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 13
       },
       "targets": [
         {
@@ -1165,7 +1062,7 @@
       }
     },
     {
-      "id": 181,
+      "id": 180,
       "type": "row",
       "title": "Trends",
       "collapsed": false,
@@ -1173,12 +1070,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 31
+        "y": 25
       },
       "panels": []
     },
     {
-      "id": 169,
+      "id": 168,
       "type": "timeseries",
       "title": "Entitlement consumption (% used)",
       "datasource": {
@@ -1189,7 +1086,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 26
       },
       "targets": [
         {
@@ -1275,7 +1172,7 @@
       }
     },
     {
-      "id": 182,
+      "id": 181,
       "type": "row",
       "title": "Details",
       "collapsed": false,
@@ -1283,12 +1180,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 42
+        "y": 36
       },
       "panels": []
     },
     {
-      "id": 170,
+      "id": 169,
       "type": "table",
       "title": "Entitlements detail (latest run)",
       "datasource": {
@@ -1299,7 +1196,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 37
       },
       "targets": [
         {
@@ -1440,7 +1337,7 @@
       }
     },
     {
-      "id": 171,
+      "id": 170,
       "type": "table",
       "title": "Active utilization alerts (latest run)",
       "datasource": {
@@ -1451,7 +1348,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 55
+        "y": 49
       },
       "targets": [
         {
@@ -1580,7 +1477,7 @@
       }
     },
     {
-      "id": 183,
+      "id": 182,
       "type": "row",
       "title": "Agentforce & Data 360 credits",
       "collapsed": false,
@@ -1588,12 +1485,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 63
+        "y": 57
       },
       "panels": []
     },
     {
-      "id": 172,
+      "id": 171,
       "type": "stat",
       "title": "AI credits",
       "datasource": {
@@ -1604,7 +1501,7 @@
         "h": 5,
         "w": 4,
         "x": 0,
-        "y": 64
+        "y": 58
       },
       "targets": [
         {
@@ -1657,7 +1554,7 @@
       }
     },
     {
-      "id": 173,
+      "id": 172,
       "type": "stat",
       "title": "Metered credits",
       "datasource": {
@@ -1668,7 +1565,7 @@
         "h": 5,
         "w": 4,
         "x": 4,
-        "y": 64
+        "y": 58
       },
       "targets": [
         {
@@ -1721,7 +1618,7 @@
       }
     },
     {
-      "id": 174,
+      "id": 173,
       "type": "stat",
       "title": "AI actions",
       "datasource": {
@@ -1732,7 +1629,7 @@
         "h": 5,
         "w": 4,
         "x": 8,
-        "y": 64
+        "y": 58
       },
       "targets": [
         {
@@ -1785,7 +1682,7 @@
       }
     },
     {
-      "id": 175,
+      "id": 174,
       "type": "stat",
       "title": "Data 360 credits",
       "datasource": {
@@ -1796,7 +1693,7 @@
         "h": 5,
         "w": 4,
         "x": 12,
-        "y": 64
+        "y": 58
       },
       "targets": [
         {
@@ -1849,7 +1746,7 @@
       }
     },
     {
-      "id": 176,
+      "id": 175,
       "type": "timeseries",
       "title": "Credit consumption evolution",
       "datasource": {
@@ -1860,7 +1757,7 @@
         "h": 5,
         "w": 8,
         "x": 16,
-        "y": 64
+        "y": 58
       },
       "targets": [
         {
@@ -1938,6 +1835,109 @@
           "mode": "multi",
           "sort": "desc"
         }
+      }
+    },
+    {
+      "id": 183,
+      "type": "row",
+      "title": "Freshness",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 63
+      },
+      "panels": []
+    },
+    {
+      "id": 176,
+      "type": "stat",
+      "title": "Stats generation date",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds_loki}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 64
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds_loki}"
+          },
+          "expr": "{source=\"sfdx-hardis\", type=\"USAGE_ENTITLEMENTS\", orgIdentifier=\"$org\"} |= ``",
+          "queryType": "range",
+          "direction": "backward",
+          "refId": "A",
+          "maxLines": 1
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "_dateTime"
+              },
+              {
+                "path": "_jobUrl"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "time",
+                "targetField": "_dateTime"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^_dateTime$/",
+          "values": false
+        },
+        "textMode": "auto"
       }
     }
   ],

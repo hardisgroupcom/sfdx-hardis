@@ -1856,10 +1856,6 @@ const usageDashboard = dashboard({
       ],
     },
     {
-      row: 'Freshness',
-      panels: [statsDatePanel('USAGE_ENTITLEMENTS', { w: 4, h: 5 })],
-    },
-    {
       row: 'Consumption vs allowance',
       panels: [
         tablePanel('Entitlement consumption', {
@@ -2076,6 +2072,12 @@ const usageDashboard = dashboard({
           links: indicatorLink('AI_USAGE'),
         }),
       ],
+    },
+    {
+      // Last: run metadata, not an indicator. It belongs after the content, not between
+      // the summary row and the detail tables.
+      row: 'Freshness',
+      panels: [statsDatePanel('USAGE_ENTITLEMENTS', { w: 4, h: 5 })],
     },
   ],
 });
