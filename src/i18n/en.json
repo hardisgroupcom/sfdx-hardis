@@ -3196,6 +3196,7 @@
   "usingCustomPackageNoOverwriteFileDefined": "Using custom package-no-overwrite file defined at {{packageNoOverwrite}}",
   "usingDraftConfig": "Using draft configuration (no PR ID specified)",
   "usingEncryptedCertFromFile": "Using encrypted certificate from file {{file}}",
+  "usingForcedDeploymentCheckId": "Using deployment check id {{deploymentCheckId}} forced by SFDX_HARDIS_DEPLOY_CHECK_ID env var",
   "usingForcedPackageXmlOutputPathFrom": "Using forced package.xml output path from FULL_ORG_MANIFEST_PATH env var: {{packageXmlOutputFile}}. This should be used only in development mode.",
   "usingTempDirectory": "Using temp directory {{tempDir}}",
   "validatingSpecifiedConnectedApp": "Validating specified Connected App(s): {{appNames}}",

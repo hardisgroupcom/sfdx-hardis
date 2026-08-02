@@ -9,6 +9,7 @@
 - New "08 - Usage & Cost" Grafana v2 dashboard for entitlement consumption, projected overage, utilization alerts and AI credit usage.
 - Estimate usage costs in your own currency: declare your contracted rates in `usageCost` and monitoring reports entitlement overage and Agentforce credits in money alongside the percentages.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): CI logs now display a readable deployment summary instead of the complete deployment JSON, which is written in hardis-report and published as a CI job artifact.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): New SFDX_HARDIS_DEPLOY_CHECK_ID env variable to force the Quick Deploy job id instead of reading it from Pull Request comments.
 
 ## [7.23.0] 2026-07-26
 

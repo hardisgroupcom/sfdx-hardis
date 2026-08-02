@@ -1,0 +1,119 @@
+name: tests-org
+
+# Integration tests that run sfdx-hardis commands against a real Salesforce org.
+# Scratch orgs are created by `sf hardis:scratch:create` itself, from the Dev Hub
+# authenticated with the TESTKIT_AUTH_URL secret.
+#
+# Deliberately separate from the `tests` workflow:
+#  - a Developer Edition Dev Hub only allows 3 active / 6 daily scratch orgs, so these
+#    tests run on a single OS with no retry instead of the 2-OS + 3-retry matrix
+#  - Salesforce serializes deployments per org, so `yarn test:nuts:org` runs without
+#    mocha --parallel
+#  - dependency-bump Pull Requests do not need an org and would burn the daily quota
+#  - the sfdmu and sfdx-git-delta plugins are needed, which the shared salesforcecli
+#    NUT workflow does not install
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    # Nightly at 03:17 UTC, on the default branch
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  # Never run two org test jobs at once: they would compete for the scratch org quota
+  # and for the target org deployment lock.
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  # Skipped for fork Pull Requests (no access to secrets, and running them would expose
+  # the org credentials to untrusted code) and for dependency bot Pull Requests.
+  should-run:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - id: check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            if [ "$IS_SAME_REPO" != "true" ]; then
+              echo "Fork Pull Request: org secrets are not available, skipping org tests."
+              echo "run=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            case "$PR_AUTHOR" in
+              dependabot\[bot\]|renovate\[bot\]|github-actions\[bot\])
+                echo "Dependency bot Pull Request ($PR_AUTHOR): skipping org tests to preserve the scratch org quota."
+                echo "run=false" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+            esac
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+
+  nuts-org:
+    needs: should-run
+    if: needs.should-run.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: yarn
+
+      - name: Install Salesforce CLI and the plugins used by the tests
+        run: |
+          npm install --no-cache @salesforce/cli --global
+          echo 'y' | sf plugins install sfdmu
+          echo 'y' | sf plugins install sfdx-git-delta
+          sf version --verbose
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build the plugin and link it as the local sf plugin
+        run: |
+          yarn compile
+          yarn oclif manifest
+          sf plugins link . --no-install
+
+      - name: Authenticate the Dev Hub
+        env:
+          TESTKIT_AUTH_URL: ${{ secrets.TESTKIT_AUTH_URL }}
+        run: |
+          if [ -z "${TESTKIT_AUTH_URL:-}" ]; then
+            echo "::error::TESTKIT_AUTH_URL secret is not set. Add it with the SFDX auth URL of a Dev Hub enabled org."
+            exit 1
+          fi
+          printf '%s' "$TESTKIT_AUTH_URL" > ./authurl.txt
+          sf org login sfdx-url --sfdx-url-file ./authurl.txt --set-default-dev-hub --alias nut-devhub
+          rm -f ./authurl.txt
+          sf org list --all
+
+      - name: Run org integration tests
+        env:
+          TESTKIT_AUTH_URL: ${{ secrets.TESTKIT_AUTH_URL }}
+          SF_DISABLE_TELEMETRY: "true"
+          FORCE_COLOR: "1"
+        run: yarn test:nuts:org
+
+      - name: Delete any scratch org left behind
+        if: always()
+        run: |
+          # Best effort: the tests delete their own org, this only catches crashed runs.
+          for alias in $(sf org list --json 2>/dev/null | jq -r '.result.scratchOrgs[]?.alias // empty' | grep '^CI-hardis-nut-' || true); do
+            echo "Deleting leftover scratch org $alias"
+            sf org delete scratch --no-prompt --target-org "$alias" || true
+          done

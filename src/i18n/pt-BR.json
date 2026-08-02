@@ -3158,6 +3158,7 @@
   "usingCustomPackageNoOverwriteFileDefined": "Usando arquivo package-no-overwrite personalizado definido em {{packageNoOverwrite}}",
   "usingDraftConfig": "Usando configuração de rascunho (nenhum ID de PR especificado)",
   "usingEncryptedCertFromFile": "Usando o certificado criptografado do arquivo {{file}}",
+  "usingForcedDeploymentCheckId": "Usando o id de validação {{deploymentCheckId}} forçado pela variável de ambiente SFDX_HARDIS_DEPLOY_CHECK_ID",
   "usingForcedPackageXmlOutputPathFrom": "Usando caminho de saída forçado do package.xml da variável de ambiente FULL_ORG_MANIFEST_PATH: {{packageXmlOutputFile}}. Isso deve ser usado apenas em modo de desenvolvimento.",
   "usingTempDirectory": "Usando diretório temporário {{tempDir}}",
   "validatingSpecifiedConnectedApp": "Validando Aplicativo(s) Conectado(s) especificado(s): {{appNames}}",

@@ -236,7 +236,8 @@
     "prepack": "sf-prepack",
     "sync:grafana": "node scripts/sync-grafana.cjs",
     "test": "wireit",
-    "test:nuts": "c8 mocha \"**/*.nut.ts\" --slow 4500 --timeout 600000 --parallel",
+    "test:nuts": "c8 mocha \"**/*.nut.ts\" --ignore \"test/nuts-org/**\" --slow 4500 --timeout 600000 --parallel",
+    "test:nuts:org": "mocha \"test/nuts-org/**/*.nut.ts\" --slow 10000 --timeout 1800000",
     "test:only": "wireit",
     "update:docker-pulls": "node scripts/update-docker-pulls.mjs",
     "version": "oclif readme"

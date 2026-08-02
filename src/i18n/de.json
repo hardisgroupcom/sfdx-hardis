@@ -3191,6 +3191,7 @@
   "usingCustomPackageNoOverwriteFileDefined": "Benutzerdefinierte package-no-overwrite-Datei unter {{packageNoOverwrite}} wird verwendet",
   "usingDraftConfig": "Entwurfskonfiguration wird verwendet (keine PR-ID angegeben)",
   "usingEncryptedCertFromFile": "Verschlüsseltes Zertifikat aus Datei {{file}} wird verwendet",
+  "usingForcedDeploymentCheckId": "Verwende die durch die Umgebungsvariable SFDX_HARDIS_DEPLOY_CHECK_ID erzwungene Deployment-Check-ID {{deploymentCheckId}}",
   "usingForcedPackageXmlOutputPathFrom": "Erzwungener package.xml-Ausgabepfad aus der Umgebungsvariable FULL_ORG_MANIFEST_PATH wird verwendet: {{packageXmlOutputFile}}. Dies sollte nur im Entwicklungsmodus verwendet werden.",
   "usingTempDirectory": "Temporäres Verzeichnis {{tempDir}} wird verwendet",
   "validatingSpecifiedConnectedApp": "Angegebene Connected App(s) werden validiert: {{appNames}}",

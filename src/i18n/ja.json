@@ -3189,6 +3189,7 @@
   "usingCustomPackageNoOverwriteFileDefined": "{{packageNoOverwrite}} で定義されたカスタム package-no-overwrite ファイルを使用しています",
   "usingDraftConfig": "ドラフト設定を使用しています（PR IDが指定されていません）",
   "usingEncryptedCertFromFile": "ファイル {{file}} から暗号化された証明書を使用しています",
+  "usingForcedDeploymentCheckId": "環境変数 SFDX_HARDIS_DEPLOY_CHECK_ID で指定されたデプロイ検証 ID {{deploymentCheckId}} を使用します",
   "usingForcedPackageXmlOutputPathFrom": "環境変数 FULL_ORG_MANIFEST_PATH で指定された package.xml の出力パスを使用しています: {{packageXmlOutputFile}}。これは開発モードでのみ使用してください。",
   "usingTempDirectory": "一時ディレクトリ {{tempDir}} を使用しています",
   "validatingSpecifiedConnectedApp": "指定された接続アプリケーションを検証しています: {{appNames}}",

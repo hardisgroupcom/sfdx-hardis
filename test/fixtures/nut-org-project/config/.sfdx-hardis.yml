@@ -1,0 +1,22 @@
+# sfdx-hardis configuration used by the integration tests (NUTs).
+#
+# The scratch org initialization keys below make hardis:scratch:create exercise its whole
+# pipeline: source push, permission set assignment, Apex init scripts and SFDMU data import.
+# Branch-level config (deployment actions) is written at runtime by the individual scenarios.
+developmentBranch: main
+projectName: sfdx-hardis-nut
+apexTestsMinCoverageOrgWide: 75.0
+
+# Scratch org initialization
+# NOTE: installedPackages is intentionally left empty. Installing a managed package needs a
+# real 04t SubscriberPackageVersionId; a wrong or retired id makes the whole scratch org
+# creation fail, so it is opt-in rather than guessed. Add an entry here to also cover the
+# package installation step of hardis:scratch:create.
+installedPackages: []
+initPermissionSets:
+  - HardisNutPermSet
+scratchOrgInitApexScripts:
+  - scripts/apex/init-scratch.apex
+dataPackages:
+  - dataPath: scripts/data/ScratchInit
+    importInScratchOrgs: true

@@ -194,6 +194,13 @@ export abstract class GitProvider {
   }
 
   static async getDeploymentCheckId(): Promise<string | null> {
+    // Allow to force the QuickDeploy job id, bypassing the lookup in Pull Request comments.
+    // Useful to replay a QuickDeploy manually, and to test the QuickDeploy path outside of a Pull Request context.
+    const forcedDeploymentCheckId = getEnvVar('SFDX_HARDIS_DEPLOY_CHECK_ID');
+    if (forcedDeploymentCheckId) {
+      uxLog("log", this, c.grey(t('usingForcedDeploymentCheckId', { deploymentCheckId: forcedDeploymentCheckId })));
+      return forcedDeploymentCheckId;
+    }
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       return null;

@@ -3192,6 +3192,7 @@
   "usingCustomPackageNoOverwriteFileDefined": "Aangepast package-no-overwrite-bestand gebruiken gedefinieerd op {{packageNoOverwrite}}",
   "usingDraftConfig": "Conceptconfiguratie gebruiken (geen PR-ID opgegeven)",
   "usingEncryptedCertFromFile": "Versleuteld certificaat uit bestand {{file}} gebruiken",
+  "usingForcedDeploymentCheckId": "Gebruikt implementatiecontrole-id {{deploymentCheckId}} die is afgedwongen door de omgevingsvariabele SFDX_HARDIS_DEPLOY_CHECK_ID",
   "usingForcedPackageXmlOutputPathFrom": "Geforceerd package.xml uitvoerpad gebruiken van omgevingsvariabele FULL_ORG_MANIFEST_PATH: {{packageXmlOutputFile}}. Dit mag alleen in ontwikkelmodus worden gebruikt.",
   "usingTempDirectory": "Tijdelijke map {{tempDir}} gebruiken",
   "validatingSpecifiedConnectedApp": "Opgegeven Connected App(s) valideren: {{appNames}}",

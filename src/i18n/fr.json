@@ -3192,6 +3192,7 @@
   "usingCustomPackageNoOverwriteFileDefined": "Utilisation du fichier package-no-overwrite personnalisé défini à {{packageNoOverwrite}}",
   "usingDraftConfig": "Utilisation de la configuration brouillon (aucun identifiant de PR spécifié)",
   "usingEncryptedCertFromFile": "Utilisation du certificat chiffré depuis le fichier {{file}}",
+  "usingForcedDeploymentCheckId": "Utilisation de l'id de validation {{deploymentCheckId}} forcé par la variable d'environnement SFDX_HARDIS_DEPLOY_CHECK_ID",
   "usingForcedPackageXmlOutputPathFrom": "Utilisation du chemin de sortie package.xml forcé depuis la variable d'env FULL_ORG_MANIFEST_PATH : {{packageXmlOutputFile}}. Ce mode ne doit être utilisé qu'en développement.",
   "usingTempDirectory": "Utilisation du répertoire temporaire {{tempDir}}",
   "validatingSpecifiedConnectedApp": "Validation des applications connectées spécifiées : {{appNames}}",
