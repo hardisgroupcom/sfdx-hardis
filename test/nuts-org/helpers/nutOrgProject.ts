@@ -154,6 +154,25 @@ export function freeNutScratchOrgSlots(devHubUsername: string): number {
   return deleted;
 }
 
+/**
+ * Read the scratch org limits of the Dev Hub.
+ *
+ * Two different limits can block a run, and they are not fixed the same way:
+ *  - ActiveScratchOrgs: how many can exist at once. Deleting orgs frees it immediately.
+ *  - DailyScratchOrgs: how many can be created per rolling 24h. Deleting orgs does NOT
+ *    give it back, so once it reaches 0 the only option is to wait.
+ * A Developer Edition Dev Hub allows 3 active and 6 daily.
+ */
+export function getScratchOrgLimits(devHubUsername: string): { active: string; daily: string } {
+  const res = runSf<any>(`org list limits --target-org ${devHubUsername} --json`, { tolerateFailure: true });
+  const limits: any[] = res.result ?? [];
+  const describe = (name: string) => {
+    const limit = limits.find((l: any) => l.name === name);
+    return limit ? `${limit.remaining}/${limit.max} remaining` : 'unknown';
+  };
+  return { active: describe('ActiveScratchOrgs'), daily: describe('DailyScratchOrgs') };
+}
+
 /** Resolve the Dev Hub username authenticated by the testkit (TESTKIT_AUTH_URL) */
 function resolveDevHubUsername(session: TestSession): string {
   const fromSession = (session as any)?.hubOrg?.username;
@@ -238,9 +257,15 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
         console.log('[nuts-org] Scratch org limit reached, deleting the orgs left by previous runs...');
         const freed = freeNutScratchOrgSlots(devHubUsername);
         if (freed === 0) {
+          // Nothing could be freed, so tell which limit is actually blocking: deleting orgs
+          // frees ActiveScratchOrgs but never restores the daily creation quota.
+          const limits = getScratchOrgLimits(devHubUsername);
           throw new Error(
-            'Scratch org limit reached on the Dev Hub, and no NUT scratch org could be freed. ' +
-            'Delete some orgs in the "Active Scratch Orgs" tab of the Dev Hub.'
+            'Scratch org limit reached on the Dev Hub and no NUT scratch org could be freed.\n' +
+            `ActiveScratchOrgs: ${limits.active}\n` +
+            `DailyScratchOrgs: ${limits.daily}\n` +
+            'If the daily quota is exhausted, deleting orgs does not help: it only resets after 24h.\n' +
+            `Scratch org creation output:\n${scratchCreateOutput.slice(-2000)}`
           );
         }
         createResult = createScratchOrg(0);

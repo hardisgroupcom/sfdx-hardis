@@ -121,7 +121,11 @@ jobs:
               sf data delete record --sobject ScratchOrgInfo --record-id "$id" --json --target-org nut-devhub || true
             done
           fi
-          sf data query --query "SELECT COUNT(Id) total FROM ScratchOrgInfo WHERE Status = 'Active'" --json --target-org nut-devhub | jq -r '"Active scratch orgs remaining: \(.result.records[0].total)"'
+          # Report both limits: deleting orgs frees ActiveScratchOrgs, but DailyScratchOrgs is a
+          # rolling 24h creation quota that deletion does not give back. A Developer Edition Dev
+          # Hub allows 3 active and 6 daily, so a day of heavy iteration can exhaust the daily one.
+          sf org list limits --target-org nut-devhub --json \
+            | jq -r '.result[] | select(.name == "ActiveScratchOrgs" or .name == "DailyScratchOrgs") | "\(.name): \(.remaining)/\(.max) remaining"'
 
       - name: Run org integration tests
         env:
