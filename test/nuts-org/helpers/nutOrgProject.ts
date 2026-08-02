@@ -151,7 +151,7 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
     project: { sourceDir: FIXTURE_PROJECT_DIR },
     devhubAuthStrategy: 'AUTO',
   });
-  // Everything below can throw. The session must always be cleaned, otherwise the sinon stub
+  // Everything below can throw. The session must always be cleaned, otherwise the stub that
   // TestSession puts on process.cwd survives and every later TestSession.create() fails with
   // "Attempted to wrap cwd which is already wrapped", turning one failure into a cascade.
   try {
@@ -255,7 +255,7 @@ export async function cleanNutOrgSession(ctx: NutOrgContext | undefined): Promis
   } catch {
     // Best effort: a leaked scratch org expires on its own after SCRATCH_ORG_DURATION days
   }
-  // Always unstub process.cwd, even if the org deletion misbehaved
+  // Always restore the process.cwd stub, even if the org deletion misbehaved
   await ctx.session?.clean().catch(() => undefined);
 }
 
