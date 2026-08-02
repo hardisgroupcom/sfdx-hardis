@@ -418,7 +418,7 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
+        "w": 6,
         "x": 0,
         "y": 18
       },
@@ -455,7 +455,7 @@
               }
             ]
           },
-          "noValue": "Schedule consumption-alerts",
+          "noValue": "Run consumption-alerts",
           "links": [
             {
               "title": "Open indicator detail",
@@ -490,8 +490,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 4,
+        "w": 6,
+        "x": 6,
         "y": 18
       },
       "targets": [
@@ -534,7 +534,7 @@
           "unit": "percent",
           "min": 0,
           "max": 100,
-          "noValue": "Schedule consumption-alerts",
+          "noValue": "Run consumption-alerts",
           "links": [
             {
               "title": "Open indicator detail",
@@ -570,7 +570,7 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 8,
+        "x": 12,
         "y": 18
       },
       "targets": [
@@ -798,7 +798,7 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
+        "w": 6,
         "x": 0,
         "y": 35
       },
@@ -835,7 +835,7 @@
               }
             ]
           },
-          "noValue": "Schedule usage-entitlements",
+          "noValue": "Run usage-entitlements",
           "links": [
             {
               "title": "Open indicator detail",
@@ -870,8 +870,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 4,
+        "w": 6,
+        "x": 6,
         "y": 35
       },
       "targets": [
@@ -914,7 +914,7 @@
           "unit": "percent",
           "min": 0,
           "max": 200,
-          "noValue": "Schedule usage-entitlements",
+          "noValue": "Run usage-entitlements",
           "links": [
             {
               "title": "Open indicator detail",
@@ -949,8 +949,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 8,
+        "w": 6,
+        "x": 12,
         "y": 35
       },
       "targets": [
@@ -986,7 +986,7 @@
               }
             ]
           },
-          "noValue": "Schedule usage-entitlements",
+          "noValue": "Run usage-entitlements",
           "links": [
             {
               "title": "Open indicator detail",
@@ -1021,8 +1021,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 12,
+        "w": 6,
+        "x": 18,
         "y": 35
       },
       "targets": [
@@ -1484,7 +1484,7 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
+        "w": 5,
         "x": 0,
         "y": 65
       },
@@ -1514,7 +1514,7 @@
             ]
           },
           "decimals": 2,
-          "noValue": "Configure usageCost",
+          "noValue": "Set usageCost rates",
           "links": [
             {
               "title": "Open indicator detail",
@@ -1549,8 +1549,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 4,
+        "w": 5,
+        "x": 5,
         "y": 65
       },
       "targets": [
@@ -1579,7 +1579,7 @@
             ]
           },
           "decimals": 2,
-          "noValue": "Configure usageCost",
+          "noValue": "Set usageCost rates",
           "links": [
             {
               "title": "Open indicator detail",
@@ -1614,8 +1614,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 8,
+        "w": 5,
+        "x": 10,
         "y": 65
       },
       "targets": [
@@ -1678,8 +1678,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 12,
-        "x": 12,
+        "w": 9,
+        "x": 15,
         "y": 65
       },
       "targets": [
@@ -2089,7 +2089,7 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
+        "w": 6,
         "x": 0,
         "y": 92
       },

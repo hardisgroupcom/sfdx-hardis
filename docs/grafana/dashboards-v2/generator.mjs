@@ -824,6 +824,7 @@ const avgStat = (title, metric, range, opts = {}) =>
     targets: [promTarget(promOverTime('avg_over_time', metric, range))],
     decimals: 1,
     thresholds: opts.thresholds || THRESHOLDS_COUNT,
+    ...(opts.gridPos ? { gridPos: opts.gridPos } : {}),
     ...(opts.links ? { links: opts.links } : {}),
     ...(opts.description ? { description: opts.description } : {}),
   });
@@ -1809,20 +1810,20 @@ const usageDashboard = dashboard({
       row: 'Consumption cards (Data 360 & platform)',
       panels: [
         statPanel('Cards in alert', {
-          gridPos: { w: 4, h: 5 },
+          gridPos: { w: 6, h: 5 },
           description:
             'Distinct consumption cards for which Salesforce raised a utilization alert. ' + RECENT_CLI_NOTE,
           targets: [promTarget(promLast('ConsumptionAlertsScopes_metric'))],
           thresholds: THRESHOLDS_COUNT,
-          noValue: 'Schedule consumption-alerts',
+          noValue: 'Run consumption-alerts',
           links: indicatorLink('CONSUMPTION_ALERTS'),
         }),
         gaugePanel('Highest alert', {
-          gridPos: { w: 4, h: 5 },
+          gridPos: { w: 6, h: 5 },
           description:
             'Highest consumption threshold Salesforce has flagged across every card. ' + RECENT_CLI_NOTE,
           targets: [promTarget(promLast('ConsumptionAlertsMaxThreshold_metric'))],
-          noValue: 'Schedule consumption-alerts',
+          noValue: 'Run consumption-alerts',
           links: indicatorLink('CONSUMPTION_ALERTS'),
         }),
         tablePanel('Consumption card thresholds', {
@@ -1878,33 +1879,34 @@ const usageDashboard = dashboard({
         // Leads with money already being spent, not with a forecast: on a real org several
         // entitlements sit past 100% at any time and that is the number to act on.
         statPanel('Over allowance', {
-          gridPos: { w: 4, h: 5 },
+          gridPos: { w: 6, h: 5 },
           description:
             'Entitlements whose paid allowance is already fully consumed, so overage is accruing now. ' +
             USAGE_NOTE,
           targets: [promTarget(promLast('UsageEntitlementsOverAllowance_metric'))],
           thresholds: THRESHOLDS_COUNT,
-          noValue: 'Schedule usage-entitlements',
+          noValue: 'Run usage-entitlements',
           links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
         gaugePanel('Worst consumption', {
-          gridPos: { w: 4, h: 5 },
+          gridPos: { w: 6, h: 5 },
           description: 'Highest share of any single allowance consumed this period. ' + USAGE_NOTE,
           targets: [promTarget(promLast('UsageEntitlementsWorstPercent_metric'))],
           max: 200,
-          noValue: 'Schedule usage-entitlements',
+          noValue: 'Run usage-entitlements',
           links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
         statPanel('Entitlements at risk', {
-          gridPos: { w: 4, h: 5 },
+          gridPos: { w: 6, h: 5 },
           description:
             'Entitlements over allowance or on track to exceed it before the period ends. ' + USAGE_NOTE,
           targets: [promTarget(promLast('UsageEntitlementsAtRisk_metric'))],
           thresholds: THRESHOLDS_COUNT,
-          noValue: 'Schedule usage-entitlements',
+          noValue: 'Run usage-entitlements',
           links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
         avgStat('At risk avg (30d)', 'UsageEntitlementsAtRisk_metric', '30d', {
+          gridPos: { w: 6, h: 5 },
           description: 'Average number of entitlements at risk over 30 days. ' + RECENT_CLI_NOTE,
           links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
@@ -2011,34 +2013,35 @@ const usageDashboard = dashboard({
       row: 'Estimated cost',
       panels: [
         statPanel('Overage cost', {
-          gridPos: { w: 4, h: 5 },
+          gridPos: { w: 5, h: 5 },
           description:
             'Estimated cost of consumption beyond purchased allowances, in the currency configured for the org. ' +
             COST_NOTE,
           targets: [promTarget(promLast('UsageEntitlementsCost_metric'))],
           decimals: 2,
           thresholds: THRESHOLDS_NONE,
-          noValue: 'Configure usageCost',
+          noValue: 'Set usageCost rates',
           links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
         statPanel('AI credit cost', {
-          gridPos: { w: 4, h: 5 },
+          gridPos: { w: 5, h: 5 },
           description:
             'Estimated cost of billed Agentforce and Data 360 credits, in the currency configured for the org. ' +
             COST_NOTE,
           targets: [promTarget(promLast('AiUsageCost_metric'))],
           decimals: 2,
           thresholds: THRESHOLDS_NONE,
-          noValue: 'Configure usageCost',
+          noValue: 'Set usageCost rates',
           links: indicatorLink('AI_USAGE'),
         }),
         avgStat('Overage avg (30d)', 'UsageEntitlementsCost_metric', '30d', {
+          gridPos: { w: 5, h: 5 },
           description: 'Average estimated overage cost over 30 days. ' + COST_NOTE,
           thresholds: THRESHOLDS_NONE,
           links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
         timeseriesPanel('Estimated cost evolution', {
-          gridPos: { w: 12, h: 5 },
+          gridPos: { w: 9, h: 5 },
           decimals: 2,
           description: 'Estimated overage and AI credit cost over time. ' + COST_NOTE,
           targets: [
@@ -2135,7 +2138,7 @@ const usageDashboard = dashboard({
       // Last: run metadata, not an indicator. It belongs after the content, not between
       // the summary row and the detail tables.
       row: 'Freshness',
-      panels: [statsDatePanel('USAGE_ENTITLEMENTS', { w: 4, h: 5 })],
+      panels: [statsDatePanel('USAGE_ENTITLEMENTS', { w: 6, h: 5 })],
     },
   ],
 });
