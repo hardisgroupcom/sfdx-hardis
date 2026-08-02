@@ -66,31 +66,38 @@ function baseEnv(devHubUsername: string): Record<string, string> {
  */
 export function runSf<T = any>(
   command: string,
-  options: { cwd?: string; devHubUsername?: string } = {}
+  options: { cwd?: string; devHubUsername?: string; tolerateFailure?: boolean } = {}
 ): { status: number; result: T | null; output: string } {
   const env = {
     ...process.env,
     ...(options.devHubUsername ? baseEnv(options.devHubUsername) : {}),
   } as Record<string, string>;
+  let output = '';
+  let parsed: any = null;
   try {
-    const output = execSync(`sf ${command}`, {
+    output = execSync(`sf ${command}`, {
       cwd: options.cwd ?? process.cwd(),
       encoding: 'utf8',
       env,
       stdio: ['ignore', 'pipe', 'pipe'],
       maxBuffer: 50 * 1024 * 1024,
     });
-    const parsed = JSON.parse(output);
-    return { status: parsed.status ?? 0, result: (parsed.result ?? null) as T | null, output };
+    parsed = JSON.parse(output);
   } catch (e: any) {
-    const output = `${e?.stdout ?? ''}${e?.stderr ?? ''}`;
+    output = `${e?.stdout ?? ''}${e?.stderr ?? ''}`;
     try {
-      const parsed = JSON.parse(e?.stdout ?? '');
-      return { status: parsed.status ?? 1, result: (parsed.result ?? null) as T | null, output };
+      parsed = JSON.parse(e?.stdout ?? '');
     } catch {
-      return { status: 1, result: null, output };
+      parsed = null;
     }
   }
+  const status = parsed?.status ?? 1;
+  // Never fail silently: a helper that returns an empty result on error makes every assertion
+  // built on it fail with a meaningless "expected 0 to equal 2" and no way to tell why.
+  if (!options.tolerateFailure && (status !== 0 || parsed === null)) {
+    throw new Error(`sf ${command}\nfailed with status ${status}:\n${output.slice(0, 2000)}`);
+  }
+  return { status, result: (parsed?.result ?? null) as T | null, output };
 }
 
 /** Username prefix of every scratch org created by these tests, used to target cleanup safely */
@@ -106,13 +113,15 @@ export const NUT_SCRATCH_USERNAME_PREFIX = 'nut@hardis-scratch-';
  */
 export function freeNutScratchOrgSlots(devHubUsername: string): number {
   const res = runSf<any>(
-    `data query --query "SELECT Id, SignupUsername FROM ScratchOrgInfo WHERE Status = 'Active' AND SignupUsername LIKE '${NUT_SCRATCH_USERNAME_PREFIX}%'" --json --target-org ${devHubUsername}`
+    `data query --query "SELECT Id, SignupUsername FROM ScratchOrgInfo WHERE Status = 'Active' AND SignupUsername LIKE '${NUT_SCRATCH_USERNAME_PREFIX}%'" --json --target-org ${devHubUsername}`,
+    { tolerateFailure: true }
   );
   const records: any[] = res.result?.records ?? [];
   let deleted = 0;
   for (const record of records) {
     const del = runSf(
-      `data delete record --sobject ScratchOrgInfo --record-id ${record.Id} --json --target-org ${devHubUsername}`
+      `data delete record --sobject ScratchOrgInfo --record-id ${record.Id} --json --target-org ${devHubUsername}`,
+      { tolerateFailure: true }
     );
     if (del.status === 0) {
       deleted++;
@@ -133,7 +142,7 @@ function resolveDevHubUsername(session: TestSession): string {
     return process.env.TESTKIT_HUB_USERNAME;
   }
   // Last resort: ask the CLI for the default Dev Hub
-  const res = runSf<any>('org list --json');
+  const res = runSf<any>('org list --json', { tolerateFailure: true });
   const devHub = (res.result?.devHubs ?? []).find((o: any) => o.username);
   if (!devHub?.username) {
     throw new Error('Unable to resolve a Dev Hub username. Is TESTKIT_AUTH_URL set and is the org a Dev Hub?');
@@ -251,7 +260,7 @@ export async function cleanNutOrgSession(ctx: NutOrgContext | undefined): Promis
   }
   try {
     // The scratch org was created by sfdx-hardis, so TestSession.clean() does not know about it
-    runSf(`org delete scratch --no-prompt --target-org ${ctx.orgAlias} --json`, { cwd: ctx.projectDir });
+    runSf(`org delete scratch --no-prompt --target-org ${ctx.orgAlias} --json`, { cwd: ctx.projectDir, tolerateFailure: true });
   } catch {
     // Best effort: a leaked scratch org expires on its own after SCRATCH_ORG_DURATION days
   }
