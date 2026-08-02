@@ -1744,12 +1744,136 @@ const usageDashboard = dashboard({
   uid: 'sfdx-hardis-v2-org-usage',
   title: '08 - Usage & Cost',
   description:
-    'Consumption of usage-based (billed) Salesforce products: contractual entitlements, projected end-of-period overage, utilization alerts and Agentforce / Data 360 credits.',
+    'Agentforce and Data 360 credit consumption first, then the contractual usage-based entitlements: consumption against allowance, projected end-of-period overage and utilization alerts.',
   time: 'now-90d',
   variables: [orgVar()],
   sections: [
     {
-      row: 'At a glance',
+      row: 'Agentforce & Data 360 credits',
+      panels: [
+        statPanel('AI credits', {
+          gridPos: { w: 6, h: 7 },
+          sparkline: true,
+          description: 'Generative AI credits consumed over the reported window. Requires Data 360. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('AiUsageCreditsTotal_metric'))],
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Requires Data 360',
+          links: indicatorLink('AI_USAGE'),
+        }),
+        statPanel('Metered credits', {
+          gridPos: { w: 6, h: 7 },
+          sparkline: true,
+          description: 'Share of AI credits that is billed. Requires Data 360. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('AiUsageCreditsMetered_metric'))],
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Requires Data 360',
+          links: indicatorLink('AI_USAGE'),
+        }),
+        statPanel('AI actions', {
+          gridPos: { w: 6, h: 7 },
+          sparkline: true,
+          description: 'Number of billed agent actions over the reported window. Requires Data 360. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('AiUsageActions_metric'))],
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Requires Data 360',
+          links: indicatorLink('AI_USAGE'),
+        }),
+        statPanel('Data 360 credits', {
+          gridPos: { w: 6, h: 7 },
+          sparkline: true,
+          description: 'Data 360 credits consumed over the reported window. Requires Data 360. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('DataCloudCreditsTotal_metric'))],
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Requires Data 360',
+          links: indicatorLink('AI_USAGE'),
+        }),
+        timeseriesPanel('Credit consumption evolution', {
+          gridPos: { w: 24, h: 9 },
+          fillOpacity: 22,
+          description: 'Agentforce and Data 360 credit consumption over time. Requires Data 360. ' + RECENT_CLI_NOTE,
+          targets: [
+            promTarget(promLast('AiUsageCreditsTotal_metric', 'orgIdentifier="$org"', '1d'), { legendFormat: 'AI credits' }),
+            promTarget(promLast('DataCloudCreditsTotal_metric', 'orgIdentifier="$org"', '1d'), {
+              legendFormat: 'Data 360 credits',
+              refId: 'B',
+            }),
+          ],
+          links: indicatorLink('AI_USAGE'),
+        }),
+      ],
+    },
+    {
+      // Digital Wallet consumption cards (Data 360 Segmentation & Activation, Platform
+      // Services, ...). Salesforce publishes only the threshold crossings, never the card
+      // balance, so these are step values: "has passed 75%", not "is at 78%".
+      row: 'Consumption cards (Data 360 & platform)',
+      panels: [
+        statPanel('Cards in alert', {
+          gridPos: { w: 4, h: 5 },
+          description:
+            'Distinct consumption cards for which Salesforce raised a utilization alert. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('ConsumptionAlertsScopes_metric'))],
+          thresholds: THRESHOLDS_COUNT,
+          noValue: 'Schedule consumption-alerts',
+          links: indicatorLink('CONSUMPTION_ALERTS'),
+        }),
+        gaugePanel('Highest alert', {
+          gridPos: { w: 4, h: 5 },
+          description:
+            'Highest consumption threshold Salesforce has flagged across every card. ' + RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('ConsumptionAlertsMaxThreshold_metric'))],
+          noValue: 'Schedule consumption-alerts',
+          links: indicatorLink('CONSUMPTION_ALERTS'),
+        }),
+        tablePanel('Consumption card thresholds', {
+          gridPos: { w: 12, h: 8 },
+          description:
+            'Highest consumption threshold Salesforce has flagged on each Digital Wallet card. ' +
+            'Salesforce exposes threshold crossings only, so a card reading 75% has passed 75%, not necessarily reached 78%. ' +
+            RECENT_CLI_NOTE,
+          targets: [
+            promTarget(
+              `label_replace(max by (__name__) (last_over_time({__name__=~"ConsumptionAlertPct_.+", ${SRC}, type="CONSUMPTION_ALERTS", orgIdentifier="$org"}[2d])), "card", "$1", "__name__", "ConsumptionAlertPct_(.+)_metric")`,
+              { instant: true, format: 'table' }
+            ),
+          ],
+          transformations: [
+            organize({
+              excludeByName: { Time: true, __name__: true },
+              renameByName: { card: 'Consumption card', Value: 'Threshold reached %' },
+            }),
+          ],
+          unit: 'percent',
+          decimals: 0,
+          thresholds: thresholdSteps([[null, 'green'], [50, 'yellow'], [75, 'orange'], [90, 'red']]),
+          links: indicatorLink('CONSUMPTION_ALERTS'),
+          overrides: [
+            {
+              matcher: { id: 'byName', options: 'Threshold reached %' },
+              properties: [{ id: 'custom.cellOptions', value: { type: 'color-background' } }],
+            },
+          ],
+          sortBy: [{ displayName: 'Threshold reached %', desc: true }],
+        }),
+        timeseriesPanel('Consumption card evolution', {
+          gridPos: { w: 12, h: 8 },
+          unit: 'percent',
+          description: 'How each consumption card has climbed through its thresholds over time. ' + RECENT_CLI_NOTE,
+          targets: [
+            promTarget(
+              `max by (__name__) (last_over_time({__name__=~"ConsumptionAlertPct_.+", ${SRC}, type="CONSUMPTION_ALERTS", orgIdentifier="$org"}[1d]))`,
+              { legendFormat: '{{__name__}}' }
+            ),
+          ],
+          transformations: [
+            { id: 'renameByRegex', options: { regex: 'ConsumptionAlertPct_(.*)_metric', renamePattern: '$1' } },
+          ],
+          links: indicatorLink('CONSUMPTION_ALERTS'),
+        }),
+      ],
+    },
+    {
+      row: 'Usage-based entitlements',
       panels: [
         // Leads with money already being spent, not with a forecast: on a real org several
         // entitlements sit past 100% at any time and that is the number to act on.
@@ -1786,73 +1910,6 @@ const usageDashboard = dashboard({
         }),
         // Salesforce leaves every crossed threshold active, so the raw alert count double
         // counts one card. Scopes is the honest number.
-        statPanel('Cards in alert', {
-          gridPos: { w: 4, h: 5 },
-          description:
-            'Distinct consumption cards for which Salesforce raised a utilization alert. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('ConsumptionAlertsScopes_metric'))],
-          thresholds: THRESHOLDS_COUNT,
-          noValue: 'Schedule consumption-alerts',
-          links: indicatorLink('CONSUMPTION_ALERTS'),
-        }),
-        gaugePanel('Highest alert', {
-          gridPos: { w: 4, h: 5 },
-          description:
-            'Highest consumption threshold Salesforce has flagged across every card. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('ConsumptionAlertsMaxThreshold_metric'))],
-          noValue: 'Schedule consumption-alerts',
-          links: indicatorLink('CONSUMPTION_ALERTS'),
-        }),
-      ],
-    },
-    {
-      // Cost is an estimate built from rates the user configures: Salesforce publishes no
-      // prices through any API. Panels stay empty until usageCost is set up, and the unit is
-      // deliberately generic because the currency is per-org configuration.
-      row: 'Estimated cost',
-      panels: [
-        statPanel('Overage cost', {
-          gridPos: { w: 4, h: 5 },
-          description:
-            'Estimated cost of consumption beyond purchased allowances, in the currency configured for the org. ' +
-            COST_NOTE,
-          targets: [promTarget(promLast('UsageEntitlementsCost_metric'))],
-          decimals: 2,
-          thresholds: THRESHOLDS_NONE,
-          noValue: 'Configure usageCost',
-          links: indicatorLink('USAGE_ENTITLEMENTS'),
-        }),
-        statPanel('AI credit cost', {
-          gridPos: { w: 4, h: 5 },
-          description:
-            'Estimated cost of billed Agentforce and Data 360 credits, in the currency configured for the org. ' +
-            COST_NOTE,
-          targets: [promTarget(promLast('AiUsageCost_metric'))],
-          decimals: 2,
-          thresholds: THRESHOLDS_NONE,
-          noValue: 'Configure usageCost',
-          links: indicatorLink('AI_USAGE'),
-        }),
-        avgStat('Overage avg (30d)', 'UsageEntitlementsCost_metric', '30d', {
-          description: 'Average estimated overage cost over 30 days. ' + COST_NOTE,
-          thresholds: THRESHOLDS_NONE,
-          links: indicatorLink('USAGE_ENTITLEMENTS'),
-        }),
-        timeseriesPanel('Estimated cost evolution', {
-          gridPos: { w: 12, h: 5 },
-          decimals: 2,
-          description: 'Estimated overage and AI credit cost over time. ' + COST_NOTE,
-          targets: [
-            promTarget(promLast('UsageEntitlementsCost_metric', 'orgIdentifier="$org"', '1d'), {
-              legendFormat: 'Entitlement overage',
-            }),
-            promTarget(promLast('AiUsageCost_metric', 'orgIdentifier="$org"', '1d'), {
-              legendFormat: 'AI credits',
-              refId: 'B',
-            }),
-          ],
-          links: indicatorLink('USAGE_ENTITLEMENTS'),
-        }),
       ],
     },
     {
@@ -1926,59 +1983,6 @@ const usageDashboard = dashboard({
       ],
     },
     {
-      // Digital Wallet consumption cards (Data 360 Segmentation & Activation, Platform
-      // Services, ...). Salesforce publishes only the threshold crossings, never the card
-      // balance, so these are step values: "has passed 75%", not "is at 78%".
-      row: 'Consumption cards (Data 360 & platform)',
-      panels: [
-        tablePanel('Consumption card thresholds', {
-          gridPos: { w: 12, h: 8 },
-          description:
-            'Highest consumption threshold Salesforce has flagged on each Digital Wallet card. ' +
-            'Salesforce exposes threshold crossings only, so a card reading 75% has passed 75%, not necessarily reached 78%. ' +
-            RECENT_CLI_NOTE,
-          targets: [
-            promTarget(
-              `label_replace(max by (__name__) (last_over_time({__name__=~"ConsumptionAlertPct_.+", ${SRC}, type="CONSUMPTION_ALERTS", orgIdentifier="$org"}[2d])), "card", "$1", "__name__", "ConsumptionAlertPct_(.+)_metric")`,
-              { instant: true, format: 'table' }
-            ),
-          ],
-          transformations: [
-            organize({
-              excludeByName: { Time: true, __name__: true },
-              renameByName: { card: 'Consumption card', Value: 'Threshold reached %' },
-            }),
-          ],
-          unit: 'percent',
-          decimals: 0,
-          thresholds: thresholdSteps([[null, 'green'], [50, 'yellow'], [75, 'orange'], [90, 'red']]),
-          links: indicatorLink('CONSUMPTION_ALERTS'),
-          overrides: [
-            {
-              matcher: { id: 'byName', options: 'Threshold reached %' },
-              properties: [{ id: 'custom.cellOptions', value: { type: 'color-background' } }],
-            },
-          ],
-          sortBy: [{ displayName: 'Threshold reached %', desc: true }],
-        }),
-        timeseriesPanel('Consumption card evolution', {
-          gridPos: { w: 12, h: 8 },
-          unit: 'percent',
-          description: 'How each consumption card has climbed through its thresholds over time. ' + RECENT_CLI_NOTE,
-          targets: [
-            promTarget(
-              `max by (__name__) (last_over_time({__name__=~"ConsumptionAlertPct_.+", ${SRC}, type="CONSUMPTION_ALERTS", orgIdentifier="$org"}[1d]))`,
-              { legendFormat: '{{__name__}}' }
-            ),
-          ],
-          transformations: [
-            { id: 'renameByRegex', options: { regex: 'ConsumptionAlertPct_(.*)_metric', renamePattern: '$1' } },
-          ],
-          links: indicatorLink('CONSUMPTION_ALERTS'),
-        }),
-      ],
-    },
-    {
       row: 'Trends',
       panels: [
         timeseriesPanel('Entitlement consumption (% used)', {
@@ -1996,6 +2000,56 @@ const usageDashboard = dashboard({
           ],
           thresholds: thresholdSteps([[null, 'green'], [90, 'red']]),
           showThresholdLine: true,
+          links: indicatorLink('USAGE_ENTITLEMENTS'),
+        }),
+      ],
+    },
+    {
+      // Cost is an estimate built from rates the user configures: Salesforce publishes no
+      // prices through any API. Panels stay empty until usageCost is set up, and the unit is
+      // deliberately generic because the currency is per-org configuration.
+      row: 'Estimated cost',
+      panels: [
+        statPanel('Overage cost', {
+          gridPos: { w: 4, h: 5 },
+          description:
+            'Estimated cost of consumption beyond purchased allowances, in the currency configured for the org. ' +
+            COST_NOTE,
+          targets: [promTarget(promLast('UsageEntitlementsCost_metric'))],
+          decimals: 2,
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Configure usageCost',
+          links: indicatorLink('USAGE_ENTITLEMENTS'),
+        }),
+        statPanel('AI credit cost', {
+          gridPos: { w: 4, h: 5 },
+          description:
+            'Estimated cost of billed Agentforce and Data 360 credits, in the currency configured for the org. ' +
+            COST_NOTE,
+          targets: [promTarget(promLast('AiUsageCost_metric'))],
+          decimals: 2,
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Configure usageCost',
+          links: indicatorLink('AI_USAGE'),
+        }),
+        avgStat('Overage avg (30d)', 'UsageEntitlementsCost_metric', '30d', {
+          description: 'Average estimated overage cost over 30 days. ' + COST_NOTE,
+          thresholds: THRESHOLDS_NONE,
+          links: indicatorLink('USAGE_ENTITLEMENTS'),
+        }),
+        timeseriesPanel('Estimated cost evolution', {
+          gridPos: { w: 12, h: 5 },
+          decimals: 2,
+          description: 'Estimated overage and AI credit cost over time. ' + COST_NOTE,
+          targets: [
+            promTarget(promLast('UsageEntitlementsCost_metric', 'orgIdentifier="$org"', '1d'), {
+              legendFormat: 'Entitlement overage',
+            }),
+            promTarget(promLast('AiUsageCost_metric', 'orgIdentifier="$org"', '1d'), {
+              legendFormat: 'AI credits',
+              refId: 'B',
+            }),
+          ],
           links: indicatorLink('USAGE_ENTITLEMENTS'),
         }),
       ],
@@ -2074,55 +2128,6 @@ const usageDashboard = dashboard({
               },
             }),
           ],
-        }),
-      ],
-    },
-    {
-      row: 'Agentforce & Data 360 credits',
-      panels: [
-        statPanel('AI credits', {
-          gridPos: { w: 4, h: 5 },
-          description: 'Generative AI credits consumed over the reported window. Requires Data 360. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('AiUsageCreditsTotal_metric'))],
-          thresholds: THRESHOLDS_NONE,
-          noValue: 'Requires Data 360',
-          links: indicatorLink('AI_USAGE'),
-        }),
-        statPanel('Metered credits', {
-          gridPos: { w: 4, h: 5 },
-          description: 'Share of AI credits that is billed. Requires Data 360. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('AiUsageCreditsMetered_metric'))],
-          thresholds: THRESHOLDS_NONE,
-          noValue: 'Requires Data 360',
-          links: indicatorLink('AI_USAGE'),
-        }),
-        statPanel('AI actions', {
-          gridPos: { w: 4, h: 5 },
-          description: 'Number of billed agent actions over the reported window. Requires Data 360. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('AiUsageActions_metric'))],
-          thresholds: THRESHOLDS_NONE,
-          noValue: 'Requires Data 360',
-          links: indicatorLink('AI_USAGE'),
-        }),
-        statPanel('Data 360 credits', {
-          gridPos: { w: 4, h: 5 },
-          description: 'Data 360 credits consumed over the reported window. Requires Data 360. ' + RECENT_CLI_NOTE,
-          targets: [promTarget(promLast('DataCloudCreditsTotal_metric'))],
-          thresholds: THRESHOLDS_NONE,
-          noValue: 'Requires Data 360',
-          links: indicatorLink('AI_USAGE'),
-        }),
-        timeseriesPanel('Credit consumption evolution', {
-          gridPos: { w: 8, h: 5 },
-          description: 'Agentforce and Data 360 credit consumption over time. Requires Data 360. ' + RECENT_CLI_NOTE,
-          targets: [
-            promTarget(promLast('AiUsageCreditsTotal_metric', 'orgIdentifier="$org"', '1d'), { legendFormat: 'AI credits' }),
-            promTarget(promLast('DataCloudCreditsTotal_metric', 'orgIdentifier="$org"', '1d'), {
-              legendFormat: 'Data 360 credits',
-              refId: 'B',
-            }),
-          ],
-          links: indicatorLink('AI_USAGE'),
         }),
       ],
     },
