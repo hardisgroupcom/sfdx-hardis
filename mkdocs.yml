@@ -171,6 +171,9 @@ nav:
           - Apex API Version: salesforce-monitoring-apex-api-version.md
           - Deployments: salesforce-monitoring-deployments.md
           - Minimal Permission Sets: salesforce-monitoring-minimal-permsets.md
+          - Usage-based entitlements: salesforce-monitoring-usage-entitlements.md
+          - Consumption utilization alerts: salesforce-monitoring-consumption-alerts.md
+          - Agentforce and Data 360 credits: salesforce-monitoring-ai-usage.md
       - Configuration:
           - Configuration guide: salesforce-monitoring-config-home.md
           - GitHub: salesforce-monitoring-config-github.md
@@ -312,8 +315,10 @@ nav:
           - data delete: hardis/org/data/delete.md
           - data export: hardis/org/data/export.md
           - data import: hardis/org/data/import.md
+          - diagnose ai-usage: hardis/org/diagnose/ai-usage.md
           - diagnose apex-api-version: hardis/org/diagnose/apex-api-version.md
           - diagnose audittrail: hardis/org/diagnose/audittrail.md
+          - diagnose consumption-alerts: hardis/org/diagnose/consumption-alerts.md
           - diagnose deployments: hardis/org/diagnose/deployments.md
           - diagnose flex-queue: hardis/org/diagnose/flex-queue.md
           - diagnose instanceupgrade: hardis/org/diagnose/instanceupgrade.md
@@ -329,6 +334,7 @@ nav:
           - diagnose unused-connected-apps: hardis/org/diagnose/unused-connected-apps.md
           - diagnose unusedlicenses: hardis/org/diagnose/unusedlicenses.md
           - diagnose unusedusers: hardis/org/diagnose/unusedusers.md
+          - diagnose usage-entitlements: hardis/org/diagnose/usage-entitlements.md
           - files export: hardis/org/files/export.md
           - files import: hardis/org/files/import.md
           - fix listviewmine: hardis/org/fix/listviewmine.md

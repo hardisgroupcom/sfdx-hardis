@@ -99,6 +99,9 @@ export type NotifMessageType =
   | "UNUSED_LICENSES"
   | "UNDERUSED_PERMSETS"
   | "MINIMAL_PERMSETS"
+  | "USAGE_ENTITLEMENTS"
+  | "CONSUMPTION_ALERTS"
+  | "AI_USAGE"
   | "UNUSED_APEX_CLASSES"
   | "APEX_API_VERSION"
   | "APEX_FLEX_QUEUE"
@@ -452,6 +455,34 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     colorClass: "metadata-access",
     emittedSeverities: ["error", "warning", "log"],
     defaults: { messaging: "warning", email: "warning", api: "log" },
+  },
+  // Contractual consumption meters (TenantUsageEntitlement): what Salesforce actually bills on,
+  // as opposed to ORG_LIMITS which tracks daily/hourly throttling.
+  // `critical` is reserved for allowances already spent (overage is being billed right now),
+  // as opposed to `error` which is a projection.
+  USAGE_ENTITLEMENTS: {
+    category: "licensesPackages",
+    icon: "utility:currency",
+    colorClass: "licenses",
+    emittedSeverities: ["critical", "error", "warning", "success", "log"],
+    defaults: { messaging: "warning", email: "error", api: "log" },
+  },
+  // Utilization alerts Salesforce itself raised on the org (the Digital Wallet alerting surface).
+  CONSUMPTION_ALERTS: {
+    category: "licensesPackages",
+    icon: "utility:notification",
+    colorClass: "licenses",
+    emittedSeverities: ["critical", "error", "warning", "log"],
+    defaults: { messaging: "warning", email: "error", api: "log" },
+  },
+  // Agentforce / Data 360 credit consumption. Only emitted on orgs with a Data 360 consumption
+  // model provisioned; the command skips silently everywhere else.
+  AI_USAGE: {
+    category: "licensesPackages",
+    icon: "utility:einstein",
+    colorClass: "licenses",
+    emittedSeverities: ["warning", "log"],
+    defaults: { messaging: "warning", email: "off", api: "log" },
   },
 
   // other

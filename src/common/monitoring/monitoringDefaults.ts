@@ -257,6 +257,30 @@ export const monitoringCommandsDefault: MonitoringCommandEntry[] = [
     category: "licensesPackages",
     icon: "utility:key",
   },
+  {
+    key: "USAGE_ENTITLEMENTS",
+    command: "sf hardis:org:diagnose:usage-entitlements",
+    frequency: "daily",
+    notificationTypes: ["USAGE_ENTITLEMENTS"],
+    category: "licensesPackages",
+    icon: "utility:currency",
+  },
+  {
+    key: "CONSUMPTION_ALERTS",
+    command: "sf hardis:org:diagnose:consumption-alerts",
+    frequency: "daily",
+    notificationTypes: ["CONSUMPTION_ALERTS"],
+    category: "licensesPackages",
+    icon: "utility:notification",
+  },
+  {
+    key: "AI_USAGE",
+    command: "sf hardis:org:diagnose:ai-usage",
+    frequency: "weekly",
+    notificationTypes: ["AI_USAGE"],
+    category: "licensesPackages",
+    icon: "utility:einstein",
+  },
 ];
 
 // Converts a key like "AUDIT_TRAIL" or "UNUSED_USERS_CRM_6_MONTHS" to a PascalCase slug suitable for i18n keys.

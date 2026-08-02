@@ -2,6 +2,12 @@
 
 ## [beta] (main)
 
+- New [hardis:org:diagnose:usage-entitlements](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/usage-entitlements/): Monitor usage-based entitlements like Einstein Requests, Flex Credits, Data 360 credits and API calls, and warn when consumption is on track to exceed the allowance before the billing period ends.
+- New [hardis:org:diagnose:consumption-alerts](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/consumption-alerts/): Report the consumption and license utilization alerts Salesforce raises on the org.
+- New [hardis:org:diagnose:ai-usage](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/ai-usage/): Break down Agentforce and Data 360 credit consumption by agent and action (requires Data 360).
+- New "08 - Usage & Cost" Grafana v2 dashboard for entitlement consumption, projected overage, utilization alerts and AI credit usage.
+- Estimate usage costs in your own currency: declare your contracted rates in `usageCost` and monitoring reports entitlement overage and Agentforce credits in money alongside the percentages.
+
 ## [7.23.0] 2026-07-26
 
 ### Org Monitoring & Grafana

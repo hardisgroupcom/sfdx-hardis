@@ -352,19 +352,27 @@ export class ApiProvider extends NotifProviderRoot {
         metricPayloadLine += "metric=" + metricData.toFixed(2);
         metricsPayloadLines.push(metricPayloadLine);
       } else if (typeof metricData === "object") {
+        // Compare against undefined, never truthiness: a min/max/percent of exactly 0 is a
+        // real measurement. Dropping it makes the series disappear entirely, so a limit at 0%
+        // reads as "no data" instead of "zero" and vanishes from the dashboards that list it.
         const metricFields: any[] = [];
-        if (metricData.min) {
+        if (metricData.min !== undefined) {
           metricFields.push("min=" + metricData.min.toFixed(2));
         }
-        if (metricData.max) {
+        if (metricData.max !== undefined) {
           metricFields.push("max=" + metricData.max.toFixed(2));
         }
-        if (metricData.percent) {
+        if (metricData.percent !== undefined) {
           metricFields.push("percent=" + metricData.percent.toFixed(2));
         }
-        metricFields.push("metric=" + metricData.value.toFixed(2));
-        metricPayloadLine += metricFields.join(",");
-        metricsPayloadLines.push(metricPayloadLine);
+        if (metricData.value !== undefined) {
+          metricFields.push("metric=" + metricData.value.toFixed(2));
+        }
+        // Influx line protocol requires at least one field; skip the metric otherwise.
+        if (metricFields.length) {
+          metricPayloadLine += metricFields.join(",");
+          metricsPayloadLines.push(metricPayloadLine);
+        }
       }
     }
 

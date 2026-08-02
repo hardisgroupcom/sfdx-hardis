@@ -2,7 +2,7 @@
 name: analyze
 description: Gather requirements by asking clarifying questions until the problem is fully understood. First step of the contribution workflow.
 disable-model-invocation: true
-allowed-tools: Read Glob Grep WebSearch AskUserQuestion
+allowed-tools: Read Glob Grep WebSearch WebFetch AskUserQuestion
 argument-hint: "[description of the change]"
 model: opus
 ---

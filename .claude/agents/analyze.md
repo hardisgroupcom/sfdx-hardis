@@ -1,7 +1,7 @@
 ---
 name: analyze
 description: Gather requirements by asking clarifying questions until the problem is fully understood. Use before designing or implementing any change.
-tools: Read, Grep, Glob, Bash, WebSearch
+tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 model: opus
 color: blue
 ---

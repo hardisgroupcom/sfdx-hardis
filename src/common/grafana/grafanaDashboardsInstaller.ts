@@ -24,6 +24,7 @@ export const GRAFANA_V2_FALLBACK_DASHBOARD_FILES = [
   'org-limits.json',
   'org-reliability.json',
   'org-security.json',
+  'org-usage.json',
   'search-licenses.json',
   'search-org.json',
   'search-packages.json',

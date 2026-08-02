@@ -12,6 +12,19 @@ const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
 const CHUNK_SIZE = Number(process.env.SOQL_CHUNK_SIZE ?? 200);
 const MAX_RECORDS = MAX_CHUNKS * CHUNK_SIZE;
 
+// True when Salesforce rejected the query because the sObject does not exist on this org, which
+// is how an edition that never provisions the object answers. Monitoring runs across whole
+// fleets, so callers are expected to skip quietly rather than fail the job. Anything else (a
+// permission problem, a transient outage) must keep propagating.
+export function isUnsupportedSObjectError(error: unknown, sObjectName: string): boolean {
+  const message = String((error as { message?: string })?.message ?? error).toLowerCase();
+  return (
+    message.includes('invalid_type') ||
+    message.includes('is not supported') ||
+    message.includes(`sobject type '${sObjectName.toLowerCase()}'`)
+  );
+}
+
 // Perform simple SOQL query (max results: 10000)
 export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
   uxLog(
