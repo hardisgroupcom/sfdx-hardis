@@ -1,4 +1,4 @@
-import { execSfdxJson, uxLog } from './index.js';
+import { uxLog } from './index.js';
 import c from 'chalk';
 import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
@@ -237,7 +237,9 @@ export async function bulkUpdate(
 - Success: ${res.successfulResults.length} records
 - Failed: ${res.failedResults.length} records
 - Unprocessed: ${res.unprocessedRecords.length} records`));
-  const outputFile = await generateReportPath('bulk', `${objectName}-${action}`, { withDate: true });
+  // Empty outputFile so generateReportPath builds a real path (report dir, branch, date, .csv);
+  // passing the name as outputFile would be taken as an explicit path and bypass all of that.
+  const outputFile = await generateReportPath(`bulk-${objectName}-${action}`, '', { withDate: true });
   if (res.failedResults.length > 0) {
     uxLog("warning", this, c.yellow(`[BulkApiV2] Some records failed to ${action}. Check the results for details.`));
   }
@@ -263,38 +265,74 @@ export async function bulkDelete(
   return await bulkUpdate(objectName, "delete", records, conn);
 }
 
+// Tooling API composite requests accept at most 25 subrequests.
+const TOOLING_COMPOSITE_CHUNK_SIZE = 25;
+
+// Delete records via the Tooling API. jsforce conn.tooling.destroy(type, ids[]) can NOT be used here:
+// https://github.com/jsforce/jsforce/issues/1815.
+// Batch unitary DELETE subrequests through the Tooling composite endpoint,
+// Fall back to one-by-one deletes also through Tooling API instead of sf CLI for speed..
 export async function bulkDeleteTooling(
   objectName: string,
   recordsIds: string[],
   conn: Connection
-): Promise<any> {
-  uxLog("log", this, c.grey(`[ToolingApi] Delete ${recordsIds.length} records on ${objectName}: ${JSON.stringify(recordsIds)}`));
-  try {
-    const deleteJobResults = await conn.tooling.destroy(objectName, recordsIds, { allOrNone: false });
-    return deleteJobResults
-  } catch (e: any) {
-    uxLog("warning", this, c.yellow(`[ToolingApi] jsforce error while calling Tooling API. Fallback to to unitary delete (longer but should work !)`));
-    uxLog("log", this, c.grey(e.message));
-    const deleteJobResults: any = [];
-    WebSocketClient.sendProgressStartMessage(`Deleting ${recordsIds.length} ${objectName} record(s)...`, recordsIds.length);
-    let step = 0;
-    for (const record of recordsIds) {
-      step++;
-      const deleteCommand =
-        `sf data:delete:record --sobject ${objectName} --record-id ${record} --target-org ${conn.getUsername()} --use-tooling-api`;
-      const deleteCommandRes = await execSfdxJson(deleteCommand, this, {
-        fail: false,
-        output: true
-      });
-      const deleteResult: any = { Id: record, success: true }
-      if (!(deleteCommandRes.status === 0)) {
-        deleteResult.success = false;
-        deleteResult.error = JSON.stringify(deleteCommandRes);
-      }
-      deleteJobResults.push(deleteResult);
-      WebSocketClient.sendProgressStepMessage(step, recordsIds.length);
+): Promise<{ results: any[] }> {
+  uxLog("log", this, c.grey('[ToolingApi] ' + t('toolingApiDeletingRecords', { count: recordsIds.length, objectName: objectName, ids: JSON.stringify(recordsIds) })));
+  const basePath = `/services/data/v${conn.getApiVersion()}/tooling`;
+  const totalChunks = Math.ceil(recordsIds.length / TOOLING_COMPOSITE_CHUNK_SIZE);
+  const results: any[] = [];
+  for (let i = 0; i < recordsIds.length; i += TOOLING_COMPOSITE_CHUNK_SIZE) {
+    const chunkIds = recordsIds.slice(i, i + TOOLING_COMPOSITE_CHUNK_SIZE);
+    if (totalChunks > 1) {
+      const currentChunk = Math.floor(i / TOOLING_COMPOSITE_CHUNK_SIZE) + 1;
+      uxLog("log", this, c.grey('[ToolingApi] ' + t('toolingApiCompositeChunk', { current: currentChunk, total: totalChunks, count: chunkIds.length })));
     }
-    WebSocketClient.sendProgressEndMessage(recordsIds.length);
-    return { results: deleteJobResults };
+    try {
+      const recordIdByReferenceId = new Map(chunkIds.map((recordId, pos) => [`ref${pos}`, recordId]));
+      const compositeRequest = chunkIds.map((recordId, pos) => ({
+        method: 'DELETE',
+        url: `${basePath}/sobjects/${objectName}/${recordId}`,
+        referenceId: `ref${pos}`,
+      }));
+      const compositeRes: any = await conn.requestPost(`${basePath}/composite`, { allOrNone: false, compositeRequest });
+      for (const subResponse of compositeRes?.compositeResponse || []) {
+        const recordId = recordIdByReferenceId.get(subResponse?.referenceId) || '';
+        if (subResponse?.httpStatusCode >= 200 && subResponse?.httpStatusCode < 300) {
+          results.push({ Id: recordId, success: true, errors: [] });
+        } else {
+          const errors = (Array.isArray(subResponse?.body) ? subResponse.body : [subResponse?.body])
+            .filter(Boolean)
+            .map((err: any) => ({ statusCode: err?.errorCode ?? String(subResponse?.httpStatusCode), message: err?.message ?? JSON.stringify(err) }));
+          results.push({ Id: recordId, success: false, errors });
+        }
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[ToolingApi] ' + t('toolingApiCompositeFallback', { error: e.message })));
+      results.push(...(await deleteToolingRecordsOneByOne(objectName, chunkIds, conn)));
+    }
   }
+  return { results };
+}
+
+// Unitary Tooling API deletes: single-id conn.tooling.destroy targets /tooling/sobjects/<type>/<id>
+async function deleteToolingRecordsOneByOne(
+  objectName: string,
+  recordsIds: string[],
+  conn: Connection
+): Promise<any[]> {
+  const results: any[] = [];
+  WebSocketClient.sendProgressStartMessage(t('deletingRecordsOnObject', { count: recordsIds.length, objectName: objectName }), recordsIds.length);
+  let step = 0;
+  for (const recordId of recordsIds) {
+    step++;
+    try {
+      await conn.tooling.destroy(objectName, recordId);
+      results.push({ Id: recordId, success: true, errors: [] });
+    } catch (e: any) {
+      results.push({ Id: recordId, success: false, errors: [{ statusCode: e.errorCode ?? e.name, message: e.message }] });
+    }
+    WebSocketClient.sendProgressStepMessage(step, recordsIds.length);
+  }
+  WebSocketClient.sendProgressEndMessage(recordsIds.length);
+  return results;
 }

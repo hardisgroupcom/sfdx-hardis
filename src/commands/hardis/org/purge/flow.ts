@@ -3,9 +3,10 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execSfdxJson, extractRegexMatches, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { execSfdxJson, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkDelete, bulkDeleteTooling, bulkQuery } from '../../../../common/utils/apiUtils.js';
+import { dedupeFlowInterviewIds, extractBlockingFlowInterviewIds, FLOW_INTERVIEW_BLOCK_MARKER, queryFlowInterviewIdsForFlows } from '../../../../common/utils/flowDeletionUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 
@@ -127,6 +128,8 @@ In agent mode:
   protected allowPurgeFailure: boolean;
   protected flowRecordsRaw: any[];
   protected flowRecords: any[];
+  protected flowVersionDetailsById: Record<string, any> = {};
+  protected flowInterviewDetailsById: Record<string, any> = {};
   protected deletedRecords: any[] = [];
   protected deletedErrors: any[] = [];
   protected outputFilesToDelete: any = {};
@@ -189,23 +192,27 @@ In agent mode:
     this.conn = conn;
     await this.processDeleteFlowVersions(conn, true);
 
+    const deletedRecordsFlat = this.deletedRecords.flat();
     const summary =
-      this.deletedRecords.length > 0
-        ? t('deletedRecordsSummary', { count: this.deletedRecords.length })
+      deletedRecordsFlat.length > 0
+        ? t('deletedRecordsSummary', { count: deletedRecordsFlat.length })
         : t('noRecordsToDelete');
     uxLog("action", this, c.cyan(summary));
-    if (this.deletedRecords.length > 0) {
-      const enrichedDeletedRecords = this.deletedRecords.flat().map((r: any) => {
-        const id = r.Id ?? r.id ?? '';
-        const flowDetail = this.flowRecords.find((f: any) => f.Id === id) ?? {};
+    if (deletedRecordsFlat.length > 0) {
+      const enrichedDeletedRecords = deletedRecordsFlat.map((r: any) => {
+        const id = String(r.Id ?? r.id ?? '');
+        const idKey = id.substring(0, 15);
+        const interviewDetail = this.flowInterviewDetailsById[idKey];
+        const flowDetail = this.flowVersionDetailsById[idKey] ?? {};
         return {
+          'Type': interviewDetail ? 'Flow Interview' : 'Flow Version',
           'Id': id,
-          'API Name': flowDetail.DefinitionDevName ?? '',
-          'Version': flowDetail.VersionNumber ?? '',
-          'Label': flowDetail.MasterLabel ?? '',
-          'Flow Status': flowDetail.Status ?? '',
+          'API Name': interviewDetail ? interviewDetail.Name ?? '' : flowDetail.DefinitionDevName ?? '',
+          'Version': interviewDetail ? '' : flowDetail.VersionNumber ?? '',
+          'Label': interviewDetail ? interviewDetail.InterviewLabel ?? '' : flowDetail.MasterLabel ?? '',
+          'Status': interviewDetail ? interviewDetail.InterviewStatus ?? '' : flowDetail.Status ?? '',
           'Deletion Status': r.success ? 'Deleted' : 'Error',
-          'Error': r.error ?? '',
+          'Error': r.error ?? (Array.isArray(r.errors) ? r.errors.map((err: any) => err?.message).filter(Boolean).join('; ') : ''),
         };
       });
       uxLogTable(this, enrichedDeletedRecords);
@@ -262,25 +269,49 @@ In agent mode:
   }
 
   private async manageDeleteFlowInterviews(conn: any) {
-    // Gather flow interviews that prevent deleting flow versions
-    const flowInterviewsIds: string[] = [];
-    this.flowRecords = [];
-    const extractInterviewsRegex = /Flow Interview - ([a-zA-Z0-9]{15}|[a-zA-Z0-9]{18})/gm;
-    for (const deletedError of this.deletedErrors) {
-      this.flowRecords.push({ Id: deletedError.Id });
-      const errorflowInterviewIds = await extractRegexMatches(extractInterviewsRegex, deletedError.error);
-      flowInterviewsIds.push(...[...new Set(errorflowInterviewIds)]); // make interview Ids unique
+    // Resolve the exact Flow versions whose deletion failed BECAUSE of Flow Interviews, before
+    // this.flowRecords is reset below. Other failures (access, references) stay out: deleting
+    // interviews cannot unblock them and the deletion is irreversible. Querying by Flow name alone
+    // would also delete interviews on versions that are not being purged.
+    const interviewBlockedErrors = this.deletedErrors.filter((deletedError: any) =>
+      JSON.stringify(deletedError).includes(FLOW_INTERVIEW_BLOCK_MARKER)
+    );
+    const failedVersionIds = new Set(
+      interviewBlockedErrors.map((deletedError: any) => deletedError.Id ?? deletedError.id).filter(Boolean)
+    );
+    const blockedVersionIdsByFlow: Record<string, string[]> = {};
+    for (const record of this.flowRecords) {
+      if (!failedVersionIds.has(record.Id) || !record.DefinitionDevName) {
+        continue;
+      }
+      blockedVersionIdsByFlow[record.DefinitionDevName] =
+        blockedVersionIdsByFlow[record.DefinitionDevName] || [];
+      blockedVersionIdsByFlow[record.DefinitionDevName].push(record.Id);
     }
-    if (flowInterviewsIds.length === 0) {
+    const blockedFlowNames = Object.keys(blockedVersionIdsByFlow);
+    // Gather every interview on the blocked versions, plus the ones named in each deletion error as a
+    // fallback when the exhaustive query is unavailable. Both sources go through
+    // dedupeFlowInterviewIds, as they do not agree on the 15/18-char Id form.
+    const flowInterviewsIds: string[] = await queryFlowInterviewIdsForFlows(blockedFlowNames, conn, this, {
+      versionIdsByFlow: blockedVersionIdsByFlow,
+      failOnError: false,
+    });
+    this.flowRecords = [];
+    for (const deletedError of this.deletedErrors) {
+      this.flowRecords.push({ Id: deletedError.Id ?? deletedError.id });
+      flowInterviewsIds.push(...(await extractBlockingFlowInterviewIds(JSON.stringify(deletedError))));
+    }
+    const flowInterviewsIdsList = dedupeFlowInterviewIds(flowInterviewsIds);
+    if (flowInterviewsIdsList.length === 0) {
       return;
     }
     // Display flows & Prompt user if not in CI
-    await this.displayFlowInterviewToDelete(flowInterviewsIds, conn);
+    await this.displayFlowInterviewToDelete(flowInterviewsIdsList, conn);
     if (!isCI && !this.agentMode && this.promptUser === true) {
       const confirmDelete = await prompts({
         type: 'confirm',
         name: 'value',
-        message: c.cyanBright(t('doYouConfirmYouWantToDelete', { flowInterviewsIds: flowInterviewsIds.length })),
+        message: c.cyanBright(t('doYouConfirmYouWantToDelete', { flowInterviewsIds: flowInterviewsIdsList.length })),
         description: t('deleteFlowInterviewsDescription'),
       });
       if (confirmDelete.value === false) {
@@ -289,8 +320,16 @@ In agent mode:
       }
     }
     // Delete flow interviews
-    const deleteInterviewResults = await bulkDelete('FlowInterview', flowInterviewsIds, conn);
-    this.deletedRecords.push(deleteInterviewResults?.successfulResults || []);
+    const deleteInterviewResults = await bulkDelete('FlowInterview', flowInterviewsIdsList, conn);
+    // Bulk API v2 results use sf__Id and have no success flag: normalize them to the same shape as
+    // Tooling API results, else they show up as errors in the final deletion table.
+    this.deletedRecords.push(
+      ...(deleteInterviewResults?.successfulResults || []).map((interviewRes: any) => ({
+        Id: interviewRes.sf__Id ?? interviewRes.Id ?? interviewRes.id ?? '',
+        success: true,
+        errors: [],
+      }))
+    );
     this.deletedErrors = deleteInterviewResults?.failedResults || [];
     // Try to delete flow versions again
     uxLog("action", this, c.cyan(t('retryDeleteFlowVersionsAfterInterviews')));
@@ -307,6 +346,9 @@ In agent mode:
       Status: record.Status,
       Description: record.Description,
     }));
+    for (const record of this.flowRecords) {
+      this.flowVersionDetailsById[String(record.Id).substring(0, 15)] = record;
+    }
 
     if (this.flowRecords.length === 0) {
       uxLog("warning", this, c.yellow(t('noFlowVersionsFoundToDelete')));
@@ -412,13 +454,19 @@ In agent mode:
 
   private async displayFlowInterviewToDelete(flowVInterviewIds: string[], conn: any) {
     const query =
-      'SELECT Name,InterviewLabel,InterviewStatus,CreatedBy.Username,CreatedDate,LastModifiedDate ' +
+      'SELECT Id,Name,InterviewLabel,InterviewStatus,CreatedBy.Username,CreatedDate,LastModifiedDate ' +
       `FROM FlowInterview WHERE Id IN ('${flowVInterviewIds.join("','")}')` +
       ' ORDER BY Name';
     const flowsInterviewsToDelete = (await bulkQuery(query, conn)).records;
     if (flowsInterviewsToDelete.length === 0) {
       uxLog("warning", this, c.yellow(t('noFlowInterviewsFoundToDelete')));
       return;
+    }
+    // Only chance to capture these details: once the interviews are deleted they can not be queried again.
+    for (const flowInterview of flowsInterviewsToDelete) {
+      if (flowInterview?.Id) {
+        this.flowInterviewDetailsById[String(flowInterview.Id).substring(0, 15)] = flowInterview;
+      }
     }
     // Display Flow Interviews to delete using uxLogTable
     uxLog("action", this, c.cyan(t('foundFlowInterviewsToDeleteCount', { count: flowsInterviewsToDelete.length })));

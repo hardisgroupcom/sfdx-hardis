@@ -151,6 +151,9 @@ export abstract class GitProvider {
       if (prData.codeCoverageMarkdownBody) {
         markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
       }
+      if (prData.flowDeletionMarkdownBody) {
+        markdownBody += "\n\n" + prData.flowDeletionMarkdownBody;
+      }
       if (prData.preDeployCommandsResultMarkdownBody) {
         markdownBody += "\n\n" + prData.preDeployCommandsResultMarkdownBody;
       }
@@ -457,7 +460,8 @@ export declare type CommonPullRequestInfo = {
   customBehaviors: {
     noDeltaDeployment?: boolean,
     purgeFlowVersions?: boolean,
-    destructiveChangesAfterDeployment?: boolean
+    destructiveChangesAfterDeployment?: boolean,
+    flowDeleteInterviews?: boolean
   }
   providerInfo: any
 }
@@ -467,6 +471,7 @@ export declare type PullRequestData = {
   title: string;
   deployErrorsMarkdownBody?: string;
   codeCoverageMarkdownBody?: string;
+  flowDeletionMarkdownBody?: string;
   commitsSummary?: string;
   deployStatus?: "valid" | "invalid" | "unknown";
   status?: "valid" | "invalid" | "tovalidate";

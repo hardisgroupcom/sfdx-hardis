@@ -12,7 +12,7 @@ Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com
 */
 
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { Messages, Org, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
@@ -25,16 +25,30 @@ import {
   isCI,
   uxLog,
 } from '../../../../common/utils/index.js';
-import { CONSTANTS, getConfig } from '../../../../config/index.js';
+import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
 import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
 import { extendPackageFileWithDependencies, appendPackageModifications } from '../../../../common/utils/deltaUtils.js';
 import { isProductionOrg, promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { getApexTestClasses, selectTestClassesFromPullRequests } from '../../../../common/utils/classUtils.js';
 import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
-import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
+import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, handlePostDeploymentNotifications, setPullRequestData } from '../../../../common/utils/gitUtils.js';
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
+import {
+  detectPendingFlowDeletions,
+  mergePendingFlowDeletions,
+  stripFlowsFromDestructiveChanges,
+  runFlowDeletionPreflight,
+  runFlowDeletionStep,
+  resolveFlowDeletionRetrySettings,
+  writeFlowDeletionReport,
+  buildFlowDeletionMarkdown,
+  worstFlowDeletionStatus,
+  isFailedFlowDeletionStatus,
+  FlowDeletionOutcome,
+  PendingFlowDeletion,
+} from '../../../../common/utils/flowDeletionUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -233,6 +247,42 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 \`\`\`
 
+### Flow deletion in destructive changes
+
+Deleting a Flow through a metadata deployment is possible, but only if the org is already in the right state before the deployment runs:
+
+- every version has to be named individually (\`MyFlow-1\`, \`MyFlow-2\`, ...), as a bare \`<members>MyFlow</members>\` fails with "insufficient access rights",
+- the Flow has to be inactive already. Deactivating it in the same deployment does not help, since Salesforce tries to deactivate the flow that was deleted during a real deploy (\`NoDataFoundException\` / \`UNKNOWN_EXCEPTION\`), so it takes a manual deactivation or an earlier deployment,
+- a \`--check\` deployment never commits a deactivation, so a deletion that depends on one can not be validated.
+
+Smart Deploy removes that manual step by taking Flow deletion **out of the deployment**. Any \`Flow\` member found in \`manifest/destructiveChanges.xml\`, \`manifest/preDestructiveChanges.xml\`, the \`packageXmlToDelete\` config or the delta-generated destructive changes is removed from the manifest sent to the org, and deleted through the Tooling API instead. Stripping is identical during validation and during the real deployment, so the constructive package stays quick-deploy eligible.
+
+A \`--check\` simulation changes nothing in the org. A read-only preflight reports, for each Flow: the active version that will be deactivated, the versions that will be deleted, and how many Flow Interviews block the deletion. The check **fails** if Flow Interviews block a deletion and you have not authorized deleting them.
+
+On a real deployment, each Flow goes through:
+
+1. Existence check. A Flow that is already gone is reported as \`FLOW_DELETE_NOOP\`, not an error (same for a Flow with no deletable version, for example one from a managed package).
+2. Deactivation through the Tooling API (\`FlowDefinition.activeVersionNumber = 0\`), which stops new Flow Interviews from starting.
+3. Flow Interview gate. If interviews remain and \`FLOW_DELETE_INTERVIEWS\` is not set, the deployment fails with \`FLOW_DELETE_BLOCKED\`. The Flow stays deactivated, so retrying the pipeline once those interviews resolve completes the deletion.
+4. Flow Interview deletion, only when \`FLOW_DELETE_INTERVIEWS\` authorizes it.
+5. Version deletion through the Tooling API, oldest version first, then a check that no version is left.
+
+When deleting Flow Interviews is authorized, step 5 retries: an interview that was still running when the Flow got deactivated can pause mid-sequence and block a version. Both bounds can be tuned, as an env variable or as a \`.sfdx-hardis.yml\` property (the env variable wins). A value that is not an integer, or is below the minimum, is ignored with a warning and the default applies.
+
+| Env variable | \`.sfdx-hardis.yml\` property | Default | Minimum | Purpose |
+| :--- | :--- | :-: | :-: | :--- |
+| FLOW_DELETE_MAX_ATTEMPTS | flowDeleteMaxAttempts | 3 | 1 | Number of version deletion attempts per Flow. \`1\` disables the retry. Only used when \`FLOW_DELETE_INTERVIEWS\` authorizes deleting interviews: without that authorization a block is final. |
+| FLOW_DELETE_RETRY_DELAY_MS | flowDeleteRetryDelayMs | 10000 | 0 | Delay in milliseconds between two attempts, to give a paused interview time to be deleted. |
+
+Any failure that is not an interview block (insufficient access, network error mid-run...) is reported as \`FLOW_DELETE_ERROR\` and also fails the deployment. After a network error the org can be further along than the report shows: every step is re-runnable, so retry and trust the new report.
+
+Notes:
+
+- A bare member (\`MyFlow\`) deletes all versions of the Flow. A versioned member (\`MyFlow-3\`) deletes that version only, and deactivates the Flow only if that version is the active one. A wildcard (\`*\`) is refused.
+- Flows are processed independently: one blocked Flow does not prevent the others from being deleted.
+- The deactivation is committed immediately and is not rolled back if a later step fails, so a Flow can be left deactivated but not deleted. Every step is re-runnable, so a pipeline retry converges.
+- Flows listed in \`preDestructiveChanges.xml\` are deleted **before** the constructive deployment, the others after it. Both happen outside the deployment transaction: a deployment that fails after a Flow was deleted does not bring that Flow back, where a \`preDestructiveChanges.xml\` handled inside the deployment used to be rolled back.
+
 ### Pull Requests Custom Behaviors
 
 If some words are found **in the Pull Request description**, special behaviors will be applied
@@ -242,6 +292,7 @@ If some words are found **in the Pull Request description**, special behaviors w
 | NO_DELTA | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request |
 | PURGE_FLOW_VERSIONS | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
 | DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package |
+| FLOW_DELETE_INTERVIEWS | Authorizes deleting the Flow Interviews that block the deletion of a Flow listed in destructive changes. The directive must be on its own line (or in a checked Markdown checkbox).<br/>**Caution: deleting Flow Interviews is irreversible and destroys in-flight process state !** |
 
 You can also override some \`.sfdx-hardis.yml\` properties directly in the Pull Request description using YAML blocks. Supported keys: \`deploymentApexTestClasses\`, \`commandsPreDeploy\`, \`commandsPostDeploy\`.
 
@@ -259,6 +310,8 @@ Note: it is also possible to define these behaviors as ENV variables:
 
 - For all deployments (example: \`PURGE_FLOW_VERSIONS=true\`)
 - For a specific branch, by appending the target branch name (example: \`PURGE_FLOW_VERSIONS_UAT=true\`)
+
+\`FLOW_DELETE_INTERVIEWS\` can also be set as a \`.sfdx-hardis.yml\` property (\`flowDeleteInterviews: true\`).
 
 ### Deployment plan (deprecated)
 
@@ -427,10 +480,18 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     delta?: boolean;
     destructiveChangesAfterDeployment?: boolean;
     extraCommands?: any[];
+    deferSuccessPullRequestComment?: boolean;
   };
   protected packageXmlFile: string;
   protected delta = false;
   protected debugMode = false;
+  // Flows to delete via the Tooling API, stripped from their destructive manifests.
+  protected pendingFlowDeletions: PendingFlowDeletion[] = [];
+  protected pendingPreDeployFlowDeletions: PendingFlowDeletion[] = [];
+  protected pendingPostDeployFlowDeletions: PendingFlowDeletion[] = [];
+  protected flowDeletionOutcomes: FlowDeletionOutcome[] = [];
+  protected flowDeleteInterviews = false;
+  protected flowDeletionConn: any = null;
 
   /* jscpd:ignore-end */
 
@@ -489,8 +550,24 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Compute and apply delta if required
     await this.handleDeltaDeployment(deltaFromArgs, targetUsername, currentGitBranch);
 
+    // Needed by the Flow Interview gate below
+    await this.resolveFlowDeleteInterviews();
+
+    // Take Flow deletions out of the metadata deploy (they run as a Tooling API step outside it)
+    await this.prepareFlowDeletion(flags);
+
     // Set smart deploy options
     await this.setAdditionalOptions(targetUsername);
+
+    // Pre-destructive Flows must be gone before the constructive metadata is deployed
+    if (!this.checkOnly) {
+      await this.executeFlowDeletion(flags, this.pendingPreDeployFlowDeletions, 'pre');
+    }
+
+    // smartDeploy normally posts its success comment before returning. Defer it when a post-deploy
+    // Flow deletion still has to succeed.
+    this.smartDeployOptions.deferSuccessPullRequestComment =
+      !this.checkOnly && this.pendingPostDeployFlowDeletions.length > 0;
 
     // Process deployment (or deployment check)
     const { messages, quickDeploy, deployXmlCount, deploymentMetrics } = await smartDeploy(
@@ -511,14 +588,158 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       });
     }
 
-    // Send notification of deployment success
+    // Post-destructive Flow deletions. A blocked Flow fails the command before any success comment or
+    // notification is sent.
     if (!this.checkOnly) {
+      await this.executeFlowDeletion(flags, this.pendingPostDeployFlowDeletions, 'post');
+      if (this.smartDeployOptions.deferSuccessPullRequestComment === true) {
+        await GitProvider.managePostPullRequestComment(this.checkOnly);
+      }
       await handlePostDeploymentNotifications(flags, targetUsername, quickDeploy, this.delta, this.debugMode, "", deploymentMetrics);
     }
     // Return result
     return { orgId: flags['target-org'].getOrgId(), outputString: messages.join('\n') };
   }
 
+  // Authorization to destroy the Flow Interviews blocking a Flow deletion. Off by default: deleting
+  // an interview destroys in-flight process state and is irreversible.
+  private async resolveFlowDeleteInterviews() {
+    const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+    // Without PR info (major org deploy), the checked-out branch is the target branch.
+    const branchName = prInfo?.targetBranch || (await getCurrentGitBranch());
+    this.flowDeleteInterviews =
+      prInfo?.customBehaviors?.flowDeleteInterviews === true ||
+      this.configInfo?.flowDeleteInterviews === true ||
+      getEnvVar('FLOW_DELETE_INTERVIEWS') === 'true' ||
+      (branchName != null && getEnvVar('FLOW_DELETE_INTERVIEWS_' + branchName) === 'true');
+  }
+
+  // Take the Flows listed in the destructive manifests out of the metadata deploy: they are deleted
+  // through the Tooling API instead.
+  // On --check, only run a read-only preflight, and fail the validation when Flow Interviews block a
+  // deletion that is not authorized to destroy them.
+  private async prepareFlowDeletion(flags) {
+    const manifests: { key: 'postDestructiveChanges' | 'preDestructiveChanges'; fileName: string }[] = [
+      { key: 'postDestructiveChanges', fileName: 'destructiveChangesWithoutFlows.xml' },
+      { key: 'preDestructiveChanges', fileName: 'preDestructiveChangesWithoutFlows.xml' },
+    ];
+    const tmpDir = await createTempDir();
+    for (const manifest of manifests) {
+      const manifestFile = this.smartDeployOptions[manifest.key];
+      if (!manifestFile || !fs.existsSync(manifestFile)) {
+        continue;
+      }
+      const { pendingFlowDeletions, hasWildcard } = await detectPendingFlowDeletions(manifestFile);
+      if (hasWildcard) {
+        throw new SfError('[FlowDeletion] ' + t('flowDeletionWildcardRefused'));
+      }
+      if (pendingFlowDeletions.length === 0) {
+        continue;
+      }
+      if (manifest.key === 'preDestructiveChanges') {
+        this.pendingPreDeployFlowDeletions = mergePendingFlowDeletions(
+          this.pendingPreDeployFlowDeletions,
+          pendingFlowDeletions
+        );
+      } else {
+        this.pendingPostDeployFlowDeletions = mergePendingFlowDeletions(
+          this.pendingPostDeployFlowDeletions,
+          pendingFlowDeletions
+        );
+      }
+      const strippedFile = await stripFlowsFromDestructiveChanges(manifestFile, tmpDir, manifest.fileName);
+      if (strippedFile) {
+        this.smartDeployOptions[manifest.key] = strippedFile;
+      }
+    }
+    this.pendingFlowDeletions = mergePendingFlowDeletions(
+      this.pendingPreDeployFlowDeletions,
+      this.pendingPostDeployFlowDeletions
+    );
+    if (this.pendingFlowDeletions.length === 0) {
+      return;
+    }
+    const flowNames = this.pendingFlowDeletions.map((pending) => pending.flowName);
+    uxLog("action", this, c.cyan('[FlowDeletion] ' + t('flowDeletionDetectedFlows', { count: flowNames.length, flows: flowNames.join(', ') })));
+    uxLog("log", this, c.grey('[FlowDeletion] ' + t('flowDeletionStrippedFromDeploy')));
+
+    if (this.checkOnly !== true) {
+      return;
+    }
+    const conn = await this.getFlowDeletionConnection(flags);
+    const outcomes = await runFlowDeletionPreflight(this.pendingFlowDeletions, conn, this, this.flowDeleteInterviews);
+    await writeFlowDeletionReport(outcomes, this);
+    setPullRequestData({ flowDeletionMarkdownBody: buildFlowDeletionMarkdown(outcomes) });
+    if (isFailedFlowDeletionStatus(worstFlowDeletionStatus(outcomes))) {
+      const blockedMessages = outcomes
+        .filter((outcome) => isFailedFlowDeletionStatus(outcome.status))
+        .map((outcome) => outcome.message);
+      setPullRequestData({ status: 'invalid', deployStatus: 'invalid', title: `❌ ${t('flowDeletionMarkdownTitle')}` });
+      await GitProvider.managePostPullRequestComment(this.checkOnly);
+      throw new SfError('[FlowDeletion] ' + blockedMessages.join('\n'));
+    }
+  }
+
+  // Delete the Flows stripped from the deployment, via the Tooling API. Real deploy only, before or
+  // after the metadata deployment according to the source destructive manifest.
+  private async executeFlowDeletion(
+    flags,
+    pendingFlowDeletions: PendingFlowDeletion[],
+    phase: 'pre' | 'post'
+  ) {
+    if (pendingFlowDeletions.length === 0) {
+      return;
+    }
+    const conn = await this.getFlowDeletionConnection(flags);
+    try {
+      const outcomes = await runFlowDeletionStep(
+        pendingFlowDeletions,
+        conn,
+        this,
+        this.flowDeleteInterviews,
+        phase,
+        resolveFlowDeletionRetrySettings(this, this.configInfo)
+      );
+      this.flowDeletionOutcomes.push(...outcomes);
+      await writeFlowDeletionReport(outcomes, this, this.flowDeletionOutcomes);
+      setPullRequestData({
+        flowDeletionMarkdownBody: buildFlowDeletionMarkdown(this.flowDeletionOutcomes),
+      });
+      const worstStatus = worstFlowDeletionStatus(outcomes);
+      if (isFailedFlowDeletionStatus(worstStatus)) {
+        const failedMessages = outcomes
+          .filter((outcome) => isFailedFlowDeletionStatus(outcome.status))
+          .map((outcome) => outcome.message);
+        throw new SfError(`[FlowDeletion] ${worstStatus}\n` + failedMessages.join('\n'));
+      }
+    } catch (e) {
+      setPullRequestData({
+        status: 'invalid',
+        deployStatus: 'invalid',
+        title: `❌ ${t('flowDeletionMarkdownTitle')}`,
+      });
+      await GitProvider.managePostPullRequestComment(false);
+      throw e;
+    }
+  }
+
+  // The deployment targets smartDeployOptions.targetUsername, which branch config or interactive
+  // selection may have set to another org than --target-org. Flow deletion is irreversible, so it
+  // must connect to the deployment org, not to the flag org.
+  private async getFlowDeletionConnection(flags): Promise<any> {
+    if (this.flowDeletionConn) {
+      return this.flowDeletionConn;
+    }
+    const deployUsername = this.smartDeployOptions?.targetUsername || null;
+    if (!deployUsername || deployUsername === flags['target-org']?.getUsername()) {
+      this.flowDeletionConn = flags['target-org']?.getConnection();
+      return this.flowDeletionConn;
+    }
+    const deployOrg = await Org.create({ aliasOrUsername: deployUsername });
+    this.flowDeletionConn = deployOrg.getConnection();
+    uxLog('log', this, c.grey('[FlowDeletion] ' + t('flowDeletionUsingDeploymentOrg', { username: deployUsername })));
+    return this.flowDeletionConn;
+  }
 
   private async setAdditionalOptions(targetUsername: string) {
     const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
@@ -658,13 +879,13 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   }
 
   private async initPackageXmlAndDestructiveChanges(packageXml: any, targetUsername: any, flags) {
+    // A configured manifest wins, manifest/ and config/ are fallbacks. Keep the existsSync ternary
+    // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
     this.packageXmlFile =
       packageXml ||
-        process.env.PACKAGE_XML_TO_DEPLOY ||
-        this.configInfo.packageXmlToDeploy ||
-        fs.existsSync('./manifest/package.xml')
-        ? './manifest/package.xml'
-        : './config/package.xml';
+      process.env.PACKAGE_XML_TO_DEPLOY ||
+      this.configInfo.packageXmlToDeploy ||
+      (fs.existsSync('./manifest/package.xml') ? './manifest/package.xml' : './config/package.xml');
     this.smartDeployOptions = {
       targetUsername: targetUsername,
       conn: flags['target-org']?.getConnection(),
@@ -672,23 +893,31 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       extraCommands: []
     };
     // Get destructiveChanges.xml and add it in options if existing
-    const postDestructiveChanges = process.env.PACKAGE_XML_TO_DELETE ||
-      this.configInfo.packageXmlToDelete ||
-      fs.existsSync('./manifest/destructiveChanges.xml')
-      ? './manifest/destructiveChanges.xml'
-      : './config/destructiveChanges.xml';
+    const configuredPostDestructiveChanges = process.env.PACKAGE_XML_TO_DELETE || this.configInfo.packageXmlToDelete;
+    const postDestructiveChanges =
+      configuredPostDestructiveChanges ||
+      (fs.existsSync('./manifest/destructiveChanges.xml')
+        ? './manifest/destructiveChanges.xml'
+        : './config/destructiveChanges.xml');
     if (fs.existsSync(postDestructiveChanges)) {
       this.smartDeployOptions.postDestructiveChanges = postDestructiveChanges;
+    } else if (configuredPostDestructiveChanges) {
+      // Silently skipping a manifest that someone configured on purpose would delete nothing and exit 0.
+      uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('configuredDestructiveManifestNotFound', { file: postDestructiveChanges })));
     }
 
     // Get preDestructiveChanges.xml and add it in options if existing
-    const preDestructiveChanges = process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
-      this.configInfo.packageXmlToDeletePreDeploy ||
-      fs.existsSync('./manifest/preDestructiveChanges.xml')
-      ? './manifest/preDestructiveChanges.xml'
-      : './config/preDestructiveChanges.xml';
+    const configuredPreDestructiveChanges =
+      process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY || this.configInfo.packageXmlToDeletePreDeploy;
+    const preDestructiveChanges =
+      configuredPreDestructiveChanges ||
+      (fs.existsSync('./manifest/preDestructiveChanges.xml')
+        ? './manifest/preDestructiveChanges.xml'
+        : './config/preDestructiveChanges.xml');
     if (fs.existsSync(preDestructiveChanges)) {
       this.smartDeployOptions.preDestructiveChanges = preDestructiveChanges;
+    } else if (configuredPreDestructiveChanges) {
+      uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('configuredDestructiveManifestNotFound', { file: preDestructiveChanges })));
     }
   }
 

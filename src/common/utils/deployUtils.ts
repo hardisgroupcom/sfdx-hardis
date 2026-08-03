@@ -268,7 +268,8 @@ export async function smartDeploy(
     preDestructiveChanges?: string;
     delta?: boolean;
     destructiveChangesAfterDeployment?: boolean;
-    extraCommands?: any[]
+    extraCommands?: any[];
+    deferSuccessPullRequestComment?: boolean;
   }
 ): Promise<any> {
   elapseStart('all deployments');
@@ -303,7 +304,9 @@ export async function smartDeploy(
     uxLog("action", this, c.cyan(t('bothPackageXmlAndDestructiveChangesFiles')));
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
-    await GitProvider.managePostPullRequestComment(check);
+    if (options.deferSuccessPullRequestComment !== true) {
+      await GitProvider.managePostPullRequestComment(check);
+    }
     return { messages: [], quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
 
@@ -313,7 +316,9 @@ export async function smartDeploy(
     uxLog("action", this, t('noDeploymentOrDestructiveChangesToPerform'));
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
-    await GitProvider.managePostPullRequestComment(check);
+    if (options.deferSuccessPullRequestComment !== true) {
+      await GitProvider.managePostPullRequestComment(check);
+    }
     return { messages: [], quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
 
@@ -340,7 +345,9 @@ export async function smartDeploy(
     uxLog("other", this, t('noDeploymentToPerform'));
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
-    await GitProvider.managePostPullRequestComment(check);
+    if (options.deferSuccessPullRequestComment !== true) {
+      await GitProvider.managePostPullRequestComment(check);
+    }
     return { messages, quickDeploy, deployXmlCount, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
@@ -661,7 +668,9 @@ export async function smartDeploy(
   // Run deployment post commands
   await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
   // Post pull request comment if available
-  await GitProvider.managePostPullRequestComment(check);
+  if (options.deferSuccessPullRequestComment !== true) {
+    await GitProvider.managePostPullRequestComment(check);
+  }
   elapseEnd('all deployments');
   deploymentMetrics.quickDeploy = quickDeploy;
   deploymentMetrics.durationSeconds = Math.round((Date.now() - deployStartTime) / 1000);

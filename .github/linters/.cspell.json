@@ -1423,6 +1423,8 @@
     "REQUESTEDFOR",
     "REQUESTEDFOREMAIL",
     "TRIGGERER",
-    "vsts"
+    "vsts",
+    "subrequest",
+    "subrequests"
   ]
 }
