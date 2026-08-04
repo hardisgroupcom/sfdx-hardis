@@ -65,7 +65,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    timeout-minutes: 90
+    # Generous on purpose: every scenario waits on a real deployment, and Salesforce can take
+    # 20 minutes to process one when the org is busy. A run that really hangs is caught by the
+    # 30 minute per-test mocha timeout long before this one.
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -138,6 +141,17 @@ jobs:
           # output, and the escape codes break JSON.parse on output that looks perfectly
           # valid in the job log, because log viewers hide the codes.
         run: yarn test:nuts:org
+
+      # Only the deployment reports are published, never the whole test session directory:
+      # the testkit authenticates the orgs inside it, so it also holds their refresh tokens.
+      - name: Publish the deployment reports produced by the tests
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: nuts-org-hardis-report
+          path: test_session_*/**/hardis-report/**
+          if-no-files-found: ignore
+          retention-days: 7
 
       # The tests do not delete their scratch org: they share a single one, and the job owns
       # its lifecycle. Deleting the ScratchOrgInfo record on the Dev Hub frees the slot even

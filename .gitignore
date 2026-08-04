@@ -26,6 +26,8 @@ lib
 .nyc_output
 coverage
 test_session*
+# Credentials of the scratch org kept between org NUT runs (SFDX_HARDIS_NUT_REUSE_ORG=true)
+.nut-org-reuse.json
 
 # ignore sfdx-trust files
 *.tgz

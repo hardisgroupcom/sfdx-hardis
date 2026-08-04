@@ -10,10 +10,14 @@ import { expect } from 'chai';
 import fs from 'fs-extra';
 import * as path from 'path';
 import {
+  addApexClassToManifest,
   addBrokenApexClass,
   clearBranchConfig,
-    countAccounts,
-    getSharedNutOrgSession,
+  countAccounts,
+  deleteAccounts,
+  expectOutputExcludes,
+  expectOutputIncludes,
+  getSharedNutOrgSession,
   git,
   NutOrgContext,
   queryTooling,
@@ -39,10 +43,10 @@ describe('hardis:project:deploy:smart against a real org', () => {
       );
       const output = result.shellOutput.stdout + result.shellOutput.stderr;
 
-      expect(output).to.include('Deployment check summary');
-      expect(output).to.include('Succeeded');
+      expectOutputIncludes(output, 'Deployment check summary');
+      expectOutputIncludes(output, 'Succeeded');
       // The complete JSON must NOT be dumped in the console anymore (issue #2026)
-      expect(output).to.not.include('"numberComponentsDeployed"');
+      expectOutputExcludes(output, '"numberComponentsDeployed"');
     });
 
     it('writes the complete deployment JSON in hardis-report', async () => {
@@ -59,8 +63,8 @@ describe('hardis:project:deploy:smart against a real org', () => {
         { ensureExitCode: 0, env: { NO_TRUNCATE_LOGS: 'true' } }
       );
       const output = result.shellOutput.stdout + result.shellOutput.stderr;
-      expect(output).to.include('Deployment check summary');
-      expect(output).to.include('numberComponentsDeployed');
+      expectOutputIncludes(output, 'Deployment check summary');
+      expectOutputIncludes(output, 'numberComponentsDeployed');
     });
   });
 
@@ -71,6 +75,9 @@ describe('hardis:project:deploy:smart against a real org', () => {
      * result of each action and its actual effect in the org.
      */
     before(async () => {
+      // The apex action inserts a marker Account. Reset it so the exact count assertion below
+      // stays meaningful when the scratch org is reused from a previous run.
+      deleteAccounts(ctx, 'HardisNutApexActionMarker');
       await writeBranchConfig(
         ctx.projectDir,
         'main',
@@ -127,22 +134,22 @@ describe('hardis:project:deploy:smart against a real org', () => {
       );
       deployOutput = result.shellOutput.stdout + result.shellOutput.stderr;
 
-      expect(deployOutput).to.include('Deployment summary');
-      expect(deployOutput).to.include('[DeploymentActions] Running action NUT command action (pre-deploy)');
-      expect(deployOutput).to.include('[DeploymentActions] Running action NUT apex action (post-deploy)');
-      expect(deployOutput).to.include('[DeploymentActions] Running action NUT data action (post-deploy)');
+      expectOutputIncludes(deployOutput, 'Deployment summary');
+      expectOutputIncludes(deployOutput, '[DeploymentActions] Running action NUT command action (pre-deploy)');
+      expectOutputIncludes(deployOutput, '[DeploymentActions] Running action NUT apex action (post-deploy)');
+      expectOutputIncludes(deployOutput, '[DeploymentActions] Running action NUT data action (post-deploy)');
       // No action must be reported as failed
-      expect(deployOutput).to.not.include('[DeploymentActions] Action NUT command action (pre-deploy) failed');
-      expect(deployOutput).to.not.include('[DeploymentActions] Action NUT apex action (post-deploy) failed');
-      expect(deployOutput).to.not.include('[DeploymentActions] Action NUT data action (post-deploy) failed');
+      expectOutputExcludes(deployOutput, '[DeploymentActions] Action NUT command action (pre-deploy) failed');
+      expectOutputExcludes(deployOutput, '[DeploymentActions] Action NUT apex action (post-deploy) failed');
+      expectOutputExcludes(deployOutput, '[DeploymentActions] Action NUT data action (post-deploy) failed');
     });
 
     it('the command action produced its output', () => {
-      expect(deployOutput, 'command action stdout should be forwarded').to.include('HARDIS_NUT_COMMAND_ACTION_RAN');
+      expectOutputIncludes(deployOutput, 'HARDIS_NUT_COMMAND_ACTION_RAN', 'command action stdout should be forwarded');
     });
 
     it('reported the manual action without running anything', () => {
-      expect(deployOutput).to.include('NUT manual action (post-deploy)');
+      expectOutputIncludes(deployOutput, 'NUT manual action (post-deploy)');
     });
 
     it('the apex action really ran against the org', () => {
@@ -186,8 +193,8 @@ describe('hardis:project:deploy:smart against a real org', () => {
       );
       const output = result.shellOutput.stdout + result.shellOutput.stderr;
 
-      expect(output).to.include('[DeploymentActions] Skipping NUT process only action');
-      expect(output).to.not.include('HARDIS_NUT_PROCESS_ONLY_RAN');
+      expectOutputIncludes(output, '[DeploymentActions] Skipping NUT process only action');
+      expectOutputExcludes(output, 'HARDIS_NUT_PROCESS_ONLY_RAN');
       await clearBranchConfig(ctx.projectDir);
     });
 
@@ -214,7 +221,7 @@ describe('hardis:project:deploy:smart against a real org', () => {
       );
       const output = result.shellOutput.stdout + result.shellOutput.stderr;
 
-      expect(output).to.include('[DeploymentActions] Action NUT failing action failed');
+      expectOutputIncludes(output, '[DeploymentActions] Action NUT failing action failed');
       await clearBranchConfig(ctx.projectDir);
     });
 
@@ -242,13 +249,24 @@ describe('hardis:project:deploy:smart against a real org', () => {
       );
       const output = result.shellOutput.stdout + result.shellOutput.stderr;
 
-      expect(output).to.include('Deployment check summary');
+      expectOutputIncludes(output, 'Deployment check summary');
       await clearBranchConfig(ctx.projectDir);
     });
   });
 
   describe('delta deployment', () => {
-    it('deploys only what changed between two commits', async () => {
+    // A delta deployment compares a source branch with a target branch, the way a Pull Request
+    // does. Running it on the target branch itself leaves the comparison scope empty, so the
+    // scenario really needs a feature branch.
+    const featureBranch = 'feature/nut-delta';
+
+    after(() => {
+      // The later scenarios expect the fixture to be back on its main branch
+      git(ctx.projectDir, 'checkout main');
+    });
+
+    it('deploys only what changed between the feature branch and its target branch', async () => {
+      git(ctx.projectDir, `checkout -b ${featureBranch}`);
       const classesDir = path.join(ctx.projectDir, 'force-app', 'main', 'default', 'classes');
       await fs.writeFile(
         path.join(classesDir, 'HardisNutDelta.cls'),
@@ -260,18 +278,24 @@ describe('hardis:project:deploy:smart against a real org', () => {
         '<?xml version="1.0" encoding="UTF-8"?>\n<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata">\n    <apiVersion>65.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n',
         'utf8'
       );
+      // sfdx-hardis filters the delta package against the project manifest, so a class missing
+      // from it would be dropped and the delta would end up empty
+      await addApexClassToManifest(ctx.projectDir, 'HardisNutDelta');
       git(ctx.projectDir, 'add -A');
       git(ctx.projectDir, 'commit -m "feat: add delta class" --no-verify');
+      git(ctx.projectDir, `push -u origin ${featureBranch}`);
 
       const result = runHardis(
         ctx,
-        `hardis:project:deploy:smart --check --delta --testlevel NoTestRun --target-org ${ctx.orgAlias}`,
+        `hardis:project:deploy:smart --check --delta --testlevel NoTestRun --target-branch main --target-org ${ctx.orgAlias}`,
         { ensureExitCode: 0 }
       );
       const output = result.shellOutput.stdout + result.shellOutput.stderr;
 
-      expect(output).to.include('Deployment check summary');
-      expect(output).to.include('DELTA');
+      expectOutputIncludes(output, 'Deployment check summary');
+      expectOutputIncludes(output, 'DELTA');
+      // Only the class added on the feature branch belongs to the delta
+      expectOutputIncludes(output, 'HardisNutDelta');
     });
   });
 
@@ -298,9 +322,9 @@ describe('hardis:project:deploy:smart against a real org', () => {
       });
       const output = result.shellOutput.stdout + result.shellOutput.stderr;
 
-      expect(output).to.include(validationJobId);
-      expect(output).to.include('QuickDeploy');
-      expect(output).to.include('Quick Deploy');
+      expectOutputIncludes(output, validationJobId);
+      expectOutputIncludes(output, 'QuickDeploy');
+      expectOutputIncludes(output, 'Quick Deploy');
     });
 
     it('skips quick deploy when SFDX_HARDIS_QUICK_DEPLOY is false', () => {
@@ -310,8 +334,8 @@ describe('hardis:project:deploy:smart against a real org', () => {
       });
       const output = result.shellOutput.stdout + result.shellOutput.stderr;
 
-      expect(output).to.include('Deployment summary');
-      expect(output).to.not.include('Successfully processed QuickDeploy');
+      expectOutputIncludes(output, 'Deployment summary');
+      expectOutputExcludes(output, 'Successfully processed QuickDeploy');
     });
   });
 
@@ -328,10 +352,10 @@ describe('hardis:project:deploy:smart against a real org', () => {
       );
       const output = result.shellOutput.stdout + result.shellOutput.stderr;
 
-      expect(output).to.include('Deployment check summary');
-      expect(output).to.include('HardisNutBroken');
+      expectOutputIncludes(output, 'Deployment check summary');
+      expectOutputIncludes(output, 'HardisNutBroken');
       // The complete JSON must not be dumped on the failure path either
-      expect(output).to.not.include('"componentSuccesses"');
+      expectOutputExcludes(output, '"componentSuccesses"');
 
       const report = await readDeployResultReport(ctx.projectDir);
       expect(report, 'report file should be written on failure too').to.not.equal(null);

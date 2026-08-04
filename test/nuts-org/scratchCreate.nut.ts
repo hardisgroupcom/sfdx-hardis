@@ -23,12 +23,18 @@ describe('hardis:scratch:create against a real Dev Hub', () => {
   before(async function () {
     this.timeout(1800000); // scratch org creation + full initialization is slow
     ctx = await getSharedNutOrgSession();
+    if (ctx.reused) {
+      // Nothing was created by this run, so there is no initialization to assert on
+      this.skip();
+    }
   });
 
   it('created a usable scratch org', () => {
     const res = runSf<any>(`org display --target-org ${ctx.orgAlias} --json`, { cwd: ctx.projectDir });
-    expect(res.result?.connectedStatus).to.equal('Connected');
+    // A scratch org reports status "Active"; connectedStatus is only set for non-scratch orgs
+    expect(res.result?.status, 'scratch org should be Active').to.equal('Active');
     expect(res.result?.username).to.be.a('string');
+    expect(res.result?.username).to.include('hardis-scratch-');
   });
 
   it('pushed the project sources to the scratch org', () => {

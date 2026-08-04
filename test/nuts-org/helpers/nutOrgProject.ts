@@ -32,7 +32,27 @@ export interface NutOrgContext {
   devHubUsername: string;
   /** Console output of hardis:scratch:create, so scenarios can assert on the init steps */
   scratchCreateOutput: string;
+  /** True when an existing org was reused instead of created (see NUT_REUSE_ORG_ENV) */
+  reused: boolean;
 }
+
+/**
+ * Name of the env var that makes the NUTs reuse the scratch org of a previous run.
+ *
+ * A Developer Edition Dev Hub only allows 6 scratch org creations per rolling 24h, which is
+ * spent in two runs when iterating on the tests. Set `SFDX_HARDIS_NUT_REUSE_ORG=true` to keep
+ * working on the same org instead:
+ *   SFDX_HARDIS_NUT_REUSE_ORG=true yarn test:nuts:org
+ * The first run creates the org and saves its alias and SFDX auth URL in NUT_REUSE_FILE; the
+ * next ones log back into it. The scratch org creation scenarios are skipped when reusing,
+ * since nothing was created.
+ *
+ * Opt-in on purpose: the file holds a refresh token, so it is only written when asked for.
+ */
+export const NUT_REUSE_ORG_ENV = 'SFDX_HARDIS_NUT_REUSE_ORG';
+
+/** Where the reusable org credentials are stored, outside of any TestSession directory */
+export const NUT_REUSE_FILE = path.resolve(currentDir, '../../../.nut-org-reuse.json');
 
 /** Run a git command inside the fixture project */
 export function git(projectDir: string, command: string): string {
@@ -66,11 +86,12 @@ function baseEnv(devHubUsername: string): Record<string, string> {
  */
 export function runSf<T = any>(
   command: string,
-  options: { cwd?: string; devHubUsername?: string; tolerateFailure?: boolean } = {}
+  options: { cwd?: string; devHubUsername?: string; tolerateFailure?: boolean; env?: Record<string, string> } = {}
 ): { status: number; result: T | null; output: string } {
   const env = {
     ...process.env,
     ...(options.devHubUsername ? baseEnv(options.devHubUsername) : {}),
+    ...(options.env ?? {}),
   } as Record<string, string>;
   let output = '';
   let execErrorMessage = '';
@@ -173,7 +194,13 @@ export function getScratchOrgLimits(devHubUsername: string): { active: string; d
   return { active: describe('ActiveScratchOrgs'), daily: describe('DailyScratchOrgs') };
 }
 
-/** Resolve the Dev Hub username authenticated by the testkit (TESTKIT_AUTH_URL) */
+/**
+ * Resolve the Dev Hub username authenticated by the testkit (TESTKIT_AUTH_URL).
+ *
+ * TestSession.create() repoints HOME to an isolated directory, so the orgs authenticated on the
+ * developer machine are invisible from inside a session: the Dev Hub has to be authenticated by
+ * the testkit itself, from TESTKIT_AUTH_URL.
+ */
 function resolveDevHubUsername(session: TestSession): string {
   const fromSession = (session as any)?.hubOrg?.username;
   if (fromSession) {
@@ -182,13 +209,84 @@ function resolveDevHubUsername(session: TestSession): string {
   if (process.env.TESTKIT_HUB_USERNAME) {
     return process.env.TESTKIT_HUB_USERNAME;
   }
-  // Last resort: ask the CLI for the default Dev Hub
+  // Last resort, only useful if something authenticated the hub inside the session home
   const res = runSf<any>('org list --json', { tolerateFailure: true });
   const devHub = (res.result?.devHubs ?? []).find((o: any) => o.username);
   if (!devHub?.username) {
-    throw new Error('Unable to resolve a Dev Hub username. Is TESTKIT_AUTH_URL set and is the org a Dev Hub?');
+    throw new Error(
+      'No Dev Hub is authenticated inside the test session.\n' +
+      'Set TESTKIT_AUTH_URL to the SFDX auth URL of a Dev Hub enabled org:\n' +
+      '  sf org display --target-org <devhub> --verbose --json   (read the sfdxAuthUrl field)\n' +
+      'TestSession isolates HOME, so the orgs authenticated on the machine are not visible here.'
+    );
   }
   return devHub.username;
+}
+
+/** True when the developer opted in to reusing the scratch org across runs */
+function isOrgReuseEnabled(): boolean {
+  return process.env[NUT_REUSE_ORG_ENV] === 'true';
+}
+
+/** Credentials of a scratch org kept between runs (see NUT_REUSE_ORG_ENV) */
+interface ReusableOrg {
+  alias: string;
+  authUrl: string;
+}
+
+function readReusableOrg(): ReusableOrg | null {
+  try {
+    const saved = fs.readJsonSync(NUT_REUSE_FILE) as ReusableOrg;
+    return saved?.alias && saved?.authUrl ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Save the org credentials outside of the session directory, so the next run can log back in */
+function saveReusableOrg(projectDir: string, alias: string): void {
+  const display = runSf<any>(`org display --target-org ${alias} --verbose --json`, {
+    cwd: projectDir,
+    tolerateFailure: true,
+    // The CLI redacts secrets from `org display` output unless explicitly asked
+    env: { SF_TEMP_SHOW_SECRETS: 'true' },
+  });
+  const authUrl = display.result?.sfdxAuthUrl;
+  if (!authUrl) {
+    // eslint-disable-next-line no-console
+    console.log('[nuts-org] No SFDX auth URL returned by org display, the org will not be reusable.');
+    return;
+  }
+  fs.writeJsonSync(NUT_REUSE_FILE, { alias, authUrl }, { spaces: 2 });
+  // eslint-disable-next-line no-console
+  console.log(`[nuts-org] Saved ${alias} in ${NUT_REUSE_FILE}, the next run will reuse it.`);
+}
+
+/**
+ * Authenticate a previously saved scratch org inside the current session.
+ * Returns false when the org expired or was deleted, so the caller creates a new one.
+ */
+function loginReusableOrg(projectDir: string, reusable: ReusableOrg): boolean {
+  const urlFile = path.join(projectDir, 'nut-reuse-auth-url.txt');
+  try {
+    fs.writeFileSync(urlFile, reusable.authUrl, 'utf8');
+    const login = runSf(
+      `org login sfdx-url --sfdx-url-file "${urlFile}" --alias ${reusable.alias} --json`,
+      { cwd: projectDir, tolerateFailure: true }
+    );
+    if (login.status !== 0) {
+      return false;
+    }
+  } finally {
+    fs.removeSync(urlFile);
+  }
+  const display = runSf<any>(`org display --target-org ${reusable.alias} --json`, {
+    cwd: projectDir,
+    tolerateFailure: true,
+  });
+  // A scratch org is reported with status "Active" and has no connectedStatus field,
+  // unlike the non-scratch orgs listed by `sf org list`.
+  return display.status === 0 && display.result?.status === 'Active';
 }
 
 /**
@@ -226,6 +324,20 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
 
     await fs.ensureDir(path.join(projectDir, 'config', 'user'));
 
+    // Reuse the org of a previous run when asked to, to spare the daily creation quota.
+    if (isOrgReuseEnabled()) {
+      const reusable = readReusableOrg();
+      if (reusable && loginReusableOrg(projectDir, reusable)) {
+        // eslint-disable-next-line no-console
+        console.log(`[nuts-org] Reusing the scratch org ${reusable.alias} of a previous run`);
+        return { session, projectDir, orgAlias: reusable.alias, devHubUsername, scratchCreateOutput: '', reused: true };
+      }
+      if (reusable) {
+        // eslint-disable-next-line no-console
+        console.log(`[nuts-org] The saved scratch org ${reusable.alias} is not usable anymore, creating a new one`);
+      }
+    }
+
     // hardis:scratch:create derives the scratch org username from the alias
     // (nut@hardis-scratch-<alias>.com). Salesforce refuses to reuse a scratch org username,
     // even once the org has been deleted, so the alias must be unique on every run.
@@ -234,10 +346,9 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
     const requestedAlias = `hardis-nut-${scenario}-${runSuffix}`;
     const orgAlias = `CI-${requestedAlias}`;
 
-    const createScratchOrg = (ensureExitCode: number | undefined) =>
+    const createScratchOrg = () =>
       execCmd(`hardis:scratch:create --target-dev-hub ${devHubUsername} --agent`, {
         cwd: projectDir,
-        ensureExitCode,
         timeout: 1800000,
         env: {
           ...process.env,
@@ -246,7 +357,7 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
         } as Record<string, string>,
       });
 
-    let createResult = createScratchOrg(undefined);
+    let createResult = createScratchOrg();
     let scratchCreateOutput = createResult.shellOutput.stdout + createResult.shellOutput.stderr;
 
     // The Dev Hub allows a limited number of active scratch orgs, and a crashed job leaks its
@@ -268,14 +379,22 @@ export async function createNutOrgSession(scenario: string): Promise<NutOrgConte
             `Scratch org creation output:\n${scratchCreateOutput.slice(-2000)}`
           );
         }
-        createResult = createScratchOrg(0);
+        createResult = createScratchOrg();
         scratchCreateOutput = createResult.shellOutput.stdout + createResult.shellOutput.stderr;
+        if (createResult.shellOutput.code !== 0) {
+          throw new Error(
+            `hardis:scratch:create failed again after freeing ${freed} scratch org slot(s):\n${scratchCreateOutput.slice(-4000)}`
+          );
+        }
       } else {
         throw new Error(`hardis:scratch:create failed:\n${scratchCreateOutput}`);
       }
     }
 
-    return { session, projectDir, orgAlias, devHubUsername, scratchCreateOutput };
+    if (isOrgReuseEnabled()) {
+      saveReusableOrg(projectDir, orgAlias);
+    }
+    return { session, projectDir, orgAlias, devHubUsername, scratchCreateOutput, reused: false };
   } catch (e) {
     await session.clean().catch(() => undefined);
     throw e;
@@ -309,8 +428,11 @@ export async function cleanNutOrgSession(ctx: NutOrgContext | undefined): Promis
     return;
   }
   try {
-    // The scratch org was created by sfdx-hardis, so TestSession.clean() does not know about it
-    runSf(`org delete scratch --no-prompt --target-org ${ctx.orgAlias} --json`, { cwd: ctx.projectDir, tolerateFailure: true });
+    // A reused org belongs to a previous run: deleting it would defeat the purpose
+    if (!ctx.reused) {
+      // The scratch org was created by sfdx-hardis, so TestSession.clean() does not know about it
+      runSf(`org delete scratch --no-prompt --target-org ${ctx.orgAlias} --json`, { cwd: ctx.projectDir, tolerateFailure: true });
+    }
   } catch {
     // Best effort: a leaked scratch org expires on its own after SCRATCH_ORG_DURATION days
   }
@@ -330,11 +452,36 @@ export async function clearBranchConfig(projectDir: string): Promise<void> {
   await fs.remove(path.join(projectDir, 'config', 'branches'));
 }
 
+/**
+ * Declare an Apex class in the project manifest/package.xml.
+ *
+ * A class dropped in the source folder alone is never deployed: a full deployment only sends
+ * what the manifest lists, and a delta deployment is filtered against that same manifest, so
+ * an undeclared class silently disappears from the delta package.
+ */
+export async function addApexClassToManifest(projectDir: string, className: string): Promise<void> {
+  const packageXmlFile = path.join(projectDir, 'manifest', 'package.xml');
+  const packageXml = await fs.readFile(packageXmlFile, 'utf8');
+  if (packageXml.includes(`<members>${className}</members>`)) {
+    return;
+  }
+  const anchor = '<name>ApexClass</name>';
+  if (!packageXml.includes(anchor)) {
+    throw new Error(`No ApexClass section found in ${packageXmlFile}, cannot declare ${className}`);
+  }
+  await fs.writeFile(
+    packageXmlFile,
+    packageXml.replace(anchor, `<members>${className}</members>\n        ${anchor}`),
+    'utf8'
+  );
+}
+
 /** Copy the deliberately broken Apex class into the project, to make a deployment fail */
 export async function addBrokenApexClass(projectDir: string): Promise<void> {
   const targetDir = path.join(projectDir, 'force-app', 'main', 'default', 'classes');
   await fs.ensureDir(targetDir);
   await fs.copy(path.join(FIXTURE_BROKEN_DIR, 'classes'), targetDir);
+  await addApexClassToManifest(projectDir, 'HardisNutBroken');
 }
 
 /**
@@ -346,9 +493,11 @@ export function runHardis<T = any>(
   command: string,
   options: { ensureExitCode?: number | 'nonZero'; env?: Record<string, string>; timeout?: number } = {}
 ) {
-  return execCmd<T>(command, {
+  // The exit code is checked here rather than through the testkit `ensureExitCode` option:
+  // the testkit assertion only reports the code, and a deployment that fails for an unexpected
+  // reason is impossible to diagnose from a CI log without the command output.
+  const result = execCmd<T>(command, {
     cwd: ctx.projectDir,
-    ensureExitCode: options.ensureExitCode,
     timeout: options.timeout ?? 1800000,
     env: {
       ...process.env,
@@ -356,6 +505,46 @@ export function runHardis<T = any>(
       ...options.env,
     } as Record<string, string>,
   });
+  const expected = options.ensureExitCode;
+  const code = result.shellOutput.code;
+  const unexpected =
+    (expected === 'nonZero' && code === 0) || (typeof expected === 'number' && code !== expected);
+  if (unexpected) {
+    const output = `${result.shellOutput.stdout || ''}${result.shellOutput.stderr || ''}`;
+    throw new Error(
+      `sf ${command}\nexited with code ${code}, expected ${expected === 'nonZero' ? 'a non-zero code' : expected}\n` +
+      `--- last 6000 characters of the command output ---\n${output.slice(-6000) || '(empty)'}`
+    );
+  }
+  return result;
+}
+
+/**
+ * Assert that a command output contains an expected text.
+ *
+ * Preferred over `expect(output).to.include(...)`: chai truncates the actual value, and a
+ * deployment log is far too long to tell from the truncation what actually happened.
+ */
+export function expectOutputIncludes(output: string, expected: string, hint = ''): void {
+  if (!output.includes(expected)) {
+    throw new Error(
+      `Expected the command output to include:\n  ${expected}\n` +
+      (hint ? `${hint}\n` : '') +
+      `--- last 6000 characters of the output ---\n${output.slice(-6000) || '(empty)'}`
+    );
+  }
+}
+
+/** Assert that a command output does NOT contain a text, showing where it appears when it does */
+export function expectOutputExcludes(output: string, unexpected: string, hint = ''): void {
+  const index = output.indexOf(unexpected);
+  if (index >= 0) {
+    throw new Error(
+      `Expected the command output NOT to include:\n  ${unexpected}\n` +
+      (hint ? `${hint}\n` : '') +
+      `--- output around the unexpected text ---\n${output.slice(Math.max(0, index - 1500), index + 1500)}`
+    );
+  }
 }
 
 /** Count Account records matching a name, to assert that an action really touched the org */
@@ -383,6 +572,24 @@ export function queryRecords(ctx: NutOrgContext, soql: string): any[] {
     devHubUsername: ctx.devHubUsername,
   });
   return res.result?.records ?? [];
+}
+
+/**
+ * Delete the Account records matching a name pattern.
+ *
+ * Used to reset a marker before the scenario that creates it, so an exact count assertion
+ * stays meaningful when the scratch org is reused across runs (see NUT_REUSE_ORG_ENV).
+ */
+export function deleteAccounts(ctx: NutOrgContext, namePattern: string): number {
+  const records = queryRecords(ctx, `SELECT Id FROM Account WHERE Name LIKE '${namePattern}'`);
+  for (const record of records) {
+    runSf(`data delete record --sobject Account --record-id ${record.Id} --json --target-org ${ctx.orgAlias}`, {
+      cwd: ctx.projectDir,
+      devHubUsername: ctx.devHubUsername,
+      tolerateFailure: true,
+    });
+  }
+  return records.length;
 }
 
 /** Read the deployment result report file written by hardis:project:deploy:smart */
