@@ -16,6 +16,7 @@
  */
 import { TestSession, execCmd } from '@salesforce/cli-plugins-testkit';
 import fs from 'fs-extra';
+import * as os from 'os';
 import * as path from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -63,9 +64,32 @@ export function git(projectDir: string, command: string): string {
   });
 }
 
+/**
+ * Where the sf CLI keeps the plugins installed on this machine.
+ *
+ * TestSession relocates HOME so that a test never touches the developer's own configuration, but
+ * the sf CLI resolves its installed plugins from there too: inside a session `sf sfdmu:run` and
+ * `sf sgd:source:delta` are reported as "not a sf command", and a delta deployment then fails on
+ * the package.xml sfdx-git-delta never got to write. Windows is unaffected because the plugins
+ * live under LOCALAPPDATA, which is why this only ever failed on Linux.
+ *
+ * Resolved at import time, before any session exists, and pinned for every command the tests run.
+ */
+const SF_DATA_DIR = process.env.SF_DATA_DIR || defaultSfDataDir();
+
+function defaultSfDataDir(): string {
+  if (process.platform === 'win32' && process.env.LOCALAPPDATA) {
+    return path.join(process.env.LOCALAPPDATA, 'sf');
+  }
+  const home = process.env.HOME || os.homedir();
+  return path.join(process.env.XDG_DATA_HOME || path.join(home, '.local', 'share'), 'sf');
+}
+
 /** Base environment shared by every hardis command run in the NUTs */
 function baseEnv(devHubUsername: string): Record<string, string> {
   return {
+    // Keep the plugins reachable even though TestSession moved HOME
+    SF_DATA_DIR,
     // isCI must be true so sfdx-hardis never prompts
     CI: 'true',
     USER_EMAIL: 'nut@sfdx-hardis.test',
@@ -90,6 +114,7 @@ export function runSf<T = any>(
 ): { status: number; result: T | null; output: string } {
   const env = {
     ...process.env,
+    SF_DATA_DIR,
     ...(options.devHubUsername ? baseEnv(options.devHubUsername) : {}),
     ...(options.env ?? {}),
   } as Record<string, string>;
@@ -529,11 +554,16 @@ export function runHardis<T = any>(
 
   let result = runOnce();
   let output = `${result.shellOutput.stdout || ''}${result.shellOutput.stderr || ''}`;
-  if (isUnexpected(result.shellOutput.code) && isTransientOrgError(output)) {
+  // Increasing waits: the only configuration where these scenarios never hit a transient error is
+  // a developer machine, where each deployment takes minutes and the org gets that long to settle.
+  for (const waitSeconds of [60, 120]) {
+    if (!isUnexpected(result.shellOutput.code) || !isTransientOrgError(output)) {
+      break;
+    }
     // eslint-disable-next-line no-console
-    console.log('[nuts-org] Transient org error, waiting 30s and running the command once more');
+    console.log(`[nuts-org] Transient org error, waiting ${waitSeconds}s before running the command again`);
     // Cross-platform synchronous wait: `sleep` does not exist on Windows and `timeout` needs a console
-    execSync('node -e "setTimeout(() => undefined, 30000)"', { stdio: 'ignore' });
+    execSync(`node -e "setTimeout(() => undefined, ${waitSeconds * 1000})"`, { stdio: 'ignore' });
     result = runOnce();
     output = `${result.shellOutput.stdout || ''}${result.shellOutput.stderr || ''}`;
   }

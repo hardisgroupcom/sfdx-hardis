@@ -69,6 +69,11 @@ jobs:
     # 20 minutes to process one when the org is busy. A run that really hangs is caught by the
     # 30 minute per-test mocha timeout long before this one.
     timeout-minutes: 150
+    env:
+      # Pinned so the plugins installed below stay reachable from inside a TestSession, which
+      # relocates HOME and would otherwise hide them from the sf CLI (Linux resolves plugins
+      # under HOME). Both the install step and the tests read this same directory.
+      SF_DATA_DIR: ${{ github.workspace }}/.sf-data
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
