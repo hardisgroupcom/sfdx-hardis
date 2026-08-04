@@ -26,8 +26,10 @@ lib
 .nyc_output
 coverage
 test_session*
-# Credentials of the scratch org kept between org NUT runs (SFDX_HARDIS_NUT_REUSE_ORG=true)
+# Credentials of the scratch org kept between org NUT runs (SFDX_HARDIS_NUT_REUSE_ORG=true),
+# and the encrypted copy the CI job hands to the next run through the Actions cache
 .nut-org-reuse.json
+.nut-org-reuse.json.enc
 
 # ignore sfdx-trust files
 *.tgz
