@@ -197,7 +197,7 @@ export function getScratchOrgLimits(devHubUsername: string): { active: string; d
 /**
  * Resolve the Dev Hub username authenticated by the testkit (TESTKIT_AUTH_URL).
  *
- * TestSession.create() repoints HOME to an isolated directory, so the orgs authenticated on the
+ * TestSession.create() moves HOME to an isolated directory, so the orgs authenticated on the
  * developer machine are invisible from inside a session: the Dev Hub has to be authenticated by
  * the testkit itself, from TESTKIT_AUTH_URL.
  */

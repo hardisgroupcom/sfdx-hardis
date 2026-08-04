@@ -4,7 +4,7 @@ import c from 'chalk';
 import fs from "fs-extra";
 import * as path from "path";
 import sortArray from 'sort-array';
-import { SfProject } from '@salesforce/core';
+import { SfError, SfProject } from '@salesforce/core';
 import {
   arrayUniqueByKey,
   arrayUniqueByKeys,
@@ -271,6 +271,18 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
     debug: options?.debugMode || false,
     cwd: gitRoot,
   });
+  // Fail here rather than later: when sfdx-git-delta does not run, the caller reads the delta
+  // package.xml it was supposed to write and dies on a file-not-found that says nothing about
+  // the real cause. Report what sfdx-git-delta actually answered instead.
+  if (gitDeltaCommandRes?.status && gitDeltaCommandRes.status !== 0) {
+    const sgdOutput = `${gitDeltaCommandRes?.stdout || ''}${gitDeltaCommandRes?.stderr || ''}`.trim();
+    throw new SfError(
+      `[DeltaDeployment] sfdx-git-delta failed (status ${gitDeltaCommandRes.status}).\n` +
+      `Command: ${packageXmlGitDeltaCommand}\n` +
+      `Working directory: ${gitRoot}\n` +
+      `Output: ${sgdOutput || '(none)'}`
+    );
+  }
   // Send results to UI if there is one (skip if caller handles notifications)
   if (WebSocketClient.isAliveWithLwcUI() && !options?.skipWebSocketNotification) {
     const deltaPackageXml = path.join(outputDir, 'package', 'package.xml');

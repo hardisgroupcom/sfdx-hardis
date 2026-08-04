@@ -154,7 +154,10 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
     label: options?.label,
     reportFile: options?.deployResultReportFile ?? null,
   }).join("\n");
-  const rawJsonBlock = isFullDeployJsonLogRequested() ? "\n\n" + shortenLogLines(log) : "";
+  // The raw output is normally replaced by the summary, but when nothing could be parsed out of it
+  // there is no summary to display, and hiding it would leave no trace at all of what went wrong.
+  const hasParsableResult = !!resultJson?.result;
+  const rawJsonBlock = isFullDeployJsonLogRequested() || !hasParsableResult ? "\n\n" + shortenLogLines(log) : "";
   // Return results
   const newLog = includeInLog
     ? summaryBlock + rawJsonBlock + "\n\n" + detailedErrorLines.join("\n")
