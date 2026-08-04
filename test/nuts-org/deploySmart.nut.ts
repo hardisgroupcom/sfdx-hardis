@@ -261,8 +261,10 @@ describe('hardis:project:deploy:smart against a real org', () => {
     const featureBranch = 'feature/nut-delta';
 
     after(() => {
-      // The later scenarios expect the fixture to be back on its main branch
-      git(ctx.projectDir, 'checkout main');
+      // The later scenarios expect the fixture to be back on its main branch. Forced because the
+      // commands under test rewrite their report files as they go, and a hook that throws here
+      // would fail every remaining scenario rather than just this one.
+      git(ctx.projectDir, 'checkout --force main');
     });
 
     it('deploys only what changed between the feature branch and its target branch', async () => {

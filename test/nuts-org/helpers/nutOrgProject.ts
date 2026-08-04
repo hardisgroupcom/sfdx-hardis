@@ -77,6 +77,32 @@ export function git(projectDir: string, command: string): string {
  */
 const SF_DATA_DIR = process.env.SF_DATA_DIR || defaultSfDataDir();
 
+/**
+ * Errors that mean "ask again later", not "the code under test is wrong".
+ *
+ * The scenarios hit the same org back to back, much faster than any real pipeline would:
+ * Salesforce rejects a deployment started seconds after the previous one finished, and a query
+ * occasionally loses its connection.
+ */
+const TRANSIENT_ORG_ERRORS = [
+  'Could not find HEAD',
+  'ALREADY_IN_PROCESS',
+  'UNABLE_TO_LOCK_ROW',
+  'Your request exceeded the time limit for processing',
+  'fetch failed',
+  'ECONNRESET',
+  'ETIMEDOUT',
+];
+
+function isTransientOrgError(output: string): boolean {
+  return TRANSIENT_ORG_ERRORS.some((message) => output.includes(message));
+}
+
+/** Cross-platform synchronous wait: `sleep` does not exist on Windows and `timeout` needs a console */
+function waitSeconds(seconds: number): void {
+  execSync(`node -e "setTimeout(() => undefined, ${seconds * 1000})"`, { stdio: 'ignore' });
+}
+
 function defaultSfDataDir(): string {
   if (process.platform === 'win32' && process.env.LOCALAPPDATA) {
     return path.join(process.env.LOCALAPPDATA, 'sf');
@@ -110,7 +136,13 @@ function baseEnv(devHubUsername: string): Record<string, string> {
  */
 export function runSf<T = any>(
   command: string,
-  options: { cwd?: string; devHubUsername?: string; tolerateFailure?: boolean; env?: Record<string, string> } = {}
+  options: {
+    cwd?: string;
+    devHubUsername?: string;
+    tolerateFailure?: boolean;
+    env?: Record<string, string>;
+    retriesLeft?: number;
+  } = {}
 ): { status: number; result: T | null; output: string } {
   const env = {
     ...process.env,
@@ -158,6 +190,13 @@ export function runSf<T = any>(
   // Never fail silently: a helper that returns an empty result on error makes every assertion
   // built on it fail with a meaningless "expected 0 to equal 2" and no way to tell why.
   if (!options.tolerateFailure && (status !== 0 || parsed === null)) {
+    // A query that lost its connection to Salesforce says nothing about the code under test
+    if (isTransientOrgError(cleanOutput) && (options.retriesLeft ?? 1) > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[nuts-org] Transient error on "sf ${command.slice(0, 60)}...", retrying in 30s`);
+      waitSeconds(30);
+      return runSf<T>(command, { ...options, retriesLeft: (options.retriesLeft ?? 1) - 1 });
+    }
     throw new Error(
       `sf ${command}\nfailed with status ${status}` +
       (execErrorMessage ? `\nexec error: ${execErrorMessage.slice(0, 500)}` : '') +
@@ -513,22 +552,6 @@ export async function addBrokenApexClass(projectDir: string): Promise<void> {
  * Run a hardis (or plain sf) command inside the fixture project.
  * `ensureExitCode` is left to the caller: failing-deployment scenarios expect a non-zero code.
  */
-/**
- * Salesforce errors that mean "ask again later", not "your deployment is wrong".
- *
- * The scenarios deploy to the same org back to back, much faster than any real pipeline would,
- * and Salesforce sometimes rejects a deployment started seconds after the previous one finished.
- */
-const TRANSIENT_ORG_ERRORS = [
-  'Could not find HEAD',
-  'ALREADY_IN_PROCESS',
-  'UNABLE_TO_LOCK_ROW',
-  'Your request exceeded the time limit for processing',
-];
-
-function isTransientOrgError(output: string): boolean {
-  return TRANSIENT_ORG_ERRORS.some((message) => output.includes(message));
-}
 
 export function runHardis<T = any>(
   ctx: NutOrgContext,
@@ -556,14 +579,13 @@ export function runHardis<T = any>(
   let output = `${result.shellOutput.stdout || ''}${result.shellOutput.stderr || ''}`;
   // Increasing waits: the only configuration where these scenarios never hit a transient error is
   // a developer machine, where each deployment takes minutes and the org gets that long to settle.
-  for (const waitSeconds of [60, 120]) {
+  for (const seconds of [60, 120]) {
     if (!isUnexpected(result.shellOutput.code) || !isTransientOrgError(output)) {
       break;
     }
     // eslint-disable-next-line no-console
-    console.log(`[nuts-org] Transient org error, waiting ${waitSeconds}s before running the command again`);
-    // Cross-platform synchronous wait: `sleep` does not exist on Windows and `timeout` needs a console
-    execSync(`node -e "setTimeout(() => undefined, ${waitSeconds * 1000})"`, { stdio: 'ignore' });
+    console.log(`[nuts-org] Transient org error, waiting ${seconds}s before running the command again`);
+    waitSeconds(seconds);
     result = runOnce();
     output = `${result.shellOutput.stdout || ''}${result.shellOutput.stderr || ''}`;
   }
