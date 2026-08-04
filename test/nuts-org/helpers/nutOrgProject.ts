@@ -488,6 +488,23 @@ export async function addBrokenApexClass(projectDir: string): Promise<void> {
  * Run a hardis (or plain sf) command inside the fixture project.
  * `ensureExitCode` is left to the caller: failing-deployment scenarios expect a non-zero code.
  */
+/**
+ * Salesforce errors that mean "ask again later", not "your deployment is wrong".
+ *
+ * The scenarios deploy to the same org back to back, much faster than any real pipeline would,
+ * and Salesforce sometimes rejects a deployment started seconds after the previous one finished.
+ */
+const TRANSIENT_ORG_ERRORS = [
+  'Could not find HEAD',
+  'ALREADY_IN_PROCESS',
+  'UNABLE_TO_LOCK_ROW',
+  'Your request exceeded the time limit for processing',
+];
+
+function isTransientOrgError(output: string): boolean {
+  return TRANSIENT_ORG_ERRORS.some((message) => output.includes(message));
+}
+
 export function runHardis<T = any>(
   ctx: NutOrgContext,
   command: string,
@@ -496,23 +513,35 @@ export function runHardis<T = any>(
   // The exit code is checked here rather than through the testkit `ensureExitCode` option:
   // the testkit assertion only reports the code, and a deployment that fails for an unexpected
   // reason is impossible to diagnose from a CI log without the command output.
-  const result = execCmd<T>(command, {
-    cwd: ctx.projectDir,
-    timeout: options.timeout ?? 1800000,
-    env: {
-      ...process.env,
-      ...baseEnv(ctx.devHubUsername),
-      ...options.env,
-    } as Record<string, string>,
-  });
+  const runOnce = () =>
+    execCmd<T>(command, {
+      cwd: ctx.projectDir,
+      timeout: options.timeout ?? 1800000,
+      env: {
+        ...process.env,
+        ...baseEnv(ctx.devHubUsername),
+        ...options.env,
+      } as Record<string, string>,
+    });
   const expected = options.ensureExitCode;
-  const code = result.shellOutput.code;
-  const unexpected =
+  const isUnexpected = (code: number) =>
     (expected === 'nonZero' && code === 0) || (typeof expected === 'number' && code !== expected);
-  if (unexpected) {
-    const output = `${result.shellOutput.stdout || ''}${result.shellOutput.stderr || ''}`;
+
+  let result = runOnce();
+  let output = `${result.shellOutput.stdout || ''}${result.shellOutput.stderr || ''}`;
+  if (isUnexpected(result.shellOutput.code) && isTransientOrgError(output)) {
+    // eslint-disable-next-line no-console
+    console.log('[nuts-org] Transient org error, waiting 30s and running the command once more');
+    // Cross-platform synchronous wait: `sleep` does not exist on Windows and `timeout` needs a console
+    execSync('node -e "setTimeout(() => undefined, 30000)"', { stdio: 'ignore' });
+    result = runOnce();
+    output = `${result.shellOutput.stdout || ''}${result.shellOutput.stderr || ''}`;
+  }
+
+  if (isUnexpected(result.shellOutput.code)) {
     throw new Error(
-      `sf ${command}\nexited with code ${code}, expected ${expected === 'nonZero' ? 'a non-zero code' : expected}\n` +
+      `sf ${command}\nexited with code ${result.shellOutput.code}, ` +
+      `expected ${expected === 'nonZero' ? 'a non-zero code' : expected}\n` +
       `--- last 6000 characters of the command output ---\n${output.slice(-6000) || '(empty)'}`
     );
   }

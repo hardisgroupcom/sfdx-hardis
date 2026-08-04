@@ -275,7 +275,13 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
   // package.xml it was supposed to write and dies on a file-not-found that says nothing about
   // the real cause. Report what sfdx-git-delta actually answered instead.
   if (gitDeltaCommandRes?.status && gitDeltaCommandRes.status !== 0) {
-    const sgdOutput = `${gitDeltaCommandRes?.stdout || ''}${gitDeltaCommandRes?.stderr || ''}`.trim();
+    // A --json command that fails reports its output in errorMessage, not in stdout/stderr
+    const sgdOutput = (
+      gitDeltaCommandRes?.errorMessage ||
+      `${gitDeltaCommandRes?.stdout || ''}${gitDeltaCommandRes?.stderr || ''}` ||
+      gitDeltaCommandRes?.message ||
+      ''
+    ).trim();
     throw new SfError(
       `[DeltaDeployment] sfdx-git-delta failed (status ${gitDeltaCommandRes.status}).\n` +
       `Command: ${packageXmlGitDeltaCommand}\n` +
