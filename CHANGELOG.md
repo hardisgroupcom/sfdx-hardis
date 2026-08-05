@@ -19,6 +19,8 @@
 - A destructive changes manifest configured through `packageXmlToDelete` / `packageXmlToDeletePreDeploy` that does not exist on disk now logs a warning, instead of being skipped silently.
 - CSV and XLSX reports of the Bulk API helpers (`bulkUpdate`, `bulkDelete`) are now written in the reports directory, like every other report, instead of a relative file named after the object and the action.
 - Plugin API: `bulkDeleteTooling` now always returns `{ results: [{ Id, success, errors }] }`. Deletions go through the Tooling composite endpoint, with a one-by-one fallback.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): CI logs now display a readable deployment summary instead of the complete deployment JSON, which is written in hardis-report and published as a CI job artifact.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): New SFDX_HARDIS_DEPLOY_CHECK_ID env variable to force the Quick Deploy job id instead of reading it from Pull Request comments.
 
 ## [7.23.0] 2026-07-26
 

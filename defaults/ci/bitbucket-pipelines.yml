@@ -61,6 +61,8 @@ pipelines:
                   fi
                 - sf hardis:auth:login
                 - sf hardis:project:deploy:smart --check
+              artifacts:
+                - hardis-report/**
 
   branches:
     # Add all your major branches here
@@ -104,3 +106,5 @@ pipelines:
               fi
             - sf hardis:auth:login
             - sf hardis:project:deploy:smart
+          artifacts:
+            - hardis-report/**

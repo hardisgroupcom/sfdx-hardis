@@ -102,6 +102,11 @@ check_deploy_to_target_branch_org:
       fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart --check
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 1 week
 
 # Create scratch org to check the sources push & the unit tests
 create_scratch_org:
@@ -266,6 +271,11 @@ check_deploy_to_current_branch_org:
       fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart --check
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 1 week
 
 # Deploy to branch related org when detecting new commit (after a merged merge request)
 # Don't forget to define variable DEPLOY_BRANCHES to match your branches in .gitlab-ci-config.yml
@@ -299,3 +309,8 @@ deploy_to_org:
       fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 1 week

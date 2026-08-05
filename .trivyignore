@@ -306,3 +306,27 @@ GHSA-8r6m-32jq-jx6q
 # Forcing 5.0.8 through yarn resolutions is not possible: v5 is a breaking change that exports { expand } instead of a callable default, so minimatch 3.x/5.x/9.x and glob 7.x/8.x would break at runtime. Remediation depends on upstream packages moving to minimatch 10.
 # DoS only, and the brace patterns we pass to glob/minimatch are our own or come from release-manager-defined config, never from untrusted input. Added 2026-07-26.
 CVE-2026-14257
+
+# https://avd.aquasec.com/nvd/cve-2026-69152
+# brace-expansion: expand() does not apply maxLength while building the comma-alternative arrays or the padded sequences, so crafted input exhausts memory or blocks the event loop (DoS, HIGH). Bypasses the fix for CVE-2026-14257.
+# sfdx-hardis own tree is patched: yarn.lock now resolves 1.1.18, 2.1.4 and 5.0.9, all fixed. The copies still reported in the image (1.1.11, 2.0.2, 2.1.1, 5.0.5, 5.0.6, 5.0.7) come from the npm-shrinkwrapped @salesforce/cli and its plugins, which our yarn resolutions cannot reach, so not remediable from this repo.
+# DoS only, and the brace patterns we pass to glob/minimatch are our own or come from release-manager-defined config, never from untrusted input. Added 2026-08-04.
+CVE-2026-69152
+
+# https://avd.aquasec.com/nvd/cve-2026-18446
+# fast-uri: a backslash-based authority introducer is parsed with no authority and folds into the path, while Node's WHATWG URL parser treats a backslash as a forward slash, so the two disagree on the host (host-based policy bypass, HIGH).
+# sfdx-hardis own tree is patched to 3.1.5 in yarn.lock. The 3.1.2 left in the image comes from the shrinkwrapped @salesforce/cli, out of reach of our resolutions.
+# fast-uri is only used by ajv to resolve JSON schema $ref values, never to make a host trust decision, so the parser differential has nothing to bypass here. Added 2026-08-04.
+CVE-2026-18446
+
+# https://avd.aquasec.com/nvd/cve-2026-69192
+# ip-address: Address4 reads an octet with a leading zero as decimal while the network stack reads it as octal, so isPrivate(), isLoopback() and the other classifiers disagree with where a connection actually goes (SSRF filter bypass, HIGH).
+# sfdx-hardis own tree is patched to 10.3.1 in yarn.lock. The 10.2.0 left in the image is pulled by the shrinkwrapped @salesforce/cli through its socks proxy agent.
+# Nothing in sfdx-hardis builds a network trust boundary on ip-address: it is only reached when a user configures an explicit proxy, so there is no allowlist to defeat. Added 2026-08-04.
+CVE-2026-69192
+
+# https://avd.aquasec.com/nvd/cve-2026-13697
+# undici: the cache interceptor stores a response carrying a degenerate qualified private directive in the shared cache and can serve it to another caller, and a malformed Cache-Control combination throws in the parser (information disclosure, HIGH).
+# sfdx-hardis own tree is patched to 6.28.0 in yarn.lock. The 7.x copy left in the image belongs to the shrinkwrapped @salesforce/cli.
+# Only applies to consumers that enable the cache interceptor. Neither sfdx-hardis nor the Salesforce CLI enables it, and every request is made by a single CLI process against one org, so there is no shared cache to poison. Added 2026-08-04.
+CVE-2026-13697
