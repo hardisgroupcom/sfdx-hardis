@@ -6,6 +6,7 @@ import { stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
 import { updatePullRequestResult } from "./deployTips.js";
 import { shortenLogLines } from "./deployUtils.js";
+import { buildDeployResultSummaryLines, isFullDeployJsonLogRequested } from "./deployResultSummary.js";
 import { t } from './i18n.js';
 
 
@@ -147,8 +148,20 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
 
   // Update data that will be used for Pull Request comment
   await updatePullRequestResult(errorsAndTips, failedTests, options);
+  // Build a readable summary instead of the complete deployment JSON, that can be huge in big orgs
+  const summaryBlock = buildDeployResultSummaryLines(resultJson, {
+    check: options?.check === true,
+    label: options?.label,
+    reportFile: options?.deployResultReportFile ?? null,
+  }).join("\n");
+  // The raw output is normally replaced by the summary, but when nothing could be parsed out of it
+  // there is no summary to display, and hiding it would leave no trace at all of what went wrong.
+  const hasParsableResult = !!resultJson?.result;
+  const rawJsonBlock = isFullDeployJsonLogRequested() || !hasParsableResult ? "\n\n" + shortenLogLines(log) : "";
   // Return results
-  const newLog = includeInLog ? shortenLogLines(log) + "\n\n" + detailedErrorLines.join("\n") : shortenLogLines(log);
+  const newLog = includeInLog
+    ? summaryBlock + rawJsonBlock + "\n\n" + detailedErrorLines.join("\n")
+    : summaryBlock + rawJsonBlock;
   return { tips, errorsAndTips, failedTests, errLog: newLog };
 }
 

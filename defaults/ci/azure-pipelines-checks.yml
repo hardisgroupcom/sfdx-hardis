@@ -121,6 +121,11 @@ jobs:
           BUILD_BUILD_ID: $(Build.BuildId)
           SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD setup
         displayName: "Simulate deploy to org"
+      # Publish sfdx-hardis reports, including the complete deployment result JSON
+      - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+        condition: succeededOrFailed()
+        artifact: hardis-report
+        displayName: Publish sfdx-hardis reports
 
   # Run MegaLinter to detect linting and security issues
   # https://megalinter.io/latest/flavors/salesforce/

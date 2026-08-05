@@ -1070,7 +1070,7 @@ async function runDeploy(
     return { success: true, output: deployResult.stdout || '', hasTestFailures: false, hasCoverageFailures: false };
   } catch (e) {
     const output = ((e as any).stdout || '') + ((e as any).stderr || '');
-    const { errLog, failedTests, errorsAndTips } = await analyzeDeployErrorLogs(output, true, {});
+    const { errLog, failedTests, errorsAndTips } = await analyzeDeployErrorLogs(output, true, { label: 'backpromote' });
     uxLog('error', commandThis, c.red(t('backpromoteDeployFailed')));
     uxLog('error', commandThis, c.red('\n' + errLog));
     const hasTestFailures = (failedTests || []).length > 0;

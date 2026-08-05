@@ -40,6 +40,7 @@ import { executePrePostCommands } from './prePostCommandUtils.js';
 import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import { t } from './i18n.js';
 import { autoFixDeployErrors } from './deployErrorAutoFix.js';
+import { logDeployResultSummary, summarizeDeployErrorMessage, writeDeployResultReportFile } from './deployResultSummary.js';
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -78,7 +79,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       uxLog("error", this, c.red(c.bold(t('theErrorAppearsToBeCausedBy'))));
     }
     // Analyze errors
-    const { errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
+    const { errLog } = await analyzeDeployErrorLogs(stdOut, true, { label: 'project:deploy:start' });
     uxLog("error", commandThis, c.red(t('unfortunatelyPushErrorsOccurred')));
     uxLog("error", this, c.red('\n' + errLog));
     elapseEnd('project:deploy:start');
@@ -124,7 +125,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
     // Manage beta/legacy boza
     const stdOut = (e as any).stdout + (e as any).stderr;
     // Analyze errors
-    const { errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
+    const { errLog } = await analyzeDeployErrorLogs(stdOut, true, { label: 'project:retrieve:start' });
     uxLog("error", this, c.red(t('sadlyThereHasBeenPullError')));
     uxLog("error", this, c.red('\n' + errLog));
     // List unknown elements from output
@@ -423,8 +424,9 @@ export async function smartDeploy(
             ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
             (debugMode ? ' --verbose' : '') +
             (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '');
+          const quickDeployStartTime = Date.now();
           const quickDeployRes = await execSfdxJson(quickDeployCommand, commandThis, {
-            output: true,
+            output: false,
             debug: debugMode,
             fail: false,
           });
@@ -439,6 +441,19 @@ export async function smartDeploy(
             );
             quickDeploy = true;
             deploymentMetrics.quickDeploy = true;
+            // Store complete deployment result as a CI artifact, then display a readable summary
+            const quickDeployReportFile = await writeDeployResultReportFile(
+              { status: quickDeployRes.status, result: quickDeployRes.result },
+              deployment.label
+            );
+            logDeployResultSummary(commandThis, { status: quickDeployRes.status, result: quickDeployRes.result }, {
+              check: check,
+              label: deployment.label,
+              delta: options.delta === true,
+              quickDeploy: true,
+              durationMs: Date.now() - quickDeployStartTime,
+              reportFile: quickDeployReportFile,
+            });
             const quickDeployResultJson = quickDeployRes.result;
             if (quickDeployResultJson) {
               deploymentMetrics.componentsDeployed += Number(quickDeployResultJson.numberComponentsDeployed || 0);
@@ -455,7 +470,7 @@ export async function smartDeploy(
               "warning",
               commandThis,
               c.yellow(
-                `Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${quickDeployRes.errorMessage}.`
+                `Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${summarizeDeployErrorMessage(quickDeployRes.errorMessage)}.`
               )
             );
             uxLog("success", commandThis, c.green("Switching back to effective deployment not using QuickDeploy: that's ok 😊"));
@@ -519,6 +534,7 @@ export async function smartDeploy(
         (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
         ` --json`;
       let deployRes;
+      const deployCommandStartTime = Date.now();
       try {
         deployRes = await execCommand(deployCommand, commandThis, {
           output: false,
@@ -526,9 +542,6 @@ export async function smartDeploy(
           fail: true,
           retry: deployment.retry || null,
         });
-        if (deployRes.status === 0) {
-          uxLog("log", commandThis, c.grey(shortenLogLines(JSON.stringify(deployRes))));
-        }
       } catch (e: any) {
         await generateApexCoverageOutputFile();
 
@@ -583,11 +596,29 @@ export async function smartDeploy(
       }
       await generateApexCoverageOutputFile();
 
+      // Keep the complete deployment result available as a CI artifact, as it is not displayed in the console anymore
+      const deployResultJsonForReport = deployRes.result
+        ? { status: deployRes.status, result: deployRes.result }
+        : findJsonInString(`${deployRes.stdout || ''}${deployRes.stderr || ''}`);
+      const deployResultReportFile = await writeDeployResultReportFile(deployResultJsonForReport, deployment.label);
+
       // Set deployment id
       await getDeploymentId(deployRes.stdout + deployRes.stderr || '');
 
       // Check org coverage if found in logs
       const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || '');
+
+      // Display a readable summary of the deployment, before the code coverage check that can throw an error
+      logDeployResultSummary(commandThis, deployResultJsonForReport, {
+        check: check,
+        label: deployment.label,
+        delta: options.delta === true,
+        quickDeploy: quickDeploy,
+        orgCoveragePercent: orgCoveragePercent,
+        durationMs: Date.now() - deployCommandStartTime,
+        reportFile: deployResultReportFile,
+      });
+
       if (orgCoveragePercent) {
         deploymentMetrics.codeCoveragePercent = Number(orgCoveragePercent);
         try {
@@ -692,8 +723,10 @@ async function handleDeployError(
       return { status: 0, stdout: (e as any).stdout, stderr: (e as any).stderr, testCoverageNotBlockingActivated: true };
     }
   }
+  // Keep the complete deployment result available as a CI artifact, as it is not displayed in the console anymore
+  const deployResultReportFile = await writeDeployResultReportFile(findJsonInString(output), deployment.label);
   // Handle Effective error
-  const { errLog, errorsAndTips: deployErrorsAndTips, failedTests: deployFailedTests } = await analyzeDeployErrorLogs(output, true, { check: check });
+  const { errLog, errorsAndTips: deployErrorsAndTips, failedTests: deployFailedTests } = await analyzeDeployErrorLogs(output, true, { check: check, label: deployment.label, deployResultReportFile: deployResultReportFile });
   uxLog("error", commandThis, c.red(c.bold(t('sadlyThereHasBeenDeploymentError'))));
   if (process.env?.SFDX_HARDIS_DEPLOY_ERR_COLORS === 'false') {
     uxLog("other", this, '\n' + errLog);
@@ -1196,7 +1229,7 @@ export async function deployDestructiveChanges(
       fail: true,
     });
   } catch (e) {
-    const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, {});
+    const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, { label: 'destructive-changes' });
     uxLog("error", this, c.red(t('sadlyThereHasBeenDestructionError')));
     uxLog("error", this, c.red('\n' + errLog));
     uxLog(
@@ -1660,7 +1693,7 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {
-  const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, options);
+  const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, Object.assign({ label: 'metadata-deployment' }, options));
   uxLog("error", commandThis, c.red(c.bold(t('sadlyThereHasBeenMetadataDeploymentError'))));
   uxLog("error", this, c.red('\n' + errLog));
   await displayDeploymentLink((e as any).stdout + (e as any).stderr, options);

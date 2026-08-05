@@ -106,3 +106,11 @@ jobs:
           fi
           sf hardis:auth:login
           sf hardis:project:deploy:smart --check
+
+      # Upload sfdx-hardis reports, including the complete deployment result JSON
+      - name: Archive sfdx-hardis reports
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfdx-hardis reports
+          path: hardis-report

@@ -107,3 +107,8 @@ jobs:
           BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
           BUILD_BUILD_ID: $(Build.BuildId)
         displayName: "Deploy sources to related SF Org"
+      # Publish sfdx-hardis reports, including the complete deployment result JSON
+      - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+        condition: succeededOrFailed()
+        artifact: hardis-report
+        displayName: Publish sfdx-hardis reports
