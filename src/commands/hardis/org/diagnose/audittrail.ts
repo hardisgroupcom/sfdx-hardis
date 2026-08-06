@@ -122,6 +122,8 @@ You can define additional users to exclude in .sfdx-hardis.yml **monitoringExclu
 
 You can also add more sections / actions considered as not suspect using property **monitoringAllowedSectionsActions**
 
+If a user is expected to perform some specific actions (for example an integration user whose portal user provisioning automatically creates account roles), you can allow those actions for that user only using property **monitoringAllowedUsersActions**: unlike **monitoringExcludeUsernames**, any other action performed by the same user is still flagged.
+
 Example:
 
 \`\`\`yaml
@@ -133,6 +135,10 @@ monitoringExcludeUsernames:
 monitoringAllowedSectionsActions:
   "Some section": [] // Will ignore all actions from such section
   "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
+
+monitoringAllowedUsersActions:
+  "provisioning-user@cloudity.com": ["createdrole"] // Will ignore only createdrole from provisioning-user@cloudity.com. Any other action from this user will still be considered as suspect.
+  "another-integration@cloudity.com": [] // Will ignore all actions from this user (same as monitoringExcludeUsernames, but the records remain visible in the report as not suspect)
 \`\`\`
 
 ## Excel output example
@@ -200,6 +206,7 @@ In agent mode, the audit trail report is generated without interactive prompts, 
   protected excludeUsers: any[] = [];
   protected lastNdays: number | undefined;
   protected allowedSectionsActions = {};
+  protected allowedUsersActions = {};
   protected debugMode = false;
   protected agentMode = false;
 
@@ -234,6 +241,11 @@ In agent mode, the audit trail report is generated without interactive prompts, 
     // Append custom sections & actions considered as not suspect
     if (config.monitoringAllowedSectionsActions) {
       this.allowedSectionsActions = Object.assign(this.allowedSectionsActions, config.monitoringAllowedSectionsActions);
+    }
+
+    // Append user-specific actions considered as not suspect
+    if (config.monitoringAllowedUsersActions) {
+      this.allowedUsersActions = Object.assign(this.allowedUsersActions, config.monitoringAllowedUsersActions);
     }
 
     const conn = flags['target-org'].getConnection();
@@ -351,6 +363,12 @@ In agent mode, the audit trail report is generated without interactive prompts, 
       record.Suspect = false;
       record.severity = 'log';
       record.severityIcon = this.severityIconLog;
+      // Actions expected from a specific user (ex: integration user whose
+      // portal user provisioning automatically creates account roles)
+      const allowedUserActions = this.allowedUsersActions[record['CreatedBy.Username'] || ''];
+      if (allowedUserActions && (allowedUserActions.length === 0 || allowedUserActions.includes(record.Action))) {
+        return record;
+      }
       // Unallowed actions
       if ((
         this.allowedSectionsActions[section] &&
@@ -414,6 +432,11 @@ In agent mode, the audit trail report is generated without interactive prompts, 
 
         if (result.records.length > 0) {
           for (const record of result.records) {
+            // Custom Setting updates expected from a specific user
+            const allowedUserActions = this.allowedUsersActions[record['LastModifiedBy']?.['Username'] || ''];
+            if (allowedUserActions && (allowedUserActions.length === 0 || allowedUserActions.includes(`customSetting${cs.QualifiedApiName}`))) {
+              continue;
+            }
             customSettingModifications.push({
               CreatedDate: record.LastModifiedDate,
               'CreatedBy.Name': record['LastModifiedBy']?.['Name'],
