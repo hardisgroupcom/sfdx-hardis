@@ -899,6 +899,119 @@
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionflowDeleteInterviews">
+    <div class="card">
+        <div class="card-header" id="headingflowDeleteInterviews">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#flowDeleteInterviews"
+                        aria-expanded="" aria-controls="flowDeleteInterviews" onclick="setAnchor('#flowDeleteInterviews')"><span class="property-name">flowDeleteInterviews</span></button>
+            </h2>
+        </div>
+
+        <div id="flowDeleteInterviews"
+             class="collapse property-definition-div" aria-labelledby="headingflowDeleteInterviews"
+             data-parent="#accordionflowDeleteInterviews">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#flowDeleteInterviews" onclick="anchorLink('flowDeleteInterviews')">flowDeleteInterviews</a></div><h4>Delete Flow Interviews blocking a Flow deletion</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<div class="description collapse" id="collapseDescription_flowDeleteInterviews">
+            <p>When deleting a Flow listed in destructive changes, authorizes sfdx-hardis to delete the Flow Interviews that block the deletion.<br />
+Caution: deleting Flow Interviews is irreversible and destroys in-flight process state.<br />
+Can also be set with the FLOW<em>DELETE</em>INTERVIEWS env variable or an affirmative, standalone FLOW<em>DELETE</em>INTERVIEWS directive in the Pull Request description.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_flowDeleteInterviews"
+               aria-expanded="false" aria-controls="collapseDescriptionflowDeleteInterviews"
+            ></a>
+        </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionflowDeleteMaxAttempts">
+    <div class="card">
+        <div class="card-header" id="headingflowDeleteMaxAttempts">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#flowDeleteMaxAttempts"
+                        aria-expanded="" aria-controls="flowDeleteMaxAttempts" onclick="setAnchor('#flowDeleteMaxAttempts')"><span class="property-name">flowDeleteMaxAttempts</span></button>
+            </h2>
+        </div>
+
+        <div id="flowDeleteMaxAttempts"
+             class="collapse property-definition-div" aria-labelledby="headingflowDeleteMaxAttempts"
+             data-parent="#accordionflowDeleteMaxAttempts">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#flowDeleteMaxAttempts" onclick="anchorLink('flowDeleteMaxAttempts')">flowDeleteMaxAttempts</a></div><h4>Flow deletion max attempts</h4><span class="badge badge-dark value-type">Type: integer</span> <span class="badge badge-success default-value">Default: 3</span><br/>
+<span class="description"><p>Number of attempts to delete the versions of a Flow listed in destructive changes. Only used when the deletion of blocking Flow Interviews is authorized, to retry a version that a paused interview still blocks.<br />
+Can also be set with the FLOW<em>DELETE</em>MAX_ATTEMPTS env variable, which takes priority. A value below 1 or not an integer is ignored, with a warning.</p>
+</span>
+        
+
+        
+        <p><span class="badge badge-light restriction numeric-restriction" id="flowDeleteMaxAttempts_number">Value must be greater or equal to <code>1</code></span></p>
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionflowDeleteRetryDelayMs">
+    <div class="card">
+        <div class="card-header" id="headingflowDeleteRetryDelayMs">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#flowDeleteRetryDelayMs"
+                        aria-expanded="" aria-controls="flowDeleteRetryDelayMs" onclick="setAnchor('#flowDeleteRetryDelayMs')"><span class="property-name">flowDeleteRetryDelayMs</span></button>
+            </h2>
+        </div>
+
+        <div id="flowDeleteRetryDelayMs"
+             class="collapse property-definition-div" aria-labelledby="headingflowDeleteRetryDelayMs"
+             data-parent="#accordionflowDeleteRetryDelayMs">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#flowDeleteRetryDelayMs" onclick="anchorLink('flowDeleteRetryDelayMs')">flowDeleteRetryDelayMs</a></div><h4>Flow deletion retry delay (ms)</h4><span class="badge badge-dark value-type">Type: integer</span> <span class="badge badge-success default-value">Default: 10000</span><br/>
+<span class="description"><p>Delay in milliseconds between two attempts to delete the versions of a Flow listed in destructive changes.<br />
+Can also be set with the FLOW<em>DELETE</em>RETRY<em>DELAY</em>MS env variable, which takes priority. A negative value or a value that is not an integer is ignored, with a warning.</p>
+</span>
+        
+
+        
+        <p><span class="badge badge-light restriction numeric-restriction" id="flowDeleteRetryDelayMs_number">Value must be greater or equal to <code>0</code></span></p>
+
+        
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionallowedOrgTypes">
     <div class="card">
         <div class="card-header" id="headingallowedOrgTypes">
@@ -10902,6 +11015,123 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
         
 
         
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionmonitoringAllowedUsersActions">
+    <div class="card">
+        <div class="card-header" id="headingmonitoringAllowedUsersActions">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringAllowedUsersActions"
+                        aria-expanded="" aria-controls="monitoringAllowedUsersActions" onclick="setAnchor('#monitoringAllowedUsersActions')"><span class="property-name">monitoringAllowedUsersActions</span></button>
+            </h2>
+        </div>
+
+        <div id="monitoringAllowedUsersActions"
+             class="collapse property-definition-div" aria-labelledby="headingmonitoringAllowedUsersActions"
+             data-parent="#accordionmonitoringAllowedUsersActions">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringAllowedUsersActions" onclick="anchorLink('monitoringAllowedUsersActions')">monitoringAllowedUsersActions</a></div><h4>Monitoring Allowed Users Actions</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Map of username to the list of Setup Audit Trail actions that won't be considered as suspect when performed by this user. Unlike monitoringExcludeUsernames, any other action from the same user is still flagged. An empty list ignores all actions from the user.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="monitoringAllowedUsersActions_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;provisioning-user@cloudity.com&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;createdrole&quot;</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="accordion" id="accordionmonitoringAllowedUsersActions_additionalProperties">
+    <div class="card">
+        <div class="card-header" id="headingmonitoringAllowedUsersActions_additionalProperties">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringAllowedUsersActions_additionalProperties"
+                        aria-expanded="" aria-controls="monitoringAllowedUsersActions_additionalProperties" onclick="setAnchor('#monitoringAllowedUsersActions_additionalProperties')"><em><span class="property-name">Additional Properties</span></em></button>
+            </h2>
+        </div>
+
+        <div id="monitoringAllowedUsersActions_additionalProperties"
+             class="collapse property-definition-div" aria-labelledby="headingmonitoringAllowedUsersActions_additionalProperties"
+             data-parent="#accordionmonitoringAllowedUsersActions_additionalProperties">
+            <div class="card-body pl-5"><p class="additional-properties">Each additional property must conform to the following schema</p>
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringAllowedUsersActions" onclick="anchorLink('monitoringAllowedUsersActions')">monitoringAllowedUsersActions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringAllowedUsersActions_additionalProperties" onclick="anchorLink('monitoringAllowedUsersActions_additionalProperties')">additionalProperties</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="monitoringAllowedUsersActions_additionalProperties_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringAllowedUsersActions" onclick="anchorLink('monitoringAllowedUsersActions')">monitoringAllowedUsersActions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringAllowedUsersActions_additionalProperties" onclick="anchorLink('monitoringAllowedUsersActions_additionalProperties')">additionalProperties</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringAllowedUsersActions_additionalProperties_items" onclick="anchorLink('monitoringAllowedUsersActions_additionalProperties_items')">additionalProperties items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div>
             </div>
         </div>
     </div>
