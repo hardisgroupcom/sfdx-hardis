@@ -1544,7 +1544,8 @@ export async function generateCsvFile(
     }
     if (data.length > 0 && !options?.noExcel) {
       await createXlsxFromCsv(outputPath, options, result);
-    } else {
+    } else if (data.length === 0) {
+      // noExcel is a deliberate caller choice: only log when the skip reason really is emptiness.
       uxLog("other", this, c.grey(t('noXlsFileGeneratedAsIsEmpty', { outputPath })));
     }
   } catch (e) {

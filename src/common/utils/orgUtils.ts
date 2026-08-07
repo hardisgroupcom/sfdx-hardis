@@ -551,10 +551,12 @@ export async function initOrgMetadatas(
   if ((isCI && process.env.CI_SCRATCH_MODE === 'deploy') || process.env.DEBUG_DEPLOY === 'true') {
     // if CI, use sf project deploy start to make sure package.xml is consistent
     uxLog("action", this, c.cyan(t('deployingProjectSourcesToOrg', { orgAlias: c.green(orgAlias) })));
+    // A configured manifest wins, manifest/ and config/ are fallbacks. Keep the existsSync ternary
+    // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
     const packageXmlFile =
-      process.env.PACKAGE_XML_TO_DEPLOY || configInfo.packageXmlToDeploy || fs.existsSync('./manifest/package.xml')
-        ? './manifest/package.xml'
-        : './config/package.xml';
+      process.env.PACKAGE_XML_TO_DEPLOY ||
+      configInfo.packageXmlToDeploy ||
+      (fs.existsSync('./manifest/package.xml') ? './manifest/package.xml' : './config/package.xml');
     await smartDeploy(packageXmlFile, false, 'NoTestRun', debugMode, this, {
       targetUsername: orgUsername,
       conn: null,

@@ -111,17 +111,19 @@ export default class DxSources extends SfCommand<any> {
     let deployProcessed = false;
 
     // Deploy sources
+    // A configured manifest wins, the other locations are fallbacks. Keep the existsSync ternary
+    // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
     const packageXmlFile =
       packageXml ||
-        process.env.PACKAGE_XML_TO_DEPLOY ||
-        this.configInfo.packageXmlToDeploy ||
-        fs.existsSync('./manifest/package.xml')
+      process.env.PACKAGE_XML_TO_DEPLOY ||
+      this.configInfo.packageXmlToDeploy ||
+      (fs.existsSync('./manifest/package.xml')
         ? './manifest/package.xml'
         : fs.existsSync('./package.xml')
           ? './package.xml'
           : fs.existsSync(path.join(this.deployDir, 'package.xml'))
             ? path.join(this.deployDir, 'package.xml')
-            : './config/package.xml';
+            : './config/package.xml');
     if (fs.existsSync(packageXmlFile)) {
       // Filter if necessary
       if (filter) {
@@ -163,15 +165,15 @@ export default class DxSources extends SfCommand<any> {
     // Deploy destructive changes
     const packageDeletedXmlFile =
       destructivePackageXml ||
-        process.env.PACKAGE_XML_TO_DELETE ||
-        this.configInfo.packageXmlToDelete ||
-        fs.existsSync('./manifest/destructiveChanges.xml')
+      process.env.PACKAGE_XML_TO_DELETE ||
+      this.configInfo.packageXmlToDelete ||
+      (fs.existsSync('./manifest/destructiveChanges.xml')
         ? './manifest/destructiveChanges.xml'
         : fs.existsSync('./destructiveChanges.xml')
           ? './destructiveChanges.xml'
           : fs.existsSync(path.join(this.deployDir, 'destructiveChanges.xml'))
             ? path.join(this.deployDir, 'destructiveChanges.xml')
-            : './config/destructiveChanges.xml';
+            : './config/destructiveChanges.xml');
     if (fs.existsSync(packageDeletedXmlFile)) {
       await deployDestructiveChanges(packageDeletedXmlFile, { debug: debugMode, check }, this);
     } else {
