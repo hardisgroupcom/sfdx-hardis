@@ -330,3 +330,10 @@ CVE-2026-69192
 # sfdx-hardis own tree is patched to 6.28.0 in yarn.lock. The 7.x copy left in the image belongs to the shrinkwrapped @salesforce/cli.
 # Only applies to consumers that enable the cache interceptor. Neither sfdx-hardis nor the Salesforce CLI enables it, and every request is made by a single CLI process against one org, so there is no shared cache to poison. Added 2026-08-04.
 CVE-2026-13697
+
+# https://github.com/advisories/GHSA-5p4m-2wfm-xmqj (title also references CVE-2026-59870)
+# js-yaml: resolveYamlOmap() checks key uniqueness of an !!omap sequence with a linear scan inside the per-element loop, so resolution is O(n2) and a modestly sized document blocks the event loop (DoS, HIGH). Fixed in 4.3.1 and 3.15.1.
+# sfdx-hardis own tree is already on 4.3.1 in yarn.lock. The 4.1.1 left in the Docker images comes from @cparra/apexdocs, which hard-pins "js-yaml": "4.1.1" (still the case in its latest release 3.24.2, so no upgrade is available upstream). Our yarn resolutions force 4.3.1 on that copy for the repo build, but the images install the plugin through `sf plugins install`, which runs npm, and npm ignores the resolutions of a package installed as a dependency.
+# DoS only, and apexdocs parses YAML that the release manager owns (its own config file and the project sources), never untrusted remote input. Remove once @cparra/apexdocs bumps its js-yaml pin. Added 2026-08-07.
+GHSA-5p4m-2wfm-xmqj
+CVE-2026-59870
