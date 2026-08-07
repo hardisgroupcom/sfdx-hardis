@@ -64,6 +64,15 @@ function listAllTips() {
 THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destructiveChanges are deployed separately from updated items deployment check`,
     },
     {
+      name: "flow-interviews-block-deletion",
+      label: "Flow Interviews block Flow deletion",
+      context: "destructiveChange",
+      expressionString: ["Flow Interview - "],
+      tip: `A Flow version can not be deleted because Flow Interviews are still running on it.
+- To let sfdx-hardis delete these Flow Interviews before deleting the Flow, set FLOW_DELETE_INTERVIEWS=true (or add FLOW_DELETE_INTERVIEWS on its own line in your Pull Request description, or set flowDeleteInterviews: true in .sfdx-hardis.yml)
+- Caution: deleting Flow Interviews is irreversible and destroys in-flight process state`,
+    },
+    {
       name: "can-not-delete-record-type",
       label: "Can not delete record type",
       context: "destructiveChange",
@@ -748,4 +757,3 @@ If you see two {2} XML blocks with {3}, please decide which one you keep and rem
     },
   ];
 }
-

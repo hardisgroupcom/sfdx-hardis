@@ -451,6 +451,32 @@
       "type": "integer",
       "minimum": 1
     },
+    "flowDeleteInterviews": {
+      "$id": "#/properties/flowDeleteInterviews",
+      "default": false,
+      "description": "When deleting a Flow listed in destructive changes, authorizes sfdx-hardis to delete the Flow Interviews that block the deletion.\nCaution: deleting Flow Interviews is irreversible and destroys in-flight process state.\nCan also be set with the FLOW_DELETE_INTERVIEWS env variable or an affirmative, standalone FLOW_DELETE_INTERVIEWS directive in the Pull Request description.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes",
+      "title": "Delete Flow Interviews blocking a Flow deletion",
+      "type": "boolean"
+    },
+    "flowDeleteMaxAttempts": {
+      "$id": "#/properties/flowDeleteMaxAttempts",
+      "default": 3,
+      "description": "Number of attempts to delete the versions of a Flow listed in destructive changes. Only used when the deletion of blocking Flow Interviews is authorized, to retry a version that a paused interview still blocks.\nCan also be set with the FLOW_DELETE_MAX_ATTEMPTS env variable, which takes priority. A value below 1 or not an integer is ignored, with a warning.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes",
+      "minimum": 1,
+      "title": "Flow deletion max attempts",
+      "type": "integer"
+    },
+    "flowDeleteRetryDelayMs": {
+      "$id": "#/properties/flowDeleteRetryDelayMs",
+      "default": 10000,
+      "description": "Delay in milliseconds between two attempts to delete the versions of a Flow listed in destructive changes.\nCan also be set with the FLOW_DELETE_RETRY_DELAY_MS env variable, which takes priority. A negative value or a value that is not an integer is ignored, with a warning.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes",
+      "minimum": 0,
+      "title": "Flow deletion retry delay (ms)",
+      "type": "integer"
+    },
     "allowedOrgTypes": {
       "$id": "#/properties/allowedOrgTypes",
       "description": "Types of Salesforce Orgs allowed for config & development. If not set, Sandbox Orgs and Scratch Orgs are allowed by default",

@@ -6,6 +6,28 @@ import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkd
 import { getEnvVar } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 
+// Interview deletion is irreversible, so a passing mention in prose must not authorize it: only a
+// standalone directive, an affirmative assignment, a bullet or a checked Markdown checkbox count.
+// Non-semantic Markdown regions do not count either: a documentation example in a fenced or
+// indented code block, or a directive hidden in a PR-template HTML comment, is not an opt-in.
+export function hasAffirmativeFlowInterviewDeletionDirective(description: string): boolean {
+  const withoutNonSemanticRegions = (description || "")
+    .replace(/<!--[\s\S]*?(?:-->|$)/g, "")
+    .replace(/```[\s\S]*?(?:```|$)/g, "")
+    .replace(/~~~[\s\S]*?(?:~~~|$)/g, "");
+  return withoutNonSemanticRegions.split(/\r?\n/).some((rawLine) => {
+    if (/^(?:\t| {4})/.test(rawLine)) {
+      return false; // indented code block
+    }
+    const line = rawLine.trim();
+    return (
+      /^FLOW_DELETE_INTERVIEWS(?:\s*=\s*true)?$/.test(line) ||
+      /^[-*]\s+FLOW_DELETE_INTERVIEWS(?:\s*=\s*true)?$/.test(line) ||
+      /^[-*]\s+\[[xX]\]\s+FLOW_DELETE_INTERVIEWS(?:\s*=\s*true)?$/.test(line)
+    );
+  });
+}
+
 export abstract class GitProviderRoot {
   public serverUrl: string | null;
   public token: string;
@@ -157,6 +179,12 @@ export abstract class GitProviderRoot {
       || getEnvVar("DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT_" + pullRequestInfo.targetBranch) === "true"
     ) {
       pullRequestInfo.customBehaviors.destructiveChangesAfterDeployment = true;
+    }
+    if (hasAffirmativeFlowInterviewDeletionDirective(desc)
+      || getEnvVar("FLOW_DELETE_INTERVIEWS") === "true"
+      || getEnvVar("FLOW_DELETE_INTERVIEWS_" + pullRequestInfo.targetBranch) === "true"
+    ) {
+      pullRequestInfo.customBehaviors.flowDeleteInterviews = true;
     }
     return pullRequestInfo;
   }

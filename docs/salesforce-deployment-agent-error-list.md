@@ -106,6 +106,21 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
 ```
 
 ---
+## [Flow Interviews block Flow deletion](sf-deployment-assistant/Flow-Interviews-block-Flow-deletion.md)
+
+**Detection**
+
+- String: `Flow Interview - `
+
+**Resolution**
+
+```shell
+A Flow version can not be deleted because Flow Interviews are still running on it.
+- To let sfdx-hardis delete these Flow Interviews before deleting the Flow, set FLOW_DELETE_INTERVIEWS=true (or add FLOW_DELETE_INTERVIEWS on its own line in your Pull Request description, or set flowDeleteInterviews: true in .sfdx-hardis.yml)
+- Caution: deleting Flow Interviews is irreversible and destroys in-flight process state
+```
+
+---
 ## [Can not delete record type](sf-deployment-assistant/Can-not-delete-record-type.md)
 
 **Detection**
