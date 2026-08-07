@@ -389,6 +389,7 @@
     "accordiondoc",
     "accordionenable",
     "accordionextends",
+    "accordionflow",
     "accordiongeneric",
     "accordioninit",
     "dotenv",
