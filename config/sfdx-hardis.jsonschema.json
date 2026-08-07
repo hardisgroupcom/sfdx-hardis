@@ -2517,6 +2517,25 @@
       "title": "Monitoring Allowed Sections Actions",
       "type": "object"
     },
+    "monitoringAllowedUsersActions": {
+      "$id": "#/properties/monitoringAllowedUsersActions",
+      "description": "Map of username to the list of Setup Audit Trail actions that won't be considered as suspect when performed by this user. Unlike monitoringExcludeUsernames, any other action from the same user is still flagged. An empty list ignores all actions from the user.",
+      "additionalProperties": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "examples": [
+        {
+          "provisioning-user@cloudity.com": [
+            "createdrole"
+          ]
+        }
+      ],
+      "title": "Monitoring Allowed Users Actions",
+      "type": "object"
+    },
     "monitoringDisable": {
       "$id": "#/properties/monitoringDisable",
       "description": "List of commands to skip during monitoring jobs",
