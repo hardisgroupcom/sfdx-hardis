@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- Docker images are published to Docker Hub again, using OIDC authentication instead of password secrets.
 - [hardis:org:user:unlink-security-key](https://sfdx-hardis.cloudity.com/hardis/org/user/unlink-security-key/): Notifications and reports now show who triggered the run.
 - New [hardis:org:diagnose:usage-entitlements](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/usage-entitlements/): Monitor usage-based entitlements like Einstein Requests, Flex Credits, Data 360 credits and API calls, and warn when consumption is on track to exceed the allowance before the billing period ends.
 - New [hardis:org:diagnose:consumption-alerts](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/consumption-alerts/): Report the consumption and license utilization alerts Salesforce raises on the org.
