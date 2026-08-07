@@ -19,6 +19,30 @@
       "skillPath": "skills/grafana-lgtm/loki/SKILL.md",
       "computedHash": "d795a6d243616bcda87e1506c0d0847f62a354c6ccb4f881d73f78c3f4f063e3"
     },
+    "megalinter": {
+      "source": "oxsecurity/megalinter",
+      "sourceType": "github",
+      "skillPath": "skills/megalinter/SKILL.md",
+      "computedHash": "8f44fe8aba5e5710fdb3b09729bcd34407bc0ff60f3361f7e2874fb977706e0e"
+    },
+    "megalinter-check": {
+      "source": "oxsecurity/megalinter",
+      "sourceType": "github",
+      "skillPath": "skills/megalinter-check/SKILL.md",
+      "computedHash": "f50caf1f1cf81d000102d88a92ec2bb08d780e7be1ab726ca5863886301de4cd"
+    },
+    "megalinter-fix": {
+      "source": "oxsecurity/megalinter",
+      "sourceType": "github",
+      "skillPath": "skills/megalinter-fix/SKILL.md",
+      "computedHash": "c4ddb9266ba7cc89b2fb6d87f2f193e6dad09b1a0698f38fce3475ce2287f863"
+    },
+    "megalinter-setup": {
+      "source": "oxsecurity/megalinter",
+      "sourceType": "github",
+      "skillPath": "skills/megalinter-setup/SKILL.md",
+      "computedHash": "19c1b8464306bb6b0a11528fd5a114f80ea339de7f3e64d5499a8fc4fb6fc13d"
+    },
     "promql": {
       "source": "grafana/skills",
       "sourceType": "github",
