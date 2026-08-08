@@ -495,14 +495,18 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Michael Havrilla](https://www.linkedin.com/in/%F0%9F%92%BB-michael-havrilla-69063036/), for the integration with Vector.dev allowing to provide monitoring logs to external systems like DataDog
 - [Teoman Sertcelik](https://www.linkedin.com/in/teoman-sertcelik/), for allowing to configure authentication using External Client App
 - [Fernando Fernandez](https://www.linkedin.com/in/fernandofernandez1/), for the great command that [detects objects fields usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/)
-- [Yamilet Oliva](https://www.linkedin.com/in/yamiletoliva/), for sfdx-hardis spanish translation
+- [Yamilet Oliva](https://www.linkedin.com/in/yamiletoliva/), for sfdx-hardis spanish translation and the enriched Flow error monitoring notifications
 - [Shinnosuke Takakura](https://www.linkedin.com/in/shinnosuke-takakura-9041ba217/), for sfdx-hardis japanese translation
 - [Dagmara Ryborz](https://www.linkedin.com/in/dagmara-ryborz-7618b991/), for Polish translation
-- [Matt Carvin](https://www.linkedin.com/in/matthew-carvin/), for underused permission sets command
-- [Salik Lennert Pedersen](https://www.linkedin.com/in/saliklp/), for his numerous bug fixes
+- [Matt Carvin](https://www.linkedin.com/in/matthew-carvin/), for the [underused permission sets command](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/underusedpermsets/) and the real deployment metrics of [smart deploy](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/)
+- [Salik Lennert Pedersen](https://www.linkedin.com/in/saliklp/), for his numerous bug fixes, the [hardis:mdapi:read](https://sfdx-hardis.cloudity.com/hardis/mdapi/read/) and [hardis:mdapi:upsert](https://sfdx-hardis.cloudity.com/hardis/mdapi/upsert/) commands, git worktrees support and Flow deletion in destructive changes
 - [Ryad Meguimi](https://www.linkedin.com/in/ryad-meguimi/), for the Light & Dark modes and the whole refactoring of CSS
 - [Nicholas Fiorendi](https://www.linkedin.com/in/nicholas-fiorendi/), for Italian translation
 - [Timo Pouw](https://www.linkedin.com/in/timopouw/), for Dutch translation
+- [Quentin Tiercelin](https://github.com/TiercelinQ), for the commands to [detect unsecure permissions](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions/) and [generate a data dictionary](https://sfdx-hardis.cloudity.com/hardis/doc/data-dictionary/)
+- [Pranay Jaiswal](https://github.com/pranayjswl007), for smarter [audit trail monitoring](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/) with allowed actions per user
+- [Maciej Ptak](https://github.com/0ptaq0), for fixing Flow git diff on projects with custom package directories
+- [Eric Mulder](https://github.com/ericmulder-welisa), for revising the [sandbox setup and best practices documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-activate-org/)
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 
