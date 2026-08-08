@@ -50,6 +50,10 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Alain Bates](https://github.com/Alainbates), for the Bitbucket Git provider support
 - [Theodoor van Donge](https://github.com/thvd), for switching [Apex logs purge](https://sfdx-hardis.cloudity.com/hardis/org/purge/apexlog/) to the Tooling API
 - [Kris Goncalves](https://github.com/kg345), for the option to hide Apex code in [generated project documentation](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)
+- [Clément Fernandez](https://github.com/clemfernandez), for the [metadata duplicates detection command](https://sfdx-hardis.cloudity.com/hardis/project/metadata/findduplicates/) and many early improvements
+- [Mehdi](https://github.com/Mehdi-Cloudity), for the [bypass generation command](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/) and its application to Flows, Validation Rules and Triggers
+- [Mathieu Rodrigues](https://github.com/MathieuRodriguesCloudity), for the SFDMU configuration for CPQ projects
+- [Hasnioui-Ysf](https://github.com/Hasnioui-Ysf), for the work on Permission Sets management
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 
