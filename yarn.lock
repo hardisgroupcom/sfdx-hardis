@@ -4799,7 +4799,7 @@ chalk-template@^0.4.0:
   dependencies:
     chalk "^4.1.2"
 
-chalk@5.6.2, chalk@^5.0.0, chalk@^5.2.0, chalk@^5.3.0, chalk@^5.4.1, chalk@^5.6.2:
+chalk@5.6.2, chalk@^5.0.0, chalk@^5.2.0, chalk@^5.3.0, chalk@^5.6.2:
   version "5.6.2"
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.6.2.tgz#b1238b6e23ea337af71c7f8a295db5af0c158aea"
   integrity sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==
@@ -4831,6 +4831,11 @@ chalk@^4.0.0, chalk@^4.0.2, chalk@^4.1.0, chalk@^4.1.2:
   dependencies:
     ansi-styles "^4.1.0"
     supports-color "^7.1.0"
+
+chalk@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-6.0.0.tgz#a3bae843bc8454f41ef66ef3fd584dcf34dd805d"
+  integrity sha512-2uNTXIuTTxk7ciZgAU1BQcgnchcG0xXnrs6jzkQfj9SsRa9M2s5zE8WT96hS6KmG4MzWHSrvH43DF1m4XRkrFg==
 
 change-case@^4, change-case@^4.1.2:
   version "4.1.2"
@@ -8098,6 +8103,11 @@ isexe@^3.1.1:
   resolved "https://registry.yarnpkg.com/isexe/-/isexe-3.1.1.tgz#4a407e2bd78ddfb14bea0c27c6f7072dde775f0d"
   integrity sha512-LpB/54B+/2J5hqQ7imZHfdU31OlgQqx7ZicVlkm9kzg9/w8GKLEcFfJl/t7DCEDueOyBAD6zCCwTO6Fzs0NoEQ==
 
+isexe@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/isexe/-/isexe-4.0.0.tgz#48f6576af8e87a18feb796b7ed5e2e5903b43dca"
+  integrity sha512-FFUtZMpoZ8RqHS3XeXEmHWLA4thH+ZxCv2lOiPIn1Xc7CxrqhWzNSDzD+/chS/zbYezmiwWLdQC09JdQKmthOw==
+
 isomorphic-dompurify@2.26.0:
   version "2.26.0"
   resolved "https://registry.yarnpkg.com/isomorphic-dompurify/-/isomorphic-dompurify-2.26.0.tgz#ea6201953d38488445171443393855fa700ea906"
@@ -8242,6 +8252,13 @@ js-yaml@4.1.1, js-yaml@4.3.1, js-yaml@^4.1.0, js-yaml@^4.1.1:
   version "4.3.1"
   resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.3.1.tgz#01216c001d67f48e2cd560d708c7af21090a3848"
   integrity sha512-CY6crGq313MX8GkwvB7tzgp99vjQxY1++5y10/BKN/GUfHqWaOGQMNZkBvqSzsZKWk/ijwHlWzzkLulsGHhjWQ==
+  dependencies:
+    argparse "^2.0.1"
+
+js-yaml@^5.2.2:
+  version "5.2.3"
+  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-5.2.3.tgz#0942ae8f507e22eb0e54624871789cd477106e54"
+  integrity sha512-n+mUVyUX5bVv7G/G2zyIHOhdxfuU1dY2NOFzTQUWiMUbFss8b57NFlgCCaggU78wSw5KVS9cllzeLyzyR+n5nw==
   dependencies:
     argparse "^2.0.1"
 
@@ -9117,23 +9134,23 @@ mdurl@^2.0.0:
   resolved "https://registry.yarnpkg.com/mdurl/-/mdurl-2.0.0.tgz#80676ec0433025dd3e17ee983d0fe8de5a2237e0"
   integrity sha512-Lf+9+2r+Tdp5wXDXC4PcIBjTDtq4UKjCPMQhKIuzpJNW0b96kVqSwW0bT7FhRSfmAiFYgP+SCRvdrDozfh0U5w==
 
-mega-linter-runner@9.5.0:
-  version "9.5.0"
-  resolved "https://registry.yarnpkg.com/mega-linter-runner/-/mega-linter-runner-9.5.0.tgz#44586872e896b3138e7c3e399898e13fe629c91a"
-  integrity sha512-btpVeDxKVAQmk5YqmLDcGrN5HdC9H1JhJ86GIX9KB4m9gQaX4ygXdZWhYxDN9meP+xlFR0N27s+nHjq5L1S8Qg==
+mega-linter-runner@10.0.0:
+  version "10.0.0"
+  resolved "https://registry.yarnpkg.com/mega-linter-runner/-/mega-linter-runner-10.0.0.tgz#c9e3977ab8004e66c8417dd6c981198a1897a971"
+  integrity sha512-yQOyD8/MTeZ35MveiE6Stoj0/FgIGkV7jok3VriFI+VP30LouWYlohFWVbaUJm+8/gmwT2NxA6pCcSdFsZ7xkA==
   dependencies:
-    chalk "^5.4.1"
+    chalk "^6.0.0"
     find-package-json "^1.2.0"
     fs-extra "^11.1.1"
     glob "^13.0.0"
-    js-yaml "^4.1.0"
+    js-yaml "^5.2.2"
     mem-fs "^4.0.0"
     open "^11.0.0"
     optionator "^0.9.3"
     prompts "^2.4.2"
     simple-git "^3.28.0"
     uuid "^14.0.0"
-    which "^6.0.0"
+    which "^7.0.0"
     yeoman-environment "^6.0.0"
     yeoman-generator "^8.0.0"
 
@@ -13012,6 +13029,13 @@ which@4.0.0:
   integrity sha512-GlaYyEb07DPxYCKhKzplCWBJtvxZcZMrL+4UkrTSJHHPyZU4mYYTv3qaOe77H7EODLSSopAUFAc6W8U4yqvscg==
   dependencies:
     isexe "^3.1.1"
+
+which@6.0.1, which@^7.0.0:
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/which/-/which-6.0.1.tgz#021642443a198fb93b784a5606721cb18cfcbfce"
+  integrity sha512-oGLe46MIrCRqX7ytPUf66EAYvdeMIZYn3WaocqqKZAxrBpkqHfL/qvTyJ/bTk5+AqHCjXmrv3CEWgy368zhRUg==
+  dependencies:
+    isexe "^4.0.0"
 
 which@^2.0.1:
   version "2.0.2"

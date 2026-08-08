@@ -5,7 +5,7 @@
 ---
 # MegaLinter flavor and version used by mega-linter-runner and CI
 MEGALINTER_FLAVOR: javascript
-MEGALINTER_VERSION: beta
+MEGALINTER_VERSION: v10
 
 # all, none, or list of linter keys
 APPLY_FIXES: all
