@@ -22,6 +22,7 @@
 - Plugin API: `bulkDeleteTooling` now always returns `{ results: [{ Id, success, errors }] }`. Deletions go through the Tooling composite endpoint, with a one-by-one fallback.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): CI logs now display a readable deployment summary instead of the complete deployment JSON, which is written in hardis-report and published as a CI job artifact.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): New SFDX_HARDIS_DEPLOY_CHECK_ID env variable to force the Quick Deploy job id instead of reading it from Pull Request comments.
+- Upgrade MegaLinter to v10 (repository lint config, CI/CD template workflow and mega-linter-runner dependency).
 
 ## [7.23.0] 2026-07-26
 
