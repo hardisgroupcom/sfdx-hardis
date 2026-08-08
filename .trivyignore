@@ -337,3 +337,10 @@ CVE-2026-13697
 # DoS only, and apexdocs parses YAML that the release manager owns (its own config file and the project sources), never untrusted remote input. Remove once @cparra/apexdocs bumps its js-yaml pin. Added 2026-08-07.
 GHSA-5p4m-2wfm-xmqj
 CVE-2026-59870
+
+# https://avd.aquasec.com/nvd/cve-2025-71329 (GHSA-5p2g-fcmc-qvqq) + cve-2025-71330 (GHSA-w3rx-r6r6-pgpr)
+# image-size: the JXL/HEIF box parser and the ICNS entry parser never advance the read offset when a size field is 0, so a crafted image spins the event loop forever (DoS, HIGH).
+# No patched release exists: every version up to and including 2.0.2 is affected and 2.0.2 is the current latest on npm, so trivy reports no fixed version and there is nothing to upgrade to. image-size 1.2.1 reaches us only through pptxgenjs 4.0.1, whose latest release still requires image-size "^1.2.1".
+# pptxgenjs is used by src/common/utils/monitoringPptxReport.ts to build the monitoring PPTX report, which is text and tables only: it never calls addImage, so the vulnerable parsers are never reached and no image bytes from an untrusted source are handed to the library. Same assessment as the osv-scanner.toml entries for the two GHSA ids. Remove once image-size ships a fix and pptxgenjs picks it up. Added 2026-08-08.
+CVE-2025-71329
+CVE-2025-71330
