@@ -3,9 +3,11 @@ import { expect } from 'chai';
 import {
   fetchLatestPackageVersion,
   isUpgradeAvailable,
+  isUpgradeCheckDisabled,
   shouldCheckForUpgrade,
   UPGRADE_CHECK_INTERVAL_MS,
 } from '../../../src/common/utils/upgradeCheckUtils.js';
+import { setFetchForTests } from '../../../src/common/utils/httpUtils.js';
 
 describe('shouldCheckForUpgrade()', () => {
   const now = 1_700_000_000_000;
@@ -50,31 +52,47 @@ describe('isUpgradeAvailable()', () => {
 });
 
 describe('fetchLatestPackageVersion()', () => {
-  const originalFetch = globalThis.fetch;
-
   afterEach(() => {
-    globalThis.fetch = originalFetch;
+    setFetchForTests(null);
   });
 
   it('returns the version field of the registry payload', async () => {
-    globalThis.fetch = (async () => new Response(JSON.stringify({ version: '9.9.9' }), { status: 200 })) as any;
+    setFetchForTests(async () => new Response(JSON.stringify({ version: '9.9.9' }), { status: 200 }));
     expect(await fetchLatestPackageVersion('sfdx-hardis')).to.equal('9.9.9');
   });
 
   it('returns null on HTTP error', async () => {
-    globalThis.fetch = (async () => new Response('not found', { status: 404 })) as any;
+    setFetchForTests(async () => new Response('not found', { status: 404 }));
     expect(await fetchLatestPackageVersion('sfdx-hardis')).to.be.null;
   });
 
   it('returns null on network failure', async () => {
-    globalThis.fetch = (async () => {
+    setFetchForTests(async () => {
       throw new Error('ECONNREFUSED');
-    }) as any;
+    });
     expect(await fetchLatestPackageVersion('sfdx-hardis')).to.be.null;
   });
 
   it('returns null on unexpected payload', async () => {
-    globalThis.fetch = (async () => new Response(JSON.stringify({ foo: 'bar' }), { status: 200 })) as any;
+    setFetchForTests(async () => new Response(JSON.stringify({ foo: 'bar' }), { status: 200 }));
     expect(await fetchLatestPackageVersion('sfdx-hardis')).to.be.null;
+  });
+});
+
+describe('isUpgradeCheckDisabled()', () => {
+  it('is disabled in CI', () => {
+    expect(isUpgradeCheckDisabled({ CI: 'true' } as any)).to.be.true;
+    expect(isUpgradeCheckDisabled({ CI: '1' } as any)).to.be.true;
+  });
+
+  it('is disabled when NO_UPDATE_NOTIFIER is set', () => {
+    expect(isUpgradeCheckDisabled({ NO_UPDATE_NOTIFIER: '1' } as any)).to.be.true;
+    expect(isUpgradeCheckDisabled({ NO_UPDATE_NOTIFIER: 'true' } as any)).to.be.true;
+  });
+
+  it('is enabled on a developer machine', () => {
+    expect(isUpgradeCheckDisabled({} as any)).to.be.false;
+    expect(isUpgradeCheckDisabled({ CI: 'false' } as any)).to.be.false;
+    expect(isUpgradeCheckDisabled({ NO_UPDATE_NOTIFIER: 'false' } as any)).to.be.false;
   });
 });

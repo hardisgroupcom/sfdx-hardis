@@ -1,8 +1,35 @@
-// Thin HTTP helpers over native fetch, used as the single HTTP client of sfdx-hardis.
+// Thin HTTP helpers over fetch, used as the single HTTP client of sfdx-hardis.
 // The API mimics the axios semantics historically used in the codebase:
 // - resolves only on 2xx, throws an HttpError exposing error.response.status / error.response.data
 // - JSON request/response handling by default, responseType: 'text' for raw payloads
 // - params / auth (basic) / headers / timeout config options
+// - HTTP_PROXY / HTTPS_PROXY / NO_PROXY env vars are honored (like axios and
+//   make-fetch-happen did) through undici's EnvHttpProxyAgent
+import { fetch as undiciFetch, EnvHttpProxyAgent } from 'undici';
+
+let envProxyAgent: EnvHttpProxyAgent | null = null;
+let fetchOverrideForTests: ((url: string, init: any) => Promise<any>) | null = null;
+
+/**
+ * Proxy-aware fetch used for every outbound HTTP call of sfdx-hardis.
+ * Honors HTTP_PROXY / HTTPS_PROXY / NO_PROXY like the axios and make-fetch-happen
+ * clients it replaces. Signature-compatible with global fetch for our usage.
+ */
+export async function proxyFetch(url: string, init: any = {}): Promise<Response> {
+  if (fetchOverrideForTests) {
+    return fetchOverrideForTests(url, init) as Promise<Response>;
+  }
+  if (envProxyAgent === null) {
+    envProxyAgent = new EnvHttpProxyAgent();
+  }
+  return undiciFetch(url, { ...init, dispatcher: envProxyAgent }) as unknown as Promise<Response>;
+}
+
+/** Test seam: override the fetch implementation (pass null to restore), and drop the cached proxy agent */
+export function setFetchForTests(fetchImpl: ((url: string, init: any) => Promise<any>) | null): void {
+  fetchOverrideForTests = fetchImpl;
+  envProxyAgent = null;
+}
 
 export interface HttpRequestConfig {
   headers?: Record<string, string>;
@@ -85,7 +112,7 @@ async function request<T = any>(method: string, url: string, data?: any, config:
       }
     }
   }
-  const response = await fetch(buildUrl(url, config.params), {
+  const response = await proxyFetch(buildUrl(url, config.params), {
     method,
     headers: headersToSend,
     body,

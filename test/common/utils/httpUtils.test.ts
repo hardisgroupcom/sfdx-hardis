@@ -2,7 +2,7 @@
 import { expect } from 'chai';
 import * as http from 'http';
 import { AddressInfo } from 'net';
-import { createHttpClient, httpGet, httpPost, HttpError } from '../../../src/common/utils/httpUtils.js';
+import { createHttpClient, httpGet, httpPost, HttpError, setFetchForTests } from '../../../src/common/utils/httpUtils.js';
 
 describe('httpUtils', () => {
   let server: http.Server;
@@ -99,5 +99,64 @@ describe('httpUtils', () => {
     await client.put('/json', { updated: true });
     expect(lastRequest.method).to.equal('PUT');
     expect(JSON.parse(lastRequest.body || '{}')).to.deep.equal({ updated: true });
+  });
+
+  describe('proxy support (HTTP_PROXY / NO_PROXY)', () => {
+    let proxyServer: http.Server;
+    let proxyPort: number;
+    let proxiedUrls: string[] = [];
+    const savedProxyEnv: Record<string, string | undefined> = {};
+
+    before(async () => {
+      // Minimal forward proxy: absolute-form requests are answered directly
+      proxyServer = http.createServer((req, res) => {
+        proxiedUrls.push(req.url || '');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ viaProxy: true }));
+      });
+      await new Promise<void>((resolve) => proxyServer.listen(0, '127.0.0.1', () => resolve()));
+      proxyPort = (proxyServer.address() as AddressInfo).port;
+    });
+
+    after(() => {
+      proxyServer.close();
+    });
+
+    beforeEach(() => {
+      proxiedUrls = [];
+      for (const envVar of ['HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'no_proxy']) {
+        savedProxyEnv[envVar] = process.env[envVar];
+        delete process.env[envVar];
+      }
+    });
+
+    afterEach(() => {
+      for (const [envVar, value] of Object.entries(savedProxyEnv)) {
+        if (value === undefined) {
+          delete process.env[envVar];
+        } else {
+          process.env[envVar] = value;
+        }
+      }
+      // Drop the cached proxy agent so other tests never route through the test proxy
+      setFetchForTests(null);
+    });
+
+    it('routes requests through the HTTP_PROXY env var', async () => {
+      process.env.HTTP_PROXY = `http://127.0.0.1:${proxyPort}`;
+      setFetchForTests(null); // reset the cached agent so the env var is re-read
+      const res = await httpGet('http://sfdx-hardis-proxy-test.invalid/ping');
+      expect(res.data).to.deep.equal({ viaProxy: true });
+      expect(proxiedUrls.some((u) => u.includes('sfdx-hardis-proxy-test.invalid'))).to.be.true;
+    });
+
+    it('bypasses the proxy for NO_PROXY hosts', async () => {
+      process.env.HTTP_PROXY = `http://127.0.0.1:${proxyPort}`;
+      process.env.NO_PROXY = '127.0.0.1';
+      setFetchForTests(null);
+      const res = await httpGet(`${baseUrl}/json`);
+      expect(res.data.ok).to.be.true;
+      expect(proxiedUrls).to.have.length(0);
+    });
   });
 });
