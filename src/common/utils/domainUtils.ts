@@ -4,7 +4,7 @@
 // Common multi-part public suffixes: when the hostname ends with one of these,
 // the registrable domain is made of three labels instead of two.
 // Not exhaustive like the Public Suffix List, but covers the common cases.
-const MULTI_PART_TLDS = new Set([
+const MULTI_PART_SUFFIXES = new Set([
   'co.uk', 'org.uk', 'gov.uk', 'ac.uk', 'net.uk',
   'com.au', 'net.au', 'org.au', 'gov.au', 'edu.au',
   'co.nz', 'org.nz', 'govt.nz',
@@ -48,6 +48,6 @@ export function extractRegistrableDomain(hostname: string | null | undefined): s
     return normalized;
   }
   const lastTwo = labels.slice(-2).join('.');
-  const labelCount = MULTI_PART_TLDS.has(lastTwo) ? 3 : 2;
+  const labelCount = MULTI_PART_SUFFIXES.has(lastTwo) ? 3 : 2;
   return labels.slice(-labelCount).join('.');
 }

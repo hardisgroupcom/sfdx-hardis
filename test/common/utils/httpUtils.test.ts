@@ -7,7 +7,7 @@ import { createHttpClient, httpGet, httpPost, HttpError } from '../../../src/com
 describe('httpUtils', () => {
   let server: http.Server;
   let baseUrl: string;
-  let lastRequest: { method?: string; url?: string; headers?: http.IncomingHttpHeaders; body?: string };
+  let lastRequest: { method?: string; url?: string; headers: http.IncomingHttpHeaders; body: string };
 
   before(async () => {
     server = http.createServer((req, res) => {

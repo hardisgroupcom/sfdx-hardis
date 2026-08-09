@@ -61,7 +61,7 @@ export class FileDownloader {
     };
   }
 
-  // Fetch with retry on network errors and retriable HTTP statuses (5xx / 408 / 429),
+  // Fetch with retry on network errors and retryable HTTP statuses (5xx / 408 / 429),
   // with exponential backoff, mimicking the historical make-fetch-happen behavior.
   private async fetchWithRetry(): Promise<Response> {
     const retries = this.fetchOptions.retry?.retries ?? DOWNLOAD_MAX_RETRIES;
@@ -76,7 +76,7 @@ export class FileDownloader {
           method: this.fetchOptions.method || 'GET',
           headers: this.fetchOptions.headers || {},
         });
-        if (res.ok || !this.isRetriableStatus(res.status)) {
+        if (res.ok || !this.isRetryableStatus(res.status)) {
           return res;
         }
         cause = new SfError(`HTTP ${res.status} on ${this.downloadUrl}`);
@@ -96,7 +96,7 @@ export class FileDownloader {
     }
   }
 
-  private isRetriableStatus(status: number): boolean {
+  private isRetryableStatus(status: number): boolean {
     return status >= 500 || status === 408 || status === 429;
   }
 

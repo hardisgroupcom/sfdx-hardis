@@ -8,7 +8,7 @@ import { stringifyCsv } from '../../../src/common/utils/csvUtils.js';
 const rows = [
   { name: 'Simple', label: 'Basic value', active: true, count: 3 },
   { name: 'With;semicolon', label: 'Has "quotes" inside', active: false, count: 0 },
-  { name: 'With\nnewline', label: 'Accénts & spécial', active: true, count: null },
+  { name: 'With\nnewline', label: 'Accents & spécial', active: true, count: null },
   { name: 'MissingLabel', active: false },
 ];
 
@@ -27,7 +27,7 @@ describe('stringifyCsv()', () => {
       'Name;Label;Active;Count\n' +
       'Simple;Basic value;1;3\n' +
       '"With;semicolon";"Has ""quotes"" inside";;0\n' +
-      '"With\nnewline";Accénts & spécial;1;\n' +
+      '"With\nnewline";Accents & spécial;1;\n' +
       'MissingLabel;;;\n'
     );
   });
@@ -38,7 +38,7 @@ describe('stringifyCsv()', () => {
       'name\tlabel\n' +
       'Simple\tBasic value\n' +
       'With;semicolon\t"Has ""quotes"" inside"\n' +
-      '"With\nnewline"\tAccénts & spécial\n' +
+      '"With\nnewline"\tAccents & spécial\n' +
       'MissingLabel\t\n'
     );
   });
