@@ -35,10 +35,15 @@ describe('dependency replacements against a real scratch org', () => {
   before(async function () {
     this.timeout(1800000); // may create the scratch org when running this file alone
     ctx = await getSharedNutOrgSession();
-    const display = runSf<any>(`org display --target-org ${ctx.orgAlias} --json`, { cwd: ctx.projectDir });
+    const display = runSf<any>(`org display --target-org ${ctx.orgAlias} --json`, {
+      cwd: ctx.projectDir,
+      // The CLI redacts accessToken in org display output unless explicitly asked
+      env: { SF_TEMP_SHOW_SECRETS: 'true' },
+    });
     accessToken = display.result?.accessToken || '';
     instanceUrl = (display.result?.instanceUrl || '').replace(/\/$/, '');
     expect(accessToken, 'org access token must be available').to.have.length.greaterThan(0);
+    expect(accessToken, 'org access token must not be redacted').to.not.include('REDACTED');
     expect(instanceUrl, 'org instance url must be available').to.match(/^https:/);
   });
 

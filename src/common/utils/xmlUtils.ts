@@ -36,7 +36,10 @@ function getCompatXmlParser(options: { explicitArray?: boolean } = {}): XMLParse
     textNodeName: '_',
     parseTagValue: false,
     parseAttributeValue: false,
-    trimValues: true,
+    // trimValues false matches the historical xml2js trim:false default: significant
+    // leading/trailing whitespace in values is preserved (e.g. a label ending with a
+    // space). Whitespace-only text (indentation) is dropped by the post-processor below.
+    trimValues: false,
     ignoreDeclaration: true,
     ignorePiTags: true,
     processEntities: { maxTotalExpansions: Infinity } as any,
@@ -45,6 +48,37 @@ function getCompatXmlParser(options: { explicitArray?: boolean } = {}): XMLParse
     // The isArray key must be absent (not undefined) when unused, or fast-xml-parser crashes
     ...(explicitArray ? { isArray: (name: string, jpath: any) => name !== '$' && String(jpath).includes('.') } : {}),
   });
+}
+
+// Reproduces the xml2js whitespace handling on the raw fast-xml-parser output:
+// - whitespace-only text nodes (indentation between elements) are dropped
+// - an element containing only whitespace text becomes the empty string
+// - non-whitespace text keeps its leading/trailing whitespace untouched
+function applyXml2jsWhitespaceSemantics(node: any): any {
+  if (typeof node === 'string') {
+    return /^\s*$/.test(node) ? '' : node;
+  }
+  if (Array.isArray(node)) {
+    return node.map((item) => applyXml2jsWhitespaceSemantics(item));
+  }
+  if (node && typeof node === 'object') {
+    for (const key of Object.keys(node)) {
+      if (key === '$') {
+        continue; // attribute values are kept as-is, like xml2js
+      }
+      if (key === '_') {
+        if (typeof node._ === 'string' && /^\s*$/.test(node._)) {
+          delete node._;
+        }
+        continue;
+      }
+      node[key] = applyXml2jsWhitespaceSemantics(node[key]);
+    }
+    if (Object.keys(node).length === 0) {
+      return '';
+    }
+  }
+  return node;
 }
 
 // xml2js escaped &, < and > in text values (not quotes), and also quotes in attribute values
@@ -66,7 +100,7 @@ export function parseXmlString(xmlString: string, options: { explicitArray?: boo
   if (validation !== true) {
     throw new Error(validation.err?.msg || 'Invalid XML document');
   }
-  return getCompatXmlParser(options).parse(xmlString);
+  return applyXml2jsWhitespaceSemantics(getCompatXmlParser(options).parse(xmlString));
 }
 
 export async function parseXmlFile(xmlFile: string) {

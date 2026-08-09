@@ -5,17 +5,22 @@ import * as path from "path";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 import { createTempDir } from "./index.js";
+import { proxyFetch } from "./httpUtils.js";
 
 // Retry tuning, replicating the make-fetch-happen options historically used here
 const DOWNLOAD_MAX_RETRIES = 20;
 const DOWNLOAD_RETRY_FACTOR = 3;
 const DOWNLOAD_RETRY_MIN_TIMEOUT_MS = 1000;
 const DOWNLOAD_RETRY_MAX_TIMEOUT_MS = 60000;
+// Per-attempt bound covering connection AND body streaming, so a stalled
+// transfer cannot hang a command forever. Large org file exports stay well below.
+const DOWNLOAD_ATTEMPT_TIMEOUT_MS = 1800000;
 
 export type FetchOptions = {
   method?: string;
   headers?: Record<string, string>;
   onRetry?: (cause: unknown) => void;
+  timeoutMs?: number;
   retry?: {
     retries?: number;
     factor?: number;
@@ -67,18 +72,22 @@ export class FileDownloader {
     const retries = this.fetchOptions.retry?.retries ?? DOWNLOAD_MAX_RETRIES;
     const factor = this.fetchOptions.retry?.factor ?? DOWNLOAD_RETRY_FACTOR;
     const randomize = this.fetchOptions.retry?.randomize ?? true;
+    const timeoutMs = this.fetchOptions.timeoutMs ?? DOWNLOAD_ATTEMPT_TIMEOUT_MS;
     let attempt = 0;
     // eslint-disable-next-line no-constant-condition
     while (true) {
       let cause: unknown;
       try {
-        const res = await fetch(this.downloadUrl, {
+        const res = await proxyFetch(this.downloadUrl, {
           method: this.fetchOptions.method || 'GET',
           headers: this.fetchOptions.headers || {},
+          signal: AbortSignal.timeout(timeoutMs),
         });
         if (res.ok || !this.isRetryableStatus(res.status)) {
           return res;
         }
+        // Consume the discarded body so the retried response does not pin its socket
+        await res.body?.cancel()?.catch(() => undefined);
         cause = new SfError(`HTTP ${res.status} on ${this.downloadUrl}`);
       } catch (e) {
         cause = e;

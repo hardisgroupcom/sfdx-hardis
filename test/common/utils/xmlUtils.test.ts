@@ -107,6 +107,35 @@ describe('xmlUtils XML engine characterization', () => {
     }
   });
 
+  it('preserves significant leading/trailing whitespace in text values', () => {
+    const parsed = parseXmlString('<CustomLabels><labels><value>Total: </value><other> padded </other></labels></CustomLabels>');
+    expect(parsed.CustomLabels.labels[0].value).to.deep.equal(['Total: ']);
+    expect(parsed.CustomLabels.labels[0].other).to.deep.equal([' padded ']);
+  });
+
+  it('round-trips a value with trailing whitespace byte-identically', async () => {
+    const tmpDir = await makeTmpDir();
+    try {
+      const outFile = path.join(tmpDir, 'trailing.xml');
+      const parsed = parseXmlString('<CustomLabels><labels><value>Total: </value></labels></CustomLabels>');
+      await writeXmlFile(outFile, parsed);
+      expect(await fs.readFile(outFile, 'utf8')).to.include('<value>Total: </value>');
+    } finally {
+      await fs.remove(tmpDir);
+    }
+  });
+
+  it('parses whitespace-only values as empty strings like the historical parser', () => {
+    const parsed = parseXmlString('<CustomLabels><labels><value>   </value><desc>\n    </desc></labels></CustomLabels>');
+    expect(parsed.CustomLabels.labels[0].value).to.deep.equal(['']);
+    expect(parsed.CustomLabels.labels[0].desc).to.deep.equal(['']);
+  });
+
+  it('drops indentation whitespace between elements', () => {
+    const parsed = parseXmlString('<Package>\n    <types>\n        <name>ApexClass</name>\n    </types>\n</Package>');
+    expect(parsed).to.deep.equal({ Package: { types: [{ name: ['ApexClass'] }] } });
+  });
+
   it('drops XML comments like the historical parser', () => {
     const parsed = parseXmlString('<?xml version="1.0" encoding="UTF-8"?>\n<Package><!-- a comment --><version>62.0</version></Package>');
     expect(parsed).to.deep.equal({ Package: { version: ['62.0'] } });

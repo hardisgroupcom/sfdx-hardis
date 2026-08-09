@@ -28,12 +28,15 @@ export class OpenAiProvider extends AiProviderRoot {
     // Routed through @langchain/openai (already shipped for the langchain provider),
     // so the standalone openai SDK is not needed anymore. useResponsesApi keeps the
     // historical behavior of calling the OpenAI Responses API.
+    // reasoning goes through modelKwargs on purpose: ChatOpenAI only forwards its
+    // own `reasoning` field for model names it recognizes as reasoning models, while
+    // the historical client always sent it (needed for gateway/alias model names).
     this.model = new ChatOpenAI({
       model: this.modelName,
       apiKey: config.apiKey || "",
       useResponsesApi: true,
       ...(this.serviceTier ? { service_tier: this.serviceTier } : {}),
-      ...(this.reasoningEffort ? { reasoning: { effort: this.reasoningEffort } } : {}),
+      ...(this.reasoningEffort ? { modelKwargs: { reasoning: { effort: this.reasoningEffort } } } : {}),
       configuration: {
         ...(config.baseURL ? { baseURL: config.baseURL } : {}),
         ...(config.defaultHeaders ? { defaultHeaders: config.defaultHeaders } : {}),

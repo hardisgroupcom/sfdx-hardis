@@ -1,9 +1,20 @@
 // Helpers for the sfdx-hardis upgrade check performed by the init hook.
 // Kept free of heavy imports: the hook runs at CLI startup.
 import semver from 'semver';
+import { proxyFetch } from './httpUtils.js';
 
 export const UPGRADE_CHECK_INTERVAL_MS = 1000 * 60 * 60 * 6; // check every 6 hours
 export const UPGRADE_CHECK_FETCH_TIMEOUT_MS = 3000;
+
+// True when the upgrade check must not run at all: CI pipelines (ephemeral
+// environments where the banner is noise and the timestamp cache never persists)
+// and the standard NO_UPDATE_NOTIFIER opt-out that update-notifier honored.
+export function isUpgradeCheckDisabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  if (env.NO_UPDATE_NOTIFIER !== undefined && env.NO_UPDATE_NOTIFIER !== '' && env.NO_UPDATE_NOTIFIER !== 'false') {
+    return true;
+  }
+  return env.CI !== undefined && env.CI !== '' && env.CI !== 'false';
+}
 
 // True when the last check is old enough (or never happened) to check again
 export function shouldCheckForUpgrade(lastCheckTs: number | null | undefined, nowTs: number, intervalMs: number = UPGRADE_CHECK_INTERVAL_MS): boolean {
@@ -26,7 +37,7 @@ export function isUpgradeAvailable(current: string | null | undefined, latest: s
 // check must never break or slow down CLI startup.
 export async function fetchLatestPackageVersion(packageName: string, timeoutMs: number = UPGRADE_CHECK_FETCH_TIMEOUT_MS): Promise<string | null> {
   try {
-    const response = await fetch(`https://registry.npmjs.org/${packageName}/latest`, {
+    const response = await proxyFetch(`https://registry.npmjs.org/${packageName}/latest`, {
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (!response.ok) {

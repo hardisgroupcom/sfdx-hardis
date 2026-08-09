@@ -14,7 +14,7 @@ const hook: Hook<'init'> = async (options) => {
     { fileURLToPath },
     path,
     { getCache, setCache },
-    { shouldCheckForUpgrade, isUpgradeAvailable, fetchLatestPackageVersion },
+    { shouldCheckForUpgrade, isUpgradeAvailable, fetchLatestPackageVersion, isUpgradeCheckDisabled },
   ] = await Promise.all([
     import('chalk'),
     import('fs-extra'),
@@ -23,6 +23,11 @@ const hook: Hook<'init'> = async (options) => {
     import('../../common/cache/index.js'),
     import('../../common/utils/upgradeCheckUtils.js'),
   ]);
+
+  // Never in CI (ephemeral environments) nor when the user opted out
+  if (isUpgradeCheckDisabled()) {
+    return;
+  }
 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);

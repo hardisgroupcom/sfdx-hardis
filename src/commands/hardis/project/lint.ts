@@ -129,12 +129,17 @@ In agent mode, all interactive prompts are skipped and default values are used.
   }
 
   // Spawn mega-linter-runner through npx so its dependency tree is only fetched
-  // by users who actually lint (it is not shipped with sfdx-hardis anymore)
+  // by users who actually lint (it is not shipped with sfdx-hardis anymore).
+  // The version is pinned to the major sfdx-hardis is aligned with, so a new
+  // mega-linter-runner major cannot change behavior without an sfdx-hardis release.
   private runMegaLinterRunner(args: string[]): { status: number | null } {
-    const spawnRes = spawnSync('npx', ['--yes', 'mega-linter-runner', ...args], {
+    const spawnRes = spawnSync('npx', ['--yes', 'mega-linter-runner@10', ...args], {
       stdio: 'inherit',
       windowsHide: true,
     });
+    if (spawnRes.error) {
+      uxLog("error", this, c.red(`Unable to run npx mega-linter-runner: ${spawnRes.error.message}`));
+    }
     return { status: spawnRes.status };
   }
 }

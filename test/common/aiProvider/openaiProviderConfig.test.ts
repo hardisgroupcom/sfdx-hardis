@@ -82,6 +82,9 @@ describe('OpenAiProvider configuration', () => {
     const provider = await OpenAiProvider.create();
     expect((provider as any).serviceTier).to.equal('flex');
     expect((provider as any).reasoningEffort).to.equal('high');
+    // reasoning must go through modelKwargs so it is sent for ANY model name,
+    // not only the ones ChatOpenAI recognizes as reasoning models
+    expect((provider as any).model?.modelKwargs?.reasoning).to.deep.equal({ effort: 'high' });
   });
 
   it('drops unsupported service tier and reasoning effort values', async () => {

@@ -1,27 +1,30 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import { CloudflareApiClient } from '../../../src/common/utils/cloudflareApiClient.js';
+import { setFetchForTests } from '../../../src/common/utils/httpUtils.js';
 
 describe('CloudflareApiClient', () => {
-  const originalFetch = globalThis.fetch;
   let requests: Array<{ url: string; init: any }> = [];
   let nextResponses: Response[] = [];
 
   function mockFetch(...responses: Response[]) {
     requests = [];
     nextResponses = responses;
-    globalThis.fetch = (async (url: any, init: any) => {
+    setFetchForTests(async (url: any, init: any) => {
       requests.push({ url: String(url), init });
       return nextResponses.shift() ?? new Response('{}', { status: 200 });
-    }) as any;
+    });
   }
 
   function envelope(result: any): Response {
-    return new Response(JSON.stringify({ success: true, result, errors: [] }), { status: 200 });
+    return new Response(JSON.stringify({ success: true, result, errors: [] }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   afterEach(() => {
-    globalThis.fetch = originalFetch;
+    setFetchForTests(null);
   });
 
   const client = new CloudflareApiClient({ apiEmail: 'me@example.com', apiToken: 'tok', accountId: 'acc123' });
@@ -67,7 +70,7 @@ describe('CloudflareApiClient', () => {
   });
 
   it('throws an explicit error on a Cloudflare error envelope', async () => {
-    mockFetch(new Response(JSON.stringify({ success: false, result: null, errors: [{ code: 8000007, message: 'Project not found' }] }), { status: 404 }));
+    mockFetch(new Response(JSON.stringify({ success: false, result: null, errors: [{ code: 8000007, message: 'Project not found' }] }), { status: 404, headers: { 'Content-Type': 'application/json' } }));
     try {
       await client.getPagesProject('missing');
       expect.fail('should have thrown');

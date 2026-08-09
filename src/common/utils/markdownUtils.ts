@@ -162,6 +162,14 @@ export async function generatePdfFileFromMarkdown(markdownFile: string, options:
     const outputPdfFile = markdownFile.replace('.md', '.pdf');
     const timeoutMs = options.timeoutMs || 120000;
 
+    // No local Chrome/Chromium: degrade to a warning like any other PDF failure,
+    // with an actionable message instead of a puppeteer launch crash
+    const chromeExecutablePath = getChromeExecutablePath();
+    if (!chromeExecutablePath) {
+      uxLog("warning", this, c.yellow(t('errorGeneratingPdfFileFromDocumentationWith', { markdownFile, message: 'No Chrome/Chromium browser found. Install one or set PUPPETEER_EXECUTABLE_PATH' })));
+      return false;
+    }
+
     // Convert markdown to a standalone HTML document, written next to the markdown
     // file so relative image paths keep resolving through the file:// URL
     const markdownContent = await fs.readFile(markdownFile, 'utf8');
@@ -174,7 +182,7 @@ export async function generatePdfFileFromMarkdown(markdownFile: string, options:
 
     // Print the HTML document to PDF using the local Chrome/Chromium
     const browser = await puppeteer.launch({
-      executablePath: getChromeExecutablePath(),
+      executablePath: chromeExecutablePath,
       timeout: timeoutMs,
       protocolTimeout: timeoutMs,
       args: [

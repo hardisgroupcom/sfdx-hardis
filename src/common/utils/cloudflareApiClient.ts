@@ -1,7 +1,10 @@
 // Minimal Cloudflare REST API client, covering only the endpoints used by
 // hardis:doc:mkdocs-to-cf (Pages projects + Zero Trust Access), so the full
 // cloudflare SDK does not need to be shipped as a dependency.
+// Built on the shared httpUtils client (proxy support, timeout) and only adds
+// the Cloudflare { success, result, errors } envelope handling.
 import { SfError } from '@salesforce/core';
+import { createHttpClient, HttpClient, HttpError } from './httpUtils.js';
 
 export interface CloudflarePagesProject {
   id?: string;
@@ -35,16 +38,23 @@ export interface CloudflareAccessApplication {
 }
 
 const CLOUDFLARE_API_ROOT = 'https://api.cloudflare.com/client/v4';
+const CLOUDFLARE_TIMEOUT_MS = 60000;
 
 export class CloudflareApiClient {
-  private readonly apiEmail: string;
-  private readonly apiToken: string;
   private readonly accountId: string;
+  private readonly http: HttpClient;
 
   constructor(options: { apiEmail: string; apiToken: string; accountId: string }) {
-    this.apiEmail = options.apiEmail;
-    this.apiToken = options.apiToken;
     this.accountId = options.accountId;
+    this.http = createHttpClient({
+      baseURL: CLOUDFLARE_API_ROOT,
+      timeout: CLOUDFLARE_TIMEOUT_MS,
+      headers: {
+        Authorization: `Bearer ${options.apiToken}`,
+        'X-Auth-Email': options.apiEmail,
+        'Content-Type': 'application/json',
+      },
+    });
   }
 
   public async getPagesProject(projectName: string): Promise<CloudflarePagesProject> {
@@ -81,26 +91,28 @@ export class CloudflareApiClient {
 
   // Sends the request and unwraps the Cloudflare response envelope { success, result, errors }
   private async request<T>(method: string, apiPath: string, body?: Record<string, any>): Promise<T> {
-    const response = await fetch(`${CLOUDFLARE_API_ROOT}${apiPath}`, {
-      method,
-      headers: {
-        Authorization: `Bearer ${this.apiToken}`,
-        'X-Auth-Email': this.apiEmail,
-        'Content-Type': 'application/json',
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    let status = 0;
     let payload: any = null;
     try {
-      payload = await response.json();
-    } catch {
-      // Non-JSON response body: handled below with the HTTP status
+      const response =
+        method === 'GET' ? await this.http.get(apiPath)
+          : method === 'PUT' ? await this.http.put(apiPath, body)
+            : await this.http.post(apiPath, body);
+      status = response.status;
+      payload = response.data;
+    } catch (e: any) {
+      if (!(e instanceof HttpError)) {
+        throw e;
+      }
+      status = e.response.status;
+      payload = typeof e.response.data === 'object' ? e.response.data : null;
+      // Falls through to the envelope error below
     }
-    if (!response.ok || payload?.success === false) {
+    if (status < 200 || status >= 300 || payload?.success === false) {
       const errors = (payload?.errors || [])
         .map((err: any) => `${err.code ? err.code + ': ' : ''}${err.message || JSON.stringify(err)}`)
         .join('; ');
-      throw new SfError(`Cloudflare API error on ${method} ${apiPath} (HTTP ${response.status})${errors ? ': ' + errors : ''}`);
+      throw new SfError(`Cloudflare API error on ${method} ${apiPath} (HTTP ${status})${errors ? ': ' + errors : ''}`);
     }
     return payload?.result as T;
   }
