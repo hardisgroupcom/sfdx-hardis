@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- Reduce the npm dependency tree by ~20% (14 packages removed, among which axios, xml2js, openai, cloudflare and md-to-pdf) to shrink the supply-chain attack surface, with no functional change.
 - [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/): New `.sfdx-hardis.yml` property **monitoringAllowedUsersActions** to allow specific expected actions for specific users (ex: an integration user whose portal user provisioning automatically creates account roles). Unlike **monitoringExcludeUsernames**, any other action performed by the same user is still flagged as suspect.
 - [hardis:org:user:unlink-security-key](https://sfdx-hardis.cloudity.com/hardis/org/user/unlink-security-key/): Notifications and reports now show who triggered the run.
 - New [hardis:org:diagnose:usage-entitlements](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/usage-entitlements/): Monitor usage-based entitlements like Einstein Requests, Flex Credits, Data 360 credits and API calls, and warn when consumption is on track to exceed the allowance before the billing period ends.
