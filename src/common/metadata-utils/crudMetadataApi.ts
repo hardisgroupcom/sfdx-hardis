@@ -6,8 +6,7 @@ import {
   MetadataResolver,
   RegistryAccess,
 } from '@salesforce/source-deploy-retrieve';
-import XMLBuilder from 'fast-xml-builder';
-import { XMLParser } from 'fast-xml-parser';
+import { XMLBuilder, XMLParser } from 'fast-xml-parser';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
