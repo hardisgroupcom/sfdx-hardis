@@ -3,7 +3,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
 import * as util from 'util';
-import * as xml2js from 'xml2js';
+import { parseXmlString } from '../../../../common/utils/xmlUtils.js';
 import { AnyJson } from '@salesforce/ts-types';
 import { uxLog } from '../../../../common/utils/index.js';
 import { writeXmlFile } from '../../../../common/utils/xmlUtils.js';
@@ -37,7 +37,7 @@ The command's technical implementation involves:
 - **Configuration Loading:** Reads the \`filter-config.json\` file, which contains an array of \`filters\`. Each filter defines a \`name\`, \`description\`, either \`folders\` or \`files\` (where to apply the filter), \`file_extensions\`, and an \`exclude_list\`.
 - **File System Operations:** Copies the input folder to an output folder (if different) to avoid modifying original files directly. It then iterates through either explicitly listed files or files found in configured folders, and applies extension checks before filtering.
 - **XML Parsing and Manipulation:** For each matching XML file:
-  - It uses \`xml2js.Parser\` to parse the XML content into a JavaScript object.
+  - It parses the XML content into a JavaScript object.
   - It recursively traverses the JavaScript object, applying the \`filterElement\` function.
   - The \`filterElement\` function checks for \`type_tag\` and \`identifier_tag\` defined in the \`exclude_list\`. If a match is found and the identifier matches one of the \`excludeDef.values\` entries (exact or wildcard), the element is removed from the XML structure.
   - After filtering, it uses \`writeXmlFile\` to write the modified JavaScript object back to the XML file.
@@ -207,20 +207,18 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
   // Filter XML content of the file
   public filterXmlFromFile(filters, file) {
-    const parser = new xml2js.Parser();
-    const data = fs.readFileSync(file);
-    parser.parseString(data, (err2, fileXmlContent) => {
-      uxLog("other", this, 'Parsed XML \n' + util.inspect(fileXmlContent, false, null));
-      filters.forEach((filter) => {
-        Object.keys(fileXmlContent).forEach((eltKey) => {
-          fileXmlContent[eltKey] = this.filterElement(fileXmlContent[eltKey], filter, file);
-        });
+    const data = fs.readFileSync(file, 'utf8');
+    const fileXmlContent = parseXmlString(data);
+    uxLog("other", this, 'Parsed XML \n' + util.inspect(fileXmlContent, false, null));
+    filters.forEach((filter) => {
+      Object.keys(fileXmlContent).forEach((eltKey) => {
+        fileXmlContent[eltKey] = this.filterElement(fileXmlContent[eltKey], filter, file);
       });
-      if (this.smmryUpdatedFiles[file] != null && this.smmryUpdatedFiles[file].updated === true) {
-        writeXmlFile(file, fileXmlContent);
-        uxLog("log", this, t('updated') + file);
-      }
     });
+    if (this.smmryUpdatedFiles[file] != null && this.smmryUpdatedFiles[file].updated === true) {
+      writeXmlFile(file, fileXmlContent);
+      uxLog("log", this, t('updated') + file);
+    }
   }
 
   public filterElement(elementValue, filter, file) {

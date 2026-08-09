@@ -7,7 +7,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { parseStringPromise, Builder } from 'xml2js';
+import { buildXmlString, parseXmlString } from '../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { glob } from 'glob';
 import { t } from '../../../common/utils/i18n.js';
@@ -56,7 +56,7 @@ The command's technical implementation involves:
 
 - **File Discovery:** It uses \`glob\` to find all \`*.translation-meta.xml\` files in the \`**/translations/\` directory and, if an LWC is specified, it searches for the LWC's JavaScript files (\`**/lwc/**/*.js\`).
 - **LWC Label Extraction:** The \`extractLabelsFromLwc\` function uses regular expressions (\`@salesforce/label/c.([a-zA-Z0-9_]+)\`) to parse LWC JavaScript files and identify referenced custom labels.
-- **XML Parsing and Building:** It uses \`xml2js\` (\`parseStringPromise\` and \`Builder\`) to:
+- **XML Parsing and Building:** It parses and rebuilds the XML files to:
   - Read and parse existing \`.translation-meta.xml\` files.
   - Filter the \`customLabels\` array to include only the requested labels.
   - Construct a new XML structure containing only the filtered labels.
@@ -165,7 +165,7 @@ The command's technical implementation involves:
 
     for (const customLabelsFile of customLabelsFiles) {
       const xmlContent = await fs.readFile(customLabelsFile, 'utf8');
-      const parsedXml = await parseStringPromise(xmlContent, { explicitArray: false });
+      const parsedXml = parseXmlString(xmlContent, { explicitArray: false });
 
       if (!parsedXml.CustomLabels || !parsedXml.CustomLabels.labels) {
         continue;
@@ -250,7 +250,7 @@ The command's technical implementation involves:
 
         const xmlContent = await fs.readFile(translationFile, 'utf8');
 
-        const parsedXml = await parseStringPromise(xmlContent, { explicitArray: false });
+        const parsedXml = parseXmlString(xmlContent, { explicitArray: false });
 
         if (!parsedXml.Translations) {
           uxLog("warning", this, c.yellow(t('invalidTranslationFileFormat', { translationFile })));
@@ -282,11 +282,7 @@ The command's technical implementation involves:
           }
         };
 
-        const builder = new Builder({
-          xmldec: { version: '1.0', encoding: 'UTF-8' },
-          renderOpts: { pretty: true, indent: '    ', newline: '\n' }
-        });
-        const outputXml = builder.buildObject(newXml);
+        const outputXml = buildXmlString(newXml, '    ');
 
         const outputFile = path.join(outputDir, `${languageCode}.translation-meta.xml`);
 
@@ -337,11 +333,7 @@ The command's technical implementation involves:
             }
           };
 
-          const builder = new Builder({
-            xmldec: { version: '1.0', encoding: 'UTF-8' },
-            renderOpts: { pretty: true, indent: '    ', newline: '\n' }
-          });
-          const outputXml = builder.buildObject(originalXml);
+          const outputXml = buildXmlString(originalXml, '    ');
 
           const originalFile = path.join(outputDir, 'original.translation-meta.xml');
           await fs.writeFile(originalFile, outputXml);
@@ -375,7 +367,7 @@ The command's technical implementation involves:
 
       for (const customLabelsFile of customLabelsFiles) {
         const xmlContent = await fs.readFile(customLabelsFile, 'utf8');
-        const parsedXml = await parseStringPromise(xmlContent);
+        const parsedXml = parseXmlString(xmlContent);
 
         if (!parsedXml.CustomLabels || !parsedXml.CustomLabels.labels) {
           throw new Error('No custom labels found in the file');
@@ -431,7 +423,7 @@ The command's technical implementation involves:
       for (const metaFile of lwcMetaFiles) {
         try {
           const xmlContent = await fs.readFile(metaFile, 'utf8');
-          const parsedXml = await parseStringPromise(xmlContent);
+          const parsedXml = parseXmlString(xmlContent);
 
           const pathParts = metaFile.split('/');
           const componentName = pathParts[pathParts.length - 1].replace('.js-meta.xml', '');

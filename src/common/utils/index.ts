@@ -9,7 +9,6 @@ import * as path from 'path';
 
 import * as util from 'util';
 import which from 'which';
-import * as xml2js from 'xml2js';
 const exec = util.promisify(child.exec);
 import { Connection, SfError } from '@salesforce/core';
 import ora from 'ora';
@@ -21,7 +20,7 @@ import { deployMetadatas, shortenLogLines } from './deployUtils.js';
 import { isProductionOrg, promptProfiles, promptUserEmail } from './orgUtils.js';
 import { LogType, WebSocketClient } from '../websocketClient.js';
 import { formatElapsedMs } from './dateHelper.js';
-import { writeXmlFile } from './xmlUtils.js';
+import { buildXmlString, parseXmlString, writeXmlFile } from './xmlUtils.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { t } from './i18n.js';
 
@@ -1133,7 +1132,7 @@ export async function filterPackageXml(
   let updated = false;
   let message = `[sfdx-hardis] ${packageXmlFileOut} not updated`;
   const initialFileContent = await fs.readFile(packageXmlFile);
-  const manifest = await xml2js.parseStringPromise(initialFileContent);
+  const manifest = parseXmlString(initialFileContent.toString());
 
   // Keep only namespaces
   if ((options.keepOnlyNamespaces || []).length > 0) {
@@ -1177,7 +1176,7 @@ export async function filterPackageXml(
   // Remove from other packageXml file
   if (options.removeFromPackageXmlFile) {
     const destructiveFileContent = await fs.readFile(options.removeFromPackageXmlFile);
-    const destructiveManifest = await xml2js.parseStringPromise(destructiveFileContent);
+    const destructiveManifest = parseXmlString(destructiveFileContent.toString());
     manifest.Package.types = manifest.Package.types
       .map((type: any) => {
         const destructiveTypes = destructiveManifest.Package.types.filter((destructiveType: any) => {
@@ -1245,8 +1244,7 @@ export async function filterPackageXml(
   manifest.Package.types = manifest.Package.types.filter(
     (type: any) => !(options.removeMetadatas || []).includes(type.name[0]) && (type?.members?.length || 0) > 0
   );
-  const builder = new xml2js.Builder({ renderOpts: { pretty: true, indent: '  ', newline: '\n' } });
-  const updatedFileContent = builder.buildObject(manifest);
+  const updatedFileContent = buildXmlString(manifest, '  ');
   if (updatedFileContent !== initialFileContent.toString()) {
     await writeXmlFile(packageXmlFileOut, manifest);
     updated = true;

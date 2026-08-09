@@ -59,7 +59,6 @@
     "sort-array": "4.1.5",
     "which": "4.0.0",
     "ws": "8.21.1",
-    "xml2js": "0.6.2",
     "xpath": "0.0.34"
   },
   "resolutions": {
@@ -117,7 +116,6 @@
     "@types/sort-array": "4.1.2",
     "@types/which": "3.0.4",
     "@types/ws": "8.18.1",
-    "@types/xml2js": "0.4.14",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.62.1",
     "c8": "^11.0.0",

@@ -17,7 +17,7 @@ import { prompts } from '../../../common/utils/prompts.js';
 import { parseXmlFile, writeXmlFile } from '../../../common/utils/xmlUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../common/notifProvider/index.js';
-import { Parser } from 'xml2js';
+import { parseXmlString } from '../../../common/utils/xmlUtils.js';
 
 // Config
 import { CONSTANTS, getConfig } from '../../../config/index.js';
@@ -692,8 +692,7 @@ In agent mode, the interactive prompt to automatically add missing accesses to P
   }
 
   private async parseString(xml: string): Promise<any> {
-    const parser = new Parser();
-    return parser.parseStringPromise(xml);
+    return parseXmlString(xml);
   }
 
   private async verifyMultipleObjectsInPermissionSets(permissionsetsDirectory: string): Promise<void> {
