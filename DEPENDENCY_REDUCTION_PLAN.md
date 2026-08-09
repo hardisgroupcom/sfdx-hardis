@@ -60,10 +60,10 @@ The biggest lever. Move optional feature families out of the core install so CI 
 
 ## Progress log
 
-| Date | Phase | Change | Runtime deps | yarn.lock entries |
-|------|-------|--------|--------------|-------------------|
-| 2026-08-09 | baseline | - | 66 | 1782 |
-| 2026-08-09 | 1 | removed @langchain/community, fast-xml-builder, csv-stringify, make-fetch-happen, mega-linter-runner | 61 | - |
-| 2026-08-09 | 2 | replaced isomorphic-dompurify (sanitize-html added), update-notifier, read-package-up, md-to-pdf, cloudflare; farmhash kept | 57 | - |
-| 2026-08-09 | 3 | removed xml2js (fast-xml-parser compat layer); @xmldom/xmldom + xpath kept | 56 | - |
-| 2026-08-09 | 4 | removed axios, openai, psl; pruned resolutions (dompurify, axios, mega-linter-runner/which, parse5, serve-handler) | 52 | 1423 |
+| Date       | Phase    | Change                                                                                                                      | Runtime deps | yarn.lock entries |
+|------------|----------|-----------------------------------------------------------------------------------------------------------------------------|--------------|-------------------|
+| 2026-08-09 | baseline | -                                                                                                                           | 66           | 1782              |
+| 2026-08-09 | 1        | removed @langchain/community, fast-xml-builder, csv-stringify, make-fetch-happen, mega-linter-runner                        | 61           | -                 |
+| 2026-08-09 | 2        | replaced isomorphic-dompurify (sanitize-html added), update-notifier, read-package-up, md-to-pdf, cloudflare; farmhash kept | 57           | -                 |
+| 2026-08-09 | 3        | removed xml2js (fast-xml-parser compat layer); @xmldom/xmldom + xpath kept                                                  | 56           | -                 |
+| 2026-08-09 | 4        | removed axios, openai, psl; pruned resolutions (dompurify, axios, mega-linter-runner/which, parse5, serve-handler)          | 52           | 1423              |
