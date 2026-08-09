@@ -2,7 +2,7 @@
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import axios from 'axios';
+import { httpGet } from '../../../../common/utils/httpUtils.js';
 import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import c from 'chalk';
 import { uxLog } from '../../../../common/utils/index.js';
@@ -95,7 +95,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
     // Get Salesforce instance info
     const instanceStatusUrl = `https://api.status.salesforce.com/v1/instances/${instanceName}/status`;
-    const axiosResponse = await axios.get(instanceStatusUrl);
+    const axiosResponse = await httpGet(instanceStatusUrl);
     const instanceInfo = axiosResponse.data;
     const maintenances = instanceInfo.Maintenances || [];
     orgInfo.maintenanceNextUpgrade = {};

@@ -11,7 +11,7 @@ getConfig(layer) returns:
 */
 
 import { Connection, SfError } from '@salesforce/core';
-import axios from 'axios';
+import { httpGet } from '../common/utils/httpUtils.js';
 import c from 'chalk';
 import { cosmiconfig } from 'cosmiconfig';
 import fs from 'fs-extra';
@@ -192,7 +192,7 @@ async function loadFromRemoteConfigFile(url) {
   if (REMOTE_CONFIGS[url]) {
     return REMOTE_CONFIGS[url];
   }
-  const remoteConfigResp = await axios.get(url);
+  const remoteConfigResp = await httpGet(url, { responseType: 'text' });
   if (remoteConfigResp.status !== 200) {
     throw new SfError(
       '[sfdx-hardis] Unable to read remote configuration file at ' + url + '\n' + JSON.stringify(remoteConfigResp)

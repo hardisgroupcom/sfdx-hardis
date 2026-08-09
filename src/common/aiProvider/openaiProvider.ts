@@ -1,4 +1,5 @@
-import { OpenAI } from "openai";
+import { ChatOpenAI } from "@langchain/openai";
+import { SystemMessage } from "@langchain/core/messages";
 import { AiResponse } from "./index.js";
 import { AiProviderRoot } from "./aiProviderRoot.js";
 import c from "chalk";
@@ -13,7 +14,7 @@ export class OpenAiProvider extends AiProviderRoot {
   private static readonly SUPPORTED_SERVICE_TIERS: OpenAiServiceTier[] = ["auto", "default", "flex"];
   private static readonly SUPPORTED_REASONING_EFFORTS: OpenAiReasoningEffort[] = ["low", "medium", "high"];
 
-  protected openai: OpenAI;
+  protected model: ChatOpenAI;
   private readonly modelName: string;
   private readonly serviceTier?: OpenAiServiceTier;
   private readonly reasoningEffort?: OpenAiReasoningEffort;
@@ -24,19 +25,20 @@ export class OpenAiProvider extends AiProviderRoot {
     this.serviceTier = config.serviceTier;
     this.reasoningEffort = config.reasoningEffort;
 
-    const clientOptions: Record<string, unknown> = {};
-    if (config.apiKey) {
-      clientOptions.apiKey = config.apiKey;
-    } else if (config.defaultHeaders) {
-      clientOptions.apiKey = "";
-    }
-    if (config.baseURL) {
-      clientOptions.baseURL = config.baseURL;
-    }
-    if (config.defaultHeaders) {
-      clientOptions.defaultHeaders = config.defaultHeaders;
-    }
-    this.openai = new OpenAI(clientOptions as ConstructorParameters<typeof OpenAI>[0]);
+    // Routed through @langchain/openai (already shipped for the langchain provider),
+    // so the standalone openai SDK is not needed anymore. useResponsesApi keeps the
+    // historical behavior of calling the OpenAI Responses API.
+    this.model = new ChatOpenAI({
+      model: this.modelName,
+      apiKey: config.apiKey || "",
+      useResponsesApi: true,
+      ...(this.serviceTier ? { service_tier: this.serviceTier } : {}),
+      ...(this.reasoningEffort ? { reasoning: { effort: this.reasoningEffort } } : {}),
+      configuration: {
+        ...(config.baseURL ? { baseURL: config.baseURL } : {}),
+        ...(config.defaultHeaders ? { defaultHeaders: config.defaultHeaders } : {}),
+      },
+    });
   }
 
   public getLabel(): string {
@@ -127,30 +129,24 @@ export class OpenAiProvider extends AiProviderRoot {
       uxLog("log", this, c.grey('[OpenAI] ' + t('openaiRequestingPrompt', { modelName: gptModel, template: template ? ' using template ' + template : '' })));
     }
     this.incrementAiCallsNumber();
-    const request: OpenAI.Responses.ResponseCreateParamsNonStreaming = {
-      model: gptModel,
-      input: [{ role: "system", content: promptText }],
-    };
-    if (this.serviceTier) {
-      request.service_tier = this.serviceTier;
-    }
-    if (this.reasoningEffort) {
-      request.reasoning = { effort: this.reasoningEffort };
-    }
-    const response = await this.openai.responses.create(request);
+    const response = await this.model.invoke([new SystemMessage(promptText)]);
     if (process.env?.DEBUG_PROMPTS === "true") {
       uxLog("log", this, c.grey('[OpenAI] ' + t('openaiReceivedResponseDebug', { modelName: gptModel, response: JSON.stringify(response, null, 2) })));
     }
     else {
       uxLog("log", this, c.grey('[OpenAI] ' + t('openaiReceivedResponse', { modelName: gptModel })));
     }
+    const responseText = typeof response.content === "string"
+      ? response.content
+      : response.text;
+    const responseModelName = response.response_metadata?.model_name || response.response_metadata?.model;
     const aiResponse: AiResponse = {
       success: false,
-      model: response.model,
+      model: typeof responseModelName === "string" ? responseModelName : gptModel,
     };
-    if (response.output.length > 0) {
+    if (responseText) {
       aiResponse.success = true;
-      aiResponse.promptResponse = response.output_text || undefined;
+      aiResponse.promptResponse = responseText;
     }
     return aiResponse;
   }

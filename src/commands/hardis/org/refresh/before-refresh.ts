@@ -4,7 +4,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import fs from 'fs-extra';
 import c from 'chalk';
 import open from 'open';
-import axios from 'axios';
+import { httpGet } from '../../../../common/utils/httpUtils.js';
 import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
 import { execCommand, execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
@@ -793,7 +793,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     uxLog("log", this, c.cyan(t('extractingApplicationIdForConnectedAppWith', { connectedAppName })));
 
     const url = `${instanceUrl}/${connectedAppId}`;
-    const response = await axios.get(url, {
+    const response = await httpGet(url, {
+      responseType: 'text',
       headers: {
         Cookie: `sid=${accessToken}`
       }

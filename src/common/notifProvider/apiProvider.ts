@@ -10,7 +10,7 @@ import { getSeverityIcon } from "../utils/notifUtils.js";
 import { anonymizeApiPayloadData, shouldAnonymizeApiData } from "./apiAnonymizer.js";
 import { convertMarkdownToPlainText } from "./markdownToPlainText.js";
 import { GitProvider } from "../gitProvider/index.js";
-import axios, { AxiosRequestConfig } from "axios";
+import { httpPost, HttpRequestConfig } from "../utils/httpUtils.js";
 import fs from "fs-extra";
 import * as path from "path";
 import { t } from '../utils/i18n.js';
@@ -230,7 +230,7 @@ export class ApiProvider extends NotifProviderRoot {
 
   // Call remote API
   private async sendToApi() {
-    const axiosConfig: AxiosRequestConfig = {
+    const axiosConfig: HttpRequestConfig = {
       responseType: "json",
     };
     // Basic Auth
@@ -246,7 +246,7 @@ export class ApiProvider extends NotifProviderRoot {
     }
     // POST message
     try {
-      const axiosResponse = await axios.post(this.apiUrl || "", this.payloadFormatted, axiosConfig);
+      const axiosResponse = await httpPost(this.apiUrl || "", this.payloadFormatted, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
         uxLog("log", this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
@@ -424,7 +424,7 @@ export class ApiProvider extends NotifProviderRoot {
 
   // Call remote API
   private async sendToMetricsApi() {
-    const axiosConfig: AxiosRequestConfig = {
+    const axiosConfig: HttpRequestConfig = {
       responseType: "json",
     };
 
@@ -449,7 +449,7 @@ export class ApiProvider extends NotifProviderRoot {
     }
     // POST message
     try {
-      const axiosResponse = await axios.post(this.metricsApiUrl || "", this.metricsPayload, axiosConfig);
+      const axiosResponse = await httpPost(this.metricsApiUrl || "", this.metricsPayload, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus >= 200 && httpStatus < 300) {
         uxLog("log", this, c.cyan(`[ApiMetricProvider] Posted metrics to API ${this.metricsApiUrl} (${httpStatus}) [format: ${this.metricsFormat}]`));
