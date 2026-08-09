@@ -2,7 +2,7 @@ import c from 'chalk';
 import * as child from 'child_process';
 import { spawn as crossSpawn } from 'cross-spawn';
 import * as crypto from 'crypto';
-import { stringify as csvStringify } from 'csv-stringify/sync';
+import { stringifyCsv } from './csvUtils.js';
 import fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
@@ -1399,9 +1399,8 @@ export async function generateReports(
   const reportFile = path.resolve(`${reportDir}/${logFileName}-${dateSuffix}.csv`);
   const reportFileExcel = path.resolve(`${reportDir}/${logFileName}-${dateSuffix}.xls`);
   await fs.ensureDir(path.dirname(reportFile));
-  const csv = csvStringify(resultSorted, {
+  const csv = stringifyCsv(resultSorted, {
     delimiter: ';',
-    header: true,
     columns,
   });
   await fs.writeFile(reportFile, csv, 'utf8');
@@ -1414,9 +1413,8 @@ export async function generateReports(
   } catch (e: any) {
     uxLog("warning", commandThis, c.yellow(`[sfdx-hardis] Error opening file in VS Code: ${e.message}`));
   }
-  const excel = csvStringify(resultSorted, {
+  const excel = stringifyCsv(resultSorted, {
     delimiter: '\t',
-    header: true,
     columns,
   });
   await fs.writeFile(reportFileExcel, excel, 'utf8');

@@ -61,4 +61,43 @@ describe('convertMarkdownToHtml()', () => {
     expect(out).to.include('<li>one</li>');
     expect(out).to.include('<li>two</li>');
   });
+
+  // Sanitization contract: this HTML is sent outbound (email bodies, Azure Boards
+  // comments) and may embed org-controlled text, so XSS vectors must be neutralized
+  // whatever sanitizer implementation is used.
+  it('strips an onerror handler from an embedded <img>', async () => {
+    const out = await convertMarkdownToHtml('<img src="x" onerror="alert(1)">');
+    expect(out).to.not.include('onerror');
+    expect(out).to.not.include('alert(1)');
+  });
+
+  it('neutralizes a javascript: link', async () => {
+    const out = await convertMarkdownToHtml('<a href="javascript:alert(1)">click</a>');
+    expect(out).to.not.include('javascript:');
+  });
+
+  it('strips an <iframe> tag', async () => {
+    const out = await convertMarkdownToHtml('before <iframe src="https://evil.example"></iframe> after');
+    expect(out).to.not.include('<iframe');
+    expect(out).to.include('before');
+    expect(out).to.include('after');
+  });
+
+  it('strips an onmouseover attribute from an embedded <div>', async () => {
+    const out = await convertMarkdownToHtml('<div onmouseover="bad()">content</div>');
+    expect(out).to.not.include('onmouseover');
+    expect(out).to.include('content');
+  });
+
+  it('keeps an https image', async () => {
+    const out = await convertMarkdownToHtml('![logo](https://example.com/logo.png)');
+    expect(out).to.include('<img');
+    expect(out).to.include('src="https://example.com/logo.png"');
+  });
+
+  it('keeps http and mailto links', async () => {
+    const out = await convertMarkdownToHtml('[site](http://example.com) and [mail](mailto:support@example.com)');
+    expect(out).to.include('href="http://example.com"');
+    expect(out).to.include('href="mailto:support@example.com"');
+  });
 });
