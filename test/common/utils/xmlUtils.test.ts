@@ -12,6 +12,7 @@ import {
   countPackageXmlItems,
   isPackageXmlEmpty,
   parseXmlFile,
+  parseXmlString,
   parsePackageXmlFile,
   writeXmlFile,
   writeXmlFileFormatted,
@@ -104,6 +105,49 @@ describe('xmlUtils XML engine characterization', () => {
       }
       await fs.remove(tmpDir);
     }
+  });
+
+  it('drops XML comments like the historical parser', () => {
+    const parsed = parseXmlString('<?xml version="1.0" encoding="UTF-8"?>\n<Package><!-- a comment --><version>62.0</version></Package>');
+    expect(parsed).to.deep.equal({ Package: { version: ['62.0'] } });
+  });
+
+  it('extracts CDATA content as plain text', () => {
+    const parsed = parseXmlString('<CustomLabels><labels><value><![CDATA[Some <b>html</b> & text]]></value></labels></CustomLabels>');
+    expect(parsed.CustomLabels.labels[0].value).to.deep.equal(['Some <b>html</b> & text']);
+  });
+
+  it('decodes numeric character references', () => {
+    const parsed = parseXmlString('<CustomLabels><labels><value>caf&#233; &#x26; th&#xE9;</value></labels></CustomLabels>');
+    expect(parsed.CustomLabels.labels[0].value).to.deep.equal(['café & thé']);
+  });
+
+  it('throws on malformed XML', () => {
+    expect(() => parseXmlString('<Package><types></Package>')).to.throw();
+  });
+
+  it('parseXmlFile wraps parse errors in an SfError mentioning the file', async () => {
+    const tmpDir = await makeTmpDir();
+    try {
+      const badFile = path.join(tmpDir, 'bad.xml');
+      await fs.writeFile(badFile, '<Package><oops></Package>');
+      try {
+        await parseXmlFile(badFile);
+        expect.fail('should have thrown');
+      } catch (e: any) {
+        expect(e.message).to.include('bad.xml');
+      }
+    } finally {
+      await fs.remove(tmpDir);
+    }
+  });
+
+  it('supports the explicitArray:false shape (single child = object, repeated = array)', () => {
+    const xml = '<CustomLabels><labels><fullName>A</fullName></labels><labels><fullName>B</fullName></labels><version>62.0</version></CustomLabels>';
+    const parsed = parseXmlString(xml, { explicitArray: false });
+    expect(parsed.CustomLabels.version).to.equal('62.0');
+    expect(parsed.CustomLabels.labels).to.be.an('array').with.length(2);
+    expect(parsed.CustomLabels.labels[0].fullName).to.equal('A');
   });
 
   it('escapes &, < and > in text values but not quotes', async () => {

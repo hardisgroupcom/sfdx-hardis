@@ -40,7 +40,10 @@ function getCompatXmlParser(options: { explicitArray?: boolean } = {}): XMLParse
     ignoreDeclaration: true,
     ignorePiTags: true,
     processEntities: { maxTotalExpansions: Infinity } as any,
-    isArray: explicitArray ? (name: string, jpath: any) => name !== '$' && String(jpath).includes('.') : undefined,
+    // htmlEntities also decodes numeric character references (&#233;), like the historical parser
+    htmlEntities: true,
+    // The isArray key must be absent (not undefined) when unused, or fast-xml-parser crashes
+    ...(explicitArray ? { isArray: (name: string, jpath: any) => name !== '$' && String(jpath).includes('.') } : {}),
   });
 }
 
