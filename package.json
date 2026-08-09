@@ -83,7 +83,8 @@
     "langsmith": "0.7.1",
     "linkify-it": "5.0.2",
     "**/yargs": "18.0.0",
-    "yauzl": "3.2.1"
+    "yauzl": "3.2.1",
+    "undici": "8.10.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
