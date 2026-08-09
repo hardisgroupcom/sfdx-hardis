@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 // External Libraries and Node.js Modules
 import fs from 'fs-extra';
-import * as xml2js from 'xml2js';
+import { parseXmlString } from '../../../common/utils/xmlUtils.js';
 import { glob } from 'glob';
 import * as path from 'path';
 
@@ -45,7 +45,7 @@ The command's technical implementation involves:
 
 - **File Discovery:** It uses \`glob\` to find all custom field metadata files (\`.field-meta.xml\`) within your project.
 - **Custom Setting Exclusion:** It first filters out fields belonging to Custom Settings by reading the corresponding object metadata files (\`.object-meta.xml\`) and checking for the \`<customSettingsType>\` tag. It also excludes Data Cloud objects (\`__dlm\`, \`__dll\`) and managed package fields.
-- **XML Parsing:** For each remaining custom field file, it reads the XML content and parses it using \`xml2js\` to extract the \`fullName\` and \`description\` attributes.
+- **XML Parsing:** For each remaining custom field file, it reads the XML content and parses it to extract the \`fullName\` and \`description\` attributes.
 - **Description Check:** It verifies if the \`description\` attribute is present and not empty for each custom field.
 - **Data Aggregation:** All custom fields found to be missing a description are collected into a list, along with their object and field names.
 - **Report Generation:** It generates a CSV report (\`lint-missingattributes.csv\`) containing details of all fields with missing descriptions.
@@ -140,7 +140,6 @@ In agent mode, the command runs fully automatically with no interactive prompts.
   }
 
   private async filterOutCustomSettings() {
-    const parserCS = new xml2js.Parser();
     const objectDirectories: string[] = await glob(this.objectFileDirectory, { ignore: this.ignorePatterns });
     for (const directory of objectDirectories) {
       const objectName = path.basename(path.dirname(path.dirname(directory)));
@@ -154,7 +153,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
         try {
           const objectMetaFileContent = fs.readFileSync(objectMetaFilePath, 'utf8');
           let isCustomSettingsObject = false;
-          const result = await parserCS.parseStringPromise(objectMetaFileContent);
+          const result = parseXmlString(objectMetaFileContent);
 
           if (result && result.CustomObject && result.CustomObject.customSettingsType) {
             isCustomSettingsObject = true;
@@ -205,13 +204,11 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
   private parseXmlStringAsync(xmlString: string): Promise<any> {
     return new Promise((resolve, reject) => {
-      xml2js.parseString(xmlString, (err, result) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      });
+      try {
+        resolve(parseXmlString(xmlString));
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 

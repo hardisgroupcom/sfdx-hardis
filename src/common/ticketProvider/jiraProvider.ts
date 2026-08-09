@@ -8,7 +8,7 @@ import { SfError } from "@salesforce/core";
 import { CONSTANTS, getConfig, getEnvVar } from "../../config/index.js";
 import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
 import { t } from '../utils/i18n.js';
-import axios from "axios";
+import { httpGet, httpPost } from "../utils/httpUtils.js";
 
 export class JiraProvider extends TicketProviderRoot {
   // Version3Client for Jira Cloud, Version2Client for Jira Server / Data Center
@@ -148,7 +148,7 @@ export class JiraProvider extends TicketProviderRoot {
     const clientId = getEnvVar("JIRA_CLIENT_ID") || "";
     const clientSecret = getEnvVar("JIRA_CLIENT_SECRET") || "";
 
-    const tokenResponse = await axios.post("https://api.atlassian.com/oauth/token", {
+    const tokenResponse = await httpPost("https://api.atlassian.com/oauth/token", {
       audience: "api.atlassian.com",
       grant_type: "client_credentials",
       client_id: clientId,
@@ -158,7 +158,7 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   private async getCloudId(accessToken: string): Promise<string> {
-    const resourcesResponse = await axios.get("https://api.atlassian.com/oauth/token/accessible-resources", {
+    const resourcesResponse = await httpGet("https://api.atlassian.com/oauth/token/accessible-resources", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },

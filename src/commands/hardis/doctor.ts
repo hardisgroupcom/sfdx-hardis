@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as os from 'node:os';
-import axios from 'axios';
+import { httpGet } from '../../common/utils/httpUtils.js';
 import c from 'chalk';
 import open from 'open';
 import semver from 'semver';
@@ -302,7 +302,7 @@ In agent mode (or in CI):
   // Returns null on any error so version checking never blocks the command.
   private async getLatestNpmVersion(packageName: string): Promise<string | null> {
     try {
-      const res = await axios.get(`https://registry.npmjs.org/${encodeURIComponent(packageName)}`, {
+      const res = await httpGet(`https://registry.npmjs.org/${encodeURIComponent(packageName)}`, {
         timeout: 7000,
         // Abbreviated metadata: smaller payload that still carries dist-tags
         headers: { Accept: 'application/vnd.npm.install-v1+json' },

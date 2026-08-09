@@ -4,11 +4,12 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
 import * as util from 'util';
-import * as xml2js from 'xml2js';
-import { XMLParser } from 'fast-xml-parser';
+import { XMLBuilder, XMLParser, XMLValidator } from 'fast-xml-parser';
 import { sortCrossPlatform, uxLog } from './index.js';
 import { getApiVersion } from '../../config/index.js';
 import { t } from './i18n.js';
+
+const XML_DECLARATION = '<?xml version="1.0" encoding="UTF-8"?>';
 
 /**
  * Returns an XMLParser configured with a higher entity expansion limit (10 000)
@@ -19,32 +20,92 @@ export function getLargeXmlParser(): XMLParser {
   return new XMLParser({ processEntities: { maxTotalExpansions: Infinity } });
 }
 
+/**
+ * Returns an XMLParser producing the same object shape as the historical xml2js
+ * parser (see xmlUtils.test.ts):
+ * - every element value wrapped in an array (except the root), unless explicitArray is false
+ * - attributes grouped under "$", text of attributed elements under "_"
+ * - tag values kept as strings, empty leafs parsed as ""
+ */
+function getCompatXmlParser(options: { explicitArray?: boolean } = {}): XMLParser {
+  const explicitArray = options.explicitArray !== false;
+  return new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: '',
+    attributesGroupName: '$',
+    textNodeName: '_',
+    parseTagValue: false,
+    parseAttributeValue: false,
+    trimValues: true,
+    ignoreDeclaration: true,
+    ignorePiTags: true,
+    processEntities: { maxTotalExpansions: Infinity } as any,
+    isArray: explicitArray ? (name: string, jpath: any) => name !== '$' && String(jpath).includes('.') : undefined,
+  });
+}
+
+// xml2js escaped &, < and > in text values (not quotes), and also quotes in attribute values
+function escapeXmlText(value: unknown): string {
+  return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function escapeXmlAttribute(value: unknown): string {
+  return escapeXmlText(value).replace(/"/g, '&quot;');
+}
+
+/**
+ * Parses an XML string into the xml2js-compatible object shape.
+ * Throws an Error on malformed XML (fast-xml-parser alone is lenient, so the
+ * document is validated first to keep the historical failure behavior).
+ */
+export function parseXmlString(xmlString: string, options: { explicitArray?: boolean } = {}): any {
+  const validation = XMLValidator.validate(xmlString);
+  if (validation !== true) {
+    throw new Error(validation.err?.msg || 'Invalid XML document');
+  }
+  return getCompatXmlParser(options).parse(xmlString);
+}
+
 export async function parseXmlFile(xmlFile: string) {
   const packageXmlString = await fs.readFile(xmlFile, 'utf8');
   try {
-    const parsedXml = await xml2js.parseStringPromise(packageXmlString);
-    return parsedXml;
+    return parseXmlString(packageXmlString);
   } catch (e: any) {
     throw new SfError(`Error parsing ${xmlFile}: ${e.message}`);
   }
 }
 
+/**
+ * Builds an XML document string from an xml2js-shaped object, byte-compatible
+ * with the historical xml2js Builder output: XML declaration, pretty print,
+ * "\n" newlines, empty leafs rendered as self-closing tags, no trailing newline.
+ */
+export function buildXmlString(xmlObject: any, indent?: string): string {
+  const builder = new XMLBuilder({
+    format: true,
+    indentBy: indent ?? (process.env.SFDX_XML_INDENT || '    '),
+    ignoreAttributes: false,
+    attributeNamePrefix: '',
+    attributesGroupName: '$',
+    textNodeName: '_',
+    suppressEmptyNode: true,
+    suppressBooleanAttributes: false,
+    processEntities: false,
+    tagValueProcessor: (name: string, value: unknown) => escapeXmlText(value),
+    attributeValueProcessor: (name: string, value: unknown) => escapeXmlAttribute(value),
+  } as any);
+  const body: string = builder.build(xmlObject);
+  return XML_DECLARATION + '\n' + body.replace(/\n$/, '');
+}
+
 export async function writeXmlFile(xmlFile: string, xmlObject: any) {
-  const builder = new xml2js.Builder({
-    renderOpts: {
-      pretty: true,
-      indent: process.env.SFDX_XML_INDENT || '    ',
-      newline: '\n',
-    },
-    xmldec: { version: '1.0', encoding: 'UTF-8' },
-  });
-  const updatedFileContent = builder.buildObject(xmlObject);
+  const updatedFileContent = buildXmlString(xmlObject);
   await fs.ensureDir(path.dirname(xmlFile));
   await fs.writeFile(xmlFile, updatedFileContent);
 }
 
 export async function writeXmlFileFormatted(xmlFile: string, xmlString: string) {
-  const xmlObject = await xml2js.parseStringPromise(xmlString);
+  const xmlObject = parseXmlString(xmlString);
   await writeXmlFile(xmlFile, xmlObject);
 }
 

@@ -10,35 +10,34 @@ const hook: Hook<'init'> = async (options) => {
   // Dynamically import libraries in parallel to avoid loading them if not needed
   const [
     { default: c },
+    { default: fs },
     { fileURLToPath },
     path,
-    { default: semver },
-    { default: updateNotifier },
-    { readPackageUp },
+    { getCache, setCache },
+    { shouldCheckForUpgrade, isUpgradeAvailable, fetchLatestPackageVersion },
   ] = await Promise.all([
     import('chalk'),
+    import('fs-extra'),
     import('url'),
     import('path'),
-    import('semver'),
-    import('update-notifier'),
-    import('read-package-up'),
+    import('../../common/cache/index.js'),
+    import('../../common/utils/upgradeCheckUtils.js'),
   ]);
 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
-  // Check if an upgrade of sfdx-hardis is required
-  // Use promise + then to not block plugin execution during that
-  const pkg = await readPackageUp({ cwd: __dirname });
-  const notifier = updateNotifier({
-    pkg: pkg?.packageJson,
-    updateCheckInterval: 1000 * 60 * 60 * 6, // check every 6 hours
-  });
-  if (
-    notifier?.update &&
-    notifier.update.current !== notifier.update.latest &&
-    semver.compare(notifier.update.latest, notifier.update.current) === 1
-  ) {
+  // Check if an upgrade of sfdx-hardis is required, at most once every 6 hours
+  const lastCheckTs = await getCache('upgradeCheckTimestamp', null);
+  if (!shouldCheckForUpgrade(lastCheckTs, Date.now())) {
+    return;
+  }
+  // Store the timestamp before fetching so a failing registry never retries on every run
+  await setCache('upgradeCheckTimestamp', Date.now());
+
+  const pkg = await fs.readJson(path.join(__dirname, '..', '..', '..', 'package.json'));
+  const latestVersion = await fetchLatestPackageVersion(pkg.name);
+  if (isUpgradeAvailable(pkg.version, latestVersion)) {
     console.warn(
       c.yellow(
         '***********************************************************************************************************************'
@@ -46,8 +45,7 @@ const hook: Hook<'init'> = async (options) => {
     );
     console.warn(
       c.yellow(
-        `WARNING: You are using sfdx-hardis v${notifier.update.current}: Please upgrade to v${notifier.update.latest
-        } by running ${c.green('sf plugins install sfdx-hardis')}`
+        `WARNING: You are using sfdx-hardis v${pkg.version}: Please upgrade to v${latestVersion} by running ${c.green('sf plugins install sfdx-hardis')}`
       )
     );
     console.warn(

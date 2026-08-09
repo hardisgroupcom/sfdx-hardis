@@ -273,4 +273,48 @@ describe('buildMetadataXml()', () => {
     const xml = buildMetadataXml('PermissionSet', { hasActivationRequired: false });
     expect(xml.endsWith('\n')).to.be.true;
   });
+
+  // Byte-exact characterization: these snapshots pin the output of the historical
+  // XML builder. The generated files are deployed as metadata, so any builder change
+  // must keep them identical.
+  it('builds a nested document byte-identically', () => {
+    const xml = buildMetadataXml('Profile', {
+      custom: false,
+      fieldPermissions: [
+        { editable: false, field: 'Account.A__c', readable: true },
+        { editable: true, field: 'Account.B__c', readable: true },
+      ],
+      description: 'A & B <test> "quoted"',
+      userLicense: 'Salesforce',
+    });
+    expect(xml).to.equal(
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<Profile xmlns="http://soap.sforce.com/2006/04/metadata">\n' +
+      '    <custom>false</custom>\n' +
+      '    <fieldPermissions>\n' +
+      '        <editable>false</editable>\n' +
+      '        <field>Account.A__c</field>\n' +
+      '        <readable>true</readable>\n' +
+      '    </fieldPermissions>\n' +
+      '    <fieldPermissions>\n' +
+      '        <editable>true</editable>\n' +
+      '        <field>Account.B__c</field>\n' +
+      '        <readable>true</readable>\n' +
+      '    </fieldPermissions>\n' +
+      '    <description>A &amp; B &lt;test&gt; &quot;quoted&quot;</description>\n' +
+      '    <userLicense>Salesforce</userLicense>\n' +
+      '</Profile>\n'
+    );
+  });
+
+  it('renders empty string values as open+close tags (suppressEmptyNode false)', () => {
+    const xml = buildMetadataXml('CustomObject', { deploymentStatus: 'Deployed', description: '' });
+    expect(xml).to.equal(
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">\n' +
+      '    <deploymentStatus>Deployed</deploymentStatus>\n' +
+      '    <description></description>\n' +
+      '</CustomObject>\n'
+    );
+  });
 });

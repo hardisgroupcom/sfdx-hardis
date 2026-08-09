@@ -6,7 +6,7 @@ import * as os from "os";
 import * as path from "path";
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import axios, { AxiosInstance } from 'axios';
+import { createHttpClient, httpGet, httpPost, HttpClient } from '../../../common/utils/httpUtils.js';
 import { uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { CONSTANTS, getEnvVar, getLocalizedEnvVar } from '../../../config/index.js';
@@ -146,7 +146,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
   protected confluencePageSuffix: string;
   protected confluenceClientId: string | null;
   protected confluenceClientSecret: string | null;
-  protected axiosClient: AxiosInstance;
+  protected axiosClient: HttpClient;
   protected docsRoot: string;
   // Map from markdown file relative path to Confluence page ID
   protected pageIdMap: Map<string, string> = new Map();
@@ -267,7 +267,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
       const accessToken = await this.getOAuthToken();
       const cloudId = await this.getCloudId(accessToken);
       this.confluenceBaseUrl = `https://api.atlassian.com/ex/confluence/${cloudId}`;
-      this.axiosClient = axios.create({
+      this.axiosClient = createHttpClient({
         baseURL: this.confluenceBaseUrl,
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -290,7 +290,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
       throw new SfError('Missing CONFLUENCE_BASE_URL, CONFLUENCE_USERNAME, or CONFLUENCE_TOKEN (or use CONFLUENCE_CLIENT_ID + CONFLUENCE_CLIENT_SECRET for OAuth2)');
     }
 
-    this.axiosClient = axios.create({
+    this.axiosClient = createHttpClient({
       baseURL: this.confluenceBaseUrl,
       auth: {
         username: this.confluenceUsername,
@@ -306,7 +306,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
   }
 
   private async getOAuthToken(): Promise<string> {
-    const tokenResponse = await axios.post('https://api.atlassian.com/oauth/token', {
+    const tokenResponse = await httpPost('https://api.atlassian.com/oauth/token', {
       audience: 'api.atlassian.com',
       grant_type: 'client_credentials',
       client_id: this.confluenceClientId,
@@ -316,7 +316,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
   }
 
   private async getCloudId(accessToken: string): Promise<string> {
-    const resourcesResponse = await axios.get('https://api.atlassian.com/oauth/token/accessible-resources', {
+    const resourcesResponse = await httpGet('https://api.atlassian.com/oauth/token/accessible-resources', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     const resources: any[] = resourcesResponse.data || [];
@@ -961,7 +961,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
   }
 
   /**
-   * Builds a human-readable error message from an axios (or plain) error.
+   * Builds a human-readable error message from an HTTP (or plain) error.
    * For HTTP errors the Confluence response body is appended so failures are easy to investigate.
    */
   private apiErrorMessage(e: any): string {
@@ -976,9 +976,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
    */
   private async uploadAttachment(pageId: string, filePath: string, fileName: string) {
     const fileBuffer = await fs.readFile(filePath);
-    const FormData = (await import('form-data')).default;
     const form = new FormData();
-    form.append('file', fileBuffer, { filename: fileName });
+    form.append('file', new Blob([fileBuffer]), fileName);
     form.append('minorEdit', 'true');
 
     try {
@@ -987,7 +986,6 @@ In agent mode, all interactive prompts are skipped and default values are used.
         form,
         {
           headers: {
-            ...form.getHeaders(),
             'X-Atlassian-Token': 'nocheck',
           },
         }

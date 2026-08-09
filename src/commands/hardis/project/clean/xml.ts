@@ -7,6 +7,9 @@ import fs from 'fs-extra';
 import { glob } from 'glob';
 import * as path from 'path';
 import sortArray from 'sort-array';
+// @xmldom/xmldom and xpath are kept on purpose: they power the user-facing
+// XPath-based cleaning feature (cleanXmlPatterns config), which cannot be
+// expressed with fast-xml-parser. See DEPENDENCY_REDUCTION_PLAN.md.
 import * as xmldom from '@xmldom/xmldom';
 import * as xpath from 'xpath';
 import { isCI, uxLog } from '../../../../common/utils/index.js';

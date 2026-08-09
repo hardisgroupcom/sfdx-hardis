@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>WelcomeMessage</fullName>
+        <categories>Général</categories>
+        <language>fr</language>
+        <protected>false</protected>
+        <shortDescription>Message d'accueil &amp; bienvenue</shortDescription>
+        <value>Bonjour &lt;utilisateur&gt; &amp; bienvenue à l'application "sfdx-hardis" !</value>
+    </labels>
+    <labels>
+        <fullName>EmptyShortDesc</fullName>
+        <language>en</language>
+        <protected>true</protected>
+        <shortDescription/>
+        <value></value>
+    </labels>
+</CustomLabels>

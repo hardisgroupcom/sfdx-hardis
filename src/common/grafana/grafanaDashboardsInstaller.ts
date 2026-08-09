@@ -2,7 +2,7 @@
 // pack) on any Grafana instance (Cloud, OSS, Enterprise) through the Grafana HTTP API.
 // Dashboard definitions are fetched at runtime from the sfdx-hardis GitHub repository, so the
 // npm package does not need to embed them and users always get the dashboards matching --ref.
-import axios, { AxiosInstance } from 'axios';
+import { createHttpClient, httpGet, HttpClient } from '../utils/httpUtils.js';
 import yaml from 'js-yaml';
 
 export const GRAFANA_V2_FOLDER_UID = 'sfdx-hardis-v2';
@@ -73,8 +73,8 @@ export function normalizeGrafanaUrl(url: string): string {
   return withScheme.replace(/\/+$/, '');
 }
 
-export function createGrafanaClient(grafanaUrl: string, token: string): AxiosInstance {
-  return axios.create({
+export function createGrafanaClient(grafanaUrl: string, token: string): HttpClient {
+  return createHttpClient({
     baseURL: normalizeGrafanaUrl(grafanaUrl),
     timeout: GRAFANA_HTTP_TIMEOUT_MS,
     headers: {
@@ -151,7 +151,7 @@ export function buildAlertRuleGroups(
 export async function listDashboardFiles(ref: string): Promise<{ files: DashboardFileRef[]; fromFallback: boolean }> {
   try {
     const listUrl = `https://api.github.com/repos/${GRAFANA_V2_REPO}/contents/${GRAFANA_V2_DASHBOARDS_PATH}?ref=${encodeURIComponent(ref)}`;
-    const response = await axios.get(listUrl, {
+    const response = await httpGet(listUrl, {
       timeout: GRAFANA_HTTP_TIMEOUT_MS,
       headers: { Accept: 'application/vnd.github+json' },
     });
@@ -179,15 +179,14 @@ export async function fetchGitHubRawFile(ref: string, filePath: string): Promise
 }
 
 export async function fetchRawUrl(url: string): Promise<string> {
-  const response = await axios.get(url, {
+  const response = await httpGet(url, {
     timeout: GRAFANA_HTTP_TIMEOUT_MS,
     responseType: 'text',
-    transformResponse: [(data) => data],
   });
   return response.data;
 }
 
-export async function getGrafanaDatasources(client: AxiosInstance): Promise<GrafanaDatasource[]> {
+export async function getGrafanaDatasources(client: HttpClient): Promise<GrafanaDatasource[]> {
   const response = await client.get('/api/datasources');
   return response.data || [];
 }
@@ -195,7 +194,7 @@ export async function getGrafanaDatasources(client: AxiosInstance): Promise<Graf
 // Idempotent: returns the folder if it already exists (409/412 = uid or title conflict;
 // Grafana versions before 9 answer 400 with an "already exists" message for the same case).
 // Any other 400 is NOT swallowed: it means the create request itself is invalid.
-export async function ensureGrafanaFolder(client: AxiosInstance, uid: string, title: string): Promise<any> {
+export async function ensureGrafanaFolder(client: HttpClient, uid: string, title: string): Promise<any> {
   try {
     const response = await client.post('/api/folders', { uid, title });
     return response.data;
@@ -211,7 +210,7 @@ export async function ensureGrafanaFolder(client: AxiosInstance, uid: string, ti
 }
 
 // Idempotent thanks to overwrite: true + stable dashboard uids: re-running upgrades in place
-export async function importGrafanaDashboard(client: AxiosInstance, dashboard: any, folderUid: string): Promise<any> {
+export async function importGrafanaDashboard(client: HttpClient, dashboard: any, folderUid: string): Promise<any> {
   const payload = { ...dashboard };
   delete payload.id;
   const response = await client.post('/api/dashboards/db', {
@@ -223,14 +222,14 @@ export async function importGrafanaDashboard(client: AxiosInstance, dashboard: a
   return response.data;
 }
 
-export async function getGrafanaDashboard(client: AxiosInstance, uid: string): Promise<any> {
+export async function getGrafanaDashboard(client: HttpClient, uid: string): Promise<any> {
   const response = await client.get(`/api/dashboards/uid/${uid}`);
   return response.data;
 }
 
 // X-Disable-Provenance lets users edit and unpause the rules from the Grafana UI afterwards
 export async function importGrafanaAlertRuleGroup(
-  client: AxiosInstance,
+  client: HttpClient,
   folderUid: string,
   group: AlertRuleGroupPayload
 ): Promise<any> {

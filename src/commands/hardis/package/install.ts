@@ -2,7 +2,7 @@
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import axios from 'axios';
+import { httpGet } from '../../../common/utils/httpUtils.js';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
@@ -157,7 +157,7 @@ All interactive package selection prompts are skipped. The \`managePackageConfig
     const packagesToInstallCompleted = await Promise.all(
       packagesToInstall.map(async (pckg) => {
         if (pckg.SubscriberPackageVersionId == null) {
-          const configResp = await axios.get(pckg.configUrl);
+          const configResp = await httpGet(pckg.configUrl, { responseType: 'json' });
           const packageAliases = configResp.data.packageAliases || [];
           pckg.SubscriberPackageName = pckg.package;
           if (pckg.package.includes('@')) {

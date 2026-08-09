@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import fs from 'fs-extra';
 import c from 'chalk';
 import { glob } from 'glob';
-import * as psl from 'psl';
+import { extractRegistrableDomain } from '../../../../common/utils/domainUtils.js';
 import sortArray from 'sort-array';
 import * as url from 'url';
 import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
@@ -40,7 +40,7 @@ The command's technical implementation involves:
 - **File Discovery:** Uses \`glob\` to find all RemoteSiteSetting metadata files within the project.
 - **Content Analysis:** Reads the content of each XML file and uses regular expressions (/<url>(.*?)<\\/url>/gim, /<isActive>(.*?)<\\/isActive>/gim, /<description>(.*?)<\\/description>/gim) to extract relevant details.
 - **\`catchMatches\` Utility:** This utility function is used to apply the defined regular expressions to each file and extract all matching occurrences.
-- **URL Parsing:** Uses Node.js's \`url\` module to parse the extracted URLs and \`psl\` (Public Suffix List) to extract the domain name from the hostname.
+- **URL Parsing:** Uses Node.js's \`url\` module to parse the extracted URLs and extracts the registrable domain name from the hostname.
 - **Data Structuring:** Organizes the extracted information into a structured format, including the remote site's name, file name, namespace, URL, active status, description, protocol, and domain.
 - **Reporting:** Uses \`generateReports\` to create a CSV report and display a table in the console, summarizing the audit findings.
 </details>
@@ -131,7 +131,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
         active: item.detail?.active ? 'yes' : 'no',
         description: item.detail?.description ? item.detail.description[0] : '',
         protocol: item.detail.url[0].includes('https') ? 'HTTPS' : 'HTTP',
-        domain: (psl.parse(new url.URL(item.detail.url[0]).hostname) as any)?.domain || 'Domain not found',
+        domain: extractRegistrableDomain(new url.URL(item.detail.url[0]).hostname) || 'Domain not found',
       };
     });
 

@@ -4,7 +4,7 @@ import { Connection, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { soqlQuery } from '../../../common/utils/apiUtils.js';
-import axios from 'axios';
+import { httpGet } from '../../../common/utils/httpUtils.js';
 import c from 'chalk';
 import { isCI, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { glob } from 'glob';
@@ -198,7 +198,7 @@ In agent mode:
     // List user stories matching with criteria
     const ticketNumbers = await this.fetchUserStories(this.conn);
 
-    // Get matching demands and incidents from ServiceNow API with axios using ticket numbers
+    // Get matching demands and incidents from ServiceNow API using ticket numbers
     await this.completeUserStoriesWithServiceNowInfo(ticketNumbers);
 
     // Build final result
@@ -286,7 +286,7 @@ In agent mode:
       uxLog("log", this, t('fetchingServiceNowTable', { tableName: table.tableName, url: serviceNowApiUrlWithQuery }));
       let serviceNowApiRes;
       try {
-        serviceNowApiRes = await axios.get(serviceNowApiUrlWithQuery, serviceNowApiOptions);
+        serviceNowApiRes = await httpGet(serviceNowApiUrlWithQuery, serviceNowApiOptions);
       }
       catch (error: any) {
         uxLog("error", this, c.red(t('servicenowApiCallFailed', { error: error.message, JSON: JSON.stringify(error?.response?.data || {}) })));
@@ -305,7 +305,7 @@ In agent mode:
           for (const record of serviceNowRecords) {
             if (record?.[subRecordField]?.link && typeof record[subRecordField].link === 'string') {
               try {
-                const serviceNowSubRecordQuery = await axios.get(record[subRecordField].link, serviceNowApiOptions);
+                const serviceNowSubRecordQuery = await httpGet(record[subRecordField].link, serviceNowApiOptions);
                 record[subRecordField] = Object.assign(record[subRecordField], serviceNowSubRecordQuery?.data?.result || {});
                 uxLog("success", this, t('serviceNowSubRecordSucceeded'));
               }
