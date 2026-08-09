@@ -5,8 +5,13 @@ import c from "chalk";
 import * as path from "path";
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import Cloudflare from 'cloudflare';
 import { execCommand, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
+import {
+  CloudflareAccessApplication,
+  CloudflareAccessPolicy,
+  CloudflareApiClient,
+  CloudflarePagesProject,
+} from '../../../common/utils/cloudflareApiClient.js';
 
 import { CONSTANTS, getEnvVar, getLocalizedEnvVar } from '../../../config/index.js';
 import which from 'which';
@@ -61,11 +66,11 @@ More information can be found in the [Documentation section](${CONSTANTS.DOC_URL
 The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
 
 - **MkDocs Integration:** It calls \`generateMkDocsHTML()\` to execute the MkDocs build process, which converts Markdown files into static HTML. It checks for the presence of \`mkdocs.yml\` to ensure it's a valid MkDocs project.
-- **Cloudflare API Interaction:** It uses the \`cloudflare\` npm package to interact with the Cloudflare API. This involves:
-  - **Authentication:** Initializes the Cloudflare client using \`CLOUDFLARE_EMAIL\`, \`CLOUDFLARE_API_TOKEN\`, and \`CLOUDFLARE_ACCOUNT_ID\` environment variables.
-  - **Pages Project Management:** Calls \`client.pages.projects.get()\` to check for an existing project and \`client.pages.projects.create()\` to create a new one if needed.
-  - **Access Policy Management:** Lists existing access policies (\`client.zeroTrust.access.policies.list()\`) and creates a new one (\`client.zeroTrust.access.policies.create()\`) if the required policy doesn't exist. It configures the policy with email domain restrictions and a default login method.
-  - **Access Application Management:** Lists existing access applications (\`client.zeroTrust.access.applications.list()\`) and creates a new one (\`client.zeroTrust.access.applications.create()\`) for the deployed site. It then updates the application to associate it with the created access policy.
+- **Cloudflare API Interaction:** It calls the Cloudflare REST API directly (no SDK dependency). This involves:
+  - **Authentication:** Sends \`CLOUDFLARE_EMAIL\`, \`CLOUDFLARE_API_TOKEN\`, and \`CLOUDFLARE_ACCOUNT_ID\` (from environment variables) with each API call.
+  - **Pages Project Management:** Reads the Pages project to check for an existing one and creates a new one if needed.
+  - **Access Policy Management:** Lists existing access policies and creates a new one if the required policy doesn't exist. It configures the policy with email domain restrictions and a default login method.
+  - **Access Application Management:** Lists existing access applications and creates a new one for the deployed site. It then updates the application to associate it with the created access policy.
 - **Git Integration:** Retrieves the current Git branch name using \`getCurrentGitBranch()\` to construct the Cloudflare project name and branch for deployment.
 - **Wrangler CLI:** Uses the \`wrangler\` CLI (Cloudflare's developer tool) to deploy the generated HTML pages to Cloudflare Pages via \`wrangler pages deploy\`.
 - **Environment Variable Management:** Reads various environment variables to configure Cloudflare settings and project names.
@@ -114,17 +119,17 @@ In agent mode, all interactive prompts are skipped and default values are used.
   protected apiEmail: string | undefined;
   protected apiToken: string | undefined;
   protected accountId: string | undefined;
-  protected client: Cloudflare;
+  protected client: CloudflareApiClient;
   protected projectName: string | null;
   protected currentGitBranch: string;
   protected defaultLoginMethodType: string = process.env.CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE || "onetimepin";
   protected defaultAccessEmailDomain: string = process.env.CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN || "@cloudity.com";
   protected pagesProjectName: string;
-  protected pagesProject: Cloudflare.Pages.Projects.Project;
+  protected pagesProject: CloudflarePagesProject;
   protected accessPolicyName: string;
-  protected accessPolicy: Cloudflare.ZeroTrust.Access.Policies.PolicyGetResponse | null;
+  protected accessPolicy: CloudflareAccessPolicy | null;
   protected extraPolicyIds: string[] = (process.env.CLOUDFLARE_EXTRA_ACCESS_POLICY_ID_LIST || "").split(",").filter(p => p);
-  protected accessApp: Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication | null;
+  protected accessApp: CloudflareAccessApplication | null;
 
   /* jscpd:ignore-end */
 
@@ -190,9 +195,10 @@ In agent mode, all interactive prompts are skipped and default values are used.
       uxLog("error", this, c.red(t('cloudflareSetupInstructions')));
       throw new Error('Missing CLOUDFLARE_EMAIL or CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID');
     }
-    this.client = new Cloudflare({
+    this.client = new CloudflareApiClient({
       apiEmail: this.apiEmail,
       apiToken: this.apiToken,
+      accountId: this.accountId,
     });
     uxLog("log", this, c.grey(t('cloudflareClientInfoFound')));
   }
@@ -200,13 +206,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
   private async ensureCloudflarePagesProject() {
     uxLog("action", this, c.cyan(t('checkingCloudflarePagesProject')));
     try {
-      this.pagesProject = await this.client.pages.projects.get(this.pagesProjectName, { account_id: this.accountId || "" });
+      this.pagesProject = await this.client.getPagesProject(this.pagesProjectName);
       uxLog("action", this, c.cyan(t('cloudflarePagesProjectFound') + this.pagesProjectName));
     } catch (e: any) {
       uxLog("log", this, c.grey(e.message));
-      this.pagesProject = await this.client.pages.projects.create({
+      this.pagesProject = await this.client.createPagesProject({
         name: this.pagesProjectName,
-        account_id: this.accountId || "",
         production_branch: this.currentGitBranch || "main",
       });
       uxLog("success", this, c.green(t('cloudflarePagesProjectCreated') + this.pagesProjectName));
@@ -216,20 +221,19 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
   private async ensureCloudflareAccessPolicy() {
     uxLog("action", this, c.cyan(t('checkingCloudflareAccessPolicy')));
-    const accessPolicies = await this.client.zeroTrust.access.policies.list({ account_id: this.accountId || "" });
-    this.accessPolicy = accessPolicies.result.find((p: Cloudflare.ZeroTrust.Access.Policies.PolicyGetResponse) => p.name === this.accessPolicyName) || null;
+    const accessPolicies = await this.client.listAccessPolicies();
+    this.accessPolicy = accessPolicies.find((p) => p.name === this.accessPolicyName) || null;
     if (this.accessPolicy) {
       uxLog("action", this, c.cyan(t('cloudflarePolicyFound') + this.accessPolicyName));
     }
     else {
-      const loginMethods = await this.client.zeroTrust.identityProviders.list({ account_id: this.accountId || "" });
-      const defaultLoginMethod = loginMethods.result.find((m: Cloudflare.ZeroTrust.IdentityProviders.IdentityProviderListResponse) => m.type === this.defaultLoginMethodType);
+      const loginMethods = await this.client.listIdentityProviders();
+      const defaultLoginMethod = loginMethods.find((m) => m.type === this.defaultLoginMethodType);
       if (!defaultLoginMethod) {
         throw new SfError(`No login method of type ${this.defaultLoginMethodType} found in Cloudflare account. Please create one in Zero Trust/Settings before running this command`);
       }
-      this.accessPolicy = await this.client.zeroTrust.access.policies.create({
+      this.accessPolicy = await this.client.createAccessPolicy({
         name: this.accessPolicyName,
-        account_id: this.accountId || "",
         decision: "allow",
         include: [
           { email_domain: { domain: this.defaultAccessEmailDomain } },
@@ -237,7 +241,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
         require: [
           { login_method: { id: defaultLoginMethod.id } }
         ],
-      } as any);
+      });
       uxLog("success", this, c.green(t('cloudflarePolicyCreated') + this.accessPolicyName + "."));
     }
     uxLog("log", this, c.grey(JSON.stringify(this.accessPolicy, null, 2)));
@@ -245,15 +249,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
   private async ensureCloudflareAccessApplication() {
     uxLog("action", this, c.cyan(t('checkingCloudflareAccessApplication')));
-    const accessApplications = await this.client.zeroTrust.access.applications.list({ account_id: this.accountId || "" });
-    this.accessApp = (accessApplications.result.find((a: Cloudflare.ZeroTrust.Access.Applications.ApplicationListResponse) => a.name === this.pagesProject?.domains?.[0]) || null) as any;
+    const accessApplications = await this.client.listAccessApplications();
+    this.accessApp = accessApplications.find((a) => a.name === this.pagesProject?.domains?.[0]) || null;
     if (this.accessApp) {
       uxLog("action", this, c.cyan(t('cloudflareAccessApplicationFound') + this.pagesProject?.domains?.[0]));
     }
     else {
-      this.accessApp = (await this.client.zeroTrust.access.applications.create({
+      this.accessApp = await this.client.createAccessApplication({
         name: this.pagesProject?.domains?.[0],
-        account_id: this.accountId || "",
         type: "self_hosted",
         domain: this.pagesProject?.domains?.[0],
         destinations: [
@@ -266,7 +269,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
             "uri": `*.${this.pagesProject?.domains?.[0]}`
           }
         ]
-      }) as Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication);
+      });
       uxLog("success", this, c.green(t('cloudflareAccessApplicationCreated') + this.pagesProject?.domains?.[0] + "."));
     }
     uxLog("log", this, c.grey(JSON.stringify(this.accessApp, null, 2)));
@@ -279,13 +282,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
     }
     else {
       const policiesWithExtra = this.extraPolicyIds.concat([this.accessPolicy?.id || ""]).filter(p => p);
-      this.accessApp = (await this.client.zeroTrust.access.applications.update(this.accessApp?.id || "", {
-        account_id: this.accountId,
+      this.accessApp = await this.client.updateAccessApplication(this.accessApp?.id || "", {
         domain: this.accessApp?.domain,
         destinations: this.accessApp?.destinations,
         type: this.accessApp?.type,
         policies: policiesWithExtra,
-      } as Cloudflare.ZeroTrust.Access.ApplicationUpdateParams)) as Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication;
+      });
       uxLog("success", this, c.green(t('accessApplicationUpdatedWithThePolicy', { accessApp: this.accessApp?.name, accessPolicy: this.accessPolicy?.name })));
     }
     uxLog("log", this, c.grey(JSON.stringify(this.accessApp, null, 2)));

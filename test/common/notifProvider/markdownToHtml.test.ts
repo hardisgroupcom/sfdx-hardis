@@ -83,6 +83,18 @@ describe('convertMarkdownToHtml()', () => {
     expect(out).to.include('after');
   });
 
+  it('strips a <style> tag and its content', async () => {
+    const out = await convertMarkdownToHtml('x <style>body { display: none; }</style> y');
+    expect(out).to.not.include('<style');
+    expect(out).to.not.include('display: none');
+  });
+
+  it('strips a <form> with a password input', async () => {
+    const out = await convertMarkdownToHtml('<form action="https://evil.example"><input type="password"></form>');
+    expect(out).to.not.include('<form');
+    expect(out).to.not.include('evil.example');
+  });
+
   it('strips an onmouseover attribute from an embedded <div>', async () => {
     const out = await convertMarkdownToHtml('<div onmouseover="bad()">content</div>');
     expect(out).to.not.include('onmouseover');
