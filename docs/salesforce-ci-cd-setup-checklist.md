@@ -7,7 +7,7 @@ description: Chronological checklist to verify that your Salesforce CI/CD setup 
 
 This checklist follows the [Setup Guide](salesforce-ci-cd-setup-home.md) in chronological order, with the [initialization merge request](salesforce-ci-cd-setup-merge-request.md) as the pivot: some items must be done **before** it, others only make sense **after** it.
 
-Go through every item in order and tick the boxes. Anything left unticked is either a deliberate choice for your project, or a gap to fix before you let the team work on the pipeline.
+Go through every item in order and tick the boxes. Any box you leave empty is either a deliberate choice for your project, or a gap to fix before you let the team work on the pipeline.
 
 Sections that depend on a platform are grouped by platform: find your platform, then tick only its own items.
 
