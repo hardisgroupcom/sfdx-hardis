@@ -28,6 +28,7 @@
 
 ### CI/CD
 
+- New [CI/CD Setup Checklist](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-checklist/) documentation page, to verify that a CI/CD setup is complete: what to do before the initialization merge request, what to check after it, and all the integrations grouped by platform.
 - Upgrade MegaLinter to v10 (repository lint config, CI/CD template workflow and mega-linter-runner dependency).
 - New Docker images are published only to GitHub Container Registry (`ghcr.io/hardisgroupcom/sfdx-hardis`): publication to Docker Hub is paused until OIDC authentication is available for the hardisgroupcom organization.
 
