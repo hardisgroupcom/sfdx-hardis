@@ -139,7 +139,20 @@ The default workflow files already declare the three jobs (check deploy, code qu
 
 _See [Maintainer Guide](salesforce-ci-cd-config-home.md) and the [full list of configuration properties](schema/sfdx-hardis-json-schema-parameters.html)_
 
-- [ ] [Overwrite management](salesforce-ci-cd-config-overwrite.md) is configured, so metadata maintained directly in production (Dashboards, Reports, Remote Site Settings, Named Credentials...) is not overwritten by deployments.
+**Overwrite management is the most important part of this section.** Without `manifest/package-no-overwrite.xml`, every deployment overwrites the metadata that is maintained directly in the orgs: business users lose their Reports and Dashboards, and org-specific credentials and URLs are replaced by the ones of another environment. _See [Overwrite management](salesforce-ci-cd-config-overwrite.md)_
+
+- **`manifest/package-no-overwrite.xml`**
+  - [ ] The file exists at the root of the `manifest` folder, and is committed.
+  - [ ] Metadata holding **org-specific values** is protected with `*`: `ConnectedApp`, `ExtlClntAppGlobalOauthSettings`, `NamedCredential`, `ExternalCredential`, `RemoteSiteSetting`, `SamlSsoConfig`.
+  - [ ] Metadata **managed by business users in production** is protected with `*`: `Report`, `Dashboard`, and the `Wave*` types if you use CRM Analytics.
+  - [ ] `ApprovalProcess` is protected if your approval processes reference users of a specific org.
+  - [ ] `Profile` is protected if profiles are maintained manually in the orgs and access is driven by Permission Sets.
+  - [ ] `FlexiPage` and `CustomApplication` items that embed hardcoded dashboard or record IDs are listed **by name**.
+  - [ ] Wildcards are used where they save maintenance, for example `*__dlm` and `*__dlm.*` for Data Cloud objects and fields.
+  - [ ] If production needs stricter protection than the lower orgs, `packageNoOverwritePath` points to a dedicated file in `config/branches/.sfdx-hardis.<branch>.yml`.
+
+Then the rest of the project configuration:
+
 - [ ] [Automated sources cleaning](salesforce-ci-cd-config-cleaning.md) is configured (`autoCleanTypes`), so User Story branches are cleaned before merge requests.
 - [ ] Apex test configuration matches your policy (test level, minimum coverage).
 - [ ] New User Story options are set (`availableTargetBranches`, `availableTargetBranchesLabels`, `sharedDevSandboxes`, `allowedOrgTypes`...) so contributors get the right prompts.
@@ -282,6 +295,7 @@ The setup is only complete when a change travels all the way to production.
 - [ ] `sf hardis:work:save` runs successfully: it updates `package.xml`, applies the cleanings and prepares the merge request.
 - [ ] The check job on the merge request **passes** for a real change.
 - [ ] After merge, the deployment job **deploys to the matching org**, and the change is visible in the Salesforce Setup.
+- [ ] **Overwrite management really protects the orgs**: the items of `package-no-overwrite.xml` that already exist in the target org are removed from the deployed package, and their version in the org is left untouched. Check it on a Report or a Named Credential of a major org.
 - [ ] The Apex tests actually pass on every major org.
 - [ ] The same has been verified for **every** major branch, up to production. A pipeline that only works on `integration` is not a finished setup.
 - [ ] Deploying to production has been done at least once from the pipeline, not manually.
