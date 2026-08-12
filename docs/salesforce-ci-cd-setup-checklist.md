@@ -146,10 +146,8 @@ _See [Maintainer Guide](salesforce-ci-cd-config-home.md) and the [full list of c
   - [ ] Metadata holding **org-specific values** is protected with `*`: `ConnectedApp`, `ExtlClntAppGlobalOauthSettings`, `NamedCredential`, `ExternalCredential`, `RemoteSiteSetting`, `SamlSsoConfig`.
   - [ ] Metadata **managed by business users in production** is protected with `*`: `Report`, `Dashboard`, and the `Wave*` types if you use CRM Analytics.
   - [ ] `ApprovalProcess` is protected if your approval processes reference users of a specific org.
-  - [ ] `Profile` is protected if profiles are maintained manually in the orgs and access is driven by Permission Sets.
   - [ ] `FlexiPage` and `CustomApplication` items that embed hardcoded dashboard or record IDs are listed **by name**.
-  - [ ] Wildcards are used where they save maintenance, for example `*__dlm` and `*__dlm.*` for Data Cloud objects and fields.
-  - [ ] If production needs stricter protection than the lower orgs, `packageNoOverwritePath` points to a dedicated file in `config/branches/.sfdx-hardis.<branch>.yml`.
+  - [ ] Wildcards are used where they save maintenance, for example `*__dlm` and `*__dlm.*` for Data Cloud objects and fields if they are maintained directly in production.
 
 Then the rest of the project configuration:
 
