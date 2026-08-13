@@ -66,6 +66,16 @@ export interface MfaDiagnoseMetrics {
   WeakIdentityFlags: number;
 }
 
+interface LatestVerification {
+  method: string;
+  time: string;
+}
+
+interface VerificationScan {
+  latestByUserId: Record<string, LatestVerification>;
+  failed: boolean;
+}
+
 interface PrivilegedUserEntry {
   Id: string;
   Username: string;
@@ -109,6 +119,9 @@ export const DEFAULT_PRIVILEGED_PERM_FIELDS = [
   'PermissionsAuthorApex',
 ];
 
+/* Users per VerificationHistory query - keeps the IN () clause well below the SOQL length limit */
+const VERIFICATION_HISTORY_CHUNK_SIZE = 200;
+
 export async function diagnoseMfa(options: MfaDiagnoseOptions): Promise<MfaDiagnoseResult> {
   const ignoreSet = new Set(options.ignoreUsers.map((u) => u.toLowerCase()));
 
@@ -130,15 +143,24 @@ export async function diagnoseMfa(options: MfaDiagnoseOptions): Promise<MfaDiagn
     bypassField
   );
 
+  const privilegedIds = privilegedContext.privilegedUsernames
+    .map((u) => privilegedContext.userIndex[u].Id)
+    .filter((id) => !!id);
+  const verificationScan = await fetchLatestVerificationByUser(
+    options.conn,
+    privilegedIds,
+    options.phishingResistantLookbackDays
+  );
+
   /*
    * Order matters: phishing-resistant readiness is the PRIMARY check for the Salesforce
    * enforcement rolling out July-September 2026 (Help article 005321563). It appears first
    * in the summary table, the per-check detail tables, and the "Actions to take" group
    * (which is already severity-sorted).
    */
-  const phishingResistant = await checkPhishingResistantReadiness(
-    options.conn,
+  const phishingResistant = checkPhishingResistantReadiness(
     privilegedContext,
+    verificationScan,
     options.phishingResistantLookbackDays,
     securityMetadata
   );
@@ -230,6 +252,39 @@ async function isFieldOnObject(conn: Connection, sobjectName: string, fieldName:
   }
 }
 
+/*
+ * Latest successful verification per user over the lookback window. Chunked because a single
+ * IN () clause listing every user of a large org would blow past the SOQL statement length limit.
+ * ORDER BY VerificationTime DESC + "first wins" in code = latest verification only.
+ */
+async function fetchLatestVerificationByUser(
+  conn: Connection,
+  userIds: string[],
+  lookbackDays: number
+): Promise<VerificationScan> {
+  const latestByUserId: Record<string, LatestVerification> = {};
+  for (let i = 0; i < userIds.length; i += VERIFICATION_HISTORY_CHUNK_SIZE) {
+    const idList = userIds
+      .slice(i, i + VERIFICATION_HISTORY_CHUNK_SIZE)
+      .map((id) => `'${id}'`)
+      .join(',');
+    const query = `SELECT UserId, VerificationMethod, VerificationTime FROM VerificationHistory WHERE UserId IN (${idList}) AND Status IN ('Succeeded', 'AutomatedSuccess') AND VerificationTime = LAST_N_DAYS:${lookbackDays} ORDER BY VerificationTime DESC`;
+    try {
+      const res = await soqlQuery(query, conn);
+      for (const r of (res.records || []) as any[]) {
+        const uid = r.UserId as string;
+        if (!uid || latestByUserId[uid]) continue;
+        latestByUserId[uid] = { method: r.VerificationMethod || '', time: r.VerificationTime || '' };
+      }
+    } catch {
+      /* A failure on any chunk makes the whole scan unreliable: partial data would report
+         users as "no MFA" only because their chunk did not come back. */
+      return { latestByUserId: {}, failed: true };
+    }
+  }
+  return { latestByUserId, failed: false };
+}
+
 async function fetchSecurityMetadata(conn: Connection): Promise<any> {
   try {
     const res: any = await conn.tooling.query('SELECT Id, Metadata FROM SecuritySettings LIMIT 1');
@@ -311,16 +366,26 @@ async function checkOrgEnforcement(
     });
   }
 
-  /* Informational rows with real explanations of what each flag does */
+  /*
+   * Informational rows with real explanations of what each flag does.
+   *
+   * skipSFAWhenMFADirectUILogin is NOT about single-factor authentication despite how it reads:
+   * per the Metadata API reference it decides which screen users see first when prompted to register
+   * a verification method. True = the full list of supported methods. False = the built-in
+   * authenticator (passkey) registration screen first. That is the Setup > Identity Verification
+   * option "Show all verification method registration options instead of starting with built-in
+   * authenticators", and it is the usual reason ordinary users report being "forced" to create a
+   * passkey when they only need any MFA method.
+   */
   rows.push({
     Check: checkTitle,
     CheckKey: checkKey,
-    Severity: skipSFAWhenMFADirectUILogin ? 'info' : 'success',
+    Severity: skipSFAWhenMFADirectUILogin ? 'success' : 'info',
     Item: 'skipSFAWhenMFADirectUILogin',
     Details: skipSFAWhenMFADirectUILogin
-      ? t('mfaDetailSkipSfaOn')
-      : t('mfaDetailSkipSfaOff'),
-    Recommendation: '',
+      ? t('mfaDetailRegistrationShowsAllMethods')
+      : t('mfaDetailRegistrationStartsWithPasskey'),
+    Recommendation: skipSFAWhenMFADirectUILogin ? '' : t('mfaRecommendationShowAllRegistrationOptions'),
   });
   rows.push({
     Check: checkTitle,
@@ -395,13 +460,6 @@ async function checkMfaBypassUsers(
     };
   }
 
-  let bypassPermSets: any[] = [];
-  if (bypassField.permissionSet) {
-    const psQuery = `SELECT Id, Label FROM PermissionSet WHERE PermissionsBypassMFAForUiLogins = true`;
-    const psRes = await soqlQuery(psQuery, conn);
-    bypassPermSets = (psRes.records || []) as any[];
-  }
-
   let bypassProfiles: any[] = [];
   if (bypassField.profile) {
     const profileQuery = `SELECT Id, Name FROM Profile WHERE PermissionsBypassMFAForUiLogins = true`;
@@ -411,23 +469,29 @@ async function checkMfaBypassUsers(
 
   const rows: MfaReportRow[] = [];
 
-  if (bypassPermSets.length > 0) {
-    const psIds = bypassPermSets.map((p) => `'${p.Id}'`).join(',');
-    const psaQuery = `SELECT AssigneeId, PermissionSetId, Assignee.Username, Assignee.Name, Assignee.IsActive, Assignee.UserType FROM PermissionSetAssignment WHERE PermissionSetId IN (${psIds}) AND Assignee.IsActive = true`;
+  /*
+   * Same assignment-first sweep as buildPrivilegedUserContext, for the same reason: permission set
+   * groups only ever produce an assignment to their aggregate permission set, so filtering the
+   * member permission sets first would miss group-granted bypasses. Profile-owned permission sets
+   * are skipped here because the Profile branch below reports them with a dedicated message.
+   */
+  if (bypassField.permissionSet) {
+    const psaQuery = `SELECT AssigneeId, PermissionSetId, Assignee.Username, Assignee.Name, Assignee.UserType, PermissionSet.Label, PermissionSet.Type FROM PermissionSetAssignment WHERE Assignee.IsActive = true AND PermissionSet.PermissionsBypassMFAForUiLogins = true`;
     const psaRes = await soqlQuery(psaQuery, conn);
     for (const a of (psaRes.records || []) as any[]) {
       const username = a.Assignee?.Username || '';
       if (a.Assignee?.UserType !== 'Standard') continue;
-      if (ignoreSet.has(username.toLowerCase())) continue;
-      const ps = bypassPermSets.find((p) => p.Id === a.PermissionSetId);
+      if (!username || ignoreSet.has(username.toLowerCase())) continue;
+      if (a.PermissionSet?.Type === 'Profile') continue;
+      const isGroup = a.PermissionSet?.Type === 'Group';
       rows.push({
         Check: checkTitle,
         CheckKey: checkKey,
         Severity: 'warning',
         Item: username,
-        Details: t('mfaDetailBypassViaPermSet', {
+        Details: t(isGroup ? 'mfaDetailBypassViaPermSetGroup' : 'mfaDetailBypassViaPermSet', {
           name: a.Assignee?.Name || '',
-          source: ps?.Label || a.PermissionSetId,
+          source: a.PermissionSet?.Label || a.PermissionSetId,
         }),
         Recommendation: t('mfaRecommendationRemoveBypassPermSet'),
       });
@@ -488,44 +552,63 @@ async function buildPrivilegedUserContext(
   bypassField: BypassFieldAvailability
 ): Promise<PrivilegedUserContext> {
   const orClause = privilegedPermFields.map((f) => `${f} = true`).join(' OR ');
-  const psFlagFields = bypassField.permissionSet
-    ? 'PermissionsBypassMFAForUiLogins, PermissionsTwoFactorApi'
-    : 'PermissionsTwoFactorApi';
-  const selectClause = `Id, Label, ${privilegedPermFields.join(', ')}, ${psFlagFields}`;
-
-  const psQuery = `SELECT ${selectClause}, Type FROM PermissionSet WHERE ${orClause}`;
-  const psRes = await soqlQuery(psQuery, conn);
-  const privPermSets = (psRes.records || []) as any[];
-
-  const profileQuery = `SELECT Id, Name, ${privilegedPermFields.join(', ')} FROM Profile WHERE ${orClause}`;
-  const profileRes = await soqlQuery(profileQuery, conn);
-  const privProfiles = (profileRes.records || []) as any[];
 
   const userIndex: Record<string, PrivilegedUserEntry> = {};
 
-  if (privPermSets.length > 0) {
-    const psIds = privPermSets.map((p) => `'${p.Id}'`).join(',');
-    const psaQuery = `SELECT AssigneeId, PermissionSetId, Assignee.Username, Assignee.Name, Assignee.IsActive, Assignee.UserType, Assignee.ProfileId FROM PermissionSetAssignment WHERE PermissionSetId IN (${psIds}) AND Assignee.IsActive = true`;
-    const psaRes = await soqlQuery(psaQuery, conn);
-    for (const a of (psaRes.records || []) as any[]) {
-      if (a.Assignee?.UserType !== 'Standard') continue;
-      const username = a.Assignee?.Username || '';
-      if (!username || ignoreSet.has(username.toLowerCase())) continue;
-      const ps = privPermSets.find((p) => p.Id === a.PermissionSetId);
-      const tag = `PermissionSet:${ps?.Label || a.PermissionSetId}`;
-      if (!userIndex[username]) {
-        userIndex[username] = {
-          Id: a.AssigneeId,
-          Username: username,
-          Name: a.Assignee?.Name || '',
-          GrantedVia: new Set<string>([tag]),
-          ProfileId: a.Assignee?.ProfileId || '',
-        };
-      } else {
-        userIndex[username].GrantedVia.add(tag);
-      }
+  /*
+   * Sweep PermissionSetAssignment with the permission filters applied through the PermissionSet
+   * relationship - this is the shape Salesforce itself publishes to identify privileged users, and
+   * it is the only one that covers all three grant paths in a single pass:
+   *  - Profile: every user has an assignment to the permission set owned by their profile
+   *    (Type = 'Profile'), so profile-granted permissions show up here too.
+   *  - Permission Set: the plain case.
+   *  - Permission Set Group: users are assigned the group's aggregate permission set
+   *    (Type = 'Group'), never its member permission sets. Filtering on the member permission sets
+   *    and then joining on PermissionSetId missed every user whose admin rights come from a group,
+   *    which is why they were prompted for a passkey without ever appearing in this report.
+   */
+  const psaPrivWhere = `Assignee.IsActive = true AND (${privilegedPermFields
+    .map((f) => `PermissionSet.${f} = true`)
+    .join(' OR ')})`;
+  const psaPrivFields =
+    'AssigneeId, PermissionSetId, Assignee.Username, Assignee.Name, Assignee.UserType, Assignee.ProfileId, PermissionSet.Label, PermissionSet.Type';
+  let psaPrivRes: any;
+  try {
+    psaPrivRes = await soqlQuery(
+      `SELECT ${psaPrivFields}, PermissionSet.Profile.Name FROM PermissionSetAssignment WHERE ${psaPrivWhere}`,
+      conn
+    );
+  } catch {
+    /* Fall back without the Profile traversal rather than failing the whole monitoring run: the
+       permission set Label of a profile-owned permission set already carries the profile name. */
+    psaPrivRes = await soqlQuery(`SELECT ${psaPrivFields} FROM PermissionSetAssignment WHERE ${psaPrivWhere}`, conn);
+  }
+  for (const a of (psaPrivRes.records || []) as any[]) {
+    if (a.Assignee?.UserType !== 'Standard') continue;
+    const username = a.Assignee?.Username || '';
+    if (!username || ignoreSet.has(username.toLowerCase())) continue;
+    const tag = grantedViaTag(a.PermissionSet, a.PermissionSetId);
+    if (!userIndex[username]) {
+      userIndex[username] = {
+        Id: a.AssigneeId,
+        Username: username,
+        Name: a.Assignee?.Name || '',
+        GrantedVia: new Set<string>([tag]),
+        ProfileId: a.Assignee?.ProfileId || '',
+      };
+    } else {
+      userIndex[username].GrantedVia.add(tag);
     }
   }
+
+  /*
+   * Belt and braces: the Profile object is queried directly as well. The assignment sweep above
+   * already covers profiles through their owned permission sets, but this keeps the check working
+   * if an org does not expose those assignment records, and it costs one query.
+   */
+  const profileQuery = `SELECT Id, Name, ${privilegedPermFields.join(', ')} FROM Profile WHERE ${orClause}`;
+  const profileRes = await soqlQuery(profileQuery, conn);
+  const privProfiles = (profileRes.records || []) as any[];
 
   if (privProfiles.length > 0) {
     const users = await queryActiveStandardUsersByProfiles(conn, privProfiles);
@@ -591,6 +674,21 @@ async function buildPrivilegedUserContext(
   return { userIndex, privilegedUsernames, bypassUsernames, twoFactorApiUsernames };
 }
 
+/*
+ * Human-readable origin of a privileged permission. PermissionSet.Type tells the three grant paths
+ * apart: 'Profile' for the permission set owned by a profile, 'Group' for a permission set group's
+ * aggregate permission set, anything else for a plain permission set.
+ */
+function grantedViaTag(permissionSet: any, permissionSetId: string): string {
+  if (permissionSet?.Type === 'Profile') {
+    return `Profile:${permissionSet?.Profile?.Name || permissionSet?.Label || permissionSetId}`;
+  }
+  if (permissionSet?.Type === 'Group') {
+    return `PermissionSetGroup:${permissionSet?.Label || permissionSetId}`;
+  }
+  return `PermissionSet:${permissionSet?.Label || permissionSetId}`;
+}
+
 function formatGrantedVia(grantedVia: Set<string>): string {
   /* Profiles first, then PermissionSets, alphabetical within each group */
   return Array.from(grantedVia)
@@ -603,12 +701,12 @@ function formatGrantedVia(grantedVia: Set<string>): string {
     .join(' | ');
 }
 
-async function checkPhishingResistantReadiness(
-  conn: Connection,
+function checkPhishingResistantReadiness(
   ctx: PrivilegedUserContext,
+  scan: VerificationScan,
   lookbackDays: number,
   securityMetadata: any
-): Promise<MfaCheckResult> {
+): MfaCheckResult {
   const checkTitle = t('mfaCheckPhishingResistantTitle');
   const checkKey: MfaCheckKey = 'phishingResistantReadiness';
   const rows: MfaReportRow[] = [];
@@ -625,15 +723,38 @@ async function checkPhishingResistantReadiness(
   const sessionSettings = securityMetadata?.sessionSettings || {};
   const smsEnabled = sessionSettings.enableSMSIdentity === true;
   const smsOnlyEnabled = sessionSettings.canConfirmIdentityBySmsOnly === true;
+  const orgRowIsWarning = smsEnabled || smsOnlyEnabled;
   rows.push({
     Check: checkTitle,
     CheckKey: checkKey,
-    Severity: smsEnabled || smsOnlyEnabled ? 'warning' : 'info',
+    Severity: orgRowIsWarning ? 'warning' : 'info',
     Item: 'orgPhishingResistantEnforcement',
-    Details: smsEnabled || smsOnlyEnabled
+    Details: orgRowIsWarning
       ? t('mfaDetailPhishingResistantOrgNotEnforced')
       : t('mfaDetailPhishingResistantOrgPartiallyHardened'),
     Recommendation: t('mfaRecommendationEnforcePhishingResistantOrgWide'),
+  });
+
+  /*
+   * Availability row: a user cannot register a passkey or a security key when neither method is
+   * enabled in Setup > Identity Verification. Without one of these two flags, no amount of user
+   * training makes the org compliant, so this is an error regardless of the per-user results.
+   */
+  const builtInAuthenticatorEnabled = sessionSettings.enableBuiltInAuthenticator === true;
+  const securityKeyEnabled = sessionSettings.enableU2F === true;
+  const noPhishingResistantMethod = !builtInAuthenticatorEnabled && !securityKeyEnabled;
+  rows.push({
+    Check: checkTitle,
+    CheckKey: checkKey,
+    Severity: noPhishingResistantMethod ? 'error' : 'success',
+    Item: 'enableBuiltInAuthenticator / enableU2F',
+    Details: noPhishingResistantMethod
+      ? t('mfaDetailPhishingResistantMethodsUnavailable')
+      : t('mfaDetailPhishingResistantMethodsAvailable', {
+          builtIn: builtInAuthenticatorEnabled,
+          securityKey: securityKeyEnabled,
+        }),
+    Recommendation: noPhishingResistantMethod ? t('mfaRecommendationEnablePhishingResistantMethods') : '',
   });
 
   if (ctx.privilegedUsernames.length === 0) {
@@ -647,9 +768,30 @@ async function checkPhishingResistantReadiness(
     });
     return {
       key: checkKey,
-      status: 'success',
+      status: noPhishingResistantMethod ? 'error' : 'success',
       title: checkTitle,
-      detail: t('mfaCheckPhishingResistantNoPrivileged'),
+      detail: noPhishingResistantMethod
+        ? t('mfaDetailPhishingResistantMethodsUnavailable')
+        : t('mfaCheckPhishingResistantNoPrivileged'),
+      rows,
+      metric: 0,
+    };
+  }
+
+  if (scan.failed) {
+    rows.push({
+      Check: checkTitle,
+      CheckKey: checkKey,
+      Severity: 'warning',
+      Item: '-',
+      Details: t('mfaCheckPhishingResistantQueryFailed'),
+      Recommendation: t('mfaRecommendationGrantVerificationHistoryAccess'),
+    });
+    return {
+      key: checkKey,
+      status: 'warning',
+      title: checkTitle,
+      detail: t('mfaCheckPhishingResistantQueryFailed'),
       rows,
       metric: 0,
     };
@@ -663,48 +805,11 @@ async function checkPhishingResistantReadiness(
    * in the window), flag them - the live Salesforce enforcement blocks them as its
    * rollout wave reaches the org.
    */
-  const latestByUserId: Record<string, { method: string; time: string }> = {};
-  const userIdList = ctx.privilegedUsernames
-    .map((u) => ctx.userIndex[u].Id)
-    .filter((id) => !!id)
-    .map((id) => `'${id}'`)
-    .join(',');
-
-  if (userIdList) {
-    try {
-      /* ORDER BY VerificationTime DESC + take first per UserId in code = "latest verification only" */
-      const query = `SELECT UserId, VerificationMethod, VerificationTime FROM VerificationHistory WHERE UserId IN (${userIdList}) AND Status IN ('Succeeded', 'AutomatedSuccess') AND VerificationTime = LAST_N_DAYS:${lookbackDays} ORDER BY VerificationTime DESC`;
-      const res = await soqlQuery(query, conn);
-      for (const r of (res.records || []) as any[]) {
-        const uid = r.UserId as string;
-        if (latestByUserId[uid]) continue;
-        latestByUserId[uid] = { method: r.VerificationMethod || '', time: r.VerificationTime || '' };
-      }
-    } catch {
-      rows.push({
-        Check: checkTitle,
-        CheckKey: checkKey,
-        Severity: 'warning',
-        Item: '-',
-        Details: t('mfaCheckPhishingResistantQueryFailed'),
-        Recommendation: t('mfaRecommendationGrantVerificationHistoryAccess'),
-      });
-      return {
-        key: checkKey,
-        status: 'warning',
-        title: checkTitle,
-        detail: t('mfaCheckPhishingResistantQueryFailed'),
-        rows,
-        metric: 0,
-      };
-    }
-  }
-
+  let notReadyCount = 0;
   for (const username of ctx.privilegedUsernames) {
     const entry = ctx.userIndex[username];
     const grantedVia = formatGrantedVia(entry.GrantedVia);
-    const latest = latestByUserId[entry.Id];
-    const latestMethod = latest?.method || '';
+    const latestMethod = scan.latestByUserId[entry.Id]?.method || '';
 
     if (latestMethod && PHISHING_RESISTANT_METHODS.has(latestMethod)) {
       rows.push({
@@ -720,6 +825,7 @@ async function checkPhishingResistantReadiness(
         Recommendation: '',
       });
     } else {
+      notReadyCount++;
       const observed = latestMethod || t('mfaDetailPhishingResistantNone');
       rows.push({
         Check: checkTitle,
@@ -737,9 +843,6 @@ async function checkPhishingResistantReadiness(
     }
   }
 
-  const notReadyCount = rows.filter((r) => r.Severity === 'error').length;
-  const orgRowIsWarning = rows[0].Severity === 'warning';
-
   let status: MfaCheckResult['status'] = 'success';
   let detail = t('mfaCheckPhishingResistantPass', { count: ctx.privilegedUsernames.length });
   if (notReadyCount > 0) {
@@ -748,6 +851,9 @@ async function checkPhishingResistantReadiness(
       count: notReadyCount,
       total: ctx.privilegedUsernames.length,
     });
+  } else if (noPhishingResistantMethod) {
+    status = 'error';
+    detail = t('mfaDetailPhishingResistantMethodsUnavailable');
   } else if (orgRowIsWarning) {
     status = 'warning';
     detail = t('mfaCheckPhishingResistantOrgNotEnforcedSummary');

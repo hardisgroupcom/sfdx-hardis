@@ -815,6 +815,7 @@ const deltaStat = (title, metric, opts = {}) =>
     thresholds: opts.thresholds || THRESHOLDS_COUNT,
     ...(opts.description ? { description: opts.description } : {}),
     ...(opts.unit ? { unit: opts.unit } : {}),
+    ...(opts.gridPos ? { gridPos: opts.gridPos } : {}),
     ...(opts.links ? { links: opts.links } : {}),
   });
 
@@ -1334,12 +1335,22 @@ const securityDashboard = dashboard({
     {
       row: 'Findings (click a number for details)',
       panels: [
-        deltaStat('Suspect setup actions', 'SuspectMetadataUpdates_metric', { links: indicatorLink('AUDIT_TRAIL') }),
-        deltaStat('Unsecured Connected Apps', 'UnsecuredConnectedApps_metric', { links: indicatorLink('UNSECURED_CONNECTED_APPS') }),
-        deltaStat('High-risk items', 'HighRisk_metric', { links: indicatorLink('ORG_HEALTH_CHECK') }),
-        deltaStat('Legacy API calls', 'LegacyApiCalls_metric', { links: indicatorLink('LEGACY_API') }),
-        deltaStat('MFA bypass users', 'MfaBypassUsers_metric', { links: indicatorLink('MFA_CONFIG') }),
-        deltaStat('Non-MFA logins', 'NonMfaLogins_metric', { links: indicatorLink('MFA_CONFIG') }),
+        deltaStat('Suspect setup actions', 'SuspectMetadataUpdates_metric', { gridPos: { w: 6, h: 5 }, links: indicatorLink('AUDIT_TRAIL') }),
+        deltaStat('Unsecured Connected Apps', 'UnsecuredConnectedApps_metric', { gridPos: { w: 6, h: 5 }, links: indicatorLink('UNSECURED_CONNECTED_APPS') }),
+        deltaStat('High-risk items', 'HighRisk_metric', { gridPos: { w: 6, h: 5 }, links: indicatorLink('ORG_HEALTH_CHECK') }),
+        deltaStat('Legacy API calls', 'LegacyApiCalls_metric', { gridPos: { w: 6, h: 5 }, links: indicatorLink('LEGACY_API') }),
+      ],
+    },
+    {
+      row: 'MFA readiness (click a number for details)',
+      panels: [
+        deltaStat('Not passkey-ready', 'PrivilegedUsersNotPhishingResistant_metric', {
+          gridPos: { w: 8, h: 5 },
+          description: `Privileged users (Modify All Data, View All Data, Customize Application, Author Apex) whose latest MFA verification was not phishing-resistant. Salesforce blocks them at login once the phishing-resistant MFA enforcement wave reaches the org. ${RECENT_CLI_NOTE}`,
+          links: indicatorLink('MFA_CONFIG'),
+        }),
+        deltaStat('MFA bypass users', 'MfaBypassUsers_metric', { gridPos: { w: 8, h: 5 }, links: indicatorLink('MFA_CONFIG') }),
+        deltaStat('Non-MFA logins', 'NonMfaLogins_metric', { gridPos: { w: 8, h: 5 }, links: indicatorLink('MFA_CONFIG') }),
       ],
     },
     {
