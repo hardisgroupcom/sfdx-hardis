@@ -379,7 +379,7 @@ async function checkOrgEnforcement(
    *
    * Which method is offered first is deliberately not named here: the Metadata API reference says
    * Salesforce Authenticator, the Setup UI label says built-in authenticators, and the two do not
-   * agree - so the row describes the behaviour instead of asserting a method.
+   * agree - so the row describes the behavior instead of asserting a method.
    */
   rows.push({
     Check: checkTitle,
