@@ -2490,6 +2490,8 @@
   "publishingPagesToConfluence": "Publikowanie {{count}} stron w Confluence...",
   "pullCommandDidNotReturnExpectedResults": "Polecenie pull nie zwróciło oczekiwanych wyników\n{{JSON}}",
   "pullLatestUpdatesFromOrgToStageAndCommit": "Pobierz najnowsze aktualizacje z org, aby móc przygotować pliki i utworzyć commit",
+  "pullRequestScopeBatchMerge": "Merge z branch {{sourceBranch}}: przetworzone zostaną akcje wdrożeniowe i klasy testowe Apex każdego Pull Requesta scalonego do {{windowBranch}} od jego ostatniego merge do {{nextBranch}}",
+  "pullRequestScopeFeatureBranchMerge": "Merge z branch funkcjonalności {{sourceBranch}}: przetworzone zostaną wyłącznie akcje wdrożeniowe i klasy testowe Apex zdefiniowane w Pull Request {{pr}}",
   "pullingAllLatestMetadataChangesFromDevOrg": "Pobieranie wszystkich najnowszych zmian metadanych z dev org do lokalnych plików projektu (w tym zmian innych użytkowników)",
   "pullingMetadataChangesFromOrg": "Pobieranie zmian metadanych z org: {{targetUsername}}",
   "pullingMostRecentVersionOfRemoteBranch": "Pobieranie najnowszej wersji zdalnej gałęzi {{mergeBranch}}...",

@@ -2488,6 +2488,8 @@
   "publishingPagesToConfluence": "{{count}} ページを Confluence に公開しています...",
   "pullCommandDidNotReturnExpectedResults": "pullコマンドが期待された結果を返しませんでした\n{{JSON}}",
   "pullLatestUpdatesFromOrgToStageAndCommit": "組織から最新の更新をpullして、ファイルをステージしてcommitを作成してください",
+  "pullRequestScopeBatchMerge": "branch {{sourceBranch}} からの merge です。{{windowBranch}} から {{nextBranch}} への前回の merge 以降に {{windowBranch}} にマージされたすべての Pull Request のデプロイアクションと Apex テストクラスが処理されます",
+  "pullRequestScopeFeatureBranchMerge": "機能 branch {{sourceBranch}} からの merge です。Pull Request {{pr}} で定義されたデプロイアクションと Apex テストクラスのみが処理されます",
   "pullingAllLatestMetadataChangesFromDevOrg": "開発組織からローカルプロジェクトファイルへすべての最新メタデータ変更をpullしています（他のユーザーによる変更を含む）",
   "pullingMetadataChangesFromOrg": "組織からメタデータの変更をpullしています：{{targetUsername}}",
   "pullingMostRecentVersionOfRemoteBranch": "リモートbranch {{mergeBranch}} の最新バージョンをpullしています...",

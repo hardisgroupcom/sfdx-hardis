@@ -2490,6 +2490,8 @@
   "publishingPagesToConfluence": "{{count}} pagina's worden gepubliceerd naar Confluence...",
   "pullCommandDidNotReturnExpectedResults": "Pull-commando heeft geen verwachte resultaten teruggegeven\n{{JSON}}",
   "pullLatestUpdatesFromOrgToStageAndCommit": "Haal de nieuwste updates op uit de org zodat je bestanden kunt stagen en je commit kunt aanmaken",
+  "pullRequestScopeBatchMerge": "Merge vanaf branch {{sourceBranch}}: de deploy-acties en Apex-testklassen van elke Pull Request die sinds de laatste merge van {{windowBranch}} naar {{nextBranch}} in {{windowBranch}} is gemerged worden verwerkt",
+  "pullRequestScopeFeatureBranchMerge": "Merge vanaf feature branch {{sourceBranch}}: alleen de deploy-acties en Apex-testklassen die op Pull Request {{pr}} zijn gedefinieerd worden verwerkt",
   "pullingAllLatestMetadataChangesFromDevOrg": "Alle nieuwste metadatawijzigingen worden opgehaald van de dev-org naar lokale projectbestanden (inclusief wijzigingen door andere gebruikers)",
   "pullingMetadataChangesFromOrg": "Metadatawijzigingen worden opgehaald van org: {{targetUsername}}",
   "pullingMostRecentVersionOfRemoteBranch": "Meest recente versie van remote branch {{mergeBranch}} wordt opgehaald...",

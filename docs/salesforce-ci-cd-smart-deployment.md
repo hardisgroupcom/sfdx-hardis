@@ -373,7 +373,11 @@ Pull Request descriptions can also override config properties using YAML blocks 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
 flowchart TD
-    CMD_START[executePrePostCommands] --> SOURCES[Collect commands from:<br/>1. Branch config<br/>2. Extra commands from PR<br/>3. PR description YAML blocks]
+    CMD_START[executePrePostCommands] --> SCOPE{Merge from a<br/>feature branch?}
+    SCOPE -->|Yes| ONE_PR[Scope: the merged PR only]
+    SCOPE -->|No: major or retrofit branch| BATCH[Scope: all PRs since<br/>the previous merge]
+    ONE_PR --> SOURCES[Collect commands from:<br/>1. Branch config<br/>2. Extra commands from PR<br/>3. PR description YAML blocks]
+    BATCH --> SOURCES
     SOURCES --> DEPLOY_KO{Metadata deployment<br/>failed?}
     DEPLOY_KO -->|Yes| SKIP_ERR[Report every action as<br/>not run and stop]
     DEPLOY_KO -->|No| LOOP{For each command}
@@ -395,8 +399,8 @@ flowchart TD
     classDef sfSuccess fill:#cdefc4,stroke:#2e844a,color:#194e31,stroke-width:1.5px
     classDef sfSkip fill:#f3f3f3,stroke:#706e6b,color:#3e3e3c,stroke-width:1px
 
-    class CMD_START,SOURCES sfAction
-    class LOOP,VALID,DEPLOY_KO,CTX_CHECK,ONCE_CHECK sfDecision
+    class CMD_START,SOURCES,ONE_PR,BATCH sfAction
+    class LOOP,VALID,SCOPE,DEPLOY_KO,CTX_CHECK,ONCE_CHECK sfDecision
     class EXEC sfSuccess
     class SKIP_INVALID,SKIP_ERR,SKIP_CTX,SKIP_ONCE sfSkip
 ```
@@ -415,6 +419,8 @@ flowchart TD
 All action types support the following common properties: `id`, `label`, `context`, `allowFailure`, `runOnlyOnceByOrg`, and `customUsername` (to run the action as a different user).
 
 Post-deployment actions are never run when the metadata deployment failed. They are reported as `not run` in the Pull Request comment, no execution state is stored, and they are proposed again during the next successful deployment.
+
+A merge from a feature branch only processes the actions and the Apex test classes of the Pull Request that has just been merged. A merge between major branches, or from a retrofit branch (`retrofit/*`), processes those of every Pull Request merged into the source major branch since its last promotion.
 
 Command context options:
 

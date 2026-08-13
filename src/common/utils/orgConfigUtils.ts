@@ -273,6 +273,19 @@ export function isUatRun(branchName) {
 }
 
 /**
+ * A retrofit branch carries the changes of an upstream major branch down to another one
+ * (ex: main is merged into retrofit/from-main, which is then merged into integration).
+ * Retrofit branches have no org config file, so they never appear in listMajorOrgs():
+ * they are identified by their name, like the other branch kinds above.
+ */
+export function isRetrofit(branchName: string): boolean {
+  // Matches the retrofit/<name> convention produced by hardis:work:new, so an ordinary branch
+  // named retrofit-JIRA-123 or retrofitting-legacy is not mistaken for one.
+  const name = (branchName || "").toLowerCase();
+  return name === "retrofit" || name.startsWith("retrofit/");
+}
+
+/**
  * Get the Chrome/Chromium executable path for Puppeteer
  * This is used by various commands that need browser automation
  * @returns string - Path to Chrome executable, or empty string if not found

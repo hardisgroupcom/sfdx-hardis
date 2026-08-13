@@ -2489,6 +2489,8 @@
   "publishingPagesToConfluence": "{{count}} Seiten werden auf Confluence veröffentlicht...",
   "pullCommandDidNotReturnExpectedResults": "Pull-Befehl hat keine erwarteten Ergebnisse zurückgegeben\n{{JSON}}",
   "pullLatestUpdatesFromOrgToStageAndCommit": "Neueste Änderungen aus der Org abrufen, um Dateien zu stagen und Ihren commit zu erstellen",
+  "pullRequestScopeBatchMerge": "Merge vom Branch {{sourceBranch}}: die Deployment-Aktionen und Apex-Testklassen jedes Pull Requests, der seit dem letzten Merge von {{windowBranch}} nach {{nextBranch}} in {{windowBranch}} gemergt wurde, werden verarbeitet",
+  "pullRequestScopeFeatureBranchMerge": "Merge vom Feature-Branch {{sourceBranch}}: es werden nur die Deployment-Aktionen und Apex-Testklassen verarbeitet, die im Pull Request {{pr}} definiert sind",
   "pullingAllLatestMetadataChangesFromDevOrg": "Alle neuesten Metadaten-Änderungen aus der Entwicklungs-Org werden in lokale Projektdateien abgerufen (einschließlich Änderungen anderer Benutzer)",
   "pullingMetadataChangesFromOrg": "Metadaten-Änderungen aus der Org werden abgerufen: {{targetUsername}}",
   "pullingMostRecentVersionOfRemoteBranch": "Neueste Version des Remote-Branches {{mergeBranch}} wird abgerufen...",
