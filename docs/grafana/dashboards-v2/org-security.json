@@ -334,7 +334,7 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
+        "w": 6,
         "x": 0,
         "y": 9
       },
@@ -404,8 +404,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 4,
+        "w": 6,
+        "x": 6,
         "y": 9
       },
       "targets": [
@@ -474,8 +474,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 8,
+        "w": 6,
+        "x": 12,
         "y": 9
       },
       "targets": [
@@ -544,8 +544,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 12,
+        "w": 6,
+        "x": 18,
         "y": 9
       },
       "targets": [
@@ -605,6 +605,90 @@
       }
     },
     {
+      "id": 187,
+      "type": "row",
+      "title": "MFA readiness (click a number for details)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "panels": []
+    },
+    {
+      "id": 188,
+      "type": "stat",
+      "title": "Not passkey-ready",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 15
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(PrivilegedUsersNotPhishingResistant_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[2d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Privileged users (Modify All Data, View All Data, Customize Application, Author Apex) whose latest MFA verification was not phishing-resistant. Salesforce blocks them at login once the phishing-resistant MFA enforcement wave reaches the org. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=MFA_CONFIG&var-metric=PrivilegedUsersNotPhishingResistant_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
       "id": 111,
       "type": "stat",
       "title": "MFA bypass users",
@@ -614,9 +698,9 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 16,
-        "y": 9
+        "w": 8,
+        "x": 8,
+        "y": 15
       },
       "targets": [
         {
@@ -684,9 +768,9 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 20,
-        "y": 9
+        "w": 8,
+        "x": 16,
+        "y": 15
       },
       "targets": [
         {
@@ -753,7 +837,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 20
       },
       "panels": []
     },
@@ -769,7 +853,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 15
+        "y": 21
       },
       "targets": [
         {
@@ -851,7 +935,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 15
+        "y": 21
       },
       "targets": [
         {
@@ -930,7 +1014,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 29
       },
       "panels": []
     },
@@ -946,7 +1030,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 30
       },
       "targets": [
         {

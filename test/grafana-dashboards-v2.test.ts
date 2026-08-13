@@ -10,6 +10,9 @@ import path from 'path';
 //   once per day: a bare selector would show "no data" with the default 5m lookback)
 
 const DASHBOARDS_DIR = path.join(process.cwd(), 'docs', 'grafana', 'dashboards-v2');
+// Lives outside DASHBOARDS_DIR: every *.json in that folder is treated as a dashboard here
+// and in the installer's fallback file list.
+const PANEL_ID_LOCK = path.join(process.cwd(), 'docs', 'grafana', 'panel-ids-v2.json');
 const ALLOWED_DATASOURCE_UIDS = ['${ds_prom}', '${ds_loki}', '-- Grafana --', 'grafana', '-- Mixed --'];
 
 function collectDatasources(node: any, found: any[]): void {
@@ -55,6 +58,36 @@ describe('Grafana dashboards v2 (portability lint)', () => {
 
   it('contains the expected dashboard set', () => {
     assert.ok(files.length >= 12, `Expected at least 12 dashboards, found ${files.length}`);
+  });
+
+  // Panel ids are public surface on an installed dashboard: ?viewPanel=<id> links,
+  // /d-solo/...?panelId=<id> iframe embeds and user-authored alert annotations all reference
+  // them. A renumber does not fail, it silently points them at a DIFFERENT panel, so every
+  // id is frozen in panel-ids-v2.json and must keep matching the generated dashboards.
+  it('keeps every panel id frozen in panel-ids-v2.json', () => {
+    const lock = fs.readJsonSync(PANEL_ID_LOCK);
+    for (const file of files) {
+      const dash = fs.readJsonSync(path.join(DASHBOARDS_DIR, file));
+      const entries = lock[dash.uid];
+      assert.ok(entries, `${file}: no panel id entry for ${dash.uid} in panel-ids-v2.json`);
+      for (const panel of dash.panels || []) {
+        const key = `${panel.type}::${panel.title || ''}`;
+        assert.equal(
+          panel.id,
+          entries[key],
+          `${file}: panel "${key}" has id ${panel.id} but the lock says ${entries[key]}. ` +
+            'Never renumber an existing panel - regenerate with generator.mjs instead of editing ids.'
+        );
+      }
+    }
+  });
+
+  it('never reuses a panel id within a dashboard', () => {
+    for (const file of files) {
+      const dash = fs.readJsonSync(path.join(DASHBOARDS_DIR, file));
+      const ids = (dash.panels || []).map((panel: any) => panel.id);
+      assert.equal(new Set(ids).size, ids.length, `${file}: duplicate panel id`);
+    }
   });
 
   it('matches the installer fallback file list (hardis:org:configure:grafana-dashboards)', async () => {

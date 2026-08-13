@@ -11,6 +11,10 @@
 - Estimate usage costs in your own currency: declare your contracted rates in `usageCost` and monitoring reports entitlement overage and Agentforce credits in money alongside the percentages.
 - [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/): New `.sfdx-hardis.yml` property **monitoringAllowedUsersActions** to allow specific expected actions for specific users (ex: an integration user whose portal user provisioning automatically creates account roles). Unlike **monitoringExcludeUsernames**, any other action performed by the same user is still flagged as suspect.
 - [hardis:org:user:unlink-security-key](https://sfdx-hardis.cloudity.com/hardis/org/user/unlink-security-key/): Notifications and reports now show who triggered the run.
+- [hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa/): Fix privileged users and MFA-bypass users being missed when their permissions come from a Permission Set Group, which made them face the Salesforce passkey requirement without ever appearing in the report.
+- [hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa/): Report an error when neither built-in authenticators nor security keys are enabled in the org, because no user can register the phishing-resistant method Salesforce requires.
+- [hardis:org:diagnose:mfa](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/mfa/): Fix the `skipSFAWhenMFADirectUILogin` report line, which described single-factor authentication instead of the verification-method registration screen the flag actually controls.
+- New "MFA readiness" section on the "05 - Security Posture" Grafana v2 dashboard, showing privileged users who are not yet passkey-ready.
 
 ### Deployment
 
@@ -35,6 +39,7 @@
 ### Core
 
 - Reduce the npm dependency tree by ~20% (14 packages removed, among which axios, xml2js, openai, cloudflare and md-to-pdf) to shrink the supply-chain attack surface, with no functional change.
+- Upgrade puppeteer-core to 25.6.0, which drops the unmaintained and vulnerable `extract-zip` transitive dependency (GHSA-jmr9-qjv8-65gv, CVE-2026-56876).
 - CSV and XLSX reports of the Bulk API helpers (`bulkUpdate`, `bulkDelete`) are now written in the reports directory, like every other report, instead of a relative file named after the object and the action.
 - Plugin API: `bulkDeleteTooling` now always returns `{ results: [{ Id, success, errors }] }`. Deletions go through the Tooling composite endpoint, with a one-by-one fallback.
 

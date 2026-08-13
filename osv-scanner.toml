@@ -21,21 +21,6 @@ reason = "serialize-javascript 6.0.2 is brought by mocha from @salesforce/dev-sc
 id = "GHSA-qj8w-gfj5-8c6v"
 reason = "serialize-javascript 6.0.2 is brought by mocha from @salesforce/dev-scripts (test tooling only)."
 
-# https://github.com/advisories/GHSA-mh99-v99m-4gvg (CVE-2026-14257)
-# brace-expansion: expand() caps the number of results but not their length, so chained brace groups
-# grow memory as max x N and crash the process (DoS, availability only).
-# 5.0.8 is the only patched release: no backport exists on the 1.x (last 1.1.16) or 2.x (last 2.1.2)
-# branches, and brace-expansion 5.x dropped the callable default export (it now exposes a named
-# `expand`), so it cannot be forced onto minimatch 3.x / 5.x / 9.x without breaking them at runtime.
-# Our own 5.x branch is upgraded to 5.0.8 in yarn.lock. The residual 1.1.16 and 2.1.2 copies are
-# pinned by upstream packages we do not control (serve-handler, eslint 8, @typescript-eslint,
-# @salesforce/source-deploy-retrieve, @oclif/core, mocha). Brace patterns come from local config,
-# package.xml and repository paths, never from untrusted remote input. Remove once those consumers
-# move to minimatch 10.x. Added 2026-07-25.
-[[IgnoredVulns]]
-id = "GHSA-mh99-v99m-4gvg"
-reason = "brace-expansion 1.1.16 and 2.1.2 are pinned by minimatch 3.x/5.x/9.x in upstream tooling; only 5.0.8 is patched and 5.x is API-breaking for those consumers. Our 5.x branch is upgraded to 5.0.8. DoS only, on patterns that never come from untrusted input."
-
 # https://github.com/advisories/GHSA-5p2g-fcmc-qvqq (CVE-2025-71329)
 # https://github.com/advisories/GHSA-w3rx-r6r6-pgpr (CVE-2025-71330)
 # image-size: the JXL/HEIF box parser and the ICNS entry parser never advance the read offset when a

@@ -135,6 +135,19 @@ export function listMetadataTypes() {
         xmlName: 'AffinityScoreDefinition',
       },
       {
+        directoryName: 'aiAgents',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'aiAgentDefinition',
+        xmlName: 'AiAgentDefinition',
+      },
+      {
+        directoryName: 'aiAgentDefinitionVersions',
+        inFolder: false,
+        metaFile: false,
+        xmlName: 'AiAgentDefinitionVersion',
+      },
+      {
         directoryName: 'aiAgentScorerDefinitions',
         inFolder: false,
         metaFile: false,
