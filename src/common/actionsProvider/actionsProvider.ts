@@ -27,7 +27,6 @@ export interface PrePostCommand {
   };
   command: string;
   context: 'all' | 'check-deployment-only' | 'process-deployment-only';
-  skipIfError?: boolean;
   allowFailure?: boolean;
   runOnlyOnceByOrg?: boolean;
   customUsername?: string;
@@ -37,10 +36,31 @@ export interface PrePostCommand {
 }
 
 export type ActionResult = {
-  statusCode: 'success' | 'failed' | 'skipped' | "manual";
+  // "not-run": the metadata deployment failed, so the action was never attempted.
+  // Unlike "skipped", it is never persisted in the Deployment Actions PR comment state,
+  // so the action still runs during the next successful deployment.
+  statusCode: 'success' | 'failed' | 'skipped' | "manual" | 'not-run';
   output?: string;
   skippedReason?: string;
 };
+
+/**
+ * Build an action output from an execCommand result.
+ *
+ * execCommand returns { status, stdout, stderr } for plain commands, but when the command
+ * contains --json and is called with fail:false, it returns { status, errorMessage, error }
+ * with neither stdout nor stderr. Reading only stdout/stderr then produced an empty output,
+ * leaving no way to know why an action failed.
+ */
+export function buildActionOutput(res: any): string {
+  const streams = [res?.stdout, res?.stderr].filter(
+    (part) => typeof part === 'string' && part.trim() !== ''
+  );
+  if (streams.length > 0) {
+    return streams.join('\n').trim();
+  }
+  return (res?.errorMessage || (res?.error as Error)?.message || '').trim();
+}
 
 export abstract class ActionsProvider {
 

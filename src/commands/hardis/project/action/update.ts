@@ -114,10 +114,6 @@ Required in agent mode:
       options: ['all', 'check-deployment-only', 'process-deployment-only'],
       description: 'New execution context',
     }),
-    'skip-if-error': Flags.boolean({
-      description: 'Skip action if deployment failed',
-      allowNo: true,
-    }),
     'allow-failure': Flags.boolean({
       description: 'Allow action to fail without blocking deployment',
       allowNo: true,
@@ -166,14 +162,9 @@ Required in agent mode:
 
     // In interactive mode, prompt for each field with current value
     if (!agentMode && !isCI) {
-      await this.interactiveUpdate(action, flags, when);
+      await this.interactiveUpdate(action, flags);
     } else {
-      this.applyFlagUpdates(action, flags, when);
-    }
-
-    // skipIfError is meaningless for pre-deploy - remove it if present
-    if (when === 'pre-deploy') {
-      delete action.skipIfError;
+      this.applyFlagUpdates(action, flags);
     }
 
     // Validate
@@ -195,7 +186,7 @@ Required in agent mode:
     return { outputString: 'Action updated', action: action as any, configFile };
   }
 
-  private async interactiveUpdate(action: PrePostCommand, _flags: any, when: string): Promise<void> {
+  private async interactiveUpdate(action: PrePostCommand, _flags: any): Promise<void> {
     const newLabel = await this.promptText(t('enterActionLabel'), action.label);
     if (newLabel) action.label = newLabel;
 
@@ -241,9 +232,6 @@ Required in agent mode:
     const newContext = await this.promptSelect(t('selectActionContext'), ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })), action.context);
     if (newContext) action.context = newContext;
 
-    if (when !== 'pre-deploy') {
-      action.skipIfError = await this.promptConfirm(t('actionPromptSkipIfError'), action.skipIfError || false);
-    }
     action.allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'), action.allowFailure || false);
     if (action.type === 'remove-packagexml-items') {
       // Filtering package.xml only affects the current deployment, so it must run every time
@@ -255,7 +243,7 @@ Required in agent mode:
     action.customUsername = cu || undefined;
   }
 
-  private applyFlagUpdates(action: PrePostCommand, flags: any, when: string): void {
+  private applyFlagUpdates(action: PrePostCommand, flags: any): void {
     if (flags.label) action.label = flags.label;
     if (flags.type) {
       action.type = flags.type;
@@ -277,7 +265,6 @@ Required in agent mode:
       };
     }
     if (flags.context) action.context = flags.context;
-    if (when !== 'pre-deploy' && flags['skip-if-error'] !== undefined) action.skipIfError = flags['skip-if-error'];
     if (flags['allow-failure'] !== undefined) action.allowFailure = flags['allow-failure'];
     if (flags['run-only-once-by-org'] !== undefined) action.runOnlyOnceByOrg = flags['run-only-once-by-org'];
     if (action.type === 'remove-packagexml-items') action.runOnlyOnceByOrg = false;

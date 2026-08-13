@@ -1,4 +1,4 @@
-import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import c from 'chalk';
 import { findDataWorkspaceByName, importData } from '../utils/dataUtils.js';
@@ -34,7 +34,7 @@ export class DataAction extends ActionsProvider {
     }
     try {
       const res = await importData(sfdmuProjectPath!, null, importOptions);
-      return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };
+      return { statusCode: 'success', output: buildActionOutput(res) };
     } catch (error) {
       uxLog('error', this, c.red(`[DeploymentActions] Error during data import for action ${cmd.label}: ${error}`));
       return { statusCode: 'failed', output: `Error during data import: ${error}` };

@@ -374,12 +374,12 @@ Pull Request descriptions can also override config properties using YAML blocks 
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
 flowchart TD
     CMD_START[executePrePostCommands] --> SOURCES[Collect commands from:<br/>1. Branch config<br/>2. Extra commands from PR<br/>3. PR description YAML blocks]
-    SOURCES --> LOOP{For each command}
+    SOURCES --> DEPLOY_KO{Metadata deployment<br/>failed?}
+    DEPLOY_KO -->|Yes| SKIP_ERR[Report every action as<br/>not run and stop]
+    DEPLOY_KO -->|No| LOOP{For each command}
     LOOP --> VALID{Action valid?}
     VALID -->|No| SKIP_INVALID[Skip with reason]
-    VALID -->|Yes| ERR_CHECK{skipIfError=true<br/>& deploy failed?}
-    ERR_CHECK -->|Yes| SKIP_ERR[Skip command]
-    ERR_CHECK -->|No| CTX_CHECK{Context matches?}
+    VALID -->|Yes| CTX_CHECK{Context matches?}
     CTX_CHECK -->|check-deployment-only<br/>but real deploy| SKIP_CTX[Skip]
     CTX_CHECK -->|process-deployment-only<br/>but check mode| SKIP_CTX
     CTX_CHECK -->|Matches| ONCE_CHECK{runOnlyOnceByOrg?}
@@ -387,7 +387,6 @@ flowchart TD
     ONCE_CHECK -->|No or first time| EXEC[Execute command]
     EXEC --> LOOP
     SKIP_INVALID --> LOOP
-    SKIP_ERR --> LOOP
     SKIP_CTX --> LOOP
     SKIP_ONCE --> LOOP
 
@@ -397,7 +396,7 @@ flowchart TD
     classDef sfSkip fill:#f3f3f3,stroke:#706e6b,color:#3e3e3c,stroke-width:1px
 
     class CMD_START,SOURCES sfAction
-    class LOOP,VALID,ERR_CHECK,CTX_CHECK,ONCE_CHECK sfDecision
+    class LOOP,VALID,DEPLOY_KO,CTX_CHECK,ONCE_CHECK sfDecision
     class EXEC sfSuccess
     class SKIP_INVALID,SKIP_ERR,SKIP_CTX,SKIP_ONCE sfSkip
 ```
@@ -413,7 +412,9 @@ flowchart TD
 | `schedule-batch`    | Schedules (or re-schedules) a [Schedulable](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_scheduler.htm) Apex batch              | `parameters.className`: Apex class name, `parameters.cronExpression`: cron schedule, `parameters.jobName` (optional)               |
 | `manual`            | Records manual instructions in the deployment report (not executed automatically)                                                                                | `parameters.instructions`: text instructions for the operator                                                                      |
 
-All action types support the following common properties: `id`, `label`, `context`, `skipIfError`, `allowFailure`, `runOnlyOnceByOrg`, and `customUsername` (to run the action as a different user).
+All action types support the following common properties: `id`, `label`, `context`, `allowFailure`, `runOnlyOnceByOrg`, and `customUsername` (to run the action as a different user).
+
+Post-deployment actions are never run when the metadata deployment failed. They are reported as `not run` in the Pull Request comment, no execution state is stored, and they are proposed again during the next successful deployment.
 
 Command context options:
 

@@ -106,11 +106,10 @@ Required in agent mode:
       Label: a.label,
       Type: a.type || 'command',
       Context: a.context || 'all',
-      'Skip If Error': a.skipIfError ? 'Yes' : 'No',
       'Allow Failure': a.allowFailure ? 'Yes' : 'No',
     }));
 
-    uxLogTable(this, tableData, ['#', 'Id', 'Label', 'Type', 'Context', 'Skip If Error', 'Allow Failure']);
+    uxLogTable(this, tableData, ['#', 'Id', 'Label', 'Type', 'Context', 'Allow Failure']);
 
     return { outputString: `Found ${actions.length} actions`, actions: actions as any };
   }

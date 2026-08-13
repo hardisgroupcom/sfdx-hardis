@@ -949,8 +949,7 @@
             "label": "Remove KnowledgeUser right to the user who has it",
             "type": "command",
             "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json",
-            "context": "all",
-            "skipIfError": false
+            "context": "all"
           },
           {
             "id": "publishCommunity",
@@ -1087,9 +1086,10 @@
           },
           "skipIfError": {
             "$id": "#/properties/commandsPostDeploy/items/properties/skipIfError",
-            "description": "Do not run the action if there is a deployment error",
-            "title": "Skip if deploy error",
-            "default": false,
+            "description": "DEPRECATED and ignored: post-deployment actions are never run when the metadata deployment failed. The property is still accepted so existing configurations remain valid, and can be removed from your YAML.",
+            "title": "Skip if deploy error (deprecated)",
+            "deprecated": true,
+            "deprecationMessage": "skipIfError is ignored: post-deployment actions are never run when the metadata deployment failed. You can remove this property.",
             "type": "boolean"
           },
           "allowFailure": {

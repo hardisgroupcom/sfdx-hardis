@@ -1,5 +1,5 @@
 import { Connection } from '@salesforce/core';
-import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import { createTempDir, execCommand, uxLog } from '../utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../utils/apiUtils.js';
 import { t } from '../utils/i18n.js';
@@ -93,8 +93,10 @@ export class ScheduleBatchAction extends ActionsProvider {
 
     if (res.status === 0) {
       uxLog('log', this, c.green(`[DeploymentActions] ${t('scheduleBatchSuccess', { jobName, className, cronExpression })}`));
-      return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };
+      return { statusCode: 'success', output: buildActionOutput(res) };
     }
-    return { statusCode: 'failed', output: (res.stdout || '') + '\n' + (res.stderr || '') };
+    // Reached only when execCommand returns instead of throwing (--json commands).
+    // Plain commands throw even with fail:false, and executePrePostCommands catches them.
+    return { statusCode: 'failed', output: buildActionOutput(res) };
   }
 }

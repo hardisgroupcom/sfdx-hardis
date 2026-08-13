@@ -365,7 +365,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
           const dateStr = e.date ? ` (${e.date.substring(0, 10)})` : '';
           const jobRef = e.jobUrl ? ` - [${e.jobId}](${e.jobUrl})` : (e.jobId ? ` - ${e.jobId}` : '');
           body += `*${e.orgBranch} - ${statusIcon} ${e.status}${dateStr}${jobRef}*\n\n`;
-          if (e.output) {
+          if ((e.output || '').trim() !== '') {
             const truncated = truncateOutput(e.output);
             body += '```\n' + truncated + '\n```\n\n';
           }
@@ -394,7 +394,6 @@ function buildActionPropertiesSection(actionId: string, def?: ActionDef): string
   firstLine += ` | **Type:** ${def.type}`;
   firstLine += ` | **Context:** ${def.context ?? 'all'}`;
   firstLine += ` | **Run only once per org:** ${def.runOnlyOnceByOrg !== false ? 'yes' : 'no'}`;
-  firstLine += ` | **Skip if deployment failed:** ${def.skipIfError === true ? 'yes' : 'no'}`;
   firstLine += ` | **Allow failure:** ${def.allowFailure === true ? 'yes' : 'no'}`;
   if (def.customUsername) {
     firstLine += ` | **Custom username:** \`${def.customUsername}\``;

@@ -84,9 +84,10 @@ Each action is an object with the following required and optional properties.
 | `command`          | string  |    No     | Shell command to run (used by `command` type).                                                                                                                                                    |
 | `parameters`       | object  |    No     | Parameters of the action (see action details)                                                                                                                                                     |
 | `customUsername`   | string  |    No     | Run the action with a specific username instead of the default target org.                                                                                                                        |
-| `skipIfError`      | boolean |    No     | If true and the deployment itself failed, the action will be skipped.                                                                                                                             |
 | `allowFailure`     | boolean |    No     | If true and the action fails, the deployment continues but the result is marked failed/allowed.                                                                                                   |
 | `runOnlyOnceByOrg` | boolean |    No     | Default: `true`. If true, the action runs only once per target org. Execution state is tracked in a dedicated "Deployment Actions" PR comment (see below) - no Salesforce custom object required. |
+
+> Post-deployment actions are never run when the metadata deployment failed. They are reported as `not run` in the Pull Request comment, no execution state is stored for them, and they are proposed again during the next successful deployment.
 
 ### Deployment Actions PR comment
 
