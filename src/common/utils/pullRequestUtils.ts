@@ -4,8 +4,9 @@ import c from "chalk";
 import path from "path";
 import fs from "fs-extra";
 import yaml from "js-yaml";
-import { listMajorOrgs } from "./orgConfigUtils.js";
+import { isRetrofit, listMajorOrgs } from "./orgConfigUtils.js";
 import { SfError } from "@salesforce/core";
+import { t } from "./i18n.js";
 
 let _cachedPullRequests: CommonPullRequestInfo[] | null = null;
 
@@ -58,6 +59,50 @@ function getYamlFromPrDescription(pr: CommonPullRequestInfo): object | null {
   return null;
 }
 
+/**
+ * Tells whether a merge carries only its own Pull Request, or a batch of upstream ones.
+ *
+ * A merge coming from a feature branch carries only its own Pull Request: collecting the other
+ * Pull Requests of the batch would run and report their deployment actions and their Apex test
+ * classes under the Pull Request that has just been merged.
+ *
+ * A merge coming from a major branch (ex: integration -> uat) or from a retrofit branch
+ * (ex: retrofit/from-main -> integration) carries every Pull Request merged upstream since the
+ * previous merge, and their actions and test classes must be replayed in the target org.
+ */
+export function isSinglePullRequestScope(sourceBranch: string, majorBranchNames: string[]): boolean {
+  const branchName = (sourceBranch || "").toLowerCase();
+  // Unknown source branch: keep the previous behavior (whole batch) rather than silently dropping
+  // the actions and test classes of every upstream Pull Request.
+  if (branchName === "") {
+    return false;
+  }
+  // Compared without case, like the other branch classifiers: major branch names come from the
+  // config/branches/.sfdx-hardis.<branch>.yml file names, which may not match the git branch case.
+  const isMajorBranch = majorBranchNames.some((majorBranchName) => (majorBranchName || "").toLowerCase() === branchName);
+  return !isMajorBranch && !isRetrofit(branchName);
+}
+
+/**
+ * Build the list of branches whose merged Pull Requests are candidates for a scope window.
+ *
+ * On top of the recursive child branches of the window's target branch, every major branch is
+ * included: matching is bounded by the window's commit SHAs, so a Pull Request merged into an
+ * upstream branch (ex: a hotfix merged into main) is only collected when its merge commit
+ * actually arrived in the window - which is exactly what happens when a retrofit branch brings
+ * main's commits down to integration. Without the upstream branches in the list, those Pull
+ * Requests would never be fetched, and their actions would never be replayed downstream.
+ *
+ * excludeBranch removes the branch the git provider already adds by itself to the search list,
+ * to avoid fetching the same branch's Pull Requests twice.
+ */
+export function buildPrSearchBranches(targetBranch: string, majorOrgs: any[], excludeBranch: string): string[] {
+  const childBranchesNames = recursiveGetChildBranches(targetBranch, majorOrgs);
+  const allBranches = new Set<string>([...childBranchesNames, ...majorOrgs.map((o) => o.branchName)]);
+  allBranches.delete(excludeBranch);
+  return [...allBranches];
+}
+
 export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Promise<CommonPullRequestInfo[]> {
   if (_cachedPullRequests) {
     return _cachedPullRequests;
@@ -88,31 +133,73 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
   else {
     // Find major org config related to the branch of the PR just merged (ex: integration)
     const prTargetOrgDef = majorOrgs.find(o => o.branchName === pullRequestInfo.targetBranch);
-    if (prTargetOrgDef) {
-      if (!prTargetOrgDef.mergeTargets || prTargetOrgDef.mergeTargets.length === 0) {
-        uxLog("warning", this, c.yellow(`[GitProvider] No merge targets defined for target branch ${prTargetOrgDef.branchName}, cannot retrieve pull requests.`));
-        return [];
-      }
-      // ex: integration
-      sourceBranchToUse = prTargetOrgDef.branchName;
-      // ex: uat (multiple merge targets is not used yet so there should always be only one)
-      targetBranchToUse = prTargetOrgDef.mergeTargets[0];
-    }
-    else {
+    if (!prTargetOrgDef) {
       uxLog("warning", this, c.yellow(`[GitProvider] Target branch ${pullRequestInfo.targetBranch} not found in major orgs list, cannot retrieve pull requests.\nPR: ${JSON.stringify(pullRequestInfo, null, 2)}`));
       return [];
     }
+    // Merge from a feature branch: the Pull Request that has just been merged is the whole scope.
+    // No merge window is needed here, so this does not depend on mergeTargets being configured.
+    if (isSinglePullRequestScope(pullRequestInfo.sourceBranch, majorOrgs.map(o => o.branchName))) {
+      uxLog("log", this, c.grey(`[GitProvider] ${t('pullRequestScopeFeatureBranchMerge', {
+        sourceBranch: pullRequestInfo.sourceBranch,
+        pr: pullRequestInfo.idStr,
+      })}`));
+      _cachedPullRequests = [pullRequestInfo];
+      return _cachedPullRequests;
+    }
+    // Topmost branch (ex: production): there is no downstream promotion to anchor a window on,
+    // so the scope is the batch of Pull Requests carried by the merge itself (the "go live").
+    // Actions and test classes MUST also be processed on the production deployment, in the orgs
+    // where they have not been performed yet.
+    if (!prTargetOrgDef.mergeTargets || prTargetOrgDef.mergeTargets.length === 0) {
+      let goLivePullRequests: CommonPullRequestInfo[] = [];
+      if (pullRequestInfo.mergeCommitSha) {
+        uxLog("log", this, c.grey(`[GitProvider] ${t('pullRequestScopeGoLiveMerge', {
+          sourceBranch: pullRequestInfo.sourceBranch,
+          targetBranch: pullRequestInfo.targetBranch,
+        })}`));
+        const goLiveSearchBranches = buildPrSearchBranches(pullRequestInfo.targetBranch, majorOrgs, pullRequestInfo.targetBranch);
+        goLivePullRequests = await gitProvider.listPullRequestsInGoLive(
+          pullRequestInfo.targetBranch,
+          goLiveSearchBranches,
+          pullRequestInfo.mergeCommitSha,
+        );
+        goLivePullRequests.reverse(); // Oldest PR first
+      }
+      else {
+        uxLog("warning", this, c.yellow(`[GitProvider] ${t('pullRequestScopeGoLiveNoMergeCommit', {
+          targetBranch: pullRequestInfo.targetBranch,
+          pr: pullRequestInfo.idStr,
+        })}`));
+      }
+      // Always keep at least the merged Pull Request itself in the scope
+      if (!goLivePullRequests.some(pr => pr.idStr === pullRequestInfo.idStr)) {
+        goLivePullRequests.push(pullRequestInfo);
+      }
+      _cachedPullRequests = goLivePullRequests;
+      return _cachedPullRequests;
+    }
+    // ex: integration
+    sourceBranchToUse = prTargetOrgDef.branchName;
+    // ex: uat (multiple merge targets is not used yet so there should always be only one)
+    targetBranchToUse = prTargetOrgDef.mergeTargets[0];
+    // The window is not the merge that just happened: it is every Pull Request merged into
+    // sourceBranchToUse since it was last promoted to targetBranchToUse.
+    uxLog("log", this, c.grey(`[GitProvider] ${t('pullRequestScopeBatchMerge', {
+      sourceBranch: pullRequestInfo.sourceBranch,
+      windowBranch: sourceBranchToUse,
+      nextBranch: targetBranchToUse,
+    })}`));
   }
-  // Recursively find all child branches of the target branch
-  // Ex: if targetbranchToUse is uat, we'll retrieve [integration]
-  const childBranchesNames = recursiveGetChildBranches(
-    targetBranchToUse,
-    majorOrgs,
-  );
+  // Child branches of the window's target branch, plus every major branch so Pull Requests
+  // merged upstream (ex: hotfixes in main arriving through a retrofit) are collected too.
+  // Ex: if targetBranchToUse is uat and sourceBranchToUse is integration, this returns
+  // [uat, preprod, main] - integration is left out because the provider prepends it itself.
+  const searchBranches = buildPrSearchBranches(targetBranchToUse, majorOrgs, sourceBranchToUse);
   const pullRequests = await gitProvider.listPullRequestsInBranchSinceLastMerge(
     sourceBranchToUse,
     targetBranchToUse,
-    [...childBranchesNames]
+    searchBranches
   );
   pullRequests.reverse(); // Oldest PR first
   // Add current PR if not already present

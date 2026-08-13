@@ -303,6 +303,13 @@ export class GithubProvider extends GitProviderRoot {
                     body
                     url
                     merged,
+                    headRefName
+                    baseRefName
+                    mergeCommit {
+                      oid
+                    }
+                    createdAt
+                    mergedAt
                     baseRef {
                       id
                       name
@@ -333,7 +340,21 @@ export class GithubProvider extends GitProviderRoot {
         (pr: any) => pr.node.merged === true && pr.node.baseRef.name === currentGitBranch,
       );
       if (candidatePullRequests.length > 0) {
-        return this.completePullRequestInfo(candidatePullRequests[0].node);
+        // The GraphQL node does not have the REST shape completePullRequestInfo reads
+        // (head.ref / base.ref / merge_commit_sha / user.login / html_url), so map it first.
+        // Without this, push-triggered deployments got a Pull Request with empty source and
+        // target branches, and the deployment actions engine could not resolve its scope.
+        const node = candidatePullRequests[0].node;
+        return this.completePullRequestInfo({
+          ...node,
+          head: { ref: node.headRefName || "" },
+          base: { ref: node.baseRefName || node.baseRef?.name || "" },
+          merge_commit_sha: node.mergeCommit?.oid || undefined,
+          created_at: node.createdAt || undefined,
+          merged_at: node.mergedAt || undefined,
+          user: { login: node.author?.login || "" },
+          html_url: node.url || "",
+        });
       }
     }
     uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubUnableToFindPrInfo')));

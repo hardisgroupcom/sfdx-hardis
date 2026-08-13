@@ -89,6 +89,28 @@ Each action is an object with the following required and optional properties.
 
 > Post-deployment actions are never run when the metadata deployment failed. They are reported as `not run` in the Pull Request comment, no execution state is stored for them, and they are proposed again during the next successful deployment.
 
+### Which Pull Requests are in scope
+
+The actions collected for a deployment depend on the branch the merged Pull Request comes from.
+
+| Merge                                                              | Scope                                              |
+|--------------------------------------------------------------------|----------------------------------------------------|
+| From a feature branch (ex: `feature/my-story` -> `integration`)    | Only the Pull Request that has just been merged    |
+| Between major branches (ex: `integration` -> `uat`)                | Every Pull Request merged since the previous merge |
+| From a retrofit branch (ex: `retrofit/from-main` -> `integration`) | Every Pull Request merged since the previous merge |
+
+A feature branch merge carries a single Pull Request, so its notification and its Pull Request comment list only that Pull Request's actions. A major branch or retrofit branch merge carries a batch of Pull Requests, whose actions must be replayed in the target org.
+
+- Between major branches, the batch is every Pull Request merged into the source major branch since its last promotion.
+- Into the production branch (which has no promotion target), the batch is every Pull Request carried by the go-live merge itself.
+- Pull Requests merged into upstream branches are part of the batch as soon as their commits arrive in the window: a hotfix merged into `main` is collected when a retrofit branch brings it down to `integration`, so its actions run there too.
+
+In every case, `runOnlyOnceByOrg` state tracking ensures each action runs only in the orgs where it has not been performed yet.
+
+The same scope applies to the Apex test classes selected from Pull Requests when `enableDeploymentApexTestClasses` is active.
+
+> If the deployment job of a feature branch fails, its actions are not picked up by the next merged Pull Request. Re-run the failed deployment job, or open a new Pull Request carrying the actions of the previous one.
+
 ### Deployment Actions PR comment
 
 After every action runs, sfdx-hardis creates or updates a dedicated **"Deployment Actions"** comment on the Pull Request. This gives release managers a consolidated view of what has been executed across every org for the lifetime of the PR.
