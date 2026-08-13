@@ -101,10 +101,11 @@ The actions collected for a deployment depend on the branch the merged Pull Requ
 
 A feature branch merge carries a single Pull Request, so its notification and its Pull Request comment list only that Pull Request's actions. A major branch or retrofit branch merge carries a batch of Pull Requests, whose actions must be replayed in the target org.
 
-> The batch is built from the Pull Requests merged into the source major branch since its last promotion. Two consequences are worth knowing:
->
-> - A merge into the production branch processes no Pull Request batch, because the production branch has no merge target to bound the window.
-> - A retrofit merge collects the Pull Requests of the branch it is merged into, not the ones merged upstream into `main`. To replay a specific upstream action during a retrofit, declare it on the retrofit Pull Request itself.
+- Between major branches, the batch is every Pull Request merged into the source major branch since its last promotion.
+- Into the production branch (which has no promotion target), the batch is every Pull Request carried by the go-live merge itself.
+- Pull Requests merged into upstream branches are part of the batch as soon as their commits arrive in the window: a hotfix merged into `main` is collected when a retrofit branch brings it down to `integration`, so its actions run there too.
+
+In every case, `runOnlyOnceByOrg` state tracking ensures each action runs only in the orgs where it has not been performed yet.
 
 The same scope applies to the Apex test classes selected from Pull Requests when `enableDeploymentApexTestClasses` is active.
 

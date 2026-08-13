@@ -161,7 +161,7 @@ You can define command lines to run before or after a deployment, with parameter
 
 Post-deployment actions are never run when the metadata deployment failed: they are reported as `not run` and are proposed again during the next successful deployment.
 
-Deployment actions and selected Apex test classes are scoped to the Pull Request that has just been merged when it comes from a feature branch. A merge from a major branch (ex: integration -> uat) or from a retrofit branch (ex: retrofit/from-main -> integration) keeps those of every Pull Request merged into the source major branch since its last promotion.
+Deployment actions and selected Apex test classes are scoped to the Pull Request that has just been merged when it comes from a feature branch. A merge from a major branch (ex: integration -> uat) or from a retrofit branch (ex: retrofit/from-main -> integration) keeps those of every Pull Request merged into the source major branch since its last promotion, and a merge into the production branch keeps those of every Pull Request carried by the go-live merge. Pull Requests merged upstream (ex: a hotfix in main) are included as soon as their commits arrive in the window.
 
 If the deployment job of a feature branch fails, its actions are not picked up by the next merged Pull Request: re-run the failed deployment job, or move the actions to a new Pull Request.
 

@@ -2496,6 +2496,8 @@
   "pullLatestUpdatesFromOrgToStageAndCommit": "Pull latest updates from org so you can stage files and create your commit",
   "pullRequestScopeBatchMerge": "Merge from branch {{sourceBranch}}: the deployment actions and Apex test classes of every Pull Request merged into {{windowBranch}} since its last merge into {{nextBranch}} will be processed",
   "pullRequestScopeFeatureBranchMerge": "Merge from feature branch {{sourceBranch}}: only the deployment actions and Apex test classes defined on Pull Request {{pr}} will be processed",
+  "pullRequestScopeGoLiveMerge": "Merge from branch {{sourceBranch}} into topmost branch {{targetBranch}}: the deployment actions and Apex test classes of every Pull Request carried by this merge will be processed",
+  "pullRequestScopeGoLiveNoMergeCommit": "No merge commit found for Pull Request {{pr}} merged into {{targetBranch}}: only this Pull Request's deployment actions and Apex test classes will be processed",
   "pullingAllLatestMetadataChangesFromDevOrg": "Pulling all latest metadata changes from dev org to local project files (including changes by other users)",
   "pullingMetadataChangesFromOrg": "Pulling metadata changes from org: {{targetUsername}}",
   "pullingMostRecentVersionOfRemoteBranch": "Pulling most recent version of remote branch {{mergeBranch}}...",
