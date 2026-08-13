@@ -371,11 +371,15 @@ async function checkOrgEnforcement(
    *
    * skipSFAWhenMFADirectUILogin is NOT about single-factor authentication despite how it reads:
    * per the Metadata API reference it decides which screen users see first when prompted to register
-   * a verification method. True = the full list of supported methods. False = the built-in
-   * authenticator (passkey) registration screen first. That is the Setup > Identity Verification
-   * option "Show all verification method registration options instead of starting with built-in
-   * authenticators", and it is the usual reason ordinary users report being "forced" to create a
-   * passkey when they only need any MFA method.
+   * a verification method. True = the full list of supported methods. False = a single method is
+   * offered first and reaching the others takes an extra step. That is the Setup > Identity
+   * Verification option "Show all verification method registration options instead of starting with
+   * built-in authenticators", and it is a usual reason ordinary users report being pushed towards a
+   * specific method when any MFA method would do.
+   *
+   * Which method is offered first is deliberately not named here: the Metadata API reference says
+   * Salesforce Authenticator, the Setup UI label says built-in authenticators, and the two do not
+   * agree - so the row describes the behaviour instead of asserting a method.
    */
   rows.push({
     Check: checkTitle,
@@ -384,7 +388,7 @@ async function checkOrgEnforcement(
     Item: 'skipSFAWhenMFADirectUILogin',
     Details: skipSFAWhenMFADirectUILogin
       ? t('mfaDetailRegistrationShowsAllMethods')
-      : t('mfaDetailRegistrationStartsWithPasskey'),
+      : t('mfaDetailRegistrationNotFullList'),
     Recommendation: skipSFAWhenMFADirectUILogin ? '' : t('mfaRecommendationShowAllRegistrationOptions'),
   });
   rows.push({
