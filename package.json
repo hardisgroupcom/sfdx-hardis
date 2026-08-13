@@ -49,7 +49,7 @@
     "ora": "8.2.0",
     "papaparse": "5.5.3",
     "pptxgenjs": "^4.0.1",
-    "puppeteer-core": "23.11.1",
+    "puppeteer-core": "25.6.0",
     "sanitize-html": "^2.14.0",
     "semver": "7.8.5",
     "simple-git": "3.36.0",
@@ -83,7 +83,6 @@
     "langsmith": "0.7.1",
     "linkify-it": "5.0.2",
     "**/yargs": "18.0.0",
-    "yauzl": "3.2.1",
     "undici": "8.10.0"
   },
   "devDependencies": {
