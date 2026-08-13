@@ -193,7 +193,8 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
   }
   // Child branches of the window's target branch, plus every major branch so Pull Requests
   // merged upstream (ex: hotfixes in main arriving through a retrofit) are collected too.
-  // Ex: if targetBranchToUse is uat, we'll retrieve [integration, preprod, main, ...]
+  // Ex: if targetBranchToUse is uat and sourceBranchToUse is integration, this returns
+  // [uat, preprod, main] - integration is left out because the provider prepends it itself.
   const searchBranches = buildPrSearchBranches(targetBranchToUse, majorOrgs, sourceBranchToUse);
   const pullRequests = await gitProvider.listPullRequestsInBranchSinceLastMerge(
     sourceBranchToUse,
