@@ -1,9 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import { isRetrofit } from '../../../src/common/utils/orgConfigUtils.js';
-import { isSinglePullRequestScope } from '../../../src/common/utils/pullRequestUtils.js';
+import { buildPrSearchBranches, isSinglePullRequestScope } from '../../../src/common/utils/pullRequestUtils.js';
 
 const MAJOR_BRANCHES = ['main', 'preprod', 'uat', 'integration'];
+
+const MAJOR_ORGS = [
+  { branchName: 'integration', mergeTargets: ['uat'] },
+  { branchName: 'uat', mergeTargets: ['preprod'] },
+  { branchName: 'preprod', mergeTargets: ['main'] },
+  { branchName: 'main', mergeTargets: [] },
+];
 
 describe('isRetrofit()', () => {
   it('recognizes a retrofit branch', () => {
@@ -67,5 +74,30 @@ describe('isSinglePullRequestScope()', () => {
   it('treats every named branch as a feature branch when no major branch is configured', () => {
     expect(isSinglePullRequestScope('integration', [])).to.equal(true);
     expect(isSinglePullRequestScope('retrofit/from-main', [])).to.equal(false);
+  });
+});
+
+describe('buildPrSearchBranches()', () => {
+  // Upstream branches must be searched too: a hotfix Pull Request merged into main can only be
+  // collected after a retrofit if main is part of the search list.
+  it('includes every major branch, not just the children of the window target', () => {
+    const branches = buildPrSearchBranches('uat', MAJOR_ORGS, 'integration');
+    expect(branches).to.have.members(['uat', 'preprod', 'main']);
+  });
+
+  it('excludes the branch the git provider already searches by itself', () => {
+    const branches = buildPrSearchBranches('preprod', MAJOR_ORGS, 'uat');
+    expect(branches).to.not.include('uat');
+    expect(branches).to.have.members(['integration', 'preprod', 'main']);
+  });
+
+  it('covers the go-live case: all major branches below and above the production branch', () => {
+    const branches = buildPrSearchBranches('main', MAJOR_ORGS, 'main');
+    expect(branches).to.have.members(['integration', 'uat', 'preprod']);
+  });
+
+  it('returns no duplicates when children and major branches overlap', () => {
+    const branches = buildPrSearchBranches('main', MAJOR_ORGS, 'preprod');
+    expect(branches).to.deep.equal([...new Set(branches)]);
   });
 });

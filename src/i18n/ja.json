@@ -2490,6 +2490,8 @@
   "pullLatestUpdatesFromOrgToStageAndCommit": "組織から最新の更新をpullして、ファイルをステージしてcommitを作成してください",
   "pullRequestScopeBatchMerge": "branch {{sourceBranch}} からの merge です。{{windowBranch}} から {{nextBranch}} への前回の merge 以降に {{windowBranch}} にマージされたすべての Pull Request のデプロイアクションと Apex テストクラスが処理されます",
   "pullRequestScopeFeatureBranchMerge": "機能 branch {{sourceBranch}} からの merge です。Pull Request {{pr}} で定義されたデプロイアクションと Apex テストクラスのみが処理されます",
+  "pullRequestScopeGoLiveMerge": "branch {{sourceBranch}} から最上位 branch {{targetBranch}} への merge です。この merge に含まれるすべての Pull Request のデプロイアクションと Apex テストクラスが処理されます",
+  "pullRequestScopeGoLiveNoMergeCommit": "{{targetBranch}} にマージされた Pull Request {{pr}} の merge コミットが見つかりません。この Pull Request のデプロイアクションと Apex テストクラスのみが処理されます",
   "pullingAllLatestMetadataChangesFromDevOrg": "開発組織からローカルプロジェクトファイルへすべての最新メタデータ変更をpullしています（他のユーザーによる変更を含む）",
   "pullingMetadataChangesFromOrg": "組織からメタデータの変更をpullしています：{{targetUsername}}",
   "pullingMostRecentVersionOfRemoteBranch": "リモートbranch {{mergeBranch}} の最新バージョンをpullしています...",

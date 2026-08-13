@@ -2492,6 +2492,8 @@
   "pullLatestUpdatesFromOrgToStageAndCommit": "Récupérez les dernières mises à jour de l'org pour pouvoir staged les fichiers et créer votre commit",
   "pullRequestScopeBatchMerge": "Merge depuis la branche {{sourceBranch}} : les actions de déploiement et les classes de test Apex de toutes les Pull Requests fusionnées dans {{windowBranch}} depuis son dernier merge vers {{nextBranch}} seront traitées",
   "pullRequestScopeFeatureBranchMerge": "Merge depuis la branche de fonctionnalité {{sourceBranch}} : seules les actions de déploiement et les classes de test Apex définies sur la Pull Request {{pr}} seront traitées",
+  "pullRequestScopeGoLiveMerge": "Merge depuis la branche {{sourceBranch}} vers la branche finale {{targetBranch}} : les actions de déploiement et les classes de test Apex de chaque Pull Request incluse dans ce merge seront traitées",
+  "pullRequestScopeGoLiveNoMergeCommit": "Aucun commit de merge trouvé pour la Pull Request {{pr}} fusionnée dans {{targetBranch}} : seules les actions de déploiement et les classes de test Apex de cette Pull Request seront traitées",
   "pullingAllLatestMetadataChangesFromDevOrg": "Récupération de toutes les dernières modifications de métadonnées depuis l'org de développement (y compris les modifications d'autres utilisateurs)",
   "pullingMetadataChangesFromOrg": "Récupération des changements de métadonnées depuis l'org : {{targetUsername}}",
   "pullingMostRecentVersionOfRemoteBranch": "Récupération de la version la plus récente de la branche distante {{mergeBranch}}...",

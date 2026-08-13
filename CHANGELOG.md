@@ -32,6 +32,9 @@
 - **Behavior change: post-deployment actions are no longer run when the metadata deployment failed.** They are reported as `not run` in the Pull Request comment, no execution state is stored, and the job now fails on the deployment error instead of on a post-deployment action error. The `skipIfError` property is removed, and is ignored if still present in your configuration.<br/>**Check your configuration before upgrading: an action relying on `skipIfError: false` to run after a failed deployment will no longer run.**
 - Deployment actions: a failed action now displays why it failed in the job log and in the Pull Request comment. Actions whose command ends with `--json` used to fail with no output at all.
 - Deployment actions and selected Apex test classes: merging a feature branch now processes only the Pull Request just merged, while merges between major branches and from `retrofit/*` branches keep replaying the whole batch of upstream Pull Requests.
+- Deployment actions and selected Apex test classes now also run on merges into the production branch, scoped to the Pull Requests carried by the go-live merge.
+- Deployment actions of Pull Requests merged upstream (like a hotfix in `main`) are now replayed downstream when a retrofit branch brings their commits to another major branch.
+- Fix deployment actions never running on GitHub push-triggered deployment jobs, caused by incomplete Pull Request detection.
 
 ### CI/CD
 

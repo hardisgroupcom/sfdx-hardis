@@ -420,7 +420,7 @@ All action types support the following common properties: `id`, `label`, `contex
 
 Post-deployment actions are never run when the metadata deployment failed. They are reported as `not run` in the Pull Request comment, no execution state is stored, and they are proposed again during the next successful deployment.
 
-A merge from a feature branch only processes the actions and the Apex test classes of the Pull Request that has just been merged. A merge between major branches, or from a retrofit branch (`retrofit/*`), processes those of every Pull Request merged into the source major branch since its last promotion.
+A merge from a feature branch only processes the actions and the Apex test classes of the Pull Request that has just been merged. A merge between major branches, or from a retrofit branch (`retrofit/*`), processes those of every Pull Request merged into the source major branch since its last promotion. A merge into the production branch processes those of every Pull Request carried by the go-live merge. Pull Requests merged upstream (ex: a hotfix in `main`) are included as soon as their commits arrive in the window, for example through a retrofit branch.
 
 Command context options:
 
