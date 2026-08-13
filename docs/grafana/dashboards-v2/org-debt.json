@@ -35,7 +35,7 @@
   ],
   "panels": [
     {
-      "id": 135,
+      "id": 133,
       "type": "row",
       "title": "Current debt (click a number for details)",
       "collapsed": false,
@@ -48,7 +48,7 @@
       "panels": []
     },
     {
-      "id": 122,
+      "id": 120,
       "type": "stat",
       "title": "Unused metadata",
       "datasource": {
@@ -118,7 +118,7 @@
       }
     },
     {
-      "id": 123,
+      "id": 121,
       "type": "stat",
       "title": "Unused Apex classes",
       "datasource": {
@@ -188,7 +188,7 @@
       }
     },
     {
-      "id": 124,
+      "id": 122,
       "type": "stat",
       "title": "Inactive Flows & VRs",
       "datasource": {
@@ -258,7 +258,7 @@
       }
     },
     {
-      "id": 125,
+      "id": 123,
       "type": "stat",
       "title": "Items without description",
       "datasource": {
@@ -328,7 +328,7 @@
       }
     },
     {
-      "id": 126,
+      "id": 124,
       "type": "stat",
       "title": "Items without access",
       "datasource": {
@@ -398,7 +398,7 @@
       }
     },
     {
-      "id": 127,
+      "id": 125,
       "type": "stat",
       "title": "Deprecated Apex",
       "datasource": {
@@ -468,7 +468,7 @@
       }
     },
     {
-      "id": 136,
+      "id": 134,
       "type": "row",
       "title": "Burn-down",
       "collapsed": false,
@@ -481,7 +481,7 @@
       "panels": []
     },
     {
-      "id": 128,
+      "id": 126,
       "type": "timeseries",
       "title": "Technical debt evolution",
       "datasource": {
@@ -607,7 +607,7 @@
       }
     },
     {
-      "id": 137,
+      "id": 135,
       "type": "row",
       "title": "Apex code coverage",
       "collapsed": false,
@@ -620,7 +620,7 @@
       "panels": []
     },
     {
-      "id": 129,
+      "id": 127,
       "type": "stat",
       "title": "Current coverage",
       "datasource": {
@@ -691,7 +691,7 @@
       }
     },
     {
-      "id": 130,
+      "id": 128,
       "type": "timeseries",
       "title": "Coverage evolution (75% threshold)",
       "datasource": {
@@ -778,7 +778,7 @@
       }
     },
     {
-      "id": 138,
+      "id": 136,
       "type": "row",
       "title": "Permission sets (click a number for details)",
       "collapsed": false,
@@ -791,7 +791,7 @@
       "panels": []
     },
     {
-      "id": 131,
+      "id": 129,
       "type": "stat",
       "title": "Underused permission sets",
       "datasource": {
@@ -861,7 +861,7 @@
       }
     },
     {
-      "id": 132,
+      "id": 130,
       "type": "stat",
       "title": "Zero-user permission sets",
       "datasource": {
@@ -931,7 +931,7 @@
       }
     },
     {
-      "id": 133,
+      "id": 131,
       "type": "stat",
       "title": "Zero-user permission set groups",
       "datasource": {
@@ -1001,7 +1001,7 @@
       }
     },
     {
-      "id": 134,
+      "id": 132,
       "type": "stat",
       "title": "Unused PS licenses",
       "datasource": {

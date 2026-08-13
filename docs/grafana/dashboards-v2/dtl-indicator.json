@@ -35,7 +35,7 @@
   ],
   "panels": [
     {
-      "id": 154,
+      "id": 152,
       "type": "row",
       "title": "$metric ($type) on $org",
       "collapsed": false,
@@ -48,7 +48,7 @@
       "panels": []
     },
     {
-      "id": 150,
+      "id": 148,
       "type": "stat",
       "title": "Latest value",
       "datasource": {
@@ -104,7 +104,7 @@
       }
     },
     {
-      "id": 151,
+      "id": 149,
       "type": "timeseries",
       "title": "Evolution",
       "datasource": {
@@ -180,7 +180,7 @@
       }
     },
     {
-      "id": 152,
+      "id": 150,
       "type": "stat",
       "title": "Stats generation date",
       "datasource": {
@@ -270,7 +270,7 @@
       }
     },
     {
-      "id": 153,
+      "id": 151,
       "type": "table",
       "title": "Detailed elements (latest run)",
       "datasource": {

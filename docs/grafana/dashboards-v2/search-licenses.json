@@ -35,7 +35,7 @@
   ],
   "panels": [
     {
-      "id": 156,
+      "id": 154,
       "type": "table",
       "title": "Orgs holding license \"$license\"",
       "datasource": {

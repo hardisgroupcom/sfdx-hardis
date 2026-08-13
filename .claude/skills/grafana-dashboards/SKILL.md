@@ -12,6 +12,7 @@ Everything needed to build, modify and validate the v2 Grafana dashboards withou
 
 - Dashboards: `docs/grafana/dashboards-v2/*.json` - **GENERATED FILES, never edit them directly.**
 - Generator: `docs/grafana/dashboards-v2/generator.mjs`. Edit it, then run `node generator.mjs` from that folder to rewrite all JSONs.
+- Panel id lock: `docs/grafana/panel-ids-v2.json` - generated, commit it with the dashboards, never hand-edit. Keeps every panel id stable across insertions and reorderings (see the DON'Ts).
 - Alert pack: `docs/grafana/alerts-v2/sfdx-hardis-alerts.yaml` (hand-written YAML, all rules `isPaused: true`).
 - Lint suite: `test/grafana-dashboards-v2.test.ts` - enforces most rules below; run with `npx mocha "test/grafana-dashboards-v2.test.ts"`.
 - Docs page: `docs/salesforce-monitoring-grafana-v2.md`.
@@ -61,6 +62,8 @@ Two emission rules decide whether a panel can show a number at all:
 - **DON'T touch the v1 dashboards or their Grafana folder** (`cdklj9xhp8074d`).
 - **DON'T activate alert rules by default** - the alert pack ships `isPaused: true` (Grafana Cloud free-tier cost), with `${DS_PROMETHEUS}`/`${DS_LOKI}` placeholders documented for replacement at import.
 - **DON'T mint new dashboard UIDs for existing dashboards** - uids are `sfdx-hardis-v2-<slug>` and stable; changing one breaks bookmarks and cross-dashboard links.
+- **DON'T let an existing panel id change, and DON'T hand-edit `docs/grafana/panel-ids-v2.json`.** Panel ids are frozen in that lock (`<dashboard uid> -> <panel type>::<panel title> -> id`) and the generator reuses them whatever the construction order; only a panel missing from the lock gets a fresh id above the high-water mark, and the generator rewrites the lock so it stays frozen. Ids are public surface on an installed dashboard - `?viewPanel=<id>` links, `/d-solo/...?panelId=<id>` iframe embeds and user-authored alert annotations all reference them, and a renumber silently repoints them at a *different* panel rather than failing. Before this lock existed the generator used one global counter, so inserting a panel into an early dashboard renumbered 67 panels across 7 otherwise-untouched dashboards. After regenerating, always confirm `git diff` shows no `"id"` change in a dashboard you did not intend to touch. Renaming a panel's title changes its key and therefore allocates a new id: rename deliberately, and if the id must survive, rename the key in the lock in the same commit.
+- **DON'T put anything but a dashboard in `docs/grafana/dashboards-v2/`.** The lint suite treats every `*.json` there as a dashboard and asserts the set matches `GRAFANA_V2_FALLBACK_DASHBOARD_FILES`. That is why the id lock lives one level up.
 - **DON'T write to the Salesforce test org**, and when running commands that push test data, set `SFDX_HARDIS_MONITORING_KEY=claude-test` so real org series stay clean.
 
 ## When a monitoring indicator changes (create / update / delete)

@@ -2206,8 +2206,71 @@ const dashboards = [
 
 for (const dash of dashboards) {
   addMetricToIndicatorLinks(dash);
-  const fileName = `${dash.uid.replace('sfdx-hardis-v2-', '')}.json`;
-  fs.writeFileSync(path.join(OUT_DIR, fileName), JSON.stringify(dash, null, 2) + '\n');
-  console.log(`Generated ${fileName} (${dash.panels.length} panels)`);
 }
+
+/*
+ * Panel ids are frozen in panel-ids.json rather than taken from the construction-order counter.
+ *
+ * The counter is global and dashboards are built in sequence, so inserting a single panel into an
+ * early dashboard renumbered every panel of every dashboard built after it. Panel ids are part of
+ * the public surface of an installed dashboard: `?viewPanel=<id>` links, `/d-solo/...?panelId=<id>`
+ * iframe embeds and user-authored alert annotations all reference them, and a renumber silently
+ * repoints them at a different panel instead of failing loudly.
+ *
+ * The lock maps `<dashboard uid> -> <panel type>::<panel title> -> id`. That key does not depend on
+ * where a panel sits, so panels can be inserted, moved or removed without disturbing any other id.
+ * A panel absent from the lock takes the next id above the highest ever issued, and the lock is
+ * rewritten so the new id is frozen too. Ids of deleted panels stay reserved and are never reused.
+ *
+ * The lock lives outside OUT_DIR on purpose: every *.json in the dashboards folder is treated as a
+ * dashboard by both the lint suite and the installer's file list.
+ */
+const LOCK_FILE = path.join(OUT_DIR, '..', 'panel-ids-v2.json');
+const idLock = JSON.parse(fs.readFileSync(LOCK_FILE, 'utf8'));
+const panelKey = (p) => `${p.type}::${p.title || ''}`;
+
+let highWater = 0;
+for (const entries of Object.values(idLock)) {
+  for (const id of Object.values(entries)) highWater = Math.max(highWater, id);
+}
+
+/* Provisional construction-order ids are globally unique, so one map remaps every reference */
+const remap = new Map();
+let allocated = 0;
+for (const dash of dashboards) {
+  const entries = (idLock[dash.uid] = idLock[dash.uid] || {});
+  const used = new Set();
+  for (const panel of dash.panels) {
+    const key = panelKey(panel);
+    if (entries[key] == null) {
+      entries[key] = ++highWater;
+      allocated++;
+      console.log(`  new panel id ${entries[key]} for ${dash.uid} ${key}`);
+    }
+    const id = entries[key];
+    if (used.has(id)) throw new Error(`Duplicate panel id ${id} in ${dash.uid} (${key})`);
+    used.add(id);
+    remap.set(panel.id, id);
+    panel.id = id;
+  }
+}
+
+for (const dash of dashboards) {
+  /* Panel links embed the provisional id in a URL string built during construction */
+  const rewritten = JSON.parse(
+    JSON.stringify(dash).replace(/(viewPanel=|editPanel=|panelId=)(\d+)/g, (whole, param, oldId) => {
+      const mapped = remap.get(Number(oldId));
+      return mapped == null ? whole : `${param}${mapped}`;
+    })
+  );
+  const fileName = `${dash.uid.replace('sfdx-hardis-v2-', '')}.json`;
+  fs.writeFileSync(path.join(OUT_DIR, fileName), JSON.stringify(rewritten, null, 2) + '\n');
+  console.log(`Generated ${fileName} (${rewritten.panels.length} panels)`);
+}
+
+const sortedLock = {};
+for (const dash of dashboards) sortedLock[dash.uid] = idLock[dash.uid];
+fs.writeFileSync(LOCK_FILE, JSON.stringify(sortedLock, null, 2) + '\n');
+
 console.log(`\n${dashboards.length} dashboards written to ${OUT_DIR}`);
+console.log(`Panel ids: ${allocated} newly allocated, high water mark ${highWater}`);

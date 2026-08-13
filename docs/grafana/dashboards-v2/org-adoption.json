@@ -35,7 +35,7 @@
   ],
   "panels": [
     {
-      "id": 147,
+      "id": 145,
       "type": "row",
       "title": "User activity (click a number for details)",
       "collapsed": false,
@@ -48,7 +48,7 @@
       "panels": []
     },
     {
-      "id": 139,
+      "id": 137,
       "type": "stat",
       "title": "Weekly active CRM users",
       "datasource": {
@@ -110,7 +110,7 @@
       }
     },
     {
-      "id": 140,
+      "id": 138,
       "type": "stat",
       "title": "Monthly active portal users",
       "datasource": {
@@ -172,7 +172,7 @@
       }
     },
     {
-      "id": 141,
+      "id": 139,
       "type": "stat",
       "title": "Inactive CRM users (6m)",
       "datasource": {
@@ -242,7 +242,7 @@
       }
     },
     {
-      "id": 142,
+      "id": 140,
       "type": "stat",
       "title": "Inactive portal users (6m)",
       "datasource": {
@@ -312,7 +312,7 @@
       }
     },
     {
-      "id": 148,
+      "id": 146,
       "type": "row",
       "title": "Activity trends",
       "collapsed": false,
@@ -325,7 +325,7 @@
       "panels": []
     },
     {
-      "id": 143,
+      "id": 141,
       "type": "timeseries",
       "title": "Active users evolution",
       "datasource": {
@@ -416,7 +416,7 @@
       }
     },
     {
-      "id": 144,
+      "id": 142,
       "type": "timeseries",
       "title": "Inactive users evolution",
       "datasource": {
@@ -507,7 +507,7 @@
       }
     },
     {
-      "id": 149,
+      "id": 147,
       "type": "row",
       "title": "Licenses (latest run)",
       "collapsed": false,
@@ -520,7 +520,7 @@
       "panels": []
     },
     {
-      "id": 145,
+      "id": 143,
       "type": "table",
       "title": "License usage",
       "datasource": {
@@ -635,7 +635,7 @@
       }
     },
     {
-      "id": 146,
+      "id": 144,
       "type": "stat",
       "title": "Stats generation date",
       "datasource": {

@@ -35,7 +35,7 @@
   ],
   "panels": [
     {
-      "id": 157,
+      "id": 155,
       "type": "table",
       "title": "Orgs with package \"$package\"",
       "datasource": {

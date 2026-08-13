@@ -35,7 +35,7 @@
   ],
   "panels": [
     {
-      "id": 181,
+      "id": 179,
       "type": "row",
       "title": "Agentforce & Data 360 credits",
       "collapsed": false,
@@ -48,7 +48,7 @@
       "panels": []
     },
     {
-      "id": 158,
+      "id": 156,
       "type": "stat",
       "title": "AI credits",
       "datasource": {
@@ -112,7 +112,7 @@
       }
     },
     {
-      "id": 159,
+      "id": 157,
       "type": "stat",
       "title": "Metered credits",
       "datasource": {
@@ -176,7 +176,7 @@
       }
     },
     {
-      "id": 160,
+      "id": 158,
       "type": "stat",
       "title": "AI actions",
       "datasource": {
@@ -240,7 +240,7 @@
       }
     },
     {
-      "id": 161,
+      "id": 159,
       "type": "stat",
       "title": "Data 360 credits",
       "datasource": {
@@ -304,7 +304,7 @@
       }
     },
     {
-      "id": 162,
+      "id": 160,
       "type": "timeseries",
       "title": "Credit consumption evolution",
       "datasource": {
@@ -396,7 +396,7 @@
       }
     },
     {
-      "id": 182,
+      "id": 180,
       "type": "row",
       "title": "Consumption cards (Data 360 & platform)",
       "collapsed": false,
@@ -409,7 +409,7 @@
       "panels": []
     },
     {
-      "id": 163,
+      "id": 161,
       "type": "stat",
       "title": "Cards in alert",
       "datasource": {
@@ -481,7 +481,7 @@
       }
     },
     {
-      "id": 164,
+      "id": 162,
       "type": "gauge",
       "title": "Highest alert",
       "datasource": {
@@ -560,7 +560,7 @@
       }
     },
     {
-      "id": 165,
+      "id": 163,
       "type": "table",
       "title": "Consumption card thresholds",
       "datasource": {
@@ -683,7 +683,7 @@
       }
     },
     {
-      "id": 166,
+      "id": 164,
       "type": "timeseries",
       "title": "Consumption card evolution",
       "datasource": {
@@ -776,7 +776,7 @@
       }
     },
     {
-      "id": 183,
+      "id": 181,
       "type": "row",
       "title": "Usage-based entitlements",
       "collapsed": false,
@@ -789,7 +789,7 @@
       "panels": []
     },
     {
-      "id": 167,
+      "id": 165,
       "type": "stat",
       "title": "Over allowance",
       "datasource": {
@@ -861,7 +861,7 @@
       }
     },
     {
-      "id": 168,
+      "id": 166,
       "type": "gauge",
       "title": "Worst consumption",
       "datasource": {
@@ -940,7 +940,7 @@
       }
     },
     {
-      "id": 169,
+      "id": 167,
       "type": "stat",
       "title": "Entitlements at risk",
       "datasource": {
@@ -1012,7 +1012,7 @@
       }
     },
     {
-      "id": 170,
+      "id": 168,
       "type": "stat",
       "title": "At risk avg (30d)",
       "datasource": {
@@ -1084,7 +1084,7 @@
       }
     },
     {
-      "id": 184,
+      "id": 182,
       "type": "row",
       "title": "Consumption vs allowance",
       "collapsed": false,
@@ -1097,7 +1097,7 @@
       "panels": []
     },
     {
-      "id": 171,
+      "id": 169,
       "type": "table",
       "title": "Entitlement consumption",
       "datasource": {
@@ -1229,7 +1229,7 @@
       }
     },
     {
-      "id": 172,
+      "id": 170,
       "type": "table",
       "title": "Projected consumption at period end",
       "datasource": {
@@ -1352,7 +1352,7 @@
       }
     },
     {
-      "id": 185,
+      "id": 183,
       "type": "row",
       "title": "Trends",
       "collapsed": false,
@@ -1365,7 +1365,7 @@
       "panels": []
     },
     {
-      "id": 173,
+      "id": 171,
       "type": "timeseries",
       "title": "Entitlement consumption (% used)",
       "datasource": {
@@ -1462,7 +1462,7 @@
       }
     },
     {
-      "id": 186,
+      "id": 184,
       "type": "row",
       "title": "Estimated cost",
       "collapsed": false,
@@ -1475,7 +1475,7 @@
       "panels": []
     },
     {
-      "id": 174,
+      "id": 172,
       "type": "stat",
       "title": "Overage cost",
       "datasource": {
@@ -1540,7 +1540,7 @@
       }
     },
     {
-      "id": 175,
+      "id": 173,
       "type": "stat",
       "title": "AI credit cost",
       "datasource": {
@@ -1605,7 +1605,7 @@
       }
     },
     {
-      "id": 176,
+      "id": 174,
       "type": "stat",
       "title": "Overage avg (30d)",
       "datasource": {
@@ -1669,7 +1669,7 @@
       }
     },
     {
-      "id": 177,
+      "id": 175,
       "type": "timeseries",
       "title": "Estimated cost evolution",
       "datasource": {
@@ -1762,7 +1762,7 @@
       }
     },
     {
-      "id": 187,
+      "id": 185,
       "type": "row",
       "title": "Details",
       "collapsed": false,
@@ -1775,7 +1775,7 @@
       "panels": []
     },
     {
-      "id": 178,
+      "id": 176,
       "type": "table",
       "title": "Entitlements detail (latest run)",
       "datasource": {
@@ -1927,7 +1927,7 @@
       }
     },
     {
-      "id": 179,
+      "id": 177,
       "type": "table",
       "title": "Active utilization alerts (latest run)",
       "datasource": {
@@ -2067,7 +2067,7 @@
       }
     },
     {
-      "id": 188,
+      "id": 186,
       "type": "row",
       "title": "Freshness",
       "collapsed": false,
@@ -2080,7 +2080,7 @@
       "panels": []
     },
     {
-      "id": 180,
+      "id": 178,
       "type": "stat",
       "title": "Stats generation date",
       "datasource": {

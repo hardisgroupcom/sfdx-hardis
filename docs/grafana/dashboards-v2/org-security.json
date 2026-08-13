@@ -35,7 +35,7 @@
   ],
   "panels": [
     {
-      "id": 117,
+      "id": 116,
       "type": "row",
       "title": "Security scores (click a number for details)",
       "collapsed": false,
@@ -312,7 +312,7 @@
       }
     },
     {
-      "id": 118,
+      "id": 117,
       "type": "row",
       "title": "Findings (click a number for details)",
       "collapsed": false,
@@ -605,7 +605,7 @@
       }
     },
     {
-      "id": 119,
+      "id": 187,
       "type": "row",
       "title": "MFA readiness (click a number for details)",
       "collapsed": false,
@@ -618,7 +618,7 @@
       "panels": []
     },
     {
-      "id": 111,
+      "id": 188,
       "type": "stat",
       "title": "Not passkey-ready",
       "datasource": {
@@ -689,7 +689,7 @@
       }
     },
     {
-      "id": 112,
+      "id": 111,
       "type": "stat",
       "title": "MFA bypass users",
       "datasource": {
@@ -759,7 +759,7 @@
       }
     },
     {
-      "id": 113,
+      "id": 112,
       "type": "stat",
       "title": "Non-MFA logins",
       "datasource": {
@@ -829,7 +829,7 @@
       }
     },
     {
-      "id": 120,
+      "id": 118,
       "type": "row",
       "title": "Trends",
       "collapsed": false,
@@ -842,7 +842,7 @@
       "panels": []
     },
     {
-      "id": 114,
+      "id": 113,
       "type": "timeseries",
       "title": "Suspect setup actions per day",
       "datasource": {
@@ -924,7 +924,7 @@
       }
     },
     {
-      "id": 115,
+      "id": 114,
       "type": "timeseries",
       "title": "Legacy API calls",
       "datasource": {
@@ -1006,7 +1006,7 @@
       }
     },
     {
-      "id": 121,
+      "id": 119,
       "type": "row",
       "title": "Latest audit trail entries",
       "collapsed": false,
@@ -1019,7 +1019,7 @@
       "panels": []
     },
     {
-      "id": 116,
+      "id": 115,
       "type": "table",
       "title": "Suspect audit trail entries (latest run)",
       "datasource": {
