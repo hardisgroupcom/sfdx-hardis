@@ -62,7 +62,7 @@ describe('Grafana dashboards v2 (portability lint)', () => {
 
   // Panel ids are public surface on an installed dashboard: ?viewPanel=<id> links,
   // /d-solo/...?panelId=<id> iframe embeds and user-authored alert annotations all reference
-  // them. A renumber does not fail, it silently repoints them at a DIFFERENT panel, so every
+  // them. A renumber does not fail, it silently points them at a DIFFERENT panel, so every
   // id is frozen in panel-ids-v2.json and must keep matching the generated dashboards.
   it('keeps every panel id frozen in panel-ids-v2.json', () => {
     const lock = fs.readJsonSync(PANEL_ID_LOCK);

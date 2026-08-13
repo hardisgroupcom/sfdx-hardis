@@ -2215,7 +2215,7 @@ for (const dash of dashboards) {
  * early dashboard renumbered every panel of every dashboard built after it. Panel ids are part of
  * the public surface of an installed dashboard: `?viewPanel=<id>` links, `/d-solo/...?panelId=<id>`
  * iframe embeds and user-authored alert annotations all reference them, and a renumber silently
- * repoints them at a different panel instead of failing loudly.
+ * points them at a different panel instead of failing loudly.
  *
  * The lock maps `<dashboard uid> -> <panel type>::<panel title> -> id`. That key does not depend on
  * where a panel sits, so panels can be inserted, moved or removed without disturbing any other id.
