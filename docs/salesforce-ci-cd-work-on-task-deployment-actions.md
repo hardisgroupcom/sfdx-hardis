@@ -93,10 +93,10 @@ Each action is an object with the following required and optional properties.
 
 The actions collected for a deployment depend on the branch the merged Pull Request comes from.
 
-| Merge | Scope |
-|-------|-------|
-| From a feature branch (ex: `feature/my-story` -> `integration`) | Only the Pull Request that has just been merged |
-| Between major branches (ex: `integration` -> `uat`) | Every Pull Request merged since the previous merge |
+| Merge                                                              | Scope                                              |
+|--------------------------------------------------------------------|----------------------------------------------------|
+| From a feature branch (ex: `feature/my-story` -> `integration`)    | Only the Pull Request that has just been merged    |
+| Between major branches (ex: `integration` -> `uat`)                | Every Pull Request merged since the previous merge |
 | From a retrofit branch (ex: `retrofit/from-main` -> `integration`) | Every Pull Request merged since the previous merge |
 
 A feature branch merge carries a single Pull Request, so its notification and its Pull Request comment list only that Pull Request's actions. A major branch or retrofit branch merge carries a batch of Pull Requests, whose actions must be replayed in the target org.
