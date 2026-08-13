@@ -485,7 +485,6 @@ When `--pr-id` is omitted for `pr` scope, actions are saved to a **draft file** 
 | `--pr-id`                |         | PR ID (for `pr` scope). `current` auto-detects from branch.                             |
 | `--branch`               |         | Branch name (for `branch` scope).                                                       |
 | `--context`              | `all`   | `all`, `check-deployment-only`, or `process-deployment-only`                            |
-| `--skip-if-error`        | `false` | Skip action if deployment already failed                                                |
 | `--allow-failure`        | `false` | Do not block deployment if action fails                                                 |
 | `--run-only-once-by-org` | `true`  | Execute only once per target org (state tracked in the "Deployment Actions" PR comment) |
 | `--custom-username`      |         | Run action as a specific Salesforce user                                                |
@@ -518,7 +517,7 @@ sf hardis:project:action:update --agent \
 
 #### Optional flags (provide only the ones to change)
 
-`--label`, `--command`, `--apex-script`, `--sfdmu-project`, `--community-name`, `--instructions`, `--class-name`, `--cron-expression`, `--context`, `--skip-if-error`, `--allow-failure`, `--run-only-once-by-org`, `--custom-username`, `--pr-id`, `--branch`
+`--label`, `--command`, `--apex-script`, `--sfdmu-project`, `--community-name`, `--instructions`, `--class-name`, `--cron-expression`, `--context`, `--allow-failure`, `--run-only-once-by-org`, `--custom-username`, `--pr-id`, `--branch`
 
 ---
 

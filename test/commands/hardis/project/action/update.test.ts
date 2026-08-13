@@ -52,7 +52,6 @@ describe('hardis:project:action:update - unit logic', () => {
       type: 'command',
       command: 'echo hello',
       context: 'all',
-      skipIfError: true,
       allowFailure: true,
       runOnlyOnceByOrg: false,
     });
@@ -67,7 +66,6 @@ describe('hardis:project:action:update - unit logic', () => {
     const result = await readActions('project', 'post-deploy');
     expect(result[0].context).to.equal('process-deployment-only');
     expect(result[0].label).to.equal('Full Action');
-    expect(result[0].skipIfError).to.equal(true);
     expect(result[0].allowFailure).to.equal(true);
   });
 });

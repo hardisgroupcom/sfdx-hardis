@@ -1017,7 +1017,7 @@ export async function execCommand(
     // if --json, we should not have a crash, so return status 1 + output log
     return {
       status: 1,
-      errorMessage: `[sfdx-hardis][ERROR] Error processing command\n$${(e as any).stdout}\n${(e as any).stderr}`,
+      errorMessage: `[sfdx-hardis][ERROR] Error processing command\n${(e as any).stdout}\n${(e as any).stderr}`,
       error: e,
     };
   }

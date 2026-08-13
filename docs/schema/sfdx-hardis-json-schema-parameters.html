@@ -3567,7 +3567,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         <div class="card-header" id="headingcommandsPostDeploy_items_skipIfError">
             <h2 class="mb-0">
                 <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPostDeploy_items_skipIfError"
-                        aria-expanded="" aria-controls="commandsPostDeploy_items_skipIfError" onclick="setAnchor('#commandsPostDeploy_items_skipIfError')"><span class="property-name">skipIfError</span></button>
+                        aria-expanded="" aria-controls="commandsPostDeploy_items_skipIfError" onclick="setAnchor('#commandsPostDeploy_items_skipIfError')"><span class="property-name">skipIfError</span> <span class="badge badge-danger deprecated-property">Deprecated</span></button>
             </h2>
         </div>
 
@@ -3597,8 +3597,8 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#commandsPostDeploy_items_skipIfError" onclick="anchorLink('commandsPostDeploy_items_skipIfError')">skipIfError</a></div><h4>Skip if deploy error</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
-<span class="description"><p>Do not run the action if there is a deployment error</p>
+    <a href="#commandsPostDeploy_items_skipIfError" onclick="anchorLink('commandsPostDeploy_items_skipIfError')">skipIfError</a></div><h4>Skip if deploy error (deprecated)</h4><span class="badge badge-dark value-type">Type: boolean</span><br/>
+<span class="description"><p>DEPRECATED and ignored: post-deployment actions are never run when the metadata deployment failed. The property is still accepted so existing configurations remain valid, and can be removed from your YAML.</p>
 </span>
         
 
@@ -3763,8 +3763,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
 <span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Remove KnowledgeUser right to the user who has it&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;command&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;command&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;sf data update record --sobject User --where \&quot;UserPermissionsKnowledgeUser=&#39;true&#39;\&quot; --values \&quot;UserPermissionsKnowledgeUser=&#39;false&#39;\&quot; --json&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;context&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;skipIfError&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">        </span><span class="s2">&quot;context&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;all&quot;</span>
 <span class="w">    </span><span class="p">},</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;publishCommunity&quot;</span><span class="p">,</span>

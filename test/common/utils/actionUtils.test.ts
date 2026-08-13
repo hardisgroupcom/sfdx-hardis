@@ -227,7 +227,6 @@ describe('actionUtils', () => {
         type: 'command',
         command: 'echo hello',
         context: 'all',
-        skipIfError: true,
         allowFailure: false,
         runOnlyOnceByOrg: true,
         customUsername: 'admin@test.com',
@@ -238,7 +237,6 @@ describe('actionUtils', () => {
       expect(action.label).to.equal('Test Action');
       expect(action.type).to.equal('command');
       expect(action.command).to.equal('echo hello');
-      expect(action.skipIfError).to.equal(true);
       expect(action.runOnlyOnceByOrg).to.equal(true);
       expect(action.customUsername).to.equal('admin@test.com');
     });
@@ -251,7 +249,6 @@ describe('actionUtils', () => {
         parameters: { instructions: 'Do something' },
       });
 
-      expect(action.skipIfError).to.equal(undefined);
       expect(action.allowFailure).to.equal(false);
       expect(action.runOnlyOnceByOrg).to.equal(true);
       expect(action.customUsername).to.equal(undefined);

@@ -150,7 +150,6 @@ export function buildAction(values: {
   type: PrePostCommand['type'];
   command?: string;
   context?: PrePostCommand['context'];
-  skipIfError?: boolean;
   allowFailure?: boolean;
   runOnlyOnceByOrg?: boolean;
   customUsername?: string;
@@ -165,9 +164,6 @@ export function buildAction(values: {
   };
   if (values.parameters && Object.keys(values.parameters).length > 0) {
     action.parameters = values.parameters;
-  }
-  if (values.skipIfError !== undefined) {
-    action.skipIfError = values.skipIfError === true;
   }
   action.allowFailure = values.allowFailure === true;
   action.runOnlyOnceByOrg = values.runOnlyOnceByOrg !== false;

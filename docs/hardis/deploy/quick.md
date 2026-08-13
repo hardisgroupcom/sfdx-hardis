@@ -17,9 +17,11 @@ You can define command lines to run before or after a deployment, with parameter
 
 - **id**: Unique Id for the command
 - **label**: Human readable label for the command
-- **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
+- **allowFailure**: If defined to "true", a failure of this action does not make the deployment job fail
 - **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
 - **runOnlyOnceByOrg**: If set to true (default), the action runs only once per target org - subsequent deployments skip it. State is tracked in the "Deployment Actions" PR comment.
+
+Post-deployment actions are never run when the metadata deployment failed: they are reported as `not run` and are proposed again during the next successful deployment.
 
 After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of `runOnlyOnceByOrg`.
 
@@ -46,7 +48,6 @@ commandsPostDeploy:
   - id: someActionToRunJustOneTime
     label: And to run only if deployment is success
     command: sf sfdmu:run ...
-    skipIfError: true
     context: process-deployment-only
     runOnlyOnceByOrg: true
 ```

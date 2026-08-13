@@ -1,4 +1,4 @@
-import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import { execCommand, uxLog } from '../utils/index.js';
 import c from 'chalk';
 
@@ -24,8 +24,10 @@ export class PublishCommunityAction extends ActionsProvider {
     const publishCmd = `sf community publish -n "${communityName}"` + (this.customUsernameToUse ? ` --target-org ${this.customUsernameToUse}` : '');
     const res = await execCommand(publishCmd, null, { fail: false, output: true });
     if (res.status === 0) {
-      return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };
+      return { statusCode: 'success', output: buildActionOutput(res) };
     }
-    return { statusCode: 'failed', output: (res.stdout || '') + '\n' + (res.stderr || '') };
+    // Reached only when execCommand returns instead of throwing (--json commands).
+    // Plain commands throw even with fail:false, and executePrePostCommands catches them.
+    return { statusCode: 'failed', output: buildActionOutput(res) };
   }
 }

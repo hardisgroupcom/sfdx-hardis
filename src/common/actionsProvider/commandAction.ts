@@ -1,4 +1,4 @@
-import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import { execCommand, getCurrentGitBranch, isCI, uxLog } from '../utils/index.js';
 import { AuthOrgOptions, authOrg, safeDeleteAuthTempFile } from '../utils/authUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
@@ -42,8 +42,7 @@ export class CommandAction extends ActionsProvider {
       isCI && commandNeedsCertKeepAlive(cmd.command) ? await this.reauthKeepingCertFile() : null;
     try {
       const res = await execCommand(cmd.command, null, { fail: false, output: true });
-      const output = (res.stdout || '') + '\n' + (res.stderr || '');
-      return { statusCode: res.status === 0 ? 'success' : 'failed', output };
+      return { statusCode: res.status === 0 ? 'success' : 'failed', output: buildActionOutput(res) };
     } finally {
       if (keptCertFilePath) {
         await safeDeleteAuthTempFile(keptCertFilePath);

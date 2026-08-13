@@ -23,7 +23,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   const extraCommands = (options.extraCommands || []).filter(cmd => cmd.preOrPost === property);
   const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(extraCommands || [])];
   try {
-    await completeWithCommandsFromPullRequests(property, commands, options.checkOnly);
+    await completeWithCommandsFromPullRequests(property, commands, options.checkOnly, options.success);
   } catch (e) {
     uxLog("error", this, c.red(`[DeploymentActions] Error while retrieving commands from pull requests: ${(e as Error).message}\n ${(e as Error).stack}\n You might report the issue on sfdx-hardis GitHub repository.`));
   }
@@ -39,6 +39,23 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     `[DeploymentActions] Found ${commands.length} ${actionLabel} to run\n` +
     commands.map(c => `- ${c.label} (${c.type || 'command'})`).join('\n')
   ));
+
+  // A failed metadata deployment must not be followed by deployment actions: the org is in an
+  // unknown state, so actions are listed and reported, but never executed. Nothing is written to
+  // the runOnlyOnceByOrg state, so they still run during the next successful deployment.
+  // Returning here also leaves the deployment error as the error reported by the job.
+  // (pre-deploy callers always pass success: true)
+  if (options.success === false) {
+    for (const cmd of commands) {
+      cmd.result = { statusCode: "not-run", skippedReason: t('actionNotRunDeploymentFailed') };
+    }
+    uxLog("warning", this, c.yellow(
+      `[DeploymentActions] ${t('deploymentActionsNotRunDeploymentFailed', { count: commands.length })}`
+    ));
+    manageResultMarkdownBody(property, commands, options.checkOnly);
+    recordExecutedDeploymentActions(commands);
+    return;
+  }
 
   // Determine org branch name and current PR for state tracking
   const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
@@ -66,33 +83,22 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     // that skipped outcomes are still recorded in the "Deployment Actions" PR comment below.
     let skipAction = false;
 
-    // If skipIfError is true and deployment failed
-    if (options.success === false && !(cmd?.skipIfError === false)) {
-      uxLog("action", this, c.yellow(`[DeploymentActions] Skipping ${cmd.label} (skipIfError=true) `));
+    // Skip if we are in another context than the requested one
+    const cmdContext = cmd.context || "all";
+    if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: check-deployment-only action, and we are in process deployment mode`));
       cmd.result = {
         statusCode: "skipped",
-        skippedReason: "skipIfError is true and deployment failed"
+        skippedReason: "Action context is check-deployment-only but we are in process deployment mode"
       };
       skipAction = true;
-    }
-    // Skip if we are in another context than the requested one
-    if (!skipAction) {
-      const cmdContext = cmd.context || "all";
-      if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
-        uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: check-deployment-only action, and we are in process deployment mode`));
-        cmd.result = {
-          statusCode: "skipped",
-          skippedReason: "Action context is check-deployment-only but we are in process deployment mode"
-        };
-        skipAction = true;
-      } else if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
-        uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: process-deployment-only action as we are in check deployment mode`));
-        cmd.result = {
-          statusCode: "skipped",
-          skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
-        };
-        skipAction = true;
-      }
+    } else if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: process-deployment-only action as we are in check deployment mode`));
+      cmd.result = {
+        statusCode: "skipped",
+        skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
+      };
+      skipAction = true;
     }
     if (!skipAction) {
       // true by default, except for action types that must run at every deployment
@@ -131,6 +137,11 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       // Run command
       uxLog("action", this, c.cyan(`[DeploymentActions] Running action ${cmd.label}`));
       await executeAction(cmd);
+      // Display the failure details right where they happen, so the reason is next to the failure
+      // in the job log instead of being buried in the PR comment (or lost entirely).
+      if (cmd.result?.statusCode === "failed") {
+        logActionFailureDetails(cmd);
+      }
     }
     // Track executed/manual/skipped actions in the source PR's "Deployment Actions" comment.
     // Actions are written to their source PR only - not to the current PR for actions from other PRs.
@@ -166,6 +177,9 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   const failedCommands = commands.filter(c => c.result?.statusCode === "failed");
   if (failedCommands.length > 0) {
     uxLog("error", this, c.red(`[DeploymentActions] ${failedCommands.length} action(s) failed during ${actionLabel}:`));
+    for (const failedCmd of failedCommands) {
+      uxLog("error", this, c.red(`- ${failedCmd.label}${failedCmd.allowFailure === true ? ' (allowed to fail)' : ''}`));
+    }
     // throw error if failed and allowFailure is not set
     const failedAndNotAllowFailure = failedCommands.filter(c => c.allowFailure !== true);
     if (failedAndNotAllowFailure.length > 0) {
@@ -181,8 +195,37 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   }
 }
 
-async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean) {
-  await checkForDraftCommandsFile(property, checkOnly);
+/**
+ * Log why an action failed. The details live in the action result output, which is the only
+ * place carrying them for commands ending with --json: execCommand returns those without
+ * stdout/stderr and prints nothing, so without this the job log showed a bare failure.
+ */
+function logActionFailureDetails(cmd: PrePostCommand): void {
+  const details = (cmd.result?.output || cmd.result?.skippedReason || '').trim();
+  if (details) {
+    uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} failed with the following output:`));
+    uxLog("other", this, c.grey(details));
+  } else {
+    uxLog("warning", this, c.yellow(`[DeploymentActions] ${t('actionNoOutputAvailable', { label: cmd.label })}`));
+  }
+}
+
+/**
+ * True when the action was not attempted because the metadata deployment failed.
+ */
+function isNotRun(cmd: PrePostCommand): boolean {
+  return cmd.result?.statusCode === "not-run";
+}
+
+/**
+ * True when the action result carries something worth displaying (not empty, not blank lines).
+ */
+function hasOutput(cmd: PrePostCommand): boolean {
+  return (cmd.result?.output || '').trim() !== '';
+}
+
+async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean, deploySuccess: boolean) {
+  await checkForDraftCommandsFile(property, checkOnly, deploySuccess);
   const pullRequests = await listAllPullRequestsForCurrentScope(checkOnly);
   for (const pr of pullRequests) {
     // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
@@ -212,7 +255,7 @@ function collectSourcePrNumbers(commands: PrePostCommand[], currentPrNumber: num
   return [...prNumbers];
 }
 
-async function checkForDraftCommandsFile(property: 'commandsPreDeploy' | 'commandsPostDeploy', checkOnly: boolean) {
+async function checkForDraftCommandsFile(property: 'commandsPreDeploy' | 'commandsPostDeploy', checkOnly: boolean, deploySuccess: boolean) {
   const prConfigFileName = path.join("scripts", "actions", `.sfdx-hardis.draft.yml`);
   if (fs.existsSync(prConfigFileName)) {
     let suggestedFileName = ".sfdx-hardis.PULL_REQUEST_ID.yml (ex: .sfdx-hardis.123.yml)";
@@ -229,10 +272,14 @@ To assign it, rename .sfdx-hardis.draft.yml into ${suggestedFileName}.
     const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
     let prData = getPullRequestData()
     prData = Object.assign(prData, {
-      title: "❌ Error: Draft deployment actions file found",
       messageKey: prData.messageKey ?? 'deployment',
       [propertyFormatted]: errorMessage
     });
+    // When the deployment already failed, keep its error as the reported one: the draft file is a
+    // secondary problem and must not take over the Pull Request comment title.
+    if (deploySuccess !== false) {
+      prData = Object.assign(prData, { title: "❌ Error: Draft deployment actions file found" });
+    }
     setPullRequestData(prData);
     await GitProvider.managePostPullRequestComment(checkOnly);
     uxLog("error", this, c.red(`[DeploymentActions] ${errorMessage}`));
@@ -262,7 +309,9 @@ function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: bool
   if (!isPreDeploy && checkOnly) {
     return '';
   }
-  const manualCommands = commands.filter(c => c.type === "manual");
+  // Actions not run because the deployment failed are not to-dos: nothing was deployed for them
+  // to complete, and they will be listed again during the next successful deployment.
+  const manualCommands = commands.filter(c => c.type === "manual" && !isNotRun(c));
   if (manualCommands.length === 0) {
     return '';
   }
@@ -280,7 +329,11 @@ function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: bool
   return section;
 }
 
-function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean) {
+/**
+ * Build the "Actions Results" markdown section posted in the Pull Request comment.
+ * Exported so it can be unit tested without a git provider or a config layer.
+ */
+export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean): string {
   let markdownBody = `### ${property === 'commandsPreDeploy' ? 'Pre-deployment Actions' : 'Post-deployment Actions'} Results\n\n`;
 
   // Add manual actions section
@@ -296,9 +349,10 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
       cmd.result?.statusCode === "success" ? '✅' :
         (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ? '⚠️' :
           (cmd.result?.statusCode === "failed") ? '❌' :
-            cmd.result?.statusCode === "skipped" ? '⚪' : '❓';
+            cmd.result?.statusCode === "skipped" ? '⚪' :
+              cmd.result?.statusCode === "not-run" ? '⏭️' : '❓';
     const statusCol = `${cmd.result?.statusCode || 'not run'}`;
-    const detailCol = cmd.result?.statusCode === "skipped" ?
+    const detailCol = (cmd.result?.statusCode === "skipped" || cmd.result?.statusCode === "not-run") ?
       (cmd.result?.skippedReason || '<!-- -->') :
       (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ?
         (cmd.result.skippedReason ? `${cmd.result.skippedReason} (Allowed to fail)` : "(Allowed to fail)") :
@@ -311,15 +365,15 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
     markdownBody += `| ${statusIcon} | ${labelCol} | ${cmd.type || 'command'} | ${statusCol} | ${detailCol} |\n`;
   }
   // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
-  const commandsInResults = commands.filter(c => (c.result && c.result.output) || c.type === "manual");
+  const commandsInResults = commands.filter(c => hasOutput(c) || (c.type === "manual" && !isNotRun(c)));
   if (commandsInResults.length > 0) {
     markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
     for (const cmd of commands) {
-      if (cmd.result?.output) {
+      if (hasOutput(cmd)) {
         // Truncate output if too long: Either the last 2000 characters, either the last 50 lines (if they are not more than 2000 characters)
         // Indicate when output has been truncated
         const maxOutputLength = 2000;
-        let outputForMarkdown = cmd.result.output;
+        let outputForMarkdown = cmd.result!.output as string;
         const outputLines = outputForMarkdown.split('\n');
         if (outputForMarkdown.length > maxOutputLength) {
           outputForMarkdown = outputForMarkdown.substring(outputForMarkdown.length - maxOutputLength);
@@ -330,8 +384,8 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
             outputForMarkdown = last50Lines;
           }
         }
-        if (outputForMarkdown.length < cmd.result.output.length) {
-          outputForMarkdown = `... (output truncated, total length was ${cmd.result.output.length} characters)\n` + outputForMarkdown;
+        if (outputForMarkdown.length < (cmd.result!.output as string).length) {
+          outputForMarkdown = `... (output truncated, total length was ${(cmd.result!.output as string).length} characters)\n` + outputForMarkdown;
         }
 
         const labelTitle = cmd.pullRequest ?
@@ -343,7 +397,7 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
         markdownBody += '\n```\n';
         markdownBody += '</details>\n';
       }
-      else if (cmd.type === "manual") {
+      else if (cmd.type === "manual" && !isNotRun(cmd)) {
         const labelTitle = cmd.pullRequest ?
           `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))` :
           cmd.label;
@@ -356,9 +410,13 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
     }
     markdownBody += `\n</details>\n`;
   }
+  return markdownBody;
+}
+
+function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean) {
   const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
   const prData = {
-    [propertyFormatted]: markdownBody
+    [propertyFormatted]: buildActionsResultMarkdown(property, commands, checkOnly)
   };
   setPullRequestData(prData);
 }

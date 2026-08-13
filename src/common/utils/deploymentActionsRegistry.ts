@@ -48,8 +48,10 @@ function escapeLineValue(value: string): string {
  * Map an action result to its icon + status label.
  * The status label is only kept for failures: ✅ and 👋 already carry the whole meaning, so
  * repeating "success" / "manual" next to them is noise in a chat message.
- * Returns null for actions that must not appear in the notification: skipped ones, and
- * ones that never ran (no result, e.g. actions after a failure aborted the sequence).
+ * Returns null for actions that must not appear in the notification: skipped ones, ones marked
+ * "not-run" because the metadata deployment failed (the notification already reports that
+ * failure, so listing every action it prevented would only add noise), and ones that never ran
+ * at all (no result, e.g. actions after a failure aborted the sequence).
  */
 function getStatusIconAndLabel(cmd: PrePostCommand, translate: boolean): { icon: string; status: string } | null {
   const statusCode = cmd.result?.statusCode;
