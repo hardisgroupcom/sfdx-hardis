@@ -64,11 +64,11 @@ The description is only modified between the sfdx-hardis navigation markers: the
 
 ### Environment variables
 
-| Variable | Effect when set to `false` |
-| --- | --- |
+| Variable                         | Effect when set to `false`                                                                                    |
+|----------------------------------|---------------------------------------------------------------------------------------------------------------|
 | `SFDX_HARDIS_PR_COMMENT_BANNERS` | Post the comments without their banner image, for example when the network blocks `raw.githubusercontent.com` |
-| `SFDX_HARDIS_PR_COMMENT_NAV` | Post the comments without the navigation line, and never modify the Pull Request description |
-| `SFDX_HARDIS_PR_DESCRIPTION_NAV` | Keep the navigation in the comments, but never modify the Pull Request description |
+| `SFDX_HARDIS_PR_COMMENT_NAV`     | Post the comments without the navigation line, and never modify the Pull Request description                  |
+| `SFDX_HARDIS_PR_DESCRIPTION_NAV` | Keep the navigation in the comments, but never modify the Pull Request description                            |
 
 ## Message notifications
 
