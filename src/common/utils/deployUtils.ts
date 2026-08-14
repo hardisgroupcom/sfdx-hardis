@@ -613,6 +613,10 @@ export async function smartDeploy(
 
       // Set deployment id
       await getDeploymentId(deployRes.stdout + deployRes.stderr || '');
+      // Stored so the Pull Request comment only promises Quick Deploy for validations that ran tests
+      if (check) {
+        setPullRequestData({ checkTestLevel: testlevel });
+      }
 
       // Check org coverage if found in logs
       const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || '');

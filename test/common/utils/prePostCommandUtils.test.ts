@@ -133,6 +133,35 @@ describe('buildActionsResultMarkdown()', () => {
     expect(markdown).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:manual-1 org:uat pr:0 -->');
   });
 
+  it('renders an already-done manual action as a ticked to-do, and a context-skipped one not at all', () => {
+    const commands = [
+      action({
+        id: 'done-1', type: 'manual', label: 'Done action',
+        result: { statusCode: 'skipped', skippedReason: 'runOnlyOnceByOrg: already run in org (uat) on 2026-08-14' },
+      }),
+      action({
+        id: 'ctx-1', type: 'manual', label: 'Context skipped action',
+        result: { statusCode: 'skipped', skippedReason: 'Action context is process-deployment-only but we are in check deployment mode' },
+      }),
+      action({ id: 'pending-1', type: 'manual', label: 'Pending action', result: { statusCode: 'manual' } }),
+    ];
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false, 'uat');
+
+    expect(markdown).to.contain('- [x] <!-- sfdx-hardis-manual-action id:done-1 org:uat pr:0 --> Done action');
+    expect(markdown).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:pending-1 org:uat pr:0 --> Pending action');
+    expect(markdown).to.not.contain('] <!-- sfdx-hardis-manual-action id:ctx-1');
+  });
+
+  it('neutralizes raw HTML tags in manual instructions', () => {
+    const commands = [
+      action({ type: 'manual', parameters: { instructions: 'Click </details> then **Save**' }, result: { statusCode: 'manual' } }),
+    ];
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false);
+
+    expect(markdown).to.contain('> Click &lt;/details> then **Save**');
+    expect(markdown).to.not.contain('> Click </details>');
+  });
+
   it('notes when two distinct actions share the same label', () => {
     const commands = [
       action({ id: 'a1', label: 'Strip items', result: { statusCode: 'success', output: 'done' } }),

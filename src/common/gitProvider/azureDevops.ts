@@ -1174,6 +1174,6 @@ ${getBannerMarkdownAndLink()}
     if (!repositoryId || !commentRef?.ref?.threadId || !commentRef?.ref?.commentId) return;
     const azureGitApi = await this.azureApi.getGitApi();
     await azureGitApi.updateComment({ content: body }, repositoryId, commentRef.prNumber, commentRef.ref.threadId, commentRef.ref.commentId);
-    uxLog("log", this, c.grey(`[Azure DevOps] Updated comment on PR #${commentRef.prNumber}`));
+    uxLog("log", this, c.grey('[Azure DevOps] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
 }

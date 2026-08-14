@@ -923,13 +923,19 @@ ${getBannerMarkdownAndLink()}
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const pullRequestId = prNumber || Number(process.env.BITBUCKET_PR_ID || '');
     if (!pullRequestId || !repoSlug || !workspace) return [];
-    const comments = await this.bitbucket.repositories.listPullRequestComments({
-      pull_request_id: pullRequestId,
-      repo_slug: repoSlug,
-      workspace,
-    });
+    // Paginate: a long-lived PR can carry more comments than a single page,
+    // and a ticked checkbox in a later comment must not be missed
+    const comments = await this.fetchAllPages(
+      (params) => this.bitbucket.repositories.listPullRequestComments(params),
+      {
+        pull_request_id: pullRequestId,
+        repo_slug: repoSlug,
+        workspace,
+        pagelen: 50,
+      },
+    );
     const results: PullRequestCommentRef[] = [];
-    for (const comment of comments?.data?.values || []) {
+    for (const comment of comments) {
       if ((comment?.content?.raw || '').includes(marker)) {
         results.push({ prNumber: pullRequestId, ref: comment.id, body: comment.content?.raw || '' });
       }
@@ -948,7 +954,7 @@ ${getBannerMarkdownAndLink()}
       comment_id: commentRef.ref,
       _body: { content: { raw: body } } as any,
     });
-    uxLog("log", this, c.grey(`[Bitbucket] Updated comment on PR #${commentRef.prNumber}`));
+    uxLog("log", this, c.grey('[Bitbucket] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
 
 }

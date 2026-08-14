@@ -281,10 +281,15 @@ export class JiraProvider extends TicketProviderRoot {
               uxLog("log", this, c.grey(JSON.stringify(ticketInfo)));
             }
             ticket.foundOnServer = false;
+            failedTicketsNumber++;
+            firstErrorMessage = firstErrorMessage || 'JIRA returned an unusable response (possibly an authentication redirect)';
           }
           uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderCollectedTicket', { ticketId: ticket.id })));
         } else {
+          // Resolved without throwing but no usable payload: still a collection failure
           uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderUnableToGetIssue', { ticketId: ticket.id })));
+          failedTicketsNumber++;
+          firstErrorMessage = firstErrorMessage || 'no details returned by the JIRA API';
         }
       }
     }

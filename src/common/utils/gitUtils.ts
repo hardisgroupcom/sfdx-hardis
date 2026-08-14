@@ -360,8 +360,9 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
         commits: [logResult],
       }
     );
-    // Plumbing merge commits ("Merge branch 'x' into y") carry no user-readable information
-    if (/^Merge (branch|remote-tracking branch) /.test(logResult.message)) {
+    // Plumbing merge commits ("Merge branch 'x' into y", "Merge pull request #12 from ...")
+    // carry no user-readable information
+    if (/^Merge (pull request #|branch |remote-tracking branch )/.test(logResult.message)) {
       continue;
     }
     displayedCommitsCount++;
@@ -370,7 +371,12 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
       // Long bodies (pasted release notes...) flood the comment: keep the beginning only
       let bodyDisplay = logResult.body;
       if (bodyDisplay.length > maxCommitBodyChars) {
-        bodyDisplay = bodyDisplay.substring(0, maxCommitBodyChars) + '... *(truncated)*';
+        bodyDisplay = bodyDisplay.substring(0, maxCommitBodyChars);
+        // Close a code fence cut open by the truncation, so the rest of the comment stays intact
+        if ((bodyDisplay.match(/```/g) || []).length % 2 === 1) {
+          bodyDisplay += '\n```\n';
+        }
+        bodyDisplay += '... *(truncated)*';
       }
       commitsList += '<br/>' + bodyDisplay + '\n\n';
     } else {
@@ -379,7 +385,11 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
   }
   // Collapsed by default: the commit list is the longest and least actionable section of the comment
   let commitsSummary = '## Commits summary\n\n';
-  commitsSummary += `<details>\n<summary>${displayedCommitsCount} commit(s)</summary>\n\n${commitsList}\n</details>\n\n`;
+  if (displayedCommitsCount === 0) {
+    commitsSummary += '_No user commits in this scope (technical merge commits only)._\n\n';
+  } else {
+    commitsSummary += `<details>\n<summary>${displayedCommitsCount} commit(s)</summary>\n\n${commitsList}\n</details>\n\n`;
+  }
 
   // Tickets and references can also be in PR description
   if (pullRequestInfo) {

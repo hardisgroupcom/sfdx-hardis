@@ -82,7 +82,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     try {
       await syncManualActionCheckboxes([...new Set([...sourcePrNumbers, ...scopePrNumbers])]);
     } catch (e) {
-      uxLog("warning", this, c.yellow(`[DeploymentActions] Could not sync manual action checkboxes: ${(e as Error).message}`));
+      uxLog("warning", this, c.yellow('[DeploymentActions] ' + t('deploymentActionsCheckboxSyncError', { message: (e as Error).message })));
     }
   }
 
@@ -297,11 +297,13 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
       if (scopeInfo.kind === 'single-pr') {
         return;
       }
-      markdown = `ℹ️ This deployment processed the deployment actions and Apex test classes of ${scopeInfo.pullRequests.length} Pull Request(s): ${prLinks}. Actions already performed in this org, or still waiting for a manual execution, keep their tracked state on their own Pull Request.`;
+      // Tense-neutral wording: this paragraph is also posted when the metadata deployment failed,
+      // in which case the actions were collected but deliberately not run (see fix #2053)
+      markdown = `ℹ️ Deployment actions and Apex test classes were collected from ${scopeInfo.pullRequests.length} Pull Request(s): ${prLinks}. Each action keeps its tracked state on its own Pull Request.`;
     }
     setPullRequestData({ deploymentScopeMarkdownBody: markdown });
   } catch (e) {
-    uxLog("warning", this, c.yellow(`[DeploymentActions] Could not build the deployment scope explanation: ${(e as Error).message}`));
+    uxLog("warning", this, c.yellow('[DeploymentActions] ' + t('deploymentActionsScopeError', { message: (e as Error).message })));
   }
 }
 
@@ -390,9 +392,14 @@ function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: bool
   if (!isPreDeploy && checkOnly) {
     return '';
   }
+  // Pending actions render as unticked to-dos. Actions already performed in the org render as
+  // TICKED items: rendering them unticked again would make the next job's checkbox sync re-tick
+  // them in a loop, and would tell the reader to perform an action that is already done.
   // Actions not run because the deployment failed are not to-dos: nothing was deployed for them
   // to complete, and they will be listed again during the next successful deployment.
-  const manualCommands = commands.filter(c => c.type === "manual" && !isNotRun(c));
+  const isDoneManual = (c: PrePostCommand) =>
+    c.result?.statusCode === "skipped" && (c.result.skippedReason || '').startsWith("runOnlyOnceByOrg: already run");
+  const manualCommands = commands.filter(c => c.type === "manual" && (c.result?.statusCode === "manual" || isDoneManual(c)));
   if (manualCommands.length === 0) {
     return '';
   }
@@ -407,7 +414,7 @@ function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: bool
     // The hidden marker lets sfdx-hardis detect a ticked checkbox on the next job, record the
     // action as done for the org branch, and tick it in the other comments where it appears.
     const marker = orgBranch ? `${buildManualActionCheckboxMarker(cmd.id, orgBranch, cmd.pullRequest?.idNumber || 0)} ` : '';
-    section += `- [ ] ${marker}${labelCol}\n`;
+    section += `- [${isDoneManual(cmd) ? 'x' : ' '}] ${marker}${labelCol}\n`;
   }
   section += `\n*Tick a box once the action has been performed in the org: the next sfdx-hardis job will record it as done.*\n`;
   section += `\n---\n\n`;
@@ -503,9 +510,11 @@ export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'comm
           cmd.label;
         markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labelTitle}</summary>\n\n`;
         // Instructions are markdown written by humans: a blockquote keeps their lists, links and
-        // bold text rendered, where a code fence would show them as raw text.
+        // bold text rendered, where a code fence would show them as raw text. Raw HTML tags are
+        // neutralized so an instruction cannot close the enclosing <details> blocks.
         const instructions = (cmd?.parameters?.instructions || "No instructions provided.") as string;
-        markdownBody += instructions.split('\n').map((line) => `> ${line}`).join('\n');
+        const safeInstructions = instructions.replace(/</g, '&lt;');
+        markdownBody += safeInstructions.split('\n').map((line) => `> ${line}`).join('\n');
         markdownBody += '\n</details>\n';
       }
     }

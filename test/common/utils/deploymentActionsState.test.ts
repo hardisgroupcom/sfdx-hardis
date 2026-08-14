@@ -112,6 +112,13 @@ describe('Manual action checkboxes', () => {
     expect(again.changed).to.be.false;
   });
 
+  it('ticks a checkbox on a star-bulleted line too', () => {
+    const starBody = `* [ ] ${marker} Create the inbound Email Service\n`;
+    const res = checkManualActionCheckboxInBody(starBody, 'action-1', 'uat');
+    expect(res.changed).to.be.true;
+    expect(res.body).to.contain(`* [x] ${marker}`);
+  });
+
   it('does not touch checkboxes of another org branch', () => {
     const res = checkManualActionCheckboxInBody(body, 'action-1', 'integration');
     expect(res.changed).to.be.false;

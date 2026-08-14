@@ -749,6 +749,6 @@ ${getBannerMarkdownAndLink()}
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
     if (!commentRef?.ref?.noteId) return;
     await this.gitlabApi.MergeRequestNotes.edit(commentRef.ref.projectId, commentRef.prNumber, commentRef.ref.noteId, { body });
-    uxLog("log", this, c.grey(`[GitLab] Updated note on MR !${commentRef.prNumber}`));
+    uxLog("log", this, c.grey('[GitLab] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
 }

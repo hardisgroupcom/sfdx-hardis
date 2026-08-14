@@ -760,13 +760,16 @@ ${getBannerMarkdownAndLink()}
   public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
     const issueNumber = prNumber || this.prNumber;
     if (!issueNumber) return [];
-    const comments = await this.octokit.rest.issues.listComments({
+    // Paginate: a long-lived PR can carry more comments than a single page,
+    // and a ticked checkbox in a later comment must not be missed
+    const comments = await this.octokit.paginate(this.octokit.rest.issues.listComments, {
       owner: this.repoOwner || '',
       repo: this.repoName || '',
       issue_number: issueNumber,
+      per_page: 100,
     });
     const results: PullRequestCommentRef[] = [];
-    for (const comment of comments.data) {
+    for (const comment of comments) {
       if (comment?.body?.includes(marker)) {
         results.push({ prNumber: issueNumber, ref: comment.id, body: comment.body });
       }
@@ -782,6 +785,6 @@ ${getBannerMarkdownAndLink()}
       comment_id: commentRef.ref,
       body,
     });
-    uxLog("log", this, c.grey(`[GitHub] Updated comment on PR #${commentRef.prNumber}`));
+    uxLog("log", this, c.grey('[GitHub] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
 }

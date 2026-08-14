@@ -560,6 +560,7 @@ export interface ManualActionCheckboxItem {
   label: string;
 }
 
+// The literal 'sfdx-hardis-manual-action' here MUST stay in sync with MANUAL_ACTION_CHECKBOX_MARKER_PREFIX
 const MANUAL_ACTION_CHECKBOX_REGEX = /^\s*[-*] \[( |x|X)\] <!-- sfdx-hardis-manual-action id:(\S+) org:(\S+) pr:(\d+) -->\s*(.*)$/;
 
 /**
@@ -591,7 +592,9 @@ export function checkManualActionCheckboxInBody(body: string, actionId: string, 
     const match = line.match(MANUAL_ACTION_CHECKBOX_REGEX);
     if (match && match[2] === actionId && match[3] === orgBranch && match[1] === ' ') {
       changed = true;
-      return line.replace('- [ ]', '- [x]');
+      // Tick the checkbox itself: the regex accepts both '-' and '*' bullets, and the first
+      // '[ ]' of a matched line is always the checkbox
+      return line.replace('[ ]', '[x]');
     }
     return line;
   });

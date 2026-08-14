@@ -151,9 +151,13 @@ export abstract class GitProvider {
       if (prData.codeCoverageMarkdownBody) {
         markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
       }
-      // Explain the Quick Deploy mechanics so "Apex tests: none run" on the merge job does not read as an anomaly
-      if (checkOnly === true && globalThis.pullRequestDeploymentId && prData.deployStatus === "valid") {
-        markdownBody += "\n\n" + "🚀 This successful validation can be reused by Quick Deploy after the Pull Request is merged, so the merge job does not run the Apex tests again.";
+      // Explain the Quick Deploy mechanics so "Apex tests: none run" on the merge job does not read
+      // as an anomaly. No promise when quick deploy is disabled or the validation ran no tests:
+      // such a validation cannot be quick-deployed.
+      if (checkOnly === true && globalThis.pullRequestDeploymentId && prData.deployStatus === "valid"
+        && prData.checkTestLevel !== "NoTestRun"
+        && (process.env.SFDX_HARDIS_QUICK_DEPLOY || '') !== 'false') {
+        markdownBody += "\n\n" + "🚀 This successful validation may be reused by Quick Deploy after the Pull Request is merged, so the merge job does not run the Apex tests again.";
       }
       if (checkOnly === false && prData.usedQuickDeploy === true) {
         markdownBody += "\n\n" + "🚀 This deployment used Quick Deploy: it released the validation performed during the Pull Request check job, where the Apex tests were already run.";
@@ -316,7 +320,7 @@ export abstract class GitProvider {
     try {
       return await gitProvider.listPullRequestCommentsByMarker(marker, prNumber);
     } catch (e) {
-      uxLog("warning", this, c.yellow(`[GitProvider] Could not list comments by marker${prNumber ? ` for PR #${prNumber}` : ''}: ${(e as Error).message}`));
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderCouldNotListComments', { message: (e as Error).message })));
       return [];
     }
   }
@@ -329,7 +333,7 @@ export abstract class GitProvider {
     try {
       await gitProvider.updatePullRequestCommentByRef(commentRef, body);
     } catch (e) {
-      uxLog("warning", this, c.yellow(`[GitProvider] Could not update comment on PR #${commentRef.prNumber}: ${(e as Error).message}`));
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderCouldNotUpdateComment', { pr: commentRef.prNumber, message: (e as Error).message })));
     }
   }
 
@@ -518,6 +522,8 @@ export declare type PullRequestData = {
   deploymentScopeMarkdownBody?: string;
   // True when the metadata deployment was performed with Quick Deploy (reusing the check job validation)
   usedQuickDeploy?: boolean;
+  // Test level of the check job validation, to know if it is reusable by Quick Deploy
+  checkTestLevel?: string;
   commitsSummary?: string;
   deployStatus?: "valid" | "invalid" | "unknown";
   status?: "valid" | "invalid" | "tovalidate";
