@@ -35,6 +35,20 @@
 - Deployment actions and selected Apex test classes now also run on merges into the production branch, scoped to the Pull Requests carried by the go-live merge.
 - Deployment actions of Pull Requests merged upstream (like a hotfix in `main`) are now replayed downstream when a retrofit branch brings their commits to another major branch.
 - Fix deployment actions never running on GitHub push-triggered deployment jobs, caused by incomplete Pull Request detection.
+- Pull Request comments are easier to understand:
+  - Check and deployment comments now explain which Pull Requests the deployment actions and Apex test classes were collected from, and the check comment of a retrofit or major-branch Pull Request announces that the merge job can process more actions than listed.
+  - Manual deployment actions can be marked as done by ticking their checkbox in any Pull Request comment: the next job records them as done for the org branch and ticks the same checkbox in the other comments where they appear.
+  - The "Deployment Actions" state comment now shows a status matrix (one row per action, one column per org branch), a pending manual actions checklist, a status legend and a last-updated date.
+  - Manual actions are reported as "waiting for manual execution", and their instructions keep their markdown formatting instead of being displayed as raw text.
+  - Distinct actions sharing the same label are flagged as such instead of looking like a duplicated row.
+  - The commits summary is collapsed by default, hides technical merge commits and truncates very long commit bodies.
+  - The Tickets section now warns when ticket details could not be retrieved from JIRA, instead of silently listing bare links.
+  - Check and deployment comments explain when Quick Deploy applies, so "Apex tests: none run" on a merge job is no longer a surprise.
+- Job logs are easier to follow: the resolved Pull Request scope is displayed as a single line, actions display the Pull Request that defines them, actions not run after a failure say why, provider fetch internals are kept out of the UI log, and repeated JIRA errors are aggregated into a single warning.
+- Delta and package-no-overwrite filtering logs now say what each step means for the deployment: which items changed between the compared commits, which items are protected because they already exist in the target org (and that absent ones will be created), and how many items of each type are skipped versus deployed.
+- The really final package.xml is now displayed after the package-no-overwrite filtering, since the delta package shown earlier can still lose protected items.
+- New [documentation page](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-publish-artifacts/) explaining how to add the hardis-report artifacts upload step to existing GitHub, GitLab, Azure, Bitbucket or Jenkins pipelines, linked from the deployment summary in job logs.
+- Fix a misleading "Image file not found" warning displayed for remote image URLs used in Pull Request comments.
 
 ### CI/CD
 

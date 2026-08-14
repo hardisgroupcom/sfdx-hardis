@@ -1,4 +1,4 @@
-import { GitProviderRoot } from "./gitProviderRoot.js";
+import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
 import * as azdev from "azure-devops-node-api";
 import c from "chalk";
 import fs from 'fs-extra';
@@ -628,7 +628,10 @@ ${this.getPipelineVariablesConfig()}
           },
           process.env.SYSTEM_TEAMPROJECT,
         );
-        uxLog("log", this, c.grey(`[Azure Integration] Found ${prs?.length || 0} completed PRs for branch ${branchName}`));
+        // Internal fetch detail: the recently merged PRs of each branch are only CANDIDATES,
+        // matched below against the window commits. Logged at "other" level so the console
+        // does not suggest that all these PRs are part of the scope.
+        uxLog("other", this, c.grey(`[Azure Integration] Fetched ${prs?.length || 0} recently completed PRs targeting branch ${branchName}, as candidates to match against the commits window`));
         return prs || [];
       } catch (err) {
         uxLog(
@@ -1127,6 +1130,8 @@ ${getBannerMarkdownAndLink()}
     for (const thread of threads) {
       if (thread.isDeleted) continue;
       for (const comment of thread?.comments || []) {
+        // Never update a deleted comment: getThreads returns them inside live threads
+        if (comment?.isDeleted) continue;
         if ((comment?.content || '').includes(marker)) {
           existingThreadId = thread.id || null;
           existingCommentId = comment.id || null;
@@ -1146,5 +1151,34 @@ ${getBannerMarkdownAndLink()}
       await azureGitApi.createThread(newThread, repositoryId, pullRequestId);
       uxLog("log", this, c.grey(`[Azure DevOps] Created Deployment Actions thread on PR #${pullRequestId}`));
     }
+  }
+
+  public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const pullRequestId = prNumber || Number(process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || '');
+    if (!repositoryId || !pullRequestId) return [];
+    const azureGitApi = await this.azureApi.getGitApi();
+    const threads = await azureGitApi.getThreads(repositoryId, pullRequestId);
+    const results: PullRequestCommentRef[] = [];
+    for (const thread of threads) {
+      if (thread.isDeleted) continue;
+      for (const comment of thread?.comments || []) {
+        // getThreads still returns deleted comments inside live threads: a checkbox ticked in a
+        // deleted comment must not be honored
+        if (comment?.isDeleted) continue;
+        if ((comment?.content || '').includes(marker)) {
+          results.push({ prNumber: pullRequestId, ref: { threadId: thread.id, commentId: comment.id }, body: comment.content || '' });
+        }
+      }
+    }
+    return results;
+  }
+
+  public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    if (!repositoryId || !commentRef?.ref?.threadId || !commentRef?.ref?.commentId) return;
+    const azureGitApi = await this.azureApi.getGitApi();
+    await azureGitApi.updateComment({ content: body }, repositoryId, commentRef.prNumber, commentRef.ref.threadId, commentRef.ref.commentId);
+    uxLog("log", this, c.grey('[Azure DevOps] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
 }

@@ -20,6 +20,7 @@ import {
 } from './index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { Ticket, TicketProvider } from '../ticketProvider/index.js';
+import { getTicketCollectionIssues } from '../ticketProvider/ticketProviderRoot.js';
 import { DefaultLogFields, ListLogLine } from 'simple-git';
 import { flowDiffToMarkdownForPullRequest } from '../gitProvider/utilsMarkdown.js';
 import { MessageAttachment } from '@slack/types';
@@ -338,7 +339,6 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
     logResults = [...logRes.all];
   }
   logResults = arrayUniqueByKeys(logResults, ['message', 'body']).reverse();
-  let commitsSummary = '## Commits summary\n\n';
   // LEGACY: free-text "MANUAL ACTION:" markers typed in commit messages / Pull Request bodies.
   // Superseded by deployment actions of type "manual" (commandsPreDeploy / commandsPostDeploy),
   // which carry an id, a phase, instructions and a tracked per-org status.
@@ -346,24 +346,57 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
   // Kept for projects that still rely on it; notifications nudge users towards deployment actions.
   const manualActions: any[] = [];
   const tickets: Ticket[] = [];
+  let commitsList = '';
+  let displayedCommitsCount = 0;
+  const maxCommitBodyChars = 400;
   for (const logResult of logResults) {
-    commitsSummary += '**' + logResult.message + '**, by ' + logResult.author_name;
-    if (logResult.body) {
-      commitsSummary += '<br/>' + logResult.body + '\n\n';
-      await collectTicketsAndManualActions(
-        currentGitBranch + '\n' + logResult.message + '\n' + logResult.body,
-        tickets,
-        manualActions,
-        {
-          commits: [logResult],
-        }
-      );
-    } else {
-      await collectTicketsAndManualActions(currentGitBranch + '\n' + logResult.message, tickets, manualActions, {
+    // Tickets and manual actions are collected from EVERY commit, including the plumbing merge
+    // commits filtered out of the displayed list below.
+    await collectTicketsAndManualActions(
+      currentGitBranch + '\n' + logResult.message + (logResult.body ? '\n' + logResult.body : ''),
+      tickets,
+      manualActions,
+      {
         commits: [logResult],
-      });
-      commitsSummary += '\n\n';
+      }
+    );
+    // Plumbing merge commits ("Merge branch 'x' into y", "Merge pull request #12 from ...")
+    // carry no user-readable information
+    if (/^Merge (pull request #|branch |remote-tracking branch )/.test(logResult.message)) {
+      continue;
     }
+    displayedCommitsCount++;
+    // Commit text is user-written: raw HTML (a </details>, an unclosed <!-- ...) would break out
+    // of the <details> wrapper below and could swallow the rest of the Pull Request comment
+    commitsList += '**' + logResult.message.replace(/</g, '&lt;') + '**, by ' + logResult.author_name;
+    if (logResult.body) {
+      // Long bodies (pasted release notes...) flood the comment: keep the beginning only
+      let bodyDisplay = logResult.body;
+      let truncated = false;
+      if (bodyDisplay.length > maxCommitBodyChars) {
+        bodyDisplay = bodyDisplay.substring(0, maxCommitBodyChars);
+        truncated = true;
+      }
+      bodyDisplay = bodyDisplay.replace(/</g, '&lt;');
+      // Close an unbalanced code fence (from the body itself or cut open by the truncation),
+      // so the rest of the comment stays intact
+      if ((bodyDisplay.match(/```/g) || []).length % 2 === 1) {
+        bodyDisplay += '\n```\n';
+      }
+      if (truncated) {
+        bodyDisplay += '... *(truncated)*';
+      }
+      commitsList += '<br/>' + bodyDisplay + '\n\n';
+    } else {
+      commitsList += '\n\n';
+    }
+  }
+  // Collapsed by default: the commit list is the longest and least actionable section of the comment
+  let commitsSummary = '## Commits summary\n\n';
+  if (displayedCommitsCount === 0) {
+    commitsSummary += '_No user commits in this scope (technical merge commits only)._\n\n';
+  } else {
+    commitsSummary += `<details>\n<summary>${displayedCommitsCount} commit(s)</summary>\n\n${commitsList}\n</details>\n\n`;
   }
 
   // Tickets and references can also be in PR description
@@ -403,6 +436,12 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
       } else {
         ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ')\n';
       }
+    }
+    // When the ticketing server could not be reached (expired token...), say it in the comment
+    // instead of silently listing bare links
+    const ticketCollectionIssues = getTicketCollectionIssues();
+    if (ticketCollectionIssues.length > 0) {
+      ticketsMarkdown += `\n> ⚠️ ${ticketCollectionIssues[0]}\n`;
     }
     commitsSummary = ticketsMarkdown + '\n\n' + commitsSummary;
   }

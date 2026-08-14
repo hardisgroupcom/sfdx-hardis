@@ -1,10 +1,20 @@
 import c from "chalk";
+import Debug from "debug";
 import { GitProvider } from '../gitProvider/index.js';
+import { PullRequestCommentRef } from '../gitProvider/gitProviderRoot.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { readActions } from './actionUtils.js';
 import { uxLog } from './index.js';
+import { t } from './i18n.js';
+
+const debug = Debug("sfdxhardis");
 
 export const DEPLOYMENT_ACTIONS_MARKER = '<!-- sfdx-hardis deployment-actions-state -->';
+
+// Prefix of the hidden marker set on every manual action checklist item, in all the Pull Request
+// comments where such checklists appear (check results, deployment results, deployment actions state).
+// Ticking one of these checkboxes records the manual action as done for the org branch.
+export const MANUAL_ACTION_CHECKBOX_MARKER_PREFIX = '<!-- sfdx-hardis-manual-action ';
 
 export interface DeploymentActionStateEntry {
   actionId: string;
@@ -33,6 +43,8 @@ export type ActionDef = PrePostCommand & {
 interface DeploymentActionsMultiPrState {
   entriesByPr: Map<number, DeploymentActionStateEntry[]>;
   dirtyPrs: Set<number>;
+  // PRs whose comments have already been scanned for checked manual action checkboxes in this process
+  syncedCheckboxPrs: Set<number>;
 }
 
 const MAX_OUTPUT_CHARS = 1500;
@@ -83,7 +95,11 @@ function getMultiPrState(): DeploymentActionsMultiPrState {
     globalThis._deploymentActionsMultiPrState = {
       entriesByPr: new Map(),
       dirtyPrs: new Set(),
+      syncedCheckboxPrs: new Set(),
     };
+  }
+  if (!globalThis._deploymentActionsMultiPrState.syncedCheckboxPrs) {
+    globalThis._deploymentActionsMultiPrState.syncedCheckboxPrs = new Set();
   }
   return globalThis._deploymentActionsMultiPrState;
 }
@@ -124,8 +140,9 @@ export async function loadDeploymentActionsState(sourcePrNumbers: number[]): Pro
       if (body) {
         const entries = parseDeploymentActionsCommentBody(body);
         state.entriesByPr.set(prNumber, entries);
-        uxLog("log", null, c.cyan(`Loaded ${entries.length} deployment actions state entries from PR #${prNumber}.`));
-        uxLog("other", null, c.grey(JSON.stringify(entries, null, 2)));
+        uxLog("log", null, c.grey(`[DeploymentActions] ${t('loadedDeploymentActionsStateEntries', { count: entries.length, pr: prNumber })}`));
+        // Full entries are diagnostic data: keep them out of the console unless DEBUG is enabled
+        debug(`Deployment actions state entries loaded from PR #${prNumber}: ${JSON.stringify(entries, null, 2)}`);
       } else {
         state.entriesByPr.set(prNumber, []);
       }
@@ -188,7 +205,7 @@ export async function persistDeploymentActionsState(): Promise<void> {
     state.entriesByPr.set(prNumber, mergedEntries);
     // Load action definitions from the PR's YAML file to populate the details section
     const actionDefs = await loadActionDefsFromPrYaml(prNumber);
-    const body = buildDeploymentActionsCommentBody(mergedEntries, actionDefs);
+    const body = buildDeploymentActionsCommentBody(mergedEntries, actionDefs, prNumber);
     await GitProvider.tryUpsertDeploymentActionsCommentForPr(prNumber, body);
   }
   state.dirtyPrs.clear();
@@ -225,6 +242,93 @@ async function mergeWithExistingComment(prNumber: number, inMemoryEntries: Deplo
 }
 
 export function parseDeploymentActionsCommentBody(body: string): DeploymentActionStateEntry[] {
+  // Matrix format: one row per action, one column per org branch
+  if (body.includes('| Action | When |')) {
+    return parseMatrixDeploymentActionsCommentBody(body);
+  }
+  // Legacy format: one row per action + org branch pair
+  return parseLegacyDeploymentActionsCommentBody(body);
+}
+
+// Action ids are free-form YAML strings: one containing whitespace would break the hidden
+// markers, whose regexes match the id with \S+. Ids are percent-encoded when written and
+// decoded when read; usual alphanumeric ids are left untouched, so legacy comments still parse.
+function encodeActionId(actionId: string): string {
+  return encodeURIComponent(actionId || '');
+}
+
+function decodeActionId(encodedId: string): string {
+  try {
+    return decodeURIComponent(encodedId || '');
+  } catch (_e) {
+    // Legacy raw id containing a stray '%': keep it as-is
+    return encodedId || '';
+  }
+}
+
+// Keep arbitrary YAML labels from breaking the markdown structure: newlines collapse to
+// spaces and pipes render through their HTML entity (displayed as '|' by the git providers)
+function sanitizeCellText(text: string): string {
+  return (text || '').replace(/\r?\n/g, ' ').replace(/\|/g, '&#124;');
+}
+
+function unsanitizeCellText(text: string): string {
+  return (text || '').replaceAll('&#124;', '|');
+}
+
+function statusFromIcon(cell: string): DeploymentActionStateEntry['status'] {
+  return cell.includes('\u2705') ? 'success' :
+    cell.includes('\u274c') ? 'failed' :
+      cell.includes('\ud83d\udc4b') ? 'manual' :
+        cell.includes('\u26aa') ? 'skipped' : 'failed';
+}
+
+function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentActionStateEntry[] {
+  const entries: DeploymentActionStateEntry[] = [];
+  let branches: string[] = [];
+  for (const line of body.split('\n')) {
+    if (branches.length === 0) {
+      const headerMatch = line.match(/^\|\s*Action\s*\|\s*When\s*\|(.*)\|\s*$/);
+      if (headerMatch) {
+        branches = headerMatch[1].split('|').map((b) => b.trim()).filter((b) => b !== '');
+      }
+      continue;
+    }
+    // | <!-- actionId:ID order:N --> Label | when | cell for branch 1 | cell for branch 2 | ... |
+    const rowMatch = line.match(/^\|\s*<!--\s*actionId:(\S+?)(?:\s+order:(\d+))?\s*-->\s*(.*?)\s*\|\s*(pre-deploy|post-deploy)\s*\|(.*)\|\s*$/);
+    if (!rowMatch) continue;
+    const actionId = decodeActionId(rowMatch[1].trim());
+    const executionOrder = rowMatch[2] ? parseInt(rowMatch[2], 10) : 0;
+    const actionLabel = unsanitizeCellText(rowMatch[3].trim());
+    const when = rowMatch[4] as ActionWhen;
+    const cells = rowMatch[5].split('|').map((cell) => cell.trim());
+    for (let i = 0; i < branches.length && i < cells.length; i++) {
+      const cell = cells[i];
+      if (cell === '' || cell === '\u2b1c') {
+        continue; // \u2b1c : not run in this org branch yet
+      }
+      // The date lives before the <br/>: the job link URL after it may itself contain a date
+      const cellHead = cell.split('<br/>')[0];
+      const dateMatch = cellHead.match(/(\d{4}-\d{2}-\d{2})/);
+      const jobLinkMatch = cell.match(/\[([^\]]+)\]\(([^)]+)\)/);
+      entries.push({
+        actionId,
+        actionLabel,
+        orgBranch: branches[i],
+        when,
+        executionOrder,
+        status: statusFromIcon(cell),
+        jobId: jobLinkMatch ? jobLinkMatch[1] : '',
+        jobUrl: jobLinkMatch ? jobLinkMatch[2] : '',
+        date: dateMatch ? dateMatch[1] : '',
+        output: '',
+      });
+    }
+  }
+  return entries;
+}
+
+function parseLegacyDeploymentActionsCommentBody(body: string): DeploymentActionStateEntry[] {
   const entries: DeploymentActionStateEntry[] = [];
   const lines = body.split('\n');
   for (const line of lines) {
@@ -232,7 +336,7 @@ export function parseDeploymentActionsCommentBody(body: string): DeploymentActio
     const rowMatch = line.match(/^\|\s*<!--\s*actionId:(\S+?)(?:\s+order:(\d+))?\s*-->\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|/);
     if (!rowMatch) continue;
 
-    const actionId = rowMatch[1].trim();
+    const actionId = decodeActionId(rowMatch[1].trim());
     const executionOrder = rowMatch[2] ? parseInt(rowMatch[2], 10) : 0;
     const actionLabel = rowMatch[3].trim();
     const orgBranch = rowMatch[4].trim();
@@ -240,11 +344,7 @@ export function parseDeploymentActionsCommentBody(body: string): DeploymentActio
     const statusCell = rowMatch[6].trim();
     const jobCell = rowMatch[7].trim();
 
-    const status: DeploymentActionStateEntry['status'] =
-      statusCell.includes('\u2705') ? 'success' :
-        statusCell.includes('\u274c') ? 'failed' :
-          statusCell.includes('\ud83d\udc4b') ? 'manual' :
-            statusCell.includes('\u26aa') ? 'skipped' : 'failed';
+    const status: DeploymentActionStateEntry['status'] = statusFromIcon(statusCell);
     const dateMatch = statusCell.match(/\(([^)]+)\)/);
     const date = dateMatch ? dateMatch[1] : '';
     const jobLinkMatch = jobCell.match(/\[([^\]]+)\]\(([^)]+)\)/);
@@ -278,7 +378,7 @@ function getOrgBranchWeight(orgBranch: string): number {
   return 0;
 }
 
-export function buildDeploymentActionsCommentBody(entries: DeploymentActionStateEntry[], actionDefs?: Map<string, ActionDef>): string {
+export function buildDeploymentActionsCommentBody(entries: DeploymentActionStateEntry[], actionDefs?: Map<string, ActionDef>, prNumber?: number): string {
   // Sort by: org weight (integ → prod), then when (pre-deploy before post-deploy), then execution order
   const sorted = [...entries].sort((a, b) => {
     const weightDiff = getOrgBranchWeight(a.orgBranch) - getOrgBranchWeight(b.orgBranch);
@@ -290,16 +390,57 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
   });
 
   let body = `${DEPLOYMENT_ACTIONS_MARKER}\n## Deployment Actions\n\n`;
-  body += `> ⚠️ This section is automatically managed by sfdx-hardis. Do not edit it manually.\n\n`;
-  body += `| Action | Org branch | When | Status | Job |\n`;
-  body += `|--------|------------|------|--------|-----|\n`;
+  body += `> ⚠️ This section is automatically managed by sfdx-hardis. Do not edit it manually, except to tick a checkbox in the "Pending manual actions" list once you have performed the action.\n\n`;
+
+  // Pending manual actions: a checkable to-do per action still waiting to be performed in an org.
+  // Ticking a box is detected by the next check or deployment job, which records the action as done.
+  const pendingManualEntries = sorted.filter((e) => e.status === 'manual');
+  if (pendingManualEntries.length > 0) {
+    body += `### Pending manual actions\n\n`;
+    body += `Tick a box once the action has been performed in the org: the next sfdx-hardis job will record it as done.\n\n`;
+    for (const e of pendingManualEntries) {
+      body += `- [ ] ${buildManualActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;
+    }
+    body += `\n`;
+  }
+
+  // Status matrix: one row per action, one column per org branch, so the reader sees at a glance
+  // in which orgs an action has been performed and where it is still pending.
+  const branches = [...new Set(sorted.map((e) => e.orgBranch))].sort((a, b) => {
+    const wDiff = getOrgBranchWeight(a) - getOrgBranchWeight(b);
+    if (wDiff !== 0) return wDiff;
+    return a.localeCompare(b);
+  });
+  const matrixActionIds: string[] = [];
   for (const e of sorted) {
-    const statusIcon = getStatusIcon(e.status);
-    const dateStr = e.date ? ` (${e.date.substring(0, 10)})` : '';
-    const statusCell = `${statusIcon} ${e.status}${dateStr}`;
-    const jobCell = e.jobUrl ? `[${e.jobId}](${e.jobUrl})` : e.jobId;
-    const orderAttr = e.executionOrder != null ? ` order:${e.executionOrder}` : '';
-    body += `| <!-- actionId:${e.actionId}${orderAttr} --> ${e.actionLabel} | ${e.orgBranch} | ${e.when} | ${statusCell} | ${jobCell} |\n`;
+    if (!matrixActionIds.includes(e.actionId)) matrixActionIds.push(e.actionId);
+  }
+  if (actionDefs) {
+    for (const [actionId] of actionDefs) {
+      if (!matrixActionIds.includes(actionId)) matrixActionIds.push(actionId);
+    }
+  }
+  if (branches.length > 0 && matrixActionIds.length > 0) {
+    body += `### Status by org branch\n\n`;
+    body += `| Action | When |${branches.map((b) => ` ${b} |`).join('')}\n`;
+    body += `|--------|------|${branches.map(() => ':---:|').join('')}\n`;
+    for (const actionId of matrixActionIds) {
+      const actionEntries = sorted.filter((e) => e.actionId === actionId);
+      const def = actionDefs?.get(actionId);
+      const label = sanitizeCellText(actionEntries[0]?.actionLabel ?? def?.label ?? actionId);
+      const when = actionEntries[0]?.when ?? def?.when ?? 'post-deploy';
+      const order = actionEntries[0]?.executionOrder ?? def?.executionOrder ?? 0;
+      const cells = branches.map((branch) => {
+        const e = actionEntries.find((entry) => entry.orgBranch === branch);
+        if (!e) return '⬜';
+        const dateStr = e.date ? ` ${e.date.substring(0, 10)}` : '';
+        const jobRef = e.jobUrl ? `<br/>[${e.jobId}](${e.jobUrl})` : '';
+        return `${getStatusIcon(e.status)}${dateStr}${jobRef}`;
+      });
+      body += `| <!-- actionId:${encodeActionId(actionId)} order:${order} --> ${label} | ${when} |${cells.map((cellContent) => ` ${cellContent} |`).join('')}\n`;
+    }
+    body += `\n*Legend: ✅ done · ❌ failed · 👋 waiting for manual execution · ⚪ skipped · ⬜ not run in this org branch yet*\n`;
+    body += `\n*Last updated: ${new Date().toISOString().replace('T', ' ').substring(0, 16)} UTC*\n`;
   }
 
   // Details section - one collapsible per unique action, covering all orgs it ran in.
@@ -347,7 +488,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
       const displayOrder = firstEntry?.executionOrder ?? def?.executionOrder;
       const orderAttr = displayOrder != null ? ` order:${displayOrder}` : '';
 
-      body += `\n<details>\n<!-- actionId:${actionId}${orderAttr} -->\n`;
+      body += `\n<details>\n<!-- actionId:${encodeActionId(actionId)}${orderAttr} -->\n`;
       body += `<summary>${displayLabel} (${displayWhen})</summary>\n\n`;
 
       body += buildActionPropertiesSection(actionId, def);
@@ -428,6 +569,156 @@ function buildActionPropertiesSection(actionId: string, def?: ActionDef): string
   }
 
   return section + '\n';
+}
+
+/**
+ * Build the hidden marker set on a manual action checklist item.
+ * prNumber is the Pull Request that owns the action (0 when unknown: the checkbox sync then
+ * falls back to the Pull Request hosting the comment).
+ */
+export function buildManualActionCheckboxMarker(actionId: string, orgBranch: string, prNumber: number, when?: ActionWhen): string {
+  const whenAttr = when ? ` when:${when}` : '';
+  return `${MANUAL_ACTION_CHECKBOX_MARKER_PREFIX}id:${encodeActionId(actionId)} org:${orgBranch} pr:${prNumber || 0}${whenAttr} -->`;
+}
+
+export interface ManualActionCheckboxItem {
+  actionId: string;
+  orgBranch: string;
+  prNumber: number;
+  when?: ActionWhen;
+  checked: boolean;
+  label: string;
+}
+
+// The literal 'sfdx-hardis-manual-action' here MUST stay in sync with MANUAL_ACTION_CHECKBOX_MARKER_PREFIX
+const MANUAL_ACTION_CHECKBOX_REGEX = /^\s*[-*] \[( |x|X)\] <!-- sfdx-hardis-manual-action id:(\S+) org:(\S+) pr:(\d+)(?: when:(pre-deploy|post-deploy))? -->\s*(.*)$/;
+
+/**
+ * Extract the manual action checklist items (ticked or not) from a Pull Request comment body.
+ */
+export function parseManualActionCheckboxes(body: string): ManualActionCheckboxItem[] {
+  const items: ManualActionCheckboxItem[] = [];
+  for (const line of body.split('\n')) {
+    const match = line.match(MANUAL_ACTION_CHECKBOX_REGEX);
+    if (!match) continue;
+    items.push({
+      checked: match[1].toLowerCase() === 'x',
+      actionId: decodeActionId(match[2]),
+      orgBranch: match[3],
+      prNumber: parseInt(match[4], 10),
+      when: match[5] ? (match[5] as ActionWhen) : undefined,
+      label: unsanitizeCellText((match[6] || '').replace(/\*\(org branch: [^)]*\)\*\s*$/, '').trim()),
+    });
+  }
+  return items;
+}
+
+/**
+ * Tick the checkbox of a manual action in a comment body. Returns the updated body and
+ * whether a line was actually changed.
+ */
+export function checkManualActionCheckboxInBody(body: string, actionId: string, orgBranch: string): { body: string; changed: boolean } {
+  let changed = false;
+  const lines = body.split('\n').map((line) => {
+    const match = line.match(MANUAL_ACTION_CHECKBOX_REGEX);
+    if (match && decodeActionId(match[2]) === actionId && match[3] === orgBranch && match[1] === ' ') {
+      changed = true;
+      // Tick the checkbox itself: the regex accepts both '-' and '*' bullets, and the first
+      // '[ ]' of a matched line is always the checkbox
+      return line.replace('[ ]', '[x]');
+    }
+    return line;
+  });
+  return { body: lines.join('\n'), changed };
+}
+
+function findEntryAnyStatus(actionId: string, orgBranch: string | null): DeploymentActionStateEntry | null {
+  const state = getMultiPrState();
+  for (const entries of state.entriesByPr.values()) {
+    const found = entries.find((e) => e.actionId === actionId && (orgBranch === null || e.orgBranch.trim() === orgBranch.trim()));
+    if (found) return found;
+  }
+  return null;
+}
+
+/**
+ * Detect the manual action checkboxes ticked by users in Pull Request comments (check results,
+ * deployment results, or the Deployment Actions state comment), record the ticked actions as done
+ * for their org branch, and tick the same checkbox in the other comments where it appears.
+ * Must be called AFTER loadDeploymentActionsState, so already-recorded actions are known.
+ */
+export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Promise<void> {
+  const state = getMultiPrState();
+  const prsToScan = [...new Set(sourcePrNumbers)].filter((n) => n > 0 && !state.syncedCheckboxPrs.has(n));
+  if (prsToScan.length === 0) {
+    return;
+  }
+  const allComments: PullRequestCommentRef[] = [];
+  for (const prNum of prsToScan) {
+    const comments = await GitProvider.tryListPullRequestCommentsByMarker(MANUAL_ACTION_CHECKBOX_MARKER_PREFIX, prNum);
+    if (comments === null) {
+      // Transient listing error: leave the PR unmarked so a later phase or job retries it
+      continue;
+    }
+    state.syncedCheckboxPrs.add(prNum);
+    allComments.push(...comments);
+  }
+  if (allComments.length === 0) {
+    return;
+  }
+
+  // Record every ticked checkbox as a performed action (once per actionId + org branch)
+  let newlyConfirmed = 0;
+  const processedPairs = new Set<string>();
+  for (const comment of allComments) {
+    for (const item of parseManualActionCheckboxes(comment.body)) {
+      if (!item.checked) continue;
+      const pairKey = `${item.actionId}||${item.orgBranch}`;
+      if (processedPairs.has(pairKey)) continue;
+      processedPairs.add(pairKey);
+      if (checkActionInState(item.actionId, item.orgBranch)) continue; // already recorded as done
+      const base = findEntryAnyStatus(item.actionId, item.orgBranch) || findEntryAnyStatus(item.actionId, null);
+      const label = base?.actionLabel || item.label || item.actionId;
+      const { jobId, jobUrl } = await getJobInfoWithUrl();
+      const sourcePr = item.prNumber > 0 ? item.prNumber : comment.prNumber;
+      upsertActionInState({
+        actionId: item.actionId,
+        actionLabel: label,
+        orgBranch: item.orgBranch,
+        when: base?.when || item.when || 'post-deploy',
+        executionOrder: base?.executionOrder ?? 0,
+        status: 'success',
+        jobId,
+        jobUrl,
+        date: new Date().toISOString(),
+        output: 'Confirmed as done via a ticked checkbox in a Pull Request comment.',
+      }, sourcePr);
+      uxLog("action", null, c.cyan(`[DeploymentActions] ${t('manualActionConfirmedViaCheckbox', { label, orgBranch: item.orgBranch })}`));
+      newlyConfirmed++;
+    }
+  }
+  if (newlyConfirmed > 0) {
+    await persistDeploymentActionsState();
+  }
+
+  // Tick the checkbox in the other comments still showing the action as pending.
+  // The Deployment Actions state comments are skipped: persistDeploymentActionsState rebuilds them.
+  for (const comment of allComments) {
+    if (comment.body.includes(DEPLOYMENT_ACTIONS_MARKER)) continue;
+    let updatedBody = comment.body;
+    let changed = false;
+    for (const item of parseManualActionCheckboxes(updatedBody)) {
+      if (!item.checked && checkActionInState(item.actionId, item.orgBranch)) {
+        const res = checkManualActionCheckboxInBody(updatedBody, item.actionId, item.orgBranch);
+        updatedBody = res.body;
+        changed = changed || res.changed;
+      }
+    }
+    if (changed) {
+      await GitProvider.tryUpdatePullRequestCommentByRef(comment, updatedBody);
+      uxLog("log", null, c.grey(`[DeploymentActions] ${t('manualActionCheckboxPropagated', { pr: comment.prNumber })}`));
+    }
+  }
 }
 
 // Augment globalThis types

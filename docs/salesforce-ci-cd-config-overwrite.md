@@ -62,6 +62,14 @@ In practice, during each deployment:
 3. Items that appear in **both** `package-no-overwrite.xml` **and** the target org are removed from the deployment package
 4. The remaining package is deployed - no org-side customizations are ever overwritten
 
+The job logs describe each of these steps:
+
+- the target org content listing, to detect which `package-no-overwrite.xml` items already exist there;
+- per metadata type, how many items already exist in the target org and will be protected (not overwritten) - items absent from the org are created by the deployment;
+- per metadata type, how many items are skipped because they are protected, and how many remain to deploy;
+- the full list of protected items, written to a `calculated-package-no-overwrite.xml` file (its path is shown in the log);
+- the final `package.xml` to deploy, displayed after all package filtering steps (or summarized when it holds more than 100 items).
+
 ### When to use it
 
 Use `package-no-overwrite.xml` for metadata that:

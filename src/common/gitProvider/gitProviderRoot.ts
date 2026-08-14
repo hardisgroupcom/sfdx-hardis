@@ -217,4 +217,27 @@ export abstract class GitProviderRoot {
   public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
     uxLog("other", this, `Method upsertPullRequestCommentByMarker is not implemented yet on ${this.getLabel()} for marker ${marker} body length ${body.length}`);
   }
+
+  // Returns ALL the comments of a Pull Request containing the marker, with an opaque
+  // provider-specific ref so the caller can update a precise comment later.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
+    uxLog("other", this, `Method listPullRequestCommentsByMarker is not implemented yet on ${this.getLabel()}`);
+    return [];
+  }
+
+  // Updates the body of one precise comment, identified by the ref returned by
+  // listPullRequestCommentsByMarker.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    uxLog("other", this, `Method updatePullRequestCommentByRef is not implemented yet on ${this.getLabel()}`);
+  }
 }
+
+// Opaque handle on a precise Pull Request comment: `ref` is provider-specific
+// (thread/comment ids on Azure, comment id on GitHub/Bitbucket, note id on GitLab).
+export declare type PullRequestCommentRef = {
+  prNumber: number;
+  ref: any;
+  body: string;
+};

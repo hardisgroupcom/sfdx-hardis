@@ -49,6 +49,15 @@ Examples:
 
 > 💡 If you want to **force the use of full deployment for a PR/MR** on a delta project, add "**NO_DELTA**" in your latest commit title or text, or in your Pull Request description.
 
+#### Reading the job logs
+
+When delta mode is active, the job logs describe each filtering step:
+
+- The package computed from the git diff is written to `gitDeltaPackage.xml`, so it is not confused with the deployment `package.xml`.
+- Each metadata type shows how many items changed between the compared commits and are kept in the delta.
+- The delta package is displayed **before** overwrite filtering: [package-no-overwrite.xml](salesforce-ci-cd-config-overwrite.md) can still remove protected items from it.
+- The final `package.xml`, after all package filtering steps, is displayed at the end (or summarized when it holds more than 100 items).
+
 ___
 
 ### Delta with Dependencies (beta)

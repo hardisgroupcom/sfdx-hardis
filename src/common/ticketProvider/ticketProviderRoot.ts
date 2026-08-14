@@ -5,6 +5,24 @@ import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
 import { t } from '../utils/i18n.js';
 
+// Issues met while collecting ticket details (ex: expired JIRA token), so the Pull Request
+// comment can display why the Tickets section only contains bare links.
+const _ticketCollectionIssues: string[] = [];
+
+export function recordTicketCollectionIssue(message: string): void {
+  _ticketCollectionIssues.push(message);
+}
+
+// Called at the start of each collection cycle, so a comment built after a later,
+// successful collection does not display the stale issues of a previous one
+export function clearTicketCollectionIssues(): void {
+  _ticketCollectionIssues.length = 0;
+}
+
+export function getTicketCollectionIssues(): string[] {
+  return [..._ticketCollectionIssues];
+}
+
 export abstract class TicketProviderRoot {
   public isActive = false;
   protected token: string | null;

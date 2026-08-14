@@ -3,7 +3,7 @@
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { getEnvVar, getReportDirectory } from '../../config/index.js';
+import { CONSTANTS, getEnvVar, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { formatElapsedMs } from './dateHelper.js';
 import { findJsonInString, uxLog } from './index.js';
@@ -96,6 +96,8 @@ export function buildDeployResultSummaryLines(resultJson: any, options: DeployRe
   // Where to find the complete JSON, and how to get it back in the console
   if (options.reportFile) {
     lines.push(t('deployResultSummaryFullJson', { reportFile: options.reportFile }));
+    // Old pipelines may not publish the hardis-report folder: point to the doc explaining how to add the step
+    lines.push(t('deployResultSummaryArtifactsDocHint', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-publish-artifacts/` }));
   }
   if (!isFullDeployJsonLogRequested()) {
     lines.push(t('deployResultSummaryFullJsonHint'));

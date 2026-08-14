@@ -1,4 +1,4 @@
-import { GitProviderRoot } from './gitProviderRoot.js';
+import { GitProviderRoot, PullRequestCommentRef } from './gitProviderRoot.js';
 import c from 'chalk';
 import fs from "fs-extra";
 import FormData from 'form-data'
@@ -916,6 +916,48 @@ ${getBannerMarkdownAndLink()}
       });
       uxLog("log", this, c.grey(`[Bitbucket] Created Deployment Actions comment on PR #${pullRequestId}`));
     }
+  }
+
+  public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const pullRequestId = prNumber || Number(process.env.BITBUCKET_PR_ID || '');
+    if (!pullRequestId || !repoSlug || !workspace) return [];
+    // Paginate: a long-lived PR can carry more comments than a single page,
+    // and a ticked checkbox in a later comment must not be missed
+    const comments = await this.fetchAllPages(
+      (params) => this.bitbucket.repositories.listPullRequestComments(params),
+      {
+        pull_request_id: pullRequestId,
+        repo_slug: repoSlug,
+        workspace,
+        pagelen: 50,
+      },
+    );
+    const results: PullRequestCommentRef[] = [];
+    for (const comment of comments) {
+      // The API returns deleted comments with deleted=true: a checkbox ticked in a deleted
+      // comment must not be honored, and updating such a comment id later would error
+      if (comment?.deleted) continue;
+      if ((comment?.content?.raw || '').includes(marker)) {
+        results.push({ prNumber: pullRequestId, ref: comment.id, body: comment.content?.raw || '' });
+      }
+    }
+    return results;
+  }
+
+  public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    if (!repoSlug || !workspace || !commentRef?.ref) return;
+    await this.bitbucket.repositories.updatePullRequestComment({
+      workspace,
+      repo_slug: repoSlug,
+      pull_request_id: commentRef.prNumber,
+      comment_id: commentRef.ref,
+      _body: { content: { raw: body } } as any,
+    });
+    uxLog("log", this, c.grey('[Bitbucket] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
 
 }

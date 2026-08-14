@@ -344,3 +344,8 @@ CVE-2026-59870
 # pptxgenjs is used by src/common/utils/monitoringPptxReport.ts to build the monitoring PPTX report, which is text and tables only: it never calls addImage, so the vulnerable parsers are never reached and no image bytes from an untrusted source are handed to the library. Same assessment as the osv-scanner.toml entries for the two GHSA ids. Remove once image-size ships a fix and pptxgenjs picks it up. Added 2026-08-08.
 CVE-2025-71329
 CVE-2025-71330
+
+# https://avd.aquasec.com/nvd/cve-2026-46600
+# Go stdlib v1.26.5 compiled into the pebble binary of the Ubuntu base image (usr/bin/pebble): golang.org/x/net/dns/dnsmessage denial of service when parsing an invalid DNS record, fixed in Go 1.26.6 / 1.27.0-rc.3.
+# Nothing to upgrade from this repo: the Go runtime is statically linked into a binary Canonical ships in ubuntu:latest, so it only goes away when the base image is rebuilt with a patched Go. pebble is Canonical's service manager and is never invoked by sfdx-hardis (one-shot CI/CD CLI), so the DNS parser is unreachable. Added 2026-08-14.
+CVE-2026-46600

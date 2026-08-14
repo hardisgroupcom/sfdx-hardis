@@ -1,7 +1,7 @@
 import c from "chalk";
 import sortArray from "sort-array";
 import { JiraProvider } from "./jiraProvider.js";
-import { TicketProviderRoot } from "./ticketProviderRoot.js";
+import { clearTicketCollectionIssues, TicketProviderRoot } from "./ticketProviderRoot.js";
 import { uxLog } from "../utils/index.js";
 import { GenericTicketingProvider } from "./genericProvider.js";
 import { AzureBoardsProvider } from "./azureBoardsProvider.js";
@@ -35,6 +35,7 @@ export abstract class TicketProvider {
 
   // Adds ticket info by calling ticket providers APIs when possible
   public static async collectTicketsInfo(tickets: Ticket[]): Promise<Ticket[]> {
+    clearTicketCollectionIssues();
     const config = await getConfig("project");
     const ticketProviders = this.getInstances(config);
     if (ticketProviders.length === 0) {
