@@ -109,6 +109,11 @@ In every case, `runOnlyOnceByOrg` state tracking ensures each action runs only i
 
 The same scope applies to the Apex test classes selected from Pull Requests when `enableDeploymentApexTestClasses` is active.
 
+The resolved scope is visible in two places:
+
+- In job logs, as a single line: `Pull Request scope: 5 Pull Request(s) (#4491, #4494, ...)`. Each Running/Skipping line then shows the Pull Request that defines the action.
+- In the check and deployment Pull Request comments, which state which Pull Requests the deployment actions and Apex test classes were collected from, with links.
+
 > If the deployment job of a feature branch fails, its actions are not picked up by the next merged Pull Request. Re-run the failed deployment job, or open a new Pull Request carrying the actions of the previous one.
 
 ### Deployment Actions PR comment
@@ -117,38 +122,38 @@ After every action runs, sfdx-hardis creates or updates a dedicated **"Deploymen
 
 **Comment structure** - one shared comment per PR, across all CI workflows:
 
-```markdown
-## Deployment Actions
+- A **Pending manual actions** checklist: one checkbox per manual action still waiting to be performed in an org. Tick a box once you have performed the action: the next sfdx-hardis job records it as done (see [Confirming manual actions with checkboxes](#confirming-manual-actions-with-checkboxes)).
+- A **Status by org branch** matrix: one row per action, one column per org branch, so you can see at a glance in which orgs an action has been performed and where it is still pending.
+- A collapsible **Action Details** section with the action properties (type, context, command or script...) and truncated output per org.
 
-| Action                      | Org branch  | Status                  | Job                                                     |
-|-----------------------------|-------------|-------------------------|---------------------------------------------------------|
-| Remove KnowledgeUser flag   | integration | ✅ success (2024-06-01)  | [12345](https://github.com/org/repo/actions/runs/12345) |
-| Import email templates      | integration | ✅ success (2024-06-01)  | [12345](https://github.com/org/repo/actions/runs/12345) |
-| Publish Experience site     | integration | ❌ failed  (2024-06-02)  | [12501](https://github.com/org/repo/actions/runs/12501) |
-| Check external callback URL | integration | 👋 manual  (2024-06-01) | [12345](https://github.com/org/repo/actions/runs/12345) |
-| Remove KnowledgeUser flag   | uat         | ✅ success (2024-06-05)  | [12890](https://github.com/org/repo/actions/runs/12890) |
-| Import email templates      | uat         | ✅ success (2024-06-05)  | [12890](https://github.com/org/repo/actions/runs/12890) |
+Example of the status matrix:
+
+```markdown
+### Status by org branch
+
+| Action                      | When        | integration                    | uat                            |
+|-----------------------------|-------------|:------------------------------:|:------------------------------:|
+| Remove KnowledgeUser flag   | pre-deploy  | ✅ 2024-06-01<br/>[12345](...) | ✅ 2024-06-05<br/>[12890](...) |
+| Import email templates      | post-deploy | ✅ 2024-06-01<br/>[12345](...) | ✅ 2024-06-05<br/>[12890](...) |
+| Publish Experience site     | post-deploy | ❌ 2024-06-02<br/>[12501](...) | ⬜                             |
+| Check external callback URL | post-deploy | 👋 2024-06-01<br/>[12345](...) | ⬜                             |
+
+*Legend: ✅ done · ❌ failed · 👋 waiting for manual execution · ⚪ skipped · ⬜ not run in this org branch yet*
 ```
 
-The table is ordered by org environment (integration → uat → preprod → prod), then chronologically within each org. It also includes a collapsible **Action Details** section with truncated output per action.
-
-**Columns:**
-
-| Column     | Description                                                                     |
-|------------|---------------------------------------------------------------------------------|
-| Action     | Action label (the `id` is embedded as an HTML comment for machine parsing)      |
-| Org branch | Target git branch name (e.g. `integration`, `uat`, `main`) - identifies the org |
-| Status     | Icon + status word + date                                                       |
-| Job        | Link to the CI run that performed the action                                    |
+Columns are ordered from dev to production (integration → uat → preprod → prod), rows follow the deployment order (pre-deploy actions first, then post-deploy). Each cell shows the status icon, the execution date and a link to the CI job that performed the action. A *Last updated* date is displayed under the matrix. The action `id` is embedded in each row as an HTML comment for machine parsing.
 
 **Status icons:**
 
-| Icon | Status    | Meaning                                           |
-|------|-----------|---------------------------------------------------|
-| ✅    | `success` | Executed successfully                             |
-| ❌    | `failed`  | Executed but failed - will be retried next run    |
-| 👋   | `manual`  | Manual step - requires human action               |
-| ⚪    | `skipped` | Skipped (e.g. already run via `runOnlyOnceByOrg`) |
+| Icon | Status    | Meaning                                                          |
+|------|-----------|------------------------------------------------------------------|
+| ✅    | `success` | Executed successfully (or confirmed as done via its checkbox)    |
+| ❌    | `failed`  | Executed but failed - will be retried next run                   |
+| 👋   | `manual`  | Manual step - waiting for a human to perform it and tick the box |
+| ⚪    | `skipped` | Skipped (e.g. already run via `runOnlyOnceByOrg`)                |
+| ⬜    | -         | Not run in this org branch yet                                   |
+
+> Comments written with the previous format (one row per action and org branch pair) are still parsed, and are migrated to the matrix format on their next update.
 
 ### runOnlyOnceByOrg - skip-on-next-run logic
 
@@ -164,6 +169,18 @@ When `runOnlyOnceByOrg` is `true` (the default), the "Deployment Actions" PR com
 - Without a git provider, actions with `runOnlyOnceByOrg: true` are **skipped with a warning** (to avoid untracked re-executions). All other actions still run normally; only the PR comment update is skipped.
 
 **Opt out:** Add `runOnlyOnceByOrg: false` explicitly on any action that should always run.
+
+### Confirming manual actions with checkboxes
+
+Manual action checklists appear in three kinds of Pull Request comments: check results, deployment results, and the Deployment Actions comment. Every checklist item carries a hidden marker identifying the action and the org branch.
+
+When someone ticks one of these checkboxes (in any of the three comments), the next check or deployment job:
+
+- records the action as done for that org branch in the Deployment Actions comment,
+- skips it in later deployments to that org (same behavior as a successful `runOnlyOnceByOrg` action),
+- ticks the same checkbox in the other comments where the action appears, so all views stay consistent.
+
+This works on GitHub, GitLab, Azure DevOps and Bitbucket, and requires the same git provider token as `runOnlyOnceByOrg` state tracking.
 
 ### Action implementations
 
@@ -307,11 +324,11 @@ Example:
 
 #### Manual step
 
-Marks a manual step that cannot be automated. The PR result will show the instructions and an unchecked box for reviewers/operators to complete.
+Marks a manual step that cannot be automated. The Pull Request comments show the instructions (rendered as markdown) and an unchecked box. Once the operator has performed the action, they tick the box: the next job records the action as done for the org branch and skips it from then on (see [Confirming manual actions with checkboxes](#confirming-manual-actions-with-checkboxes)).
 
-| Custom parameter          | Description                                                                                                  | Example |
-|---------------------------|--------------------------------------------------------------------------------------------------------------|---------|
-| `parameters.instructions` | Human-readable instructions or checklist for the operator/reviewer. Use a YAML block to preserve formatting. |         |
+| Custom parameter          | Description                                                                                                                                 | Example |
+|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|---------|
+| `parameters.instructions` | Human-readable instructions or checklist for the operator/reviewer, in markdown format. Use a YAML block to preserve formatting.            |         |
 
 Example:
 
