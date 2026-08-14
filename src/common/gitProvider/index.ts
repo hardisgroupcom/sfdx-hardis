@@ -6,15 +6,25 @@ import { GitlabProvider } from "./gitlab.js";
 import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
 import { BitbucketProvider } from "./bitbucket.js";
 import Debug from "debug";
-import { CONSTANTS, getEnvVar } from "../../config/index.js";
+import { CONSTANTS, getEnvVar, PrCommentBannerKey } from "../../config/index.js";
 import { prompts } from "../utils/prompts.js";
 import { removeMermaidLinks } from "../utils/mermaidUtils.js";
 import { getPullRequestData } from "../utils/gitUtils.js";
 import { t } from '../utils/i18n.js';
+import {
+  buildPrCommentNavBlock,
+  DEPLOYMENT_ACTIONS_MARKER,
+  getPrCommentKind,
+  isPrCommentNavEnabled,
+  isPrDescriptionNavEnabled,
+  PrCommentNavLinks,
+  renderPrCommentNav,
+  replacePrCommentNavBlock,
+  setPrCommentNavLinks,
+  SFDX_HARDIS_COMMENT_MARKER,
+  upsertNavInDescription,
+} from "./prCommentNav.js";
 const debug = Debug("sfdxhardis");
-
-// Must match DEPLOYMENT_ACTIONS_MARKER in deploymentActionsStateUtils.ts
-const DEPLOYMENT_ACTIONS_MARKER = '<!-- sfdx-hardis deployment-actions-state -->';
 
 export abstract class GitProvider {
   static async getInstance(prompt = false): Promise<GitProviderRoot | null> {
@@ -181,11 +191,14 @@ export abstract class GitProvider {
         markdownBody += "\n\n" + prData.flowDiffMarkdown.markdownSummary;
       }
       markdownBody = removeMermaidLinks(markdownBody); // Remove "click" elements that are useless and ugly on some providers 😊
+      const status = prData.status || 'tovalidate';
       const prMessageRequest: PullRequestMessageRequest = {
-        title: (checkOnly === true ? "Deployment Check Results" : "Deployment Results") + (prData.title ? `\n\n${prData.title}` : ""),
+        title: (checkOnly === true ? "🔍 Validation Results (deployment simulation)" : "🚀 Deployment Results") + (prData.title ? `\n\n${prData.title}` : ""),
         message: markdownBody,
-        status: prData.status || 'tovalidate',
+        status: status,
         messageKey: (checkOnly === true) ? `deployment-check` : `deployment`,
+        bannerKey: getDeploymentBannerKey(checkOnly, status),
+        navBlock: buildPrCommentNavBlock(checkOnly === true ? 'validation' : 'deployment'),
       };
       // Post main message
       const postResult = await gitProvider.tryPostPullRequestMessage(prMessageRequest);
@@ -204,6 +217,8 @@ export abstract class GitProvider {
         };
         await gitProvider.tryPostPullRequestMessage(prMessageRequestAdditional);
       }
+      // Now that this comment exists, refresh the navigation of all the sfdx-hardis comments
+      await GitProvider.refreshPullRequestNavigation();
     } else {
       uxLog("error", this, c.grey(`${JSON.stringify(prData || { noPrData: "" })} && ${gitProvider} && ${prCommentSent}`));
       uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderSkipPrComment')));
@@ -314,6 +329,80 @@ export abstract class GitProvider {
 
   // Returns null on a listing error (network, API): callers must treat null as "retry later",
   // where an empty array means the Pull Request genuinely has no matching comment.
+  /**
+   * Refresh the navigation between the sfdx-hardis comments of a Pull Request (validation,
+   * deployment, deployment actions) and at the top of its description, so a reader jumps from one
+   * to the other instead of scrolling. The comments are posted by different jobs, so the links can
+   * only be completed once they exist: this runs after every comment post, and each run adds the
+   * comments that appeared since the previous one.
+   */
+  static async refreshPullRequestNavigation(prNumber?: number): Promise<void> {
+    if (!isPrCommentNavEnabled()) {
+      return;
+    }
+    try {
+      const comments = await GitProvider.tryListPullRequestCommentsByMarker(SFDX_HARDIS_COMMENT_MARKER, prNumber);
+      if (comments === null || comments.length === 0) {
+        return;
+      }
+      const navComments: { kind: 'validation' | 'deployment' | 'actions'; comment: PullRequestCommentRef }[] = [];
+      const links: PrCommentNavLinks = {};
+      for (const comment of comments) {
+        const kind = getPrCommentKind(comment.body);
+        if (kind === null) {
+          continue;
+        }
+        navComments.push({ kind, comment });
+        if (comment.url) {
+          links[kind] = comment.url;
+        }
+      }
+      // Keep the links for the comments rebuilt later in the same job (deployment actions state)
+      setPrCommentNavLinks(links);
+      if (navComments.length < 2) {
+        return;
+      }
+      for (const navComment of navComments) {
+        const updatedBody = replacePrCommentNavBlock(navComment.comment.body, renderPrCommentNav(links, navComment.kind));
+        if (updatedBody !== navComment.comment.body) {
+          await GitProvider.tryUpdatePullRequestCommentByRef(navComment.comment, updatedBody);
+        }
+      }
+      await GitProvider.refreshPullRequestDescriptionNavigation(links, prNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderNavRefreshError', { message: (e as Error).message })));
+    }
+  }
+
+  // Insert the same navigation at the very beginning of the Pull Request description.
+  // The description is re-read just before writing: it belongs to the user, and only the block
+  // between the sfdx-hardis navigation markers is replaced.
+  private static async refreshPullRequestDescriptionNavigation(links: PrCommentNavLinks, prNumber?: number): Promise<void> {
+    if (!isPrDescriptionNavEnabled()) {
+      return;
+    }
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return;
+    }
+    const prInfo = await GitProvider.getPullRequestInfo();
+    if (prInfo == null || (prNumber && prInfo.idNumber !== prNumber)) {
+      return;
+    }
+    const currentDescription = prInfo.description || '';
+    const updatedDescription = upsertNavInDescription(currentDescription, renderPrCommentNav(links, null));
+    if (updatedDescription === currentDescription) {
+      return;
+    }
+    try {
+      await gitProvider.updatePullRequestDescription(prInfo.idNumber, prInfo.title, updatedDescription);
+      prInfo.description = updatedDescription;
+      uxLog("log", this, c.grey('[GitProvider] ' + t('gitProviderNavAddedToDescription', { pr: prInfo.idStr })));
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderNavDescriptionError', { message: (e as Error).message })));
+    }
+  }
+
   static async tryListPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[] | null> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
@@ -493,6 +582,17 @@ export abstract class GitProvider {
   }
 }
 
+/**
+ * Banner identifying a validation (checkOnly deployment) or deployment results comment, with its outcome.
+ * "tovalidate" is the status of a comment posted before the deployment result is known
+ * (example: a draft deployment actions file stopping the job early).
+ */
+function getDeploymentBannerKey(checkOnly: boolean, status: "valid" | "invalid" | "tovalidate"): PrCommentBannerKey {
+  const type = checkOnly === true ? "validation" : "deployment";
+  const outcome = status === "valid" ? "success" : status === "invalid" ? "failure" : "pending";
+  return `${type}-${outcome}` as PrCommentBannerKey;
+}
+
 export declare type CommonPullRequestInfo = {
   idNumber: number;
   idStr: string;
@@ -555,6 +655,10 @@ export declare type PullRequestMessageRequest = {
   messageKey: string;
   status: "valid" | "invalid" | "tovalidate";
   sourceFile?: string;
+  // Identifies the comment (type + status) with a banner image at the top of the comment
+  bannerKey?: PrCommentBannerKey;
+  // Navigation block linking to the other sfdx-hardis comments of the Pull Request
+  navBlock?: string;
 };
 
 export declare type PullRequestMessageResult = {

@@ -4,12 +4,13 @@ import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
-import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
+import { CONSTANTS, getBannerMarkdownAndLink, getPrCommentBannerMarkdown } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
 
 export class GitlabProvider extends GitProviderRoot {
   private gitlabApi: InstanceType<typeof Gitlab>;
+  private mergeRequestWebUrls: { [key: string]: string } = {};
   public serverUrl: string;
   public token: string;
 
@@ -359,9 +360,9 @@ export class GitlabProvider extends GitProviderRoot {
     const gitlabCIJobUrl = process.env.CI_JOB_URL;
     // Build note message
     const messageKey = prMessage.messageKey + "-" + gitlabCiJobName + "-" + mergeRequestId;
-    let messageBody = `## ${prMessage.title || ""}
+    let messageBody = `${getPrCommentBannerMarkdown(prMessage.bannerKey)}## ${prMessage.title || ""}
 
-${prMessage.message}
+${prMessage.navBlock || ""}${prMessage.message}
 
 _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
 
@@ -737,13 +738,37 @@ ${getBannerMarkdownAndLink()}
     const ctx = this.resolveMergeRequestContext(prNumber);
     if (!ctx) return [];
     const notes = await this.gitlabApi.MergeRequestNotes.all(ctx.projectId, ctx.mergeRequestId);
+    const mergeRequestUrl = await this.getMergeRequestWebUrl(ctx.projectId, ctx.mergeRequestId);
     const results: PullRequestCommentRef[] = [];
     for (const note of notes) {
       if ((note.body || '').includes(marker)) {
-        results.push({ prNumber: ctx.mergeRequestId, ref: { projectId: ctx.projectId, noteId: note.id }, body: note.body || '' });
+        results.push({
+          prNumber: ctx.mergeRequestId,
+          ref: { projectId: ctx.projectId, noteId: note.id },
+          body: note.body || '',
+          url: mergeRequestUrl ? `${mergeRequestUrl}#note_${note.id}` : '',
+        });
       }
     }
     return results;
+  }
+
+  // Web URL of a merge request, to build the permalink of its notes. Cached: it never changes
+  // during a job, and every comment of the same merge request reuses it.
+  private async getMergeRequestWebUrl(projectId: string, mergeRequestId: number): Promise<string> {
+    const cacheKey = `${projectId}-${mergeRequestId}`;
+    if (this.mergeRequestWebUrls[cacheKey] !== undefined) {
+      return this.mergeRequestWebUrls[cacheKey];
+    }
+    let webUrl = '';
+    try {
+      const mergeRequest: any = await this.gitlabApi.MergeRequests.show(projectId, mergeRequestId);
+      webUrl = mergeRequest?.web_url || '';
+    } catch (e) {
+      uxLog("log", this, c.grey(`[Gitlab Integration] Unable to get merge request URL: ${(e as Error).message}`));
+    }
+    this.mergeRequestWebUrls[cacheKey] = webUrl;
+    return webUrl;
   }
 
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {

@@ -6,6 +6,8 @@ import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.j
 import { readActions } from './actionUtils.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
+import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
+import { buildPrCommentNavBlock } from '../gitProvider/prCommentNav.js';
 
 const debug = Debug("sfdxhardis");
 
@@ -378,6 +380,24 @@ function getOrgBranchWeight(orgBranch: string): number {
   return 0;
 }
 
+/**
+ * Banner identifying the Deployment Actions comment, with the state of its actions:
+ * an action in error wins over a manual action still to perform.
+ * Returns null when there is nothing to qualify yet, so no banner is displayed.
+ */
+function getActionsBannerKey(entries: DeploymentActionStateEntry[]): PrCommentBannerKey | null {
+  if (entries.length === 0) {
+    return null;
+  }
+  if (entries.some((e) => e.status === 'failed')) {
+    return 'actions-error';
+  }
+  if (entries.some((e) => e.status === 'manual')) {
+    return 'actions-pending';
+  }
+  return 'actions-completed';
+}
+
 export function buildDeploymentActionsCommentBody(entries: DeploymentActionStateEntry[], actionDefs?: Map<string, ActionDef>, prNumber?: number): string {
   // Sort by: org weight (integ → prod), then when (pre-deploy before post-deploy), then execution order
   const sorted = [...entries].sort((a, b) => {
@@ -389,7 +409,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
     return (a.executionOrder ?? 0) - (b.executionOrder ?? 0);
   });
 
-  let body = `${DEPLOYMENT_ACTIONS_MARKER}\n## Deployment Actions\n\n`;
+  let body = `${DEPLOYMENT_ACTIONS_MARKER}\n${getPrCommentBannerMarkdown(getActionsBannerKey(sorted))}## 🛠️ Deployment Actions\n\n${buildPrCommentNavBlock('actions')}`;
   body += `> ⚠️ This section is automatically managed by sfdx-hardis. Do not edit it manually, except to tick a checkbox in the "Pending manual actions" list once you have performed the action.\n\n`;
 
   // Pending manual actions: a checkable to-do per action still waiting to be performed in an org.
@@ -519,6 +539,11 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
     }
 
     body += `\n</details>\n`;
+  }
+  // Same footer as the other sfdx-hardis Pull Request comments
+  const cloudityBanner = getBannerMarkdownAndLink();
+  if (cloudityBanner) {
+    body += `\n${cloudityBanner}\n`;
   }
   return body;
 }

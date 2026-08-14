@@ -6,7 +6,7 @@ import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../ut
 import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
-import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
+import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';
@@ -696,9 +696,9 @@ ${this.getPipelineVariablesConfig()}
     const azureBuildUri = `${SYSTEM_COLLECTIONURI}${encodeURIComponent(SYSTEM_TEAMPROJECT)}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
     // Build thread message
     const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
-    let messageBody = `## ${prMessage.title || ""}
+    let messageBody = `${getPrCommentBannerMarkdown(prMessage.bannerKey)}## ${prMessage.title || ""}
 
-${prMessage.message}
+${prMessage.navBlock || ""}${prMessage.message}
 
 <br/>
 
@@ -777,6 +777,15 @@ ${getBannerMarkdownAndLink()}
         : CommentThreadStatus.Unknown;
   }
 
+  // Web URL of a Pull Request. The repository name variable is exposed as BUILD_REPOSITORY_NAME by
+  // Azure Pipelines: the BUILD_REPOSITORYNAME spelling is kept as a fallback for older agents.
+  private buildPullRequestWebUrl(pullRequestId: number | undefined): string {
+    const repositoryName = process.env.BUILD_REPOSITORY_NAME || process.env.BUILD_REPOSITORYNAME || "";
+    return `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(
+      process.env.SYSTEM_TEAMPROJECT || "",
+    )}/_git/${encodeURIComponent(repositoryName)}/pullrequest/${pullRequestId}`;
+  }
+
   private completePullRequestInfo(prData: GitPullRequest): CommonPullRequestInfo {
     const prInfo: CommonPullRequestInfo = {
       idNumber: prData.pullRequestId || 0,
@@ -785,9 +794,7 @@ ${getBannerMarkdownAndLink()}
       targetBranch: (prData.targetRefName || "").replace("refs/heads/", ""),
       title: prData.title || "",
       description: prData.description || "",
-      webUrl: `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT || "")}/_git/${encodeURIComponent(
-        process.env.BUILD_REPOSITORYNAME || "",
-      )}/pullrequest/${prData.pullRequestId}`,
+      webUrl: this.buildPullRequestWebUrl(prData.pullRequestId),
       authorName: prData?.createdBy?.displayName || "",
       createdDate: prData?.creationDate ? new Date(prData.creationDate).toISOString() : undefined,
       // Azure has no dedicated merge date: closedDate of a completed PR is its merge time
@@ -1167,7 +1174,12 @@ ${getBannerMarkdownAndLink()}
         // deleted comment must not be honored
         if (comment?.isDeleted) continue;
         if ((comment?.content || '').includes(marker)) {
-          results.push({ prNumber: pullRequestId, ref: { threadId: thread.id, commentId: comment.id }, body: comment.content || '' });
+          results.push({
+            prNumber: pullRequestId,
+            ref: { threadId: thread.id, commentId: comment.id },
+            body: comment.content || '',
+            url: `${this.buildPullRequestWebUrl(pullRequestId)}?_a=overview&discussionId=${thread.id}`,
+          });
         }
       }
     }
