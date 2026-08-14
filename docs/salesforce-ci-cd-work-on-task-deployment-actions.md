@@ -131,12 +131,12 @@ Example of the status matrix:
 ```markdown
 ### Status by org branch
 
-| Action                      | When        | integration                    | uat                            |
-|-----------------------------|-------------|:------------------------------:|:------------------------------:|
-| Remove KnowledgeUser flag   | pre-deploy  | ✅ 2024-06-01<br/>[12345](...) | ✅ 2024-06-05<br/>[12890](...) |
-| Import email templates      | post-deploy | ✅ 2024-06-01<br/>[12345](...) | ✅ 2024-06-05<br/>[12890](...) |
-| Publish Experience site     | post-deploy | ❌ 2024-06-02<br/>[12501](...) | ⬜                             |
-| Check external callback URL | post-deploy | 👋 2024-06-01<br/>[12345](...) | ⬜                             |
+| Action                      | When        |          integration           |              uat              |
+|-----------------------------|-------------|:------------------------------:|:-----------------------------:|
+| Remove KnowledgeUser flag   | pre-deploy  | ✅ 2024-06-01<br/>[12345](...)  | ✅ 2024-06-05<br/>[12890](...) |
+| Import email templates      | post-deploy | ✅ 2024-06-01<br/>[12345](...)  | ✅ 2024-06-05<br/>[12890](...) |
+| Publish Experience site     | post-deploy | ❌ 2024-06-02<br/>[12501](...)  |               ⬜               |
+| Check external callback URL | post-deploy | 👋 2024-06-01<br/>[12345](...) |               ⬜               |
 
 *Legend: ✅ done · ❌ failed · 👋 waiting for manual execution · ⚪ skipped · ⬜ not run in this org branch yet*
 ```
@@ -326,9 +326,9 @@ Example:
 
 Marks a manual step that cannot be automated. The Pull Request comments show the instructions (rendered as markdown) and an unchecked box. Once the operator has performed the action, they tick the box: the next job records the action as done for the org branch and skips it from then on (see [Confirming manual actions with checkboxes](#confirming-manual-actions-with-checkboxes)).
 
-| Custom parameter          | Description                                                                                                                                 | Example |
-|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| `parameters.instructions` | Human-readable instructions or checklist for the operator/reviewer, in markdown format. Use a YAML block to preserve formatting.            |         |
+| Custom parameter          | Description                                                                                                                      | Example |
+|---------------------------|----------------------------------------------------------------------------------------------------------------------------------|---------|
+| `parameters.instructions` | Human-readable instructions or checklist for the operator/reviewer, in markdown format. Use a YAML block to preserve formatting. |         |
 
 Example:
 
