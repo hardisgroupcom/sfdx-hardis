@@ -293,12 +293,12 @@ describe('folder based metadata with an org unique API name', () => {
   });
 
   it('does not make folder entries match each other', async () => {
-    const result = await filterPackage(packageXmlWith({ Report: ['Youpi/'] }), orgManifest, {
+    const result = await filterPackage(packageXmlWith({ Report: ['Other_Folder/'] }), orgManifest, {
       removedOnly: false,
       keepEmptyTypes: true,
       context: 'no-overwrite-remove',
     });
-    expect(result.Report).to.deep.equal(['Youpi/']);
+    expect(result.Report).to.deep.equal(['Other_Folder/']);
   });
 
   it('keeps folder sensitive matching for the types that are not org unique', async () => {
