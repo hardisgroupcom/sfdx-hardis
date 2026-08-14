@@ -39,6 +39,9 @@
 - Deployment actions of Pull Requests merged upstream (like a hotfix in `main`) are now replayed downstream when a retrofit branch brings their commits to another major branch.
 - Fix deployment actions never running on GitHub push-triggered deployment jobs, caused by incomplete Pull Request detection.
 - Pull Request comments are easier to understand:
+  - A banner at the top of each comment says which of the three comments you are reading (Validation, Deployment, Deployment Actions) and how it went, with one icon for the comment type and one for its status. Set `SFDX_HARDIS_PR_COMMENT_BANNERS=false` to post the comments without their banner.
+  - The check job comment is now titled "Validation Results (deployment simulation)", so it can no longer be mistaken for the deployment one.
+  - A navigation line under the title of each comment links to the two others, and the same navigation is added at the beginning of the Pull Request description. Only the block between the sfdx-hardis markers is written, so the description text stays untouched. Set `SFDX_HARDIS_PR_COMMENT_NAV=false` to remove the navigation, or `SFDX_HARDIS_PR_DESCRIPTION_NAV=false` to keep it in the comments only.
   - Check and deployment comments now explain which Pull Requests the deployment actions and Apex test classes were collected from, and the check comment of a retrofit or major-branch Pull Request announces that the merge job can process more actions than listed.
   - Manual deployment actions can be marked as done by ticking their checkbox in any Pull Request comment: the next job records them as done for the org branch and ticks the same checkbox in the other comments where they appear.
   - The "Deployment Actions" state comment now shows a status matrix (one row per action, one column per org branch), a pending manual actions checklist, a status legend and a last-updated date.

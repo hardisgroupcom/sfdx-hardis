@@ -240,4 +240,7 @@ export declare type PullRequestCommentRef = {
   prNumber: number;
   ref: any;
   body: string;
+  // Permalink of the comment, used to navigate from one sfdx-hardis comment to another.
+  // Empty when the provider cannot build it.
+  url?: string;
 };
