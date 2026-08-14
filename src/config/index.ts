@@ -149,7 +149,7 @@ const PR_COMMENT_BANNERS: Record<PrCommentBannerKey, { file: string; altTextKey:
  * SFDX_HARDIS_PR_COMMENT_BANNERS=false (useful when a network blocks raw.githubusercontent.com).
  */
 export const getPrCommentBannerMarkdown = (bannerKey: PrCommentBannerKey | null | undefined): string => {
-  if (!bannerKey || (process.env.SFDX_HARDIS_PR_COMMENT_BANNERS || '') === 'false') {
+  if (!bannerKey || (getEnvVar('SFDX_HARDIS_PR_COMMENT_BANNERS') || '') === 'false') {
     return '';
   }
   const banner = PR_COMMENT_BANNERS[bannerKey];

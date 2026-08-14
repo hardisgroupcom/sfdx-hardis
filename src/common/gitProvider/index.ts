@@ -217,8 +217,11 @@ export abstract class GitProvider {
         };
         await gitProvider.tryPostPullRequestMessage(prMessageRequestAdditional);
       }
-      // Now that this comment exists, refresh the navigation of all the sfdx-hardis comments
-      await GitProvider.refreshPullRequestNavigation();
+      // Now that this comment exists, refresh the navigation of all the sfdx-hardis comments.
+      // The Pull Request number is passed explicitly: on a merge job, GitLab, Azure and Bitbucket
+      // have no Pull Request context in their environment variables to fall back on.
+      const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+      await GitProvider.refreshPullRequestNavigation(prInfo?.idNumber);
     } else {
       uxLog("error", this, c.grey(`${JSON.stringify(prData || { noPrData: "" })} && ${gitProvider} && ${prCommentSent}`));
       uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderSkipPrComment')));
