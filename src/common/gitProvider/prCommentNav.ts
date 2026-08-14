@@ -62,7 +62,7 @@ export function isPrCommentNavEnabled(): boolean {
   return (getEnvVar('SFDX_HARDIS_PR_COMMENT_NAV') || '') !== 'false';
 }
 
-// Editing the Pull Request description touches content owned by the user: keep it separately disablable
+// Editing the Pull Request description touches content owned by the user, so it has its own switch to turn it off
 export function isPrDescriptionNavEnabled(): boolean {
   return isPrCommentNavEnabled() && (getEnvVar('SFDX_HARDIS_PR_DESCRIPTION_NAV') || '') !== 'false';
 }
