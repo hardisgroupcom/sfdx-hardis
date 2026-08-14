@@ -130,14 +130,15 @@ describe('buildActionsResultMarkdown()', () => {
     ];
     const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false, 'uat');
 
-    expect(markdown).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:manual-1 org:uat pr:0 -->');
+    expect(markdown).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:manual-1 org:uat pr:0 when:post-deploy -->');
   });
 
   it('renders an already-done manual action as a ticked to-do, and a context-skipped one not at all', () => {
     const commands = [
       action({
         id: 'done-1', type: 'manual', label: 'Done action',
-        result: { statusCode: 'skipped', skippedReason: 'runOnlyOnceByOrg: already run in org (uat) on 2026-08-14' },
+        // skippedCode is the detection contract: the reason wording must not matter
+        result: { statusCode: 'skipped', skippedCode: 'already-run-in-org', skippedReason: 'some reworded reason' },
       }),
       action({
         id: 'ctx-1', type: 'manual', label: 'Context skipped action',
@@ -147,8 +148,8 @@ describe('buildActionsResultMarkdown()', () => {
     ];
     const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false, 'uat');
 
-    expect(markdown).to.contain('- [x] <!-- sfdx-hardis-manual-action id:done-1 org:uat pr:0 --> Done action');
-    expect(markdown).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:pending-1 org:uat pr:0 --> Pending action');
+    expect(markdown).to.contain('- [x] <!-- sfdx-hardis-manual-action id:done-1 org:uat pr:0 when:post-deploy --> Done action');
+    expect(markdown).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:pending-1 org:uat pr:0 when:post-deploy --> Pending action');
     expect(markdown).to.not.contain('] <!-- sfdx-hardis-manual-action id:ctx-1');
   });
 

@@ -372,6 +372,9 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
       let bodyDisplay = logResult.body;
       if (bodyDisplay.length > maxCommitBodyChars) {
         bodyDisplay = bodyDisplay.substring(0, maxCommitBodyChars);
+        // A truncated excerpt must not carry raw HTML: an element or comment cut open by the
+        // truncation (<details>, <!-- ...) would swallow the rest of the Pull Request comment
+        bodyDisplay = bodyDisplay.replace(/</g, '&lt;');
         // Close a code fence cut open by the truncation, so the rest of the comment stays intact
         if ((bodyDisplay.match(/```/g) || []).length % 2 === 1) {
           bodyDisplay += '\n```\n';

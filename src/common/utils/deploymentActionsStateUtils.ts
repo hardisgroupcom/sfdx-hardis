@@ -250,6 +250,16 @@ export function parseDeploymentActionsCommentBody(body: string): DeploymentActio
   return parseLegacyDeploymentActionsCommentBody(body);
 }
 
+// Keep arbitrary YAML labels from breaking the markdown structure: newlines collapse to
+// spaces and pipes render through their HTML entity (displayed as '|' by the git providers)
+function sanitizeCellText(text: string): string {
+  return (text || '').replace(/\r?\n/g, ' ').replace(/\|/g, '&#124;');
+}
+
+function unsanitizeCellText(text: string): string {
+  return (text || '').replaceAll('&#124;', '|');
+}
+
 function statusFromIcon(cell: string): DeploymentActionStateEntry['status'] {
   return cell.includes('\u2705') ? 'success' :
     cell.includes('\u274c') ? 'failed' :
@@ -273,7 +283,7 @@ function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentAction
     if (!rowMatch) continue;
     const actionId = rowMatch[1].trim();
     const executionOrder = rowMatch[2] ? parseInt(rowMatch[2], 10) : 0;
-    const actionLabel = rowMatch[3].trim();
+    const actionLabel = unsanitizeCellText(rowMatch[3].trim());
     const when = rowMatch[4] as ActionWhen;
     const cells = rowMatch[5].split('|').map((cell) => cell.trim());
     for (let i = 0; i < branches.length && i < cells.length; i++) {
@@ -281,7 +291,9 @@ function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentAction
       if (cell === '' || cell === '\u2b1c') {
         continue; // \u2b1c : not run in this org branch yet
       }
-      const dateMatch = cell.match(/(\d{4}-\d{2}-\d{2})/);
+      // The date lives before the <br/>: the job link URL after it may itself contain a date
+      const cellHead = cell.split('<br/>')[0];
+      const dateMatch = cellHead.match(/(\d{4}-\d{2}-\d{2})/);
       const jobLinkMatch = cell.match(/\[([^\]]+)\]\(([^)]+)\)/);
       entries.push({
         actionId,
@@ -371,7 +383,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
     body += `### Pending manual actions\n\n`;
     body += `Tick a box once the action has been performed in the org: the next sfdx-hardis job will record it as done.\n\n`;
     for (const e of pendingManualEntries) {
-      body += `- [ ] ${buildManualActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0)} ${e.actionLabel} *(org branch: ${e.orgBranch})*\n`;
+      body += `- [ ] ${buildManualActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;
     }
     body += `\n`;
   }
@@ -399,7 +411,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
     for (const actionId of matrixActionIds) {
       const actionEntries = sorted.filter((e) => e.actionId === actionId);
       const def = actionDefs?.get(actionId);
-      const label = actionEntries[0]?.actionLabel ?? def?.label ?? actionId;
+      const label = sanitizeCellText(actionEntries[0]?.actionLabel ?? def?.label ?? actionId);
       const when = actionEntries[0]?.when ?? def?.when ?? 'post-deploy';
       const order = actionEntries[0]?.executionOrder ?? def?.executionOrder ?? 0;
       const cells = branches.map((branch) => {
@@ -548,20 +560,22 @@ function buildActionPropertiesSection(actionId: string, def?: ActionDef): string
  * prNumber is the Pull Request that owns the action (0 when unknown: the checkbox sync then
  * falls back to the Pull Request hosting the comment).
  */
-export function buildManualActionCheckboxMarker(actionId: string, orgBranch: string, prNumber: number): string {
-  return `${MANUAL_ACTION_CHECKBOX_MARKER_PREFIX}id:${actionId} org:${orgBranch} pr:${prNumber || 0} -->`;
+export function buildManualActionCheckboxMarker(actionId: string, orgBranch: string, prNumber: number, when?: ActionWhen): string {
+  const whenAttr = when ? ` when:${when}` : '';
+  return `${MANUAL_ACTION_CHECKBOX_MARKER_PREFIX}id:${actionId} org:${orgBranch} pr:${prNumber || 0}${whenAttr} -->`;
 }
 
 export interface ManualActionCheckboxItem {
   actionId: string;
   orgBranch: string;
   prNumber: number;
+  when?: ActionWhen;
   checked: boolean;
   label: string;
 }
 
 // The literal 'sfdx-hardis-manual-action' here MUST stay in sync with MANUAL_ACTION_CHECKBOX_MARKER_PREFIX
-const MANUAL_ACTION_CHECKBOX_REGEX = /^\s*[-*] \[( |x|X)\] <!-- sfdx-hardis-manual-action id:(\S+) org:(\S+) pr:(\d+) -->\s*(.*)$/;
+const MANUAL_ACTION_CHECKBOX_REGEX = /^\s*[-*] \[( |x|X)\] <!-- sfdx-hardis-manual-action id:(\S+) org:(\S+) pr:(\d+)(?: when:(pre-deploy|post-deploy))? -->\s*(.*)$/;
 
 /**
  * Extract the manual action checklist items (ticked or not) from a Pull Request comment body.
@@ -576,7 +590,8 @@ export function parseManualActionCheckboxes(body: string): ManualActionCheckboxI
       actionId: match[2],
       orgBranch: match[3],
       prNumber: parseInt(match[4], 10),
-      label: (match[5] || '').replace(/\*\(org branch: [^)]*\)\*\s*$/, '').trim(),
+      when: match[5] ? (match[5] as ActionWhen) : undefined,
+      label: unsanitizeCellText((match[6] || '').replace(/\*\(org branch: [^)]*\)\*\s*$/, '').trim()),
     });
   }
   return items;
@@ -624,8 +639,12 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
   }
   const allComments: PullRequestCommentRef[] = [];
   for (const prNum of prsToScan) {
-    state.syncedCheckboxPrs.add(prNum);
     const comments = await GitProvider.tryListPullRequestCommentsByMarker(MANUAL_ACTION_CHECKBOX_MARKER_PREFIX, prNum);
+    if (comments === null) {
+      // Transient listing error: leave the PR unmarked so a later phase or job retries it
+      continue;
+    }
+    state.syncedCheckboxPrs.add(prNum);
     allComments.push(...comments);
   }
   if (allComments.length === 0) {
@@ -650,7 +669,7 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
         actionId: item.actionId,
         actionLabel: label,
         orgBranch: item.orgBranch,
-        when: base?.when || 'post-deploy',
+        when: base?.when || item.when || 'post-deploy',
         executionOrder: base?.executionOrder ?? 0,
         status: 'success',
         jobId,

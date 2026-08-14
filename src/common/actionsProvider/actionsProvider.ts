@@ -42,6 +42,9 @@ export type ActionResult = {
   statusCode: 'success' | 'failed' | 'skipped' | "manual" | 'not-run';
   output?: string;
   skippedReason?: string;
+  // Machine-readable skip cause: skippedReason is user-facing wording that may change,
+  // code must branch on this field instead
+  skippedCode?: 'already-run-in-org';
 };
 
 /**

@@ -13,6 +13,12 @@ export function recordTicketCollectionIssue(message: string): void {
   _ticketCollectionIssues.push(message);
 }
 
+// Called at the start of each collection cycle, so a comment built after a later,
+// successful collection does not display the stale issues of a previous one
+export function clearTicketCollectionIssues(): void {
+  _ticketCollectionIssues.length = 0;
+}
+
 export function getTicketCollectionIssues(): string[] {
   return [..._ticketCollectionIssues];
 }

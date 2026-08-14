@@ -239,6 +239,7 @@ export class JiraProvider extends TicketProviderRoot {
     for (const ticket of tickets) {
       if (ticket.provider === "JIRA") {
         let ticketInfo: any = null;
+        let errorCaught = false;
         try {
           // Cast needed: Version2Client and Version3Client share the same method signature,
           // but TypeScript cannot resolve the union of their overloaded signatures.
@@ -247,6 +248,7 @@ export class JiraProvider extends TicketProviderRoot {
           // A single aggregated warning is displayed after the loop: per-ticket failures usually
           // share the same cause (expired token, missing permission) and would flood the log.
           uxLog("log", this, c.grey('[JiraApi] ' + t('jiraApiErrorGettingTicket', { ticketId: ticket.id, message: (e as Error).message })));
+          errorCaught = true;
           failedTicketsNumber++;
           firstErrorMessage = firstErrorMessage || (e as Error).message;
         }
@@ -285,8 +287,9 @@ export class JiraProvider extends TicketProviderRoot {
             firstErrorMessage = firstErrorMessage || 'JIRA returned an unusable response (possibly an authentication redirect)';
           }
           uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderCollectedTicket', { ticketId: ticket.id })));
-        } else {
-          // Resolved without throwing but no usable payload: still a collection failure
+        } else if (!errorCaught) {
+          // Resolved without throwing but no usable payload: still a collection failure.
+          // The thrown case was already counted and logged in the catch block above.
           uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderUnableToGetIssue', { ticketId: ticket.id })));
           failedTicketsNumber++;
           firstErrorMessage = firstErrorMessage || 'no details returned by the JIRA API';

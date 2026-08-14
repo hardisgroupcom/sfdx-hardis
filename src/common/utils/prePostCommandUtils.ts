@@ -37,6 +37,22 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   if (commands.length === 0) {
     uxLog("action", this, c.cyan(`[DeploymentActions] No ${actionLabel} defined in branch config or pull requests`));
     uxLog("log", this, c.grey(t('noFoundToRun', { property })));
+    // Even with no action to run, a manual action checkbox may have been ticked in a Pull Request
+    // comment of the scope (ex: the action definition was removed after its checklist was posted):
+    // still scan the comments so the tick is recorded and propagated.
+    if ((await GitProvider.getInstance()) !== null) {
+      const prInfoForSync = await GitProvider.getPullRequestInfo({ useCache: true });
+      const scopePrsForSync = (getPullRequestScopeInfo()?.pullRequests || []).map((pr) => pr.idNumber);
+      const allPrsForSync = [...new Set([prInfoForSync?.idNumber || 0, ...scopePrsForSync])].filter((prNumber) => prNumber > 0);
+      if (allPrsForSync.length > 0) {
+        try {
+          await loadDeploymentActionsState(allPrsForSync);
+          await syncManualActionCheckboxes(allPrsForSync);
+        } catch (e) {
+          uxLog("warning", this, c.yellow('[DeploymentActions] ' + t('deploymentActionsCheckboxSyncError', { message: (e as Error).message })));
+        }
+      }
+    }
     return;
   }
   uxLog("action", this, c.cyan(
@@ -135,6 +151,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
             ));
             cmd.result = {
               statusCode: "skipped",
+              skippedCode: "already-run-in-org",
               skippedReason: `runOnlyOnceByOrg: already run in org (${orgBranchName}) on ${existingEntry.date}`
             };
             // If the action label changed, update it in the PR comment.
@@ -397,8 +414,11 @@ function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: bool
   // them in a loop, and would tell the reader to perform an action that is already done.
   // Actions not run because the deployment failed are not to-dos: nothing was deployed for them
   // to complete, and they will be listed again during the next successful deployment.
+  // Structured skippedCode first; the wording match remains as a safety net for results built
+  // by an older sfdx-hardis version in the same process chain
   const isDoneManual = (c: PrePostCommand) =>
-    c.result?.statusCode === "skipped" && (c.result.skippedReason || '').startsWith("runOnlyOnceByOrg: already run");
+    c.result?.statusCode === "skipped" &&
+    (c.result.skippedCode === "already-run-in-org" || (c.result.skippedReason || '').startsWith("runOnlyOnceByOrg: already run"));
   const manualCommands = commands.filter(c => c.type === "manual" && (c.result?.statusCode === "manual" || isDoneManual(c)));
   if (manualCommands.length === 0) {
     return '';
@@ -408,12 +428,14 @@ function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: bool
     : `#### Manual Actions to perform after deployment:\n\n`;
   let section = title;
   for (const cmd of manualCommands) {
+    // Newlines in a label would break the checklist line and its hidden marker
+    const singleLineLabel = (cmd.label || '').replace(/\r?\n/g, ' ');
     const labelCol = cmd.pullRequest
-      ? `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))`
-      : cmd.label;
+      ? `${singleLineLabel} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))`
+      : singleLineLabel;
     // The hidden marker lets sfdx-hardis detect a ticked checkbox on the next job, record the
     // action as done for the org branch, and tick it in the other comments where it appears.
-    const marker = orgBranch ? `${buildManualActionCheckboxMarker(cmd.id, orgBranch, cmd.pullRequest?.idNumber || 0)} ` : '';
+    const marker = orgBranch ? `${buildManualActionCheckboxMarker(cmd.id, orgBranch, cmd.pullRequest?.idNumber || 0, cmd.when)} ` : '';
     section += `- [${isDoneManual(cmd) ? 'x' : ' '}] ${marker}${labelCol}\n`;
   }
   section += `\n*Tick a box once the action has been performed in the org: the next sfdx-hardis job will record it as done.*\n`;

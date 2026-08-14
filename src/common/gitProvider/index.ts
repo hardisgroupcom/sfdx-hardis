@@ -312,7 +312,9 @@ export abstract class GitProvider {
     }
   }
 
-  static async tryListPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
+  // Returns null on a listing error (network, API): callers must treat null as "retry later",
+  // where an empty array means the Pull Request genuinely has no matching comment.
+  static async tryListPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[] | null> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       return [];
@@ -321,7 +323,7 @@ export abstract class GitProvider {
       return await gitProvider.listPullRequestCommentsByMarker(marker, prNumber);
     } catch (e) {
       uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderCouldNotListComments', { message: (e as Error).message })));
-      return [];
+      return null;
     }
   }
 

@@ -66,9 +66,34 @@ describe('Deployment Actions state comment (matrix format)', () => {
 
     expect(body).to.contain('| Action | When | integration | uat |');
     expect(body).to.contain('### Pending manual actions');
-    expect(body).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:action-1 org:uat pr:42 -->');
+    expect(body).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:action-1 org:uat pr:42 when:pre-deploy -->');
     expect(body).to.contain('*Legend:');
     expect(body).to.contain('*Last updated:');
+  });
+
+  it('escapes pipes and newlines in labels and round-trips them intact', () => {
+    const entries = [
+      entry({ actionLabel: 'Update queue A | queue B\nsecond line', status: 'manual' }),
+    ];
+    const body = buildDeploymentActionsCommentBody(entries, undefined, 42);
+
+    // No raw pipe or newline may reach the table row or the checklist line
+    expect(body).to.contain('Update queue A &#124; queue B second line');
+    const reparsed = parseDeploymentActionsCommentBody(body);
+    expect(reparsed).to.have.length(1);
+    expect(reparsed[0].actionLabel).to.equal('Update queue A | queue B second line');
+    expect(reparsed[0].orgBranch).to.equal('integration');
+  });
+
+  it('does not fabricate a date from a date-stamped job URL', () => {
+    const entries = [
+      entry({ date: '', jobUrl: 'https://ci.example.com/builds/2026-08-14/1234' }),
+    ];
+    const body = buildDeploymentActionsCommentBody(entries, undefined, 42);
+    const reparsed = parseDeploymentActionsCommentBody(body);
+    expect(reparsed).to.have.length(1);
+    expect(reparsed[0].date).to.equal('');
+    expect(reparsed[0].jobUrl).to.equal('https://ci.example.com/builds/2026-08-14/1234');
   });
 
   it('still parses the legacy one-row-per-org format', () => {
