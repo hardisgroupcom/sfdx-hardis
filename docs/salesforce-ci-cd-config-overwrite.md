@@ -10,6 +10,8 @@ description: Learn how to use package-no-overwrite.xml to protect metadata that 
   - [How it works](#how-it-works)
   - [When to use it](#when-to-use-it)
   - [Setup](#setup)
+  - [Wildcard support](#wildcard-support)
+  - [Reports and Dashboards: the folder is ignored when matching](#reports-and-dashboards-the-folder-is-ignored-when-matching)
   - [Configuration options](#configuration-options)
   - [Example](#example)
 
@@ -129,6 +131,23 @@ Glob patterns use `*` as a wildcard that matches any sequence of characters. Mul
   <name>CustomField</name>
 </types>
 ```
+
+### Reports and Dashboards: the folder is ignored when matching
+
+The API name of a `Report` or of a `Dashboard` is unique in the whole org, so `Mercury/My_Report` and `Global_Follow_up/My_Report` are the **same** component, stored in one folder or in the other. sfdx-hardis matches these two types on their API name only, so a report listed in `package-no-overwrite.xml` stays protected even when your sources place it in a folder different from the one it currently sits in the target org.
+
+The same rule explains a deployment behavior that surprises many teams: listing the **same** report or dashboard API name under two folders in your `package.xml` does not create two components. The deployment moves the single existing component into the folder of the last deployed member, and moves it again at every deployment. sfdx-hardis warns about it before deploying:
+
+```text
+9 item(s) of the deployment package use the same API name in several folders
+
+Type    | API name  | Folders
+Report  | My_Report | Mercury/Global_Follow_up/My_Report, Mercury/My_Report
+```
+
+When you see this warning, keep a single folder per API name in your sources and in `package.xml`.
+
+Note that a nested source path such as `reports/Mercury/Global_Follow_up/My_Report.report-meta.xml` does not create a subfolder of `Mercury` in the org: the report lands in a top-level folder named `Global_Follow_up`.
 
 ### Configuration options
 
