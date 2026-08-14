@@ -11,9 +11,11 @@ import * as path from 'path';
 import {
   countPackageXmlItems,
   isPackageXmlEmpty,
+  listDuplicateFolderMetadataApiNames,
   parseXmlFile,
   parseXmlString,
   parsePackageXmlFile,
+  removePackageXmlFilesContent,
   writeXmlFile,
   writeXmlFileFormatted,
   writePackageXmlFile,
@@ -220,6 +222,132 @@ describe('package.xml helpers', () => {
       const rawContent = await fs.readFile(outFile, 'utf8');
       expect(rawContent).to.include('<?xml version="1.0" encoding="UTF-8"?>');
       expect(rawContent).to.include('<Package>');
+    } finally {
+      await fs.remove(tmpDir);
+    }
+  });
+});
+
+// A Report or a Dashboard API name is unique in the whole org, so the same API name in two folders is
+// the same component: package-no-overwrite.xml must protect it whatever the folder it sits in the org.
+describe('folder based metadata with an org unique API name', () => {
+  function packageXmlWith(types: { [type: string]: string[] }): string {
+    const typesXml = Object.keys(types)
+      .map(
+        (type) =>
+          `    <types>\n${types[type].map((m) => `        <members>${m}</members>`).join('\n')}\n        <name>${type}</name>\n    </types>`
+      )
+      .join('\n');
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n${typesXml}\n    <version>62.0</version>\n</Package>`;
+  }
+
+  // Target org content: My_Report sits in the GlobalFollowup folder
+  const orgManifest = packageXmlWith({
+    Report: ['GlobalFollowup/', 'GlobalFollowup/My_Report', 'Mercury/', 'Mercury/Another_Report'],
+    ApexClass: ['MyClass'],
+  });
+
+  async function filterPackage(packageXml: string, filterXml: string, options: any): Promise<any> {
+    const tmpDir = await makeTmpDir();
+    try {
+      const packageXmlFile = path.join(tmpDir, 'package.xml');
+      const filterFile = path.join(tmpDir, 'filter.xml');
+      await fs.writeFile(packageXmlFile, packageXml);
+      await fs.writeFile(filterFile, filterXml);
+      const types = await removePackageXmlFilesContent(packageXmlFile, filterFile, options);
+      const result: { [type: string]: string[] } = {};
+      for (const type of types) {
+        result[type.name[0]] = type.members || [];
+      }
+      return result;
+    } finally {
+      await fs.remove(tmpDir);
+    }
+  }
+
+  it('protects a Report that exists in the target org under another folder', async () => {
+    const result = await filterPackage(
+      packageXmlWith({ Report: ['Mercury/My_Report'], ApexClass: ['MyClass'] }),
+      orgManifest,
+      { removedOnly: false, keepEmptyTypes: true, context: 'no-overwrite-remove' }
+    );
+    expect(result.Report).to.deep.equal([]);
+  });
+
+  it('still deploys a Report that does not exist in the target org', async () => {
+    const result = await filterPackage(packageXmlWith({ Report: ['Mercury/A_New_Report'] }), orgManifest, {
+      removedOnly: false,
+      keepEmptyTypes: true,
+      context: 'no-overwrite-remove',
+    });
+    expect(result.Report).to.deep.equal(['Mercury/A_New_Report']);
+  });
+
+  it('keeps a Report of package-no-overwrite.xml listed under another folder in the org', async () => {
+    const result = await filterPackage(packageXmlWith({ Report: ['Mercury/My_Report'] }), orgManifest, {
+      removedOnly: true,
+      keepEmptyTypes: false,
+      context: 'no-overwrite-keep',
+    });
+    expect(result.Report).to.deep.equal(['Mercury/My_Report']);
+  });
+
+  it('does not make folder entries match each other', async () => {
+    const result = await filterPackage(packageXmlWith({ Report: ['Other_Folder/'] }), orgManifest, {
+      removedOnly: false,
+      keepEmptyTypes: true,
+      context: 'no-overwrite-remove',
+    });
+    expect(result.Report).to.deep.equal(['Other_Folder/']);
+  });
+
+  it('keeps folder sensitive matching for the types that are not org unique', async () => {
+    const orgWithEmailTemplate = packageXmlWith({ EmailTemplate: ['GlobalFollowup/My_Template'] });
+    const result = await filterPackage(packageXmlWith({ EmailTemplate: ['Mercury/My_Template'] }), orgWithEmailTemplate, {
+      removedOnly: false,
+      keepEmptyTypes: true,
+      context: 'no-overwrite-remove',
+    });
+    expect(result.EmailTemplate).to.deep.equal(['Mercury/My_Template']);
+  });
+
+  it('keeps folder sensitive matching outside of the no-overwrite filtering', async () => {
+    const result = await filterPackage(packageXmlWith({ Report: ['Mercury/My_Report'] }), orgManifest, {
+      removedOnly: false,
+      keepEmptyTypes: true,
+      context: 'delta',
+    });
+    expect(result.Report).to.deep.equal(['Mercury/My_Report']);
+  });
+
+  it('listDuplicateFolderMetadataApiNames reports API names present in several folders', async () => {
+    const tmpDir = await makeTmpDir();
+    try {
+      const packageXmlFile = path.join(tmpDir, 'package.xml');
+      await fs.writeFile(
+        packageXmlFile,
+        packageXmlWith({
+          Report: ['Mercury/', 'Mercury/My_Report', 'Mercury/Sub/My_Report', 'Mercury/Alone', 'unfiled$public/Alone2'],
+          Dashboard: ['A/Same_Name', 'B/Same_Name'],
+          EmailTemplate: ['A/Not_Org_Unique', 'B/Not_Org_Unique'],
+        })
+      );
+      const duplicates = await listDuplicateFolderMetadataApiNames(packageXmlFile);
+      expect(duplicates).to.deep.equal([
+        { type: 'Report', apiName: 'My_Report', members: ['Mercury/My_Report', 'Mercury/Sub/My_Report'] },
+        { type: 'Dashboard', apiName: 'Same_Name', members: ['A/Same_Name', 'B/Same_Name'] },
+      ]);
+    } finally {
+      await fs.remove(tmpDir);
+    }
+  });
+
+  it('listDuplicateFolderMetadataApiNames returns nothing on a clean package.xml', async () => {
+    const tmpDir = await makeTmpDir();
+    try {
+      const packageXmlFile = path.join(tmpDir, 'package.xml');
+      await fs.writeFile(packageXmlFile, packageXmlWith({ Report: ['*'], Dashboard: ['A/One', 'B/Two'] }));
+      expect(await listDuplicateFolderMetadataApiNames(packageXmlFile)).to.deep.equal([]);
     } finally {
       await fs.remove(tmpDir);
     }

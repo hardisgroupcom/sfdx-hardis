@@ -24,6 +24,7 @@ import {
   getLatestGitCommit,
   isCI,
   uxLog,
+  uxLogTable,
 } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
@@ -941,7 +942,18 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       parentBranch = prInfo.targetBranch;
     }
     const majorOrgs = await listMajorOrgs();
-    uxLog("log", this, c.grey(t('majorOrgsWithAuthConfigured') + JSON.stringify(majorOrgs, null, 2)));
+    uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('majorOrgsWithAuthConfigured')));
+    uxLogTable(
+      this,
+      majorOrgs.map((majorOrg) => ({
+        Branch: majorOrg.branchName || '',
+        Level: majorOrg.level ?? '',
+        'Merge targets': (majorOrg.mergeTargets || []).join(', '),
+        'Instance URL': majorOrg.instanceUrl || '',
+        Username: majorOrg.targetUsername || '',
+      })),
+      ['Branch', 'Level', 'Merge targets', 'Instance URL', 'Username']
+    );
     const currentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === currentBranch);
     const parentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === parentBranch);
     if (currentBranchIsMajor && (parentBranchIsMajor === true || parentBranch == null)) {

@@ -383,8 +383,16 @@ export async function removePackageXmlFilesContent(
     } else {
       // Filter members (supports glob wildcards in filter patterns, e.g. "*__dlm")
       const originalCount = typeMembers.length;
+      // A Report or a Dashboard listed in package-no-overwrite.xml and present in the target org under
+      // another folder is the same component: deploying it would move it, not create a second one,
+      // so it must be detected as already existing whatever the folder it sits in
+      const apiNameOnly =
+        context.startsWith('no-overwrite') && ORG_UNIQUE_FOLDER_METADATA_TYPES.includes(type.name[0]);
       typeMembers = typeMembers.filter((member: string) =>
-        checkRemove(!removeTypeMembers.some((pattern: string) => memberMatchesPattern(member, pattern)), removedOnly)
+        checkRemove(
+          !removeTypeMembers.some((pattern: string) => memberMatchesPattern(member, pattern, apiNameOnly)),
+          removedOnly
+        )
       );
       if (removedOnly) {
         const keptKey =
@@ -443,10 +451,61 @@ export function sortObject(o) {
     .reduce((r, k) => ((r[k] = o[k]), r), {});
 }
 
+// Folder based metadata types whose API name is unique in the whole org: the same API name in two
+// different folders is the same component, and deploying it just moves it from one folder to the other
+export const ORG_UNIQUE_FOLDER_METADATA_TYPES = ['Dashboard', 'Report'];
+
+// Returns the API name of a folder based member ("Mercury/My_Report" -> "My_Report").
+// A folder entry ("Mercury/") has no API name and returns an empty string.
+function getMemberApiName(member: string): string {
+  const lastSlashPos = member.lastIndexOf('/');
+  return lastSlashPos === -1 ? member : member.substring(lastSlashPos + 1);
+}
+
+// Lists the ORG_UNIQUE_FOLDER_METADATA_TYPES members of a package.xml that share their API name with
+// another member sitting in a different folder. Deploying them does not create one component per folder:
+// Salesforce moves the single existing component to the folder of the last deployed member.
+export async function listDuplicateFolderMetadataApiNames(
+  packageXmlFile: string
+): Promise<{ type: string; apiName: string; members: string[] }[]> {
+  const parsedPackageXml: any = await parseXmlFile(packageXmlFile);
+  const duplicates: { type: string; apiName: string; members: string[] }[] = [];
+  for (const type of parsedPackageXml?.Package?.types || []) {
+    const typeName = type?.name?.[0];
+    if (!ORG_UNIQUE_FOLDER_METADATA_TYPES.includes(typeName)) {
+      continue;
+    }
+    const membersByApiName: { [apiName: string]: string[] } = {};
+    for (const member of type.members || []) {
+      const apiName = getMemberApiName(member);
+      // Skip wildcards and folder entries, that hold no API name
+      if (apiName === '' || apiName === '*' || !member.includes('/')) {
+        continue;
+      }
+      membersByApiName[apiName] = (membersByApiName[apiName] || []).concat([member]);
+    }
+    for (const apiName of Object.keys(membersByApiName)) {
+      if (membersByApiName[apiName].length > 1) {
+        duplicates.push({ type: typeName, apiName: apiName, members: sortCrossPlatform(membersByApiName[apiName]) });
+      }
+    }
+  }
+  return duplicates;
+}
+
 // Returns true when member matches pattern, supporting * as a glob wildcard (e.g. "*__dlm", "Account*").
-function memberMatchesPattern(member: string, pattern: string): boolean {
+// When apiNameOnly is set, an exact pattern also matches a member holding the same API name in another folder.
+function memberMatchesPattern(member: string, pattern: string, apiNameOnly = false): boolean {
   if (pattern === '*') return true;
-  if (!pattern.includes('*')) return member === pattern;
+  if (!pattern.includes('*')) {
+    if (member === pattern) return true;
+    if (apiNameOnly) {
+      const memberApiName = getMemberApiName(member);
+      // Folder entries have no API name: they must not all match each other
+      return memberApiName !== '' && memberApiName === getMemberApiName(pattern);
+    }
+    return false;
+  }
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
   return new RegExp(`^${escaped}$`).test(member);
 }

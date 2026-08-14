@@ -31,7 +31,7 @@ import { callSfdxGitDelta, getPullRequestData, setPullRequestData } from './gitU
 import { createBlankSfdxProject, GLOB_IGNORE_PATTERNS, isSfdxProject } from './projectUtils.js';
 import { prompts } from './prompts.js';
 import { arrangeFilesBefore, restoreArrangedFiles } from './workaroundUtils.js';
-import { countPackageXmlItems, isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
+import { countPackageXmlItems, isPackageXmlEmpty, listDuplicateFolderMetadataApiNames, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
 import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
@@ -419,6 +419,7 @@ export async function smartDeploy(
           } (${nbDeployedItems} items)${hasDestructiveChanges ? ' with destructive changes' : ''}...`
         )
       );
+      await warnOnDuplicateFolderMetadataApiNames(deployment.packageXmlFile, commandThis);
       const branchConfig = await getConfig('branch');
       // Try QuickDeploy
       if (check === false && (process.env?.SFDX_HARDIS_QUICK_DEPLOY || '') !== 'false') {
@@ -1015,6 +1016,27 @@ async function buildDeploymentPackageXmls(
       },
     ];
   }
+}
+
+// Warn when a deployment package holds the same Report or Dashboard API name in several folders.
+// Their API name is unique in the whole org, so the deployment moves a single component from folder to
+// folder instead of creating one component per folder, and the component moves again at each deployment.
+async function warnOnDuplicateFolderMetadataApiNames(packageXmlFile: string, commandThis: any) {
+  const duplicates = await listDuplicateFolderMetadataApiNames(packageXmlFile);
+  if (duplicates.length === 0) {
+    return;
+  }
+  uxLog("warning", commandThis, c.yellow(t('duplicateFolderMetadataApiNames', { count: c.bold(duplicates.length) })));
+  uxLogTable(
+    commandThis,
+    duplicates.map((duplicate) => ({
+      Type: duplicate.type,
+      'API name': duplicate.apiName,
+      Folders: duplicate.members.join(', '),
+    })),
+    ['Type', 'API name', 'Folders']
+  );
+  uxLog("warning", commandThis, c.yellow(t('duplicateFolderMetadataApiNamesHint')));
 }
 
 // Apply packageXml filtering using deployOncePackageXml and deployOnChangePackageXml
