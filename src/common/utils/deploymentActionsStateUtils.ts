@@ -250,6 +250,22 @@ export function parseDeploymentActionsCommentBody(body: string): DeploymentActio
   return parseLegacyDeploymentActionsCommentBody(body);
 }
 
+// Action ids are free-form YAML strings: one containing whitespace would break the hidden
+// markers, whose regexes match the id with \S+. Ids are percent-encoded when written and
+// decoded when read; usual alphanumeric ids are left untouched, so legacy comments still parse.
+function encodeActionId(actionId: string): string {
+  return encodeURIComponent(actionId || '');
+}
+
+function decodeActionId(encodedId: string): string {
+  try {
+    return decodeURIComponent(encodedId || '');
+  } catch (_e) {
+    // Legacy raw id containing a stray '%': keep it as-is
+    return encodedId || '';
+  }
+}
+
 // Keep arbitrary YAML labels from breaking the markdown structure: newlines collapse to
 // spaces and pipes render through their HTML entity (displayed as '|' by the git providers)
 function sanitizeCellText(text: string): string {
@@ -281,7 +297,7 @@ function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentAction
     // | <!-- actionId:ID order:N --> Label | when | cell for branch 1 | cell for branch 2 | ... |
     const rowMatch = line.match(/^\|\s*<!--\s*actionId:(\S+?)(?:\s+order:(\d+))?\s*-->\s*(.*?)\s*\|\s*(pre-deploy|post-deploy)\s*\|(.*)\|\s*$/);
     if (!rowMatch) continue;
-    const actionId = rowMatch[1].trim();
+    const actionId = decodeActionId(rowMatch[1].trim());
     const executionOrder = rowMatch[2] ? parseInt(rowMatch[2], 10) : 0;
     const actionLabel = unsanitizeCellText(rowMatch[3].trim());
     const when = rowMatch[4] as ActionWhen;
@@ -320,7 +336,7 @@ function parseLegacyDeploymentActionsCommentBody(body: string): DeploymentAction
     const rowMatch = line.match(/^\|\s*<!--\s*actionId:(\S+?)(?:\s+order:(\d+))?\s*-->\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|/);
     if (!rowMatch) continue;
 
-    const actionId = rowMatch[1].trim();
+    const actionId = decodeActionId(rowMatch[1].trim());
     const executionOrder = rowMatch[2] ? parseInt(rowMatch[2], 10) : 0;
     const actionLabel = rowMatch[3].trim();
     const orgBranch = rowMatch[4].trim();
@@ -421,7 +437,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
         const jobRef = e.jobUrl ? `<br/>[${e.jobId}](${e.jobUrl})` : '';
         return `${getStatusIcon(e.status)}${dateStr}${jobRef}`;
       });
-      body += `| <!-- actionId:${actionId} order:${order} --> ${label} | ${when} |${cells.map((cellContent) => ` ${cellContent} |`).join('')}\n`;
+      body += `| <!-- actionId:${encodeActionId(actionId)} order:${order} --> ${label} | ${when} |${cells.map((cellContent) => ` ${cellContent} |`).join('')}\n`;
     }
     body += `\n*Legend: ✅ done · ❌ failed · 👋 waiting for manual execution · ⚪ skipped · ⬜ not run in this org branch yet*\n`;
     body += `\n*Last updated: ${new Date().toISOString().replace('T', ' ').substring(0, 16)} UTC*\n`;
@@ -472,7 +488,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
       const displayOrder = firstEntry?.executionOrder ?? def?.executionOrder;
       const orderAttr = displayOrder != null ? ` order:${displayOrder}` : '';
 
-      body += `\n<details>\n<!-- actionId:${actionId}${orderAttr} -->\n`;
+      body += `\n<details>\n<!-- actionId:${encodeActionId(actionId)}${orderAttr} -->\n`;
       body += `<summary>${displayLabel} (${displayWhen})</summary>\n\n`;
 
       body += buildActionPropertiesSection(actionId, def);
@@ -562,7 +578,7 @@ function buildActionPropertiesSection(actionId: string, def?: ActionDef): string
  */
 export function buildManualActionCheckboxMarker(actionId: string, orgBranch: string, prNumber: number, when?: ActionWhen): string {
   const whenAttr = when ? ` when:${when}` : '';
-  return `${MANUAL_ACTION_CHECKBOX_MARKER_PREFIX}id:${actionId} org:${orgBranch} pr:${prNumber || 0}${whenAttr} -->`;
+  return `${MANUAL_ACTION_CHECKBOX_MARKER_PREFIX}id:${encodeActionId(actionId)} org:${orgBranch} pr:${prNumber || 0}${whenAttr} -->`;
 }
 
 export interface ManualActionCheckboxItem {
@@ -587,7 +603,7 @@ export function parseManualActionCheckboxes(body: string): ManualActionCheckboxI
     if (!match) continue;
     items.push({
       checked: match[1].toLowerCase() === 'x',
-      actionId: match[2],
+      actionId: decodeActionId(match[2]),
       orgBranch: match[3],
       prNumber: parseInt(match[4], 10),
       when: match[5] ? (match[5] as ActionWhen) : undefined,
@@ -605,7 +621,7 @@ export function checkManualActionCheckboxInBody(body: string, actionId: string, 
   let changed = false;
   const lines = body.split('\n').map((line) => {
     const match = line.match(MANUAL_ACTION_CHECKBOX_REGEX);
-    if (match && match[2] === actionId && match[3] === orgBranch && match[1] === ' ') {
+    if (match && decodeActionId(match[2]) === actionId && match[3] === orgBranch && match[1] === ' ') {
       changed = true;
       // Tick the checkbox itself: the regex accepts both '-' and '*' bullets, and the first
       // '[ ]' of a matched line is always the checkbox

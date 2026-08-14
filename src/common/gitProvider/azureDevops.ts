@@ -1130,6 +1130,8 @@ ${getBannerMarkdownAndLink()}
     for (const thread of threads) {
       if (thread.isDeleted) continue;
       for (const comment of thread?.comments || []) {
+        // Never update a deleted comment: getThreads returns them inside live threads
+        if (comment?.isDeleted) continue;
         if ((comment?.content || '').includes(marker)) {
           existingThreadId = thread.id || null;
           existingCommentId = comment.id || null;
@@ -1161,6 +1163,9 @@ ${getBannerMarkdownAndLink()}
     for (const thread of threads) {
       if (thread.isDeleted) continue;
       for (const comment of thread?.comments || []) {
+        // getThreads still returns deleted comments inside live threads: a checkbox ticked in a
+        // deleted comment must not be honored
+        if (comment?.isDeleted) continue;
         if ((comment?.content || '').includes(marker)) {
           results.push({ prNumber: pullRequestId, ref: { threadId: thread.id, commentId: comment.id }, body: comment.content || '' });
         }

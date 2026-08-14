@@ -87,7 +87,6 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   const hasGitProvider = (await GitProvider.getInstance()) !== null;
   if (hasGitProvider) {
     const sourcePrNumbers = collectSourcePrNumbers(commands, currentPrNumber);
-    await loadDeploymentActionsState(sourcePrNumbers);
     // Manual action checkboxes ticked by users in Pull Request comments count as performed actions.
     // The scan covers every Pull Request of the scope, not only those owning actions: a checkbox
     // can be ticked on the deployment comment of a batch Pull Request (retrofit or major-branch
@@ -95,8 +94,13 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     const scopePrNumbers = (getPullRequestScopeInfo()?.pullRequests || [])
       .map((pr) => pr.idNumber)
       .filter((prNumber) => prNumber > 0);
+    // State must be loaded for every scanned Pull Request, not only those owning actions:
+    // otherwise a still-ticked checkbox of a scope-only Pull Request would be re-recorded as
+    // newly done on every job, overwriting its original completion date and job link.
+    const allPrNumbers = [...new Set([...sourcePrNumbers, ...scopePrNumbers])];
+    await loadDeploymentActionsState(allPrNumbers);
     try {
-      await syncManualActionCheckboxes([...new Set([...sourcePrNumbers, ...scopePrNumbers])]);
+      await syncManualActionCheckboxes(allPrNumbers);
     } catch (e) {
       uxLog("warning", this, c.yellow('[DeploymentActions] ' + t('deploymentActionsCheckboxSyncError', { message: (e as Error).message })));
     }
@@ -419,7 +423,10 @@ function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: bool
   const isDoneManual = (c: PrePostCommand) =>
     c.result?.statusCode === "skipped" &&
     (c.result.skippedCode === "already-run-in-org" || (c.result.skippedReason || '').startsWith("runOnlyOnceByOrg: already run"));
-  const manualCommands = commands.filter(c => c.type === "manual" && (c.result?.statusCode === "manual" || isDoneManual(c)));
+  // Failed manual actions (invalid customUsername, auth error...) stay in the checklist as
+  // unticked to-dos: the operator still has to perform them.
+  const manualCommands = commands.filter(c => c.type === "manual" &&
+    (c.result?.statusCode === "manual" || c.result?.statusCode === "failed" || isDoneManual(c)));
   if (manualCommands.length === 0) {
     return '';
   }

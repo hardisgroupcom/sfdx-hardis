@@ -366,19 +366,24 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
       continue;
     }
     displayedCommitsCount++;
-    commitsList += '**' + logResult.message + '**, by ' + logResult.author_name;
+    // Commit text is user-written: raw HTML (a </details>, an unclosed <!-- ...) would break out
+    // of the <details> wrapper below and could swallow the rest of the Pull Request comment
+    commitsList += '**' + logResult.message.replace(/</g, '&lt;') + '**, by ' + logResult.author_name;
     if (logResult.body) {
       // Long bodies (pasted release notes...) flood the comment: keep the beginning only
       let bodyDisplay = logResult.body;
+      let truncated = false;
       if (bodyDisplay.length > maxCommitBodyChars) {
         bodyDisplay = bodyDisplay.substring(0, maxCommitBodyChars);
-        // A truncated excerpt must not carry raw HTML: an element or comment cut open by the
-        // truncation (<details>, <!-- ...) would swallow the rest of the Pull Request comment
-        bodyDisplay = bodyDisplay.replace(/</g, '&lt;');
-        // Close a code fence cut open by the truncation, so the rest of the comment stays intact
-        if ((bodyDisplay.match(/```/g) || []).length % 2 === 1) {
-          bodyDisplay += '\n```\n';
-        }
+        truncated = true;
+      }
+      bodyDisplay = bodyDisplay.replace(/</g, '&lt;');
+      // Close an unbalanced code fence (from the body itself or cut open by the truncation),
+      // so the rest of the comment stays intact
+      if ((bodyDisplay.match(/```/g) || []).length % 2 === 1) {
+        bodyDisplay += '\n```\n';
+      }
+      if (truncated) {
         bodyDisplay += '... *(truncated)*';
       }
       commitsList += '<br/>' + bodyDisplay + '\n\n';

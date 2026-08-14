@@ -936,6 +936,9 @@ ${getBannerMarkdownAndLink()}
     );
     const results: PullRequestCommentRef[] = [];
     for (const comment of comments) {
+      // The API returns deleted comments with deleted=true: a checkbox ticked in a deleted
+      // comment must not be honored, and updating such a comment id later would error
+      if (comment?.deleted) continue;
       if ((comment?.content?.raw || '').includes(marker)) {
         results.push({ prNumber: pullRequestId, ref: comment.id, body: comment.content?.raw || '' });
       }

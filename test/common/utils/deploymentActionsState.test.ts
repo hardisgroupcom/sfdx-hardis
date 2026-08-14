@@ -149,4 +149,16 @@ describe('Manual action checkboxes', () => {
     expect(res.changed).to.be.false;
     expect(res.body).to.equal(body);
   });
+
+  it('round-trips an action id containing whitespace', () => {
+    const spacedId = 'enable feature X';
+    const spacedMarker = buildManualActionCheckboxMarker(spacedId, 'uat', 42);
+    const spacedBody = `- [x] ${spacedMarker} Enable feature X\n`;
+    const items = parseManualActionCheckboxes(spacedBody);
+    expect(items).to.have.length(1);
+    expect(items[0]).to.include({ actionId: spacedId, orgBranch: 'uat', prNumber: 42, checked: true });
+    const untickedBody = `- [ ] ${spacedMarker} Enable feature X\n`;
+    const res = checkManualActionCheckboxInBody(untickedBody, spacedId, 'uat');
+    expect(res.changed).to.be.true;
+  });
 });
