@@ -72,9 +72,15 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   if (hasGitProvider) {
     const sourcePrNumbers = collectSourcePrNumbers(commands, currentPrNumber);
     await loadDeploymentActionsState(sourcePrNumbers);
-    // Manual action checkboxes ticked by users in Pull Request comments count as performed actions
+    // Manual action checkboxes ticked by users in Pull Request comments count as performed actions.
+    // The scan covers every Pull Request of the scope, not only those owning actions: a checkbox
+    // can be ticked on the deployment comment of a batch Pull Request (retrofit or major-branch
+    // merge) that defines no action itself but lists the manual actions of the other ones.
+    const scopePrNumbers = (getPullRequestScopeInfo()?.pullRequests || [])
+      .map((pr) => pr.idNumber)
+      .filter((prNumber) => prNumber > 0);
     try {
-      await syncManualActionCheckboxes(sourcePrNumbers);
+      await syncManualActionCheckboxes([...new Set([...sourcePrNumbers, ...scopePrNumbers])]);
     } catch (e) {
       uxLog("warning", this, c.yellow(`[DeploymentActions] Could not sync manual action checkboxes: ${(e as Error).message}`));
     }
