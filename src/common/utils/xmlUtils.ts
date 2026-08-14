@@ -313,7 +313,10 @@ export function buildInlineRemoveTypes(metadataTypes: string[], metadataNames: s
 export async function removePackageXmlFilesContent(
   packageXmlFile: string,
   removePackageXmlFile: string,
-  { outputXmlFile = '', logFlag = false, removedOnly = false, keepEmptyTypes = false, inlineRemoveTypes = null as any }
+  // context selects domain wording for the per-type log lines ('delta', 'delta-destructive',
+  // 'no-overwrite-keep', 'no-overwrite-remove'): the generic "kept/removed by filter file"
+  // wording reads as internal plumbing and users cannot tell what it means for their deployment
+  { outputXmlFile = '', logFlag = false, removedOnly = false, keepEmptyTypes = false, inlineRemoveTypes = null as any, context = '' }
 ) {
   // Read package.xml file to update
   const parsedPackageXml: any = await parseXmlFile(packageXmlFile);
@@ -366,7 +369,8 @@ export async function removePackageXmlFilesContent(
     // Manage * case contained in target
     if (removedOnly === true && typeMembers.includes('*')) {
       typeMembers = removeTypeMembers;
-      uxLog("log", this, c.grey(c.italic(t('foundWildcardOnTypeKeptItems', { type: c.bold(type.name), typeMembers: typeMembers.length }))));
+      const wildcardKeptKey = context === 'no-overwrite-keep' ? 'noOverwriteTypeWildcardProtected' : 'foundWildcardOnTypeKeptItems';
+      uxLog("log", this, c.grey(c.italic(t(wildcardKeptKey, { type: c.bold(type.name), typeMembers: typeMembers.length }))));
     }
     // Manage * case contained in source
     else if (removeTypeMembers[0] && removeTypeMembers[0] === '*') {
@@ -383,10 +387,15 @@ export async function removePackageXmlFilesContent(
         checkRemove(!removeTypeMembers.some((pattern: string) => memberMatchesPattern(member, pattern)), removedOnly)
       );
       if (removedOnly) {
-        uxLog("log", this, c.grey(c.italic(t('typeItemsKeptFromFilter', { type: c.bold(type.name), count: typeMembers.length }))));
+        const keptKey =
+          context === 'delta' || context === 'delta-destructive' ? 'deltaTypeItemsKept' :
+            context === 'no-overwrite-keep' ? 'noOverwriteTypeItemsProtected' :
+              'typeItemsKeptFromFilter';
+        uxLog("log", this, c.grey(c.italic(t(keptKey, { type: c.bold(type.name), count: typeMembers.length }))));
       } else {
         const removedCount = originalCount - typeMembers.length;
-        uxLog("log", this, c.grey(c.italic(t('typeItemsRemainAfterRemoval', { type: c.bold(type.name), count: typeMembers.length, removed: removedCount }))));
+        const remainKey = context === 'no-overwrite-remove' ? 'noOverwriteTypeItemsRemoved' : 'typeItemsRemainAfterRemoval';
+        uxLog("log", this, c.grey(c.italic(t(remainKey, { type: c.bold(type.name), count: typeMembers.length, removed: removedCount }))));
       }
     }
     if (typeMembers.length > 0 || keepEmptyTypes === true) {

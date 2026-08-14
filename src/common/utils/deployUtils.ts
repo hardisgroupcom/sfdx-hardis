@@ -1024,6 +1024,7 @@ async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deploy
     await removePackageXmlContent(packageXml, deployOncePackageXml, false, {
       debugMode: debugMode,
       keepEmptyTypes: true,
+      context: 'no-overwrite-remove',
     });
   }
   //Main packageXml: Remove packageDeployOnChange.xml items that are not different in target org
@@ -1032,6 +1033,18 @@ async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deploy
       debugMode: debugMode,
       keepEmptyTypes: true,
     });
+  }
+  // Display the REALLY final package: the delta package shown earlier is displayed before this
+  // filtering, so protected items can still have been removed from it since.
+  if (deployOncePackageXml || deployOnChangePackageXml) {
+    const finalNbItems = await countPackageXmlItems(packageXml);
+    if (finalNbItems <= 100) {
+      const finalContent = await fs.readFile(packageXml, 'utf8');
+      uxLog("action", this, c.cyan(t('finalPackageXmlToDeploy', { count: finalNbItems, content: c.green(finalContent) })));
+    } else {
+      // A full deployment package can hold thousands of items: do not flood the log
+      uxLog("log", this, c.grey(t('finalPackageXmlToDeployLarge', { count: finalNbItems, file: packageXml })));
+    }
   }
 }
 
@@ -1064,13 +1077,7 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     if (!(await isPackageXmlEmpty(packageNoOverwrite))) {
       const tmpDir = await createTempDir();
       // Build target org package.xml
-      uxLog(
-        "action",
-        this,
-        c.cyan(
-          `Generating full package.xml from target org to identify its items matching with package-no-overwrite.xml ...`
-        )
-      );
+      uxLog("action", this, c.cyan('[NoOverwrite] ' + t('listingTargetOrgContentForNoOverwrite')));
       const targetOrgPackageXml = path.join(tmpDir, 'packageTargetOrg.xml');
       await buildOrgManifest(options.targetUsername, targetOrgPackageXml, options.conn);
 
@@ -1080,16 +1087,11 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
       await removePackageXmlContent(calculatedPackageNoOverwrite, targetOrgPackageXml, true, {
         debugMode: debugMode,
         keepEmptyTypes: false,
+        context: 'no-overwrite-keep',
       });
       await fs.copy(calculatedPackageNoOverwrite, path.join(tmpDir, 'calculated-package-no-overwrite.xml'));
       calculatedPackageNoOverwrite = path.join(tmpDir, 'calculated-package-no-overwrite.xml');
-      uxLog(
-        "log",
-        this,
-        c.grey(
-          `calculated-package-no-overwrite.xml with only items that already exist in target org: ${calculatedPackageNoOverwrite}`
-        )
-      );
+      uxLog("log", this, c.grey('[NoOverwrite] ' + t('calculatedNoOverwriteFileInfo', { file: calculatedPackageNoOverwrite })));
       // Check if there is still something in calculated-package-no-overwrite.xml
       if (!(await isPackageXmlEmpty(calculatedPackageNoOverwrite))) {
         return calculatedPackageNoOverwrite;
@@ -1178,22 +1180,33 @@ export async function removePackageXmlContent(
   packageXmlFile: string,
   packageXmlFileToRemove: string,
   removedOnly = false,
-  options = { debugMode: false, keepEmptyTypes: false }
+  options: { debugMode: boolean; keepEmptyTypes: boolean; context?: string } = { debugMode: false, keepEmptyTypes: false }
 ) {
+  // The context selects domain wording ("kept in the delta", "protected from overwrite"...)
+  // instead of the generic filtering vocabulary, which users cannot relate to their deployment
+  const contextMarker =
+    options.context === 'delta' || options.context === 'delta-destructive' ? '[DeltaDeployment] ' :
+      (options.context || '').startsWith('no-overwrite') ? '[NoOverwrite] ' : '';
   if (removedOnly === false) {
+    const introKey = options.context === 'no-overwrite-remove' ? 'noOverwriteRemoveIntro' : 'removingFilterItemsFromPackage';
     uxLog(
       "action",
       this,
-      c.cyan(t('removingFilterItemsFromPackage', {
+      c.cyan(contextMarker + t(introKey, {
         filterFile: c.green(path.basename(packageXmlFileToRemove)),
         packageFile: c.green(path.basename(packageXmlFile))
       }))
     );
   } else {
+    const introKey =
+      options.context === 'delta' ? 'deltaFilterIntro' :
+        options.context === 'delta-destructive' ? 'deltaDestructiveFilterIntro' :
+          options.context === 'no-overwrite-keep' ? 'noOverwriteKeepIntro' :
+            'keepingMatchingItemsFromFilter';
     uxLog(
       "action",
       this,
-      c.cyan(t('keepingMatchingItemsFromFilter', {
+      c.cyan(contextMarker + t(introKey, {
         packageFile: c.green(path.basename(packageXmlFile)),
         filterFile: c.green(path.basename(packageXmlFileToRemove))
       }))
@@ -1204,6 +1217,7 @@ export async function removePackageXmlContent(
     logFlag: options.debugMode,
     removedOnly: removedOnly,
     keepEmptyTypes: options.keepEmptyTypes || false,
+    context: options.context || '',
   });
 }
 

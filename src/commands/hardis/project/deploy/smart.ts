@@ -678,9 +678,13 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         await appendPackageModifications(fromCommit, toCommit, originalPackageXml, diffPackageXml);
       }
 
-      await removePackageXmlContent(this.packageXmlFile, diffPackageXml, true, {
+      // Copy under an explicit name: the log would otherwise show two files both named package.xml
+      const gitDeltaPackageXml = path.join(tmpDir, 'package', 'gitDeltaPackage.xml');
+      await fs.copy(diffPackageXml, gitDeltaPackageXml);
+      await removePackageXmlContent(this.packageXmlFile, gitDeltaPackageXml, true, {
         debugMode: this.debugMode,
         keepEmptyTypes: false,
+        context: 'delta',
       });
 
       const deltaContent = await fs.readFile(this.packageXmlFile, 'utf8');
@@ -719,6 +723,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, {
           debugMode: this.debugMode,
           keepEmptyTypes: false,
+          context: 'delta-destructive',
         });
         this.smartDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
         const deltaContentDelete = await fs.readFile(destructiveXmlFileDeploy, 'utf8');
