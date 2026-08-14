@@ -10,6 +10,39 @@ import { t } from "./i18n.js";
 
 let _cachedPullRequests: CommonPullRequestInfo[] | null = null;
 
+/**
+ * How the current Pull Request scope was determined.
+ * - single-pr: merge from a feature branch, the merged Pull Request is the whole scope
+ * - batch: merge from a major or retrofit branch, the scope is the promotion window of the target branch
+ * - go-live: merge into the topmost branch, the scope is the batch carried by the merge itself
+ * - check: Pull Request check job, the scope is the content of the checked Pull Request
+ */
+export type PullRequestScopeKind = 'single-pr' | 'batch' | 'go-live' | 'check';
+
+let _scopeKind: PullRequestScopeKind | null = null;
+
+/**
+ * Returns the resolved Pull Request scope with the way it was determined,
+ * so callers (like the Pull Request comment builder) can explain to the end user
+ * why actions from other Pull Requests are processed.
+ * Returns null when listAllPullRequestsForCurrentScope has not run (or returned nothing).
+ */
+export function getPullRequestScopeInfo(): { kind: PullRequestScopeKind; pullRequests: CommonPullRequestInfo[] } | null {
+  if (_scopeKind == null || _cachedPullRequests == null) {
+    return null;
+  }
+  return { kind: _scopeKind, pullRequests: _cachedPullRequests };
+}
+
+/**
+ * Log the final scope as a single readable line: the provider internals above it show HOW the
+ * scope was computed, this line shows WHAT it contains.
+ */
+function logResolvedScope(pullRequests: CommonPullRequestInfo[]): void {
+  const prList = pullRequests.map((pr) => `#${pr.idStr}`).join(', ');
+  uxLog("log", null, c.grey(`[GitProvider] ${t('pullRequestScopeResolved', { count: pullRequests.length, prList: prList || '-' })}`));
+}
+
 export async function getPullRequestScopedSfdxHardisConfig(pr: CommonPullRequestInfo): Promise<object | null> {
   const configFromPrDescription = getYamlFromPrDescription(pr);
   let configFromFile: object | null = null;
@@ -145,6 +178,8 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
         pr: pullRequestInfo.idStr,
       })}`));
       _cachedPullRequests = [pullRequestInfo];
+      _scopeKind = 'single-pr';
+      logResolvedScope(_cachedPullRequests);
       return _cachedPullRequests;
     }
     // Topmost branch (ex: production): there is no downstream promotion to anchor a window on,
@@ -177,6 +212,8 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
         goLivePullRequests.push(pullRequestInfo);
       }
       _cachedPullRequests = goLivePullRequests;
+      _scopeKind = 'go-live';
+      logResolvedScope(_cachedPullRequests);
       return _cachedPullRequests;
     }
     // ex: integration
@@ -207,6 +244,8 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
     pullRequests.push(pullRequestInfo);
   }
   _cachedPullRequests = pullRequests;
+  _scopeKind = checkOnly ? 'check' : 'batch';
+  logResolvedScope(_cachedPullRequests);
   return pullRequests
 }
 

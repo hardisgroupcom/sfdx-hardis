@@ -3,7 +3,7 @@ import { getCurrentGitBranch, isCI, uxLog } from "../utils/index.js";
 import { AzureDevopsProvider } from "./azureDevops.js";
 import { GithubProvider } from "./github.js";
 import { GitlabProvider } from "./gitlab.js";
-import { GitProviderRoot } from "./gitProviderRoot.js";
+import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
 import { BitbucketProvider } from "./bitbucket.js";
 import Debug from "debug";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
@@ -151,8 +151,18 @@ export abstract class GitProvider {
       if (prData.codeCoverageMarkdownBody) {
         markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
       }
+      // Explain the Quick Deploy mechanics so "Apex tests: none run" on the merge job does not read as an anomaly
+      if (checkOnly === true && globalThis.pullRequestDeploymentId && prData.deployStatus === "valid") {
+        markdownBody += "\n\n" + "🚀 This successful validation can be reused by Quick Deploy after the Pull Request is merged, so the merge job does not run the Apex tests again.";
+      }
+      if (checkOnly === false && prData.usedQuickDeploy === true) {
+        markdownBody += "\n\n" + "🚀 This deployment used Quick Deploy: it released the validation performed during the Pull Request check job, where the Apex tests were already run.";
+      }
       if (prData.flowDeletionMarkdownBody) {
         markdownBody += "\n\n" + prData.flowDeletionMarkdownBody;
+      }
+      if (prData.deploymentScopeMarkdownBody) {
+        markdownBody += "\n\n" + prData.deploymentScopeMarkdownBody;
       }
       if (prData.preDeployCommandsResultMarkdownBody) {
         markdownBody += "\n\n" + prData.preDeployCommandsResultMarkdownBody;
@@ -295,6 +305,31 @@ export abstract class GitProvider {
       await gitProvider.upsertPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, body, prNumber);
     } catch (e) {
       uxLog("warning", this, c.yellow(`[GitProvider] Could not update Deployment Actions comment for PR #${prNumber}: ${(e as Error).message}`));
+    }
+  }
+
+  static async tryListPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return [];
+    }
+    try {
+      return await gitProvider.listPullRequestCommentsByMarker(marker, prNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Could not list comments by marker${prNumber ? ` for PR #${prNumber}` : ''}: ${(e as Error).message}`));
+      return [];
+    }
+  }
+
+  static async tryUpdatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return;
+    }
+    try {
+      await gitProvider.updatePullRequestCommentByRef(commentRef, body);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Could not update comment on PR #${commentRef.prNumber}: ${(e as Error).message}`));
     }
   }
 
@@ -479,6 +514,10 @@ export declare type PullRequestData = {
   deployErrorsMarkdownBody?: string;
   codeCoverageMarkdownBody?: string;
   flowDeletionMarkdownBody?: string;
+  // Explains which Pull Requests the deployment actions and Apex test classes were collected from
+  deploymentScopeMarkdownBody?: string;
+  // True when the metadata deployment was performed with Quick Deploy (reusing the check job validation)
+  usedQuickDeploy?: boolean;
   commitsSummary?: string;
   deployStatus?: "valid" | "invalid" | "unknown";
   status?: "valid" | "invalid" | "tovalidate";

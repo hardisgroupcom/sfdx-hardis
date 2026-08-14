@@ -101,4 +101,45 @@ describe('buildActionsResultMarkdown()', () => {
     expect(markdown).to.contain('Expand to see details for each action');
     expect(markdown).to.contain('Agent not found');
   });
+
+  it('describes a manual action as waiting for manual execution, with a status legend', () => {
+    const commands = [
+      action({ type: 'manual', parameters: { instructions: 'Go to Setup' }, result: { statusCode: 'manual', output: 'Go to Setup' } }),
+    ];
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false);
+
+    expect(markdown).to.contain('waiting for manual execution');
+    expect(markdown).to.not.contain('| manual | manual |');
+    expect(markdown).to.contain('*Legend:');
+  });
+
+  it('renders manual instructions as a blockquote instead of a code fence', () => {
+    const commands = [
+      action({ type: 'manual', parameters: { instructions: '1. Go to Setup\n2. Click Save' }, result: { statusCode: 'manual' } }),
+    ];
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false);
+
+    expect(markdown).to.contain('> 1. Go to Setup');
+    expect(markdown).to.contain('> 2. Click Save');
+    expect(markdown).to.not.contain('```\n1. Go to Setup');
+  });
+
+  it('adds a hidden checkbox marker when the org branch is known', () => {
+    const commands = [
+      action({ id: 'manual-1', type: 'manual', parameters: { instructions: 'Go to Setup' }, result: { statusCode: 'manual' } }),
+    ];
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false, 'uat');
+
+    expect(markdown).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:manual-1 org:uat pr:0 -->');
+  });
+
+  it('notes when two distinct actions share the same label', () => {
+    const commands = [
+      action({ id: 'a1', label: 'Strip items', result: { statusCode: 'success', output: 'done' } }),
+      action({ id: 'a2', label: 'Strip items', result: { statusCode: 'success', output: 'done' } }),
+    ];
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false);
+
+    expect(markdown).to.contain('distinct actions');
+  });
 });

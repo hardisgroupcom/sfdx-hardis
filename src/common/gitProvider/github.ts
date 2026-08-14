@@ -1,6 +1,6 @@
 import * as github from "@actions/github";
 import c from "chalk";
-import { GitProviderRoot } from "./gitProviderRoot.js";
+import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GitHub } from "@actions/github/lib/utils.js";
@@ -755,5 +755,33 @@ ${getBannerMarkdownAndLink()}
       });
       uxLog("log", this, c.grey(`[GitHub] Created Deployment Actions comment on PR #${issueNumber}`));
     }
+  }
+
+  public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
+    const issueNumber = prNumber || this.prNumber;
+    if (!issueNumber) return [];
+    const comments = await this.octokit.rest.issues.listComments({
+      owner: this.repoOwner || '',
+      repo: this.repoName || '',
+      issue_number: issueNumber,
+    });
+    const results: PullRequestCommentRef[] = [];
+    for (const comment of comments.data) {
+      if (comment?.body?.includes(marker)) {
+        results.push({ prNumber: issueNumber, ref: comment.id, body: comment.body });
+      }
+    }
+    return results;
+  }
+
+  public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    if (!commentRef?.ref) return;
+    await this.octokit.rest.issues.updateComment({
+      owner: this.repoOwner || '',
+      repo: this.repoName || '',
+      comment_id: commentRef.ref,
+      body,
+    });
+    uxLog("log", this, c.grey(`[GitHub] Updated comment on PR #${commentRef.prNumber}`));
   }
 }

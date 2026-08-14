@@ -196,6 +196,11 @@ export function extractImagesFromMarkdown(markdown: string, sourceFile: string |
   const imageRegex = /!\[.*?\]\((.*?)\)/gm;
   const matches = Array.from(markdown.matchAll(imageRegex));
   return matches.map((match) => match[1]).filter(file => {
+    // Remote images render by themselves in the git provider UI: nothing to upload,
+    // and running a URL through path.join would mangle it into a broken warning
+    if (/^https?:\/\//.test(file)) {
+      return false;
+    }
     if (fs.existsSync(file)) {
       return true;
     }

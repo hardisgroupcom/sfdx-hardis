@@ -6,11 +6,12 @@ import * as path from 'path';
 import { getConfig } from '../../config/index.js';
 import { getCurrentGitBranch, uxLog } from './index.js';
 import { GitProvider } from '../gitProvider/index.js';
-import { loadDeploymentActionsState, checkActionInState, upsertActionInState, persistDeploymentActionsState, getJobInfoWithUrl } from './deploymentActionsStateUtils.js';
+import { loadDeploymentActionsState, checkActionInState, upsertActionInState, persistDeploymentActionsState, getJobInfoWithUrl, syncManualActionCheckboxes, buildManualActionCheckboxMarker } from './deploymentActionsStateUtils.js';
 // data import moved to DataAction class in actionsProvider
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
-import { getPullRequestScopedSfdxHardisConfig, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
+import { getPullRequestScopedSfdxHardisConfig, getPullRequestScopeInfo, isSinglePullRequestScope, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
+import { listMajorOrgs } from './orgConfigUtils.js';
 import { t } from './i18n.js';
 import { ActionWhen, getPrIdFromUserConfig } from './actionUtils.js';
 import { recordExecutedDeploymentActions } from './deploymentActionsRegistry.js';
@@ -30,6 +31,9 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   for (const cmd of commands) {
     cmd.when ??= deployWhen;
   }
+  // Explain in the Pull Request comment which Pull Requests the actions and test classes come from,
+  // so nobody wonders why actions of other Pull Requests are listed on this one.
+  await addDeploymentScopeMarkdownToPrData(options.checkOnly);
   if (commands.length === 0) {
     uxLog("action", this, c.cyan(`[DeploymentActions] No ${actionLabel} defined in branch config or pull requests`));
     uxLog("log", this, c.grey(t('noFoundToRun', { property })));
@@ -68,6 +72,12 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   if (hasGitProvider) {
     const sourcePrNumbers = collectSourcePrNumbers(commands, currentPrNumber);
     await loadDeploymentActionsState(sourcePrNumbers);
+    // Manual action checkboxes ticked by users in Pull Request comments count as performed actions
+    try {
+      await syncManualActionCheckboxes(sourcePrNumbers);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[DeploymentActions] Could not sync manual action checkboxes: ${(e as Error).message}`));
+    }
   }
 
   for (let cmdIndex = 0; cmdIndex < commands.length; cmdIndex++) {
@@ -86,14 +96,14 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     // Skip if we are in another context than the requested one
     const cmdContext = cmd.context || "all";
     if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: check-deployment-only action, and we are in process deployment mode`));
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: check-deployment-only action, and we are in process deployment mode`));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "Action context is check-deployment-only but we are in process deployment mode"
       };
       skipAction = true;
     } else if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: process-deployment-only action as we are in check deployment mode`));
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: process-deployment-only action as we are in check deployment mode`));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
@@ -115,7 +125,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
           const existingEntry = checkActionInState(cmd.id, orgBranchName);
           if (existingEntry) {
             uxLog("action", this, c.grey(
-              `[DeploymentActions] Skipping ${cmd.label}: already run in ${orgBranchName} on ${existingEntry.date}`
+              `[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: already run in ${orgBranchName} on ${existingEntry.date}`
             ));
             cmd.result = {
               statusCode: "skipped",
@@ -135,7 +145,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     }
     if (!skipAction) {
       // Run command
-      uxLog("action", this, c.cyan(`[DeploymentActions] Running action ${cmd.label}`));
+      uxLog("action", this, c.cyan(`[DeploymentActions] Running action ${describeActionWithPr(cmd)}`));
       await executeAction(cmd);
       // Display the failure details right where they happen, so the reason is next to the failure
       // in the job log instead of being buried in the PR comment (or lost entirely).
@@ -167,10 +177,20 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     }
     if (cmd.result?.statusCode === "failed" && cmd.allowFailure !== true) {
       uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} failed, stopping execution of further actions.`));
+      // Give the actions that will not run an explicit reason, so the Pull Request comment does not
+      // show a bare "not run" without saying why.
+      for (let notRunIndex = cmdIndex + 1; notRunIndex < commands.length; notRunIndex++) {
+        if (!commands[notRunIndex].result) {
+          commands[notRunIndex].result = {
+            statusCode: "not-run",
+            skippedReason: `Not run because a previous action failed (${cmd.label})`,
+          };
+        }
+      }
       break;
     }
   }
-  manageResultMarkdownBody(property, commands, options.checkOnly);
+  manageResultMarkdownBody(property, commands, options.checkOnly, orgBranchName);
   // Expose the executed actions so the post-deployment notification can report them
   recordExecutedDeploymentActions(commands);
   // Check commands results
@@ -193,6 +213,14 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       throw new SfError(`One or more ${actionLabel} have failed. See logs for more details.`);
     }
   }
+}
+
+/**
+ * Console label of an action, with the Pull Request that defines it when there is one,
+ * so the job log carries the same attribution as the Pull Request comment.
+ */
+function describeActionWithPr(cmd: PrePostCommand): string {
+  return cmd.pullRequest?.idStr ? `${cmd.label} (from PR #${cmd.pullRequest.idStr})` : cmd.label;
 }
 
 /**
@@ -222,6 +250,53 @@ function isNotRun(cmd: PrePostCommand): boolean {
  */
 function hasOutput(cmd: PrePostCommand): boolean {
   return (cmd.result?.output || '').trim() !== '';
+}
+
+/**
+ * Store in the Pull Request data the markdown paragraph explaining the Pull Request scope used to
+ * collect deployment actions and Apex test classes. Set once per process (pre-deploy usually wins).
+ */
+async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<void> {
+  try {
+    const existingPrData = getPullRequestData();
+    if (existingPrData.deploymentScopeMarkdownBody) {
+      return;
+    }
+    const scopeInfo = getPullRequestScopeInfo();
+    if (!scopeInfo || scopeInfo.pullRequests.length === 0) {
+      return;
+    }
+    const prLinks = scopeInfo.pullRequests
+      .map((pr) => (pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`))
+      .join(', ');
+    let markdown = '';
+    if (checkOnly) {
+      markdown = `ℹ️ Deployment actions and Apex test classes are collected from the content of this Pull Request`;
+      if (scopeInfo.pullRequests.length > 1) {
+        markdown += ` (${scopeInfo.pullRequests.length} Pull Requests carried: ${prLinks})`;
+      }
+      markdown += `.`;
+      // On a merge from a major or retrofit branch, the post-merge deployment job replays the whole
+      // promotion window: without this note, the check comment ("no actions") and the merge job
+      // (actions from other Pull Requests) look contradictory.
+      const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+      if (prInfo) {
+        const majorOrgs = await listMajorOrgs();
+        if (!isSinglePullRequestScope(prInfo.sourceBranch, majorOrgs.map((o) => o.branchName))) {
+          markdown += `\n\nℹ️ After the merge, the deployment job will also process the still-pending actions of the other Pull Requests of the \`${prInfo.targetBranch}\` promotion window, so it can process more actions than listed here.`;
+        }
+      }
+    } else {
+      // A feature Pull Request merge processes only its own actions: nothing to explain
+      if (scopeInfo.kind === 'single-pr') {
+        return;
+      }
+      markdown = `ℹ️ This deployment processed the deployment actions and Apex test classes of ${scopeInfo.pullRequests.length} Pull Request(s): ${prLinks}. Actions already performed in this org, or still waiting for a manual execution, keep their tracked state on their own Pull Request.`;
+    }
+    setPullRequestData({ deploymentScopeMarkdownBody: markdown });
+  } catch (e) {
+    uxLog("warning", this, c.yellow(`[DeploymentActions] Could not build the deployment scope explanation: ${(e as Error).message}`));
+  }
 }
 
 async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean, deploySuccess: boolean) {
@@ -302,7 +377,7 @@ async function executeAction(cmd: PrePostCommand): Promise<void> {
   }
 }
 
-function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: boolean, checkOnly: boolean): string {
+function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: boolean, checkOnly: boolean, orgBranch?: string): string {
   if (isPreDeploy && !checkOnly) {
     return '';
   }
@@ -323,8 +398,12 @@ function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: bool
     const labelCol = cmd.pullRequest
       ? `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))`
       : cmd.label;
-    section += `- [ ] ${labelCol}\n`;
+    // The hidden marker lets sfdx-hardis detect a ticked checkbox on the next job, record the
+    // action as done for the org branch, and tick it in the other comments where it appears.
+    const marker = orgBranch ? `${buildManualActionCheckboxMarker(cmd.id, orgBranch, cmd.pullRequest?.idNumber || 0)} ` : '';
+    section += `- [ ] ${marker}${labelCol}\n`;
   }
+  section += `\n*Tick a box once the action has been performed in the org: the next sfdx-hardis job will record it as done.*\n`;
   section += `\n---\n\n`;
   return section;
 }
@@ -333,12 +412,19 @@ function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: bool
  * Build the "Actions Results" markdown section posted in the Pull Request comment.
  * Exported so it can be unit tested without a git provider or a config layer.
  */
-export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean): string {
+export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean, orgBranch?: string): string {
   let markdownBody = `### ${property === 'commandsPreDeploy' ? 'Pre-deployment Actions' : 'Post-deployment Actions'} Results\n\n`;
 
   // Add manual actions section
   const isPreDeploy = property === 'commandsPreDeploy';
-  markdownBody += buildManualActionsSection(commands, isPreDeploy, checkOnly);
+  markdownBody += buildManualActionsSection(commands, isPreDeploy, checkOnly, orgBranch);
+
+  // Count labels so two distinct actions sharing the same label do not look like a duplicated row
+  const labelCounts = new Map<string, number>();
+  for (const cmd of commands) {
+    labelCounts.set(cmd.label, (labelCounts.get(cmd.label) || 0) + 1);
+  }
+  const hasDuplicateLabels = [...labelCounts.values()].some((count) => count > 1);
 
   // Build markdown table
   markdownBody += `| <!-- --> | Label | Type | Status | Details |\n`;
@@ -351,19 +437,27 @@ export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'comm
           (cmd.result?.statusCode === "failed") ? '❌' :
             cmd.result?.statusCode === "skipped" ? '⚪' :
               cmd.result?.statusCode === "not-run" ? '⏭️' : '❓';
-    const statusCol = `${cmd.result?.statusCode || 'not run'}`;
+    const statusCol = cmd.result?.statusCode === "manual" ?
+      'waiting for manual execution' :
+      `${cmd.result?.statusCode || 'not run'}`;
     const detailCol = (cmd.result?.statusCode === "skipped" || cmd.result?.statusCode === "not-run") ?
       (cmd.result?.skippedReason || '<!-- -->') :
       (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ?
         (cmd.result.skippedReason ? `${cmd.result.skippedReason} (Allowed to fail)` : "(Allowed to fail)") :
         (cmd.result?.statusCode === "failed" && cmd.result.skippedReason) ?
           cmd.result.skippedReason :
-          "See details below";
+          cmd.result?.statusCode === "manual" ?
+            "Instructions in the details section below" :
+            "See details below";
     const labelCol = cmd.pullRequest ?
       `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))` :
       cmd.label;
     markdownBody += `| ${statusIcon} | ${labelCol} | ${cmd.type || 'command'} | ${statusCol} | ${detailCol} |\n`;
   }
+  if (hasDuplicateLabels) {
+    markdownBody += `\n*Some rows share the same label but are distinct actions, each defined on its own Pull Request.*\n`;
+  }
+  markdownBody += `\n*Legend: ✅ success · ⚠️ failed (allowed to fail) · ❌ failed · 👋 waiting for manual execution · ⚪ skipped · ⏭️ not run*\n`;
   // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
   const commandsInResults = commands.filter(c => hasOutput(c) || (c.type === "manual" && !isNotRun(c)));
   if (commandsInResults.length > 0) {
@@ -402,10 +496,11 @@ export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'comm
           `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))` :
           cmd.label;
         markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labelTitle}</summary>\n\n`;
-        markdownBody += '```\n';
-        markdownBody += cmd?.parameters?.instructions || "No instructions provided.";
-        markdownBody += '\n```\n';
-        markdownBody += '</details>\n';
+        // Instructions are markdown written by humans: a blockquote keeps their lists, links and
+        // bold text rendered, where a code fence would show them as raw text.
+        const instructions = (cmd?.parameters?.instructions || "No instructions provided.") as string;
+        markdownBody += instructions.split('\n').map((line) => `> ${line}`).join('\n');
+        markdownBody += '\n</details>\n';
       }
     }
     markdownBody += `\n</details>\n`;
@@ -413,10 +508,10 @@ export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'comm
   return markdownBody;
 }
 
-function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean) {
+function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean, orgBranch?: string) {
   const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
   const prData = {
-    [propertyFormatted]: buildActionsResultMarkdown(property, commands, checkOnly)
+    [propertyFormatted]: buildActionsResultMarkdown(property, commands, checkOnly, orgBranch)
   };
   setPullRequestData(prData);
 }

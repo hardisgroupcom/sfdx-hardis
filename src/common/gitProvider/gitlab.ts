@@ -3,7 +3,7 @@ import c from "chalk";
 import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { GitProviderRoot } from "./gitProviderRoot.js";
+import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
 import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
@@ -731,5 +731,24 @@ ${getBannerMarkdownAndLink()}
       await this.gitlabApi.MergeRequestNotes.create(projectId, mergeRequestId, body);
       uxLog("log", this, c.grey(`[GitLab] Created Deployment Actions note on MR !${mergeRequestId}`));
     }
+  }
+
+  public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
+    const ctx = this.resolveMergeRequestContext(prNumber);
+    if (!ctx) return [];
+    const notes = await this.gitlabApi.MergeRequestNotes.all(ctx.projectId, ctx.mergeRequestId);
+    const results: PullRequestCommentRef[] = [];
+    for (const note of notes) {
+      if ((note.body || '').includes(marker)) {
+        results.push({ prNumber: ctx.mergeRequestId, ref: { projectId: ctx.projectId, noteId: note.id }, body: note.body || '' });
+      }
+    }
+    return results;
+  }
+
+  public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    if (!commentRef?.ref?.noteId) return;
+    await this.gitlabApi.MergeRequestNotes.edit(commentRef.ref.projectId, commentRef.prNumber, commentRef.ref.noteId, { body });
+    uxLog("log", this, c.grey(`[GitLab] Updated note on MR !${commentRef.prNumber}`));
   }
 }

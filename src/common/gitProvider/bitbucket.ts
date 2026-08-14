@@ -1,4 +1,4 @@
-import { GitProviderRoot } from './gitProviderRoot.js';
+import { GitProviderRoot, PullRequestCommentRef } from './gitProviderRoot.js';
 import c from 'chalk';
 import fs from "fs-extra";
 import FormData from 'form-data'
@@ -916,6 +916,39 @@ ${getBannerMarkdownAndLink()}
       });
       uxLog("log", this, c.grey(`[Bitbucket] Created Deployment Actions comment on PR #${pullRequestId}`));
     }
+  }
+
+  public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const pullRequestId = prNumber || Number(process.env.BITBUCKET_PR_ID || '');
+    if (!pullRequestId || !repoSlug || !workspace) return [];
+    const comments = await this.bitbucket.repositories.listPullRequestComments({
+      pull_request_id: pullRequestId,
+      repo_slug: repoSlug,
+      workspace,
+    });
+    const results: PullRequestCommentRef[] = [];
+    for (const comment of comments?.data?.values || []) {
+      if ((comment?.content?.raw || '').includes(marker)) {
+        results.push({ prNumber: pullRequestId, ref: comment.id, body: comment.content?.raw || '' });
+      }
+    }
+    return results;
+  }
+
+  public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    if (!repoSlug || !workspace || !commentRef?.ref) return;
+    await this.bitbucket.repositories.updatePullRequestComment({
+      workspace,
+      repo_slug: repoSlug,
+      pull_request_id: commentRef.prNumber,
+      comment_id: commentRef.ref,
+      _body: { content: { raw: body } } as any,
+    });
+    uxLog("log", this, c.grey(`[Bitbucket] Updated comment on PR #${commentRef.prNumber}`));
   }
 
 }

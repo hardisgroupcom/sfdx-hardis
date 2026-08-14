@@ -448,6 +448,8 @@ export async function smartDeploy(
             );
             quickDeploy = true;
             deploymentMetrics.quickDeploy = true;
+            // Displayed in the Pull Request comment: explains why no Apex test ran on this job
+            setPullRequestData({ usedQuickDeploy: true });
             // Store complete deployment result as a CI artifact, then display a readable summary
             const quickDeployReportFile = await writeDeployResultReportFile(
               { status: quickDeployRes.status, result: quickDeployRes.result },

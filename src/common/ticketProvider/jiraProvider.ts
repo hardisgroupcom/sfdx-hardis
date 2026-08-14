@@ -1,5 +1,5 @@
 import { Version2Client, Version3Client, Version3Models } from "jira.js";
-import { TicketProviderRoot } from "./ticketProviderRoot.js";
+import { recordTicketCollectionIssue, TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from "sort-array";
 import { Ticket } from "./index.js";
@@ -234,6 +234,8 @@ export class JiraProvider extends TicketProviderRoot {
         c.cyan('[JiraProvider] ' + t('jiraProviderCollectingTickets', { jiraTicketsNumber, jiraHost: this.jiraHost })),
       );
     }
+    let failedTicketsNumber = 0;
+    let firstErrorMessage = '';
     for (const ticket of tickets) {
       if (ticket.provider === "JIRA") {
         let ticketInfo: any = null;
@@ -242,7 +244,11 @@ export class JiraProvider extends TicketProviderRoot {
           // but TypeScript cannot resolve the union of their overloaded signatures.
           ticketInfo = await (activeClient as Version2Client).issues.getIssue({ issueIdOrKey: ticket.id });
         } catch (e) {
-          uxLog("warning", this, c.yellow('[JiraApi] ' + t('jiraApiErrorGettingTicket', { ticketId: ticket.id, message: (e as Error).message })));
+          // A single aggregated warning is displayed after the loop: per-ticket failures usually
+          // share the same cause (expired token, missing permission) and would flood the log.
+          uxLog("log", this, c.grey('[JiraApi] ' + t('jiraApiErrorGettingTicket', { ticketId: ticket.id, message: (e as Error).message })));
+          failedTicketsNumber++;
+          firstErrorMessage = firstErrorMessage || (e as Error).message;
         }
         if (ticketInfo) {
           // Description is ADF Document on Cloud (v3) or plain string on Server/DC (v2)
@@ -278,9 +284,17 @@ export class JiraProvider extends TicketProviderRoot {
           }
           uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderCollectedTicket', { ticketId: ticket.id })));
         } else {
-          uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderUnableToGetIssue', { ticketId: ticket.id })));
+          uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderUnableToGetIssue', { ticketId: ticket.id })));
         }
       }
+    }
+    if (failedTicketsNumber > 0) {
+      uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderTicketsCollectionFailed', {
+        failed: failedTicketsNumber,
+        total: jiraTicketsNumber,
+        message: firstErrorMessage,
+      })));
+      recordTicketCollectionIssue(`Details could not be retrieved for ${failedTicketsNumber} of ${jiraTicketsNumber} JIRA ticket(s) (first error: ${firstErrorMessage}). Check the JIRA authentication and permissions of the CI job.`);
     }
     return tickets;
   }
