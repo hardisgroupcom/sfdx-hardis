@@ -4,7 +4,7 @@ import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
-import { CONSTANTS, getBannerMarkdownAndLink, getPrCommentBannerMarkdown } from "../../config/index.js";
+import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
 
@@ -360,9 +360,7 @@ export class GitlabProvider extends GitProviderRoot {
     const gitlabCIJobUrl = process.env.CI_JOB_URL;
     // Build note message
     const messageKey = prMessage.messageKey + "-" + gitlabCiJobName + "-" + mergeRequestId;
-    let messageBody = `${getPrCommentBannerMarkdown(prMessage.bannerKey)}## ${prMessage.title || ""}
-
-${prMessage.navBlock || ""}${prMessage.message}
+    let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
 _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
 

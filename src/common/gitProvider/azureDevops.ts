@@ -6,7 +6,8 @@ import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../ut
 import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
-import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
+import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';
@@ -475,13 +476,26 @@ ${this.getPipelineVariablesConfig()}
   }
 
   // Returns a comparable timestamp (ms) for a PR comment, falling back to its parent thread.
+  // Comments are updated in place from one run to the next, so the last update is what tells when
+  // the content (and the deployment id it carries) was written, not the creation date.
   private getCommentTimestamp(comment: any, thread: any): number {
-    const dateValue = comment?.publishedDate || comment?.lastUpdatedDate || thread?.publishedDate || thread?.lastUpdatedDate;
-    if (!dateValue) {
-      return 0;
+    const dateValues = [
+      comment?.lastUpdatedDate,
+      comment?.publishedDate,
+      thread?.lastUpdatedDate,
+      thread?.publishedDate,
+    ];
+    let latest = 0;
+    for (const dateValue of dateValues) {
+      if (!dateValue) {
+        continue;
+      }
+      const time = new Date(dateValue).getTime();
+      if (!isNaN(time) && time > latest) {
+        latest = time;
+      }
     }
-    const time = new Date(dateValue).getTime();
-    return isNaN(time) ? 0 : time;
+    return latest;
   }
 
   public async listPullRequestsInBranchSinceLastMerge(
@@ -696,9 +710,7 @@ ${this.getPipelineVariablesConfig()}
     const azureBuildUri = `${SYSTEM_COLLECTIONURI}${encodeURIComponent(SYSTEM_TEAMPROJECT)}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
     // Build thread message
     const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
-    let messageBody = `${getPrCommentBannerMarkdown(prMessage.bannerKey)}## ${prMessage.title || ""}
-
-${prMessage.navBlock || ""}${prMessage.message}
+    let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
 <br/>
 
@@ -709,27 +721,34 @@ ${getBannerMarkdownAndLink()}
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present
-    if (globalThis.pullRequestDeploymentId) {
+    if (globalThis.pullRequestDeploymentId && prMessage.skipDeploymentIdMarker !== true) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
     // Upload attached images if necessary
     messageBody = await this.uploadAndReplaceImageReferences(messageBody, prMessage.sourceFile || "");
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
-    // Check for existing threads from a previous run
+    // Check for existing threads from a previous run. A comment of the same kind (validation or
+    // deployment) matches even when its message key carries another job name: the merge job this
+    // way updates the pending deployment comment created by the check job instead of adding a
+    // second deployment comment.
     uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationListingPrThreads', { pullRequestId })));
+    const currentCommentKind = getPrCommentKindFromMessageKey(prMessage.messageKey);
     const existingThreads = await azureGitApi.getThreads(repositoryId, pullRequestId);
     let existingThreadId: number | null = null;
-    let existingThreadComment: GitPullRequestCommentThread | null = null;
     let existingThreadCommentId: number | null | undefined = null;
     for (const existingThread of existingThreads) {
       if (existingThread.isDeleted) {
         continue;
       }
       for (const comment of existingThread?.comments || []) {
-        if ((comment?.content || "").includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
-          existingThreadComment = existingThread;
-          existingThreadCommentId = (existingThread.comments || [])[0].id;
+        if (comment?.isDeleted) {
+          continue;
+        }
+        const commentContent = comment?.content || "";
+        if (commentContent.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`) ||
+          (currentCommentKind !== null && getPrCommentKind(commentContent) === currentCommentKind)) {
+          existingThreadCommentId = comment.id;
           existingThreadId = existingThread.id || null;
           break;
         }
@@ -739,18 +758,23 @@ ${getBannerMarkdownAndLink()}
       }
     }
 
-    // Create or update MR note
-    if (existingThreadId) {
-      // Delete previous comment
-      uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationDeletingPreviousThread')));
-      await azureGitApi.deleteComment(repositoryId, pullRequestId, existingThreadId, existingThreadCommentId || 0);
-      existingThreadComment = await azureGitApi.getPullRequestThread(repositoryId, pullRequestId, existingThreadId);
-      // Update existing thread
-      existingThreadComment = {
-        id: existingThreadComment.id,
-        status: CommentThreadStatus.Closed,
+    // Update the existing comment in place: the thread id must stay stable, because the navigation
+    // links of the other sfdx-hardis comments and of the Pull Request description point to it, and
+    // the description cannot be fixed after the merge (see isPrDescriptionEditableAfterMerge)
+    if (existingThreadId && existingThreadCommentId) {
+      uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationUpdatingPrThread', { threadId: existingThreadId })));
+      await azureGitApi.updateComment({ content: messageBody }, repositoryId, pullRequestId, existingThreadId, existingThreadCommentId);
+      await azureGitApi.updateThread(
+        { status: this.pullRequestStatusToAzureThreadStatus(prMessage) },
+        repositoryId,
+        pullRequestId,
+        existingThreadId,
+      );
+      uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationPostedPrThread', { threadId: existingThreadId })));
+      return {
+        posted: true,
+        providerResult: { threadId: existingThreadId, commentId: existingThreadCommentId },
       };
-      await azureGitApi.updateThread(existingThreadComment, repositoryId, pullRequestId, existingThreadId);
     }
 
     // Create new thread
@@ -766,6 +790,11 @@ ${getBannerMarkdownAndLink()}
     };
     uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationPostedPrThread', { threadId: azureEditThreadResult.id })));
     return prResult;
+  }
+
+  // Azure DevOps returns TF401181 when editing the description of a completed Pull Request
+  public isPrDescriptionEditableAfterMerge(): boolean {
+    return false;
   }
 
   // Convert sfdx-hardis PR status to Azure Thread status value
@@ -1174,11 +1203,17 @@ ${getBannerMarkdownAndLink()}
         // deleted comment must not be honored
         if (comment?.isDeleted) continue;
         if ((comment?.content || '').includes(marker)) {
+          // The URL fragment scrolls the Azure DevOps UI to the comment itself: the anchor of a
+          // comment is the Unix timestamp (in seconds) of its publication date
+          const publishedEpochSeconds = comment.publishedDate
+            ? Math.floor(new Date(comment.publishedDate).getTime() / 1000)
+            : null;
           results.push({
             prNumber: pullRequestId,
             ref: { threadId: thread.id, commentId: comment.id },
             body: comment.content || '',
-            url: `${this.buildPullRequestWebUrl(pullRequestId)}?_a=overview&discussionId=${thread.id}`,
+            url: `${this.buildPullRequestWebUrl(pullRequestId)}?_a=overview&discussionId=${thread.id}` +
+              (publishedEpochSeconds ? `#${publishedEpochSeconds}` : ''),
           });
         }
       }

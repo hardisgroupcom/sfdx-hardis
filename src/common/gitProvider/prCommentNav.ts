@@ -112,6 +112,33 @@ function escapeForRegex(text: string): string {
 
 const NAV_BLOCK_REGEX = new RegExp(`${escapeForRegex(PR_NAV_START)}[\\s\\S]*?${escapeForRegex(PR_NAV_END)}`);
 
+const NAV_BLOCK_CONTENT_REGEX = new RegExp(`${escapeForRegex(PR_NAV_START)}\\s*([\\s\\S]*?)\\s*${escapeForRegex(PR_NAV_END)}`);
+
+/**
+ * Navigation line already present in a comment body, or null when the body carries no
+ * navigation block or an empty one.
+ */
+export function extractPrCommentNavLine(body: string): string | null {
+  const match = (body || '').match(NAV_BLOCK_CONTENT_REGEX);
+  const navLine = (match?.[1] || '').trim();
+  return navLine === '' ? null : navLine;
+}
+
+/**
+ * Kind of the comment a PullRequestMessageRequest will produce, from its base message key
+ * (before the provider appends its job name suffix). Returns null for the other comments
+ * (Flow diffs), which are only matched by their full message key.
+ */
+export function getPrCommentKindFromMessageKey(messageKey: string): PrCommentKind | null {
+  if (messageKey === 'deployment-check') {
+    return 'validation';
+  }
+  if (messageKey === 'deployment') {
+    return 'deployment';
+  }
+  return null;
+}
+
 /**
  * Replace the navigation block of a comment body. A body without the markers is returned untouched,
  * so comments that are not part of the navigation (Flow diffs, user comments) are never modified.

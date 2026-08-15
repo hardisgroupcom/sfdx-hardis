@@ -4,7 +4,7 @@ import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GitHub } from "@actions/github/lib/utils.js";
-import { CONSTANTS, getBannerMarkdownAndLink, getPrCommentBannerMarkdown } from "../../config/index.js";
+import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
 
@@ -372,9 +372,7 @@ export class GithubProvider extends GitProviderRoot {
     const githubJobUrl = await this.getCurrentJobUrl();
     // Build note message
     const messageKey = prMessage.messageKey + "-" + this.workflow + "-" + this.prNumber;
-    let messageBody = `${getPrCommentBannerMarkdown(prMessage.bannerKey)}## ${prMessage.title || ""}
-
-${prMessage.navBlock || ""}${prMessage.message}
+    let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
 _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}](${githubJobUrl})_
 

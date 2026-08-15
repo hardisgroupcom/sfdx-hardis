@@ -32,7 +32,7 @@ Depending of your git provider, configure one of the following integrations.
 
 ## Pull Request comments
 
-Whatever the git provider, sfdx-hardis can post up to three different comments on the same Pull Request. Each one starts with a banner telling which comment you are reading, and how it went: green when it succeeded, red when it failed, orange when something is still pending.
+Whatever the git provider, sfdx-hardis can post up to three different comments on the same Pull Request. Each one starts with a banner telling which comment you are reading, and how it went: green when it succeeded, red when it failed, orange when manual actions are still waiting. The banner replaces the title of the comment, which stays as the alt text of the image.
 
 ### Validation
 
@@ -54,13 +54,15 @@ Updated by both jobs. It tracks the [deployment actions](salesforce-ci-cd-work-o
 
 ### Navigation between the comments
 
-The three comments are posted by different jobs and end up scattered among the other comments of the Pull Request, so each one displays a navigation line just under its title:
+The three comments are posted by different jobs and end up scattered among the other comments of the Pull Request, so each one displays a navigation line above its banner:
 
 > [🔍 Validation](#) | **🚀 Deployment** | [🛠️ Actions](#)
 
 The comment you are reading is in bold, the others are links to their own comment. Comments that do not exist yet are not listed. The same navigation is added at the very beginning of the Pull Request description, so the comments can be reached from the top of the Pull Request.
 
 The description is only modified between the sfdx-hardis navigation markers: the text written by the author is left untouched.
+
+On Azure DevOps, the description of a completed Pull Request can no longer be edited, so the check job creates the deployment comment right away, with a "Waiting for the Pull Request to be merged" note and no banner. The deployment job updates that same comment once the merge happened, which keeps the Deployment entry of the navigation valid from the start.
 
 ### Environment variables
 

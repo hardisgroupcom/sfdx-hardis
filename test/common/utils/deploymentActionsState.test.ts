@@ -96,6 +96,36 @@ describe('Deployment Actions state comment (matrix format)', () => {
     expect(reparsed[0].jobUrl).to.equal('https://ci.example.com/builds/2026-08-14/1234');
   });
 
+  it('shows the banner in place of the title heading, with the title as alt text', () => {
+    const body = buildDeploymentActionsCommentBody([entry({})], undefined, 42);
+    expect(body).to.contain('![🛠️ Deployment Actions](');
+    expect(body).to.not.contain('## 🛠️ Deployment Actions');
+  });
+
+  it('keeps the title heading when banners are disabled', () => {
+    process.env.SFDX_HARDIS_PR_COMMENT_BANNERS = 'false';
+    try {
+      const body = buildDeploymentActionsCommentBody([entry({})], undefined, 42);
+      expect(body).to.contain('## 🛠️ Deployment Actions');
+      expect(body).to.not.contain('pr-banner-');
+    } finally {
+      delete process.env.SFDX_HARDIS_PR_COMMENT_BANNERS;
+    }
+  });
+
+  it('keeps the previous navigation when the process does not know the comment links', () => {
+    const previousBody = [
+      '<!-- sfdx-hardis deployment-actions-state -->',
+      '<!-- sfdx-hardis nav-start -->',
+      '[🔍 Validation](https://git.example.com/pr/42#c1) | **🛠️ Actions**',
+      '<!-- sfdx-hardis nav-end -->',
+      '',
+      'old content',
+    ].join('\n');
+    const body = buildDeploymentActionsCommentBody([entry({})], undefined, 42, previousBody);
+    expect(body).to.contain('[🔍 Validation](https://git.example.com/pr/42#c1) | **🛠️ Actions**');
+  });
+
   it('still parses the legacy one-row-per-org format', () => {
     const legacyBody = `<!-- sfdx-hardis deployment-actions-state -->
 ## Deployment Actions

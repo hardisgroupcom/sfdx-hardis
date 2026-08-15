@@ -1034,25 +1034,28 @@ export async function execCommand(
     };
   }
   // Parse command result if --json
+  let parsedResult: any = null;
   try {
-    const parsedResult = JSON.parse(commandResult.stdout);
-    if (options.fail && parsedResult.status && parsedResult.status > 0) {
-      throw new SfError(c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`));
-    }
-    if (commandResult.stderr && commandResult.stderr.length > 2) {
-      uxLog("other", this, '[sfdx-hardis][WARNING] stderr: ' + c.yellow(commandResult.stderr));
-    }
-    return parsedResult;
+    parsedResult = JSON.parse(commandResult.stdout);
   } catch (e) {
-    // Manage case when json is not parseable
+    // The command succeeded (its exit code was 0) but its output is not a single JSON document,
+    // for example two --json commands chained with && : the exit code stays the source of truth,
+    // so no failure is fabricated out of the parsing error.
+    uxLog("warning", commandThis, c.yellow(t('commandOutputJsonNotParseable', { message: (e as Error).message })));
     return {
-      status: 1,
-      errorMessage: c.red(
-        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${(e as Error).message}\n${commandResult.stdout}\n${commandResult.stderr
-        })`
-      ),
+      status: 0,
+      stdout: commandResult.stdout,
+      stderr: commandResult.stderr,
+      jsonParseError: (e as Error).message,
     };
   }
+  if (options.fail && parsedResult.status && parsedResult.status > 0) {
+    throw new SfError(c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`));
+  }
+  if (commandResult.stderr && commandResult.stderr.length > 2) {
+    uxLog("other", this, '[sfdx-hardis][WARNING] stderr: ' + c.yellow(commandResult.stderr));
+  }
+  return parsedResult;
 }
 
 /* Ex: force-app/main/default/layouts/Opportunity-Opportunity %28Marketing%29 Layout.layout-meta.xml

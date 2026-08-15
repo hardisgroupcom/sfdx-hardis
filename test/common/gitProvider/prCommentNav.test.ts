@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import {
+  extractPrCommentNavLine,
   getPrCommentKind,
+  getPrCommentKindFromMessageKey,
   PR_NAV_END,
   PR_NAV_START,
   renderPrCommentNav,
@@ -110,5 +112,24 @@ describe('Pull Request comment kind detection', () => {
   it('keeps the Flow diff comments out of the navigation', () => {
     expect(getPrCommentKind('<!-- sfdx-hardis message-key sfdx-hardis-flow-diff-MyFlow-job-42 -->')).to.be.null;
     expect(getPrCommentKind('A comment written by a user')).to.be.null;
+  });
+
+  it('resolves the kind from a base message key before the provider suffixes it', () => {
+    expect(getPrCommentKindFromMessageKey('deployment-check')).to.equal('validation');
+    expect(getPrCommentKindFromMessageKey('deployment')).to.equal('deployment');
+    expect(getPrCommentKindFromMessageKey('sfdx-hardis-flow-diff-MyFlow')).to.be.null;
+  });
+});
+
+describe('Navigation line extraction', () => {
+  it('returns the navigation line of a comment body', () => {
+    const navLine = renderPrCommentNav(LINKS, 'actions');
+    const body = `Header\n\n${wrapPrCommentNav(navLine)}\n\nContent`;
+    expect(extractPrCommentNavLine(body)).to.equal(navLine);
+  });
+
+  it('returns null for an empty navigation block or a body without markers', () => {
+    expect(extractPrCommentNavLine(`Header\n${wrapPrCommentNav('')}\nContent`)).to.be.null;
+    expect(extractPrCommentNavLine('No navigation here')).to.be.null;
   });
 });
