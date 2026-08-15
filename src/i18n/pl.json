@@ -83,6 +83,7 @@
   "aiUsageDetailRowsTruncated": "Liczba wierszy szczegolowych jest ograniczona do {{count}}: sumy sa dokladne, ale podzial na agenty jest czesciowy.",
   "aiUsageMeteredColumnNotIdentified": "Nie udało się zidentyfikować flagi metered w modelu zużycia Data 360. Każdy credit jest liczony jako rozliczony, więc wartości stanowią górną granicę.",
   "allApexClassesCalledInLastDays": "Wszystkie klasy Apex były wywoływane w ciągu ostatnich {{days}} dni",
+  "allDeploymentsSkippedEmptyPackageXml": "Nie wysłano żadnych metadanych do org: każde zaplanowane wdrożenie zostało pominięte, ponieważ jego package.xml okazał się pusty",
   "allFlows": "Wszystkie Flow",
   "allLicensesTypes": "Wszystkie typy licencji",
   "allMetadataTypesAlreadyDecomposed": "Wszystkie typy metadanych są już rozłożone",

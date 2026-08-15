@@ -83,6 +83,7 @@
   "aiUsageDetailRowsTruncated": "Detail rows are capped at {{count}}: totals are exact but the per-agent breakdown is partial.",
   "aiUsageMeteredColumnNotIdentified": "Could not identify a metered flag in the Data 360 usage model. Every credit is counted as billed, so the figures are an upper bound.",
   "allApexClassesCalledInLastDays": "All Apex classes have been called in the last {{days}} days",
+  "allDeploymentsSkippedEmptyPackageXml": "No metadata was sent to the org: every planned deployment was skipped because its package.xml ended up empty",
   "allFlows": "All flows",
   "allLicensesTypes": "All license types",
   "allMetadataTypesAlreadyDecomposed": "All metadata types already decomposed",

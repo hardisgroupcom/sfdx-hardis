@@ -83,6 +83,7 @@
   "aiUsageDetailRowsTruncated": "Detailregels zijn beperkt tot {{count}}: de totalen zijn exact maar de uitsplitsing per agent is gedeeltelijk.",
   "aiUsageMeteredColumnNotIdentified": "Kon geen metered-vlag identificeren in het Data 360-gebruiksmodel. Elk credit wordt als gefactureerd geteld, dus de cijfers zijn een bovengrens.",
   "allApexClassesCalledInLastDays": "Alle Apex classes zijn aangeroepen in de afgelopen {{days}} dagen",
+  "allDeploymentsSkippedEmptyPackageXml": "Er zijn geen metadata naar de org verzonden: elke geplande implementatie is overgeslagen omdat de package.xml leeg was",
   "allFlows": "Alle flows",
   "allLicensesTypes": "Alle licentietypes",
   "allMetadataTypesAlreadyDecomposed": "Alle metadatatypes zijn al gedecomposeerd",

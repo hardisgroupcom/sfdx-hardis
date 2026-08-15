@@ -83,6 +83,7 @@
   "aiUsageDetailRowsTruncated": "Les lignes de detail sont limitees a {{count}} : les totaux sont exacts mais la repartition par agent est partielle.",
   "aiUsageMeteredColumnNotIdentified": "Impossible d'identifier un flag metered dans le modèle d'utilisation Data 360. Chaque crédit est compté comme facturé, les chiffres constituent donc une borne supérieure.",
   "allApexClassesCalledInLastDays": "Toutes les classes Apex ont été appelées au cours des {{days}} derniers jours",
+  "allDeploymentsSkippedEmptyPackageXml": "Aucune métadonnée n'a été envoyée à l'org : chaque déploiement prévu a été ignoré car son package.xml s'est retrouvé vide",
   "allFlows": "Tous les flux",
   "allLicensesTypes": "Tous les types de licences",
   "allMetadataTypesAlreadyDecomposed": "Tous les types de métadonnées sont déjà décomposés",

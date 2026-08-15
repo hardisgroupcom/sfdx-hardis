@@ -83,6 +83,7 @@
   "aiUsageDetailRowsTruncated": "Las filas de detalle estan limitadas a {{count}}: los totales son exactos pero el desglose por agente es parcial.",
   "aiUsageMeteredColumnNotIdentified": "No se ha podido identificar un indicador metered en el modelo de uso de Data 360. Cada crédito se cuenta como facturado, por lo que las cifras son un límite superior.",
   "allApexClassesCalledInLastDays": "Todas las clases Apex han sido invocadas en los últimos {{days}} días",
+  "allDeploymentsSkippedEmptyPackageXml": "No se enviaron metadatos a la org: se omitió cada despliegue previsto porque su package.xml quedó vacío",
   "allFlows": "Todos los Flows",
   "allLicensesTypes": "Todos los tipos de licencia",
   "allMetadataTypesAlreadyDecomposed": "Todos los tipos de metadatos ya están descompuestos",
