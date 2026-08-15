@@ -169,6 +169,8 @@ After every action runs, its result (✅ success, ❌ failed, 👋 manual) is re
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 
+You can also keep a single definition and restrict it with `includeTargetBranches` or `excludeTargetBranches` (use `dev-sandboxes` for developer sandboxes).
+
 Example:
 
 ```yaml
@@ -194,15 +196,52 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 ```
 
+### Flow deletion in destructive changes
+
+Deleting a Flow through a metadata deployment is possible, but only if the org is already in the right state before the deployment runs:
+
+- every version has to be named individually (`MyFlow-1`, `MyFlow-2`, ...), as a bare `<members>MyFlow</members>` fails with "insufficient access rights",
+- the Flow has to be inactive already. Deactivating it in the same deployment does not help, since Salesforce tries to deactivate the flow that was deleted during a real deploy (`NoDataFoundException` / `UNKNOWN_EXCEPTION`), so it takes a manual deactivation or an earlier deployment,
+- a `--check` deployment never commits a deactivation, so a deletion that depends on one can not be validated.
+
+Smart Deploy removes that manual step by taking Flow deletion **out of the deployment**. Any `Flow` member found in `manifest/destructiveChanges.xml`, `manifest/preDestructiveChanges.xml`, the `packageXmlToDelete` config or the delta-generated destructive changes is removed from the manifest sent to the org, and deleted through the Tooling API instead. Stripping is identical during validation and during the real deployment, so the constructive package stays quick-deploy eligible.
+
+A `--check` simulation changes nothing in the org. A read-only preflight reports, for each Flow: the active version that will be deactivated, the versions that will be deleted, and how many Flow Interviews block the deletion. The check **fails** if Flow Interviews block a deletion and you have not authorized deleting them.
+
+On a real deployment, each Flow goes through:
+
+1. Existence check. A Flow that is already gone is reported as `FLOW_DELETE_NOOP`, not an error (same for a Flow with no deletable version, for example one from a managed package).
+2. Deactivation through the Tooling API (`FlowDefinition.activeVersionNumber = 0`), which stops new Flow Interviews from starting.
+3. Flow Interview gate. If interviews remain and `FLOW_DELETE_INTERVIEWS` is not set, the deployment fails with `FLOW_DELETE_BLOCKED`. The Flow stays deactivated, so retrying the pipeline once those interviews resolve completes the deletion.
+4. Flow Interview deletion, only when `FLOW_DELETE_INTERVIEWS` authorizes it.
+5. Version deletion through the Tooling API, oldest version first, then a check that no version is left.
+
+When deleting Flow Interviews is authorized, step 5 retries: an interview that was still running when the Flow got deactivated can pause mid-sequence and block a version. Both bounds can be tuned, as an env variable or as a `.sfdx-hardis.yml` property (the env variable wins). A value that is not an integer, or is below the minimum, is ignored with a warning and the default applies.
+
+| Env variable               | `.sfdx-hardis.yml` property | Default | Minimum | Purpose                                                                                                                                                                                    |
+|:---------------------------|:----------------------------|:-------:|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| FLOW_DELETE_MAX_ATTEMPTS   | flowDeleteMaxAttempts       |    3    |    1    | Number of version deletion attempts per Flow. `1` disables the retry. Only used when `FLOW_DELETE_INTERVIEWS` authorizes deleting interviews: without that authorization a block is final. |
+| FLOW_DELETE_RETRY_DELAY_MS | flowDeleteRetryDelayMs      |  10000  |    0    | Delay in milliseconds between two attempts, to give a paused interview time to be deleted.                                                                                                 |
+
+Any failure that is not an interview block (insufficient access, network error mid-run...) is reported as `FLOW_DELETE_ERROR` and also fails the deployment. After a network error the org can be further along than the report shows: every step is re-runnable, so retry and trust the new report.
+
+Notes:
+
+- A bare member (`MyFlow`) deletes all versions of the Flow. A versioned member (`MyFlow-3`) deletes that version only, and deactivates the Flow only if that version is the active one. A wildcard (`*`) is refused.
+- Flows are processed independently: one blocked Flow does not prevent the others from being deleted.
+- The deactivation is committed immediately and is not rolled back if a later step fails, so a Flow can be left deactivated but not deleted. Every step is re-runnable, so a pipeline retry converges.
+- Flows listed in `preDestructiveChanges.xml` are deleted **before** the constructive deployment, the others after it. Both happen outside the deployment transaction: a deployment that fails after a Flow was deleted does not bring that Flow back, where a `preDestructiveChanges.xml` handled inside the deployment used to be rolled back.
+
 ### Pull Requests Custom Behaviors
 
 If some words are found **in the Pull Request description**, special behaviors will be applied
 
-| Word                                 | Behavior                                                                                                                                                                              |
-|:-------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| NO_DELTA                             | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request                                                                        |
-| PURGE_FLOW_VERSIONS                  | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
-| DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package                                                  |
+| Word                                 | Behavior                                                                                                                                                                                                                                                                             |
+|:-------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NO_DELTA                             | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request                                                                                                                                                                       |
+| PURGE_FLOW_VERSIONS                  | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !**                                                                                                |
+| DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package                                                                                                                                                 |
+| FLOW_DELETE_INTERVIEWS               | Authorizes deleting the Flow Interviews that block the deletion of a Flow listed in destructive changes. The directive must be on its own line (or in a checked Markdown checkbox).<br/>**Caution: deleting Flow Interviews is irreversible and destroys in-flight process state !** |
 
 You can also override some `.sfdx-hardis.yml` properties directly in the Pull Request description using YAML blocks. Supported keys: `deploymentApexTestClasses`, `commandsPreDeploy`, `commandsPostDeploy`.
 
@@ -220,6 +259,8 @@ Note: it is also possible to define these behaviors as ENV variables:
 
 - For all deployments (example: `PURGE_FLOW_VERSIONS=true`)
 - For a specific branch, by appending the target branch name (example: `PURGE_FLOW_VERSIONS_UAT=true`)
+
+`FLOW_DELETE_INTERVIEWS` can also be set as a `.sfdx-hardis.yml` property (`flowDeleteInterviews: true`).
 
 ### Deployment plan (deprecated)
 

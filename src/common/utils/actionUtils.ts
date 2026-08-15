@@ -13,6 +13,21 @@ import { t } from './i18n.js';
 export type ActionScope = 'project' | 'branch' | 'pr';
 export type { ActionWhen };
 
+/**
+ * Virtual target branch name matching any deployment target that is not a declared major branch:
+ * a developer sandbox reached by hardis:work:backpromote, or a local deployment from a feature branch.
+ */
+export const DEV_SANDBOXES_BRANCH_NAME = 'dev-sandboxes';
+
+export type ActionBranchFilterMode = 'none' | 'include' | 'exclude';
+
+export type ActionBranchFilterVerdict = {
+  run: boolean;
+  // true when the action definition itself is wrong (both lists set), as opposed to simply not targeted
+  invalid?: boolean;
+  reason?: string;
+};
+
 const WHEN_TO_CONFIG_KEY: Record<ActionWhen, string> = {
   'pre-deploy': 'commandsPreDeploy',
   'post-deploy': 'commandsPostDeploy',
@@ -68,12 +83,131 @@ export async function writeActions(scope: ActionScope, when: ActionWhen, actions
 }
 
 /**
+ * Normalize a branch name for comparison: branch names come either from git (feature/JIRA-123)
+ * or from a config file name (.sfdx-hardis.feature__JIRA-123.yml), so both forms must collapse
+ * to the same value before an exact, case-insensitive match.
+ */
+export function normalizeBranchName(name: string): string {
+  return String(name || '').trim().toLowerCase().replace(/\//g, '__');
+}
+
+/**
+ * Names an action branch filter may match for the current deployment.
+ * The real target branch always counts, so a literal feature branch name still works.
+ * A target that is not a declared major branch is a developer sandbox, so it also matches
+ * the virtual "dev-sandboxes" name.
+ */
+export function buildActionTargetBranchCandidates(targetBranch: string, majorBranchNames: string[]): string[] {
+  const candidates = [targetBranch];
+  const isMajorBranch = (majorBranchNames || []).some(
+    (majorBranch) => normalizeBranchName(majorBranch) === normalizeBranchName(targetBranch)
+  );
+  if (!isMajorBranch) {
+    candidates.push(DEV_SANDBOXES_BRANCH_NAME);
+  }
+  return candidates;
+}
+
+/**
+ * Decide whether an action applies to the current deployment target.
+ * Pure function (no git, no org, no config): the branch filter rule lives here only.
+ *
+ * An empty list is treated as "not set" rather than "matches nothing", so a leftover
+ * `includeTargetBranches: []` in a config never silently disables an action everywhere.
+ */
+export function evaluateActionBranchFilter(
+  action: Pick<PrePostCommand, 'includeTargetBranches' | 'excludeTargetBranches'>,
+  targetBranchCandidates: string[]
+): ActionBranchFilterVerdict {
+  const includeBranches = (action.includeTargetBranches || []).filter((branch) => String(branch || '').trim() !== '');
+  const excludeBranches = (action.excludeTargetBranches || []).filter((branch) => String(branch || '').trim() !== '');
+  if (includeBranches.length > 0 && excludeBranches.length > 0) {
+    return { run: false, invalid: true, reason: t('actionValidationBranchFiltersMutuallyExclusive') };
+  }
+  const normalizedCandidates = (targetBranchCandidates || []).map((candidate) => normalizeBranchName(candidate));
+  const matches = (branches: string[]) =>
+    branches.some((branch) => normalizedCandidates.includes(normalizeBranchName(branch)));
+  // The real target branch is the first candidate: report it rather than the dev-sandboxes alias
+  const targetName = targetBranchCandidates?.[0] || '';
+  if (includeBranches.length > 0 && !matches(includeBranches)) {
+    return { run: false, reason: t('actionSkippedBranchNotIncluded', { branches: includeBranches.join(', '), target: targetName }) };
+  }
+  if (excludeBranches.length > 0 && matches(excludeBranches)) {
+    return { run: false, reason: t('actionSkippedBranchExcluded', { target: targetName }) };
+  }
+  return { run: true };
+}
+
+/**
+ * Parse a comma-separated branch list flag value into an array.
+ * An empty string is a deliberate "clear the filter" value, so it returns an empty array.
+ */
+export function parseBranchListFlag(flagValue: string): string[] {
+  return String(flagValue || '')
+    .split(',')
+    .map((branch) => branch.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Apply the --include-target-branches / --exclude-target-branches flags to an action.
+ *
+ * The two lists are mutually exclusive, so setting one clears the other: switching an action from
+ * an exclude list to an include list is a single flag, not a flag plus an explicit reset. Passing
+ * both flags at once leaves both set, which validateActionParameters then rejects as the
+ * configuration error it is. An empty value removes the restriction.
+ *
+ * A flag left out (undefined) never touches the action, so updating an unrelated field keeps the
+ * branch filter it already carries.
+ */
+export function applyBranchFilterFlagsToAction(
+  action: Partial<PrePostCommand>,
+  includeFlagValue?: string,
+  excludeFlagValue?: string
+): void {
+  const bothPassed = includeFlagValue !== undefined && excludeFlagValue !== undefined;
+  if (includeFlagValue !== undefined) {
+    const includeTargetBranches = parseBranchListFlag(includeFlagValue);
+    action.includeTargetBranches = includeTargetBranches.length > 0 ? includeTargetBranches : undefined;
+    if (includeTargetBranches.length > 0 && !bothPassed) {
+      action.excludeTargetBranches = undefined;
+    }
+  }
+  if (excludeFlagValue !== undefined) {
+    const excludeTargetBranches = parseBranchListFlag(excludeFlagValue);
+    action.excludeTargetBranches = excludeTargetBranches.length > 0 ? excludeTargetBranches : undefined;
+    if (excludeTargetBranches.length > 0 && !bothPassed) {
+      action.includeTargetBranches = undefined;
+    }
+  }
+}
+
+/**
+ * Choices offered when prompting for the target branches of an action: the major branches
+ * declared in config/branches, plus the virtual dev-sandboxes entry.
+ * orgConfigUtils is imported lazily to keep puppeteer out of the startup path of action commands.
+ */
+export async function listActionTargetBranchChoices(): Promise<{ title: string; value: string }[]> {
+  const { listMajorOrgs } = await import('./orgConfigUtils.js');
+  const majorOrgs = await listMajorOrgs();
+  const choices = majorOrgs
+    .filter((majorOrg: any) => majorOrg?.branchName)
+    .map((majorOrg: any) => ({ title: majorOrg.branchName, value: majorOrg.branchName }));
+  choices.push({ title: t('actionBranchFilterDevSandboxes'), value: DEV_SANDBOXES_BRANCH_NAME });
+  return choices;
+}
+
+/**
  * Validate type-specific parameters for an action.
  * Returns an array of error messages (empty if valid).
  */
 export async function validateActionParameters(action: Partial<PrePostCommand>): Promise<string[]> {
   const errors: string[] = [];
   const type = action.type || 'command';
+
+  if ((action.includeTargetBranches || []).length > 0 && (action.excludeTargetBranches || []).length > 0) {
+    errors.push(t('actionValidationBranchFiltersMutuallyExclusive'));
+  }
 
   if (type === 'command') {
     if (!action.command) {
@@ -150,6 +284,8 @@ export function buildAction(values: {
   type: PrePostCommand['type'];
   command?: string;
   context?: PrePostCommand['context'];
+  includeTargetBranches?: string[];
+  excludeTargetBranches?: string[];
   allowFailure?: boolean;
   runOnlyOnceByOrg?: boolean;
   customUsername?: string;
@@ -164,6 +300,13 @@ export function buildAction(values: {
   };
   if (values.parameters && Object.keys(values.parameters).length > 0) {
     action.parameters = values.parameters;
+  }
+  // Keep the YAML clean: an action without a branch filter carries neither property
+  if ((values.includeTargetBranches || []).length > 0) {
+    action.includeTargetBranches = values.includeTargetBranches;
+  }
+  if ((values.excludeTargetBranches || []).length > 0) {
+    action.excludeTargetBranches = values.excludeTargetBranches;
   }
   action.allowFailure = values.allowFailure === true;
   action.runOnlyOnceByOrg = values.runOnlyOnceByOrg !== false;
@@ -181,6 +324,12 @@ export function logActionSummary(commandThis: any, action: PrePostCommand): void
   uxLog("log", commandThis, c.grey(`  label: ${action.label}`));
   uxLog("log", commandThis, c.grey(`  type: ${action.type}`));
   uxLog("log", commandThis, c.grey(`  context: ${action.context}`));
+  if ((action.includeTargetBranches || []).length > 0) {
+    uxLog("log", commandThis, c.grey(`  includeTargetBranches: ${(action.includeTargetBranches || []).join(', ')}`));
+  }
+  if ((action.excludeTargetBranches || []).length > 0) {
+    uxLog("log", commandThis, c.grey(`  excludeTargetBranches: ${(action.excludeTargetBranches || []).join(', ')}`));
+  }
   if (action.command) {
     uxLog("log", commandThis, c.grey(`  command: ${action.command}`));
   }

@@ -28,6 +28,7 @@ import { authOrg } from './authUtils.js';
 import { findUserByUsernameLike } from './orgUtils.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
+import { DEV_SANDBOXES_BRANCH_NAME, evaluateActionBranchFilter } from './actionUtils.js';
 import { createBlankSfdxProject } from './projectUtils.js';
 import { OrgDiffItem, WebSocketClient } from '../websocketClient.js';
 import { t } from './i18n.js';
@@ -1129,12 +1130,29 @@ export async function executeBackpromoteActions(
   // Collect actions from selected PRs for the given phase only
   const allActions: Array<PrePostCommand & { prLabel: string; prId: number }> = [];
 
+  // A backpromote always deploys to a developer sandbox, so branch filters are evaluated against
+  // the dev-sandboxes virtual name (the feature branch name stays eligible too).
+  const targetBranchCandidates = [DEV_SANDBOXES_BRANCH_NAME, currentBranch];
+
   for (const prGroup of selectedPrs) {
     for (const { config: prConfig, prId, prTitle } of prGroup.prConfigs) {
       const commands = prConfig[phase];
       if (!Array.isArray(commands)) continue;
       const prLabel = prId > 0 ? `#${prId} - ${prTitle}` : prTitle;
       for (const cmd of commands) {
+        // Actions not meant for developer sandboxes are dropped from the selection list: there is
+        // no Pull Request comment here to carry a skipped row. An invalid definition (both filter
+        // lists set) is a warning rather than a failure: backpromote is an interactive developer
+        // command, not a pipeline gate.
+        const branchFilterVerdict = evaluateActionBranchFilter(cmd, targetBranchCandidates);
+        if (branchFilterVerdict.run === false) {
+          if (branchFilterVerdict.invalid) {
+            uxLog('warning', commandThis, c.yellow(`[Backpromote] ${cmd.label}: ${branchFilterVerdict.reason}`));
+          } else {
+            uxLog('log', commandThis, c.grey(`[Backpromote] ${t('backpromoteActionSkippedBranchFilter', { label: cmd.label })}`));
+          }
+          continue;
+        }
         allActions.push({ ...cmd, prLabel, prId });
       }
     }

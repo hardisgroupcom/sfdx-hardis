@@ -215,6 +215,8 @@ After every action runs, its result (✅ success, ❌ failed, 👋 manual) is re
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 
+You can also keep a single definition and restrict it with \`includeTargetBranches\` or \`excludeTargetBranches\` (use \`dev-sandboxes\` for developer sandboxes).
+
 Example:
 
 \`\`\`yaml

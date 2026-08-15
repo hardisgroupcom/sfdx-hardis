@@ -187,13 +187,38 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
   }
 }
 
+/**
+ * True when a deployment run that sent nothing to the org must still be reported as a success.
+ *
+ * Every planned deployment can be skipped inside the deployment loop because its package.xml ended
+ * up empty: filtered by package-no-overwrite.xml / packageDeployOnChange.xml, emptied by a
+ * remove-packagexml-items pre-deploy action, or left with standalone parent items only. Nothing
+ * then records a deployment result, and the Pull Request comment carries no status at all: no
+ * result title, no banner (a "tovalidate" comment has none) and no code coverage section.
+ *
+ * A failure already reported (ex: a post-deploy action allowed to fail) is never overwritten.
+ */
+export function shouldReportNoMetadataDeploymentSuccess(
+  processedDeploymentCount: number,
+  hasDestructiveChanges: boolean,
+  prData: { status?: string; deployStatus?: string }
+): boolean {
+  if (processedDeploymentCount > 0 || hasDestructiveChanges) {
+    return false;
+  }
+  return !prData?.deployStatus && prData?.status !== 'invalid';
+}
+
 // Populate pullRequestData with a success message when there is no metadata to deploy,
 // so the resulting PR comment is rendered as a successful deployment instead of an empty body.
-function setNoMetadataDeploymentSuccess(check: boolean): void {
+// Without it the comment carries no status at all, so it displays neither its result title nor
+// its banner (a "tovalidate" comment has none).
+function setNoMetadataDeploymentSuccess(check: boolean, reason?: string): void {
+  const defaultReason = "No metadata to deploy: the package.xml is empty so nothing was sent to the target org.";
   const prData: Partial<PullRequestData> = {
     messageKey: "deployment",
     title: check ? "✅ Deployment check success - No metadata to deploy" : "✅ Deployment success - No metadata to deploy",
-    deployErrorsMarkdownBody: "No metadata to deploy: the package.xml is empty so nothing was sent to the target org. " + (check ? "The deployment check succeeded." : "The deployment succeeded."),
+    deployErrorsMarkdownBody: (reason || defaultReason) + " " + (check ? "The deployment check succeeded." : "The deployment succeeded."),
     deployStatus: "valid",
     status: "valid",
   };
@@ -365,6 +390,10 @@ export async function smartDeploy(
   // Process items of deployment plan
   uxLog("action", this, c.cyan(t('processingSplitDeploymentsBuildFromDeploymentPlan')));
   uxLog("other", this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
+  // Deployments that were actually sent to the org. A deployment whose package.xml ends up empty is
+  // skipped below, and when every one of them is skipped nothing sets the deployment result: the
+  // Pull Request comment then displays no status, no banner and no code coverage section.
+  let processedDeploymentCount = 0;
   for (const deployment of splitDeployments) {
     elapseStart(`deploy ${deployment.label}`);
 
@@ -407,9 +436,11 @@ export async function smartDeploy(
             `Skipping deployment of ${c.bold(deployment.label)} because package.xml is empty and there are no destructive changes.`
           )
         );
+        deployXmlCount--;
         elapseEnd(`deploy ${deployment.label}`);
         continue;
       }
+      processedDeploymentCount++;
 
       uxLog(
         "action",
@@ -695,6 +726,7 @@ export async function smartDeploy(
     else if (deployment.dataPath) {
       const dataPath = path.resolve(deployment.dataPath);
       await importData(dataPath, commandThis, options);
+      processedDeploymentCount++;
     }
     // Wait after deployment item process if necessary
     if (deployment.waitAfter) {
@@ -705,6 +737,16 @@ export async function smartDeploy(
   }
   // Run deployment post commands
   await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+  // Nothing was sent to the org because every planned deployment was skipped: report the same
+  // success as the paths that detect an empty package.xml before building the deployment plan,
+  // otherwise the Pull Request comment carries no status at all.
+  if (shouldReportNoMetadataDeploymentSuccess(processedDeploymentCount, hasDestructiveChanges, getPullRequestData())) {
+    uxLog("action", this, c.cyan(t('allDeploymentsSkippedEmptyPackageXml')));
+    setNoMetadataDeploymentSuccess(
+      check,
+      "No metadata to deploy: every item of the deployment package was filtered out before the deployment (package-no-overwrite.xml, packageDeployOnChange.xml or a remove-packagexml-items action), so nothing was sent to the target org."
+    );
+  }
   // Post pull request comment if available
   if (options.deferSuccessPullRequestComment !== true) {
     await GitProvider.managePostPullRequestComment(check);

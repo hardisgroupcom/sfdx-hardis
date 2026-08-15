@@ -9,6 +9,7 @@ import { t } from '../../../../common/utils/i18n.js';
 import {
   ACTION_CONTEXTS,
   ACTION_TYPES,
+  applyBranchFilterFlagsToAction,
   findActionById,
   logActionSummary,
   readActions,
@@ -31,6 +32,8 @@ export default class ActionUpdate extends ActionCommandBase {
 **Updates an existing deployment action in the project configuration.**
 
 Allows modifying any field of an existing action, including changing its type (which requires providing new type-specific parameters). Only the fields you specify are updated; all other fields remain unchanged.
+
+The target branch restriction (\`includeTargetBranches\` / \`excludeTargetBranches\`) can also be changed here. The two lists are mutually exclusive: setting one clears the other. Pass an empty value to a flag to remove the restriction and run the action on every target branch again.
 
 ### Agent Mode
 
@@ -56,6 +59,7 @@ Required in agent mode:
   public static examples = [
     '$ sf hardis:project:action:update',
     '$ sf hardis:project:action:update --agent --scope branch --when pre-deploy --action-id abc-123 --label "New label" --context process-deployment-only',
+    '$ sf hardis:project:action:update --agent --scope project --when post-deploy --action-id abc-123 --include-target-branches "uat,preprod"',
   ];
 
   public static flags: any = {
@@ -113,6 +117,12 @@ Required in agent mode:
     context: Flags.string({
       options: ['all', 'check-deployment-only', 'process-deployment-only'],
       description: 'New execution context',
+    }),
+    'include-target-branches': Flags.string({
+      description: 'New comma-separated list of target branches the action runs on. Pass an empty value to remove the restriction',
+    }),
+    'exclude-target-branches': Flags.string({
+      description: 'New comma-separated list of target branches the action is skipped on. Pass an empty value to remove the restriction',
     }),
     'allow-failure': Flags.boolean({
       description: 'Allow action to fail without blocking deployment',
@@ -232,6 +242,11 @@ Required in agent mode:
     const newContext = await this.promptSelect(t('selectActionContext'), ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })), action.context);
     if (newContext) action.context = newContext;
 
+    // Both keys are assigned, so switching the restriction mode clears the previous list
+    const branchFilter = await this.promptTargetBranchFilter(action);
+    action.includeTargetBranches = branchFilter.includeTargetBranches;
+    action.excludeTargetBranches = branchFilter.excludeTargetBranches;
+
     action.allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'), action.allowFailure || false);
     if (action.type === 'remove-packagexml-items') {
       // Filtering package.xml only affects the current deployment, so it must run every time
@@ -265,6 +280,7 @@ Required in agent mode:
       };
     }
     if (flags.context) action.context = flags.context;
+    applyBranchFilterFlagsToAction(action, flags['include-target-branches'], flags['exclude-target-branches']);
     if (flags['allow-failure'] !== undefined) action.allowFailure = flags['allow-failure'];
     if (flags['run-only-once-by-org'] !== undefined) action.runOnlyOnceByOrg = flags['run-only-once-by-org'];
     if (action.type === 'remove-packagexml-items') action.runOnlyOnceByOrg = false;

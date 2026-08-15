@@ -2,7 +2,8 @@ import { SfCommand } from '@salesforce/sf-plugins-core';
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import { isCI } from '../../../../common/utils/index.js';
-import { ActionScope, ActionWhen } from '../../../../common/utils/actionUtils.js';
+import { ActionBranchFilterMode, ActionScope, ActionWhen, listActionTargetBranchChoices } from '../../../../common/utils/actionUtils.js';
+import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
 
@@ -83,6 +84,47 @@ export abstract class ActionCommandBase extends SfCommand<any> {
       value: a.id,
       description: a.id,
     })));
+  }
+
+  /**
+   * Ask whether the action is restricted to some target branches, and to which ones.
+   * Returns both keys so the caller can assign them as-is: the unused one is undefined,
+   * which clears a filter previously set the other way round.
+   */
+  protected async promptTargetBranchFilter(
+    action?: Pick<PrePostCommand, 'includeTargetBranches' | 'excludeTargetBranches'>
+  ): Promise<{ includeTargetBranches?: string[]; excludeTargetBranches?: string[] }> {
+    const currentMode: ActionBranchFilterMode = (action?.includeTargetBranches || []).length > 0
+      ? 'include'
+      : (action?.excludeTargetBranches || []).length > 0 ? 'exclude' : 'none';
+    const mode: ActionBranchFilterMode = await this.promptSelect(t('actionPromptRestrictTargetBranches'), [
+      { title: t('actionBranchFilterNone'), value: 'none' },
+      { title: t('actionBranchFilterInclude'), value: 'include' },
+      { title: t('actionBranchFilterExclude'), value: 'exclude' },
+    ], currentMode);
+    if (mode !== 'include' && mode !== 'exclude') {
+      return { includeTargetBranches: undefined, excludeTargetBranches: undefined };
+    }
+    const currentBranches = (mode === 'include' ? action?.includeTargetBranches : action?.excludeTargetBranches) || [];
+    const choices = (await listActionTargetBranchChoices()).map((choice) => ({
+      ...choice,
+      selected: currentBranches.includes(choice.value),
+    }));
+    const response = await prompts({
+      type: 'multiselect',
+      name: 'value',
+      message: c.cyanBright(t('selectActionTargetBranches')),
+      description: t('selectActionTargetBranches'),
+      choices,
+    });
+    const selectedBranches: string[] = response.value || [];
+    // An empty selection means no restriction at all: do not save a filter matching nothing
+    if (selectedBranches.length === 0) {
+      return { includeTargetBranches: undefined, excludeTargetBranches: undefined };
+    }
+    return mode === 'include'
+      ? { includeTargetBranches: selectedBranches, excludeTargetBranches: undefined }
+      : { includeTargetBranches: undefined, excludeTargetBranches: selectedBranches };
   }
 
   protected async promptConfirm(message: string, initial = false): Promise<boolean> {

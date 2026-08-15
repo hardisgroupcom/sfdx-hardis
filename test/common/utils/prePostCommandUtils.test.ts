@@ -2,7 +2,7 @@
 import { expect } from 'chai';
 import type { ActionResult, PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { buildActionOutput } from '../../../src/common/actionsProvider/actionsProvider.js';
-import { buildActionsResultMarkdown } from '../../../src/common/utils/prePostCommandUtils.js';
+import { buildActionsResultMarkdown, buildDeploymentScopeSubjects } from '../../../src/common/utils/prePostCommandUtils.js';
 
 function action(overrides: Partial<PrePostCommand>): PrePostCommand {
   return {
@@ -48,6 +48,41 @@ describe('buildActionOutput()', () => {
   });
 });
 
+describe('buildDeploymentScopeSubjects()', () => {
+  it('names both subjects when the Pull Requests carry both', () => {
+    const configs = [{ commandsPreDeploy: [{ id: 'a' }], deploymentApexTestClasses: ['MyTest'] }];
+    expect(buildDeploymentScopeSubjects(configs, true)).to.deep.equal(['Deployment actions', 'Apex test classes']);
+  });
+
+  // Announcing Apex test classes on a Pull Request that carries none describes content
+  // the reader will not find in the comment
+  it('names only the deployment actions when there is no test class', () => {
+    const configs = [{ commandsPostDeploy: [{ id: 'a' }] }];
+    expect(buildDeploymentScopeSubjects(configs, true)).to.deep.equal(['Deployment actions']);
+  });
+
+  it('names only the Apex test classes when there is no action', () => {
+    const configs = [{ deploymentApexTestClasses: ['MyTest'] }];
+    expect(buildDeploymentScopeSubjects(configs, true)).to.deep.equal(['Apex test classes']);
+  });
+
+  it('names nothing when the Pull Requests carry neither', () => {
+    expect(buildDeploymentScopeSubjects([{ commandsPreDeploy: [] }, null], true)).to.deep.equal([]);
+    expect(buildDeploymentScopeSubjects([], true)).to.deep.equal([]);
+  });
+
+  // Test classes declared while the feature is off are never used, so they must not be announced
+  it('ignores the test classes when the feature is not enabled', () => {
+    const configs = [{ commandsPreDeploy: [{ id: 'a' }], deploymentApexTestClasses: ['MyTest'] }];
+    expect(buildDeploymentScopeSubjects(configs, false)).to.deep.equal(['Deployment actions']);
+  });
+
+  it('collects the subjects across all the Pull Requests of the scope', () => {
+    const configs = [{ commandsPreDeploy: [{ id: 'a' }] }, { deploymentApexTestClasses: ['MyTest'] }];
+    expect(buildDeploymentScopeSubjects(configs, true)).to.deep.equal(['Deployment actions', 'Apex test classes']);
+  });
+});
+
 describe('buildActionsResultMarkdown()', () => {
   it('reports a not-run action with its reason instead of "See details below"', () => {
     const commands = [action({ result: NOT_RUN })];
@@ -84,6 +119,68 @@ describe('buildActionsResultMarkdown()', () => {
     expect(markdown).to.contain('Manual Actions to perform after deployment');
     expect(markdown).to.contain('- [ ] Create the inbound Email Service');
     expect(markdown).to.contain('Go to Setup');
+  });
+
+  it('reports an action skipped by its branch filter with the reason', () => {
+    const commands = [
+      action({
+        label: 'Publish the customer community',
+        result: {
+          statusCode: 'skipped',
+          skippedCode: 'branch-not-targeted',
+          skippedReason: 'Action only runs on target branches uat, preprod, and this deployment targets main',
+        },
+      }),
+    ];
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false);
+
+    expect(markdown).to.contain('⚪');
+    expect(markdown).to.contain('skipped');
+    expect(markdown).to.contain('this deployment targets main');
+    expect(markdown).to.not.contain('See details below');
+  });
+
+  it('does not list a manual action skipped by its branch filter as a to-do', () => {
+    const commands = [
+      action({
+        type: 'manual',
+        label: 'Create the inbound Email Service',
+        parameters: { instructions: 'Go to Setup' },
+        result: {
+          statusCode: 'skipped',
+          skippedCode: 'branch-not-targeted',
+          skippedReason: 'Action is excluded from target branch main',
+        },
+      }),
+    ];
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false);
+
+    expect(markdown).to.not.contain('Manual Actions to perform after deployment');
+    expect(markdown).to.not.contain('- [ ]');
+  });
+
+  // A legend explaining outcomes absent from the table above it is noise
+  it('lists only the statuses present in the table', () => {
+    const commands = [
+      action({ label: 'Ran fine', result: { statusCode: 'success' } }),
+      action({ label: 'Not for this branch', result: { statusCode: 'skipped', skippedReason: 'Action is excluded from target branch main' } }),
+    ];
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false);
+
+    expect(markdown).to.contain('*Legend: ✅ success · ⚪ skipped*');
+    expect(markdown).to.not.contain('waiting for manual execution');
+    expect(markdown).to.not.contain('not run');
+    expect(markdown).to.not.contain('allowed to fail');
+  });
+
+  it('distinguishes a failure allowed to fail from a blocking one in the legend', () => {
+    const allowed = [action({ allowFailure: true, result: { statusCode: 'failed' } })];
+    expect(buildActionsResultMarkdown('commandsPostDeploy', allowed, false))
+      .to.contain('*Legend: ⚠️ failed (allowed to fail)*');
+
+    const blocking = [action({ result: { statusCode: 'failed' } })];
+    expect(buildActionsResultMarkdown('commandsPostDeploy', blocking, false))
+      .to.contain('*Legend: ❌ failed*');
   });
 
   it('does not render an empty code block for a whitespace-only output', () => {

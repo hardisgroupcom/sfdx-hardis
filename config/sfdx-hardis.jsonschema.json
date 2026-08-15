@@ -907,6 +907,41 @@
               "process-deployment-only"
             ]
           },
+          "includeTargetBranches": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/includeTargetBranches",
+            "description": "Run this action only when the deployment targets one of these branches. Names are matched exactly, ignoring case. Use dev-sandboxes to match any target that is not a major branch declared in config/branches (developer sandboxes, backpromote). Cannot be combined with excludeTargetBranches.",
+            "title": "Include target branches",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "examples": [
+              [
+                "uat",
+                "preprod"
+              ],
+              [
+                "dev-sandboxes"
+              ]
+            ]
+          },
+          "excludeTargetBranches": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/excludeTargetBranches",
+            "description": "Run this action on every target branch except these ones. Names are matched exactly, ignoring case. Use dev-sandboxes to match any target that is not a major branch declared in config/branches (developer sandboxes, backpromote). Cannot be combined with includeTargetBranches.",
+            "title": "Exclude target branches",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "examples": [
+              [
+                "main"
+              ],
+              [
+                "dev-sandboxes"
+              ]
+            ]
+          },
           "allowFailure": {
             "$id": "#/properties/commandsPreDeploy/items/properties/allowFailure",
             "description": "Allow action to fail without marking the deployment as failed",
@@ -1091,6 +1126,41 @@
             "deprecated": true,
             "deprecationMessage": "skipIfError is ignored: post-deployment actions are never run when the metadata deployment failed. You can remove this property.",
             "type": "boolean"
+          },
+          "includeTargetBranches": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/includeTargetBranches",
+            "description": "Run this action only when the deployment targets one of these branches. Names are matched exactly, ignoring case. Use dev-sandboxes to match any target that is not a major branch declared in config/branches (developer sandboxes, backpromote). Cannot be combined with excludeTargetBranches.",
+            "title": "Include target branches",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "examples": [
+              [
+                "uat",
+                "preprod"
+              ],
+              [
+                "dev-sandboxes"
+              ]
+            ]
+          },
+          "excludeTargetBranches": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/excludeTargetBranches",
+            "description": "Run this action on every target branch except these ones. Names are matched exactly, ignoring case. Use dev-sandboxes to match any target that is not a major branch declared in config/branches (developer sandboxes, backpromote). Cannot be combined with includeTargetBranches.",
+            "title": "Exclude target branches",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "examples": [
+              [
+                "main"
+              ],
+              [
+                "dev-sandboxes"
+              ]
+            ]
           },
           "allowFailure": {
             "$id": "#/properties/commandsPostDeploy/items/properties/allowFailure",

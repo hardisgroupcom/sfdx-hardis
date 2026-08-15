@@ -27,6 +27,12 @@ export interface PrePostCommand {
   };
   command: string;
   context: 'all' | 'check-deployment-only' | 'process-deployment-only';
+  // Target branches the action applies to. Mutually exclusive: setting both makes the action invalid.
+  // Names are matched exactly (case-insensitive) against the branch the deployment targets.
+  // The virtual name "dev-sandboxes" matches any target that is not a declared major branch,
+  // which covers hardis:work:backpromote and local deployments to a developer sandbox.
+  includeTargetBranches?: string[];
+  excludeTargetBranches?: string[];
   allowFailure?: boolean;
   runOnlyOnceByOrg?: boolean;
   customUsername?: string;
@@ -44,7 +50,7 @@ export type ActionResult = {
   skippedReason?: string;
   // Machine-readable skip cause: skippedReason is user-facing wording that may change,
   // code must branch on this field instead
-  skippedCode?: 'already-run-in-org';
+  skippedCode?: 'already-run-in-org' | 'branch-not-targeted';
 };
 
 /**
