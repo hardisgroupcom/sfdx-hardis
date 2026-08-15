@@ -3253,6 +3253,7 @@
   "updateFixScratchOrgUser": "スクラッチ組織ユーザーの更新 / 修正",
   "updateLocalProjectFilesWithInstalledPackages": "デプロイ用にインストール済みパッケージのリストでローカルプロジェクトファイルを更新します",
   "updateManualActionsFile": "手動アクションファイルの更新",
+  "updateMergeRequestLabel": "{{mergeRequestName}} を更新する",
   "updateMkdocsAndBuildDeployDocs": "新しく生成されたページを含めるために mkdocs.yml と build-deploy-docs.yml を更新する必要があります",
   "updated": "更新しました",
   "updatedApiVersionInFromTo": "{{manifestFile}} の API バージョンを {{match}} から {{candidateApiVersion}} に更新しました",
