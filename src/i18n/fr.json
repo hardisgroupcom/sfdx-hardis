@@ -2304,6 +2304,7 @@
   "onceConfirmedTheDataLoadingWillStart": "Une fois confirmé, le chargement des données commencera",
   "onlyFilesWithSizeGreaterThanValueDownloaded": "Seuls les fichiers d'une taille supérieure ou égale à cette valeur seront téléchargés (en kilooctets)",
   "onlyHttpRemoteUrlsAreSupportedFor": "Seules les URLs distantes HTTP(S) sont supportées pour l'injection d'identifiants",
+  "openDeploymentActionsForPullRequest": "Mettre à jour les actions de déploiement de votre pull request",
   "openDevOpsPipelineForManualActions": "Ouvrez le panneau DevOps Pipeline pour examiner et mettre à jour les actions manuelles de votre pull request.",
   "openExternalClientAppManager": "Ouvrir External Client App Manager",
   "openExternalClientAppSettings": "Ouvrir les paramètres External Client App",

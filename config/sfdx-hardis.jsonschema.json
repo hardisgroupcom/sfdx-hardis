@@ -858,6 +858,24 @@
                 "description": "Human-readable instructions for 'manual' actions",
                 "type": "string"
               },
+              "className": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/className",
+                "description": "Apex batch class name to schedule for 'schedule-batch' actions",
+                "type": "string"
+              },
+              "cronExpression": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/cronExpression",
+                "description": "Cron expression used to schedule the Apex batch class for 'schedule-batch' actions",
+                "examples": [
+                  "0 0 2 * * ?"
+                ],
+                "type": "string"
+              },
+              "jobName": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/jobName",
+                "description": "Scheduled job name for 'schedule-batch' actions. Defaults to <className>_Schedule",
+                "type": "string"
+              },
               "packageXmlItems": {
                 "$id": "#/properties/commandsPreDeploy/items/properties/parameters/packageXmlItems",
                 "description": "List of package.xml items to remove before the metadata deployment for 'remove-packagexml-items' actions. Each entry uses the format TypeName:Member1,Member2 (use * as member to remove the whole type). A single string is also accepted for a single entry.",
@@ -1026,6 +1044,7 @@
               "command",
               "data",
               "apex",
+              "schedule-batch",
               "publish-community",
               "manual"
             ],
@@ -1033,6 +1052,7 @@
               "Command",
               "Data Import",
               "Apex Script",
+              "Schedule Batch",
               "Publish Community",
               "Manual Action"
             ],
@@ -1040,6 +1060,7 @@
               "command",
               "data",
               "apex",
+              "schedule-batch",
               "publish-community",
               "manual"
             ]
@@ -1086,6 +1107,24 @@
               "instructions": {
                 "$id": "#/properties/commandsPostDeploy/items/properties/parameters/instructions",
                 "description": "Human-readable instructions for 'manual' actions",
+                "type": "string"
+              },
+              "className": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/className",
+                "description": "Apex batch class name to schedule for 'schedule-batch' actions",
+                "type": "string"
+              },
+              "cronExpression": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/cronExpression",
+                "description": "Cron expression used to schedule the Apex batch class for 'schedule-batch' actions",
+                "examples": [
+                  "0 0 2 * * ?"
+                ],
+                "type": "string"
+              },
+              "jobName": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/jobName",
+                "description": "Scheduled job name for 'schedule-batch' actions. Defaults to <className>_Schedule",
                 "type": "string"
               }
             },
@@ -2099,7 +2138,7 @@
     "manualActionsMode": {
       "$id": "#/properties/manualActionsMode",
       "default": "externalFile",
-      "description": "Defines how manual actions are managed for deployments.\n- **externalFile** (default): Manual actions are tracked in an external Excel/XLS file referenced by manualActionsFileUrl. The pipeline view will warn if this file is not configured.\n- **sfdxHardis**: Manual actions are managed directly within sfdx-hardis. No external file is required, and the pipeline view will not warn about a missing manual actions file.",
+      "description": "Defines how manual actions are managed for deployments.\n- **externalFile** (default): Manual actions are tracked in an external Excel/XLS file referenced by manualActionsFileUrl, and hardis:work:save reminds you to update it at the end of a run.\n- **sfdxHardis**: Manual actions are managed directly within sfdx-hardis, as deployment actions of type `manual`. They are listed in the Pull Request comments, where they can be ticked off once performed, and no external file is required.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-deploy/",
       "enum": [
         "externalFile",

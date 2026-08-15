@@ -2302,6 +2302,7 @@
   "onceConfirmedTheDataLoadingWillStart": "確認後、データのロードが開始されます",
   "onlyFilesWithSizeGreaterThanValueDownloaded": "このサイズ（キロバイト）以上のファイルのみがダウンロードされます",
   "onlyHttpRemoteUrlsAreSupportedFor": "資格情報の挿入には HTTP(S) リモート URL のみがサポートされています",
+  "openDeploymentActionsForPullRequest": "プルリクエストのデプロイアクションを更新",
   "openDevOpsPipelineForManualActions": "DevOps Pipelineパネルを開いて、プルリクエストの手動アクションを確認・更新してください。",
   "openExternalClientAppManager": "External Client App Manager を開く",
   "openExternalClientAppSettings": "External Client App の設定を開く",

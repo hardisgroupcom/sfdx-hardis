@@ -2304,6 +2304,7 @@
   "onceConfirmedTheDataLoadingWillStart": "Zodra bevestigd, begint het laden van gegevens",
   "onlyFilesWithSizeGreaterThanValueDownloaded": "Alleen bestanden met een grootte groter dan of gelijk aan deze waarde worden gedownload (in kilobytes)",
   "onlyHttpRemoteUrlsAreSupportedFor": "Alleen HTTP(S) externe URL's worden ondersteund voor het injecteren van inloggegevens",
+  "openDeploymentActionsForPullRequest": "Werk de implementatieacties van je pull request bij",
   "openDevOpsPipelineForManualActions": "Open het DevOps Pipeline-paneel om de handmatige acties voor je pull request te bekijken en bij te werken.",
   "openExternalClientAppManager": "Open External Client App Manager",
   "openExternalClientAppSettings": "Open External Client App instellingen",

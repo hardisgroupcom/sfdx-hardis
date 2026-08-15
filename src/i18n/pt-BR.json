@@ -2276,6 +2276,7 @@
   "openaiReceivedResponseDebug": "Resposta do prompt recebida de {{modelName}}\n{{response}}",
   "openaiRequestingPrompt": "Solicitando prompt a {{modelName}}{{template}} (defina DEBUG_PROMPTS=true para ver detalhes)",
   "openaiRequestingPromptDebug": "Solicitando o seguinte prompt a {{modelName}}{{template}}:\n{{promptText}}",
+  "openDeploymentActionsForPullRequest": "Atualizar as ações de implantação do seu pull request",
   "openDevOpsPipelineForManualActions": "Abra o painel DevOps Pipeline para revisar e atualizar as ações manuais do seu pull request.",
   "openExternalClientAppManager": "Abrir Gerenciador de Aplicativos Clientes Externos",
   "openExternalClientAppSettings": "Abrir configurações External Client App",

@@ -229,27 +229,29 @@ static sendMessage(data: any) {
     WebSocketClient.sendMessage({ event: 'refreshPipeline' });
   }
 
-  // Opens the DevOps Pipeline panel and shows the new PR modal for the given branches
-  static sendOpenPipelinePullRequestMessage(currentBranch: string, targetBranch: string) {
-    WebSocketClient.sendMessage({ event: 'openPipelinePullRequest', currentBranch, targetBranch });
-  }
-
   static sendRefreshDataWorkbenchMessage() {
     WebSocketClient.sendMessage({ event: 'refreshDataWorkbench' });
   }
 
   // Sends info about downloadable report file
+  // commandArgs is only used by the "actionCommand" type: it carries the arguments passed
+  // to the VS Code command, so a button can deep-link into a specific panel section.
   static sendReportFileMessage(
     file: string,
     title: string,
-    type: "actionCommand" | "actionUrl" | "report" | "docUrl"
+    type: "actionCommand" | "actionUrl" | "report" | "docUrl",
+    commandArgs?: any[]
   ) {
-    WebSocketClient.sendMessage({
+    const message: any = {
       event: 'reportFile',
       file: file.replace(/\\/g, '/'),
       title: title,
       type: type
-    });
+    };
+    if (type === 'actionCommand' && Array.isArray(commandArgs) && commandArgs.length > 0) {
+      message.commandArgs = commandArgs;
+    }
+    WebSocketClient.sendMessage(message);
   }
 
   static sendPrompts(prompts: any): Promise<any> {
