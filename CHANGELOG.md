@@ -19,6 +19,12 @@
 ### Deployment
 
 - [hardis:project:action:create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/): Restrict a deployment action to some major branches, or to all of them except a few, using `dev-sandboxes` to target developer sandboxes.
+- New [hardis:project:action:state](https://sfdx-hardis.cloudity.com/hardis/project/action/state/): Read the per-org execution state of the deployment actions of a Pull Request (done, failed, waiting for manual execution, skipped), as stored in the "Deployment Actions" Pull Request comment. Lets tools that cannot read Pull Request comments, like the VS Code extension, display the status matrix without reimplementing the parser.
+- Configuration schema fixes, so `.sfdx-hardis.yml` validation and autocompletion match what the commands actually accept:
+  - `commandsPostDeploy` now accepts the `schedule-batch` action type, which was reported as invalid even though scheduling an Apex batch after a deployment is its normal use.
+  - The `className`, `cronExpression` and `jobName` parameters of `schedule-batch` actions are now declared, instead of only being tolerated as extra keys.
+  - New `packageXmlToDeploy`, `packageXmlToDelete` and `packageXmlToDeletePreDeploy` properties, which were read from the configuration but absent from the schema.
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): The end of the command now displays an **Update the Deployment Actions of your Pull Request** button in VS Code, opening the DevOps Pipeline directly on the deployment actions of the Pull Request of your current branch (its draft actions when the Pull Request is not created yet). Requires VS Code extension **sfdx-hardis** v7.19.0 or later.
 - Fix the Pull Request comment losing its result banner, its status title and its code coverage section when every item of the deployment package was filtered out before the deployment.
 - Pull Request comments now only mention what they actually contain: the scope paragraph names deployment actions and Apex test classes only when the Pull Request carries them, and each status legend lists only the statuses present in the table above it.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/):

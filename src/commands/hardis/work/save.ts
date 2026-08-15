@@ -271,9 +271,6 @@ The command's technical implementation involves a series of orchestrated steps:
       const manualActionsMode = config.manualActionsMode || 'externalFile';
       if (manualActionsMode === 'sfdxHardis') {
         uxLog("warning", this, c.yellow(t('openDevOpsPipelineForManualActions')));
-        if (WebSocketClient.isAliveWithLwcUI()) {
-          WebSocketClient.sendOpenPipelinePullRequestMessage(this.currentBranch, this.targetBranch || '');
-        }
       } else {
         if (config.manualActionsFileUrl && config.manualActionsFileUrl !== '') {
           uxLog("warning", this, c.yellow(t('ifYouHavePreDeploymentOrPost', { config: c.green(config.manualActionsFileUrl) })));
@@ -284,6 +281,16 @@ The command's technical implementation involves a series of orchestrated steps:
         else {
           uxLog("warning", this, c.yellow(t('defineManualActionsFileAskReleaseMgr')));
         }
+      }
+      // Button opening the DevOps Pipeline panel directly on the deployment actions
+      // of the Pull Request of the current branch (draft actions when it is not created yet)
+      if (WebSocketClient.isAliveWithLwcUI()) {
+        WebSocketClient.sendReportFileMessage(
+          'vscode-sfdx-hardis.showPipeline',
+          t('openDeploymentActionsForPullRequest'),
+          'actionCommand',
+          [{ focus: 'deploymentActions', sourceBranch: this.currentBranch, targetBranch: this.targetBranch || '' }]
+        );
       }
       if (!WebSocketClient.isAliveWithLwcUI()) {
         uxLog("log", this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(mergeRequestDoc)}`));
