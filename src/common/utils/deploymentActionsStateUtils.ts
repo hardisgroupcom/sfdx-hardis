@@ -363,6 +363,26 @@ function parseLegacyDeploymentActionsCommentBody(body: string): DeploymentAction
   return entries;
 }
 
+// Status icons of the "Status by org branch" matrix, in the order they are listed in the legend
+const MATRIX_STATUS_LEGEND: { icon: string; label: string }[] = [
+  { icon: '✅', label: 'done' },              // ✅
+  { icon: '❌', label: 'failed' },            // ❌
+  { icon: '👋', label: 'waiting for manual execution' }, // 👋
+  { icon: '⚪', label: 'skipped' },           // ⚪
+  { icon: '❓', label: 'unknown' },           // ❓
+  { icon: '⬜', label: 'not run in this org branch yet' },     // ⬜
+];
+
+/**
+ * Legend of the status matrix, listing only the statuses actually present in it.
+ * A legend explaining outcomes that do not appear in the table above it is noise.
+ */
+function buildMatrixStatusLegend(usedIcons: string[]): string {
+  const used = new Set(usedIcons);
+  const parts = MATRIX_STATUS_LEGEND.filter((entry) => used.has(entry.icon)).map((entry) => `${entry.icon} ${entry.label}`);
+  return parts.length > 0 ? `\n*Legend: ${parts.join(' · ')}*\n` : '';
+}
+
 function getStatusIcon(status: DeploymentActionStateEntry['status']): string {
   switch (status) {
     case 'success': return '\u2705';   // ✅
@@ -467,6 +487,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
       if (!matrixActionIds.includes(actionId)) matrixActionIds.push(actionId);
     }
   }
+  const usedMatrixIcons: string[] = [];
   if (branches.length > 0 && matrixActionIds.length > 0) {
     body += `### Status by org branch\n\n`;
     body += `| Action | When |${branches.map((b) => ` ${b} |`).join('')}\n`;
@@ -479,14 +500,19 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
       const order = actionEntries[0]?.executionOrder ?? def?.executionOrder ?? 0;
       const cells = branches.map((branch) => {
         const e = actionEntries.find((entry) => entry.orgBranch === branch);
-        if (!e) return '⬜';
+        if (!e) {
+          usedMatrixIcons.push('⬜');
+          return '⬜';
+        }
         const dateStr = e.date ? ` ${e.date.substring(0, 10)}` : '';
         const jobRef = e.jobUrl ? `<br/>[${e.jobId}](${e.jobUrl})` : '';
-        return `${getStatusIcon(e.status)}${dateStr}${jobRef}`;
+        const statusIcon = getStatusIcon(e.status);
+        usedMatrixIcons.push(statusIcon);
+        return `${statusIcon}${dateStr}${jobRef}`;
       });
       body += `| <!-- actionId:${encodeActionId(actionId)} order:${order} --> ${label} | ${when} |${cells.map((cellContent) => ` ${cellContent} |`).join('')}\n`;
     }
-    body += `\n*Legend: ✅ done · ❌ failed · 👋 waiting for manual execution · ⚪ skipped · ⬜ not run in this org branch yet*\n`;
+    body += buildMatrixStatusLegend(usedMatrixIcons);
     body += `\n*Last updated: ${new Date().toISOString().replace('T', ' ').substring(0, 16)} UTC*\n`;
   }
 

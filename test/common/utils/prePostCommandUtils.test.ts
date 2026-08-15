@@ -2,7 +2,7 @@
 import { expect } from 'chai';
 import type { ActionResult, PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { buildActionOutput } from '../../../src/common/actionsProvider/actionsProvider.js';
-import { buildActionsResultMarkdown } from '../../../src/common/utils/prePostCommandUtils.js';
+import { buildActionsResultMarkdown, buildDeploymentScopeSubjects } from '../../../src/common/utils/prePostCommandUtils.js';
 
 function action(overrides: Partial<PrePostCommand>): PrePostCommand {
   return {
@@ -45,6 +45,41 @@ describe('buildActionOutput()', () => {
   it('returns an empty string rather than blank lines when there is nothing to report', () => {
     expect(buildActionOutput({ status: 0 })).to.equal('');
     expect(buildActionOutput({ status: 0, stdout: '\n', stderr: '' })).to.equal('');
+  });
+});
+
+describe('buildDeploymentScopeSubjects()', () => {
+  it('names both subjects when the Pull Requests carry both', () => {
+    const configs = [{ commandsPreDeploy: [{ id: 'a' }], deploymentApexTestClasses: ['MyTest'] }];
+    expect(buildDeploymentScopeSubjects(configs, true)).to.deep.equal(['Deployment actions', 'Apex test classes']);
+  });
+
+  // Announcing Apex test classes on a Pull Request that carries none describes content
+  // the reader will not find in the comment
+  it('names only the deployment actions when there is no test class', () => {
+    const configs = [{ commandsPostDeploy: [{ id: 'a' }] }];
+    expect(buildDeploymentScopeSubjects(configs, true)).to.deep.equal(['Deployment actions']);
+  });
+
+  it('names only the Apex test classes when there is no action', () => {
+    const configs = [{ deploymentApexTestClasses: ['MyTest'] }];
+    expect(buildDeploymentScopeSubjects(configs, true)).to.deep.equal(['Apex test classes']);
+  });
+
+  it('names nothing when the Pull Requests carry neither', () => {
+    expect(buildDeploymentScopeSubjects([{ commandsPreDeploy: [] }, null], true)).to.deep.equal([]);
+    expect(buildDeploymentScopeSubjects([], true)).to.deep.equal([]);
+  });
+
+  // Test classes declared while the feature is off are never used, so they must not be announced
+  it('ignores the test classes when the feature is not enabled', () => {
+    const configs = [{ commandsPreDeploy: [{ id: 'a' }], deploymentApexTestClasses: ['MyTest'] }];
+    expect(buildDeploymentScopeSubjects(configs, false)).to.deep.equal(['Deployment actions']);
+  });
+
+  it('collects the subjects across all the Pull Requests of the scope', () => {
+    const configs = [{ commandsPreDeploy: [{ id: 'a' }] }, { deploymentApexTestClasses: ['MyTest'] }];
+    expect(buildDeploymentScopeSubjects(configs, true)).to.deep.equal(['Deployment actions', 'Apex test classes']);
   });
 });
 
@@ -122,6 +157,30 @@ describe('buildActionsResultMarkdown()', () => {
 
     expect(markdown).to.not.contain('Manual Actions to perform after deployment');
     expect(markdown).to.not.contain('- [ ]');
+  });
+
+  // A legend explaining outcomes absent from the table above it is noise
+  it('lists only the statuses present in the table', () => {
+    const commands = [
+      action({ label: 'Ran fine', result: { statusCode: 'success' } }),
+      action({ label: 'Not for this branch', result: { statusCode: 'skipped', skippedReason: 'Action is excluded from target branch main' } }),
+    ];
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false);
+
+    expect(markdown).to.contain('*Legend: ✅ success · ⚪ skipped*');
+    expect(markdown).to.not.contain('waiting for manual execution');
+    expect(markdown).to.not.contain('not run');
+    expect(markdown).to.not.contain('allowed to fail');
+  });
+
+  it('distinguishes a failure allowed to fail from a blocking one in the legend', () => {
+    const allowed = [action({ allowFailure: true, result: { statusCode: 'failed' } })];
+    expect(buildActionsResultMarkdown('commandsPostDeploy', allowed, false))
+      .to.contain('*Legend: ⚠️ failed (allowed to fail)*');
+
+    const blocking = [action({ result: { statusCode: 'failed' } })];
+    expect(buildActionsResultMarkdown('commandsPostDeploy', blocking, false))
+      .to.contain('*Legend: ❌ failed*');
   });
 
   it('does not render an empty code block for a whitespace-only output', () => {

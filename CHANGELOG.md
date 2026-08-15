@@ -20,6 +20,7 @@
 
 - [hardis:project:action:create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/): Restrict a deployment action to some major branches, or to all of them except a few, using `dev-sandboxes` to target developer sandboxes.
 - Fix the Pull Request comment losing its result banner, its status title and its code coverage section when every item of the deployment package was filtered out before the deployment.
+- Pull Request comments now only mention what they actually contain: the scope paragraph names deployment actions and Apex test classes only when the Pull Request carries them, and each status legend lists only the statuses present in the table above it.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/):
   - Delete Flows listed in destructive changes. Flow members are removed from the manifest sent to the org and deleted through the Tooling API after the deployment (deactivate, then delete every version), because a Flow deletion can neither be validated by a `--check` deployment nor survive a quick deploy. A `--check` reports the deletion plan in the Pull Request comment and fails if Flow Interviews block a deletion.
   - New `FLOW_DELETE_INTERVIEWS` Pull Request keyword / env variable and `flowDeleteInterviews` config property, to authorize deleting the Flow Interviews that block a Flow deletion.<br/>**Caution: deleting Flow Interviews is irreversible and destroys in-flight process state.**

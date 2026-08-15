@@ -193,8 +193,8 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
  * Every planned deployment can be skipped inside the deployment loop because its package.xml ended
  * up empty: filtered by package-no-overwrite.xml / packageDeployOnChange.xml, emptied by a
  * remove-packagexml-items pre-deploy action, or left with standalone parent items only. Nothing
- * then records a deployment result, and the Pull Request comment stays statusless: no result title,
- * no banner (a "tovalidate" comment has none) and no code coverage section.
+ * then records a deployment result, and the Pull Request comment carries no status at all: no
+ * result title, no banner (a "tovalidate" comment has none) and no code coverage section.
  *
  * A failure already reported (ex: a post-deploy action allowed to fail) is never overwritten.
  */

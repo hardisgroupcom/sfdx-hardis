@@ -311,6 +311,31 @@ function hasOutput(cmd: PrePostCommand): boolean {
 }
 
 /**
+ * What the Pull Requests of the scope actually carry, so the scope paragraph only names the
+ * subjects that exist. Announcing "Deployment actions and Apex test classes" on a Pull Request
+ * that carries neither, or only one of them, describes content the reader will not find.
+ *
+ * Both phases are inspected, not only the one being executed: the paragraph is written once per
+ * job and must describe the whole Pull Request, whichever phase happens to run first.
+ */
+export function buildDeploymentScopeSubjects(prConfigs: (object | null)[], testClassesEnabled: boolean): string[] {
+  const hasArrayContent = (config: any, property: string): boolean =>
+    Array.isArray(config?.[property]) && config[property].length > 0;
+  const hasActions = prConfigs.some(
+    (config) => hasArrayContent(config, 'commandsPreDeploy') || hasArrayContent(config, 'commandsPostDeploy')
+  );
+  const hasTestClasses = testClassesEnabled && prConfigs.some((config) => hasArrayContent(config, 'deploymentApexTestClasses'));
+  const subjects: string[] = [];
+  if (hasActions) {
+    subjects.push('Deployment actions');
+  }
+  if (hasTestClasses) {
+    subjects.push('Apex test classes');
+  }
+  return subjects;
+}
+
+/**
  * Store in the Pull Request data the markdown paragraph explaining the Pull Request scope used to
  * collect deployment actions and Apex test classes. Set once per process (pre-deploy usually wins).
  */
@@ -327,33 +352,50 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
     const prLinks = scopeInfo.pullRequests
       .map((pr) => (pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`))
       .join(', ');
-    let markdown = '';
+    // Only name what the Pull Requests of the scope really carry
+    const prConfigs = await Promise.all(
+      scopeInfo.pullRequests.map((pr) => getPullRequestScopedSfdxHardisConfig(pr).catch(() => null))
+    );
+    const projectConfig = await getConfig('branch');
+    const subjects = buildDeploymentScopeSubjects(prConfigs, projectConfig?.enableDeploymentApexTestClasses === true);
+    const subjectsLabel = subjects.join(' and ');
+    const paragraphs: string[] = [];
     if (checkOnly) {
-      markdown = `ℹ️ Deployment actions and Apex test classes are collected from the content of this Pull Request`;
-      if (scopeInfo.pullRequests.length > 1) {
-        markdown += ` (${scopeInfo.pullRequests.length} Pull Requests carried: ${prLinks})`;
+      if (subjects.length > 0) {
+        let collectedSentence = `ℹ️ ${subjectsLabel} are collected from the content of this Pull Request`;
+        if (scopeInfo.pullRequests.length > 1) {
+          collectedSentence += ` (${scopeInfo.pullRequests.length} Pull Requests carried: ${prLinks})`;
+        }
+        paragraphs.push(collectedSentence + `.`);
       }
-      markdown += `.`;
       // On a merge from a major or retrofit branch, the post-merge deployment job replays the whole
       // promotion window: without this note, the check comment ("no actions") and the merge job
-      // (actions from other Pull Requests) look contradictory.
+      // (actions from other Pull Requests) look contradictory. It is about the actions of the OTHER
+      // Pull Requests, so it stays relevant even when this one carries none.
       const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
       if (prInfo) {
         const majorOrgs = await listMajorOrgs();
         if (!isSinglePullRequestScope(prInfo.sourceBranch, majorOrgs.map((o) => o.branchName))) {
-          markdown += `\n\nℹ️ After the merge, the deployment job will also process the still-pending actions of the other Pull Requests of the \`${prInfo.targetBranch}\` promotion window, so it can process more actions than listed here.`;
+          paragraphs.push(`ℹ️ After the merge, the deployment job will also process the still-pending actions of the other Pull Requests of the \`${prInfo.targetBranch}\` promotion window, so it can process more actions than listed here.`);
         }
       }
     } else {
       // A feature Pull Request merge processes only its own actions: nothing to explain
-      if (scopeInfo.kind === 'single-pr') {
+      if (scopeInfo.kind === 'single-pr' || subjects.length === 0) {
         return;
       }
       // Tense-neutral wording: this paragraph is also posted when the metadata deployment failed,
       // in which case the actions were collected but deliberately not run (see fix #2053)
-      markdown = `ℹ️ Deployment actions and Apex test classes were collected from ${scopeInfo.pullRequests.length} Pull Request(s): ${prLinks}. Each action keeps its tracked state on its own Pull Request.`;
+      let collectedSentence = `ℹ️ ${subjectsLabel} were collected from ${scopeInfo.pullRequests.length} Pull Request(s): ${prLinks}.`;
+      if (subjects.includes('Deployment actions')) {
+        collectedSentence += ` Each action keeps its tracked state on its own Pull Request.`;
+      }
+      paragraphs.push(collectedSentence);
     }
-    setPullRequestData({ deploymentScopeMarkdownBody: markdown });
+    if (paragraphs.length === 0) {
+      return;
+    }
+    setPullRequestData({ deploymentScopeMarkdownBody: paragraphs.join('\n\n') });
   } catch (e) {
     uxLog("warning", this, c.yellow('[DeploymentActions] ' + t('deploymentActionsScopeError', { message: (e as Error).message })));
   }
@@ -481,6 +523,40 @@ function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: bool
   return section;
 }
 
+// Status icons of the actions results table, in the order they are listed in the legend
+const ACTION_STATUS_LEGEND: { icon: string; label: string }[] = [
+  { icon: '✅', label: 'success' },
+  { icon: '⚠️', label: 'failed (allowed to fail)' },
+  { icon: '❌', label: 'failed' },
+  { icon: '👋', label: 'waiting for manual execution' },
+  { icon: '⚪', label: 'skipped' },
+  { icon: '⏭️', label: 'not run' },
+  { icon: '❓', label: 'unknown' },
+];
+
+/**
+ * Status icon of an action in the results table.
+ */
+function getActionStatusIcon(cmd: PrePostCommand): string {
+  return cmd.result?.statusCode === "manual" ?
+    "👋" :
+    cmd.result?.statusCode === "success" ? '✅' :
+      (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ? '⚠️' :
+        (cmd.result?.statusCode === "failed") ? '❌' :
+          cmd.result?.statusCode === "skipped" ? '⚪' :
+            cmd.result?.statusCode === "not-run" ? '⏭️' : '❓';
+}
+
+/**
+ * Legend of the actions results table, listing only the statuses actually present in it.
+ * A legend explaining outcomes that do not appear in the table above it is noise.
+ */
+function buildActionStatusLegend(usedIcons: string[]): string {
+  const used = new Set(usedIcons);
+  const parts = ACTION_STATUS_LEGEND.filter((entry) => used.has(entry.icon)).map((entry) => `${entry.icon} ${entry.label}`);
+  return parts.length > 0 ? `\n*Legend: ${parts.join(' · ')}*\n` : '';
+}
+
 /**
  * Build the "Actions Results" markdown section posted in the Pull Request comment.
  * Exported so it can be unit tested without a git provider or a config layer.
@@ -502,14 +578,10 @@ export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'comm
   // Build markdown table
   markdownBody += `| <!-- --> | Label | Type | Status | Details |\n`;
   markdownBody += `|:--------:|-------|------|--------|---------|\n`;
+  const usedStatusIcons: string[] = [];
   for (const cmd of commands) {
-    const statusIcon = cmd.result?.statusCode === "manual" ?
-      "👋" :
-      cmd.result?.statusCode === "success" ? '✅' :
-        (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ? '⚠️' :
-          (cmd.result?.statusCode === "failed") ? '❌' :
-            cmd.result?.statusCode === "skipped" ? '⚪' :
-              cmd.result?.statusCode === "not-run" ? '⏭️' : '❓';
+    const statusIcon = getActionStatusIcon(cmd);
+    usedStatusIcons.push(statusIcon);
     const statusCol = cmd.result?.statusCode === "manual" ?
       'waiting for manual execution' :
       `${cmd.result?.statusCode || 'not run'}`;
@@ -530,7 +602,7 @@ export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'comm
   if (hasDuplicateLabels) {
     markdownBody += `\n*Some rows share the same label but are distinct actions, each defined on its own Pull Request.*\n`;
   }
-  markdownBody += `\n*Legend: ✅ success · ⚠️ failed (allowed to fail) · ❌ failed · 👋 waiting for manual execution · ⚪ skipped · ⏭️ not run*\n`;
+  markdownBody += buildActionStatusLegend(usedStatusIcons);
   // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
   const commandsInResults = commands.filter(c => hasOutput(c) || (c.type === "manual" && !isNotRun(c)));
   if (commandsInResults.length > 0) {
