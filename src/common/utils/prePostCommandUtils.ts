@@ -13,7 +13,7 @@ import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvi
 import { getPullRequestScopedSfdxHardisConfig, getPullRequestScopeInfo, isSinglePullRequestScope, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { t } from './i18n.js';
-import { ActionWhen, getPrIdFromUserConfig } from './actionUtils.js';
+import { ActionWhen, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getPrIdFromUserConfig } from './actionUtils.js';
 import { recordExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, extraCommands?: any[] }) {
@@ -83,6 +83,16 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   const prIdFromConfig = !prInfo?.idNumber ? await getPrIdFromUserConfig() : null;
   const currentPrNumber = prInfo?.idNumber || (prIdFromConfig ? parseInt(prIdFromConfig, 10) : 0);
 
+  // Branch filters (includeTargetBranches / excludeTargetBranches) are resolved against the branch
+  // the deployment targets. listMajorOrgs() is only called when at least one action declares a
+  // filter, so projects not using the feature keep the exact same behavior and job output.
+  const hasBranchFilters = commands.some(
+    (cmd) => (cmd.includeTargetBranches || []).length > 0 || (cmd.excludeTargetBranches || []).length > 0
+  );
+  const targetBranchCandidates = hasBranchFilters
+    ? buildActionTargetBranchCandidates(orgBranchName, (await listMajorOrgs()).map((majorOrg: any) => majorOrg.branchName))
+    : [orgBranchName];
+
   // Pre-load deployment actions state from all source PRs
   const hasGitProvider = (await GitProvider.getInstance()) !== null;
   if (hasGitProvider) {
@@ -108,6 +118,14 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
 
   for (let cmdIndex = 0; cmdIndex < commands.length; cmdIndex++) {
     const cmd = commands[cmdIndex];
+    // An action defining both branch filter lists is a definition error, not a skip: report every
+    // offending action of the job, and let the failure check after the loop fail the deployment.
+    const branchFilterVerdict = evaluateActionBranchFilter(cmd, targetBranchCandidates);
+    if (branchFilterVerdict.invalid) {
+      cmd.result = { statusCode: "failed", skippedReason: branchFilterVerdict.reason };
+      uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} is not valid: ${branchFilterVerdict.reason}`));
+      continue;
+    }
     const actionsInstance = await ActionsProvider.buildActionInstance(cmd);
     const actionsIssues = await actionsInstance.checkValidityIssues(cmd);
     if (actionsIssues) {
@@ -133,6 +151,16 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
+      };
+      skipAction = true;
+    } else if (branchFilterVerdict.run === false) {
+      // Skipped before the runOnlyOnceByOrg check below, so the action is never recorded as run in
+      // the org and still runs on a later deployment targeting a branch it does apply to.
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: ${branchFilterVerdict.reason}`));
+      cmd.result = {
+        statusCode: "skipped",
+        skippedCode: "branch-not-targeted",
+        skippedReason: branchFilterVerdict.reason
       };
       skipAction = true;
     }

@@ -86,6 +86,24 @@ describe('hardis:project:action:create - unit logic', () => {
     expect(result[0].parameters?.jobName).to.equal('NightlyBatch_Schedule');
   });
 
+  it('persists a target branch restriction to the config file', async () => {
+    const action = buildAction({
+      id: randomUUID(),
+      label: 'Publish community',
+      type: 'publish-community',
+      parameters: { communityName: 'Customer' },
+      excludeTargetBranches: ['main', 'dev-sandboxes'],
+    });
+
+    const actions = await readActions('project', 'post-deploy');
+    actions.push(action);
+    const configFile = await writeActions('project', 'post-deploy', actions);
+
+    const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+    expect(doc.commandsPostDeploy[0].excludeTargetBranches).to.deep.equal(['main', 'dev-sandboxes']);
+    expect(doc.commandsPostDeploy[0]).to.not.have.property('includeTargetBranches');
+  });
+
   it('appends to existing actions without disturbing them', async () => {
     const first = buildAction({ id: 'first-id', label: 'First', type: 'command', command: 'echo 1' });
     await writeActions('project', 'pre-deploy', [first]);

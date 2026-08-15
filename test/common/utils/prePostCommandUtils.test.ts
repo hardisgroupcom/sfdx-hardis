@@ -86,6 +86,44 @@ describe('buildActionsResultMarkdown()', () => {
     expect(markdown).to.contain('Go to Setup');
   });
 
+  it('reports an action skipped by its branch filter with the reason', () => {
+    const commands = [
+      action({
+        label: 'Publish the customer community',
+        result: {
+          statusCode: 'skipped',
+          skippedCode: 'branch-not-targeted',
+          skippedReason: 'Action only runs on target branches uat, preprod, and this deployment targets main',
+        },
+      }),
+    ];
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false);
+
+    expect(markdown).to.contain('⚪');
+    expect(markdown).to.contain('skipped');
+    expect(markdown).to.contain('this deployment targets main');
+    expect(markdown).to.not.contain('See details below');
+  });
+
+  it('does not list a manual action skipped by its branch filter as a to-do', () => {
+    const commands = [
+      action({
+        type: 'manual',
+        label: 'Create the inbound Email Service',
+        parameters: { instructions: 'Go to Setup' },
+        result: {
+          statusCode: 'skipped',
+          skippedCode: 'branch-not-targeted',
+          skippedReason: 'Action is excluded from target branch main',
+        },
+      }),
+    ];
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false);
+
+    expect(markdown).to.not.contain('Manual Actions to perform after deployment');
+    expect(markdown).to.not.contain('- [ ]');
+  });
+
   it('does not render an empty code block for a whitespace-only output', () => {
     const commands = [action({ result: { statusCode: 'failed', output: '\n' } })];
     const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false);

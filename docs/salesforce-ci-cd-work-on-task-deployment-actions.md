@@ -75,19 +75,80 @@ commandsPostDeploy:
 
 Each action is an object with the following required and optional properties.
 
-| Field              | Type    | Required? | Description                                                                                                                                                                                       |
-|--------------------|---------|:---------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `id`               | string  |    Yes    | Unique identifier for the action.                                                                                                                                                                 |
-| `label`            | string  |    Yes    | Human-readable description of the action.                                                                                                                                                         |
-| `type`             | string  |    Yes    | One of `command`, `data`, `apex`, `publish-community`, `schedule-batch`, `remove-packagexml-items`, `manual`.                                                                                     |
-| `context`          | string  |    Yes    | When the action should run. Allowed values: `all` (default), `check-deployment-only`, `process-deployment-only`.                                                                                  |
-| `command`          | string  |    No     | Shell command to run (used by `command` type).                                                                                                                                                    |
-| `parameters`       | object  |    No     | Parameters of the action (see action details)                                                                                                                                                     |
-| `customUsername`   | string  |    No     | Run the action with a specific username instead of the default target org.                                                                                                                        |
-| `allowFailure`     | boolean |    No     | If true and the action fails, the deployment continues but the result is marked failed/allowed.                                                                                                   |
-| `runOnlyOnceByOrg` | boolean |    No     | Default: `true`. If true, the action runs only once per target org. Execution state is tracked in a dedicated "Deployment Actions" PR comment (see below) - no Salesforce custom object required. |
+| Field                   | Type    | Required? | Description                                                                                                                                                                                       |
+|-------------------------|---------|:---------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`                    | string  |    Yes    | Unique identifier for the action.                                                                                                                                                                 |
+| `label`                 | string  |    Yes    | Human-readable description of the action.                                                                                                                                                         |
+| `type`                  | string  |    Yes    | One of `command`, `data`, `apex`, `publish-community`, `schedule-batch`, `remove-packagexml-items`, `manual`.                                                                                     |
+| `context`               | string  |    Yes    | When the action should run. Allowed values: `all` (default), `check-deployment-only`, `process-deployment-only`.                                                                                  |
+| `command`               | string  |    No     | Shell command to run (used by `command` type).                                                                                                                                                    |
+| `parameters`            | object  |    No     | Parameters of the action (see action details)                                                                                                                                                     |
+| `customUsername`        | string  |    No     | Run the action with a specific username instead of the default target org.                                                                                                                        |
+| `includeTargetBranches` | array   |    No     | Run the action only when the deployment targets one of these branches. See [Restricting an action to some orgs](#restricting-an-action-to-some-orgs).                                             |
+| `excludeTargetBranches` | array   |    No     | Run the action on every target branch except these ones. See [Restricting an action to some orgs](#restricting-an-action-to-some-orgs).                                                           |
+| `allowFailure`          | boolean |    No     | If true and the action fails, the deployment continues but the result is marked failed/allowed.                                                                                                   |
+| `runOnlyOnceByOrg`      | boolean |    No     | Default: `true`. If true, the action runs only once per target org. Execution state is tracked in a dedicated "Deployment Actions" PR comment (see below) - no Salesforce custom object required. |
 
 > Post-deployment actions are never run when the metadata deployment failed. They are reported as `not run` in the Pull Request comment, no execution state is stored for them, and they are proposed again during the next successful deployment.
+
+### Restricting an action to some orgs
+
+By default an action runs on every target org. Some actions only make sense in a subset of them: seeding demo data everywhere but production, publishing a community on UAT only, disabling an integration on developer sandboxes.
+
+Two mutually exclusive properties control this:
+
+- `includeTargetBranches`: the action runs only when the deployment targets one of the listed branches.
+- `excludeTargetBranches`: the action runs everywhere except on the listed branches.
+
+```yaml
+commandsPostDeploy:
+  # Runs on UAT and preprod only
+  - id: publishCommunity
+    label: Publish the customer community
+    type: publish-community
+    parameters:
+      communityName: Customer
+    context: process-deployment-only
+    includeTargetBranches:
+      - uat
+      - preprod
+
+  # Runs everywhere except production
+  - id: seedDemoData
+    label: Import demo records
+    type: data
+    parameters:
+      sfdmuProject: DemoData
+    context: process-deployment-only
+    excludeTargetBranches:
+      - main
+```
+
+Branch names are matched exactly, ignoring case. There are no wildcards: list each branch you mean.
+
+**The `dev-sandboxes` virtual branch**
+
+A deployment does not always target a major branch. `sf hardis:work:backpromote` deploys to a developer sandbox, and so does a local `sf hardis:project:deploy:start` run from a feature branch. In those cases the name `dev-sandboxes` matches, so you can target developer sandboxes without knowing their branch names:
+
+```yaml
+commandsPreDeploy:
+  # Never runs when a developer backpromotes into their own sandbox
+  - id: lockIntegrationUser
+    label: Lock the integration user
+    type: apex
+    parameters:
+      apexScript: scripts/apex/lock-integration-user.apex
+    excludeTargetBranches:
+      - dev-sandboxes
+```
+
+A target counts as `dev-sandboxes` when it has no `config/branches/.sfdx-hardis.<branch>.yml` file. In a repository with no branch config files at all, every deployment therefore counts as a developer sandbox.
+
+**Reporting and validation**
+
+When an action does not apply to the branch being deployed, it is reported as `skipped` in the Deployment Actions Pull Request comment with the reason, and no execution state is stored: the action still runs later on a branch it does target. A manual action skipped this way is not added to the manual checklist.
+
+Setting both properties on the same action is a configuration error. `sf hardis:project:action:create` and `sf hardis:project:action:update` refuse to save it, and a deployment reading such an action from a YAML file fails with an explicit message.
 
 ### Which Pull Requests are in scope
 

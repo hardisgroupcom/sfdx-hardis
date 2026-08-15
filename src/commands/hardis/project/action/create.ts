@@ -15,6 +15,7 @@ import {
   ActionWhen,
   buildAction,
   logActionSummary,
+  parseBranchListFlag,
   readActions,
   resolvePrId,
   validateActionParameters,
@@ -39,6 +40,28 @@ New actions are appended to the end of the action list. Use \`hardis:project:act
 
 The action ID is auto-generated using UUID.
 
+### Target branches
+
+An action runs on every target branch by default. To restrict it, set one of the two mutually exclusive lists:
+
+- \`includeTargetBranches\`: the action only runs when the deployment targets one of these branches
+- \`excludeTargetBranches\`: the action runs everywhere except on these branches
+
+Branch names are matched exactly, ignoring case. The virtual name \`dev-sandboxes\` matches any target that is not a major branch declared in \`config/branches\`: a developer sandbox reached by \`hardis:work:backpromote\`, or a local deployment from a feature branch.
+
+\`\`\`yaml
+commandsPostDeploy:
+  - id: publishCommunity
+    label: Publish the customer community
+    type: publish-community
+    parameters:
+      communityName: Customer
+    excludeTargetBranches:
+      - dev-sandboxes
+\`\`\`
+
+When an action does not apply to the branch being deployed, it is reported as skipped in the Pull Request comment, with the reason.
+
 ### Agent Mode
 
 Supports non-interactive execution with \`--agent\`:
@@ -53,6 +76,8 @@ Required in agent mode:
 - Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--packagexml-items\` for remove-packagexml-items
 
 In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-only-once-by-org\` defaults to \`true\` (use \`--no-run-only-once-by-org\` to disable); other optional boolean flags default to \`false\`.
+
+Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separated, mutually exclusive) to restrict the action to some target branches. Without either flag, the action runs on all of them.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -69,6 +94,7 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
     '$ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type command --label "Disable triggers" --command "sf apex run --file scripts/disable-triggers.apex"',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type data --label "Import test data" --sfdmu-project TestData',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when pre-deploy --type remove-packagexml-items --label "Skip legacy classes" --packagexml-items "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
+    '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type apex --label "Reset demo data" --apex-script scripts/apex/reset-demo.apex --exclude-target-branches "main,preprod"',
   ];
 
   public static flags: any = {
@@ -123,6 +149,12 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
     context: Flags.string({
       options: ['all', 'check-deployment-only', 'process-deployment-only'],
       description: 'Execution context (default: process-deployment-only)',
+    }),
+    'include-target-branches': Flags.string({
+      description: 'Comma-separated list of target branches the action runs on (ex: "uat,preprod"). Use dev-sandboxes for developer sandboxes. Cannot be combined with --exclude-target-branches',
+    }),
+    'exclude-target-branches': Flags.string({
+      description: 'Comma-separated list of target branches the action is skipped on (ex: "main"). Use dev-sandboxes for developer sandboxes. Cannot be combined with --include-target-branches',
     }),
     'allow-failure': Flags.boolean({
       default: false,
@@ -237,10 +269,17 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
     let allowFailure = flags['allow-failure'];
     let runOnlyOnceByOrg = flags['run-only-once-by-org'];
     let customUsername = flags['custom-username'] || '';
+    let includeTargetBranches = parseBranchListFlag(flags['include-target-branches']);
+    let excludeTargetBranches = parseBranchListFlag(flags['exclude-target-branches']);
 
     if (!agentMode && !isCI) {
       if (!flags['allow-failure']) {
         allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'));
+      }
+      if (!flags['include-target-branches'] && !flags['exclude-target-branches']) {
+        const branchFilter = await this.promptTargetBranchFilter();
+        includeTargetBranches = branchFilter.includeTargetBranches || [];
+        excludeTargetBranches = branchFilter.excludeTargetBranches || [];
       }
       if (type !== 'remove-packagexml-items') {
         runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), flags['run-only-once-by-org']);
@@ -261,6 +300,8 @@ In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-on
       type,
       command,
       context,
+      includeTargetBranches,
+      excludeTargetBranches,
       allowFailure,
       runOnlyOnceByOrg,
       customUsername,
