@@ -1104,9 +1104,7 @@ ${getBannerMarkdownAndLink()}
       description: request.body,
     };
     const result = await azureGitApi.createPullRequest(prToCreate, repositoryId, teamProject);
-    const pullRequestUrl = result?.url || (result?.pullRequestId
-      ? `${this.serverUrl}${teamProject}/_git/${repositoryId}/pullrequest/${result.pullRequestId}`
-      : null);
+    const pullRequestUrl = result?.pullRequestId ? this.pullRequestWebUrlFromApiResult(result, teamProject, repositoryId) : null;
     return {
       created: !!(result?.pullRequestId),
       pullRequestUrl,
@@ -1126,8 +1124,18 @@ ${getBannerMarkdownAndLink()}
     }, teamProject);
     const pr = prs?.[0];
     if (!pr?.pullRequestId) return null;
-    const pullRequestUrl = pr.url || `${this.serverUrl}${teamProject}/_git/${repositoryId}/pullrequest/${pr.pullRequestId}`;
-    return { pullRequestUrl, id: pr.pullRequestId };
+    return { pullRequestUrl: this.pullRequestWebUrlFromApiResult(pr, teamProject, repositoryId), id: pr.pullRequestId };
+  }
+
+  // Web URL of a Pull Request returned by the API. The `url` property of the API result must not be
+  // used: it is the REST URL of the Pull Request, which displays raw JSON when opened in a browser.
+  private pullRequestWebUrlFromApiResult(pullRequest: GitPullRequest, teamProject: string, repositoryId: string): string {
+    const repositoryWebUrl = pullRequest?.repository?.webUrl;
+    if (repositoryWebUrl) {
+      return `${repositoryWebUrl}/pullrequest/${pullRequest.pullRequestId}`;
+    }
+    // The repository GUID is accepted by the Azure DevOps UI when its name is unknown
+    return `${this.serverUrl}${teamProject}/_git/${repositoryId}/pullrequest/${pullRequest.pullRequestId}`;
   }
 
   public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {

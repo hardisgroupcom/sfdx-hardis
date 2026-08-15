@@ -3237,6 +3237,7 @@
   "updateFixScratchOrgUser": "Atualizar / corrigir usuário da scratch org ",
   "updateLocalProjectFilesWithInstalledPackages": "Atualize os arquivos do seu projeto local com a lista de pacotes instalados para deploy",
   "updateManualActionsFile": "Atualizar arquivo de Ações Manuais",
+  "updateMergeRequestLabel": "Atualizar {{mergeRequestName}}",
   "updateMkdocsAndBuildDeployDocs": "Provavelmente você deve atualizar mkdocs.yml e build-deploy-docs.yml para incluir as páginas recém-geradas",
   "updatesForceIgnore": "Atualiza seu arquivo .forceignore com as melhores práticas mais recentes do sfdx-hardis e remove entradas antigas",
   "updatesGitignore": "Atualiza seu arquivo .gitignore com as melhores práticas mais recentes do sfdx-hardis e remove entradas duplicadas",

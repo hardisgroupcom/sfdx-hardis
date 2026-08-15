@@ -245,17 +245,23 @@ The command's technical implementation involves a series of orchestrated steps:
     await this.manageCommitPush(gitStatusWithConfig, gitStatusAfterDeployPlan);
 
 
-    let mergeRequestUrl = GitProvider.getMergeRequestCreateUrl(this.gitUrl, this.targetBranch || '', this.currentBranch);
+    // If a Pull Request is already open from the current branch to its target branch,
+    // point to it instead of proposing to create a new one
+    const existingPullRequest = await this.findExistingPullRequest();
+    let mergeRequestUrl = existingPullRequest ? existingPullRequest.pullRequestUrl : GitProvider.getMergeRequestCreateUrl(this.gitUrl, this.targetBranch || '', this.currentBranch);
     mergeRequestUrl = mergeRequestUrl || this.gitUrl.replace('.git', '');
+    const mergeRequestLabel = existingPullRequest
+      ? t('updateMergeRequestLabel', { mergeRequestName: GitProvider.getMergeRequestName(this.gitUrl) })
+      : t('createMergeRequestLabel', { mergeRequestName: GitProvider.getMergeRequestName(this.gitUrl) });
 
     // Merge request
     uxLog("action", this, c.cyan(t('ifYourWorkIsCreateOtherwisePush', { completed: c.bold(t('completed')), GitProvider: c.bold(GitProvider.getMergeRequestName(this.gitUrl)), currentBranch: c.green(this.currentBranch) })));
     let summaryMsg = c.grey("");
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(mergeRequestUrl, t('createMergeRequestLabel', { mergeRequestName: GitProvider.getMergeRequestName(this.gitUrl) }), 'actionUrl');
+      WebSocketClient.sendReportFileMessage(mergeRequestUrl, mergeRequestLabel, 'actionUrl');
     }
     else {
-      summaryMsg += c.grey(`- New ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}\n`);
+      summaryMsg += c.grey(`- ${existingPullRequest ? 'Existing' : 'New'} ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}\n`);
     }
     const mergeRequestDoc = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`;
     summaryMsg += c.grey('- ' + t('repositoryLabel') + ': ' + c.green(this.gitUrl.replace('.git', '')) + '\n');
@@ -299,6 +305,23 @@ The command's technical implementation involves a series of orchestrated steps:
     }
     // Return an object to be displayed with --json
     return { outputString: 'Saved the User Story' };
+  }
+
+  // Returns the Pull Request already open between the current branch and its target branch, if there is one
+  private async findExistingPullRequest(): Promise<{ pullRequestUrl: string; id: any } | null> {
+    if (!this.targetBranch) {
+      return null;
+    }
+    try {
+      const gitProvider = await GitProvider.getInstance();
+      if (gitProvider == null) {
+        return null;
+      }
+      return await gitProvider.findOpenPullRequest(this.currentBranch, this.targetBranch);
+    } catch (e) {
+      uxLog("log", this, c.grey(`Unable to check if a ${GitProvider.getMergeRequestName(this.gitUrl)} is already open: ${(e as Error).message}`));
+      return null;
+    }
   }
 
   // Clean git status

@@ -3256,6 +3256,7 @@
   "updateFixScratchOrgUser": "Mise à jour / correction de l'utilisateur de la scratch org ",
   "updateLocalProjectFilesWithInstalledPackages": "Mettre à jour vos fichiers de projet locaux avec la liste des packages installés pour le déploiement",
   "updateManualActionsFile": "Mettre à jour le fichier d'actions manuelles",
+  "updateMergeRequestLabel": "Mettre à jour {{mergeRequestName}}",
   "updateMkdocsAndBuildDeployDocs": "Vous devriez probablement mettre à jour mkdocs.yml et build-deploy-docs.yml pour inclure les pages nouvellement générées",
   "updated": "Mis à jour ",
   "updatedApiVersionInFromTo": "Version API mise à jour dans {{manifestFile}} de {{match}} vers {{candidateApiVersion}}",

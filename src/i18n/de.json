@@ -3255,6 +3255,7 @@
   "updateFixScratchOrgUser": "Scratch Org-Benutzer aktualisieren / korrigieren ",
   "updateLocalProjectFilesWithInstalledPackages": "Lokale Projektdateien mit der Liste der installierten Pakete für die Bereitstellung aktualisieren",
   "updateManualActionsFile": "Datei für manuelle Aktionen aktualisieren",
+  "updateMergeRequestLabel": "{{mergeRequestName}} aktualisieren",
   "updateMkdocsAndBuildDeployDocs": "Sie sollten wahrscheinlich mkdocs.yml und build-deploy-docs.yml aktualisieren, um neu generierte Seiten einzuschließen",
   "updated": "Aktualisiert ",
   "updatedApiVersionInFromTo": "API-Version in {{manifestFile}} von {{match}} auf {{candidateApiVersion}} aktualisiert",

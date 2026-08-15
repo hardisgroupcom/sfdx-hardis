@@ -23,6 +23,8 @@
   - `commandsPostDeploy` now accepts the `schedule-batch` action type, which was reported as invalid even though scheduling an Apex batch after a deployment is its normal use.
   - The `className`, `cronExpression` and `jobName` parameters of `schedule-batch` actions are now declared, instead of only being tolerated as extra keys.
 - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): The end of the command now displays an **Update the Deployment Actions of your Pull Request** button in VS Code, opening the DevOps Pipeline directly on the deployment actions of the Pull Request of your current branch (its draft actions when the Pull Request is not created yet). Requires VS Code extension **sfdx-hardis** v7.19.0 or later.
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): When a Pull Request is already open between your branch and its target branch, the end of the command now proposes to **Update Pull Request** and links to it, instead of proposing to create a new one.
+- Azure DevOps: Fix the links to Pull Requests created or found by sfdx-hardis, which opened the REST API response (raw JSON) instead of the Pull Request page.
 - Fix the Pull Request comment losing its result banner, its status title and its code coverage section when every item of the deployment package was filtered out before the deployment.
 - Pull Request comments now only mention what they actually contain: the scope paragraph names deployment actions and Apex test classes only when the Pull Request carries them, and each status legend lists only the statuses present in the table above it.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/):

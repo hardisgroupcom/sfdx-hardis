@@ -3256,6 +3256,7 @@
   "updateFixScratchOrgUser": "Bijwerken / corrigeren scratch org gebruiker ",
   "updateLocalProjectFilesWithInstalledPackages": "Werk je lokale projectbestanden bij met de lijst van geïnstalleerde pakketten voor implementatie",
   "updateManualActionsFile": "Handmatige acties-bestand bijwerken",
+  "updateMergeRequestLabel": "{{mergeRequestName}} bijwerken",
   "updateMkdocsAndBuildDeployDocs": "Je zou waarschijnlijk mkdocs.yml en build-deploy-docs.yml moeten bijwerken om nieuw gegenereerde pagina's op te nemen",
   "updated": "Bijgewerkt ",
   "updatedApiVersionInFromTo": "API-versie in {{manifestFile}} bijgewerkt van {{match}} naar {{candidateApiVersion}}",
