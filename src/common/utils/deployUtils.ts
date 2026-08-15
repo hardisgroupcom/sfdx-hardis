@@ -647,7 +647,7 @@ export async function smartDeploy(
         const existingPrData = getPullRequestData();
         const prDataCodeCoverage: PullRequestData = {
           messageKey: existingPrData.messageKey ?? 'deployment',
-          title: existingPrData.title ?? check ? '✅ Deployment check success' : '✅ Deployment success',
+          title: existingPrData.title ?? (check ? '✅ Deployment check success' : '✅ Deployment success'),
           codeCoverageMarkdownBody:
             testlevel === 'NoTestRun'
               ? '⚠️ Apex Tests has not been run thanks to useSmartDeploymentTests' :
@@ -1764,7 +1764,7 @@ async function updatePullRequestResultCoverage(
   const existingPrData = getPullRequestData();
   const prDataCodeCoverage: Partial<PullRequestData> = {
     messageKey: existingPrData.messageKey ?? 'deployment',
-    title: existingPrData.title ?? options.check ? '✅ Deployment check success' : '✅ Deployment success',
+    title: existingPrData.title ?? (options.check ? '✅ Deployment check success' : '✅ Deployment success'),
     codeCoverageMarkdownBody: 'Code coverage is valid',
     deployStatus: (coverageStatus === 'valid' || coverageStatus === 'invalid' || coverageStatus === 'unknown')
       ? coverageStatus

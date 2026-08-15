@@ -289,6 +289,8 @@ export async function updatePullRequestResult(errorsAndTips: Array<any>, failedT
     title: options.check ? "✅ Deployment check success" : "✅ Deployment success",
     deployErrorsMarkdownBody: "No error has been found during the deployment",
     deployStatus: "valid",
+    // Also set the comment status, otherwise it stays "tovalidate" and the comment displays a pending banner
+    status: "valid",
   };
   if (errorsAndTips.length > 0) {
     prData.title = options.check ? "❌ Deployment check failure" : "❌ Deployment failure";

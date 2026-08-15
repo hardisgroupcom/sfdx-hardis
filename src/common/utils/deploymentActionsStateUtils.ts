@@ -7,7 +7,7 @@ import { readActions } from './actionUtils.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
 import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
-import { buildPrCommentNavBlock } from '../gitProvider/prCommentNav.js';
+import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/prCommentNav.js';
 
 const debug = Debug("sfdxhardis");
 
@@ -202,12 +202,12 @@ export async function persistDeploymentActionsState(): Promise<void> {
   for (const prNumber of state.dirtyPrs) {
     const inMemoryEntries = state.entriesByPr.get(prNumber) || [];
     // Re-read the current PR comment and merge to preserve entries from other org branches
-    const mergedEntries = await mergeWithExistingComment(prNumber, inMemoryEntries);
+    const { mergedEntries, existingBody } = await mergeWithExistingComment(prNumber, inMemoryEntries);
     // Update the in-memory state with the merged result so subsequent persists stay consistent
     state.entriesByPr.set(prNumber, mergedEntries);
     // Load action definitions from the PR's YAML file to populate the details section
     const actionDefs = await loadActionDefsFromPrYaml(prNumber);
-    const body = buildDeploymentActionsCommentBody(mergedEntries, actionDefs, prNumber);
+    const body = buildDeploymentActionsCommentBody(mergedEntries, actionDefs, prNumber, existingBody);
     await GitProvider.tryUpsertDeploymentActionsCommentForPr(prNumber, body);
   }
   state.dirtyPrs.clear();
@@ -217,11 +217,17 @@ export async function persistDeploymentActionsState(): Promise<void> {
  * Merge in-memory entries with the entries currently stored in a PR's comment.
  * In-memory entries take precedence for the same actionId+orgBranch pair;
  * entries that only exist in the comment (from other org branches / deployments) are preserved.
+ * The existing comment body is returned along, so the rebuilt comment can keep parts of it
+ * that this process cannot recompute (the navigation links).
  */
-async function mergeWithExistingComment(prNumber: number, inMemoryEntries: DeploymentActionStateEntry[]): Promise<DeploymentActionStateEntry[]> {
+async function mergeWithExistingComment(
+  prNumber: number,
+  inMemoryEntries: DeploymentActionStateEntry[],
+): Promise<{ mergedEntries: DeploymentActionStateEntry[]; existingBody: string | null }> {
   let existingEntries: DeploymentActionStateEntry[] = [];
+  let existingBody: string | null = null;
   try {
-    const existingBody = await GitProvider.tryGetDeploymentActionsCommentBodyForPr(prNumber);
+    existingBody = await GitProvider.tryGetDeploymentActionsCommentBodyForPr(prNumber);
     if (existingBody) {
       existingEntries = parseDeploymentActionsCommentBody(existingBody);
     }
@@ -229,7 +235,7 @@ async function mergeWithExistingComment(prNumber: number, inMemoryEntries: Deplo
     // If re-read fails, proceed with in-memory entries only
   }
   if (existingEntries.length === 0) {
-    return inMemoryEntries;
+    return { mergedEntries: inMemoryEntries, existingBody };
   }
   // Start from in-memory entries (they are the most up-to-date for this run)
   const merged = [...inMemoryEntries];
@@ -240,7 +246,7 @@ async function mergeWithExistingComment(prNumber: number, inMemoryEntries: Deplo
       merged.push(existing);
     }
   }
-  return merged;
+  return { mergedEntries: merged, existingBody };
 }
 
 export function parseDeploymentActionsCommentBody(body: string): DeploymentActionStateEntry[] {
@@ -398,7 +404,24 @@ function getActionsBannerKey(entries: DeploymentActionStateEntry[]): PrCommentBa
   return 'actions-completed';
 }
 
-export function buildDeploymentActionsCommentBody(entries: DeploymentActionStateEntry[], actionDefs?: Map<string, ActionDef>, prNumber?: number): string {
+/**
+ * Navigation block of the Deployment Actions comment. The comment can be rebuilt by a job run
+ * for another Pull Request (a promotion window deployment processing this PR's actions), whose
+ * process does not know this PR's comment links: the navigation already present in the previous
+ * comment body is then kept instead of being wiped.
+ */
+function buildActionsNavBlock(previousBody?: string | null): string {
+  if (!isPrCommentNavEnabled()) {
+    return '';
+  }
+  let navLine = renderPrCommentNav(getPrCommentNavLinks(), 'actions');
+  if (navLine === '' && previousBody) {
+    navLine = extractPrCommentNavLine(previousBody) || '';
+  }
+  return wrapPrCommentNav(navLine) + '\n\n';
+}
+
+export function buildDeploymentActionsCommentBody(entries: DeploymentActionStateEntry[], actionDefs?: Map<string, ActionDef>, prNumber?: number, previousBody?: string | null): string {
   // Sort by: org weight (integ → prod), then when (pre-deploy before post-deploy), then execution order
   const sorted = [...entries].sort((a, b) => {
     const weightDiff = getOrgBranchWeight(a.orgBranch) - getOrgBranchWeight(b.orgBranch);
@@ -409,7 +432,11 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
     return (a.executionOrder ?? 0) - (b.executionOrder ?? 0);
   });
 
-  let body = `${DEPLOYMENT_ACTIONS_MARKER}\n${getPrCommentBannerMarkdown(getActionsBannerKey(sorted))}## 🛠️ Deployment Actions\n\n${buildPrCommentNavBlock('actions')}`;
+  // The banner image replaces the title heading, kept as the image alt text so it only shows
+  // when the image is hidden or cannot be loaded; without a banner the heading is kept
+  const bannerMarkdown = getPrCommentBannerMarkdown(getActionsBannerKey(sorted), '🛠️ Deployment Actions');
+  const headingMarkdown = bannerMarkdown === '' ? '## 🛠️ Deployment Actions\n\n' : '';
+  let body = `${DEPLOYMENT_ACTIONS_MARKER}\n${buildActionsNavBlock(previousBody)}${bannerMarkdown}${headingMarkdown}`;
   body += `> ⚠️ This section is automatically managed by sfdx-hardis. Do not edit it manually, except to tick a checkbox in the "Pending manual actions" list once you have performed the action.\n\n`;
 
   // Pending manual actions: a checkable to-do per action still waiting to be performed in an org.

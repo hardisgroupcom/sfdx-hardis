@@ -6,7 +6,7 @@ import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { getCurrentGitBranch, git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
-import { CONSTANTS, getBannerMarkdownAndLink, getPrCommentBannerMarkdown } from '../../config/index.js';
+import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./jenkinsUtils.js";
 const { Bitbucket } = bbPkg;
@@ -672,9 +672,7 @@ export class BitbucketProvider extends GitProviderRoot {
     const bitbucketJobUrl = await this.getCurrentJobUrl();
 
     const messageKey = `${prMessage.messageKey}-${pullRequestId}`;
-    let messageBody = `${getPrCommentBannerMarkdown(prMessage.bannerKey)}## ${prMessage.title || ''}
-
-${prMessage.navBlock || ''}${prMessage.message}
+    let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
 _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${bitbucketBuildNumber}](${bitbucketJobUrl})_
 

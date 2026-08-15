@@ -102,13 +102,13 @@ $Statuses = @{
   'pending' = @{ color = '#F59E0B'; glyph = 'clock' }
 }
 
+# Validation and deployment comments are only posted once completed: their only statuses are
+# success and failure, so no pending banner exists for them.
 $Variants = @(
   @{ file = 'pr-banner-validation-success.png'; type = 'validation'; status = 'success'; text = 'Deployment simulation successful' }
   @{ file = 'pr-banner-validation-failure.png'; type = 'validation'; status = 'failure'; text = 'Deployment simulation failed' }
-  @{ file = 'pr-banner-validation-pending.png'; type = 'validation'; status = 'pending'; text = 'Deployment simulation in progress' }
   @{ file = 'pr-banner-deployment-success.png'; type = 'deployment'; status = 'success'; text = 'Deployment successful' }
   @{ file = 'pr-banner-deployment-failure.png'; type = 'deployment'; status = 'failure'; text = 'Deployment failed' }
-  @{ file = 'pr-banner-deployment-pending.png'; type = 'deployment'; status = 'pending'; text = 'Deployment in progress' }
   @{ file = 'pr-banner-actions-completed.png'; type = 'actions'; status = 'success'; text = 'All actions completed' }
   @{ file = 'pr-banner-actions-pending.png'; type = 'actions'; status = 'pending'; text = 'Manual actions pending' }
   @{ file = 'pr-banner-actions-error.png'; type = 'actions'; status = 'failure'; text = 'Actions in error' }

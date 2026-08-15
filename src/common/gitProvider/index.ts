@@ -190,7 +190,7 @@ export abstract class GitProvider {
       if (prData?.flowDiffMarkdown?.markdownSummary) {
         markdownBody += "\n\n" + prData.flowDiffMarkdown.markdownSummary;
       }
-      markdownBody = removeMermaidLinks(markdownBody); // Remove "click" elements that are useless and ugly on some providers 😊
+      markdownBody = removeMermaidLinks(markdownBody).trim(); // Remove "click" elements that are useless and ugly on some providers 😊
       const status = prData.status || 'tovalidate';
       const prMessageRequest: PullRequestMessageRequest = {
         title: (checkOnly === true ? "🔍 Validation Results (deployment simulation)" : "🚀 Deployment Results") + (prData.title ? `\n\n${prData.title}` : ""),
@@ -204,6 +204,13 @@ export abstract class GitProvider {
       const postResult = await gitProvider.tryPostPullRequestMessage(prMessageRequest);
       if (postResult && postResult.posted === true) {
         globalThis.pullRequestCommentSent = true;
+      }
+      // On providers where the description freezes at merge time (Azure DevOps), the deployment
+      // comment link can only reach the description while the Pull Request is still open: the
+      // check job creates the deployment comment as a pending placeholder, that the merge job
+      // will later update in place.
+      if (checkOnly === true && isPrDescriptionNavEnabled() && gitProvider.isPrDescriptionEditableAfterMerge() === false) {
+        await GitProvider.ensurePendingDeploymentComment(gitProvider);
       }
       // Post additional comments
       for (const flowDiff of prData?.flowDiffMarkdown?.flowDiffMarkdownList || []) {
@@ -226,6 +233,31 @@ export abstract class GitProvider {
       uxLog("error", this, c.grey(`${JSON.stringify(prData || { noPrData: "" })} && ${gitProvider} && ${prCommentSent}`));
       uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderSkipPrComment')));
     }
+  }
+
+  /**
+   * Create the deployment comment as a pending placeholder when it does not exist yet, so its
+   * URL can be linked from the Pull Request description before the merge freezes it.
+   */
+  private static async ensurePendingDeploymentComment(gitProvider: GitProviderRoot): Promise<void> {
+    const comments = await GitProvider.tryListPullRequestCommentsByMarker(SFDX_HARDIS_COMMENT_MARKER);
+    if (comments === null) {
+      return; // Listing failed: better no placeholder than a duplicated deployment comment
+    }
+    if (comments.some((comment) => getPrCommentKind(comment.body) === 'deployment')) {
+      return;
+    }
+    uxLog("log", this, c.grey('[GitProvider] ' + t('gitProviderPostingPendingDeploymentComment')));
+    // No banner: a deployment banner only exists as success or failure, and this comment has no
+    // result yet, so it displays its plain title until the merge job updates it
+    const placeholderMessage: PullRequestMessageRequest = {
+      title: "🚀 Deployment Results\n\n⏳ Waiting for the Pull Request to be merged",
+      message: "The deployment job will update this comment after the Pull Request is merged.",
+      status: "tovalidate",
+      messageKey: "deployment",
+      navBlock: buildPrCommentNavBlock('deployment'),
+    };
+    await gitProvider.tryPostPullRequestMessage(placeholderMessage);
   }
 
   static async getDeploymentCheckId(): Promise<string | null> {
@@ -586,13 +618,17 @@ export abstract class GitProvider {
 }
 
 /**
- * Banner identifying a validation (checkOnly deployment) or deployment results comment, with its outcome.
- * "tovalidate" is the status of a comment posted before the deployment result is known
- * (example: a draft deployment actions file stopping the job early).
+ * Banner identifying a validation (checkOnly deployment) or deployment results comment, with its
+ * outcome: success or failure, the only two possible statuses. A "tovalidate" comment (posted
+ * before the result is known, like the pending deployment placeholder or a draft deployment
+ * actions file stopping the job early) displays no banner, only its title.
  */
-function getDeploymentBannerKey(checkOnly: boolean, status: "valid" | "invalid" | "tovalidate"): PrCommentBannerKey {
+function getDeploymentBannerKey(checkOnly: boolean, status: "valid" | "invalid" | "tovalidate"): PrCommentBannerKey | undefined {
+  if (status === "tovalidate") {
+    return undefined;
+  }
   const type = checkOnly === true ? "validation" : "deployment";
-  const outcome = status === "valid" ? "success" : status === "invalid" ? "failure" : "pending";
+  const outcome = status === "valid" ? "success" : "failure";
   return `${type}-${outcome}` as PrCommentBannerKey;
 }
 

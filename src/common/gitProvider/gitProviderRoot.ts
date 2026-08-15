@@ -3,7 +3,7 @@ import c from "chalk";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils/index.js";
 import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
-import { getEnvVar } from "../../config/index.js";
+import { getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 
 // Interview deletion is irreversible, so a passing mention in prose must not authorize it: only a
@@ -113,6 +113,29 @@ export abstract class GitProviderRoot {
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     uxLog("warning", this, c.yellow(t('methodPostpullrequestmessageIsNotYetImplementedOn') + this.getLabel() + " to post " + JSON.stringify(prMessage)));
     return { posted: false, providerResult: { error: "Not implemented in sfdx-hardis" } };
+  }
+
+  // False when the provider refuses to edit the description of a merged Pull Request (Azure
+  // DevOps): the description navigation must then be completed before the merge, so the check
+  // job creates the deployment comment as a pending placeholder.
+  public isPrDescriptionEditableAfterMerge(): boolean {
+    return true;
+  }
+
+  /**
+   * Common header of a sfdx-hardis Pull Request comment: the navigation between the sfdx-hardis
+   * comments first, then the banner image identifying the comment type and status. The banner
+   * replaces the title heading, which stays as the image alt text so it only shows when the image
+   * is hidden or cannot be loaded; without a banner the title heading is kept. The lines following
+   * the first title line (the deployment outcome) are rendered after the banner in both cases.
+   */
+  protected buildPrCommentBodyHeader(prMessage: PullRequestMessageRequest): string {
+    const titleLines = (prMessage.title || '').split('\n');
+    const titleLine = (titleLines[0] || '').trim();
+    const titleRest = titleLines.slice(1).join('\n').trim();
+    const bannerMarkdown = getPrCommentBannerMarkdown(prMessage.bannerKey, titleLine);
+    const headingMarkdown = bannerMarkdown === '' ? `## ${titleLine}\n\n` : '';
+    return `${prMessage.navBlock || ''}${bannerMarkdown}${headingMarkdown}${titleRest ? `${titleRest}\n\n` : ''}`;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
