@@ -2806,33 +2806,6 @@
       "title": "Branch-scoped custom Package-No-Overwrite path",
       "type": "string"
     },
-    "packageXmlToDeletePreDeploy": {
-      "$id": "#/properties/packageXmlToDeletePreDeploy",
-      "description": "Path to the destructive changes manifest applied BEFORE the metadata deployment.\nOverrides the default manifest/preDestructiveChanges.xml (or config/preDestructiveChanges.xml).\nCan also be set with the PACKAGE_XML_TO_DELETE_PRE_DEPLOY environment variable, which takes priority.\nA configured file that does not exist on disk logs a warning instead of being silently skipped.",
-      "examples": [
-        "manifest/preDestructiveChanges-custom.xml"
-      ],
-      "title": "Custom pre-deployment destructive changes path",
-      "type": "string"
-    },
-    "packageXmlToDelete": {
-      "$id": "#/properties/packageXmlToDelete",
-      "description": "Path to the destructive changes manifest applied AFTER the metadata deployment.\nOverrides the default manifest/destructiveChanges.xml (or config/destructiveChanges.xml).\nCan also be set with the PACKAGE_XML_TO_DELETE environment variable, which takes priority.\nA configured file that does not exist on disk logs a warning instead of being silently skipped.",
-      "examples": [
-        "manifest/destructiveChanges-custom.xml"
-      ],
-      "title": "Custom destructive changes path",
-      "type": "string"
-    },
-    "packageXmlToDeploy": {
-      "$id": "#/properties/packageXmlToDeploy",
-      "description": "Path to the package.xml manifest to deploy.\nOverrides the default manifest/package.xml (or config/package.xml).\nCan also be set with the PACKAGE_XML_TO_DEPLOY environment variable or the --packagexml flag of hardis:project:deploy:smart, which take priority.",
-      "examples": [
-        "manifest/package-custom.xml"
-      ],
-      "title": "Custom package.xml path",
-      "type": "string"
-    },
     "poolConfig": {
       "$id": "#/properties/poolConfig",
       "description": "Configuration allowing to generate and fetch scratch orgs from scratch org pool",
