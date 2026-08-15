@@ -1837,10 +1837,10 @@
     wordwrap "^1.0.0"
     wrap-ansi "^7.0.0"
 
-"@oclif/plugin-command-snapshot@5.3.33":
-  version "5.3.33"
-  resolved "https://registry.yarnpkg.com/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.3.33.tgz#36f6cc1b8b9154e6087f9f7f8a3a83b0c089198f"
-  integrity sha512-Djtpaf6tO73cWMLXY+i7SZgfkVz3zRFZ1rwTKrAQZ55gN22zjHn0QXc181dtEGYcVb+laYJGHo/epvDntySi3g==
+"@oclif/plugin-command-snapshot@5.3.35":
+  version "5.3.35"
+  resolved "https://registry.yarnpkg.com/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.3.35.tgz#0bb1f3627a4d3209c5bd41089dbfffefbf94a60e"
+  integrity sha512-IIj6zISG1muLLSpPI560n6Q2F4njN+OFTP/PXp+sdGxrB0pT/NtuRQ6DXwo0fvOX2AA6aG7HMLNYRO5h5feGJg==
   dependencies:
     "@oclif/core" "^4"
     ansis "^3.17.0"
@@ -3688,7 +3688,7 @@ browserslist@^4.24.0, browserslist@^4.25.1:
     node-releases "^2.0.19"
     update-browserslist-db "^1.1.3"
 
-buffer-crc32@^0.2.1, buffer-crc32@^0.2.13, buffer-crc32@~0.2.3:
+buffer-crc32@^0.2.1, buffer-crc32@^0.2.13:
   version "0.2.13"
   resolved "https://registry.yarnpkg.com/buffer-crc32/-/buffer-crc32-0.2.13.tgz#0d333e3f00eac50aa1454abd30ef8c2a5d9a7242"
   integrity sha512-VO9Ht/+p3SN7SKWqcrgEzjGbRSJYTx+Q1pTQC0wrWqHx0vpJraQ6GtHx8tvcg1rlK1byhU5gccxgOgj7B0TDkQ==
@@ -8326,11 +8326,6 @@ pathval@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/pathval/-/pathval-1.1.1.tgz#8534e77a77ce7ac5a2512ea21e0fdb8fcf6c3d8d"
   integrity sha512-Dp6zGqpTdETdR63lehJYPeIOqpiNBNtc7BpWSLrOje7UaIsE5aY92r/AunQA7rsXvet3lrJ3JnZX29UPTKXyKQ==
-
-pend@~1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/pend/-/pend-1.2.0.tgz#7a57eb550a6783f9115331fcf4663d5c8e007a50"
-  integrity sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==
 
 picocolors@^1.0.0, picocolors@^1.1.1:
   version "1.1.1"
