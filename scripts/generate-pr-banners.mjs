@@ -81,17 +81,17 @@ body{background:transparent;font-family:Poppins,sans-serif;-webkit-font-smoothin
 <div class="banner">
   <div style="position:absolute;right:-155px;top:-155px;width:440px;height:440px;border-radius:50%;background:#05050D"></div>
   <div style="position:absolute;left:-70px;top:-130px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 62%)"></div>
-  <div style="position:absolute;left:0;top:0;bottom:0;width:9px;background:${status.color}"></div>
-  <div style="position:relative;display:flex;align-items:center;gap:20px;padding-left:34px;flex:none">
-    <div style="width:66px;height:66px;border-radius:20px;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.34);display:flex;align-items:center;justify-content:center;color:#fff;flex:none">${icon(type.icon, 34)}</div>
+  <div style="position:relative;display:flex;align-items:center;gap:22px;padding-left:34px;flex:none">
+    <div style="position:relative;flex:none">
+      <div style="width:72px;height:72px;border-radius:22px;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.34);display:flex;align-items:center;justify-content:center;color:#fff">${icon(type.icon, 36)}</div>
+      <div style="position:absolute;right:-9px;bottom:-9px;width:34px;height:34px;border-radius:50%;background:${status.color};border:3px solid #fff;display:flex;align-items:center;justify-content:center;color:#0B0A16">${icon(status.icon, 18, 3.4)}</div>
+    </div>
     <div>
       <div style="font-size:15px;font-weight:600;letter-spacing:2.4px;text-transform:uppercase;color:rgba(255,255,255,.72);line-height:1">${type.label}</div>
       <div style="margin-top:7px;font-size:31px;font-weight:700;color:#fff;letter-spacing:-.4px;line-height:1.05">${variant.text}</div>
     </div>
   </div>
-  <div style="position:relative;flex:1;display:flex;justify-content:flex-end;padding-right:34px">
-    <div style="width:62px;height:62px;border-radius:50%;background:${status.color};display:flex;align-items:center;justify-content:center;color:#0B0A16;box-shadow:0 8px 22px rgba(0,0,0,.28)">${icon(status.icon, 32, 3)}</div>
-  </div>
+  <div style="flex:1"></div>
   <div style="position:relative;padding-right:26px;display:flex;flex-direction:column;align-items:center;gap:5px;flex:none">
     <div style="font-size:17px;font-weight:600;color:#fff;letter-spacing:.2px">sfdx-hardis</div>
     <div style="display:flex;align-items:center;gap:7px">
