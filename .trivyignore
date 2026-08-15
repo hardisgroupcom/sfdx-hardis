@@ -349,3 +349,19 @@ CVE-2025-71330
 # Go stdlib v1.26.5 compiled into the pebble binary of the Ubuntu base image (usr/bin/pebble): golang.org/x/net/dns/dnsmessage denial of service when parsing an invalid DNS record, fixed in Go 1.26.6 / 1.27.0-rc.3.
 # Nothing to upgrade from this repo: the Go runtime is statically linked into a binary Canonical ships in ubuntu:latest, so it only goes away when the base image is rebuilt with a patched Go. pebble is Canonical's service manager and is never invoked by sfdx-hardis (one-shot CI/CD CLI), so the DNS parser is unreachable. Added 2026-08-14.
 CVE-2026-46600
+
+# https://avd.aquasec.com/nvd/cve-2026-33818
+# Go stdlib v1.26.5 compiled into the pebble binary of the Ubuntu base image (usr/bin/pebble), fixed in Go 1.25.13 / 1.26.6 / 1.27.0-rc.3. Six findings from the same batch:
+#   CVE-2026-33818 encoding/asn1 DoS via excessive recursion in Unmarshal
+#   CVE-2026-56853 net/http DoS on unencrypted HTTP/2 connections
+#   CVE-2026-56858 html/template XSS via pathological input
+#   CVE-2026-56859 encoding/xml DoS via decoding recursion depth
+#   CVE-2026-56860 net/url DoS via quadratic complexity in path handling
+#   CVE-2026-56862 crypto/tls DoS via indefinite KeyUpdate messages
+# Same situation as the entries above: the Go runtime is statically linked into a binary Canonical ships in ubuntu:latest, so nothing in this repo can upgrade it. It goes away when the base image is rebuilt with a patched Go. pebble is Canonical's service manager, never invoked by sfdx-hardis (one-shot CI/CD CLI), so none of these code paths run: no HTTP/2 server, no HTML template rendering, no XML or ASN.1 decoding of untrusted input, no TLS session. Added 2026-08-15.
+CVE-2026-33818
+CVE-2026-56853
+CVE-2026-56858
+CVE-2026-56859
+CVE-2026-56860
+CVE-2026-56862
