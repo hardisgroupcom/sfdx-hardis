@@ -9,9 +9,9 @@ import { t } from '../../../../common/utils/i18n.js';
 import {
   ACTION_CONTEXTS,
   ACTION_TYPES,
+  applyBranchFilterFlagsToAction,
   findActionById,
   logActionSummary,
-  parseBranchListFlag,
   readActions,
   resolvePrId,
   validateActionParameters,
@@ -280,15 +280,7 @@ Required in agent mode:
       };
     }
     if (flags.context) action.context = flags.context;
-    // Compared to undefined, not to truthiness: an empty value clears the branch restriction
-    if (flags['include-target-branches'] !== undefined) {
-      const includeTargetBranches = parseBranchListFlag(flags['include-target-branches']);
-      action.includeTargetBranches = includeTargetBranches.length > 0 ? includeTargetBranches : undefined;
-    }
-    if (flags['exclude-target-branches'] !== undefined) {
-      const excludeTargetBranches = parseBranchListFlag(flags['exclude-target-branches']);
-      action.excludeTargetBranches = excludeTargetBranches.length > 0 ? excludeTargetBranches : undefined;
-    }
+    applyBranchFilterFlagsToAction(action, flags['include-target-branches'], flags['exclude-target-branches']);
     if (flags['allow-failure'] !== undefined) action.allowFailure = flags['allow-failure'];
     if (flags['run-only-once-by-org'] !== undefined) action.runOnlyOnceByOrg = flags['run-only-once-by-org'];
     if (action.type === 'remove-packagexml-items') action.runOnlyOnceByOrg = false;

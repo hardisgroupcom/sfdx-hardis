@@ -9,6 +9,7 @@ import {
   validateActionParameters,
   findActionById,
   buildAction,
+  applyBranchFilterFlagsToAction,
   buildActionTargetBranchCandidates,
   evaluateActionBranchFilter,
   normalizeBranchName,
@@ -247,6 +248,44 @@ describe('actionUtils', () => {
     it('returns an empty array for an empty or missing value', () => {
       expect(parseBranchListFlag('')).to.deep.equal([]);
       expect(parseBranchListFlag(undefined as any)).to.deep.equal([]);
+    });
+  });
+
+  describe('applyBranchFilterFlagsToAction', () => {
+    it('leaves the action untouched when neither flag is passed', () => {
+      const action: any = { includeTargetBranches: ['uat'] };
+      applyBranchFilterFlagsToAction(action, undefined, undefined);
+      expect(action.includeTargetBranches).to.deep.equal(['uat']);
+      expect(action.excludeTargetBranches).to.equal(undefined);
+    });
+
+    // The two lists are mutually exclusive: switching mode must be a single flag, otherwise
+    // --include-target-branches on an excluded action would fail the mutual-exclusion validation
+    it('clears the opposite list when one is set', () => {
+      const action: any = { excludeTargetBranches: ['main'] };
+      applyBranchFilterFlagsToAction(action, 'uat,preprod', undefined);
+      expect(action.includeTargetBranches).to.deep.equal(['uat', 'preprod']);
+      expect(action.excludeTargetBranches).to.equal(undefined);
+
+      const otherAction: any = { includeTargetBranches: ['uat'] };
+      applyBranchFilterFlagsToAction(otherAction, undefined, 'main');
+      expect(otherAction.excludeTargetBranches).to.deep.equal(['main']);
+      expect(otherAction.includeTargetBranches).to.equal(undefined);
+    });
+
+    it('removes the restriction when an empty value is passed', () => {
+      const action: any = { includeTargetBranches: ['uat'] };
+      applyBranchFilterFlagsToAction(action, '', undefined);
+      expect(action.includeTargetBranches).to.equal(undefined);
+    });
+
+    // Passing both is a configuration error: keep both so validateActionParameters reports it
+    // instead of silently honouring one of them
+    it('keeps both lists when both flags are passed, so validation can reject it', () => {
+      const action: any = {};
+      applyBranchFilterFlagsToAction(action, 'uat', 'main');
+      expect(action.includeTargetBranches).to.deep.equal(['uat']);
+      expect(action.excludeTargetBranches).to.deep.equal(['main']);
     });
   });
 

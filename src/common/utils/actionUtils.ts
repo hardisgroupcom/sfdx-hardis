@@ -150,6 +150,39 @@ export function parseBranchListFlag(flagValue: string): string[] {
 }
 
 /**
+ * Apply the --include-target-branches / --exclude-target-branches flags to an action.
+ *
+ * The two lists are mutually exclusive, so setting one clears the other: switching an action from
+ * an exclude list to an include list is a single flag, not a flag plus an explicit reset. Passing
+ * both flags at once leaves both set, which validateActionParameters then rejects as the
+ * configuration error it is. An empty value removes the restriction.
+ *
+ * A flag left out (undefined) never touches the action, so updating an unrelated field keeps the
+ * branch filter it already carries.
+ */
+export function applyBranchFilterFlagsToAction(
+  action: Partial<PrePostCommand>,
+  includeFlagValue?: string,
+  excludeFlagValue?: string
+): void {
+  const bothPassed = includeFlagValue !== undefined && excludeFlagValue !== undefined;
+  if (includeFlagValue !== undefined) {
+    const includeTargetBranches = parseBranchListFlag(includeFlagValue);
+    action.includeTargetBranches = includeTargetBranches.length > 0 ? includeTargetBranches : undefined;
+    if (includeTargetBranches.length > 0 && !bothPassed) {
+      action.excludeTargetBranches = undefined;
+    }
+  }
+  if (excludeFlagValue !== undefined) {
+    const excludeTargetBranches = parseBranchListFlag(excludeFlagValue);
+    action.excludeTargetBranches = excludeTargetBranches.length > 0 ? excludeTargetBranches : undefined;
+    if (excludeTargetBranches.length > 0 && !bothPassed) {
+      action.includeTargetBranches = undefined;
+    }
+  }
+}
+
+/**
  * Choices offered when prompting for the target branches of an action: the major branches
  * declared in config/branches, plus the virtual dev-sandboxes entry.
  * orgConfigUtils is imported lazily to keep puppeteer out of the startup path of action commands.
@@ -434,7 +467,6 @@ export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex'
 export const ACTION_CONTEXTS: PrePostCommand['context'][] = ['all', 'check-deployment-only', 'process-deployment-only'];
 export const ACTION_SCOPES: ActionScope[] = ['project', 'branch', 'pr'];
 export const ACTION_WHENS: ActionWhen[] = ['pre-deploy', 'post-deploy'];
-export const ACTION_BRANCH_FILTER_MODES: ActionBranchFilterMode[] = ['none', 'include', 'exclude'];
 
 /**
  * Read the deploymentApexTestClasses array from a config file.
