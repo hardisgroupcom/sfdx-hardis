@@ -19,7 +19,6 @@
 ### Deployment
 
 - [hardis:project:action:create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/): Restrict a deployment action to some major branches, or to all of them except a few, using `dev-sandboxes` to target developer sandboxes.
-- New [hardis:project:action:state](https://sfdx-hardis.cloudity.com/hardis/project/action/state/): Read the per-org execution state of the deployment actions of a Pull Request (done, failed, waiting for manual execution, skipped), as stored in the "Deployment Actions" Pull Request comment. Lets tools that cannot read Pull Request comments, like the VS Code extension, display the status matrix without reimplementing the parser.
 - Configuration schema fixes, so `.sfdx-hardis.yml` validation and autocompletion match what the commands actually accept:
   - `commandsPostDeploy` now accepts the `schedule-batch` action type, which was reported as invalid even though scheduling an Apex batch after a deployment is its normal use.
   - The `className`, `cronExpression` and `jobName` parameters of `schedule-batch` actions are now declared, instead of only being tolerated as extra keys.
