@@ -191,7 +191,7 @@ export abstract class GitProvider {
         markdownBody += "\n\n" + prData.flowDiffMarkdown.markdownSummary;
       }
       markdownBody = removeMermaidLinks(markdownBody).trim(); // Remove "click" elements that are useless and ugly on some providers 😊
-      const status = prData.status || 'tovalidate';
+      const status = resolvePrCommentStatus(prData);
       const prMessageRequest: PullRequestMessageRequest = {
         title: (checkOnly === true ? "🔍 Validation Results (deployment simulation)" : "🚀 Deployment Results") + (prData.title ? `\n\n${prData.title}` : ""),
         message: markdownBody,
@@ -209,8 +209,11 @@ export abstract class GitProvider {
       // comment link can only reach the description while the Pull Request is still open: the
       // check job creates the deployment comment as a pending placeholder, that the merge job
       // will later update in place.
-      if (checkOnly === true && isPrDescriptionNavEnabled() && gitProvider.isPrDescriptionEditableAfterMerge() === false) {
-        await GitProvider.ensurePendingDeploymentComment(gitProvider);
+      if (checkOnly === true
+        && (isPrDescriptionNavEnabled() || isPrCommentNavEnabled())
+        && gitProvider.isPrDescriptionEditableAfterMerge() === false) {
+        const prInfoForPlaceholder = await GitProvider.getPullRequestInfo({ useCache: true });
+        await GitProvider.ensurePendingDeploymentComment(gitProvider, prInfoForPlaceholder?.idNumber);
       }
       // Post additional comments
       for (const flowDiff of prData?.flowDiffMarkdown?.flowDiffMarkdownList || []) {
@@ -239,8 +242,8 @@ export abstract class GitProvider {
    * Create the deployment comment as a pending placeholder when it does not exist yet, so its
    * URL can be linked from the Pull Request description before the merge freezes it.
    */
-  private static async ensurePendingDeploymentComment(gitProvider: GitProviderRoot): Promise<void> {
-    const comments = await GitProvider.tryListPullRequestCommentsByMarker(SFDX_HARDIS_COMMENT_MARKER);
+  private static async ensurePendingDeploymentComment(gitProvider: GitProviderRoot, prNumber?: number): Promise<void> {
+    const comments = await GitProvider.tryListPullRequestCommentsByMarker(SFDX_HARDIS_COMMENT_MARKER, prNumber);
     if (comments === null) {
       return; // Listing failed: better no placeholder than a duplicated deployment comment
     }
@@ -256,6 +259,9 @@ export abstract class GitProvider {
       status: "tovalidate",
       messageKey: "deployment",
       navBlock: buildPrCommentNavBlock('deployment'),
+      // The placeholder carries no deployment result, so it must not claim the QuickDeploy id of
+      // the validation that is running: it would outrank the validation comment on the next run.
+      skipDeploymentIdMarker: true,
     };
     await gitProvider.tryPostPullRequestMessage(placeholderMessage);
   }
@@ -618,12 +624,27 @@ export abstract class GitProvider {
 }
 
 /**
+ * Status of the Pull Request comment to post. Most success paths only set deployStatus (code
+ * coverage check, project without Apex), while the failure paths set status: without this
+ * fallback a successful deployment would stay "tovalidate" and carry no banner at all.
+ */
+export function resolvePrCommentStatus(prData: Partial<PullRequestData>): "valid" | "invalid" | "tovalidate" {
+  if (prData.status) {
+    return prData.status;
+  }
+  if (prData.deployStatus === 'valid' || prData.deployStatus === 'invalid') {
+    return prData.deployStatus;
+  }
+  return 'tovalidate';
+}
+
+/**
  * Banner identifying a validation (checkOnly deployment) or deployment results comment, with its
  * outcome: success or failure, the only two possible statuses. A "tovalidate" comment (posted
  * before the result is known, like the pending deployment placeholder or a draft deployment
  * actions file stopping the job early) displays no banner, only its title.
  */
-function getDeploymentBannerKey(checkOnly: boolean, status: "valid" | "invalid" | "tovalidate"): PrCommentBannerKey | undefined {
+export function getDeploymentBannerKey(checkOnly: boolean, status: "valid" | "invalid" | "tovalidate"): PrCommentBannerKey | undefined {
   if (status === "tovalidate") {
     return undefined;
   }
@@ -698,6 +719,8 @@ export declare type PullRequestMessageRequest = {
   bannerKey?: PrCommentBannerKey;
   // Navigation block linking to the other sfdx-hardis comments of the Pull Request
   navBlock?: string;
+  // Do not tag the comment with the QuickDeploy deployment id of the running job
+  skipDeploymentIdMarker?: boolean;
 };
 
 export declare type PullRequestMessageResult = {

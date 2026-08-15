@@ -142,7 +142,6 @@
   "azureCannotCreatePrMissingRepoInfo": "Kan geen pull request aanmaken: BUILD_REPOSITORY_ID of SYSTEM_TEAMPROJECT ontbreekt.",
   "azureCreatingPullRequest": "Pull request aanmaken van {{source}} naar {{target}}...",
   "azureIntegrationAddingPrThread": "Pull Request Thread toevoegen op Azure...",
-  "azureIntegrationDeletingPreviousThread": "Vorige opmerking verwijderen en vorige thread sluiten...",
   "azureIntegrationExtractedPrId": "PR ID {{prId}} geëxtraheerd uit commit-bericht",
   "azureIntegrationIncompletePr": "Waarschuwing: onvolledige PR gevonden (id: {{prId}})",
   "azureIntegrationListingPrThreads": "Threads van Pull Request #{{pullRequestId}} weergeven ...",

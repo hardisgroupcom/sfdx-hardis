@@ -119,16 +119,19 @@ const browser = await puppeteer.launch({
   headless: true,
   args: ['--no-sandbox', '--disable-setuid-sandbox', '--font-render-hinting=none'],
 });
-const page = await browser.newPage();
-await page.setViewport({ width: WIDTH + 40, height: HEIGHT + 40, deviceScaleFactor: 1 });
+try {
+  const page = await browser.newPage();
+  await page.setViewport({ width: WIDTH + 40, height: HEIGHT + 40, deviceScaleFactor: 1 });
 
-for (const variant of VARIANTS) {
-  await page.setContent(buildHtml(variant), { waitUntil: 'load' });
-  await page.evaluate(() => document.fonts.ready);
-  const element = await page.$('.banner');
-  const filePath = path.join(imagesDir, variant.file);
-  await element.screenshot({ path: filePath, omitBackground: true });
-  console.log(`Generated ${filePath}`);
+  for (const variant of VARIANTS) {
+    await page.setContent(buildHtml(variant), { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts.ready);
+    const element = await page.$('.banner');
+    const filePath = path.join(imagesDir, variant.file);
+    await element.screenshot({ path: filePath, omitBackground: true });
+    console.log(`Generated ${filePath}`);
+  }
+} finally {
+  // Always close the browser, otherwise a failing variant leaves a headless Chrome process behind
+  await browser.close();
 }
-
-await browser.close();

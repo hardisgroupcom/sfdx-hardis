@@ -235,7 +235,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
         title: "❌ Error: Failed deployment actions",
         messageKey: prData.messageKey ?? 'deployment',
         // Mark the comment as failed even when the metadata deployment succeeded,
-        // so it displays a failure banner instead of a pending one
+        // so it displays a failure banner instead of the success one
         status: 'invalid',
       });
       setPullRequestData(prData);

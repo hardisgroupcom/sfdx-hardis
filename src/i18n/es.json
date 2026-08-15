@@ -142,7 +142,6 @@
   "azureCannotCreatePrMissingRepoInfo": "No se puede crear la pull request: falta BUILD_REPOSITORY_ID o SYSTEM_TEAMPROJECT.",
   "azureCreatingPullRequest": "Creando pull request de {{source}} a {{target}}...",
   "azureIntegrationAddingPrThread": "Añadiendo hilo de Pull Request en Azure...",
-  "azureIntegrationDeletingPreviousThread": "Eliminando comentario anterior y cerrando el hilo anterior...",
   "azureIntegrationExtractedPrId": "ID de PR {{prId}} extraído del mensaje de commit",
   "azureIntegrationIncompletePr": "Advertencia: se encontró una PR incompleta (id: {{prId}})",
   "azureIntegrationListingPrThreads": "Listando hilos de la Pull Request #{{pullRequestId}} ...",

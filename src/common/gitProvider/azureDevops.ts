@@ -476,13 +476,26 @@ ${this.getPipelineVariablesConfig()}
   }
 
   // Returns a comparable timestamp (ms) for a PR comment, falling back to its parent thread.
+  // Comments are updated in place from one run to the next, so the last update is what tells when
+  // the content (and the deployment id it carries) was written, not the creation date.
   private getCommentTimestamp(comment: any, thread: any): number {
-    const dateValue = comment?.publishedDate || comment?.lastUpdatedDate || thread?.publishedDate || thread?.lastUpdatedDate;
-    if (!dateValue) {
-      return 0;
+    const dateValues = [
+      comment?.lastUpdatedDate,
+      comment?.publishedDate,
+      thread?.lastUpdatedDate,
+      thread?.publishedDate,
+    ];
+    let latest = 0;
+    for (const dateValue of dateValues) {
+      if (!dateValue) {
+        continue;
+      }
+      const time = new Date(dateValue).getTime();
+      if (!isNaN(time) && time > latest) {
+        latest = time;
+      }
     }
-    const time = new Date(dateValue).getTime();
-    return isNaN(time) ? 0 : time;
+    return latest;
   }
 
   public async listPullRequestsInBranchSinceLastMerge(
@@ -708,7 +721,7 @@ ${getBannerMarkdownAndLink()}
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present
-    if (globalThis.pullRequestDeploymentId) {
+    if (globalThis.pullRequestDeploymentId && prMessage.skipDeploymentIdMarker !== true) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
     // Upload attached images if necessary

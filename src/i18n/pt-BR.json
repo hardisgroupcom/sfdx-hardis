@@ -140,7 +140,6 @@
   "azureBoardsProviderPostingComments": "Tentando postar comentários em {{count}} itens de trabalho...",
   "azureBoardsProviderUnableToGetWorkItem": "Não foi possível obter o Item de Trabalho do Azure Boards {{ticketId}}\n{{ticketInfo}}",
   "azureIntegrationAddingPrThread": "Adicionando Thread de Pull Request no Azure...",
-  "azureIntegrationDeletingPreviousThread": "Excluindo comentário anterior e fechando thread anterior...",
   "azureIntegrationExtractedPrId": "ID do PR {{prId}} extraído da mensagem de commit",
   "azureIntegrationIncompletePr": "Aviso: PR incompleto encontrado (id: {{prId}})",
   "azureIntegrationListingPrThreads": "Listando Threads do Pull Request #{{pullRequestId}} ...",
