@@ -67,6 +67,7 @@
 - The really final package.xml is now displayed after the package-no-overwrite filtering, since the delta package shown earlier can still lose protected items.
 - New [documentation page](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-publish-artifacts/) explaining how to add the hardis-report artifacts upload step to existing GitHub, GitLab, Azure, Bitbucket or Jenkins pipelines, linked from the deployment summary in job logs.
 - Fix a misleading "Image file not found" warning displayed for remote image URLs used in Pull Request comments.
+- The two CI/CD jobs are now consistently called the **validation job** (previously "check job" or "deployment check job") and the **deployment job** (previously "process deployment job"), in deployment action context labels, job logs, Pull Request comments and documentation. The technical `context` values of pre/post deployment commands (`check-deployment-only`, `process-deployment-only`) are unchanged, so existing configurations keep working without any update.
 
 ### CI/CD
 

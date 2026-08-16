@@ -730,7 +730,7 @@ ${getBannerMarkdownAndLink()}
     const azureGitApi = await this.azureApi.getGitApi();
     // Check for existing threads from a previous run. A comment of the same kind (validation or
     // deployment) matches even when its message key carries another job name: the merge job this
-    // way updates the pending deployment comment created by the check job instead of adding a
+    // way updates the pending deployment comment created by the validation job instead of adding a
     // second deployment comment.
     uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationListingPrThreads', { pullRequestId })));
     const currentCommentKind = getPrCommentKindFromMessageKey(prMessage.messageKey);

@@ -170,7 +170,7 @@ export abstract class GitProvider {
         markdownBody += "\n\n" + "🚀 This successful validation may be reused by Quick Deploy after the Pull Request is merged, so the merge job does not run the Apex tests again.";
       }
       if (checkOnly === false && prData.usedQuickDeploy === true) {
-        markdownBody += "\n\n" + "🚀 This deployment used Quick Deploy: it released the validation performed during the Pull Request check job, where the Apex tests were already run.";
+        markdownBody += "\n\n" + "🚀 This deployment used Quick Deploy: it released the validation performed during the Pull Request validation job, where the Apex tests were already run.";
       }
       if (prData.flowDeletionMarkdownBody) {
         markdownBody += "\n\n" + prData.flowDeletionMarkdownBody;
@@ -207,7 +207,7 @@ export abstract class GitProvider {
       }
       // On providers where the description freezes at merge time (Azure DevOps), the deployment
       // comment link can only reach the description while the Pull Request is still open: the
-      // check job creates the deployment comment as a pending placeholder, that the merge job
+      // validation job creates the deployment comment as a pending placeholder, that the merge job
       // will later update in place.
       if (checkOnly === true
         && (isPrDescriptionNavEnabled() || isPrCommentNavEnabled())
@@ -682,9 +682,9 @@ export declare type PullRequestData = {
   flowDeletionMarkdownBody?: string;
   // Explains which Pull Requests the deployment actions and Apex test classes were collected from
   deploymentScopeMarkdownBody?: string;
-  // True when the metadata deployment was performed with Quick Deploy (reusing the check job validation)
+  // True when the metadata deployment was performed with Quick Deploy (reusing the validation job result)
   usedQuickDeploy?: boolean;
-  // Test level of the check job validation, to know if it is reusable by Quick Deploy
+  // Test level of the validation job, to know if it is reusable by Quick Deploy
   checkTestLevel?: string;
   commitsSummary?: string;
   deployStatus?: "valid" | "invalid" | "unknown";

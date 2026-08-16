@@ -915,9 +915,9 @@
               "process-deployment-only"
             ],
             "enumNames": [
-              "All",
-              "Check Deployment Only",
-              "Process Deployment Only"
+              "Validation and Deployment jobs",
+              "Validation job only",
+              "Deployment job only"
             ],
             "examples": [
               "all",
@@ -1148,9 +1148,9 @@
               "process-deployment-only"
             ],
             "enumNames": [
-              "All",
-              "Check Deployment Only",
-              "Process Deployment Only"
+              "Validation and Deployment jobs",
+              "Validation job only",
+              "Deployment job only"
             ],
             "examples": [
               "all",

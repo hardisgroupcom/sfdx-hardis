@@ -140,17 +140,17 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     // Skip if we are in another context than the requested one
     const cmdContext = cmd.context || "all";
     if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: check-deployment-only action, and we are in process deployment mode`));
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: validation-only action (context check-deployment-only), and this is the deployment job`));
       cmd.result = {
         statusCode: "skipped",
-        skippedReason: "Action context is check-deployment-only but we are in process deployment mode"
+        skippedReason: "Action context is check-deployment-only but this is the deployment job"
       };
       skipAction = true;
     } else if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: process-deployment-only action as we are in check deployment mode`));
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: deployment-only action (context process-deployment-only), and this is the validation job`));
       cmd.result = {
         statusCode: "skipped",
-        skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
+        skippedReason: "Action context is process-deployment-only but this is the validation job"
       };
       skipAction = true;
     } else if (branchFilterVerdict.run === false) {
