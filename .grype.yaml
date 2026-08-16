@@ -28,3 +28,18 @@ ignore:
     package:
       name: minimatch
       version: "9.0.3"
+
+  # image-size 1.2.1 - transitive dependency of pptxgenjs 4.0.1 (monitoring PPTX report)
+  # Both advisories are infinite-loop DoS in the ICNS / JXL / HEIF parsers, triggered by a
+  # crafted image buffer. sfdx-hardis only passes images it generated itself (charts, logos)
+  # to pptxgenjs, never attacker-controlled image files.
+  # No patched version exists: all releases up to the latest (2.0.2) are affected.
+  # Revisit when image-size ships a fix and pptxgenjs picks it up.
+  - vulnerability: GHSA-5p2g-fcmc-qvqq
+    package:
+      name: image-size
+      version: "1.2.1"
+  - vulnerability: GHSA-w3rx-r6r6-pgpr
+    package:
+      name: image-size
+      version: "1.2.1"
