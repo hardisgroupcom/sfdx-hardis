@@ -41,6 +41,39 @@ export default [
     },
   },
   {
+    // PERF guard: these modules run before every sf hardis command boots.
+    // They must never statically import the heavy common/utils barrel or
+    // config/index (1000+ transitive modules: langchain, puppeteer, jira...):
+    // that would silently revert the fast WebSocket connection to the VS Code
+    // extension. Deferred needs must use dynamic import().
+    files: [
+      'src/common/websocketClient.ts',
+      'src/common/utils/envUtils.ts',
+      'src/common/utils/i18n.ts',
+      'src/config/constants.ts',
+      'src/hooks/init/*.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/utils/index.js', '**/common/utils/index.js'],
+              message:
+                'Startup-critical module: do not statically import the heavy utils barrel (use a dynamic import() in the code path that needs it).',
+            },
+            {
+              group: ['**/config/index.js'],
+              message:
+                'Startup-critical module: import from config/constants.js instead of the heavy config/index.js.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['test/**/*.{ts,cjs,js}'],
     languageOptions: {
       globals: mochaGlobals,
