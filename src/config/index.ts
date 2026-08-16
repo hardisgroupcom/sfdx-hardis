@@ -34,8 +34,8 @@ const username = os.userInfo().username;
 const userConfigFiles = [`config/user/.${moduleName}.${username}.yaml`, `config/user/.${moduleName}.${username}.yml`];
 const REMOTE_CONFIGS: any = {};
 
-export { CONSTANTS } from './constants.js';
 import { CONSTANTS } from './constants.js';
+export { CONSTANTS };
 
 export const getApiVersion = (conn: Connection | null = null) => {
   // globalThis.currentOrgApiVersion is set during authentication check (so not set if --skipauth option is used)

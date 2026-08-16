@@ -27,13 +27,12 @@ const hook: Hook<'init'> = async (options) => {
   }
 
   // Skip WebSocket initialization when running in agent mode or requesting help.
-  // isAgentMode is inlined (instead of imported from common/utils) so the heavy
-  // utils barrel (langchain, puppeteer, jira, ... 1000+ modules) is never loaded
-  // before the WebSocket connects: the VS Code extension gets feedback as early
-  // as possible.
-  const argv: string[] = (globalThis as any)?.processArgv || process.argv || [];
-  const agentMode = argv.some((arg: string) => arg === '--agent' || arg.startsWith('--agent='));
-  if (agentMode || options?.argv?.includes('--help') || options?.argv?.includes('-h')) {
+  // isAgentMode comes from the dependency-free envUtils leaf module so the
+  // heavy utils barrel (langchain, puppeteer, jira, ... 1000+ modules) is
+  // never loaded before the WebSocket connects: the VS Code extension gets
+  // feedback as early as possible.
+  const { isAgentMode } = await import('../../common/utils/envUtils.js');
+  if (isAgentMode() || options?.argv?.includes('--help') || options?.argv?.includes('-h')) {
     return;
   }
 
@@ -52,6 +51,10 @@ const hook: Hook<'init'> = async (options) => {
     command: commandId,
     id: process.env.SFDX_HARDIS_COMMAND_CONTEXT_ID || process.pid,
   };
+  // Consume the provisional id: child `sf hardis:*` processes spawned by this
+  // command inherit the environment, and reusing the same id would make the
+  // extension conflate their panels (and cancel/close the wrong command)
+  delete process.env.SFDX_HARDIS_COMMAND_CONTEXT_ID;
 
   // Resolve the plugin root from the manifest (cheap, no class loading)
   let cmd: any = null;
@@ -62,7 +65,7 @@ const hook: Hook<'init'> = async (options) => {
       context.commandPluginRoot = pluginRoot;
     }
   } catch {
-    // Silently ignore – commandPluginRoot is optional
+    // Silently ignore - commandPluginRoot is optional
   }
 
   const websocketArgIndex = options?.argv?.indexOf('--websocket') ?? -1;
@@ -75,19 +78,22 @@ const hook: Hook<'init'> = async (options) => {
   }
   // Connect FIRST so the VS Code extension gets instant feedback, then check
   // disableWebsocket on the command class (loading it can take seconds for
-  // heavy commands - it used to block the connection). The known CLI-only
-  // commands are already excluded above without any class loading; this check
-  // only covers third-party plugin commands declaring disableWebsocket.
+  // heavy commands - it used to block the connection). sfdx-hardis own
+  // CLI-only commands are already excluded above without any class loading,
+  // so the check only runs for third-party plugin commands.
   globalThis.webSocketClient = new WebSocketClient(context);
-  try {
-    const cmdClass = await cmd?.load();
-    if ((cmdClass as any)?.disableWebsocket === true) {
-      globalThis.webSocketClient.dispose();
-      globalThis.webSocketClient = null;
-      return;
+  const pluginName = (cmd as any)?.pluginName ?? (cmd as any)?.plugin?.name;
+  if (pluginName && pluginName !== 'sfdx-hardis') {
+    try {
+      const cmdClass = await cmd?.load();
+      if ((cmdClass as any)?.disableWebsocket === true) {
+        globalThis.webSocketClient.dispose();
+        globalThis.webSocketClient = null;
+        return;
+      }
+    } catch {
+      // Silently ignore - disableWebsocket check is best-effort
     }
-  } catch {
-    // Silently ignore – disableWebsocket check is best-effort
   }
   await WebSocketClient.isInitialized();
 };

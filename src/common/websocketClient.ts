@@ -11,9 +11,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { CONSTANTS } from '../config/constants.js';
 import { t } from './utils/i18n.js';
-
-// Inlined from common/utils to avoid importing the heavy barrel (see above)
-const isCI = process.env.CI != null;
+import { isCI } from './utils/envUtils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -22,6 +20,8 @@ let globalWs: WebSocketClient | null;
 // See activeInstance getter below.
 
 const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
+// Max wait for the extension to answer the initClient message
+const INIT_TIMEOUT_MS = 10000;
 
 // Define allowed log types and type alias outside the class
 export const LOG_TYPES = ['log', 'action', 'warning', 'error', 'success', 'table', "other"] as const;
@@ -85,10 +85,8 @@ export class WebSocketClient {
     } catch (err) {
       this.isDead = true;
       this.markInitialized(false);
-      this.uxLogDeferred(
-        "warning",
-        c.yellow('Unable to start WebSocket client on ' + wsHostPort + '. ' + (err as Error).message)
-      );
+      // Synchronous warning: the process may exit before a deferred log flushes
+      console.warn(c.yellow('Unable to start WebSocket client on ' + wsHostPort + '. ' + (err as Error).message));
     }
   }
 
@@ -120,13 +118,21 @@ export class WebSocketClient {
       // 10s safety timeout. Fall back to polling when the active instance
       // comes from another module copy without initializedPromise.
       if (instance.initializedPromise) {
+        let safetyTimer: NodeJS.Timeout | undefined;
         await Promise.race([
           instance.initializedPromise,
-          new Promise((resolve) => setTimeout(resolve, 10000)),
+          new Promise((resolve) => {
+            safetyTimer = setTimeout(resolve, INIT_TIMEOUT_MS);
+          }),
         ]);
+        // Clear the losing timer: a pending timeout would keep the process
+        // alive up to 10s after fast commands complete
+        if (safetyTimer) {
+          clearTimeout(safetyTimer);
+        }
         return instance.isInitialized;
       }
-      let retries = 40; // Wait up to 10 seconds
+      let retries = INIT_TIMEOUT_MS / 250; // Wait up to 10 seconds
       while (!instance.isInitialized && retries > 0 && !instance.isDead) {
         await new Promise((resolve) => setTimeout(resolve, 250));
         retries--;
@@ -429,8 +435,14 @@ static sendMessage(data: any) {
     }
     else if (data.event === 'cancelCommand') {
       if (this.wsContext?.command === data?.context?.command && this.wsContext.id === data?.context?.id) {
-        // Synchronous log: the process exits immediately, a deferred uxLog would never flush
-        console.error(c.red(t('commandCancelledByUser')));
+        // Synchronous logs: the process exits immediately, a deferred uxLog would never flush
+        const cancelMsg = t('commandCancelledByUser');
+        console.error(c.red(cancelMsg));
+        try {
+          (globalThis as any).hardisLogFileStream?.write(cancelMsg + "\n");
+        } catch {
+          // Log file stream is best-effort
+        }
         process.exit(1);
       }
     }
@@ -487,8 +499,21 @@ static sendMessage(data: any) {
   }
 
   dispose(status?: string, error: any = null) {
-    WebSocketClient.sendCloseClientMessage(status, error);
-    this.ws.terminate();
+    // Only send closeClient on an OPEN socket: initClient is sent on 'open',
+    // so a CONNECTING socket has nothing to close on the extension side, and
+    // ws.send() would throw and abort the disposal
+    try {
+      if (this.ws?.readyState === 1) {
+        WebSocketClient.sendCloseClientMessage(status, error);
+      }
+    } catch {
+      // Disposal must never throw
+    }
+    try {
+      this.ws?.terminate();
+    } catch {
+      // Socket may never have been created
+    }
     this.isDead = true;
     this.markInitialized(false);
     globalWs = null;

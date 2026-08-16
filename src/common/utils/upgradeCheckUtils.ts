@@ -6,15 +6,8 @@ import { proxyFetch } from './httpUtils.js';
 export const UPGRADE_CHECK_INTERVAL_MS = 1000 * 60 * 60 * 6; // check every 6 hours
 export const UPGRADE_CHECK_FETCH_TIMEOUT_MS = 3000;
 
-// True when the upgrade check must not run at all: CI pipelines (ephemeral
-// environments where the banner is noise and the timestamp cache never persists)
-// and the standard NO_UPDATE_NOTIFIER opt-out that update-notifier honored.
-export function isUpgradeCheckDisabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  if (env.NO_UPDATE_NOTIFIER !== undefined && env.NO_UPDATE_NOTIFIER !== '' && env.NO_UPDATE_NOTIFIER !== 'false') {
-    return true;
-  }
-  return env.CI !== undefined && env.CI !== '' && env.CI !== 'false';
-}
+// Single definition lives in the dependency-free envUtils leaf module
+export { isUpgradeCheckDisabled } from './envUtils.js';
 
 // True when the last check is old enough (or never happened) to check again
 export function shouldCheckForUpgrade(lastCheckTs: number | null | undefined, nowTs: number, intervalMs: number = UPGRADE_CHECK_INTERVAL_MS): boolean {

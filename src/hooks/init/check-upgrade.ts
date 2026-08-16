@@ -8,13 +8,10 @@ const hook: Hook<'init'> = async (options) => {
   }
 
   // Never in CI (ephemeral environments) nor when the user opted out.
-  // Inlined env checks (kept in sync with isUpgradeCheckDisabled) so nothing
-  // at all is imported when the check is disabled.
-  const env = process.env;
-  if (env.NO_UPDATE_NOTIFIER !== undefined && env.NO_UPDATE_NOTIFIER !== '' && env.NO_UPDATE_NOTIFIER !== 'false') {
-    return;
-  }
-  if (env.CI !== undefined && env.CI !== '' && env.CI !== 'false') {
+  // envUtils is a dependency-free leaf module, so nothing heavy is imported
+  // when the check is disabled.
+  const { isUpgradeCheckDisabled } = await import('../../common/utils/envUtils.js');
+  if (isUpgradeCheckDisabled()) {
     return;
   }
 
@@ -35,7 +32,7 @@ async function runUpgradeCheck(): Promise<void> {
     { fileURLToPath },
     path,
     { getCache, setCache },
-    { shouldCheckForUpgrade, isUpgradeAvailable, fetchLatestPackageVersion, isUpgradeCheckDisabled },
+    { shouldCheckForUpgrade, isUpgradeAvailable, fetchLatestPackageVersion },
   ] = await Promise.all([
     import('chalk'),
     import('fs-extra'),
@@ -45,11 +42,6 @@ async function runUpgradeCheck(): Promise<void> {
     import('../../common/utils/upgradeCheckUtils.js'),
   ]);
 
-  // Authoritative opt-out check (covers cases the inlined env check may miss)
-  if (isUpgradeCheckDisabled()) {
-    return;
-  }
-
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
@@ -58,11 +50,13 @@ async function runUpgradeCheck(): Promise<void> {
   if (!shouldCheckForUpgrade(lastCheckTs, Date.now())) {
     return;
   }
-  // Store the timestamp before fetching so a failing registry never retries on every run
-  await setCache('upgradeCheckTimestamp', Date.now());
-
   const pkg = await fs.readJson(path.join(__dirname, '..', '..', '..', 'package.json'));
+  // fetchLatestPackageVersion never rejects (returns null on error/timeout)
   const latestVersion = await fetchLatestPackageVersion(pkg.name);
+  // Store the timestamp only once the check completed: the hook is
+  // fire-and-forget, so a process exiting before this line simply retries on
+  // the next run instead of suppressing the banner for 6 hours
+  await setCache('upgradeCheckTimestamp', Date.now());
   if (isUpgradeAvailable(pkg.version, latestVersion)) {
     console.warn(
       c.yellow(

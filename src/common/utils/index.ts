@@ -26,19 +26,8 @@ import { t } from './i18n.js';
 
 let pluginsStdout: string | null = null;
 
-export const isCI = process.env.CI != null;
-
-let isAgentModeCache: boolean | null = null;
-
-export function isAgentMode(): boolean {
-  if (isAgentModeCache !== null) {
-    return isAgentModeCache;
-  }
-  const argv = (globalThis as any)?.processArgv || process.argv || [];
-  const agentMode = argv.some((arg: string) => arg === '--agent' || arg.startsWith('--agent='));
-  isAgentModeCache = agentMode;
-  return agentMode;
-}
+export { isCI, isAgentMode } from './envUtils.js';
+import { isCI, isAgentMode } from './envUtils.js';
 
 export function git(options: any = { output: false, displayCommand: true }): SimpleGit {
   const simpleGitInstance = simpleGit();
