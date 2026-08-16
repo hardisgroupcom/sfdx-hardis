@@ -58,13 +58,14 @@ jobs:
             echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${CURRENT_BRANCH_NAME}"
             exit 0
           fi
-          if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
-            git config user.email "sfdx-hardis-bot@cloudity.com"
-            git config user.name "sfdx-hardis Bot"
-            echo "[sfdx-hardis] Azure push/PR auth enabled for coding agents via SYSTEM_ACCESSTOKEN"
-          else
-            echo "[sfdx-hardis] Skipping coding-agent Azure auth setup: SYSTEM_ACCESSTOKEN is not set"
-          fi
+          # Uncomment the lines below to allow coding agents to push auto-fix branches and create Pull Requests
+          # (also requires the sfdx-hardis-ubuntu-with-agents image, an AI API key in the variables below,
+          # and "Contribute" + "Create branch" permissions for the Build Service user on the repository)
+          # if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
+          #   git config user.email "sfdx-hardis-bot@cloudity.com"
+          #   git config user.name "sfdx-hardis Bot"
+          #   echo "[sfdx-hardis] Azure push/PR auth enabled for coding agents via SYSTEM_ACCESSTOKEN"
+          # fi
           sf hardis:auth:login
           sf hardis:project:deploy:smart --check
         env:

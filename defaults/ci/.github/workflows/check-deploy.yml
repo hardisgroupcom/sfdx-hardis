@@ -29,9 +29,11 @@ jobs:
     container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     name: Simulate Deployment to Major Org
     permissions:
-      pull-requests: write
-      contents: write
+      pull-requests: write # Allows sfdx-hardis to post deployment status comments on the Pull Request
       issues: write
+      contents: read
+      # To allow coding agents to push auto-fix branches and create Pull Requests,
+      # replace "contents: read" above by "contents: write"
     steps:
       # Checkout repo
       - name: Checkout code
@@ -60,7 +62,9 @@ jobs:
           ORG_ALIAS: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
           CONFIG_BRANCH: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Uncomment to allow coding agents to push auto-fix branches and create Pull Requests
+          # (also requires "contents: write" in the permissions above, the sfdx-hardis-ubuntu-with-agents image, and an AI API key below)
+          # CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           SLACK_CHANNEL_ID_INTEGRATION: ${{ secrets.SLACK_CHANNEL_ID_INTEGRATION }}

@@ -28,9 +28,11 @@ jobs:
     # To use coding agents for auto-fix of deployment errors, use image ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest
     container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     permissions:
-      pull-requests: write
-      contents: write
+      pull-requests: write # Allows sfdx-hardis to post deployment status comments on the Pull Request
       issues: write
+      contents: read
+      # To allow coding agents to push auto-fix branches and create Pull Requests,
+      # replace "contents: read" above by "contents: write"
     steps:
       # Git Checkout
       - name: Checkout Code
@@ -61,7 +63,9 @@ jobs:
           ORG_ALIAS: ${{ env.BRANCH }} # Defines the target branch of the PR
           CONFIG_BRANCH: ${{ env.BRANCH }} # Defines the target branch of the PR
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Uncomment to allow coding agents to push auto-fix branches and create Pull Requests
+          # (also requires "contents: write" in the permissions above, the sfdx-hardis-ubuntu-with-agents image, and an AI API key below)
+          # CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           NOTIF_EMAIL_ADDRESS: ${{ secrets.NOTIF_EMAIL_ADDRESS }}

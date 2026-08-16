@@ -44,16 +44,17 @@ pipelines:
                     echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CURRENT_BRANCH_NAME"
                     exit 0
                   fi
-                - |
-                  if [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ]; then
-                    git config user.email "sfdx-hardis-bot@cloudity.com"
-                    git config user.name "sfdx-hardis Bot"
-                    ORIGIN_PATH=$(git remote get-url origin | sed -E 's#^https?://##; s#^git@([^:]+):#\1/#; s#^ssh://git@([^/]+)/#\1/#; s#\.git$##')
-                    git remote set-url origin "https://x-token-auth:${CI_SFDX_HARDIS_BITBUCKET_TOKEN}@${ORIGIN_PATH}.git"
-                    echo "[sfdx-hardis] Bitbucket push/PR auth enabled for coding agents"
-                  else
-                    echo "[sfdx-hardis] Skipping coding-agent Bitbucket auth setup: CI_SFDX_HARDIS_BITBUCKET_TOKEN is not set"
-                  fi
+                # Uncomment the lines below to allow coding agents to push auto-fix branches and create Pull Requests
+                # (also requires the sfdx-hardis-ubuntu-with-agents image, an AI API key,
+                # and a CI_SFDX_HARDIS_BITBUCKET_TOKEN repository variable with repository:write + pullrequest:write scopes)
+                # - |
+                #   if [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ]; then
+                #     git config user.email "sfdx-hardis-bot@cloudity.com"
+                #     git config user.name "sfdx-hardis Bot"
+                #     ORIGIN_PATH=$(git remote get-url origin | sed -E 's#^https?://##; s#^git@([^:]+):#\1/#; s#^ssh://git@([^/]+)/#\1/#; s#\.git$##')
+                #     git remote set-url origin "https://x-token-auth:${CI_SFDX_HARDIS_BITBUCKET_TOKEN}@${ORIGIN_PATH}.git"
+                #     echo "[sfdx-hardis] Bitbucket push/PR auth enabled for coding agents"
+                #   fi
                 - sf hardis:auth:login
                 - sf hardis:project:deploy:smart --check
               artifacts:
@@ -79,16 +80,17 @@ pipelines:
                 echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CURRENT_BRANCH_NAME"
                 exit 0
               fi
-            - |
-              if [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ]; then
-                git config user.email "sfdx-hardis-bot@cloudity.com"
-                git config user.name "sfdx-hardis Bot"
-                ORIGIN_PATH=$(git remote get-url origin | sed -E 's#^https?://##; s#^git@([^:]+):#\1/#; s#^ssh://git@([^/]+)/#\1/#; s#\.git$##')
-                git remote set-url origin "https://x-token-auth:${CI_SFDX_HARDIS_BITBUCKET_TOKEN}@${ORIGIN_PATH}.git"
-                echo "[sfdx-hardis] Bitbucket push/PR auth enabled for coding agents"
-              else
-                echo "[sfdx-hardis] Skipping coding-agent Bitbucket auth setup: CI_SFDX_HARDIS_BITBUCKET_TOKEN is not set"
-              fi
+            # Uncomment the lines below to allow coding agents to push auto-fix branches and create Pull Requests
+            # (also requires the sfdx-hardis-ubuntu-with-agents image, an AI API key,
+            # and a CI_SFDX_HARDIS_BITBUCKET_TOKEN repository variable with repository:write + pullrequest:write scopes)
+            # - |
+            #   if [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ]; then
+            #     git config user.email "sfdx-hardis-bot@cloudity.com"
+            #     git config user.name "sfdx-hardis Bot"
+            #     ORIGIN_PATH=$(git remote get-url origin | sed -E 's#^https?://##; s#^git@([^:]+):#\1/#; s#^ssh://git@([^/]+)/#\1/#; s#\.git$##')
+            #     git remote set-url origin "https://x-token-auth:${CI_SFDX_HARDIS_BITBUCKET_TOKEN}@${ORIGIN_PATH}.git"
+            #     echo "[sfdx-hardis] Bitbucket push/PR auth enabled for coding agents"
+            #   fi
             - sf hardis:auth:login
             - sf hardis:project:deploy:smart
           artifacts:

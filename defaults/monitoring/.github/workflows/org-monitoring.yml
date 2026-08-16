@@ -42,7 +42,8 @@ jobs:
     # Images are also mirrored on Docker Hub, if your infrastructure can only pull from docker.io: hardisgroupcom/sfdx-hardis-ubuntu:latest
     container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     name: Backup metadatas
-    permissions: write-all
+    permissions:
+      contents: write # Allows the job to push the commit containing the retrieved metadata
     timeout-minutes: 360
     strategy:
       fail-fast: false
@@ -126,7 +127,7 @@ jobs:
     container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     name: Apex tests
     needs: backup
-    permissions: write-all
+    permissions: read-all
     timeout-minutes: 360
     strategy:
       fail-fast: false
