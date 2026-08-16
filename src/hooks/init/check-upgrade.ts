@@ -7,6 +7,27 @@ const hook: Hook<'init'> = async (options) => {
     return;
   }
 
+  // Never in CI (ephemeral environments) nor when the user opted out.
+  // Inlined env checks (kept in sync with isUpgradeCheckDisabled) so nothing
+  // at all is imported when the check is disabled.
+  const env = process.env;
+  if (env.NO_UPDATE_NOTIFIER !== undefined && env.NO_UPDATE_NOTIFIER !== '' && env.NO_UPDATE_NOTIFIER !== 'false') {
+    return;
+  }
+  if (env.CI !== undefined && env.CI !== '' && env.CI !== 'false') {
+    return;
+  }
+
+  // Fire-and-forget: the upgrade check must never delay command startup
+  // (init hooks of a plugin run serially, so awaiting here would postpone the
+  // WebSocket connection to the VS Code extension). The banner is printed
+  // whenever the check resolves.
+  void runUpgradeCheck().catch(() => {
+    // Upgrade check is best-effort and must never break the CLI
+  });
+};
+
+async function runUpgradeCheck(): Promise<void> {
   // Dynamically import libraries in parallel to avoid loading them if not needed
   const [
     { default: c },
@@ -24,7 +45,7 @@ const hook: Hook<'init'> = async (options) => {
     import('../../common/utils/upgradeCheckUtils.js'),
   ]);
 
-  // Never in CI (ephemeral environments) nor when the user opted out
+  // Authoritative opt-out check (covers cases the inlined env check may miss)
   if (isUpgradeCheckDisabled()) {
     return;
   }

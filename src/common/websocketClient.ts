@@ -1,12 +1,19 @@
+// PERF: this module must stay a "leaf": it is loaded by the init hook before
+// the command boots so the VS Code extension gets feedback as early as
+// possible. Do NOT import the common/utils barrel (or config/index.js) here:
+// that would eagerly load 1000+ modules (langchain, puppeteer, jira, ...)
+// before the WebSocket can even connect. Heavy helpers are dynamically
+// imported in the rare code paths that need them.
 import c from 'chalk';
 import * as util from 'util';
 import WebSocket from 'ws';
-import { isCI, uxLog } from './utils/index.js';
-import { SfError } from '@salesforce/core';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { CONSTANTS } from '../config/index.js';
+import { CONSTANTS } from '../config/constants.js';
 import { t } from './utils/i18n.js';
+
+// Inlined from common/utils to avoid importing the heavy barrel (see above)
+const isCI = process.env.CI != null;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -47,6 +54,10 @@ export class WebSocketClient {
   private promptResponse: any;
   private isDead = false;
   private isInitialized = false;
+  // Resolved as soon as the extension answers the initClient message (or the
+  // connection dies), so callers do not have to poll on a timer
+  private initializedPromise: Promise<boolean> | null = null;
+  private initializedResolve: ((value: boolean) => void) | null = null;
   private userInput: string | null = null;
   private extensionVersionResponse: string | null = null;
 
@@ -62,6 +73,9 @@ export class WebSocketClient {
 
   constructor(context: WebSocketClientContext) {
     this.wsContext = context;
+    this.initializedPromise = new Promise((resolve) => {
+      this.initializedResolve = resolve;
+    });
     const wsHostPort = context.websocketHostPort ? `ws://${context.websocketHostPort}` : `ws://localhost:${PORT}`;
     try {
       this.ws = new WebSocket(wsHostPort);
@@ -70,17 +84,48 @@ export class WebSocketClient {
       console.log("WS Client started");
     } catch (err) {
       this.isDead = true;
-      uxLog(
+      this.markInitialized(false);
+      this.uxLogDeferred(
         "warning",
-        this,
         c.yellow('Unable to start WebSocket client on ' + wsHostPort + '. ' + (err as Error).message)
       );
     }
   }
 
+  private markInitialized(success: boolean): void {
+    if (success) {
+      this.isInitialized = true;
+    }
+    if (this.initializedResolve) {
+      this.initializedResolve(success);
+      this.initializedResolve = null;
+    }
+  }
+
+  // Logs through uxLog without statically importing the heavy utils barrel
+  // (see the PERF note at the top of this file). Falls back to console.log.
+  private uxLogDeferred(logType: string, text: string): void {
+    void import('./utils/index.js')
+      .then(({ uxLog }) => uxLog(logType as any, this, text))
+      .catch(() => console.log(text));
+  }
+
   static async isInitialized(): Promise<boolean> {
     const instance = WebSocketClient.activeInstance;
     if (instance) {
+      if (instance.isInitialized || instance.isDead) {
+        return instance.isInitialized;
+      }
+      // Event-driven wait (resolved as soon as the extension answers) with a
+      // 10s safety timeout. Fall back to polling when the active instance
+      // comes from another module copy without initializedPromise.
+      if (instance.initializedPromise) {
+        await Promise.race([
+          instance.initializedPromise,
+          new Promise((resolve) => setTimeout(resolve, 10000)),
+        ]);
+        return instance.isInitialized;
+      }
       let retries = 40; // Wait up to 10 seconds
       while (!instance.isInitialized && retries > 0 && !instance.isDead) {
         await new Promise((resolve) => setTimeout(resolve, 250));
@@ -259,7 +304,7 @@ static sendMessage(data: any) {
     if (instance) {
       return instance.promptServer(prompts);
     }
-    throw new SfError('globalWs should be set in sendPrompts');
+    throw new Error('globalWs should be set in sendPrompts');
   }
 
   // Send close client message with status
@@ -333,7 +378,7 @@ static sendMessage(data: any) {
           // Only warn for sfdx-hardis own commands – external plugins are not
           // expected to expose a command class file at the resolved path.
           if (this.wsContext.command.startsWith('hardis:')) {
-            uxLog("warning", this, c.yellow(t('unableToImportCommandClassFor', { wsContext: this.wsContext.command, instanceof: e instanceof Error ? e.message : String(e) })));
+            this.uxLogDeferred("warning", c.yellow(t('unableToImportCommandClassFor', { wsContext: this.wsContext.command, instanceof: e instanceof Error ? e.message : String(e) })));
           }
         }
       }
@@ -357,6 +402,7 @@ static sendMessage(data: any) {
         (globalThis as any).webSocketClient = null;
       }
       this.isDead = true;
+      this.markInitialized(false);
       if (process.env.DEBUG) {
         console.error(err);
       }
@@ -376,14 +422,15 @@ static sendMessage(data: any) {
     }
     else if (data.event === 'userInput') {
       this.userInput = data.userInput;
-      this.isInitialized = true;
+      this.markInitialized(true);
     }
     else if (data.event === 'extensionVersionResponse') {
       this.extensionVersionResponse = data.extensionVersion ?? 'unknown';
     }
     else if (data.event === 'cancelCommand') {
       if (this.wsContext?.command === data?.context?.command && this.wsContext.id === data?.context?.id) {
-        uxLog("error", this, c.red(t('commandCancelledByUser')));
+        // Synchronous log: the process exits immediately, a deferred uxLog would never flush
+        console.error(c.red(t('commandCancelledByUser')));
         process.exit(1);
       }
     }
@@ -443,6 +490,7 @@ static sendMessage(data: any) {
     WebSocketClient.sendCloseClientMessage(status, error);
     this.ws.terminate();
     this.isDead = true;
+    this.markInitialized(false);
     globalWs = null;
     if ((globalThis as any).webSocketClient === this) {
       (globalThis as any).webSocketClient = null;
