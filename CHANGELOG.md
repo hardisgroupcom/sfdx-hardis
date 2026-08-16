@@ -87,6 +87,11 @@
 - Upgrade puppeteer-core to 25.6.0, which drops the unmaintained and vulnerable `extract-zip` transitive dependency (GHSA-jmr9-qjv8-65gv, CVE-2026-56876).
 - CSV and XLSX reports of the Bulk API helpers (`bulkUpdate`, `bulkDelete`) are now written in the reports directory, like every other report, instead of a relative file named after the object and the action.
 - Plugin API: `bulkDeleteTooling` now always returns `{ results: [{ Id, success, errors }] }`. Deletions go through the Tooling composite endpoint, with a one-by-one fallback.
+- [hardis:project:clean:profiles-extract](https://sfdx-hardis.cloudity.com/hardis/project/clean/profiles-extract/):
+  - Faster extraction: object record counts and field extracts are fetched concurrently, with a progress bar in VS Code.
+  - The SObject selection is remembered between runs and proposed as the default selection on the next one.
+  - Items are sorted alphabetically in every sheet of the generated XLSX report.
+  - Profile field access is limited to profiles of active users, and system fields that cannot have field-level security are skipped.
 
 ## [7.23.0] 2026-07-26
 

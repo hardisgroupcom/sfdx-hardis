@@ -117,6 +117,7 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     const recordStream = await conn.bulk2.query(soqlQuery);
     recordStream.on('error', (err) => {
       uxLog("warning", this, c.yellow(t('bulkQueryError') + err));
+      uxLog("log", this, c.grey(t('fullQueryWas', { query: soqlQuery })));
       globalThis.sfdxHardisFatalError = true;
     });
     // Wait for all results

@@ -2857,6 +2857,22 @@
       "title": "Production branch name",
       "type": "string"
     },
+    "profilesExtractCachedSelection": {
+      "$id": "#/properties/profilesExtractCachedSelection",
+      "default": [],
+      "description": "SObject API names selected during the latest run of hardis:project:clean:profiles-extract, proposed as default selection on the next run. Automatically set in user config.",
+      "examples": [
+        [
+          "Account",
+          "Opportunity"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Profiles extract cached SObject selection",
+      "type": "array"
+    },
     "projectName": {
       "$id": "#/properties/projectName",
       "default": "",

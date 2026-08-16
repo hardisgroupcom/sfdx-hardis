@@ -7,10 +7,14 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import c from 'chalk';
 import { generateCsvFile, generateReportPath, createXlsxFromCsvFiles } from '../../../../common/utils/filesUtils.js';
-import { bulkQuery } from '../../../../common/utils/apiUtils.js';
+import { bulkQuery, soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { listOrgSObjectsFilteredWithQualifiedNames } from '../../../../common/utils/orgUtils.js';
 import * as path from 'path';
-import { getReportDirectory } from '../../../../config/index.js';
+import { getConfig, getReportDirectory, setConfig } from '../../../../config/index.js';
 import { Messages } from '@salesforce/core';
+import { PromisePool } from '@supercharge/promise-pool';
+import sortArray from 'sort-array';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -106,19 +110,25 @@ In agent mode:
     let numberOfPersonas = 1;
     try {
       selectedObjects = await this.generateObjectsList(conn, agentMode);
-      uxLog("action", this, c.green(t('handlingExtractOfUsers')));
+      uxLog("action", this, c.cyan(t('handlingExtractOfUsers')));
       await this.generateUsersExtract(conn);
       numberOfPersonas = await this.generatePersonaExtract(agentMode);
-      uxLog("action", this, c.green(t('generatingExtractsForPersonas', { numberOfPersonas })));
+      uxLog("action", this, c.cyan(t('generatingExtractsForPersonas', { numberOfPersonas })));
+      uxLog("log", this, c.grey(t('generatingRelationExtract')));
       await this.generateRelationExtract(selectedObjects, numberOfPersonas);
+      uxLog("log", this, c.grey(t('generatingRecordTypesExtract')));
       await this.generateRTExtract(conn, selectedObjects, numberOfPersonas);
+      uxLog("log", this, c.grey(t('generatingApplicationsExtract')));
       await this.generateAppsExtract(conn, numberOfPersonas);
+      uxLog("log", this, c.grey(t('generatingPermissionsExtract')));
       await this.generatePermissionsExtract(conn, numberOfPersonas);
+      uxLog("log", this, c.grey(t('generatingTabsExtract')));
       await this.generateTabsExtract(conn, numberOfPersonas);
+      uxLog("log", this, c.grey(t('generatingPermissionSetsExtract')));
       await this.generatePermissionSetsExtract(conn, numberOfPersonas);
 
       // 1. Extract profile field access and get all profiles
-      uxLog("action", this, c.green(t('extractingProfileFieldAccess')));
+      uxLog("action", this, c.cyan(t('extractingProfileFieldAccess')));
       const profileFieldAccess = await this.getProfileFieldAccessData(conn, selectedObjects);
       const profileNames = Array.from(new Set(profileFieldAccess.map(r => r.Profile).filter(Boolean)));
 
@@ -129,7 +139,7 @@ In agent mode:
       if (profileFieldAccess.length > 0) {
         const reportDir = await getReportDirectory();
         this.outputFile = path.join(reportDir, 'ProfileFieldAccess.csv');
-        await generateCsvFile(profileFieldAccess, this.outputFile, { fileTitle: 'Profile Field Access', noExcel: true });
+        await generateCsvFile(profileFieldAccess, this.outputFile, { fileTitle: 'Profile Field Access', noExcel: true, skipNotifyToWebSocket: true });
         this.csvFiles.push(this.outputFile);
       } else {
         uxLog('log', this, c.yellow(t('noProfileFieldAccessRecordsFoundSkipping')));
@@ -137,7 +147,7 @@ In agent mode:
 
       this.outputFile = '';
       this.outputFile = await generateReportPath('profiles-extract', this.outputFile);
-      uxLog("action", this, c.green(t('generatingFinalXlsxReport')));
+      uxLog("action", this, c.cyan(t('generatingFinalXlsxReport')));
       await createXlsxFromCsvFiles(this.csvFiles, this.outputFile, { fileTitle: 'profiles extract' });
     } catch (error) {
       uxLog('log', this, c.red(t('failedToFetchSobjects')));
@@ -153,29 +163,61 @@ In agent mode:
   async getProfileFieldAccessData(conn: any, selectedObjects: string[]) {
     const fieldAccessRecords: { Profile: string; SObjectType: string; Field: string; PermissionsRead: string; PermissionsEdit: string }[] = [];
     try {
-      let soql = `SELECT Field, PermissionsRead, PermissionsEdit, SObjectType, Parent.Profile.Name FROM FieldPermissions WHERE Parent.ProfileId != null`;
+      // Step 1: Get Profile IDs based on active profile names
+      let profileIds: string[] = [];
+      if (this.activeProfileNames && this.activeProfileNames.size > 0) {
+        const profileNames = Array.from(this.activeProfileNames).filter((name) => !!name);
+        const profileNameList = profileNames.map(name => `'${name.replace(/'/g, "''")}'`).join(", ");
+        const profileQuery = `SELECT Id, Name FROM Profile WHERE Name IN (${profileNameList})`;
+
+        try {
+          const profileResult = await soqlQuery(profileQuery, conn);
+          profileIds = profileResult.records.map((p: any) => p.Id);
+        } catch (profileError) {
+          uxLog('warning', this, c.yellow(t('failedToQueryProfileIds', { error: (profileError as Error).message })));
+          return fieldAccessRecords; // Return empty array if profile query fails
+        }
+      }
+
+      // Step 2: Build FieldPermissions query using ProfileIds
+      let soql = `SELECT Field, PermissionsRead, PermissionsEdit, SObjectType, Parent.ProfileId FROM FieldPermissions WHERE Parent.ProfileId != null`;
+
+      if (profileIds.length > 0) {
+        const profileIdList = profileIds.map(id => `'${id}'`).join(", ");
+        soql += ` AND Parent.ProfileId IN (${profileIdList})`;
+      }
+
       if (selectedObjects && selectedObjects.length > 0) {
         const objectList = selectedObjects.map(obj => `'${obj}'`).join(", ");
         soql += ` AND SObjectType IN (${objectList})`;
       }
-      // Add filter for active profiles
-      if (this.activeProfileNames && this.activeProfileNames.size > 0) {
-        const profileList = Array.from(this.activeProfileNames)
-          .filter((name) => !!name)
-          .map(name => `'${name.replace(/'/g, "''")}'`).join(", ");
-        soql += ` AND Parent.Profile.Name IN (${profileList})`;
-      }
+
+      // Step 3: Query FieldPermissions using bulk API
       const result = await bulkQuery(soql, conn);
+
+      // Step 4: Map ProfileIds back to Profile Names for the report
+      const profileIdToName = new Map();
+      if (this.activeProfileNames && this.activeProfileNames.size > 0) {
+        const profileNames = Array.from(this.activeProfileNames).filter((name) => !!name);
+        const profileNameList = profileNames.map(name => `'${name.replace(/'/g, "''")}'`).join(", ");
+        const profileQuery = `SELECT Id, Name FROM Profile WHERE Name IN (${profileNameList})`;
+        const profileResult = await soqlQuery(profileQuery, conn);
+        profileResult.records.forEach((p: any) => {
+          profileIdToName.set(p.Id, p.Name);
+        });
+      }
+
       result.records.forEach((rec: any) => {
+        const profileName = profileIdToName.get(rec['Parent.ProfileId']) || 'Unknown';
         fieldAccessRecords.push({
-          Profile: rec['Parent.Profile.Name'],
+          Profile: profileName,
           SObjectType: rec['SobjectType'],
           Field: rec['Field'],
           PermissionsRead: rec['PermissionsRead'] === true || rec['PermissionsRead'] === 'true' ? 'Yes' : 'No',
           PermissionsEdit: rec['PermissionsEdit'] === true || rec['PermissionsEdit'] === 'true' ? 'Yes' : 'No',
         });
       });
-      uxLog('log', this, c.green(t('fetchedProfileFieldAccessRecords', { fieldAccessRecords: fieldAccessRecords.length })));
+      uxLog('log', this, c.grey(t('fetchedProfileFieldAccessRecords', { fieldAccessRecords: fieldAccessRecords.length })));
     } catch (error) {
       uxLog('warning', this, c.yellow(t('failedToQueryFieldpermissions', { error: (error as Error).message })));
     }
@@ -191,82 +233,53 @@ In agent mode:
   private async generateObjectsList(conn: any, agentMode = false): Promise<string[]> {
 
     let selectedObjects: string[] = [];
-    uxLog('action', this, c.green(t('fetchingSobjectsList')));
+    uxLog('action', this, c.cyan(t('fetchingSobjectsList')));
     let sobjectsList: { label: string; name: string; masterObject: string; objectType: string }[] = [];
     try {
-      // Exclude objects whose API names start with any of these prefixes
-      const excludedPrefixes = [
-        'Active',
-        'Apex',
-        'AuraDefinition',
-        'Business',
-        'Content',
-        'Dashboard',
-        'Email',
-        'Flow',
-        'Forecasting',
-        'Formula',
-        'ListView',
-        'LoginGeo',
-        'Marketing',
-        'MatchingRule',
-        'PermissionSet',
-        'UiFormula',
-        'WebLink',
-        'pi__'
-      ];
-      // Exclude objects whose API names are in this explicit list
-      const excludedObjects = [
-        'AppDefinition', 'AppMenu', 'AssignmentRule', 'AsyncApexJob', 'AuthProvider', 'AuthSession',
-        'BrowserPolicyViolation', 'CampaignInfluenceModel', 'CaseStatus', 'ClientBrowser', 'Community',
-        'ConnectedApplication', 'ContractStatus', 'CronJobDetail', 'CronTrigger', 'CustomNotificationType',
-        'CustomPermission', 'DataType', 'DeleteEvent', 'Domain', 'DuplicateRule', 'EntityDefinition',
-        'FeedItem', 'FieldPermissions', 'FieldSecurityClassification', 'FileSearchActivity', 'FiscalYearSettings',
-        'Folder', 'Group', 'GroupMember', 'NamedCredential', 'OauthToken', 'ObjectPermissions', 'OrderStatus',
-        'OrgWideEmailAddress', 'Organization', 'PackageLicense', 'PartnerRole', 'Period', 'Profile', 'Publisher',
-        'QueueSobject', 'RecentlyViewed', 'RecordType', 'Report', 'Scontrol', 'SetupAuditTrail', 'SetupEntityAccess',
-        'SolutionStatus', 'StandardInvocableActionType', 'StaticResource', 'TabDefinition', 'TenantUsageEntitlement',
-        'Translation', 'VerificationHistory'
-      ];
-      const sobjects = await conn.describeGlobal();
-      sobjectsList = sobjects.sobjects
-        .filter(sobj =>
-          sobj.queryable &&
-          !excludedPrefixes.some(prefix => sobj.name.startsWith(prefix)) &&
-          !excludedObjects.includes(sobj.name) &&
-          !sobj.name.endsWith('History') &&
-          !sobj.name.endsWith('Share')
-        )
-        .map((sobject) => ({
-          label: sobject.label,
-          name: sobject.name,
-          masterObject: '',
-          objectType: sobject.name.endsWith('__c') ? 'Custom' : 'Standard',
-        }));
+      // Use listOrgSObjectsFilteredWithQualifiedNames to get filtered SObjects with qualified API names
+      const sObjectsFilteredRecords = await listOrgSObjectsFilteredWithQualifiedNames(conn);
 
-      uxLog('log', this, c.green(t('fetchingSobjectsCompleted')));
-      uxLog('log', this, c.green(t('fetchedSobjects', { sobjectsList: sobjectsList.length })));
+      // Convert records to sobjectsList format: { label, name, masterObject, objectType }
+      sobjectsList = sObjectsFilteredRecords.map((record) => ({
+        label: record.Label,
+        name: record.QualifiedApiName,
+        masterObject: '',
+        objectType: record.QualifiedApiName.endsWith('__c') ? 'Custom' : 'Standard',
+      }));
 
-      const sobjectsWithRecords: { Object_Label: string; API_Name: string; Object_Type: string }[] = [];
+      uxLog('log', this, c.grey(t('fetchingSobjectsCompleted')));
+      uxLog('log', this, c.grey(t('fetchedSobjects', { sobjectsList: sobjectsList.length })));
 
-      uxLog('action', this, t('checkingSobjectsForRecords'));
-      for (const sobject of sobjectsList) {
-        try {
-          const result = await conn.query(`SELECT COUNT() FROM ${sobject.name}`);
-          if (result.totalSize > 0) {
-            sobjectsWithRecords.push({ Object_Label: sobject.label, API_Name: sobject.name, Object_Type: sobject.objectType });
+      const sobjectsWithRecords: { API_Name: string; Object_Label: string; Object_Type: string }[] = [];
+
+      WebSocketClient.sendProgressStartMessage(t('checkingSobjectsForRecords'), sobjectsList.length);
+      let counter = 0;
+      await PromisePool.withConcurrency(5)
+        .for(sobjectsList)
+        .process(async (sobject) => {
+          try {
+            const result = await conn.query(`SELECT COUNT() FROM ${sobject.name}`);
+            if (result.totalSize > 0) {
+              sobjectsWithRecords.push({ API_Name: sobject.name, Object_Label: sobject.label, Object_Type: sobject.objectType });
+            }
+            uxLog('log', this, `Checked ${sobject.name}: ${result.totalSize} records.`);
+          } catch (error) {
+            uxLog('warning', this, c.yellow(t('failedToQuery', { sobject: sobject.name, error: (error as Error).message })));
+          } finally {
+            counter++;
+            WebSocketClient.sendProgressStepMessage(counter, sobjectsList.length);
           }
-          uxLog('log', this, `Checked ${sobject.name}: ${result.totalSize} records.`);
-        } catch (error) {
-          uxLog('warning', this, c.yellow(t('failedToQuery', { sobject: sobject.name, error: (error as Error).message })));
-        }
-      }
+        });
+      WebSocketClient.sendProgressEndMessage();
       this.spinner.stop();
 
       if (sobjectsWithRecords.length === 0) {
-        uxLog('warning', this, c.red(t('noSobjectsWithRecordsFound')));
+        uxLog('warning', this, c.yellow(t('noSobjectsWithRecordsFound')));
         return [];
       }
+
+      const config = await getConfig("user");
+      const initialSelection = config.profilesExtractCachedSelection || [];
 
       const choices: { title: string; value: string }[] = [];
       for (const sobject of sobjectsWithRecords) {
@@ -275,6 +288,7 @@ In agent mode:
           value: sobject.API_Name,
         });
       }
+      sortArray(choices, { by: 'title', order: 'asc' });
 
       if (!isCI && !agentMode) {
         const statusRes = await prompts({
@@ -282,7 +296,10 @@ In agent mode:
           type: "multiselect",
           description: t('beCarefulAboutProfileChanges'),
           choices: choices,
+          initial: initialSelection.filter((sel => choices.some(choice => choice.value === sel))),
         });
+
+        await setConfig("user", { profilesExtractCachedSelection: statusRes.value });
 
         if (statusRes && statusRes.value !== "all") {
           selectedObjects = statusRes.value;
@@ -294,11 +311,13 @@ In agent mode:
         uxLog('log', this, `Agent mode: using all ${selectedObjects.length} objects with records.`);
       }
 
-      uxLog("log", this, c.green(t('generatingObjectsCsvReport')));
+      uxLog("log", this, c.grey(t('generatingObjectsCsvReport')));
       const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, 'Objects.csv');
+      const objectsToWrite = sobjectsWithRecords.filter((sobj) => selectedObjects.includes(sobj.API_Name));
+      sortArray(objectsToWrite, { by: 'API_Name', order: 'asc' });
       // Without xlsx
-      await generateCsvFile(sobjectsWithRecords.filter((sobj) => selectedObjects.includes(sobj.API_Name)), this.outputFile, { fileTitle: 'profiles extract', noExcel: true });
+      await generateCsvFile(objectsToWrite, this.outputFile, { fileTitle: 'profiles extract', noExcel: true, skipNotifyToWebSocket: true });
       // With xlsx
       // this.outputFilesRes = await generateCsvFile(sobjectsWithRecords.filter((sobj) => selectedObjects.includes(sobj.API_Name)), this.outputFile, { fileTitle: 'profiles extract' });
 
@@ -331,11 +350,12 @@ In agent mode:
     })));
     // Build set of active profile names (filter out empty/null)
     this.activeProfileNames = new Set(userResult.records.map((user) => user['Profile.Name']).filter((n) => !!n));
-    uxLog('log', this, c.green(t('fetchedActiveUsers', { userResult: userResult.records.length })));
-    uxLog('log', this, c.cyan(t('activeProfiles', { Array: Array.from(this.activeProfileNames).join(', ') })));
+    uxLog('log', this, c.grey(t('fetchedActiveUsers', { userResult: userResult.records.length })));
+    uxLog('log', this, c.grey(t('activeProfiles', { Array: Array.from(this.activeProfileNames).join(', ') })));
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Users.csv');
-    await generateCsvFile(usersRecords, this.outputFile, { fileTitle: 'Users extract', noExcel: true });
+    sortArray(usersRecords, { by: 'User', order: 'asc' });
+    await generateCsvFile(usersRecords, this.outputFile, { fileTitle: 'Users extract', noExcel: true, skipNotifyToWebSocket: true });
     this.csvFiles.push(this.outputFile);
     return;
   }
@@ -369,7 +389,7 @@ In agent mode:
 
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'persona.csv');
-    await generateCsvFile(persona, this.outputFile, { fileTitle: 'persona extract', noExcel: true });
+    await generateCsvFile(persona, this.outputFile, { fileTitle: 'persona extract', noExcel: true, skipNotifyToWebSocket: true });
     this.csvFiles.push(this.outputFile);
     return numberOfPersonas;
   }
@@ -401,7 +421,8 @@ In agent mode:
     });
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Relation.csv');
-    await generateCsvFile(relationRecords, this.outputFile, { fileTitle: 'Relation Object Persona', noExcel: true });
+    sortArray(relationRecords, { by: 'Object', order: 'asc' });
+    await generateCsvFile(relationRecords, this.outputFile, { fileTitle: 'Relation Object Persona', noExcel: true, skipNotifyToWebSocket: true });
     this.csvFiles.push(this.outputFile);
     return;
   }
@@ -437,7 +458,8 @@ In agent mode:
     }
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'RecordTypes.csv');
-    await generateCsvFile(recordTypesRecords, this.outputFile, { fileTitle: 'Record Types extract', noExcel: true });
+    sortArray(recordTypesRecords, { by: 'Object', order: 'asc' });
+    await generateCsvFile(recordTypesRecords, this.outputFile, { fileTitle: 'Record Types extract', noExcel: true, skipNotifyToWebSocket: true });
     this.csvFiles.push(this.outputFile);
     return;
   }
@@ -471,7 +493,8 @@ In agent mode:
     }
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Applications.csv');
-    await generateCsvFile(appsRecords, this.outputFile, { fileTitle: 'Applications extract', noExcel: true });
+    sortArray(appsRecords, { by: 'Application', order: 'asc' });
+    await generateCsvFile(appsRecords, this.outputFile, { fileTitle: 'Applications extract', noExcel: true, skipNotifyToWebSocket: true });
     this.csvFiles.push(this.outputFile);
     return;
   }
@@ -502,7 +525,8 @@ In agent mode:
     });
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Permissions.csv');
-    await generateCsvFile(permissionsRecords, this.outputFile, { fileTitle: 'Permissions extract', noExcel: true });
+    sortArray(permissionsRecords, { by: 'Permission_Label', order: 'asc' });
+    await generateCsvFile(permissionsRecords, this.outputFile, { fileTitle: 'Permissions extract', noExcel: true, skipNotifyToWebSocket: true });
     this.csvFiles.push(this.outputFile);
     return;
   }
@@ -526,7 +550,8 @@ In agent mode:
       });
       const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, 'Tabs.csv');
-      await generateCsvFile(tabsRecords, this.outputFile, { fileTitle: 'Tabs extract', noExcel: true });
+      sortArray(tabsRecords, { by: 'Tab_Label', order: 'asc' });
+      await generateCsvFile(tabsRecords, this.outputFile, { fileTitle: 'Tabs extract', noExcel: true, skipNotifyToWebSocket: true });
       this.csvFiles.push(this.outputFile);
     } catch (error) {
       uxLog('warning', this, c.yellow(t('failedToQueryTabs', { error: (error as Error).message })));
@@ -543,73 +568,87 @@ In agent mode:
    * @param numberOfPersonas Number of personas
    */
   async generateObjectFieldsExtract(conn: any, selectedObjects: string[], numberOfPersonas: number, profileNames: string[] = [], profileFieldAccess: any[] = []) {
-    const fieldsRecords: any[] = [];
-    for (const objName of selectedObjects) {
-      try {
-        fieldsRecords.length = 0;
-        const desc = await conn.describeSObject(objName);
-        desc.fields.forEach((field) => {
-          let picklistValues = '';
-          if (field.picklistValues && field.picklistValues.length > 0) {
-            picklistValues = field.picklistValues.map(pv => pv.value).join('; ');
-          }
-          // Add persona columns using formula logic
-          const personaCols: Record<string, string> = {};
-          for (let i = 1; i <= numberOfPersonas; i++) {
-            const personaRow = i + 1;
-            personaCols[`=persona!A${personaRow}&"_View"`] = '';
-            personaCols[`=persona!A${personaRow}&"_Edit"`] = '';
-          }
-          // Add one column per profile, fill with 'none', 'edit', or 'read'
-          const profileCols = (profileNames || []).reduce((acc, profile) => {
-            // Find access for this field/profile/object (case-insensitive, and check both SObjectType and API_Name)
-            const access = profileFieldAccess.find((rec) => {
-              const profileMatch = rec.Profile === profile;
-              const objectMatch = (rec.SObjectType === objName || rec.SObjectType?.toLowerCase() === objName.toLowerCase());
-              // rec.Field can be 'ObjectName.FieldName' or just 'FieldName'
-              let recFieldName = rec.Field;
-              if (recFieldName && recFieldName.includes('.')) {
-                recFieldName = recFieldName.split('.').pop();
-              }
-              const fieldMatch = (recFieldName === field.name || recFieldName?.toLowerCase() === field.name.toLowerCase());
-              return profileMatch && objectMatch && fieldMatch;
-            });
-            let value = 'none';
-            if (access) {
-              if (access.PermissionsEdit === 'Yes') {
-                value = 'edit';
-              } else if (access.PermissionsRead === 'Yes') {
-                value = 'read';
-              }
+    WebSocketClient.sendProgressStartMessage(t('extractingObjectFields'), selectedObjects.length);
+    const outputFiles: string[] = new Array(selectedObjects.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(5)
+      .for(selectedObjects.map((objName, index) => ({ objName, index })))
+      .process(async ({ objName, index }) => {
+        try {
+          const fieldsRecords: any[] = [];
+          const desc = await conn.describeSObject(objName);
+          desc.fields.forEach((field) => {
+            // Skip system fields that can't have field-level security set
+            if (field.permissionable === false) {
+              return;
             }
-            acc[`Profile_${profile}`] = value;
-            return acc;
-          }, {} as Record<string, string>);
-          fieldsRecords.push({
-            Field_Label: field.label,
-            API_Name: field.name,
-            Data_Type: field.type,
-            Length: field.length ? field.length.toString() : '',
-            Field_Type: field.calculated ? 'Formula' : (field.type === 'reference' ? 'Lookup' : field.type),
-            Required: field.nillable ? 'No' : 'Yes',
-            PicklistValues: picklistValues,
-            Formula: field.calculated ? field.calculatedFormula : '',
-            ExternalId: field.externalId ? 'Yes' : 'No',
-            TrackHistory: field.trackHistory ? 'Yes' : 'No',
-            Description: field.description ? field.description : '',
-            HelpText: field.inlineHelpText ? field.inlineHelpText : '',
-            ...personaCols,
-            ...profileCols,
+            let picklistValues = '';
+            if (field.picklistValues && field.picklistValues.length > 0) {
+              picklistValues = field.picklistValues.map(pv => pv.value).join('; ');
+            }
+            // Add persona columns using formula logic
+            const personaCols: Record<string, string> = {};
+            for (let i = 1; i <= numberOfPersonas; i++) {
+              const personaRow = i + 1;
+              personaCols[`=persona!A${personaRow}&"_View"`] = '';
+              personaCols[`=persona!A${personaRow}&"_Edit"`] = '';
+            }
+            // Add one column per profile, fill with 'none', 'edit', or 'read'
+            const profileCols = (profileNames || []).reduce((acc, profile) => {
+              // Find access for this field/profile/object (case-insensitive, and check both SObjectType and API_Name)
+              const access = profileFieldAccess.find((rec) => {
+                const profileMatch = rec.Profile === profile;
+                const objectMatch = (rec.SObjectType === objName || rec.SObjectType?.toLowerCase() === objName.toLowerCase());
+                // rec.Field can be 'ObjectName.FieldName' or just 'FieldName'
+                let recFieldName = rec.Field;
+                if (recFieldName && recFieldName.includes('.')) {
+                  recFieldName = recFieldName.split('.').pop();
+                }
+                const fieldMatch = (recFieldName === field.name || recFieldName?.toLowerCase() === field.name.toLowerCase());
+                return profileMatch && objectMatch && fieldMatch;
+              });
+              let value = 'none';
+              if (access) {
+                if (access.PermissionsEdit === 'Yes') {
+                  value = 'edit';
+                } else if (access.PermissionsRead === 'Yes') {
+                  value = 'read';
+                }
+              }
+              acc[`Profile_${profile}`] = value;
+              return acc;
+            }, {} as Record<string, string>);
+            fieldsRecords.push({
+              API_Name: field.name,
+              Field_Label: field.label,
+              Data_Type: field.type,
+              Length: field.length ? field.length.toString() : '',
+              Field_Type: field.calculated ? 'Formula' : (field.type === 'reference' ? 'Lookup' : field.type),
+              Required: field.nillable ? 'No' : 'Yes',
+              PicklistValues: picklistValues,
+              Formula: field.calculated ? field.calculatedFormula : '',
+              ExternalId: field.externalId ? 'Yes' : 'No',
+              TrackHistory: field.trackHistory ? 'Yes' : 'No',
+              Description: field.description ? field.description : '',
+              HelpText: field.inlineHelpText ? field.inlineHelpText : '',
+              ...personaCols,
+              ...profileCols,
+            });
           });
-        });
-      } catch (error) {
-        uxLog('warning', this, c.yellow(t('failedToDescribeFieldsFor', { objName, error: (error as Error).message })));
-      }
-      const reportDir = await getReportDirectory();
-      this.outputFile = path.join(reportDir, `${objName} Fields.csv`);
-      await generateCsvFile(fieldsRecords, this.outputFile, { fileTitle: `${objName} Fields extract`, noExcel: true });
-      this.csvFiles.push(this.outputFile);
-    }
+          const reportDir = await getReportDirectory();
+          const outputFile = path.join(reportDir, `${objName} Fields.csv`);
+          sortArray(fieldsRecords, { by: 'API_Name', order: 'asc' });
+          await generateCsvFile(fieldsRecords, outputFile, { fileTitle: `${objName} Fields extract`, noExcel: true, skipNotifyToWebSocket: true });
+          outputFiles[index] = outputFile;
+        } catch (error) {
+          uxLog('warning', this, c.yellow(t('failedToDescribeFieldsFor', { objName, error: (error as Error).message })));
+        } finally {
+          counter++;
+          WebSocketClient.sendProgressStepMessage(counter, selectedObjects.length);
+        }
+      });
+    WebSocketClient.sendProgressEndMessage();
+    this.csvFiles.push(...outputFiles.filter(Boolean));
     return;
   }
 
@@ -645,9 +684,11 @@ In agent mode:
 
       const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, 'PermissionSets.csv');
+      sortArray(permissionSetsRecords, { by: 'Name', order: 'asc' });
       await generateCsvFile(permissionSetsRecords, this.outputFile, {
         fileTitle: 'Permission Sets extract',
         noExcel: true,
+        skipNotifyToWebSocket: true,
       });
       this.csvFiles.push(this.outputFile);
     } catch (error) {
