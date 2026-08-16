@@ -71,9 +71,9 @@ By default, only changed files are used to generate the documentation (diff-only
 If Flow history doc always display a single state, you probably need to update your workflow configuration:
 
 - on Gitlab: Env variable [`GIT_FETCH_EXTRA_FLAGS: --depth 10000`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.gitlab-ci.yml#L11)
-- on GitHub: [`fetch-depth: 0`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.github/workflows/org-monitoring.yml#L61)
-- on Azure: [`fetchDepth: "0"`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/azure-pipelines.yml#L45)
-- on Bitbucket: [`step: clone: depth: full`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/bitbucket-pipelines.yml#L22)
+- on GitHub: [`fetch-depth: 0`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.github/workflows/org-monitoring.yml#L62)
+- on Azure: [`fetchDepth: "0"`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/azure-pipelines.yml#L46)
+- on Bitbucket: [`step: clone: depth: full`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/bitbucket-pipelines.yml#L23)
 
 ### Agent Mode
 

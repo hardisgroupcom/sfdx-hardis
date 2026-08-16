@@ -16,6 +16,7 @@ stages:
   - monitor
 
 # Use sfdx-hardis docker image to always be up to date with latest version
+# Images are also mirrored on Docker Hub, if your infrastructure can only pull from docker.io: hardisgroupcom/sfdx-hardis:latest
 # An ubuntu-based variant is also available: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest (bigger, but includes Chrome for mermaid diagrams generation)
 image: ghcr.io/hardisgroupcom/sfdx-hardis:latest
 

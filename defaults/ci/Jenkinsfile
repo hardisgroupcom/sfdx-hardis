@@ -38,6 +38,7 @@ pipeline {
     agent {
         docker {
             // Use sfdx-hardis image - no install step needed. If not working on Jenkins, use ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+            // Images are also mirrored on Docker Hub, if your infrastructure can only pull from docker.io: hardisgroupcom/sfdx-hardis:latest
             image 'ghcr.io/hardisgroupcom/sfdx-hardis:latest'
             // Mount Docker socket so MegaLinter can run as a sibling container
             args '-v /var/run/docker.sock:/var/run/docker.sock --user root'

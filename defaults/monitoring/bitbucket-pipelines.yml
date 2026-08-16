@@ -5,6 +5,7 @@
 
 # Steps run in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
 # You can use latest, beta or a version number (ex: v7.23.0), and pin a version if you need reproducible runs.
+# Images are also mirrored on Docker Hub, if your infrastructure can only pull from docker.io: hardisgroupcom/sfdx-hardis-ubuntu:latest
 image: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
 definitions:
   services:
