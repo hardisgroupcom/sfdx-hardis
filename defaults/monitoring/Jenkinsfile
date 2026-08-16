@@ -16,7 +16,7 @@
 //    Missing optional credentials are silently ignored - the pipeline will NOT crash.
 //
 // 3. The Docker agent requires Docker to be available on the Jenkins node.
-//    The main agent uses hardisgroupcom/sfdx-hardis:latest.
+//    The main agent uses ghcr.io/hardisgroupcom/sfdx-hardis:latest.
 //    MegaLinter runs via `docker run` inside that agent (Docker socket is mounted).
 //
 // Doc & support: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/

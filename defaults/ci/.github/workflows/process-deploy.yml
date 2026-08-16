@@ -22,6 +22,10 @@ jobs:
   process_deployment:
     name: Process Deployment to Major Org
     runs-on: ubuntu-latest
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    # You can use latest, beta or a version number (ex: v7.23.0), and pin a version if you need reproducible runs.
+    # To use coding agents for auto-fix of deployment errors, use image ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     permissions:
       pull-requests: write
       contents: write
@@ -34,25 +38,6 @@ jobs:
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-      # Setup node
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      # SFDX & plugins
-      - name: Install SFDX and plugins
-        run: |
-          npm install @salesforce/cli --global
-          sf plugins install @salesforce/plugin-packaging
-          echo 'y' | sf plugins install sfdx-hardis
-          # echo 'y' | sf plugins install sfdmu # Disabled while it does not play well with @salesforce/cli
-          echo 'y' | sf plugins install sfdx-git-delta
-            sf version --verbose --json
-          # Uncomment the coding agent CLIs you want to use for auto-fix of deployment errors
-          # npm install --no-cache @anthropic-ai/claude-code@latest --global && claude --version
-          # npm install --no-cache @openai/codex@latest --global && codex --version
-          # npm install --no-cache @google/gemini-cli@latest --global && gemini --version
-          # npm install --no-cache @github/copilot@latest --global && copilot --version
       # Set env branch variable (github.ref_name seems to not work)
       - name: Set env.BRANCH
         run: echo "BRANCH=$(echo "$GITHUB_REF" | cut -d'/' -f 3)" >> "$GITHUB_ENV"

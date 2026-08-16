@@ -37,12 +37,15 @@ jobs:
   ##############################################
   backup:
     runs-on: ubuntu-latest
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    # You can use latest, beta or a version number (ex: v7.23.0), and pin a version if you need reproducible runs.
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     name: Backup metadatas
     permissions: write-all
     timeout-minutes: 360
     strategy:
       fail-fast: false
-      max-parallel: 10 # Set to 1 if you have issues with command npm install --no-cache @salesforce/cli --global
+      max-parallel: 10 # Set to 1 if you have issues with race conditions
       matrix:
         # MANUAL: Add your monitored git branches here
         branch:
@@ -55,22 +58,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0 # Faster code checkout fetching only latest commit
+          fetch-depth: 0 # Fetch all branches & git history (required to generate Flow history documentation)
           ref: ${{ matrix.branch }}
           persist-credentials: true
-      # Setup node
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      # SFDX & plugins
-      - name: Install SFDX and plugins
-        run: |
-          npm install --no-cache @salesforce/cli --global
-          sf plugins install --force @salesforce/plugin-packaging
-          echo 'y' | sf plugins install --force sfdx-hardis
-          echo 'y' | sf plugins install --force sfdx-git-delta
-          sf version --verbose --json
       # Login & check deploy with test classes & code coverage
       - name: Login & Retrieve Metadata
         env:
@@ -131,13 +121,15 @@ jobs:
   ######################
   apex_tests:
     runs-on: ubuntu-latest
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     name: Apex tests
     needs: backup
     permissions: write-all
     timeout-minutes: 360
     strategy:
       fail-fast: false
-      max-parallel: 10 # Set to 1 if you have issues with command npm install --no-cache @salesforce/cli --global
+      max-parallel: 10 # Set to 1 if you have issues with race conditions
       matrix:
         # MANUAL: Add your monitored git branches here
         branch:
@@ -150,22 +142,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0 # Faster code checkout fetching only latest commit
+          fetch-depth: 0 # Fetch all branches & git history (required to generate Flow history documentation)
           ref: ${{ matrix.branch }}
           persist-credentials: true
-      # Setup node
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      # SFDX & plugins
-      - name: Install SFDX and plugins
-        run: |
-          npm install --no-cache @salesforce/cli --global
-          sf plugins install --force @salesforce/plugin-packaging
-          echo 'y' | sf plugins install --force sfdx-hardis
-          echo 'y' | sf plugins install --force sfdx-git-delta
-          sf version --verbose --json
       # Login & check deploy with test classes & code coverage
       - name: Login & Run apex tests
         env:
@@ -231,7 +210,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0 # Faster code checkout fetching only latest commit
+          fetch-depth: 0 # Fetch all branches & git history (required to generate Flow history documentation)
           ref: ${{ matrix.branch }}
           persist-credentials: true
 
@@ -272,13 +251,15 @@ jobs:
   # Monitoring additional checks job
   monitoring:
     runs-on: ubuntu-latest
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     name: Monitoring
     needs: backup
     permissions: read-all
     timeout-minutes: 360
     strategy:
       fail-fast: false
-      max-parallel: 10 # Set to 1 if you have issues with command npm install --no-cache @salesforce/cli --global
+      max-parallel: 10 # Set to 1 if you have issues with race conditions
       matrix:
         # MANUAL: Add your monitored git branches here
         branch:
@@ -294,19 +275,6 @@ jobs:
           fetch-depth: 0
           ref: ${{ matrix.branch }}
           persist-credentials: true
-      # Setup node
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      # SFDX & plugins
-      - name: Install SFDX and plugins
-        run: |
-          npm install --no-cache @salesforce/cli --global
-          sf plugins install --force @salesforce/plugin-packaging
-          echo 'y' | sf plugins install --force sfdx-hardis
-          echo 'y' | sf plugins install --force sfdx-git-delta
-          sf version --verbose --json
       # Login & check deploy with test classes & code coverage
       - name: Login & Run monitoring checks
         env:

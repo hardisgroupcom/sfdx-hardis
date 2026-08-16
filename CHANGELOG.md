@@ -71,6 +71,12 @@
 
 ### CI/CD
 
+- The default GitHub Actions, Azure Pipelines and Bitbucket Pipelines workflows (CI/CD and Org Monitoring) now run in the ubuntu-based sfdx-hardis Docker image (`ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest`), like GitLab always did with the alpine-based image:
+  - Jobs no longer install Node.js, Salesforce CLI and its plugins at every run, so they start faster and can no longer be broken by a bad release of a dependency.
+  - To let the pipeline auto-fix deployment errors with coding agents, switch to the `ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest` image instead of uncommenting npm install lines.
+  - The ubuntu images now include `sudo`, so custom steps added to Azure Pipelines container jobs (which run as a non-root user) can still elevate privileges when they need to.
+  - Existing pipelines keep working: the templates are only applied when initializing a new project or monitoring repository (or, for GitLab monitoring repositories, when automatic updates are opted-in with `AUTO_UPDATE_GITLAB_CI_YML`).
+- The default GitLab CI workflows now pull the sfdx-hardis image from GitHub Container Registry (`ghcr.io/hardisgroupcom/sfdx-hardis:latest`), since the Docker Hub image is not updated anymore.
 - New [CI/CD Setup Checklist](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-checklist/) documentation page, to verify that a CI/CD setup is complete: what to do before the initialization merge request, what to check after it, and all the integrations grouped by platform.
 - Upgrade MegaLinter to v10 (repository lint config, CI/CD template workflow and mega-linter-runner dependency).
 - New Docker images are published only to GitHub Container Registry (`ghcr.io/hardisgroupcom/sfdx-hardis`): publication to Docker Hub is paused until OIDC authentication is available for the hardisgroupcom organization.

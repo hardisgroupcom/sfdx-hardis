@@ -262,7 +262,7 @@ export class CodingAgentProvider {
    */
   private static warnAgentNotInstalledSuggestUbuntu(agent: CodingAgentType): void {
     if (this.isMuslSystem()) {
-      uxLog("warning", this, c.yellow(t("codingAgentNotInstalledSuggestUbuntu", { agent, ubuntuImage: "hardisgroupcom/sfdx-hardis-ubuntu:latest" })));
+      uxLog("warning", this, c.yellow(t("codingAgentNotInstalledSuggestUbuntu", { agent, ubuntuImage: "ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest" })));
     }
   }
 }

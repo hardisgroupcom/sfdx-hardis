@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     gnupg \
+    # Required for Azure Pipelines container jobs (steps run as a non-root user that needs sudo to elevate)
+    sudo \
     # Required for Python
     python3 \
     python3-pip \

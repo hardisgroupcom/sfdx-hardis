@@ -5,9 +5,9 @@
 stages:
   - check # Controle de qualité des sources
 
-# On execute les jobs sur l'image hardisgroupcom/sfdx-hardis qui contient les applications necessaires
+# On execute les jobs sur l'image sfdx-hardis qui contient les applications necessaires
 # Version latest recommandée, cependant beta et alpha peuvent être utilisées pour les tests
-image: hardisgroupcom/sfdx-hardis:latest # If rate limits reached, use ghcr.io/hardisgroupcom/sfdx-hardis:latest
+image: ghcr.io/hardisgroupcom/sfdx-hardis:latest
 
 # Variables globales aux jobs
 variables:
