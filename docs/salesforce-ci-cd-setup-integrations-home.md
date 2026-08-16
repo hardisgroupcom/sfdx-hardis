@@ -38,7 +38,7 @@ Whatever the git provider, sfdx-hardis can post up to three different comments o
 
 ![](assets/images/pr-banner-validation-success.png)
 
-Posted by the check job, before the merge. It contains the result of the deployment simulation on the target org: deployment errors, Apex test results, code coverage and Flow visual diffs.
+Posted by the validation job, before the merge. It contains the result of the deployment simulation on the target org: deployment errors, Apex test results, code coverage and Flow visual diffs.
 
 ### Deployment
 
@@ -62,7 +62,7 @@ The comment you are reading is in bold, the others are links to their own commen
 
 The description is only modified between the sfdx-hardis navigation markers: the text written by the author is left untouched.
 
-On Azure DevOps, the description of a completed Pull Request can no longer be edited, so the check job creates the deployment comment right away, with a "Waiting for the Pull Request to be merged" note and no banner. The deployment job updates that same comment once the merge happened, which keeps the Deployment entry of the navigation valid from the start.
+On Azure DevOps, the description of a completed Pull Request can no longer be edited, so the validation job creates the deployment comment right away, with a "Waiting for the Pull Request to be merged" note and no banner. The deployment job updates that same comment once the merge happened, which keeps the Deployment entry of the navigation valid from the start.
 
 ### Environment variables
 

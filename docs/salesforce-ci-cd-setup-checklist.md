@@ -258,7 +258,7 @@ The pipeline works on the first level. Now verify what could not be verified bef
 Open a small test merge request with a real change and check what actually shows up.
 
 - [ ] A deployment status comment is posted by the pipeline on the merge request, with the deployment errors and failing test classes when there are any.
-- [ ] Quick Deploy is effective: after a successful check job, the deployment job reuses the validated deployment instead of running a full one (`SFDX_HARDIS_QUICK_DEPLOY` is not set to `false`). _See [Smart Deployments](salesforce-ci-cd-smart-deployment.md)_
+- [ ] Quick Deploy is effective: after a successful validation job, the deployment job reuses the validated deployment instead of running a full one (`SFDX_HARDIS_QUICK_DEPLOY` is not set to `false`). _See [Smart Deployments](salesforce-ci-cd-smart-deployment.md)_
 - [ ] **A real notification has been received** on each configured channel, coming from an actual deployment job.
 - [ ] Ticket references and links appear in merge request comments and in notifications.
 - [ ] Tickets get a comment and a deployment tag once deployed in a major org (`DEPLOYED_TAG_TEMPLATE` if you customized the tag).
@@ -291,7 +291,7 @@ The setup is only complete when a change travels all the way to production.
 
 - [ ] A **User Story branch** can be created with `sf hardis:work:new`, and it creates or assigns the expected sandbox.
 - [ ] `sf hardis:work:save` runs successfully: it updates `package.xml`, applies the cleanings and prepares the merge request.
-- [ ] The check job on the merge request **passes** for a real change.
+- [ ] The validation job on the merge request **passes** for a real change.
 - [ ] After merge, the deployment job **deploys to the matching org**, and the change is visible in the Salesforce Setup.
 - [ ] **Overwrite management really protects the orgs**: the items of `package-no-overwrite.xml` that already exist in the target org are removed from the deployed package, and their version in the org is left untouched. Check it on a Report or a Named Credential of a major org.
 - [ ] The Apex tests actually pass on every major org.

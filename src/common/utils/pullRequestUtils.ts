@@ -15,7 +15,7 @@ let _cachedPullRequests: CommonPullRequestInfo[] | null = null;
  * - single-pr: merge from a feature branch, the merged Pull Request is the whole scope
  * - batch: merge from a major or retrofit branch, the scope is the promotion window of the target branch
  * - go-live: merge into the topmost branch, the scope is the batch carried by the merge itself
- * - check: Pull Request check job, the scope is the content of the checked Pull Request
+ * - check: Pull Request validation job, the scope is the content of the checked Pull Request
  */
 export type PullRequestScopeKind = 'single-pr' | 'batch' | 'go-live' | 'check';
 
