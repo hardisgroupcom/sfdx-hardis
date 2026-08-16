@@ -20,7 +20,7 @@
 //    Missing optional credentials are silently ignored - the pipeline will NOT crash.
 //
 // 3. The Docker agent requires Docker to be available on the Jenkins node.
-//    The main agent uses hardisgroupcom/sfdx-hardis:latest.
+//    The main agent uses ghcr.io/hardisgroupcom/sfdx-hardis:latest.
 //    MegaLinter runs via `docker run` inside that agent (Docker socket must be mounted).
 //
 // Doc & support: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jenkins/
@@ -37,9 +37,9 @@ pipeline {
 
     agent {
         docker {
-            // Use sfdx-hardis image - no install step needed
-            // If rate limits are reached, use: ghcr.io/hardisgroupcom/sfdx-hardis:latest
-            image 'hardisgroupcom/sfdx-hardis:latest'
+            // Use sfdx-hardis image - no install step needed. If not working on Jenkins, use ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+            // Images are also mirrored on Docker Hub, if your infrastructure can only pull from docker.io: hardisgroupcom/sfdx-hardis:latest
+            image 'ghcr.io/hardisgroupcom/sfdx-hardis:latest'
             // Mount Docker socket so MegaLinter can run as a sibling container
             args '-v /var/run/docker.sock:/var/run/docker.sock --user root'
         }
@@ -153,15 +153,15 @@ pipeline {
                                     string(credentialsId: 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',       variable: 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',       optional: true),
                                     string(credentialsId: 'CI_SFDX_HARDIS_AZURE_TOKEN',           variable: 'CI_SFDX_HARDIS_AZURE_TOKEN',           optional: true),
                                 ]) {
-                                    sh '''
-                                        if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_AZURE_TOKEN:-}" ]; then
-                                            git config user.email "sfdx-hardis-bot@cloudity.com"
-                                            git config user.name "sfdx-hardis Bot"
-                                            echo "[sfdx-hardis] Coding-agent git auth prerequisites found"
-                                        else
-                                            echo "[sfdx-hardis] Skipping coding-agent git auth setup: no provider token variable is set"
-                                        fi
-                                    '''
+                                    // Uncomment the lines below to allow coding agents to push auto-fix branches and create PRs
+                                    // (also requires an AI API key credential and a git provider token credential above)
+                                    // sh '''
+                                    //     if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_AZURE_TOKEN:-}" ]; then
+                                    //         git config user.email "sfdx-hardis-bot@cloudity.com"
+                                    //         git config user.name "sfdx-hardis Bot"
+                                    //         echo "[sfdx-hardis] Coding-agent git auth prerequisites found"
+                                    //     fi
+                                    // '''
                                     sh 'sf hardis:auth:login'
                                     sh 'sf hardis:project:deploy:smart --check'
                                 }
@@ -230,15 +230,15 @@ pipeline {
                             string(credentialsId: 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',       variable: 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',       optional: true),
                             string(credentialsId: 'CI_SFDX_HARDIS_AZURE_TOKEN',           variable: 'CI_SFDX_HARDIS_AZURE_TOKEN',           optional: true),
                         ]) {
-                            sh '''
-                                if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_AZURE_TOKEN:-}" ]; then
-                                    git config user.email "sfdx-hardis-bot@cloudity.com"
-                                    git config user.name "sfdx-hardis Bot"
-                                    echo "[sfdx-hardis] Coding-agent git auth prerequisites found"
-                                else
-                                    echo "[sfdx-hardis] Skipping coding-agent git auth setup: no provider token variable is set"
-                                fi
-                            '''
+                            // Uncomment the lines below to allow coding agents to push auto-fix branches and create PRs
+                            // (also requires an AI API key credential and a git provider token credential above)
+                            // sh '''
+                            //     if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_AZURE_TOKEN:-}" ]; then
+                            //         git config user.email "sfdx-hardis-bot@cloudity.com"
+                            //         git config user.name "sfdx-hardis Bot"
+                            //         echo "[sfdx-hardis] Coding-agent git auth prerequisites found"
+                            //     fi
+                            // '''
                             sh 'sf hardis:auth:login'
                             sh 'sf hardis:project:deploy:smart'
                         }

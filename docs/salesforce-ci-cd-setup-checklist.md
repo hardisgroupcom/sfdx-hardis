@@ -217,9 +217,9 @@ _Optional, but it makes deployment errors much faster to solve. See [Setup AI in
 
 _Optional. Only if you want the pipeline to fix deployment errors and push fix branches. See [Coding Agent Auto-Fix](salesforce-deployment-agent-autofix.md)_
 
-The default workflow files already contain the coding agent install lines (commented out), the `git remote set-url` snippet and the `auto-fix/` branch skipping, so only the following is up to you.
+The default workflow files already contain the `git remote set-url` snippet and the `auto-fix/` branch skipping, so only the following is up to you.
 
-- [ ] If you do not use the sfdx-hardis Docker image: the install line of the coding agent CLI you want is **uncommented** in the workflow file.
+- [ ] The workflow uses a **`-with-agents`** sfdx-hardis Docker image variant (ex: `ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest`), or, if your pipeline installs the CLI with npm instead of using the Docker image, the install line of the coding agent CLI you want is added to the workflow file.
 - [ ] Auto-fix is enabled: `codingAgentAutoFix: true` in `.sfdx-hardis.yml`.
 - [ ] The agent is chosen: `codingAgent` in `.sfdx-hardis.yml` (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`).
 - [ ] The API key of the chosen agent is set as a masked secret (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY` / `CODEX_API_KEY`, `GEMINI_API_KEY`, `COPILOT_GITHUB_TOKEN`), unless it reuses `LANGCHAIN_LLM_MODEL_API_KEY`.

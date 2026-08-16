@@ -98,11 +98,14 @@ See [Using AI Coding Agents](salesforce-ci-cd-agent-skills.md) for more detailed
 For CI/CD pipelines that need to run sfdx-hardis **and** an AI agent CLI in the same container:
 
 ```yaml
-# GitHub Actions
-image: hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest
+# GitHub Actions, Azure Pipelines
+container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest
+
+# Bitbucket Pipelines
+image: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest
 
 # GitLab CI
-image: hardisgroupcom/sfdx-hardis-with-agents:latest
+image: ghcr.io/hardisgroupcom/sfdx-hardis-with-agents:latest
 ```
 
 These images include Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, and Cursor pre-installed.

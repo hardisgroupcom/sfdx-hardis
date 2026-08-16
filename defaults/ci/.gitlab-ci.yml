@@ -18,9 +18,12 @@ stages:
   - check_deploy # Simulate deployment to target branch
   - deploy # After a merge, automatically deploys the new commit state into the related Salesforce org
 
-# Jobs are run on sfdx-hardis image, that includes all required dependencies.
-# You can use latest, beta or latest-recommended
-image: hardisgroupcom/sfdx-hardis:latest # If rate limits reached, use ghcr.io/hardisgroupcom/sfdx-hardis:latest
+# Jobs are run on sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+# You can use latest, beta or a version number (ex: v7.23.0), and pin a version if you need reproducible runs.
+# Images are also mirrored on Docker Hub, if your infrastructure can only pull from docker.io: hardisgroupcom/sfdx-hardis:latest
+# To use coding agents for auto-fix of deployment errors, use image ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest (some agents may crash on the alpine-based images)
+# An ubuntu-based variant is also available: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest (bigger, but includes Chrome for mermaid diagrams generation)
+image: ghcr.io/hardisgroupcom/sfdx-hardis:latest
 
 # Force color for output logs for better readability
 variables:
@@ -91,15 +94,16 @@ check_deploy_to_target_branch_org:
         echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
         exit 0
       fi
-    - |
-      if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
-        git config user.email "sfdx-hardis-bot@cloudity.com"
-        git config user.name "sfdx-hardis Bot"
-        git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-        echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
-      else
-        echo "[sfdx-hardis] Skipping coding-agent GitLab auth setup: CI_SFDX_HARDIS_GITLAB_TOKEN is not set"
-      fi
+    # Uncomment the lines below to allow coding agents to push auto-fix branches and create Merge Requests
+    # (also requires the sfdx-hardis-ubuntu-with-agents image, an AI API key,
+    # and a CI_SFDX_HARDIS_GITLAB_TOKEN CI/CD variable with api + write_repository scopes)
+    # - |
+    #   if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
+    #     git config user.email "sfdx-hardis-bot@cloudity.com"
+    #     git config user.name "sfdx-hardis Bot"
+    #     git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    #     echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
+    #   fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart --check
   artifacts:
@@ -260,15 +264,16 @@ check_deploy_to_current_branch_org:
         echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
         exit 0
       fi
-    - |
-      if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
-        git config user.email "sfdx-hardis-bot@cloudity.com"
-        git config user.name "sfdx-hardis Bot"
-        git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-        echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
-      else
-        echo "[sfdx-hardis] Skipping coding-agent GitLab auth setup: CI_SFDX_HARDIS_GITLAB_TOKEN is not set"
-      fi
+    # Uncomment the lines below to allow coding agents to push auto-fix branches and create Merge Requests
+    # (also requires the sfdx-hardis-ubuntu-with-agents image, an AI API key,
+    # and a CI_SFDX_HARDIS_GITLAB_TOKEN CI/CD variable with api + write_repository scopes)
+    # - |
+    #   if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
+    #     git config user.email "sfdx-hardis-bot@cloudity.com"
+    #     git config user.name "sfdx-hardis Bot"
+    #     git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    #     echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
+    #   fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart --check
   artifacts:
@@ -298,15 +303,16 @@ deploy_to_org:
         echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
         exit 0
       fi
-    - |
-      if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
-        git config user.email "sfdx-hardis-bot@cloudity.com"
-        git config user.name "sfdx-hardis Bot"
-        git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-        echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
-      else
-        echo "[sfdx-hardis] Skipping coding-agent GitLab auth setup: CI_SFDX_HARDIS_GITLAB_TOKEN is not set"
-      fi
+    # Uncomment the lines below to allow coding agents to push auto-fix branches and create Merge Requests
+    # (also requires the sfdx-hardis-ubuntu-with-agents image, an AI API key,
+    # and a CI_SFDX_HARDIS_GITLAB_TOKEN CI/CD variable with api + write_repository scopes)
+    # - |
+    #   if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
+    #     git config user.email "sfdx-hardis-bot@cloudity.com"
+    #     git config user.name "sfdx-hardis Bot"
+    #     git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    #     echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
+    #   fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart
   artifacts:

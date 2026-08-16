@@ -72,9 +72,12 @@ This loop can run multiple times (`PR-2`, `PR-3`, etc.) until the check deploy j
 
 ### 1. Install a coding agent CLI
 
-If you are using the **sfdx-hardis Docker images**, all agent CLIs are pre-installed.
+If you are using the **sfdx-hardis Docker images** (the default in the CI/CD pipeline templates), switch to a **`-with-agents`** image variant, that has all agent CLIs pre-installed:
 
-If you run your own CI/CD pipeline, install the CLI(s) you want to use:
+- `ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest` (GitHub Actions, Azure Pipelines, Bitbucket Pipelines)
+- `ghcr.io/hardisgroupcom/sfdx-hardis-with-agents:latest` (GitLab CI, alpine-based: some agents may crash on Alpine/musl, prefer the ubuntu variant if so)
+
+If your CI/CD pipeline installs Salesforce CLI with npm instead of using the Docker images, install the CLI(s) you want to use:
 
 ```bash
 # Pick one (or more):
@@ -83,8 +86,6 @@ npm install -g @openai/codex
 npm install -g @google/gemini-cli
 npm install -g @github/copilot
 ```
-
-In the default CI/CD pipeline templates, these lines are present but **commented out**. Uncomment the one(s) you need.
 
 ### 2. Enable auto-fix
 
