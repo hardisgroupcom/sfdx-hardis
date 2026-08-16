@@ -2,6 +2,7 @@ import * as fs from "fs";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { sortCrossPlatform } from "../utils/index.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderApex extends DocBuilderRoot {
 
@@ -16,9 +17,9 @@ export class DocBuilderApex extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Apex Classes" : "## Apex Classes",
+      filterObject ? `## ${t('docMdRelatedApexClasses')}` : `## ${t('docMdApexClasses')}`,
       "",
-      "| Apex Class | Type |",
+      `| ${t('docMdColApexClass')} | ${t('docMdColType')} |`,
       "| :----      | :--: | "
     ]);
     for (const apex of filteredApex) {
@@ -45,7 +46,7 @@ export class DocBuilderApex extends DocBuilderRoot {
       })).filter(apex => apex.relatedClasses.includes(className)).map(apex => apex.name));
     const allRelatedClasses = [...new Set([...relatedClasses, ...reverseRelatedClasses])];
 
-    const lines: string[] = ["## Class Diagram"];
+    const lines: string[] = [`## ${t('docMdClassDiagram')}`];
     lines.push("");
     lines.push("```mermaid");
     lines.push("graph TD");

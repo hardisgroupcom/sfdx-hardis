@@ -24,44 +24,31 @@ export async function getNotificationButtons(): Promise<{ text: string; url: str
 }
 
 /**
- * @descriptionThis function retrieves the current Git branch and its URL from the GitProvider.
- * It then generates a markdown string for the branch.
- * If the branch URL exists, it creates a markdown link with the branch name as the link text.
- * Otherwise, it simply formats the branch name in markdown.
- *
- * @returns {Promise<string>} - A Promise that resolves to a markdown string for the current Git branch.
+ * Returns a CommonMark / GitHub-flavored markdown representation of the current
+ * Git branch. Notification providers (Slack, Teams, Email, etc.) convert this
+ * to their own dialect on the way out.
  */
-export async function getBranchMarkdown(type = "slack"): Promise<string> {
-  const currentGitBranch = await getCurrentGitBranch() || "";
-  let branchMd =
-    type === "jira"
-      ? `{ "label": "${currentGitBranch}"}`
-      : type === "teams"
-        ? `**${currentGitBranch}**`
-        : type == "html"
-          ? `<strong>${currentGitBranch}</strong>`
-          : `*${currentGitBranch}*`;
+export async function getBranchMarkdown(): Promise<string> {
+  const currentGitBranch = (await getCurrentGitBranch()) || "";
   const branchUrl = await GitProvider.getCurrentBranchUrl();
   if (branchUrl) {
-    branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch, type);
+    return UtilsNotifs.markdownLink(branchUrl, currentGitBranch);
   }
-  return branchMd;
+  return `**${currentGitBranch}**`;
 }
 
 /**
- * @descriptionThis function retrieves the current Git branch and its URL from the GitProvider.
- * It then generates a markdown string for the branch.
- * If the branch URL exists, it creates a markdown link with the branch name as the link text.
- * Otherwise, it simply formats the branch name in markdown.
- *
- * @returns {Promise<string>} - A Promise that resolves to a markdown string for the current Git branch.
+ * Returns a CommonMark / GitHub-flavored markdown representation of the
+ * Salesforce org. When the org has no instance URL, falls back to the branch
+ * markdown. Notification providers convert this to their own dialect on the
+ * way out.
  */
-export async function getOrgMarkdown(instanceUrl: string, type = "slack"): Promise<string> {
+export async function getOrgMarkdown(instanceUrl: string): Promise<string> {
   if (!instanceUrl) {
-    return await getBranchMarkdown(type);
+    return await getBranchMarkdown();
   }
-  const linkMarkdown = UtilsNotifs.markdownLink(instanceUrl, instanceUrl.replace("https://", "").replace(".my.salesforce.com", ""), type);
-  return linkMarkdown;
+  const label = instanceUrl.replace("https://", "").replace(".my.salesforce.com", "");
+  return UtilsNotifs.markdownLink(instanceUrl, label);
 }
 
 type RemoveMarkdownOptions = {

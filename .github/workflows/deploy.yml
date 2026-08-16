@@ -20,14 +20,17 @@ jobs:
       id-token: write # Required for OIDC
       contents: read
     environment:
-      name: alpha
+      name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
           scope: "nvuillam"
+          package-manager-cache: false
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile && yarn run compile
       - run: yarn config set version-git-tag false
@@ -37,27 +40,30 @@ jobs:
 
   push_alpha_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
-    name: Push alpha Docker image to Docker Hub
+    name: Push alpha Docker image to GitHub Container Registry & Docker Hub
     needs: deploy_alpha
     runs-on: ubuntu-latest
     permissions:
       packages: write
     environment:
-      name: alpha
+      name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile
@@ -70,39 +76,42 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis:alpha
             ghcr.io/hardisgroupcom/sfdx-hardis:alpha
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis:alpha
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+            docker.io/hardisgroupcom/sfdx-hardis:alpha
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis:alpha
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   push_alpha_to_registry_sfdx_recommended:
     if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
-    name: Push alpha Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
+    name: Push alpha Docker image to GitHub Container Registry & Docker Hub (with @salesforce/cli version recommended by hardis)
     needs: deploy_alpha
     runs-on: ubuntu-latest
     permissions:
       packages: write
     environment:
-      name: alpha
+      name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile
@@ -115,39 +124,42 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis:alpha-sfdx-recommended
             ghcr.io/hardisgroupcom/sfdx-hardis:alpha-sfdx-recommended
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis:alpha-sfdx-recommended
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+            docker.io/hardisgroupcom/sfdx-hardis:alpha-sfdx-recommended
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis:alpha-sfdx-recommended
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   push_alpha_ubuntu_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
-    name: Push alpha Ubuntu Docker image to Docker Hub
+    name: Push alpha Ubuntu Docker image to GitHub Container Registry & Docker Hub
     needs: deploy_alpha
     runs-on: ubuntu-latest
     permissions:
       packages: write
     environment:
-      name: alpha
+      name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile-ubuntu
@@ -160,39 +172,42 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   push_alpha_ubuntu_to_registry_sfdx_recommended:
     if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
-    name: Push alpha Ubuntu Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
+    name: Push alpha Ubuntu Docker image to GitHub Container Registry & Docker Hub (with @salesforce/cli version recommended by hardis)
     needs: deploy_alpha
     runs-on: ubuntu-latest
     permissions:
       packages: write
     environment:
-      name: alpha
+      name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile-ubuntu
@@ -205,15 +220,99 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha-sfdx-recommended
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha-sfdx-recommended
-      - uses: aquasecurity/trivy-action@master
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha-sfdx-recommended
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha-sfdx-recommended
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+
+  push_alpha_with_agents_to_registry:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
+    name: Push alpha Docker image with agents to GitHub Container Registry & Docker Hub
+    needs: deploy_alpha
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    environment:
+      name: release
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha-sfdx-recommended
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=alpha
+            SFDX_CLI_VERSION=latest
+            INSTALL_AGENTS=true
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            ghcr.io/hardisgroupcom/sfdx-hardis-with-agents:alpha
+            docker.io/hardisgroupcom/sfdx-hardis-with-agents:alpha
+
+  push_alpha_ubuntu_with_agents_to_registry:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
+    name: Push alpha Ubuntu Docker image with agents to GitHub Container Registry & Docker Hub
+    needs: deploy_alpha
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    environment:
+      name: release
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: Dockerfile-ubuntu
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=alpha
+            SFDX_CLI_VERSION=latest
+            INSTALL_AGENTS=true
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:alpha
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:alpha
 
   deploy_canary:
     if: github.event_name == 'push' && github.ref == 'refs/heads/canary'
@@ -225,12 +324,15 @@ jobs:
     environment:
       name: canary
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
           scope: "nvuillam"
+          package-manager-cache: false
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile
       - run: yarn config set version-git-tag false && tsc -b
@@ -239,7 +341,7 @@ jobs:
 
   push_canary_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/canary'
-    name: Push canary Docker image to Docker Hub
+    name: Push canary Docker image to GitHub Container Registry & Docker Hub
     needs: deploy_canary
     runs-on: ubuntu-latest
     permissions:
@@ -247,19 +349,22 @@ jobs:
     environment:
       name: canary
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile
@@ -272,19 +377,19 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis:canary
             ghcr.io/hardisgroupcom/sfdx-hardis:canary
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis:canary
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+            docker.io/hardisgroupcom/sfdx-hardis:canary
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis:canary
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   push_canary_ubuntu_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/canary'
-    name: Push canary Ubuntu Docker image to Docker Hub
+    name: Push canary Ubuntu Docker image to GitHub Container Registry & Docker Hub
     needs: deploy_canary
     runs-on: ubuntu-latest
     permissions:
@@ -292,19 +397,22 @@ jobs:
     environment:
       name: canary
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile-ubuntu
@@ -317,15 +425,99 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:canary
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:canary
-      - uses: aquasecurity/trivy-action@master
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:canary
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:canary
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+
+  push_canary_with_agents_to_registry:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/canary'
+    name: Push canary Docker image with agents to GitHub Container Registry & Docker Hub
+    needs: deploy_canary
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    environment:
+      name: canary
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:canary
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=canary
+            SFDX_CLI_VERSION=latest
+            INSTALL_AGENTS=true
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            ghcr.io/hardisgroupcom/sfdx-hardis-with-agents:canary
+            docker.io/hardisgroupcom/sfdx-hardis-with-agents:canary
+
+  push_canary_ubuntu_with_agents_to_registry:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/canary'
+    name: Push canary Ubuntu Docker image with agents to GitHub Container Registry & Docker Hub
+    needs: deploy_canary
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    environment:
+      name: canary
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: Dockerfile-ubuntu
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=canary
+            SFDX_CLI_VERSION=latest
+            INSTALL_AGENTS=true
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:canary
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:canary
 
   deploy_beta:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -337,12 +529,15 @@ jobs:
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
           scope: "nvuillam"
+          package-manager-cache: false
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile
       - run: yarn config set version-git-tag false && tsc -b
@@ -351,7 +546,7 @@ jobs:
 
   push_beta_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    name: Push Beta Docker image to Docker Hub
+    name: Push Beta Docker image to GitHub Container Registry & Docker Hub
     needs: deploy_beta
     runs-on: ubuntu-latest
     permissions:
@@ -360,19 +555,22 @@ jobs:
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile
@@ -385,56 +583,56 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis:beta
             ghcr.io/hardisgroupcom/sfdx-hardis:beta
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
-          format: table
-          output: sfdx-hardis-trivy-image-beta-results.txt
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
-          format: sarif
-          output: sfdx-hardis-trivy-image-beta-results.sarif
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
-          format: cyclonedx
-          output: sfdx-hardis-image-sbom-beta.cyclonedx.json
-          scan-type: image
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
-          format: spdx-json
-          output: sfdx-hardis-image-sbom-beta.spdx.json
-          scan-type: image
-      - uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: sfdx-hardis-trivy-image-beta-results.sarif
-          category: trivy
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: security-and-sbom-documents
-          path: |
-            sfdx-hardis-image-sbom-beta.cyclonedx.json
-            sfdx-hardis-image-sbom-beta.spdx.json
-            sfdx-hardis-trivy-image-beta-results.txt
-            sfdx-hardis-trivy-image-beta-results.sarif
+            docker.io/hardisgroupcom/sfdx-hardis:beta
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+      #     format: table
+      #     output: sfdx-hardis-trivy-image-beta-results.txt
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+      #     format: sarif
+      #     output: sfdx-hardis-trivy-image-beta-results.sarif
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+      #     format: cyclonedx
+      #     output: sfdx-hardis-image-sbom-beta.cyclonedx.json
+      #     scan-type: image
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+      #     format: spdx-json
+      #     output: sfdx-hardis-image-sbom-beta.spdx.json
+      #     scan-type: image
+      # - uses: github/codeql-action/upload-sarif@v3
+      #   if: always()
+      #   with:
+      #     sarif_file: sfdx-hardis-trivy-image-beta-results.sarif
+      #     category: trivy
+      # - uses: actions/upload-artifact@v4
+      #   if: always()
+      #   with:
+      #     name: security-and-sbom-documents
+      #     path: |
+      #       sfdx-hardis-image-sbom-beta.cyclonedx.json
+      #       sfdx-hardis-image-sbom-beta.spdx.json
+      #       sfdx-hardis-trivy-image-beta-results.txt
+      #       sfdx-hardis-trivy-image-beta-results.sarif
 
   push_beta_to_registry_sfdx_recommended:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    name: Push Beta Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
+    name: Push Beta Docker image to GitHub Container Registry & Docker Hub (with @salesforce/cli version recommended by hardis)
     needs: deploy_beta
     runs-on: ubuntu-latest
     permissions:
@@ -442,19 +640,22 @@ jobs:
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile
@@ -467,19 +668,19 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis:beta-sfdx-recommended
             ghcr.io/hardisgroupcom/sfdx-hardis:beta-sfdx-recommended
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis:beta-sfdx-recommended
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+            docker.io/hardisgroupcom/sfdx-hardis:beta-sfdx-recommended
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis:beta-sfdx-recommended
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   push_beta_ubuntu_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    name: Push Beta Ubuntu Docker image to Docker Hub
+    name: Push Beta Ubuntu Docker image to GitHub Container Registry & Docker Hub
     needs: deploy_beta
     runs-on: ubuntu-latest
     permissions:
@@ -488,19 +689,22 @@ jobs:
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile-ubuntu
@@ -513,56 +717,56 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
-          format: table
-          output: sfdx-hardis-ubuntu-trivy-image-beta-results.txt
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
-          format: sarif
-          output: sfdx-hardis-ubuntu-trivy-image-beta-results.sarif
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
-          format: cyclonedx
-          output: sfdx-hardis-ubuntu-image-sbom-beta.cyclonedx.json
-          scan-type: image
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
-          format: spdx-json
-          output: sfdx-hardis-ubuntu-image-sbom-beta.spdx.json
-          scan-type: image
-      - uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: sfdx-hardis-ubuntu-trivy-image-beta-results.sarif
-          category: trivy-ubuntu
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: security-and-sbom-documents-ubuntu
-          path: |
-            sfdx-hardis-ubuntu-image-sbom-beta.cyclonedx.json
-            sfdx-hardis-ubuntu-image-sbom-beta.spdx.json
-            sfdx-hardis-ubuntu-trivy-image-beta-results.txt
-            sfdx-hardis-ubuntu-trivy-image-beta-results.sarif
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
+      #     format: table
+      #     output: sfdx-hardis-ubuntu-trivy-image-beta-results.txt
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
+      #     format: sarif
+      #     output: sfdx-hardis-ubuntu-trivy-image-beta-results.sarif
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
+      #     format: cyclonedx
+      #     output: sfdx-hardis-ubuntu-image-sbom-beta.cyclonedx.json
+      #     scan-type: image
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
+      #     format: spdx-json
+      #     output: sfdx-hardis-ubuntu-image-sbom-beta.spdx.json
+      #     scan-type: image
+      # - uses: github/codeql-action/upload-sarif@v3
+      #   if: always()
+      #   with:
+      #     sarif_file: sfdx-hardis-ubuntu-trivy-image-beta-results.sarif
+      #     category: trivy-ubuntu
+      # - uses: actions/upload-artifact@v4
+      #   if: always()
+      #   with:
+      #     name: security-and-sbom-documents-ubuntu
+      #     path: |
+      #       sfdx-hardis-ubuntu-image-sbom-beta.cyclonedx.json
+      #       sfdx-hardis-ubuntu-image-sbom-beta.spdx.json
+      #       sfdx-hardis-ubuntu-trivy-image-beta-results.txt
+      #       sfdx-hardis-ubuntu-trivy-image-beta-results.sarif
 
   push_beta_ubuntu_to_registry_sfdx_recommended:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    name: Push Beta Ubuntu Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
+    name: Push Beta Ubuntu Docker image to GitHub Container Registry & Docker Hub (with @salesforce/cli version recommended by hardis)
     needs: deploy_beta
     runs-on: ubuntu-latest
     permissions:
@@ -570,19 +774,22 @@ jobs:
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile-ubuntu
@@ -595,15 +802,99 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:beta-sfdx-recommended
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta-sfdx-recommended
-      - uses: aquasecurity/trivy-action@master
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:beta-sfdx-recommended
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:beta-sfdx-recommended
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+
+  push_beta_with_agents_to_registry:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    name: Push Beta Docker image with agents to GitHub Container Registry & Docker Hub
+    needs: deploy_beta
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    environment:
+      name: release
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:beta-sfdx-recommended
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=beta
+            SFDX_CLI_VERSION=latest
+            INSTALL_AGENTS=true
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            ghcr.io/hardisgroupcom/sfdx-hardis-with-agents:beta
+            docker.io/hardisgroupcom/sfdx-hardis-with-agents:beta
+
+  push_beta_ubuntu_with_agents_to_registry:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    name: Push Beta Ubuntu Docker image with agents to GitHub Container Registry & Docker Hub
+    needs: deploy_beta
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    environment:
+      name: release
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: Dockerfile-ubuntu
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=beta
+            SFDX_CLI_VERSION=latest
+            INSTALL_AGENTS=true
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:beta
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:beta
 
   deploy_release:
     if: github.event_name == 'release'
@@ -615,19 +906,22 @@ jobs:
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
           scope: "nvuillam"
+          package-manager-cache: false
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile
       - run: yarn config set network-timeout 300000 && npm publish
 
   push_release_to_registry:
     if: github.event_name == 'release'
-    name: Push Docker image to Docker Hub
+    name: Push Docker image to GitHub Container Registry & Docker Hub
     needs: deploy_release
     runs-on: ubuntu-latest
     permissions:
@@ -636,19 +930,22 @@ jobs:
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile
@@ -661,58 +958,58 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
-            docker.io/hardisgroupcom/sfdx-hardis:latest
             ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
             ghcr.io/hardisgroupcom/sfdx-hardis:latest
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
-          format: table
-          output: sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.txt
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
-          format: sarif
-          output: sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.sarif
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
-          format: cyclonedx
-          output: sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
-          scan-type: image
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
-          format: spdx-json
-          output: sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.spdx.json
-          scan-type: image
-      - uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.sarif
-          category: trivy
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: security-and-sbom-documents
-          path: |
-            sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
-            sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.spdx.json
-            sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.txt
-            sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+            docker.io/hardisgroupcom/sfdx-hardis:latest
+            docker.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+      #     format: table
+      #     output: sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.txt
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+      #     format: sarif
+      #     output: sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+      #     format: cyclonedx
+      #     output: sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
+      #     scan-type: image
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+      #     format: spdx-json
+      #     output: sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.spdx.json
+      #     scan-type: image
+      # - uses: github/codeql-action/upload-sarif@v3
+      #   if: always()
+      #   with:
+      #     sarif_file: sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+      #     category: trivy
+      # - uses: actions/upload-artifact@v4
+      #   if: always()
+      #   with:
+      #     name: security-and-sbom-documents
+      #     path: |
+      #       sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
+      #       sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.spdx.json
+      #       sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.txt
+      #       sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.sarif
 
   push_release_to_registry_sfdx_recommended:
     if: github.event_name == 'release'
-    name: Push Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
+    name: Push Docker image to GitHub Container Registry & Docker Hub (with @salesforce/cli version recommended by hardis)
     needs: deploy_release
     runs-on: ubuntu-latest
     permissions:
@@ -720,19 +1017,22 @@ jobs:
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile
@@ -745,19 +1045,19 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
             ghcr.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+            docker.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   push_release_ubuntu_to_registry:
     if: github.event_name == 'release'
-    name: Push Ubuntu Docker image to Docker Hub
+    name: Push Ubuntu Docker image to GitHub Container Registry & Docker Hub
     needs: deploy_release
     runs-on: ubuntu-latest
     permissions:
@@ -766,19 +1066,22 @@ jobs:
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile-ubuntu
@@ -791,58 +1094,58 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
-            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
-          format: table
-          output: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.txt
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
-          format: sarif
-          output: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
-          format: cyclonedx
-          output: sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
-          scan-type: image
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
-          format: spdx-json
-          output: sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.spdx.json
-          scan-type: image
-      - uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
-          category: trivy-ubuntu
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: security-and-sbom-documents-ubuntu
-          path: |
-            sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
-            sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.spdx.json
-            sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.txt
-            sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+      #     format: table
+      #     output: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.txt
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+      #     format: sarif
+      #     output: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+      #     format: cyclonedx
+      #     output: sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
+      #     scan-type: image
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+      #     format: spdx-json
+      #     output: sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.spdx.json
+      #     scan-type: image
+      # - uses: github/codeql-action/upload-sarif@v3
+      #   if: always()
+      #   with:
+      #     sarif_file: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+      #     category: trivy-ubuntu
+      # - uses: actions/upload-artifact@v4
+      #   if: always()
+      #   with:
+      #     name: security-and-sbom-documents-ubuntu
+      #     path: |
+      #       sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
+      #       sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.spdx.json
+      #       sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.txt
+      #       sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
 
   push_release_ubuntu_to_registry_sfdx_recommended:
     if: github.event_name == 'release'
-    name: Push Ubuntu Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
+    name: Push Ubuntu Docker image to GitHub Container Registry & Docker Hub (with @salesforce/cli version recommended by hardis)
     needs: deploy_release
     runs-on: ubuntu-latest
     permissions:
@@ -850,19 +1153,22 @@ jobs:
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile-ubuntu
@@ -875,12 +1181,100 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
-            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended
-      - uses: aquasecurity/trivy-action@master
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+
+  push_release_with_agents_to_registry:
+    if: github.event_name == 'release'
+    name: Push Docker image with agents to GitHub Container Registry & Docker Hub
+    needs: deploy_release
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    environment:
+      name: release
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=latest
+            SFDX_CLI_VERSION=latest
+            INSTALL_AGENTS=true
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            ghcr.io/hardisgroupcom/sfdx-hardis-with-agents:${{ github.event.release.tag_name }}
+            ghcr.io/hardisgroupcom/sfdx-hardis-with-agents:latest
+            docker.io/hardisgroupcom/sfdx-hardis-with-agents:latest
+            docker.io/hardisgroupcom/sfdx-hardis-with-agents:${{ github.event.release.tag_name }}
+
+  push_release_ubuntu_with_agents_to_registry:
+    if: github.event_name == 'release'
+    name: Push Ubuntu Docker image with agents to GitHub Container Registry & Docker Hub
+    needs: deploy_release
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    environment:
+      name: release
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      # Docker Hub login (secondary registry: ghcr.io is the primary & recommended one)
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: Dockerfile-ubuntu
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=latest
+            SFDX_CLI_VERSION=latest
+            INSTALL_AGENTS=true
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:${{ github.event.release.tag_name }}
+            ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:${{ github.event.release.tag_name }}

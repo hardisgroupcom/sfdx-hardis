@@ -5,8 +5,9 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { execCommand, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -41,11 +42,25 @@ The command's technical implementation involves:
 - **File System Operations:** It uses \`fs-extra\` to create the temporary directory and manage the CSV file.
 - **Error Handling:** Includes error handling for the query and deletion operations.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:purge:apexlog --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- Apex log deletion proceeds without confirmation.
 `;
 
   public static examples = [
     `$ sf hardis:org:purge:apexlog`,
     `$ sf hardis:org:purge:apexlog --target-org nicolas.vuillamy@gmail.com`,
+    '$ sf hardis:org:purge:apexlog --agent',
   ];
 
   // public static args = [{name: 'file'}];
@@ -69,6 +84,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -79,6 +98,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(PurgeApexLogs);
+    const agentMode = flags.agent === true;
     const prompt = flags.prompt === false ? false : true;
     const debugMode = flags.debug || false;
 
@@ -97,19 +117,17 @@ The command's technical implementation involves:
     const apexLogsNumber = extractFile.split('\n').filter((line) => line.length > 0).length;
 
     if (apexLogsNumber === 0) {
-      uxLog("action", this, c.cyan(`There are no Apex Logs to delete in org ${c.green(flags['target-org'].getUsername())}`));
+      uxLog("action", this, c.cyan(t('thereAreNoApexLogsToDelete', { flags: c.green(flags['target-org'].getUsername()) })));
       return {};
     }
 
     // Prompt confirmation
-    if (prompt) {
+    if (prompt && !isCI && !agentMode) {
       const confirmRes = await prompts({
         type: 'confirm',
         name: 'value',
-        message: `Do you want to delete ${c.bold(apexLogsNumber)} Apex Logs of org ${c.green(
-          flags['target-org'].getUsername()
-        )} ?`,
-        description: 'Permanently delete all Apex debug logs from the Salesforce org to free up storage space',
+        message: t('confirmDeleteApexLogsPrompt'),
+        description: t('confirmDeleteApexLogsDescription'),
       });
       if (confirmRes.value === false) {
         return {};
@@ -127,9 +145,7 @@ The command's technical implementation involves:
     uxLog(
       "success",
       this,
-      c.green(
-        `Successfully deleted ${c.bold(apexLogsNumber)} Apex Logs in org ${c.bold(flags['target-org'].getUsername())}`
-      )
+      c.green(t('successfullyDeletedApexLogs'))
     );
 
     // Return an object to be displayed with --json

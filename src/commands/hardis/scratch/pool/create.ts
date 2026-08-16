@@ -8,6 +8,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { uxLog } from '../../../../common/utils/index.js';
 import { instantiateProvider, listKeyValueProviders } from '../../../../common/utils/poolUtils.js';
 import { KeyValueProviderInterface } from '../../../../common/utils/keyValueUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -16,6 +17,8 @@ export default class ScratchPoolCreate extends SfCommand<any> {
   public static title = 'Create and configure scratch org pool';
 
   public static description = `Select a data storage service and configure information to build a scratch org pool
+
+> **This command requires human interaction and must be called manually, preferably from the [VS Code SFDX Hardis UI](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis). It is not suitable for automation or AI agent usage.**
 
   Run the command, follow instruction, then you need to schedule a daily CI job for the pool maintenance:
 
@@ -77,9 +80,9 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
       {
         type: 'select',
         name: 'storageService',
-        message: c.cyanBright('What storage service do you want to use for your scratch orgs pool ?'),
-        description: 'Choose a storage backend for managing and tracking scratch org pools',
-        placeholder: 'Select a storage service',
+        message: c.cyanBright(t('whatStorageServiceDoYouWantTo')),
+        description: t('chooseStorageBackendForScratchOrgPools'),
+        placeholder: t('selectAStorageService'),
         initial: 0,
         choices: allProviders.map((provider: KeyValueProviderInterface) => {
           return { title: provider.name, description: provider.description, value: provider.name };
@@ -88,9 +91,9 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
       {
         type: 'number',
         name: 'maxScratchOrgsNumber',
-        message: c.cyanBright('What is the maximum number of scratch orgs in the pool ?'),
-        description: 'Set the maximum number of scratch orgs that can exist in the pool at any time',
-        placeholder: 'Ex: 5',
+        message: c.cyanBright(t('whatIsTheMaximumNumberOfScratch')),
+        description: t('setMaximumScratchOrgsInPool'),
+        placeholder: t('exFiveNumber'),
         initial: poolConfig.maxScratchOrgsNumber || 5,
       },
     ]);
@@ -113,19 +116,13 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
       uxLog(
         "action",
         this,
-        c.cyan(`You need to define CI masked variable ${c.green('SFDX_AUTH_URL_DEV_HUB')} = ${c.green(sfdxAuthUrl)}`)
+        c.cyan(t('youNeedToDefineCiMaskedVariableDevHub', { sfdxAuthUrl: c.green(sfdxAuthUrl) }))
       );
     } else {
       uxLog(
         "warning",
         this,
-        c.yellow(
-          `You'll probably need to define CI masked variable ${c.green(
-            'SFDX_AUTH_URL_DEV_HUB'
-          )} with content of sfdxAuthUrl that you can retrieve with ${c.white(
-            'sf org display -o YOURDEVHUBUSERNAME --verbose --json'
-          )}`
-        )
+        c.yellow(t('youllProbablyNeedToDefineCiMaskedVar'))
       );
     }
 

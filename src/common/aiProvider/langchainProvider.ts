@@ -7,6 +7,8 @@ import { PromptTemplate } from "./promptTemplates.js";
 import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
 import { ModelConfig, ProviderType } from "./langChainProviders/langChainBaseProvider.js";
 import { getConfig, getEnvVar } from "../../config/index.js";
+import { parseDefaultHeaders, HEADER_PARSE_I18N_KEYS } from "./providerConfigUtils.js";
+import { t } from '../utils/i18n.js';
 
 export class LangChainProvider extends AiProviderRoot {
   private model: BaseChatModel;
@@ -31,7 +33,8 @@ export class LangChainProvider extends AiProviderRoot {
       maxTokens: options.maxTokens,
       maxRetries: options.maxRetries,
       baseUrl: options.baseUrl,
-      apiKey: options.apiKey
+      apiKey: options.apiKey,
+      defaultHeaders: options.defaultHeaders,
     };
 
     const llmProvider = LangChainProviderFactory.createProvider(providerType, this.modelName, config);
@@ -65,6 +68,12 @@ export class LangChainProvider extends AiProviderRoot {
       return null;
     }
 
+    const headerResult = parseDefaultHeaders(getEnvVar("LANGCHAIN_LLM_DEFAULT_HEADERS"));
+    if (headerResult.error) {
+      uxLog("warning", this, c.yellow(t(HEADER_PARSE_I18N_KEYS[headerResult.error], { label: "LangChain", key: headerResult.errorKey })));
+    }
+    const defaultHeaders = headerResult.headers;
+
     return {
       provider,
       modelName,
@@ -86,6 +95,7 @@ export class LangChainProvider extends AiProviderRoot {
       ),
       baseUrl: getEnvVar("LANGCHAIN_LLM_BASE_URL") || rootConfig.langchainLlmBaseUrl || rootConfig.LANGCHAIN_LLM_BASE_URL,
       apiKey: getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY") || undefined,
+      defaultHeaders,
     };
   }
 
@@ -120,17 +130,14 @@ export class LangChainProvider extends AiProviderRoot {
   }
 
   public async promptAi(promptText: string, template: PromptTemplate | null = null): Promise<AiResponse | null> {
-    // re-use the same check for max ai calls number as in the original openai provider implementation
-    if (!this.checkMaxAiCallsNumber()) {
-      const maxCalls = this.getAiMaxCallsNumber();
-      uxLog("warning", this, c.yellow(`[LangChain] Already performed maximum ${maxCalls} calls. Increase it by defining AI_MAXIMUM_CALL_NUMBER env variable`));
+    if (!this.checkAndWarnMaxAiCalls("LangChain")) {
       return null;
     }
 
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey(`[LangChain] Requesting the following prompt to ${this.modelName}${template ? ' using template ' + template : ''}:\n${promptText}`));
+      uxLog("log", this, c.grey('[LangChain] ' + t('langchainRequestingPromptDebug', { modelName: this.modelName, template: template ? ' using template ' + template : '', promptText })));
     } else {
-      uxLog("log", this, c.grey(`[LangChain] Requesting prompt to ${this.modelName}${template ? ' using template ' + template : ''} (define DEBUG_PROMPTS=true to see details)`));
+      uxLog("log", this, c.grey('[LangChain] ' + t('langchainRequestingPrompt', { modelName: this.modelName, template: template ? ' using template ' + template : '' })));
     }
 
     this.incrementAiCallsNumber();
@@ -144,9 +151,9 @@ export class LangChainProvider extends AiProviderRoot {
       ]);
 
       if (process.env?.DEBUG_PROMPTS === "true") {
-        uxLog("log", this, c.grey("[LangChain] Received prompt response\n" + JSON.stringify(response, null, 2)));
+        uxLog("log", this, c.grey('[LangChain] ' + t('langchainReceivedResponseDebug', { response: JSON.stringify(response, null, 2) })));
       } else {
-        uxLog("log", this, c.grey("[LangChain] Received prompt response"));
+        uxLog("log", this, c.grey('[LangChain] ' + t('langchainReceivedResponse')));
       }
 
       const aiResponse: AiResponse = {
@@ -162,9 +169,9 @@ export class LangChainProvider extends AiProviderRoot {
       return aiResponse;
     } catch (error: unknown) {
       if (error instanceof Error) {
-        uxLog("error", this, c.red(`[LangChain] Error while calling LLM API: ${error.message}`));
+        uxLog("error", this, c.red('[LangChain] ' + t('langchainErrorCallingLLM', { message: error.message })));
       } else {
-        uxLog("error", this, c.red(`[LangChain] Unexpected error occurred`));
+        uxLog("error", this, c.red('[LangChain] ' + t('langchainUnexpectedError')));
       }
       return null;
     }
@@ -180,4 +187,5 @@ interface LangChainResolvedConfig {
   maxRetries?: number;
   baseUrl?: string;
   apiKey?: string;
+  defaultHeaders?: Record<string, string>;
 }

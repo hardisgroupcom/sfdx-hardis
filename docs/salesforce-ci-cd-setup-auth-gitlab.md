@@ -19,3 +19,8 @@ description: Learn how to configure CI/CD variables for CI Server authentication
 ![](assets/images/screenshot-add-variable-gitlab.png)
 
 More info: [Gitlab documentation](https://docs.gitlab.com/ee/ci/variables/#for-a-project){target=blank}
+
+## Auto-fix branches
+
+Default CI templates skip steps that run `sf hardis` commands when the current branch starts with `auto-fix/`.
+This prevents recursive or redundant deploy/check executions on auto-generated fix branches.

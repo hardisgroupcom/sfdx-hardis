@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiPromptTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
+    <activeVersionIdentifier>AjPWGy1NWRnan672rYeoEp4mSWe/blXMq0Y4PvsXx8w=_1</activeVersionIdentifier>
+    <description>Generic prompt used by sfdx-hardis for Agentforce prompt integration</description>
+    <developerName>SfdxHardisGenericPrompt</developerName>
+    <masterLabel>SfdxHardisGenericPrompt</masterLabel>
+    <templateVersions>
+        <content>{!$Input:PromptText}
+</content>
+        <inputs>
+            <apiName>PromptText</apiName>
+            <definition>primitive://String</definition>
+            <masterLabel>PromptText</masterLabel>
+            <referenceName>Input:PromptText</referenceName>
+            <required>true</required>
+        </inputs>
+        <primaryModel>sfdc_ai__DefaultBedrockAnthropicClaude46Sonnet</primaryModel>
+        <status>Published</status>
+        <versionIdentifier>AjPWGy1NWRnan672rYeoEp4mSWe/blXMq0Y4PvsXx8w=_1</versionIdentifier>
+    </templateVersions>
+    <type>einstein_gpt__flex</type>
+    <visibility>Global</visibility>
+</GenAiPromptTemplate>

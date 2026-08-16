@@ -19,7 +19,9 @@ You can override any predefined prompt template by providing a local text file w
 
 ### Example
 
-Create a file `config/prompt-templates/PROMPT_DESCRIBE_APPROVAL_PROCESS.txt` with the following content.
+Create a file `config/prompt-templates/PROMPT_DESCRIBE_APPROVAL_PROCESS.md` with the following content.
+
+> **Note:** For backward compatibility, `.txt` files are also supported, but `.md` is preferred.
 
 ```
 Describe Salesforce Approval Process "{{APPROVALPROCESS_NAME}}".

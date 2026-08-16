@@ -11,6 +11,7 @@ import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { executePrePostCommands } from '../../../common/utils/prePostCommandUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 // Wrapper for sfdx force:source:deploy
 export class Deploy extends SfCommand<any> {
@@ -35,11 +36,17 @@ You can define command lines to run before or after a deployment, with parameter
 
 - **id**: Unique Id for the command
 - **label**: Human readable label for the command
-- **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
+- **allowFailure**: If defined to "true", a failure of this action does not make the deployment job fail
 - **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
-- **runOnlyOnceByOrg**: If set to true, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
+- **runOnlyOnceByOrg**: If set to true (default), the action runs only once per target org - subsequent deployments skip it. State is tracked in the "Deployment Actions" PR comment.
+
+Post-deployment actions are never run when the metadata deployment failed: they are reported as \`not run\` and are proposed again during the next successful deployment.
+
+After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of \`runOnlyOnceByOrg\`.
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
+
+You can also keep a single definition and restrict it with \`includeTargetBranches\` or \`excludeTargetBranches\` (use \`dev-sandboxes\` for developer sandboxes).
 
 Example:
 
@@ -62,7 +69,6 @@ commandsPostDeploy:
   - id: someActionToRunJustOneTime
     label: And to run only if deployment is success
     command: sf sfdmu:run ...
-    skipIfError: true
     context: process-deployment-only
     runOnlyOnceByOrg: true
 \`\`\`
@@ -72,6 +78,17 @@ Notes:
 - You can disable coloring of errors in red by defining env variable SFDX_HARDIS_DEPLOY_ERR_COLORS=false
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:source:deploy --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
   public static readonly examples = [
     '$ sf hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests --postdestructivechanges ./manifest/destructiveChanges.xml --target-org nicolas.vuillamy@cloudity.com.sfdxhardis --checkonly --checkcoverage --verbose --coverageformatters json-summary',
@@ -172,6 +189,10 @@ Notes:
     }),
     junit: Flags.boolean({ description: 'junit' }),
     checkcoverage: Flags.boolean({ description: 'Check Apex org coverage' }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       default: false,
       description: 'debug',
@@ -185,8 +206,8 @@ Notes:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Deploy);
-    uxLog("error", this, c.red('This command will be removed by Salesforce in November 2024.'));
-    uxLog("error", this, c.red('Please migrate to command sf hardis project deploy start'));
+    uxLog("error", this, c.red(t('thisCommandWillBeRemovedBySalesforce')));
+    uxLog("error", this, c.red(t('pleaseMigrateToCommandSfHardisProject')));
     uxLog(
       "error",
       this,
@@ -195,8 +216,7 @@ Notes:
       )
     );
     // Run pre deployment commands if defined
-    const conn = flags["target-org"].getConnection();
-    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: flags.checkonly, conn: conn });
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: flags.checkonly });
     const result = await wrapSfdxCoreCommand('sfdx force:source:deploy', this.argv, this, flags.debug);
     // Check org coverage if requested
     const checkOnly = flags.checkonly || false;
@@ -212,7 +232,7 @@ Notes:
       }
     }
     // Run post deployment commands if defined
-    await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly, conn: conn });
+    await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly });
     await GitProvider.managePostPullRequestComment(checkOnly);
     return result;
   }

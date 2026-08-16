@@ -1,6 +1,6 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
-import extractZip from 'extract-zip';
+import AdmZip from 'adm-zip';
 import fs from 'fs-extra';
 import * as path from 'path';
 import sortArray from 'sort-array';
@@ -20,12 +20,13 @@ import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { getCache, setCache } from '../cache/index.js';
 import { buildOrgManifest } from '../utils/deployUtils.js';
 import { listMajorOrgs } from '../utils/orgConfigUtils.js';
-import { GLOB_IGNORE_PATTERNS, isSfdxProject } from '../utils/projectUtils.js';
+import { GLOB_IGNORE_PATTERNS, METADATA_DOC_GLOB_IGNORE_PATTERNS, getSfdxProjectPackageDirectories, isSfdxProject } from '../utils/projectUtils.js';
 import { prompts } from '../utils/prompts.js';
 import { parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { listMetadataTypes } from './metadataList.js';
 import { FileStatusResult } from 'simple-git';
 import { glob } from 'glob';
+import { t } from '../utils/i18n.js';
 
 class MetadataUtils {
   // Describe packageXml <=> metadata folder correspondance
@@ -297,7 +298,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     await fs.copyFile('package-full.xml', 'package.xml');
     // Filter managed items if requested
     if (options.filterManagedItems) {
-      uxLog("action", commandThis, c.cyan('Filtering managed items from package.Xml manifest...'));
+      uxLog("action", commandThis, c.cyan(t('filteringManagedItemsFromPackageXmlManifest')));
       // List installed packages & collect managed namespaces
       let namespaces: any[] = [];
       if (isSfdxProject()) {
@@ -355,11 +356,11 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
 
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
-      uxLog("action", commandThis, c.cyan(`Retrieving metadatas in ${c.green(metadataFolder)}...`));
+      uxLog("action", commandThis, c.cyan(t('retrievingMetadatasIn', { metadataFolder: c.green(metadataFolder) })));
       const retrieveCommand =
         'sf project retrieve start' +
-        ` --target-metadata-dir ${metadataFolder}` +
-        ` --manifest ${packageXml}` +
+        ` --target-metadata-dir "${metadataFolder}"` +
+        ` --manifest "${packageXml}"` +
         ` --wait ${process.env.SFDX_RETRIEVE_WAIT_MINUTES || '60'}` +
         (debug ? ' --verbose' : '');
       const retrieveRes = await execSfdxJson(retrieveCommand, this, {
@@ -371,10 +372,9 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         uxLog("other", commandThis, retrieveRes);
       }
       // Unzip metadatas
-      uxLog("action", commandThis, c.cyan('Unzipping metadatas...'));
-      await extractZip(path.join(metadataFolder, 'unpackaged.zip'), {
-        dir: metadataFolder,
-      });
+      uxLog("action", commandThis, c.cyan(t('unzippingMetadatas')));
+      const zip = new AdmZip(path.join(metadataFolder, 'unpackaged.zip'));
+      zip.extractAllTo(metadataFolder, true);
       await fs.unlink(path.join(metadataFolder, 'unpackaged.zip'));
     }
   }
@@ -384,8 +384,8 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const metadataTypes = sortArray(listMetadataTypes(), { by: ['xmlName'], order: ['asc'] });
     const metadataResp = await prompts({
       type: 'multiselect',
-      message: c.cyanBright('Please select metadata types'),
-      description: 'Choose the Salesforce metadata types to include in this operation',
+      message: c.cyanBright(t('pleaseSelectMetadataTypes')),
+      description: t('descChooseMetadataTypes'),
       choices: metadataTypes.map((metadataType: any) => {
         return {
           title: c.cyan(`${metadataType.xmlName || 'no xml name'} (${metadataType.directoryName || 'no dir name'})`),
@@ -454,14 +454,9 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
   }
 
   public static async findMetaFileFromTypeAndName(packageXmlType: string, packageXmlName: string, packageDirectories: any[] = []) {
-    // Handle default package directory if not provided as input
+    // Handle package directories declared in sfdx-project.json if not provided as input
     if (packageDirectories.length === 0) {
-      packageDirectories = [
-        {
-          fullPath: path.join(process.cwd(), "force-app"),
-          path: "force-app"
-        }
-      ]
+      packageDirectories = await getSfdxProjectPackageDirectories();
     }
     // Find metadata type from packageXmlName
     const metadataList = listMetadataTypes();
@@ -493,12 +488,12 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
   }
 
   public static async promptFlow() {
-    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: GLOB_IGNORE_PATTERNS });
+    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
     sortCrossPlatform(flowFiles);
     const flowSelectRes = await prompts({
       type: 'select',
-      message: 'Please select the Flow you want to visually compare',
-      description: 'Choose a Flow file to perform visual comparison operations on',
+      message: t('pleaseSelectTheFlowYouWantTo'),
+      description: t('descChooseFlowForComparison'),
       choices: flowFiles.map(flowFile => {
         return { value: flowFile, title: path.basename(flowFile, ".flow-meta.xml") }
       })
@@ -507,12 +502,12 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
   }
 
   public static async promptMultipleFlows() {
-    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: GLOB_IGNORE_PATTERNS });
+    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
     sortCrossPlatform(flowFiles);
     const flowSelectRes = await prompts({
       type: 'multiselect',
-      message: 'Please select the Flows you want to create the documentation',
-      description: 'Choose multiple Flow files to generate documentation for',
+      message: t('pleaseSelectTheFlowsYouWantTo'),
+      description: t('descChooseFlowsForDoc'),
       choices: flowFiles.map(flowFile => {
         return { value: flowFile, title: path.basename(flowFile, ".flow-meta.xml") }
       })

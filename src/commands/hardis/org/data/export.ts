@@ -1,11 +1,12 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { exportData, findDataWorkspaceByName, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
 import { promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -35,6 +36,8 @@ See this article for a practical example:
 
 [![How to detect bad words in Salesforce records using SFDX Data Loader and sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-badwords.jpg)](https://nicolas.vuillamy.fr/how-to-detect-bad-words-in-salesforce-records-using-sfdx-data-loader-and-sfdx-hardis-171db40a9bac)
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/p4E2DUGZ3bs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -46,12 +49,22 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 - **Environment Awareness:** Checks the \`isCI\` flag to determine whether to run in an interactive mode (prompting for user input) or a non-interactive mode (relying solely on command-line flags).
 - **Required Plugin:** It explicitly lists \`sfdmu\` as a required plugin, ensuring that the necessary dependency is in place before execution.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all prompts. Typical usage:
+
+\`sf hardis:org:data:export --agent --path ./scripts/data/MyDataProject --target-org myOrg\`
+
+- The \`--path\` flag (or \`--project-name\`) is required in agent mode (no interactive workspace selection).
+- The \`--target-org\` flag is used directly (no interactive org selection prompt).
 `;
 
   public static examples = [
     '$ sf hardis:org:data:export',
     '$ sf hardis:org:data:export --project-name MyDataProject --target-org my-org@example.com',
     '$ sf hardis:org:data:export --path ./scripts/data/MyDataProject --no-prompt --target-org my-org@example.com',
+    '$ sf hardis:org:data:export --agent --path ./scripts/data/MyDataProject --target-org myOrg',
   ];
 
   public static flags: any = {
@@ -67,6 +80,10 @@ The command's technical implementation relies heavily on the SFDMU plugin:
       char: 'r',
       description: 'Do not prompt for Org, use default org',
       default: false,
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -95,14 +112,15 @@ The command's technical implementation relies heavily on the SFDMU plugin:
     let sfdmuPath = flags.path || null;
     const projectName = flags["project-name"] || null;
     const noPrompts = flags["no-prompt"] || false;
+    const agentMode = flags.agent === true;
     //const debugMode = flags.debug || false;
 
 
-    uxLog("action", this, c.cyan('This command will launch data EXPORT (download from org) using SFDX Data Loader (sfdmu)'));
+    uxLog("action", this, c.cyan(t('thisCommandWillLaunchDataExportDownload')));
 
     // Select org that will be used to export records
     let orgUsername = flags['target-org'].getUsername();
-    if (!isCI && noPrompts === false) {
+    if (!isCI && !agentMode && noPrompts === false) {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false });
     }
 
@@ -113,8 +131,11 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 
     // Identify sfdmu workspace if not defined
     if (sfdmuPath == null) {
+      if (isCI || agentMode) {
+        throw new SfError(c.red('In agent/CI mode, --path or --project-name flag is required to specify the data workspace.'));
+      }
       sfdmuPath = await selectDataWorkspace({
-        selectDataLabel: `Please select a data workspace to EXPORT from ${c.green(orgUsername)}`,
+        selectDataLabel: t('selectDataWorkspaceToExport'),
       });
     }
 
@@ -124,9 +145,7 @@ The command's technical implementation relies heavily on the SFDMU plugin:
     });
 
     // Output message
-    const message = `Successfully exported data from sfdmu project ${c.green(sfdmuPath)} from org ${c.green(
-      orgUsername
-    )}`;
+    const message = t('successfullyExportedData');
     uxLog("action", this, c.cyan(message));
     return { outputString: message };
   }

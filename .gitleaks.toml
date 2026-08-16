@@ -1,0 +1,72 @@
+# gitleaks configuration for sfdx-hardis
+#
+# Read by MegaLinter's REPOSITORY_BETTERLEAKS and REPOSITORY_GITLEAKS linters
+# (betterleaks uses gitleaks under the hood and shares this config format).
+#
+# We extend the gitleaks default ruleset and add tightly scoped allowlists for
+# known false positives. Each pattern allowlist requires BOTH the file path AND
+# the secret pattern to match (matchCondition = "AND"), so the same words in any
+# other file, or a real secret in these files, are still reported.
+# The only path-only allowlist is the one for vendored third-party skills below.
+
+[extend]
+useDefault = true
+
+# .claude/skills/{alerting-irm,dashboarding,loki,promql}:
+# Generic Grafana skills vendored from github.com/grafana/skills with `npx skills`
+# and pinned by content hash in skills-lock.json. They are public upstream
+# documentation, refreshed wholesale by `npx skills update`, so local edits would
+# be lost. Their code samples use placeholder credentials
+# (e.g. `curl -u "user:apikey"` in the Loki push API example), which the
+# curl-auth-user and generic-api-key rules flag. Scoped to these four directories
+# only: any other file under .claude/ is still scanned.
+[[allowlists]]
+description = "Placeholder credentials in vendored grafana/skills documentation"
+paths = ['''\.claude/skills/(alerting-irm|dashboarding|loki|promql)/''']
+
+# test/common/utils/cryptoUtils.test.ts (~lines 6 and 15):
+# fake RSA PEM blocks used as fixtures in the encrypt/decrypt round-trip test.
+# Bodies are placeholders ("MIIEowIBAAKCAQEA...", "FAKEKEYCONTENT"), not real keys.
+[[allowlists]]
+description = "Fake RSA private key fixtures in cryptoUtils round-trip test"
+matchCondition = "AND"
+paths = ['''test/common/utils/cryptoUtils\.test\.ts''']
+regexes = ['''-----BEGIN RSA PRIVATE KEY-----\\n(MIIEowIBAAKCAQEA\.\.\.|FAKEKEYCONTENT)\\n-----END RSA PRIVATE KEY-----''']
+
+# src/common/utils/dataDictionaryUtils.ts (~line 481):
+# "Key Prefix" / "Length/Precision" are spreadsheet column-header literals,
+# flagged by the generic-api-key entropy heuristic. Not secrets.
+[[allowlists]]
+description = "Spreadsheet column-header literals in dataDictionaryUtils"
+matchCondition = "AND"
+paths = ['''src/common/utils/dataDictionaryUtils\.ts''']
+regexes = ['''(Key Prefix|Length/Precision)''']
+
+# test/common/utils/filesUtils.test.ts (~line 180):
+# CSV header fixture "API Name,Length/Precision", flagged by generic-api-key. Not a secret.
+[[allowlists]]
+description = "CSV header fixture in filesUtils test"
+matchCondition = "AND"
+paths = ['''test/common/utils/filesUtils\.test\.ts''']
+regexes = ['''(API Name,)?Length/Precision''']
+
+# docs/salesforce-ci-cd-setup-auth.md (~line 90):
+# Documentation listing the supported PEM private-key HEADER formats
+# ("-----BEGIN PRIVATE KEY-----" / "-----BEGIN RSA PRIVATE KEY-----") so users
+# know which formats sfdx-hardis accepts. These are format labels with no key
+# body - no secret material. Flagged by the private-key rule.
+[[allowlists]]
+description = "PEM private-key format labels in CI/CD auth setup docs"
+matchCondition = "AND"
+paths = ['''docs/salesforce-ci-cd-setup-auth\.md''']
+regexes = ['''-----BEGIN (RSA )?PRIVATE KEY-----''']
+
+# docs/salesforce-ci-cd-setup-integration-api.md (~line 213):
+# Example value "NOTIF_API_METRICS_BASIC_AUTH_USERNAME=1596503" - a Grafana Cloud
+# numeric account username shown as a setup example (the doc explicitly says to
+# leave the password empty). Not a token. Flagged by the grafana-cloud-api-token rule.
+[[allowlists]]
+description = "Grafana username example in CI/CD integration API setup docs"
+matchCondition = "AND"
+paths = ['''docs/salesforce-ci-cd-setup-integration-api\.md''']
+regexes = ['''NOTIF_API_METRICS_BASIC_AUTH_USERNAME=\d+''']

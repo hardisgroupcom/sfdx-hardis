@@ -4,7 +4,7 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
-import moment from 'moment';
+import { DateHelper } from '../../../common/utils/dateHelper.js';
 import ora from 'ora';
 import * as path from 'path';
 import * as readline from 'readline';
@@ -12,6 +12,7 @@ import * as readline from 'readline';
 import { stripAnsi, uxLog } from '../../../common/utils/index.js';
 import { countLinesInFile } from '../../../common/utils/filesUtils.js';
 import { getRecordTypeId } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -59,6 +60,17 @@ The command's technical implementation involves:
 - **Statistics Collection:** Tracks various statistics, such as the number of processed lines, successful lines, error lines, and filtered lines, providing a summary at the end.
 - **File Copying:** Optionally copies generated CSV files to other specified locations.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:misc:toml2csv --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
@@ -92,6 +104,10 @@ The command's technical implementation involves:
     outputdir: Flags.string({
       char: 'z',
       description: 'Output directory',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -188,11 +204,7 @@ The command's technical implementation involves:
     uxLog(
       "action",
       this,
-      c.cyan(
-        `Generating CSV files from ${c.green(tomlFile)} (encoding ${tomlFileEncoding}) into folder ${c.green(
-          this.outputDir
-        )}.`
-      )
+      c.cyan(t('generatingCsvFilesFromToml', { tomlFile, encoding: tomlFileEncoding, outputDir: this.outputDir }))
     );
 
     // Start spinner
@@ -312,7 +324,7 @@ The command's technical implementation involves:
           }
         }
       } else {
-        uxLog("warning", this, c.yellow(`Line without declared section before: skipped (${line})`));
+        uxLog("warning", this, c.yellow(t('lineWithoutDeclaredSectionBeforeSkipped', { line })));
       }
     }
 
@@ -355,13 +367,13 @@ The command's technical implementation involves:
     }
 
     // Display full stats
-    uxLog("log", this, c.grey('Stats: \n' + JSON.stringify(this.stats, null, 2)));
+    uxLog("log", this, c.grey(t('stats') + JSON.stringify(this.stats, null, 2)));
 
     // Display errors summary
     if (Object.keys(this.lineErrorMessages).length > 0) {
-      uxLog("warning", this, c.yellow('There have been parsing errors:'));
+      uxLog("warning", this, c.yellow(t('thereHaveBeenParsingErrors')));
       for (const errMsg of Object.keys(this.lineErrorMessages)) {
-        uxLog("warning", this, c.yellow('- ' + this.lineErrorMessages[errMsg] + ' lines: ' + errMsg));
+        uxLog("warning", this, c.yellow(t('parsingErrorLineCount', { count: this.lineErrorMessages[errMsg], message: errMsg })));
       }
       uxLog("other", this, '');
     }
@@ -373,20 +385,16 @@ The command's technical implementation involves:
         uxLog(
           "log",
           this,
-          c.grey(`[${section}] kept ${sectionStats.dataSuccessLinesNb} entries on ${sectionStats.dataLinesNb}`)
+          c.grey('[' + section + '] ' + t('sectionKeptEntries', { successNb: sectionStats.dataSuccessLinesNb, totalNb: sectionStats.dataLinesNb }))
         );
       }
     }
-    uxLog("log", this, c.grey(`[TOTAL] kept ${this.stats.dataSuccessLinesNb} entries on ${this.stats.dataLinesNb}`));
+    uxLog("log", this, c.grey('[TOTAL] ' + t('totalKeptEntries', { successNb: this.stats.dataSuccessLinesNb, totalNb: this.stats.dataLinesNb })));
     const message = `TOML file ${tomlFile} has been split into ${this.csvFiles.length} CSV files in directory ${this.outputDir}`;
     uxLog(
       "action",
       this,
-      c.cyan(
-        `TOML file ${c.green(tomlFile)} has been split into ${c.green(
-          this.csvFiles.length
-        )} CSV files in directory ${c.green(this.outputDir)}`
-      )
+      c.cyan(t('tomlFileSplitIntoCsvFiles'))
     );
     return { outputString: message, csvfiles: this.csvFiles, stats: this.stats };
   }
@@ -398,16 +406,20 @@ The command's technical implementation involves:
       ` errors: ${this.stats.dataErrorLinesNb}, filtered: ${this.stats.dataFilteredLinesNb})`;
   }
 
+  // Create and register a write stream for the given output file path
+  private initWriteStream(outputFile: string) {
+    const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });
+    uxLog("action", this, c.cyan('- ' + t('initializedOutputCsvFile', { file: c.green(c.bold(outputFile)) })));
+    this.csvFiles.push(outputFile);
+    return fileWriteStream;
+  }
+
   // Create output write stream for section
   async createSectionWriteStream(section: string, errMode = false) {
     // Case when transformation is skipped
     if (this.skipTransfo) {
       const outputFile = path.join(this.outputDir, `${section}.csv`);
-      // Init writeStream
-      const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });
-      uxLog("action", this, c.cyan(`- Initialized output CSV file ${c.green(c.bold(outputFile))}`));
-      this.csvFiles.push(outputFile);
-      return fileWriteStream;
+      return this.initWriteStream(outputFile);
     }
     // Create writeStream managing transformation
     else if (this.transfoConfig?.entities[section]?.outputFile?.cols) {
@@ -428,18 +440,14 @@ The command's technical implementation involves:
       }
       // Initialize with header
       fileWriteStream.write(headerLine + '\n');
-      uxLog("action", this, c.cyan(`- Initialized ${errMode ? 'errors' : 'output'} CSV file ${c.green(c.bold(outputFile))}`));
+      uxLog("action", this, c.cyan('- ' + (errMode ? t('initializedCsvFile', { file: c.green(c.bold(outputFile)) }) : t('initializedOutputCsvFile', { file: c.green(c.bold(outputFile)) }))));
       this.csvFiles.push(outputFile);
       return fileWriteStream;
     } else if (errMode === false) {
       // Section has not been described in config file !!
-      uxLog("warning", this, c.yellow(`Section ${section} as entity is not described with columns in ${this.transfoConfigFile}`));
+      uxLog("warning", this, c.yellow(t('sectionAsEntityIsNotDescribedWith', { section, transfoConfigFile: this.transfoConfigFile })));
       const outputFile = path.join(this.outputDir, 'errors', `noconfig__${section}.csv`);
-      // Init writeStream
-      const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });
-      uxLog("action", this, c.cyan(`- Initialized default output CSV file ${c.green(c.bold(outputFile))}`));
-      this.csvFiles.push(outputFile);
-      return fileWriteStream;
+      return this.initWriteStream(outputFile);
     }
   }
 
@@ -585,7 +593,7 @@ The command's technical implementation involves:
       if (transfo.addZero && colVal.length === 7) {
         colVal = '0' + colVal;
       }
-      const formattedDate = moment(colVal, transfo.from, true).format(transfo.to);
+      const formattedDate = DateHelper.parse(colVal, transfo.from).format(transfo.to);
       if (formattedDate === 'Invalid date') {
         this.triggerError(`Unable to reformat date ${colVal} for column ${JSON.stringify(colDefinition)}`, false);
       }
@@ -659,8 +667,8 @@ The command's technical implementation involves:
   }
 
   checkFilterDate(filter, lineSplit) {
-    const dateStart = moment(filter.date, filter.dateFormat, true);
-    const colValue = moment(lineSplit[filter.colNumber - 1], filter.colDateFormat, true);
+    const dateStart = DateHelper.parse(filter.date, filter.dateFormat);
+    const colValue = DateHelper.parse(lineSplit[filter.colNumber - 1], filter.colDateFormat);
     const res =
       filter.typeDtl === 'higherThan'
         ? colValue.isAfter(dateStart, 'day')

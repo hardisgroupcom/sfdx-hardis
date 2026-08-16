@@ -1,6 +1,32 @@
 import { expect } from 'chai';
 import { TestContext } from '@salesforce/core/testSetup';
-import { isDeployCheckCoverageOnlyFailure } from '../../../src/common/utils/deployUtils.js';
+import { isDeployCheckCoverageOnlyFailure, shouldReportNoMetadataDeploymentSuccess } from '../../../src/common/utils/deployUtils.js';
+
+describe('Deploy Utils - No metadata deployed success', () => {
+  // A remove-packagexml-items pre-deploy action can empty the only package.xml of the plan, so
+  // every deployment is skipped inside the loop and no deployment result is ever recorded. Without
+  // this fallback the Pull Request comment stayed "tovalidate": no result title, no banner and no
+  // code coverage section.
+  it('reports a success when every deployment was skipped and nothing was recorded', () => {
+    expect(shouldReportNoMetadataDeploymentSuccess(0, false, {})).to.equal(true);
+  });
+
+  it('does not report anything when a deployment was actually sent to the org', () => {
+    expect(shouldReportNoMetadataDeploymentSuccess(1, false, {})).to.equal(false);
+    expect(shouldReportNoMetadataDeploymentSuccess(2, false, {})).to.equal(false);
+  });
+
+  // Destructive changes are deployed even with an empty package.xml, so the run has a real result
+  it('does not report anything when the run carries destructive changes', () => {
+    expect(shouldReportNoMetadataDeploymentSuccess(0, true, {})).to.equal(false);
+  });
+
+  it('never overwrites a result already recorded', () => {
+    expect(shouldReportNoMetadataDeploymentSuccess(0, false, { deployStatus: 'valid' })).to.equal(false);
+    expect(shouldReportNoMetadataDeploymentSuccess(0, false, { deployStatus: 'invalid' })).to.equal(false);
+    expect(shouldReportNoMetadataDeploymentSuccess(0, false, { status: 'invalid' })).to.equal(false);
+  });
+});
 
 describe('Deploy Utils - Coverage not blocking', () => {
   const $$ = new TestContext();

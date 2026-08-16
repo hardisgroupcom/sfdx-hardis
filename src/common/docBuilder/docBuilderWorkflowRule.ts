@@ -1,6 +1,7 @@
 import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderWorkflowRule extends DocBuilderRoot {
 
@@ -18,9 +19,9 @@ export class DocBuilderWorkflowRule extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Workflow Rules" : "## Workflow Rules",
+      filterObject ? `## ${t('docMdRelatedWorkflowRules')}` : `## ${t('docMdWorkflowRules')}`,
       "",
-      "| Workflow Rule | Is Active |",
+      `| ${t('docMdColWorkflowRule')} | ${t('docMdColIsActive')} |`,
       "| :---- | :--: |"
     ]);
 
@@ -38,7 +39,7 @@ export class DocBuilderWorkflowRule extends DocBuilderRoot {
     return [
       `## ${this.metadataName}`,
       "",
-      buildGenericMarkdownTable(this.parsedXmlObject, ["allFields"], "## Workflow Rule attributes", []),
+      buildGenericMarkdownTable(this.parsedXmlObject, ["allFields"], `## ${t('docMdWorkflowRuleAttributes')}`, []),
       "",
       "<!-- Workflow Rule description -->",
       "",

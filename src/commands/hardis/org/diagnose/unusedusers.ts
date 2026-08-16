@@ -12,6 +12,7 @@ import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils
 import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -52,7 +53,22 @@ The command's technical implementation involves:
 - **Report Generation:** It uses \`generateCsvFile\` to create the CSV report of users.
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
 - **User Feedback:** Provides a summary of the findings in the console, indicating the number of inactive or active users found.
-</details>`
+</details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:unusedusers --agent --days 180 --licensetypes all-crm --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- \`--days\` defaults to 180 when not provided.
+- \`--licensetypes\` defaults to \`all-crm\` when not provided (covers standard CRM users: SFDC, AUL, AUL1, AULL_IGHT).
+- To target all license types, pass \`--licensetypes all\`.
+- All interactive prompts are skipped.`
     ;
 
   public static examples = [
@@ -61,6 +77,7 @@ The command's technical implementation involves:
     '$ sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm',
     '$ sf hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1',
     '$ sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm --returnactiveusers',
+    '$ sf hardis:org:diagnose:unusedusers --agent',
   ];
 
   //Comment default values to test the prompts
@@ -99,6 +116,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -114,6 +135,7 @@ The command's technical implementation involves:
   };
 
   protected returnActiveUsers = false;
+  protected agentMode = false;
   protected debugMode = false;
   protected outputFile;
   protected outputFilesRes: any = {};
@@ -127,6 +149,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DiagnoseUnusedUsers);
+    this.agentMode = flags.agent === true;
     this.debugMode = flags.debug || false;
     this.returnActiveUsers = flags.returnactiveusers ?? false;
     this.outputFile = flags.outputfile || null;
@@ -206,18 +229,18 @@ The command's technical implementation involves:
   private async defineLicenseIdentifiers() {
     if (!this.licenseIdentifiers) {
       // Ask user if interactive mode
-      if (!this.licenseTypes && !isCI) {
+      if (!this.licenseTypes && !isCI && !this.agentMode) {
         const licenseTypesResponse = await prompts({
           type: 'select',
           name: 'licensetypes',
-          message: 'Please select the type of licenses you want to detect ',
-          description: 'Choose which categories of user licenses to analyze for unused accounts',
-          placeholder: 'Select license type',
+          message: t('pleaseSelectTheTypeOfLicensesYou'),
+          description: t('chooseWhichCategoriesOfUserLicensesToAnalyze'),
+          placeholder: t('selectLicenseType'),
           choices: [
-            { value: 'all', title: 'All licenses types' },
-            { value: `all-crm`, title: 'Salesforce Licenses' },
-            { value: `all-paying`, title: 'Salesforce Licences + Experience + Other paying' },
-            { value: `experience`, title: 'Experience licenses only' },
+            { value: 'all', title: t('allLicensesTypes') },
+            { value: `all-crm`, title: t('salesforceLicences') },
+            { value: `all-paying`, title: t('salesforceLicencesExperienceOtherPaying') },
+            { value: `experience`, title: t('experienceLicensesOnly') },
           ],
         });
         this.licenseTypes = licenseTypesResponse.licensetypes;
@@ -231,14 +254,14 @@ The command's technical implementation involves:
 
   private async defineNumberOfInactiveDays() {
     if (!this.lastNdays) {
-      if (!isCI) {
+      if (!isCI && !this.agentMode) {
         // If manual mode and days not sent as parameter, prompt user
         const lastNdaysResponse = await prompts({
           type: 'select',
           name: 'days',
-          message: 'Please select the period to detect users.',
-          description: 'Choose how far back to look for user activity when determining if users are inactive',
-          placeholder: 'Select time period',
+          message: t('pleaseSelectThePeriodToDetectUsers'),
+          description: t('chooseHowFarBackToLookForUserActivity'),
+          placeholder: t('selectTimePeriod'),
           choices: [
             { title: `1 day`, value: 1 },
             { title: `2 days`, value: 2 },
@@ -300,8 +323,8 @@ The command's technical implementation involves:
     if (users.length > 0) {
       notifSeverity = this.returnActiveUsers ? 'log' : 'warning';
       notifText = this.returnActiveUsers
-        ? `*${this.users.length}* active users have logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`
-        : `*${this.users.length}* active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
+        ? `**${this.users.length}** active users have logged in to ${orgMarkdown} within the last **${this.lastNdays}** days.`
+        : `**${this.users.length}** active users have not logged in to ${orgMarkdown} within the last **${this.lastNdays}** days.`;
       attachments = [{ text: notifDetailText }];
     }
     const notificationType = this.getNotificationType();

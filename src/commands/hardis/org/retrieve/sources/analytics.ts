@@ -10,6 +10,7 @@ import { uxLog, isCI, createTempDir, execCommand } from '../../../../../common/u
 import { promptOrgUsernameDefault } from '../../../../../common/utils/orgUtils.js';
 import { buildOrgManifest } from '../../../../../common/utils/deployUtils.js';
 import { parsePackageXmlFile, writePackageXmlFile } from '../../../../../common/utils/xmlUtils.js';
+import { t } from '../../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -42,9 +43,24 @@ The command's technical implementation involves:
 - **Temporary File Management:** It uses \`createTempDir\` to manage temporary files and directories created during the process.
 - **Interactive Org Selection:** Uses \`promptOrgUsernameDefault\` to guide the user in selecting the target Salesforce org if not provided via flags.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:retrieve:sources:analytics --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- The interactive org selection prompt is skipped; \`--target-org\` flag value is used directly.
 `;
 
-  public static examples = ['$ sf hardis:org:retrieve:sources:analytics'];
+  public static examples = [
+    '$ sf hardis:org:retrieve:sources:analytics',
+    '$ sf hardis:org:retrieve:sources:analytics --agent --target-org myorg@example.com',
+  ];
 
   public static flags: any = {
     debug: Flags.boolean({
@@ -57,6 +73,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   }; // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -79,9 +99,10 @@ The command's technical implementation involves:
   // Retrieves locally all items corresponding to CRM Analytics configuration
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(RetrieveAnalytics);
+    const agentMode = flags.agent === true;
     // Manage user selection for org if we are not in CI
     let orgUsername = flags['target-org'].getUsername();
-    if (!isCI && !flags['target-org']) {
+    if (!isCI && !agentMode && !flags['target-org']) {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false });
     }
 
@@ -89,7 +110,7 @@ The command's technical implementation involves:
     const tmpDir = await createTempDir();
     const packageXmlAllFile = path.join(tmpDir, 'packageXmlAll.xml');
     await buildOrgManifest(orgUsername, packageXmlAllFile, flags['target-org'].getConnection());
-    uxLog("action", this, c.cyan(`Retrieved full package XML from org ${orgUsername}: ${packageXmlAllFile}`));
+    uxLog("action", this, c.cyan(t('retrievedFullPackageXmlFromOrg', { orgUsername, packageXmlAllFile })));
 
     // Filter to keep only analytics metadatas
     const parsedPackageXmlAll = await parsePackageXmlFile(packageXmlAllFile);
@@ -101,16 +122,12 @@ The command's technical implementation involves:
       }
     }
     await writePackageXmlFile(packageXmlAnalyticsFile, analyticsPackageXml);
-    uxLog(
-      "action",
-      this,
-      c.cyan(`Filtered and completed analytics metadatas in analytics package XML: ${packageXmlAnalyticsFile}`)
-    );
+    uxLog("action", this, c.cyan(t('filteredAndCompletedAnalyticsMetadatas', { packageXmlAnalyticsFile })));
 
     // Retrieve locally Analytics sources
     const retrieveCommand = `sf project retrieve start -x "${packageXmlAnalyticsFile}" -o ${orgUsername}`;
     await execCommand(retrieveCommand, this, { fail: true, debug: this.debugMode, output: true });
-    uxLog("action", this, c.cyan(`Retrieved all analytics source items using package XML: ${packageXmlAnalyticsFile}`));
+    uxLog("action", this, c.cyan(t('retrievedAllAnalyticsSourceItemsUsingPackage', { packageXmlAnalyticsFile })));
 
     return { outputString: `Retrieved analytics sources from org ${orgUsername}` };
   }

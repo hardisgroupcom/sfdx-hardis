@@ -33,6 +33,11 @@ jobs:
     timeoutInMinutes: 150
     pool:
       vmImage: ubuntu-latest
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    # You can use latest, beta or a version number (ex: v7.23.0), and pin a version if you need reproducible runs.
+    # Images are also mirrored on Docker Hub, if your infrastructure can only pull from docker.io: hardisgroupcom/sfdx-hardis-ubuntu:latest
+    # To use coding agents for auto-fix of deployment errors, use image ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     steps:
       # Checkout repo
       - checkout: self
@@ -40,24 +45,20 @@ jobs:
         persistCredentials: true
         displayName: Git Checkout
 
-      # Setup Node.js
-      - task: UseNode@1
-        inputs:
-          version: ">=24.0.0"
-        displayName: "Setup Node.js"
-
-      # Install SFDX & Dependencies
-      - script: |
-          npm install @salesforce/cli --global
-          sf plugins install @salesforce/plugin-packaging
-          echo 'y' | sf plugins install sfdx-hardis
-          echo 'y' | sf plugins install sfdmu
-          echo 'y' | sf plugins install sfdx-git-delta
-          sf version --verbose --json
-        displayName: "Install SFDX & plugins"
-
       # Login & Deploy sfdx sources to related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
       - script: |
+          if [ "${BRANCH_NAME#auto-fix/}" != "${BRANCH_NAME}" ]; then
+            echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${BRANCH_NAME}"
+            exit 0
+          fi
+          # Uncomment the lines below to allow coding agents to push auto-fix branches and create Pull Requests
+          # (also requires the sfdx-hardis-ubuntu-with-agents image, an AI API key in the variables below,
+          # and "Contribute" + "Create branch" permissions for the Build Service user on the repository)
+          # if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
+          #   git config user.email "sfdx-hardis-bot@cloudity.com"
+          #   git config user.name "sfdx-hardis Bot"
+          #   echo "[sfdx-hardis] Azure push/PR auth enabled for coding agents via SYSTEM_ACCESSTOKEN"
+          # fi
           sf hardis:auth:login
           sf hardis:project:deploy:smart
         env:
@@ -74,7 +75,7 @@ jobs:
           JIRA_HOST: $(JIRA_HOST)
           JIRA_EMAIL: $(JIRA_EMAIL)
           JIRA_TOKEN: $(JIRA_TOKEN)
-          JIRA_PAT: $(JIRA_HOST)
+          JIRA_PAT: $(JIRA_PAT)
           JIRA_TICKET_REGEX: $(JIRA_TICKET_REGEX)
           SFDX_DEPLOY_WAIT_MINUTES: $(SFDX_DEPLOY_WAIT_MINUTES)
           SFDX_AUTH_URL_TECHNICAL_ORG: $(SFDX_AUTH_URL_TECHNICAL_ORG)
@@ -91,3 +92,8 @@ jobs:
           BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
           BUILD_BUILD_ID: $(Build.BuildId)
         displayName: "Deploy sources to related SF Org"
+      # Publish sfdx-hardis reports, including the complete deployment result JSON
+      - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+        condition: succeededOrFailed()
+        artifact: hardis-report
+        displayName: Publish sfdx-hardis reports

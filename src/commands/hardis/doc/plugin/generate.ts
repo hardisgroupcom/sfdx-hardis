@@ -6,12 +6,13 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
 import sortArray from 'sort-array';
-import set from 'set-value';
+import { setDeepValue } from '../../../../common/utils/objectUtils.js';
 import * as yaml from 'js-yaml';
 import { uxLog } from '../../../../common/utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { Config } from '@oclif/core';
 import { readMkDocsFile, writeMkDocsFile } from '../../../../common/docBuilder/docUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -60,13 +61,29 @@ The command's technical implementation involves:
 - **File System Operations:** It uses \`fs-extra\` to create directories, copy default MkDocs files (\`defaults/mkdocs\`), and write the generated Markdown and YAML files.
 - **YAML Serialization:** It uses \`js-yaml\` to serialize the navigation object into YAML format for \`mkdocs.yml\`.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:plugin:generate --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:doc:plugin:generate'];
+  public static examples = ['$ sf hardis:doc:plugin:generate',
+    '$ sf hardis:doc:plugin:generate --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -96,7 +113,7 @@ The command's technical implementation involves:
     const config = await Config.load({ root: cwd, devPlugins: false, userPlugins: false });
 
     // Generate commands markdowns
-    const commandsNav = { 'All commands': 'commands.md' };
+    const commandsNav = { 'Commands Reference': 'commands.md' };
     const commandsLinks = {};
     for (const command of config.commands) {
       await this.generateCommandDoc(command);
@@ -105,7 +122,7 @@ The command's technical implementation involves:
       const commandMdPath = commandsSplit.join('/') + `/${commandName}.md`;
       const navItem = {};
       navItem[commandName || ''] = commandMdPath;
-      set(commandsNav, commandsSplit.join('.'), navItem, { preservePaths: true, merge: true });
+      setDeepValue(commandsNav, commandsSplit.join('.'), navItem);
       commandsLinks[command.id] = commandMdPath;
     }
     uxLog("other", this, yaml.dump(commandsNav));
@@ -118,12 +135,12 @@ The command's technical implementation involves:
     const mkdocsYmlFileExists = fs.existsSync(mkdocsYmlFile);
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/mkdocs', '.'), process.cwd(), { overwrite: false });
     if (!mkdocsYmlFileExists) {
-      uxLog("log", this, c.grey('Base mkdocs files copied into your SF CLI plugin folder.'));
+      uxLog("log", this, c.grey(t('baseMkdocsFilesCopiedIntoYourSf')));
       uxLog(
         "warning",
         this,
         c.yellow(
-          'You should probably update mkdocs.yml and build-deploy-docs.yml with your repository and plugin information.'
+          t('updateMkdocsAndBuildDeployDocs')
         )
       );
     }
@@ -270,6 +287,6 @@ The command's technical implementation involves:
     await fs.ensureDir(path.dirname(mdFileName));
     const yamlString = lines.join('\n') + '\n';
     await fs.writeFile(mdFileName, yamlString);
-    uxLog("log", this, c.grey('Generated file ' + c.bold(mdFileName) + '.'));
+    uxLog("log", this, c.grey(t('generatedFile') + c.bold(mdFileName) + '.'));
   }
 }

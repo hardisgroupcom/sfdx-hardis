@@ -1,0 +1,173 @@
+// Build and display a readable summary of a Salesforce deployment result,
+// instead of dumping the complete (and often huge) deployment JSON in CI logs.
+import c from 'chalk';
+import fs from 'fs-extra';
+import * as path from 'path';
+import { CONSTANTS, getEnvVar, getReportDirectory } from '../../config/index.js';
+import { WebSocketClient } from '../websocketClient.js';
+import { formatElapsedMs } from './dateHelper.js';
+import { findJsonInString, uxLog } from './index.js';
+import { t } from './i18n.js';
+
+export interface DeployResultSummaryOptions {
+  check: boolean;
+  label?: string;
+  delta?: boolean;
+  quickDeploy?: boolean;
+  orgCoveragePercent?: string | number | null;
+  durationMs?: number | null;
+  reportFile?: string | null;
+}
+
+/** True when the user asked to keep the complete deployment JSON in the console logs */
+export function isFullDeployJsonLogRequested(): boolean {
+  return getEnvVar('NO_TRUNCATE_LOGS') === 'true';
+}
+
+/**
+ * Build the lines of a concise, human-readable deployment summary.
+ *
+ * Values are read from the deployment result JSON itself (not from the accumulated DeploymentMetrics),
+ * so the same function can be used for a successful deployment and for a failed one, and so that each
+ * split deployment displays its own figures.
+ */
+export function buildDeployResultSummaryLines(resultJson: any, options: DeployResultSummaryOptions): string[] {
+  const result = resultJson?.result;
+  if (!result) {
+    return [t('deployResultSummaryNoResult')];
+  }
+  const lines: string[] = [];
+
+  // Title: fallback on the deployment id when no package label is provided by the caller
+  const label = options.label || result.id || 'package.xml';
+  lines.push(options.check ? t('deployResultSummaryTitleCheck', { label }) : t('deployResultSummaryTitleDeploy', { label }));
+
+  // Status: keep raw Salesforce values (Succeeded, Failed, SucceededPartial...)
+  const status = result.status || (result.success === true ? 'Succeeded' : 'Failed');
+  lines.push(t('deployResultSummaryStatus', { status }));
+
+  // Deployment Id
+  if (result.id) {
+    lines.push(t('deployResultSummaryDeploymentId', { deploymentId: result.id }));
+  }
+
+  // Deployment mode
+  const modeParts: string[] = [options.delta === true ? 'DELTA' : 'FULL'];
+  if (options.quickDeploy === true) {
+    modeParts.push('Quick Deploy');
+  }
+  lines.push(t('deployResultSummaryMode', { mode: modeParts.join(' + ') }));
+
+  // Components
+  lines.push(
+    t('deployResultSummaryComponents', {
+      deployed: Number(result.numberComponentsDeployed || 0),
+      failed: Number(result.numberComponentErrors || 0),
+      total: Number(result.numberComponentsTotal || 0),
+    })
+  );
+
+  // Apex tests
+  const testsTotal = Number(result.numberTestsTotal || 0);
+  const testsCompleted = Number(result.numberTestsCompleted || 0);
+  if (testsTotal > 0 || testsCompleted > 0) {
+    lines.push(
+      t('deployResultSummaryTests', {
+        completed: testsCompleted,
+        failed: Number(result.numberTestErrors || 0),
+        total: testsTotal,
+      })
+    );
+  } else {
+    lines.push(t('deployResultSummaryNoTests'));
+  }
+
+  // Org-wide Apex code coverage
+  if (options.orgCoveragePercent !== null && options.orgCoveragePercent !== undefined && options.orgCoveragePercent !== '') {
+    lines.push(t('deployResultSummaryCoverage', { coverage: options.orgCoveragePercent }));
+  }
+
+  // Duration: prefer the dates returned by the Metadata API, fallback to the measured duration
+  const durationMs = getDeployDurationMs(result, options.durationMs);
+  if (durationMs !== null) {
+    lines.push(t('deployResultSummaryDuration', { duration: formatElapsedMs(durationMs) }));
+  }
+
+  // Where to find the complete JSON, and how to get it back in the console
+  if (options.reportFile) {
+    lines.push(t('deployResultSummaryFullJson', { reportFile: options.reportFile }));
+    // Old pipelines may not publish the hardis-report folder: point to the doc explaining how to add the step
+    lines.push(t('deployResultSummaryArtifactsDocHint', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-publish-artifacts/` }));
+  }
+  if (!isFullDeployJsonLogRequested()) {
+    lines.push(t('deployResultSummaryFullJsonHint'));
+  }
+
+  return lines;
+}
+
+/** Display the deployment summary, then the complete JSON if NO_TRUNCATE_LOGS=true */
+export function logDeployResultSummary(commandThis: any, resultJson: any, options: DeployResultSummaryOptions): void {
+  const lines = buildDeployResultSummaryLines(resultJson, options);
+  uxLog('action', commandThis, c.cyan(lines[0]));
+  for (const line of lines.slice(1)) {
+    uxLog('log', commandThis, c.grey(`  ${line}`));
+  }
+  if (isFullDeployJsonLogRequested() && resultJson) {
+    uxLog('other', commandThis, c.grey(JSON.stringify(resultJson)));
+  }
+}
+
+/**
+ * Write the complete deployment result JSON in the report directory, so it remains available
+ * as a CI job artifact even if it is not displayed in the console anymore.
+ * Returns the file path, or null if there was nothing to write.
+ */
+export async function writeDeployResultReportFile(resultJson: any, label: string): Promise<string | null> {
+  if (!resultJson) {
+    return null;
+  }
+  try {
+    const reportDir = await getReportDirectory();
+    const safeLabel = (label || 'deployment').replace(/[^a-zA-Z0-9._-]/g, '-');
+    const reportFile = path.join(reportDir, `deploy-result-${safeLabel}.json`);
+    await fs.writeFile(reportFile, JSON.stringify(resultJson, null, 2), 'utf8');
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      WebSocketClient.sendReportFileMessage(reportFile, t('deployResultJsonReportTitle'), 'report');
+    }
+    return reportFile;
+  } catch (e: any) {
+    uxLog('warning', this, c.yellow(t('warningUnableToWriteDeployResultReportFile', { message: e.message })));
+    return null;
+  }
+}
+
+/**
+ * Command error output can embed a complete deployment JSON: keep only the error message when we find one,
+ * so error logs stay readable. Returns the input unchanged when no JSON deployment result is found.
+ */
+export function summarizeDeployErrorMessage(rawErrorMessage: string): string {
+  if (!rawErrorMessage || isFullDeployJsonLogRequested()) {
+    return rawErrorMessage;
+  }
+  const jsonResult = findJsonInString(rawErrorMessage);
+  const message = jsonResult?.result?.errorMessage || jsonResult?.message || null;
+  if (message) {
+    const statusCode = jsonResult?.result?.errorStatusCode || jsonResult?.name || null;
+    return statusCode ? `${statusCode}: ${message}` : message;
+  }
+  return rawErrorMessage;
+}
+
+/** Extract the deployment duration, from the Metadata API dates when available */
+function getDeployDurationMs(result: any, fallbackDurationMs?: number | null): number | null {
+  const startDate = result?.startDate ? new Date(result.startDate).getTime() : NaN;
+  const completedDate = result?.completedDate ? new Date(result.completedDate).getTime() : NaN;
+  if (!isNaN(startDate) && !isNaN(completedDate) && completedDate >= startDate) {
+    return completedDate - startDate;
+  }
+  if (fallbackDurationMs !== null && fallbackDurationMs !== undefined && fallbackDurationMs >= 0) {
+    return fallbackDurationMs;
+  }
+  return null;
+}

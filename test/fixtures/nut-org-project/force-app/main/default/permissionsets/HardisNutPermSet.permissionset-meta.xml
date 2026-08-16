@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <classAccesses>
+        <apexClass>HardisNutSample</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <description>Permission set assigned by the sfdx-hardis NUT scratch org initialization</description>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Account.HardisNutFlag__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Hardis NUT Perm Set</label>
+</PermissionSet>

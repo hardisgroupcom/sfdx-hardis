@@ -4,22 +4,35 @@ import { getCurrentGitBranch, uxLog } from '../utils/index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { authOrg } from '../utils/authUtils.js';
 import { findUserByUsernameLike } from '../utils/orgUtils.js';
+import { t } from '../utils/i18n.js';
+
+export type ActionWhen = 'pre-deploy' | 'post-deploy';
 
 export interface PrePostCommand {
   id: string;
   label: string;
-  type: 'command' | 'data' | 'apex' | 'publish-community' | 'manual';
+  type: 'command' | 'data' | 'apex' | 'publish-community' | 'manual' | 'schedule-batch' | 'remove-packagexml-items';
+  when?: ActionWhen;
   // Known parameters used by action implementations. Additional keys allowed.
   parameters?: {
     apexScript?: string;     // for 'apex' actions
     sfdmuProject?: string;   // for 'data' actions
     communityName?: string;  // for 'publish-community' actions
     instructions?: string;   // for 'manual' actions
+    className?: string;      // for 'schedule-batch' actions
+    cronExpression?: string;  // for 'schedule-batch' actions
+    jobName?: string;        // for 'schedule-batch' actions (optional, defaults to <className>_Schedule)
+    packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
     [key: string]: any;
   };
   command: string;
   context: 'all' | 'check-deployment-only' | 'process-deployment-only';
-  skipIfError?: boolean;
+  // Target branches the action applies to. Mutually exclusive: setting both makes the action invalid.
+  // Names are matched exactly (case-insensitive) against the branch the deployment targets.
+  // The virtual name "dev-sandboxes" matches any target that is not a declared major branch,
+  // which covers hardis:work:backpromote and local deployments to a developer sandbox.
+  includeTargetBranches?: string[];
+  excludeTargetBranches?: string[];
   allowFailure?: boolean;
   runOnlyOnceByOrg?: boolean;
   customUsername?: string;
@@ -29,10 +42,34 @@ export interface PrePostCommand {
 }
 
 export type ActionResult = {
-  statusCode: 'success' | 'failed' | 'skipped' | "manual";
+  // "not-run": the metadata deployment failed, so the action was never attempted.
+  // Unlike "skipped", it is never persisted in the Deployment Actions PR comment state,
+  // so the action still runs during the next successful deployment.
+  statusCode: 'success' | 'failed' | 'skipped' | "manual" | 'not-run';
   output?: string;
   skippedReason?: string;
+  // Machine-readable skip cause: skippedReason is user-facing wording that may change,
+  // code must branch on this field instead
+  skippedCode?: 'already-run-in-org' | 'branch-not-targeted';
 };
+
+/**
+ * Build an action output from an execCommand result.
+ *
+ * execCommand returns { status, stdout, stderr } for plain commands, but when the command
+ * contains --json and is called with fail:false, it returns { status, errorMessage, error }
+ * with neither stdout nor stderr. Reading only stdout/stderr then produced an empty output,
+ * leaving no way to know why an action failed.
+ */
+export function buildActionOutput(res: any): string {
+  const streams = [res?.stdout, res?.stderr].filter(
+    (part) => typeof part === 'string' && part.trim() !== ''
+  );
+  if (streams.length > 0) {
+    return streams.join('\n').trim();
+  }
+  return (res?.errorMessage || (res?.error as Error)?.message || '').trim();
+}
 
 export abstract class ActionsProvider {
 
@@ -61,6 +98,14 @@ export abstract class ActionsProvider {
       const ManualAction = await import('./manualAction.js');
       actionInstance = new ManualAction.ManualAction();
     }
+    else if (type === 'schedule-batch') {
+      const ScheduleBatchAction = await import('./scheduleBatchAction.js');
+      actionInstance = new ScheduleBatchAction.ScheduleBatchAction();
+    }
+    else if (type === 'remove-packagexml-items') {
+      const RemovePackageXmlItemsAction = await import('./removePackageXmlItemsAction.js');
+      actionInstance = new RemovePackageXmlItemsAction.RemovePackageXmlItemsAction();
+    }
     else {
       uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
       cmd.result = {
@@ -73,6 +118,12 @@ export abstract class ActionsProvider {
 
   public getLabel(): string {
     throw new SfError('getLabel should be implemented on this call');
+  }
+
+  // Override and return false for action types that must run at every deployment
+  // (for example actions that only alter the current deployment context, not the org)
+  public supportsRunOnlyOnceByOrg(): boolean {
+    return true;
   }
 
   /**
@@ -95,13 +146,13 @@ export abstract class ActionsProvider {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async checkParameters(_cmd: PrePostCommand): Promise<ActionResult | null> {
-    uxLog('warning', this, c.yellow(`checkParameters is not implemented on ${this.getLabel()}`));
+    uxLog('warning', this, c.yellow(t('checkparametersIsNotImplementedOn', { getLabel: this.getLabel() })));
     return null;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
-    uxLog('warning', this, c.yellow(`run is not implemented on ${this.getLabel()}`));
+    uxLog('warning', this, c.yellow(t('runIsNotImplementedOn', { getLabel: this.getLabel() })));
     return { statusCode: 'skipped', skippedReason: 'Not implemented' };
   }
 
@@ -110,11 +161,17 @@ export abstract class ActionsProvider {
       return null;
     }
     if (cmd.customUsername) {
+      const agentMode = globalThis._agentMode === true;
       const conn: Connection = globalThis.jsForceConn;
       const user = await findUserByUsernameLike(cmd.customUsername, conn);
       if (!user) {
-        uxLog('error', this, c.red(`[DeploymentActions] Custom username [${cmd.customUsername}] not found for action ${cmd.label}`));
-        return { statusCode: 'failed', skippedReason: `Custom username [${cmd.customUsername}] not found` };
+        const reason = `Custom username [${cmd.customUsername}] not found`;
+        uxLog('error', this, c.red(`[DeploymentActions] ${reason} for action ${cmd.label}`));
+        if (agentMode) {
+          uxLog('warning', this, c.yellow(`[DeploymentActions] Agent mode: skipping action ${cmd.label} instead of failing`));
+          return { statusCode: 'skipped', skippedReason: reason };
+        }
+        return { statusCode: 'failed', skippedReason: reason };
       }
       let authResult: boolean;
       try {
@@ -131,16 +188,26 @@ export abstract class ActionsProvider {
           setDefault: false,
         });
       } catch (error) {
-        uxLog('error', this, c.red(`[DeploymentActions] Error during authentication with custom username [${user.Username}] for action ${cmd.label}: ${error}`));
-        return { statusCode: 'failed', skippedReason: `Error during authentication with custom username [${user.Username}]: ${error}` };
+        const reason = `Error during authentication with custom username [${user.Username}]: ${error}`;
+        uxLog('error', this, c.red(`[DeploymentActions] ${reason} for action ${cmd.label}`));
+        if (agentMode) {
+          uxLog('warning', this, c.yellow(`[DeploymentActions] Agent mode: skipping action ${cmd.label} instead of failing`));
+          return { statusCode: 'skipped', skippedReason: reason };
+        }
+        return { statusCode: 'failed', skippedReason: reason };
       }
       if (authResult === true) {
         this.customUsernameToUse = user.Username;
         uxLog('log', this, c.green(`[DeploymentActions] Authenticated with custom username [${this.customUsernameToUse}] for action ${cmd.label}`));
       }
       else {
-        uxLog('error', this, c.red(`[DeploymentActions] Failed to authenticate with custom username [${user.Username}] for action ${cmd.label}`));
-        return { statusCode: 'failed', skippedReason: `Failed to authenticate with custom username [${user.Username}]` };
+        const reason = `Failed to authenticate with custom username [${user.Username}]`;
+        uxLog('error', this, c.red(`[DeploymentActions] ${reason} for action ${cmd.label}`));
+        if (agentMode) {
+          uxLog('warning', this, c.yellow(`[DeploymentActions] Agent mode: skipping action ${cmd.label} instead of failing`));
+          return { statusCode: 'skipped', skippedReason: reason };
+        }
+        return { statusCode: 'failed', skippedReason: reason };
       }
     }
     return null;

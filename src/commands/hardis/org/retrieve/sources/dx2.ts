@@ -6,10 +6,11 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
 
-import { execCommand, uxLog } from '../../../../../common/utils/index.js';
+import { execCommand, isCI, uxLog } from '../../../../../common/utils/index.js';
 import { promptOrg } from '../../../../../common/utils/orgUtils.js';
 import { prompts } from '../../../../../common/utils/prompts.js';
 import { PACKAGE_ROOT_DIR } from '../../../../../settings.js';
+import { t } from '../../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -42,9 +43,18 @@ The command's technical implementation involves:
 - **Salesforce CLI Retrieval:** It executes the \`sf project retrieve start\` command, passing the resolved \`package.xml\` path and the target username to retrieve the sources.
 - **User Feedback:** Provides clear messages to the user about the retrieval process and its success.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all prompts. Typical usage:
+
+\`sf hardis:org:retrieve:sources:dx2 --agent --packagexml manifest/package.xml --target-org myOrg\`
+
+- The \`--packagexml\` or \`--template\` flag is required in agent mode (no interactive prompt for package.xml path).
+- Org selection uses the \`--target-org\` flag value directly.
 `;
 
-  public static examples = ['$ sf hardis:org:retrieve:sources:dx2'];
+  public static examples = ['$ sf hardis:org:retrieve:sources:dx2', '$ sf hardis:org:retrieve:sources:dx2 --agent --packagexml manifest/package.xml'];
 
   public static flags: any = {
     packagexml: Flags.string({
@@ -54,6 +64,10 @@ The command's technical implementation involves:
     template: Flags.string({
       char: 't',
       description: 'sfdx-hardis package.xml Template name. ex: wave',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -82,6 +96,7 @@ The command's technical implementation involves:
     let targetUsername = flags['target-org']?.getUsername() || null;
     const template = flags.template || null;
     this.debugMode = flags.debug || false;
+    const agentMode = flags.agent === true;
 
     // Prompt for organization if not sent
     if (targetUsername == null) {
@@ -96,14 +111,18 @@ The command's technical implementation involves:
 
     // Prompt for package.xml if not sent
     if (packageXml === null) {
-      const packageXmlRes = await prompts({
-        message: c.cyanBright('Please input the path to the package.xml file'),
-        description: 'Specify the package.xml file that defines which metadata to retrieve from the org',
-        placeholder: 'Ex: manifest/package.xml',
-        type: 'text',
-        name: 'value',
-      });
-      packageXml = packageXmlRes.value;
+      if (!isCI && !agentMode) {
+        const packageXmlRes = await prompts({
+          message: c.cyanBright(t('pleaseInputThePathToThePackage')),
+          description: t('specifyPackageXmlFileForMetadataRetrieval'),
+          placeholder: t('exManifestPackageXml'),
+          type: 'text',
+          name: 'value',
+        });
+        packageXml = packageXmlRes.value;
+      } else {
+        throw new SfError(c.red(t('packageXmlRequiredInAgentMode')));
+      }
     }
 
     // Check package.xml file exists
@@ -115,7 +134,7 @@ The command's technical implementation involves:
       const packageXmlTmp = path.join(process.cwd(), 'tmp', 'retrievePackage.xml');
       await fs.ensureDir(path.dirname(packageXmlTmp));
       await fs.copy(packageXml || '', packageXmlTmp);
-      uxLog("log", this, c.grey(`Copied ${packageXml} to ${packageXmlTmp}`));
+      uxLog("log", this, c.grey(t('copiedTo', { packageXml, packageXmlTmp })));
       packageXml = path.relative(process.cwd(), packageXmlTmp);
     }
 
@@ -124,9 +143,7 @@ The command's technical implementation involves:
     await execCommand(retrieveCommand, this, { fail: false, debug: this.debugMode, output: true });
 
     // Set bac initial cwd
-    const message = `[sfdx-hardis] Successfully retrieved sfdx sources from ${c.bold(targetUsername)} using ${c.bold(
-      packageXml
-    )}`;
+    const message = '[sfdx-hardis] ' + t('successfullyRetrievedSfdxSources', { targetUsername: c.bold(targetUsername || ''), packageXml: c.bold(packageXml || '') });
     uxLog("success", this, c.green(message));
     return { outputString: message };
   }

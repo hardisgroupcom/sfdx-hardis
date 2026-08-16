@@ -6,11 +6,16 @@ LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
 
 ENV SF_DATA_DIR=/usr/local/lib
 
+# Node.js major version installed from NodeSource (see note in the install step below)
+ARG NODE_MAJOR=24
+
 # Update package list and install required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     gnupg \
+    # Required for Azure Pipelines container jobs (steps run as a non-root user that needs sudo to elevate)
+    sudo \
     # Required for Python
     python3 \
     python3-pip \
@@ -48,7 +53,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ln -sf /usr/bin/python3 /usr/bin/python && \
     ln -sf /usr/bin/pip3 /usr/bin/pip && \
     # Install Node.js
-    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
+    # Pin to the Node 24 line: NodeSource serves its latest patch (24.18.0+), which includes
+    # the PR #64004 follow-up to the CVE-2026-48931 http.Agent fix. Without that follow-up
+    # (i.e. Node 24.17.0) the Salesforce CLI / jsforce hangs with an "unsettled top-level await"
+    # error (see https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
+    curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - && \
     apt-get install -y nodejs && \
     # Chrome installation 
     wget -q -O google-chrome-stable_current_amd64.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
@@ -98,6 +107,17 @@ RUN npm install --no-cache yarn -g && \
     rm -rf /root/.npm/_cacache && \
     rm -rf /tmp/* && \
     npm cache clean --force
+
+# Optionally install coding agent CLIs for auto-fix feature
+# Use --build-arg INSTALL_AGENTS=true to include agent CLIs (sfdx-hardis-ubuntu-with-agents images)
+ARG INSTALL_AGENTS=false
+RUN if [ "$INSTALL_AGENTS" = "true" ]; then \
+    npm install --no-cache @anthropic-ai/claude-code@latest -g && claude --version && \
+    npm install --no-cache @openai/codex@latest -g && codex --version && \
+    npm install --no-cache @google/gemini-cli@latest -g && gemini --version && \
+    npm install --no-cache @github/copilot@latest -g && copilot --version && \
+    npm cache clean --force; \
+fi
 
 ENV MERMAID_MODES="cli"
 

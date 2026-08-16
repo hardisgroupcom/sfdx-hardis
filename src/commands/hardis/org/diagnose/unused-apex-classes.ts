@@ -9,10 +9,11 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
-import moment from 'moment';
+import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import sortArray from 'sort-array';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -33,11 +34,22 @@ Apex Classes CreatedBy and CreatedOn fields are calculated from MIN(date from gi
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-apex-classes/) and can output Grafana, Slack and MsTeams Notifications.
 
 ![](${CONSTANTS.DOC_URL_ROOT}/assets/images/screenshot-monitoring-unused-apex-grafana.jpg)
-`;
+
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:unused-apex-classes --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically. The inactivity threshold defaults to 365 days when \`--days\` is not provided.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:unused-apex-classes',
-    '$ sf hardis:org:diagnose:unused-apex-classes --days 700'
+    '$ sf hardis:org:diagnose:unused-apex-classes --days 700',
+    '$ sf hardis:org:diagnose:unused-apex-classes --agent',
   ];
 
   //Comment default values to test the prompts
@@ -61,6 +73,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -124,15 +140,15 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async findCronTriggers(conn: any) {
-    uxLog("action", this, c.cyan(`Retrieving CronTriggers from org ${conn.instanceUrl}...`));
+    uxLog("action", this, c.cyan(t('retrievingCrontriggersFromOrg', { conn: conn.instanceUrl })));
     const cronTriggersQuery = `SELECT Id, CronJobDetail.JobType, CronJobDetail.Name, State, NextFireTime FROM CronTrigger  WHERE State IN ('WAITING', 'ACQUIRED', 'EXECUTING', 'PAUSED', 'BLOCKED', 'PAUSED_BLOCKED')`;
     const cronTriggersResult = await soqlQuery(cronTriggersQuery, conn);
     return cronTriggersResult.records;
   }
 
   private displaySummaryOutput() {
-    uxLog("action", this, c.cyan(`Found ${this.unusedNumber} async Apex classes that might not be used anymore:`));
-    let summary = `All async apex classes have been called during the latest ${this.lastNdays} days.`;
+    uxLog("action", this, c.cyan(t('foundAsyncApexClassesThatMightNot', { unusedNumber: this.unusedNumber })));
+    let summary = t('allApexClassesCalledInLastDays', { days: this.lastNdays });
     if (this.unusedNumber > 0) {
       summary = `${this.unusedNumber} apex classes might not be used anymore.
 Note: Salesforce does not provide all info to be 100% sure that a class is not used, so double-check before deleting them 😊`
@@ -142,11 +158,11 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
           severity: `${apexClass.severityIcon}`,
           name: apexClass.Name,
           AsyncType: apexClass.AsyncType,
-          latestJobDate: apexClass.latestJobDate ? moment(apexClass.latestJobDate).format('YYYY-MM-DD hh:mm') : "Not found",
+          latestJobDate: apexClass.latestJobDate ? dateHelper(apexClass.latestJobDate).format('YYYY-MM-DD hh:mm') : "Not found",
           latestJobRunDays: apexClass.latestJobRunDays,
-          nextJobDate: apexClass.nextJobDate ? moment(apexClass.nextJobDate).format('YYYY-MM-DD hh:mm') : "None",
+          nextJobDate: apexClass.nextJobDate ? dateHelper(apexClass.nextJobDate).format('YYYY-MM-DD hh:mm') : "None",
           queued: apexClass.queued,
-          classCreatedOn: moment(apexClass.ClassCreatedDate).format('YYYY-MM-DD'),
+          classCreatedOn: dateHelper(apexClass.ClassCreatedDate).format('YYYY-MM-DD'),
           classCreatedBy: apexClass.ClassCreatedBy
         };
       });
@@ -162,7 +178,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
   }
 
   private matchClassesWithJobs(latestJobsAll: any[], cronTriggers: any[]) {
-    uxLog("action", this, c.cyan(`Matching async Apex classes with latest jobs and cron triggers...`));
+    uxLog("action", this, c.cyan(t('matchingApexClassesWithJobs')));
     this.asyncClassList = this.asyncClassList.map(apexClass => {
       const futureJobs = cronTriggers.filter(cronJob => apexClass.Name === cronJob.CronJobDetail.Name);
       apexClass.nextJobDate = "";
@@ -185,8 +201,8 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
           apexClass.queued = true;
         }
         apexClass.latestJobDate = relatedJobs[0].expr0;
-        const today = moment();
-        apexClass.latestJobRunDays = today.diff(apexClass.latestJobDate, 'days');
+        const today = dateHelper();
+        apexClass.latestJobRunDays = today.diff(dateHelper(apexClass.latestJobDate), 'days');
         if (apexClass.latestJobRunDays > this.lastNdays && apexClass.nextJobDate === "" && apexClass.queued === false) {
           apexClass.severity = "warning";
           this.unusedNumber++;
@@ -206,7 +222,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
   }
 
   private async findLatestApexJobsForEachClass(conn: any) {
-    uxLog("action", this, c.cyan(`Retrieving latest Apex jobs from org ${conn.instanceUrl}...`));
+    uxLog("action", this, c.cyan(t('retrievingLatestApexJobsFromOrg', { conn: conn.instanceUrl })));
     const classIds = this.asyncClassList.map(apexClass => apexClass.Id);
     const query = `SELECT ApexClassId, Status, MAX(CreatedDate)` +
       ` FROM AsyncApexJob` +
@@ -217,7 +233,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
   }
 
   private async listAsyncApexClasses(conn: any) {
-    uxLog("action", this, c.cyan(`Retrieving async Apex classes from org ${conn.instanceUrl}...`));
+    uxLog("action", this, c.cyan(t('retrievingAsyncApexClassesFromOrg', { conn: conn.instanceUrl })));
     const classListRes = await soqlQueryTooling("SELECT Id, Name, Body FROM ApexClass WHERE ManageableState ='unmanaged' ORDER BY Name ASC", conn);
     const allClassList: any[] = classListRes.records || [];
     for (const classItem of allClassList) {
@@ -238,7 +254,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
     this.asyncClassList = await Promise.all(this.asyncClassList.map(async (cls) => {
       const matchingClass = classDtlResRecords.filter(classDtl => classDtl.Id === cls.Id)[0];
       // Use date & user found in org by default
-      cls.ClassCreatedDate = moment(matchingClass.CreatedDate).format('YYYY-MM-DD');
+      cls.ClassCreatedDate = dateHelper(matchingClass.CreatedDate).format('YYYY-MM-DD');
       cls.ClassCreatedBy = `${matchingClass.CreatedBy.Name} (org)`;
       // If file found in git, and if git date is lower than org date, use git date and user
       if (isRepo) {
@@ -251,11 +267,11 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
             '--max-count': 1,     // Limit to the first commit
           });
           if (log && log.all.length === 1) {
-            const orgCreatedDate = moment(cls.ClassCreatedDate);
-            const gitCreatedDate = moment(log.all[0].date);
+            const orgCreatedDate = dateHelper(cls.ClassCreatedDate);
+            const gitCreatedDate = dateHelper(log.all[0].date);
             // Use date from git only if it is before date from org
             if (gitCreatedDate.isBefore(orgCreatedDate)) {
-              cls.ClassCreatedDate = moment(log.all[0].date).format('YYYY-MM-DD');
+              cls.ClassCreatedDate = dateHelper(log.all[0].date).format('YYYY-MM-DD');
               cls.ClassCreatedBy = `${log.all[0].author_name} (git)`;
             }
           }
@@ -271,25 +287,25 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = 'log';
-    let notifText = `All async apex classes of org ${orgMarkdown} have been called during the latest ${this.lastNdays} days.`;
+    let notifText = `All async apex classes of org ${orgMarkdown} have been called during the latest **${this.lastNdays}** days.`;
     let attachments: any[] = [];
     if (this.unusedNumber > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.unusedNumber} apex classes might not be used anymore.`;
+      notifText = `**${this.unusedNumber}** apex classes might not be used anymore.`;
       const notifDetailText = this.asyncClassList
         .filter(apexClass => ["warning", "error"].includes(apexClass.severity))
         .map(apexClass => {
           if (apexClass.nextJobDate) {
-            return `• *${apexClass.Name}*: Will run on ${moment(apexClass.nextJobDate.format('YYYY-MM-DD hh:mm'))}`
+            return `- **${apexClass.Name}**: Will run on ${dateHelper(apexClass.nextJobDate).format('YYYY-MM-DD hh:mm')}`
           }
           else if (apexClass.queued) {
-            return `• *${apexClass.Name}*: A future job is queued`
+            return `- **${apexClass.Name}**: A future job is queued`
           }
           else if (apexClass.latestJobRunDays < 99999) {
-            return `• *${apexClass.Name}*: ${apexClass.latestJobRunDays} days (created on ${moment(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
+            return `- **${apexClass.Name}**: **${apexClass.latestJobRunDays}** days (created on ${dateHelper(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
           }
           else {
-            return `• *${apexClass.Name}*: No past or future job found (created on ${moment(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
+            return `- **${apexClass.Name}**: No past or future job found (created on ${dateHelper(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
           }
         }).join("\n");
       attachments = [{ text: notifDetailText }];

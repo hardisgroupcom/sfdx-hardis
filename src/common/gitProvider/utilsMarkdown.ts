@@ -5,6 +5,7 @@ import { MetadataUtils } from "../metadata-utils/index.js";
 import { uxLog } from "../utils/index.js";
 import { generateFlowVisualGitDiff } from "../utils/mermaidUtils.js";
 import { GitProvider } from "./index.js";
+import { t } from '../utils/i18n.js';
 
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
   let md = "## Deployment errors\n\n";
@@ -27,7 +28,7 @@ export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
           : "";
       md += `<details><summary>⛔ ${errorMessage}</summary>
 
-_[**✏️ ${err.tip.label}**](${err.tip.docUrl || "https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-home/"})_
+_[**✏️ ${err.tip.label}**](${err.tip.docUrl || "https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-home/"})_
 
 ${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
 ${aiText}
@@ -110,6 +111,10 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
   for (const flowName of flowNames) {
     flowDiffFilesSummary += `- [${flowName}](#${flowName})\n`;
     const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
+    if (fileMetadata == null) {
+      uxLog("warning", this, c.yellow('[FlowGitDiff] ' + t('flowGitDiffFlowFileNotFound', { flowName })));
+      continue;
+    }
     try {
       // Markdown with pure MermaidJS
       if (supportsMermaidInPrMarkdown) {
@@ -124,7 +129,7 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
         await generateDiffMarkdownWithPng(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
     } catch (e: any) {
-      uxLog("warning", this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff for ${flowName}: ${e.message}`) + "\n" + c.grey(e.stack));
+      uxLog("warning", this, c.yellow('[FlowGitDiff] ' + t('flowGitDiffUnableToGenerate', { flowName, message: e.message })) + "\n" + c.grey(e.stack));
     }
   }
   if (truncatedNb > 0) {
@@ -191,13 +196,18 @@ export function extractImagesFromMarkdown(markdown: string, sourceFile: string |
   const imageRegex = /!\[.*?\]\((.*?)\)/gm;
   const matches = Array.from(markdown.matchAll(imageRegex));
   return matches.map((match) => match[1]).filter(file => {
+    // Remote images render by themselves in the git provider UI: nothing to upload,
+    // and running a URL through path.join would mangle it into a broken warning
+    if (/^https?:\/\//.test(file)) {
+      return false;
+    }
     if (fs.existsSync(file)) {
       return true;
     }
     else if (fs.existsSync(path.join(sourceFilePath, file))) {
       return true;
     }
-    uxLog("warning", this, c.yellow(`[Markdown] Image file not found: ${file} or ${path.join(sourceFilePath, file)}`));
+    uxLog("warning", this, c.yellow('[Markdown] ' + t('markdownImageFileNotFound', { file, altPath: path.join(sourceFilePath, file) })));
     return false;
   }).map(file => {
     if (fs.existsSync(file)) {

@@ -61,7 +61,7 @@ Example: `DEPLOYED_TO_{BRANCH}`
 
 - .sfdx-hardis.yml property: **jiraTicketRegex** or ENV variable **JIRA_TICKET_REGEX**
 
-Define regular expression allowing to identify the JIRA tickets of your project in commit& Pull Requests titles & bodies, for example `(CLOUDITY-[0-9]+)`
+Define regular expression with a capturing group allowing to identify the JIRA tickets of your project in commit & Pull Requests titles & bodies, for example `(CLOUDITY-[0-9]+)`
 
 If not defined, default value is `(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\d{1,6})(?=[^a-zA-Z0-9_-]|$)`
 
@@ -70,8 +70,19 @@ If not defined, default value is `(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\d{1,6
 Define variables
 
 - .sfdx-hardis.yml property **jiraHost** or ENV variable **JIRA_HOST** (example: `https://sfdx-hardis.atlassian.net/`)
+
+For Basic Auth: 
 - **JIRA_EMAIL** (example: `nicolas.vuillamy@cloudity.com`)
-- **JIRA_TOKEN** , to create following [Atlassian documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
+- **JIRA_TOKEN**, to create following [Atlassian documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
+
+If instead you wish to use Service Accounts with OAuth2 define the following:
+- **JIRA_CLIENT_ID** 
+- **JIRA_CLIENT_SECRET**, to create following [Atlassian documentation](https://support.atlassian.com/user-management/docs/create-oauth-2-0-credential-for-service-accounts/)
+
+Remember to give the right scopes
+- **read:jira-work** Used to read the Jira issue data for use in pull request comment.
+- **write:jira-work** Used to post comment and update deployment label on issue.
+
 
 ### Jira On-Premise
 
@@ -124,3 +135,5 @@ This integration use the following variables, that must be available from the pi
 - JIRA_EMAIL
 - JIRA_TOKEN
 - JIRA_PAT
+- JIRA_CLIENT_ID
+- JIRA_CLIENT_SECRET

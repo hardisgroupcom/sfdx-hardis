@@ -1,7 +1,7 @@
 import { PromptTemplate } from "./promptTemplates.js";
 import path from 'path';
 import fs from 'fs-extra';
-import { XMLParser } from "fast-xml-parser";
+import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import farmhash from 'farmhash';
 import { getConfig } from "../../config/index.js";
 
@@ -65,7 +65,7 @@ export class UtilsAi {
     const parametersFingerPrints = promptParameters.map((promptParameter) => {
       if (typeof promptParameter === "string" && promptParameter.includes("<xml")) {
         try {
-          const xmlObj = new XMLParser().parse(UtilsAi.normalizeString(promptParameter));
+          const xmlObj = getLargeXmlParser().parse(UtilsAi.normalizeString(promptParameter));
           return farmhash.fingerprint32(UtilsAi.normalizeString(JSON.stringify(xmlObj)));
         }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

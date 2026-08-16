@@ -11,6 +11,7 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
   - [Gitlab](#gitlab)
   - [Azure](#azure)
   - [Bitbucket](#bitbucket)
+  - [Jenkins (any Git server)](#jenkins-any-git-server)
 - [Notifications](#notifications)
 - [Troubleshooting](#troubleshooting)
 
@@ -22,7 +23,7 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 
 ### Common instructions
 
-All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab**, **Azure** or **BitBucket** repository.
+All you need to configure sfdx-hardis Org Monitoring is a **GitHub**, **Gitlab**, **Azure**, **BitBucket** or any Git server accessible from a **Jenkins** instance.
 
 - Create and clone a git repository (initialize it with README)
 - Open it with Visual Studio Code, then open [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) extension menu.
@@ -56,29 +57,74 @@ All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab*
   - [Pre-requisites](salesforce-monitoring-config-bitbucket.md#pre-requisites)
   - [Schedule monitoring job](salesforce-monitoring-config-bitbucket.md#schedule-the-monitoring-job)
 
+### Jenkins (any Git server)
+
+- [Jenkins configuration](salesforce-monitoring-config-jenkins.md)
+  - [Pre-requisites](salesforce-monitoring-config-jenkins.md#pre-requisites)
+  - [Schedule monitoring job](salesforce-monitoring-config-jenkins.md#schedule-the-monitoring-job)
+
 ## Notifications
 
 For a better user experience, it is highly recommended to configure notifications !
 
-- [Slack instructions](salesforce-ci-cd-setup-integration-slack.md)
-- [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md)
-- [Email instructions](salesforce-ci-cd-setup-integration-email.md)
-- [Grafana instructions](salesforce-ci-cd-setup-integration-api.md) (example: for Grafana Loki integration)
+You can wire any combination of the following targets - they are fully independent and can be enabled in parallel:
 
-You can decide to run  commands but not send some notifications by defining either a **notificationsDisable** property in `.sfdx-hardis.yml`, or a comma separated list in env variable **NOTIFICATIONS_DISABLE**
+- [Slack instructions](salesforce-ci-cd-setup-integration-slack.md) - post to one or several Slack channels (global, branch-scoped, errors-only)
+- [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md) - post to Teams channels via incoming webhooks
+- [Email instructions](salesforce-ci-cd-setup-integration-email.md) - send to any recipient list, with per-notification-type overrides
+- [API / Grafana instructions](salesforce-ci-cd-setup-integration-api.md) - stream logs and Prometheus metrics to Grafana Loki, Prometheus, or any HTTP endpoint (used to build the [Org Monitoring by sfdx-hardis Grafana dashboards](salesforce-monitoring-grafana-v2.md))
 
-Example in .sfdx-hardis.yml:
+sfdx-hardis groups these targets into three channels, and you can configure each channel independently per notification type:
+
+- **messaging** -- Slack and Microsoft Teams
+- **email** -- email recipients
+- **api** -- the sfdx-hardis API / metrics provider (e.g. Grafana Loki, Prometheus). The `api` channel is always sent when configured, unless explicitly set to `off`.
+
+The full configuration (frequency, per-channel severity thresholds, custom commands) can be edited from the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) UI, or directly in `.sfdx-hardis.yml`:
+
+![](assets/images/monitoring-config-2026.gif)
+
+### Fine-grained routing per notification type
+
+You can configure, for each notification type, the minimum severity that must be reached before a channel is notified. This avoids overflowing Slack/Teams with informational notifications while still streaming everything to Grafana.
+
+Severity order (low to high): `log < success < info < warning < error < critical`. Use `off` to disable a channel for a given notification type.
 
 ```yaml
-notificationsDisable:
-  - METADATA_STATUS
-  - UNUSED_METADATAS
+monitoringCommands:
+  - key: AUDIT_TRAIL
+    notifications:
+      messaging: warning   # Slack/Teams only on warning, error, critical
+      email: error         # email only on error and critical
+      api: log             # everything goes to Grafana
+  - key: ORG_LIMITS
+    notifications:
+      messaging: error
+      email: critical
+  - key: METADATA_STATUS
+    notifications:
+      messaging: off       # mute Slack/Teams for this notification type
 ```
 
-Example in env var:
+### Override email recipients per notification type
 
-```sh
-NOTIFICATIONS_DISABLE=METADATA_STATUS,UNUSED_METADATAS
+For email, you can also override the recipient list per notification type, on top of the env-var-based recipients (`NOTIF_EMAIL_ADDRESS`, `NOTIF_EMAIL_ADDRESS_<BRANCH>`, `NOTIF_EMAIL_ADDRESS_<TYPE>`). Recipients listed in YAML are appended by default; set `replaceRecipients: true` to fully redirect the notification type to a dedicated mailing list.
+
+```yaml
+monitoringCommands:
+  - key: AUDIT_TRAIL
+    notifications:
+      email:
+        threshold: warning
+        recipients:
+          - security@company.com
+          - audit-team@company.com
+        replaceRecipients: true   # ignore env-var recipients for this type
+  - key: BACKUP
+    notifications:
+      email:
+        recipients:
+          - devops@company.com    # appended to existing env-var recipients
 ```
 
 You can also decide to skip posting logs or metrics to API for all notification types or specific ones by defining env variables **NOTIF_API_SKIP_LOGS** and **NOTIF_API_SKIP_METRICS**.
@@ -99,20 +145,46 @@ NOTIF_API_SKIP_METRICS=METADATA_STATUS,UNUSED_METADATAS
 
 ## Monitoring commands
 
-You can decide to disable commands by defining either a **monitoringDisable** property in `.sfdx-hardis.yml`, or a comma separated list in env variable **MONITORING_DISABLE**
+You can fine-tune which monitoring commands run, how often, and how their notifications are routed via the **monitoringCommands** property in `.sfdx-hardis.yml`. User entries are **merged by `key`** onto the built-in defaults, so you only need to declare the fields you want to override; new keys are appended as custom commands.
 
-Example in .sfdx-hardis.yml:
+### Frequency
+
+Each entry accepts a `frequency` field with one of:
+
+- `daily` -- runs every run
+- `weekly` -- runs once per week. The firing day is configurable via `frequencyDay` (`monday`..`sunday`, default `saturday`)
+- `biweekly` -- runs every other week. Same `frequencyDay` selector. The anchor uses ISO week parity so two `biweekly` entries with the same `frequencyDay` always fire on the same calendar weeks
+- `monthly` -- runs once per month. The firing day is configurable via `frequencyDayOfMonth` (`1`..`31`, default `1`). Values larger than the current month's last day are clamped to the last day, so `31` reliably means "last day of the month"
+- `off` -- never runs unless `--force-all` is passed to `hardis:org:monitor:all` (or env var `MONITORING_IGNORE_FREQUENCY=true` is set)
+
+Example overriding cadence + day:
 
 ```yaml
-monitoringDisable:
-  - METADATA_STATUS
-  - UNUSED_METADATAS
+monitoringCommands:
+  - key: AUDIT_TRAIL
+    frequency: weekly
+    frequencyDay: monday
+  - key: LICENSES
+    frequency: monthly
+    frequencyDayOfMonth: 1
+  - key: ORG_LIMITS
+    frequency: off
 ```
 
-Example in env var:
+### Custom commands
 
-```sh
-MONITORING_DISABLE=METADATA_STATUS,UNUSED_METADATAS
+To add a brand new command, declare a new key with `title` and `command`. Frequency and notifications are optional and behave the same as built-in entries:
+
+```yaml
+monitoringCommands:
+  - key: MY_CUSTOM_REPORT
+    title: My custom command
+    command: sf my:custom:command
+    frequency: biweekly
+    frequencyDay: friday
+    notifications:
+      messaging: info
+      email: warning
 ```
 
 ## Troubleshooting

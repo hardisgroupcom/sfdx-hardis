@@ -1,35 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_GRAFANACLOUD-CLOUDITY-LOGS",
-      "label": "grafanacloud-cloudity-logs",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "loki",
-      "pluginName": "Loki"
-    }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "11.3.0-75420"
-    },
-    {
-      "type": "datasource",
-      "id": "loki",
-      "name": "Loki",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -49,11 +18,10 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
+  "id": 35,
   "links": [],
   "panels": [
     {
-      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -63,13 +31,14 @@
       "id": 2,
       "panels": [],
       "repeat": "org",
+      "repeatDirection": "h",
       "title": "$org",
       "type": "row"
     },
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -158,12 +127,12 @@
           }
         ]
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{orgIdentifier=\"$org\", type=\"LICENSES\"} |= ``",
@@ -264,7 +233,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -353,12 +322,12 @@
           }
         ]
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{orgIdentifier=\"$org\", type=\"LICENSES\"} |= ``",
@@ -462,12 +431,21 @@
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
         "datasource": {
           "type": "loki",
-          "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          "uid": "grafanacloud-logs"
         },
         "definition": "",
+        "hide": 0,
         "includeAll": true,
         "multi": true,
         "name": "org",
@@ -480,6 +458,7 @@
         },
         "refresh": 1,
         "regex": "^(?!.*\\..*)(?!.*sandbox.*).*$",
+        "skipUrlSync": false,
         "sort": 1,
         "type": "query"
       }
@@ -489,6 +468,7 @@
     "from": "now-30d",
     "to": "now"
   },
+  "timeRangeUpdatedDuringEditOrView": false,
   "timepicker": {},
   "timezone": "browser",
   "title": "DASH - Licenses for all orgs",

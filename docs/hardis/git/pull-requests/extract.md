@@ -30,11 +30,21 @@ The command's technical implementation involves interacting with a Git provider'
 - **Error Handling:** It includes error handling for cases where a Git provider cannot be identified.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all interactive prompts. In agent mode:
+
+- `--target-branch`: Optional. If omitted, all branches are included.
+- `--status`: Optional. If omitted, all statuses are included.
+- `--min-date`: Optional date filter.
+- All interactive branch and status selection prompts are skipped.
+
 
 ## Parameters
 
 | Name                 |  Type   | Description                                                       | Default | Required |            Options            |
 |:---------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-----------------------------:|
+| agent                | boolean | Run in non-interactive mode for agents and automation             |         |          |                               |
 | debug<br/>-d         | boolean | Activate debug mode (more logs)                                   |         |          |                               |
 | flags-dir            | option  | undefined                                                         |         |          |                               |
 | json                 | boolean | Format output as json.                                            |         |          |                               |
@@ -53,6 +63,14 @@ $ sf hardis:git:pull-requests:extract
 
 ```shell
 $ sf hardis:git:pull-requests:extract --target-branch main --status merged
+```
+
+```shell
+$ sf hardis:git:pull-requests:extract --agent
+```
+
+```shell
+$ sf hardis:git:pull-requests:extract --agent --target-branch main --status merged
 ```
 
 

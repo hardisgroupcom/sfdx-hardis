@@ -4,7 +4,7 @@
 // The user is then prompted to select which objects to extract. The selected objects are returned and used in the rest of the extraction process.
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { prompts } from '../../../../common/utils/prompts.js';
-import { uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
 import c from 'chalk';
 import { generateCsvFile, generateReportPath, createXlsxFromCsvFiles } from '../../../../common/utils/filesUtils.js';
 import { bulkQuery, soqlQuery } from '../../../../common/utils/apiUtils.js';
@@ -15,6 +15,7 @@ import { Messages } from '@salesforce/core';
 import { PromisePool } from '@supercharge/promise-pool';
 import sortArray from 'sort-array';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -36,6 +37,19 @@ Key capabilities:
 - **Profile field access coverage:** Retrieves FieldPermissions to surface read/edit status per profile and field.
 - **Consolidated reporting:** Produces standalone CSVs plus an aggregated XLSX stored in the report directory.
 
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:profiles-extract --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- The interactive object selection prompt is skipped; all queryable objects with records are used.
+- The persona count prompt is skipped; defaults to 1 persona.
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -52,10 +66,11 @@ Key capabilities:
   public static readonly examples = [
     `$ sf hardis:project:clean:profiles-extract`,
     `$ sf hardis:project:clean:profiles-extract --target-org my-org`,
+    '$ sf hardis:project:clean:profiles-extract --agent --target-org my-org',
   ];
 
   /* jscpd:ignore-start */
-  public static readonly flags = {
+  public static readonly flags: any = {
     'target-org': Flags.requiredOrg({
       char: 'o',
       description: 'The target Salesforce org to fetch SObjects from.',
@@ -71,6 +86,10 @@ Key capabilities:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
   };
   /* jscpd:ignore-end */
   protected csvFiles: string[] = [];
@@ -85,30 +104,31 @@ Key capabilities:
    */
   public async run(): Promise<void> {
     const { flags } = await this.parse(ProfilesExtract);
+    const agentMode = flags.agent === true;
     const conn = flags['target-org'].getConnection();
     let selectedObjects: string[] = [];
     let numberOfPersonas = 1;
     try {
-      selectedObjects = await this.generateObjectsList(conn);
-      uxLog("action", this, c.cyan('Handling extract of Users...'));
+      selectedObjects = await this.generateObjectsList(conn, agentMode);
+      uxLog("action", this, c.cyan(t('handlingExtractOfUsers')));
       await this.generateUsersExtract(conn);
-      numberOfPersonas = await this.generatePersonaExtract();
-      uxLog("action", this, c.cyan(`Generating extracts for ${numberOfPersonas} personas...`));
-      uxLog("log", this, c.cyan('Generating Relation extract...'));
+      numberOfPersonas = await this.generatePersonaExtract(agentMode);
+      uxLog("action", this, c.cyan(t('generatingExtractsForPersonas', { numberOfPersonas })));
+      uxLog("log", this, c.grey(t('generatingRelationExtract')));
       await this.generateRelationExtract(selectedObjects, numberOfPersonas);
-      uxLog("log", this, c.cyan('Generating Record Types extract...'));
+      uxLog("log", this, c.grey(t('generatingRecordTypesExtract')));
       await this.generateRTExtract(conn, selectedObjects, numberOfPersonas);
-      uxLog("log", this, c.cyan('Generating Applications extract...'));
+      uxLog("log", this, c.grey(t('generatingApplicationsExtract')));
       await this.generateAppsExtract(conn, numberOfPersonas);
-      uxLog("log", this, c.cyan('Generating Permissions extract...'));
+      uxLog("log", this, c.grey(t('generatingPermissionsExtract')));
       await this.generatePermissionsExtract(conn, numberOfPersonas);
-      uxLog("log", this, c.cyan('Generating Tabs extract...'));
+      uxLog("log", this, c.grey(t('generatingTabsExtract')));
       await this.generateTabsExtract(conn, numberOfPersonas);
-      uxLog("log", this, c.cyan('Generating Permission Sets extract...'));
+      uxLog("log", this, c.grey(t('generatingPermissionSetsExtract')));
       await this.generatePermissionSetsExtract(conn, numberOfPersonas);
 
       // 1. Extract profile field access and get all profiles
-      uxLog("action", this, c.cyan('Extracting profile field access...'));
+      uxLog("action", this, c.cyan(t('extractingProfileFieldAccess')));
       const profileFieldAccess = await this.getProfileFieldAccessData(conn, selectedObjects);
       const profileNames = Array.from(new Set(profileFieldAccess.map(r => r.Profile).filter(Boolean)));
 
@@ -122,15 +142,15 @@ Key capabilities:
         await generateCsvFile(profileFieldAccess, this.outputFile, { fileTitle: 'Profile Field Access', noExcel: true, skipNotifyToWebSocket: true });
         this.csvFiles.push(this.outputFile);
       } else {
-        uxLog('log', this, c.yellow('No profile field access records found, skipping ProfileFieldAccess.csv.'));
+        uxLog('log', this, c.yellow(t('noProfileFieldAccessRecordsFoundSkipping')));
       }
 
       this.outputFile = '';
       this.outputFile = await generateReportPath('profiles-extract', this.outputFile);
-      uxLog("action", this, c.cyan('Generating final XLSX report...'));
+      uxLog("action", this, c.cyan(t('generatingFinalXlsxReport')));
       await createXlsxFromCsvFiles(this.csvFiles, this.outputFile, { fileTitle: 'profiles extract' });
     } catch (error) {
-      uxLog('log', this, c.red('Failed to fetch SObjects.'));
+      uxLog('log', this, c.red(t('failedToFetchSobjects')));
       throw error;
     }
   }
@@ -154,7 +174,7 @@ Key capabilities:
           const profileResult = await soqlQuery(profileQuery, conn);
           profileIds = profileResult.records.map((p: any) => p.Id);
         } catch (profileError) {
-          uxLog('warning', this, c.yellow(`Failed to query Profile IDs: ${(profileError as Error).message}`));
+          uxLog('warning', this, c.yellow(t('failedToQueryProfileIds', { error: (profileError as Error).message })));
           return fieldAccessRecords; // Return empty array if profile query fails
         }
       }
@@ -197,9 +217,9 @@ Key capabilities:
           PermissionsEdit: rec['PermissionsEdit'] === true || rec['PermissionsEdit'] === 'true' ? 'Yes' : 'No',
         });
       });
-      uxLog('log', this, c.cyan(`Fetched ${fieldAccessRecords.length} profile field access records.`));
+      uxLog('log', this, c.grey(t('fetchedProfileFieldAccessRecords', { fieldAccessRecords: fieldAccessRecords.length })));
     } catch (error) {
-      uxLog('warning', this, c.yellow(`Failed to query FieldPermissions: ${(error as Error).message}`));
+      uxLog('warning', this, c.yellow(t('failedToQueryFieldpermissions', { error: (error as Error).message })));
     }
     return fieldAccessRecords;
   }
@@ -210,10 +230,10 @@ Key capabilities:
    * @param conn Salesforce connection
    * @returns Array of selected object API names
    */
-  private async generateObjectsList(conn: any): Promise<string[]> {
+  private async generateObjectsList(conn: any, agentMode = false): Promise<string[]> {
 
     let selectedObjects: string[] = [];
-    uxLog('action', this, c.cyan('Fetching SObjects list...'));
+    uxLog('action', this, c.cyan(t('fetchingSobjectsList')));
     let sobjectsList: { label: string; name: string; masterObject: string; objectType: string }[] = [];
     try {
       // Use listOrgSObjectsFilteredWithQualifiedNames to get filtered SObjects with qualified API names
@@ -227,12 +247,12 @@ Key capabilities:
         objectType: record.QualifiedApiName.endsWith('__c') ? 'Custom' : 'Standard',
       }));
 
-      uxLog('log', this, c.cyan('Fetching SObjects completed.'));
-      uxLog('log', this, c.cyan(`Fetched ${sobjectsList.length} SObjects.`));
+      uxLog('log', this, c.grey(t('fetchingSobjectsCompleted')));
+      uxLog('log', this, c.grey(t('fetchedSobjects', { sobjectsList: sobjectsList.length })));
 
       const sobjectsWithRecords: { API_Name: string; Object_Label: string; Object_Type: string }[] = [];
 
-      WebSocketClient.sendProgressStartMessage('Checking SObjects for records...', sobjectsList.length);
+      WebSocketClient.sendProgressStartMessage(t('checkingSobjectsForRecords'), sobjectsList.length);
       let counter = 0;
       await PromisePool.withConcurrency(5)
         .for(sobjectsList)
@@ -244,7 +264,7 @@ Key capabilities:
             }
             uxLog('log', this, `Checked ${sobject.name}: ${result.totalSize} records.`);
           } catch (error) {
-            uxLog('warning', this, c.yellow(`Failed to query ${sobject.name}: ${(error as Error).message}`));
+            uxLog('warning', this, c.yellow(t('failedToQuery', { sobject: sobject.name, error: (error as Error).message })));
           } finally {
             counter++;
             WebSocketClient.sendProgressStepMessage(counter, sobjectsList.length);
@@ -254,7 +274,7 @@ Key capabilities:
       this.spinner.stop();
 
       if (sobjectsWithRecords.length === 0) {
-        uxLog('warning', this, c.red('No SObjects with records found.'));
+        uxLog('warning', this, c.yellow(t('noSobjectsWithRecordsFound')));
         return [];
       }
 
@@ -270,22 +290,28 @@ Key capabilities:
       }
       sortArray(choices, { by: 'title', order: 'asc' });
 
-      const statusRes = await prompts({
-        message: "Please select SObjects to add in the output Excel file",
-        type: "multiselect",
-        description: "Be careful, you can't update the selection later without re-running the command :)",
-        choices: choices,
-        initial: initialSelection.filter((sel => choices.some(choice => choice.value === sel))),
-      });
+      if (!isCI && !agentMode) {
+        const statusRes = await prompts({
+          message: t('pleaseSelectSobjectsToAddInThe'),
+          type: "multiselect",
+          description: t('beCarefulAboutProfileChanges'),
+          choices: choices,
+          initial: initialSelection.filter((sel => choices.some(choice => choice.value === sel))),
+        });
 
-      await setConfig("user", { profilesExtractCachedSelection: statusRes.value });
+        await setConfig("user", { profilesExtractCachedSelection: statusRes.value });
 
-      if (statusRes && statusRes.value !== "all") {
-        selectedObjects = statusRes.value;
-        uxLog('log', this, `You selected ${selectedObjects.length} objects.`);
+        if (statusRes && statusRes.value !== "all") {
+          selectedObjects = statusRes.value;
+          uxLog('log', this, `You selected ${selectedObjects.length} objects.`);
+        }
+      } else {
+        // In agent/CI mode, use all objects with records
+        selectedObjects = sobjectsWithRecords.map((sobj) => sobj.API_Name);
+        uxLog('log', this, `Agent mode: using all ${selectedObjects.length} objects with records.`);
       }
 
-      uxLog("log", this, c.cyan('Generating Objects.csv report...'));
+      uxLog("log", this, c.grey(t('generatingObjectsCsvReport')));
       const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, 'Objects.csv');
       const objectsToWrite = sobjectsWithRecords.filter((sobj) => selectedObjects.includes(sobj.API_Name));
@@ -298,7 +324,7 @@ Key capabilities:
       this.csvFiles.push(this.outputFile);
 
     } catch (error) {
-      uxLog('log', this, c.red('Failed to fetch SObjects.'));
+      uxLog('log', this, c.red(t('failedToFetchSobjects')));
       throw error;
     }
 
@@ -324,8 +350,8 @@ Key capabilities:
     })));
     // Build set of active profile names (filter out empty/null)
     this.activeProfileNames = new Set(userResult.records.map((user) => user['Profile.Name']).filter((n) => !!n));
-    uxLog('log', this, c.cyan(`Fetched ${userResult.records.length} active users.`));
-    uxLog('log', this, c.cyan(`Active profiles: ${Array.from(this.activeProfileNames).join(', ')}`));
+    uxLog('log', this, c.grey(t('fetchedActiveUsers', { userResult: userResult.records.length })));
+    uxLog('log', this, c.grey(t('activeProfiles', { Array: Array.from(this.activeProfileNames).join(', ') })));
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Users.csv');
     sortArray(usersRecords, { by: 'User', order: 'asc' });
@@ -339,17 +365,21 @@ Key capabilities:
    * Generates a CSV report listing the personas.
    * @returns The number of personas
    */
-  private async generatePersonaExtract() {
+  private async generatePersonaExtract(agentMode = false) {
     let numberOfPersonas = 1;
-    const statusRes = await prompts({
-      message: "Please enter the number of personas to create",
-      type: "number",
-      description: "One tab by personal will be created in the final Excel file",
-      placeholder: "Input a number of personas (better too much than too few!)",
-    });
-    if (statusRes && statusRes.value !== 0) {
-      numberOfPersonas = statusRes.value;
-      uxLog('log', this, `Creation of ${numberOfPersonas} personas.`);
+    if (!isCI && !agentMode) {
+      const statusRes = await prompts({
+        message: t('pleaseEnterTheNumberOfPersonasTo'),
+        type: "number",
+        description: "One tab by personal will be created in the final Excel file",
+        placeholder: t('inputNumberOfPersonas'),
+      });
+      if (statusRes && statusRes.value !== 0) {
+        numberOfPersonas = statusRes.value;
+        uxLog('log', this, `Creation of ${numberOfPersonas} personas.`);
+      }
+    } else {
+      uxLog('log', this, `Agent mode: using default of ${numberOfPersonas} persona(s).`);
     }
 
     const persona: { 'Persona Name': string }[] = [];
@@ -423,7 +453,7 @@ Key capabilities:
           });
         });
       } catch (error) {
-        uxLog('warning', this, c.yellow(`Failed to query RecordTypes for ${objName}: ${(error as Error).message}`));
+        uxLog('warning', this, c.yellow(t('failedToQueryRecordtypesFor', { objName, error: (error as Error).message })));
       }
     }
     const reportDir = await getReportDirectory();
@@ -459,7 +489,7 @@ Key capabilities:
         });
       });
     } catch (error) {
-      uxLog('warning', this, c.yellow(`Failed to query Applications : ${(error as Error).message}`));
+      uxLog('warning', this, c.yellow(t('failedToQueryApplications', { error: (error as Error).message })));
     }
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Applications.csv');
@@ -487,15 +517,10 @@ Key capabilities:
 
     // Print API name + Label
     permissionFields.forEach(field => {
-      const personaCols: Record<string, string> = {};
-      for (let i = 1; i <= numberOfPersonas; i++) {
-        const personaRow = i + 1;
-        personaCols[`=persona!A${personaRow}`] = '';
-      }
       permissionsRecords.push({
         Permission_Label: field.label,
         Permission_API_Name: field.name,
-        ...personaCols,
+        ...this.buildPersonaCols(numberOfPersonas),
       });
     });
     const reportDir = await getReportDirectory();
@@ -517,15 +542,10 @@ Key capabilities:
     try {
       const tabsResult = await conn.query(`SELECT Name, Label FROM TabDefinition WHERE IsCustom = true`);
       tabsResult.records.forEach((tab) => {
-        const personaCols: Record<string, string> = {};
-        for (let i = 1; i <= numberOfPersonas; i++) {
-          const personaRow = i + 1;
-          personaCols[`=persona!A${personaRow}`] = '';
-        }
         tabsRecords.push({
           Tab_Label: tab.Label,
           Tab_API_Name: tab.Name,
-          ...personaCols,
+          ...this.buildPersonaCols(numberOfPersonas),
         });
       });
       const reportDir = await getReportDirectory();
@@ -534,7 +554,7 @@ Key capabilities:
       await generateCsvFile(tabsRecords, this.outputFile, { fileTitle: 'Tabs extract', noExcel: true, skipNotifyToWebSocket: true });
       this.csvFiles.push(this.outputFile);
     } catch (error) {
-      uxLog('warning', this, c.yellow(`Failed to query Tabs : ${(error as Error).message}`));
+      uxLog('warning', this, c.yellow(t('failedToQueryTabs', { error: (error as Error).message })));
     }
     return;
   }
@@ -548,7 +568,7 @@ Key capabilities:
    * @param numberOfPersonas Number of personas
    */
   async generateObjectFieldsExtract(conn: any, selectedObjects: string[], numberOfPersonas: number, profileNames: string[] = [], profileFieldAccess: any[] = []) {
-    WebSocketClient.sendProgressStartMessage('Extracting object fields...', selectedObjects.length);
+    WebSocketClient.sendProgressStartMessage(t('extractingObjectFields'), selectedObjects.length);
     const outputFiles: string[] = new Array(selectedObjects.length);
     let counter = 0;
     await PromisePool.withConcurrency(5)
@@ -621,7 +641,7 @@ Key capabilities:
           await generateCsvFile(fieldsRecords, outputFile, { fileTitle: `${objName} Fields extract`, noExcel: true, skipNotifyToWebSocket: true });
           outputFiles[index] = outputFile;
         } catch (error) {
-          uxLog('warning', this, c.yellow(`Failed to describe fields for ${objName}: ${(error as Error).message}`));
+          uxLog('warning', this, c.yellow(t('failedToDescribeFieldsFor', { objName, error: (error as Error).message })));
         } finally {
           counter++;
           WebSocketClient.sendProgressStepMessage(counter, selectedObjects.length);
@@ -635,8 +655,8 @@ Key capabilities:
   /**
    * Extracts all Permission Sets in the org.
    * Generates a CSV report mapping each permission set to personas.
-   * @param conn 
-   * @param numberOfPersonas 
+   * @param conn
+   * @param numberOfPersonas
    */
   async generatePermissionSetsExtract(conn: any, numberOfPersonas: number) {
     const permissionSetsRecords: { Name: string; Label: string; Description: string; IsCustom: string;[key: string]: string }[] = [];
@@ -672,8 +692,16 @@ Key capabilities:
       });
       this.csvFiles.push(this.outputFile);
     } catch (error) {
-      uxLog('warning', this, c.yellow(`Failed to query PermissionSets: ${(error as Error).message}`));
+      uxLog('warning', this, c.yellow(t('failedToQueryPermissionsets', { error: (error as Error).message })));
     }
+  }
+
+  private buildPersonaCols(numberOfPersonas: number): Record<string, string> {
+    const cols: Record<string, string> = {};
+    for (let i = 1; i <= numberOfPersonas; i++) {
+      cols[`=persona!A${i + 1}`] = '';
+    }
+    return cols;
   }
 
 }

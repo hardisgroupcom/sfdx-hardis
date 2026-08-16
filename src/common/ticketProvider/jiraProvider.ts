@@ -1,53 +1,92 @@
-import { Version3Client, Version3Models } from "jira.js";
-import { TicketProviderRoot } from "./ticketProviderRoot.js";
+import { Version2Client, Version3Client, Version3Models } from "jira.js";
+import { recordTicketCollectionIssue, TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from "sort-array";
 import { Ticket } from "./index.js";
-import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
-import { extractRegexMatches, uxLog } from "../utils/index.js";
+import { extractRegexMatches, getCurrentGitBranch, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
-import { getConfig, getEnvVar } from "../../config/index.js";
-import { CommonPullRequestInfo } from "../gitProvider/index.js";
+import { CONSTANTS, getConfig, getEnvVar } from "../../config/index.js";
+import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
+import { t } from '../utils/i18n.js';
+import { httpGet, httpPost } from "../utils/httpUtils.js";
 
 export class JiraProvider extends TicketProviderRoot {
-  private jiraClient: Version3Client | null = null;
+  // Version3Client for Jira Cloud, Version2Client for Jira Server / Data Center
+  private jiraClient: Version2Client | Version3Client | null = null;
   private jiraHost: string | null = null;
+  private clientCredentialsEnabled = false;
+  private clientCredentialsInitialized = false;
 
   constructor(config: any) {
     super();
     const rawHost = getEnvVar("JIRA_HOST") || config.jiraHost || "";
     const sanitizedHost = rawHost.startsWith("http") ? rawHost : `https://${rawHost}`;
     this.jiraHost = sanitizedHost.replace(/\/$/, "");
-    const jiraOptions: ConstructorParameters<typeof Version3Client>[0] = {
-      host: this.jiraHost || '',
-    };
-    // Basic Auth
-    if (getEnvVar("JIRA_EMAIL") && getEnvVar("JIRA_TOKEN")) {
-      jiraOptions.authentication = {
+    // Client Credentials (Jira Cloud only - uses Atlassian OAuth2 API)
+    if (getEnvVar("JIRA_CLIENT_ID") && getEnvVar("JIRA_CLIENT_SECRET")) {
+      this.isActive = true;
+      this.clientCredentialsEnabled = true;
+      uxLog("log", this, c.grey("[JiraProvider] Using JIRA_CLIENT_ID and JIRA_CLIENT_SECRET for authentication"));
+    }
+    // Basic Auth (email + API token for Cloud, username + password for Server/DC)
+    else if (getEnvVar("JIRA_EMAIL") && getEnvVar("JIRA_TOKEN")) {
+      const authConfig = {
         basic: {
           email: getEnvVar("JIRA_EMAIL") || "",
           apiToken: getEnvVar("JIRA_TOKEN") || "",
         },
       };
+      this.jiraClient = this.createJiraClient(authConfig);
       this.isActive = true;
-      uxLog("log", this, c.grey("[JiraProvider] Using JIRA_EMAIL and JIRA_TOKEN for authentication"));
+      uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderAuthEmailToken')));
     }
     // Personal access token
     else if (getEnvVar("JIRA_PAT")) {
-      jiraOptions.authentication = {
+      const authConfig = {
         oauth2: {
           accessToken: getEnvVar("JIRA_PAT") || "",
         },
       };
+      this.jiraClient = this.createJiraClient(authConfig);
       this.isActive = true;
-      uxLog("log", this, c.grey("[JiraProvider] Using JIRA_PAT for authentication"));
-    }
-    if (this.isActive) {
-      this.jiraClient = new Version3Client(jiraOptions);
+      uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderAuthPat')));
     }
   }
 
+  /**
+   * Detects whether the configured JIRA host is Jira Cloud.
+   * Jira Cloud instances use atlassian.net or .jira.com domains.
+   * Jira Server / Data Center uses custom/on-premise domains.
+   */
+  private isJiraCloud(): boolean {
+    return (this.jiraHost || "").includes("atlassian.net") || (this.jiraHost || "").includes(".jira.com");
+  }
+
+  /**
+   * Creates the appropriate JIRA client based on the hosting type:
+   * - Version3Client for Jira Cloud (REST API v3 with ADF support)
+   * - Version2Client for Jira Server / Data Center (REST API v2 with plain text)
+   */
+  private createJiraClient(
+    authConfig: { oauth2: { accessToken: string } } | { basic: { email: string; apiToken: string } },
+  ): Version2Client | Version3Client {
+    const host = (this.jiraHost || "").replace(/\/$/, "");
+    if (this.isJiraCloud()) {
+      return new Version3Client({ host, authentication: authConfig });
+    }
+    // Jira Server / Data Center only supports REST API v2
+    return new Version2Client({ host, authentication: authConfig });
+  }
+
   public static isAvailable(config: any): boolean {
+    if (
+      // Client Credentials
+      (getEnvVar("JIRA_HOST") || config.jiraHost) &&
+      getEnvVar("JIRA_CLIENT_ID") &&
+      getEnvVar("JIRA_CLIENT_SECRET")
+    ) {
+      return true;
+    }
     if (
       // Basic auth
       (getEnvVar("JIRA_HOST") || config.jiraHost) &&
@@ -68,6 +107,75 @@ export class JiraProvider extends TicketProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis JIRA connector";
+  }
+
+  private async getJiraClient(): Promise<Version2Client | Version3Client | null> {
+    if (this.jiraClient) {
+      return this.jiraClient;
+    }
+    if (!this.isActive) {
+      return null;
+    }
+    // Client Credentials OAuth2 flow (Jira Cloud only)
+    if (this.clientCredentialsEnabled && !this.clientCredentialsInitialized) {
+      try {
+        const accessToken = await this.getOAuthToken();
+        const cloudId = await this.getCloudId(accessToken);
+
+        if (cloudId) {
+          // Client Credentials always target Jira Cloud via the Atlassian API gateway
+          this.jiraClient = new Version3Client({
+            host: `https://api.atlassian.com/ex/jira/${cloudId}`,
+            authentication: {
+              oauth2: {
+                accessToken: accessToken,
+              },
+            },
+          });
+        } else {
+          uxLog("error", this, c.yellow("[JiraProvider] Could not resolve Cloud ID for JIRA_HOST from accessible resources."));
+        }
+      } catch (e: any) {
+        uxLog("error", this, c.yellow(`[JiraProvider] Error initializing OAuth2 client: ${e.message}`));
+      } finally {
+        this.clientCredentialsInitialized = true;
+      }
+    }
+    return this.jiraClient;
+  }
+
+  private async getOAuthToken(): Promise<string> {
+    const clientId = getEnvVar("JIRA_CLIENT_ID") || "";
+    const clientSecret = getEnvVar("JIRA_CLIENT_SECRET") || "";
+
+    const tokenResponse = await httpPost("https://api.atlassian.com/oauth/token", {
+      audience: "api.atlassian.com",
+      grant_type: "client_credentials",
+      client_id: clientId,
+      client_secret: clientSecret,
+    });
+    return tokenResponse.data.access_token;
+  }
+
+  private async getCloudId(accessToken: string): Promise<string> {
+    const resourcesResponse = await httpGet("https://api.atlassian.com/oauth/token/accessible-resources", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    let cloudId = "";
+    for (const resource of resourcesResponse.data) {
+      if (this.jiraHost?.includes(resource.url) || resource.url.includes(this.jiraHost || "")) {
+        cloudId = resource.id;
+        break;
+      }
+    }
+
+    if (!cloudId && resourcesResponse.data.length > 0) {
+      cloudId = resourcesResponse.data[0].id; // Fallback to first available resource
+    }
+    return cloudId;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -93,10 +201,11 @@ export class JiraProvider extends TicketProviderRoot {
     // Extract JIRA tickets using Identifiers
     const config = await getConfig("project");
     const jiraBaseUrl = getEnvVar("JIRA_HOST") || config.jiraHost || "https://define.JIRA_HOST.in.cicd.variables/";
+    const sanitizedBaseUrl = jiraBaseUrl.startsWith("http") ? jiraBaseUrl : `https://${jiraBaseUrl}`;
     const jiraRegex = getEnvVar("JIRA_TICKET_REGEX") || config.jiraTicketRegex || "(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\\d{1,6})(?=[^a-zA-Z0-9_-]|$)";
     const jiraRefRegex = new RegExp(jiraRegex, "gm");
     const jiraRefs = await extractRegexMatches(jiraRefRegex, text);
-    const jiraBaseUrlBrowse = jiraBaseUrl.replace(/\/$/, "") + "/browse/";
+    const jiraBaseUrlBrowse = sanitizedBaseUrl.replace(/\/$/, "") + "/browse/";
     for (const jiraRef of jiraRefs) {
       const jiraTicketUrl = jiraBaseUrlBrowse + jiraRef;
       if (!tickets.some((ticket) => ticket.url === jiraTicketUrl || ticket.id === jiraRef)) {
@@ -113,7 +222,8 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   public async collectTicketsInfo(tickets: Ticket[]) {
-    if (!this.jiraClient) {
+    const activeClient = await this.getJiraClient();
+    if (!activeClient) {
       return tickets;
     }
     const jiraTicketsNumber = tickets.filter((ticket) => ticket.provider === "JIRA").length;
@@ -121,26 +231,37 @@ export class JiraProvider extends TicketProviderRoot {
       uxLog(
         "action",
         this,
-        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + this.jiraHost + " ..."),
+        c.cyan('[JiraProvider] ' + t('jiraProviderCollectingTickets', { jiraTicketsNumber, jiraHost: this.jiraHost })),
       );
     }
+    let failedTicketsNumber = 0;
+    let firstErrorMessage = '';
     for (const ticket of tickets) {
       if (ticket.provider === "JIRA") {
-        let ticketInfo: Version3Models.Issue | null = null;
+        let ticketInfo: any = null;
+        let errorCaught = false;
         try {
-          ticketInfo = await this.jiraClient.issues.getIssue({ issueIdOrKey: ticket.id });
+          // Cast needed: Version2Client and Version3Client share the same method signature,
+          // but TypeScript cannot resolve the union of their overloaded signatures.
+          ticketInfo = await (activeClient as Version2Client).issues.getIssue({ issueIdOrKey: ticket.id });
         } catch (e) {
-          uxLog("warning", this, c.yellow(`[JiraApi] Error while trying to get ${ticket.id} information: ${(e as Error).message}`));
+          // A single aggregated warning is displayed after the loop: per-ticket failures usually
+          // share the same cause (expired token, missing permission) and would flood the log.
+          uxLog("log", this, c.grey('[JiraApi] ' + t('jiraApiErrorGettingTicket', { ticketId: ticket.id, message: (e as Error).message })));
+          errorCaught = true;
+          failedTicketsNumber++;
+          firstErrorMessage = firstErrorMessage || (e as Error).message;
         }
         if (ticketInfo) {
-          const body = this.getPlainTextFromDescription(ticketInfo?.fields?.description as Version3Models.Document | string | null | undefined);
+          // Description is ADF Document on Cloud (v3) or plain string on Server/DC (v2)
+          const body = this.getPlainTextFromDescription(ticketInfo?.fields?.description);
           ticket.foundOnServer = true;
           ticket.subject = ticketInfo?.fields?.summary || "";
           ticket.body = body;
           ticket.status = ticketInfo.fields?.status?.id || "";
           ticket.statusLabel = ticketInfo.fields?.status?.name || "";
-          const assignee = ticketInfo.fields?.assignee as Version3Models.UserDetails | undefined;
-          const reporter = ticketInfo.fields?.reporter as Version3Models.UserDetails | undefined;
+          const assignee = ticketInfo.fields?.assignee as any;
+          const reporter = ticketInfo.fields?.reporter as any;
           if (assignee) {
             ticket.assignee = assignee.accountId || assignee.name || "";
             ticket.assigneeLabel = assignee.displayName || "";
@@ -155,32 +276,53 @@ export class JiraProvider extends TicketProviderRoot {
             ticket.authorLabel = preferredOwner.displayName || "";
           }
           if (ticket.subject === "") {
-            uxLog("warning", this, c.yellow("[JiraProvider] Unable to collect JIRA ticket info for " + ticket.id));
+            uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderUnableToCollectTicket', { ticketId: ticket.id })));
             if (JSON.stringify(ticketInfo).includes("<!DOCTYPE html>")) {
-              uxLog("log", this, c.grey("[JiraProvider] This is probably a JIRA auth config issue, as HTML is returned"));
+              uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderAuthConfigIssue')));
             } else {
               uxLog("log", this, c.grey(JSON.stringify(ticketInfo)));
             }
             ticket.foundOnServer = false;
+            failedTicketsNumber++;
+            firstErrorMessage = firstErrorMessage || 'JIRA returned an unusable response (possibly an authentication redirect)';
           }
-          uxLog("log", this, c.grey("[JiraProvider] Collected data for ticket " + ticket.id));
-        } else {
-          uxLog("warning", this, c.yellow("[JiraProvider] Unable to get JIRA issue " + ticket.id));
+          uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderCollectedTicket', { ticketId: ticket.id })));
+        } else if (!errorCaught) {
+          // Resolved without throwing but no usable payload: still a collection failure.
+          // The thrown case was already counted and logged in the catch block above.
+          uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderUnableToGetIssue', { ticketId: ticket.id })));
+          failedTicketsNumber++;
+          firstErrorMessage = firstErrorMessage || 'no details returned by the JIRA API';
         }
       }
+    }
+    if (failedTicketsNumber > 0) {
+      uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderTicketsCollectionFailed', {
+        failed: failedTicketsNumber,
+        total: jiraTicketsNumber,
+        message: firstErrorMessage,
+      })));
+      recordTicketCollectionIssue(`Details could not be retrieved for ${failedTicketsNumber} of ${jiraTicketsNumber} JIRA ticket(s) (first error: ${firstErrorMessage}). Check the JIRA authentication and permissions of the CI job.`);
     }
     return tickets;
   }
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
-    if (!this.jiraClient) {
+    const activeClient = await this.getJiraClient();
+    if (!activeClient) {
       return tickets;
     }
-    uxLog("action", this, c.cyan(`[JiraProvider] Try to post comments on ${tickets.length} tickets...`));
+    uxLog("action", this, c.cyan('[JiraProvider] ' + t('jiraProviderPostingComments', { count: tickets.length })));
 
     const genericHtmlResponseError = "Probably config/access error since response is HTML";
-    const orgMarkdown = JSON.parse(await getOrgMarkdown(org, "jira"));
-    const branchMarkdown = JSON.parse(await getBranchMarkdown("jira"));
+    // Jira's ADF / wiki markup builders below consume { label, url } objects.
+    // TODO(commonmark-jira): replace the bespoke ADF / wiki markup builders with a
+    // CommonMark -> Jira converter so this provider can join the central pipeline.
+    const orgLabel = org.replace("https://", "").replace(".my.salesforce.com", "");
+    const orgMarkdown = { label: orgLabel, url: org };
+    const branchName = (await getCurrentGitBranch()) || "";
+    const branchUrl = (await GitProvider.getCurrentBranchUrl()) || "";
+    const branchMarkdown = { label: branchName, url: branchUrl };
     const tag = await this.getDeploymentTag();
     const commentedTickets: Ticket[] = [];
     const taggedTickets: Ticket[] = [];
@@ -197,29 +339,42 @@ export class JiraProvider extends TicketProviderRoot {
             prAuthor = pullRequestInfo?.authorName;
           }
         }
-        const jiraComment = this.getJiraDeploymentCommentAdf(
-          orgMarkdown.label,
-          orgMarkdown.url,
-          branchMarkdown.label,
-          branchMarkdown.url || "",
-          prTitle,
-          prUrl,
-          prAuthor,
-        );
+        // Use ADF format for Jira Cloud, plain text for Jira Server/DC
+        const jiraComment: any = this.isJiraCloud()
+          ? this.getJiraDeploymentCommentAdf(
+            orgMarkdown.label,
+            orgMarkdown.url,
+            branchMarkdown.label,
+            branchMarkdown.url || "",
+            prTitle,
+            prUrl,
+            prAuthor,
+          )
+          : this.getJiraDeploymentCommentText(
+            orgMarkdown.label,
+            orgMarkdown.url,
+            branchMarkdown.label,
+            branchMarkdown.url || "",
+            prTitle,
+            prUrl,
+            prAuthor,
+          );
         // Post comment
+        // Cast needed: Version2Client and Version3Client share the same method signature,
+        // but TypeScript cannot resolve the union of their overloaded signatures.
         try {
-          const commentPostRes = await this.jiraClient.issueComments.addComment({ issueIdOrKey: ticket.id, comment: jiraComment });
+          const commentPostRes = await (activeClient as Version2Client).issueComments.addComment({ issueIdOrKey: ticket.id, comment: jiraComment });
           if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
             throw new SfError(genericHtmlResponseError);
           }
           commentedTickets.push(ticket);
         } catch (e6) {
-          uxLog("warning", this, c.yellow(`[JiraProvider] Error while posting comment on ${ticket.id}: ${(e6 as any).message}`));
+          uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderErrorPostingComment', { ticketId: ticket.id, message: (e6 as any).message })));
         }
 
         // Add deployment label to JIRA ticket
         try {
-          await this.jiraClient.issues.editIssue({
+          await (activeClient as Version2Client).issues.editIssue({
             issueIdOrKey: ticket.id,
             update: {
               labels: [{ add: tag }],
@@ -230,7 +385,7 @@ export class JiraProvider extends TicketProviderRoot {
           if ((e6 as any).message != null && (e6 as any).message.includes("<!doctype html>")) {
             (e6 as any).message = genericHtmlResponseError;
           }
-          uxLog("warning", this, c.yellow(`[JiraProvider] Error while adding label ${tag} on ${ticket.id}: ${(e6 as any).message}`));
+          uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderErrorAddingLabel', { tag, ticketId: ticket.id, message: (e6 as any).message })));
         }
       }
     }
@@ -239,12 +394,12 @@ export class JiraProvider extends TicketProviderRoot {
       uxLog(
         "log",
         this,
-        c.grey(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")),
+        c.grey('[JiraProvider] ' + t('jiraProviderPostedComments', { count: commentedTickets.length, tickets: commentedTickets.map((ticket) => ticket.id).join(", ") })),
       );
       uxLog(
         "log",
         this,
-        c.grey(`[JiraProvider] Added label ${tag} on ${taggedTickets.length} ticket(s): ` + taggedTickets.map((ticket) => ticket.id).join(", ")),
+        c.grey('[JiraProvider] ' + t('jiraProviderAddedLabel', { tag, count: taggedTickets.length, tickets: taggedTickets.map((ticket) => ticket.id).join(", ") })),
       );
     }
     return tickets;
@@ -350,6 +505,28 @@ export class JiraProvider extends TicketProviderRoot {
       ],
     };
     return comment;
+  }
+
+  /**
+   * Builds a plain-text deployment comment for Jira Server / Data Center (REST API v2).
+   */
+  getJiraDeploymentCommentText(
+    orgName: string,
+    orgUrl: string,
+    branchName: string,
+    branchUrl: string,
+    prTitle: string,
+    prUrl: string,
+    prAuthor: string,
+  ): string {
+    let text = `Deployed by [sfdx-hardis|${CONSTANTS.DOC_URL_ROOT}/] in [${orgName}|${orgUrl}] from branch [${branchName}|${branchUrl}]`;
+    if (prTitle && prUrl) {
+      text += `\nRelated PR: [${prTitle}|${prUrl}]`;
+      if (prAuthor) {
+        text += `, by ${prAuthor}`;
+      }
+    }
+    return text;
   }
 
   private getPlainTextFromDescription(description: Version3Models.Document | string | null | undefined): string {

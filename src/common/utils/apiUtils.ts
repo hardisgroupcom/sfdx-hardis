@@ -1,15 +1,29 @@
-import { execSfdxJson, uxLog } from './index.js';
+import { uxLog } from './index.js';
 import c from 'chalk';
 import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
 import { WebSocketClient } from '../websocketClient.js';
 import { generateCsvFile, generateReportPath } from './filesUtils.js';
 import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
+import { t } from './i18n.js';
 
 // Constants for record limits
 const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
 const CHUNK_SIZE = Number(process.env.SOQL_CHUNK_SIZE ?? 200);
 const MAX_RECORDS = MAX_CHUNKS * CHUNK_SIZE;
+
+// True when Salesforce rejected the query because the sObject does not exist on this org, which
+// is how an edition that never provisions the object answers. Monitoring runs across whole
+// fleets, so callers are expected to skip quietly rather than fail the job. Anything else (a
+// permission problem, a transient outage) must keep propagating.
+export function isUnsupportedSObjectError(error: unknown, sObjectName: string): boolean {
+  const message = String((error as { message?: string })?.message ?? error).toLowerCase();
+  return (
+    message.includes('invalid_type') ||
+    message.includes('is not supported') ||
+    message.includes(`sobject type '${sObjectName.toLowerCase()}'`)
+  );
+}
 
 // Perform simple SOQL query (max results: 10000)
 export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
@@ -28,13 +42,13 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
 
   // Get all page results
   while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_CHUNKS) {
-    uxLog("log", this, c.grey(`Fetching batch ${batchCount + 1}/${MAX_CHUNKS}...`));
+    uxLog("log", this, c.grey(t('fetchingBatch', { batchCount: batchCount + 1, MAX_CHUNKS })));
     pageRes = await conn.queryMore(pageRes.nextRecordsUrl);
     res.records.push(...pageRes.records);
     batchCount++;
   }
   if (!pageRes.done) {
-    uxLog("warning", this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
+    uxLog("warning", this, c.yellow(t('warningQueryLimitOfRecordsReachedSome', { MAX_RECORDS })));
     uxLog("warning", this, c.yellow(`Consider using bulkQuery for larger datasets.`));
   }
   if (batchCount > 1) {
@@ -47,6 +61,7 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
 }
 
 // Perform simple SOQL query with Tooling API
+// Uses Sforce-Query-Options: batchSize=2000 to avoid default 100-record limit (Tooling API can return fewer by default)
 export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<any> {
   uxLog(
     "log",
@@ -56,22 +71,36 @@ export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Pro
       c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery)
     )
   );
-  // First query
-  const res = await conn.tooling.query(soqlQuery);
-  let pageRes = Object.assign({}, res);
+  const apiVersion = `v${conn.getApiVersion() || '65.0'}`;
+  const queryPath = `/services/data/${apiVersion}/tooling/query/?q=${encodeURIComponent(soqlQuery)}`;
+  const headers: Record<string, string> = {
+    'Sforce-Query-Options': 'batchSize=2000',
+  };
+  const res = await conn.request<{ records: any[]; done: boolean; nextRecordsUrl?: string }>({
+    method: 'GET',
+    url: queryPath,
+    headers,
+  });
+  const result = { records: res.records || [], done: res.done, nextRecordsUrl: res.nextRecordsUrl };
   let batchCount = 1;
-  // Get all page results
-  while (pageRes.done === false && pageRes.nextRecordsUrl) {
-    pageRes = await conn.tooling.queryMore(pageRes.nextRecordsUrl || "");
-    res.records.push(...pageRes.records);
+  while (result.done === false && result.nextRecordsUrl) {
+    const nextPath = result.nextRecordsUrl.startsWith('/') ? result.nextRecordsUrl : `/${result.nextRecordsUrl}`;
+    const pageRes = await conn.request<{ records: any[]; done: boolean; nextRecordsUrl?: string }>({
+      method: 'GET',
+      url: nextPath,
+      headers,
+    });
+    result.records.push(...(pageRes.records || []));
+    result.done = pageRes.done;
+    result.nextRecordsUrl = pageRes.nextRecordsUrl;
     batchCount++;
   }
   if (batchCount > 1) {
-    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
+    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${result.records.length} records in ${batchCount} chunks(s)`));
   } else {
-    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records`));
+    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${result.records.length} records`));
   }
-  return res;
+  return result;
 }
 
 let spinnerQ;
@@ -87,8 +116,8 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     spinnerQ = ora({ text: `[BulkApiV2] Bulk Query: ${queryLabel}`, spinner: 'moon' }).start();
     const recordStream = await conn.bulk2.query(soqlQuery);
     recordStream.on('error', (err) => {
-      uxLog("warning", this, c.yellow('Bulk Query error: ' + err));
-      uxLog("log", this, c.yellow("Full Query was: " + soqlQuery));
+      uxLog("warning", this, c.yellow(t('bulkQueryError') + err));
+      uxLog("log", this, c.grey(t('fullQueryWas', { query: soqlQuery })));
       globalThis.sfdxHardisFatalError = true;
     });
     // Wait for all results
@@ -180,8 +209,8 @@ export async function bulkUpdate(
       `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on ${c.bold(records.length)} records of object ${c.bold(objectName)}`
     )
   );
-  conn.bulk2.pollInterval = 5000; // 5 sec
-  conn.bulk2.pollTimeout = 60000; // 60 sec
+  conn.bulk2.pollInterval = process.env.BULKAPIV2_POLL_INTERVAL ? Number(process.env.BULKAPIV2_POLL_INTERVAL) : 5000; // 5 sec
+  conn.bulk2.pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 60000; // 60 sec
   // Initialize Job
   spinner = ora({ text: `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on ${c.bold(records.length)} records of object ${c.bold(objectName)}`, spinner: 'moon' }).start();
   const job = conn.bulk2.createJob({
@@ -209,7 +238,9 @@ export async function bulkUpdate(
 - Success: ${res.successfulResults.length} records
 - Failed: ${res.failedResults.length} records
 - Unprocessed: ${res.unprocessedRecords.length} records`));
-  const outputFile = await generateReportPath('bulk', `${objectName}-${action}`, { withDate: true });
+  // Empty outputFile so generateReportPath builds a real path (report dir, branch, date, .csv);
+  // passing the name as outputFile would be taken as an explicit path and bypass all of that.
+  const outputFile = await generateReportPath(`bulk-${objectName}-${action}`, '', { withDate: true });
   if (res.failedResults.length > 0) {
     uxLog("warning", this, c.yellow(`[BulkApiV2] Some records failed to ${action}. Check the results for details.`));
   }
@@ -235,33 +266,74 @@ export async function bulkDelete(
   return await bulkUpdate(objectName, "delete", records, conn);
 }
 
+// Tooling API composite requests accept at most 25 subrequests.
+const TOOLING_COMPOSITE_CHUNK_SIZE = 25;
+
+// Delete records via the Tooling API. jsforce conn.tooling.destroy(type, ids[]) can NOT be used here:
+// https://github.com/jsforce/jsforce/issues/1815.
+// Batch unitary DELETE subrequests through the Tooling composite endpoint,
+// Fall back to one-by-one deletes also through Tooling API instead of sf CLI for speed..
 export async function bulkDeleteTooling(
   objectName: string,
   recordsIds: string[],
   conn: Connection
-): Promise<any> {
-  uxLog("log", this, c.grey(`[ToolingApi] Delete ${recordsIds.length} records on ${objectName}: ${JSON.stringify(recordsIds)}`));
-  try {
-    const deleteJobResults = await conn.tooling.destroy(objectName, recordsIds, { allOrNone: false });
-    return deleteJobResults
-  } catch (e: any) {
-    uxLog("warning", this, c.yellow(`[ToolingApi] jsforce error while calling Tooling API. Fallback to to unitary delete (longer but should work !)`));
-    uxLog("log", this, c.grey(e.message));
-    const deleteJobResults: any = [];
-    for (const record of recordsIds) {
-      const deleteCommand =
-        `sf data:delete:record --sobject ${objectName} --record-id ${record} --target-org ${conn.getUsername()} --use-tooling-api`;
-      const deleteCommandRes = await execSfdxJson(deleteCommand, this, {
-        fail: false,
-        output: true
-      });
-      const deleteResult: any = { Id: record, success: true }
-      if (!(deleteCommandRes.status === 0)) {
-        deleteResult.success = false;
-        deleteResult.error = JSON.stringify(deleteCommandRes);
-      }
-      deleteJobResults.push(deleteResult);
+): Promise<{ results: any[] }> {
+  uxLog("log", this, c.grey('[ToolingApi] ' + t('toolingApiDeletingRecords', { count: recordsIds.length, objectName: objectName, ids: JSON.stringify(recordsIds) })));
+  const basePath = `/services/data/v${conn.getApiVersion()}/tooling`;
+  const totalChunks = Math.ceil(recordsIds.length / TOOLING_COMPOSITE_CHUNK_SIZE);
+  const results: any[] = [];
+  for (let i = 0; i < recordsIds.length; i += TOOLING_COMPOSITE_CHUNK_SIZE) {
+    const chunkIds = recordsIds.slice(i, i + TOOLING_COMPOSITE_CHUNK_SIZE);
+    if (totalChunks > 1) {
+      const currentChunk = Math.floor(i / TOOLING_COMPOSITE_CHUNK_SIZE) + 1;
+      uxLog("log", this, c.grey('[ToolingApi] ' + t('toolingApiCompositeChunk', { current: currentChunk, total: totalChunks, count: chunkIds.length })));
     }
-    return { results: deleteJobResults };
+    try {
+      const recordIdByReferenceId = new Map(chunkIds.map((recordId, pos) => [`ref${pos}`, recordId]));
+      const compositeRequest = chunkIds.map((recordId, pos) => ({
+        method: 'DELETE',
+        url: `${basePath}/sobjects/${objectName}/${recordId}`,
+        referenceId: `ref${pos}`,
+      }));
+      const compositeRes: any = await conn.requestPost(`${basePath}/composite`, { allOrNone: false, compositeRequest });
+      for (const subResponse of compositeRes?.compositeResponse || []) {
+        const recordId = recordIdByReferenceId.get(subResponse?.referenceId) || '';
+        if (subResponse?.httpStatusCode >= 200 && subResponse?.httpStatusCode < 300) {
+          results.push({ Id: recordId, success: true, errors: [] });
+        } else {
+          const errors = (Array.isArray(subResponse?.body) ? subResponse.body : [subResponse?.body])
+            .filter(Boolean)
+            .map((err: any) => ({ statusCode: err?.errorCode ?? String(subResponse?.httpStatusCode), message: err?.message ?? JSON.stringify(err) }));
+          results.push({ Id: recordId, success: false, errors });
+        }
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[ToolingApi] ' + t('toolingApiCompositeFallback', { error: e.message })));
+      results.push(...(await deleteToolingRecordsOneByOne(objectName, chunkIds, conn)));
+    }
   }
+  return { results };
+}
+
+// Unitary Tooling API deletes: single-id conn.tooling.destroy targets /tooling/sobjects/<type>/<id>
+async function deleteToolingRecordsOneByOne(
+  objectName: string,
+  recordsIds: string[],
+  conn: Connection
+): Promise<any[]> {
+  const results: any[] = [];
+  WebSocketClient.sendProgressStartMessage(t('deletingRecordsOnObject', { count: recordsIds.length, objectName: objectName }), recordsIds.length);
+  let step = 0;
+  for (const recordId of recordsIds) {
+    step++;
+    try {
+      await conn.tooling.destroy(objectName, recordId);
+      results.push({ Id: recordId, success: true, errors: [] });
+    } catch (e: any) {
+      results.push({ Id: recordId, success: false, errors: [{ statusCode: e.errorCode ?? e.name, message: e.message }] });
+    }
+    WebSocketClient.sendProgressStepMessage(step, recordsIds.length);
+  }
+  WebSocketClient.sendProgressEndMessage(recordsIds.length);
+  return results;
 }

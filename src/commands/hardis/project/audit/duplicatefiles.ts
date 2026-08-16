@@ -3,9 +3,10 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import readFilesRecursive from 'fs-readdir-recursive';
+import fs from 'fs-extra';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -37,15 +38,31 @@ The command's technical implementation involves:
 - **Exclusion Logic:** The \`checkDoublingAllowed\` function contains regular expressions to identify specific file path patterns where duplicate names are acceptable (e.g., \`objects/Account/fields/MyField__c.field-meta.xml\` and \`objects/Contact/fields/MyField__c.field-meta.xml\`). This prevents false positives.
 - **Data Structuring:** Organizes the results into a JavaScript object where keys are duplicate file names and values are arrays of their full paths.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:audit:duplicatefiles --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:audit:duplicatefiles'];
+  public static examples = ['$ sf hardis:project:audit:duplicatefiles',
+    '$ sf hardis:project:audit:duplicatefiles --agent',];
 
   public static flags: any = {
     path: Flags.string({
       char: 'p',
       default: process.cwd(),
       description: 'Root path to check',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -70,10 +87,13 @@ The command's technical implementation involves:
     const pathToBrowser = flags.path || process.cwd();
 
     // List all files
-    const allFiles = readFilesRecursive(pathToBrowser)
+    const allFiles = (fs.readdirSync(pathToBrowser, { recursive: true }) as string[])
       .filter((file) => !file.includes('node_modules'))
+      .filter((file) => {
+        try { return fs.statSync(path.join(pathToBrowser, file)).isFile(); } catch { return false; }
+      })
       .map((file) => {
-        return { fullPath: file, fileName: path.basename(file) };
+        return { fullPath: path.join(pathToBrowser, file), fileName: path.basename(file) };
       });
 
     uxLog(
@@ -105,10 +125,10 @@ The command's technical implementation involves:
         this,
         c.cyan(`Found ${c.bold(duplicateCount)} duplicate file names in ${c.bold(pathToBrowser)}.`)
       );
-      uxLog("warning", this, c.yellow(`Duplicate files:\n${duplicateList}`));
+      uxLog("warning", this, c.yellow(t('duplicateFiles', { duplicateList })));
     }
     else {
-      uxLog("action", this, c.cyan(`No duplicate file names found in ${c.bold(pathToBrowser)}.`));
+      uxLog("action", this, c.cyan(t('noDuplicateFileNamesFoundIn', { pathToBrowser: c.bold(pathToBrowser) })));
     }
     return { duplicates: duplicates };
   }

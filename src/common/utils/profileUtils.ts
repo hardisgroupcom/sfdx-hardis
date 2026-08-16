@@ -10,12 +10,16 @@ export async function minimizeProfile(profileFile: string) {
   const profileXml = await parseXmlFile(profileFile);
   // Remove nodes that are present on Permission Sets
   const nodesToRemoveDefault = [
+    "agentAccesses",
     "classAccesses",
     "customMetadataTypeAccesses",
+    "customPermissions",
     "externalDataSourceAccesses",
     "fieldPermissions",
+    "flowAccesses",
     "objectPermissions",
     "pageAccesses",
+    "ServicePresenceStatusAccesses",
   ];
   // Allow to override the list of node to remove at repo level
   const config = await getConfig("branch");
@@ -71,7 +75,7 @@ export async function minimizeProfile(profileFile: string) {
   // Update profile file
   const partiallyRemovedUnique = [...new Set(partiallyRemoved)];
   let updated = false;
-  if (removed.length > 1 || updatedDefaults === true || updatedUserPerms === true) {
+  if (removed.length >= 1 || updatedDefaults === true || updatedUserPerms === true) {
     updated = true;
     await writeXmlFile(profileFile, profileXml);
     let log = `Updated profile ${c.bold(path.basename(profileFile))} by completely removing sections ${c.bold(removed.join(", "))}`;

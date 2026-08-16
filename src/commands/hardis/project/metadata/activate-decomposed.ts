@@ -2,12 +2,13 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import c from 'chalk';
-import { execCommand, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, isCI, uxLog } from '../../../../common/utils/index.js';
 import { getConfig } from '../../../../config/index.js';
 import fs from 'fs-extra';
 import path from 'path';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { isSfdxProject } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -90,14 +91,33 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
 
 Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:metadata:activate-decomposed --agent
+\`\`\`
+
+In agent mode:
+
+- All applicable metadata types are processed automatically
+- The retry prompt for source tracking conflicts is skipped; the command will automatically unset the default org and retry
+- All interactive prompts are skipped
 `;
 
   public static examples = [
     '$ sf hardis:project:metadata:activate-decomposed',
-    '$ sf hardis:project:metadata:activate-decomposed --debug'
+    '$ sf hardis:project:metadata:activate-decomposed --debug',
+    '$ sf hardis:project:metadata:activate-decomposed --agent',
   ];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       description: 'Run command in debug mode',
@@ -116,6 +136,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
   public async run(): Promise<any> {
     const { flags } = await this.parse(ActivateDecomposedMetadata);
+    const agentMode = flags.agent === true;
 
     // Initialize configuration
     this.configInfo = await getConfig('user');
@@ -136,7 +157,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
     try {
       // Start main action section
-      uxLog("action", this, c.cyan(`Checking for metadata types eligible for decomposition (Beta feature)`));
+      uxLog("action", this, c.cyan(t('checkingMetadataTypesEligibleForDecomposition')));
 
       // Preliminary check: identify already decomposed and remaining metadata types
       const decompositionStatus = this.checkDecompositionStatus();
@@ -151,62 +172,70 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       // Display already decomposed types as a separate section (always visible)
       if (alreadyDecomposedNames) {
-        uxLog("action", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
+        uxLog("action", this, c.grey(t('alreadyDecomposed', { alreadyDecomposedNames })));
         results.alreadyDecomposedTypes = decompositionStatus.alreadyDecomposed.map(t => t.name);
       }
 
       // Display eligible types as a log entry under the last action
       if (applicableTypes.length > 0) {
         const remainingNames = applicableTypes.map(t => t.name).join(', ');
-        uxLog("log", this, c.cyan(`Eligible for decomposition: ${remainingNames}`));
+        uxLog("log", this, c.cyan(t('eligibleForDecomposition', { remainingNames })));
       }
 
       if (applicableTypes.length === 0) {
         if (alreadyDecomposedNames) {
-          uxLog("warning", this, c.yellow(`All supported metadata types are already decomposed in this project`));
-          uxLog("log", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
+          uxLog("warning", this, c.yellow(t('allSupportedMetadataTypesAlreadyDecomposed')));
+          uxLog("log", this, c.grey(t('alreadyDecomposed', { alreadyDecomposedNames })));
           return {
             success: true,
-            message: 'All metadata types already decomposed',
+            message: t('allMetadataTypesAlreadyDecomposed'),
             alreadyDecomposed: true,
             alreadyDecomposedTypes: results.alreadyDecomposedTypes
           };
         } else {
-          uxLog("warning", this, c.yellow(`No supported metadata types found in this project`));
-          return { success: false, message: 'No supported metadata types found' };
+          uxLog("warning", this, c.yellow(t('noSupportedMetadataTypesFoundInProject')));
+          return { success: false, message: t('noSupportedMetadataTypesFound') };
         }
       }
 
       // Let user select which metadata types to decompose
-      const selectionResult = await prompts({
-        type: 'multiselect',
-        name: 'selectedTypes',
-        message: c.cyan('Select metadata types to decompose:'),
-        description: 'Use space to select/deselect, Enter to confirm',
-        choices: applicableTypes.map(type => ({
-          title: type.name,
-          value: type.name,
-          selected: true // All selected by default
-        }))
-      });
+      let selectedMetadataTypes: MetadataTypeConfig[];
 
-      // Check if user cancelled the selection
-      if (!selectionResult.selectedTypes || selectionResult.selectedTypes.length === 0) {
-        uxLog("warning", this, c.yellow('Operation cancelled by user.'));
-        results.cancelled = true;
-        return results;
+      if (!isCI && !agentMode) {
+        const selectionResult = await prompts({
+          type: 'multiselect',
+          name: 'selectedTypes',
+          message: c.cyan(t('selectMetadataTypesToDecompose')),
+          description: t('useSpaceToSelectDeselectEnterToConfirm'),
+          choices: applicableTypes.map(type => ({
+            title: type.name,
+            value: type.name,
+            selected: true // All selected by default
+          }))
+        });
+
+        // Check if user cancelled the selection
+        if (!selectionResult.selectedTypes || selectionResult.selectedTypes.length === 0) {
+          uxLog("warning", this, c.yellow(t('operationCancelledByUser')));
+          results.cancelled = true;
+          return results;
+        }
+
+        // Filter to only selected types
+        selectedMetadataTypes = applicableTypes.filter(type =>
+          selectionResult.selectedTypes.includes(type.name)
+        );
+      } else {
+        // In agent mode, process all applicable types
+        selectedMetadataTypes = applicableTypes;
+        uxLog("log", this, c.grey(t('agentModeProcessingAllMetadataTypes', { count: selectedMetadataTypes.length })));
       }
 
-      // Filter to only selected types
-      const selectedMetadataTypes = applicableTypes.filter(type =>
-        selectionResult.selectedTypes.includes(type.name)
-      );
-
-      uxLog("log", this, c.cyan(`Selected for decomposition: ${selectedMetadataTypes.map(t => t.name).join(', ')}`));
+      uxLog("log", this, c.cyan(t('selectedForDecomposition', { selectedMetadataTypes: selectedMetadataTypes.map(t => t.name).join(', ') })));
 
       // Process each selected metadata type
       for (const metadataType of selectedMetadataTypes) {
-        const operationResult = await this.decomposeMetadataType(metadataType, flags);
+        const operationResult = await this.decomposeMetadataType(metadataType, flags, agentMode);
 
         if (operationResult.success) {
           results.decomposedTypes.push(metadataType.name);
@@ -217,9 +246,9 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       // Send success status to UI if any types were decomposed
       if (results.decomposedTypes.length > 0) {
-        uxLog("action", this, c.green(`Successfully decomposed: ${results.decomposedTypes.join(', ')}`));
+        uxLog("action", this, c.green(t('successfullyDecomposed2', { results: results.decomposedTypes.join(', ') })));
       } else {
-        uxLog("action", this, c.yellow(`No metadata types were decomposed`));
+        uxLog("action", this, c.yellow(t('noMetadataTypesWereDecomposed')));
       }
 
       // Log errors if any
@@ -307,7 +336,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     } catch (error: any) {
       // If there's an error reading the file, assume no options exist
       this.sourceBehaviorOptionsCache = null;
-      uxLog("warning", this, c.yellow(`Warning: Unable to read sfdx-project.json for sourceBehaviorOptions (error: ${error instanceof Error ? error.message : 'unknown error'})`));
+      uxLog("warning", this, c.yellow(t('warningUnableToReadSfdxProjectJson', { error: error instanceof Error ? error.message : 'unknown error' })));
       return [];
     }
   }
@@ -330,7 +359,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       // Fallback to default if no project or no package directories
       return ['force-app'];
     } catch (error) {
-      uxLog("warning", this, c.yellow(`Warning: Unable to read package directories from sfdx-project.json (error: ${error instanceof Error ? error.message : 'unknown error'})`));
+      uxLog("warning", this, c.yellow(t('warningUnableToReadPackageDirectoriesFrom', { error: error instanceof Error ? error.message : 'unknown error' })));
       // Fallback to default on error
       return ['force-app'];
     }
@@ -443,9 +472,10 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
    */
   private async decomposeMetadataType(
     metadataType: MetadataTypeConfig,
-    flags: any
+    flags: any,
+    agentMode = false
   ): Promise<{ success: boolean; error?: string }> {
-    uxLog("action", this, c.cyan(`Attempting to decompose metadata ${metadataType.name}...`));
+    uxLog("action", this, c.cyan(t('attemptingToDecomposeMetadata', { metadataType: metadataType.name })));
 
     // Run sf project convert source-behavior command
     const command = `sf project convert source-behavior --behavior ${metadataType.behavior}`;
@@ -453,7 +483,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     try {
       // Use cross-platform method to handle confirmation
       await this.execSfCommandWithConfirmation(command, flags);
-      uxLog("success", this, c.green(`Successfully decomposed ${metadataType.name}`));
+      uxLog("success", this, c.green(t('successfullyDecomposed', { metadataType: metadataType.name })));
       return { success: true };
     } catch (error: any) {
       // Extract all error information
@@ -472,19 +502,27 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       }
 
       if (errorMessage.includes('TrackingNotSupportedError')) {
-        const retryRes = await prompts({
-          type: 'confirm',
-          name: 'retry',
-          message: c.yellow(`You can not decompose metadata when default org has source tracking enabled. Do you want to unselect the default org and retry?`),
-          description: 'This will unset the default org for this project and try the command again',
-          initial: true
-        });
-        if (retryRes.retry) {
+        let shouldRetry = false;
+        if (!isCI && !agentMode) {
+          const retryRes = await prompts({
+            type: 'confirm',
+            name: 'retry',
+            message: c.yellow(t('cannotDecomposeMetadataSourceTrackingEnabled')),
+            description: t('unsetsDefaultOrgAndRetryDecomposition'),
+            initial: true
+          });
+          shouldRetry = retryRes.retry === true;
+        } else {
+          // In agent mode, automatically unset default org and retry
+          shouldRetry = true;
+          uxLog("log", this, c.grey(t('agentModeAutoRetryingDecomposition', { metadataType: metadataType.name })));
+        }
+        if (shouldRetry) {
           // Unset default org
           await execCommand('sf config unset target-org', this, { fail: true, debug: flags.debug });
-          uxLog("log", this, c.green(`Default org unset successfully. Retrying decomposition of ${metadataType.name}...`));
+          uxLog("log", this, c.green(t('defaultOrgUnsetSuccessfullyRetryingDecompositionOf', { metadataType: metadataType.name })));
           // Retry decomposition
-          return await this.decomposeMetadataType(metadataType, flags);
+          return await this.decomposeMetadataType(metadataType, flags, agentMode);
         }
       }
 
@@ -530,7 +568,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       // Also log to help with debugging
       if (flags.debug) {
-        uxLog("error", this, c.grey(`Full error object: ${JSON.stringify(error, null, 2)}`));
+        uxLog("error", this, c.grey(t('fullErrorObject', { JSON: JSON.stringify(error, null, 2) })));
       }
 
       return { success: false, error: detailedErrorReport };

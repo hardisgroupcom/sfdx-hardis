@@ -1,10 +1,11 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -37,17 +38,39 @@ The command's technical implementation involves:
 - **\`execSfdxJson\`:** This utility is used to execute the Salesforce CLI command and capture its JSON output.
 - **Error Handling:** It handles cases where a package version might already be promoted or if other errors occur during the promotion process.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all interactive prompts. In agent mode:
+
+- \`--auto\`: Recommended. Automatically detects and promotes unreleased package versions.
+- \`--package\`: Alternatively, specify a single package alias to promote (required if \`--auto\` is not used).
+
+All interactive package selection prompts are skipped.
 `;
 
-  public static examples = ['$ sf hardis:package:version:promote', '$ sf hardis:package:version:promote --auto'];
+  public static examples = [
+    '$ sf hardis:package:version:promote',
+    '$ sf hardis:package:version:promote --auto',
+    '$ sf hardis:package:version:promote --agent --auto',
+    '$ sf hardis:package:version:promote --agent --package "MyPackage@1.0.0"',
+  ];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     auto: Flags.boolean({
       char: 'f',
       default: false,
       description: 'Auto-detect which versions of which packages need to be promoted',
+    }),
+    package: Flags.string({
+      char: 'p',
+      description: 'Package alias to promote (required in agent mode if --auto is not used)',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -70,6 +93,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(PackageVersionPromote);
+    const agentMode = flags.agent === true;
     const debugMode = flags.debug || false;
     const auto = flags.auto || false;
     // List project packages
@@ -98,17 +122,15 @@ The command's technical implementation involves:
         );
       });
       packagesToPromote.push(...filteredPackagesToPromote);
-    } else {
-      // Prompt user if not auto
+    } else if (!isCI && !agentMode) {
+      // Prompt user if not auto and not agent/CI mode
       const packageResponse = await prompts([
         {
           type: 'select',
           name: 'packageSelected',
-          message: c.cyanBright(
-            `Please select a package (this is not a drill, it will create an official new version !)`
-          ),
-          description: 'Choose which package to promote - this will create a new official version that cannot be undone',
-          placeholder: 'Select a package',
+          message: c.cyanBright(t('pleaseSelectPackageNotADrillPromote')),
+          description: t('choosePackageToPromote'),
+          placeholder: t('selectAPackage'),
           choices: Object.values(availablePackageAliases).map((packageAlias) => {
             return { title: packageAlias, value: packageAlias };
           }),
@@ -116,6 +138,13 @@ The command's technical implementation involves:
       ]);
       // Manage user response
       packagesToPromote.push(packageResponse.packageSelected);
+    } else {
+      // Agent/CI mode: require --package flag
+      const packageFlag = flags.package || null;
+      if (!packageFlag) {
+        throw new SfError("In agent/CI mode without --auto, --package flag is required to specify which package to promote.");
+      }
+      packagesToPromote.push(packageFlag);
     }
 
     const promotedPackageVersions: any[] = [];
@@ -123,7 +152,7 @@ The command's technical implementation involves:
 
     // Promote packages
     for (const packageToPromote of packagesToPromote) {
-      uxLog("action", this, c.cyan(`Promoting version of package ${c.green(packageToPromote)}`));
+      uxLog("action", this, c.cyan(t('promotingVersionOfPackage', { packageToPromote: c.green(packageToPromote) })));
       const promoteCommand = 'sf package version promote' + ` --package "${packageToPromote}"` + ' --no-prompt';
       const promoteResult = await execSfdxJson(promoteCommand, this, {
         fail: false,
@@ -131,24 +160,10 @@ The command's technical implementation involves:
         debug: debugMode,
       });
       if (promoteResult.status === 0) {
-        uxLog(
-          "action",
-          this,
-          c.cyan(
-            `Promoted package version ${c.green(packageToPromote)} with id ${c.green(
-              promoteResult.result.id
-            )}. It is now installable on production orgs`
-          )
-        );
+        uxLog("action", this, c.cyan(t('promotedPackageVersionInstallable', { version: packageToPromote, id: promoteResult.result.id })));
         promotedPackageVersions.push({ package: packageToPromote, result: promoteResult });
       } else {
-        uxLog(
-          "warning",
-          this,
-          c.yellow(
-            `Error promoting package version ${c.red(packageToPromote)} (probably already promoted so it can be ok)`
-          )
-        );
+        uxLog("warning", this, c.yellow(t('errorPromotingPackageVersionAlreadyPromoted', { version: packageToPromote })));
         errorPromotedVersions.push({ package: packageToPromote, result: promoteResult });
       }
     }

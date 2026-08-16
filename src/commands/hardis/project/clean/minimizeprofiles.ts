@@ -9,6 +9,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { minimizeProfile } from '../../../../common/utils/profileUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -48,15 +49,31 @@ skipMinimizeProfiles:
   - MyClient Customer Community Login User
   - MyClientPortail Profile
 \`\`\`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:minimizeprofiles --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:clean:minimizeprofiles'];
+  public static examples = ['$ sf hardis:project:clean:minimizeprofiles',
+    '$ sf hardis:project:clean:minimizeprofiles --agent',];
 
   public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: 'force-app',
       description: 'Root folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -83,7 +100,7 @@ skipMinimizeProfiles:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Removing profile attributes that exist on Permission Sets`));
+    uxLog("action", this, c.cyan(t('removingProfileAttributesOnPermissionSets')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.profile-meta.xml`;
@@ -94,7 +111,7 @@ skipMinimizeProfiles:
     for (const profileFile of matchingProfileFiles) {
       const profileName = path.basename(profileFile).replace('.profile-meta.xml', '');
       if (skipMinimizeProfiles.includes(profileName)) {
-        uxLog("log", this, c.grey(`Skipped ${profileName} as found in skipMinimizeProfiles property`));
+        uxLog("log", this, c.grey(t('skippedAsFoundInSkipminimizeprofilesProperty', { profileName })));
         continue;
       }
       const res = await minimizeProfile(profileFile);
@@ -105,7 +122,7 @@ skipMinimizeProfiles:
 
     // Summary
     if (counter > 0) {
-      uxLog("warning", this, c.yellow('Please make sure the attributes removed from Profiles are defined on Permission Sets'));
+      uxLog("warning", this, c.yellow(t('pleaseMakeSureTheAttributesRemovedFrom')));
       globalThis.displayProfilesWarning = true;
     }
     const msg = `Cleaned ${c.green(c.bold(counter))} profiles from attributes existing on Permission Sets`;

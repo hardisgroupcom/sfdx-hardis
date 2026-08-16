@@ -27,11 +27,23 @@ The command's technical implementation involves:
 - **Error Handling:** Includes basic error handling for the external command execution.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:convert:profilestopermsets --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name          |  Type   | Description                                                   | Default | Required | Options |
 |:--------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent         | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d  | boolean | Activate debug mode (more logs)                               |         |          |         |
 | except<br/>-e | option  | List of filters                                               |         |          |         |
 | flags-dir     | option  | undefined                                                     |         |          |         |
@@ -43,6 +55,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:project:convert:profilestopermsets
+```
+
+```shell
+$ sf hardis:project:convert:profilestopermsets --agent
 ```
 
 

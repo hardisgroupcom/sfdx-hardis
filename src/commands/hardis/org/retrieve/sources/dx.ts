@@ -13,6 +13,7 @@ import { MetadataUtils } from '../../../../../common/metadata-utils/index.js';
 import { uxLog } from '../../../../../common/utils/index.js';
 import { WebSocketClient } from '../../../../../common/websocketClient.js';
 import { setConfig } from '../../../../../config/index.js';
+import { t } from '../../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -53,9 +54,21 @@ The command's technical implementation involves:
 - **Error Handling:** Includes robust error handling for Salesforce CLI commands and file system operations.
 - **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshCommandsMessage\` to notify connected VS Code clients about changes to the project.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:retrieve:sources:dx --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:org:retrieve:sources:dx'];
+  public static examples = ['$ sf hardis:org:retrieve:sources:dx',
+    '$ sf hardis:org:retrieve:sources:dx --agent',];
 
   public static flags: any = {
     folder: Flags.string({
@@ -84,6 +97,10 @@ The command's technical implementation involves:
     instanceurl: Flags.string({
       char: 'r',
       description: messages.getMessage('instanceUrl'),
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -146,7 +163,7 @@ The command's technical implementation involves:
 
     // Create sfdx project
     if (fs.readdirSync(sfdxFolder).length === 0) {
-      uxLog("action", this, c.cyan('Creating SFDX project...'));
+      uxLog("action", this, c.cyan(t('creatingSfdxProject')));
       const projectCreateCommand = 'sf project generate --name "sfdx-project"';
       uxLog("other", this, `[command] ${c.bold(c.grey(projectCreateCommand))}`);
       const createProjectRes = await exec(projectCreateCommand, { maxBuffer: 1024 * 2000 });
@@ -156,9 +173,9 @@ The command's technical implementation involves:
     }
 
     // Converting metadatas to sfdx
-    uxLog("action", this, c.cyan(`Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`));
+    uxLog("action", this, c.cyan(t('convertingMetadatasIntoSfdxSourcesIn', { sfdxFolder: c.green(sfdxFolder) })));
     process.chdir(sfdxFolder);
-    const mdapiConvertCommand = `sf project convert mdapi --root-dir ${path.join(metadataFolder, 'unpackaged')} ${debug ? '--verbose' : ''
+    const mdapiConvertCommand = `sf project convert mdapi --root-dir "${path.join(metadataFolder, 'unpackaged')}" ${debug ? '--verbose' : ''
       }`;
     uxLog("other", this, `[command] ${c.bold(c.grey(mdapiConvertCommand))}`);
     try {
@@ -210,7 +227,7 @@ The command's technical implementation involves:
       await fs.rm(tempFolder, { recursive: true });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      uxLog("warning", this, c.yellow(`Unable to remove folder ${tempFolder}, please delete it manually`));
+      uxLog("warning", this, c.yellow(t('unableToRemoveFolderPleaseDeleteIt', { tempFolder })));
     }
 
     // Trigger commands refresh on VS Code WebSocket Client

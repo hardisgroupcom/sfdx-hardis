@@ -17,11 +17,23 @@ autoCleanTypes:
   - sensitiveMetadatas
 ```
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:clean:sensitive-metadatas --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name          |  Type   | Description                                                   |  Default  | Required | Options |
 |:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
+| agent         | boolean | Run in non-interactive mode for agents and automation         |           |          |         |
 | debug<br/>-d  | boolean | Activate debug mode (more logs)                               |           |          |         |
 | flags-dir     | option  | undefined                                                     |           |          |         |
 | folder<br/>-f | option  | Root folder                                                   | force-app |          |         |
@@ -33,6 +45,10 @@ autoCleanTypes:
 
 ```shell
 $ sf hardis:project:clean:sensitive-metadatas
+```
+
+```shell
+$ sf hardis:project:clean:sensitive-metadatas --agent
 ```
 
 

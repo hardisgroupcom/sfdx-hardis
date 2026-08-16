@@ -38,11 +38,30 @@ Notes:
 
   - GITHUB_TOKEN (provided by GitHub but has to be send as option to the deployment jobs)
 
-## Using GitHub integration without Github Actions
+## Using GitHub integration without GitHub Actions
 
-You might want to use GitHub integration with other tools than GitHub Actions, like Jenkins or Codefresh
+You might want to use GitHub integration with other tools than GitHub Actions, like Jenkins or Codefresh.
 
-In that case, to still benefit from GitHub integration, you need to make sure that the following variables are set.
+### Jenkins
+
+When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins environment and maps its variables to GitHub equivalents. You only need to set:
+
+| Variable                    | Description                                                                                                                                                                          |
+|:----------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| CI_SFDX_HARDIS_GITHUB_TOKEN | A [GitHub Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) stored as a Jenkins credential |
+
+The following variables are **automatically derived** from Jenkins built-in variables (`GIT_URL`, `GIT_BRANCH`, `BUILD_URL`, `BUILD_NUMBER`, `JOB_NAME`, `CHANGE_ID`):
+
+- `GITHUB_REPOSITORY`, `GITHUB_REPOSITORY_OWNER`, `GITHUB_SERVER_URL` - parsed from `GIT_URL` (git remote)
+- `GITHUB_REF`, `GITHUB_REF_NAME` - from `GIT_BRANCH` / `CHANGE_BRANCH`
+- `GITHUB_RUN_ID` - from `BUILD_NUMBER`
+- `GITHUB_WORKFLOW` - from `JOB_NAME`
+- Pull request number - from `CHANGE_ID` (Jenkins Multibranch Pipeline)
+- Job URL - from `BUILD_URL`
+
+### Other CI systems
+
+For other CI systems (Codefresh, etc.), you need to manually set the following variables:
 
 | Variable                | Description                                                                                                                                                                    |
 |:------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -57,4 +76,37 @@ In that case, to still benefit from GitHub integration, you need to make sure th
 | GITHUB_REF_NAME         | ex: `503/merge`                                                                                                                                                                |
 | GITHUB_RUN_ID           | ex: `14282257027`. If you can't have it, to not set the variable.                                                                                                              |
 | PIPELINE_JOB_URL        | Direct link to the page where we can see your job results. ex: `https://yourserver.com/jobs/345`                                                                               |
+
+## Instructions for using Coding Agents
+
+When using auto-fix with coding agents, the pipeline must be able to push a fix branch and create/update Pull Requests.
+
+This works for both:
+
+- GitHub Cloud (`github.com`)
+- GitHub Enterprise Server / GitHub Enterprise Cloud custom domains
+
+Add this in your deployment/check workflow step before running `sf hardis:*` commands:
+
+```yaml
+env:
+  CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+run: |
+  if [ -n "${CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN:-}" ]; then
+    git config user.email "sfdx-hardis-bot@cloudity.com"
+    git config user.name "sfdx-hardis Bot"
+    GITHUB_HOST=$(echo "${GITHUB_SERVER_URL:-https://github.com}" | sed -E 's#^https?://##')
+    git remote set-url origin "https://x-access-token:${CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN}@${GITHUB_HOST}/${GITHUB_REPOSITORY}.git"
+    echo "[sfdx-hardis] GitHub push/PR auth enabled for coding agents"
+  else
+    echo "[sfdx-hardis] Skipping coding-agent GitHub auth setup: CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN is not set"
+  fi
+```
+
+Required secret/variable:
+
+- `CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN` (or `PAT`):
+  - Use `secrets.GITHUB_TOKEN` if your workflow permissions include `contents: write` and `pull-requests: write`.
+  - Otherwise create a fine-grained PAT with repository scopes `Contents: Read and write` and `Pull requests: Read and write`.
 

@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { assert } from 'console';
 import fs from 'fs-extra';
-import moment from 'moment';
+import { dateHelper } from '../../../common/utils/dateHelper.js';
 import * as os from 'os';
 import * as path from 'path';
 import { clearCache } from '../../../common/cache/index.js';
@@ -27,9 +27,11 @@ import {
   promptUserEmail,
 } from '../../../common/utils/orgUtils.js';
 import { addScratchOrgToPool, fetchScratchOrg } from '../../../common/utils/poolUtils.js';
+import { getOrgSfdxAuthUrl } from '../../../common/utils/credentialUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { getConfig, setConfig } from '../../../config/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -84,9 +86,22 @@ The command's technical implementation involves:
 - **Error Recovery:** Implements comprehensive error handling with scratch org cleanup, pool management, and detailed error messaging for troubleshooting.
 - **WebSocket Integration:** Provides real-time status updates and file reporting through WebSocket connections for VS Code extension integration.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:create --agent --target-dev-hub mydevhub@example.com
+\`\`\`
+
+In agent mode:
+
+- The scratch org reuse confirmation prompt is skipped and a new org is always created.
+- All other interactive prompts are skipped.
 `;
 
-  public static examples = ['$ sf hardis:scratch:create'];
+  public static examples = ['$ sf hardis:scratch:create', '$ sf hardis:scratch:create --agent'];
 
   // public static args = [{name: 'file'}];
 
@@ -99,6 +114,10 @@ The command's technical implementation involves:
     pool: Flags.boolean({
       default: false,
       description: 'Creates the scratch org for a scratch org pool',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -125,6 +144,7 @@ The command's technical implementation involves:
   /* jscpd:ignore-end */
 
   protected debugMode = false;
+  protected agentMode = false;
   protected pool = false;
   protected configInfo: any;
   protected devHubAlias: string;
@@ -147,6 +167,7 @@ The command's technical implementation involves:
     this.pool = flags.pool || false;
     this.debugMode = flags.debug || false;
     this.forceNew = flags.forcenew || false;
+    this.agentMode = flags.agent === true;
     elapseStart(`Create and initialize scratch org`);
     await this.initConfig();
     await this.createScratchOrg(flags);
@@ -170,7 +191,7 @@ The command's technical implementation involves:
       }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
-      uxLog("log", this, c.grey('Error: ' + (e as Error).message + '\n' + (e as Error).stack));
+      uxLog("log", this, c.grey(t('error2') + (e as Error).message + '\n' + (e as Error).stack));
       if (isCI && this.scratchOrgFromPool) {
         this.scratchOrgFromPool.failures = this.scratchOrgFromPool.failures || [];
         this.scratchOrgFromPool.failures.push(JSON.stringify(e, null, 2));
@@ -187,7 +208,7 @@ The command's technical implementation involves:
           fail: false,
           output: true,
         });
-        uxLog("error", this, c.red('Deleted scratch org as we are in CI and its creation has failed'));
+        uxLog("error", this, c.red(t('deletedScratchOrgAsWeAreIn')));
       }
       throw e;
     }
@@ -227,7 +248,7 @@ The command's technical implementation involves:
       '-' +
       (this.gitBranch.split('/').pop() || '').slice(0, 15) +
       '_' +
-      moment().format('YYYYMMDD_hhmm');
+      dateHelper().format('YYYYMMDD_hhmm');
     this.scratchOrgAlias =
       process.env.SCRATCH_ORG_ALIAS ||
       (!this.forceNew && this.pool == false ? this.configInfo.scratchOrgAlias : null) ||
@@ -239,19 +260,16 @@ The command's technical implementation involves:
       this.scratchOrgAlias = 'PO-' + Math.random().toString(36).substr(2, 2) + this.scratchOrgAlias;
     }
     // Verify that the user wants to resume scratch org creation
-    if (!isCI && this.scratchOrgAlias !== newScratchName && this.pool === false) {
+    if (!isCI && !this.agentMode && this.scratchOrgAlias !== newScratchName && this.pool === false) {
       const checkRes = await prompts({
         type: 'confirm',
         name: 'value',
         message: c.cyanBright(
-          `You are about to reuse scratch org ${c.green(
-            this.scratchOrgAlias
-          )}. Are you sure that's what you want to do ?\n${c.grey(
-            '(if not, run again hardis:work:new or use hardis:scratch:create --forcenew)'
-          )}`
+          t('aboutToReuseScratchOrgAreYouSure', { alias: c.green(this.scratchOrgAlias) }) +
+          '\n' + c.grey(t('ifNotRunAgainHardisWorkNew'))
         ),
         default: false,
-        description: 'Confirm that you want to reuse this existing scratch org instead of creating a new one',
+        description: t('confirmReuseExistingScratchOrg'),
       });
       if (checkRes.value === false) {
         process.exit(0);
@@ -272,8 +290,8 @@ The command's technical implementation involves:
 
     // If not found, prompt user email and store it in user config file
     if (this.userEmail == null) {
-      if (this.pool === true) {
-        throw new SfError(c.red('You need to define userEmail property in .sfdx-hardis.yml'));
+      if (this.pool === true || this.agentMode) {
+        throw new SfError(c.red('You need to define userEmail property in .sfdx-hardis.yml or set USER_EMAIL env var.'));
       }
       this.userEmail = await promptUserEmail();
     }
@@ -282,7 +300,7 @@ The command's technical implementation involves:
   // Create a new scratch org or reuse existing one
   public async createScratchOrg(flags) {
     // Build project-scratch-def-branch-user.json
-    uxLog("action", this, c.cyan('Building custom project-scratch-def.json...'));
+    uxLog("action", this, c.cyan(t('buildingCustomProjectScratchDefJson')));
     this.projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json', 'utf-8'));
     this.projectScratchDef.orgName = this.scratchOrgAlias;
     this.projectScratchDef.adminEmail = this.userEmail;
@@ -292,11 +310,11 @@ The command's technical implementation involves:
     if (process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape) {
       this.projectScratchDef.sourceOrg = process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape;
     }
-    uxLog("log", this, c.grey("Project scratch def: \n" + JSON.stringify(this.projectScratchDef, null, 2)));
+    uxLog("log", this, c.grey(t('projectScratchDef') + JSON.stringify(this.projectScratchDef, null, 2)));
     const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectScratchDefLocal));
     await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
-    WebSocketClient.sendReportFileMessage(projectScratchDefLocal, "Scratch Org definition", "report");
+    WebSocketClient.sendReportFileMessage(projectScratchDefLocal, t('scratchOrgDefinition'), "report");
 
     // Check current scratch org
     const orgListResult = await execSfdxJson('sf org list', this);
@@ -309,7 +327,7 @@ The command's technical implementation involves:
     if (matchingScratchOrgs?.length > 0 && !this.forceNew && this.pool == false) {
       this.scratchOrgInfo = matchingScratchOrgs[0];
       this.scratchOrgUsername = this.scratchOrgInfo.username;
-      uxLog("action", this, c.cyan(`Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
+      uxLog("action", this, c.cyan(t('reusingOrgWithUser', { scratchOrgAlias: c.green(this.scratchOrgAlias), scratchOrgUsername: c.green(this.scratchOrgUsername) })));
       return;
     }
     // Try to fetch a scratch org from the pool
@@ -356,11 +374,11 @@ The command's technical implementation involves:
     const tmpShapeFolder = path.join(os.tmpdir(), 'shape');
     if (fs.existsSync(tmpShapeFolder) && this.pool === false) {
       await fs.remove(tmpShapeFolder);
-      uxLog("log", this, c.grey('Deleted ' + tmpShapeFolder));
+      uxLog("log", this, c.grey(t('deleted') + tmpShapeFolder));
     }
 
     // Create new scratch org
-    uxLog("action", this, c.cyan('Creating new scratch org...'));
+    uxLog("action", this, c.cyan(t('creatingNewScratchOrg')));
     const waitTime = process.env.SCRATCH_ORG_WAIT || '15';
     const createCommand =
       'sf org create scratch --set-default ' +
@@ -402,19 +420,21 @@ The command's technical implementation involves:
 
     if (isCI || this.pool === true) {
       // Try to store sfdxAuthUrl for scratch org reuse during CI
-      const displayOrgCommand = `sf org display -o ${this.scratchOrgAlias} --verbose`;
+      const displayOrgCommand = `sf org display -o ${this.scratchOrgAlias}`;
       const displayResult = await execSfdxJson(displayOrgCommand, this, {
         fail: true,
         output: false,
         debug: this.debugMode,
       });
-      if (displayResult.result.sfdxAuthUrl) {
+      const authUrlFromCommand = await getOrgSfdxAuthUrl(this.scratchOrgAlias, { fail: false, debug: this.debugMode });
+      if (authUrlFromCommand) {
         await setConfig('user', {
-          scratchOrgSfdxAuthUrl: displayResult.result.sfdxAuthUrl,
+          scratchOrgSfdxAuthUrl: authUrlFromCommand,
         });
-        this.scratchOrgSfdxAuthUrl = displayResult.result.sfdxAuthUrl;
+        this.scratchOrgSfdxAuthUrl = authUrlFromCommand;
+        displayResult.result.sfdxAuthUrl = authUrlFromCommand;
       } else {
-        // Try to get sfdxAuthUrl with workaround
+        // Fallback: read auth file directly via @salesforce/core
         try {
           const authInfo = await AuthInfo.create({ username: displayResult.result.username });
           this.scratchOrgSfdxAuthUrl = authInfo.getSfdxAuthUrl();
@@ -428,7 +448,7 @@ The command's technical implementation involves:
             "warning",
             this,
             c.yellow(
-              `Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using sf org login sfdx-url or sf org login web will have access token and enabled for autoLogin\nYou may need to define SFDX_AUTH_URL_DEV_HUB or SFDX_AUTH_URL_devHubAlias in your CI job running sf hardis:scratch:pool:refresh`
+              t('unableToFetchSfdxAuthUrlForScratch', { username: displayResult.result.username })
             )
           );
           this.scratchOrgSfdxAuthUrl = null;
@@ -446,7 +466,7 @@ The command's technical implementation involves:
         output: false,
         debug: this.debugMode,
       });
-      uxLog("action", this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
+      uxLog("action", this, c.cyan(t('openScratchOrgWithUrl2', { openRes: c.green(openRes?.result?.url) })));
     } else {
       // Open scratch org for user if not in CI
       await execSfdxJson('sf org open', this, {
@@ -458,7 +478,7 @@ The command's technical implementation involves:
     uxLog(
       "action",
       this,
-      c.cyan(`Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`)
+      c.cyan(t('createdScratchOrgWithUser', { alias: c.green(this.scratchOrgAlias), username: c.green(this.scratchOrgUsername) }))
     );
   }
 
@@ -492,7 +512,7 @@ The command's technical implementation involves:
   public async updateScratchOrgUser() {
     const config = await getConfig('user');
     // Update scratch org main user
-    uxLog("action", this, c.cyan('Update / fix scratch org user ' + this.scratchOrgUsername));
+    uxLog("action", this, c.cyan(t('updateFixScratchOrgUser') + this.scratchOrgUsername));
     const userQueryCommand = `sf data get record --sobject User --where "Username=${this.scratchOrgUsername}" --target-org ${this.scratchOrgAlias}`;
     const userQueryRes = await execSfdxJson(userQueryCommand, this, {
       fail: true,

@@ -10,6 +10,7 @@ import { MetadataUtils } from '../../../../../common/metadata-utils/index.js';
 import { createTempDir, execCommand, uxLog } from '../../../../../common/utils/index.js';
 import { deployDestructiveChanges, deployMetadatas } from '../../../../../common/utils/deployUtils.js';
 import { getConfig } from '../../../../../config/index.js';
+import { t } from '../../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -19,7 +20,8 @@ export default class DxSources extends SfCommand<any> {
 
   public static description = messages.getMessage('deployMetadatas');
 
-  public static examples = ['$ sf hardis:project:deploy:sources:metadata'];
+  public static examples = ['$ sf hardis:project:deploy:sources:metadata',
+    '$ sf hardis:project:deploy:sources:metadata --agent',];
 
   public static flags: any = {
     check: Flags.boolean({
@@ -51,6 +53,10 @@ export default class DxSources extends SfCommand<any> {
       options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunRelevantTests', 'RunAllTestsInOrg'],
       description: messages.getMessage('testLevel'),
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -78,8 +84,8 @@ export default class DxSources extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DxSources);
-    uxLog("error", this, c.red('This command is deprecated and will be removed in January 2025'));
-    uxLog("error", this, c.red('Nobody used Metadata format anymore 😊'));
+    uxLog("error", this, c.red(t('thisCommandIsDeprecatedAndWillBe')));
+    uxLog("error", this, c.red(t('nobodyUsedMetadataFormatAnymore')));
     uxLog(
       "error",
       this,
@@ -105,17 +111,19 @@ export default class DxSources extends SfCommand<any> {
     let deployProcessed = false;
 
     // Deploy sources
+    // A configured manifest wins, the other locations are fallbacks. Keep the existsSync ternary
+    // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
     const packageXmlFile =
       packageXml ||
-        process.env.PACKAGE_XML_TO_DEPLOY ||
-        this.configInfo.packageXmlToDeploy ||
-        fs.existsSync('./manifest/package.xml')
+      process.env.PACKAGE_XML_TO_DEPLOY ||
+      this.configInfo.packageXmlToDeploy ||
+      (fs.existsSync('./manifest/package.xml')
         ? './manifest/package.xml'
         : fs.existsSync('./package.xml')
           ? './package.xml'
           : fs.existsSync(path.join(this.deployDir, 'package.xml'))
             ? path.join(this.deployDir, 'package.xml')
-            : './config/package.xml';
+            : './config/package.xml');
     if (fs.existsSync(packageXmlFile)) {
       // Filter if necessary
       if (filter) {
@@ -123,13 +131,13 @@ export default class DxSources extends SfCommand<any> {
         // sfdx-essentials still here but deprecated and will be removed
         const filterCommand =
           'sfdx essentials:metadata:filter-from-packagexml' +
-          ` -i ${this.deployDir}` +
-          ` -p ${packageXmlFile}` +
-          ` -o ${tmpDir}`;
+          ` -i "${this.deployDir}"` +
+          ` -p "${packageXmlFile}"` +
+          ` -o "${tmpDir}"`;
         this.deployDir = tmpDir;
         await execCommand(filterCommand, this, {
           output: true,
-          debugMode,
+          debug: debugMode,
           fail: true,
         });
       }
@@ -151,25 +159,25 @@ export default class DxSources extends SfCommand<any> {
         uxLog("error", this, c.red(deployRes.errorMessage));
       }
     } else {
-      uxLog("log", this, 'No package.xml found so no deployment has been performed');
+      uxLog("log", this, t('noPackageXmlFoundSoNoDeployment'));
     }
 
     // Deploy destructive changes
     const packageDeletedXmlFile =
       destructivePackageXml ||
-        process.env.PACKAGE_XML_TO_DELETE ||
-        this.configInfo.packageXmlToDelete ||
-        fs.existsSync('./manifest/destructiveChanges.xml')
+      process.env.PACKAGE_XML_TO_DELETE ||
+      this.configInfo.packageXmlToDelete ||
+      (fs.existsSync('./manifest/destructiveChanges.xml')
         ? './manifest/destructiveChanges.xml'
         : fs.existsSync('./destructiveChanges.xml')
           ? './destructiveChanges.xml'
           : fs.existsSync(path.join(this.deployDir, 'destructiveChanges.xml'))
             ? path.join(this.deployDir, 'destructiveChanges.xml')
-            : './config/destructiveChanges.xml';
+            : './config/destructiveChanges.xml');
     if (fs.existsSync(packageDeletedXmlFile)) {
       await deployDestructiveChanges(packageDeletedXmlFile, { debug: debugMode, check }, this);
     } else {
-      uxLog("log", this, 'No destructivePackage.Xml found so no destructive deployment has been performed');
+      uxLog("log", this, t('noDestructivepackageXmlFoundSoNoDestructive'));
     }
 
     return {

@@ -1,0 +1,57 @@
+{
+  "Profile": {
+    "$": {
+      "xmlns": "http://soap.sforce.com/2006/04/metadata"
+    },
+    "custom": [
+      "true"
+    ],
+    "fieldPermissions": [
+      {
+        "editable": [
+          "false"
+        ],
+        "field": [
+          "Account.Client_Type__c"
+        ],
+        "readable": [
+          "true"
+        ]
+      },
+      {
+        "editable": [
+          "true"
+        ],
+        "field": [
+          "Account.Revenue__c"
+        ],
+        "readable": [
+          "true"
+        ]
+      }
+    ],
+    "layoutAssignments": [
+      {
+        "layout": [
+          "Account-Account %28Marketing%29 Layout"
+        ],
+        "recordType": [
+          "Account.Business"
+        ]
+      }
+    ],
+    "userLicense": [
+      "Salesforce"
+    ],
+    "userPermissions": [
+      {
+        "enabled": [
+          "true"
+        ],
+        "name": [
+          "ApiEnabled"
+        ]
+      }
+    ]
+  }
+}

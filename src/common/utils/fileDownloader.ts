@@ -2,15 +2,38 @@ import { Connection, SfError } from "@salesforce/core";
 import fs from 'fs-extra';
 import ora from "ora";
 import * as path from "path";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
 import { createTempDir } from "./index.js";
-import makeFetchHappen, { FetchOptions } from 'make-fetch-happen';
+import { proxyFetch } from "./httpUtils.js";
+
+// Retry tuning, replicating the make-fetch-happen options historically used here
+const DOWNLOAD_MAX_RETRIES = 20;
+const DOWNLOAD_RETRY_FACTOR = 3;
+const DOWNLOAD_RETRY_MIN_TIMEOUT_MS = 1000;
+const DOWNLOAD_RETRY_MAX_TIMEOUT_MS = 60000;
+// Per-attempt bound covering connection AND body streaming, so a stalled
+// transfer cannot hang a command forever. Large org file exports stay well below.
+const DOWNLOAD_ATTEMPT_TIMEOUT_MS = 1800000;
+
+export type FetchOptions = {
+  method?: string;
+  headers?: Record<string, string>;
+  onRetry?: (cause: unknown) => void;
+  timeoutMs?: number;
+  retry?: {
+    retries?: number;
+    factor?: number;
+    randomize?: boolean;
+  };
+};
 
 export class FileDownloader {
 
   conn: Connection;
   downloadUrl: string;
   outputFile: string | null = null;
-  fetchOptions: any = {};
+  fetchOptions: FetchOptions = {};
   label: string;
 
   constructor(downloadUrl: string, options: {
@@ -36,11 +59,54 @@ export class FileDownloader {
         // "X-PrettyPrint": '1'
       },
       retry: {
-        retries: 20,
-        factor: 3,
+        retries: DOWNLOAD_MAX_RETRIES,
+        factor: DOWNLOAD_RETRY_FACTOR,
         randomize: true,
       },
     };
+  }
+
+  // Fetch with retry on network errors and retryable HTTP statuses (5xx / 408 / 429),
+  // with exponential backoff, mimicking the historical make-fetch-happen behavior.
+  private async fetchWithRetry(): Promise<Response> {
+    const retries = this.fetchOptions.retry?.retries ?? DOWNLOAD_MAX_RETRIES;
+    const factor = this.fetchOptions.retry?.factor ?? DOWNLOAD_RETRY_FACTOR;
+    const randomize = this.fetchOptions.retry?.randomize ?? true;
+    const timeoutMs = this.fetchOptions.timeoutMs ?? DOWNLOAD_ATTEMPT_TIMEOUT_MS;
+    let attempt = 0;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      let cause: unknown;
+      try {
+        const res = await proxyFetch(this.downloadUrl, {
+          method: this.fetchOptions.method || 'GET',
+          headers: this.fetchOptions.headers || {},
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+        if (res.ok || !this.isRetryableStatus(res.status)) {
+          return res;
+        }
+        // Consume the discarded body so the retried response does not pin its socket
+        await res.body?.cancel()?.catch(() => undefined);
+        cause = new SfError(`HTTP ${res.status} on ${this.downloadUrl}`);
+      } catch (e) {
+        cause = e;
+      }
+      attempt++;
+      if (attempt > retries) {
+        throw cause;
+      }
+      this.fetchOptions.onRetry?.(cause);
+      const backoffMs = Math.min(
+        DOWNLOAD_RETRY_MIN_TIMEOUT_MS * Math.pow(factor, attempt - 1),
+        DOWNLOAD_RETRY_MAX_TIMEOUT_MS
+      ) * (randomize ? (1 + Math.random()) : 1);
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    }
+  }
+
+  private isRetryableStatus(status: number): boolean {
+    return status >= 500 || status === 408 || status === 429;
   }
 
   public async download(): Promise<{ success: boolean, outputFile: string, error?: any }> {
@@ -59,20 +125,19 @@ export class FileDownloader {
         spinnerCustom.text = `Retrying ${this.label} (${cause})...`;
       };
 
-      const fetchRes = await makeFetchHappen(this.downloadUrl, this.fetchOptions);
+      const fetchRes = await this.fetchWithRetry();
       if (!fetchRes.ok) {
-        throw new SfError(`Fetch error: ${JSON.stringify(fetchRes.body)}`);
+        throw new SfError(`Fetch error: HTTP ${fetchRes.status} ${await fetchRes.text().catch(() => '')}`);
+      }
+      if (!fetchRes.body) {
+        throw new SfError(`Fetch error: empty response body for ${this.downloadUrl}`);
       }
 
-      const stream = fs.createWriteStream(this.outputFile);
       const totalSize = Number(fetchRes.headers.get('content-length'));
-
       let downloadedSize = 0;
 
-      // Set up piping first
-      fetchRes.body.pipe(stream);
-
-      fetchRes.body.on('data', (chunk) => {
+      const bodyStream = Readable.fromWeb(fetchRes.body as any);
+      bodyStream.on('data', (chunk) => {
         downloadedSize += chunk.length;
         const percentComplete = totalSize ? (downloadedSize / totalSize * 100).toFixed(2) : null;
         spinnerCustom.text = totalSize
@@ -80,12 +145,7 @@ export class FileDownloader {
           : `Downloaded ${downloadedSize} bytes of ${this.label}`;
       });
 
-      // Handle end of download, or error
-      await new Promise<void>((resolve, reject) => {
-        fetchRes.body.on("error", () => reject());
-        stream.on("error", () => reject());
-        stream.on("finish", () => resolve());
-      });
+      await pipeline(bodyStream, fs.createWriteStream(this.outputFile));
 
       const fileExists = await fs.exists(this.outputFile);
       if (!fileExists) {
@@ -93,7 +153,6 @@ export class FileDownloader {
       }
 
       spinnerCustom.succeed(`Downloaded ${this.label}`);
-      stream.destroy();
 
     } catch (err: any) {
       spinnerCustom.fail(`Error while downloading ${this.downloadUrl}: ${err.message}`);

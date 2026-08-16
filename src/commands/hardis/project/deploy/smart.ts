@@ -24,6 +24,7 @@ import {
   getLatestGitCommit,
   isCI,
   uxLog,
+  uxLogTable,
 } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
@@ -35,6 +36,8 @@ import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
+import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -49,6 +52,8 @@ export default class SmartDeploy extends SfCommand<any> {
   public static description = `Smart deploy of SFDX sources to target org, with many useful options.
 
 In case of errors, [tips to fix them](${CONSTANTS.DOC_URL_ROOT}/deployTips/) will be included within the error messages.
+
+> See the [whole sfdx-hardis smart deployment workflow explained in detail](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-smart-deployment.md)
 
 ### Quick Deploy
 
@@ -149,9 +154,10 @@ deploymentApexTestClasses:
 
 ### Dynamic deployment items / Overwrite management
 
-If necessary,you can define the following files (that supports wildcards <members>*</members>):
+If necessary,you can define the following files:
 
 - \`manifest/package-no-overwrite.xml\`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org).
+  - Supports \`<members>*</members>\` (all members of a type), exact names, and glob-style patterns such as \`<members>*__dlm</members>\` or \`<members>Prod_*</members>\`.
   - Can be overridden for a branch using .sfdx-hardis.yml property **packageNoOverwritePath** or environment variable PACKAGE_NO_OVERWRITE_PATH (for example, define: \`packageNoOverwritePath: manifest/package-no-overwrite-main.xml\` in config file \`config/.sfdx-hardis.main.yml\`)
 - \`manifest/packageXmlOnChange.xml\`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
@@ -195,11 +201,21 @@ You can define command lines to run before or after a deployment, with parameter
 
 - **id**: Unique Id for the command
 - **label**: Human readable label for the command
-- **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
+- **allowFailure**: If defined to "true", a failure of this action does not make the deployment job fail
 - **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
-- **runOnlyOnceByOrg**: If set to true, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
+- **runOnlyOnceByOrg**: If set to true (default), the action runs only once per target org - subsequent deployments skip it. State is tracked in the "Deployment Actions" PR comment.
+
+Post-deployment actions are never run when the metadata deployment failed: they are reported as \`not run\` and are proposed again during the next successful deployment.
+
+Deployment actions and selected Apex test classes are scoped to the Pull Request that has just been merged when it comes from a feature branch. A merge from a major branch (ex: integration -> uat) or from a retrofit branch (ex: retrofit/from-main -> integration) keeps those of every Pull Request merged into the source major branch since its last promotion, and a merge into the production branch keeps those of every Pull Request carried by the go-live merge. Pull Requests merged upstream (ex: a hotfix in main) are included as soon as their commits arrive in the window.
+
+If the deployment job of a feature branch fails, its actions are not picked up by the next merged Pull Request: re-run the failed deployment job, or move the actions to a new Pull Request.
+
+After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of \`runOnlyOnceByOrg\`.
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
+
+You can also keep a single definition and restrict it with \`includeTargetBranches\` or \`excludeTargetBranches\` (use \`dev-sandboxes\` for developer sandboxes).
 
 Example:
 
@@ -222,10 +238,45 @@ commandsPostDeploy:
   - id: someActionToRunJustOneTime
     label: And to run only if deployment is success
     command: sf sfdmu:run ...
-    skipIfError: true
     context: process-deployment-only
     runOnlyOnceByOrg: true
 \`\`\`
+
+### Flow deletion in destructive changes
+
+Deleting a Flow through a metadata deployment is possible, but only if the org is already in the right state before the deployment runs:
+
+- every version has to be named individually (\`MyFlow-1\`, \`MyFlow-2\`, ...), as a bare \`<members>MyFlow</members>\` fails with "insufficient access rights",
+- the Flow has to be inactive already. Deactivating it in the same deployment does not help, since Salesforce tries to deactivate the flow that was deleted during a real deploy (\`NoDataFoundException\` / \`UNKNOWN_EXCEPTION\`), so it takes a manual deactivation or an earlier deployment,
+- a \`--check\` deployment never commits a deactivation, so a deletion that depends on one can not be validated.
+
+Smart Deploy removes that manual step by taking Flow deletion **out of the deployment**. Any \`Flow\` member found in \`manifest/destructiveChanges.xml\`, \`manifest/preDestructiveChanges.xml\`, the \`packageXmlToDelete\` config or the delta-generated destructive changes is removed from the manifest sent to the org, and deleted through the Tooling API instead. Stripping is identical during validation and during the real deployment, so the constructive package stays quick-deploy eligible.
+
+A \`--check\` simulation changes nothing in the org. A read-only preflight reports, for each Flow: the active version that will be deactivated, the versions that will be deleted, and how many Flow Interviews block the deletion. The check **fails** if Flow Interviews block a deletion and you have not authorized deleting them.
+
+On a real deployment, each Flow goes through:
+
+1. Existence check. A Flow that is already gone is reported as \`FLOW_DELETE_NOOP\`, not an error (same for a Flow with no deletable version, for example one from a managed package).
+2. Deactivation through the Tooling API (\`FlowDefinition.activeVersionNumber = 0\`), which stops new Flow Interviews from starting.
+3. Flow Interview gate. If interviews remain and \`FLOW_DELETE_INTERVIEWS\` is not set, the deployment fails with \`FLOW_DELETE_BLOCKED\`. The Flow stays deactivated, so retrying the pipeline once those interviews resolve completes the deletion.
+4. Flow Interview deletion, only when \`FLOW_DELETE_INTERVIEWS\` authorizes it.
+5. Version deletion through the Tooling API, oldest version first, then a check that no version is left.
+
+When deleting Flow Interviews is authorized, step 5 retries: an interview that was still running when the Flow got deactivated can pause mid-sequence and block a version. Both bounds can be tuned, as an env variable or as a \`.sfdx-hardis.yml\` property (the env variable wins). A value that is not an integer, or is below the minimum, is ignored with a warning and the default applies.
+
+| Env variable | \`.sfdx-hardis.yml\` property | Default | Minimum | Purpose |
+| :--- | :--- | :-: | :-: | :--- |
+| FLOW_DELETE_MAX_ATTEMPTS | flowDeleteMaxAttempts | 3 | 1 | Number of version deletion attempts per Flow. \`1\` disables the retry. Only used when \`FLOW_DELETE_INTERVIEWS\` authorizes deleting interviews: without that authorization a block is final. |
+| FLOW_DELETE_RETRY_DELAY_MS | flowDeleteRetryDelayMs | 10000 | 0 | Delay in milliseconds between two attempts, to give a paused interview time to be deleted. |
+
+Any failure that is not an interview block (insufficient access, network error mid-run...) is reported as \`FLOW_DELETE_ERROR\` and also fails the deployment. After a network error the org can be further along than the report shows: every step is re-runnable, so retry and trust the new report.
+
+Notes:
+
+- A bare member (\`MyFlow\`) deletes all versions of the Flow. A versioned member (\`MyFlow-3\`) deletes that version only, and deactivates the Flow only if that version is the active one. A wildcard (\`*\`) is refused.
+- Flows are processed independently: one blocked Flow does not prevent the others from being deleted.
+- The deactivation is committed immediately and is not rolled back if a later step fails, so a Flow can be left deactivated but not deleted. Every step is re-runnable, so a pipeline retry converges.
+- Flows listed in \`preDestructiveChanges.xml\` are deleted **before** the constructive deployment, the others after it. Both happen outside the deployment transaction: a deployment that fails after a Flow was deleted does not bring that Flow back, where a \`preDestructiveChanges.xml\` handled inside the deployment used to be rolled back.
 
 ### Pull Requests Custom Behaviors
 
@@ -236,6 +287,7 @@ If some words are found **in the Pull Request description**, special behaviors w
 | NO_DELTA | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request |
 | PURGE_FLOW_VERSIONS | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
 | DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package |
+| FLOW_DELETE_INTERVIEWS | Authorizes deleting the Flow Interviews that block the deletion of a Flow listed in destructive changes. The directive must be on its own line (or in a checked Markdown checkbox).<br/>**Caution: deleting Flow Interviews is irreversible and destroys in-flight process state !** |
 
 You can also override some \`.sfdx-hardis.yml\` properties directly in the Pull Request description using YAML blocks. Supported keys: \`deploymentApexTestClasses\`, \`commandsPreDeploy\`, \`commandsPostDeploy\`.
 
@@ -253,6 +305,8 @@ Note: it is also possible to define these behaviors as ENV variables:
 
 - For all deployments (example: \`PURGE_FLOW_VERSIONS=true\`)
 - For a specific branch, by appending the target branch name (example: \`PURGE_FLOW_VERSIONS_UAT=true\`)
+
+\`FLOW_DELETE_INTERVIEWS\` can also be set as a \`.sfdx-hardis.yml\` property (\`flowDeleteInterviews: true\`).
 
 ### Deployment plan (deprecated)
 
@@ -313,6 +367,24 @@ If you need to increase the deployment waiting time (sf project deploy start --w
 If you need notifications to be sent using the current Pull Request and not the one just merged ([see use case](https://github.com/hardisgroupcom/sfdx-hardis/issues/637#issuecomment-2230798904)), define env variable SFDX_HARDIS_DEPLOY_BEFORE_MERGE=true
 
 If you want to disable the calculation and display of Flow Visual Git Diff in Pull Request comments, define variable **SFDX_DISABLE_FLOW_DIFF=true**
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:deploy:smart --agent --check --source-branch feature/my-feature --target-branch integration --target-org deploy@myclient.com.integration
+\`\`\`
+
+> **Important**: \`--target-org\` must be the **target deployment org** (e.g. the integration sandbox), not the developer's current working org. The Salesforce CLI must be authenticated to that org before running this command.
+
+In agent mode:
+
+- The interactive org selection prompt is skipped.
+- Deployment is forced into **simulation/check mode** - \`--check\` is implicit, but should be passed explicitly to make the intent clear. No changes are applied to the org.
+- Use \`--source-branch\` to specify the source git branch (overrides local git branch detection via \`FORCE_SOURCE_BRANCH\`).
+- Use \`--target-branch\` to specify the target git branch. This sets \`FORCE_TARGET_BRANCH\` for delta/PR scope and also sets \`CONFIG_BRANCH\` so the target branch config file (\`config/branches/.sfdx-hardis-BRANCHNAME.yml\`) is loaded - providing the correct \`targetUsername\` for that org automatically.
+- If a deployment action requires a \`customUsername\` and authentication for that user fails, the action is **skipped** (not failed) so the simulation can continue.
 `;
 
   public static examples = [
@@ -325,7 +397,9 @@ If you want to disable the calculation and display of Flow Visual Git Diff in Pu
     '$ FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod',
     '$ SYSTEM_ACCESSTOKEN=xxxxxx SYSTEM_COLLECTIONURI=https://dev.azure.com/xxxxxxx/ SYSTEM_TEAMPROJECT="xxxxxxx" BUILD_REPOSITORY_ID=xxxxx SYSTEM_PULLREQUEST_PULLREQUESTID=1418 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my.salesforce@org.com',
     '$ CI_SFDX_HARDIS_BITBUCKET_TOKEN=xxxxxx BITBUCKET_WORKSPACE=sfdxhardis-demo BITBUCKET_REPO_SLUG=test BITBUCKET_BUILD_NUMBER=1 BITBUCKET_BRANCH=uat BITBUCKET_PR_ID=2 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com',
-    '$ GITHUB_TOKEN=xxxx GITHUB_REPOSITORY=my-user/my-repo FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com'
+    '$ GITHUB_TOKEN=xxxx GITHUB_REPOSITORY=my-user/my-repo FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com',
+    '$ sf hardis:project:deploy:smart --agent --check',
+    '$ sf hardis:project:deploy:smart --agent --check --source-branch feature/my-feature --target-branch integration --target-org deploy@myclient.com.integration',
   ];
 
 
@@ -372,6 +446,16 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
+    'source-branch': Flags.string({
+      description: 'Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)',
+    }),
+    'target-branch': Flags.string({
+      description: 'Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername)',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -391,25 +475,51 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     delta?: boolean;
     destructiveChangesAfterDeployment?: boolean;
     extraCommands?: any[];
+    deferSuccessPullRequestComment?: boolean;
   };
   protected packageXmlFile: string;
   protected delta = false;
   protected debugMode = false;
+  // Handles the Flow members of the destructive manifests, deleted outside the metadata deploy
+  protected flowDeletion: FlowDeletionHandler;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(SmartDeploy);
+    const agentMode = flags.agent === true;
+    // Store agentMode globally so action providers can skip failing auth instead of failing
+    globalThis._agentMode = agentMode;
+
+    // Apply agent-mode branch/org overrides before any git branch detection or config loading
+    if (flags['source-branch']) {
+      process.env.FORCE_SOURCE_BRANCH = flags['source-branch'];
+    }
+    if (flags['target-branch']) {
+      // FORCE_TARGET_BRANCH drives delta deployment scope and PR comment org-branch lookup
+      process.env.FORCE_TARGET_BRANCH = flags['target-branch'];
+      // CONFIG_BRANCH drives which branch config file is loaded by getConfig('branch'),
+      // so targetUsername resolves to the correct org for the target branch
+      process.env.CONFIG_BRANCH = flags['target-branch'].replace(/\//g, '__');
+    }
+
     this.configInfo = await getConfig('branch');
-    this.checkOnly = flags.check || false;
+    // In agent mode, force simulation/check mode - no actual deployment allowed
+    this.checkOnly = agentMode ? true : (flags.check || false);
+    if (agentMode && !flags.check) {
+      uxLog("warning", this, c.yellow('[AgentMode] Forcing check/simulation mode - no changes will be applied to the org.'));
+    }
     const deltaFromArgs = flags.delta || false;
     const packageXml = flags.packagexml || null;
     this.debugMode = flags.debug || false;
     const currentGitBranch = await getCurrentGitBranch();
-    // Get target org
-    let targetUsername = flags['target-org'].getUsername();
-    if (!isCI) {
-      uxLog("warning", this, c.yellow("Just to be sure, please select the org you want to use for this command 😊"))
+    // Get target org: prefer targetUsername from target-branch config, then fall back to --target-org
+    let targetUsername = this.configInfo.targetUsername || flags['target-org'].getUsername();
+    if (this.configInfo.targetUsername) {
+      uxLog("log", this, c.grey(`[AgentMode] Using targetUsername from branch config: ${targetUsername}`));
+    }
+    if (!isCI && !agentMode) {
+      uxLog("warning", this, c.yellow(t('justToBeSurePleaseSelectThe')))
       targetUsername = await promptOrgUsernameDefault(this, targetUsername, { devHub: false, setDefault: false, scratch: false });
     }
 
@@ -430,11 +540,31 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Compute and apply delta if required
     await this.handleDeltaDeployment(deltaFromArgs, targetUsername, currentGitBranch);
 
+    // Take Flow deletions out of the metadata deploy (they run as a Tooling API step outside it)
+    this.flowDeletion = new FlowDeletionHandler({
+      commandThis: this,
+      checkOnly: this.checkOnly,
+      configInfo: this.configInfo,
+      targetOrg: flags['target-org'],
+      smartDeployOptions: this.smartDeployOptions,
+    });
+    await this.flowDeletion.prepare();
+
     // Set smart deploy options
     await this.setAdditionalOptions(targetUsername);
 
+    // Pre-destructive Flows must be gone before the constructive metadata is deployed
+    if (!this.checkOnly) {
+      await this.flowDeletion.execute('pre');
+    }
+
+    // smartDeploy normally posts its success comment before returning. Defer it when a post-deploy
+    // Flow deletion still has to succeed.
+    this.smartDeployOptions.deferSuccessPullRequestComment =
+      !this.checkOnly && this.flowDeletion.hasPostDeployDeletions;
+
     // Process deployment (or deployment check)
-    const { messages, quickDeploy, deployXmlCount } = await smartDeploy(
+    const { messages, quickDeploy, deployXmlCount, deploymentMetrics } = await smartDeploy(
       this.packageXmlFile,
       this.checkOnly,
       this.testLevel,
@@ -452,14 +582,18 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       });
     }
 
-    // Send notification of deployment success
-    if (deployExecuted) {
-      await handlePostDeploymentNotifications(flags, targetUsername, quickDeploy, this.delta, this.debugMode);
+    // Post-destructive Flow deletions. A blocked Flow fails the command before any success comment or
+    // notification is sent.
+    if (!this.checkOnly) {
+      await this.flowDeletion.execute('post');
+      if (this.smartDeployOptions.deferSuccessPullRequestComment === true) {
+        await GitProvider.managePostPullRequestComment(this.checkOnly);
+      }
+      await handlePostDeploymentNotifications(flags, targetUsername, quickDeploy, this.delta, this.debugMode, "", deploymentMetrics);
     }
     // Return result
     return { orgId: flags['target-org'].getOrgId(), outputString: messages.join('\n') };
   }
-
 
   private async setAdditionalOptions(targetUsername: string) {
     const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
@@ -470,11 +604,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           id: `PURGE_FLOW_VERSIONS`,
           command: `sf hardis:org:purge:flow --no-prompt --delete-flow-interviews --target-org ${targetUsername}`,
           label: 'Purge Flow Versions (added from PR config)',
-          skipIfError: true,
           context: 'process-deployment-only',
           preOrPost: 'commandsPreDeploy',
         })
-        uxLog("action", this, c.cyan('[SmartDeploy] Purge Flow Versions command added to deployment options (from PR config)'));
+        uxLog("action", this, c.cyan('[SmartDeploy] ' + t('smartDeployPurgeFlowVersionsAdded')));
       }
       if (prInfo.customBehaviors?.destructiveChangesAfterDeployment === true) {
         if (this.smartDeployOptions.postDestructiveChanges) {
@@ -486,7 +619,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
             ` --manifest "${emptyPackageXml}"` +
             ' --ignore-warnings' +
             ' --ignore-conflicts' +
-            ` --post-destructive-changes ${this.smartDeployOptions.postDestructiveChanges}` +
+            ` --post-destructive-changes "${this.smartDeployOptions.postDestructiveChanges}"` +
             ` --target-org ${targetUsername}` +
             ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
             (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
@@ -495,14 +628,13 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
             id: `DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT`,
             command: deployCommand,
             label: 'Destructive Changes After Deployment (added from PR config)',
-            skipIfError: true,
             context: 'process-deployment-only',
             preOrPost: 'commandsPostDeploy',
           });
-          uxLog("action", this, c.cyan('[SmartDeploy] Destructive Changes After Deployment command added to deployment options (from PR config)'));
+          uxLog("action", this, c.cyan('[SmartDeploy] ' + t('smartDeployDestructiveChangesAdded')));
         }
         else {
-          uxLog("warning", this, c.yellow('[SmartDeploy] Destructive Changes After Deployment is set to true in PR config, but no postDestructiveChanges file found. Skipping this step.'));
+          uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('smartDeployDestructiveChangesNoPostFile')));
         }
       }
     }
@@ -530,7 +662,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         toCommit = deltaScope?.toCommit?.hash || '';
       }
       // call delta
-      uxLog("action", this, c.cyan('[DeltaDeployment] Generating git delta package.xml and destructiveChanges.xml ...'));
+      uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('deltaDeploymentGeneratingGitDelta')));
       const tmpDir = await createTempDir();
       await callSfdxGitDelta(fromCommit, toCommit, tmpDir, { debug: this.debugMode });
       const packageXmlFileDeltaDeploy = path.join(tmpDir, 'package', 'packageDelta.xml');
@@ -544,22 +676,26 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
       // Extend delta with dependencies if required
       if (process.env.USE_DELTA_DEPLOYMENT_WITH_DEPENDENCIES === 'true' || this.configInfo.useDeltaDeploymentWithDependencies === true) {
-        uxLog("action", this, c.cyan('[DeltaDeployment] Extending package.xml with dependencies ...'));
+        uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('deltaDeploymentExtendingPackageXml')));
         await extendPackageFileWithDependencies(diffPackageXml, this.packageXmlFile, diffDestructiveChangesXml);
         await appendPackageModifications(fromCommit, toCommit, originalPackageXml, diffPackageXml);
       }
 
-      await removePackageXmlContent(this.packageXmlFile, diffPackageXml, true, {
+      // Copy under an explicit name: the log would otherwise show two files both named package.xml
+      const gitDeltaPackageXml = path.join(tmpDir, 'package', 'gitDeltaPackage.xml');
+      await fs.copy(diffPackageXml, gitDeltaPackageXml);
+      await removePackageXmlContent(this.packageXmlFile, gitDeltaPackageXml, true, {
         debugMode: this.debugMode,
         keepEmptyTypes: false,
+        context: 'delta',
       });
 
       const deltaContent = await fs.readFile(this.packageXmlFile, 'utf8');
-      uxLog("action", this, c.cyan('[DeltaDeployment] Final Delta package.xml to deploy:\n' + c.green(deltaContent)));
+      uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('deltaDeploymentFinalDeltaPackageXml', { deltaContent: c.green(deltaContent) })));
 
       const smartDeploymentTestsAllowed = await this.isSmartDeploymentTestsAllowed()
       if (smartDeploymentTestsAllowed) {
-        uxLog("action", this, c.cyan("[SmartDeploymentTests] Smart Deployment tests activated: analyzing delta package content..."));
+        uxLog("action", this, c.cyan('[SmartDeploymentTests] ' + t('smartDeploymentTestsActivated')));
         const deltaPackageContent = await parsePackageXmlFile(this.packageXmlFile);
         const metadataTypesInDelta = Object.keys(deltaPackageContent);
         const impactingMetadataTypesInDelta: string[] = []
@@ -569,15 +705,15 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           }
         }
         if (impactingMetadataTypesInDelta.length === 0 && !(await isProductionOrg(targetUsername, {}))) {
-          uxLog("success", this, c.green("[SmartDeploymentTests] No Impacting metadata in delta package.xml: Skip test classes as the deployed items seem safe 😊"));
+          uxLog("success", this, c.green('[SmartDeploymentTests] ' + t('smartDeploymentNoImpactingMetadataSkipTests')));
           this.testLevel = "NoTestRun";
           this.testClasses = "";
         }
         else {
           if (impactingMetadataTypesInDelta.length > 0) {
-            uxLog("warning", this, c.yellow(`[SmartDeploymentTests] Impacting metadata in delta package.xml (${impactingMetadataTypesInDelta.join(",")}): do not skip test classes.`));
+            uxLog("warning", this, c.yellow('[SmartDeploymentTests] ' + t('smartDeploymentImpactingMetadataDoNotSkipTests', { types: impactingMetadataTypesInDelta.join(",") })));
           } else {
-            uxLog("warning", this, c.yellow("[SmartDeploymentTests] Production org as deployment target: do not skip test classes"));
+            uxLog("warning", this, c.yellow('[SmartDeploymentTests] ' + t('productionOrgDeploymentTargetNoSkipTests')));
           }
         }
 
@@ -590,22 +726,23 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, {
           debugMode: this.debugMode,
           keepEmptyTypes: false,
+          context: 'delta-destructive',
         });
         this.smartDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
         const deltaContentDelete = await fs.readFile(destructiveXmlFileDeploy, 'utf8');
-        uxLog("action", this, c.cyan('[DeltaDeployment] Final Delta destructiveChanges.xml to delete:\n' + c.yellow(deltaContentDelete)));
+        uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('deltaDeploymentFinalDestructiveChanges', { deltaContentDelete: c.yellow(deltaContentDelete) })));
       }
     }
   }
 
   private async initPackageXmlAndDestructiveChanges(packageXml: any, targetUsername: any, flags) {
+    // A configured manifest wins, manifest/ and config/ are fallbacks. Keep the existsSync ternary
+    // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
     this.packageXmlFile =
       packageXml ||
-        process.env.PACKAGE_XML_TO_DEPLOY ||
-        this.configInfo.packageXmlToDeploy ||
-        fs.existsSync('./manifest/package.xml')
-        ? './manifest/package.xml'
-        : './config/package.xml';
+      process.env.PACKAGE_XML_TO_DEPLOY ||
+      this.configInfo.packageXmlToDeploy ||
+      (fs.existsSync('./manifest/package.xml') ? './manifest/package.xml' : './config/package.xml');
     this.smartDeployOptions = {
       targetUsername: targetUsername,
       conn: flags['target-org']?.getConnection(),
@@ -613,23 +750,31 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       extraCommands: []
     };
     // Get destructiveChanges.xml and add it in options if existing
-    const postDestructiveChanges = process.env.PACKAGE_XML_TO_DELETE ||
-      this.configInfo.packageXmlToDelete ||
-      fs.existsSync('./manifest/destructiveChanges.xml')
-      ? './manifest/destructiveChanges.xml'
-      : './config/destructiveChanges.xml';
+    const configuredPostDestructiveChanges = process.env.PACKAGE_XML_TO_DELETE || this.configInfo.packageXmlToDelete;
+    const postDestructiveChanges =
+      configuredPostDestructiveChanges ||
+      (fs.existsSync('./manifest/destructiveChanges.xml')
+        ? './manifest/destructiveChanges.xml'
+        : './config/destructiveChanges.xml');
     if (fs.existsSync(postDestructiveChanges)) {
       this.smartDeployOptions.postDestructiveChanges = postDestructiveChanges;
+    } else if (configuredPostDestructiveChanges) {
+      // Silently skipping a manifest that someone configured on purpose would delete nothing and exit 0.
+      uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('configuredDestructiveManifestNotFound', { file: postDestructiveChanges })));
     }
 
     // Get preDestructiveChanges.xml and add it in options if existing
-    const preDestructiveChanges = process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
-      this.configInfo.packageXmlToDeletePreDeploy ||
-      fs.existsSync('./manifest/preDestructiveChanges.xml')
-      ? './manifest/preDestructiveChanges.xml'
-      : './config/preDestructiveChanges.xml';
+    const configuredPreDestructiveChanges =
+      process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY || this.configInfo.packageXmlToDeletePreDeploy;
+    const preDestructiveChanges =
+      configuredPreDestructiveChanges ||
+      (fs.existsSync('./manifest/preDestructiveChanges.xml')
+        ? './manifest/preDestructiveChanges.xml'
+        : './config/preDestructiveChanges.xml');
     if (fs.existsSync(preDestructiveChanges)) {
       this.smartDeployOptions.preDestructiveChanges = preDestructiveChanges;
+    } else if (configuredPreDestructiveChanges) {
+      uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('configuredDestructiveManifestNotFound', { file: preDestructiveChanges })));
     }
   }
 
@@ -662,9 +807,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           "warning",
           this,
           c.yellow(
-            `You may need to install package ${c.bold(package1.SubscriberPackageName)} ${c.bold(
-              package1.SubscriberPackageVersionId
-            )} in target org to validate the deployment check`
+            t('youMayNeedToInstallPackageInTargetOrg', {
+              packageName: c.bold(package1.SubscriberPackageName),
+              packageVersionId: c.bold(package1.SubscriberPackageVersionId)
+            })
           )
         );
       }
@@ -674,9 +820,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         this,
         c.yellow(
           c.italic(
-            `If you want deployment checks to automatically install packages, please define ${c.bold(
-              'INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true'
-            )} in ENV vars, or property ${c.bold('installPackagesDuringCheckDeploy: true')} in .sfdx-hardis.yml`
+            t('ifWantDeploymentChecksInstallPackagesDefine', {
+              installPackagesEnvVar: c.bold('INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true'),
+              installPackagesProperty: c.bold('installPackagesDuringCheckDeploy: true')
+            })
           )
         )
       );
@@ -684,7 +831,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   }
 
   private async initTestLevelAndTestClasses(testLevelFlag?: string, runTestsFlag?: string) {
-    uxLog("action", this, c.cyan('[SmartDeploy] Initializing test level and test classes to run...'));
+    uxLog("action", this, c.cyan('[SmartDeploy] ' + t('smartDeployInitializingTestLevel')));
     let givenTestlevel = testLevelFlag || this.configInfo.testLevel || 'RunLocalTests';
     this.testClasses = runTestsFlag || this.configInfo.runtests || '';
 
@@ -707,13 +854,13 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     const enableDeploymentApexTestClasses = this.configInfo.enableDeploymentApexTestClasses || false;
     // Select test classes from PRs if allowed
     if (enableDeploymentApexTestClasses === true) {
-      uxLog("log", this, c.cyan('[SmartDeploy] enableDeploymentApexTestClasses is activated (not recommended by default): identifying test classes from Config file and Pull Requests...'));
+      uxLog("log", this, c.cyan('[SmartDeploy] ' + t('smartDeployEnableDeploymentApexTestClassesActivated')));
       if (!this.configInfo.enableDeltaDeploymentBetweenMajorBranches) {
         throw new SfError('[SmartDeploy] It is mandatory to set enableDeltaDeploymentBetweenMajorBranches to true when using enableDeploymentApexTestClasses to avoid missing test classes in delta deployments between major branches.');
       }
       const selectedTestClassesForAllPrs = this.configInfo.deploymentApexTestClasses || [];
       if (selectedTestClassesForAllPrs.length > 0) {
-        uxLog("log", this, c.grey(`[SmartDeploy] Test classes selected from config file: ${selectedTestClassesForAllPrs.join(" ")}`));
+        uxLog("log", this, c.grey('[SmartDeploy] ' + t('smartDeployTestClassesFromConfig', { classes: selectedTestClassesForAllPrs.join(" ") })));
       }
       const pullRequests = await listAllPullRequestsForCurrentScope(this.checkOnly);
       const selectedTestClassesFromPrs = await selectTestClassesFromPullRequests(pullRequests, this.testClasses !== '' ? this.testClasses.split(" ") : []);
@@ -721,14 +868,14 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       if (allSelectedTestClasses.length > 0) {
         givenTestlevel = 'RunSpecifiedTests';
         this.testClasses = allSelectedTestClasses.join(" ");
-        uxLog("log", this, c.green(`[SmartDeploy] Test classes selected from PRs:\n - ${this.testClasses.split(" ").join("\n - ")}`));
+        uxLog("log", this, c.green('[SmartDeploy] ' + t('smartDeployTestClassesFromPrs', { testClasses: this.testClasses.split(" ").join("\n - ") })));
       } else {
-        uxLog("warning", this, c.yellow(`[SmartDeploy] No test class selected from PRs, keeping previous test level and classes.`));
+        uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('smartDeployNoTestClassFromPrs')));
       }
     }
 
     this.testLevel = givenTestlevel || this.configInfo.testLevel || 'RunLocalTests';
-    uxLog("log", this, c.green(`[SmartDeploy] Final test level: ${c.bold(this.testLevel)}.`));
+    uxLog("log", this, c.green('[SmartDeploy] ' + t('smartDeployFinalTestLevel', { testLevel: c.bold(this.testLevel) })));
     // Test classes are only valid for RunSpecifiedTests
     if (this.testLevel != 'RunSpecifiedTests') {
       this.testClasses = '';
@@ -797,7 +944,18 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       parentBranch = prInfo.targetBranch;
     }
     const majorOrgs = await listMajorOrgs();
-    uxLog("log", this, c.grey('Major orgs with auth configured:\n' + JSON.stringify(majorOrgs, null, 2)));
+    uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('majorOrgsWithAuthConfigured')));
+    uxLogTable(
+      this,
+      majorOrgs.map((majorOrg) => ({
+        Branch: majorOrg.branchName || '',
+        Level: majorOrg.level ?? '',
+        'Merge targets': (majorOrg.mergeTargets || []).join(', '),
+        'Instance URL': majorOrg.instanceUrl || '',
+        Username: majorOrg.targetUsername || '',
+      })),
+      ['Branch', 'Level', 'Merge targets', 'Instance URL', 'Username']
+    );
     const currentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === currentBranch);
     const parentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === parentBranch);
     if (currentBranchIsMajor && (parentBranchIsMajor === true || parentBranch == null)) {

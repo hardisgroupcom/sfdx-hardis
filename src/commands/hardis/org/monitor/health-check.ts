@@ -12,6 +12,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import sortArray from 'sort-array';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -84,9 +85,17 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 - **Notifications:** Relies on \`NotifProvider\` to broadcast the score metric, top risky settings, and the XLSX attachment. Grafana pipelines reuse \`data.metric\` (score) and \`metrics\` (risk counters) fields.
 - **Exit codes:** Sets \`process.exitCode = 1\` whenever an error severity is detected to help CI pipelines fail fast when the security score drops below expectations.
 </details>
-`;
 
-  public static examples = ['$ sf hardis:org:monitor:health-check'];
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:monitor:health-check --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+  public static examples = ['$ sf hardis:org:monitor:health-check', '$ sf hardis:org:monitor:health-check --agent'];
 
   public static flags: any = {
     outputfile: Flags.string({
@@ -103,6 +112,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -129,7 +142,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     const conn = flags['target-org'].getConnection();
 
-    uxLog('action', this, c.cyan('Retrieve latest Security Health Check score...'));
+    uxLog('action', this, c.cyan(t('retrieveLatestSecurityHealthCheckScore')));
     const scoreQuery = `SELECT Id, DurableId, CustomBaselineId, Score FROM SecurityHealthCheck LIMIT 1`;
     const scoreResult = await soqlQueryTooling(scoreQuery, conn);
     if (!scoreResult.records || scoreResult.records.length === 0) {
@@ -140,7 +153,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const scoreSeverity = this.getScoreSeverity(scoreValue);
     const scoreText = scoreValue != null ? `${scoreValue.toFixed(2)}%` : 'Not available';
 
-    uxLog('action', this, c.cyan('Retrieve Security Health Check indicators...'));
+    uxLog('action', this, c.cyan(t('retrieveSecurityHealthCheckIndicators')));
     const risksQuery = `SELECT Id, DurableId, RiskType, Setting, SettingGroup, SettingRiskCategory, OrgValue, StandardValue FROM SecurityHealthCheckRisks ORDER BY RiskType, Setting`;
     const risksResult = await soqlQueryTooling(risksQuery, conn);
     const riskRecords = (risksResult.records || []) as SecurityHealthCheckRisk[];
@@ -180,12 +193,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const uxSeverityLevel: UxLogLevel =
       scoreSeverity === 'error' ? 'error' : scoreSeverity === 'warning' ? 'warning' : scoreSeverity === 'success' ? 'success' : 'other';
     const severityColor = scoreSeverity === 'error' ? c.red : scoreSeverity === 'warning' ? c.yellow : scoreSeverity === 'success' ? c.green : c.cyan;
-    uxLog(uxSeverityLevel, this, severityColor(`Security Health Check score: ${scoreText}`));
+    uxLog(uxSeverityLevel, this, severityColor(t('securityHealthCheckScore', { score: scoreText })));
 
     if (riskCounts.high === 0 && riskCounts.medium === 0) {
-      uxLog('success', this, c.green('No error or warning severity indicators detected.'));
+      uxLog('success', this, c.green(t('noErrorOrWarningSeverityIndicatorsDetected')));
     } else {
-      uxLog('warning', this, c.yellow(`Detected ${riskCounts.high} error-severity and ${riskCounts.medium} warning-severity indicators.`));
+      uxLog('warning', this, c.yellow(t('detectedErrorSeverityAndWarningSeverityIndicators', { riskCounts: riskCounts.high, riskCounts1: riskCounts.medium })));
     }
 
     this.reportRows = this.buildReportRows();
@@ -300,23 +313,23 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       notifSeverity = 'warning';
     }
 
-    let notifText = `Security Health Check score for ${orgMarkdown} is ${scoreText}.`;
+    let notifText = `Security Health Check score for ${orgMarkdown} is **${scoreText}**.`;
     if (highRisks.length > 0) {
-      notifText = `Security Health Check score for ${orgMarkdown} is ${scoreText} with ${highRisks.length} error-severity indicators.`;
+      notifText = `Security Health Check score for ${orgMarkdown} is **${scoreText}** with **${highRisks.length}** error-severity indicators.`;
     } else if (mediumRisks.length > 0) {
-      notifText = `Security Health Check score for ${orgMarkdown} is ${scoreText} with ${mediumRisks.length} warning-severity indicators.`;
+      notifText = `Security Health Check score for ${orgMarkdown} is **${scoreText}** with **${mediumRisks.length}** warning-severity indicators.`;
     }
 
     const notifAttachments: MessageAttachment[] = [];
     const highList = this.formatRisksForAttachment(highRisks);
     if (highList) {
       notifAttachments.push({ title: 'Error severity settings', text: highList });
-      uxLog('error', this, c.red(`Error severity settings:\n${highList}`));
+      uxLog('error', this, c.red(t('errorSeveritySettings', { highList })));
     }
     const mediumList = this.formatRisksForAttachment(mediumRisks);
     if (mediumList && notifSeverity !== 'error') {
       notifAttachments.push({ title: 'Warning severity settings', text: mediumList });
-      uxLog('warning', this, c.yellow(`Warning severity settings:\n${mediumList}`));
+      uxLog('warning', this, c.yellow(t('warningSeveritySettings', { mediumList })));
     }
 
     if (notifSeverity === 'error') {
@@ -358,7 +371,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         const groupLabel = risk.SettingGroup ? ` (${risk.SettingGroup})` : '';
         const orgValue = risk.OrgValue ?? 'N/A';
         const standardValue = risk.StandardValue ?? 'N/A';
-        return `• ${risk.Setting || 'Unknown'}${groupLabel}: Org=${orgValue} / Baseline=${standardValue}`;
+        return `- **${risk.Setting || 'Unknown'}**${groupLabel}: Org=${orgValue} / Baseline=${standardValue}`;
       })
       .join('\n');
   }

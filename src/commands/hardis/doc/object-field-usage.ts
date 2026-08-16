@@ -11,6 +11,7 @@ import { createXlsxFromCsvFiles, generateCsvFile, generateReportPath } from '../
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { listOrgSObjects } from '../../../common/utils/orgUtils.js';
 import { isManagedApiName } from '../../../common/utils/projectUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 type FieldUsageRow = {
   sObjectName: string;
@@ -21,6 +22,7 @@ type FieldUsageRow = {
   populatedRecords: number;
   populatedPercentageNumeric: number;
   populatedPercentage: string;
+  sum: number | string;
 };
 
 type SkippedFieldInfo = {
@@ -34,6 +36,7 @@ type ObjectContext = {
   describeResult: any;
   useTooling: boolean;
   eligibleFields: any[];
+  sumFields: string[];
 };
 
 type FieldDistributionResult = {
@@ -56,23 +59,43 @@ This command focuses on one or more sObjects and measures how many records popul
 
 - **Target Org:** Use \`--target-org\` to pick the org connection context.
 - **Multiple sObjects:** Provide one or more API names via \`--objects\` (comma-separated) to analyze several objects in one run.
+- **Restrict to specific fields:** Use the \`Object:Field1,Field2\` syntax in \`--objects\` (groups separated by spaces) to analyze only the listed fields instead of every custom field. Example: \`--objects "Contact:Name,Email Account:Name,MyField__c"\`. Explicitly named fields are analyzed even when they are standard, as long as they exist and are filterable.
+- **Sum of values:** Append \`(WITH_SUM)\` to a field name to add a \`sum\` column with the total of its populated values. Example: \`--objects "Opportunity:Amount(WITH_SUM),Name,ExpectedRevenue(WITH_SUM)"\`. Only numeric fields (currency, double, int, percent) are summed; the column is added to the report only when at least one field requests it.
 - **Per-field Counts:** Performs one overall record count and one per-field count with \`SELECT COUNT() FROM <sObject> WHERE <field> != null\`, skipping required or non-filterable fields.
+- **Non-filterable Fields:** Long Text Area and Rich Text fields cannot be counted with \`WHERE != null\`, so they are skipped by default. Add \`--include-non-filterable\` to compute their population rate anyway: the command pages through the records and counts how many have a non-empty value (slower on objects with many records, since the values cannot be tested server-side).
 - **Field Distributions:** Combine \`--objects <singleObject>\` with \`--fields FieldA,FieldB\` to group by those fields and list distinct values with their record counts and usage percentages.
 - **Reporting:** Generates CSV/XLSX reports and prints a summary table with per-field population rates.
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:object-field-usage --objects Account,Contact --agent
+\`\`\`
+
+In agent mode:
+- The \`--objects\` flag is **required** (no interactive prompt for object selection).
+- The \`Object:Field1,Field2\` syntax can be used to restrict the analysis to specific fields, with an optional \`(WITH_SUM)\` modifier per numeric field.
+- The API usage confirmation prompt is skipped (proceeds automatically).
 `;
 
   public static examples = [
     '$ sf hardis:doc:object-field-usage',
     '$ sf hardis:doc:object-field-usage --objects Account,Contact',
     '$ sf hardis:doc:object-field-usage --target-org myOrgAlias --objects CustomObject__c',
+    '$ sf hardis:doc:object-field-usage --objects "Contact:Name,Email Account:Name,MyField__c,MyOtherField__c"',
+    '$ sf hardis:doc:object-field-usage --objects "Opportunity:Amount(WITH_SUM),Name,ExpectedRevenue(WITH_SUM)"',
+    '$ sf hardis:doc:object-field-usage --objects "Opportunity:Description,Name" --include-non-filterable',
     '$ sf hardis:doc:object-field-usage --objects Account --fields SalesRegionAcct__c,Region__c',
+    '$ sf hardis:doc:object-field-usage --objects Account,Contact --agent',
   ];
 
   public static flags: any = {
     'target-org': requiredOrgFlagWithDeprecations,
     objects: Flags.string({
       char: 'o',
-      description: 'Comma-separated API names of the sObjects to analyze (e.g. Account,CustomObject__c). If omitted, an interactive prompt will list available objects.',
+      description: 'Comma-separated API names of the sObjects to analyze (e.g. Account,CustomObject__c). To restrict the analysis to specific fields, use the Object:Field1,Field2 syntax with groups separated by spaces (e.g. "Contact:Name,Email Account:MyField__c"). Append (WITH_SUM) to a numeric field to add a column with the sum of its values (e.g. "Opportunity:Amount(WITH_SUM)"). If omitted, an interactive prompt will list available objects.',
       required: false,
     }),
     fields: Flags.string({
@@ -80,12 +103,20 @@ This command focuses on one or more sObjects and measures how many records popul
       description: 'Comma-separated API names of fields to analyze (requires exactly one --objects value)',
       required: false,
     }),
+    'include-non-filterable': Flags.boolean({
+      default: false,
+      description: 'Also compute the population rate of non-filterable fields (e.g. Long Text Area, Rich Text). Their values cannot be counted server-side, so the command pages through the records and counts non-empty values, which can be slow on objects with many records.',
+    }),
     websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
     skipauth: Flags.boolean({
       description:
         "Skip authentication check when a default username is required",
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
   };
 
@@ -181,6 +212,140 @@ This command focuses on one or more sObjects and measures how many records popul
     }
   }
 
+  // Parses the --objects flag value into a list of objects with their optional field restrictions.
+  // Two accepted forms:
+  //  - Comma-separated objects (legacy): "Account,Contact" -> all eligible fields per object.
+  //  - Per-object field selection: "Contact:Name,Email Account:MyField__c" (groups separated by spaces).
+  // A field can carry a (WITH_SUM) suffix (e.g. "Amount(WITH_SUM)") to request an extra column
+  // with the sum of its populated values.
+  protected parseObjectsInput(raw: string): Array<{ name: string; fields: Array<{ name: string; withSum: boolean }> }> {
+    const input = (raw || '').trim();
+    if (!input) {
+      return [];
+    }
+    // Without a colon, keep the historical comma-separated objects behavior (all fields).
+    if (!input.includes(':')) {
+      return input
+        .split(',')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+        .map((name) => ({ name, fields: [] }));
+    }
+    // With a colon, groups are separated by spaces and each group is Object or Object:Field1,Field2
+    return input
+      .split(/\s+/)
+      .map((group) => group.trim())
+      .filter((group) => group.length > 0)
+      .map((group) => {
+        const colonIndex = group.indexOf(':');
+        if (colonIndex === -1) {
+          return { name: group, fields: [] };
+        }
+        const name = group.slice(0, colonIndex).trim();
+        const fields = group
+          .slice(colonIndex + 1)
+          .split(',')
+          .map((field) => field.trim())
+          .filter((field) => field.length > 0)
+          .map((field) => {
+            const sumMatch = field.match(/^(.*?)\s*\(WITH_SUM\)\s*$/i);
+            if (sumMatch) {
+              return { name: sumMatch[1].trim(), withSum: true };
+            }
+            return { name: field, withSum: false };
+          });
+        return { name, fields };
+      })
+      .filter((entry) => entry.name.length > 0);
+  }
+
+  // Resolves explicitly requested field names against the object describe.
+  // Honors standard fields too; skips unknown fields with a warning.
+  // Non-filterable fields are skipped unless includeNonFilterable is set (then counted in memory).
+  protected selectRequestedFields(describeFields: any[], requestedNames: string[], sObjectName: string, includeNonFilterable = false): any[] {
+    const fieldsByLowerName = new Map<string, any>();
+    for (const field of describeFields || []) {
+      if (field?.name && typeof field.name === 'string') {
+        fieldsByLowerName.set(field.name.toLowerCase(), field);
+      }
+    }
+    const selected: any[] = [];
+    for (const requestedName of requestedNames) {
+      const field = fieldsByLowerName.get(requestedName.toLowerCase());
+      if (!field) {
+        uxLog("warning", this, c.yellow(t('requestedFieldNotFound', { fieldName: requestedName, sObjectName })));
+        continue;
+      }
+      // Compound parents (Address / Geolocation) can't be counted; analyze their components instead
+      if (this.isCompoundParentField(field)) {
+        uxLog("warning", this, c.yellow(t('requestedFieldIsCompound', { fieldName: field.name, sObjectName })));
+        continue;
+      }
+      if (field.filterable === false && !includeNonFilterable) {
+        uxLog("warning", this, c.yellow(t('requestedFieldNotFilterable', { fieldName: field.name, sObjectName })));
+        continue;
+      }
+      selected.push(field);
+    }
+    return selected;
+  }
+
+  // Counts populated values for non-filterable fields (Long Text Area, Rich Text...).
+  // These cannot be counted with COUNT() WHERE != null, and SOQL cannot test their emptiness
+  // server-side, so we page through the records with the REST query API (JSON) and only keep a
+  // running count of non-empty values. Records are discarded after each page, so the field
+  // contents are never accumulated in memory; we only care whether each value is empty or not.
+  protected async countNonFilterableFields(
+    connection: Connection,
+    sObjectName: string,
+    fields: any[],
+    skippedFields: SkippedFieldInfo[]
+  ): Promise<Record<string, number>> {
+    const counts: Record<string, number> = {};
+    if (!fields.length) {
+      return counts;
+    }
+    const fieldNames = fields.map((field) => field.name);
+    for (const fieldName of fieldNames) {
+      counts[fieldName] = 0;
+    }
+    uxLog("log", this, c.grey(t('countingNonFilterableFields', { count: fieldNames.length, sObjectName })));
+
+    const tally = (records: any[]) => {
+      for (const record of records) {
+        for (const field of fields) {
+          const value = record[field.name];
+          if (value !== null && typeof value !== 'undefined' && String(value).trim() !== '') {
+            counts[field.name]++;
+          }
+        }
+      }
+    };
+
+    try {
+      const query = `SELECT ${fieldNames.join(', ')} FROM ${sObjectName}`;
+      let result: any = await connection.query(query);
+      tally(result.records || []);
+      let fetched = result.records?.length || 0;
+      let nextProgress = 100000;
+      while (result.done === false && result.nextRecordsUrl) {
+        result = await connection.queryMore(result.nextRecordsUrl);
+        tally(result.records || []);
+        fetched += result.records?.length || 0;
+        if (fetched >= nextProgress) {
+          uxLog("log", this, c.grey(t('nonFilterableCountProgress', { count: fetched, sObjectName })));
+          nextProgress += 100000;
+        }
+      }
+    } catch (error: any) {
+      const warning = t('nonFilterableCountFailed', { sObjectName, message: error?.message || error });
+      uxLog("warning", this, c.yellow(warning));
+      fields.forEach((field) => skippedFields.push({ sObjectName, fieldName: field.name, reason: warning }));
+      return {};
+    }
+    return counts;
+  }
+
   protected extractCount(result: any): number {
     if (!result) {
       return 0;
@@ -238,8 +403,7 @@ This command focuses on one or more sObjects and measures how many records popul
         "log",
         this,
         c.grey(
-          `Processing ${sObjectName}: batch ${Math.floor(i / batchSize) + 1}/${totalBatches} ` +
-          `(${i + 1}-${i + batch.length} / ${fields.length} fields)`
+          t('processingObjectBatch', { sObjectName, batchNumber: Math.floor(i / batchSize) + 1, totalBatches, from: i + 1, to: i + batch.length, total: fields.length })
         )
       );
 
@@ -277,13 +441,13 @@ This command focuses on one or more sObjects and measures how many records popul
               item.body?.[0]?.message ||
               (item.errors && item.errors[0]?.message) ||
               'Unknown error';
-            const warning = `Composite query failed for ${fieldName}: ${errorMessage}`;
+            const warning = t('compositeQueryFailed', { fieldName, errorMessage });
             uxLog("warning", this, c.yellow(warning));
             skippedFields.push({ sObjectName, fieldName, reason: warning });
           }
         });
       } catch (error: any) {
-        const warning = `Composite request batch starting at index ${i} failed: ${error.message}`;
+        const warning = t('compositeRequestBatchFailed', { i, message: error.message });
         uxLog("warning", this, c.yellow(warning));
         batch.forEach((field) => skippedFields.push({ sObjectName, fieldName: field.name, reason: warning }));
       }
@@ -300,6 +464,38 @@ This command focuses on one or more sObjects and measures how many records popul
   ): Promise<any> {
     const query = `SELECT ${fieldName}, COUNT(Id) FROM ${sObjectName} GROUP BY ${fieldName} ORDER BY COUNT(Id) DESC LIMIT 1000`;
     return useTooling ? soqlQueryTooling(query, connection) : soqlQuery(query, connection);
+  }
+
+  // Computes SUM() for the requested numeric fields in a single aggregate query.
+  // Returns a map fieldName -> sum (null when the org returned no value).
+  protected async computeFieldSums(
+    connection: Connection,
+    sObjectName: string,
+    sumFields: string[],
+    useTooling: boolean
+  ): Promise<Record<string, number | null>> {
+    const sums: Record<string, number | null> = {};
+    if (!sumFields.length) {
+      return sums;
+    }
+    const aliasToField: Record<string, string> = {};
+    const selectParts = sumFields.map((fieldName, idx) => {
+      const alias = `sum${idx}`;
+      aliasToField[alias] = fieldName;
+      return `SUM(${fieldName}) ${alias}`;
+    });
+    const query = `SELECT ${selectParts.join(', ')} FROM ${sObjectName}`;
+    try {
+      const result = useTooling ? await soqlQueryTooling(query, connection) : await soqlQuery(query, connection);
+      const record = (result?.records || [])[0] || {};
+      for (const [alias, fieldName] of Object.entries(aliasToField)) {
+        const value = record[alias];
+        sums[fieldName] = value === null || typeof value === 'undefined' ? null : Number(value);
+      }
+    } catch (error: any) {
+      uxLog("warning", this, c.yellow(t('unableToComputeFieldSums', { sObjectName, message: error?.message || error })));
+    }
+    return sums;
   }
 
   protected isInvalidTypeError(error: any): boolean {
@@ -325,7 +521,7 @@ This command focuses on one or more sObjects and measures how many records popul
       if (!this.isInvalidTypeError(error)) {
         throw error;
       }
-      uxLog("warning", this, c.yellow(`Standard API describe failed for ${sObjectName}. Retrying with Tooling API...`));
+      uxLog("warning", this, c.yellow(t('standardApiDescribeFailedForRetryingWith', { sObjectName })));
       const describeResult = await connection.tooling.describe(sObjectName);
       return { describeResult, useTooling: true };
     }
@@ -338,7 +534,7 @@ This command focuses on one or more sObjects and measures how many records popul
     useTooling: boolean
   ): Promise<FieldDistributionResult> {
     const fieldName = fieldDescribe.name;
-    uxLog("action", this, c.cyan(`Computing distribution for ${sObjectName}.${fieldName}...`));
+    uxLog("action", this, c.cyan(t('computingDistributionFor', { sObjectName, fieldName })));
     const totalRecords = await this.countRecords(connection, sObjectName, useTooling);
     const distributionResult = await this.queryFieldDistribution(connection, sObjectName, fieldName, useTooling);
 
@@ -363,8 +559,8 @@ This command focuses on one or more sObjects and measures how many records popul
       { key: 'percentage', header: 'Percentage' },
     ];
 
-    uxLog("log", this, c.cyan(`Found ${rows.length} distinct values for ${fieldName}.`));
-    uxLog("log", this, c.cyan(`Total ${sObjectName} records: ${totalRecords}.`));
+    uxLog("log", this, c.cyan(t('foundDistinctValuesFor', { rows: rows.length, fieldName })));
+    uxLog("log", this, c.cyan(t('totalRecords', { sObjectName, totalRecords })));
     // uxLogTable(this, rows, columns.map((col) => col.key));
 
     const reportFiles = await generateReports(rows, columns, this, {
@@ -384,14 +580,15 @@ This command focuses on one or more sObjects and measures how many records popul
     connection: Connection,
     sObjectName: string,
     eligibleFields: any[],
-    useTooling: boolean
+    useTooling: boolean,
+    sumFields: string[] = []
   ): Promise<{ rows: FieldUsageRow[]; totalRecords: number; skippedFields: SkippedFieldInfo[] }> {
     if (eligibleFields.length === 0) {
-      uxLog("warning", this, c.yellow(`No eligible fields found on ${sObjectName}; skipping.`));
+      uxLog("warning", this, c.yellow(t('noEligibleFieldsFoundOnSkipping', { sObjectName })));
       return { rows: [], totalRecords: 0, skippedFields: [] };
     }
 
-    uxLog("log", this, c.cyan(`Counting total ${sObjectName} records...`));
+    uxLog("log", this, c.cyan(t('countingTotalRecords', { sObjectName })));
     const totalRecords = await this.countRecords(connection, sObjectName, useTooling);
 
     const skippedFields: SkippedFieldInfo[] = [];
@@ -402,24 +599,47 @@ This command focuses on one or more sObjects and measures how many records popul
       eligibleFields.map((f) => f.name).filter((name) => typeof name === 'string' && name.length > 0)
     );
 
+    // Non-filterable fields (Long Text Area, Rich Text...) can't use COUNT() WHERE != null,
+    // so split them out and count them in memory via the Bulk API.
+    const filterableFields = eligibleFields.filter((field) => field.filterable !== false);
+    const nonFilterableFields = eligibleFields.filter((field) => field.filterable === false);
+
     const fieldCounts = await this.countFieldsWithComposite(
       connection,
       sObjectName,
-      eligibleFields,
+      filterableFields,
       useTooling,
       skippedFields
     );
+
+    if (nonFilterableFields.length > 0) {
+      const nonFilterableCounts = await this.countNonFilterableFields(
+        connection,
+        sObjectName,
+        nonFilterableFields,
+        skippedFields
+      );
+      Object.assign(fieldCounts, nonFilterableCounts);
+    }
+
+    const sumFieldsSet = new Set(sumFields);
+    const fieldSums = await this.computeFieldSums(connection, sObjectName, sumFields, useTooling);
 
     const rows: FieldUsageRow[] = [];
     for (const field of eligibleFields) {
       const populatedRecords = fieldCounts[field.name];
       if (typeof populatedRecords !== 'number') {
-        const warning = `Skipping field ${field.name} on ${sObjectName} because composite response had no count.`;
+        const warning = t('skippingFieldNoCount', { fieldName: field.name, sObjectName });
         uxLog("warning", this, c.yellow(warning));
         skippedFields.push({ sObjectName, fieldName: field.name, reason: warning });
         continue;
       }
       const percentage = totalRecords === 0 ? 0 : (populatedRecords / totalRecords) * 100;
+      let sum: number | string = '';
+      if (sumFieldsSet.has(field.name)) {
+        const computedSum = fieldSums[field.name];
+        sum = computedSum === null || typeof computedSum === 'undefined' ? 'N/A' : computedSum;
+      }
       rows.push({
         sObjectName,
         fieldApiName: field.name,
@@ -429,6 +649,7 @@ This command focuses on one or more sObjects and measures how many records popul
         populatedRecords,
         populatedPercentageNumeric: percentage,
         populatedPercentage: `${percentage.toFixed(2)}%`,
+        sum,
       });
     }
 
@@ -444,8 +665,8 @@ This command focuses on one or more sObjects and measures how many records popul
       order: ['desc'],
     });
 
-    uxLog("log", this, c.grey(`Computed population metrics for ${resultSorted.length} fields on ${sObjectName}.`));
-    uxLog("log", this, c.grey(`Total records for ${sObjectName}: ${totalRecords}.`));
+    uxLog("log", this, c.grey(t('computedPopulationMetricsForFieldsOn', { resultSorted: resultSorted.length, sObjectName })));
+    uxLog("log", this, c.grey(t('totalRecordsFor', { sObjectName, totalRecords })));
     //uxLogTable(this, resultSorted, columns.map((col) => col.key));
 
     return { rows: resultSorted, totalRecords, skippedFields };
@@ -454,18 +675,25 @@ This command focuses on one or more sObjects and measures how many records popul
   protected async generateFieldUsageCsvReport(
     rows: FieldUsageRow[],
     reportName: string,
-    fileTitle: string
+    fileTitle: string,
+    includeSum = false
   ): Promise<string> {
     const csvPath = await generateReportPath(reportName, '', { withDate: true });
-    const csvData = rows.map((row) => ({
-      sObjectName: row.sObjectName,
-      fieldApiName: row.fieldApiName,
-      fieldLabel: row.fieldLabel,
-      fieldCreatedDate: row.fieldCreatedDate,
-      totalRecords: row.totalRecords,
-      populatedRecords: row.populatedRecords,
-      populatedPercentage: row.populatedPercentage,
-    }));
+    const csvData = rows.map((row) => {
+      const csvRow: Record<string, any> = {
+        sObjectName: row.sObjectName,
+        fieldApiName: row.fieldApiName,
+        fieldLabel: row.fieldLabel,
+        fieldCreatedDate: row.fieldCreatedDate,
+        totalRecords: row.totalRecords,
+        populatedRecords: row.populatedRecords,
+        populatedPercentage: row.populatedPercentage,
+      };
+      if (includeSum) {
+        csvRow.sum = row.sum;
+      }
+      return csvRow;
+    });
     await generateCsvFile(csvData, csvPath, {
       fileTitle,
       noExcel: true,
@@ -474,7 +702,15 @@ This command focuses on one or more sObjects and measures how many records popul
     return csvPath;
   }
 
-  protected filterDescribeFields(fields: any[]): any[] {
+  // True for the parent of a compound field (Address or Geolocation). Such fields can't be
+  // counted with WHERE != null, and when selected their value is an object, so the emptiness
+  // check is meaningless. Their individual components (e.g. BillingStreet) can still be analyzed.
+  protected isCompoundParentField(field: any): boolean {
+    const type = (field?.type || '').toLowerCase();
+    return type === 'address' || type === 'location';
+  }
+
+  protected filterDescribeFields(fields: any[], includeNonFilterable = false): any[] {
     if (!Array.isArray(fields)) {
       return [];
     }
@@ -491,7 +727,16 @@ This command focuses on one or more sObjects and measures how many records popul
       if (field.calculated || field.deprecatedAndHidden) {
         return false;
       }
-      if (!field.nillable || !field.filterable) {
+      if (!field.nillable) {
+        return false;
+      }
+      // Compound parents (Address / Geolocation) can't be counted and their value is an object
+      if (this.isCompoundParentField(field)) {
+        return false;
+      }
+      // Non-filterable fields (Long Text Area, Rich Text...) can't be counted with WHERE != null.
+      // They are kept only when --include-non-filterable is set, then counted in memory.
+      if (!field.filterable && !includeNonFilterable) {
         return false;
       }
       if (field.compoundFieldName && field.compoundFieldName !== field.name) {
@@ -502,7 +747,7 @@ This command focuses on one or more sObjects and measures how many records popul
   }
 
   protected estimateApiCalls(
-    contexts: Array<{ sObjectName: string; eligibleFields: any[] }>,
+    contexts: Array<{ sObjectName: string; eligibleFields: any[]; sumFields?: string[] }>,
     fieldFilters: string[] = []
   ): number {
     if (contexts.length === 0) {
@@ -516,14 +761,18 @@ This command focuses on one or more sObjects and measures how many records popul
       if (eligibleCount === 0) {
         return sum;
       }
-      const compositeCalls = Math.ceil(eligibleCount / this.compositeBatchSize);
+      const filterableCount = context.eligibleFields.filter((field) => field.filterable !== false).length;
+      const nonFilterableCount = eligibleCount - filterableCount;
+      const compositeCalls = Math.ceil(filterableCount / this.compositeBatchSize);
       const createdDateCalls = Math.ceil(eligibleCount / this.toolingCustomFieldBatchSize) || 1;
-      return sum + 1 + createdDateCalls + compositeCalls; // total count + CustomField chunks + composite batches
+      const sumCalls = (context.sumFields?.length || 0) > 0 ? 1 : 0; // single aggregate query per object
+      const nonFilterableCalls = nonFilterableCount > 0 ? 1 : 0; // record paging per object (more on large objects)
+      return sum + 1 + createdDateCalls + compositeCalls + sumCalls + nonFilterableCalls; // total count + CustomField chunks + composite batches + sum + non-filterable paging
     }, 0);
   }
 
-  protected async confirmApiUsage(plannedCalls: number, objectNames: string[]): Promise<boolean> {
-    if (plannedCalls === 0 || isCI) {
+  protected async confirmApiUsage(plannedCalls: number, objectNames: string[], agentMode = false): Promise<boolean> {
+    if (plannedCalls === 0 || isCI || agentMode) {
       return true;
     }
     const confirm = await prompts({
@@ -533,7 +782,7 @@ This command focuses on one or more sObjects and measures how many records popul
       message: c.cyanBright(
         `About to execute approximately ${plannedCalls} API call(s) for ${objectNames.length} object(s). Continue?`
       ),
-      description: 'Confirm API usage',
+      description: t('confirmApiUsage'),
     });
     return confirm.value === true;
   }
@@ -553,43 +802,67 @@ This command focuses on one or more sObjects and measures how many records popul
   public async run(): Promise<AnyJson> {
     this.injectObjectsPromptSentinel();
     const { flags } = await this.parse(HardisDocObjectFieldUsage);
+    const agentMode = flags.agent === true;
+    const includeNonFilterable = flags['include-non-filterable'] === true;
     const connection = flags['target-org'].getConnection();
     let uniqueObjects: string[] = [];
+    const requestedFieldsByObject: Record<string, string[]> = {};
+    // Field names (lowercased) explicitly requested with the (WITH_SUM) modifier, per object
+    const sumFieldsByObject: Record<string, Set<string>> = {};
     const hasPromptSentinel = flags.objects === this.objectsPromptSentinel;
     if (flags.objects && !hasPromptSentinel) {
-      const objectsInput = (flags.objects as string)
-        .split(',')
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0);
-      uniqueObjects = Array.from(new Set(objectsInput));
-      uniqueObjects.forEach((name) => this.validateIdentifier(name, 'sObject'));
+      const parsedObjects = this.parseObjectsInput(flags.objects as string);
+      for (const entry of parsedObjects) {
+        this.validateIdentifier(entry.name, 'sObject');
+        entry.fields.forEach((field) => this.validateIdentifier(field.name, 'field'));
+        if (!requestedFieldsByObject[entry.name]) {
+          requestedFieldsByObject[entry.name] = [];
+          sumFieldsByObject[entry.name] = new Set();
+        }
+        for (const field of entry.fields) {
+          requestedFieldsByObject[entry.name].push(field.name);
+          if (field.withSum) {
+            sumFieldsByObject[entry.name].add(field.name.toLowerCase());
+          }
+        }
+      }
+      uniqueObjects = Object.keys(requestedFieldsByObject);
+      for (const name of uniqueObjects) {
+        requestedFieldsByObject[name] = Array.from(new Set(requestedFieldsByObject[name]));
+      }
     }
 
     const objectContexts: ObjectContext[] = [];
     if (uniqueObjects.length === 0 || hasPromptSentinel) {
-      const availableSObjects = await listOrgSObjects(connection);
-      const sObjectApiNames = (availableSObjects?.records || [])
-        .map((record: any) => record?.QualifiedApiName)
-        .filter((apiName: any) => typeof apiName === 'string' && apiName.length > 0)
-        .filter((apiName: string) => !apiName.endsWith('__Share') && !apiName.endsWith('__ChangeEvent'));
-      sortArray(sObjectApiNames);
+      if (!isCI && !agentMode) {
+        const availableSObjects = await listOrgSObjects(connection);
+        const sObjectApiNames = (availableSObjects?.records || [])
+          .map((record: any) => record?.QualifiedApiName)
+          .filter((apiName: any) => typeof apiName === 'string' && apiName.length > 0)
+          .filter((apiName: string) => !apiName.endsWith('__Share') && !apiName.endsWith('__ChangeEvent'));
+        sortArray(sObjectApiNames);
 
-      const promptObjectsRes = await prompts({
-        type: 'multiselect',
-        name: 'value',
-        message: 'Select the SObjects to analyze:',
-        description: "Exclude objects you don't want to analyze.",
-        choices: sObjectApiNames.map((apiName: string) => ({ title: apiName, value: apiName })),
-        initial: sObjectApiNames,
-      });
-      const selectedObjects = promptObjectsRes.value || [];
-      if (!selectedObjects.length) {
-        const outputString = 'No objects selected; aborting.';
-        uxLog("warning", this, c.yellow(outputString));
+        const promptObjectsRes = await prompts({
+          type: 'multiselect',
+          name: 'value',
+          message: t('selectTheSobjectsToAnalyze'),
+          description: t('excludeObjectsYouDontWantToAnalyze'),
+          choices: sObjectApiNames.map((apiName: string) => ({ title: apiName, value: apiName })),
+          initial: sObjectApiNames,
+        });
+        const selectedObjects = promptObjectsRes.value || [];
+        if (!selectedObjects.length) {
+          const outputString = 'No objects selected; aborting.';
+          uxLog("warning", this, c.yellow(t('noObjectsSelectedAborting')));
+          return { outputString, cancelled: true };
+        }
+        uniqueObjects = selectedObjects;
+        uxLog("log", this, t('sObjectsSelectedForAnalysis', { count: uniqueObjects.length }));
+      } else {
+        const outputString = t('objectsFlagRequiredInAgentMode');
+        uxLog("error", this, c.red(outputString));
         return { outputString, cancelled: true };
       }
-      uniqueObjects = selectedObjects;
-      uxLog("log", this, `${uniqueObjects.length} SObjects selected for analysis.`);
     }
 
     const fieldsInput = flags.fields
@@ -602,29 +875,54 @@ This command focuses on one or more sObjects and measures how many records popul
         )
       )
       : [];
+    const hasPerObjectFields = Object.values(requestedFieldsByObject).some((fields) => fields.length > 0);
     if (fieldsInput.length > 0) {
+      if (hasPerObjectFields) {
+        throw new Error('--fields cannot be combined with the Object:Field1,Field2 syntax in --objects. Use one or the other.');
+      }
       fieldsInput.forEach((fieldName) => this.validateIdentifier(fieldName, 'field'));
       if (uniqueObjects.length !== 1) {
         throw new Error('--fields can only be used when a single object is specified or selected.');
       }
     }
 
-    WebSocketClient.sendProgressStartMessage(`Describing ${uniqueObjects.length} objects...`);
+    WebSocketClient.sendProgressStartMessage(t('describingObjects', { count: uniqueObjects.length }));
     let counter = 0;
     for (const sObjectName of uniqueObjects) {
-      uxLog("log", this, c.grey(`Describing ${sObjectName}...`));
+      uxLog("log", this, c.grey(t('describing', { sObjectName })));
       const context = await this.describeTarget(connection, sObjectName);
-      uxLog("log", this, c.grey(`Using ${context.useTooling ? 'Tooling' : 'standard'} API for ${sObjectName}.`));
-      const eligibleFields = this.filterDescribeFields(context.describeResult?.fields || []);
-      // Filter eligible fields to remove those with namespaces
-      const eligibleFieldsFiltered = eligibleFields.filter((field) => {
-        if (isManagedApiName(field.name) && !fieldsInput.includes(field.name)) {
-          return false;
+      uxLog("log", this, c.grey(t('usingApiFor', { context: context.useTooling ? 'Tooling' : 'standard', sObjectName })));
+      const requestedFields = requestedFieldsByObject[sObjectName] || [];
+      let eligibleFieldsFiltered: any[];
+      if (requestedFields.length > 0) {
+        // Only analyze the explicitly requested fields (standard fields honored, namespace filter bypassed)
+        eligibleFieldsFiltered = this.selectRequestedFields(context.describeResult?.fields || [], requestedFields, sObjectName, includeNonFilterable);
+      } else {
+        const eligibleFields = this.filterDescribeFields(context.describeResult?.fields || [], includeNonFilterable);
+        // Filter eligible fields to remove those with namespaces
+        eligibleFieldsFiltered = eligibleFields.filter((field) => {
+          if (isManagedApiName(field.name) && !fieldsInput.includes(field.name)) {
+            return false;
+          }
+          return true;
+        });
+      }
+      // Resolve which eligible fields should also get a SUM column (numeric fields only)
+      const requestedSumFields = sumFieldsByObject[sObjectName] || new Set<string>();
+      const numericFieldTypes = new Set(['currency', 'double', 'int', 'percent']);
+      const sumFields: string[] = [];
+      for (const field of eligibleFieldsFiltered) {
+        if (!requestedSumFields.has(field.name.toLowerCase())) {
+          continue;
         }
-        return true;
-      });
+        if (numericFieldTypes.has((field.type || '').toLowerCase())) {
+          sumFields.push(field.name);
+        } else {
+          uxLog("warning", this, c.yellow(t('sumRequestedOnNonNumericField', { fieldName: field.name, sObjectName })));
+        }
+      }
       if (eligibleFieldsFiltered.length > 0) {
-        objectContexts.push({ sObjectName, ...context, eligibleFields: eligibleFieldsFiltered });
+        objectContexts.push({ sObjectName, ...context, eligibleFields: eligibleFieldsFiltered, sumFields });
       }
       WebSocketClient.sendProgressStepMessage(counter + 1, uniqueObjects.length);
       counter++;
@@ -632,7 +930,7 @@ This command focuses on one or more sObjects and measures how many records popul
     WebSocketClient.sendProgressEndMessage(uniqueObjects.length);
 
     const plannedApiCalls = this.estimateApiCalls(objectContexts, fieldsInput);
-    const proceed = await this.confirmApiUsage(plannedApiCalls, uniqueObjects);
+    const proceed = await this.confirmApiUsage(plannedApiCalls, uniqueObjects, agentMode);
     if (!proceed) {
       const outputString = 'Operation cancelled by user.';
       uxLog("warning", this, c.yellow(outputString));
@@ -664,7 +962,7 @@ This command focuses on one or more sObjects and measures how many records popul
         totalRecords = singleResult.totalRecords ?? totalRecords;
       }
 
-      uxLog("action", this, c.cyan(`Summary:`));
+      uxLog("action", this, c.cyan(t('summary')));
       const fieldSummaryRows = fieldsInput.map((fieldApiName) => {
         const distinctValues = aggregatedResults.filter((r: any) => r?.fieldApiName === fieldApiName).length;
         return {
@@ -678,7 +976,7 @@ This command focuses on one or more sObjects and measures how many records popul
         uxLogTable(this, fieldSummaryRows, ['sObjectName', 'fieldApiName', 'distinctValues', 'totalRecords']);
       }
       if (aggregatedReportFiles.length > 0) {
-        uxLog("log", this, c.grey('Report files:'));
+        uxLog("log", this, c.grey(t('reportFiles')));
         for (const rf of aggregatedReportFiles) {
           uxLog("log", this, c.grey(`- ${rf?.type || 'file'}: ${rf?.file || ''}`));
         }
@@ -697,14 +995,15 @@ This command focuses on one or more sObjects and measures how many records popul
     const aggregatedSkipped: SkippedFieldInfo[] = [];
     const totalRecordsMap: Record<string, number> = {};
 
-    WebSocketClient.sendProgressStartMessage(`Processing field usage for ${objectContexts.length} objects...`);
+    WebSocketClient.sendProgressStartMessage(t('processingFieldUsage', { count: objectContexts.length }));
     counter = 0;
     for (const context of objectContexts) {
       const { rows, totalRecords, skippedFields } = await this.processObjectFieldUsage(
         connection,
         context.sObjectName,
         context.eligibleFields,
-        context.useTooling
+        context.useTooling,
+        context.sumFields
       );
       aggregatedRows.push(...rows);
       perObjectRows[context.sObjectName] = rows;
@@ -715,7 +1014,10 @@ This command focuses on one or more sObjects and measures how many records popul
     }
     WebSocketClient.sendProgressEndMessage(objectContexts.length);
 
-    uxLog("action", this, c.cyan(`Generating reports...`));
+    // Only add the Sum column when at least one (WITH_SUM) field was requested
+    const includeSumColumn = objectContexts.some((context) => (context.sumFields?.length || 0) > 0);
+
+    uxLog("action", this, c.cyan(t('generatingReports')));
     const reportFiles: any[] = [];
     const csvFilesForXlsx: string[] = [];
     for (const context of objectContexts) {
@@ -726,7 +1028,8 @@ This command focuses on one or more sObjects and measures how many records popul
       const csvPath = await this.generateFieldUsageCsvReport(
         rows,
         `object-field-usage-${context.sObjectName}`,
-        `Field usage - ${context.sObjectName}`
+        `Field usage - ${context.sObjectName}`,
+        includeSumColumn
       );
       csvFilesForXlsx.push(csvPath);
       reportFiles.push({ type: 'csv', file: csvPath });
@@ -736,7 +1039,8 @@ This command focuses on one or more sObjects and measures how many records popul
       const summaryCsv = await this.generateFieldUsageCsvReport(
         aggregatedRows,
         'object-field-usage-summary',
-        'Object field usage summary'
+        'Object field usage summary',
+        includeSumColumn
       );
       csvFilesForXlsx.unshift(summaryCsv);
       reportFiles.push({ type: 'csv', file: summaryCsv });
@@ -746,7 +1050,7 @@ This command focuses on one or more sObjects and measures how many records popul
       uxLog(
         "warning",
         this,
-        c.yellow(`${aggregatedSkipped.length} fields were skipped across analyzed objects. See skipped-fields report.`)
+        c.yellow(t('fieldsSkippedAcrossObjects', { count: aggregatedSkipped.length }))
       );
       const skippedCsv = await generateReportPath('object-field-usage-skipped-fields', '', { withDate: true });
       await generateCsvFile(aggregatedSkipped, skippedCsv, {
@@ -759,7 +1063,7 @@ This command focuses on one or more sObjects and measures how many records popul
 
     if (csvFilesForXlsx.length > 0) {
       const consolidatedBase = await generateReportPath('object-field-usage', '', { withDate: true });
-      uxLog("action", this, c.cyan(`Generating consolidated XLSX report...`));
+      uxLog("action", this, c.cyan(t('generatingConsolidatedXlsxReport')));
       await createXlsxFromCsvFiles(csvFilesForXlsx, consolidatedBase, { fileTitle: 'Object field usage (all)' });
       const consolidatedXlsx = path.join(
         path.dirname(consolidatedBase),
@@ -769,7 +1073,7 @@ This command focuses on one or more sObjects and measures how many records popul
       reportFiles.push({ type: 'xlsx', file: consolidatedXlsx });
     }
 
-    uxLog("action", this, c.cyan(`Summary:`));
+    uxLog("action", this, c.cyan(t('summary')));
 
     const perObjectSummary = objectContexts.map((context) => {
       const rows = perObjectRows[context.sObjectName] || [];
@@ -803,8 +1107,7 @@ This command focuses on one or more sObjects and measures how many records popul
       "log",
       this,
       c.grey(
-        `Analyzed ${objectContexts.length} object(s), ${totalFieldsAnalyzed} field(s) ` +
-        `(${aggregatedSkipped.length} skipped).`
+        t('analyzedObjectsAndFields', { objects: objectContexts.length, fields: totalFieldsAnalyzed, skipped: aggregatedSkipped.length })
       )
     );
     if (perObjectSummary.length > 0) {

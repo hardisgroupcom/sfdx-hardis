@@ -38,9 +38,27 @@ Assisted export data defined in .sfdx-hardis.yml
 
 Activate debug mode (more logs)
 
+# doraReportOutputFile
+
+Force the path and name of output report file. Must end with .md
+
+# doraReportPeriod
+
+Number of days to analyze (default: 90)
+
 # deployMetadatas
 
 Deploy metadatas to source org
+
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:deploy:sources:metadata --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
 
 # exceptFilter
 
@@ -85,6 +103,10 @@ Filter according to Name criteria
 # newWorkTask
 
 New User Story
+
+# outputFile
+
+Force the path and name of the output report file
 
 # orgFreezeUser
 
@@ -216,6 +238,42 @@ Websocket host:port for VsCode SFDX Hardis UI integration
 # withDevHub
 
 Also connect associated DevHub
+
+# releaseNotesFromDate
+
+Start date for the release scope (YYYY-MM-DD). Mutually exclusive with tag flags.
+
+# releaseNotesMergeCommit
+
+Specific merge commit SHA to use as the end of the release scope
+
+# releaseNotesMode
+
+Release notes mode: prepare (preview upcoming release) or post (document completed release)
+
+# releaseNotesPreviousTag
+
+Previous git tag (semver). If omitted, auto-detected from existing tags.
+
+# releaseNotesReleaseTag
+
+Git tag for the release (semver, e.g. v1.2.0)
+
+# releaseNotesSourceBranch
+
+Source branch name (e.g. integration, develop). In prepare mode, if --target-branch is not set, the target branch is inferred from this branch's mergeTargets configuration.
+
+# releaseNotesSourceCommit
+
+Source commit SHA to use as the start of the release scope
+
+# releaseNotesTargetBranch
+
+Target major branch name (e.g. main, production). If omitted, prompted or auto-detected.
+
+# releaseNotesToDate
+
+End date for the release scope (YYYY-MM-DD). Mutually exclusive with tag flags.
 
 # runtests
 

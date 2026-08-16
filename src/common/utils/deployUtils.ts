@@ -31,12 +31,16 @@ import { callSfdxGitDelta, getPullRequestData, setPullRequestData } from './gitU
 import { createBlankSfdxProject, GLOB_IGNORE_PATTERNS, isSfdxProject } from './projectUtils.js';
 import { prompts } from './prompts.js';
 import { arrangeFilesBefore, restoreArrangedFiles } from './workaroundUtils.js';
-import { countPackageXmlItems, isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
+import { countPackageXmlItems, isPackageXmlEmpty, listDuplicateFolderMetadataApiNames, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
 import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { executePrePostCommands } from './prePostCommandUtils.js';
+import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
+import { t } from './i18n.js';
+import { autoFixDeployErrors } from './deployErrorAutoFix.js';
+import { logDeployResultSummary, summarizeDeployErrorMessage, writeDeployResultReportFile } from './deployResultSummary.js';
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -72,11 +76,11 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
     // Manage beta/legacy boza
     const stdOut = (e as any).stdout + (e as any).stderr;
     if (stdOut.includes(`getaddrinfo EAI_AGAIN`)) {
-      uxLog("error", this, c.red(c.bold('The error appears to be caused by an unstable internet connection. Please try again.')));
+      uxLog("error", this, c.red(c.bold(t('theErrorAppearsToBeCausedBy'))));
     }
     // Analyze errors
-    const { errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
-    uxLog("error", commandThis, c.red('Unfortunately, push errors occurred.'));
+    const { errLog } = await analyzeDeployErrorLogs(stdOut, true, { label: 'project:deploy:start' });
+    uxLog("error", commandThis, c.red(t('unfortunatelyPushErrorsOccurred')));
     uxLog("error", this, c.red('\n' + errLog));
     elapseEnd('project:deploy:start');
     killBoringExitHandlers();
@@ -106,23 +110,23 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
         }));
       // Sort files by Type then Name
       sortArray(files, { by: ['Type', 'Name'], order: ['asc', 'asc'] });
-      uxLog("action", this, c.green('Successfully pulled sources from scratch org / source-tracked sandbox'));
+      uxLog("action", this, c.green(t('successfullyPulledSourcesFromScratchOrgSource')));
       // Display as a table
       if (files.length > 0) {
         // Use the uxLogTable utility for consistent table output
         uxLogTable(this, files, ['Type', 'Name', 'State']);
       } else {
-        uxLog("log", this, c.grey('No files pulled.'));
+        uxLog("log", this, c.grey(t('noFilesPulled')));
       }
     } else {
-      uxLog("error", this, c.red(`Pull command did not return expected results\n${JSON.stringify(pullCommandResult, null, 2)}`));
+      uxLog("error", this, c.red(t('pullCommandDidNotReturnExpectedResults', { JSON: JSON.stringify(pullCommandResult, null, 2) })));
     }
   } catch (e) {
     // Manage beta/legacy boza
     const stdOut = (e as any).stdout + (e as any).stderr;
     // Analyze errors
-    const { errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
-    uxLog("error", this, c.red('Sadly there has been pull error(s)'));
+    const { errLog } = await analyzeDeployErrorLogs(stdOut, true, { label: 'project:retrieve:start' });
+    uxLog("error", this, c.red(t('sadlyThereHasBeenPullError')));
     uxLog("error", this, c.red('\n' + errLog));
     // List unknown elements from output
     const forceIgnoreElements = [...stdOut.matchAll(/Entity of type '(.*)' named '(.*)' cannot be found/gm)];
@@ -130,9 +134,8 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
       // Propose user to ignore elements
       const forceIgnoreRes = await prompts({
         type: 'multiselect',
-        message:
-          'If you want to try again with updated .forceignore file, please select elements you want to add, else escape',
-        description: 'Select metadata elements to add to .forceignore to resolve deployment conflicts',
+        message: t('tryAgainWithUpdatedForceignore'),
+        description: t('descChooseForceIgnoreElements'),
         name: 'value',
         choices: forceIgnoreElements.map((forceIgnoreElt) => {
           return {
@@ -147,7 +150,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
         const forceIgnoreLines = forceIgnore.replace('\r\n', '\n').split('\n');
         forceIgnoreLines.push(...forceIgnoreRes.value);
         await fs.writeFile(forceIgnoreFile, forceIgnoreLines.join('\n') + '\n');
-        uxLog("log", this, 'Updated .forceignore file');
+        uxLog("log", this, t('updatedForceignoreFile'));
         return await forceSourcePull(scratchOrgAlias, debug);
       }
     }
@@ -158,7 +161,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
   // Check if some items has to be forced-retrieved because SF CLI does not detect updates
   const config = await getConfig('project');
   if (config.autoRetrieveWhenPull) {
-    uxLog("action", this, c.cyan('Retrieving additional sources that are usually forgotten by sf project:retrieve:start ...'));
+    uxLog("action", this, c.cyan(t('retrievingAdditionalSourcesThatAreUsuallyForgotten')));
     const metadataConstraint = config.autoRetrieveWhenPull.join(', ');
     const retrieveCommand = `sf project retrieve start -m "${metadataConstraint}" -o ${scratchOrgAlias} --wait 60`;
     await execCommand(retrieveCommand, this, {
@@ -170,10 +173,10 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
 
   // If there are SharingRules, retrieve all of them to avoid the previous one are deleted (SF Cli strange/buggy behavior)
   if (pullCommandResult?.stdout?.includes("SharingRules")) {
-    uxLog("action", this, c.cyan('Detected Sharing Rules in the pull: retrieving the whole of them to avoid silly overrides !'));
+    uxLog("action", this, c.cyan(t('detectedSharingRulesInThePullRetrieving')));
     const sharingRulesNamesMatches = [...pullCommandResult.stdout.matchAll(/([^ \\/]+)\.sharingRules-meta\.xml/gm)];
     for (const match of sharingRulesNamesMatches) {
-      uxLog("log", this, c.grey(`Retrieve the whole ${match[1]} SharingRules...`));
+      uxLog("log", this, c.grey(t('retrieveTheWholeSharingrules', { match: match[1] })));
       const retrieveCommand = `sf project retrieve start -m "SharingRules:${match[1]}" -o ${scratchOrgAlias} --wait 60`;
       await execCommand(retrieveCommand, this, {
         fail: true,
@@ -182,6 +185,99 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
       });
     }
   }
+}
+
+/**
+ * True when a deployment run that sent nothing to the org must still be reported as a success.
+ *
+ * Every planned deployment can be skipped inside the deployment loop because its package.xml ended
+ * up empty: filtered by package-no-overwrite.xml / packageDeployOnChange.xml, emptied by a
+ * remove-packagexml-items pre-deploy action, or left with standalone parent items only. Nothing
+ * then records a deployment result, and the Pull Request comment carries no status at all: no
+ * result title, no banner (a "tovalidate" comment has none) and no code coverage section.
+ *
+ * A failure already reported (ex: a post-deploy action allowed to fail) is never overwritten.
+ */
+export function shouldReportNoMetadataDeploymentSuccess(
+  processedDeploymentCount: number,
+  hasDestructiveChanges: boolean,
+  prData: { status?: string; deployStatus?: string }
+): boolean {
+  if (processedDeploymentCount > 0 || hasDestructiveChanges) {
+    return false;
+  }
+  return !prData?.deployStatus && prData?.status !== 'invalid';
+}
+
+// Populate pullRequestData with a success message when there is no metadata to deploy,
+// so the resulting PR comment is rendered as a successful deployment instead of an empty body.
+// Without it the comment carries no status at all, so it displays neither its result title nor
+// its banner (a "tovalidate" comment has none).
+function setNoMetadataDeploymentSuccess(check: boolean, reason?: string): void {
+  const defaultReason = "No metadata to deploy: the package.xml is empty so nothing was sent to the target org.";
+  const prData: Partial<PullRequestData> = {
+    messageKey: "deployment",
+    title: check ? "✅ Deployment check success - No metadata to deploy" : "✅ Deployment success - No metadata to deploy",
+    deployErrorsMarkdownBody: (reason || defaultReason) + " " + (check ? "The deployment check succeeded." : "The deployment succeeded."),
+    deployStatus: "valid",
+    status: "valid",
+  };
+  setPullRequestData(prData);
+}
+
+export interface DeploymentMetrics {
+  componentsDeployed: number;
+  // Subset of componentsDeployed that were deletions (destructive changes).
+  componentsDeleted: number;
+  componentsTotal: number;
+  componentsFailed: number;
+  testsRun: number;
+  testsFailed: number;
+  testsTotal: number;
+  codeCoveragePercent: number | null;
+  quickDeploy: boolean;
+  delta: boolean;
+  success: boolean;
+  durationSeconds: number;
+}
+
+/**
+ * Count how many components of a deploy result were deletions.
+ *
+ * numberComponentsDeployed lumps deletions in with creations and updates, so the split has to come
+ * from the per-component details: `details.componentSuccesses[].deleted` when present, falling back
+ * to the source-tracking style `files[].state`. The package.xml manifest entry that Salesforce adds
+ * to componentSuccesses is excluded.
+ */
+function countDeletedComponents(deployResultJson: any): number {
+  const componentSuccesses = deployResultJson?.details?.componentSuccesses;
+  if (Array.isArray(componentSuccesses) && componentSuccesses.length > 0) {
+    return componentSuccesses.filter(
+      (item: any) => item?.deleted === true && item?.fullName !== 'package.xml'
+    ).length;
+  }
+  const files = deployResultJson?.files;
+  if (Array.isArray(files)) {
+    return files.filter((item: any) => item?.state === 'Deleted').length;
+  }
+  return 0;
+}
+
+function buildEmptyDeploymentMetrics(options: { quickDeploy: boolean; delta: boolean; startTime: number }): DeploymentMetrics {
+  return {
+    componentsDeployed: 0,
+    componentsDeleted: 0,
+    componentsTotal: 0,
+    componentsFailed: 0,
+    testsRun: 0,
+    testsFailed: 0,
+    testsTotal: 0,
+    codeCoveragePercent: null,
+    quickDeploy: options.quickDeploy,
+    delta: options.delta,
+    success: true,
+    durationSeconds: Math.round((Date.now() - options.startTime) / 1000),
+  };
 }
 
 export async function smartDeploy(
@@ -198,11 +294,16 @@ export async function smartDeploy(
     preDestructiveChanges?: string;
     delta?: boolean;
     destructiveChangesAfterDeployment?: boolean;
-    extraCommands?: any[]
+    extraCommands?: any[];
+    deferSuccessPullRequestComment?: boolean;
   }
 ): Promise<any> {
   elapseStart('all deployments');
+  // Start from a clean slate so the post-deployment notification only reports this run's actions
+  resetExecutedDeploymentActions();
+  const deployStartTime = Date.now();
   let quickDeploy = false;
+  const deploymentMetrics: DeploymentMetrics = buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime });
 
   // Check package.xml emptiness
   const packageXmlIsEmpty = !fs.existsSync(packageXmlFile) || await isPackageXmlEmpty(packageXmlFile);
@@ -225,25 +326,31 @@ export async function smartDeploy(
 
   // Special case: both package.xml and destructive changes files exist but are empty
   if (packageXmlIsEmpty && hasEmptyDestructiveChanges && !hasDestructiveChanges) {
-    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
-    uxLog("action", this, c.cyan('Both package.xml and destructive changes files exist but are empty. Nothing to deploy.'));
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
-    await GitProvider.managePostPullRequestComment(check);
-    return { messages: [], quickDeploy, deployXmlCount: 0 };
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    uxLog("action", this, c.cyan(t('bothPackageXmlAndDestructiveChangesFiles')));
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    setNoMetadataDeploymentSuccess(check);
+    if (options.deferSuccessPullRequestComment !== true) {
+      await GitProvider.managePostPullRequestComment(check);
+    }
+    return { messages: [], quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
 
   // If we have empty package.xml and no destructive changes, there's nothing to do
   if (packageXmlIsEmpty && !hasDestructiveChanges) {
-    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
-    uxLog("action", this, 'No deployment or destructive changes to perform');
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
-    await GitProvider.managePostPullRequestComment(check);
-    return { messages: [], quickDeploy, deployXmlCount: 0 };
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    uxLog("action", this, t('noDeploymentOrDestructiveChangesToPerform'));
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    setNoMetadataDeploymentSuccess(check);
+    if (options.deferSuccessPullRequestComment !== true) {
+      await GitProvider.managePostPullRequestComment(check);
+    }
+    return { messages: [], quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
 
   // If we have empty package.xml but destructive changes, log it
   if (packageXmlIsEmpty && hasDestructiveChanges) {
-    uxLog("action", this, c.cyan('Package.xml is empty, but destructive changes are present. Will proceed with deployment of destructive changes.'));
+    uxLog("action", this, c.cyan(t('packageXmlIsEmptyButDestructiveChanges')));
   }
 
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode, options);
@@ -252,7 +359,7 @@ export async function smartDeploy(
 
   // If no deployments are planned but we have destructive changes, add a deployment with the existing package.xml
   if (deployXmlCount === 0 && hasDestructiveChanges) {
-    uxLog("action", this, c.cyan('Creating deployment for destructive changes...'));
+    uxLog("action", this, c.cyan(t('creatingDeploymentForDestructiveChanges')));
     splitDeployments.push({
       label: 'package-for-destructive-changes',
       packageXmlFile: packageXmlFile,
@@ -260,19 +367,33 @@ export async function smartDeploy(
     });
     deployXmlCount = 1;
   } else if (deployXmlCount === 0) {
-    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
-    uxLog("other", this, 'No deployment to perform');
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
-    await GitProvider.managePostPullRequestComment(check);
-    return { messages, quickDeploy, deployXmlCount };
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    uxLog("other", this, t('noDeploymentToPerform'));
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    setNoMetadataDeploymentSuccess(check);
+    if (options.deferSuccessPullRequestComment !== true) {
+      await GitProvider.managePostPullRequestComment(check);
+    }
+    return { messages, quickDeploy, deployXmlCount, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Run deployment pre-commands
-  await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+  // Expose the package.xml files of the deployment plan so pre-deploy actions can update them
+  // (ex: remove-packagexml-items actions filter their content before the metadata deploy step)
+  globalThis.pendingDeploymentPackageXmlFiles = splitDeployments.map((deployment) => deployment.packageXmlFile);
+  try {
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+  } finally {
+    delete globalThis.pendingDeploymentPackageXmlFiles;
+  }
   // Process items of deployment plan
-  uxLog("action", this, c.cyan('Processing split deployments build from deployment plan...'));
+  uxLog("action", this, c.cyan(t('processingSplitDeploymentsBuildFromDeploymentPlan')));
   uxLog("other", this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
+  // Deployments that were actually sent to the org. A deployment whose package.xml ends up empty is
+  // skipped below, and when every one of them is skipped nothing sets the deployment result: the
+  // Pull Request comment then displays no status, no banner and no code coverage section.
+  let processedDeploymentCount = 0;
   for (const deployment of splitDeployments) {
     elapseStart(`deploy ${deployment.label}`);
 
@@ -315,9 +436,11 @@ export async function smartDeploy(
             `Skipping deployment of ${c.bold(deployment.label)} because package.xml is empty and there are no destructive changes.`
           )
         );
+        deployXmlCount--;
         elapseEnd(`deploy ${deployment.label}`);
         continue;
       }
+      processedDeploymentCount++;
 
       uxLog(
         "action",
@@ -327,6 +450,7 @@ export async function smartDeploy(
           } (${nbDeployedItems} items)${hasDestructiveChanges ? ' with destructive changes' : ''}...`
         )
       );
+      await warnOnDuplicateFolderMetadataApiNames(deployment.packageXmlFile, commandThis);
       const branchConfig = await getConfig('branch');
       // Try QuickDeploy
       if (check === false && (process.env?.SFDX_HARDIS_QUICK_DEPLOY || '') !== 'false') {
@@ -339,13 +463,14 @@ export async function smartDeploy(
             ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
             (debugMode ? ' --verbose' : '') +
             (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '');
+          const quickDeployStartTime = Date.now();
           const quickDeployRes = await execSfdxJson(quickDeployCommand, commandThis, {
-            output: true,
+            output: false,
             debug: debugMode,
             fail: false,
           });
           if (quickDeployRes.status === 0) {
-            uxLog("success", commandThis, c.green(`Successfully processed QuickDeploy for deploymentId ${deploymentCheckId}`));
+            uxLog("success", commandThis, c.green(t('successfullyProcessedQuickdeployForDeploymentid', { deploymentCheckId })));
             uxLog(
               "warning",
               commandThis,
@@ -354,13 +479,39 @@ export async function smartDeploy(
               )
             );
             quickDeploy = true;
+            deploymentMetrics.quickDeploy = true;
+            // Displayed in the Pull Request comment: explains why no Apex test ran on this job
+            setPullRequestData({ usedQuickDeploy: true });
+            // Store complete deployment result as a CI artifact, then display a readable summary
+            const quickDeployReportFile = await writeDeployResultReportFile(
+              { status: quickDeployRes.status, result: quickDeployRes.result },
+              deployment.label
+            );
+            logDeployResultSummary(commandThis, { status: quickDeployRes.status, result: quickDeployRes.result }, {
+              check: check,
+              label: deployment.label,
+              delta: options.delta === true,
+              quickDeploy: true,
+              durationMs: Date.now() - quickDeployStartTime,
+              reportFile: quickDeployReportFile,
+            });
+            const quickDeployResultJson = quickDeployRes.result;
+            if (quickDeployResultJson) {
+              deploymentMetrics.componentsDeployed += Number(quickDeployResultJson.numberComponentsDeployed || 0);
+              deploymentMetrics.componentsDeleted += countDeletedComponents(quickDeployResultJson);
+              deploymentMetrics.componentsTotal += Number(quickDeployResultJson.numberComponentsTotal || 0);
+              deploymentMetrics.componentsFailed += Number(quickDeployResultJson.numberComponentErrors || 0);
+              deploymentMetrics.testsRun += Number(quickDeployResultJson.numberTestsCompleted || 0);
+              deploymentMetrics.testsFailed += Number(quickDeployResultJson.numberTestErrors || 0);
+              deploymentMetrics.testsTotal += Number(quickDeployResultJson.numberTestsTotal || 0);
+            }
             continue;
           } else {
             uxLog(
               "warning",
               commandThis,
               c.yellow(
-                `Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${quickDeployRes.errorMessage}.`
+                `Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${summarizeDeployErrorMessage(quickDeployRes.errorMessage)}.`
               )
             );
             uxLog("success", commandThis, c.green("Switching back to effective deployment not using QuickDeploy: that's ok 😊"));
@@ -411,11 +562,11 @@ export async function smartDeploy(
         ` --manifest "${deployment.packageXmlFile}"` +
         ' --ignore-warnings' + // So it does not fail in for objectTranslations stuff for example
         ' --ignore-conflicts' + // With CICD we are supposed to ignore them
-        ((hasCoverageFormatterJson || hasCoverageFormatterJsonSummary) ? ` --results-dir ${reportDir}` : '') +
+        ((hasCoverageFormatterJson || hasCoverageFormatterJsonSummary) ? ` --results-dir "${reportDir}"` : '') +
         ` --test-level ${testlevel}` +
         (options.testClasses && testlevel !== 'NoTestRun' ? ` --tests ${options.testClasses}` : '') +
-        (options.preDestructiveChanges ? ` --pre-destructive-changes ${options.preDestructiveChanges}` : '') +
-        (options.postDestructiveChanges && !(options.destructiveChangesAfterDeployment === true) ? ` --post-destructive-changes ${options.postDestructiveChanges}` : '') +
+        (options.preDestructiveChanges ? ` --pre-destructive-changes "${options.preDestructiveChanges}"` : '') +
+        (options.postDestructiveChanges && !(options.destructiveChangesAfterDeployment === true) ? ` --post-destructive-changes "${options.postDestructiveChanges}"` : '') +
         (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
         (hasCoverageFormatterJsonSummary ? ' --coverage-formatters json-summary' : '') +
         (hasCoverageFormatterJson ? ' --coverage-formatters json' : '') +
@@ -424,6 +575,7 @@ export async function smartDeploy(
         (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
         ` --json`;
       let deployRes;
+      const deployCommandStartTime = Date.now();
       try {
         deployRes = await execCommand(deployCommand, commandThis, {
           output: false,
@@ -431,9 +583,6 @@ export async function smartDeploy(
           fail: true,
           retry: deployment.retry || null,
         });
-        if (deployRes.status === 0) {
-          uxLog("log", commandThis, c.grey(shortenLogLines(JSON.stringify(deployRes))));
-        }
       } catch (e: any) {
         await generateApexCoverageOutputFile();
 
@@ -466,17 +615,57 @@ export async function smartDeploy(
         }
       }
 
+      // Accumulate deploy result metrics for this split deployment (before deployRes.stdout gets overwritten below)
+      try {
+        const deployResultJson = deployRes.result ?? JSON.parse(deployRes.stdout || '{}')?.result;
+        if (deployResultJson) {
+          deploymentMetrics.componentsDeployed += Number(deployResultJson.numberComponentsDeployed || 0);
+          deploymentMetrics.componentsDeleted += countDeletedComponents(deployResultJson);
+          deploymentMetrics.componentsTotal += Number(deployResultJson.numberComponentsTotal || 0);
+          deploymentMetrics.componentsFailed += Number(deployResultJson.numberComponentErrors || 0);
+          deploymentMetrics.testsRun += Number(deployResultJson.numberTestsCompleted || 0);
+          deploymentMetrics.testsFailed += Number(deployResultJson.numberTestErrors || 0);
+          deploymentMetrics.testsTotal += Number(deployResultJson.numberTestsTotal || 0);
+        }
+      } catch {
+        // Deploy result JSON not parseable for this split deployment: metrics for it are skipped
+      }
+      deploymentMetrics.success = deploymentMetrics.success && deployRes.status === 0;
+
       if (typeof deployRes === 'object') {
         deployRes.stdout = JSON.stringify(deployRes);
       }
       await generateApexCoverageOutputFile();
 
+      // Keep the complete deployment result available as a CI artifact, as it is not displayed in the console anymore
+      const deployResultJsonForReport = deployRes.result
+        ? { status: deployRes.status, result: deployRes.result }
+        : findJsonInString(`${deployRes.stdout || ''}${deployRes.stderr || ''}`);
+      const deployResultReportFile = await writeDeployResultReportFile(deployResultJsonForReport, deployment.label);
+
       // Set deployment id
       await getDeploymentId(deployRes.stdout + deployRes.stderr || '');
+      // Stored so the Pull Request comment only promises Quick Deploy for validations that ran tests
+      if (check) {
+        setPullRequestData({ checkTestLevel: testlevel });
+      }
 
       // Check org coverage if found in logs
       const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || '');
+
+      // Display a readable summary of the deployment, before the code coverage check that can throw an error
+      logDeployResultSummary(commandThis, deployResultJsonForReport, {
+        check: check,
+        label: deployment.label,
+        delta: options.delta === true,
+        quickDeploy: quickDeploy,
+        orgCoveragePercent: orgCoveragePercent,
+        durationMs: Date.now() - deployCommandStartTime,
+        reportFile: deployResultReportFile,
+      });
+
       if (orgCoveragePercent) {
+        deploymentMetrics.codeCoveragePercent = Number(orgCoveragePercent);
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: check, testlevel: testlevel, testClasses: options.testClasses });
         } catch (errCoverage) {
@@ -489,7 +678,7 @@ export async function smartDeploy(
         const existingPrData = getPullRequestData();
         const prDataCodeCoverage: PullRequestData = {
           messageKey: existingPrData.messageKey ?? 'deployment',
-          title: existingPrData.title ?? check ? '✅ Deployment check success' : '✅ Deployment success',
+          title: existingPrData.title ?? (check ? '✅ Deployment check success' : '✅ Deployment success'),
           codeCoverageMarkdownBody:
             testlevel === 'NoTestRun'
               ? '⚠️ Apex Tests has not been run thanks to useSmartDeploymentTests' :
@@ -537,6 +726,7 @@ export async function smartDeploy(
     else if (deployment.dataPath) {
       const dataPath = path.resolve(deployment.dataPath);
       await importData(dataPath, commandThis, options);
+      processedDeploymentCount++;
     }
     // Wait after deployment item process if necessary
     if (deployment.waitAfter) {
@@ -546,11 +736,25 @@ export async function smartDeploy(
     messages.push(message);
   }
   // Run deployment post commands
-  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+  // Nothing was sent to the org because every planned deployment was skipped: report the same
+  // success as the paths that detect an empty package.xml before building the deployment plan,
+  // otherwise the Pull Request comment carries no status at all.
+  if (shouldReportNoMetadataDeploymentSuccess(processedDeploymentCount, hasDestructiveChanges, getPullRequestData())) {
+    uxLog("action", this, c.cyan(t('allDeploymentsSkippedEmptyPackageXml')));
+    setNoMetadataDeploymentSuccess(
+      check,
+      "No metadata to deploy: every item of the deployment package was filtered out before the deployment (package-no-overwrite.xml, packageDeployOnChange.xml or a remove-packagexml-items action), so nothing was sent to the target org."
+    );
+  }
   // Post pull request comment if available
-  await GitProvider.managePostPullRequestComment(check);
+  if (options.deferSuccessPullRequestComment !== true) {
+    await GitProvider.managePostPullRequestComment(check);
+  }
   elapseEnd('all deployments');
-  return { messages, quickDeploy, deployXmlCount };
+  deploymentMetrics.quickDeploy = quickDeploy;
+  deploymentMetrics.durationSeconds = Math.round((Date.now() - deployStartTime) / 1000);
+  return { messages, quickDeploy, deployXmlCount, deploymentMetrics };
 }
 
 async function handleDeployError(
@@ -577,17 +781,28 @@ async function handleDeployError(
       return { status: 0, stdout: (e as any).stdout, stderr: (e as any).stderr, testCoverageNotBlockingActivated: true };
     }
   }
+  // Keep the complete deployment result available as a CI artifact, as it is not displayed in the console anymore
+  const deployResultReportFile = await writeDeployResultReportFile(findJsonInString(output), deployment.label);
   // Handle Effective error
-  const { errLog } = await analyzeDeployErrorLogs(output, true, { check: check });
-  uxLog("error", commandThis, c.red(c.bold('Sadly there has been Deployment error(s)')));
+  const { errLog, errorsAndTips: deployErrorsAndTips, failedTests: deployFailedTests } = await analyzeDeployErrorLogs(output, true, { check: check, label: deployment.label, deployResultReportFile: deployResultReportFile });
+  uxLog("error", commandThis, c.red(c.bold(t('sadlyThereHasBeenDeploymentError'))));
   if (process.env?.SFDX_HARDIS_DEPLOY_ERR_COLORS === 'false') {
     uxLog("other", this, '\n' + errLog);
   } else {
     uxLog("error", this, c.red('\n' + errLog));
   }
   await displayDeploymentLink(output, options);
+  // Try auto-fix with coding agent if enabled
+  const autoFixResult = await autoFixDeployErrors(
+    deployErrorsAndTips || [],
+    deployFailedTests || [],
+    { targetUsername: options.targetUsername, check },
+  );
+  if (autoFixResult?.pullRequestUrl) {
+    setPullRequestData({ autoFixPullRequestUrl: autoFixResult.pullRequestUrl });
+  }
   elapseEnd(`deploy ${deployment.label}`);
-  await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check, conn: options.conn });
+  await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check });
   await GitProvider.managePostPullRequestComment(check);
   killBoringExitHandlers();
   throw new SfError('Deployment failure. Check messages above');
@@ -721,7 +936,7 @@ async function getDeploymentId(rawLog: string) {
     globalThis.pullRequestDeploymentId = deploymentId;
     return deploymentId;
   }
-  uxLog("warning", this, c.yellow(`Unable to find deploymentId in logs \n${c.grey(rawLog)}`));
+  uxLog("warning", this, c.yellow(t('unableToFindDeploymentidInLogs', { rawLog: c.grey(rawLog) })));
   return null;
 }
 
@@ -762,7 +977,7 @@ async function buildDeploymentPackageXmls(
 ): Promise<any[]> {
   // Check for empty package.xml
   if (await isPackageXmlEmpty(packageXmlFile)) {
-    uxLog("other", this, 'Empty package.xml: nothing to deploy');
+    uxLog("other", this, t('emptyPackageXmlNothingToDeploy'));
     return [];
   }
   const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, options);
@@ -845,6 +1060,27 @@ async function buildDeploymentPackageXmls(
   }
 }
 
+// Warn when a deployment package holds the same Report or Dashboard API name in several folders.
+// Their API name is unique in the whole org, so the deployment moves a single component from folder to
+// folder instead of creating one component per folder, and the component moves again at each deployment.
+async function warnOnDuplicateFolderMetadataApiNames(packageXmlFile: string, commandThis: any) {
+  const duplicates = await listDuplicateFolderMetadataApiNames(packageXmlFile);
+  if (duplicates.length === 0) {
+    return;
+  }
+  uxLog("warning", commandThis, c.yellow(t('duplicateFolderMetadataApiNames', { count: c.bold(duplicates.length) })));
+  uxLogTable(
+    commandThis,
+    duplicates.map((duplicate) => ({
+      Type: duplicate.type,
+      'API name': duplicate.apiName,
+      Folders: duplicate.members.join(', '),
+    })),
+    ['Type', 'API name', 'Folders']
+  );
+  uxLog("warning", commandThis, c.yellow(t('duplicateFolderMetadataApiNamesHint')));
+}
+
 // Apply packageXml filtering using deployOncePackageXml and deployOnChangePackageXml
 async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deployOnChangePackageXml, debugMode) {
   // Main packageXml: Remove package-no-overwrite.xml items that are already present in target org
@@ -852,6 +1088,7 @@ async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deploy
     await removePackageXmlContent(packageXml, deployOncePackageXml, false, {
       debugMode: debugMode,
       keepEmptyTypes: true,
+      context: 'no-overwrite-remove',
     });
   }
   //Main packageXml: Remove packageDeployOnChange.xml items that are not different in target org
@@ -860,6 +1097,18 @@ async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deploy
       debugMode: debugMode,
       keepEmptyTypes: true,
     });
+  }
+  // Display the REALLY final package: the delta package shown earlier is displayed before this
+  // filtering, so protected items can still have been removed from it since.
+  if (deployOncePackageXml || deployOnChangePackageXml) {
+    const finalNbItems = await countPackageXmlItems(packageXml);
+    if (finalNbItems <= 100) {
+      const finalContent = await fs.readFile(packageXml, 'utf8');
+      uxLog("action", this, c.cyan(t('finalPackageXmlToDeploy', { count: finalNbItems, content: c.green(finalContent) })));
+    } else {
+      // A full deployment package can hold thousands of items: do not flood the log
+      uxLog("log", this, c.grey(t('finalPackageXmlToDeployLarge', { count: finalNbItems, file: packageXml })));
+    }
   }
 }
 
@@ -884,21 +1133,15 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     if (!fs.existsSync(packageNoOverwrite)) {
       throw new SfError(`packageNoOverwritePath property or PACKAGE_NO_OVERWRITE_PATH leads not existing file ${packageNoOverwrite}`);
     }
-    uxLog("log", this, c.grey(`Using custom package-no-overwrite file defined at ${packageNoOverwrite}`));
+    uxLog("log", this, c.grey(t('usingCustomPackageNoOverwriteFileDefined', { packageNoOverwrite })));
   }
   if (fs.existsSync(packageNoOverwrite)) {
-    uxLog("action", this, c.cyan('Handling package-no-overwrite.xml (Metadata that are not overwritten if existing in target org)...'));
+    uxLog("action", this, c.cyan(t('handlingPackageNoOverwriteXmlMetadataThat')));
     // If package-no-overwrite.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
     if (!(await isPackageXmlEmpty(packageNoOverwrite))) {
       const tmpDir = await createTempDir();
       // Build target org package.xml
-      uxLog(
-        "action",
-        this,
-        c.cyan(
-          `Generating full package.xml from target org to identify its items matching with package-no-overwrite.xml ...`
-        )
-      );
+      uxLog("action", this, c.cyan('[NoOverwrite] ' + t('listingTargetOrgContentForNoOverwrite')));
       const targetOrgPackageXml = path.join(tmpDir, 'packageTargetOrg.xml');
       await buildOrgManifest(options.targetUsername, targetOrgPackageXml, options.conn);
 
@@ -908,16 +1151,11 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
       await removePackageXmlContent(calculatedPackageNoOverwrite, targetOrgPackageXml, true, {
         debugMode: debugMode,
         keepEmptyTypes: false,
+        context: 'no-overwrite-keep',
       });
       await fs.copy(calculatedPackageNoOverwrite, path.join(tmpDir, 'calculated-package-no-overwrite.xml'));
       calculatedPackageNoOverwrite = path.join(tmpDir, 'calculated-package-no-overwrite.xml');
-      uxLog(
-        "log",
-        this,
-        c.grey(
-          `calculated-package-no-overwrite.xml with only items that already exist in target org: ${calculatedPackageNoOverwrite}`
-        )
-      );
+      uxLog("log", this, c.grey('[NoOverwrite] ' + t('calculatedNoOverwriteFileInfo', { file: calculatedPackageNoOverwrite })));
       // Check if there is still something in calculated-package-no-overwrite.xml
       if (!(await isPackageXmlEmpty(calculatedPackageNoOverwrite))) {
         return calculatedPackageNoOverwrite;
@@ -947,7 +1185,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 
   // Retrieve sfdx sources in local git repo
   await execCommand(
-    `sf project retrieve start --manifest ${packageDeployOnChangePath}` +
+    `sf project retrieve start --manifest "${packageDeployOnChangePath}"` +
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : ''),
     this,
     {
@@ -960,7 +1198,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   // Do not call delta if no updated file has been retrieved
   const hasGitLocalUpdates = await gitHasLocalUpdates();
   if (hasGitLocalUpdates === false) {
-    uxLog("log", this, c.grey('No diff retrieved from packageDeployOnChange.xml'));
+    uxLog("log", this, c.grey(t('noDiffRetrievedFromPackagedeployonchangeXml')));
     return null;
   }
 
@@ -968,7 +1206,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   await git().addConfig('user.email', 'bot@hardis.com', false, 'global');
   await git().addConfig('user.name', 'Hardis', false, 'global');
   await git().add('--all');
-  await git().commit('"temp"', ['--no-verify']);
+  await git().commit('chore(sfdx-hardis): temp commit for delta computation', ['--no-verify']);
 
   // Generate package.xml git delta
   const tmpDir = await createTempDir();
@@ -1006,27 +1244,36 @@ export async function removePackageXmlContent(
   packageXmlFile: string,
   packageXmlFileToRemove: string,
   removedOnly = false,
-  options = { debugMode: false, keepEmptyTypes: false }
+  options: { debugMode: boolean; keepEmptyTypes: boolean; context?: string } = { debugMode: false, keepEmptyTypes: false }
 ) {
+  // The context selects domain wording ("kept in the delta", "protected from overwrite"...)
+  // instead of the generic filtering vocabulary, which users cannot relate to their deployment
+  const contextMarker =
+    options.context === 'delta' || options.context === 'delta-destructive' ? '[DeltaDeployment] ' :
+      (options.context || '').startsWith('no-overwrite') ? '[NoOverwrite] ' : '';
   if (removedOnly === false) {
+    const introKey = options.context === 'no-overwrite-remove' ? 'noOverwriteRemoveIntro' : 'removingFilterItemsFromPackage';
     uxLog(
       "action",
       this,
-      c.cyan(
-        `Removing ${c.green(path.basename(packageXmlFileToRemove))} items from ${c.green(
-          path.basename(packageXmlFile)
-        )}...`
-      )
+      c.cyan(contextMarker + t(introKey, {
+        filterFile: c.green(path.basename(packageXmlFileToRemove)),
+        packageFile: c.green(path.basename(packageXmlFile))
+      }))
     );
   } else {
+    const introKey =
+      options.context === 'delta' ? 'deltaFilterIntro' :
+        options.context === 'delta-destructive' ? 'deltaDestructiveFilterIntro' :
+          options.context === 'no-overwrite-keep' ? 'noOverwriteKeepIntro' :
+            'keepingMatchingItemsFromFilter';
     uxLog(
       "action",
       this,
-      c.cyan(
-        `Keeping ${c.green(path.basename(packageXmlFileToRemove))} items matching with ${c.green(
-          path.basename(packageXmlFile)
-        )} (and remove the rest)...`
-      )
+      c.cyan(contextMarker + t(introKey, {
+        packageFile: c.green(path.basename(packageXmlFile)),
+        filterFile: c.green(path.basename(packageXmlFileToRemove))
+      }))
     );
   }
   await removePackageXmlFilesContent(packageXmlFile, packageXmlFileToRemove, {
@@ -1034,6 +1281,7 @@ export async function removePackageXmlContent(
     logFlag: options.debugMode,
     removedOnly: removedOnly,
     keepEmptyTypes: options.keepEmptyTypes || false,
+    context: options.context || '',
   });
 }
 
@@ -1045,7 +1293,7 @@ export async function deployDestructiveChanges(
 ) {
   // Create empty deployment file because of SF CLI limitation
   // cf https://gist.github.com/benahm/b590ecf575ff3c42265425233a2d727e
-  uxLog("action", commandThis, c.cyan(`Deploying destructive changes from file ${path.resolve(packageDeletedXmlFile)}`));
+  uxLog("action", commandThis, c.cyan(t('deployingDestructiveChangesFromFile', { path: path.resolve(packageDeletedXmlFile) })));
   const tmpDir = await createTempDir();
   const emptyPackageXmlFile = path.join(tmpDir, 'package.xml');
   await fs.writeFile(
@@ -1058,7 +1306,7 @@ export async function deployDestructiveChanges(
   );
   await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges.xml'));
   const deployDelete =
-    `sf project deploy ${options.check ? 'validate' : 'start'} --metadata-dir ${tmpDir}` +
+    `sf project deploy ${options.check ? 'validate' : 'start'} --metadata-dir "${tmpDir}"` +
     ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
     ` --test-level ${options.testLevel || 'NoTestRun'}` +
     ' --ignore-warnings' + // So it does not fail in case metadata is already deleted
@@ -1074,8 +1322,8 @@ export async function deployDestructiveChanges(
       fail: true,
     });
   } catch (e) {
-    const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, {});
-    uxLog("error", this, c.red('Sadly there has been destruction error(s)'));
+    const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, { label: 'destructive-changes' });
+    uxLog("error", this, c.red(t('sadlyThereHasBeenDestructionError')));
     uxLog("error", this, c.red('\n' + errLog));
     uxLog(
       "warning",
@@ -1115,7 +1363,7 @@ export async function deployMetadatas(
   // Perform deployment
   let deployCommand =
     `sf project deploy ${options.check ? 'validate' : 'start'}` +
-    ` --metadata-dir ${options.deployDir || '.'}` +
+    ` --metadata-dir "${options.deployDir || '.'}"` +
     ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
     ` --test-level ${options.testlevel || 'RunLocalTests'}` +
     ` --api-version ${options.apiVersion || getApiVersion()}` +
@@ -1172,7 +1420,7 @@ let quickActionsBackUpFolder: string;
 // Replace QuickAction content with Dummy content that will always pass
 async function replaceQuickActionsWithDummy() {
   if (process.env.CI_DEPLOY_QUICK_ACTIONS_DUMMY === 'true') {
-    uxLog("action", this, c.cyan('Replacing QuickActions content with Dummy content that will always pass...'));
+    uxLog("action", this, c.cyan(t('replacingQuickactionsContentWithDummyContentThat')));
     quickActionsBackUpFolder = await createTempDir();
     const patternQuickActions = process.cwd() + '/force-app/' + `**/quickActions/*__c.*.quickAction-meta.xml`;
     const matchQuickActions = await glob(patternQuickActions, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
@@ -1195,7 +1443,7 @@ async function replaceQuickActionsWithDummy() {
     <width>100</width>
 </QuickAction>`
       );
-      uxLog("log", this, c.grey('Backuped and replaced ' + quickActionFile));
+      uxLog("log", this, c.grey(t('backupedAndReplaced') + quickActionFile));
     }
   }
 }
@@ -1214,7 +1462,7 @@ async function restoreQuickActions() {
         .resolve(quickActionFile)
         .replace(path.resolve(quickActionsBackUpFolder), path.resolve(process.cwd()));
       await fs.copy(quickActionFile, prevFileName);
-      uxLog("log", this, c.grey('Restored ' + quickActionFile));
+      uxLog("log", this, c.grey(t('restored') + quickActionFile));
     }
   }
 }
@@ -1223,18 +1471,19 @@ async function restoreQuickActions() {
 export async function buildOrgManifest(
   targetOrgUsernameAlias,
   packageXmlOutputFile: string | null = null,
-  conn: any | null = null
+  conn: any | null = null,
+  options: { excludePackages?: boolean, logType?: 'action' | 'log' } = {},
 ) {
   // Manage file name
   if (packageXmlOutputFile === null) {
     const tmpDir = await createTempDir();
-    uxLog("action", this, c.cyan(`Generating full package.xml from target org ${targetOrgUsernameAlias}...`));
+    uxLog(options.logType || 'action', this, c.cyan(t('generatingFullPackageXmlFromTargetOrg', { targetOrgUsernameAlias })));
     packageXmlOutputFile = path.join(tmpDir, 'packageTargetOrg.xml');
   }
   // Use forced file name, for development purposed only
   if (process.env.FULL_ORG_MANIFEST_PATH) {
     fs.copyFileSync(process.env.FULL_ORG_MANIFEST_PATH, packageXmlOutputFile);
-    uxLog("warning", this, c.grey(`Using forced package.xml output path from FULL_ORG_MANIFEST_PATH env var: ${packageXmlOutputFile}. This should be used only in development mode.`));
+    uxLog("warning", this, c.grey(t('usingForcedPackageXmlOutputPathFrom', { packageXmlOutputFile })));
     return process.env.FULL_ORG_MANIFEST_PATH;
   }
   const manifestName = path.basename(packageXmlOutputFile);
@@ -1247,18 +1496,19 @@ export async function buildOrgManifest(
     }
     targetOrgUsernameAlias = currentOrg.username;
   }
+  const includePackagesFlag = options.excludePackages ? '' : ' --include-packages managed,unlocked';
   if (isSfdxProject()) {
     // Use sfdx manifest build in current project
     await execCommand(
       `sf project generate manifest` +
       ` --name ${manifestName}` +
-      ` --output-dir ${path.resolve(manifestDir)}` +
-      ` --include-packages managed,unlocked` +
+      ` --output-dir "${path.resolve(manifestDir)}"` +
+      includePackagesFlag +
       ` --from-org ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
-        debug: process.env.DEBUG,
+        debug: Boolean(process.env.DEBUG),
         output: true,
       }
     );
@@ -1269,14 +1519,14 @@ export async function buildOrgManifest(
     await execCommand(
       `sf project generate manifest` +
       ` --name ${manifestName}` +
-      ` --output-dir ${path.resolve(manifestDir)}` +
-      ` --include-packages managed,unlocked` +
+      ` --output-dir "${path.resolve(manifestDir)}"` +
+      includePackagesFlag +
       ` --from-org ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
         cwd: path.join(tmpDirSfdxProject, 'sfdx-hardis-blank-project'),
-        debug: process.env.DEBUG,
+        debug: Boolean(process.env.DEBUG),
         output: true,
       }
     );
@@ -1291,7 +1541,7 @@ export async function buildOrgManifest(
   }
   // Add Elements that are not returned by SF CLI command
   if (conn) {
-    uxLog("log", this, c.grey('Looking for package.xml elements that are not returned by manifest create command...'));
+    uxLog("log", this, c.grey(t('lookingForPackageXmlElementsThatAre')));
     const mdTypes = [{ type: 'ListView' }, { type: 'CustomLabel' }];
     const mdList = await conn.metadata.list(mdTypes, getApiVersion());
     const parsedPackageXml = await parseXmlFile(packageXmlFull);
@@ -1360,7 +1610,7 @@ export async function buildOrgManifest(
     const typesToRemove = parsedPackageXml.Package.types.filter(type => filteredTypes.includes(type.name[0]));
 
     if (typesToRemove.length > 0) {
-      uxLog("log", this, c.grey(`Force filtering out metadata types from org-generated package.xml: ${typesToRemove.map(type => type.name[0]).join(', ')}`));
+      uxLog("log", this, c.grey(t('forceFilteringOutMetadataTypesFromOrg', { typesToRemove: typesToRemove.map(type => type.name[0]).join(', ') })));
       parsedPackageXml.Package.types = parsedPackageXml.Package.types.filter(
         (type) => !filteredTypes.includes(type.name[0])
       );
@@ -1369,7 +1619,7 @@ export async function buildOrgManifest(
   }
 
   const nbRetrievedItems = await countPackageXmlItems(packageXmlFull);
-  uxLog("action", this, c.cyan(`Full org package.xml contains ${c.bold(nbRetrievedItems)} items`))
+  uxLog("log", this, c.cyan(t('fullOrgPackageXmlContainsItems', { nbRetrievedItems: c.bold(nbRetrievedItems) })))
   return packageXmlFull;
 }
 
@@ -1393,7 +1643,7 @@ export async function createEmptyPackageXml(): Promise<string> {
     'utf8'
   );
 
-  uxLog("log", this, c.grey(`Created empty package.xml at ${emptyPackageXmlPath}`));
+  uxLog("log", this, c.grey(t('createdEmptyPackageXmlAt', { emptyPackageXmlPath })));
   return emptyPackageXmlPath;
 }
 
@@ -1411,7 +1661,7 @@ export async function extractOrgCoverageFromLog(stdout) {
       return orgCoverage.toFixed(2);
     }
   } catch (e) {
-    uxLog("warning", this, c.yellow(`Warning: unable to convert ${orgCoverage} into string`));
+    uxLog("warning", this, c.yellow(t('warningUnableToConvertIntoString', { orgCoverage })));
     uxLog("error", this, c.grey((e as Error).message));
   }
   /* jscpd:ignore-end */
@@ -1478,7 +1728,7 @@ function getCoverageFromJsonFile(jsonFile) {
         return orgCoverage.toFixed(2);
       }
     } catch (e) {
-      uxLog("warning", this, c.yellow(`Warning: unable to convert ${orgCoverage} into string`));
+      uxLog("warning", this, c.yellow(t('warningUnableToConvertIntoString', { orgCoverage })));
       uxLog("error", this, c.grey((e as Error).message));
     }
   }
@@ -1536,8 +1786,8 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {
-  const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, options);
-  uxLog("error", commandThis, c.red(c.bold('Sadly there has been Metadata deployment error(s)...')));
+  const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, Object.assign({ label: 'metadata-deployment' }, options));
+  uxLog("error", commandThis, c.red(c.bold(t('sadlyThereHasBeenMetadataDeploymentError'))));
   uxLog("error", this, c.red('\n' + errLog));
   await displayDeploymentLink((e as any).stdout + (e as any).stderr, options);
   // Post pull requests comments if necessary
@@ -1556,7 +1806,7 @@ async function updatePullRequestResultCoverage(
   const existingPrData = getPullRequestData();
   const prDataCodeCoverage: Partial<PullRequestData> = {
     messageKey: existingPrData.messageKey ?? 'deployment',
-    title: existingPrData.title ?? options.check ? '✅ Deployment check success' : '✅ Deployment success',
+    title: existingPrData.title ?? (options.check ? '✅ Deployment check success' : '✅ Deployment success'),
     codeCoverageMarkdownBody: 'Code coverage is valid',
     deployStatus: (coverageStatus === 'valid' || coverageStatus === 'invalid' || coverageStatus === 'unknown')
       ? coverageStatus
@@ -1597,13 +1847,46 @@ export async function generateApexCoverageOutputFile(): Promise<void> {
     }
     if (coverageObject !== null) {
       await fs.writeFile(coverageFileName, JSON.stringify(coverageObject, null, 2), 'utf8');
-      uxLog("log", this, c.grey(`Written Apex coverage results in file ${coverageFileName}`));
+      uxLog("log", this, c.grey(t('writtenApexCoverageResultsInFile', { coverageFileName })));
       if (WebSocketClient.isAliveWithLwcUI()) {
-        WebSocketClient.sendReportFileMessage(coverageFileName, "Coverage Results JSON", "report")
+        WebSocketClient.sendReportFileMessage(coverageFileName, t('coverageResultsJson'), "report")
       }
     }
   } catch (e: any) {
-    uxLog("error", this, c.red(`Error while generating Apex coverage output file: ${e.message}`));
+    uxLog("error", this, c.red(t('errorWhileGeneratingApexCoverageOutputFile', { message: e.message })));
   }
 }
 
+// ---------------------------------------------------------------------------
+// Shared deployment record types & helpers
+// ---------------------------------------------------------------------------
+
+export interface DeployRecord {
+  Type: 'Deployment' | 'Validation';
+  Id: string;
+  Status: string;
+  DeployedBy: string;
+  CreatedDate: string;
+  StartDate: string;
+  CompletedDate: string;
+  PendingMinutes: number;
+  DurationMinutes: number;
+}
+
+export function parseDatetime(dateStr: string | null | undefined): Date | null {
+  if (!dateStr) return null;
+  const parsed = Date.parse(dateStr);
+  return Number.isNaN(parsed) ? null : new Date(parsed);
+}
+
+export function minutesBetween(start: Date | null, end: Date | null): number {
+  if (!start || !end) return 0;
+  return (end.getTime() - start.getTime()) / 60000;
+}
+
+
+// Augment globalThis types
+declare global {
+  // eslint-disable-next-line no-var
+  var pendingDeploymentPackageXmlFiles: string[] | undefined;
+}

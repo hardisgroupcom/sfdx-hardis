@@ -29,3 +29,4 @@ ___
 - [Configure integrations](salesforce-ci-cd-setup-integrations-home.md)
 - [Configure Salesforce DX project](salesforce-ci-cd-config-home.md) (follow all steps !)
 - [Make the first merge request !](salesforce-ci-cd-setup-merge-request.md)
+- [Check the setup with the final checklist](salesforce-ci-cd-setup-checklist.md)

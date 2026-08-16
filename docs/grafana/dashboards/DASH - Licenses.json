@@ -1,35 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_GRAFANACLOUD-CLOUDITY-LOGS",
-      "label": "grafanacloud-cloudity-logs",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "loki",
-      "pluginName": "Loki"
-    }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "panel",
-      "id": "gauge",
-      "name": "Gauge",
-      "version": ""
-    },
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "11.3.0-75420"
-    },
-    {
-      "type": "datasource",
-      "id": "loki",
-      "name": "Loki",
-      "version": "1.0.0"
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -49,11 +18,10 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
+  "id": 39,
   "links": [],
   "panels": [
     {
-      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -61,14 +29,13 @@
         "y": 0
       },
       "id": 41,
-      "panels": [],
       "title": "All Orgs",
       "type": "row"
     },
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -199,7 +166,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 24,
+        "w": 4,
         "x": 0,
         "y": 1
       },
@@ -227,7 +194,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{type=\"LICENSES\", orgIdentifier=\"$org\"}",
@@ -283,7 +250,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -435,12 +402,13 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.2.0-73451",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{type=\"LICENSES\"}",
@@ -568,7 +536,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -720,12 +688,13 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.2.0-73451",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{type=\"LICENSES\"}",
@@ -865,12 +834,21 @@
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
         "datasource": {
           "type": "loki",
-          "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          "uid": "grafanacloud-logs"
         },
         "definition": "",
+        "hide": 0,
         "includeAll": true,
         "multi": true,
         "name": "org",
@@ -883,6 +861,8 @@
         },
         "refresh": 1,
         "regex": "^(?!.*\\..*)(?!.*sandbox.*).*$",
+        "skipUrlSync": false,
+        "sort": 0,
         "type": "query"
       }
     ]

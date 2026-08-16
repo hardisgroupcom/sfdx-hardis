@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from "chalk";
 import * as path from "path";
@@ -11,10 +11,11 @@ import {
   uxLog,
 } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
-import moment from 'moment';
+import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { generateFlowVisualGitDiff, generateHistoryDiffMarkdown } from '../../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -27,11 +28,25 @@ export default class GenerateFlowGitDiff extends SfCommand<any> {
 Note: This command might requires @mermaid-js/mermaid-cli to be installed.
 
 Run \`npm install @mermaid-js/mermaid-cli --global\`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:generate:flow-git-diff --agent --flow "force-app/main/default/flows/MyFlow.flow-meta.xml" --commit-before abc123 --commit-after def456
+\`\`\`
+
+In agent mode:
+
+- All interactive prompts for flow selection, commit-before, and commit-after are skipped.
+- \`--flow\`, \`--commit-before\`, and \`--commit-after\` flags must be provided.
   `;
 
   public static examples = [
     '$ sf hardis:project:generate:flow-git-diff',
-    '$ sf hardis:project:generate:flow-git-diff --flow "force-app/main/default/flows/Opportunity_AfterUpdate_Cloudity.flow-meta.xml" --commit-before 8bd290e914c9dbdde859dad7e3c399776160d704 --commit-after e0835251bef6e400fb91e42f3a31022f37840f65'
+    '$ sf hardis:project:generate:flow-git-diff --flow "force-app/main/default/flows/Opportunity_AfterUpdate_Cloudity.flow-meta.xml" --commit-before 8bd290e914c9dbdde859dad7e3c399776160d704 --commit-after e0835251bef6e400fb91e42f3a31022f37840f65',
+    '$ sf hardis:project:generate:flow-git-diff --agent --flow "force-app/main/default/flows/MyFlow.flow-meta.xml" --commit-before abc123 --commit-after def456',
   ];
 
   public static flags: any = {
@@ -57,6 +72,10 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -72,6 +91,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(GenerateFlowGitDiff);
+    const agentMode = flags.agent === true;
     this.flowFile = flags.flow || "";
     this.commitBefore = flags["commit-before"] || "";
     this.commitAfter = flags["commit-after"] || "";
@@ -80,7 +100,10 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     await ensureGitRepository();
 
     // Prompt flow file if not send as input param
-    if (this.flowFile == "" && !isCI) {
+    if (this.flowFile == "") {
+      if (isCI || agentMode) {
+        throw new SfError('In agent/CI mode, --flow flag is required.');
+      }
       this.flowFile = await MetadataUtils.promptFlow();
     }
     this.flowLabel = path.basename(this.flowFile, ".flow-meta.xml");
@@ -88,35 +111,38 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     // List states of flow file using git
     const fileHistory = await git().log({ file: this.flowFile });
     if (fileHistory.all.length === 1) {
-      uxLog("success", this, c.green(`There is only one state for Flow ${this.flowFile}`));
+      uxLog("success", this, c.green(t('thereIsOnlyOneStateForFlow', { flowFile: this.flowFile })));
       return {};
     }
 
     // Build prompt choices
     let allChoices: any[] = [];
-    if ((this.commitBefore === "" || this.commitAfter === "") && !isCI) {
+    if ((this.commitBefore === "" || this.commitAfter === "") && !isCI && !agentMode) {
       allChoices = fileHistory.all.map(log => {
         return {
           value: log.hash,
-          title: `${moment(log.date).format("ll")}: ${log.message}`,
+          title: `${dateHelper(log.date).format("ll")}: ${log.message}`,
           description: `By ${log.author_name}(${log.author_email}) in ${log.refs}`
         }
       });
     }
 
     // Prompt commits if not sent as input parameter
-    if (this.commitBefore === "" && !isCI) {
+    if (this.commitBefore === "" && (isCI || agentMode)) {
+      throw new SfError('In agent/CI mode, --commit-before flag is required (use "allStates" to generate all states).');
+    }
+    if (this.commitBefore === "" && !isCI && !agentMode) {
       const commitBeforeSelectRes = await prompts({
         type: 'select',
         name: 'before',
-        message: 'Please select BEFORE UPDATE commit',
-        description: 'Choose the commit representing the state before your changes',
-        placeholder: 'Select a commit',
+        message: t('pleaseSelectBeforeUpdateCommit'),
+        description: t('chooseCommitBeforeYourChanges'),
+        placeholder: t('selectACommit'),
         choices: [...allChoices, ...[
           {
-            title: "Calculate for all Flow states",
+            title: t('calculateForAllFlowStates'),
             value: "allStates",
-            description: "Requires mkdocs-material to be read correctly. If you do not have it, we advise to select 2 commits for comparison."
+            description: t('requiresMkdocsMaterialForAllStates')
           }
         ]]
       });
@@ -128,14 +154,14 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       diffMdFile = await generateHistoryDiffMarkdown(this.flowFile, this.debugMode);
     }
     else {
-      if (this.commitAfter === "" && !isCI) {
+      if (this.commitAfter === "" && !isCI && !agentMode) {
         // Compute between 2 commits: prompt for the second one      
         const commitAfterSelectRes = await prompts({
           type: 'select',
           name: 'after',
-          message: 'Please select AFTER UPDATE commit',
-          description: 'Choose the commit representing the state after your changes',
-          placeholder: 'Select a commit',
+          message: t('pleaseSelectAfterUpdateCommit'),
+          description: t('chooseCommitAfterYourChanges'),
+          placeholder: t('selectACommit'),
           choices: allChoices
         })
         this.commitAfter = commitAfterSelectRes.after;
@@ -147,11 +173,11 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
 
     // Open file in a new VS Code tab if available
     WebSocketClient.requestOpenFile(path.relative(process.cwd(), diffMdFile));
-    WebSocketClient.sendReportFileMessage(diffMdFile, path.basename(diffMdFile).replace(".md", "") + " Documentation", 'report');
+    WebSocketClient.sendReportFileMessage(diffMdFile, t('fileDocumentation', { name: path.basename(diffMdFile).replace(".md", "") }), 'report');
 
-    uxLog("action", this, c.green(`Markdown Flow diff documentation generated for ${path.basename(diffMdFile).replace(".md", "")}.`));
+    uxLog("action", this, c.green(t('markdownFlowDiffDocumentationGeneratedFor', { path: path.basename(diffMdFile).replace(".md", "") })));
     if (this.commitBefore === "allStates") {
-      uxLog("warning", this, c.yellow(`It is recommended to use mkdocs-material to read it correctly (see https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/#doc-html-pages)`));
+      uxLog("warning", this, c.yellow(t('recommendedToUseMkdocsMaterialToRead')));
     }
 
     // Return an object to be displayed with --json

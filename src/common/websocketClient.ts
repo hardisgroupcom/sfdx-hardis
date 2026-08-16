@@ -1,33 +1,81 @@
+// PERF: this module must stay a "leaf": it is loaded by the init hook before
+// the command boots so the VS Code extension gets feedback as early as
+// possible. Do NOT import the common/utils barrel (or config/index.js) here:
+// that would eagerly load 1000+ modules (langchain, puppeteer, jira, ...)
+// before the WebSocket can even connect. Heavy helpers are dynamically
+// imported in the rare code paths that need them.
 import c from 'chalk';
 import * as util from 'util';
 import WebSocket from 'ws';
-import { isCI, uxLog } from './utils/index.js';
-import { SfError } from '@salesforce/core';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { CONSTANTS } from '../config/index.js';
+import { CONSTANTS } from '../config/constants.js';
+import { t } from './utils/i18n.js';
+import { isCI } from './utils/envUtils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let globalWs: WebSocketClient | null;
-let isWsOpen = false;
-let userInput = null;
+// isWsOpen and userInput are now stored on the instance to avoid module-instance isolation issues.
+// See activeInstance getter below.
 
 const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
+// Max wait for the extension to answer the initClient message
+const INIT_TIMEOUT_MS = 10000;
 
 // Define allowed log types and type alias outside the class
 export const LOG_TYPES = ['log', 'action', 'warning', 'error', 'success', 'table', "other"] as const;
 export type LogType = typeof LOG_TYPES[number];
 
+/** One entry in a vscodeDiff message - describes a single file pair to open in a side-by-side diff editor. */
+export interface OrgDiffItem {
+  leftPath: string;
+  rightPath: string;
+  title: string;
+  metadataType: string;
+  metadataName: string;
+  status: 'added' | 'modified' | 'deleted';
+}
+
+/** Context passed to the WebSocketClient constructor, identifying the running command and connection endpoint. */
+export interface WebSocketClientContext {
+  /** The command identifier, e.g. `"hardis:doc:flow2markdown"`. */
+  command?: string;
+  /** The process ID (or any unique identifier) for this client instance. */
+  id?: number | string;
+  /** Optional `host:port` override for the WebSocket server (e.g. `"localhost:2702"`). */
+  websocketHostPort?: string;
+  [key: string]: unknown;
+}
+
 export class WebSocketClient {
   private ws: any;
-  private wsContext: any;
+  private wsContext: WebSocketClientContext;
   private promptResponse: any;
   private isDead = false;
   private isInitialized = false;
+  // Resolved as soon as the extension answers the initClient message (or the
+  // connection dies), so callers do not have to poll on a timer
+  private initializedPromise: Promise<boolean> | null = null;
+  private initializedResolve: ((value: boolean) => void) | null = null;
+  private userInput: string | null = null;
+  private extensionVersionResponse: string | null = null;
 
-  constructor(context: any) {
+  /**
+   * Returns the active WebSocketClient instance.
+   * Falls back to globalThis.webSocketClient so that plugins importing this
+   * module from a different package path (separate ES module cache entry) still
+   * reach the instance created by sfdx-hardis's init hook.
+   */
+  private static get activeInstance(): WebSocketClient | null {
+    return globalWs ?? ((globalThis as any).webSocketClient as WebSocketClient) ?? null;
+  }
+
+  constructor(context: WebSocketClientContext) {
     this.wsContext = context;
+    this.initializedPromise = new Promise((resolve) => {
+      this.initializedResolve = resolve;
+    });
     const wsHostPort = context.websocketHostPort ? `ws://${context.websocketHostPort}` : `ws://localhost:${PORT}`;
     try {
       this.ws = new WebSocket(wsHostPort);
@@ -36,43 +84,109 @@ export class WebSocketClient {
       console.log("WS Client started");
     } catch (err) {
       this.isDead = true;
-      uxLog(
-        "warning",
-        this,
-        c.yellow('Unable to start WebSocket client on ' + wsHostPort + '. ' + (err as Error).message)
-      );
+      this.markInitialized(false);
+      // Synchronous warning: the process may exit before a deferred log flushes
+      console.warn(c.yellow('Unable to start WebSocket client on ' + wsHostPort + '. ' + (err as Error).message));
     }
   }
 
+  private markInitialized(success: boolean): void {
+    if (success) {
+      this.isInitialized = true;
+    }
+    if (this.initializedResolve) {
+      this.initializedResolve(success);
+      this.initializedResolve = null;
+    }
+  }
+
+  // Logs through uxLog without statically importing the heavy utils barrel
+  // (see the PERF note at the top of this file). Falls back to console.log.
+  private uxLogDeferred(logType: string, text: string): void {
+    void import('./utils/index.js')
+      .then(({ uxLog }) => uxLog(logType as any, this, text))
+      .catch(() => console.log(text));
+  }
+
   static async isInitialized(): Promise<boolean> {
-    if (globalWs) {
-      let retries = 40; // Wait up to 10 seconds
-      while (!globalWs.isInitialized && retries > 0 && !globalWs.isDead) {
+    const instance = WebSocketClient.activeInstance;
+    if (instance) {
+      if (instance.isInitialized || instance.isDead) {
+        return instance.isInitialized;
+      }
+      // Event-driven wait (resolved as soon as the extension answers) with a
+      // 10s safety timeout. Fall back to polling when the active instance
+      // comes from another module copy without initializedPromise.
+      if (instance.initializedPromise) {
+        let safetyTimer: NodeJS.Timeout | undefined;
+        await Promise.race([
+          instance.initializedPromise,
+          new Promise((resolve) => {
+            safetyTimer = setTimeout(resolve, INIT_TIMEOUT_MS);
+          }),
+        ]);
+        // Clear the losing timer: a pending timeout would keep the process
+        // alive up to 10s after fast commands complete
+        if (safetyTimer) {
+          clearTimeout(safetyTimer);
+        }
+        return instance.isInitialized;
+      }
+      let retries = INIT_TIMEOUT_MS / 250; // Wait up to 10 seconds
+      while (!instance.isInitialized && retries > 0 && !instance.isDead) {
         await new Promise((resolve) => setTimeout(resolve, 250));
         retries--;
       }
-      return globalWs.isInitialized;
+      return instance.isInitialized;
     }
     return false;
   }
 
   static isAlive(): boolean {
-    return !isCI && globalWs != null && isWsOpen === true;
+    const instance = WebSocketClient.activeInstance;
+    // readyState 1 === WebSocket.OPEN
+    return !isCI && instance != null && instance.ws?.readyState === 1;
   }
 
   static isAliveWithLwcUI(): boolean {
-    return this.isAlive() && userInput === 'ui-lwc';
+    return WebSocketClient.isAlive() && WebSocketClient.activeInstance?.userInput === 'ui-lwc';
   }
 
-  static sendMessage(data: any) {
-    if (globalWs) {
-      globalWs.sendMessageToServer(data);
+  // Best-effort request of the connected VS Code extension version.
+  // Returns null when no VS Code extension is linked or when it does not answer in time.
+  static async getExtensionVersion(): Promise<string | null> {
+    const instance = WebSocketClient.activeInstance;
+    if (!WebSocketClient.isAlive() || !instance) {
+      return null;
+    }
+    return instance.requestExtensionVersion();
+  }
+
+static sendMessage(data: any) {
+    const instance = WebSocketClient.activeInstance;
+    if (instance) {
+      instance.sendMessageToServer(data);
     }
   }
 
   // Requests open file within VS Code if linked
   static requestOpenFile(file: string) {
     WebSocketClient.sendMessage({ event: 'openFile', file: file.replace(/\\/g, '/') });
+  }
+
+  // Requests VS Code to open one or more side-by-side diff editors via vscode.diff command
+  static sendVscodeDiffMessage(diffs: OrgDiffItem[]) {
+    WebSocketClient.sendMessage({
+      event: 'vscodeDiff',
+      diffs: diffs.map((d) => ({
+        leftPath: d.leftPath.replace(/\\/g, '/'),
+        rightPath: d.rightPath.replace(/\\/g, '/'),
+        title: d.title,
+        metadataType: d.metadataType,
+        metadataName: d.metadataName,
+        status: d.status,
+      })),
+    });
   }
 
   // Send refresh status message
@@ -143,12 +257,13 @@ export class WebSocketClient {
   }
 
   // Send command log line message
-  static sendCommandLogLineMessage(message: string, logType?: LogType, isQuestion?: boolean) {
+  static sendCommandLogLineMessage(message: string, logType?: LogType, isQuestion?: boolean, alwaysVisible?: boolean) {
     WebSocketClient.sendMessage({
       event: 'commandLogLine',
       logType: logType,
       message: message,
       isQuestion: isQuestion,
+      alwaysVisible: alwaysVisible,
     });
   }
 
@@ -165,25 +280,37 @@ export class WebSocketClient {
     WebSocketClient.sendMessage({ event: 'refreshPipeline' });
   }
 
+  static sendRefreshDataWorkbenchMessage() {
+    WebSocketClient.sendMessage({ event: 'refreshDataWorkbench' });
+  }
+
   // Sends info about downloadable report file
+  // commandArgs is only used by the "actionCommand" type: it carries the arguments passed
+  // to the VS Code command, so a button can deep-link into a specific panel section.
   static sendReportFileMessage(
     file: string,
     title: string,
-    type: "actionCommand" | "actionUrl" | "report" | "docUrl"
+    type: "actionCommand" | "actionUrl" | "report" | "docUrl",
+    commandArgs?: any[]
   ) {
-    WebSocketClient.sendMessage({
+    const message: any = {
       event: 'reportFile',
       file: file.replace(/\\/g, '/'),
       title: title,
       type: type
-    });
+    };
+    if (type === 'actionCommand' && Array.isArray(commandArgs) && commandArgs.length > 0) {
+      message.commandArgs = commandArgs;
+    }
+    WebSocketClient.sendMessage(message);
   }
 
   static sendPrompts(prompts: any): Promise<any> {
-    if (globalWs) {
-      return globalWs.promptServer(prompts);
+    const instance = WebSocketClient.activeInstance;
+    if (instance) {
+      return instance.promptServer(prompts);
     }
-    throw new SfError('globalWs should be set in sendPrompts');
+    throw new Error('globalWs should be set in sendPrompts');
   }
 
   // Send close client message with status
@@ -205,8 +332,9 @@ export class WebSocketClient {
 
   // Close the WebSocket connection externally
   static closeClient(status?: string) {
-    if (globalWs) {
-      globalWs.dispose(status);
+    const instance = WebSocketClient.activeInstance;
+    if (instance) {
+      instance.dispose(status);
     }
   }
 
@@ -224,7 +352,6 @@ export class WebSocketClient {
 
   async start() {
     this.ws.on('open', async () => {
-      isWsOpen = true;
       const commandDocUrl = this.getCommandDocUrl();
       const message = {
         event: 'initClient',
@@ -236,9 +363,14 @@ export class WebSocketClient {
       // Dynamically import command class and send static uiConfig if present
       if (this.wsContext?.command) {
         try {
-          // Convert command string to file path, e.g. hardis:cache:clear -> lib/commands/hardis/cache/clear.js
           const commandParts = this.wsContext.command.split(':');
-          const commandPath = path.resolve(__dirname, '../../lib/commands', ...commandParts) + '.js';
+          // Use the plugin root provided by the init hook when available (works for
+          // third-party plugins), otherwise fall back to sfdx-hardis's own lib/commands.
+          const pluginRoot = (this.wsContext as any).commandPluginRoot as string | undefined;
+          const commandsBase = pluginRoot
+            ? path.resolve(pluginRoot, 'lib/commands')
+            : path.resolve(__dirname, '../../lib/commands');
+          const commandPath = path.resolve(commandsBase, ...commandParts) + '.js';
           const fileUrl = 'file://' + commandPath.replace(/\\/g, '/');
           const imported = await import(fileUrl);
           const CommandClass = imported.default;
@@ -249,7 +381,11 @@ export class WebSocketClient {
             message.uiConfig = CommandClass.uiConfig;
           }
         } catch (e) {
-          uxLog("warning", this, c.yellow(`Unable to import command class for ${this.wsContext.command}: ${e instanceof Error ? e.message : String(e)}`));
+          // Only warn for sfdx-hardis own commands – external plugins are not
+          // expected to expose a command class file at the resolved path.
+          if (this.wsContext.command.startsWith('hardis:')) {
+            this.uxLogDeferred("warning", c.yellow(t('unableToImportCommandClassFor', { wsContext: this.wsContext.command, instanceof: e instanceof Error ? e.message : String(e) })));
+          }
         }
       }
       // Add link to command log file
@@ -268,8 +404,11 @@ export class WebSocketClient {
     this.ws.on('error', (err) => {
       this.ws.terminate();
       globalWs = null;
-      isWsOpen = false;
+      if ((globalThis as any).webSocketClient === this) {
+        (globalThis as any).webSocketClient = null;
+      }
       this.isDead = true;
+      this.markInitialized(false);
       if (process.env.DEBUG) {
         console.error(err);
       }
@@ -288,12 +427,22 @@ export class WebSocketClient {
       this.promptResponse = data.promptsResponse;
     }
     else if (data.event === 'userInput') {
-      userInput = data.userInput;
-      this.isInitialized = true;
+      this.userInput = data.userInput;
+      this.markInitialized(true);
+    }
+    else if (data.event === 'extensionVersionResponse') {
+      this.extensionVersionResponse = data.extensionVersion ?? 'unknown';
     }
     else if (data.event === 'cancelCommand') {
       if (this.wsContext?.command === data?.context?.command && this.wsContext.id === data?.context?.id) {
-        uxLog("error", this, c.red('Command cancelled by user.'));
+        // Synchronous logs: the process exits immediately, a deferred uxLog would never flush
+        const cancelMsg = t('commandCancelledByUser');
+        console.error(c.red(cancelMsg));
+        try {
+          (globalThis as any).hardisLogFileStream?.write(cancelMsg + "\n");
+        } catch {
+          // Log file stream is best-effort
+        }
         process.exit(1);
       }
     }
@@ -302,6 +451,27 @@ export class WebSocketClient {
   sendMessageToServer(data: any) {
     data.context = this.wsContext;
     this.ws.send(JSON.stringify(data));
+  }
+
+  // Sends a getExtensionVersion request and waits (with a short timeout) for the response.
+  // Resolves null on timeout so the caller never blocks on a missing/older extension.
+  requestExtensionVersion(): Promise<string | null> {
+    this.extensionVersionResponse = null;
+    this.sendMessageToServer({ event: 'getExtensionVersion' });
+    return new Promise((resolve) => {
+      let interval: any = null;
+      const timeout = setTimeout(() => {
+        clearInterval(interval as NodeJS.Timeout);
+        resolve(this.extensionVersionResponse);
+      }, 5000);
+      interval = setInterval(() => {
+        if (this.extensionVersionResponse != null) {
+          clearInterval(interval as NodeJS.Timeout);
+          clearTimeout(timeout as NodeJS.Timeout);
+          resolve(this.extensionVersionResponse);
+        }
+      }, 200);
+    });
   }
 
   promptServer(prompts: any): Promise<any> {
@@ -329,11 +499,27 @@ export class WebSocketClient {
   }
 
   dispose(status?: string, error: any = null) {
-    WebSocketClient.sendCloseClientMessage(status, error);
-    this.ws.terminate();
+    // Only send closeClient on an OPEN socket: initClient is sent on 'open',
+    // so a CONNECTING socket has nothing to close on the extension side, and
+    // ws.send() would throw and abort the disposal
+    try {
+      if (this.ws?.readyState === 1) {
+        WebSocketClient.sendCloseClientMessage(status, error);
+      }
+    } catch {
+      // Disposal must never throw
+    }
+    try {
+      this.ws?.terminate();
+    } catch {
+      // Socket may never have been created
+    }
     this.isDead = true;
-    isWsOpen = false;
+    this.markInitialized(false);
     globalWs = null;
+    if ((globalThis as any).webSocketClient === this) {
+      (globalThis as any).webSocketClient = null;
+    }
     // uxLog("other", this,c.grey('Closed WebSocket connection with VS Code SFDX Hardis'));
   }
 }

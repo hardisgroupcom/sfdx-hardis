@@ -33,11 +33,23 @@ The command's technical implementation involves:
 - **Logging:** Provides a summary of how many files were cleaned.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:clean:systemdebug --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name          |  Type   | Description                                                   |  Default  | Required | Options |
 |:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
+| agent         | boolean | Run in non-interactive mode for agents and automation         |           |          |         |
 | delete<br/>-d | boolean | Delete lines with System.debug                                |           |          |         |
 | flags-dir     | option  | undefined                                                     |           |          |         |
 | folder<br/>-f | option  | Root folder                                                   | force-app |          |         |
@@ -49,6 +61,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:project:clean:systemdebug
+```
+
+```shell
+$ sf hardis:project:clean:systemdebug --agent
 ```
 
 

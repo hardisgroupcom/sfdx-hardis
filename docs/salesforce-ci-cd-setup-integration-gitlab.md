@@ -42,3 +42,52 @@ Notes:
   - CI_JOB_NAME (provided by Gitlab CI)
   - CI_JOB_URL (provided by Gitlab CI)
   - GITLAB_API_REJECT_UNAUTHORIZED: set to `"false"` if you want to allow connection even without certificate (can be useful on on-premise GitLab instance)
+
+## Using GitLab integration from Jenkins
+
+When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins environment and maps its variables to GitLab CI equivalents. You only need to set:
+
+| Variable                    | Description                                                                                             |
+|:----------------------------|:--------------------------------------------------------------------------------------------------------|
+| CI_SFDX_HARDIS_GITLAB_TOKEN | A GitLab project access token with **Developer** role and **api** scope, stored as a Jenkins credential |
+
+The following variables are **automatically derived** from Jenkins built-in variables:
+
+- `CI_SERVER_URL`, `CI_PROJECT_PATH` - parsed from `GIT_URL` (git remote)
+- `CI_PROJECT_ID` - resolved via the GitLab API using the project path
+- `CI_COMMIT_REF_NAME` - from `GIT_BRANCH` / `CHANGE_BRANCH`
+- `CI_JOB_URL` - from `BUILD_URL`
+- `CI_JOB_NAME` - from `JOB_NAME`
+- `CI_MERGE_REQUEST_IID` - from `CHANGE_ID` (Jenkins Multibranch Pipeline)
+- `CI_PROJECT_URL` - constructed from `CI_SERVER_URL` and `CI_PROJECT_PATH`
+
+## Instructions for using Coding Agents
+
+When using auto-fix with coding agents, the pipeline must be able to push a fix branch and create/update Merge Requests.
+
+This works for both:
+
+- GitLab.com
+- GitLab self-managed / on-premise instances
+
+Add this in your workflow before running `sf hardis:*` commands:
+
+```yaml
+before_script:
+  - |
+      if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
+        git config user.email "sfdx-hardis-bot@cloudity.com"
+        git config user.name "sfdx-hardis Bot"
+        git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+        echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
+      else
+        echo "[sfdx-hardis] Skipping coding-agent GitLab auth setup: CI_SFDX_HARDIS_GITLAB_TOKEN is not set"
+      fi
+```
+
+Required secret/variable:
+
+- `CI_SFDX_HARDIS_GITLAB_TOKEN`:
+  - Go to **Project -> Settings -> Access Tokens**.
+  - Create a Project Access Token with role **Developer** (or higher), scopes **api** and **write_repository**.
+  - Store it as a **masked** CI/CD variable named `CI_SFDX_HARDIS_GITLAB_TOKEN`.

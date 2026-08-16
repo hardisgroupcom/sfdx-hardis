@@ -51,7 +51,9 @@ You are a skilled Business Analyst working on a Salesforce project. Your task is
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 

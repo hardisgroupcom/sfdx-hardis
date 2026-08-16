@@ -8,6 +8,7 @@ import { glob } from 'glob';
 import sortArray from 'sort-array';
 import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -43,14 +44,30 @@ The command's technical implementation involves:
 - **Reporting:** Uses \`generateReports\` to create a CSV report and display a table in the console, summarizing the audit findings.
 - **Filtering:** Filters out files that start with 'hidden' or contain \`@isTest\` to focus on relevant code.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:audit:callincallout --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:audit:callouts'];
+  public static examples = ['$ sf hardis:project:audit:callouts',
+    '$ sf hardis:project:audit:callouts --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
     // flag with a value (-n, --name=VALUE)
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -105,6 +122,7 @@ The command's technical implementation involves:
       if (fileText.startsWith('hidden') || fileText.includes('@isTest')) {
         continue;
       }
+      /* jscpd:ignore-start */
       // Loop on criteria to find matches in this file
       for (const catcher of catchers) {
         const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
@@ -115,6 +133,7 @@ The command's technical implementation involves:
     // Format result
     const result: any[] = this.matchResults.map((item: any) => {
       return {
+        /* jscpd:ignore-end */
         type: item.type,
         subType: item.subType,
         fileName: item.fileName,
@@ -147,7 +166,7 @@ The command's technical implementation involves:
 
     // Display as table
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
-    uxLog("action", this, c.cyan(`Found ${c.bold(resultsLight.length)} call-ins and call-outs.`));
+    uxLog("action", this, c.cyan(t('foundCallInsAndCallOuts', { resultsLight: c.bold(resultsLight.length) })));
     uxLogTable(this,
       resultsLight.map((item: any) => {
         delete item.detail;

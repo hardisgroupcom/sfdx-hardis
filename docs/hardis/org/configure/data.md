@@ -6,6 +6,8 @@
 
 ## Command Behavior
 
+> **This command requires human interaction and must be called manually, preferably from the [VS Code SFDX Hardis UI](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis). It is not suitable for automation or AI agent usage.**
+
 **Configures a Salesforce Data Migration Utility (SFDMU) project for data export and import operations.**
 
 This command assists in setting up SFDMU workspaces, which are essential for managing data within your Salesforce environments. It streamlines the creation of `export.json` files and related configurations, enabling efficient data seeding, migration, and synchronization.

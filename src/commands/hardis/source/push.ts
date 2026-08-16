@@ -4,6 +4,7 @@ import c from 'chalk';
 import { AnyJson } from '@salesforce/ts-types';
 import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 export default class Push extends SfCommand<any> {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deployment errors.
@@ -11,6 +12,17 @@ export default class Push extends SfCommand<any> {
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:source:push --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
   public static readonly flags: any = {
     forceoverwrite: Flags.boolean({
@@ -30,6 +42,10 @@ export default class Push extends SfCommand<any> {
     quiet: Flags.boolean({
       description: 'quiet',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       default: false,
       description: 'debug',
@@ -44,8 +60,8 @@ export default class Push extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Push);
-    uxLog("error", this, c.red('This command will be removed by Salesforce in November 2024.'));
-    uxLog("error", this, c.red('Please migrate to command sf hardis project deploy start'));
+    uxLog("error", this, c.red(t('thisCommandWillBeRemovedBySalesforce')));
+    uxLog("error", this, c.red(t('pleaseMigrateToCommandSfHardisProject')));
     uxLog(
       "error",
       this,

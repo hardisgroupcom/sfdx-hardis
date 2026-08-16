@@ -2,23 +2,90 @@ name: tests
 on:
   push:
     branches-ignore: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
+permissions: read-all
+
+# Supersede older runs of the same event on the same branch (head_ref on
+# pull_request, ref_name on push); falling back to ref makes manual
+# workflow_dispatch runs cancellable too. The event name is part of the group
+# so push and pull_request runs do NOT cancel each other: the redundant
+# push run is instead skipped by the detect-duplicate-run guard below, so it
+# shows up as skipped rather than cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref_name || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # When a branch push happens while an open PR already exists for that branch,
+  # the pull_request event covers the same commit. Flag the push run as
+  # redundant so the test jobs below skip instead of running a duplicate.
+  detect-duplicate-run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$EVENT_NAME" = "push" ]; then
+            open_prs="$(gh pr list --head "$BRANCH_NAME" --state open --json number --jq 'length')"
+            if [ "${open_prs:-0}" -gt 0 ]; then
+              echo "Open PR found for $BRANCH_NAME; skipping duplicate push run."
+              echo "should_run=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "should_run=true" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
   linux-unit-tests:
-    uses: salesforcecli/github-workflows/.github/workflows/unitTestsLinux.yml@main
+    needs: detect-duplicate-run
+    if: needs.detect-duplicate-run.outputs.should_run == 'true'
+    uses: salesforcecli/github-workflows/.github/workflows/unitTestsLinux.yml@main # zizmor: ignore[unpinned-uses]
+    permissions:
+      contents: read
+      checks: write
     with:
       skipTsDepCheck: true
 
   windows-unit-tests:
-    uses: salesforcecli/github-workflows/.github/workflows/unitTestsWindows.yml@main
+    needs: detect-duplicate-run
+    if: needs.detect-duplicate-run.outputs.should_run == 'true'
+    uses: salesforcecli/github-workflows/.github/workflows/unitTestsWindows.yml@main # zizmor: ignore[unpinned-uses]
+    permissions:
+      contents: read
+      checks: write
 
+  # NUTs need org/DevHub secrets (secrets: inherit). Fork PRs do not receive
+  # repository secrets, so the job would fail to authenticate; running it would
+  # also expose secrets to untrusted fork code. Skip it for PRs opened from a
+  # fork (head repo != base repo). It still runs on push, workflow_dispatch and
+  # same-repo PRs. Unit tests above need no secrets and run on fork PRs too.
   nuts:
     needs:
+      - detect-duplicate-run
       - linux-unit-tests
       - windows-unit-tests
-    uses: salesforcecli/github-workflows/.github/workflows/nut.yml@main
-    secrets: inherit
+    if: >-
+      needs.detect-duplicate-run.outputs.should_run == 'true' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    uses: salesforcecli/github-workflows/.github/workflows/nut.yml@main # zizmor: ignore[unpinned-uses]
+    secrets: inherit # zizmor: ignore[secrets-inherit]
+    permissions:
+      contents: read
+      checks: write
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]

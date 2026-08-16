@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { assert } from 'console';
 import fs from 'fs-extra';
-import moment from 'moment';
+import { dateHelper } from '../../../common/utils/dateHelper.js';
 import * as os from 'os';
 import * as path from 'path';
 import { clearCache } from '../../../common/cache/index.js';
@@ -18,6 +18,7 @@ import {
 } from '../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { getConfig } from '../../../config/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -56,13 +57,30 @@ The command's technical implementation involves:
 - **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshStatusMessage\` to notify connected VS Code clients about the new sandbox.
 - **Required Plugin Check:** Explicitly lists \`sfdmu\` as a required plugin, indicating its role in data initialization.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:create --agent --target-dev-hub mydevhub@example.com
+\`\`\`
+
+In agent mode:
+
+- The user email prompt is skipped; \`USER_EMAIL\` env var or \`userEmail\` config property is required.
+- If no email is available, an error is thrown.
 `;
 
-  public static examples = ['$ sf hardis:org:create'];
+  public static examples = ['$ sf hardis:org:create', '$ sf hardis:org:create --agent'];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -86,6 +104,7 @@ The command's technical implementation involves:
   /* jscpd:ignore-end */
 
   protected debugMode = false;
+  protected agentMode = false;
   protected configInfo: any;
   protected devHubAlias: string;
   protected sandboxOrgAlias: string;
@@ -103,6 +122,7 @@ The command's technical implementation involves:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(SandboxCreate);
     this.debugMode = flags.debug || false;
+    this.agentMode = flags.agent === true;
     elapseStart(`Create and initialize sandbox org`);
     await this.initConfig();
     await this.createSandboxOrg();
@@ -113,7 +133,7 @@ The command's technical implementation involves:
       await initOrgData(path.join('.', 'scripts', 'data', 'SandboxInit'), this.sandboxOrgUsername);
     } catch (e) {
       elapseEnd(`Create and initialize sandbox org`);
-      uxLog("log", this, c.grey('Error: ' + (e as Error).message + '\n' + (e as Error).stack));
+      uxLog("log", this, c.grey(t('error2') + (e as Error).message + '\n' + (e as Error).stack));
       throw e;
     }
     elapseEnd(`Create and initialize sandbox org`);
@@ -138,7 +158,7 @@ The command's technical implementation involves:
       '-' +
       (this.gitBranch.split('/').pop() || '').slice(0, 15) +
       '_' +
-      moment().format('YYYYMMDD_hhmm');
+      dateHelper().format('YYYYMMDD_hhmm');
     this.sandboxOrgAlias = process.env.SANDBOX_ORG_ALIAS || newSandboxName;
 
     this.projectName = process.env.PROJECT_NAME || this.configInfo.projectName;
@@ -148,6 +168,9 @@ The command's technical implementation involves:
 
     // If not found, prompt user email and store it in user config file
     if (this.userEmail == null) {
+      if (this.agentMode) {
+        throw new SfError(c.red('You need to define userEmail property in .sfdx-hardis.yml or set USER_EMAIL env var.'));
+      }
       this.userEmail = await promptUserEmail();
     }
   }
@@ -155,11 +178,11 @@ The command's technical implementation involves:
   // Create a new sandbox org or reuse existing one
   public async createSandboxOrg() {
     // Build project-sandbox-def-branch-user.json
-    uxLog("action", this, c.cyan('Building custom project-sandbox-def.json...'));
+    uxLog("action", this, c.cyan(t('buildingCustomProjectSandboxDefJson')));
     if (fs.existsSync('./config/project-sandbox-def.json')) {
       this.projectSandboxDef = JSON.parse(fs.readFileSync('./config/project-sandbox-def.json', 'utf-8'));
     } else {
-      uxLog("warning", this, c.yellow(`Default values used: you may define a file ${c.bold('config/project-sandbox-def.json')}`));
+      uxLog("warning", this, c.yellow(t('defaultSandboxValuesUsed')));
       this.projectSandboxDef = {
         sandboxName: '',
         description: 'SFDX Hardis developer sandbox',
@@ -176,11 +199,11 @@ The command's technical implementation involves:
     const tmpShapeFolder = path.join(os.tmpdir(), 'shape');
     if (fs.existsSync(tmpShapeFolder)) {
       await fs.remove(tmpShapeFolder);
-      uxLog("log", this, c.grey('Deleted ' + tmpShapeFolder));
+      uxLog("log", this, c.grey(t('deleted') + tmpShapeFolder));
     }
 
     // Create new sandbox org
-    uxLog("action", this, c.cyan('Creating new sandbox org...'));
+    uxLog("action", this, c.cyan(t('creatingNewSandboxOrg')));
     const waitTime = process.env.SANDBOX_ORG_WAIT || '60';
     const createCommand =
       'sf org create sandbox --set-default ' +
@@ -209,7 +232,7 @@ The command's technical implementation involves:
     uxLog(
       "action",
       this,
-      c.cyan(`Created sandbox org ${c.green(this.sandboxOrgAlias)} with user ${c.green(this.sandboxOrgUsername)}`)
+      c.cyan(t('createdSandboxOrgWithUser', { sandboxOrgAlias: c.green(this.sandboxOrgAlias), sandboxOrgUsername: c.green(this.sandboxOrgUsername) }))
     );
   }
 
@@ -237,7 +260,7 @@ The command's technical implementation involves:
   public async updateSandboxOrgUser() {
     const config = await getConfig('user');
     // Update sandbox org main user
-    uxLog("action", this, c.cyan('Update / fix sandbox org user ' + this.sandboxOrgUsername));
+    uxLog("action", this, c.cyan(t('updateFixSandboxOrgUser') + this.sandboxOrgUsername));
     const userQueryCommand = `sf data get record --sobject User --where "Username=${this.sandboxOrgUsername}" --target-org ${this.sandboxOrgAlias}`;
     const userQueryRes = await execSfdxJson(userQueryCommand, this, {
       fail: true,

@@ -4,14 +4,15 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
-import pascalcase from 'pascalcase';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
+import { toPascalCase } from '../../../../common/utils/stringUtils.js';
 import { filesFolderRoot } from '../../../../common/utils/filesUtils.js';
 import { promptFilesExportConfiguration } from '../../../../common/utils/filesUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -21,6 +22,8 @@ export default class ConfigureData extends SfCommand<any> {
 
   public static description = `
 ## Command Behavior
+
+> **This command requires human interaction and must be called manually, preferably from the [VS Code SFDX Hardis UI](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis). It is not suitable for automation or AI agent usage.**
 
 **Configures a project for exporting file attachments from a Salesforce org.**
 
@@ -93,7 +96,7 @@ The command's technical implementation involves:
 
     // Trigger command to open SFDMU config file in VS Code extension
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(exportJsonFile, 'Edit your Files export configuration', 'report');
+      WebSocketClient.sendReportFileMessage(exportJsonFile, t('editYourFilesExportConfiguration'), 'report');
     }
     else {
       WebSocketClient.requestOpenFile(exportJsonFile);
@@ -136,7 +139,7 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
     }
 
     const defaultTemplateChoice = {
-      title: '📄 Blank template',
+      title: t('blankTemplateTitle'),
       value: 'blank',
       description: 'Configure your files import/export from scratch 😊',
     };
@@ -144,9 +147,9 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
     const templateResp = await prompts({
       type: 'select',
       name: 'template',
-      message: c.cyanBright('Please select a Files import/export template, or the blank one'),
-      description: 'Choose a pre-configured template for file operations or start with a blank configuration',
-      placeholder: 'Select a template',
+      message: c.cyanBright(t('pleaseSelectFilesImportExportTemplateOr')),
+      description: t('choosePreConfiguredTemplateForFileOperations'),
+      placeholder: t('selectATemplate'),
       choices: [...[defaultTemplateChoice], ...templateFileChoices],
     });
     return templateResp.template;
@@ -167,13 +170,13 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
 
     this.exportConfig = await promptFilesExportConfiguration(defaultConfig, false);
     // Collect / reformat data
-    this.filesExportPath = pascalcase(this.exportConfig.filesExportPath);
+    this.filesExportPath = toPascalCase(this.exportConfig.filesExportPath);
     delete this.exportConfig.filesExportPath;
   }
 
   private async buildExportJsonInfoFromTemplate(templateFile) {
     const templateName = path.basename(templateFile).replace('.json', '');
-    this.filesExportPath = pascalcase(templateName);
+    this.filesExportPath = toPascalCase(templateName);
     this.exportConfig = JSON.parse(fs.readFileSync(templateFile, 'utf-8'));
   }
 }

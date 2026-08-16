@@ -7,12 +7,13 @@ import fs from 'fs-extra';
 import ora, { Ora } from 'ora';
 import * as path from 'path';
 
-import { execCommand, uxLog } from '../../../common/utils/index.js';
+import { execCommand, isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { glob } from 'glob';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { applyAllReplacementsDefinitions } from '../../../common/utils/xmlUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -52,9 +53,24 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
 - **Regular Expressions:** The replacement rules heavily rely on regular expressions (\`regex\`) to precisely match and modify the content.
 - **User Feedback:** Provides real-time feedback using \`ora\` for spinners and \`uxLog\` for logging messages about the progress and results of the operation.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:misc:purge-references --references "Affaire__c,MyField__c" --agent
+\`\`\`
+
+In agent mode:
+- The \`--references\` flag is **required** (no interactive prompt for reference strings).
+- The source retrieval confirmation prompt is skipped (sources are assumed up-to-date).
 `;
 
-  public static examples = ['$ sf hardis:misc:purge-references'];
+  public static examples = [
+    '$ sf hardis:misc:purge-references',
+    '$ sf hardis:misc:purge-references --references "Affaire__c,MyField__c" --agent',
+  ];
 
   public static flags: any = {
     references: Flags.string({
@@ -72,6 +88,10 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -88,19 +108,22 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
   public async run(): Promise<AnyJson> {
     uxLog("warning", this, c.yellow(c.bold(PurgeRef.description)));
     const { flags } = await this.parse(PurgeRef);
+    const agentMode = flags.agent === true;
     // Collect input parameters
     this.referenceStrings = (flags?.references || '').split(',');
     if (this.referenceStrings.length == 1 && this.referenceStrings[0] === '') {
-      const refPromptResult = await prompts({
-        type: 'text',
-        message: 'Please input a comma-separated list of strings you want to purge (example: Affaire__c)',
-        description: 'Enter the reference strings to purge from your metadata files.',
-        placeholder: 'Ex: Affaire__c,MyField__c,CustomObject__c',
-      });
-      this.referenceStrings = refPromptResult.value.split(',');
+      if (!isCI && !agentMode) {
+        const refPromptResult = await prompts({
+          type: 'text',
+          message: t('pleaseInputCommaSeparatedListOfStrings'),
+          description: t('enterReferencesDescription'),
+          placeholder: t('exAffaireCustomObject'),
+        });
+        this.referenceStrings = refPromptResult.value.split(',');
+      }
     }
     if (this.referenceStrings.length == 1 && this.referenceStrings[0] === '') {
-      throw new SfError('You must input at least one string to check for references');
+      throw new SfError(t('purgeReferencesReferencesFlagRequiredInAgentMode'));
     }
     for (const refString of this.referenceStrings) {
       if (refString.endsWith('__c') && !this.referenceStrings.includes(refString.replace('__c', '__r'))) {
@@ -110,22 +133,22 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
     this.referenceStringsLabel = this.referenceStrings.join(',');
 
     // Retrieve metadatas if necessary
-    const retrieveNeedRes = await prompts({
-      type: 'select',
-      message: `Are your local sources up to date with target org ${flags[
-        'target-org'
-      ].getUsername()}, or do you need to retrieve some of them?`,
-      description: 'Confirm whether your local metadata is synchronized with the target org.',
-      placeholder: 'Select an option',
-      choices: [
-        { value: true, title: 'My local sfdx sources are up to date with the target org' },
-        { value: false, title: 'I need to retrieve metadatas ' },
-      ],
-    });
-    if (retrieveNeedRes.value === false) {
-      const metadatas = await MetadataUtils.promptMetadataTypes();
-      const metadataArg = metadatas.map((metadataType: any) => metadataType.xmlName).join(' ');
-      await execCommand(`sf project retrieve start --ignore-conflicts --metadata ${metadataArg}`, this, { fail: true });
+    if (!isCI && !agentMode) {
+      const retrieveNeedRes = await prompts({
+        type: 'select',
+        message: t('localSourcesUpToDatePrompt'),
+        description: t('localSourcesSyncDescription'),
+        placeholder: t('selectAnOption'),
+        choices: [
+          { value: true, title: t('localSourcesUpToDate') },
+          { value: false, title: t('needToRetrieveMetadatas') },
+        ],
+      });
+      if (retrieveNeedRes.value === false) {
+        const metadatas = await MetadataUtils.promptMetadataTypes();
+        const metadataArg = metadatas.map((metadataType: any) => metadataType.xmlName).join(' ');
+        await execCommand(`sf project retrieve start --ignore-conflicts --metadata ${metadataArg}`, this, { fail: true });
+      }
     }
 
     // Find sources that contain references
@@ -160,7 +183,7 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
       this.getAllReplacements()
     );
 
-    return { message: 'Command completed' };
+    return { message: t('commandCompleted') };
   }
 
   private getAllReplacements() {

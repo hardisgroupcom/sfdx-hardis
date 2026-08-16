@@ -2,7 +2,7 @@
 // External Libraries
 import { glob } from 'glob';
 import fs from 'fs-extra';
-import * as xml2js from 'xml2js';
+import { parseXmlString } from '../../../common/utils/xmlUtils.js';
 import * as path from 'path';
 import c from 'chalk';
 
@@ -20,6 +20,7 @@ import { uxLog } from '../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -47,7 +48,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 The command's technical implementation involves:
 
 - **File Discovery:** It uses \`glob\` to find all relevant project files (Apex classes, triggers, JavaScript, HTML, XML, Aura components, Visualforce pages) and custom label (\`CustomLabels.labels-meta.xml\`) and custom permission (\`.customPermission-meta.xml\`) definition files.
-- **XML Parsing:** It uses \`xml2js\` to parse the XML content of \`CustomLabels.labels-meta.xml\` and custom permission files to extract the full names of labels and permissions.
+- **XML Parsing:** It parses the XML content of \`CustomLabels.labels-meta.xml\` and custom permission files to extract the full names of labels and permissions.
 - **Content Scanning:** For each label and custom permission, it iterates through all other project files and checks if their names or associated labels are present in the file content. It performs case-insensitive checks for labels.
 - **Usage Tracking:** It maintains a count of how many times each custom permission is referenced. Labels are checked for any inclusion.
 - **Unused Identification:** Elements with no or very few references (for custom permissions, less than 2 to account for their own definition file) are flagged as unused.
@@ -55,8 +56,18 @@ The command's technical implementation involves:
 - **Report Generation:** It generates a CSV report (\`lint-unusedmetadatas.csv\`) containing details of all unused metadata elements.
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications (e.g., to Slack, MS Teams, Grafana) about the presence and count of unused metadata, making it suitable for automated monitoring in CI/CD pipelines.
 </details>
-`;
-  public static examples = ['$ sf hardis:lint:unusedmetadatas'];
+
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:lint:unusedmetadatas --agent
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+  public static examples = ['$ sf hardis:lint:unusedmetadatas', '$ sf hardis:lint:unusedmetadatas --agent'];
   /* jscpd:ignore-start */
   public static flags: any = {
     debug: Flags.boolean({
@@ -73,6 +84,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': optionalOrgFlagWithDeprecations,
   };
@@ -93,9 +108,9 @@ The command's technical implementation involves:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(UnusedMetadatas);
     await this.setProjectFiles();
-    uxLog("action", this, c.cyan('Checking for unused labels...'));
+    uxLog("action", this, c.cyan(t('checkingForUnusedLabels')));
     const unusedLabels = await this.verifyLabels();
-    uxLog("action", this, c.cyan('Checking for unused custom permissions...'));
+    uxLog("action", this, c.cyan(t('checkingForUnusedCustomPermissions')));
     const unusedCustomPermissions = await this.verifyCustomPermissions();
 
     // Build notification
@@ -106,29 +121,29 @@ The command's technical implementation involves:
     const attachments: MessageAttachment[] = [];
     if (unusedLabels.length > 0) {
       attachments.push({
-        text: `*Unused Labels*\n${unusedLabels.map((label) => `• ${label.name}`).join('\n')}`,
+        text: `**Unused Labels**\n${unusedLabels.map((label) => `- ${label.name}`).join('\n')}`,
       });
     }
     if (unusedCustomPermissions.length > 0) {
       attachments.push({
-        text: `*Unused Custom Permissions*\n${unusedCustomPermissions
-          .map((permission) => `• ${permission.name}`)
+        text: `**Unused Custom Permissions**\n${unusedCustomPermissions
+          .map((permission) => `- ${permission.name}`)
           .join('\n')}`,
       });
     }
-    uxLog("action", this, c.cyan("Summary"));
+    uxLog("action", this, c.cyan(t('summary')));
     if (unusedLabels.length > 0 || unusedCustomPermissions.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.unusedData.length} unused metadata were detected in ${branchMd}`;
+      notifText = `**${this.unusedData.length}** unused metadata were detected in ${branchMd}`;
       if (unusedLabels.length > 0) {
-        uxLog("warning", this, c.yellow(`Unused Labels: ${unusedLabels.length}`));
+        uxLog("warning", this, c.yellow(t('unusedLabels', { unusedLabels: unusedLabels.length })));
       }
       if (unusedCustomPermissions.length > 0) {
-        uxLog("warning", this, c.yellow(`Unused Custom Permissions: ${unusedCustomPermissions.length}`));
+        uxLog("warning", this, c.yellow(t('unusedCustomPermissions', { unusedCustomPermissions: unusedCustomPermissions.length })));
       }
       await this.buildCsvFile(unusedLabels, unusedCustomPermissions);
     } else {
-      uxLog("success", this, c.green('No unused labels or custom permissions detected.'));
+      uxLog("success", this, c.green(t('noUnusedLabelsOrCustomPermissionsDetected')));
     }
     // Post notification
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
@@ -158,7 +173,7 @@ The command's technical implementation involves:
     const labelFilePath = labelFiles[0];
 
     if (!labelFilePath) {
-      uxLog("warning", this, c.yellow('No label file found.'));
+      uxLog("warning", this, c.yellow(t('noLabelFileFound')));
       return [];
     }
 
@@ -170,11 +185,14 @@ The command's technical implementation involves:
             return;
           }
 
-          xml2js.parseString(data, (errorParseString, result: any) => {
-            if (errorParseString) {
-              reject(errorParseString);
-              return;
-            }
+          let result: any;
+          try {
+            result = parseXmlString(data);
+          } catch (errorParseString) {
+            reject(errorParseString);
+            return;
+          }
+          {
             const severityIconInfo = getSeverityIcon('info');
             const labelsArray: string[] = result.CustomLabels.labels.map((label: any) => label.fullName[0]);
             const unusedLabels: any[] = labelsArray
@@ -184,7 +202,7 @@ The command's technical implementation involves:
                 const auraPattern = `{!$Label.c.${label.toLowerCase()}}`;
                 return !this.projectFiles.some((filePath) => {
                   if (!fs.existsSync(filePath)) {
-                    uxLog("warning", this, c.yellow(`File not found: ${filePath}`));
+                    uxLog("warning", this, c.yellow(t('fileNotFound', { filePath })));
                     return false;
                   }
                   try {
@@ -193,7 +211,7 @@ The command's technical implementation involves:
                       fileContent.includes(labelLower) || fileContent.includes(cLower) || fileContent.includes(auraPattern)
                     );
                   } catch (error) {
-                    uxLog("warning", this, c.yellow(`Error reading file ${filePath}: ${error}`));
+                    uxLog("warning", this, c.yellow(t('errorReadingFile', { filePath, error })));
                     return false;
                   }
                 });
@@ -207,10 +225,10 @@ The command's technical implementation involves:
               });
 
             resolve(unusedLabels);
-          });
+          }
         });
       } catch (error) {
-        uxLog("warning", this, c.yellow(`Error processing label file: ${error}`));
+        uxLog("warning", this, c.yellow(t('errorProcessingLabelFile', { error })));
         reject(error);
       }
     });
@@ -227,7 +245,7 @@ The command's technical implementation involves:
     });
 
     if (!customPermissionFiles) {
-      uxLog("warning", this, c.yellow('No custom permission file found.'));
+      uxLog("warning", this, c.yellow(t('noCustomPermissionFileFound')));
       return [];
     }
 
@@ -237,13 +255,12 @@ The command's technical implementation involves:
         const fileName = path.basename(file, '.customPermission-meta.xml');
         let label = '';
 
-        xml2js.parseString(fileData, (error, result) => {
-          if (error) {
-            uxLog("warning", this, c.yellow(`Error parsing XML: ${error}`));
-            return;
-          }
+        try {
+          const result = parseXmlString(fileData);
           label = result.CustomPermission.label[0];
-        });
+        } catch (error) {
+          uxLog("warning", this, c.yellow(t('errorParsingXml', { error })));
+        }
         for (const filePath of this.projectFiles) {
           const fileContent: string = fs.readFileSync(filePath, 'utf-8');
           if (fileContent.includes(fileName) || fileContent.includes(label)) {
@@ -252,7 +269,7 @@ The command's technical implementation involves:
           }
         }
       } catch (error) {
-        uxLog("warning", this, c.yellow(`Error processing custom permission file ${file}: ${error}`));
+        uxLog("warning", this, c.yellow(t('errorProcessingCustomPermissionFile', { file, error })));
       }
     }
     const severityIconInfo = getSeverityIcon('info');

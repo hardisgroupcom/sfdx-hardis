@@ -29,18 +29,29 @@ The command's technical implementation involves:
 - **Error Handling:** It handles cases where a package version might already be promoted or if other errors occur during the promotion process.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all interactive prompts. In agent mode:
+
+- `--auto`: Recommended. Automatically detects and promotes unreleased package versions.
+- `--package`: Alternatively, specify a single package alias to promote (required if `--auto` is not used).
+
+All interactive package selection prompts are skipped.
+
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                      | Default | Required | Options |
-|:----------------------|:-------:|:-----------------------------------------------------------------|:-------:|:--------:|:-------:|
-| auto<br/>-f           | boolean | Auto-detect which versions of which packages need to be promoted |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                  |         |          |         |
-| flags-dir             | option  | undefined                                                        |         |          |         |
-| json                  | boolean | Format output as json.                                           |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required    |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                        |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration        |         |          |         |
+| Name                  |  Type   | Description                                                             | Default | Required | Options |
+|:----------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                   |         |          |         |
+| auto<br/>-f           | boolean | Auto-detect which versions of which packages need to be promoted        |         |          |         |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                         |         |          |         |
+| flags-dir             | option  | undefined                                                               |         |          |         |
+| json                  | boolean | Format output as json.                                                  |         |          |         |
+| package<br/>-p        | option  | Package alias to promote (required in agent mode if --auto is not used) |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required           |         |          |         |
+| target-dev-hub<br/>-v | option  | undefined                                                               |         |          |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration               |         |          |         |
 
 ## Examples
 
@@ -50,6 +61,14 @@ $ sf hardis:package:version:promote
 
 ```shell
 $ sf hardis:package:version:promote --auto
+```
+
+```shell
+$ sf hardis:package:version:promote --agent --auto
+```
+
+```shell
+$ sf hardis:package:version:promote --agent --package "MyPackage@1.0.0"
 ```
 
 

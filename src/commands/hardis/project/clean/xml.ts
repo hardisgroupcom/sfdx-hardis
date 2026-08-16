@@ -7,6 +7,9 @@ import fs from 'fs-extra';
 import { glob } from 'glob';
 import * as path from 'path';
 import sortArray from 'sort-array';
+// @xmldom/xmldom and xpath are kept on purpose: they power the user-facing
+// XPath-based cleaning feature (cleanXmlPatterns config), which cannot be
+// expressed with fast-xml-parser. See DEPENDENCY_REDUCTION_PLAN.md.
 import * as xmldom from '@xmldom/xmldom';
 import * as xpath from 'xpath';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
@@ -14,6 +17,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { writeXmlFileFormatted } from '../../../../common/utils/xmlUtils.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -32,12 +36,26 @@ This can be very useful to avoid to always remove manually the same elements in 
 ![How to build cleaning XPath](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/doc-clean-xml.jpg)
 
 Note: If globpattern and xpath are not sent, elements defined in property **cleanXmlPatterns** in **.sfdx-hardis.yml** config file will be used
-  
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:xml --agent --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"
+\`\`\`
+
+In agent mode:
+
+- The interactive prompt to add the cleaning rule to permanent configuration is skipped.
+- Cleaning is performed using the provided flags or the existing \`cleanXmlPatterns\` configuration.
+
   `;
 
   public static examples = [
     '$ sf hardis:project:clean:xml',
     `$ sf hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"`,
+    '$ sf hardis:project:clean:xml --agent',
   ];
 
   public static flags: any = {
@@ -73,6 +91,10 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -86,6 +108,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(CleanXml);
+    const agentMode = flags.agent === true;
     this.folder = flags.folder || './force-app';
     this.globPattern = flags.globpattern;
     this.xpath = flags.xpath;
@@ -113,7 +136,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
           const nodes = xpathSelect(xpathItem, doc as any);
           for (const node of nodes as Node[]) {
             await this.removeXPath(xpathItem, doc, node);
-            uxLog("log", this, c.grey(`Removed xpath ${xpathItem} from ${xmlFile}`));
+            uxLog("log", this, c.grey(t('removedXpathFrom', { xpathItem, xmlFile })));
             updated = true;
             counter++;
           }
@@ -130,7 +153,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
     uxLog("log", this, c.grey(msg));
     // Propose to add in permanent configuration
     if (this.globPattern && this.xpath) {
-      await this.manageAddToPermanentConfig(this.globPattern, this.xpath);
+      await this.manageAddToPermanentConfig(this.globPattern, this.xpath, agentMode);
     }
     // Return an object to be displayed with --json
     return { outputString: msg };
@@ -139,7 +162,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   public async buildCleanXmlPatterns() {
     // Input parameters
     if (this.globPattern && this.xpath) {
-      uxLog("log", this, c.grey('Using configuration from input arguments...'));
+      uxLog("log", this, c.grey(t('usingConfigurationFromInputArguments')));
       return [
         {
           globPattern: this.globPattern,
@@ -184,8 +207,8 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   }
 
   // Propose user to perform such cleaning at each future hardis:work:save command
-  public async manageAddToPermanentConfig(globPattern: string, xpath: string) {
-    if (!isCI) {
+  public async manageAddToPermanentConfig(globPattern: string, xpath: string, agentMode = false) {
+    if (!isCI && !agentMode) {
       const config = await getConfig('project');
       let cleanXmlPatterns = config.cleanXmlPatterns || [];
       const alreadyDefined = cleanXmlPatterns.filter(
@@ -197,10 +220,8 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
       // prompt user
       const addConfigRes = await prompts({
         type: 'confirm',
-        message: c.cyanBright(
-          `Do you want to ALWAYS apply removal of xpath ${xpath} from files of pattern ${globPattern} ?`
-        ),
-        description: 'Choose whether to save this xpath removal as a permanent cleaning rule',
+        message: c.cyanBright(t('doYouWantToAlwaysApplyRemovalOfXpath', { xpath, globPattern })),
+        description: t('chooseSaveXpathRemovalPermanentRule'),
       });
       if (addConfigRes.value === true) {
         let updated = false;

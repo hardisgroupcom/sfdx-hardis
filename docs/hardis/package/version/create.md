@@ -33,11 +33,21 @@ The command's technical implementation involves:
 - **Error Handling:** Includes checks for missing package arguments and handles errors during package version creation or post-creation actions.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all interactive prompts. Required flags in agent mode:
+
+- `--package`: Package name or ID to create a version for (required).
+- `--installkey`: Optional installation key for the package version.
+
+All interactive package selection and installation key prompts are skipped.
+
 
 ## Parameters
 
 | Name                  |  Type   | Description                                                               | Default | Required | Options |
 |:----------------------|:-------:|:--------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                     |         |          |         |
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                           |         |          |         |
 | deleteafter           | boolean | Delete package version after creating it                                  |         |          |         |
 | flags-dir             | option  | undefined                                                                 |         |          |         |
@@ -53,6 +63,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:package:version:create
+```
+
+```shell
+$ sf hardis:package:version:create --agent --package "My Package"
 ```
 
 

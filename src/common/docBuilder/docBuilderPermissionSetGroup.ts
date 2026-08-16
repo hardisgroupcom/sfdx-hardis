@@ -1,6 +1,7 @@
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderPermissionSetGroup extends DocBuilderRoot {
 
@@ -17,15 +18,15 @@ export class DocBuilderPermissionSetGroup extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Permission Set Groups" : "## Permission Set Groups",
+      filterObject ? `## ${t('docMdRelatedPermissionSetGroups')}` : `## ${t('docMdPermissionSetGroups')}`,
       "",
-      "| Permission Set Group | Description |",
+      `| ${t('docMdColPermissionSetGroup')} | ${t('docMdColDescription')} |`,
       "| :----                | :---------- |"
     ]);
     for (const pSetGroup of filteredPsetGroups) {
       const pSetGroupNameCell = `[${pSetGroup.name}](${prefix}${encodeURIComponent(pSetGroup.name)}.md)`;
       lines.push(...[
-        `| ${pSetGroupNameCell} | ${pSetGroup.description || "None"} |`
+        `| ${pSetGroupNameCell} | ${pSetGroup.description || t('docMdNone')} |`
       ]);
     }
     lines.push("");
@@ -34,7 +35,7 @@ export class DocBuilderPermissionSetGroup extends DocBuilderRoot {
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
     const permissionSetTableLines = [
-      "| Permission Set |",
+      `| ${t('docMdColPermissionSet')} |`,
       "| :------------- |"
     ];
     if (this.parsedXmlObject.permissionSets) {
@@ -46,15 +47,15 @@ export class DocBuilderPermissionSetGroup extends DocBuilderRoot {
         permissionSetTableLines.push(`| ${permissionSetNameCell} |`);
       }
     } else {
-      permissionSetTableLines.push("| None |");
+      permissionSetTableLines.push(`| ${t('docMdNone')} |`);
     }
 
     return [
       `## ${this.metadataName}`,
       '',
-      buildGenericMarkdownTable(this.parsedXmlObject, ["label", "description", "status"], "## Permission Set Group attributes", []),
+      buildGenericMarkdownTable(this.parsedXmlObject, ["label", "description", "status"], `## ${t('docMdPermissionSetGroupAttributes')}`, []),
       '',
-      '## Permission Sets',
+      `## ${t('docMdPermissionSets')}`,
       ...permissionSetTableLines,
       '',
       '<!-- PermissionSetGroup description -->',

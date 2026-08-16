@@ -1,7 +1,7 @@
 import { Connection } from "@salesforce/core";
 import c from "chalk";
-import * as he from "he";
 import * as path from "path";
+import { decodeHtmlEntities } from "../utils/stringUtils.js";
 import { getConfig } from "../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
 import { uxLog } from "../utils/index.js";
@@ -9,6 +9,7 @@ import { soqlQuery } from "../utils/apiUtils.js";
 import { deployMetadatas } from "../utils/deployUtils.js";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils.js";
 import { setPoolStorage } from "../utils/poolUtils.js";
+import { t } from '../utils/i18n.js';
 
 export class SalesforceProvider implements KeyValueProviderInterface {
   name = "salesforce";
@@ -35,7 +36,7 @@ export class SalesforceProvider implements KeyValueProviderInterface {
     );
     const valueText = queryRes.records[0] ? (queryRes.records[0] as any).ValueText__c || "" : "";
     if (valueText.length > 5) {
-      return valueText.includes("&quot") ? JSON.parse(he.decode(valueText)) : JSON.parse(valueText);
+      return valueText.includes("&quot") ? JSON.parse(decodeHtmlEntities(valueText)) : JSON.parse(valueText);
     }
     return {};
   }
@@ -109,7 +110,7 @@ You mut create manually an Custom Object SfdxHardisKeyValueStore__c:
 - Field SfdxHardisKeyValueStore__c.ValueText__c of type TextArea (long) (with maximum size 131072 chars)
       `),
       );
-      uxLog("warning", this, c.yellow("You may have to create a Permission Set with all rights on SfdxHardisKeyValueStore__c and assign users to it"));
+      uxLog("warning", this, c.yellow(t('youMayHaveToCreatePermissionSet')));
       throw e;
     }
     // Initialize storage
@@ -117,10 +118,10 @@ You mut create manually an Custom Object SfdxHardisKeyValueStore__c:
       await setPoolStorage({}, options);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      uxLog("warning", this, c.yellow("You may have to create a Permission Set with all rights on SfdxHardisKeyValueStore__c and assign users to it"));
+      uxLog("warning", this, c.yellow(t('youMayHaveToCreatePermissionSet')));
     }
 
-    uxLog("success", this, c.green("Created KeyValue storage on Salesforce org"));
+    uxLog("success", this, c.green(t('createdKeyvalueStorageOnSalesforceOrg')));
     return true;
   }
 

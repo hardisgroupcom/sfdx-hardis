@@ -56,7 +56,9 @@ You are a skilled Salesforce developer working on a Lightning Web Components (LW
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_LWC.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_LWC.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_DESCRIBE_LWC.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 

@@ -7,6 +7,7 @@ import { getConfig } from '../../../../config/index.js';
 import { uxLog } from '../../../../common/utils/index.js';
 import { instantiateProvider } from '../../../../common/utils/poolUtils.js';
 import { KeyValueProviderInterface } from '../../../../common/utils/keyValueUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -37,13 +38,29 @@ The command's technical implementation involves:
 - **User Authentication:** It then calls the \`userAuthenticate()\` method on the instantiated provider. This method encapsulates the specific logic for authenticating with the chosen storage service (e.g., prompting for API keys, performing OAuth flows).
 - **Error Handling:** It checks for the absence of a configured scratch org pool and provides a user-friendly message.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:pool:localauth --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:scratch:pool:localauth'];
+  public static examples = ['$ sf hardis:scratch:pool:localauth',
+    '$ sf hardis:scratch:pool:localauth --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -73,9 +90,7 @@ The command's technical implementation involves:
       uxLog(
         "warning",
         this,
-        c.yellow(
-          `There is not scratch orgs pool configured on this project. Please see with your tech lead about using command hardis:scratch:pool:configure`
-        )
+        c.yellow(t('noScratchOrgsPoolConfiguredLocalAuth'))
       );
       return { outputString: 'Scratch org pool configuration to create' };
     }

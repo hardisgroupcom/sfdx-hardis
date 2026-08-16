@@ -35,11 +35,25 @@ The command's technical implementation involves:
 - **Required Plugin Check:** Explicitly lists `sfdmu` as a required plugin, indicating its role in data initialization.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:create --agent --target-dev-hub mydevhub@example.com
+```
+
+In agent mode:
+
+- The user email prompt is skipped; `USER_EMAIL` env var or `userEmail` config property is required.
+- If no email is available, an error is thrown.
+
 
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir    | option  | undefined                                                     |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
@@ -50,6 +64,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:org:create
+```
+
+```shell
+$ sf hardis:org:create --agent
 ```
 
 

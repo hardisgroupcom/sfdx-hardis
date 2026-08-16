@@ -8,6 +8,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -41,11 +42,27 @@ The command's technical implementation involves:
   - If custom fields are found, it then uses \`glob\` again to find all standard fields (\`*.field-meta.xml\` without \`__\`) within the object's \`fields\` directory and removes only those standard field files.
 - **Logging:** Provides clear messages about which folders and files are being removed or kept.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:standarditems --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:clean:standarditems'];
+  public static examples = ['$ sf hardis:project:clean:standarditems',
+    '$ sf hardis:project:clean:standarditems --agent',];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -70,7 +87,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Removing unwanted standard dx source files...`));
+    uxLog("action", this, c.cyan(t('removingUnwantedStandardDxSourceFiles')));
     /* jscpd:ignore-end */
     const sourceRootFolder = path.join(process.cwd() + '/force-app/main/default');
     const objectsFolder = path.join(sourceRootFolder + '/objects');
@@ -84,12 +101,12 @@ The command's technical implementation involves:
         if (matchingCustomFiles.length === 0) {
           // Remove the whole folder
           await fs.remove(objectDir);
-          uxLog("action", this, c.cyan(`Removed folder ${c.yellow(objectDir)}`));
+          uxLog("log", this, c.cyan(t('removedFolder', { objectDir: c.yellow(objectDir) })));
           const sharingRuleFile = path.join(sourceRootFolder, 'sharingRules', objectDirName + '.sharingRules-meta.xml');
           if (fs.existsSync(sharingRuleFile)) {
             // Remove sharingRule if existing
             await fs.remove(sharingRuleFile);
-            uxLog("action", this, c.cyan(`Removed sharing rule ${c.yellow(sharingRuleFile)}`));
+            uxLog("log", this, c.cyan(t('removedSharingRule', { sharingRuleFile: c.yellow(sharingRuleFile) })));
           }
         } else {
           // Remove only standard fields
@@ -98,13 +115,21 @@ The command's technical implementation involves:
           for (const field of matchingAllFields) {
             if (!field.includes('__')) {
               await fs.remove(field);
-              uxLog("action", this, c.cyan(`  - removed standard field ${c.yellow(field)}`));
+              uxLog("log", this, c.cyan(t('removedStandardField', { field: c.yellow(field) })));
             }
           }
 
-          uxLog("action", this, c.cyan(`Keep folder ${c.green(objectDir)} because of custom fields found`));
+          uxLog("log", this, c.cyan(t('keepFolderBecauseOfCustomFieldsFound', { objectDir: c.green(objectDir) })));
         }
       }
+    }
+
+    // Remove standard application files
+    const standardAppsPattern = `${sourceRootFolder}/applications/standard__*.app-meta.xml`;
+    const matchingStandardApps = await glob(standardAppsPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
+    for (const appFile of matchingStandardApps) {
+      await fs.remove(appFile);
+      uxLog("log", this, c.cyan(t('removedFile', { removeFile: c.yellow(appFile) })));
     }
 
     // Return an object to be displayed with --json

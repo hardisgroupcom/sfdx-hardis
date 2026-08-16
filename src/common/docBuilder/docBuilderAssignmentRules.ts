@@ -1,6 +1,7 @@
-import {DocBuilderRoot} from "./docBuilderRoot.js";
-import {PromptTemplate} from "../aiProvider/promptTemplates.js";
-import {RulesBuilderUtil} from "../utils/rulesBuilderUtil.js";
+import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { PromptTemplate } from "../aiProvider/promptTemplates.js";
+import { RulesBuilderUtil } from "../utils/rulesBuilderUtil.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderAssignmentRules extends DocBuilderRoot {
 
@@ -16,9 +17,9 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Assignment Rules" : "## Assignment Rules",
+      filterObject ? `## ${t('docMdRelatedAssignmentRules')}` : `## ${t('docMdAssignmentRules')}`,
       "",
-      "| Assignment Rule | Is Active |",
+      `| ${t('docMdColAssignmentRule')} | ${t('docMdColIsActive')} |`,
       "|     :----       |  :--: | "
     ]);
 
@@ -39,11 +40,11 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
 
     await ruleBuilderUtil.buildInitialMarkDownLinesForRules(this.parsedXmlObject);
 
-    const assignmentRuleTableLines: string [] = [...ruleBuilderUtil.globalRuleTableLines];
+    const assignmentRuleTableLines: string[] = [...ruleBuilderUtil.globalRuleTableLines];
 
     return [
       '<!-- Assignment Rule description -->',
-      '## Assignment Rules list',
+      `## ${t('docMdAssignmentRulesList')}`,
       ...assignmentRuleTableLines,
       '',
     ];

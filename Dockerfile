@@ -1,15 +1,33 @@
 # Docker image to run sfdx-hardis
 
+# Node.js is deliberately NOT installed from Alpine's apk repo.
+# As of July 2026, Alpine 3.23 ships nodejs 24.17.0, which sits in the broken band of the
+# CVE-2026-48931 http.Agent security fix and hangs the Salesforce CLI / jsforce with an
+# "unsettled top-level await" error (see https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
+# The follow-up fix (PR #64004) landed one patch later, in Node 24.18.0, which Alpine's repo
+# does not serve yet. So we copy a fixed Node 24 build from the official node:24-alpine image
+# (currently 24.18.0), while keeping the official python base so pip/MkDocs keeps working
+# (no PEP-668 issues).
+ARG NODE_IMAGE=node:24-alpine
+FROM ${NODE_IMAGE} AS node
+
 FROM python:3.12.12-alpine3.23
 
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
+
+# Copy the fixed Node.js 24 runtime (node + npm + corepack) from the official node image
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
+    ln -sf /usr/local/lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack
 
 RUN apk add --update --no-cache \
             coreutils \
             git \
             bash \
-            nodejs \
-            npm \
+            # Required for the copied Node.js binary (musl C++ runtime)
+            libstdc++ \
             # Required for docker
             docker \
             openrc \
@@ -69,6 +87,18 @@ RUN npm install --no-cache yarn -g && \
     rm -rf /root/.npm/_cacache && \
     rm -rf /tmp/* && \
     npm cache clean --force
+
+# Optionally install coding agent CLIs for auto-fix feature
+# Note: some agents may crash on Alpine/musl at runtime. If so, use the Ubuntu-based image instead.
+# Use --build-arg INSTALL_AGENTS=true to include agent CLIs (sfdx-hardis-with-agents images)
+ARG INSTALL_AGENTS=false
+RUN if [ "$INSTALL_AGENTS" = "true" ]; then \
+    (npm install --no-cache @anthropic-ai/claude-code@latest -g && claude --version || echo 'WARNING: claude-code install or version check failed') && \
+    (npm install --no-cache @openai/codex@latest -g && codex --version || echo 'WARNING: codex install or version check failed') && \
+    (npm install --no-cache @google/gemini-cli@latest -g && gemini --version || echo 'WARNING: gemini-cli install or version check failed') && \
+    (npm install --no-cache @github/copilot@latest -g && copilot --version || echo 'WARNING: copilot install or version check failed') && \
+    npm cache clean --force; \
+fi
 
 ENV MERMAID_MODES="docker"
 

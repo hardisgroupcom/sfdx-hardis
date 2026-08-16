@@ -6,6 +6,7 @@ import { glob } from 'glob';
 import { parseXmlFile, writeXmlFile } from './xmlUtils.js';
 import { isScratchOrg } from './orgUtils.js';
 import { GLOB_IGNORE_PATTERNS } from './projectUtils.js';
+import { t } from './i18n.js';
 
 // Update files for special cases
 export async function arrangeFilesBefore(commandThis: any, options: any = {}) {
@@ -36,7 +37,7 @@ export async function removeLookupFilters(tempDir: string, commandThis: any, opt
       delete fieldXml.CustomField.lookupFilter;
       await writeXmlFile(fieldFile, fieldXml);
       arrangedFiles.push({ file: fieldFile, backupFile: backupFile });
-      uxLog("log", commandThis, c.grey(`Removed lookup filter from field ${fieldFile}`));
+      uxLog("log", commandThis, c.grey(t('removedLookupFilterFromField', { fieldFile })));
     }
   }
   return arrangedFiles;
@@ -46,7 +47,7 @@ export async function removeLookupFilters(tempDir: string, commandThis: any, opt
 export async function restoreArrangedFiles(arrangedFiles: any[], commandThis: any) {
   for (const arrangedFile of arrangedFiles) {
     await fs.copyFile(arrangedFile.backupFile, arrangedFile.file);
-    uxLog("log", commandThis, c.grey(`Restored file ${arrangedFile.file}`));
+    uxLog("log", commandThis, c.grey(t('restoredFile', { arrangedFile: arrangedFile.file })));
   }
 }
 // Parse the given query and re-apply the limit clause if exists and is lower than the provided limit
@@ -68,6 +69,6 @@ export async function parseSoqlAndReapplyLimit(soqlQuery: string, limit: number 
   }
   //Replace 2 or more spaces with single space
   tempSoqlQuery = tempSoqlQuery.replace(/\s{2,}/g,' ');
-  uxLog("log",commandThis, c.grey(`New Query: ${tempSoqlQuery}`));
+  uxLog("log",commandThis, c.grey(t('newQuery', { tempSoqlQuery })));
   return tempSoqlQuery;
 }

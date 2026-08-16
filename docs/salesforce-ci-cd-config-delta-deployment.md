@@ -49,6 +49,15 @@ Examples:
 
 > 💡 If you want to **force the use of full deployment for a PR/MR** on a delta project, add "**NO_DELTA**" in your latest commit title or text, or in your Pull Request description.
 
+#### Reading the job logs
+
+When delta mode is active, the job logs describe each filtering step:
+
+- The package computed from the git diff is written to `gitDeltaPackage.xml`, so it is not confused with the deployment `package.xml`.
+- Each metadata type shows how many items changed between the compared commits and are kept in the delta.
+- The delta package is displayed **before** overwrite filtering: [package-no-overwrite.xml](salesforce-ci-cd-config-overwrite.md) can still remove protected items from it.
+- The final `package.xml`, after all package filtering steps, is displayed at the end (or summarized when it holds more than 100 items).
+
 ___
 
 ### Delta with Dependencies (beta)
@@ -57,7 +66,7 @@ Sometimes, using pure delta deployment is not enough: for example, if you delete
 
 [Stepan Stepanov](https://www.linkedin.com/in/stepan-stepanov-79a48734/) implemented a smart way to handle that with sfdx-hardis: Delta with dependencies.
 
-Delta with dependencies mode leverages a set of processors defined in `src/common/utils/deltaUtils.ts` to automatically detect and include related metadata dependencies in your deployment package. These processors analyze changes and ensure that dependent components are also deployed, reducing the risk of deployment failures due to missing references.
+Delta with dependencies mode uses a set of processors defined in `src/common/utils/deltaUtils.ts` to automatically detect and include related metadata dependencies in your deployment package. These processors analyze changes and ensure dependent components are also deployed, reducing the risk of deployment failures due to missing references.
 
 **List of supported dependency processors:**
 
@@ -93,10 +102,10 @@ Practical examples:
 
 How to validate in CI:
 
-- When enabled, the pipeline publishes or logs the delta package that will be deployed — inspect the generated package.xml in the job output or artifacts to see the added entries.
+- When enabled, the pipeline publishes or logs the delta package that will be deployed - inspect the generated package.xml in the job output or artifacts to see the added entries.
 - Start by enabling the feature on a non-critical branch (or for a single PR) to confirm the produced delta includes the expected additional metadata before rolling it out broadly.
 
-Note: This feature is provided in beta — it helps reduce deployment surprises but it's recommended to test it on your repository and workflows before relying on it for critical releases.
+Note: This feature is provided in beta - it helps reduce deployment surprises but it's recommended to test it on your repository and workflows before relying on it for critical releases.
 
 ___
 

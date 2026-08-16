@@ -3,7 +3,7 @@
 
 ## Description
 
-Generates a markdown documentation from a SFDX project
+Generates Markdown documentation from a SFDX project
 
 - Objects (with fields, validation rules, relationships and dependencies)
 - Automations
@@ -27,27 +27,27 @@ Generates a markdown documentation from a SFDX project
 
 Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
 
-Generates markdown files will be written in **docs** folder (except README.md where a link to doc index is added)
+Generated markdown files will be written in the **docs** folder (except README.md, where a link to the doc index is added).
 
 - You can customize the pages following [mkdocs-material setup documentation](https://squidfunk.github.io/mkdocs-material/setup/)
 - You can manually add new markdown files in the "docs" folder to extend this documentation and add references to them in "mkdocs.yml"
 - You can also add images in folder "docs/assets" and embed them in markdown files.
 
-To read Flow documentations if your markdown reader doesn't handle MermaidJS syntax, this command could require @mermaid-js/mermaid-cli
+To read flow documentation, if your markdown reader doesn't handle MermaidJS syntax this command may require @mermaid-js/mermaid-cli.
 
 - Run `npm install @mermaid-js/mermaid-cli --global` if puppeteer works in your environment
 - It can also be run as a docker image
 
 Both modes will be tried by default, but you can also force one of them by defining environment variable `MERMAID_MODES=docker` or `MERMAID_MODES=cli`
 
-_sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/puppeteer: if you can help, please submit a PR !_
+_The alpine-based sfdx-hardis docker image does not succeed to run mermaid/puppeteer: use the ubuntu-based image `ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu`, that embeds Chrome and runs mermaid-cli out of the box._
 
 If Flow history doc always display a single state, you probably need to update your workflow configuration:
 
 - on Gitlab: Env variable [`GIT_FETCH_EXTRA_FLAGS: --depth 10000`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.gitlab-ci.yml#L11)
-- on GitHub: [`fetch-depth: 0`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.github/workflows/org-monitoring.yml#L58)
-- on Azure: [`fetchDepth: "0"`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/azure-pipelines.yml#L39)
-- on Bitbucket: [`step: clone: depth: full`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/bitbucket-pipelines.yml#L18)
+- on GitHub: [`fetch-depth: 0`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.github/workflows/org-monitoring.yml#L62)
+- on Azure: [`fetchDepth: "0"`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/azure-pipelines.yml#L46)
+- on Bitbucket: [`step: clone: depth: full`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/bitbucket-pipelines.yml#L23)
 
 ![Screenshot flow doc](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-flow-doc.jpg)
 
@@ -73,6 +73,16 @@ If you have a complex strategy, you might need to input property **mergeTargets*
 
 Define DO_NOT_OVERWRITE_INDEX_MD=true to avoid overwriting the index.md file in docs folder, useful if you want to keep your own index.md file.
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:project2markdown --agent
+```
+
+In agent mode, all interactive prompts are skipped. All flags remain available and behave identically - use them to control which documentation sections are generated.
+
 ## Doc HTML Pages
 
 To read the documentation as HTML pages, run the following code (you need [**Python**](https://www.python.org/downloads/) on your computer)
@@ -88,23 +98,37 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build -v || 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                         | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                     |         |          |         |
-| diff-only         | boolean | Generate documentation only for changed files (used for monitoring) |         |          |         |
-| flags-dir         | option  | undefined                                                           |         |          |         |
-| hide-apex-code    | boolean | Hide Apex code in the generated documentation for Apex classes.     |         |          |         |
-| json              | boolean | Format output as json.                                              |         |          |         |
-| pdf               | boolean | Also generate the documentation in PDF format                       |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required       |         |          |         |
-| target-org<br/>-o | option  | undefined                                                           |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration           |         |          |         |
-| with-history      | boolean | Generate a markdown file with the history diff of the Flow          |         |          |         |
+| Name                     |  Type   | Description                                                                                                     | Default | Required | Options |
+|:-------------------------|:-------:|:----------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                    | boolean | Run in non-interactive mode for agents and automation                                                           |         |          |         |
+| debug<br/>-d             | boolean | Activate debug mode (more logs)                                                                                 |         |          |         |
+| diff-only                | boolean | Generate documentation only for changed files (used for monitoring)                                             |         |          |         |
+| excel                    | boolean | Also generate an Excel file with all metadata in separate tabs                                                  |         |          |         |
+| flags-dir                | option  | undefined                                                                                                       |         |          |         |
+| generate-apex-doc        | boolean | Generate Apex documentation                                                                                     |         |          |         |
+| generate-automations-doc | boolean | Generate Automations documentation (Approval Processes, Assignment Rules, AutoResponse Rules, Escalation Rules) |         |          |         |
+| generate-flow-doc        | boolean | Generate Flows, Process Builders and Workflow Rules documentation                                               |         |          |         |
+| generate-lwc-doc         | boolean | Generate Lightning Web Components documentation                                                                 |         |          |         |
+| generate-objects-doc     | boolean | Generate Objects documentation                                                                                  |         |          |         |
+| generate-packages-doc    | boolean | Generate Installed Packages documentation                                                                       |         |          |         |
+| generate-pages-doc       | boolean | Generate Lightning Pages documentation                                                                          |         |          |         |
+| generate-profiles-doc    | boolean | Generate Profiles, Permission Sets, Permission Set Groups and Roles documentation                               |         |          |         |
+| hide-apex-code           | boolean | Hide Apex code in the generated documentation for Apex classes.                                                 |         |          |         |
+| json                     | boolean | Format output as json.                                                                                          |         |          |         |
+| pdf                      | boolean | Also generate the documentation in PDF format                                                                   |         |          |         |
+| skipauth                 | boolean | Skip authentication check when a default username is required                                                   |         |          |         |
+| target-org<br/>-o        | option  | undefined                                                                                                       |         |          |         |
+| websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                       |         |          |         |
+| with-history             | boolean | Generate a markdown file with the history diff of the Flow                                                      |         |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:doc:project2markdown
+```
+
+```shell
+$ sf hardis:doc:project2markdown --agent
 ```
 
 ```shell
@@ -117,6 +141,18 @@ $ sf hardis:doc:project2markdown --with-history --pdf
 
 ```shell
 $ sf hardis:doc:project2markdown --hide-apex-code
+```
+
+```shell
+$ sf hardis:doc:project2markdown --excel
+```
+
+```shell
+$ sf hardis:doc:project2markdown --no-generate-apex-doc --no-generate-lwc-doc
+```
+
+```shell
+$ sf hardis:doc:project2markdown --no-generate-automations-doc
 ```
 
 

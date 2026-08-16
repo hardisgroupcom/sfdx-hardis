@@ -7,9 +7,10 @@ import { AnyJson } from '@salesforce/ts-types';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { parseStringPromise, Builder } from 'xml2js';
+import { buildXmlString, parseXmlString } from '../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { glob } from 'glob';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -28,6 +29,19 @@ This command streamlines the process of managing and isolating specific custom l
 - **Collaboration:** Sharing only the necessary translation files with translators, reducing complexity.
 - **Debugging:** Isolating translation issues for specific labels or components.
 
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:misc:custom-label-translations --label Label1,Label2 --agent
+sf hardis:misc:custom-label-translations --lwc MyComponent --agent
+\`\`\`
+
+In agent mode:
+- Interactive selection prompts are skipped.
+- The \`--label\` or \`--lwc\` flag is **required** to specify which labels to extract.
+
 Key functionalities:
 
 - **Label Selection:** You can specify custom label names directly using the \`--label\` flag (comma-separated).
@@ -42,7 +56,7 @@ The command's technical implementation involves:
 
 - **File Discovery:** It uses \`glob\` to find all \`*.translation-meta.xml\` files in the \`**/translations/\` directory and, if an LWC is specified, it searches for the LWC's JavaScript files (\`**/lwc/**/*.js\`).
 - **LWC Label Extraction:** The \`extractLabelsFromLwc\` function uses regular expressions (\`@salesforce/label/c.([a-zA-Z0-9_]+)\`) to parse LWC JavaScript files and identify referenced custom labels.
-- **XML Parsing and Building:** It uses \`xml2js\` (\`parseStringPromise\` and \`Builder\`) to:
+- **XML Parsing and Building:** It parses and rebuilds the XML files to:
   - Read and parse existing \`.translation-meta.xml\` files.
   - Filter the \`customLabels\` array to include only the requested labels.
   - Construct a new XML structure containing only the filtered labels.
@@ -56,7 +70,8 @@ The command's technical implementation involves:
   public static examples = [
     '$ sf hardis:misc:custom-label-translations --label CustomLabelName',
     '$ sf hardis:misc:custom-label-translations --label Label1,Label2',
-    '$ sf hardis:misc:custom-label-translations --lwc MyComponent'
+    '$ sf hardis:misc:custom-label-translations --lwc MyComponent',
+    '$ sf hardis:misc:custom-label-translations --label Label1,Label2 --agent',
   ];
 
   private outputDirPrefix = 'extract-';
@@ -70,6 +85,7 @@ The command's technical implementation involves:
       char: 'c',
       description: 'Developer name of the Lightning Web Component',
     }),
+    /* jscpd:ignore-start */
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -81,6 +97,11 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
+    /* jscpd:ignore-end */
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -90,7 +111,7 @@ The command's technical implementation involves:
    * Extract custom label names from LWC JS files
    */
   private async extractLabelsFromLwc(lwcName: string, debugMode: boolean): Promise<string[]> {
-    uxLog("log", this, c.grey(`Looking for LWC '${lwcName}' JS files...`));
+    uxLog("log", this, c.grey(t('lookingForLwcJsFiles', { lwcName })));
 
     const lwcFiles = await glob(`**/lwc/${lwcName}/**/*.js`);
 
@@ -98,7 +119,7 @@ The command's technical implementation involves:
       throw new Error(`No JS files found for LWC '${lwcName}'`);
     }
 
-    uxLog("log", this, c.grey(`Found ${lwcFiles.length} JS files for component '${lwcName}'.`));
+    uxLog("log", this, c.grey(t('foundJsFilesForComponent', { lwcFiles: lwcFiles.length, lwcName })));
 
     const labelNames = new Set<string>();
     const labelImportRegex = /@salesforce\/label\/c\.([a-zA-Z0-9_]+)/g;
@@ -112,7 +133,7 @@ The command's technical implementation involves:
       }
 
       if (debugMode) {
-        uxLog("log", this, c.grey(`Processed file: ${jsFile}`));
+        uxLog("log", this, c.grey(t('processedFile', { jsFile })));
       }
     }
 
@@ -122,7 +143,7 @@ The command's technical implementation involves:
       throw new Error(`No custom labels found in LWC '${lwcName}'`);
     }
 
-    uxLog("log", this, c.grey(`Found ${extractedLabels.length} custom labels in LWC '${lwcName}': ${extractedLabels.join(', ')}`));
+    uxLog("log", this, c.grey(t('foundCustomLabelsInLwc', { extractedLabels: extractedLabels.length, lwcName, extractedLabels1: extractedLabels.join(', ') })));
     this.outputDirPrefix = lwcName;
 
     return extractedLabels;
@@ -132,19 +153,19 @@ The command's technical implementation involves:
    * Extract original custom label values from CustomLabels.labels-meta.xml
    */
   private async extractOriginalLabels(labelNames: string[], debugMode: boolean): Promise<Map<string, any>> {
-    uxLog("log", this, c.grey(`Looking for original custom label definitions...`));
+    uxLog("log", this, c.grey(t('lookingForOriginalCustomLabelDefinitions')));
 
     const originalLabels = new Map<string, any>();
     const customLabelsFiles = await glob('**/labels/CustomLabels.labels-meta.xml', { ignore: GLOB_IGNORE_PATTERNS });
 
     if (customLabelsFiles.length === 0) {
-      uxLog("warning", this, c.yellow(`No CustomLabels.labels-meta.xml found.`));
+      uxLog("warning", this, c.yellow(t('noCustomLabelsMetaXmlFound')));
       return originalLabels;
     }
 
     for (const customLabelsFile of customLabelsFiles) {
       const xmlContent = await fs.readFile(customLabelsFile, 'utf8');
-      const parsedXml = await parseStringPromise(xmlContent, { explicitArray: false });
+      const parsedXml = parseXmlString(xmlContent, { explicitArray: false });
 
       if (!parsedXml.CustomLabels || !parsedXml.CustomLabels.labels) {
         continue;
@@ -156,7 +177,7 @@ The command's technical implementation involves:
 
       for (const label of labels) {
         const labelName = label.fullName || label.name;
-        
+
         if (labelNames.includes(labelName)) {
           originalLabels.set(labelName, {
             name: labelName,
@@ -165,18 +186,19 @@ The command's technical implementation involves:
           });
 
           if (debugMode) {
-            uxLog("log", this, c.grey(`Found original: ${labelName} = "${label.value}"`));
+            uxLog("log", this, c.grey(t('foundOriginal', { labelName, label: label.value })));
           }
         }
       }
     }
 
-    uxLog("log", this, c.grey(`Found ${originalLabels.size} original label definitions.`));
+    uxLog("log", this, c.grey(t('foundOriginalLabelDefinitions', { originalLabels: originalLabels.size })));
     return originalLabels;
   }
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(CustomLabelTranslations);
+    const agentMode = flags.agent === true;
     const debugMode = flags.debug || false;
 
     let labelNames: string[] = [];
@@ -190,7 +212,7 @@ The command's technical implementation involves:
       }
     } else if (flags.label) {
       labelNames = flags.label.split(',').map(label => label.trim());
-    } else if (!isCI) {
+    } else if (!isCI && !agentMode) {
       const selection = await CustomLabelTranslations.promptExtractionMethod();
       if (selection.type == 'labels') {
         labelNames = selection.values;
@@ -200,12 +222,12 @@ The command's technical implementation involves:
     }
 
     if (!labelNames || labelNames.length === 0) {
-      const errorMsg = 'No custom labels specified. Use --label or --lwc flag.';
+      const errorMsg = t('noCustomLabelsSpecifiedUseFlagOrLwc');
       uxLog("error", this, c.red(errorMsg));
       return { success: false, message: errorMsg };
     }
 
-    uxLog("log", this, c.grey(`Processing custom labels: ${labelNames.join(', ')}`));
+    uxLog("log", this, c.grey(t('processingCustomLabels', { labelNames: labelNames.join(', ') })));
 
     try {
       const originalLabels = await this.extractOriginalLabels(labelNames, debugMode);
@@ -216,27 +238,27 @@ The command's technical implementation involves:
       const translationFiles = await glob('**/translations/*.translation-meta.xml');
 
       if (translationFiles.length === 0) {
-        uxLog("warning", this, c.yellow(`No translation files found in **/translations/.`));
-        return { success: false, message: 'No translation files found' };
+        uxLog("warning", this, c.yellow(t('noTranslationFilesFoundInFolder')));
+        return { success: false, message: t('noTranslationFilesFound') };
       }
 
       const results = {};
 
       for (const translationFile of translationFiles) {
         const languageCode = path.basename(translationFile).replace('.translation-meta.xml', '');
-        uxLog("log", this, c.grey(`Processing translation file for ${languageCode}...`));
+        uxLog("log", this, c.grey(t('processingTranslationFileFor', { languageCode })));
 
         const xmlContent = await fs.readFile(translationFile, 'utf8');
 
-        const parsedXml = await parseStringPromise(xmlContent, { explicitArray: false });
+        const parsedXml = parseXmlString(xmlContent, { explicitArray: false });
 
         if (!parsedXml.Translations) {
-          uxLog("warning", this, c.yellow(`Invalid translation file format: ${translationFile}.`));
+          uxLog("warning", this, c.yellow(t('invalidTranslationFileFormat', { translationFile })));
           continue;
         }
 
         if (!parsedXml.Translations.customLabels) {
-          uxLog("warning", this, c.yellow(`No custom labels found in ${translationFile}.`));
+          uxLog("warning", this, c.yellow(t('noCustomLabelsFoundIn', { translationFile })));
           continue;
         }
 
@@ -249,7 +271,7 @@ The command's technical implementation involves:
         );
 
         if (matchedLabels.length === 0) {
-          uxLog("warning", this, c.yellow(`No matching custom labels found in ${languageCode}.`));
+          uxLog("warning", this, c.yellow(t('noMatchingCustomLabelsFoundIn', { languageCode })));
           continue;
         }
 
@@ -260,11 +282,7 @@ The command's technical implementation involves:
           }
         };
 
-        const builder = new Builder({
-          xmldec: { version: '1.0', encoding: 'UTF-8' },
-          renderOpts: { pretty: true, indent: '    ', newline: '\n' }
-        });
-        const outputXml = builder.buildObject(newXml);
+        const outputXml = buildXmlString(newXml, '    ');
 
         const outputFile = path.join(outputDir, `${languageCode}.translation-meta.xml`);
 
@@ -276,7 +294,7 @@ The command's technical implementation involves:
         };
 
         if (debugMode) {
-          uxLog("log", this, c.grey(`Found ${matchedLabels.length} labels in ${languageCode}:`));
+          uxLog("log", this, c.grey(t('foundLabelsIn', { matchedLabels: matchedLabels.length, languageCode })));
           matchedLabels.forEach(label => {
             uxLog("log", this, c.grey(`  ${label.name} = "${label.label}"`));
           });
@@ -286,16 +304,16 @@ The command's technical implementation involves:
       const totalFiles = Object.keys(results).length;
 
       if (totalFiles === 0) {
-        uxLog("warning", this, c.yellow('No matching labels found in any translation file.'));
-        return { success: false, message: 'No matching labels found' };
+        uxLog("warning", this, c.yellow(t('noMatchingLabelsFoundInAnyTranslation')));
+        return { success: false, message: t('noMatchingLabelsFound') };
       }
 
-      uxLog("success", this, c.green(`Successfully extracted custom labels to ${outputDir}.`));
-      uxLog("log", this, c.grey(`Processed ${totalFiles} translation files.`));
+      uxLog("success", this, c.green(t('successfullyExtractedCustomLabelsTo', { outputDir })));
+      uxLog("log", this, c.grey(t('processedTranslationFiles', { totalFiles })));
 
       if (originalLabels.size > 0) {
         const originalXmlLabels: any[] = [];
-        
+
         for (const labelName of labelNames) {
           const original = originalLabels.get(labelName);
           if (original) {
@@ -315,16 +333,12 @@ The command's technical implementation involves:
             }
           };
 
-          const builder = new Builder({
-            xmldec: { version: '1.0', encoding: 'UTF-8' },
-            renderOpts: { pretty: true, indent: '    ', newline: '\n' }
-          });
-          const outputXml = builder.buildObject(originalXml);
+          const outputXml = buildXmlString(originalXml, '    ');
 
           const originalFile = path.join(outputDir, 'original.translation-meta.xml');
           await fs.writeFile(originalFile, outputXml);
 
-          uxLog("log", this, c.grey(`Generated original labels file: original.translation-meta.xml`));
+          uxLog("log", this, c.grey(t('generatedOriginalLabelsFile')));
         }
       }
 
@@ -337,7 +351,7 @@ The command's technical implementation involves:
       };
 
     } catch (err: any) {
-      uxLog("error", this, c.red(`Error processing custom labels: ${err.message}`));
+      uxLog("error", this, c.red(t('errorProcessingCustomLabels', { err: err.message })));
       throw err;
     }
   }
@@ -353,7 +367,7 @@ The command's technical implementation involves:
 
       for (const customLabelsFile of customLabelsFiles) {
         const xmlContent = await fs.readFile(customLabelsFile, 'utf8');
-        const parsedXml = await parseStringPromise(xmlContent);
+        const parsedXml = parseXmlString(xmlContent);
 
         if (!parsedXml.CustomLabels || !parsedXml.CustomLabels.labels) {
           throw new Error('No custom labels found in the file');
@@ -384,8 +398,8 @@ The command's technical implementation involves:
 
       const labelSelectRes = await prompts({
         type: 'multiselect',
-        message: 'Please select the Custom Labels you want to extract from translations',
-        description: 'Choose which custom labels to include in the translation extraction',
+        message: t('pleaseSelectTheCustomLabelsYouWant'),
+        description: t('chooseWhichCustomLabelsToIncludeInTranslationExtraction'),
         choices: choices
       });
 
@@ -409,7 +423,7 @@ The command's technical implementation involves:
       for (const metaFile of lwcMetaFiles) {
         try {
           const xmlContent = await fs.readFile(metaFile, 'utf8');
-          const parsedXml = await parseStringPromise(xmlContent);
+          const parsedXml = parseXmlString(xmlContent);
 
           const pathParts = metaFile.split('/');
           const componentName = pathParts[pathParts.length - 1].replace('.js-meta.xml', '');
@@ -443,9 +457,9 @@ The command's technical implementation involves:
       const componentSelectRes = await prompts({
         type: 'select',
         name: 'value',
-        message: 'Select a Lightning Web Component to extract custom labels from',
-        description: 'Choose which LWC component to analyze for custom label usage',
-        placeholder: 'Select a component',
+        message: t('selectLightningWebComponentToExtractCustom'),
+        description: t('chooseWhichLwcComponentToAnalyzeForCustomLabelUsage'),
+        placeholder: t('selectAComponent'),
         choices: choices
       });
 
@@ -461,19 +475,19 @@ The command's technical implementation involves:
       const methodSelectRes = await prompts({
         type: 'select',
         name: 'method',
-        message: 'How would you like to extract custom label translations?',
-        description: 'Choose your preferred method for extracting custom label translations',
-        placeholder: 'Select extraction method',
+        message: t('howWouldYouLikeToExtractCustom'),
+        description: t('chooseYourPreferredMethodForExtractingCustomLabelTranslations'),
+        placeholder: t('selectExtractionMethod'),
         choices: [
           {
             value: 'labels',
-            title: 'Select specific custom labels',
-            description: 'Choose one or more custom labels from the full list'
+            title: t('extractMethodSelectLabels'),
+            description: t('extractMethodSelectLabelsDesc')
           },
           {
             value: 'lwc',
-            title: 'Extract from a Lightning Web Component',
-            description: 'Find all custom labels used in a specific LWC'
+            title: t('extractMethodLwc'),
+            description: t('extractMethodLwcDesc')
           }
         ]
       });

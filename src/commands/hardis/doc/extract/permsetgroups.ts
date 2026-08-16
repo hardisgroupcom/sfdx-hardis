@@ -11,6 +11,7 @@ import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getReportDirectory } from '../../../../config/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -42,14 +43,30 @@ The command performs the following technical steps:
 - **Markdown Generation:** It generates a Markdown file (\`docs/permission-set-groups.md\`) that includes a title, a table of contents, and detailed sections for each Permission Set Group. Each section lists the group's name, label, description, and a bulleted list of its assigned Permission Sets.
 - **File System Operations:** It uses \`fs-extra\` to ensure output directories exist and to write the generated CSV and Markdown files.
 - **VS Code Integration:** It uses \`WebSocketClient.requestOpenFile\` to automatically open the generated CSV and Markdown files in VS Code, enhancing the user experience.
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:extract:permsetgroups --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:doc:extract:permsetgroups'];
+  public static examples = ['$ sf hardis:doc:extract:permsetgroups',
+    '$ sf hardis:doc:extract:permsetgroups --agent',];
 
   public static flags: any = {
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -75,13 +92,13 @@ The command performs the following technical steps:
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Generating CSV and Markdown for Permission Set Groups and their related Permission Sets.`));
+    uxLog("action", this, c.cyan(t('generatingCsvAndMarkdownForPermission')));
     /* jscpd:ignore-end */
 
     const psgList: any[] = [];
     const globPatternPSG = process.cwd() + `/**/*.permissionsetgroup-meta.xml`;
     const psgFiles = await glob(globPatternPSG, { ignore: GLOB_IGNORE_PATTERNS });
-    uxLog("log", this, c.grey(`Found ${psgFiles.length} permission set groups.`));
+    uxLog("log", this, c.grey(t('foundPermissionSetGroups', { psgFiles: psgFiles.length })));
     for (const psgFile of psgFiles) {
       const psgName = (psgFile.replace(/\\/g, '/').split('/').pop() || '').replace('.permissionsetgroup-meta.xml', '');
       const psg = await parseXmlFile(psgFile);
@@ -116,11 +133,11 @@ The command performs the following technical steps:
     try {
       const csvText = csvLines.map((e) => e.join(',')).join('\n');
       await fs.writeFile(this.outputFile, csvText, 'utf8');
-      uxLog("action", this, c.cyan(`Permission set groups CSV file generated at ${c.bold(c.green(this.outputFile))}.`));
+      uxLog("action", this, c.cyan(t('permissionSetGroupsCsvFileGeneratedAt', { green: c.bold(c.green(this.outputFile)) })));
       // Trigger command to open CSV file in VS Code extension
       WebSocketClient.requestOpenFile(this.outputFile);
     } catch (e: any) {
-      uxLog("warning", this, c.yellow('Error while generating CSV file:\n' + (e as Error).message + '\n' + e.stack));
+      uxLog("warning", this, c.yellow(t('errorWhileGeneratingCsvFile') + (e as Error).message + '\n' + e.stack));
       this.outputFile = null;
     }
 
@@ -138,7 +155,7 @@ The command performs the following technical steps:
     const mdPsgText = mdPsg.join('\n');
     // mdPsgText = toc.insert(mdPsgText);
     await fs.writeFile(docFile, mdPsgText, 'utf8');
-    uxLog("action", this, c.cyan(`Permission set groups Markdown file generated at ${c.bold(c.green(docFile))}.`));
+    uxLog("action", this, c.cyan(t('permissionSetGroupsMarkdownFileGeneratedAt', { green: c.bold(c.green(docFile)) })));
     // Trigger command to open CSV file in VS Code extension
     WebSocketClient.requestOpenFile(docFile);
 

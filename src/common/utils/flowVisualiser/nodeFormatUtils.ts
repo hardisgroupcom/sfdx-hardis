@@ -1,5 +1,5 @@
 import * as yaml from 'js-yaml';
-import moment from 'moment';
+import { dateHelper } from '../dateHelper.js';
 import * as fs from 'fs';
 import path from 'path';
 
@@ -199,7 +199,7 @@ export function handleSchedule(flowNode: any, allProperties: string[]): string {
     return ""
   }
   const scheduleItemsValues = scheduleItems.map((item: any) => {
-    const startDateFormatted = moment(item.startDate).format("ll");
+    const startDateFormatted = dateHelper(item.startDate).format("ll");
     const startTimeFormatted = item?.startTime?.endsWith("Z") ? item.startTime.slice(0, 5) : item.startTime;
     return {
       frequency: item.frequency,

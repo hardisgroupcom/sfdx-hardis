@@ -7,6 +7,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
 import { execCommand, uxLog } from '../../../../common/utils/index.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -37,9 +38,21 @@ The command's technical implementation involves:
 - **Command Execution:** For each identified Profile (that is not excluded), it constructs and executes the \`sf shane:profile:convert\` command with the appropriate Profile name and desired Permission Set name.
 - **Error Handling:** Includes basic error handling for the external command execution.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:convert:profilestopermsets --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:convert:profilestopermsets'];
+  public static examples = ['$ sf hardis:project:convert:profilestopermsets',
+    '$ sf hardis:project:convert:profilestopermsets --agent',];
 
   public static flags: any = {
     except: Flags.string({
@@ -47,6 +60,10 @@ The command's technical implementation involves:
       default: [],
       description: 'List of filters',
       multiple: true,
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -70,7 +87,7 @@ The command's technical implementation involves:
     const { flags } = await this.parse(ConvertProfilesToPermSets);
     const except = flags.except || [];
 
-    uxLog("action", this, c.cyan('This command will convert profiles into permission sets'));
+    uxLog("action", this, c.cyan(t('thisCommandWillConvertProfilesIntoPermission')));
 
     const sourceRootFolder = path.join(process.cwd() + '/force-app/main/default');
     const profilesFolder = path.join(sourceRootFolder, 'profiles');
@@ -82,7 +99,7 @@ The command's technical implementation involves:
           continue;
         }
         const psName = 'PS_' + profileName.split(' ').join('_');
-        uxLog("action", this, c.cyan(`Generating Permission set ${c.green(psName)} from profile ${c.green(profileName)}`));
+        uxLog("action", this, c.cyan(t('generatingPermissionSetFromProfile', { psName: c.green(psName), profileName: c.green(profileName) })));
         const convertCommand = 'sf shane:profile:convert' + ` -p "${profileName}"` + ` -n "${psName}"` + ' -e';
         await execCommand(convertCommand, this, { fail: true, output: true });
       }

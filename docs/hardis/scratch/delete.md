@@ -28,22 +28,45 @@ The command's technical implementation involves:
 - **Data Sorting:** Sorts the list of scratch orgs by username, alias, and instance URL for better readability in the interactive menu.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:scratch:delete --agent --target-dev-hub mydevhub@example.com
+```
+
+In agent mode:
+
+- `--name` is required: comma-separated list of scratch org usernames to delete.
+- All confirmation prompts are skipped.
+
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                   | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir             | option  | undefined                                                     |         |          |         |
-| json                  | boolean | Format output as json.                                        |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name                  |  Type   | Description                                                                                          | Default | Required | Options |
+|:----------------------|:-------:|:-----------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                |         |          |         |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                      |         |          |         |
+| flags-dir             | option  | undefined                                                                                            |         |          |         |
+| json                  | boolean | Format output as json.                                                                               |         |          |         |
+| name<br/>-n           | option  | Comma-separated list of scratch org usernames to delete. Used in agent mode to target specific orgs. |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                        |         |          |         |
+| target-dev-hub<br/>-v | option  | undefined                                                                                            |         |          |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                            |         |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:scratch:delete
+```
+
+```shell
+$ sf hardis:scratch:delete --agent --name user@scratch.org
+```
+
+```shell
+$ sf hardis:scratch:delete --agent
 ```
 
 

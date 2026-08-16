@@ -4,10 +4,12 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
-import { uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { managePackageConfig, promptOrg } from '../../../../common/utils/orgUtils.js';
+import { getConfig } from '../../../../config/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -36,11 +38,48 @@ The command's technical implementation involves:
 - **Configuration Management:** If the user confirms, it calls \`managePackageConfig\` to update the project's configuration file (likely \`.sfdx-hardis.yml\`) with the new package information.
 - **User Feedback:** Provides clear messages to the user about the success of the package retrieval and configuration update.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all prompts. Typical usage:
+
+\`\`\`sh
+sf hardis:org:retrieve:packageconfig --agent --packages "MyPackage,OtherPackage" --target-org myOrg
+sf hardis:org:retrieve:packageconfig --agent --update-all-config --target-org myOrg
+\`\`\`
+
+In agent mode:
+
+- Without \`--packages\`, \`--update-existing-config\`, or \`--update-all-config\`, the command only lists packages (no config update).
+- Use \`--packages\` to update config only for the specified packages (comma-separated names or subscriber package IDs).
+- Use \`--update-existing-config\` to update only packages that are already present in the project config (version upgrade).
+- Use \`--update-all-config\` to update config with all retrieved packages.
 `;
 
-  public static examples = ['$ sf hardis:org:retrieve:packageconfig', 'sf hardis:org:retrieve:packageconfig -u myOrg'];
+  public static examples = [
+    '$ sf hardis:org:retrieve:packageconfig',
+    'sf hardis:org:retrieve:packageconfig -u myOrg',
+    '$ sf hardis:org:retrieve:packageconfig --agent --packages "MyPackage,OtherPkg"',
+    '$ sf hardis:org:retrieve:packageconfig --agent --update-existing-config',
+    '$ sf hardis:org:retrieve:packageconfig --agent --update-all-config',
+  ];
 
   public static flags: any = {
+    packages: Flags.string({
+      description: 'Comma-separated list of package names or subscriber package IDs to update in the project config. Used in agent mode.',
+    }),
+    'update-existing-config': Flags.boolean({
+      default: false,
+      description: 'Update only packages already present in the project config (version upgrade). Useful in agent mode.',
+    }),
+    'update-all-config': Flags.boolean({
+      default: false,
+      description: 'Update config with all retrieved packages (existing and new).',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -62,6 +101,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(RetrievePackageConfig);
+    const agentMode = flags.agent === true;
     let targetUsername = flags['target-org'].getUsername() || null;
 
     // Prompt for organization if not sent
@@ -71,7 +111,7 @@ The command's technical implementation involves:
     }
 
     // Retrieve list of installed packages
-    uxLog("action", this, c.cyan('Retrieving installed packages from org ' + targetUsername + '...'));
+    uxLog("action", this, c.cyan(t('retrievingInstalledPackagesFromOrg') + targetUsername + '...'));
     const installedPackages = await MetadataUtils.listInstalledPackages(targetUsername || '', this);
 
     const packageNames = installedPackages
@@ -80,24 +120,59 @@ The command's technical implementation involves:
       .join('\n');
 
     if (installedPackages.length === 0) {
-      uxLog("warning", this, c.yellow(`No installed packages found in org ${targetUsername}.`));
+      uxLog("warning", this, c.yellow(t('noInstalledPackagesFoundInOrg', { targetUsername })));
       throw new SfError('No installed packages found in the target org. Maybe an auth issue ?');
     }
-    uxLog("action", this, c.cyan(`Successfully retrieved ${installedPackages.length} installed packages from org ${targetUsername}.\n${packageNames}`));
+    uxLog("action", this, c.cyan(t('successfullyRetrievedInstalledPackagesFromOrg', { installedPackages: installedPackages.length, targetUsername, packageNames })));
 
     // Store list in config
-    const updateConfigRes = await prompts({
-      type: 'confirm',
-      name: 'value',
-      message: c.cyanBright('Do you want to update your project configuration with this list of packages ?'),
-      description: 'Update your local project files with the list of installed packages for deployment automation',
-    });
-    if (updateConfigRes.value === true) {
-      await managePackageConfig(installedPackages, installedPackages, true);
+    if (isCI || agentMode) {
+      const packagesFlag = flags.packages as string | undefined;
+      const updateExistingConfig = flags['update-existing-config'] === true;
+      const updateAllConfig = flags['update-all-config'] === true;
+      if (packagesFlag) {
+        // Filter to only the specified packages
+        const filterValues = packagesFlag.split(',').map((v: string) => v.trim().toLowerCase());
+        const filteredPackages = installedPackages.filter((pkg: any) =>
+          filterValues.includes((pkg.SubscriberPackageName || '').toLowerCase()) ||
+          filterValues.includes((pkg.SubscriberPackageId || '').toLowerCase())
+        );
+        if (filteredPackages.length > 0) {
+          await managePackageConfig(filteredPackages, filteredPackages, true);
+        } else {
+          uxLog("warning", this, c.yellow(`No installed packages matched the --packages filter: ${packagesFlag}`));
+        }
+      } else if (updateExistingConfig) {
+        // Filter to only packages already in the project config
+        const config = await getConfig('project');
+        const projectPackageIds = (config.installedPackages || []).map((p: any) => p.SubscriberPackageId);
+        const existingPackages = installedPackages.filter((pkg: any) =>
+          projectPackageIds.includes(pkg.SubscriberPackageId)
+        );
+        if (existingPackages.length > 0) {
+          await managePackageConfig(existingPackages, existingPackages, true);
+        } else {
+          uxLog("warning", this, c.yellow('No installed packages match existing project config entries.'));
+        }
+      } else if (updateAllConfig) {
+        await managePackageConfig(installedPackages, installedPackages, true);
+      } else {
+        uxLog("log", this, c.grey('Agent/CI mode: skipping config update (use --packages, --update-existing-config, or --update-all-config to update).'));
+      }
+    } else {
+      const updateConfigRes = await prompts({
+        type: 'confirm',
+        name: 'value',
+        message: c.cyanBright(t('doYouWantToUpdateYourProject')),
+        description: t('updateLocalProjectFilesWithInstalledPackages'),
+      });
+      if (updateConfigRes.value === true) {
+        await managePackageConfig(installedPackages, installedPackages, true);
+      }
     }
 
     WebSocketClient.sendRefreshPipelineMessage();
-    const message = `Successfully retrieved installed packages configuration`;
+    const message = t('successfullyRetrievedInstalledPackagesConfig');
     uxLog("success", this, c.green(message));
     return { orgId: flags['target-org'].getOrgId(), outputString: message };
   }

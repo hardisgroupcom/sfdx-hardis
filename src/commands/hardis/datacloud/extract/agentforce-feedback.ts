@@ -21,6 +21,7 @@ import {
   resolveExcludedConversationIds,
   stringValue,
 } from "../../../../common/utils/agentforceQueryUtils.js";
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -59,10 +60,22 @@ The command's technical implementation involves:
 - **Notification Integration:** Uses \`NotifProvider\` to broadcast the feedback summary and the generated report file to configured channels (Slack, MS Teams, etc.).
 - **Exclusion Filters:** Supports excluding specific conversations or sessions via environment variables \`AGENTFORCE_FEEDBACK_EXCLUDED_CONV_IDS\` and \`AGENTFORCE_EXCLUDED_SESSION_IDS\` (comma-separated IDs).
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:datacloud:extract:agentforce-feedback --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
     '$ sf hardis:datacloud:extract:agentforce-feedback',
+    '$ sf hardis:datacloud:extract:agentforce-feedback --agent',
     '$ sf hardis:datacloud:extract:agentforce-feedback --target-org myorg@example.com',
     '$ sf hardis:datacloud:extract:agentforce-feedback --outputfile ./reports/agentforce-feedback.csv'
   ];
@@ -73,6 +86,10 @@ The command's technical implementation involves:
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -125,12 +142,12 @@ The command's technical implementation involves:
 
     this.queryString = buildMainQuery(dateFilterOptions).trim();
 
-    uxLog("action", this, c.cyan("Querying Feedbacks table..."));
+    uxLog("action", this, c.cyan(t('queryingFeedbacksTable')));
     const rawResult = await dataCloudSqlQuery(this.queryString, conn, {});
     const sessionIds = extractSessionIds(rawResult.records);
-    uxLog("action", this, c.cyan("Fetching full conversations transcripts..."));
+    uxLog("action", this, c.cyan(t('fetchingFullConversationsTranscripts')));
     const transcriptsBySession = await fetchConversationTranscripts(sessionIds, conn, { chunkSize: 25 });
-    uxLog("action", this, c.cyan("Aggregating and filtering data..."))
+    uxLog("action", this, c.cyan(t('aggregatingAndFilteringData')))
     const exportRecords = buildAgentforceFeedbackRecords(rawResult.records, {
       conversationLinkDomain,
       timeFilterDays,
@@ -363,7 +380,7 @@ function computeFeedbackStats(records: AgentforceCsvRecord[]): FeedbackStats {
 }
 
 function buildNotificationText(stats: FeedbackStats, filters: AgentforceQueryFilters): string {
-  const lines = [`Agentforce feedback summary: ${stats.goodCount} GOOD / ${stats.badCount} BAD (total ${stats.totalCount}).`];
+  const lines = [`Agentforce feedback summary: **${stats.goodCount}** GOOD / **${stats.badCount}** BAD (total **${stats.totalCount}**).`];
   const windowDescription = describeFeedbackDateRange(filters);
   if (windowDescription) {
     lines.push(windowDescription);

@@ -7,6 +7,7 @@ import { PROMPT_VARIABLES, PromptVariable } from "./promptTemplates/variablesInd
 import { uxLog } from "../utils/index.js";
 
 export type PromptTemplate =
+  "PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS" |
   "PROMPT_SOLVE_DEPLOYMENT_ERROR" |
   "PROMPT_DESCRIBE_FLOW" |
   "PROMPT_DESCRIBE_FLOW_DIFF" |
@@ -24,7 +25,10 @@ export type PromptTemplate =
   "PROMPT_DESCRIBE_LWC" |
   "PROMPT_DESCRIBE_AUTORESPONSE_RULES" |
   "PROMPT_DESCRIBE_ESCALATION_RULES" |
-  "PROMPT_DESCRIBE_WORKFLOW_RULE";
+  "PROMPT_DESCRIBE_WORKFLOW_RULE" |
+  "PROMPT_MONITORING_SUMMARY" |
+  "PROMPT_MONITORING_PPTX_REPORT" |
+  "PROMPT_RELEASE_SUMMARY";
 
 // Loads a template, allowing override from local file, with caching
 const promptTemplateCache: Record<string, PromptTemplateDefinition> = {};
@@ -39,9 +43,11 @@ function getPromptTemplate(template: PromptTemplate): PromptTemplateDefinition {
     throw new Error(`Unknown prompt template: ${template}`);
   }
 
-  // Check for local override (Text file)
-  const localPath = path.resolve(process.cwd(), "config", "prompt-templates", `${template}.txt`);
-  if (fs.existsSync(localPath)) {
+  // Check for local override (.md preferred, .txt for backward compatibility)
+  const localPathMd = path.resolve(process.cwd(), "config", "prompt-templates", `${template}.md`);
+  const localPathTxt = path.resolve(process.cwd(), "config", "prompt-templates", `${template}.txt`);
+  const localPath = fs.existsSync(localPathMd) ? localPathMd : fs.existsSync(localPathTxt) ? localPathTxt : null;
+  if (localPath) {
     try {
       const localTemplate = fs.readFileSync(localPath, "utf-8");
       templateData.text = {
@@ -71,9 +77,11 @@ async function getPromptVariable(variable: PromptVariable): Promise<string> {
     throw new Error(`Unknown prompt variable: ${variable}`);
   }
 
-  // Check for local override (Text file)
-  const localPath = path.resolve(process.cwd(), "config", "prompt-templates", `${variable}.txt`);
-  if (fs.existsSync(localPath)) {
+  // Check for local override (.md preferred, .txt for backward compatibility)
+  const localPathMd = path.resolve(process.cwd(), "config", "prompt-templates", `${variable}.md`);
+  const localPathTxt = path.resolve(process.cwd(), "config", "prompt-templates", `${variable}.txt`);
+  const localPath = fs.existsSync(localPathMd) ? localPathMd : fs.existsSync(localPathTxt) ? localPathTxt : null;
+  if (localPath) {
     try {
       const localVariable = fs.readFileSync(localPath, "utf-8");
       uxLog("log", this, `Loaded local prompt variable for ${variable} from ${localPath}`);

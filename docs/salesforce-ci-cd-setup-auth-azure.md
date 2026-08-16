@@ -36,3 +36,8 @@ Impacted YAML files if present in your repo:
 - `azure-pipelines-checks.yml`
 - `azure-pipelines-deployment.yml`
 - `azure-pipelines.yml`
+
+## Auto-fix branches
+
+Default CI templates skip steps that run `sf hardis` commands when the current branch starts with `auto-fix/`.
+This prevents recursive or redundant deploy/check executions on auto-generated fix branches.

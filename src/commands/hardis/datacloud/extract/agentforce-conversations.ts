@@ -24,6 +24,7 @@ import {
   sanitizePlaceholderValue,
   stringValue,
 } from "../../../../common/utils/agentforceQueryUtils.js";
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -64,16 +65,32 @@ The command's technical implementation involves:
 - **File Output:** Uses \`generateCsvFile\` to output the processed data into CSV and XLSX formats with custom column widths and formatting.
 - **Exclusion Filters:** Supports excluding specific conversations or sessions via environment variables \`AGENTFORCE_FEEDBACK_EXCLUDED_CONV_IDS\` and \`AGENTFORCE_EXCLUDED_SESSION_IDS\` (comma-separated IDs).
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:datacloud:extract:agentforce-conversations --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
     '$ sf hardis:datacloud:extract:agentforce-conversations',
+    '$ sf hardis:datacloud:extract:agentforce-conversations --agent',
   ];
 
   public static flags: any = {
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -120,15 +137,15 @@ The command's technical implementation involves:
     });
     this.queryString = buildConversationQuery(dateFilterOptions).trim();
 
-    uxLog("action", this, c.cyan("Querying Agentforce conversations..."));
+    uxLog("action", this, c.cyan(t('queryingAgentforceConversations')));
     const rawResult = await dataCloudSqlQuery(this.queryString, conn, {});
     const sessionIds = extractSessionIds(rawResult.records, { sanitizer: sanitizePlaceholderValue });
-    uxLog("action", this, c.cyan("Fetching conversation transcripts..."));
+    uxLog("action", this, c.cyan(t('fetchingConversationTranscripts')));
     const transcriptsBySession = await fetchConversationTranscripts(sessionIds, conn, {
       chunkSize: 50,
       sanitizeSessionId: sanitizePlaceholderValue,
     });
-    uxLog("action", this, c.cyan("Building export records..."));
+    uxLog("action", this, c.cyan(t('buildingExportRecords')));
     const exportRecords = buildConversationRecords(rawResult.records, {
       conversationLinkDomain,
       transcriptsBySession,
@@ -405,7 +422,7 @@ function computeConversationStats(records: ConversationCsvRecord[]): Conversatio
 
 function buildConversationNotificationText(stats: ConversationStats, filters: AgentforceQueryFilters): string {
   const lines = [
-    `Agentforce conversations exported: ${stats.totalCount} (with feedback: ${stats.withFeedback}, GOOD: ${stats.feedbackGood}, BAD: ${stats.feedbackBad}).`,
+    `Agentforce conversations exported: **${stats.totalCount}** (with feedback: **${stats.withFeedback}**, GOOD: **${stats.feedbackGood}**, BAD: **${stats.feedbackBad}**).`,
   ];
   if (filters.dateFrom && filters.dateTo) {
     lines.push(`Window: ${filters.dateFrom} → ${filters.dateTo}`);

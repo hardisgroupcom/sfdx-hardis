@@ -7,6 +7,7 @@ import { getPoolStorage, setPoolStorage } from '../../../../common/utils/poolUti
 import { getConfig } from '../../../../config/index.js';
 import { execCommand, uxLog } from '../../../../common/utils/index.js';
 import { authenticateWithSfdxUrlStore } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -40,13 +41,29 @@ The command's technical implementation involves:
 - **Scratch Org Deletion:** It iterates through each scratch org in the retrieved list. For each org, it authenticates to it using \`authenticateWithSfdxUrlStore\` and then executes \`sf org delete scratch\` via \`execCommand\`.
 - **Logging:** Provides clear messages about the deletion process and the status of each scratch org.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:pool:reset --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:scratch:pool:refresh'];
+  public static examples = ['$ sf hardis:scratch:pool:refresh',
+    '$ sf hardis:scratch:pool:refresh --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -77,14 +94,14 @@ The command's technical implementation involves:
       uxLog(
         "warning",
         this,
-        c.yellow('Configuration file must contain a poolConfig property') +
+        c.yellow(t('configFileMustContainPoolConfigProperty')) +
         '\n' +
         c.grey(JSON.stringify(config, null, 2))
       );
       return { outputString: 'Configuration file must contain a poolConfig property' };
     }
-    uxLog("action", this, c.cyan(`Reseting scratch org pool on org ${c.green(flags['target-dev-hub'].getUsername())}...`));
-    uxLog("log", this, c.grey('Pool config: ' + JSON.stringify(config.poolConfig)));
+    uxLog("action", this, c.cyan(t('resetingScratchOrgPoolOnOrg', { flags: c.green(flags['target-dev-hub'].getUsername()) })));
+    uxLog("log", this, c.grey(t('poolConfig') + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
     const poolStorage = await getPoolStorage({
@@ -112,8 +129,7 @@ The command's technical implementation involves:
         "action",
         this,
         c.cyan(
-          `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result?.instanceUrl
-          } has been deleted`
+          t('scratchOrgHasBeenDeleted', { username: c.green(scratchOrgToDelete.scratchOrgUsername), instanceUrl: scratchOrgToDelete?.authFileJson?.result?.instanceUrl })
         )
       );
     }

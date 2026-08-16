@@ -28,22 +28,38 @@ The command's technical implementation involves:
 - **Data Structuring:** Organizes the results into a JavaScript object where keys are duplicate file names and values are arrays of their full paths.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:audit:duplicatefiles --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   |         Default         | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-----------------------:|:--------:|:-------:|
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |                         |          |         |
-| flags-dir    | option  | undefined                                                     |                         |          |         |
-| json         | boolean | Format output as json.                                        |                         |          |         |
-| path<br/>-p  | option  | Root path to check                                            | C:\git\pro\sfdx-hardis2 |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |                         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                         |          |         |
+| Name         |  Type   | Description                                                   |      Default       | Required | Options |
+|:-------------|:-------:|:--------------------------------------------------------------|:------------------:|:--------:|:-------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation         |                    |          |         |
+| debug<br/>-d | boolean | Activate debug mode (more logs)                               |                    |          |         |
+| flags-dir    | option  | undefined                                                     |                    |          |         |
+| json         | boolean | Format output as json.                                        |                    |          |         |
+| path<br/>-p  | option  | Root path to check                                            | C:\git\sfdx-hardis |          |         |
+| skipauth     | boolean | Skip authentication check when a default username is required |                    |          |         |
+| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                    |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:project:audit:duplicatefiles
+```
+
+```shell
+$ sf hardis:project:audit:duplicatefiles --agent
 ```
 
 

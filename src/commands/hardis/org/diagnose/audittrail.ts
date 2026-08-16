@@ -12,6 +12,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -121,6 +122,8 @@ You can define additional users to exclude in .sfdx-hardis.yml **monitoringExclu
 
 You can also add more sections / actions considered as not suspect using property **monitoringAllowedSectionsActions**
 
+If a user is expected to perform some specific actions (for example an integration user whose portal user provisioning automatically creates account roles), you can allow those actions for that user only using property **monitoringAllowedUsersActions**: unlike **monitoringExcludeUsernames**, any other action performed by the same user is still flagged.
+
 Example:
 
 \`\`\`yaml
@@ -132,6 +135,10 @@ monitoringExcludeUsernames:
 monitoringAllowedSectionsActions:
   "Some section": [] // Will ignore all actions from such section
   "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
+
+monitoringAllowedUsersActions:
+  "provisioning-user@cloudity.com": ["createdrole"] // Will ignore only createdrole from provisioning-user@cloudity.com. Any other action from this user will still be considered as suspect.
+  "another-integration@cloudity.com": [] // Will ignore all actions from this user (same as monitoringExcludeUsernames, but the records remain visible in the report as not suspect)
 \`\`\`
 
 ## Excel output example
@@ -143,13 +150,24 @@ monitoringAllowedSectionsActions:
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-local.jpg)
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-suspect-audit-trail/) and can output Grafana, Slack and MsTeams Notifications.
-`;
+
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:audittrail --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the audit trail report is generated without interactive prompts, using the default number of days.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:audittrail',
     '$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com',
     '$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com',
     '$ sf hardis:org:diagnose:audittrail --lastndays 5',
+    '$ sf hardis:org:diagnose:audittrail --agent',
   ];
 
   public static flags: any = {
@@ -176,6 +194,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -184,7 +206,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected excludeUsers: any[] = [];
   protected lastNdays: number | undefined;
   protected allowedSectionsActions = {};
+  protected allowedUsersActions = {};
   protected debugMode = false;
+  protected agentMode = false;
 
   protected suspectRecords: any[] = [];
   protected suspectUsers: any[] = [];
@@ -201,6 +225,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DiagnoseAuditTrail);
+    this.agentMode = flags.agent === true;
     this.debugMode = flags.debug || false;
     this.excludeUsers = flags.excludeusers ? flags.excludeusers.split(',') : [];
     this.lastNdays = flags.lastndays;
@@ -218,8 +243,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       this.allowedSectionsActions = Object.assign(this.allowedSectionsActions, config.monitoringAllowedSectionsActions);
     }
 
+    // Append user-specific actions considered as not suspect
+    if (config.monitoringAllowedUsersActions) {
+      this.allowedUsersActions = Object.assign(this.allowedUsersActions, config.monitoringAllowedUsersActions);
+    }
+
     const conn = flags['target-org'].getConnection();
-    uxLog("action", this, c.cyan(`Extracting Setup Audit Trail and detect suspect actions in ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(t('extractingSetupAuditTrailAndDetectSuspect', { conn: conn.instanceUrl })));
 
     // Manage exclude users list
     const whereConstraint = this.manageExcludedUsers(config);
@@ -230,9 +260,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     await this.handleCustomSettingsAudit(conn);
 
     // Summarize
-    uxLog("action", this, c.cyan(`Results summary:`));
+    uxLog("action", this, c.cyan(t('resultsSummary')));
     let statusCode = 0;
-    let msg = 'No suspect Setup Audit Trail records has been found';
+    let msg = t('noSuspectAuditTrailFound');
     const suspectActionsWithCount: any[] = [];
     if (this.suspectRecords.length > 0) {
       statusCode = 1;
@@ -248,7 +278,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       }
       sortCrossPlatform(suspectActionsWithCount);
 
-      uxLog("other", this, 'Suspect records list');
+      uxLog("other", this, t('suspectRecordsList'));
       uxLog("other", this, JSON.stringify(this.suspectRecords, null, 2));
 
       let logMsg = '';
@@ -279,16 +309,16 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     let notifAttachments: any[] = [];
     if (this.suspectRecords.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.suspectRecords.length} suspect Setup Audit Trail records have been found in ${orgMarkdown}`;
+      notifText = `**${this.suspectRecords.length}** suspect Setup Audit Trail records have been found in ${orgMarkdown}`;
       let notifDetailText = ``;
-      notifDetailText += '*Related users*:\n';
+      notifDetailText += '**Related users**:\n';
       for (const user of this.suspectUsers) {
-        notifDetailText += `• ${user + " (" + this.suspectUsersAndActions[user].actions.join(', ') + ")"}\n`;
+        notifDetailText += `- ${user + " (" + this.suspectUsersAndActions[user].actions.join(', ') + ")"}\n`;
       }
       notifDetailText += '\n';
-      notifDetailText += '*Related actions*:\n';
+      notifDetailText += '**Related actions**:\n';
       for (const action of suspectActionsWithCount) {
-        notifDetailText += `• ${action}\n`;
+        notifDetailText += `- ${action}\n`;
       }
       notifAttachments = [{ text: notifDetailText }];
     }
@@ -333,6 +363,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       record.Suspect = false;
       record.severity = 'log';
       record.severityIcon = this.severityIconLog;
+      // Actions expected from a specific user (ex: integration user whose
+      // portal user provisioning automatically creates account roles)
+      const allowedUserActions = this.allowedUsersActions[record['CreatedBy.Username'] || ''];
+      if (allowedUserActions && (allowedUserActions.length === 0 || allowedUserActions.includes(record.Action))) {
+        return record;
+      }
       // Unallowed actions
       if ((
         this.allowedSectionsActions[section] &&
@@ -372,12 +408,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       return;
     }
     // Add custom settings tracking
-    uxLog("action", this, c.cyan(`List available custom settings...`));
-    uxLog("log", this, c.grey(`(Define SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true if you don't want them)`));
+    uxLog("action", this, c.cyan(t('listAvailableCustomSettings')));
+    uxLog("log", this, c.grey(t('defineSkipCustomSettingsEnvVar')));
     const customSettingsQuery = `SELECT QualifiedApiName, Label FROM EntityDefinition 
                            WHERE IsCustomSetting = true`;
     const customSettingsResult = await soqlQuery(customSettingsQuery, conn);
-    uxLog("action", this, c.cyan(`Analyze updates in ${customSettingsResult.records.length} Custom Settings...`));
+    uxLog("action", this, c.cyan(t('analyzeUpdatesInCustomSettings', { customSettingsResult: customSettingsResult.records.length })));
 
     let whereConstraintCustomSetting = `WHERE LastModifiedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND LastModifiedBy.Username != NULL `;
     if (this.excludeUsers.length > 0) {
@@ -396,6 +432,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
         if (result.records.length > 0) {
           for (const record of result.records) {
+            // Custom Setting updates expected from a specific user
+            const allowedUserActions = this.allowedUsersActions[record['LastModifiedBy']?.['Username'] || ''];
+            if (allowedUserActions && (allowedUserActions.length === 0 || allowedUserActions.includes(`customSetting${cs.QualifiedApiName}`))) {
+              continue;
+            }
             customSettingModifications.push({
               CreatedDate: record.LastModifiedDate,
               'CreatedBy.Name': record['LastModifiedBy']?.['Name'],
@@ -415,13 +456,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           }
         }
       } catch (error) {
-        uxLog("error", this, c.red(`Error querying Custom Setting ${cs.Label}: ${error}`));
+        uxLog("error", this, c.red(t('errorQueryingCustomSetting', { cs: cs.Label, error })));
         continue;
       }
     }
     // Add custom setting updates to audit trail records
     if (customSettingModifications.length > 0) {
-      uxLog("warning", this, c.yellow(`Found ${customSettingModifications.length} Custom Setting updates`));
+      uxLog("warning", this, c.yellow(t('foundCustomSettingUpdates', { customSettingModifications: customSettingModifications.length })));
       this.auditTrailRecords.push(...customSettingModifications);
 
       // Add to suspect records
@@ -530,13 +571,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async manageAuditTimeframe() {
-    if (!isCI && !this.lastNdays) {
+    if (!isCI && !this.agentMode && !this.lastNdays) {
       const lastNdaysResponse = await prompts({
         type: 'select',
         name: 'lastndays',
-        message: 'Please select the number of days in the past from today you want to detect suspiscious setup activities',
-        description: 'Choose the timeframe for analyzing audit trail records to detect suspicious administrative activities',
-        placeholder: 'Select number of days',
+        message: t('pleaseSelectTheNumberOfDaysIn'),
+        description: t('chooseTimeframeForAnalyzingAuditTrailRecords'),
+        placeholder: t('selectNumberOfDays'),
         choices: [
           { title: `1`, value: 1 },
           { title: `2`, value: 2 },
@@ -571,13 +612,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     if (this.excludeUsers.length > 0) {
       whereConstraint += `AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
     }
-    uxLog("log", this, c.grey(`Excluded users are ${this.excludeUsers.join(',') || 'None'}`));
+    uxLog("log", this, c.grey(t('excludedUsersAre', { excludeUsers: this.excludeUsers.join(',') || 'None' })));
     uxLog(
       "log",
       this,
-      c.grey(
-        `Use argument --excludeusers or .sfdx-hardis.yml property monitoringExcludeUsernames to exclude more users`
-      )
+      c.grey(t('useExcludeUsersArgument'))
     );
     return whereConstraint;
   }

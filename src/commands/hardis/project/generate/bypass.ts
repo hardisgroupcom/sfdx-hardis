@@ -9,7 +9,7 @@ import {
   soqlQuery,
   soqlQueryTooling,
 } from "../../../../common/utils/apiUtils.js";
-import { execCommand, uxLog, uxLogTable } from "../../../../common/utils/index.js";
+import { execCommand, isCI, uxLog, uxLogTable } from "../../../../common/utils/index.js";
 import { prompts } from "../../../../common/utils/prompts.js";
 import c from "chalk";
 import path from "path";
@@ -27,6 +27,7 @@ import { MetadataUtils } from "../../../../common/metadata-utils/index.js";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
 import { WebSocketClient } from "../../../../common/websocketClient.js";
 import { listOrgSObjectsFiltered } from "../../../../common/utils/orgUtils.js";
+import { t } from '../../../../common/utils/i18n.js';
 
 // Constants
 const ALLOWED_AUTOMATIONS = ["Flow", "Trigger", "VR"]; // TODO: type and remove hardcoded
@@ -101,6 +102,10 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
     skipauth: Flags.boolean({
       description:
         "Skip authentication check when a default username is required",
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     "skip-credits": Flags.boolean({
       aliases: ["skipCredits"],
@@ -193,6 +198,21 @@ The command's technical implementation involves:
   - Continues processing remaining items even when individual items fail (unless critical errors occur).
 - **Reporting:** Generates timestamped CSV reports showing outcomes for both metadata generation and bypass implementation operations.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:generate:bypass --agent --sObjects Account,Contact --automations Flow,Trigger,VR --metadata-source org
+\`\`\`
+
+In agent mode:
+
+- \`--objects\` (sObjects) and \`--automations\` flags are required; the command will error if not provided
+- \`--metadata-source\` defaults to \`local\` if not specified
+- All interactive prompts are skipped
+- \`--apply-to-vrs\`, \`--apply-to-triggers\`, \`--apply-to-flows\` default to false if not explicitly set
 `;
 
   public static examples = [
@@ -204,12 +224,14 @@ The command's technical implementation involves:
     "$ sf hardis:project:generate:bypass --apply-to-vrs",
     "$ sf hardis:project:generate:bypass --apply-to-triggers",
     "$ sf hardis:project:generate:bypass --metadata-source org",
+    "$ sf hardis:project:generate:bypass --agent --sObjects Account,Contact --automations Flow,Trigger,VR",
   ];
 
   // Main run method
   public async run(): Promise<AnyJson> {
     // Collect options
     const { flags } = await this.parse(HardisProjectGenerateBypass);
+    const agentMode = flags.agent === true;
     const connection = flags["target-org"].getConnection();
     if (
       flags["metadata-source"] !== undefined &&
@@ -237,7 +259,7 @@ The command's technical implementation involves:
         Object.entries(availableSObjects).filter(([key]) => {
           const res = sObjectsFromFlag.includes(key);
           if (!res) {
-            uxLog("warning", this, c.yellow(`Warning: sObject "${key}" is not available or not customizable. Skipping.`));
+            uxLog("warning", this, c.yellow(t('warningSobjectIsNotAvailableOrNot', { key })));
           }
           return res;
         })
@@ -261,8 +283,8 @@ The command's technical implementation involves:
       promptsNeeded.push({
         type: "multiselect",
         name: "sobjects",
-        message: "Select sObjects for bypass",
-        description: "Choose which sObjects should have automation bypass functionality",
+        message: t('selectSobjectsForBypass'),
+        description: t('chooseWhichSobjectsForBypass'),
         choices: Object.entries(availableSObjects).map(([devName, label]) => ({
           title: label,
           value: devName,
@@ -274,12 +296,12 @@ The command's technical implementation involves:
       promptsNeeded.push({
         type: "multiselect",
         name: "automations",
-        message: "Select which automations to bypass",
-        description: "This will generate bypass custom permissions and permission sets for the selected automation types and sObjects",
+        message: t('selectWhichAutomationsToBypass'),
+        description: t('generateBypassCustomPermissionsAndPermSets'),
         choices: [
-          { title: "Flows", value: "Flow" },
-          { title: "Triggers", value: "Trigger" },
-          { title: "Validation Rules", value: "VR" },
+          { title: t('bypassAutomationChoiceFlows'), value: "Flow" },
+          { title: t('bypassAutomationChoiceTriggers'), value: "Trigger" },
+          { title: t('bypassAutomationChoiceValidationRules'), value: "VR" },
         ],
       });
     }
@@ -288,12 +310,12 @@ The command's technical implementation involves:
       promptsNeeded.push({
         type: "multiselect",
         name: "applyTo",
-        message: "Where do you wish to have the bypass applied?",
-        description: "Choose which automation types should have the bypass logic applied automatically. The metadata files will be modified accordingly.",
+        message: t('whereDoYouWishToHaveThe'),
+        description: t('chooseWhichAutomationTypesForBypass'),
         choices: [
-          { title: "Flows (as a decision node)", value: "applyToFlows" },
-          { title: "Triggers (within the .trigger file)", value: "applyToTriggers" },
-          { title: "Validation Rules (encapsulating the existing validation logic)", value: "applyToVrs" },
+          { title: t('bypassApplyChoiceFlows'), value: "applyToFlows" },
+          { title: t('bypassApplyChoiceTriggers'), value: "applyToTriggers" },
+          { title: t('bypassApplyChoiceVrs'), value: "applyToVrs" },
         ],
       });
     }
@@ -302,17 +324,17 @@ The command's technical implementation involves:
       promptsNeeded.push({
         type: "select",
         name: "elementSource",
-        message: "Where do you want to get the elements to apply bypass to?",
-        description: "Choose the source for retrieving automation elements",
-        placeholder: "Select source",
+        message: t('whereDoYouWantToGetThe'),
+        description: t('chooseSourceForRetrievingAutomationElements'),
+        placeholder: t('selectSource'),
         choices: [
-          { title: "Retrieve from org (recommended)", value: "org" },
-          { title: "Use local elements in the project", value: "local" },
+          { title: t('bypassSourceChoiceOrg'), value: "org" },
+          { title: t('bypassSourceChoiceLocal'), value: "local" },
         ],
       });
     }
 
-    if (promptsNeeded.length) {
+    if (promptsNeeded.length && !isCI && !agentMode) {
       const promptResults = await prompts(promptsNeeded);
       if (promptResults.sobjects) {
         targetSObjects = Object.fromEntries(
@@ -340,6 +362,22 @@ The command's technical implementation involves:
       }
     }
 
+    // In agent mode, apply defaults for unset values
+    if (agentMode) {
+      if (this.retrieveFromOrg == null) {
+        this.retrieveFromOrg = false;
+      }
+      if (applyToTriggers == null) {
+        applyToTriggers = false;
+      }
+      if (applyToVrs == null) {
+        applyToVrs = false;
+      }
+      if (applyToFlows == null) {
+        applyToFlows = false;
+      }
+    }
+
     // Validate selections
     if (!Object.keys(targetSObjects).length) {
       throw new SfError(c.red("ERROR: You must select at least one sObject."));
@@ -353,28 +391,28 @@ The command's technical implementation involves:
     this.generateFiles(targetSObjects, targetAutomations);
 
     if (applyToVrs) {
-      uxLog("action", this, c.cyan(`Implementing the bypass logic to Validation Rules...`));
+      uxLog("action", this, c.cyan(t('implementingBypassLogicToValidationRules')));
       await this.applyBypassToValidationRules(connection, targetSObjects);
     }
 
     if (applyToTriggers) {
-      uxLog("action", this, c.cyan(`Implementing the bypass logic to Triggers...`));
+      uxLog("action", this, c.cyan(t('implementingBypassLogicToTriggers')));
       await this.applyBypassToTriggers(connection, targetSObjects);
     }
 
     if (applyToFlows) {
-      uxLog("action", this, c.cyan(`Implementing the bypass logic to Flows...`));
+      uxLog("action", this, c.cyan(t('implementingBypassLogicToFlows')));
       await this.applyBypassToFlows(connection, targetSObjects);
     }
 
-    uxLog("action", this, c.cyan(`Bypass generation and implementation is completed.`));
+    uxLog("action", this, c.cyan(t('bypassGenerationAndImplementationCompleted')));
 
     if (applyToVrs || applyToTriggers || applyToFlows) {
-      uxLog("action", this, c.cyan(`Bypass implementation report:`));
+      uxLog("action", this, c.cyan(t('bypassImplementationReport')));
       uxLogTable(this, this.reports.implementation);
     }
 
-    uxLog("action", this, c.cyan(`Generating report files...`));
+    uxLog("action", this, c.cyan(t('generatingReportFiles')));
     await this.generateReports();
 
     return {
@@ -402,7 +440,7 @@ The command's technical implementation involves:
   public async queryTriggers(connection: Connection) {
     const query = `SELECT Id, Name, Status, IsValid, Body, BodyCrc, TableEnumOrId, ManageableState From ApexTrigger WHERE ManageableState != 'installed'`;
     const results = await soqlQueryTooling(query, connection);
-    uxLog("log", this, c.grey(`Found ${results.records.length} Triggers.`));
+    uxLog("log", this, c.grey(t('foundTriggers', { results: results.records.length })));
     return results;
   }
 
@@ -425,14 +463,14 @@ The command's technical implementation involves:
         .map((s) => `'${s}'`)
         .join(", ")})`;
     const results = await soqlQueryTooling(query, connection);
-    uxLog("log", this, c.grey(`Found ${results.records.length} Validation Rules.`));
+    uxLog("log", this, c.grey(t('foundValidationRules', { results: results.records.length })));
     return results;
   }
 
   public async queryFlows(connection: Connection) {
     const query = `SELECT Id, ApiName, Label, TriggerObjectOrEvent.QualifiedApiName FROM FlowDefinitionView WHERE ManageableState = 'unmanaged'`;
     const results = await soqlQuery(query, connection);
-    uxLog("log", this, c.grey(`Found ${results.records.length} Flows.`));
+    uxLog("log", this, c.grey(t('foundFlows', { results: results.records.length })));
     return results;
   }
 
@@ -523,7 +561,7 @@ The command's technical implementation involves:
       baseReportItem.permissionSetFilePath = permissionSetFilePath;
       this.reports.metadataGeneration.push(baseReportItem);
     } catch (error) {
-      uxLog("error", this, c.red(`Error generating XML files for ${sObject} and ${automation}: ${error}`));
+      uxLog("error", this, c.red(t('errorGeneratingXmlFilesForAnd', { sObject, automation, error })));
       this.reports.metadataGeneration.push(baseReportItem);
     }
   }
@@ -531,7 +569,7 @@ The command's technical implementation involves:
   generateFiles(targetSObjects: { [key: string]: string }, targetAutomations: string[]): void {
     let counter = 0;
     const totalSteps = Object.keys(targetSObjects).length * targetAutomations.length;
-    WebSocketClient.sendProgressStartMessage("Generating bypass metadata files...", totalSteps);
+    WebSocketClient.sendProgressStartMessage(t('generatingBypassMetadataFiles'), totalSteps);
     for (const developerName of Object.keys(targetSObjects)) {
       counter++;
       WebSocketClient.sendProgressStepMessage(counter, totalSteps);
@@ -570,7 +608,7 @@ The command's technical implementation involves:
         });
         results.push(result);
       } catch (error) {
-        uxLog("error", this, c.red(`Error retrieving ${metadataType}: ${error}`));
+        uxLog("error", this, c.red(t('errorRetrieving', { metadataType, error })));
       }
     }
     return results;
@@ -649,9 +687,9 @@ The command's technical implementation involves:
   public async applyBypassToValidationRules(connection: Connection, sObjects: { [key: string]: string }): Promise<void> {
     const validationRuleRecords = await this.queryValidationRules(connection, sObjects);
     if (!validationRuleRecords || validationRuleRecords.records.length === 0) {
-      uxLog("log", this, c.grey("No validation rules found for the specified sObjects."));
+      uxLog("log", this, c.grey(t('noValidationRulesFoundForTheSpecified')));
     }
-    uxLog("log", this, c.grey(`Processing ${validationRuleRecords.records.length} Validation Rules.`));
+    uxLog("log", this, c.grey(t('processingValidationRules', { validationRuleRecords: validationRuleRecords.records.length })));
     const eligibleMetadataFilePaths: any = [];
 
     if (this.retrieveFromOrg) {
@@ -675,7 +713,7 @@ The command's technical implementation involves:
             eligibleMetadataFilePaths.push({ filePath, sObject, name });
           }
         } else {
-          uxLog("log", this, c.grey("No Validation Rule files found in the retrieved metadata chunk."));
+          uxLog("log", this, c.grey(t('noValidationRuleFilesFoundInThe')));
         }
       }
     } else {
@@ -794,7 +832,7 @@ The command's technical implementation involves:
     const triggerResults = await this.queryTriggers(connection);
     const filteredTriggersResults = this.filterTriggerResults(triggerResults, sObjects);
     if (!filteredTriggersResults || filteredTriggersResults?.length === 0) {
-      uxLog("log", this, c.grey("No triggers found for the specified sObjects."));
+      uxLog("log", this, c.grey(t('noTriggersFoundForTheSpecifiedSobjects')));
     }
     const eligibleMetadataFilePaths: any = [];
     if (this.retrieveFromOrg) {
@@ -819,7 +857,7 @@ The command's technical implementation involves:
             eligibleMetadataFilePaths.push({ filePath, name });
           }
         } else {
-          uxLog("log", this, c.grey("No Trigger files found in the retrieved metadata chunk."));
+          uxLog("log", this, c.grey(t('noTriggerFilesFoundInTheRetrieved')));
         }
       }
     } else {
@@ -1013,7 +1051,7 @@ The command's technical implementation involves:
     const flowResults = await this.queryFlows(connection);
     const filteredFlowResults = this.filterFlowResults(flowResults, sObjects);
     if (!filteredFlowResults || filteredFlowResults?.length === 0) {
-      uxLog("log", this, c.grey("No flows found for the specified sObjects."));
+      uxLog("log", this, c.grey(t('noFlowsFoundForTheSpecifiedSobjects')));
     }
     const eligibleMetadataFilePaths: any = [];
     if (this.retrieveFromOrg) {
@@ -1037,7 +1075,7 @@ The command's technical implementation involves:
             eligibleMetadataFilePaths.push({ filePath, name });
           }
         } else {
-          uxLog("log", this, c.grey("No Flow files found in the retrieved metadata chunk."));
+          uxLog("log", this, c.grey(t('noFlowFilesFoundInTheRetrieved')));
         }
       }
     } else {

@@ -1,10 +1,10 @@
 import { countRegexMatches, uxLog } from "./index.js";
 import c from "chalk";
-import readFilesRecursive from "fs-readdir-recursive";
 import * as path from "path";
 import * as fs from "fs";
 import { getPullRequestScopedSfdxHardisConfig } from "./pullRequestUtils.js";
 import { CommonPullRequestInfo } from "../gitProvider/index.js";
+import { t } from './i18n.js';
 
 function findSubstringInFile(filePath: string, substring: string): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
@@ -23,14 +23,14 @@ function findSubstringInFile(filePath: string, substring: string): Promise<boole
 // Detect all test classes under the repository
 export async function getApexTestClasses(classRegexFilter: string = "", excludeSeeAllData = false) {
   const pathToBrowser = process.cwd();
-  uxLog("log", this, c.grey(`Finding all repository APEX tests in ${c.bold(pathToBrowser)}`));
+  uxLog("log", this, c.grey(t('findingAllRepositoryApexTestsIn', { pathToBrowser: c.bold(pathToBrowser) })));
 
   // Find all APEX classes
   const testClasses: any[] = [];
-  const allFiles = await readFilesRecursive(pathToBrowser)
+  const allFiles = (fs.readdirSync(pathToBrowser, { recursive: true }) as string[])
     .filter((file) => !file.includes("node_modules") && file.includes("classes") && file.endsWith(".cls"))
     .map((file) => {
-      return { fullPath: file, fileName: path.basename(file) };
+      return { fullPath: path.join(pathToBrowser, file), fileName: path.basename(file) };
     });
 
   // Detect test classes
@@ -40,7 +40,7 @@ export async function getApexTestClasses(classRegexFilter: string = "", excludeS
       const className = entry.fileName.substring(0, entry.fileName.length - 4);
       // Check if need to exclude SeeAllData=true
       if (excludeSeeAllData === true && (await findSubstringInFile(entry.fullPath, "SeeAllData=true"))) {
-        uxLog("log", this, c.grey(`Filtered class ${className} because is contains SeeAllData=true`));
+        uxLog("log", this, c.grey(t('filteredClassBecauseIsContainsSeealldataTrue', { className })));
         continue;
       }
       // Check if regex filter
@@ -50,7 +50,7 @@ export async function getApexTestClasses(classRegexFilter: string = "", excludeS
     }
   }
 
-  uxLog("log", this, c.grey(`Found APEX tests: ${c.bold(testClasses.join())}`));
+  uxLog("log", this, c.grey(t('foundApexTests', { testClasses: c.bold(testClasses.join()) })));
   return testClasses;
 }
 
@@ -68,7 +68,7 @@ export async function selectTestClassesFromPullRequests(pullRequests: CommonPull
         else if (checkTestClassesExistence && allAvailableTestClasses.includes(testClass)) {
           selectedTestClasses.add(testClass);
         } else {
-          uxLog("warning", this, c.yellow(`Test class ${testClass} from PR ${pr.idStr} is not available in the repository and will be ignored.`));
+          uxLog("warning", this, c.yellow(t('testClassFromPrIsNotAvailable', { testClass, pr: pr.idStr })));
         }
       }
     }
@@ -81,7 +81,7 @@ async function matchRegexFilter(classRegexFilter: string, className: string) {
     if ((await countRegexMatches(new RegExp(classRegexFilter), className)) > 0) {
       return true;
     }
-    uxLog("log", this, c.grey(`Filtered class ${className} because not matching RegExp ${classRegexFilter}`));
+    uxLog("log", this, c.grey(t('filteredClassBecauseNotMatchingRegexp', { className, classRegexFilter })));
     return false;
   }
   return true;

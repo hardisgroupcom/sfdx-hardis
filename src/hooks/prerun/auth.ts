@@ -25,16 +25,18 @@ const hook: Hook<'prerun'> = async (options) => {
     return;
   }
 
-  // Dynamic imports to improve performances when other CLI commands are called
-  const { authOrg } = await import('../../common/utils/authUtils.js');
-  const c = (await import('chalk')).default;
-  const { checkConfig, getConfig } = await import('../../config/index.js');
-  const {
-    elapseStart,
-    getCurrentGitBranch,
-    isCI,
-    restoreLocalSfdxInfo,
-  } = await import('../../common/utils/index.js');
+  // Dynamic imports in parallel to improve performances when other CLI commands are called
+  const [
+    { authOrg, extractTargetOrgFromArgv },
+    { default: c },
+    { checkConfig, getConfig },
+    { elapseStart, getCurrentGitBranch, isCI, restoreLocalSfdxInfo },
+  ] = await Promise.all([
+    import('../../common/utils/authUtils.js'),
+    import('chalk'),
+    import('../../config/index.js'),
+    import('../../common/utils/index.js'),
+  ]);
 
   if (commandId.startsWith('hardis')) {
     elapseStart(`${options?.Command?.id} execution time`);
@@ -65,19 +67,22 @@ const hook: Hook<'prerun'> = async (options) => {
       (options as any)?.checkAuth === true) &&
     !((options as any)?.devHub === true)
   ) {
-    const orgAlias = (options as any)?.alias
-      ? (options as any).alias
-      : process.env.ORG_ALIAS
-        ? process.env.ORG_ALIAS
-        : isCI && configInfo.scratchOrgAlias
-          ? configInfo.scratchOrgAlias
-          : isCI && (options as any)?.scratch && configInfo.sfdxAuthUrl
-            ? configInfo.sfdxAuthUrl
-            : isCI
-              ? await getCurrentGitBranch({ formatted: true })
-              : commandId === 'hardis:auth:login' && configInfo.orgAlias
-                ? configInfo.orgAlias
-                : configInfo.scratchOrgAlias || ''; // Can be '' and it's ok if we're not in scratch org context
+    const cliTargetOrg = extractTargetOrgFromArgv(options?.argv);
+    const orgAlias = cliTargetOrg
+      ? cliTargetOrg
+      : (options as any)?.alias
+        ? (options as any).alias
+        : process.env.ORG_ALIAS
+          ? process.env.ORG_ALIAS
+          : isCI && configInfo.scratchOrgAlias
+            ? configInfo.scratchOrgAlias
+            : isCI && (options as any)?.scratch && configInfo.sfdxAuthUrl
+              ? configInfo.sfdxAuthUrl
+              : isCI
+                ? await getCurrentGitBranch({ formatted: true })
+                : commandId === 'hardis:auth:login' && configInfo.orgAlias
+                  ? configInfo.orgAlias
+                  : configInfo.scratchOrgAlias || ''; // Can be '' and it's ok if we're not in scratch org context
     await authOrg(orgAlias, options);
   }
 };

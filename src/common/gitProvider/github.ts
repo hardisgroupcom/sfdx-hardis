@@ -1,10 +1,12 @@
 import * as github from "@actions/github";
 import c from "chalk";
-import { GitProviderRoot } from "./gitProviderRoot.js";
+import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GitHub } from "@actions/github/lib/utils.js";
-import { CONSTANTS } from "../../config/index.js";
+import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
+import { t } from '../utils/i18n.js';
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
 
 export class GithubProvider extends GitProviderRoot {
   private octokit: InstanceType<typeof GitHub>;
@@ -29,21 +31,122 @@ export class GithubProvider extends GitProviderRoot {
     const ctxPrNumber = github?.context?.payload?.pull_request?.number;
     const envRefFirstSegment = process.env.GITHUB_REF_NAME ? process.env.GITHUB_REF_NAME.split("/")?.[0] || "" : "";
     const envPrNumber = envRefFirstSegment ? parseInt(envRefFirstSegment, 10) : NaN;
+    const jenkinsPrNumber = isJenkins() ? parseInt(getJenkinsPrNumber() || "", 10) : NaN;
     this.prNumber =
       typeof ctxPrNumber === "number" && ctxPrNumber > 0
         ? ctxPrNumber
         : Number.isFinite(envPrNumber) && envPrNumber > 0
           ? envPrNumber
-          : null;
+          : Number.isFinite(jenkinsPrNumber) && jenkinsPrNumber > 0
+            ? jenkinsPrNumber
+            : null;
     this.runId = github?.context?.runId || process.env.GITHUB_RUN_ID || null;
+  }
+
+  // Auto-detect GitHub CI variables from token + local git remote URL
+  public static async autoDetectSettings(): Promise<void> {
+    try {
+      const remoteUrl = (await git().getConfig("remote.origin.url"))?.value || "";
+      if (!remoteUrl) {
+        uxLog("log", GithubProvider, c.grey("[GitHub] " + t("autoDetectProviderNoGitRemote", { provider: "GitHub" })));
+        return;
+      }
+      const parsed = GithubProvider.parseGithubRepoUrl(remoteUrl);
+      if (!parsed) {
+        uxLog("log", GithubProvider, c.grey("[GitHub] " + t("autoDetectProviderParseUrlFailed", { provider: "GitHub" })));
+        return;
+      }
+      if (!process.env.GITHUB_SERVER_URL) {
+        process.env.GITHUB_SERVER_URL = parsed.serverUrl;
+      }
+      if (!process.env.GITHUB_REPOSITORY_OWNER) {
+        process.env.GITHUB_REPOSITORY_OWNER = parsed.owner;
+      }
+      if (!process.env.GITHUB_REPOSITORY) {
+        process.env.GITHUB_REPOSITORY = `${parsed.owner}/${parsed.repo}`;
+      }
+      // When running on Jenkins, map Jenkins-specific variables to GitHub equivalents
+      if (isJenkins()) {
+        if (!process.env.GITHUB_REF_NAME) {
+          const branch = getJenkinsBranchName();
+          if (branch) {
+            process.env.GITHUB_REF_NAME = branch;
+          }
+        }
+        if (!process.env.GITHUB_REF) {
+          const branch = getJenkinsBranchName();
+          if (branch) {
+            process.env.GITHUB_REF = `refs/heads/${branch}`;
+          }
+        }
+        if (!process.env.GITHUB_RUN_ID) {
+          const buildNumber = getJenkinsBuildNumber();
+          if (buildNumber) {
+            process.env.GITHUB_RUN_ID = buildNumber;
+          }
+        }
+        if (!process.env.GITHUB_WORKFLOW) {
+          const jobName = getJenkinsJobName();
+          if (jobName) {
+            process.env.GITHUB_WORKFLOW = jobName;
+          }
+        }
+        uxLog("log", GithubProvider, c.grey("[GitHub] " + t("autoDetectProviderJenkinsMapping", { provider: "GitHub" })));
+      }
+      /* Only log the success summary when Jenkins is involved - on native CI providers this is just noise */
+      if (isJenkins()) {
+        uxLog("log", GithubProvider, c.grey("[GitHub] " + t("autoDetectProviderSuccess", {
+          provider: "GitHub",
+          details: `server=${process.env.GITHUB_SERVER_URL}, repo=${process.env.GITHUB_REPOSITORY}`,
+        })));
+      }
+    } catch (e) {
+      uxLog("warning", GithubProvider, c.yellow("[GitHub] " + t("autoDetectProviderFailed", { provider: "GitHub", message: (e as Error).message })));
+    }
+  }
+
+  public static parseGithubRepoUrl(remoteUrl: string): { serverUrl: string; owner: string; repo: string } | null {
+    // HTTPS: https://github.com/owner/repo.git
+    if (remoteUrl.startsWith("https://") || remoteUrl.startsWith("http://")) {
+      const url = remoteUrl.replace(/\.git$/, "").replace(/\/$/, "");
+      const cleanUrl = url.replace(/\/\/([^@/]+@)/gm, "//");
+      const match = cleanUrl.match(/^(https?:\/\/[^/]+)\/([^/]+)\/([^/]+)$/);
+      if (match) {
+        return { serverUrl: match[1], owner: match[2], repo: match[3] };
+      }
+    }
+    // SSH: git@github.com:owner/repo.git
+    if (remoteUrl.startsWith("git@")) {
+      const match = remoteUrl.match(/^git@([^:]+):([^/]+)\/([^/]+?)(?:\.git)?$/);
+      if (match) {
+        return { serverUrl: `https://${match[1]}`, owner: match[2], repo: match[3] };
+      }
+    }
+    // SSH: ssh://git@github.com/owner/repo.git
+    if (remoteUrl.startsWith("ssh://")) {
+      const match = remoteUrl.match(/^ssh:\/\/(?:[^@]+@)?([^/]+)\/([^/]+)\/([^/]+?)(?:\.git)?$/);
+      if (match) {
+        return { serverUrl: `https://${match[1]}`, owner: match[2], repo: match[3] };
+      }
+    }
+    return null;
   }
 
   public getLabel(): string {
     return "sfdx-hardis GitHub connector";
   }
+
+  public logAutoFixRemediation(step: "push" | "pr-create"): void {
+    const stepLabel = step === "push" ? "git push" : "pull request creation";
+    uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (github)`);
+    uxLog("log", this, "1) Update workflow: keep checkout credentials and grant write permissions.");
+    uxLog("log", this, "   Example: actions/checkout with persist-credentials: true, and workflow permissions contents: write, pull-requests: write.");
+    uxLog("log", this, "2) Set variable: GITHUB_TOKEN (or a PAT mapped to GITHUB_TOKEN).");
+    uxLog("log", this, "3) How to get value: use secrets.GITHUB_TOKEN with repository workflow permissions set to Read and write; or create a Fine-grained PAT with Repository contents Read/Write and Pull requests Read/Write.");
+  }
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId: string | null = null;
-    uxLog("log", this, c.grey("[GitHub Integration] Listing previously closed Pull Requests"));
+    uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubListingClosedPullRequests')));
     const latestPullRequestsOnBranch = await this.octokit.rest.pulls.list({
       owner: this.repoOwner || "",
       repo: this.repoName || "",
@@ -53,11 +156,24 @@ export class GithubProvider extends GitProviderRoot {
       base: gitBranch,
     });
     if (latestPullRequestsOnBranch.data.length > 0) {
-      const latestPullRequest = latestPullRequestsOnBranch.data[0];
-      const latestPullRequestId = latestPullRequest.number;
-      deploymentCheckId = await this.getDeploymentIdFromPullRequest(latestPullRequestId, this.repoOwner || "", this.repoName || "", deploymentCheckId, latestPullRequest);
+      // Select the PR whose merge commit matches the commit currently being deployed (HEAD).
+      // When several PRs are merged around the same time, the most recently closed PR is not
+      // necessarily the one that produced this build's commit. Using its validation id would make
+      // QuickDeploy reuse an unrelated PR's deployment and deploy the wrong metadata.
+      const sha = await git().revparse(["HEAD"]);
+      const matchingPullRequest = latestPullRequestsOnBranch.data.find((pr) => this.isPullRequestMatchingCommit(pr, sha)) || null;
+      if (matchingPullRequest == null) {
+        uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('noPrMatchingDeployedCommit', { sha })));
+        return null;
+      }
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(matchingPullRequest.number, this.repoOwner || "", this.repoName || "", deploymentCheckId, matchingPullRequest);
     }
     return deploymentCheckId;
+  }
+
+  private isPullRequestMatchingCommit(pr: any, sha: string): boolean {
+    // A merged PR exposes the resulting base-branch commit in merge_commit_sha (merge, squash or rebase).
+    return pr?.merged_at != null && pr?.merge_commit_sha === sha;
   }
 
   public async getPullRequestDeploymentCheckId(): Promise<string | null> {
@@ -74,23 +190,41 @@ export class GithubProvider extends GitProviderRoot {
     deploymentCheckId: string | null,
     latestPullRequest: any,
   ): Promise<string | null> {
-    uxLog("log", this, c.grey(`[GitHub Integration] Listing comments for PR ${latestPullRequestId}`));
+    uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubListingPrComments', { prId: latestPullRequestId })));
     const existingComments = await this.octokit.rest.issues.listComments({
       owner: repoOwner,
       repo: repoName,
       issue_number: latestPullRequestId,
     });
+    // A PR can hold several deployment-id comments, one per pipeline run. Scan every comment and
+    // select the most recent one by date, otherwise QuickDeploy would reuse an outdated validation id.
+    let latestDeploymentTime = -1;
     for (const existingComment of existingComments.data) {
       if ((existingComment.body || "").includes("<!-- sfdx-hardis deployment-id ")) {
         const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingComment.body || "");
         if (matches) {
-          deploymentCheckId = matches[1];
-          uxLog("error", this, c.grey(`Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`));
-          break;
+          const commentTime = this.getCommentTimestamp(existingComment);
+          if (commentTime >= latestDeploymentTime) {
+            latestDeploymentTime = commentTime;
+            deploymentCheckId = matches[1];
+          }
         }
       }
     }
+    if (deploymentCheckId) {
+      uxLog("log", this, c.grey(t('foundDeploymentIdOnPr', { deploymentCheckId, latestPullRequestId, latestPullRequest: latestPullRequest.title })));
+    }
     return deploymentCheckId;
+  }
+
+  // Returns a comparable timestamp (ms) for a PR comment.
+  private getCommentTimestamp(comment: any): number {
+    const dateValue = comment?.created_at || comment?.updated_at;
+    if (!dateValue) {
+      return 0;
+    }
+    const time = new Date(dateValue).getTime();
+    return isNaN(time) ? 0 : time;
   }
 
   // Returns current job URL
@@ -98,15 +232,24 @@ export class GithubProvider extends GitProviderRoot {
     if (process.env.PIPELINE_JOB_URL) {
       return process.env.PIPELINE_JOB_URL;
     }
+    // On Jenkins, always return the Jenkins BUILD_URL so PR comments link to the Jenkins build
+    const jenkinsUrl = getJenkinsJobUrl();
+    if (isJenkins() && jenkinsUrl) {
+      return jenkinsUrl;
+    }
     try {
       if (this.repoOwner && this.repoName && this.serverUrl && this.runId) {
         return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${this.runId}`;
       }
     } catch (err: any) {
-      uxLog("warning", this, c.yellow("[GitHub Integration]" + err.message));
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('githubIntegrationWarning', { message: err.message })));
     }
     if (process.env.GITHUB_JOB_URL) {
       return process.env.GITHUB_JOB_URL;
+    }
+    // Jenkins fallback (when BUILD_URL exists but isJenkins() returned false)
+    if (jenkinsUrl) {
+      return jenkinsUrl;
     }
     return null;
   }
@@ -118,7 +261,7 @@ export class GithubProvider extends GitProviderRoot {
         return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/tree/${this.branch}`;
       }
     } catch (err: any) {
-      uxLog("warning", this, c.yellow("[GitHub Integration]" + err.message));
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('githubIntegrationWarning', { message: err.message })));
     }
     return null;
   }
@@ -160,6 +303,13 @@ export class GithubProvider extends GitProviderRoot {
                     body
                     url
                     merged,
+                    headRefName
+                    baseRefName
+                    mergeCommit {
+                      oid
+                    }
+                    createdAt
+                    mergedAt
                     baseRef {
                       id
                       name
@@ -182,7 +332,7 @@ export class GithubProvider extends GitProviderRoot {
         },
       );
     } catch (error) {
-      uxLog("warning", this, c.yellow(`[GitHub Integration] Error while calling GraphQL Api to list PR on commit ${sha}\n${(error as any).message}`));
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('githubErrorGraphQLPr', { sha, message: (error as any).message })));
     }
     if (graphQlRes?.repository?.commit?.associatedPullRequests?.edges?.length > 0) {
       const currentGitBranch = await getCurrentGitBranch();
@@ -190,10 +340,24 @@ export class GithubProvider extends GitProviderRoot {
         (pr: any) => pr.node.merged === true && pr.node.baseRef.name === currentGitBranch,
       );
       if (candidatePullRequests.length > 0) {
-        return this.completePullRequestInfo(candidatePullRequests[0].node);
+        // The GraphQL node does not have the REST shape completePullRequestInfo reads
+        // (head.ref / base.ref / merge_commit_sha / user.login / html_url), so map it first.
+        // Without this, push-triggered deployments got a Pull Request with empty source and
+        // target branches, and the deployment actions engine could not resolve its scope.
+        const node = candidatePullRequests[0].node;
+        return this.completePullRequestInfo({
+          ...node,
+          head: { ref: node.headRefName || "" },
+          base: { ref: node.baseRefName || node.baseRef?.name || "" },
+          merge_commit_sha: node.mergeCommit?.oid || undefined,
+          created_at: node.createdAt || undefined,
+          merged_at: node.mergedAt || undefined,
+          user: { login: node.author?.login || "" },
+          html_url: node.url || "",
+        });
       }
     }
-    uxLog("log", this, c.grey(`[GitHub Integration] Unable to find related Pull Request Info`));
+    uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubUnableToFindPrInfo')));
     return null;
   }
 
@@ -202,17 +366,18 @@ export class GithubProvider extends GitProviderRoot {
     const prInfo = await this.getPullRequestInfo();
     this.prNumber = this.prNumber || prInfo?.idNumber || null;
     if (this.repoName == null || this.prNumber == null) {
-      uxLog("log", this, c.grey("[GitHub Integration] No project and merge request, so no note posted..."));
+      uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubNoProjectNoNote')));
       return { posted: false, providerResult: { info: "No related pull request" } };
     }
     const githubJobUrl = await this.getCurrentJobUrl();
     // Build note message
     const messageKey = prMessage.messageKey + "-" + this.workflow + "-" + this.prNumber;
-    let messageBody = `## ${prMessage.title || ""}
-
-${prMessage.message}
+    let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
 _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}](${githubJobUrl})_
+
+${getBannerMarkdownAndLink()}
+
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present
@@ -221,7 +386,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
     }
 
     // Check for existing note from a previous run
-    uxLog("log", this, c.grey("[GitHub Integration] Listing comments of Pull Request..."));
+    uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubListingPrCommentsAll')));
     const existingComments = await this.octokit.rest.issues.listComments({
       owner: this.repoOwner || "",
       repo: this.repoName,
@@ -237,7 +402,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
     // Create or update MR note
     if (existingCommentId) {
       // Update existing note
-      uxLog("log", this, c.grey("[GitHub Integration] Updating Pull Request Comment on GitHub..."));
+      uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubUpdatingPrComment')));
       const githubCommentEditResult = await this.octokit.rest.issues.updateComment({
         owner: this.repoOwner || "",
         repo: this.repoName,
@@ -252,7 +417,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
       return prResult;
     } else {
       // Create new note if no existing not was found
-      uxLog("log", this, c.grey("[GitHub Integration] Adding Pull Request Comment on GitHub..."));
+      uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubAddingPrComment')));
       const githubCommentCreateResult = await this.octokit.rest.issues.createComment({
         owner: this.repoOwner || "",
         repo: this.repoName,
@@ -265,6 +430,57 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
       };
       return prResult;
     }
+  }
+
+  public async listPullRequests(
+    filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
+  ): Promise<CommonPullRequestInfo[] | null> {
+    if (!this.octokit || !this.repoOwner || !this.repoName) {
+      return null;
+    }
+    const state = filters.status === "merged" || filters.status === "closed" ? "closed" : filters.status === "open" ? "open" : "all";
+    const allPrs: CommonPullRequestInfo[] = [];
+    let page = 1;
+    const maxPages = 10; // Safety limit
+
+    try {
+      while (page <= maxPages) {
+        const params: any = {
+          owner: this.repoOwner,
+          repo: this.repoName,
+          state,
+          sort: "updated",
+          direction: "desc",
+          per_page: 100,
+          page,
+        };
+        if (filters.targetBranch) {
+          params.base = filters.targetBranch;
+        }
+        const response = await this.octokit.rest.pulls.list(params);
+        if (response.data.length === 0) break;
+
+        for (const pr of response.data) {
+          // Filter merged-only when requested
+          if (filters.status === "merged" && !pr.merged_at) continue;
+          // Filter by minDate on creation
+          if (filters.minDate && new Date(pr.created_at) < filters.minDate) continue;
+
+          allPrs.push(this.completePullRequestInfo(pr));
+        }
+
+        // Stop if we have gone past the date window
+        const lastPr = response.data[response.data.length - 1];
+        if (filters.minDate && new Date(lastPr.updated_at) < filters.minDate) break;
+        if (response.data.length < 100) break;
+        page++;
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('githubErrorListingPullRequests', { message: e?.message || e })));
+      return null;
+    }
+
+    return allPrs;
   }
 
   public async listPullRequestsInBranchSinceLastMerge(
@@ -288,7 +504,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
         direction: "desc",
         per_page: 1,
       });
-      uxLog("log", this, c.grey(`[GitHub Integration] Finding last merged PR from ${currentBranchName} to ${targetBranchName}`));
+      uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubFindingLastMergedPr', { sourceBranch: currentBranchName, targetBranch: targetBranchName })));
 
       const lastMergeToTarget = mergedPRs.find((pr) => pr.merged_at);
 
@@ -305,7 +521,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
 
       const { data: comparison } =
         await this.octokit.rest.repos.compareCommits(compareOptions);
-      uxLog("log", this, c.grey(`[GitHub Integration] Comparing commits between ${compareOptions.base} and ${compareOptions.head}`));
+      uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubComparingCommits', { base: compareOptions.base, head: compareOptions.head })));
 
       if (!comparison.commits || comparison.commits.length === 0) {
         return [];
@@ -313,60 +529,115 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
 
       const commitSHAs = new Set(comparison.commits.map((c) => c.sha));
 
-      // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
+      // Step 3-6: Match merged PRs targeting currentBranch and child branches against those commits
       const allBranches = [currentBranchName, ...childBranchesNames];
-
-      const prPromises = allBranches.map(async (branchName) => {
-        try {
-          const { data: prs } = await this.octokit!.rest.pulls.list({
-            owner: this.repoOwner!,
-            repo: this.repoName!,
-            state: "closed",
-            base: branchName,
-            per_page: 1000,
-          });
-          uxLog("log", this, c.grey(`[GitHub Integration] Fetching merged PRs for branch ${branchName}`));
-          return prs.filter((pr) => pr.merged_at);
-        } catch (err) {
-          uxLog(
-            "warning",
-            this,
-            c.yellow(`[GitHub Integration] Error fetching merged PRs for branch ${branchName}: ${String(err)}`),
-          );
-          return [];
-        }
-      });
-
-      const prResults = await Promise.all(prPromises);
-      const allMergedPRs: any[] = prResults.flat();
-
-      // Step 4: Filter PRs whose merge commit is in our commit list
-      const relevantPRs = allMergedPRs.filter((pr) => {
-        return pr.merge_commit_sha && commitSHAs.has(pr.merge_commit_sha);
-      });
-
-      // Step 5: Remove duplicates
-      const uniquePRsMap = new Map();
-      for (const pr of relevantPRs) {
-        if (!uniquePRsMap.has(pr.number)) {
-          uniquePRsMap.set(pr.number, pr);
-        }
-      }
-
-      const uniquePRs = Array.from(uniquePRsMap.values());
-
-      // Step 6: Convert to CommonPullRequestInfo
-      return uniquePRs.map((pr) =>
-        this.completePullRequestInfo(pr)
-      );
+      return await this.collectMergedPrsForCommits(allBranches, commitSHAs);
     } catch (err) {
       uxLog(
         "warning",
         this,
-        c.yellow(`[GitHub Integration] Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}\n${err instanceof Error ? err.stack : ""}`),
+        c.yellow('[GitHub Integration] ' + t('githubErrorListingPrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })),
       );
       return [];
     }
+  }
+
+  // List the Pull Requests included in a specific "go live" merge commit (e.g. the merge
+  // of preprod into main). Bounds the range by the merge commit's first parent so hotfixes
+  // merged to the target branch at other times are excluded.
+  public async listPullRequestsInGoLive(
+    branchName: string,
+    childBranchesNames: string[],
+    mergeCommitId: string,
+  ): Promise<CommonPullRequestInfo[]> {
+    if (!this.octokit || !this.repoOwner || !this.repoName || !mergeCommitId) {
+      return [];
+    }
+    try {
+      // Step 1: Resolve the merge commit's first parent (the mainline before the go live)
+      const { data: mergeCommit } = await this.octokit.rest.repos.getCommit({
+        owner: this.repoOwner,
+        repo: this.repoName,
+        ref: mergeCommitId,
+      });
+      const firstParent = mergeCommit?.parents?.[0]?.sha;
+      if (!firstParent) {
+        return [];
+      }
+
+      // Step 2: Commits introduced by the go live
+      const { data: comparison } = await this.octokit.rest.repos.compareCommits({
+        owner: this.repoOwner,
+        repo: this.repoName,
+        base: firstParent,
+        head: mergeCommitId,
+        per_page: 1000,
+      });
+      const commitSHAs = new Set((comparison.commits || []).map((c) => c.sha));
+      commitSHAs.add(mergeCommitId);
+
+      // Step 3-6: Match merged PRs targeting branchName and child branches against those commits
+      const allBranches = [branchName, ...childBranchesNames];
+      return await this.collectMergedPrsForCommits(allBranches, commitSHAs);
+    } catch (err) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow('[GitHub Integration] ' + t('githubErrorListingPrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })),
+      );
+      return [];
+    }
+  }
+
+  // Shared tail: fetch merged PRs targeting each branch, keep those whose merge commit
+  // is part of commitSHAs, dedupe by PR number and convert to the common shape.
+  private async collectMergedPrsForCommits(
+    allBranches: string[],
+    commitSHAs: Set<string>,
+  ): Promise<CommonPullRequestInfo[]> {
+    const prPromises = allBranches.map(async (branchName) => {
+      try {
+        const { data: prs } = await this.octokit!.rest.pulls.list({
+          owner: this.repoOwner!,
+          repo: this.repoName!,
+          state: "closed",
+          base: branchName,
+          per_page: 1000,
+        });
+        uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubFetchingMergedPrs', { branchName })));
+        return prs.filter((pr) => pr.merged_at);
+      } catch (err) {
+        uxLog(
+          "warning",
+          this,
+          c.yellow('[GitHub Integration] ' + t('githubErrorFetchingMergedPrs', { branchName, message: String(err) })),
+        );
+        return [];
+      }
+    });
+
+    const prResults = await Promise.all(prPromises);
+    const allMergedPRs: any[] = prResults.flat();
+
+    // Keep PRs whose merge commit is in our commit list
+    const relevantPRs = allMergedPRs.filter((pr) => pr.merge_commit_sha && commitSHAs.has(pr.merge_commit_sha));
+
+    // Remove duplicates by PR number
+    const uniquePRsMap = new Map();
+    for (const pr of relevantPRs) {
+      if (!uniquePRsMap.has(pr.number)) {
+        uniquePRsMap.set(pr.number, pr);
+      }
+    }
+    return Array.from(uniquePRsMap.values()).map((pr) => this.completePullRequestInfo(pr));
+  }
+
+  // Upgrade a GitHub login (GITHUB_ACTOR) to the account's full name and public email, so
+  // notifications can name the person who triggered the run rather than showing a bare handle.
+  // Most accounts hide their email, in which case only the name is returned.
+  public async resolveUserIdentity(login: string): Promise<{ name: string | null; email: string | null } | null> {
+    const { data } = await this.octokit.rest.users.getByUsername({ username: login });
+    return { name: data?.name || null, email: data?.email || null };
   }
 
   private completePullRequestInfo(prData: any): CommonPullRequestInfo {
@@ -379,9 +650,139 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
       description: prData?.body || "",
       authorName: prData?.user?.login || "",
       webUrl: prData?.html_url || "",
+      createdDate: prData?.created_at || undefined,
+      mergedDate: prData?.merged_at || undefined,
+      mergeCommitSha: prData?.merge_commit_sha || undefined,
       providerInfo: prData,
       customBehaviors: {}
     }
     return this.completeWithCustomBehaviors(prInfo);
+  }
+
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    if (!this.repoOwner || !this.repoName) {
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('githubCannotCreatePrMissingRepoInfo')));
+      return { created: false, pullRequestUrl: null, providerResult: { error: "Missing repo owner or name" } };
+    }
+    uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubCreatingPullRequest', { source: request.sourceBranch, target: request.targetBranch })));
+    const result = await this.octokit.rest.pulls.create({
+      owner: this.repoOwner,
+      repo: this.repoName,
+      title: request.title,
+      body: request.body,
+      head: request.sourceBranch,
+      base: request.targetBranch,
+    });
+    return {
+      created: result.data.number > 0,
+      pullRequestUrl: result.data.html_url || null,
+      providerResult: result,
+    };
+  }
+
+  public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
+    if (!this.repoOwner || !this.repoName) return null;
+    const result = await this.octokit.rest.pulls.list({
+      owner: this.repoOwner,
+      repo: this.repoName,
+      state: "open",
+      head: `${this.repoOwner}:${sourceBranch}`,
+      base: targetBranch,
+    });
+    const pr = result.data?.[0];
+    if (!pr) return null;
+    return { pullRequestUrl: pr.html_url, id: pr.number };
+  }
+
+  public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
+    if (!this.repoOwner || !this.repoName) return;
+    await this.octokit.rest.pulls.update({
+      owner: this.repoOwner,
+      repo: this.repoName,
+      pull_number: id,
+      title,
+      body,
+    });
+  }
+
+  public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
+    const issueNumber = prNumber || this.prNumber;
+    if (!issueNumber) return null;
+    const comments = await this.octokit.rest.issues.listComments({
+      owner: this.repoOwner || '',
+      repo: this.repoName || '',
+      issue_number: issueNumber,
+    });
+    for (const comment of comments.data) {
+      if (comment?.body?.includes(marker)) {
+        return comment.body;
+      }
+    }
+    return null;
+  }
+
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+    const issueNumber = prNumber || this.prNumber;
+    if (!issueNumber) return;
+    const comments = await this.octokit.rest.issues.listComments({
+      owner: this.repoOwner || '',
+      repo: this.repoName || '',
+      issue_number: issueNumber,
+    });
+    let existingId: number | null = null;
+    for (const comment of comments.data) {
+      if (comment?.body?.includes(marker)) {
+        existingId = comment.id;
+        break;
+      }
+    }
+    if (existingId) {
+      await this.octokit.rest.issues.updateComment({
+        owner: this.repoOwner || '',
+        repo: this.repoName || '',
+        comment_id: existingId,
+        body,
+      });
+      uxLog("log", this, c.grey(`[GitHub] Updated Deployment Actions comment on PR #${issueNumber}`));
+    } else {
+      await this.octokit.rest.issues.createComment({
+        owner: this.repoOwner || '',
+        repo: this.repoName || '',
+        issue_number: issueNumber,
+        body,
+      });
+      uxLog("log", this, c.grey(`[GitHub] Created Deployment Actions comment on PR #${issueNumber}`));
+    }
+  }
+
+  public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
+    const issueNumber = prNumber || this.prNumber;
+    if (!issueNumber) return [];
+    // Paginate: a long-lived PR can carry more comments than a single page,
+    // and a ticked checkbox in a later comment must not be missed
+    const comments = await this.octokit.paginate(this.octokit.rest.issues.listComments, {
+      owner: this.repoOwner || '',
+      repo: this.repoName || '',
+      issue_number: issueNumber,
+      per_page: 100,
+    });
+    const results: PullRequestCommentRef[] = [];
+    for (const comment of comments) {
+      if (comment?.body?.includes(marker)) {
+        results.push({ prNumber: issueNumber, ref: comment.id, body: comment.body, url: comment.html_url || '' });
+      }
+    }
+    return results;
+  }
+
+  public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    if (!commentRef?.ref) return;
+    await this.octokit.rest.issues.updateComment({
+      owner: this.repoOwner || '',
+      repo: this.repoName || '',
+      comment_id: commentRef.ref,
+      body,
+    });
+    uxLog("log", this, c.grey('[GitHub] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
 }

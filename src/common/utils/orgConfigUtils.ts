@@ -6,9 +6,9 @@ import sortArray from 'sort-array';
 import * as chromeLauncher from 'chrome-launcher';
 import * as yaml from 'js-yaml';
 import { uxLog } from './index.js';
-import { Connection, SfError } from '@salesforce/core';
-import { DescribeSObjectResult } from '@jsforce/jsforce-node';
+import { SfError } from '@salesforce/core';
 import { GLOB_IGNORE_PATTERNS } from './projectUtils.js';
+import { t } from './i18n.js';
 
 const listViewRegex = /objects\/(.*)\/listViews\/(.*)\.listView-meta\.xml/gi;
 
@@ -57,7 +57,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   } catch (e: any) {
     uxLog("error", this, c.red("List view 'Mine' has not been restored: error while trying to launch Puppeteer (browser simulator)."));
     uxLog("error", this, c.red(e.message));
-    uxLog("error", this, c.red("You might need to set the PUPPETEER_EXECUTABLE_PATH environment variable to a Chrome/Chromium executable path. Example: /usr/bin/chromium-browser."));
+    uxLog("error", this, c.red(t('youMightNeedToSetThePuppeteerexecutablepath')));
     return { error: e };
   }
   const page = await browser.newPage();
@@ -142,11 +142,11 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       // Confirmed saved toast
       await page.waitForSelector("xpath///span[contains(text(), 'List view updated.')]");
       success.push(`${objectName}:${listViewName}`);
-      uxLog("success", this, c.green(`Successfully set ${objectName}.${listViewName} as "Mine"`));
+      uxLog("success", this, c.green(t('successfullySetAsMine', { objectName, listViewName })));
     } catch (e) {
       // Unexpected puppeteer error
       failed.push(`${objectName}:${listViewName}`);
-      uxLog("error", this, c.red(`Puppeteer error while processing ${objectName}:${listViewName}: ${(e as Error).message}`));
+      uxLog("error", this, c.red(t('puppeteerErrorWhileProcessing', { objectName, listViewName, as: (e as Error).message })));
     }
   }
   // Close puppeteer browser
@@ -240,7 +240,7 @@ function guessMatchingMergeTargets(branchName: string, majorOrgs: any[]): string
     return majorOrgs.filter(org => isUat(org.branchName)).map(org => org.branchName);
   }
   if (branchName.toLowerCase().includes('training')) {
-    uxLog('log', this, c.grey(`Branch ${branchName} appears to be a training branch, that's probably ok to have no merge targets.`));
+    uxLog('log', this, c.grey(t('branchAppearsToBeTrainingBranchThat', { branchName })));
     return [];
   }
   uxLog("warning", this, c.yellow(`Unable to guess merge targets for ${branchName}.
@@ -272,20 +272,17 @@ export function isUatRun(branchName) {
   return (branchName.toLowerCase().startsWith("uat") || branchName.toLowerCase().startsWith("recette")) && branchName.toLowerCase().includes("run");
 }
 
-export async function checkSfdxHardisTraceAvailable(conn: Connection) {
-  let traceObject: DescribeSObjectResult;
-  try {
-    traceObject = await conn.sobject("SfdxHardisTrace__c").describe();
-  } catch (e: any) {
-    throw new SfError("You need a Custom Setting of type List (activate through Schema Settings), named SfdxHardisTrace__c, with Type__c and Key__c fields (both string, length 80)\n" + e.message);
-  }
-  const traceObjectFields = traceObject.fields;
-  if (traceObjectFields.filter(field => field.name === "Type__c").length === 0) {
-    throw new SfError("You need a field Type__c (string, length 80) on SfdxHardisTrace__c in target org");
-  }
-  if (traceObjectFields.filter(field => field.name === "Key__c").length === 0) {
-    throw new SfError("You need a field Key__c (string, length 80) on SfdxHardisTrace__c in target org");
-  }
+/**
+ * A retrofit branch carries the changes of an upstream major branch down to another one
+ * (ex: main is merged into retrofit/from-main, which is then merged into integration).
+ * Retrofit branches have no org config file, so they never appear in listMajorOrgs():
+ * they are identified by their name, like the other branch kinds above.
+ */
+export function isRetrofit(branchName: string): boolean {
+  // Matches the retrofit/<name> convention produced by hardis:work:new, so an ordinary branch
+  // named retrofit-JIRA-123 or retrofitting-legacy is not mistaken for one.
+  const name = (branchName || "").toLowerCase();
+  return name === "retrofit" || name.startsWith("retrofit/");
 }
 
 /**

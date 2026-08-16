@@ -1,0 +1,246 @@
+/* jscpd:ignore-start */
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { CONSTANTS, getEnvVar } from '../../../../config/index.js';
+import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
+import { MessageAttachment } from '@slack/web-api';
+import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
+import { resolveDateFilterOptions } from '../../../../common/utils/agentforceQueryUtils.js';
+import {
+  AiUsageResult,
+  buildAiUsageMetrics,
+  collectAiUsage,
+  formatAiUsageLine,
+} from '../../../../common/utils/aiUsageUtils.js';
+import { estimateCreditCost, formatCost, resolveUsageCostConfig } from '../../../../common/utils/usageCostUtils.js';
+
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+export default class DiagnoseAiUsage extends SfCommand<any> {
+  public static title = 'Check Agentforce and Data 360 credit usage';
+
+  public static description = `
+## Command Behavior
+
+**Breaks down Agentforce and Data 360 credit consumption by agent and action.**
+
+Agentforce actions and Data 360 operations are billed in Flex Credits. This command reads the consumption models Salesforce publishes in Data 360 and reports where the credits went, so a runaway agent or an expensive action shows up before the invoice does.
+
+Key functionalities:
+
+- **Consumption Breakdown:** Aggregates credits consumed and event counts per agent, action, usage type and metered flag.
+- **Billed vs Covered Usage:** Only metered usage is charged. Standard generative AI features covered by an add-on run unmetered and are usually the bulk of consumption, so the report leads with billed credits and shows the total alongside. If the org's usage model exposes no metered flag, every credit is counted as billed and the report says so, rather than reporting zero billed credits.
+- **Data 360 Credits:** Reports Data 360 credit consumption alongside Agentforce usage.
+- **Date Windowing:** Restricts the analysis to a recent period, 30 days by default.
+- **CSV Report Generation:** Produces a report of the aggregated consumption rows.
+- **Notifications:** Sends notifications to configured channels (Grafana, Slack, MS Teams) with the credit totals and the top consumers.
+
+**This command requires Data 360 (Data Cloud) with an Agentforce or Data 360 consumption model provisioned.** On any other org it logs why it cannot run, sends no notification, and exits successfully, so it is safe to schedule across a whole fleet.
+
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-ai-usage/) and can output Grafana, Slack and MsTeams Notifications.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Availability Probe:** Lists Data 360 data model objects before querying anything. Two distinct skip paths are handled: Data Cloud not provisioned on the org, and Data Cloud provisioned without any consumption model. Neither is treated as a failure.
+- **Model Discovery:** Consumption model names ship with a paid SKU and are not hardcoded. Known names are matched against the live listing first, then a name pattern is used as a fallback so a Salesforce rename does not silently break the command.
+- **Column Discovery:** Columns are read from the schema the Data 360 query API returns rather than assumed, then mapped onto the roles the report needs (agent, action, credits, metered flag, usage type, timestamp).
+- **Graceful Aggregation:** When no credits column can be identified, the command returns raw rows instead of inventing an aggregation.
+- **Metrics:** Emits total, metered and unmetered credit totals, action counts and Data 360 credit totals. Per-agent detail stays in the report and notification body, never in metric labels.
+</details>
+
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:ai-usage --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts. The analysis window defaults to the last 30 days unless \`--days\` is provided.`;
+
+  public static examples = [
+    '$ sf hardis:org:diagnose:ai-usage',
+    '$ sf hardis:org:diagnose:ai-usage --days 7',
+    '$ sf hardis:org:diagnose:ai-usage --agent',
+  ];
+
+  public static flags: any = {
+    days: Flags.integer({
+      default: 30,
+      description: 'Number of days to analyze',
+    }),
+    outputfile: Flags.string({
+      char: 'f',
+      description: 'Force the path and name of output report file. Must end with .csv',
+    }),
+    debug: Flags.boolean({
+      char: 'd',
+      default: false,
+      description: messages.getMessage('debugMode'),
+    }),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
+    }),
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
+    }),
+    'target-org': requiredOrgFlagWithDeprecations,
+  };
+
+  public static requiresProject = true;
+
+  protected static triggerNotification = true;
+
+  protected usageResult: AiUsageResult | null = null;
+  protected outputFile;
+  protected outputFilesRes: any = {};
+  protected debugMode = false;
+
+  /* jscpd:ignore-end */
+
+  public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(DiagnoseAiUsage);
+    this.outputFile = flags.outputfile || null;
+    this.debugMode = flags.debug || false;
+    const conn = flags['target-org'].getConnection();
+
+    uxLog('action', this, c.cyan(t('checkingAgentforceCreditUsage')));
+    const filters = resolveDateFilterOptions({ lastNDaysInput: flags.days });
+    this.usageResult = await collectAiUsage(conn, filters);
+
+    // Most orgs have no Data 360 consumption model: skip quietly instead of failing the run.
+    if (!this.usageResult.available) {
+      uxLog('log', this, c.grey(this.usageResult.reason || 'Data 360 credit usage is not available on this org'));
+      return { outputString: 'AI usage not available on org ' + conn.instanceUrl, aiRows: [] };
+    }
+
+    if (this.usageResult.degraded) {
+      uxLog('warning', this, c.yellow(t('aiUsageCreditColumnNotIdentified')));
+    }
+
+    // Say it out loud when the detail listing is capped: the totals stay exact, but the
+    // per-agent breakdown below is not the whole picture.
+    if (this.usageResult.truncatedRows) {
+      uxLog(
+        'warning',
+        this,
+        c.yellow(t('aiUsageDetailRowsTruncated', { count: this.usageResult.truncatedRows }))
+      );
+    }
+
+    // The metered flag is what separates billed credits from usage covered by the subscription.
+    // Without it every credit is counted as billed, so the figures below are an upper bound.
+    const meteringKnown = this.usageResult.aiTotals?.meteringKnown ?? true;
+    if (this.usageResult.aiTotals && !meteringKnown) {
+      uxLog('warning', this, c.yellow(t('aiUsageMeteredColumnNotIdentified')));
+    }
+
+    uxLogTable(this, this.usageResult.aiRows);
+
+    this.outputFile = await generateReportPath('ai-usage', this.outputFile);
+    // One schema per report: aggregated rows when available, otherwise the raw rows of whichever
+    // single model produced them. Mixing the AI and Data 360 schemas would yield a CSV whose
+    // columns belong to neither.
+    const reportRows = this.usageResult.aiRows.length
+      ? this.usageResult.aiRows
+      : this.usageResult.rawAiRows.length
+        ? this.usageResult.rawAiRows
+        : this.usageResult.dataCreditRows;
+    this.outputFilesRes = await generateCsvFile(reportRows, this.outputFile, {
+      fileTitle: 'Agentforce and Data 360 Credit Usage',
+    });
+
+    const metrics = buildAiUsageMetrics(this.usageResult);
+    const creditsThreshold = Number(getEnvVar('AI_USAGE_CREDITS_THRESHOLD') || 0);
+    // Metrics omit any model that is not provisioned, so default to 0 for the arithmetic here
+    // while the emitted payload stays silent about what does not exist.
+    const aiTotal = metrics.AiUsageCreditsTotal ?? 0;
+    const aiMetered = metrics.AiUsageCreditsMetered ?? 0;
+    const aiUnmetered = metrics.AiUsageCreditsUnmetered ?? 0;
+    const dataCloudTotal = metrics.DataCloudCreditsTotal ?? 0;
+    const totalCredits = aiTotal + dataCloudTotal;
+    // Only metered usage is charged. On a real org most consumption is covered by the
+    // subscription, so leading with the raw total would overstate the bill several times over.
+    const billedCredits = aiMetered + dataCloudTotal;
+
+    const orgMarkdown = await getOrgMarkdown(conn?.instanceUrl);
+    const notifButtons = await getNotificationButtons();
+    const notifAttachments: MessageAttachment[] = [];
+    let notifSeverity: NotifSeverity = 'log';
+    // Flat-rate estimate, deliberately an upper bound: Flex Credits tier down with volume, so
+    // the real charge is at most this. Reporting only, it never influences severity.
+    const costConfig = await resolveUsageCostConfig();
+    const estimatedCost = estimateCreditCost(billedCredits, costConfig);
+    if (estimatedCost !== null) {
+      metrics.AiUsageCost = estimatedCost;
+    }
+    const costSuffix =
+      estimatedCost !== null ? `, up to **${formatCost(estimatedCost, costConfig)}**` : '';
+
+    let notifText = meteringKnown
+      ? `**${billedCredits}** billed credits over the last ${flags.days} days in ${orgMarkdown}${costSuffix} ` +
+        `(**${totalCredits}** consumed in total, ${aiUnmetered} unmetered)`
+      : `**${totalCredits}** credits consumed over the last ${flags.days} days in ${orgMarkdown}${costSuffix}, ` +
+        `all counted as billed (this org's usage model exposes no metered flag, so the billed share cannot be told apart)`;
+
+    const topConsumers = this.usageResult.aiRows.slice(0, 10);
+    if (topConsumers.length > 0) {
+      const listed = topConsumers.reduce((sum, row) => sum + (row.credits ?? 0), 0);
+      const remaining = this.usageResult.aiRows.length - topConsumers.length;
+      let text = `**Top consumers**\n${topConsumers.map(formatAiUsageLine).join('\n')}`;
+      if (remaining > 0) {
+        // Never let the top-10 read as the whole picture. The listed rows come from the AI
+        // model only, so the remainder is measured against the AI total, not the combined
+        // total which also carries Data 360 credits.
+        const tail = Math.max(0, Math.round((aiTotal - listed) * 100) / 100);
+        text += `\n- ...and ${remaining} more, totalling ${tail} credits`;
+      }
+      notifAttachments.push({ text });
+    }
+
+    if (creditsThreshold > 0 && billedCredits > creditsThreshold) {
+      notifSeverity = 'warning';
+      notifText = `Billed credit consumption exceeded the configured threshold in ${orgMarkdown}: **${billedCredits}** credits over the last ${flags.days} days${costSuffix} (threshold: **${creditsThreshold}**)`;
+      uxLog('warning', this, c.yellow(notifText));
+    } else {
+      uxLog('success', this, c.green(notifText));
+    }
+
+    await setConnectionVariables(conn); // Required for some notifications providers like Email
+    await NotifProvider.postNotifications({
+      type: 'AI_USAGE',
+      text: notifText,
+      buttons: notifButtons,
+      attachments: notifAttachments,
+      severity: notifSeverity,
+      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+      logElements: reportRows,
+      data: {
+        metric: billedCredits,
+        aiModel: this.usageResult.aiModel,
+        dataCreditModel: this.usageResult.dataCreditModel,
+      },
+      metrics: metrics,
+    });
+
+    return {
+      outputString: 'Agentforce and Data 360 credit usage check on org ' + conn.instanceUrl,
+      aiRows: this.usageResult.aiRows,
+    };
+  }
+}

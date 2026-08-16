@@ -8,6 +8,7 @@ import { GitProvider, PullRequestData } from '../../../../common/gitProvider/ind
 import c from "chalk"
 import { uxLog } from '../../../../common/utils/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -23,7 +24,7 @@ export default class DeployNotify extends SfCommand<any> {
 
 ### Integrations
 
-According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-assistant-home/#flow-visual-git-diff)
+According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-agent-flow-visual-git-diff/)
 
   - GitHub, Gitlab, Azure DevOps, Bitbucket comments on Pull Requests (including Flows Visual Git Diff)
 
@@ -81,11 +82,22 @@ sf hardis:project:deploy:notify --check-only --deploy-status "$MYSTATUS"
 
 This command is for custom SF Cli pipelines, if you are a sfdx-hardis user, it is already embedded in sf hardis:deploy:smart.
 
-You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-assistant-setup/#using-custom-cicd-pipeline)
-`
+You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-agent-setup/#using-custom-cicd-pipeline)
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:deploy:notify --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+`;
 
   public static examples = [
     '$ sf hardis:project:deploy:notify --check-only --deploy-status valid --message "This deployment check is valid\\n\\nYahooo !!"',
+    '$ sf hardis:project:deploy:notify --agent',
     '$ sf hardis:project:deploy:notify --check-only --deploy-status invalid --message "This deployment check has failed !\\n\\Oh no !!"',
     '$ sf hardis:project:deploy:notify --deploy-status valid --message "This deployment has been processed !\\n\\nYahooo !!"'
   ];
@@ -106,6 +118,10 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
       char: "m",
       default: "",
       description: "Custom message that you want to be added in notifications (string or markdown format)"
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -139,7 +155,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     await setConnectionVariables(flags?.['target-org']?.getConnection(), true);
 
 
-    uxLog("action", this, c.cyan("Handling Pull Request comments for a deployment check job..."));
+    uxLog("action", this, c.cyan(t('handlingPullRequestCommentsForDeploymentCheck')));
     // Add deployment info
     await buildCheckDeployCommitSummary();
     const prData: Partial<PullRequestData> = {
@@ -164,10 +180,10 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     }
     // Fallback
     else {
-      uxLog("warning", this, c.yellow("No notification has been sent"));
-      uxLog("warning", this, c.yellow("- Slack / Teams / Email / JIRA messages are sent only if --check-only is false and --deploy-status is valid"));
+      uxLog("warning", this, c.yellow(t('noNotificationHasBeenSent')));
+      uxLog("warning", this, c.yellow(t('slackTeamsEmailJiraMessagesSentOnlyIf')));
     }
 
-    return { message: "Processed notifications" }
+    return { message: t('processedNotifications') }
   }
 }

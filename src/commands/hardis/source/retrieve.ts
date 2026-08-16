@@ -6,6 +6,7 @@ import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import { promptOrgUsernameDefault } from '../../../common/utils/orgUtils.js';
 import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 export class SourceRetrieve extends SfCommand<any> {
   public static readonly description = `
@@ -34,6 +35,17 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 - **Error Handling:** It includes basic error handling, such as prompting the user to re-select an org if an issue occurs during org selection.
 - **Deprecation Warning:** It explicitly logs warnings about the deprecation of \`sfdx force:source:retrieve\` to inform users about upcoming changes.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:source:retrieve --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
   public static readonly examples = [];
   public static readonly requiresProject = true;
@@ -83,6 +95,10 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
     verbose: Flags.boolean({
       description: 'verbose',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -99,8 +115,8 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 
   public async run(): Promise<any> {
     const { flags } = await this.parse(SourceRetrieve);
-    uxLog("error", this, c.red('This command will be removed by Salesforce in November 2024.'));
-    uxLog("error", this, c.red('Please migrate to command sf hardis project retrieve start'));
+    uxLog("error", this, c.red(t('thisCommandWillBeRemovedBySalesforce')));
+    uxLog("error", this, c.red(t('pleaseMigrateToCommandSfHardisProject2')));
     uxLog(
       "error",
       this,

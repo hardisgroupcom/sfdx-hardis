@@ -30,11 +30,23 @@ The command's technical implementation involves:
 - **Reporting:** Uses `generateReports` to create a CSV report and display a table in the console, summarizing the audit findings.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:audit:remotesites --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir    | option  | undefined                                                     |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
@@ -45,6 +57,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:project:audit:remotesites
+```
+
+```shell
+$ sf hardis:project:audit:remotesites --agent
 ```
 
 

@@ -21,7 +21,7 @@ Key functionalities:
 - **Notifications:** Sends notifications to configured channels (Grafana, Slack, MS Teams) with a summary of unused PSLAs.
 - **Interactive Deletion:** In non-CI environments, it offers an interactive prompt to bulk delete the identified unused PSLAs.
 
-Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for the inspiration during his great speaker session at [French Touch Dreamin '23](https://frenchtouchdreamin.com/), and his kind agreement for reusing such inspiration in this command :)
+Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for the inspiration during his great speaker session at [French Touch Dreamin '23](https://frenchtouchdreamin.com/), and his kind agreement for reusing such inspiration in this command 😊
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-unused-licenses/) and can output Grafana, Slack and MsTeams Notifications.
 
@@ -40,10 +40,21 @@ The command's technical implementation involves extensive querying of Salesforce
 </details>
 
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:diagnose:unusedlicenses --agent --target-org myorg@example.com
+```
+
+In agent mode, the bulk-delete confirmation prompt is skipped (no unused PSLAs are deleted automatically). Use `--fix` together with `--agent` to delete them without prompting.
+
 ## Parameters
 
 | Name              |  Type   | Description                                                       | Default | Required | Options |
 |:------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |         |          |         |
 | flags-dir         | option  | undefined                                                         |         |          |         |
 | json              | boolean | Format output as json.                                            |         |          |         |
@@ -60,6 +71,10 @@ $ sf hardis:org:diagnose:unusedlicenses
 
 ```shell
 $ sf hardis:org:diagnose:unusedlicenses --fix
+```
+
+```shell
+$ sf hardis:org:diagnose:unusedlicenses --agent
 ```
 
 

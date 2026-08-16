@@ -2,15 +2,18 @@ import { Connection, SfError } from "@salesforce/core";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils/index.js";
-import type { NotifMessage, NotifSeverity } from "./types.js";
+import type { NotificationChannel, NotifMessage, NotifSeverity } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 
-import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils.js";
+import { getSeverityIcon } from "../utils/notifUtils.js";
+import { anonymizeApiPayloadData, shouldAnonymizeApiData } from "./apiAnonymizer.js";
+import { convertMarkdownToPlainText } from "./markdownToPlainText.js";
 import { GitProvider } from "../gitProvider/index.js";
-import axios, { AxiosRequestConfig } from "axios";
+import { httpPost, HttpRequestConfig } from "../utils/httpUtils.js";
 import fs from "fs-extra";
 import * as path from "path";
+import { t } from '../utils/i18n.js';
 
 const MAX_LOKI_LOG_LENGTH = Number(process.env.MAX_LOKI_LOG_LENGTH || 200000);
 const TRUNCATE_LOKI_ELEMENTS_LENGTH = Number(process.env.TRUNCATE_LOKI_ELEMENTS_LENGTH || 500);
@@ -27,6 +30,10 @@ export class ApiProvider extends NotifProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis Api connector";
+  }
+
+  public getChannel(): NotificationChannel {
+    return "api";
   }
 
   // Always send notifications to API endpoint
@@ -101,12 +108,11 @@ export class ApiProvider extends NotifProviderRoot {
 
   // Build message
   private async buildPayload(notifMessage: NotifMessage) {
-    const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(
-      UtilsNotifs.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]),
+    const logTitle = UtilsNotifs.prefixWithSeverityEmoji(
+      convertMarkdownToPlainText(notifMessage.text.split("\n")[0]),
       notifMessage.severity,
     );
-    const logTitle = removeMarkdown(firstLineMarkdown);
-    let logBodyText = UtilsNotifs.prefixWithSeverityEmoji(UtilsNotifs.slackToTeamsMarkdown(notifMessage.text), notifMessage.severity);
+    let logBodyMd = UtilsNotifs.prefixWithSeverityEmoji(notifMessage.text, notifMessage.severity);
 
     // Add text details
     if (notifMessage?.attachments?.length && notifMessage?.attachments?.length > 0) {
@@ -117,25 +123,25 @@ export class ApiProvider extends NotifProviderRoot {
         }
       }
       if (text !== "") {
-        logBodyText += UtilsNotifs.slackToTeamsMarkdown(text) + "\n\n";
+        logBodyMd += text + "\n\n";
       }
     }
 
     // Add action blocks
     if (notifMessage.buttons?.length && notifMessage.buttons?.length > 0) {
-      logBodyText += "Links:\n\n";
+      logBodyMd += "Links:\n\n";
       for (const button of notifMessage.buttons) {
         // Url button
         if (button.url) {
-          logBodyText += "  - " + button.text + ": " + button.url + "\n\n";
+          logBodyMd += "  - " + button.text + ": " + button.url + "\n\n";
         }
       }
-      logBodyText += "\n\n";
+      logBodyMd += "\n\n";
     }
 
     // Add sfdx-hardis ref
-    logBodyText += `Powered by sfdx-hardis: ${CONSTANTS.DOC_URL_ROOT}`;
-    logBodyText = removeMarkdown(logBodyText);
+    logBodyMd += `Powered by sfdx-hardis: ${CONSTANTS.DOC_URL_ROOT}`;
+    const logBodyText = convertMarkdownToPlainText(logBodyMd);
 
     // Build payload
     const repoName = (await getGitRepoName() || "").replace(".git", "");
@@ -144,7 +150,7 @@ export class ApiProvider extends NotifProviderRoot {
     const monitoringKeyOverride = getEnvVar("SFDX_HARDIS_MONITORING_KEY") || getEnvVar("MONITORING_KEY");
     const orgIdentifier = monitoringKeyOverride
       ? monitoringKeyOverride
-      : (conn.instanceUrl) ? conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__") : currentGitBranch || "ERROR apiProvider";
+      : (conn?.instanceUrl) ? conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__") : currentGitBranch || "ERROR apiProvider";
     const notifKey = orgIdentifier + "!!" + notifMessage.type;
     this.payload = {
       source: "sfdx-hardis",
@@ -167,6 +173,11 @@ export class ApiProvider extends NotifProviderRoot {
     const jobUrl = await GitProvider.getJobUrl();
     if (jobUrl) {
       this.payload.data._jobUrl = jobUrl;
+    }
+    // Anonymize end-user identifying fields (default: only in CI, override with NOTIF_API_ANONYMIZE)
+    if (shouldAnonymizeApiData()) {
+      this.payload.data = anonymizeApiPayloadData(this.payload.data, orgIdentifier);
+      uxLog("log", this, c.grey(t('apiAnonymizationActive')));
     }
   }
 
@@ -219,7 +230,7 @@ export class ApiProvider extends NotifProviderRoot {
 
   // Call remote API
   private async sendToApi() {
-    const axiosConfig: AxiosRequestConfig = {
+    const axiosConfig: HttpRequestConfig = {
       responseType: "json",
     };
     // Basic Auth
@@ -235,7 +246,7 @@ export class ApiProvider extends NotifProviderRoot {
     }
     // POST message
     try {
-      const axiosResponse = await axios.post(this.apiUrl || "", this.payloadFormatted, axiosConfig);
+      const axiosResponse = await httpPost(this.apiUrl || "", this.payloadFormatted, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
         uxLog("log", this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
@@ -245,8 +256,8 @@ export class ApiProvider extends NotifProviderRoot {
       }
     } catch (e) {
       uxLog("warning", this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${(e as Error).message}`));
-      uxLog("log", this, c.grey("Request body: \n" + JSON.stringify(this.payloadFormatted)));
-      uxLog("log", this, c.grey("Response body: \n" + JSON.stringify((e as any)?.response?.data || {})));
+      uxLog("log", this, c.grey(t('requestBody') + JSON.stringify(this.payloadFormatted)));
+      uxLog("log", this, c.grey(t('responseBody2') + JSON.stringify((e as any)?.response?.data || {})));
     }
   }
 
@@ -286,8 +297,8 @@ export class ApiProvider extends NotifProviderRoot {
       );
 
       if (getEnvVar("NOTIF_API_DEBUG") === "true") {
-        uxLog("log", this, c.grey(`Log elements count: ${elementCount}`));
-        uxLog("log", this, c.grey(`Metric value: ${metricValue}`));
+        uxLog("log", this, c.grey(t('logElementsCount', { elementCount })));
+        uxLog("log", this, c.grey(t('metricValue', { metricValue })));
       }
     } catch (e) {
       uxLog("warning", this, c.yellow(`[ApiProvider] Error writing logs: ${(e as Error).message}`));
@@ -341,19 +352,27 @@ export class ApiProvider extends NotifProviderRoot {
         metricPayloadLine += "metric=" + metricData.toFixed(2);
         metricsPayloadLines.push(metricPayloadLine);
       } else if (typeof metricData === "object") {
+        // Compare against undefined, never truthiness: a min/max/percent of exactly 0 is a
+        // real measurement. Dropping it makes the series disappear entirely, so a limit at 0%
+        // reads as "no data" instead of "zero" and vanishes from the dashboards that list it.
         const metricFields: any[] = [];
-        if (metricData.min) {
+        if (metricData.min !== undefined) {
           metricFields.push("min=" + metricData.min.toFixed(2));
         }
-        if (metricData.max) {
+        if (metricData.max !== undefined) {
           metricFields.push("max=" + metricData.max.toFixed(2));
         }
-        if (metricData.percent) {
+        if (metricData.percent !== undefined) {
           metricFields.push("percent=" + metricData.percent.toFixed(2));
         }
-        metricFields.push("metric=" + metricData.value.toFixed(2));
-        metricPayloadLine += metricFields.join(",");
-        metricsPayloadLines.push(metricPayloadLine);
+        if (metricData.value !== undefined) {
+          metricFields.push("metric=" + metricData.value.toFixed(2));
+        }
+        // Influx line protocol requires at least one field; skip the metric otherwise.
+        if (metricFields.length) {
+          metricPayloadLine += metricFields.join(",");
+          metricsPayloadLines.push(metricPayloadLine);
+        }
       }
     }
 
@@ -405,7 +424,7 @@ export class ApiProvider extends NotifProviderRoot {
 
   // Call remote API
   private async sendToMetricsApi() {
-    const axiosConfig: AxiosRequestConfig = {
+    const axiosConfig: HttpRequestConfig = {
       responseType: "json",
     };
 
@@ -430,18 +449,18 @@ export class ApiProvider extends NotifProviderRoot {
     }
     // POST message
     try {
-      const axiosResponse = await axios.post(this.metricsApiUrl || "", this.metricsPayload, axiosConfig);
+      const axiosResponse = await httpPost(this.metricsApiUrl || "", this.metricsPayload, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus >= 200 && httpStatus < 300) {
         uxLog("log", this, c.cyan(`[ApiMetricProvider] Posted metrics to API ${this.metricsApiUrl} (${httpStatus}) [format: ${this.metricsFormat}]`));
         if (getEnvVar("NOTIF_API_DEBUG") === "true") {
-          uxLog("log", this, c.cyan("Metrics payload:\n" + this.metricsPayload));
+          uxLog("log", this, c.cyan(t('metricsPayload') + this.metricsPayload));
         }
       }
     } catch (e) {
       uxLog("warning", this, c.yellow(`[ApiMetricProvider] Error while sending metrics to API ${this.metricsApiUrl}: ${(e as Error).message}`));
-      uxLog("log", this, c.grey("Request body:\n" + this.metricsPayload));
-      uxLog("log", this, c.grey("Response body: " + JSON.stringify((e as any)?.response?.data || {})));
+      uxLog("log", this, c.grey(t('requestBody2') + this.metricsPayload));
+      uxLog("log", this, c.grey(t('responseBody') + JSON.stringify((e as any)?.response?.data || {})));
     }
   }
 }

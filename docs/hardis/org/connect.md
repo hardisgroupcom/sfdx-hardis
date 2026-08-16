@@ -27,11 +27,25 @@ The command's technical implementation involves:
 - **Environment Awareness:** Checks the `isCI` flag to determine whether to offer the browser launch option, as it's typically not applicable in continuous integration environments.
 </details>
 
+### Agent Mode
+
+Supports `--agent` flag for automation detection:
+
+```sh
+sf hardis:org:connect --agent
+```
+
+In agent mode:
+
+- This command is inherently interactive; an error is thrown recommending `sf org login` or `sf org open` instead.
+- The browser open prompt is skipped.
+
 
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir    | option  | undefined                                                     |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
@@ -42,6 +56,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:org:connect
+```
+
+```shell
+$ sf hardis:org:connect --agent
 ```
 
 

@@ -1,9 +1,8 @@
-import c from "chalk";
-import { NotifProviderRoot } from "./notifProviderRoot.js";
-import { getCurrentGitBranch, uxLog } from "../utils/index.js";
-import type { NotifMessage } from "./types.js";
+import { WebhookNotifProviderRoot } from "./webhookNotifProviderRoot.js";
+import type { NotificationChannel, NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
-import { getEnvVar } from "../../config/index.js";
+import { convertMarkdownToTeamsMrkdwn } from "./teamsMarkdown.js";
+import { SizeGuardLimits } from "./messageSizeGuard.js";
 
 interface AdaptiveCardElement {
   type: string;
@@ -20,58 +19,46 @@ interface AdaptiveCard {
 const ADAPTIVE_CARD_VERSION = "1.0";
 const CONTENT_TYPE_ADAPTIVE_CARD = "application/vnd.microsoft.card.adaptive";
 const DETAILS_CONTAINER_ID = "detailsContainer";
-const ERROR_SEVERITIES = ["critical", "error", "warning"];
-const MAIN_ENV_VAR = "MS_TEAMS_WEBHOOK_URL";
-const ERRORS_WARNINGS_ENV_VAR = "MS_TEAMS_WEBHOOK_URL_ERRORS_WARNINGS";
+const LOG_PREFIX = "[TeamsProvider]";
 
-export class TeamsProvider extends NotifProviderRoot {
+// Teams rejects an Adaptive Card payload over roughly 28 KB. TextBlock has no documented
+// per-element cap, so the payload budget governs. Overridable for orgs on different limits.
+const TEAMS_SIZE_LIMITS: SizeGuardLimits = {
+  maxAttachmentsChars: Number(process.env.TEAMS_MAX_ATTACHMENTS_CHARS || 18000),
+  // NOT ENFORCED: a TextBlock has no documented per-element cap, so nothing clamps individual
+  // elements here. Declared only because SizeGuardLimits requires it; mirrors the payload budget.
+  maxBlockChars: Number(process.env.TEAMS_MAX_BLOCK_CHARS || 18000),
+  // NOT ENFORCED: an Adaptive Card has no documented element count cap. The payload budget governs.
+  maxBlocks: Number(process.env.TEAMS_MAX_BLOCKS || 100),
+};
+
+export class TeamsProvider extends WebhookNotifProviderRoot {
   public getLabel(): string {
     return "sfdx-hardis MsTeams connector";
   }
 
-  public async postNotification(notifMessage: NotifMessage): Promise<void> {
-    const webhookUrls = await this.getWebhookUrls(notifMessage);
-    if (webhookUrls.length === 0) {
-      uxLog("error", this, c.red("[TeamsProvider] MS_TEAMS_WEBHOOK_URL is not defined"));
-      return;
-    }
+  public getChannel(): NotificationChannel {
+    return "messaging";
+  }
 
+  protected getMainEnvVar(): string {
+    return "MS_TEAMS_WEBHOOK_URL";
+  }
+
+  protected getErrorsWarningsEnvVar(): string {
+    return "MS_TEAMS_WEBHOOK_URL_ERRORS_WARNINGS";
+  }
+
+  protected getLogPrefix(): string {
+    return LOG_PREFIX;
+  }
+
+  protected getSizeLimits(): SizeGuardLimits {
+    return TEAMS_SIZE_LIMITS;
+  }
+
+  protected buildPayload(notifMessage: NotifMessage): object {
     const adaptiveCard = this.buildAdaptiveCard(notifMessage);
-    const payload = this.buildPayload(adaptiveCard);
-
-    await this.sendToWebhooks(webhookUrls, payload);
-  }
-
-  private async getWebhookUrls(notifMessage: NotifMessage): Promise<string[]> {
-    const mainWebhookUrl = getEnvVar(MAIN_ENV_VAR);
-    if (!mainWebhookUrl) {
-      return [];
-    }
-
-    const webhookUrls = mainWebhookUrl.split(",");
-
-    // Add branch-specific webhook if defined
-    const currentBranch = await getCurrentGitBranch();
-    if (currentBranch) {
-      const branchWebhookVar = `${MAIN_ENV_VAR}_${currentBranch.toUpperCase()}`;
-      const branchWebhook = getEnvVar(branchWebhookVar);
-      if (branchWebhook) {
-        webhookUrls.push(...branchWebhook.split(","));
-      }
-    }
-
-    // Add errors/warnings webhook if applicable
-    if (ERROR_SEVERITIES.indexOf(notifMessage.severity) > -1) {
-      const errorsWebhook = getEnvVar(ERRORS_WARNINGS_ENV_VAR);
-      if (errorsWebhook) {
-        webhookUrls.push(...errorsWebhook.split(","));
-      }
-    }
-
-    return webhookUrls;
-  }
-
-  private buildPayload(adaptiveCard: AdaptiveCard): object {
     return {
       attachments: [
         {
@@ -80,30 +67,6 @@ export class TeamsProvider extends NotifProviderRoot {
         },
       ],
     };
-  }
-
-  private async sendToWebhooks(webhookUrls: string[], payload: object): Promise<void> {
-    for (const webhookUrl of webhookUrls) {
-      try {
-        const response = await fetch(webhookUrl.trim(), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          uxLog("log", this, c.cyan("[TeamsProvider] Sent Teams notification to webhook"));
-        } else {
-          const errorText = await response.text();
-          uxLog("error", this, c.grey("[TeamsProvider] Failed Teams message content:\n" + JSON.stringify(payload, null, 2)));
-          uxLog("error", this, c.red(`[TeamsProvider] Error while sending message to webhook\n${response.status} - ${errorText}`));
-        }
-      } catch (error) {
-        uxLog("error", this, c.red(`[TeamsProvider] Error while sending message to webhook\n${(error as Error).message}`));
-      }
-    }
   }
 
   private buildAdaptiveCard(notifMessage: NotifMessage): AdaptiveCard {
@@ -119,8 +82,9 @@ export class TeamsProvider extends NotifProviderRoot {
   }
 
   private buildCardBody(notifMessage: NotifMessage): AdaptiveCardElement[] {
-    const messageText = UtilsNotifs.slackToTeamsMarkdown(
-      UtilsNotifs.prefixWithSeverityEmoji(notifMessage.text, notifMessage.severity)
+    const messageText = UtilsNotifs.prefixWithSeverityEmoji(
+      convertMarkdownToTeamsMrkdwn(notifMessage.text),
+      notifMessage.severity,
     );
 
     const body: AdaptiveCardElement[] = [
@@ -149,7 +113,7 @@ export class TeamsProvider extends NotifProviderRoot {
       .filter((attachment) => attachment.text)
       .map((attachment) => ({
         type: "TextBlock",
-        text: UtilsNotifs.slackToTeamsMarkdown(attachment.text),
+        text: convertMarkdownToTeamsMrkdwn(attachment.text),
         wrap: true,
       }));
 

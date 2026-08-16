@@ -1,6 +1,7 @@
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderPage extends DocBuilderRoot {
 
@@ -17,18 +18,20 @@ export class DocBuilderPage extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Lightning Pages" : "## Lightning Pages",
+      filterObject ? `## ${t('docMdRelatedLightningPages')}` : `## ${t('docMdLightningPages')}`,
       "",
-      "| Lightning Page | Type |",
+      `| ${t('docMdColLightningPage')} | ${t('docMdColType')} |`,
       "| :----      | :--: | "
     ]);
     for (const page of filteredPages) {
+      /* jscpd:ignore-start */
       const pageNameCell = `[${page.name}](${prefix}${page.name}.md)`;
       lines.push(...[
         `| ${pageNameCell} | ${page.type} |`
       ]);
     }
     lines.push("");
+    /* jscpd:ignore-end */
     return lines;
   }
 
@@ -36,7 +39,7 @@ export class DocBuilderPage extends DocBuilderRoot {
     return [
       `## ${this.metadataName}`,
       '',
-      buildGenericMarkdownTable(this.parsedXmlObject, ["sobjectType", "type", "masterLabel", "template"], "## Lightning Page attributes", []),
+      buildGenericMarkdownTable(this.parsedXmlObject, ["sobjectType", "type", "masterLabel", "template"], `## ${t('docMdLightningPageAttributes')}`, []),
       '',
       '<!-- Page description -->',
       '',

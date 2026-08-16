@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 // External Libraries and Node.js Modules
 import fs from 'fs-extra';
-import * as xml2js from 'xml2js';
+import { parseXmlString } from '../../../common/utils/xmlUtils.js';
 import { glob } from 'glob';
 import * as path from 'path';
 
@@ -18,6 +18,7 @@ import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from '../.
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -44,14 +45,24 @@ The command's technical implementation involves:
 
 - **File Discovery:** It uses \`glob\` to find all custom field metadata files (\`.field-meta.xml\`) within your project.
 - **Custom Setting Exclusion:** It first filters out fields belonging to Custom Settings by reading the corresponding object metadata files (\`.object-meta.xml\`) and checking for the \`<customSettingsType>\` tag. It also excludes Data Cloud objects (\`__dlm\`, \`__dll\`) and managed package fields.
-- **XML Parsing:** For each remaining custom field file, it reads the XML content and parses it using \`xml2js\` to extract the \`fullName\` and \`description\` attributes.
+- **XML Parsing:** For each remaining custom field file, it reads the XML content and parses it to extract the \`fullName\` and \`description\` attributes.
 - **Description Check:** It verifies if the \`description\` attribute is present and not empty for each custom field.
 - **Data Aggregation:** All custom fields found to be missing a description are collected into a list, along with their object and field names.
 - **Report Generation:** It generates a CSV report (\`lint-missingattributes.csv\`) containing details of all fields with missing descriptions.
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications (e.g., to Slack, MS Teams, Grafana) about the presence and count of fields with missing descriptions, making it suitable for automated quality checks in CI/CD pipelines.
 </details>
-`;
-  public static examples = ['$ sf hardis:lint:missingattributes'];
+
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:lint:missingattributes --agent
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+  public static examples = ['$ sf hardis:lint:missingattributes', '$ sf hardis:lint:missingattributes --agent'];
   /* jscpd:ignore-start */
   public static flags: any = {
     debug: Flags.boolean({
@@ -68,6 +79,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': optionalOrgFlagWithDeprecations,
   };
@@ -96,15 +111,15 @@ The command's technical implementation involves:
     let attachments: MessageAttachment[] = [];
     if (this.fieldsWithoutDescription.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.fieldsWithoutDescription.length} fields with missing descriptions were found in ${branchMd}`;
+      notifText = `**${this.fieldsWithoutDescription.length}** fields with missing descriptions were found in ${branchMd}`;
       await this.buildCsvFile(this.fieldsWithoutDescription);
       attachments = [
         {
-          text: `*Missing descriptions*\n${this.fieldsWithoutDescription.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Missing descriptions**\n${this.fieldsWithoutDescription.map((file) => `- ${file.name}`).join('\n')}`,
         },
       ];
     } else {
-      uxLog("other", this, 'No missing descriptions on fields were found.');
+      uxLog("other", this, t('noMissingDescriptionsOnFieldsWereFound'));
     }
     // Post notifications
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
@@ -125,7 +140,6 @@ The command's technical implementation involves:
   }
 
   private async filterOutCustomSettings() {
-    const parserCS = new xml2js.Parser();
     const objectDirectories: string[] = await glob(this.objectFileDirectory, { ignore: this.ignorePatterns });
     for (const directory of objectDirectories) {
       const objectName = path.basename(path.dirname(path.dirname(directory)));
@@ -139,7 +153,7 @@ The command's technical implementation involves:
         try {
           const objectMetaFileContent = fs.readFileSync(objectMetaFilePath, 'utf8');
           let isCustomSettingsObject = false;
-          const result = await parserCS.parseStringPromise(objectMetaFileContent);
+          const result = parseXmlString(objectMetaFileContent);
 
           if (result && result.CustomObject && result.CustomObject.customSettingsType) {
             isCustomSettingsObject = true;
@@ -190,13 +204,11 @@ The command's technical implementation involves:
 
   private parseXmlStringAsync(xmlString: string): Promise<any> {
     return new Promise((resolve, reject) => {
-      xml2js.parseString(xmlString, (err, result) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      });
+      try {
+        resolve(parseXmlString(xmlString));
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 

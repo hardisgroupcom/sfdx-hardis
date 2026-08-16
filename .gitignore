@@ -26,6 +26,10 @@ lib
 .nyc_output
 coverage
 test_session*
+# Credentials of the scratch org kept between org NUT runs (SFDX_HARDIS_NUT_REUSE_ORG=true),
+# and the encrypted copy the CI job hands to the next run through the Actions cache
+.nut-org-reuse.json
+.nut-org-reuse.json.enc
 
 # ignore sfdx-trust files
 *.tgz
@@ -51,6 +55,14 @@ node_modules
 .DS_Store
 .idea
 
+.env
 hardis-report/
 megalinter-reports/
 config/user/
+
+.sfdx/
+.claude/settings.local.json
+site/
+
+# MegaLinter generated GitHub config (branch protection rules fetched at runtime)
+.megalinter_github_conf/

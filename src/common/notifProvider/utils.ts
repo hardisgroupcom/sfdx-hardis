@@ -1,5 +1,6 @@
-import type { NotifSeverity } from "./types.js";
+import type { NotifSeverity, NotificationConfigEntry } from "./types.js";
 import { getEnvVar } from "../../config/index.js";
+import { isEmailChannelObject } from "./notificationConfig.js";
 
 export class UtilsNotifs {
   public static isSlackAvailable() {
@@ -16,31 +17,42 @@ export class UtilsNotifs {
     return false;
   }
 
-  public static isEmailAvailable() {
-    if (getEnvVar("NOTIF_EMAIL_ADDRESS") && globalThis.jsForceConn) {
+  public static isGoogleChatAvailable() {
+    if (getEnvVar("GOOGLE_CHAT_WEBHOOK_URL")) {
       return true;
     }
     return false;
+  }
+
+  // Email is available when:
+  //   - the global NOTIF_EMAIL_ADDRESS env var is set, OR
+  //   - at least one .sfdx-hardis.yml notificationConfig entry declares email recipients;
+  // and a Salesforce connection is available (emails are dispatched via Salesforce Messaging).
+  public static isEmailAvailable(userConfig?: { notificationConfig?: NotificationConfigEntry[] }) {
+    if (!globalThis.jsForceConn) {
+      return false;
+    }
+    if (getEnvVar("NOTIF_EMAIL_ADDRESS")) {
+      return true;
+    }
+    const entries = userConfig?.notificationConfig ?? [];
+    return entries.some((entry) => {
+      const email = entry?.notifications?.email;
+      return (
+        isEmailChannelObject(email) && Array.isArray(email.recipients) && email.recipients.some((r) => r && r.trim().length > 0)
+      );
+    });
   }
 
   public static isApiAvailable() {
-    if (getEnvVar("NOTIF_API_URL")) {
+    if (getEnvVar("NOTIF_API_URL") || getEnvVar("NOTIF_API_LOGS_JSON_FILE")) {
       return true;
     }
     return false;
   }
 
-  public static markdownLink(url: string, label: string, type = "slack") {
-    if (type == "teams") {
-      return `[${label}](${url})`;
-    }
-    if (type === "jira") {
-      return `{ "label": "${label}", "url": "${url}"}`;
-    }
-    if (type == "html") {
-      return `<a href="${url}">${label}</a>`;
-    }
-    return `<${url}|*${label}*>`;
+  public static markdownLink(url: string, label: string): string {
+    return `[${label}](${url})`;
   }
 
   public static prefixWithSeverityEmoji(text: string, severity: NotifSeverity | null) {
@@ -65,16 +77,4 @@ export class UtilsNotifs {
     return images[imageKey] || null;
   }
 
-  public static slackToTeamsMarkdown(text: string) {
-    // Bold
-    const boldRegex = /(\*(.*?)\*)/gm;
-    text = text.replace(boldRegex, "**$2**");
-    // Carriage return
-    const carriageReturnRegex = /\n/gm;
-    text = text.replace(carriageReturnRegex, "\n\n");
-    // Hyperlink
-    const hyperlinkRegex = /<(.*?)\|(.*?)>/gm;
-    text = text.replace(hyperlinkRegex, "[$2]($1)");
-    return text;
-  }
 }

@@ -1,0 +1,30 @@
+fail-on-severity: "high"
+
+ignore:
+  # Disputed/unwarranted CVE
+  # @link https://nvd.nist.gov/vuln/detail/CVE-2018-20225
+  - vulnerability: CVE-2018-20225
+
+  # brace-expansion 4.0.1 - dev build-tool dependency only (wireit)
+  # wireit 0.14.12 (latest) requires brace-expansion ^4.0.0; no upstream fix available in 4.x line
+  # Only impacts build scripts at development time, not production runtime
+  - vulnerability: GHSA-f886-m6hf-6m8v
+    package:
+      name: brace-expansion
+      version: "4.0.1"
+
+  # minimatch 9.0.3 - dev ESLint dependency only (@typescript-eslint/typescript-estree@6.21.0)
+  # eslint-config-salesforce-typescript@3.x/4.x requires @typescript-eslint@^6.21.0 which pins minimatch@9.0.3
+  # Only impacts lint tooling at development time, not production runtime
+  - vulnerability: GHSA-7r86-cg39-jmmj
+    package:
+      name: minimatch
+      version: "9.0.3"
+  - vulnerability: GHSA-3ppc-4f35-3m26
+    package:
+      name: minimatch
+      version: "9.0.3"
+  - vulnerability: GHSA-23c5-xmqv-rm74
+    package:
+      name: minimatch
+      version: "9.0.3"

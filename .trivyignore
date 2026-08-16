@@ -72,6 +72,12 @@ CVE-2025-12735
 # js-yaml prototype pollution vulnerability, harmless for sfdx-hardis use as we parse release manager defined YAML files only
 CVE-2025-64718
 
+# js-yaml https://avd.aquasec.com/nvd/cve-2026-53550
+# js-yaml 3.14.2 quadratic-complexity DoS in YAML merge-key handling (MEDIUM). Transitive via gray-matter (md-to-pdf).
+# The v4.2.0 fix removes yaml.safeLoad, which gray-matter calls at runtime, breaking PDF doc generation. No patched 3.x release exists.
+# Used only to parse our own markdown frontmatter, not untrusted input.
+CVE-2026-53550
+
 # https://avd.aquasec.com/nvd/cve-2025-64756
 # glob CLI: Command injection via -c/--cmd executes matches with shell:true, harmless for sfdx-hardis use as we don't use glob CLI
 CVE-2025-64756
@@ -112,15 +118,250 @@ CVE-2026-25547
 # npmcli: npm cli Incorrect Permission Assignment Local Privilege Escalation Vulnerability, located in @salesforce/cli so they'll fix that soon
 CVE-2026-0775
 
+# https://avd.aquasec.com/nvd/cve-2026-26278
+# fast-xml-parser affected by DoS through entity expansion in XML, not risky for sfdx-hardis use as we don't parse XML files from untrusted sources
+CVE-2026-26278
+
+# https://avd.aquasec.com/nvd/cve-2026-26960
+# tar vulnerable to Arbitrary File Write, located in @salesforce/cli so they'll fix that soon
+CVE-2026-26960
+
+# https://avd.aquasec.com/nvd/cve-2026-26996 
+# minimatch DDOS risk, not risky for sfdx-hardis use as we don't use minimatch directly and the risk is only a DoS, not a security risk
+CVE-2026-26996
+
+# https://avd.aquasec.com/nvd/cve-2026-25896
+# fast-xml-parser issue, located in @salesforce/cli so they'll fix that soon
+CVE-2026-25896
+
+# https://avd.aquasec.com/nvd/cve-2026-27699
+# basic-ftp, embedded in @salesforce/cli , so they'll fix that soon
+CVE-2026-27699
+
+# https://avd.aquasec.com/nvd/cve-2026-27903
+# minimatch DDOS risk, not risky for sfdx-hardis use as we don't use minimatch directly and the risk is only a DoS, not a security risk
+CVE-2026-27903
+
+# https://avd.aquasec.com/nvd/cve-2026-27904
+# minimatch DDOS risk, not risky for sfdx-hardis use as we don't use minimatch directly and the risk is only a DoS, not a security risk
+CVE-2026-27904
+
+# https://avd.aquasec.com/nvd/cve-2026-29786
+# tar vulnerable to Arbitrary File Write, located in @salesforce/cli so they'll fix
+CVE-2026-29786
+
+# https://avd.aquasec.com/nvd/cve-2026-28292
+# simple-git issue from sfdx-git-delta, not risky for sfdx-hardis use as we don't use sfdx-git-delta in a way that could be vulnerable to this CVE
+CVE-2026-28292
+
+# https://avd.aquasec.com/nvd/cve-2026-31802
+# tar vulnerable to Arbitrary File Write, located in @salesforce/cli so they'll fix that soon
+CVE-2026-31802
+
+# https://avd.aquasec.com/nvd/cve-2026-1526
+# undici DDOS risk, harmless for sfdx-hardis usage
+CVE-2026-1526
+
+# https://avd.aquasec.com/nvd/cve-2026-2229
+# undici DDOS risk, harmless for sfdx-hardis usage
+CVE-2026-2229
+
+# https://avd.aquasec.com/nvd/cve-2026-33036
+# fast-xml-parser, located in @salesforce/cli so they'll fix that soon
+CVE-2026-33036
+
+# https://avd.aquasec.com/nvd/cve-2026-1528
+# DDOS risk in undici, harmless for sfdx-hardis usage
+CVE-2026-1528
+
 # Dockerfile https://avd.aquasec.com/misconfig/ds002
 # Image using root user, that's ok as we are using it in CI/CD jobs containers, so not risky for sfdx-hardis
 DS002
 DS-0002
-
 
 # Dockerfile https://avd.aquasec.com/misconfig/ds026
 # No HEALTHCHECK defined, that's ok as our container live only the time of the job, so not risky for sfdx-hardis
 DS026
 DS-0026
 
+# https://avd.aquasec.com/nvd/cve-2026-6321 + cve-2026-6322
+# fast-uri 3.1.0 path traversal / URI authority bypass, located in @salesforce/cli and sfdx-git-delta so they'll fix that soon
+CVE-2026-6321
+CVE-2026-6322
 
+# https://avd.aquasec.com/nvd/cve-2026-4800
+# lodash 4.17.23 arbitrary code execution via untrusted template imports, located in @salesforce/cli so they'll fix that soon
+CVE-2026-4800
+
+# https://avd.aquasec.com/nvd/cve-2026-33671
+# picomatch 2.3.1 Regular Expression Denial of Service, located in @salesforce/cli so they'll fix that soon
+CVE-2026-33671
+
+# https://avd.aquasec.com/nvd/cve-2026-44289
+# protobufjs 7.5.5 DoS / process-wide DoS / code generation gadget / arbitrary code execution, located in @salesforce/cli so they'll fix that soon
+CVE-2026-44289
+CVE-2026-44290
+CVE-2026-44291
+CVE-2026-44293
+
+# https://avd.aquasec.com/nvd/cve-2026-28291 + cve-2026-6951
+# simple-git 3.30.0 command execution / remote code execution, located in sfdx-git-delta so they'll fix that soon
+CVE-2026-28291
+CVE-2026-6951
+
+# https://avd.aquasec.com/nvd/cve-2026-44705
+# tmp 0.0.33 (via external-editor) arbitrary file write through symlink, located in @salesforce/cli so they'll fix that soon
+CVE-2026-44705
+
+# https://avd.aquasec.com/nvd/cve-2026-33811
+# Go stdlib v1.26.2 in the pebble binary of the Ubuntu base image (usr/bin/pebble), fixed in Go 1.25.10 / 1.26.3, depends on the upstream base image rebuild
+CVE-2026-33811
+CVE-2026-33814
+CVE-2026-39820
+CVE-2026-39823
+CVE-2026-39825
+CVE-2026-39836
+CVE-2026-42499
+CVE-2026-42504
+
+# https://avd.aquasec.com/nvd/cve-2026-12143
+# form-data: sfdx-hardis own tree is already pinned to 4.0.6 in yarn.lock; residual instances in the image come from independently-installed Salesforce CLI plugins, not under sfdx-hardis control. Not dangerous (HTTP multipart boundary)
+CVE-2026-12143
+
+# https://avd.aquasec.com/nvd/cve-2026-48712
+# protobufjs: not in sfdx-hardis dependency tree at all; pulled transitively by Salesforce CLI / plugins (sfdmu, mermaid-cli, etc.). Not remediable from this repo. Not dangerous in this usage
+CVE-2026-48712
+
+# https://avd.aquasec.com/nvd/cve-2026-48779
+# ws: sfdx-hardis own tree is already pinned to 8.21.0 in yarn.lock; residual old ws (8.18.3/8.20.1) in the image comes from independently-installed Salesforce CLI plugins. Not dangerous (DoS)
+CVE-2026-48779
+
+# https://avd.aquasec.com/nvd/cve-2026-12151 + cve-2026-6734 + cve-2026-9697
+# undici 5.29.0 bundled inside the globally-installed Salesforce CLI (/root/.local/share/sf/node_modules), not in the sfdx-hardis dependency tree. No fix available for undici 5.x (fixes land in 7.28.0+/8.2.0), so not remediable from this repo; the Salesforce CLI team will pick up the upgrade. DoS / info disclosure / MITM via ignored TLS, harmless for sfdx-hardis usage. Added 2026-06-20.
+CVE-2026-12151
+CVE-2026-6734
+CVE-2026-9697
+
+# https://avd.aquasec.com/nvd/cve-2026-39821
+# golang.org/x/net v0.40.0 in the pebble binary of the Ubuntu base image (usr/bin/pebble), fixed in golang.org/x/net 0.55.0.
+# idna Punycode label-validation bypass (privilege escalation) plus arbitrary-HTML parsing DoS via Render. pebble is Canonical's service manager shipped in the base image and is never invoked by sfdx-hardis (one-shot CI/CD CLI), so the code paths are unreachable. Depends on the upstream base image rebuild. Added 2026-06-24.
+CVE-2026-25680
+CVE-2026-25681
+CVE-2026-27136
+CVE-2026-39821
+CVE-2026-42502
+CVE-2026-42506
+
+# https://avd.aquasec.com/nvd/cve-2026-27145
+# Go stdlib v1.26.3 in the pebble binary of the Ubuntu base image (usr/bin/pebble): x509 VerifyHostname matching issue, fixed in Go 1.25.11 / 1.26.4. pebble is never invoked by sfdx-hardis. Depends on the upstream base image rebuild. Added 2026-06-24.
+CVE-2026-27145
+
+# https://avd.aquasec.com/nvd/cve-2026-39822
+# Go stdlib v1.26.3 in the pebble binary of the Ubuntu base image (usr/bin/pebble): os.Root symlink-following vulnerability, fixed in Go 1.25.12 / 1.26.5 / 1.27.0-rc.2. Exploiting it needs the binary to sandbox untrusted filesystem paths with os.Root; pebble is Canonical's service manager and is never invoked by sfdx-hardis (one-shot CI/CD CLI), so the code path is unreachable. Depends on the upstream base image rebuild. Added 2026-07-11.
+CVE-2026-39822
+
+# https://avd.aquasec.com/nvd/cve-2026-50195
+# containerd 2.2.2-0ubuntu1 (from the docker.io apt package in the Ubuntu image): CRI checkpoint import image-cache poisoning on shared Kubernetes nodes (CVSS 8.8). The attack requires a multi-tenant k8s node, pod-creation rights, and CRIU checkpoint/restore enabled. sfdx-hardis runs containerd as a one-shot CI/CD CLI with no CRI plugin and no shared-node tenancy, so it is not exploitable. No fixed version published for Ubuntu 26.04 yet (fix lands in containerd 2.2.4-3). Added 2026-06-24.
+CVE-2026-50195
+CVE-2026-53488
+CVE-2026-53489
+CVE-2026-53492
+
+# https://avd.aquasec.com/nvd/cve-2026-54466
+# websocket-driver 0.7.4 (message corruption via abuse of protocol length headers, CRITICAL). sfdx-hardis own tree is already pinned to 0.7.5 in yarn.lock; the residual 0.7.4 comes from the globally npm-installed Salesforce CLI (usr/lib/node_modules/@salesforce/cli/node_modules/websocket-driver), which our yarn resolutions cannot reach, so it is not remediable from this repo; the Salesforce CLI team will pick up the upgrade. websocket-driver is used as a streaming client, not a server parsing untrusted frames, so harmless for sfdx-hardis usage. Added 2026-07-17.
+CVE-2026-54466
+
+
+# https://avd.aquasec.com/nvd/cve-2026-13149
+# brace-expansion Denial of Service via exponential-time complexity (HIGH). sfdx-hardis own tree is already pinned to the fixed versions (5.0.7 / 1.1.16 / 2.1.2) in yarn.lock; the residual old copies in the image (1.1.11, 2.0.2, 2.1.1, 5.0.5, 5.0.6) come from the globally npm-installed Salesforce CLI and its plugins, which our yarn resolutions cannot reach, so not remediable from this repo. DoS only, harmless for sfdx-hardis usage. Added 2026-07-21.
+CVE-2026-13149
+
+# https://avd.aquasec.com/nvd/cve-2026-59869
+# js-yaml Denial of Service via crafted YAML documents (HIGH). sfdx-hardis own tree is already on the fixed versions (3.15.0 / 4.3.0) in yarn.lock; the residual 4.1.1 in the image comes from the globally npm-installed Salesforce CLI, not under sfdx-hardis control. We parse only release-manager-defined YAML, not untrusted input, so harmless for sfdx-hardis usage. Added 2026-07-21.
+CVE-2026-59869
+
+# https://avd.aquasec.com/nvd/cve-2026-59873
+# tar (node-tar) Denial of Service via crafted gzip bomb (CRITICAL). sfdx-hardis own tree is already pinned to 7.5.19 in yarn.lock; the residual 7.5.15 in the image comes from the globally npm-installed Salesforce CLI, which our yarn resolutions cannot reach, so not remediable from this repo. DoS only, harmless for sfdx-hardis usage. Added 2026-07-21.
+CVE-2026-59873
+
+# https://avd.aquasec.com/nvd/cve-2026-59874
+# tar (node-tar) Denial of Service via malformed tar archive header (HIGH). Same root cause as CVE-2026-59873: sfdx-hardis own tree is already pinned to 7.5.19 in yarn.lock; the residual 7.5.15 in the image comes from the globally npm-installed Salesforce CLI, not under sfdx-hardis control. DoS only, harmless for sfdx-hardis usage. Added 2026-07-21.
+CVE-2026-59874
+
+# https://avd.aquasec.com/nvd/cve-2026-13676 + cve-2026-16221
+# fast-uri host parsing differs from Node WHATWG URL: Unicode/IDN hostnames are not canonicalized (CVE-2026-13676), and a literal backslash is not treated as an authority delimiter (CVE-2026-16221). Both allow host-based policy (allowlist, SSRF or loopback filtering, redirect validation) to be bypassed.
+# sfdx-hardis own tree is already pinned to fast-uri 3.1.4 (fixed for both) in yarn.lock. The residual 3.1.2 in the image comes from the npm-shrinkwrapped @salesforce/cli and from the sfdx-git-delta plugin, both installed globally by the Dockerfile at their latest published version, so not remediable from this repo.
+# sfdx-hardis never uses fast-uri to make host-based security decisions: it is pulled in transitively by ajv for JSON schema $ref resolution over schemas we ship ourselves, not attacker-controlled URLs. Added 2026-07-23.
+CVE-2026-13676
+CVE-2026-16221
+
+# https://github.com/advisories/GHSA-8r6m-32jq-jx6q
+# fast-xml-parser: repeated DOCTYPE declarations reset the entity expansion counters, so a crafted XML document can blow past the expansion limits (CPU / memory exhaustion, DoS). Fixed in 5.10.1.
+# sfdx-hardis own tree is already pinned to fast-xml-parser 5.10.1 in yarn.lock; the residual 5.9.3 in the image comes from the npm-shrinkwrapped @salesforce/cli, which our yarn resolutions cannot reach, so not remediable from this repo. DoS only, and the XML parsed comes from Salesforce APIs and from the repository metadata, not from untrusted sources. Added 2026-07-23.
+GHSA-8r6m-32jq-jx6q
+
+# https://avd.aquasec.com/nvd/cve-2026-14257
+# brace-expansion: expand() caps the number of results but not their length, so chaining many brace groups exhausts memory and crashes Node with an uncatchable OOM (DoS, HIGH).
+# Only fixed in brace-expansion 5.0.8; no 1.x or 2.x backport exists (latest published are 1.1.16 and 2.1.2, both still affected). The vulnerable copies come from minimatch 3.1.5 (brace-expansion ^1.1.7) and minimatch 5.1.9 / 9.0.x (brace-expansion ^2.0.x), which are the latest releases of those lines and still pin the affected ranges. Only minimatch 10.x moved to brace-expansion 5.x.
+# Forcing 5.0.8 through yarn resolutions is not possible: v5 is a breaking change that exports { expand } instead of a callable default, so minimatch 3.x/5.x/9.x and glob 7.x/8.x would break at runtime. Remediation depends on upstream packages moving to minimatch 10.
+# DoS only, and the brace patterns we pass to glob/minimatch are our own or come from release-manager-defined config, never from untrusted input. Added 2026-07-26.
+CVE-2026-14257
+
+# https://avd.aquasec.com/nvd/cve-2026-69152
+# brace-expansion: expand() does not apply maxLength while building the comma-alternative arrays or the padded sequences, so crafted input exhausts memory or blocks the event loop (DoS, HIGH). Bypasses the fix for CVE-2026-14257.
+# sfdx-hardis own tree is patched: yarn.lock now resolves 1.1.18, 2.1.4 and 5.0.9, all fixed. The copies still reported in the image (1.1.11, 2.0.2, 2.1.1, 5.0.5, 5.0.6, 5.0.7) come from the npm-shrinkwrapped @salesforce/cli and its plugins, which our yarn resolutions cannot reach, so not remediable from this repo.
+# DoS only, and the brace patterns we pass to glob/minimatch are our own or come from release-manager-defined config, never from untrusted input. Added 2026-08-04.
+CVE-2026-69152
+
+# https://avd.aquasec.com/nvd/cve-2026-18446
+# fast-uri: a backslash-based authority introducer is parsed with no authority and folds into the path, while Node's WHATWG URL parser treats a backslash as a forward slash, so the two disagree on the host (host-based policy bypass, HIGH).
+# sfdx-hardis own tree is patched to 3.1.5 in yarn.lock. The 3.1.2 left in the image comes from the shrinkwrapped @salesforce/cli, out of reach of our resolutions.
+# fast-uri is only used by ajv to resolve JSON schema $ref values, never to make a host trust decision, so the parser differential has nothing to bypass here. Added 2026-08-04.
+CVE-2026-18446
+
+# https://avd.aquasec.com/nvd/cve-2026-69192
+# ip-address: Address4 reads an octet with a leading zero as decimal while the network stack reads it as octal, so isPrivate(), isLoopback() and the other classifiers disagree with where a connection actually goes (SSRF filter bypass, HIGH).
+# sfdx-hardis own tree is patched to 10.3.1 in yarn.lock. The 10.2.0 left in the image is pulled by the shrinkwrapped @salesforce/cli through its socks proxy agent.
+# Nothing in sfdx-hardis builds a network trust boundary on ip-address: it is only reached when a user configures an explicit proxy, so there is no allowlist to defeat. Added 2026-08-04.
+CVE-2026-69192
+
+# https://avd.aquasec.com/nvd/cve-2026-13697
+# undici: the cache interceptor stores a response carrying a degenerate qualified private directive in the shared cache and can serve it to another caller, and a malformed Cache-Control combination throws in the parser (information disclosure, HIGH).
+# sfdx-hardis own tree is patched to 6.28.0 in yarn.lock. The 7.x copy left in the image belongs to the shrinkwrapped @salesforce/cli.
+# Only applies to consumers that enable the cache interceptor. Neither sfdx-hardis nor the Salesforce CLI enables it, and every request is made by a single CLI process against one org, so there is no shared cache to poison. Added 2026-08-04.
+CVE-2026-13697
+
+# https://github.com/advisories/GHSA-5p4m-2wfm-xmqj (title also references CVE-2026-59870)
+# js-yaml: resolveYamlOmap() checks key uniqueness of an !!omap sequence with a linear scan inside the per-element loop, so resolution is O(n2) and a modestly sized document blocks the event loop (DoS, HIGH). Fixed in 4.3.1 and 3.15.1.
+# sfdx-hardis own tree is already on 4.3.1 in yarn.lock. The 4.1.1 left in the Docker images comes from @cparra/apexdocs, which hard-pins "js-yaml": "4.1.1" (still the case in its latest release 3.24.2, so no upgrade is available upstream). Our yarn resolutions force 4.3.1 on that copy for the repo build, but the images install the plugin through `sf plugins install`, which runs npm, and npm ignores the resolutions of a package installed as a dependency.
+# DoS only, and apexdocs parses YAML that the release manager owns (its own config file and the project sources), never untrusted remote input. Remove once @cparra/apexdocs bumps its js-yaml pin. Added 2026-08-07.
+GHSA-5p4m-2wfm-xmqj
+CVE-2026-59870
+
+# https://avd.aquasec.com/nvd/cve-2025-71329 (GHSA-5p2g-fcmc-qvqq) + cve-2025-71330 (GHSA-w3rx-r6r6-pgpr)
+# image-size: the JXL/HEIF box parser and the ICNS entry parser never advance the read offset when a size field is 0, so a crafted image spins the event loop forever (DoS, HIGH).
+# No patched release exists: every version up to and including 2.0.2 is affected and 2.0.2 is the current latest on npm, so trivy reports no fixed version and there is nothing to upgrade to. image-size 1.2.1 reaches us only through pptxgenjs 4.0.1, whose latest release still requires image-size "^1.2.1".
+# pptxgenjs is used by src/common/utils/monitoringPptxReport.ts to build the monitoring PPTX report, which is text and tables only: it never calls addImage, so the vulnerable parsers are never reached and no image bytes from an untrusted source are handed to the library. Same assessment as the osv-scanner.toml entries for the two GHSA ids. Remove once image-size ships a fix and pptxgenjs picks it up. Added 2026-08-08.
+CVE-2025-71329
+CVE-2025-71330
+
+# https://avd.aquasec.com/nvd/cve-2026-46600
+# Go stdlib v1.26.5 compiled into the pebble binary of the Ubuntu base image (usr/bin/pebble): golang.org/x/net/dns/dnsmessage denial of service when parsing an invalid DNS record, fixed in Go 1.26.6 / 1.27.0-rc.3.
+# Nothing to upgrade from this repo: the Go runtime is statically linked into a binary Canonical ships in ubuntu:latest, so it only goes away when the base image is rebuilt with a patched Go. pebble is Canonical's service manager and is never invoked by sfdx-hardis (one-shot CI/CD CLI), so the DNS parser is unreachable. Added 2026-08-14.
+CVE-2026-46600
+
+# https://avd.aquasec.com/nvd/cve-2026-33818
+# Go stdlib v1.26.5 compiled into the pebble binary of the Ubuntu base image (usr/bin/pebble), fixed in Go 1.25.13 / 1.26.6 / 1.27.0-rc.3. Six findings from the same batch:
+#   CVE-2026-33818 encoding/asn1 DoS via excessive recursion in Unmarshal
+#   CVE-2026-56853 net/http DoS on unencrypted HTTP/2 connections
+#   CVE-2026-56858 html/template XSS via pathological input
+#   CVE-2026-56859 encoding/xml DoS via decoding recursion depth
+#   CVE-2026-56860 net/url DoS via quadratic complexity in path handling
+#   CVE-2026-56862 crypto/tls DoS via indefinite KeyUpdate messages
+# Same situation as the entries above: the Go runtime is statically linked into a binary Canonical ships in ubuntu:latest, so nothing in this repo can upgrade it. It goes away when the base image is rebuilt with a patched Go. pebble is Canonical's service manager, never invoked by sfdx-hardis (one-shot CI/CD CLI), so none of these code paths run: no HTTP/2 server, no HTML template rendering, no XML or ASN.1 decoding of untrusted input, no TLS session. Added 2026-08-15.
+CVE-2026-33818
+CVE-2026-56853
+CVE-2026-56858
+CVE-2026-56859
+CVE-2026-56860
+CVE-2026-56862

@@ -3,9 +3,12 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execSfdxJson, extractRegexMatches, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { execSfdxJson, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkDelete, bulkDeleteTooling, bulkQuery } from '../../../../common/utils/apiUtils.js';
+import { dedupeFlowInterviewIds, extractBlockingFlowInterviewIds, FLOW_INTERVIEW_BLOCK_MARKER, queryFlowInterviewIdsForFlows } from '../../../../common/utils/flowDeletionUtils.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -37,12 +40,28 @@ The command's technical implementation involves:
 - **Error Reporting:** Logs detailed error messages for failed deletions, including the specific reasons.
 - **Command-Line Execution:** Uses \`execSfdxJson\` to execute Salesforce CLI commands for querying Flow data.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:purge:flow --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- If \`--status\` is not provided, defaults to \`Obsolete\`.
+- If \`--name\` is not provided, all matching Flows are targeted.
+- Flow version and Flow Interview deletions proceed without confirmation.
 `;
 
   public static examples = [
     `$ sf hardis:org:purge:flow`,
     `$ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com --no-prompt --delete-flow-interviews`,
     `$ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft" --name TestFlow`,
+    '$ sf hardis:org:purge:flow --agent',
   ];
 
   // public static args = [{name: 'file'}];
@@ -90,6 +109,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -105,12 +128,19 @@ The command's technical implementation involves:
   protected allowPurgeFailure: boolean;
   protected flowRecordsRaw: any[];
   protected flowRecords: any[];
+  protected flowVersionDetailsById: Record<string, any> = {};
+  protected flowInterviewDetailsById: Record<string, any> = {};
   protected deletedRecords: any[] = [];
   protected deletedErrors: any[] = [];
+  protected outputFilesToDelete: any = {};
+  protected outputFilesDeleted: any = {};
+  protected conn: any;
+  protected agentMode = false;
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgPurgeFlow);
+    this.agentMode = flags.agent === true;
     this.promptUser = flags.prompt === false ? false : true;
     this.nameFilter = flags.name || null;
     this.allowPurgeFailure = flags.allowpurgefailure === false ? false : true;
@@ -139,39 +169,70 @@ The command's technical implementation involves:
     // Simplify results format & display them
     this.formatFlowRecords();
 
+    // Generate CSV report of flows to delete
+    await this.generateFlowsToDeleteReport();
+
     // Confirm deletion
-    if (this.promptUser && !isCI) {
+    if (this.promptUser && !isCI && !this.agentMode) {
       const confirmDelete = await prompts({
         type: 'confirm',
         name: 'value',
-        message: c.cyanBright(`Do you confirm you want to delete these ${this.flowRecords.length} flow versions ?`),
-        description: 'Permanently delete the selected flow versions from the Salesforce org',
+        message: c.cyanBright(t('doYouConfirmYouWantToDelete2', { flowRecords: this.flowRecords.length })),
+        description: t('deleteFlowVersionsDescription'),
       });
 
       if (confirmDelete.value === false) {
-        uxLog("error", this, c.red('Action cancelled by user.'));
+        uxLog("error", this, c.red(t('actionCancelledByUser')));
         return { outputString: 'Action cancelled by user.' };
       }
     }
 
     // Perform deletion
     const conn = flags['target-org'].getConnection();
+    this.conn = conn;
     await this.processDeleteFlowVersions(conn, true);
 
+    const deletedRecordsFlat = this.deletedRecords.flat();
     const summary =
-      this.deletedRecords.length > 0
-        ? `Deleted the following list of record(s)`
-        : 'No record(s) to delete';
+      deletedRecordsFlat.length > 0
+        ? t('deletedRecordsSummary', { count: deletedRecordsFlat.length })
+        : t('noRecordsToDelete');
     uxLog("action", this, c.cyan(summary));
-    if (this.deletedRecords.length > 0) {
-      uxLogTable(this, this.deletedRecords);
+    if (deletedRecordsFlat.length > 0) {
+      const enrichedDeletedRecords = deletedRecordsFlat.map((r: any) => {
+        const id = String(r.Id ?? r.id ?? '');
+        const idKey = id.substring(0, 15);
+        const interviewDetail = this.flowInterviewDetailsById[idKey];
+        const flowDetail = this.flowVersionDetailsById[idKey] ?? {};
+        return {
+          'Type': interviewDetail ? 'Flow Interview' : 'Flow Version',
+          'Id': id,
+          'API Name': interviewDetail ? interviewDetail.Name ?? '' : flowDetail.DefinitionDevName ?? '',
+          'Version': interviewDetail ? '' : flowDetail.VersionNumber ?? '',
+          'Label': interviewDetail ? interviewDetail.InterviewLabel ?? '' : flowDetail.MasterLabel ?? '',
+          'Status': interviewDetail ? interviewDetail.InterviewStatus ?? '' : flowDetail.Status ?? '',
+          'Deletion Status': r.success ? 'Deleted' : 'Error',
+          'Error': r.error ?? (Array.isArray(r.errors) ? r.errors.map((err: any) => err?.message).filter(Boolean).join('; ') : ''),
+        };
+      });
+      uxLogTable(this, enrichedDeletedRecords);
+      const deletionReportPath = await generateReportPath('org-purge-flow-deleted', '');
+      this.outputFilesDeleted = await generateCsvFile(enrichedDeletedRecords, deletionReportPath, {
+        fileTitle: t('flowVersionsDeletionResultsReportTitle'),
+      });
     }
+
     // Return an object to be displayed with --json
-    return { orgId: flags['target-org'].getOrgId(), outputString: summary };
+    return {
+      orgId: flags['target-org'].getOrgId(),
+      outputString: summary,
+      csvLogFile: this.outputFilesToDelete?.csvFile,
+      xlsxLogFile: this.outputFilesToDelete?.xlsxFile,
+    };
   }
 
   private async processDeleteFlowVersions(conn: any, tryDeleteInterviews: boolean) {
-    uxLog("action", this, c.cyan(`Deleting Flow versions...`));
+    uxLog("action", this, c.cyan(t('deletingFlowVersions')));
     const recordsIds = this.flowRecords.map((record) => record.Id);
     const deleteResults = await bulkDeleteTooling('Flow', recordsIds, conn);
     for (const deleteRes of deleteResults.results) {
@@ -184,7 +245,7 @@ The command's technical implementation involves:
     }
     if (
       this.deletedErrors.length > 0 &&
-      (this.deleteFlowInterviews === true || !isCI) &&
+      (this.deleteFlowInterviews === true || (!isCI && !this.agentMode)) &&
       tryDeleteInterviews === true
     ) {
       await this.manageDeleteFlowInterviews(conn);
@@ -208,38 +269,70 @@ The command's technical implementation involves:
   }
 
   private async manageDeleteFlowInterviews(conn: any) {
-    // Gather flow interviews that prevent deleting flow versions
-    const flowInterviewsIds: string[] = [];
-    this.flowRecords = [];
-    const extractInterviewsRegex = /Flow Interview - ([a-zA-Z0-9]{15}|[a-zA-Z0-9]{18})/gm;
-    for (const deletedError of this.deletedErrors) {
-      this.flowRecords.push({ Id: deletedError.Id });
-      const errorflowInterviewIds = await extractRegexMatches(extractInterviewsRegex, deletedError.error);
-      flowInterviewsIds.push(...[...new Set(errorflowInterviewIds)]); // make interview Ids unique
+    // Resolve the exact Flow versions whose deletion failed BECAUSE of Flow Interviews, before
+    // this.flowRecords is reset below. Other failures (access, references) stay out: deleting
+    // interviews cannot unblock them and the deletion is irreversible. Querying by Flow name alone
+    // would also delete interviews on versions that are not being purged.
+    const interviewBlockedErrors = this.deletedErrors.filter((deletedError: any) =>
+      JSON.stringify(deletedError).includes(FLOW_INTERVIEW_BLOCK_MARKER)
+    );
+    const failedVersionIds = new Set(
+      interviewBlockedErrors.map((deletedError: any) => deletedError.Id ?? deletedError.id).filter(Boolean)
+    );
+    const blockedVersionIdsByFlow: Record<string, string[]> = {};
+    for (const record of this.flowRecords) {
+      if (!failedVersionIds.has(record.Id) || !record.DefinitionDevName) {
+        continue;
+      }
+      blockedVersionIdsByFlow[record.DefinitionDevName] =
+        blockedVersionIdsByFlow[record.DefinitionDevName] || [];
+      blockedVersionIdsByFlow[record.DefinitionDevName].push(record.Id);
     }
-    if (flowInterviewsIds.length === 0) {
+    const blockedFlowNames = Object.keys(blockedVersionIdsByFlow);
+    // Gather every interview on the blocked versions, plus the ones named in each deletion error as a
+    // fallback when the exhaustive query is unavailable. Both sources go through
+    // dedupeFlowInterviewIds, as they do not agree on the 15/18-char Id form.
+    const flowInterviewsIds: string[] = await queryFlowInterviewIdsForFlows(blockedFlowNames, conn, this, {
+      versionIdsByFlow: blockedVersionIdsByFlow,
+      failOnError: false,
+    });
+    this.flowRecords = [];
+    for (const deletedError of this.deletedErrors) {
+      this.flowRecords.push({ Id: deletedError.Id ?? deletedError.id });
+      flowInterviewsIds.push(...(await extractBlockingFlowInterviewIds(JSON.stringify(deletedError))));
+    }
+    const flowInterviewsIdsList = dedupeFlowInterviewIds(flowInterviewsIds);
+    if (flowInterviewsIdsList.length === 0) {
       return;
     }
     // Display flows & Prompt user if not in CI
-    await this.displayFlowInterviewToDelete(flowInterviewsIds, conn);
-    if (!isCI && this.promptUser === true) {
+    await this.displayFlowInterviewToDelete(flowInterviewsIdsList, conn);
+    if (!isCI && !this.agentMode && this.promptUser === true) {
       const confirmDelete = await prompts({
         type: 'confirm',
         name: 'value',
-        message: c.cyanBright(`Do you confirm you want to delete ${flowInterviewsIds.length} Flow Interviews ?`),
-        description: 'Permanently delete the selected flow interview records from the Salesforce org',
+        message: c.cyanBright(t('doYouConfirmYouWantToDelete', { flowInterviewsIds: flowInterviewsIdsList.length })),
+        description: t('deleteFlowInterviewsDescription'),
       });
       if (confirmDelete.value === false) {
-        uxLog("error", this, c.red('Action cancelled by user.'));
+        uxLog("error", this, c.red(t('actionCancelledByUser')));
         return { outputString: 'Action cancelled by user.' };
       }
     }
     // Delete flow interviews
-    const deleteInterviewResults = await bulkDelete('FlowInterview', flowInterviewsIds, conn);
-    this.deletedRecords.push(deleteInterviewResults?.successfulResults || []);
+    const deleteInterviewResults = await bulkDelete('FlowInterview', flowInterviewsIdsList, conn);
+    // Bulk API v2 results use sf__Id and have no success flag: normalize them to the same shape as
+    // Tooling API results, else they show up as errors in the final deletion table.
+    this.deletedRecords.push(
+      ...(deleteInterviewResults?.successfulResults || []).map((interviewRes: any) => ({
+        Id: interviewRes.sf__Id ?? interviewRes.Id ?? interviewRes.id ?? '',
+        success: true,
+        errors: [],
+      }))
+    );
     this.deletedErrors = deleteInterviewResults?.failedResults || [];
     // Try to delete flow versions again
-    uxLog("action", this, c.cyan(`Trying again to delete flow versions after deleting flow interviews...`));
+    uxLog("action", this, c.cyan(t('retryDeleteFlowVersionsAfterInterviews')));
     this.flowRecords = [...new Set(this.flowRecords)]; // Make list unique
     await this.processDeleteFlowVersions(conn, false);
   }
@@ -253,30 +346,37 @@ The command's technical implementation involves:
       Status: record.Status,
       Description: record.Description,
     }));
+    for (const record of this.flowRecords) {
+      this.flowVersionDetailsById[String(record.Id).substring(0, 15)] = record;
+    }
 
     if (this.flowRecords.length === 0) {
-      uxLog("warning", this, c.yellow('No Flow versions found to delete.'));
+      uxLog("warning", this, c.yellow(t('noFlowVersionsFoundToDelete')));
       return;
     }
 
-    const flowList = this.flowRecords
-      .map(
-        (flow) =>
-          `- ${c.bold(flow.DefinitionDevName)} v${c.green(flow.VersionNumber)} (${c.yellow(flow.Status)})${flow.Description ? ` - ${c.gray(flow.Description)}` : ''}`
-      )
-      .join('\n');
+    uxLog("action", this, c.cyan(t('foundFlowVersionsToDelete', { count: this.flowRecords.length })));
+    uxLogTable(this, this.flowRecords.map((flow: any) => ({
+      'API Name': flow.DefinitionDevName,
+      'Version': flow.VersionNumber,
+      'Label': flow.MasterLabel,
+      'Status': flow.Status,
+      'Description': flow.Description ?? '',
+    })));
+  }
 
-    uxLog(
-      "action",
-      this,
-      c.cyan(
-        `Found ${this.flowRecords.length} Flow version(s) to delete:\n${flowList}`
-      )
-    );
+  private async generateFlowsToDeleteReport(): Promise<void> {
+    if (this.flowRecords.length === 0) {
+      return;
+    }
+    const reportPath = await generateReportPath('org-purge-flow-to-delete', '');
+    this.outputFilesToDelete = await generateCsvFile(this.flowRecords, reportPath, {
+      fileTitle: t('flowVersionsToDeleteReportTitle'),
+    });
   }
 
   private async listFlowVersionsToDelete(manageableConstraint: string) {
-    uxLog("action", this, c.cyan('Querying Flow versions to delete...'));
+    uxLog("action", this, c.cyan(t('queryingFlowVersionsToDelete')));
     let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description,Definition.DeveloperName FROM Flow WHERE ${manageableConstraint} AND Status IN ('${this.statusFilter.join(
       "','"
     )}')`;
@@ -300,12 +400,12 @@ The command's technical implementation involves:
     if (flags.status) {
       // Input parameter used
       this.statusFilter = flags.status.split(',');
-    } else if (isCI || this.promptUser === false) {
-      // Obsolete by default for CI
+    } else if (isCI || this.agentMode || this.promptUser === false) {
+      // Obsolete by default for CI and agent mode
       this.statusFilter = ['Obsolete'];
     } else {
       // Query all flows definitions
-      uxLog("action", this, c.cyan('Querying all Flow definitions to select from...'));
+      uxLog("action", this, c.cyan(t('queryingAllFlowDefinitionsToSelectFrom')));
       const allFlowQueryCommand =
         'sf data query ' +
         ` --query "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
@@ -321,23 +421,24 @@ The command's technical implementation involves:
       const flowNamesChoice = flowNamesUnique.map((flowName) => {
         return { title: flowName, value: flowName };
       });
-      flowNamesChoice.unshift({ title: 'All flows', value: 'all' });
+      flowNamesChoice.unshift({ title: t('allFlows'), value: 'all' });
 
       // Manually select status
       const selectStatus = await prompts([
         {
           type: 'select',
           name: 'name',
-          message: 'Please select the flow you want to clean',
-          description: 'Choose a specific flow to clean or select all flows',
-          placeholder: 'Select a flow',
+          message: t('pleaseSelectTheFlowYouWantTo2'),
+          description: t('chooseASpecificFlowToCleanOrSelectAll'),
+          placeholder: t('selectAFlow'),
           choices: flowNamesChoice,
         },
         {
           type: 'multiselect',
           name: 'status',
-          message: 'Please select the status(es) you want to delete',
+          message: t('pleaseSelectTheStatusEsYouWant'),
           description: 'Choose which flow version statuses should be deleted',
+          initial: ['Draft', 'Inactive', 'Obsolete'],
           choices: [
             { title: `Draft`, value: 'Draft' },
             { title: `Inactive`, value: 'Inactive' },
@@ -353,21 +454,28 @@ The command's technical implementation involves:
 
   private async displayFlowInterviewToDelete(flowVInterviewIds: string[], conn: any) {
     const query =
-      'SELECT Name,InterviewLabel,InterviewStatus,CreatedBy.Username,CreatedDate,LastModifiedDate ' +
+      'SELECT Id,Name,InterviewLabel,InterviewStatus,CreatedBy.Username,CreatedDate,LastModifiedDate ' +
       `FROM FlowInterview WHERE Id IN ('${flowVInterviewIds.join("','")}')` +
       ' ORDER BY Name';
     const flowsInterviewsToDelete = (await bulkQuery(query, conn)).records;
     if (flowsInterviewsToDelete.length === 0) {
-      uxLog("warning", this, c.yellow('No Flow Interviews found to delete.'));
+      uxLog("warning", this, c.yellow(t('noFlowInterviewsFoundToDelete')));
       return;
     }
-    // Display Flow Interviews to delete
-    const flowList = flowsInterviewsToDelete
-      .map(
-        (flow) =>
-          `- ${c.bold(flow.Name)} (${c.green(flow.InterviewLabel)}) - ${c.yellow(flow.InterviewStatus)}`
-      )
-      .join('\n');
-    uxLog("action", this, c.cyan(`Found ${flowsInterviewsToDelete.length} Flow Interviews to delete:\n${flowList}`));
+    // Only chance to capture these details: once the interviews are deleted they can not be queried again.
+    for (const flowInterview of flowsInterviewsToDelete) {
+      if (flowInterview?.Id) {
+        this.flowInterviewDetailsById[String(flowInterview.Id).substring(0, 15)] = flowInterview;
+      }
+    }
+    // Display Flow Interviews to delete using uxLogTable
+    uxLog("action", this, c.cyan(t('foundFlowInterviewsToDeleteCount', { count: flowsInterviewsToDelete.length })));
+    uxLogTable(this, flowsInterviewsToDelete.map((flow: any) => ({
+      'Name': flow.Name,
+      'Label': flow.InterviewLabel,
+      'Status': flow.InterviewStatus,
+      'Created By': flow.CreatedBy?.Username ?? '',
+    })));
   }
+
 }

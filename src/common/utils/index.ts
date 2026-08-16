@@ -2,14 +2,13 @@ import c from 'chalk';
 import * as child from 'child_process';
 import { spawn as crossSpawn } from 'cross-spawn';
 import * as crypto from 'crypto';
-import { stringify as csvStringify } from 'csv-stringify/sync';
+import { stringifyCsv } from './csvUtils.js';
 import fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 
 import * as util from 'util';
 import which from 'which';
-import * as xml2js from 'xml2js';
 const exec = util.promisify(child.exec);
 import { Connection, SfError } from '@salesforce/core';
 import ora from 'ora';
@@ -20,13 +19,15 @@ import { encryptFile } from '../cryptoUtils.js';
 import { deployMetadatas, shortenLogLines } from './deployUtils.js';
 import { isProductionOrg, promptProfiles, promptUserEmail } from './orgUtils.js';
 import { LogType, WebSocketClient } from '../websocketClient.js';
-import moment from 'moment';
-import { writeXmlFile } from './xmlUtils.js';
+import { formatElapsedMs } from './dateHelper.js';
+import { buildXmlString, parseXmlString, writeXmlFile } from './xmlUtils.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
+import { t } from './i18n.js';
 
 let pluginsStdout: string | null = null;
 
-export const isCI = process.env.CI != null;
+export { isCI, isAgentMode } from './envUtils.js';
+import { isCI, isAgentMode } from './envUtils.js';
 
 export function git(options: any = { output: false, displayCommand: true }): SimpleGit {
   const simpleGitInstance = simpleGit();
@@ -163,11 +164,7 @@ export async function checkSfdxPlugin(pluginName: string) {
     uxLog(
       "warning",
       this,
-      c.yellow(
-        `[dependencies] Installing SF CLI plugin ${c.green(
-          pluginName
-        )}... \nIf it stays stuck for too long, please run ${c.green(`sf plugins install ${pluginName}`)}`
-      )
+      c.yellow(t('installingsfCliPlugin', { pluginName }))
     );
     const installCommand = `echo y|sf plugins install ${pluginName}`;
     await execCommand(installCommand, this, { fail: true, output: false });
@@ -175,8 +172,8 @@ export async function checkSfdxPlugin(pluginName: string) {
 }
 
 const dependenciesInstallLink = {
-  git: 'Download installer at https://git-scm.com/downloads',
-  openssl: 'Run "choco install openssl" in Windows Powershell, or use Git Bash as command line tool',
+  git: t('gitDownloadInstaller'),
+  openssl: t('opensslInstallInstruction'),
 };
 
 export async function checkAppDependency(appName) {
@@ -194,10 +191,7 @@ export async function checkAppDependency(appName) {
       uxLog(
         "error",
         this,
-        c.red(
-          `You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ''
-          }`
-        )
+        c.red(t('youNeedAppInstalledLocally', { appName: c.bold(appName) }) + `\n${dependenciesInstallLink[appName] || ''}`)
       );
       process.exit();
     });
@@ -214,18 +208,18 @@ export async function promptInstanceUrl(
       : 'https://myclient--preprod.sandbox.lightning.force.com/';
   const allChoices = [
     {
-      title: '📝 Custom login URL (Sandbox, DevHub or Production Org)',
-      description: `Recommended option 😊 Example: ${customLoginUrlExample}`,
+      title: t('titleCustomLoginUrl'),
+      description: t('descRecommendedOption', { example: customLoginUrlExample }),
       value: 'custom',
     },
     {
-      title: '🧪 Sandbox or Scratch org (test.salesforce.com)',
-      description: 'The org I want to connect is a sandbox or a scratch org',
+      title: t('titleSandboxScratchOrg'),
+      description: t('descConnectSandboxOrScratch'),
       value: 'https://test.salesforce.com',
     },
     {
-      title: '☢️ Other: Dev org, Production org or DevHub org (login.salesforce.com)',
-      description: 'The org I want to connect is NOT a sandbox',
+      title: t('titleOtherOrgType'),
+      description: t('descConnectNonSandbox'),
       value: 'https://login.salesforce.com',
     },
   ];
@@ -241,15 +235,15 @@ export async function promptInstanceUrl(
   if (defaultOrgChoice != null) {
     choices.unshift({
       title: `♻️ ${defaultOrgChoice.instanceUrl}`,
-      description: 'Your current default org',
+      description: t('descYourCurrentDefaultOrg'),
       value: defaultOrgChoice.instanceUrl,
     });
   }
   const orgTypeResponse = await prompts({
     type: 'select',
     name: 'value',
-    message: c.cyanBright(`What is the base URL or domain or the org you want to connect to, as ${alias} ?`),
-    description: 'Select the Salesforce environment type or specify a custom URL for authentication',
+    message: c.cyanBright(t('whatIsTheBaseUrlOrDomain', { alias: alias || t('defaultOrg') })),
+    description: t('descSelectOrgTypeOrUrl'),
     choices: choices,
     initial: 1,
   });
@@ -262,9 +256,9 @@ export async function promptInstanceUrl(
   const customUrlResponse = await prompts({
     type: 'text',
     name: 'value',
-    message: c.cyanBright('Please input the base URL of the salesforce org (just copy paste any full URL of your org,i\'ll clean it 🙃):'),
-    description: 'Copy paste the full URL of your currently open Salesforce org 😊',
-    placeholder: 'Ex: https://myclient.my.salesforce.com , or myclient',
+    message: c.cyanBright(t('pleaseInputTheBaseUrlOfThe')),
+    description: t('copyPasteTheFullUrlOfYourCurrentlyOpenSalesforceOrg'),
+    placeholder: t('exSalesforceOrgUrl'),
   });
   let urlCustom = (customUrlResponse?.value || "")
     .replace('.lightning.force.com', '.my.salesforce.com')
@@ -298,21 +292,19 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
         const cloneUrlPrompt = await prompts({
           type: 'text',
           name: 'value',
-          message: c.cyanBright(
-            'What is the URL of your git repository ?'
-          ),
-          description: 'Enter the full URL of the git repository to clone',
-          placeholder: 'Ex: https://gitlab.hardis-group.com/busalesforce/monclient/monclient-org-monitoring.git',
+          message: c.cyanBright(t('whatIsTheUrlOfYourGitRepository')),
+          description: t('descEnterGitRepoUrl'),
+          placeholder: t('exGitlabMonitoringRepoUrl'),
         });
         cloneUrl = cloneUrlPrompt.value;
       }
-      // Git lcone
+      // Git clone
       await new Promise((resolve) => {
         crossSpawn('git', ['clone', cloneUrl, '.'], { stdio: 'inherit' }).on('close', () => {
           resolve(null);
         });
       });
-      uxLog("other", this, `Git repository cloned. ${c.yellow('Please run the same command again 😊')}`);
+      uxLog("other", this, `Git repository cloned. ${c.yellow(t('pleaseRunTheSameCommandAgain'))}`);
       process.exit(0);
     } else {
       throw new SfError('You need to be at the root of a git repository to run this command');
@@ -337,11 +329,21 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   if (!isGitRepo()) {
     return null;
   }
-  const gitBranch = process.env.CI_COMMIT_REF_NAME || (await git().branchLocal()).current;
+  const gitBranch = process.env.FORCE_SOURCE_BRANCH || process.env.CI_COMMIT_REF_NAME || (await git().branchLocal()).current;
   if (options.formatted === true) {
     return gitBranch.replace('/', '__');
   }
   return gitBranch;
+}
+
+// Build a stable slug from an org instance URL (used to name branch/auth configs from an org domain)
+export function buildOrgSlugFromInstanceUrl(instanceUrl: string): string {
+  return (instanceUrl || '')
+    .replace('https://', '')
+    .replace('.my.salesforce.com', '')
+    .replace(/\./gm, '_')
+    .replace(/--/gm, '__')
+    .replace(/-/gm, '_');
 }
 
 export async function getLatestGitCommit() {
@@ -367,8 +369,8 @@ export async function selectGitBranch(
   const branchResp = await prompts({
     type: 'select',
     name: 'value',
-    message: options.message || 'Please select a Git branch',
-    description: 'Choose a git branch to work with',
+    message: options.message || t('pleaseSelectGitBranch'),
+    description: t('descChooseGitBranch'),
     choices: branches.all.map((branchName) => {
       return { title: branchName.replace('origin/', ''), value: branchName.replace('origin/', '') };
     }),
@@ -383,8 +385,26 @@ export async function selectGitBranch(
 }
 
 export async function gitCheckOutRemote(branchName: string) {
+  // Fail early with a clear message if the branch is checked out in another git worktree
+  await assertBranchNotInOtherWorktree(branchName);
   await git().checkout(branchName);
-  await gitPull();
+  try {
+    await gitPull();
+  } catch (error: any) {
+    const errorStr = (error?.message || error?.toString() || '');
+    // Fallback when the local branch has no upstream tracking: pull explicitly from origin, then set upstream
+    if (/no tracking information/i.test(errorStr) || /no upstream/i.test(errorStr)) {
+      uxLog("warning", this, c.yellow(t('gitPullNoUpstreamFallback', { branchName })));
+      await gitPull(['origin', branchName]);
+      try {
+        await git().branch([`--set-upstream-to=origin/${branchName}`, branchName]);
+      } catch {
+        // Best-effort: tracking setup failure should not break the checkout
+      }
+    } else {
+      throw error;
+    }
+  }
 }
 
 // Helper function to detect git authentication errors
@@ -411,36 +431,36 @@ function isGitAuthError(error: any): boolean {
 // Helper function to prompt for git credentials and update remote URL
 async function handleGitAuthError(operation: string): Promise<boolean> {
   if (isCI) {
-    uxLog("error", this, c.red(`Git ${operation} failed due to authentication error in CI environment`));
+    uxLog("error", this, c.red(t('gitFailedDueToAuthenticationErrorIn', { operation })));
     return false;
   }
 
-  uxLog("warning", this, c.yellow(`Git ${operation} failed due to authentication error.`));
-  uxLog("action", this, c.cyan('Please provide your Git credentials to continue.'));
+  uxLog("warning", this, c.yellow(t('gitFailedDueToAuthenticationError', { operation })));
+  uxLog("action", this, c.cyan(t('pleaseProvideYourGitCredentialsToContinue')));
 
   const usernamePrompt = await prompts({
     type: 'text',
     name: 'username',
-    message: c.cyanBright('Enter your Git username'),
-    description: 'Your Git service username',
+    message: c.cyanBright(t('enterYourGitUsername')),
+    description: t('descGitUsername'),
     validate: (value: string) => (value && value.trim().length > 0) || 'Username is required',
   });
 
   if (!usernamePrompt.username) {
-    uxLog("error", this, c.red('Git username is required to continue'));
+    uxLog("error", this, c.red(t('gitUsernameIsRequiredToContinue')));
     return false;
   }
 
   const passwordPrompt = await prompts({
     type: 'text',
     name: 'password',
-    message: c.cyanBright('Enter your Git password or Personal Access Token (PAT)'),
-    description: 'Your Git service password or PAT (input will be visible)',
+    message: c.cyanBright(t('enterYourGitPasswordOrPersonalAccess')),
+    description: t('descGitPassword'),
     validate: (value: string) => (value && value.trim().length > 0) || 'Password/PAT is required',
   });
 
   if (!passwordPrompt.password) {
-    uxLog("error", this, c.red('Git password/PAT is required to continue'));
+    uxLog("error", this, c.red(t('gitPasswordPatIsRequiredToContinue')));
     return false;
   }
 
@@ -451,7 +471,7 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
     // Get current remote URL
     const origin = await git().getConfig('remote.origin.url');
     if (!origin || !origin.value) {
-      uxLog("error", this, c.red('Could not retrieve remote origin URL'));
+      uxLog("error", this, c.red(t('couldNotRetrieveRemoteOriginUrl')));
       return false;
     }
 
@@ -471,16 +491,16 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
       // Add new credentials
       remoteUrl = remoteUrl.replace('http://', `http://${encodedUsername}:${encodedPassword}@`);
     } else {
-      uxLog("error", this, c.red('Only HTTP(S) remote URLs are supported for credential injection'));
+      uxLog("error", this, c.red(t('onlyHttpRemoteUrlsAreSupportedFor')));
       return false;
     }
 
     // Update the remote URL
     await git().remote(['set-url', 'origin', remoteUrl]);
-    uxLog("action", this, c.green('Remote URL updated with credentials successfully'));
+    uxLog("action", this, c.green(t('remoteUrlUpdatedWithCredentialsSuccessfully')));
     return true;
   } catch (e: any) {
-    uxLog("error", this, c.red(`Failed to update remote URL: ${e?.message || e}`));
+    uxLog("error", this, c.red(t('failedToUpdateRemoteUrl', { message: e?.message || e })));
     return false;
   }
 }
@@ -508,7 +528,7 @@ export async function gitFetch(argsOrOptions?: string[] | any, argsIfOptionsFirs
       const credentialsUpdated = await handleGitAuthError('fetch');
       if (credentialsUpdated) {
         // Retry the operation
-        uxLog("action", this, c.cyan('Retrying git fetch with updated credentials.'));
+        uxLog("action", this, c.cyan(t('retryingGitFetchWithUpdatedCredentials')));
         if (options.output !== undefined || options.displayCommand !== undefined) {
           return await git(options).fetch(args);
         }
@@ -542,7 +562,7 @@ export async function gitPull(argsOrOptions?: string[] | any, argsIfOptionsFirst
       const credentialsUpdated = await handleGitAuthError('pull');
       if (credentialsUpdated) {
         // Retry the operation
-        uxLog("action", this, c.cyan('Retrying git pull with updated credentials...'));
+        uxLog("action", this, c.cyan(t('retryingGitPullWithUpdatedCredentials')));
         if (options.output !== undefined || options.displayCommand !== undefined) {
           return await git(options).pull(args);
         }
@@ -576,7 +596,7 @@ export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst
       const credentialsUpdated = await handleGitAuthError('push');
       if (credentialsUpdated) {
         // Retry the operation
-        uxLog("action", this, c.cyan('Retrying git push with updated credentials...'));
+        uxLog("action", this, c.cyan(t('retryingGitPushWithUpdatedCredentials')));
         if (options.output !== undefined || options.displayCommand !== undefined) {
           return await git(options).push(args);
         }
@@ -602,10 +622,11 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
   const localBranches = await git().branchLocal();
   if (localBranches.current !== branchName) {
     if (branches.all.includes(branchName)) {
-      // Existing branch: checkout & pull
+      // Existing branch: checkout & pull (fail early if it is checked out in another worktree)
+      await assertBranchNotInOtherWorktree(branchName);
       await git().checkout(branchName);
       if (options.logAsAction) {
-        uxLog("action", this, c.green(`Checked out git branch ${c.bold(branchName)}`));
+        uxLog("action", this, c.green(t('checkedOutGitBranch', { branchName: c.bold(branchName) })));
       }
       // await git().pull()
     } else {
@@ -625,11 +646,134 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
         await git().checkoutBranch(branchName, localBranches.current);
       }
       if (options.logAsAction) {
-        uxLog("action", this, c.green(`Created and checked out git branch ${c.bold(branchName)}`));
+        uxLog("action", this, c.green(t('createdAndCheckedOutGitBranch', { branchName: c.bold(branchName) })));
       }
     }
   }
   return true;
+}
+
+export interface GitWorktreeInfo {
+  path: string; // Absolute path of the worktree
+  head?: string; // Commit hash currently checked out
+  branch?: string; // Short branch name checked out (undefined when detached)
+}
+
+// List all git worktrees attached to the current repository
+export async function listGitWorktrees(): Promise<GitWorktreeInfo[]> {
+  let raw = '';
+  try {
+    raw = await git().raw(['worktree', 'list', '--porcelain']);
+  } catch {
+    // git worktree may be unavailable on very old git versions: assume a single worktree
+    return [];
+  }
+  const blocks = raw
+    .split(/\r?\n\r?\n/)
+    .map((block) => block.trim())
+    .filter((block) => block.length > 0);
+  return blocks
+    .map((block) => {
+      const info: GitWorktreeInfo = { path: '' };
+      for (const line of block.split(/\r?\n/)) {
+        if (line.startsWith('worktree ')) {
+          info.path = line.substring('worktree '.length).trim();
+        } else if (line.startsWith('HEAD ')) {
+          info.head = line.substring('HEAD '.length).trim();
+        } else if (line.startsWith('branch ')) {
+          info.branch = line.substring('branch '.length).trim().replace(/^refs\/heads\//, '');
+        }
+      }
+      return info;
+    })
+    .filter((info) => info.path !== '');
+}
+
+// Returns the path of another worktree where branchName is checked out, or null if free
+export async function getBranchWorktreePath(branchName: string): Promise<string | null> {
+  const worktrees = await listGitWorktrees();
+  if (worktrees.length === 0) {
+    return null;
+  }
+  let currentRoot: string | null = null;
+  try {
+    currentRoot = path.resolve(await getGitRepoRoot());
+  } catch {
+    currentRoot = null;
+  }
+  for (const worktree of worktrees) {
+    if (worktree.branch === branchName && (currentRoot === null || path.resolve(worktree.path) !== currentRoot)) {
+      return worktree.path;
+    }
+  }
+  return null;
+}
+
+// Throws a clear error when branchName is checked out in another git worktree, so callers fail with
+// an actionable message instead of a cryptic "'<branch>' is already used by worktree at <path>" git error.
+export async function assertBranchNotInOtherWorktree(branchName: string): Promise<void> {
+  const branchWorktree = await getBranchWorktreePath(branchName);
+  if (branchWorktree) {
+    throw new SfError(t('branchAlreadyCheckedOutInWorktree', { branch: branchName, worktreePath: branchWorktree }));
+  }
+}
+
+/**
+ * Create (or check out) a work branch based on the latest state of a target branch, in a way that
+ * is safe when the target branch is checked out in another git worktree.
+ *
+ * - Never checks out the target branch in the current worktree (so it cannot fail with
+ *   "<target> is already checked out at <path>").
+ * - Fetches origin/<target> and creates the new branch from it, falling back to the local <target> ref.
+ * - If the branch already exists and is free, checks it out (resume work).
+ * - If the branch is checked out in another worktree, throws a clear error.
+ */
+export async function createWorkBranchFromTarget(branchName: string, targetBranch: string): Promise<void> {
+  if (!isGitRepo()) {
+    throw new SfError('[sfdx-hardis] You must be within a git repository');
+  }
+
+  // Refuse if the work branch is already checked out in another worktree
+  await assertBranchNotInOtherWorktree(branchName);
+
+  // Fetch the latest state of the target branch into its remote-tracking ref origin/<target>
+  try {
+    await gitFetch(['origin', targetBranch]);
+  } catch (e) {
+    uxLog("warning", this, c.yellow(t('unableToFetchTargetBranch', { branch: targetBranch, message: (e as Error).message })));
+  }
+
+  const localBranches = await git().branchLocal();
+  // Resume an existing local branch
+  if (localBranches.all.includes(branchName)) {
+    await git().checkout(branchName);
+    uxLog("action", this, c.green(t('checkedOutGitBranch', { branchName: c.bold(branchName) })));
+    return;
+  }
+
+  // Resume a branch that exists only on origin (git creates the local tracking branch)
+  const remoteBranches = await git().branch(['-r']);
+  if (remoteBranches.all.includes(`origin/${branchName}`)) {
+    await git().checkout(branchName);
+    uxLog("action", this, c.green(t('checkedOutGitBranch', { branchName: c.bold(branchName) })));
+    return;
+  }
+
+  // Determine the start point: prefer origin/<target>, fall back to the local <target> ref
+  let startPoint: string | null = null;
+  if (remoteBranches.all.includes(`origin/${targetBranch}`)) {
+    startPoint = `origin/${targetBranch}`;
+  } else if (localBranches.all.includes(targetBranch)) {
+    startPoint = targetBranch;
+  }
+  if (startPoint === null) {
+    throw new SfError(t('unableToFindTargetBranchToBranchFrom', { branch: targetBranch }));
+  }
+
+  // Create the work branch from the start point. --no-track keeps it upstream-less until
+  // hardis:work:save pushes it with -u (matching the behavior of branching from a local ref).
+  await git().checkout(['-b', branchName, '--no-track', startPoint]);
+  uxLog("action", this, c.green(t('createdAndCheckedOutGitBranch', { branchName: c.bold(branchName) })));
 }
 
 // Checks that current git status is clean.
@@ -649,162 +793,21 @@ export async function checkGitClean(options: any) {
         await execCommand('git add --all', this, { output: true, fail: true });
         await execCommand('git stash', this, { output: true, fail: true });
       } catch (e) {
-        uxLog("warning", this, c.yellow(c.bold("You might need to run the following command in Powershell launched as Administrator")));
-        uxLog("warning", this, c.yellow(c.bold("git config --system core.longpaths true")));
+        uxLog("warning", this, c.yellow(c.bold(t('youMightNeedToRunTheFollowing'))));
+        uxLog("warning", this, c.yellow(c.bold(t('gitConfigSystemCoreLongpathsTrue'))));
         throw e;
       }
     } else {
+      const warningMessage = t('branchIsNotCleanCommitOrResetLocalUpdates', {
+        branch: c.bold(gitStatus.current),
+        localUpdates: c.yellow(localUpdates),
+      });
+      uxLog("warning", this, c.yellow(warningMessage));
       throw new SfError(
-        `[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold(
-          'commit or reset'
-        )} the following local updates:\n${c.yellow(localUpdates)}`
+        `[sfdx-hardis] ${warningMessage}`
       );
     }
   }
-}
-
-// Interactive git add
-export async function interactiveGitAdd(options: any = { filter: [], groups: [] }) {
-  if (!isGitRepo()) {
-    throw new SfError('[sfdx-hardis] You must be within a git repository');
-  }
-  // List all files and arrange their format
-  const config = await getConfig('project');
-  const gitStatus = await git().status();
-  let filesFiltered = gitStatus.files
-    .filter((fileStatus: FileStatusResult) => {
-      return (
-        (options.filter || []).filter((filterString: string) => fileStatus.path.includes(filterString)).length === 0
-      );
-    })
-    .map((fileStatus: FileStatusResult) => {
-      fileStatus.path = normalizeFileStatusPath(fileStatus.path, config);
-      return fileStatus;
-    });
-  // Create default group if
-  let groups = options.groups || [];
-  if (groups.length === 0) {
-    groups = [
-      {
-        label: 'All',
-        regex: /(.*)/i,
-        defaultSelect: false,
-        ignore: false,
-      },
-    ];
-  }
-  // Ask user what he/she wants to git add/rm
-  const result: any = { added: [], removed: [] };
-  if (filesFiltered.length > 0) {
-    for (const group of groups) {
-      // Extract files matching group regex
-      const matchingFiles = filesFiltered.filter((fileStatus: FileStatusResult) => {
-        return group.regex.test(fileStatus.path);
-      });
-      if (matchingFiles.length === 0) {
-        continue;
-      }
-      // Remove remaining files list
-      filesFiltered = filesFiltered.filter((fileStatus: FileStatusResult) => {
-        return !group.regex.test(fileStatus.path);
-      });
-      // Ask user for input
-      const selectFilesStatus = await prompts({
-        type: 'multiselect',
-        name: 'files',
-        message: c.cyanBright(
-          `Please select the ${c.bgWhite(
-            c.red(c.bold(group.label.toUpperCase()))
-          )} files you want to commit (save)}`
-        ),
-        description: 'Choose files to include in the git commit. Be careful with your selection.',
-        choices: matchingFiles.map((fileStatus: FileStatusResult) => {
-          return {
-            title: `(${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`,
-            selected: group.defaultSelect || false,
-            value: fileStatus,
-          };
-        }),
-        optionsPerPage: 9999,
-      });
-      // Add to group list of files
-      group.files = selectFilesStatus.files;
-      // Separate added to removed files
-      result.added.push(
-        ...selectFilesStatus.files
-          .filter((fileStatus: FileStatusResult) => fileStatus.working_dir !== 'D')
-          .map((fileStatus: FileStatusResult) => fileStatus.path.replace('"', ''))
-      );
-      result.removed.push(
-        ...selectFilesStatus.files
-          .filter((fileStatus: FileStatusResult) => fileStatus.working_dir === 'D')
-          .map((fileStatus: FileStatusResult) => fileStatus.path.replace('"', ''))
-      );
-    }
-    if (filesFiltered.length > 0) {
-      uxLog(
-        "log",
-        this,
-        c.grey(
-          'The following list of files has not been proposed for selection\n' +
-          filesFiltered
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join('\n')
-        )
-      );
-    }
-    // Ask user for confirmation
-    const confirmationText = groups
-      .filter((group) => group.files != null && group.files.length > 0)
-      .map((group) => {
-        return (
-          c.bgWhite(c.red(c.bold(group.label))) +
-          '\n' +
-          group.files
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join('\n') +
-          '\n'
-        );
-      })
-      .join('\n');
-    const addFilesResponse = await prompts({
-      type: 'select',
-      name: 'addFiles',
-      message: c.cyanBright(`Do you confirm that you want to add the following list of files ?\n${confirmationText}`),
-      description: 'Confirm your file selection for the git commit',
-      choices: [
-        { title: 'Yes, my selection is complete !', value: 'yes' },
-        { title: 'No, I want to select again', value: 'no' },
-        { title: 'Let me out of here !', value: 'bye' },
-      ],
-      initial: 0,
-    });
-    // Commit if requested
-    if (addFilesResponse.addFiles === 'yes') {
-      if (result.added.length > 0) {
-        await git({ output: true }).add(result.added);
-      }
-      if (result.removed.length > 0) {
-        await git({ output: true }).rm(result.removed);
-      }
-    }
-    // restart selection
-    else if (addFilesResponse.addFiles === 'no') {
-      return await interactiveGitAdd(options);
-    }
-    // exit
-    else {
-      uxLog("other", this, 'Cancelled by user.');
-      process.exit(0);
-    }
-  } else {
-    uxLog("action", this, c.cyan('There is no new file to commit'));
-  }
-  return result;
 }
 
 // Shortcut to add, commit and push
@@ -812,7 +815,7 @@ export async function gitAddCommitPush(
   options: any = {
     init: false,
     pattern: './*',
-    commitMessage: 'Updated by sfdx-hardis',
+    commitMessage: 'chore(sfdx-hardis): automated update',
     branch: null,
   }
 ) {
@@ -828,7 +831,7 @@ export async function gitAddCommitPush(
   const currentgitBranch = (await git().branchLocal()).current;
   await git()
     .add(options.pattern || './*')
-    .commit(options.commitMessage || 'Updated by sfdx-hardis');
+    .commit(options.commitMessage || 'chore(sfdx-hardis): automated update');
   await gitPush(['-u', 'origin', currentgitBranch]);
 }
 
@@ -846,11 +849,37 @@ export function normalizeFileStatusPath(fileStatusPath: string, config): string 
   return fileStatusPath;
 }
 
+// Retry policy for execCommand. tryCount is set by execCommand on retry — callers do not provide it.
+export interface ExecCommandRetryOptions {
+  tryCount?: number;
+  retryMaxAttempts?: number;
+  retryStringConstraint?: string;
+  retryDelay?: number;
+}
+
+// Options accepted by execCommand and execSfdxJson.
+export interface ExecCommandOptions {
+  // Throw on non-zero command exit (or on --json status > 0). Default false.
+  fail?: boolean;
+  // Print command output to the user. null/undefined means "auto" based on --json. Default false.
+  output?: boolean | null;
+  // Log the stdout for debugging. Default false.
+  debug?: boolean;
+  // Show an ora spinner during execution. Default true.
+  spinner?: boolean;
+  // Working directory for the child process.
+  cwd?: string;
+  // Extra environment variables to merge on top of the inherited process env.
+  env?: NodeJS.ProcessEnv;
+  // Retry policy on failure.
+  retry?: ExecCommandRetryOptions;
+}
+
 // Execute salesforce DX command with --json
 export async function execSfdxJson(
   command: string,
   commandThis: any,
-  options: any = {
+  options: ExecCommandOptions = {
     fail: false,
     output: false,
     debug: false,
@@ -866,7 +895,7 @@ export async function execSfdxJson(
 export async function execCommand(
   command: string,
   commandThis: SfCommand<any> | null,
-  options: any = {
+  options: ExecCommandOptions = {
     fail: false,
     output: false,
     debug: false,
@@ -897,6 +926,9 @@ export async function execCommand(
   execOptions.env = env;
   if (command.startsWith('sf hardis')) {
     execOptions.env.NO_NEW_COMMAND_TAB = 'true';
+  }
+  if (options.env && typeof options.env === 'object') {
+    Object.assign(execOptions.env, options.env);
   }
   let commandResult: any = {};
   const output = options.output !== null ? options.output : !commandThis?.argv?.includes('--json');
@@ -949,21 +981,22 @@ export async function execCommand(
       }
       (e as Error).message = (e as Error).message += '\n' + strErr;
       // Manage retry if requested
-      if (options.retry != null) {
-        options.retry.tryCount = (options.retry.tryCount || 0) + 1;
+      const retry = options.retry;
+      if (retry != null) {
+        retry.tryCount = (retry.tryCount || 0) + 1;
         if (
-          options.retry.tryCount <= (options.retry.retryMaxAttempts || 1) &&
-          (options.retry.retryStringConstraint == null ||
-            ((e as any).stdout + (e as any).stderr).includes(options.retry.retryStringConstraint))
+          retry.tryCount <= (retry.retryMaxAttempts || 1) &&
+          (retry.retryStringConstraint == null ||
+            ((e as any).stdout + (e as any).stderr).includes(retry.retryStringConstraint))
         ) {
           uxLog(
             "warning",
             commandThis,
-            c.yellow(`Retry command: ${options.retry.tryCount} on ${options.retry.retryMaxAttempts || 1}`)
+            c.yellow(`Retry command: ${retry.tryCount} on ${retry.retryMaxAttempts || 1}`)
           );
-          if (options.retry.retryDelay) {
-            uxLog("other", this, `Waiting ${options.retry.retryDelay} seconds before retrying command`);
-            await new Promise((resolve) => setTimeout(resolve, options.retry.retryDelay * 1000));
+          if (retry.retryDelay) {
+            uxLog("other", this, `Waiting ${retry.retryDelay} seconds before retrying command`);
+            await new Promise((resolve) => setTimeout(resolve, retry.retryDelay! * 1000));
           }
           return await execCommand(command, commandThis, options);
         }
@@ -973,7 +1006,7 @@ export async function execCommand(
     // if --json, we should not have a crash, so return status 1 + output log
     return {
       status: 1,
-      errorMessage: `[sfdx-hardis][ERROR] Error processing command\n$${(e as any).stdout}\n${(e as any).stderr}`,
+      errorMessage: `[sfdx-hardis][ERROR] Error processing command\n${(e as any).stdout}\n${(e as any).stderr}`,
       error: e,
     };
   }
@@ -990,25 +1023,28 @@ export async function execCommand(
     };
   }
   // Parse command result if --json
+  let parsedResult: any = null;
   try {
-    const parsedResult = JSON.parse(commandResult.stdout);
-    if (options.fail && parsedResult.status && parsedResult.status > 0) {
-      throw new SfError(c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`));
-    }
-    if (commandResult.stderr && commandResult.stderr.length > 2) {
-      uxLog("other", this, '[sfdx-hardis][WARNING] stderr: ' + c.yellow(commandResult.stderr));
-    }
-    return parsedResult;
+    parsedResult = JSON.parse(commandResult.stdout);
   } catch (e) {
-    // Manage case when json is not parseable
+    // The command succeeded (its exit code was 0) but its output is not a single JSON document,
+    // for example two --json commands chained with && : the exit code stays the source of truth,
+    // so no failure is fabricated out of the parsing error.
+    uxLog("warning", commandThis, c.yellow(t('commandOutputJsonNotParseable', { message: (e as Error).message })));
     return {
-      status: 1,
-      errorMessage: c.red(
-        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${(e as Error).message}\n${commandResult.stdout}\n${commandResult.stderr
-        })`
-      ),
+      status: 0,
+      stdout: commandResult.stdout,
+      stderr: commandResult.stderr,
+      jsonParseError: (e as Error).message,
     };
   }
+  if (options.fail && parsedResult.status && parsedResult.status > 0) {
+    throw new SfError(c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`));
+  }
+  if (commandResult.stderr && commandResult.stderr.length > 2) {
+    uxLog("other", this, '[sfdx-hardis][WARNING] stderr: ' + c.yellow(commandResult.stderr));
+  }
+  return parsedResult;
 }
 
 /* Ex: force-app/main/default/layouts/Opportunity-Opportunity %28Marketing%29 Layout.layout-meta.xml
@@ -1032,10 +1068,6 @@ export function getSfdxFileLabel(filePath: string) {
   return cleanStr;
 }
 
-function getGitWorkingDirLabel(workingDir) {
-  return workingDir === '?' ? 'CREATED' : workingDir === 'D' ? 'DELETED' : workingDir === 'M' ? 'UPDATED' : 'OOOOOPS';
-}
-
 const elapseAll = {};
 export function elapseStart(text) {
   elapseAll[text] = process.hrtime.bigint();
@@ -1044,7 +1076,7 @@ export function elapseEnd(text: string, commandThis: any = this) {
   if (elapseAll[text]) {
     const elapsed = Number(process.hrtime.bigint() - elapseAll[text]);
     const ms = elapsed / 1000000;
-    uxLog("log", commandThis, c.grey(c.italic(text + ' ' + moment().startOf('day').milliseconds(ms).format('H:mm:ss.SSS'))));
+    uxLog("log", commandThis, c.grey(c.italic(text + ' ' + formatElapsedMs(ms))));
     delete elapseAll[text];
   }
 }
@@ -1092,11 +1124,11 @@ export async function filterPackageXml(
   let updated = false;
   let message = `[sfdx-hardis] ${packageXmlFileOut} not updated`;
   const initialFileContent = await fs.readFile(packageXmlFile);
-  const manifest = await xml2js.parseStringPromise(initialFileContent);
+  const manifest = parseXmlString(initialFileContent.toString());
 
   // Keep only namespaces
   if ((options.keepOnlyNamespaces || []).length > 0) {
-    uxLog("log", this, c.grey(`Keeping items from namespaces ${options.keepOnlyNamespaces.join(',')} ...`));
+    uxLog("log", this, c.grey(t('keepingItemsFromNamespaces', { options: options.keepOnlyNamespaces.join(',') })));
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
         const containsNamespace = options.keepOnlyNamespaces.filter((ns: string) => member.startsWith(ns) || member.includes(`${ns}__`)).length > 0;
@@ -1111,7 +1143,7 @@ export async function filterPackageXml(
 
   // Remove namespaces
   if ((options.removeNamespaces || []).length > 0) {
-    uxLog("log", this, c.grey(`Removing items from namespaces ${options.removeNamespaces.join(',')} ...`));
+    uxLog("log", this, c.grey(t('removingItemsFromNamespaces', { options: options.removeNamespaces.join(',') })));
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
         const startsWithNamespace = options.removeNamespaces.filter((ns: string) => member.startsWith(ns + '__')).length > 0;
@@ -1136,7 +1168,7 @@ export async function filterPackageXml(
   // Remove from other packageXml file
   if (options.removeFromPackageXmlFile) {
     const destructiveFileContent = await fs.readFile(options.removeFromPackageXmlFile);
-    const destructiveManifest = await xml2js.parseStringPromise(destructiveFileContent);
+    const destructiveManifest = parseXmlString(destructiveFileContent.toString());
     manifest.Package.types = manifest.Package.types
       .map((type: any) => {
         const destructiveTypes = destructiveManifest.Package.types.filter((destructiveType: any) => {
@@ -1159,7 +1191,7 @@ export async function filterPackageXml(
           );
         });
         if (wildcardDestructiveTypes.length > 0) {
-          uxLog("log", this, c.grey(`Removed ${type.name[0]} type`));
+          uxLog("log", this, c.grey(t('removedType', { type: type.name[0] })));
         }
         return wildcardDestructiveTypes.length === 0;
       });
@@ -1195,7 +1227,7 @@ export async function filterPackageXml(
         uxLog("log", this, c.grey('kept ' + type.name[0]));
         return true;
       }
-      uxLog("log", this, c.grey('removed ' + type.name[0]));
+      uxLog("log", this, c.grey(t('removed') + type.name[0]));
       return false;
     });
   }
@@ -1204,8 +1236,7 @@ export async function filterPackageXml(
   manifest.Package.types = manifest.Package.types.filter(
     (type: any) => !(options.removeMetadatas || []).includes(type.name[0]) && (type?.members?.length || 0) > 0
   );
-  const builder = new xml2js.Builder({ renderOpts: { pretty: true, indent: '  ', newline: '\n' } });
-  const updatedFileContent = builder.buildObject(manifest);
+  const updatedFileContent = buildXmlString(manifest, '  ');
   if (updatedFileContent !== initialFileContent.toString()) {
     await writeXmlFile(packageXmlFileOut, manifest);
     updated = true;
@@ -1358,9 +1389,8 @@ export async function generateReports(
   const reportFile = path.resolve(`${reportDir}/${logFileName}-${dateSuffix}.csv`);
   const reportFileExcel = path.resolve(`${reportDir}/${logFileName}-${dateSuffix}.xls`);
   await fs.ensureDir(path.dirname(reportFile));
-  const csv = csvStringify(resultSorted, {
+  const csv = stringifyCsv(resultSorted, {
     delimiter: ';',
-    header: true,
     columns,
   });
   await fs.writeFile(reportFile, csv, 'utf8');
@@ -1369,17 +1399,16 @@ export async function generateReports(
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(reportFile);
     }
-    WebSocketClient.sendReportFileMessage(reportFile, `${logLabel} (CSV)`, "report");
+    WebSocketClient.sendReportFileMessage(reportFile, t('labelCsvReport', { label: logLabel }), "report");
   } catch (e: any) {
     uxLog("warning", commandThis, c.yellow(`[sfdx-hardis] Error opening file in VS Code: ${e.message}`));
   }
-  const excel = csvStringify(resultSorted, {
+  const excel = stringifyCsv(resultSorted, {
     delimiter: '\t',
-    header: true,
     columns,
   });
   await fs.writeFile(reportFileExcel, excel, 'utf8');
-  WebSocketClient.sendReportFileMessage(reportFileExcel, `${logLabel} (CSV)`, "report");
+  WebSocketClient.sendReportFileMessage(reportFileExcel, t('labelCsvReport', { label: logLabel }), "report");
   uxLog("action", commandThis, c.cyan(logLabel));
   uxLog("log", commandThis, c.grey(c.cyan(`- CSV: ${reportFile}`)));
   uxLog("log", commandThis, c.grey(c.cyan(`- XLS: ${reportFileExcel}`)));
@@ -1389,7 +1418,20 @@ export async function generateReports(
   ];
 }
 
-export function uxLog(logType: LogType, commandThis: any, textInit: string, sensitive = false) {
+// Options for uxLog. `sensitive` obfuscates the value in log files; `alwaysVisible` keeps the
+// enclosing VS Code UI section expanded by default.
+export interface UxLogOptions {
+  sensitive?: boolean;
+  alwaysVisible?: boolean;
+}
+
+export function uxLog(logType: LogType, commandThis: any, textInit: string, optionsOrSensitive: boolean | UxLogOptions = {}): void {
+  // Backward compatibility: the 4th argument used to be a boolean "sensitive" flag.
+  // uxLog can be called by external plugins, so keep accepting that legacy form.
+  const options: UxLogOptions =
+    typeof optionsOrSensitive === 'boolean' ? { sensitive: optionsOrSensitive } : (optionsOrSensitive || {});
+  const sensitive = options.sensitive === true;
+  const alwaysVisible = options.alwaysVisible === true;
   const text = textInit.includes('[sfdx-hardis]') ? textInit : '[sfdx-hardis]' + (textInit.startsWith('[') ? '' : ' ') + textInit;
   // Console log
   if (commandThis?.ux) {
@@ -1408,7 +1450,8 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, sens
   }
   // VS Code sfdx-hardis log
   if (WebSocketClient.isAlive() && !text.includes('[command]') && !text.includes('[NotifProvider]')) {
-    if (sensitive && !text.includes('SFDX_CLIENT_ID_') && !text.includes('SFDX_CLIENT_KEY_')) {
+    // <copy> marks a value the user must copy from the VS Code UI: show it there but keep it obfuscated in the log file (handled above)
+    if (sensitive && !text.includes('<copy>') && !text.includes('SFDX_CLIENT_ID_') && !text.includes('SFDX_CLIENT_KEY_') && !text.includes('SFDX_CLIENT_CERT_')) {
       WebSocketClient.sendCommandLogLineMessage('OBFUSCATED LOG LINE');
     }
     else {
@@ -1422,7 +1465,7 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, sens
 
       // Send message to WebSocket client
       if (logType !== "other") {
-        WebSocketClient.sendCommandLogLineMessage(textToSend, logType, isQuestion);
+        WebSocketClient.sendCommandLogLineMessage(textToSend, logType, isQuestion, alwaysVisible);
       }
     }
   }
@@ -1484,7 +1527,7 @@ export function uxLogTable(commandThis: any, tableData: any[], columnsOrder: str
     if (displayData.length > maxLen) {
       sendRows = displayData.slice(0, maxLen);
       sendRows.push({
-        sfdxHardisTruncatedMessage: `Truncated to the first ${maxLen} lines on ${displayData.length} total lines, see full report for more details.`,
+        sfdxHardisTruncatedMessage: t('sfdxHardisTruncatedMessage', { maxLen, total: displayData.length }),
         returnedNumber: maxLen,
         totalNumber: displayData.length
       });
@@ -1548,6 +1591,32 @@ export async function restoreLocalSfdxInfo() {
 }
 
 // Generate External Client App metadata files in a temporary directory
+// Heuristic detection of a deploy failure caused by an auth app (External Client App) that already exists,
+// including the common case where the org refuses the provided credentials/consumer key of an existing app.
+function isAuthAppAlreadyExistsError(error: any): boolean {
+  const haystack = (typeof error === 'string' ? error : (error?.message || '') + ' ' + JSON.stringify(error || {})).toLowerCase();
+  return [
+    'already exists',
+    'duplicate value found',
+    'duplicate_developer_name',
+    'duplicate developer name',
+    'consumer key',
+    'already in use',
+    'name is already',
+    'value already exists',
+  ].some((needle) => haystack.includes(needle));
+}
+
+// Escape the few characters that are not valid as-is inside an XML text node
+function escapeXml(value: string): string {
+  return (value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 export async function generateExternalClientAppMetadata(
   appName: string,
   profileName: string,
@@ -1555,13 +1624,14 @@ export async function generateExternalClientAppMetadata(
   crtContent: string,
   consumerKey: string,
   tmpDir: string,
-  conn: Connection
+  conn: Connection,
+  description: string = 'External Client App for sfdx-hardis CI/CD authentication'
 ): Promise<void> {
   // 1. ExternalClientApplication (.eca-meta.xml)
   const ecaMetadata = `<?xml version="1.0" encoding="UTF-8"?>
 <ExternalClientApplication xmlns="http://soap.sforce.com/2006/04/metadata">
     <contactEmail>${contactEmail}</contactEmail>
-    <description>External Client App for sfdx-hardis CI/CD authentication</description>
+    <description>${escapeXml(description)}</description>
     <distributionState>Local</distributionState>
     <isProtected>false</isProtected>
     <label>${appName}</label>
@@ -1699,7 +1769,34 @@ export async function generateSSLCertificate(
   conn: any,
   options: any
 ) {
-  uxLog("action", commandThis, c.cyan('Generating SSL certificate...'));
+  // Ask the user whether sfdx-hardis should generate a self-signed certificate, or whether they want
+  // to use their own CA-signed certificate (in that case, the External Client App must be created manually).
+  if (!isCI && !isAgentMode()) {
+    const certSourceResponse = await prompts({
+      type: 'select',
+      name: 'value',
+      message: c.cyanBright(t('howDoYouWantToProvideCertificate')),
+      description: t('descHowDoYouWantToProvideCertificate'),
+      choices: [
+        {
+          title: t('titleSelfSignedCertificate'),
+          value: 'selfSigned',
+          description: t('descSelfSignedCertificate'),
+        },
+        {
+          title: t('titleCaSignedCertificate'),
+          value: 'caSigned',
+          description: t('descCaSignedCertificate'),
+        },
+      ],
+      initial: 0,
+    });
+    if (certSourceResponse.value === 'caSigned') {
+      await configureCaSignedCertificate(branchName, commandThis);
+      return { mode: 'caSigned' as const };
+    }
+  }
+  uxLog("action", commandThis, c.cyan(t('generatingSslCertificate')));
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
   process.chdir(tmpDir);
@@ -1712,12 +1809,7 @@ export async function generateSSLCertificate(
       fail: true,
     });
   } catch (e) {
-    uxLog("error", commandThis, c.red(`Error generating SSL certificate, please ensure you have openssl installed
-- It is included in Git Bash for Windows
-- You can also install it using "choco install openssl" if you have chocolatey installed
-- If it is installed, make sure that paths to bash and openssl are available in PATH
-- If you still have issues, run sfdx-hardis command in Git Bash terminal
-`));
+    uxLog("error", commandThis, c.red(t('errorGeneratingSslCertificate')));
     throw e;
   }
   process.chdir(prevDir);
@@ -1726,7 +1818,8 @@ export async function generateSSLCertificate(
   const targetKeyFile = path.join(folder, `${branchName}.key`);
   await fs.copy(path.join(tmpDir, 'server.key'), targetKeyFile);
   const encryptionKey = await encryptFile(targetKeyFile);
-  WebSocketClient.sendReportFileMessage(targetKeyFile, `Encrypted SSL certificate key for branch ${branchName}`, 'report');
+  WebSocketClient.sendReportFileMessage(targetKeyFile, t('encryptedSslCertificateKeyForBranch', { branchName }), 'report');
+  const encryptedCertificateValue = await fs.readFile(targetKeyFile, 'utf8');
   // Copy certificate file in user home project
   const crtFile = path.join(os.homedir(), `${branchName}.crt`);
   await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
@@ -1740,20 +1833,51 @@ export async function generateSSLCertificate(
     type: 'confirm',
     name: 'value',
     initial: true,
-    message: c.cyanBright(
-      "Do you want sfdx-hardis to configure the SF CLI External Client App or Connected App on your org ?"
-    ),
-    description: 'Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.',
+    message: c.cyanBright(t('doYouWantSfdxHardisToConfigureApp')),
+    description: t('descCreateConnectedApp'),
   });
   if (confirmResponse.value === true) {
     const clientIdStringRaw = `SFDX_CLIENT_ID_${branchName.toUpperCase()}`;
     const clientKeyStringRaw = `SFDX_CLIENT_KEY_${branchName.toUpperCase()}`;
+    const clientCertStringRaw = `SFDX_CLIENT_CERT_${branchName.toUpperCase()}`;
+
+    // With external storage, only the encrypted certificate goes to a password manager;
+    // the other secrets (client id, decryption key) still go to CI/CD variables.
+    const externalStorage = options.externalStorage === true;
+    const certStorageResponse = externalStorage
+      ? { value: 'file' }
+      : await prompts({
+        type: 'select',
+        name: 'value',
+        message: c.cyanBright(t('whichJwtCertificateStorageModeDoYouWant')),
+        description: t('descSelectJwtCertificateStorageMode'),
+        choices: [
+          {
+            title: t('titleJwtCertificateAsEncryptedFile'),
+            value: 'file',
+            description: t('descJwtCertificateAsEncryptedFile')
+          },
+          {
+            title: t('titleJwtCertificateAsCiVariable'),
+            value: 'variable',
+            description: t('descJwtCertificateAsCiVariable')
+          },
+        ],
+        initial: 0,
+      });
+    // True when the encrypted certificate is stored as a CI/CD variable (SFDX_CLIENT_CERT)
+    const storeCertificateInVariable = !externalStorage && certStorageResponse.value === 'variable';
+    // True when the committed encrypted certificate file must be removed from the repo
+    const removeCertFileFromRepo = externalStorage || storeCertificateInVariable;
+
     const idKeyValues = {
       clientIdString: clientIdStringRaw,
       clientIdValueString: consumerKey,
       clientKeyString: clientKeyStringRaw,
       clientKeyValueString: encryptionKey,
-    }
+      clientCertString: clientCertStringRaw,
+      clientCertValueString: encryptedCertificateValue,
+    };
     // Add <copy></copy> around values if we have VsCode UI to allow to display copy icon
     if (WebSocketClient.isAliveWithLwcUI()) {
       for (const key of Object.keys(idKeyValues)) {
@@ -1761,7 +1885,11 @@ export async function generateSSLCertificate(
       }
     }
 
-    uxLog("action", commandThis, c.cyan('Please configure both below variables in your CI/CD platform.'));
+    uxLog(
+      "action",
+      commandThis,
+      c.cyan(t(storeCertificateInVariable ? 'pleaseConfigureThreeBelowVariablesInYour' : 'pleaseConfigureBothBelowVariablesInYour'))
+    );
     uxLog(
       "log",
       commandThis,
@@ -1772,7 +1900,7 @@ export async function generateSSLCertificate(
           )}
           - Value: ${c.bold(c.green(idKeyValues.clientIdValueString))}`
         )),
-      true
+      { sensitive: true }
     );
     uxLog(
       "log",
@@ -1783,40 +1911,58 @@ export async function generateSSLCertificate(
         )}
         - Value: ${c.bold(c.green(idKeyValues.clientKeyValueString))}`
       )),
-      true
+      { sensitive: true }
     );
+    if (storeCertificateInVariable) {
+      uxLog(
+        "log",
+        commandThis,
+        c.grey(c.cyanBright(
+          `- Variable: ${c.green(
+            c.bold(idKeyValues.clientCertString)
+          )}
+          - Value: ${c.bold(c.green(idKeyValues.clientCertValueString))}`
+        )),
+        { sensitive: true }
+      );
+    }
     uxLog(
       "log",
       commandThis,
-      c.grey(c.yellow(`Help to configure CI/CD variables: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`))
+      c.grey(c.yellow(t('helpToConfigureCiCdVariablesUrl', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/` })))
     );
-    uxLog("warning", commandThis, c.yellow(`If you are using GitHub or Azure, you also need to manually add references to ${clientIdStringRaw} and ${clientKeyStringRaw} in your pipeline YAML definition file (.github/workflows/*.yml or azure-pipelines-*.yml).`));
-    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, "Help to configure CI variables", "docUrl");
+    uxLog(
+      "warning",
+      commandThis,
+      c.yellow(
+        t(
+          storeCertificateInVariable ? 'ifYouAreUsingGithubOrAzureWithClientCert' : 'ifYouAreUsingGithubOrAzure',
+          { clientIdStringRaw, clientKeyStringRaw, clientCertStringRaw }
+        )
+      )
+    );
+    // External storage: the encrypted certificate must be kept in a password manager, not in the repo nor a CI/CD variable
+    if (externalStorage) {
+      uxLog("action", commandThis, c.cyan(t('pleaseStoreEncryptedCertInPasswordManager')));
+      uxLog(
+        "log",
+        commandThis,
+        c.grey(c.cyanBright(`- ${c.bold(c.green(idKeyValues.clientCertString))}\n- Value: ${c.bold(c.green(idKeyValues.clientCertValueString))}`)),
+        { sensitive: true }
+      );
+      uxLog("warning", commandThis, c.yellow(t('externalStorageCertNotCommitted')));
+    }
+
+    if (removeCertFileFromRepo) {
+      await fs.remove(targetKeyFile);
+      uxLog("log", commandThis, c.cyan(t('encryptedCertificateKeyFileDeletedLocally', { targetKeyFile })));
+    }
+
+    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, t('helpToConfigureCiVariables'), "docUrl");
     await prompts({
       type: 'confirm',
-      message: c.cyanBright('Please confirm when variables have been set (copy the variable names and values in the section above)'),
-      description: 'Confirm when you have configured the required CI/CD environment variables in your deployment platform',
-    });
-
-    // Ask user which type of app to create
-    const appTypeResponse = await prompts({
-      type: 'select',
-      name: 'value',
-      message: c.cyanBright('Which type of app do you want to create for CI/CD authentication?'),
-      description: 'Select the type of OAuth app to create for CI/CD authentication',
-      choices: [
-        {
-          title: 'External Client App (Recommended by the mothership)',
-          value: 'externalClientApp',
-          description: 'External Client App are the replacement of Connected Apps'
-        },
-        {
-          title: 'Connected App (Legacy)',
-          value: 'connectedApp',
-          description: 'Does not work starting Spring 26 except if you post a case to SF to request activation of Connected Apps creation'
-        },
-      ],
-      initial: 0,
+      message: c.cyanBright(externalStorage ? t('pleaseConfirmWhenSecretsStoredInPasswordManager') : t('pleaseConfirmWhenVariablesHaveBeenSet')),
+      description: t('descConfirmCiCdVariables'),
     });
 
     // Build default app name from branch name by replacing all non-alphanumeric characters with empty string
@@ -1829,6 +1975,8 @@ export async function generateSSLCertificate(
     if (appNameDflt.length > 20) {
       appNameDflt = appNameDflt.substring(0, 20);
     }
+    // Use the app name provided by the caller (CLI flag) if available, else the computed default
+    const appNameInitial = options.appName ? options.appName : 'sfdxhardis' + appNameDflt;
 
     // Read certificate content (shared by both flows)
     const crtContent = await fs.readFile(crtFile, 'utf8');
@@ -1860,9 +2008,7 @@ export async function generateSSLCertificate(
         uxLog(
           "log",
           commandThis,
-          c.grey(
-            `Production org detected, will run test class found ${uniqueTestClass} on deployment.\nIf you want to specify a specific test class, set SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS variable`
-          )
+          c.grey(t('productionOrgDetectedWillRunTestClass', { testClass: uniqueTestClass }))
         );
       }
 
@@ -1895,7 +2041,7 @@ export async function generateSSLCertificate(
         uxLog(
           "warning",
           commandThis,
-          c.yellow(`Unable to verify existing ${metadataTypeLabels[metadataType] || metadataType}: ${error.message}`)
+          c.yellow(t('unableToVerifyExistingMetadata', { metadataType: metadataTypeLabels[metadataType] || metadataType, message: error.message }))
         );
         return false;
       }
@@ -1913,22 +2059,21 @@ export async function generateSSLCertificate(
       }
       const orgLabel = options.targetUsername || 'target org';
       const setupLocation = metadataInfo.type === "ExternalClientApplication" ? "External Client App Manager" : "App Manager";
-      const basePromptMessage = `${label} named ${metadataInfo.fullName} already exists in ${orgLabel}. Delete it in Setup > ${setupLocation} before continuing.`;
-      let promptMessage = `${basePromptMessage} Have you deleted it?`;
+      let promptMessage = t('metadataAlreadyExistsHaveYouDeleted', { label, fullName: metadataInfo.fullName, orgLabel, setupLocation });
       while (alreadyExists) {
         const confirmation = await prompts({
           type: 'confirm',
           name: 'value',
           initial: true,
           message: c.cyanBright(promptMessage),
-          description: 'Select yes once the record is deleted from Setup > App Manager. Choose no to cancel deployment.',
+          description: t('descSelectAfterDeletion'),
         });
         if (!confirmation.value) {
           throw new SfError(`[sfdx-hardis] Deployment canceled: ${label} ${metadataInfo.fullName} still exists.`);
         }
         alreadyExists = await metadataItemExists(metadataInfo.type, metadataInfo.fullName);
         if (alreadyExists) {
-          promptMessage = `${label} ${metadataInfo.fullName} is still detected in ${orgLabel}. Salesforce may need a few seconds to purge deleted apps. Retry once it disappears. Have you deleted it now?`;
+          promptMessage = t('metadataStillDetectedInOrg', { label, fullName: metadataInfo.fullName, orgLabel });
         }
       }
     };
@@ -1946,78 +2091,91 @@ export async function generateSSLCertificate(
       if (deployRes?.status !== 0) {
         throw new Error('[sfdx-hardis] Failed to deploy metadatas');
       }
-      uxLog("action", commandThis, c.cyan(`Successfully deployed ${c.green(successLabel)}`));
+      uxLog("action", commandThis, c.cyan(t('successfullyDeployed', { successLabel: c.green(successLabel) })));
       // Cleanup temporary metadata directory and local certificate after successful deployment
       await fs.remove(deployDir);
       await fs.remove(crtFile);
     };
 
-    // Branch based on app type selection
-    if (appTypeResponse.value === 'externalClientApp') {
-      // ========== EXTERNAL CLIENT APP FLOW ==========
-      const promptResponses = await prompts([
-        {
+    // ========== EXTERNAL CLIENT APP FLOW ==========
+    // Connected Apps can no longer be created in Salesforce orgs, so always create an External Client App
+    const promptResponses = await prompts([
+      {
+        type: 'text',
+        name: 'appName',
+        initial: appNameInitial,
+        message: c.cyanBright(t('howWouldYouLikeToNameThe2')),
+        description: t('descExternalClientAppName'),
+        placeholder: t('exSfdxHardis'),
+      },
+    ]);
+    const contactEmail = await promptUserEmail(
+      t('enterContactEmailExternalClientApp')
+    );
+
+    const profileSelection = await promptProfiles(conn, {
+      multiselect: false,
+      message: t('whatProfileWillBePreAuthorizedFor'),
+      initialSelection: ['System Administrator', 'Administrateur Système'],
+    });
+
+    const selectedProfile = Array.isArray(profileSelection)
+      ? (profileSelection[0] as string)
+      : (profileSelection as string);
+
+    // Resolve the External Client App description according to its usage.
+    // CI/CD and monitoring descriptions are stored in the org metadata, so they are always in English (not localized).
+    const usageType = options.usageType === 'monitoring' || options.usageType === 'other' ? options.usageType : 'cicd';
+    let appDescription: string;
+    if (usageType === 'monitoring') {
+      appDescription = `External Client App used by sfdx-hardis for org monitoring authentication. Documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/`;
+    } else if (usageType === 'other') {
+      appDescription = options.appDescription
+        ? options.appDescription
+        : (await prompts({
           type: 'text',
-          name: 'appName',
-          initial: 'sfdxhardis' + appNameDflt,
-          message: c.cyanBright('How would you like to name the External Client App?'),
-          description: 'Name for the External Client App that will be created in your Salesforce org',
-          placeholder: 'Ex: sfdx_hardis',
-        },
-      ]);
-      const contactEmail = await promptUserEmail(
-        'Enter a contact email for the External Client App (ex: teoman.sertcelik@gmail.com)'
-      );
+          name: 'value',
+          message: c.cyanBright(t('whatIsExternalClientAppDescription')),
+          description: t('descExternalClientAppDescription'),
+          placeholder: t('placeholderExternalClientAppDescription'),
+        })).value;
+    } else {
+      appDescription = `External Client App used by sfdx-hardis for CI/CD authentication. Documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`;
+    }
 
-      const profileSelection = await promptProfiles(conn, {
-        multiselect: false,
-        message: 'What profile will be pre-authorized for the External Client App ? (ex: System Administrator)',
-        initialSelection: ['System Administrator', 'Administrateur Système'],
-      });
+    // Sanitize app name for metadata
+    const sanitizedAppName = promptResponses.appName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || 'sfdxhardis';
 
-      const selectedProfile = Array.isArray(profileSelection)
-        ? (profileSelection[0] as string)
-        : (profileSelection as string);
+    // Create metadata folder and generate ECA metadata files
+    const tmpDirMd = await createTempDir();
+    await generateExternalClientAppMetadata(
+      sanitizedAppName,
+      selectedProfile || 'System Administrator',
+      contactEmail,
+      crtContent,
+      consumerKey,
+      tmpDirMd,
+      conn,
+      appDescription
+    );
 
-      // Sanitize app name for metadata
-      const sanitizedAppName = promptResponses.appName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || 'sfdxhardis';
-
-      // Create metadata folder and generate ECA metadata files
-      const tmpDirMd = await createTempDir();
-      await generateExternalClientAppMetadata(
-        sanitizedAppName,
-        selectedProfile || 'System Administrator',
-        contactEmail,
-        crtContent,
-        consumerKey,
-        tmpDirMd,
-        conn
-      );
-
-      // Deploy metadatas
+    // Deploy metadatas (retry loop to handle the "External Client App already exists" case)
+    let deployed = false;
+    while (!deployed) {
       try {
         uxLog(
           "action",
           commandThis,
-          c.cyan(
-            `Deploying External Client App ${c.bold(sanitizedAppName)} into target org ${options.targetUsername || ''} ...`
-          )
+          c.cyan(t('deployingExternalClientApp', { appName: c.bold(sanitizedAppName), targetUsername: options.targetUsername || '' }))
         );
 
         // Log metadata info (hide sensitive data)
-        uxLog("log", commandThis, c.grey(`External Client App metadata files:
-- externalClientApps/${sanitizedAppName}.eca-meta.xml
-- extlClntAppOauthSettings/${sanitizedAppName}OAuthSettings.ecaOauth-meta.xml
-- extlClntAppGlobalOauthSets/${sanitizedAppName}GlblOAuth.ecaGlblOauth-meta.xml (certificate and consumer key hidden)
-- extlClntAppPolicies/${sanitizedAppName}_defaultPolicy.ecaPlcy-meta.xml
-- extlClntAppOauthPolicies/${sanitizedAppName}OAuthSettings_defaultPolicy.ecaOauthPlcy-meta.xml`));
+        uxLog("log", commandThis, c.grey(t('externalClientAppMetadataFiles', { appName: sanitizedAppName })));
 
         uxLog(
           "log",
           commandThis,
-          c.grey(c.yellow(
-            `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the External Client App 😊`
-          ))
+          c.grey(c.yellow(t('ifUploadErrorReadMessageAfterExternal')))
         );
 
         await deployAuthMetadataAndCleanup(tmpDirMd, `${sanitizedAppName} External Client App`, {
@@ -2025,195 +2183,107 @@ export async function generateSSLCertificate(
           fullName: sanitizedAppName,
           friendlyLabel: 'External Client App',
         });
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        deployed = true;
       } catch (e) {
-        uxLog(
-          "error",
-          commandThis,
-          c.red(
-            'Error pushing External Client App metadata. Maybe the app name is already taken?\nYou may try again with another app name'
-          )
-        );
-        uxLog(
-          "warning",
-          commandThis,
-          c.yellow(`
-${c.bold('MANUAL INSTRUCTIONS')}
-If deployment fails, create the External Client App manually:
-1. Go to Setup > App Manager > New External Client App
-2. Set App Name: ${sanitizedAppName}
-3. Contact Email: ${contactEmail}
-4. Enable OAuth Settings with scopes: Api, Web, RefreshToken
-5. Upload the certificate file: ${c.bold(crtFile)} (delete from your computer after!)
-6. Copy Consumer Key to CI/CD variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))}`)
-        );
-        await prompts({
-          type: 'confirm',
-          message: c.cyanBright(
-            'You need to manually configure the External Client App. Follow the MANUAL INSTRUCTIONS above, then continue here'
-          ),
-          description: 'Confirm when you have completed the manual External Client App configuration steps',
-        });
-      }
-    } else {
-      // ========== CONNECTED APP FLOW (existing logic) ==========
-      const promptResponses = await prompts([
-        {
-          type: 'text',
-          name: 'appName',
-          initial: 'sfdxhardis' + appNameDflt,
-          message: c.cyanBright('How would you like to name the Connected App ?'),
-          description: 'Name for the Connected App that will be created in your Salesforce org',
-          placeholder: 'Ex: sfdx_hardis',
-        },
-      ]);
-      const contactEmail = await promptUserEmail(
-        'Enter a contact email for the Connect App (ex: nicolas.vuillamy@cloudity.com)'
-      );
-      const profile = await promptProfiles(conn, {
-        multiselect: false,
-        message: 'What profile will be used for the connected app ? (ex: System Administrator)',
-        initialSelection: ['System Administrator', 'Administrateur Système'],
-      });
-      // Build ConnectedApp metadata
-      const connectedAppMetadata = `<?xml version="1.0" encoding="UTF-8"?>
-<ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
-  <contactEmail>${contactEmail}</contactEmail>
-  <label>${promptResponses.appName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || 'sfdxhardis'}</label>
-  <oauthConfig>
-      <callbackUrl>http://localhost:1717/OauthRedirect</callbackUrl>
-      <certificate>${crtContent}</certificate>
-      <consumerKey>${consumerKey}</consumerKey>
-      <isAdminApproved>true</isAdminApproved>
-      <isConsumerSecretOptional>false</isConsumerSecretOptional>
-      <isIntrospectAllTokens>false</isIntrospectAllTokens>
-      <isSecretRequiredForRefreshToken>false</isSecretRequiredForRefreshToken>
-      <scopes>Api</scopes>
-      <scopes>Web</scopes>
-      <scopes>RefreshToken</scopes>
-  </oauthConfig>
-  <oauthPolicy>
-      <ipRelaxation>ENFORCE</ipRelaxation>
-      <refreshTokenPolicy>specific_lifetime:3:HOURS</refreshTokenPolicy>
-  </oauthPolicy>
-  <profileName>${profile || 'System Administrator'}</profileName>
-</ConnectedApp>
-`;
-      const packageXml = `<?xml version="1.0" encoding="UTF-8"?>
-<Package xmlns="http://soap.sforce.com/2006/04/metadata">
-  <types>
-    <members>${promptResponses.appName}</members>
-    <name>ConnectedApp</name>
-  </types>
-  <version>${getApiVersion()}</version>
-</Package>
-`;
-      // create metadata folder
-      const tmpDirMd = await createTempDir();
-      const connectedAppDir = path.join(tmpDirMd, 'connectedApps');
-      await fs.ensureDir(connectedAppDir);
-      await fs.writeFile(path.join(tmpDirMd, 'package.xml'), packageXml);
-      await fs.writeFile(path.join(connectedAppDir, `${promptResponses.appName}.connectedApp`), connectedAppMetadata);
-
-      // Deploy metadatas
-      try {
-        uxLog(
-          "action",
-          commandThis,
-          c.cyan(
-            `Deploying Connected App ${c.bold(promptResponses.appName)} into target org ${options.targetUsername || ''
-            } ...`
-          )
-        );
-        // Replace sensitive info in connectedAppMetadata for logging
-        const connectedAppMetadataForLog = connectedAppMetadata
-          .replace(consumerKey, '***CONSUMERKEY_HIDDEN_FROM_LOGS***')
-          .replace(crtContent, '***CERTIFICATE_HIDDEN_FROM_LOGS***');
-
-        uxLog("log", commandThis, c.grey(`Connected App metadatas XML:\n${connectedAppMetadataForLog}`));
-        uxLog(
-          "log",
-          commandThis,
-          c.grey(c.yellow(
-            `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file 😊`
-          ))
-        );
-        await deployAuthMetadataAndCleanup(tmpDirMd, `${promptResponses.appName} Connected App`, {
-          type: 'ConnectedApp',
-          fullName: promptResponses.appName,
-          friendlyLabel: 'Connected App',
-        });
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (e) {
-        uxLog(
-          "error",
-          commandThis,
-          c.red(
-            'Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name'
-          )
-        );
-        uxLog(
-          "warning",
-          commandThis,
-          c.yellow(`
-${c.bold('MANUAL INSTRUCTIONS')}
-If this is a Test class issue (production env), you may have to create manually connected app ${promptResponses.appName
-            }:
-- Follow instructions here: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm
-  - Use certificate ${c.bold(crtFile)} in "Use Digital Signature section" (delete the file from your computer after !)
-- Once created, update CI/CD variable ${c.green(
-              c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
-            )} with the ConsumerKey of the newly created connected app`)
-        );
-        await prompts({
-          type: 'confirm',
-          message: c.cyanBright(
-            'You need to manually configure the connected app. Follow the MANUAL INSTRUCTIONS above, then continue here'
-          ),
-          description: 'Confirm when you have completed the manual Connected App configuration steps',
-        });
+        if (isAuthAppAlreadyExistsError(e)) {
+          // The app (or its consumer key) already exists: ask the user to delete it in Setup, then retry or give up
+          const setupUrl = `${conn.instanceUrl}/lightning/setup/ExternalClientAppsManager/home`;
+          uxLog("error", commandThis, c.red(t('externalClientAppAlreadyExists', { appName: sanitizedAppName })));
+          uxLog("warning", commandThis, c.yellow(t('deleteExternalClientAppInSetup', { setupUrl })));
+          WebSocketClient.sendReportFileMessage(setupUrl, t('openExternalClientAppManager'), "actionUrl");
+          const existsResponse = await prompts({
+            type: 'select',
+            name: 'value',
+            message: c.cyanBright(t('externalClientAppExistsWhatToDo')),
+            description: t('descExternalClientAppExistsWhatToDo'),
+            choices: [
+              { title: t('retryDeployExternalClientApp'), value: 'retry' },
+              { title: t('giveUpExternalClientApp'), value: 'giveUp' },
+            ],
+            initial: 0,
+          });
+          if (existsResponse.value === 'giveUp') {
+            throw new SfError(t('externalClientAppDeploymentCancelled', { appName: sanitizedAppName }));
+          }
+          // else: loop again and retry the deployment
+        } else {
+          // Any other error: fall back to manual instructions and stop retrying
+          uxLog(
+            "error",
+            commandThis,
+            c.red(t('errorPushingExternalClientAppMetadata'))
+          );
+          uxLog(
+            "warning",
+            commandThis,
+            c.yellow(t('manualInstructionsExternalClientApp', { appName: sanitizedAppName, contactEmail, crtFile: c.bold(crtFile), branchNameUpper: branchName.toUpperCase() })));
+          await prompts({
+            type: 'confirm',
+            message: c.cyanBright(
+              t('youNeedToManuallyConfigureTheExternalClientApp')
+            ),
+            description: t('descConfirmExternalClientApp'),
+          });
+          break;
+        }
       }
     }
   } else {
     // Tell infos to install manually
-    uxLog("action", commandThis, c.cyan('Now you can configure the SF CLI connected app'));
+    uxLog("action", commandThis, c.cyan(t('nowYouCanConfigureTheSfCli')));
     uxLog(
       "log",
       commandThis,
-      c.grey(
-        `Follow instructions here: ${c.bold(
-          'https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm'
-        )}`
-      )
+      c.grey(t('followInstructionsConnectedApp'))
     );
     uxLog(
       "log",
       commandThis,
-      c.grey(
-        `Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(
-          `then delete ${crtFile} for security`
-        )}`
-      )
+      c.grey(t('useCertificateOnConnectedApp', { crtFile: c.green(crtFile) }))
     );
     uxLog(
       "log",
       commandThis,
-      c.grey(
-        `- configure CI variable ${c.green(
-          `SFDX_CLIENT_ID_${branchName.toUpperCase()}`
-        )} with value of ConsumerKey on Connected App configuration page`
-      )
+      c.grey(t('configureCiVariableClientId', { branchNameUpper: branchName.toUpperCase() }))
     );
     uxLog(
       "log",
       commandThis,
-      c.grey(
-        `- configure CI variable ${c.green(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)} with value ${c.green(
-          encryptionKey
-        )} key`
-      )
+      c.grey(t('configureCiVariableClientKey', { branchNameUpper: branchName.toUpperCase(), encryptionKey: c.green(encryptionKey) }))
     );
   }
+  return { mode: 'selfSigned' as const };
+}
+
+// Bring-your-own CA-signed certificate flow.
+// sfdx-hardis does NOT generate the cert, does NOT create the External Client App, and does NOT
+// touch the repo or CI variables. The user is fully in charge of:
+//   1) creating the External Client App manually in Setup (with their CA-signed certificate
+//      uploaded as Digital Signature, and the CI user's profile pre-authorized),
+//   2) setting SFDX_CLIENT_ID_<ALIAS> and SFDX_CLIENT_CERT_<ALIAS> CI/CD variables
+//      (raw PEM key, no encryption, no SFDX_CLIENT_KEY_<ALIAS> needed).
+// We just show the instructions and point at the documentation.
+async function configureCaSignedCertificate(branchName: string, commandThis: any) {
+  const aliasUpper = branchName.toUpperCase();
+  const clientIdVar = `SFDX_CLIENT_ID_${aliasUpper}`;
+  const clientCertVar = `SFDX_CLIENT_CERT_${aliasUpper}`;
+  const docUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/#use-a-ca-signed-certificate`;
+
+  uxLog("action", commandThis, c.cyan(t('caSignedConfigureForBranch', { branchName: c.bold(branchName) })));
+  uxLog("log", commandThis, c.grey(t('caSignedManualEcaInstructions')));
+  uxLog("action", commandThis, c.cyan(t('caSignedSetCiVariables')));
+  uxLog(
+    "log",
+    commandThis,
+    c.grey(
+      `- ${c.green(c.bold(clientIdVar))}: Consumer Key of the External Client App\n- ${c.green(c.bold(clientCertVar))}: full PEM content of your private key (including BEGIN/END lines)`
+    )
+  );
+  uxLog("log", commandThis, c.grey(c.yellow(t('helpToConfigureCiCdVariablesUrl', { url: docUrl }))));
+
+  WebSocketClient.sendReportFileMessage(docUrl, t('helpToConfigureCiVariables'), 'docUrl');
+
+  uxLog("action", commandThis, c.green(t('caSignedConfigurationComplete', { branchName })));
 }
 
 export async function isMonitoringJob() {
@@ -2242,7 +2312,7 @@ const ansiRegex = new RegExp(ansiPattern, 'g');
 
 export function stripAnsi(str: string) {
   if (typeof str !== 'string') {
-    uxLog("warning", this, c.yellow('Warning: stripAnsi expects a string'));
+    uxLog("warning", this, c.yellow(t('warningStripansiExpectsString')));
     return '';
   }
   return str.replace(ansiRegex, '');
@@ -2271,11 +2341,11 @@ export function replaceJsonInString(inputString: string, jsonObject: any): strin
       const jsonString = JSON.stringify(jsonObject, null, 2);
       return stripAnsi(inputString).replace(jsonMatch[0], jsonString);
     } catch (err: any) {
-      uxLog("warning", this, c.yellow('Warning: unable to replace JSON in string:' + err.message));
+      uxLog("warning", this, c.yellow(t('warningUnableToReplaceJsonInString') + err.message));
       return inputString;
     }
   }
-  uxLog("warning", this, c.yellow('Warning: unable to find json to replace in string'));
+  uxLog("warning", this, c.yellow(t('warningUnableToFindJsonToReplace')));
   return inputString;
 }
 

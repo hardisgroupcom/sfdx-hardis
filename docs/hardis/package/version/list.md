@@ -25,11 +25,23 @@ The command's technical implementation is straightforward:
 - **Output Display:** The raw output from the Salesforce CLI command is displayed to the user, providing all the details about the package versions.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:package:version:list --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name                  |  Type   | Description                                                   | Default | Required | Options |
 |:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir             | option  | undefined                                                     |         |          |         |
 | json                  | boolean | Format output as json.                                        |         |          |         |
@@ -41,6 +53,10 @@ The command's technical implementation is straightforward:
 
 ```shell
 $ sf hardis:package:version:list
+```
+
+```shell
+$ sf hardis:package:version:list --agent
 ```
 
 

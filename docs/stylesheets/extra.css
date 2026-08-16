@@ -20,12 +20,12 @@
 
 /* light mode table header bgcolor */
 .md-typeset__table th {
-  background-color: #f2edfe;
+  background-color: #E8EDF5;
 }
 
 /* dark mode table header bgcolor */
 [data-md-color-scheme="slate"] .md-typeset__table th {
-  background-color: hsla(var(--md-hue), 25%, 25%, 1)
+  background-color: #1A1A2E;
 }
 
 /* light mode alternating table bg colors */
@@ -35,38 +35,37 @@
 
 /* dark mode alternating table bg colors */
 [data-md-color-scheme="slate"] .md-typeset__table tr:nth-child(2n) {
-  background-color: hsla(var(--md-hue), 25%, 25%, 1)
+  background-color: #1A1A2E;
 }
 
 :root {
-  --md-primary-fg-color: #0057B8;
-  --md-primary-bg-color: #F5F7FA;
-  --md-accent-fg-color: #FFB81C;
-  --md-footer-bg-color: #1B1464;
-  --md-footer-fg-color: #FFB81C;
-  --md-header-bg-color: #1B1464;
-  --md-header-fg-color: #FFB81C;
+  --md-primary-fg-color: #0053FF;
+  --md-primary-bg-color: #F3F3F3;
+  --md-accent-fg-color: #660FF2;
+  --md-footer-bg-color: #001135;
+  --md-footer-fg-color: #FFFFFF;
+  --md-header-bg-color: #001135;
+  --md-header-fg-color: #FFFFFF;
 }
 
 [data-md-color-scheme="slate"] {
-  --md-primary-fg-color: #FFB81C;
-  /* Use accent yellow for primary text for better contrast */
-  --md-primary-bg-color: #181B2A;
-  --md-accent-fg-color: #FFB81C;
-  --md-footer-bg-color: #181B2A;
-  --md-footer-fg-color: #FFB81C;
-  --md-header-bg-color: #181B2A;
-  --md-header-fg-color: #FFB81C;
+  --md-primary-fg-color: #0053FF;
+  --md-primary-bg-color: #121212;
+  --md-accent-fg-color: #660FF2;
+  --md-footer-bg-color: #121212;
+  --md-footer-fg-color: #FFFFFF;
+  --md-header-bg-color: #121212;
+  --md-header-fg-color: #FFFFFF;
 }
 
 /* Improve link readability in dark mode */
 [data-md-color-scheme="slate"] a,
 [data-md-color-scheme="slate"] .md-typeset a {
-  color: #FFB81C;
+  color: #0053FF;
 }
 
 /* Optional: Make code blocks and inline code more readable in dark mode */
 [data-md-color-scheme="slate"] code,
 [data-md-color-scheme="slate"] pre {
-  color: #FFB81C;
+  color: #0053FF;
 }

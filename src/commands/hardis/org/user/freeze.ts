@@ -1,13 +1,13 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { generateReports, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
-//import { executeApex } from "../../../../common/utils/deployUtils.js";
 import { prompts } from '../../../../common/utils/prompts.js';
 import { soqlQuery, bulkQuery, bulkUpdate } from '../../../../common/utils/apiUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -24,20 +24,36 @@ This command allows administrators to freeze Salesforce user logins. It provides
 
 Key functionalities:
 
-- **User Selection:** You can select users to freeze based on their assigned profiles.
+- **User Selection:** You can select users to freeze using one of the following methods:
+  - \`--usernames\`: Freeze a specific comma-separated list of Salesforce usernames (takes priority over profile flags).
   - \`--includeprofiles\`: Freeze users belonging to a comma-separated list of specified profiles.
   - \`--excludeprofiles\`: Freeze users belonging to all profiles *except* those specified in a comma-separated list.
-  - If no profile flags are provided, an interactive menu will allow you to select profiles.
+  - If no flags are provided, an interactive menu will allow you to select profiles.
 - **Interactive Confirmation:** In non-CI environments, it prompts for confirmation before freezing the selected users.
 - **Bulk Freezing:** Efficiently freezes multiple user logins using Salesforce's Bulk API.
 - **Reporting:** Generates CSV and XLSX reports of the users that are about to be frozen.
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:user:freeze --agent --usernames 'user1@myorg.com,user2@myorg.com' --target-org my-user@myorg.com
+sf hardis:org:user:freeze --agent --includeprofiles 'Standard' --target-org my-user@myorg.com
+\`\`\`
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- The freeze operation proceeds automatically for the matched users.
+- You must provide \`--usernames\`, \`--includeprofiles\`, or \`--excludeprofiles\` (interactive selection is not available).
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
-- **SOQL Queries (Bulk API):** It executes SOQL queries against the \`User\` and \`Profile\` objects to identify active users based on the provided profile filters. It then queries the \`UserLogin\` object to find active login sessions for these users.
+- **SOQL Queries (Bulk API):** When \`--usernames\` is provided, users are queried directly by username. Otherwise, it queries the \`User\` and \`Profile\` objects to identify active users based on the provided profile filters. It then queries the \`UserLogin\` object to find active login sessions for these users.
 - **Interactive Prompts:** Uses the \`prompts\` library to guide the user through profile selection and to confirm the freezing operation.
 - **Bulk Update:** It constructs an array of \`UserLogin\` records with their \`Id\` and \`IsFrozen\` set to \`true\`, then uses \`bulkUpdate\` to perform the mass update operation on the Salesforce org.
 - **Reporting:** It uses \`generateReports\` to create CSV and XLSX files containing details of the users to be frozen.
@@ -48,17 +64,21 @@ The command's technical implementation involves:
   public static examples = [
     `$ sf hardis:org:user:freeze`,
     `$ sf hardis:org:user:freeze --target-org my-user@myorg.com`,
+    `$ sf hardis:org:user:freeze --usernames 'user1@myorg.com,user2@myorg.com'`,
     `$ sf hardis:org:user:freeze --includeprofiles 'Standard'`,
     `$ sf hardis:org:user:freeze --excludeprofiles 'System Administrator,Some Other Profile'`,
+    '$ sf hardis:org:user:freeze --agent --usernames \'user1@myorg.com,user2@myorg.com\'',
+    '$ sf hardis:org:user:freeze --agent --includeprofiles \'Standard\'',
   ];
 
-  // public static args = [{name: 'file'}];
-
   public static flags: any = {
-    // flag with a value (-n, --name=VALUE)
     name: Flags.string({
       char: 'n',
       description: messages.getMessage('nameFilter'),
+    }),
+    usernames: Flags.string({
+      char: 'u',
+      description: 'Comma-separated list of Salesforce usernames to freeze (takes priority over profile flags)',
     }),
     includeprofiles: Flags.string({
       char: 'p',
@@ -84,90 +104,116 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
-  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
 
   protected maxUsersDisplay = 100;
   protected debugMode = false;
+  protected agentMode = false;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgFreezeUser);
+    const usernameList = flags.usernames ? flags.usernames.split(',').map((u: string) => u.trim()).filter((u: string) => u) : [];
     const includeProfileNames = flags.includeprofiles ? flags.includeprofiles.split(',') : [];
     const excludeProfileNames = flags.excludeprofiles ? flags.excludeprofiles.split(',') : [];
     this.maxUsersDisplay = flags.maxuserdisplay || 100;
     this.debugMode = flags.debug || false;
+    this.agentMode = flags.agent === true;
 
     const conn = flags['target-org'].getConnection();
 
-    // Select profiles that we want users to be frozen
-    let profileIds: any[] = [];
+    let usersToFreeze: any[] = [];
     let profileNames: any[] = [];
-    if (includeProfileNames.length === 0 && excludeProfileNames.length === 0) {
-      // Manual user selection
-      const profilesRes = await promptProfiles(conn, {
-        multiselect: true,
-        message: 'Please select profiles that you do you want to freeze users that are assigned to them ?',
-        returnField: 'record',
-        allowSelectMine: false,
-        allowSelectMineErrorMessage: "If you freeze your own profile, you'll be unable to unfreeze it later 😊",
-        allowSelectAll: false,
-        allowSelectAllErrorMessage:
-          'You can not select all profiles, keep at least one (usually System Administrator) so you can unfreeze later !',
-      });
-      profileIds = profilesRes.map((profile) => profile.Id);
-      profileNames = profilesRes.map((profile) => {
-        return [profile.Id, profile.Name];
-      });
-    } else if (includeProfileNames.length > 0) {
-      // Use includeprofiles argument
-      const profilesConstraintIn = includeProfileNames.map((profileName) => `'${profileName}'`).join(',');
-      const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name IN (${profilesConstraintIn})`;
-      const profilesQueryRes = await soqlQuery(profilesQuery, conn);
-      if (this.debugMode) {
-        uxLog("log", this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
+
+    if (usernameList.length > 0) {
+      // Freeze specific users by username
+      uxLog("action", this, c.cyan(t('queryingUserRecordsMatchingUsernames', { count: c.bold(usernameList.length) })));
+      const usernamesConstraint = usernameList.map((u: string) => `'${u}'`).join(',');
+      const userQuery = `SELECT Id,Name,Username,ProfileId FROM User WHERE Username IN (${usernamesConstraint}) and IsActive=true`;
+      const userQueryRes = await bulkQuery(userQuery, conn);
+      usersToFreeze = userQueryRes.records;
+
+      // Resolve profile names for display
+      const uniqueProfileIds = [...new Set(usersToFreeze.map((u: any) => u.ProfileId as string))];
+      if (uniqueProfileIds.length > 0) {
+        const profileIdsConstraint = uniqueProfileIds.map((id) => `'${id}'`).join(',');
+        const profilesQuery = `SELECT Id,Name FROM Profile WHERE Id IN (${profileIdsConstraint})`;
+        const profilesQueryRes = await soqlQuery(profilesQuery, conn);
+        profileNames = profilesQueryRes.records.map((profile: any) => [profile.Id, profile.Name]);
       }
-      profileIds = profilesQueryRes.records.map((profile) => profile.Id);
-      profileNames = profilesQueryRes.records.map((profile) => {
-        return [profile.Id, profile.Name];
-      });
-    } else if (excludeProfileNames.length > 0) {
-      // Use excludeprofiles argument
-      const profilesConstraintIn = excludeProfileNames.map((profileName) => `'${profileName}'`).join(',');
-      const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name NOT IN (${profilesConstraintIn})`;
-      const profilesQueryRes = await soqlQuery(profilesQuery, conn);
-      if (this.debugMode) {
-        uxLog("log", this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
+    } else {
+      // Select profiles that we want users to be frozen
+      let profileIds: any[] = [];
+      if (includeProfileNames.length === 0 && excludeProfileNames.length === 0) {
+        if (isCI || this.agentMode) {
+          throw new SfError(c.red('In agent/CI mode, --usernames, --includeprofiles, or --excludeprofiles flag is required for freeze operation.'));
+        }
+        // Manual profile selection
+        const profilesRes = await promptProfiles(conn, {
+          multiselect: true,
+          message: t('pleaseSelectProfilesThatYouDoYou'),
+          returnField: 'record',
+          allowSelectMine: false,
+          allowSelectMineErrorMessage: "If you freeze your own profile, you'll be unable to unfreeze it later 😊",
+          allowSelectAll: false,
+          allowSelectAllErrorMessage:
+            'You can not select all profiles, keep at least one (usually System Administrator) so you can unfreeze later !',
+        });
+        profileIds = profilesRes.map((profile) => profile.Id);
+        profileNames = profilesRes.map((profile) => {
+          return [profile.Id, profile.Name];
+        });
+      } else if (includeProfileNames.length > 0) {
+        const profilesConstraintIn = includeProfileNames.map((profileName) => `'${profileName}'`).join(',');
+        const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name IN (${profilesConstraintIn})`;
+        const profilesQueryRes = await soqlQuery(profilesQuery, conn);
+        if (this.debugMode) {
+          uxLog("log", this, c.grey(t('queryResult2', { JSON: JSON.stringify(profilesQueryRes, null, 2) })));
+        }
+        profileIds = profilesQueryRes.records.map((profile) => profile.Id);
+        profileNames = profilesQueryRes.records.map((profile) => {
+          return [profile.Id, profile.Name];
+        });
+      } else if (excludeProfileNames.length > 0) {
+        const profilesConstraintIn = excludeProfileNames.map((profileName) => `'${profileName}'`).join(',');
+        const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name NOT IN (${profilesConstraintIn})`;
+        const profilesQueryRes = await soqlQuery(profilesQuery, conn);
+        if (this.debugMode) {
+          uxLog("log", this, c.grey(t('queryResult2', { JSON: JSON.stringify(profilesQueryRes, null, 2) })));
+        }
+        profileIds = profilesQueryRes.records.map((profile) => profile.Id);
+        profileNames = profilesQueryRes.records.map((profile) => {
+          return [profile.Id, profile.Name];
+        });
       }
-      profileIds = profilesQueryRes.records.map((profile) => profile.Id);
-      profileNames = profilesQueryRes.records.map((profile) => {
-        return [profile.Id, profile.Name];
-      });
+
+      // Query users that we want to freeze
+      const profileIdsStr = profileIds.map((profileId) => `'${profileId}'`).join(',');
+      uxLog("action", this, c.cyan(t('queryingUserRecordsMatchingProfiles', { profileIds: c.bold(profileIds.length) })));
+      const userQuery = `SELECT Id,Name,Username,ProfileId FROM User WHERE ProfileId IN (${profileIdsStr}) and IsActive=true`;
+      const userQueryRes = await bulkQuery(userQuery, conn);
+      usersToFreeze = userQueryRes.records;
     }
 
-    // List profiles that must be frozen
-    const profileIdsStr = profileIds.map((profileId) => `'${profileId}'`).join(',');
-
-    // Query users that we want to freeze
-    uxLog("action", this, c.cyan(`Querying User records matching ${c.bold(profileIds.length)} profiles...`));
-    const userQuery = `SELECT Id,Name,Username,ProfileId FROM User WHERE ProfileId IN (${profileIdsStr}) and IsActive=true`;
-    const userQueryRes = await bulkQuery(userQuery, conn);
-    const usersToFreeze = userQueryRes.records;
     const userIdsStr = usersToFreeze.map((user) => `'${user.Id}'`).join(',');
 
     // Check empty result
     if (usersToFreeze.length === 0) {
-      const outputString = `No matching user records found with defined profile constraints`;
+      const outputString = `No matching user records found with defined constraints`;
       uxLog("warning", this, c.yellow(outputString));
       return { outputString };
     }
 
     // Query related UserLogin records
-    uxLog("action", this, c.cyan(`Querying UserLogin records matching ${c.bold(usersToFreeze.length)} users...`));
+    uxLog("action", this, c.cyan(t('queryingUserloginRecordsMatchingUsers', { usersToFreeze: c.bold(usersToFreeze.length) })));
     const userLoginQuery = `SELECT Id,UserId,IsFrozen FROM UserLogin WHERE UserId IN (${userIdsStr}) and IsFrozen=false`;
     const userLoginQueryRes = await bulkQuery(userLoginQuery, conn);
     const userLoginsToFreeze = userLoginQueryRes.records;
@@ -181,13 +227,13 @@ The command's technical implementation involves:
         Profile: profileNames.filter((profile) => profile[0] === matchingUser.ProfileId)[1],
       };
     });
-    uxLog("action", this, c.cyan(`List of ${userLoginsToFreeze.length} users that will be frozen:`));
+    uxLog("action", this, c.cyan(t('listOfUsersThatWillBeFrozen', { userLoginsToFreeze: userLoginsToFreeze.length })));
     uxLogTable(
       this,
       this.debugMode ? usersToFreezeDisplay : usersToFreezeDisplay.slice(0, this.maxUsersDisplay)
     );
     if (!this.debugMode && usersToFreezeDisplay.length > this.maxUsersDisplay) {
-      uxLog("warning", this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
+      uxLog("warning", this, c.yellow(c.italic(t('listTruncatedToFirstUsers', { maxUsersDisplay: this.maxUsersDisplay }))));
     }
 
     // Generate csv + xls of users about to be frozen
@@ -197,17 +243,13 @@ The command's technical implementation involves:
     });
 
     // Request configuration from user
-    if (!isCI) {
+    if (!isCI && !this.agentMode) {
       const confirmfreeze = await prompts({
         type: 'confirm',
         name: 'value',
         initial: true,
-        message: c.cyanBright(
-          `Are you sure you want to freeze these ${c.bold(userLoginsToFreeze.length)} users in org ${c.green(
-            flags['target-org'].getUsername()
-          )} ?`
-        ),
-        description: 'Confirm freezing selected users, which will deactivate their accounts in the Salesforce org',
+        message: c.cyanBright(t('areYouSureYouWantToFreezeUsers', { count: userLoginsToFreeze.length, orgUsername: flags['target-org'].getUsername() })),
+        description: t('confirmFreezingSelectedUsers'),
       });
       if (confirmfreeze.value !== true) {
         const outputString = 'Script cancelled by user.';
@@ -225,13 +267,11 @@ The command's technical implementation involves:
     const freezeSuccessNb = bulkUpdateRes.successfulResults.length;
     const freezeErrorsNb = bulkUpdateRes.failedResults.length;
     if (freezeErrorsNb > 0) {
-      uxLog("warning", this, c.yellow(`Warning: ${c.red(c.bold(freezeErrorsNb))} users has not been frozen (bulk API errors)`));
+      uxLog("warning", this, c.yellow(t('warningUsersHasNotBeenFrozenBulk', { bold: c.red(c.bold(freezeErrorsNb)) })));
     }
 
-    // Build results summary
-    uxLog("success", this, c.green(`${c.bold(freezeSuccessNb)} users has been be frozen.`));
+    uxLog("success", this, c.green(t('usersHaveBeenFrozen', { count: freezeSuccessNb })));
 
-    // Return an object to be displayed with --json
     return {
       orgId: flags['target-org'].getOrgId(),
       freezeSuccess: freezeSuccessNb,

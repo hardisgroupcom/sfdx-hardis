@@ -12,12 +12,23 @@ This command identifies metadata with an apiVersion lower than the value specifi
   Example to handle [ApexClass / Trigger & ApexPage mandatory version upgrade](https://help.salesforce.com/s/articleView?id=sf.admin_locales_update_api.htm&type=5) :
    
    `sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --newapiversion 50`
+
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:audit:apiversion --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
   
 
 ## Parameters
 
 | Name                     |  Type   | Description                                                                                                          | Default | Required | Options |
 |:-------------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                    | boolean | Run in non-interactive mode for agents and automation                                                                |         |          |         |
 | debug<br/>-d             | boolean | Activate debug mode (more logs)                                                                                      |         |          |         |
 | failiferror<br/>-f       | boolean | Fails (exit code 1) if an error is found                                                                             |         |          |         |
 | fix                      | boolean | Automatically update API versions in files that are below the minimum version threshold to match the minimum version |         |          |         |
@@ -33,6 +44,10 @@ This command identifies metadata with an apiVersion lower than the value specifi
 
 ```shell
 $ sf hardis:project:audit:apiversion
+```
+
+```shell
+$ sf hardis:project:audit:apiversion --agent
 ```
 
 ```shell

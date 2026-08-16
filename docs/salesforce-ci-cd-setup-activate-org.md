@@ -32,10 +32,28 @@ When there is a new state of a major branch (after a merge), a deployment to the
 
 You need to have a Salesforce sandbox corresponding to each major branch.
 
+> Create major orgs sandbox by cloning from Production.
+
+> If you have existing sandboxes, it's is highly recommended to refresh them before activating the pipeline
+
 Example:
 
-- Branch `preprod` - create a sandbox named `Preprod`, cloned from Production org
-- Branch `uat` - create a sandbox named `UAT`, cloned from PreProd org
-- Branch `integration` - create a sandbox named `Integration`, cloned from UAT org
+- Branch `preprod` - create a developer named `Preprod`
+- Branch `uat` - create a developer named `UAT`
+- Branch `integration` - create a sandbox named `Integci` (sandbox name has 10 character limit)
+
+Depending on the number of "bigger" sandboxes you have available, here are the recommended sandbox types for each major org:
+
+| Available        | Integ  | UAT        | Preprod    |
+|------------------|--------|------------|------------|
+| Partial only     | dev SB | partial SB | dev SB     |
+| Partial + 1 Full | dev SB | Full SB    | partial SB |
+| Partial + 2 Full | dev SB | Full SB    | Full SB    |
 
 If you are converting an existing project to CI/CD and already have existing orgs, just create an org `Integration`, and you'll refresh later `UAT` and `PreProd`, once your setup will be more advanced.
+
+It is **very important that Integ is a dev sandbox**, because you'll clone it to create the sandboxes where people will actually perform the implementation (and you can clone only sandboxes of the same type).
+
+## Developer sandboxes
+
+The actual development work is done in developer sandboxes that need to be created from the Integration org.

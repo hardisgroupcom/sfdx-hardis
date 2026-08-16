@@ -1,11 +1,11 @@
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
 import { getReportDirectory } from '../../../../config/index.js';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
 import * as path from 'path';
-import { execCommand, filterPackageXml, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, filterPackageXml, isCI, uxLog } from '../../../../common/utils/index.js';
 import c from 'chalk';
 import fs from 'fs';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
@@ -13,6 +13,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -26,10 +27,13 @@ export default class OrgPurgeProfile extends SfCommand<any> {
 **Removes or "mutes" Permission Sets attributes from selected Salesforce Profile metadata files and redeploys the cleaned profiles to the target org.**
 
 This command is intended to safely remove PS attributes from Profiles after a migration from Profile-based to PS-based permission management. It:
+
 - Builds or reuses a full org manifest to determine metadata present in the org.
 - Filters the manifest to remove selected managed package namespaces and keep only relevant metadata types required for profile processing.
 - Retrieves the necessary metadata (profiles, objects, fields, classes) into the local project.
 - Iterates over selected profile files and mutes configured attributes (for example: classAccesses.enabled, fieldPermissions.readable/editable, objectPermissions.* and userPermissions.enabled).
+- Resets record type visibilities on purged objects: assigns the Master record type as default and visible, and unchecks all other record types.
+- Resets application visibilities: keeps only the default app visible, and sets all others to not visible.
 - Writes the modified profile XML files back to the repository
 - Deploys the updated profiles to the target org.
 
@@ -45,15 +49,36 @@ The command checks for uncommitted changes and will not run if the working tree 
 - **Retrieval & Deployment:** Uses the Salesforce CLI ('sf project retrieve' / 'sf project deploy') via 'execCommand' to retrieve metadata and deploy the updated profiles.
 - **Exit behavior:** Returns an object with 'orgId' and an 'outputString'. Errors are logged to the console and do not throw uncaught exceptions within the command.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:purge:profile --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- Uncommitted changes warning is skipped (proceeds anyway).
+- If a cached full org manifest exists, it is reused without prompting.
+- No namespace filtering is applied (all namespaces are kept).
+- Deployment of muted profiles proceeds without confirmation.
 `;
 
   public static examples = [
     `sf hardis:org:purge:profile`,
     `sf hardis:org:purge:profile --target-org my-org@example.com`,
+    '$ sf hardis:org:purge:profile --agent',
   ];
 
   /* jscpd:ignore-start */
   public static flags: any = {
+    profiles: Flags.string({
+      char: 'p',
+      description: 'Comma-separated list of profile API names to purge. Required in agent mode.',
+    }),
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
@@ -68,6 +93,10 @@ The command checks for uncommitted changes and will not run if the working tree 
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -112,15 +141,17 @@ The command checks for uncommitted changes and will not run if the working tree 
   protected outputFile;
   protected outputFilesRes: any = {};
   protected allChanges: { profile: string; node: string; name: string; attribute: string; oldValue: any; newValue: any }[] = [];
+  protected agentMode = false;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgPurgeProfile);
+    this.agentMode = flags.agent === true;
     this.outputFile = flags.outputfile || null;
     const orgUsername = flags['target-org'].getUsername();
     const conn = flags['target-org'].getConnection();
     const instanceUrlKey = conn.instanceUrl.replace(/https?:\/\//, '').replace(/\./g, '_').toUpperCase();
 
-    uxLog("action", this, c.cyan(`Starting profile attributes purge process on org: ${conn.instanceUrl}`));
+    uxLog("action", this, c.cyan(t('startingProfileAttributesPurgeProcessOnOrg', { conn: conn.instanceUrl })));
 
     const reportDir = await getReportDirectory();
     const packageFullOrgPath = path.join(reportDir, `org-package-xml-full_${instanceUrlKey}.xml`);
@@ -129,47 +160,58 @@ The command checks for uncommitted changes and will not run if the working tree 
 
     // Check if user has uncommitted changes
     if (!await this.checkUncommittedChanges()) {
-      const confirmPromptRes = await prompts({
-        type: "confirm",
-        message: `You have uncommitted changes in your git repository, do you want to continue anyway? This may lead to overwrite your uncommitted changes.`,
-        description: "It's recommended to commit, stash or discard your changes before proceeding.",
-      });
-      if (!confirmPromptRes.value === true) {
-        uxLog("error", this, c.blue(`Operation cancelled by user. Exiting without making changes.`));
-        return {};
+      if (!isCI && !this.agentMode) {
+        const confirmPromptRes = await prompts({
+          type: "confirm",
+          message: t('youHaveUncommittedChangesInYourGit'),
+          description: "It's recommended to commit, stash or discard your changes before proceeding.",
+        });
+        if (!confirmPromptRes.value === true) {
+          uxLog("error", this, c.blue(t('operationCancelledExitingWithoutChanges')));
+          return {};
+        }
       }
     }
 
-    uxLog("action", this, c.cyan(`Loading full org manifest for profile retrieval...`));
+    uxLog("action", this, c.cyan(t('loadingFullOrgManifest')));
     await this.loadFullOrgManifest(conn, orgUsername, packageFullOrgPath);
 
     await this.filterFullOrgPackageByNamespaces(packageFullOrgPath, packageFilteredPackagesPath);
 
-    const selectedProfiles = await promptProfiles(flags['target-org'].getConnection(), { multiselect: true, returnApiName: true });
+    let selectedProfiles: string[];
+    if (isCI || this.agentMode) {
+      const profilesFlag = flags.profiles;
+      if (!profilesFlag) {
+        throw new SfError(c.red('In agent/CI mode, --profiles flag is required (comma-separated profile API names).'));
+      }
+      selectedProfiles = profilesFlag.split(',').map((p: string) => p.trim());
+    } else {
+      selectedProfiles = await promptProfiles(flags['target-org'].getConnection(), { multiselect: true, returnApiName: true });
+    }
 
-    uxLog("action", this, c.cyan(`Filtering full org manifest to only keep relevant metadata types...`));
+    uxLog("action", this, c.cyan(t('filteringFullOrgManifest')));
     await this.filterFullOrgPackageByRelevantMetadataTypes(packageFilteredPackagesPath, packageFilteredProfilePath, selectedProfiles);
 
-    uxLog("action", this, c.cyan(`Retrieving metadatas required for profile purge (this will take some time)...`));
+    uxLog("action", this, c.cyan(t('retrievingMetadatasForProfilePurge')));
     await execCommand(
-      `sf project retrieve start --manifest ${packageFilteredProfilePath} --target-org ${orgUsername} --ignore-conflicts --json`,
+      `sf project retrieve start --manifest "${packageFilteredProfilePath}" --target-org ${orgUsername} --ignore-conflicts --json`,
       this,
       { output: false, fail: true }
     );
 
 
-    uxLog("action", this, c.cyan(`Muting unwanted profile attributes...`));
+    uxLog("action", this, c.cyan(t('mutingUnwantedProfileAttributes')));
     const profilesDir = path.join('force-app', 'main', 'default', 'profiles');
     for (const selectedProfile of selectedProfiles) {
       const profileFilePath = path.join(profilesDir, `${selectedProfile}.profile-meta.xml`);
       if (!fs.existsSync(profileFilePath)) {
-        uxLog("warning", this, c.yellow(`Profile file ${profileFilePath} does not exist. Skipping.`));
+        uxLog("warning", this, c.yellow(t('profileFileDoesNotExistSkipping', { profileFilePath })));
         continue;
       }
 
       const profileWithMutedAttributes = await this.muteProfileAttributes(profileFilePath);
       await writeXmlFile(profileFilePath, profileWithMutedAttributes);
-      uxLog("success", this, c.green(`Profile ${selectedProfile} processed and unwanted attributes muted.`));
+      uxLog("success", this, c.green(t('profileProcessedAndUnwantedAttributesMuted', { selectedProfile })));
       WebSocketClient.sendReportFileMessage(profileFilePath, `See updated ${path.basename(profileFilePath, ".profile-meta.xml")} profile `, 'report');
     }
 
@@ -177,15 +219,17 @@ The command checks for uncommitted changes and will not run if the working tree 
     this.outputFile = await generateReportPath('profile-muted-attributes', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.allChanges, this.outputFile, { fileTitle: 'Profile muted attributes report' });
 
-    const promptDeployRes = await prompts({
-      type: "confirm",
-      message: `Do you want to deploy ${selectedProfiles} profiles back to the org now?`,
-      description: "Deploying the profiles will overwrite the existing profiles in the target org with the muted versions. Profiles: " + selectedProfiles.join(", "),
-      initial: true,
-    });
-    if (!promptDeployRes.value === true) {
-      uxLog("error", this, c.blue(`Deployment cancelled by user. Exiting without deploying profiles.`));
-      return { orgId: flags['target-org'].getOrgId(), outputString: "Profile purge completed without deployment." };
+    if (!isCI && !this.agentMode) {
+      const promptDeployRes = await prompts({
+        type: "confirm",
+        message: t('doYouWantToDeployProfilesBack', { selectedProfiles }),
+        description: t('confirmDeployProfilesDescription'),
+        initial: true,
+      });
+      if (!promptDeployRes.value === true) {
+        uxLog("error", this, c.blue(t('deploymentCancelledByUser')));
+        return { orgId: flags['target-org'].getOrgId(), outputString: "Profile purge completed without deployment." };
+      }
     }
 
     uxLog("action", this, c.cyan(`Deploying muted profiles back to the org...`));
@@ -209,21 +253,25 @@ The command checks for uncommitted changes and will not run if the working tree 
     // Check if full org manifest already exists
     let useExistingManifest = false;
     if (fs.existsSync(packageFullOrgPath)) {
-      const promptResults = await prompts({
-        type: "select",
-        name: "useExistingManifest",
-        message: "Do you want to use the existing full org manifest or generate a new one?",
-        description: "A full org manifest file was found from a previous run. You can either use it or generate a new one to ensure it's up to date. It may take some time to generate a new one.",
-        choices: [
-          {
-            title: `Use the existing full org manifest`,
-            description: `Cache file is located at ${path.relative(process.cwd(), packageFullOrgPath)}`,
-            value: true
-          },
-          { title: "Generate a new full org manifest", value: false },
-        ],
-      });
-      useExistingManifest = promptResults.useExistingManifest;
+      if (!isCI && !this.agentMode) {
+        const promptResults = await prompts({
+          type: "select",
+          name: "useExistingManifest",
+          message: t('doYouWantToUseTheExisting'),
+          description: t('existingManifestFoundDescription'),
+          choices: [
+            {
+              title: t('useExistingManifestTitle'),
+              description: t('existingManifestCacheLocation', { path: path.relative(process.cwd(), packageFullOrgPath) }),
+              value: true
+            },
+            { title: t('generateNewManifestTitle'), value: false },
+          ],
+        });
+        useExistingManifest = promptResults.useExistingManifest;
+      } else {
+        useExistingManifest = true;
+      }
     }
     if (!useExistingManifest) {
       uxLog("action", this, c.cyan(`Generating full org manifest for profile retrieval...`));
@@ -233,7 +281,7 @@ The command checks for uncommitted changes and will not run if the working tree 
 
   private async muteProfileAttributes(profileFilePath: string): Promise<any> {
     const profileName = path.basename(profileFilePath, '.profile-meta.xml');
-    uxLog("action", this, c.cyan(`Processing profile: ${profileName}`));
+    uxLog("action", this, c.cyan(t('processingProfile', { profileName })));
     const profileParsedXml: any = await parseXmlFile(profileFilePath);
     const filename = path.basename(profileFilePath);
     const changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[] = [];
@@ -312,6 +360,12 @@ The command checks for uncommitted changes and will not run if the working tree 
       }
     }
 
+    // Reset record type visibilities: set Master as default and visible, uncheck others
+    this.resetRecordTypeVisibilities(profileParsedXml, changes);
+
+    // Reset application visibilities: keep only the default app visible, uncheck others
+    this.resetApplicationVisibilities(profileParsedXml, changes);
+
     // Build a single summary string and emit it with one uxLog("log") call
     const summaryLines: string[] = [];
     summaryLines.push(`Profile: ${profileName}`);
@@ -330,6 +384,141 @@ The command checks for uncommitted changes and will not run if the working tree 
     uxLog('log', this, c.cyan(summaryLines.join('\n')));
     this.allChanges.push(...changes.map(change => ({ profile: profileName, ...change })));
     return profileParsedXml;
+  }
+
+  private resetRecordTypeVisibilities(
+    profileParsedXml: any,
+    changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[]
+  ): void {
+    const nodeName = 'recordTypeVisibilities';
+    const profileNodes = this.getProfileNodeArray(profileParsedXml, nodeName);
+    if (!profileNodes) {
+      return;
+    }
+
+    // Collect purged object names from objectPermissions
+    const purgedObjects = new Set<string>();
+    if (profileParsedXml?.Profile?.objectPermissions) {
+      const objPerms = Array.isArray(profileParsedXml.Profile.objectPermissions)
+        ? profileParsedXml.Profile.objectPermissions
+        : [profileParsedXml.Profile.objectPermissions];
+      for (const objPerm of objPerms) {
+        const objName = this.unwrapProfileValue(objPerm.object);
+        if (objName) {
+          purgedObjects.add(objName);
+        }
+      }
+    }
+
+    if (purgedObjects.size === 0) {
+      return;
+    }
+
+    for (const rtNode of profileNodes) {
+      const recordTypeName = this.unwrapProfileValue(rtNode.recordType);
+      if (!recordTypeName) {
+        continue;
+      }
+
+      // recordType format is "ObjectName.RecordTypeName"
+      const dotIndex = recordTypeName.lastIndexOf('.');
+      if (dotIndex === -1) {
+        continue;
+      }
+      const objectName = recordTypeName.substring(0, dotIndex);
+      const rtName = recordTypeName.substring(dotIndex + 1);
+
+      // Only process record types for purged objects
+      if (!purgedObjects.has(objectName)) {
+        continue;
+      }
+
+      const isMaster = rtName === 'Master';
+      const targetVisible = isMaster;
+      const targetDefault = isMaster;
+
+      this.updateBooleanProfileAttribute(rtNode, 'visible', targetVisible, nodeName, recordTypeName, changes);
+      this.updateBooleanProfileAttribute(rtNode, 'default', targetDefault, nodeName, recordTypeName, changes);
+      this.updateBooleanProfileAttribute(rtNode, 'personAccountDefault', targetDefault, nodeName, recordTypeName, changes);
+    }
+  }
+
+  private resetApplicationVisibilities(
+    profileParsedXml: any,
+    changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[]
+  ): void {
+    const nodeName = 'applicationVisibilities';
+    const profileNodes = this.getProfileNodeArray(profileParsedXml, nodeName);
+    if (!profileNodes) {
+      return;
+    }
+
+    // Find the default app name
+    let defaultAppName: string | null = null;
+    for (const appNode of profileNodes) {
+      const isDefault = this.parseProfileBoolean(appNode.default);
+      if (isDefault) {
+        const appName = this.unwrapProfileValue(appNode.application);
+        defaultAppName = appName;
+        break;
+      }
+    }
+
+    for (const appNode of profileNodes) {
+      const appName = this.unwrapProfileValue(appNode.application);
+      if (!appName) {
+        continue;
+      }
+
+      const isDefault = appName === defaultAppName;
+      const targetVisible = isDefault;
+      this.updateBooleanProfileAttribute(appNode, 'visible', targetVisible, nodeName, appName, changes);
+    }
+  }
+
+  private unwrapProfileValue(value: any): any {
+    return Array.isArray(value) ? value[0] : value;
+  }
+
+  private getProfileNodeArray(profileParsedXml: any, nodeName: string): any[] | null {
+    const profileNode = profileParsedXml?.Profile?.[nodeName];
+    if (!profileNode) {
+      return null;
+    }
+    if (!Array.isArray(profileNode)) {
+      profileParsedXml.Profile[nodeName] = [profileNode];
+    }
+    return profileParsedXml.Profile[nodeName];
+  }
+
+  private parseProfileBoolean(value: any): boolean {
+    const unwrapped = this.unwrapProfileValue(value);
+    return unwrapped === true || unwrapped === 'true';
+  }
+
+  private updateBooleanProfileAttribute(
+    nodeObj: any,
+    attribute: string,
+    targetValue: boolean,
+    nodeName: string,
+    memberName: string,
+    changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[]
+  ): void {
+    if (nodeObj?.[attribute] === undefined) {
+      return;
+    }
+    const oldValue = this.unwrapProfileValue(nodeObj[attribute]);
+    const oldValueBool = this.parseProfileBoolean(oldValue);
+    if (oldValueBool !== targetValue) {
+      changes.push({
+        node: nodeName,
+        name: memberName,
+        attribute,
+        oldValue,
+        newValue: targetValue,
+      });
+      nodeObj[attribute] = targetValue;
+    }
   }
 
   async filterFullOrgPackageByNamespaces(packageFullOrgPath: string, packageFilteredPackagesPath: string): Promise<void> {
@@ -375,17 +564,21 @@ The command checks for uncommitted changes and will not run if the working tree 
       }
     }
 
-    const selectedNamespacesPrompt = await prompts({
-      type: 'multiselect',
-      name: "namespaces",
-      message: "Select the namespaces you want to ignore in the selected profiles that will be processed.",
-      description: "You will NOT disable access to elements related to namespaces that you will select.",
-      choices: namespaceOptions
-    });
+    let selectedNamespaces: string[] = [];
+    if (!isCI && !this.agentMode) {
+      const selectedNamespacesPrompt = await prompts({
+        type: 'multiselect',
+        name: "namespaces",
+        message: t('selectTheNamespacesYouWantToIgnore'),
+        description: t('youWillNotDisableAccessToElementsRelatedToNamespaces'),
+        choices: namespaceOptions
+      });
+      selectedNamespaces = selectedNamespacesPrompt.namespaces || [];
+    }
 
     uxLog("action", this, c.cyan(`Filtering full org manifest to remove unwanted namespaces...`));
     await filterPackageXml(packageFullOrgPath, packageFilteredPackagesPath, {
-      removeNamespaces: selectedNamespacesPrompt.namespaces,
+      removeNamespaces: selectedNamespaces,
       removeStandard: false
     });
   }
@@ -397,6 +590,7 @@ The command checks for uncommitted changes and will not run if the working tree 
         .map((a: any) => a.packageType)
         .filter((pkgType: any) => pkgType != null),
       'Profile',
+      'CustomApplication', // needed to retrieve applicationVisibilities in profiles
     ]));
 
     for (const key of Object.keys(parsedPackage)) {
@@ -419,8 +613,8 @@ The command checks for uncommitted changes and will not run if the working tree 
         this,
         { output: true, fail: true }
       );
-      uxLog("action", this, c.cyan(`Successfully deployed ${selectedProfiles.length}`));
-      uxLog("success", this, c.green(`Profiles deployed successfully:\n${selectedProfiles.join(', ')}`));
+      uxLog("action", this, c.cyan(t('successfullyDeployed2', { selectedProfiles: selectedProfiles.length })));
+      uxLog("success", this, c.green(t('profilesDeployedSuccessfully', { selectedProfiles: selectedProfiles.join(', ') })));
     } catch (error) {
       uxLog("action", this, c.red(`Failed to deploy profiles.`));
       uxLog("error", this, c.red(JSON.stringify(error, null, 2)));

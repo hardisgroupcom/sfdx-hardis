@@ -7,6 +7,7 @@ import fs from 'fs-extra';
 import { glob } from 'glob';
 import { uxLog } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -40,15 +41,31 @@ The command's technical implementation involves:
 - **File Writing:** If changes are made, the modified XML content is written back to the FlexiPage file using \`fs.writeFile\`.
 - **Logging:** Provides messages about which FlexiPages are being processed and a summary of the total number of identifiers added.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:fix:v53flexipages --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:fix:v53flexipages'];
+  public static examples = ['$ sf hardis:project:fix:v53flexipages',
+    '$ sf hardis:project:fix:v53flexipages --agent',];
 
   public static flags: any = {
     path: Flags.string({
       char: 'p',
       default: process.cwd(),
       description: 'Root folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -75,7 +92,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Adding identifiers to componentInstance in flexipages`));
+    uxLog("action", this, c.cyan(t('addingIdentifiersToComponentInstanceFlexipages')));
     /* jscpd:ignore-end */
 
     const globPattern = this.pathToBrowse + `/**/*.flexipage-meta.xml`;
@@ -83,7 +100,7 @@ The command's technical implementation involves:
     let counter = 0;
     const flexipages: any[] = [];
     const flexipageSourceFiles = await glob(globPattern, { cwd: this.pathToBrowse, ignore: GLOB_IGNORE_PATTERNS });
-    uxLog("log", this, c.grey(`Found ${flexipageSourceFiles.length} flexipages`));
+    uxLog("log", this, c.grey(t('foundFlexipages', { flexipageSourceFiles: flexipageSourceFiles.length })));
     const regexAndReplacements = [
       {
         regex: /(<componentName>.*<\/componentName>\n.*<\/componentInstance>)/gim,
@@ -128,7 +145,7 @@ The command's technical implementation involves:
         }
         if (found) {
           await fs.writeFile(flexiFile, flexipageRawXml);
-          uxLog("log", this, c.grey('Updated ' + flexiFile));
+          uxLog("log", this, c.grey(t('updated') + flexiFile));
         }
       }
     }

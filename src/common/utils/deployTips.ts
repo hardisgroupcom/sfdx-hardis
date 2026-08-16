@@ -1,14 +1,14 @@
 // Analyze deployment errors to provide tips to user 😊
 import c from "chalk";
-import format from "string-template";
-
 import { getAllTips } from "./deployTipsList.js";
+import { formatTemplate as format } from "./stringUtils.js";
 import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown.js";
 import { findJsonInString, stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
 import { analyzeDeployErrorLogsJson } from "./deployTipJson.js";
 import { PullRequestData } from "../gitProvider/index.js";
 import { setPullRequestData } from "./gitUtils.js";
+import { t } from './i18n.js';
 
 let logRes: string | null = null;
 let errorsAndTips: any[] = [];
@@ -89,10 +89,10 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   // Fallback in case we have not been able to identify errors
   if (errorsAndTips.length === 0 && failedTests.length === 0) {
     errorsAndTips.push(({
-      error: { message: "There has been an issue parsing errors, probably because of a SF CLI output format update. Please check console logs." },
+      error: { message: t('thereHasBeenAnIssueParsingErrors2') },
       tip: {
         label: "SfdxHardisParseError",
-        message: "If you are in CI/CD, please check at the bottom of deployment check job logs. The issue will be fixed ASAP.",
+        message: t('ifYouAreInCiCdPlease'),
       },
     }))
   }
@@ -289,6 +289,8 @@ export async function updatePullRequestResult(errorsAndTips: Array<any>, failedT
     title: options.check ? "✅ Deployment check success" : "✅ Deployment success",
     deployErrorsMarkdownBody: "No error has been found during the deployment",
     deployStatus: "valid",
+    // Also set the comment status, otherwise it stays "tovalidate" and the comment displays no banner
+    status: "valid",
   };
   if (errorsAndTips.length > 0) {
     prData.title = options.check ? "❌ Deployment check failure" : "❌ Deployment failure";

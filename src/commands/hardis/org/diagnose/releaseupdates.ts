@@ -8,9 +8,10 @@ import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
-import moment from 'moment';
+import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -25,10 +26,21 @@ Before publishing **Breaking Changes** ❌, Salesforce announce them in the setu
 ⚠️ Some of them are very important, because if you don't make the related upgrades in time (ex: before Winter 25) , your production org can crash !
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-release-updates/) and can output Grafana, Slack and MsTeams Notifications.
-`;
+
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:releaseupdates --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:releaseupdates',
+    '$ sf hardis:org:diagnose:releaseupdates --agent',
   ];
 
   public static flags: any = {
@@ -46,6 +58,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -65,7 +81,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
     const conn = flags['target-org'].getConnection();
-    uxLog("action", this, c.cyan(`Extracting Release Updates and checks to perform in ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(t('extractingReleaseUpdatesAndChecksToPerform', { conn: conn.instanceUrl })));
 
     // Fetch ReleaseUpdate records
     const releaseUpdatesQuery =
@@ -92,10 +108,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
       const notifSeverity: NotifSeverity = 'warning';
-      const notifText = `${this.releaseUpdatesRecords.length} Release Updates to check have been found in ${orgMarkdown}`
+      const notifText = `**${this.releaseUpdatesRecords.length}** Release Updates to check have been found in ${orgMarkdown}`
       let notifDetailText = '';
       for (const releaseUpdate of this.releaseUpdatesRecords) {
-        notifDetailText += `• *${releaseUpdate.Title}* (${releaseUpdate.StepStage},${releaseUpdate.Status},${releaseUpdate.Category}), due for ${moment(releaseUpdate.DueDate).format("ll")}\n`;
+        notifDetailText += `- **${releaseUpdate.Title}** (${releaseUpdate.StepStage},${releaseUpdate.Status},${releaseUpdate.Category}), due for ${dateHelper(releaseUpdate.DueDate).format("ll")}\n`;
       }
       const notifAttachments = [{ text: notifDetailText }];
       // Post notif
@@ -121,7 +137,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           StepStage: releaseUpdate.StepStage,
           Status: releaseUpdate.Status,
           Category: releaseUpdate.Category,
-          DueDate: moment(releaseUpdate.DueDate).format('ll')
+          DueDate: dateHelper(releaseUpdate.DueDate).format('ll')
         }
       })
 
@@ -130,7 +146,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       uxLogTable(this, releaseUpdatesLight);
     }
     else {
-      uxLog("success", this, c.green("No release updates has been found"));
+      uxLog("success", this, c.green(t('noReleaseUpdatesHasBeenFound')));
     }
 
     // Return an object to be displayed with --json

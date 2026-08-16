@@ -12,6 +12,7 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 export default class CallInCallOut extends SfCommand<any> {
   public static title = 'Audit Metadatas API Version';
@@ -25,10 +26,21 @@ export default class CallInCallOut extends SfCommand<any> {
   Example to handle [ApexClass / Trigger & ApexPage mandatory version upgrade](https://help.salesforce.com/s/articleView?id=sf.admin_locales_update_api.htm&type=5) :
    
    \`sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --newapiversion 50\`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:audit:apiversion --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
   `
 
   public static examples = [
     '$ sf hardis:project:audit:apiversion',
+    '$ sf hardis:project:audit:apiversion --agent',
     '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45',
     '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --fix',
     '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --newapiversion 50'
@@ -46,6 +58,10 @@ export default class CallInCallOut extends SfCommand<any> {
       char: 'f',
       default: false,
       description: messages.getMessage('failIfError'),
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -177,9 +193,9 @@ export default class CallInCallOut extends SfCommand<any> {
         }
       } catch (error) {
         if (error instanceof Error) {
-          uxLog("warning", this, c.yellow(`Error processing file ${file}: ${error.message}`));
+          uxLog("warning", this, c.yellow(t('errorProcessingFile2', { file, error: error.message })));
         } else {
-          uxLog("warning", this, c.yellow(`Error processing file ${file}: ${String(error)}`));
+          uxLog("warning", this, c.yellow(t('errorProcessingFile', { file, String: String(error) })));
         }
       }
     }
@@ -201,7 +217,7 @@ export default class CallInCallOut extends SfCommand<any> {
     });
 
     // Display as table
-    uxLog("action", this, c.cyan(`Found ${c.bold(resultSorted.length)} metadata files with API Version.`));
+    uxLog("action", this, c.cyan(t('foundMetadataFilesWithApiVersion', { resultSorted: c.bold(resultSorted.length) })));
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
     uxLogTable(this,
       resultsLight.map((item: any) => {

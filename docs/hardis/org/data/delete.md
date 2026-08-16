@@ -21,6 +21,8 @@ If you intend to run this command in a production environment, you must:
 - Set `runnableInProduction` to `true` in your `export.json` file within the SFDMU workspace.
 - Define `sfdmuCanModify: YOUR_INSTANCE_URL` in your branch-specific configuration file (e.g., `config/branches/.sfdx-hardis.YOUR_BRANCH.yml`) to explicitly authorize data modification for that instance.
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/p4E2DUGZ3bs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -34,11 +36,21 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 - **Required Plugin:** It explicitly lists `sfdmu` as a required plugin, ensuring that the necessary dependency is in place before execution.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all prompts. Typical usage:
+
+`sf hardis:org:data:delete --agent --path ./scripts/data/MyDataProject --target-org myOrg`
+
+- The `--path` flag is required in agent mode (no interactive workspace selection).
+- The `--target-org` flag is used directly (no interactive org selection prompt).
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                   | Default | Required | Options |
 |:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir         | option  | undefined                                                     |         |          |         |
 | json              | boolean | Format output as json.                                        |         |          |         |
@@ -51,6 +63,10 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 
 ```shell
 $ sf hardis:org:data:delete
+```
+
+```shell
+$ sf hardis:org:data:delete --agent --path ./scripts/data/MyDataProject --target-org myOrg
 ```
 
 

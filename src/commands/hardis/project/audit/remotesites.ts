@@ -5,11 +5,12 @@ import { AnyJson } from '@salesforce/ts-types';
 import fs from 'fs-extra';
 import c from 'chalk';
 import { glob } from 'glob';
-import * as psl from 'psl';
+import { extractRegistrableDomain } from '../../../../common/utils/domainUtils.js';
 import sortArray from 'sort-array';
 import * as url from 'url';
 import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -39,18 +40,34 @@ The command's technical implementation involves:
 - **File Discovery:** Uses \`glob\` to find all RemoteSiteSetting metadata files within the project.
 - **Content Analysis:** Reads the content of each XML file and uses regular expressions (/<url>(.*?)<\\/url>/gim, /<isActive>(.*?)<\\/isActive>/gim, /<description>(.*?)<\\/description>/gim) to extract relevant details.
 - **\`catchMatches\` Utility:** This utility function is used to apply the defined regular expressions to each file and extract all matching occurrences.
-- **URL Parsing:** Uses Node.js's \`url\` module to parse the extracted URLs and \`psl\` (Public Suffix List) to extract the domain name from the hostname.
+- **URL Parsing:** Uses Node.js's \`url\` module to parse the extracted URLs and extracts the registrable domain name from the hostname.
 - **Data Structuring:** Organizes the extracted information into a structured format, including the remote site's name, file name, namespace, URL, active status, description, protocol, and domain.
 - **Reporting:** Uses \`generateReports\` to create a CSV report and display a table in the console, summarizing the audit findings.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:audit:remotesites --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:audit:remotesites'];
+  public static examples = ['$ sf hardis:project:audit:remotesites',
+    '$ sf hardis:project:audit:remotesites --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
     // flag with a value (-n, --name=VALUE)
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -94,6 +111,7 @@ The command's technical implementation involves:
     // Loop in files
     for (const file of remoteSiteSettingsFiles) {
       const fileText = await fs.readFile(file, 'utf8');
+      /* jscpd:ignore-start */
       // Loop on criteria to find matches in this file
       for (const catcher of catchers) {
         const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
@@ -104,6 +122,7 @@ The command's technical implementation involves:
     // Format result
     const result: any[] = this.matchResults.map((item: any) => {
       return {
+        /* jscpd:ignore-end */
         name: item.fileName.replace('.remoteSite-meta.xml', '').replace('.remoteSite', ''),
         fileName: item.fileName,
         nameSpace: item.fileName.includes('__') ? item.fileName.split('__')[0] : 'Custom',
@@ -112,7 +131,7 @@ The command's technical implementation involves:
         active: item.detail?.active ? 'yes' : 'no',
         description: item.detail?.description ? item.detail.description[0] : '',
         protocol: item.detail.url[0].includes('https') ? 'HTTPS' : 'HTTP',
-        domain: (psl.parse(new url.URL(item.detail.url[0]).hostname) as any)?.domain || 'Domain not found',
+        domain: extractRegistrableDomain(new url.URL(item.detail.url[0]).hostname) || 'Domain not found',
       };
     });
 
@@ -123,7 +142,7 @@ The command's technical implementation involves:
     });
 
     // Display as table
-    uxLog("action", this, c.cyan(`Found ${c.bold(resultSorted.length)} remote sites.`));
+    uxLog("action", this, c.cyan(t('foundRemoteSites', { resultSorted: c.bold(resultSorted.length) })));
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
     uxLogTable(this,
       resultsLight.map((item: any) => {

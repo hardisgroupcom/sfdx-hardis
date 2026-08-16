@@ -17,13 +17,14 @@ import { prompts } from '../../../common/utils/prompts.js';
 import { parseXmlFile, writeXmlFile } from '../../../common/utils/xmlUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../common/notifProvider/index.js';
-import { Parser } from 'xml2js';
+import { parseXmlString } from '../../../common/utils/xmlUtils.js';
 
 // Config
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from '../../../common/utils/notifUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -60,12 +61,23 @@ The command's technical implementation involves:
 - **Access Verification Logic:** Iterates through each element to check and verifies if it has the necessary access enabled in any of the non-ignored Permission Sets or Profiles.
 - **Data Aggregation:** Collects all elements with missing access into a \`missingElements\` array and \`missingElementsMap\` for reporting and notification purposes.
 </details>
-`;
+
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:lint:access --agent
+\`\`\`
+
+In agent mode, the interactive prompt to automatically add missing accesses to Permission Sets is skipped. The report is still generated and notifications are sent.`;
 
   public static examples = [
     '$ sf hardis:lint:access',
     '$ sf hardis:lint:access -e "ApexClass:ClassA, CustomField:Account.CustomField"',
     '$ sf hardis:lint:access -i "PermissionSet:permissionSetA, Profile"',
+    '$ sf hardis:lint:access --agent',
   ];
 
   public static flags: any = {
@@ -99,6 +111,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': optionalOrgFlagWithDeprecations,
   };
 
@@ -108,6 +124,7 @@ The command's technical implementation involves:
   public static requiresProject = true;
 
   protected folder: string;
+  protected agentMode = false;
   protected customSettingsNames: string[] = [];
   protected missingElements: any[] = [];
   protected missingElementsMap: any = {};
@@ -167,6 +184,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(LintAccess);
+    this.agentMode = flags.agent === true;
     const config = await getConfig('user');
     this.folder = flags.folder || './force-app';
     this.hasToDisplayJsonOnly = this.argv.includes('--json');
@@ -176,7 +194,7 @@ The command's technical implementation involves:
 
     this.customSettingsNames = (await this.listLocalCustomSettings()).map((cs) => cs.name);
 
-    uxLog("action", this, c.cyan(LintAccess.messages.header));
+    uxLog("action", this, c.cyan(t('lintAccessHeader')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
 
@@ -500,13 +518,13 @@ The command's technical implementation involves:
     // Manage detail in case there are issues
     if (this.missingElements.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.missingElements.length} custom elements have no access defined in any Profile or Permission set in ${branchMd}`;
+      notifText = `**${this.missingElements.length}** custom elements have no access defined in any Profile or Permission set in ${branchMd}`;
       let notifDetailText = ``;
       for (const missingType of Object.keys(this.missingElementsMap)) {
         if (this.missingElementsMap[missingType]?.length > 0) {
-          notifDetailText += `*${missingType}*\n`;
+          notifDetailText += `**${missingType}**\n`;
           for (const missingItem of this.missingElementsMap[missingType]) {
-            notifDetailText += `• ${missingItem}\n`;
+            notifDetailText += `- ${missingItem}\n`;
           }
         }
       }
@@ -530,11 +548,11 @@ The command's technical implementation involves:
   }
 
   private async handleFixIssues() {
-    if (!isCI && this.missingElements.length > 0 && this.argv.includes('--websocket')) {
+    if (!isCI && !this.agentMode && this.missingElements.length > 0 && this.argv.includes('--websocket')) {
       const promptUpdate = await prompts({
         type: 'confirm',
-        message: c.cyanBright('Do you want to add the missing accesses in permission sets ?'),
-        description: 'Confirm if you want to automatically fix missing access issues',
+        message: c.cyanBright(t('doYouWantToAddTheMissing')),
+        description: t('confirmFixMissingAccessDescription'),
       });
       if (promptUpdate.value === true) {
         const availablePermissionSets = await this.listLocalPermissionSets();
@@ -542,8 +560,8 @@ The command's technical implementation involves:
           {
             type: 'multiselect',
             name: 'elements',
-            message: 'Please select the elements you want to add in Permission Set(s)',
-            description: 'Choose which missing access elements to add to permission sets',
+            message: t('pleaseSelectTheElementsYouWantTo'),
+            description: t('chooseMssingElementsToAddDescription'),
             choices: this.missingElements.map((elt) => {
               return { title: `${elt.type}: ${elt.element}`, value: elt };
             }),
@@ -551,8 +569,8 @@ The command's technical implementation involves:
           {
             type: 'multiselect',
             name: 'permissionSets',
-            message: 'Please select the permission sets you want to update with selected elements',
-            description: 'Choose which permission sets should receive the selected access elements',
+            message: t('pleaseSelectThePermissionSetsYouWant'),
+            description: t('choosePermissionSetsDescription'),
             choices: availablePermissionSets.map((elt) => {
               return { title: elt.name, value: elt.filePath };
             }),
@@ -560,12 +578,12 @@ The command's technical implementation involves:
           {
             type: 'select',
             name: 'access',
-            message: 'Please select the accesses to set for the custom fields',
-            description: 'Choose the level of access to grant for custom fields',
-            placeholder: 'Select access level',
+            message: t('pleaseSelectTheAccessesToSetFor'),
+            description: t('chooseAccessLevelDescription'),
+            placeholder: t('selectAccessLevel'),
             choices: [
-              { title: 'Readable', value: 'readable' },
-              { title: 'Readable & Editable', value: 'editable' },
+              { title: t('accessReadable'), value: 'readable' },
+              { title: t('accessReadableEditable'), value: 'editable' },
             ],
           },
         ]);
@@ -581,8 +599,8 @@ The command's technical implementation involves:
         }
       }
     } else if (this.missingElements.length > 0) {
-      uxLog("warning", this, c.yellow('Please add missing access on permission set(s)'));
-      uxLog("warning", this, c.yellow('You can do it by running VS Code SFDX Hardis command Audit -> Detect missing permissions.'));
+      uxLog("warning", this, c.yellow(t('pleaseAddMissingAccessOnPermissionSet')));
+      uxLog("warning", this, c.yellow(t('youCanDoItByRunningVs')));
     }
   }
 
@@ -664,8 +682,8 @@ The command's technical implementation involves:
       }
       await writeXmlFile(permissionSetFile, psFileXml);
     }
-    uxLog("action", this, c.cyan('Permission sets updated successfully!'));
-    uxLog("warning", this, c.yellow('Please commit and push your changes to the repository!'));
+    uxLog("action", this, c.cyan(t('permissionSetsUpdatedSuccessfully')));
+    uxLog("warning", this, c.yellow(t('pleaseCommitAndPushYourChangesTo')));
     throw new SfError(c.red('Your permission sets has been updated: please CHECK THE UPDATES then commit and push !'));
   }
 
@@ -674,8 +692,7 @@ The command's technical implementation involves:
   }
 
   private async parseString(xml: string): Promise<any> {
-    const parser = new Parser();
-    return parser.parseStringPromise(xml);
+    return parseXmlString(xml);
   }
 
   private async verifyMultipleObjectsInPermissionSets(permissionsetsDirectory: string): Promise<void> {

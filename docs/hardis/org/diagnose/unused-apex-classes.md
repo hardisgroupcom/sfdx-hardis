@@ -5,7 +5,7 @@
 
 List all async Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days.
   
-The result class list probably can be removed from the project, and that will improve your test classes performances :)
+The result class list probably can be removed from the project, and that will improve your test classes performances 😊
 
 The number of unused day is overridable using --days option. 
 
@@ -18,10 +18,21 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 ![](https://sfdx-hardis.cloudity.com/assets/images/screenshot-monitoring-unused-apex-grafana.jpg)
 
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:diagnose:unused-apex-classes --agent --target-org myorg@example.com
+```
+
+In agent mode, the command runs fully automatically. The inactivity threshold defaults to 365 days when `--days` is not provided.
+
 ## Parameters
 
 | Name              |  Type   | Description                                                                                             | Default | Required | Options |
 |:------------------|:-------:|:--------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.           |         |          |         |
 | days<br/>-t       | option  | Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                         |         |          |         |
 | flags-dir         | option  | undefined                                                                                               |         |          |         |
@@ -39,6 +50,10 @@ $ sf hardis:org:diagnose:unused-apex-classes
 
 ```shell
 $ sf hardis:org:diagnose:unused-apex-classes --days 700
+```
+
+```shell
+$ sf hardis:org:diagnose:unused-apex-classes --agent
 ```
 
 

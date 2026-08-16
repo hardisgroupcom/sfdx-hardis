@@ -1,7 +1,8 @@
 ---
 title: Sfdx-hardis AI assistant setup
-description: Learn how to use AI to supercharge sfdx-hardis deployments
+description: Learn how to wire AI into sfdx-hardis deployments
 ---
+
 <!-- markdownlint-disable MD013 -->
 
 # Setup AI for sfdx-hardis
@@ -20,7 +21,9 @@ See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and ho
 
 ## Main configuration
 
-> You're lost ? Contact [Cloudity](https://cloudity.com/#form), we can do it for you :)
+> You're lost ? Contact [Cloudity](https://cloudity.com/contact-us/), we can do it for you :)
+
+[![Cloudity](assets/images/cloudity-banner.png)](https://cloudity.com/contact-us/){target=blank}
 
 ### Common variables
 
@@ -43,14 +46,16 @@ See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and ho
 ![Salesforce Foundations free tier](assets/images/foundations.png)
 
 - A prompt template **SfdxHardisGenericPrompt** (type `Flex`) must exist in the default org, with input variable **PromptText** (type `FreeText`)
-- The connected used must be assigned to permission set **Prompt Template User**
+- The connected user must be assigned to permission set **Prompt Template User** (EinsteinGPTPromptTemplateUser)
 
-| Variable                           | Description                                                                                                                                                                                                                       | Default                                                                                                        |
-|------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
-| USE_AGENTFORCE                     | Set to true to activate the use of Agentforce prompts                                                                                                                                                                             | false                                                                                                          |
-| GENERIC_AGENTFORCE_PROMPT_TEMPLATE | Set this variable to override default prompt template                                                                                                                                                                             | `SfdxHardisGenericPrompt`                                                                                      |
-| GENERIC_AGENTFORCE_PROMPT_URL      | Set this variable to override default prompt url                                                                                                                                                                                  | `/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{GENERIC_AGENTFORCE_PROMPT_TEMPLATE}}/generations` |
-| SFDX_AUTH_URL_TECHNICAL_ORG        | If you want to use another org to call Agentforce (like a [Developer Org](https://developer.salesforce.com/signup) just to test the feature), you can define this variable (get Auth Url using `sf org display --verbose --json`) | <!-- -->                                                                                                       |
+> **Quick setup:** Run [`sf hardis:org:configure:generic-prompt`](hardis/org/configure/generic-prompt.md) to deploy the `SfdxHardisGenericPrompt` template and optionally assign the `EinsteinGPTPromptTemplateUser` Permission Set to your user in a single interactive step. Then **manually** add `useAgentforce: true` to your `.sfdx-hardis.yml` config file or set the `USE_AGENTFORCE` env variable to enable Agentforce integration.
+
+| Variable                           | Description                                                                                                                                                                                                                                                              | Default                                                                                                        |
+|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| USE_AGENTFORCE                     | Set to true to activate the use of Agentforce prompts                                                                                                                                                                                                                    | false                                                                                                          |
+| GENERIC_AGENTFORCE_PROMPT_TEMPLATE | Set this variable to override default prompt template                                                                                                                                                                                                                    | `SfdxHardisGenericPrompt`                                                                                      |
+| GENERIC_AGENTFORCE_PROMPT_URL      | Set this variable to override default prompt url                                                                                                                                                                                                                         | `/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{GENERIC_AGENTFORCE_PROMPT_TEMPLATE}}/generations` |
+| SFDX_AUTH_URL_TECHNICAL_ORG        | If you want to use another org to call Agentforce (like a [Developer Org](https://developer.salesforce.com/signup) just to test the feature), you can define this variable (get Auth Url using `sf org auth show-sfdx-auth-url --target-org <alias> --no-prompt --json`) | <!-- -->                                                                                                       |
 
 ![](assets/images//screenshot-agentforce-config-1.jpg)
 
@@ -77,16 +82,17 @@ Currently supported LangchainJS providers:
 - Anthropic
 - Google GenAI
 
-| Variable                    | Description                                                                                     | Default                          |
-|-----------------------------|-------------------------------------------------------------------------------------------------|----------------------------------|
-| USE_LANGCHAIN_LLM           | Set to true to use LangChain integration                                                        | `false`                          |
-| LANGCHAIN_LLM_PROVIDER      | The LLM provider to use (currently supports `ollama`, `openai`, `anthropic` and `google-genai`) |                                  |
-| LANGCHAIN_LLM_MODEL         | The model to use with the selected provider (e.g. `gpt-4o`, `qwen2.5-coder:14b`)                |                                  |
-| LANGCHAIN_LLM_MODEL_API_KEY | API key for the selected provider (required for OpenAI, Anthropic and Gemini)                   |                                  |
-| LANGCHAIN_LLM_TEMPERATURE   | Controls randomness (0-1)                                                                       |                                  |
-| LANGCHAIN_LLM_MAX_TOKENS    | Maximum number of tokens to generate                                                            |                                  |
-| LANGCHAIN_LLM_MAX_RETRIES   | Number of retries for failed requests                                                           |                                  |
-| LANGCHAIN_LLM_BASE_URL      | Base URL for the API (mainly for Ollama)                                                        | Ollama: `http://localhost:11434` |
+| Variable                      | Description                                                                                                            | Default                          |
+|-------------------------------|------------------------------------------------------------------------------------------------------------------------|----------------------------------|
+| USE_LANGCHAIN_LLM             | Set to true to use LangChain integration                                                                               | `false`                          |
+| LANGCHAIN_LLM_PROVIDER        | The LLM provider to use (currently supports `ollama`, `openai`, `anthropic` and `google-genai`)                        |                                  |
+| LANGCHAIN_LLM_MODEL           | The model to use with the selected provider (e.g. `gpt-4o`, `qwen2.5-coder:14b`)                                       |                                  |
+| LANGCHAIN_LLM_MODEL_API_KEY   | API key for the selected provider (required for OpenAI, Anthropic, and Gemini unless using gateway headers for OpenAI) |                                  |
+| LANGCHAIN_LLM_TEMPERATURE     | Controls randomness (0-1)                                                                                              |                                  |
+| LANGCHAIN_LLM_MAX_TOKENS      | Maximum number of tokens to generate                                                                                   |                                  |
+| LANGCHAIN_LLM_MAX_RETRIES     | Number of retries for failed requests                                                                                  |                                  |
+| LANGCHAIN_LLM_BASE_URL        | Base URL for the API (for Ollama or corporate OpenAI gateways)                                                         | Ollama: `http://localhost:11434` |
+| LANGCHAIN_LLM_DEFAULT_HEADERS | JSON object of default HTTP headers sent with every request (for gateway/proxy authentication)                         |                                  |
 
 #### Example configurations
 
@@ -114,6 +120,18 @@ LANGCHAIN_LLM_MODEL_API_KEY=your-api-key
 LANGCHAIN_LLM_TEMPERATURE=0.7
 LANGCHAIN_LLM_MAX_TOKENS=2000
 ```
+
+For OpenAI via a corporate gateway (no API key needed):
+
+```sh
+USE_LANGCHAIN_LLM=true
+LANGCHAIN_LLM_PROVIDER=openai
+LANGCHAIN_LLM_MODEL=gpt-4o
+LANGCHAIN_LLM_BASE_URL=https://your-company-gateway.example.com/v1
+LANGCHAIN_LLM_DEFAULT_HEADERS='{"X-Company-Auth": "your-token-here"}'
+```
+
+When `LANGCHAIN_LLM_DEFAULT_HEADERS` is set together with `LANGCHAIN_LLM_BASE_URL`, the OpenAI provider skips the API key requirement and authenticates via the supplied headers instead.
 
 For Anthropic:
 
@@ -152,33 +170,105 @@ Only values that are safe to commit (model, provider, tuning) are loaded from th
 
 ### With OpenAI Directly
 
-You need to define env variable OPENAI_API_KEY and make it available to your CI/CD workflow.
+You need to define env variable OPENAI_API_KEY (or use gateway authentication) and make it available to your CI/CD workflow.
 
 To get an OpenAi API key , register on [OpenAi Platform](https://platform.openai.com/).
 
-| Variable       | Description                                                                               | Default       |
-|----------------|-------------------------------------------------------------------------------------------|---------------|
-| OPENAI_API_KEY | Your openai account API key                                                               |               |
-| OPENAI_MODEL   | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/)) | `gpt-4o-mini` |
+| Variable                | Description                                                                               | Default       |
+|-------------------------|-------------------------------------------------------------------------------------------|---------------|
+| OPENAI_API_KEY          | Your openai account API key (not required when using gateway headers)                     |               |
+| OPENAI_MODEL            | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/)) | `gpt-4o-mini` |
+| OPENAI_SERVICE_TIER     | Optional OpenAI service tier for supported projects (`auto`, `default`, `flex`)           |               |
+| OPENAI_REASONING_EFFORT | Optional reasoning effort for supported OpenAI reasoning models (`low`, `medium`, `high`) |               |
+| OPENAI_BASE_URL         | Base URL for OpenAI API (for corporate gateways/proxies)                                  |               |
+| OPENAI_DEFAULT_HEADERS  | JSON object of default HTTP headers for gateway/proxy authentication                      |               |
+
+#### OpenAI via corporate gateway (no API key needed)
+
+```sh
+USE_OPENAI_DIRECT=true
+OPENAI_MODEL=gpt-4o
+OPENAI_BASE_URL=https://your-company-gateway.example.com/v1
+OPENAI_DEFAULT_HEADERS='{"X-Company-Auth": "your-token-here"}'
+```
+
+When `OPENAI_DEFAULT_HEADERS` is set together with `OPENAI_BASE_URL`, the OpenAI provider skips the API key requirement and authenticates via the supplied headers instead.
 
 #### Configure OpenAI via .sfdx-hardis.yml
 
 ```yaml
 useOpenaiDirect: true
 openaiModel: gpt-4o-mini
+openaiServiceTier: auto
+openaiReasoningEffort: medium
 ```
 
-Store only model and provider preferences in the config file; keep `OPENAI_API_KEY` in a secure environment variable.
+Store only model and provider preferences in the config file; keep `OPENAI_API_KEY` (or gateway headers) in secure environment variables.
+
+### With Codex Directly
+
+To use Codex directly, set `USE_CODEX_DIRECT=true`.
+
+Authentication is resolved in this order:
+
+1. `CODEX_API_KEY` environment variable (recommended for CI/CD).
+2. Gateway authentication via `CODEX_BASE_URL` + `CODEX_DEFAULT_HEADERS` (for corporate OpenAI gateways).
+3. Existing Codex local auth cache file at `$CODEX_HOME/auth.json` (or `~/.codex/auth.json` when `CODEX_HOME` is not set).
+
+| Variable               | Description                                                                                         | Default         |
+|------------------------|-----------------------------------------------------------------------------------------------------|-----------------|
+| USE_CODEX_DIRECT       | Set to true to activate direct Codex integration                                                    | `false`         |
+| CODEX_API_KEY          | Codex API key used by `@openai/codex-sdk` (optional if auth cache file exists)                      |                 |
+| CODEX_MODEL            | Codex model used to perform prompts                                                                 | `gpt-5.1-codex` |
+| CODEX_REASONING_EFFORT | Reasoning effort used for Codex calls (`low`, `medium`, `high`, `xhigh`)                            | `high`          |
+| CODEX_BASE_URL         | Base URL for Codex API (for corporate gateways/proxies; falls back to `OPENAI_BASE_URL`)            |                 |
+| CODEX_DEFAULT_HEADERS  | JSON object of default HTTP headers for gateway/proxy auth (falls back to `OPENAI_DEFAULT_HEADERS`) |                 |
+
+If `CODEX_REASONING_EFFORT` is set to an unsupported value, sfdx-hardis falls back to `high`.
+
+#### Codex via corporate gateway (no API key needed)
+
+```sh
+USE_CODEX_DIRECT=true
+CODEX_MODEL=gpt-5.1-codex
+CODEX_BASE_URL=https://your-company-gateway.example.com/v1
+CODEX_DEFAULT_HEADERS='{"X-Company-Auth": "your-token-here"}'
+```
+
+When headers are configured, sfdx-hardis defines a custom Codex CLI model provider with the supplied headers and routes requests through it.
+
+#### Configure Codex via .sfdx-hardis.yml
+
+```yaml
+useCodexDirect: true
+codexModel: gpt-5.1-codex
+codexReasoningEffort: high
+```
+
+Store only model preferences in the config file; keep `CODEX_API_KEY` in a secure environment variable when running in CI/CD.
+
+## Coding Agent Auto-Fix (Beta)
+
+If you have configured one of the AI providers above (LangChain, OpenAI, Codex), sfdx-hardis can also use the matching **coding agent CLI** to automatically fix deployment errors.
+
+The API key configured for your AI provider (e.g. `LANGCHAIN_LLM_MODEL_API_KEY`) is automatically reused by the coding agent CLI, so no extra key configuration is needed.
+
+**Local mode:** When running outside CI/CD (on your local machine), sfdx-hardis will automatically detect installed coding agent CLIs and use them **without any API key environment variables**. Agents authenticate via their own login mechanisms (`claude login`, `gh auth login`, etc.).
+
+> **Use with caution:** This feature is in beta. AI coding agents can make mistakes - all proposed changes must be reviewed by an expert before merging.
+
+See [Coding Agent Auto-Fix](salesforce-deployment-agent-autofix.md) for full setup instructions.
 
 ## Templates
 
 You can override default prompts by defining the following environment variables.
 
-| Prompt Template                      | Description                                                                                         |                          Variables                          |
-|--------------------------------------|-----------------------------------------------------------------------------------------------------|:-----------------------------------------------------------:|
-| PROMPT_SOLVE_DEPLOYMENT_ERROR        | Ask AI about how to solve a deployment error                                                        |                            ERROR                            |
-| PROMPT_DESCRIBE_FLOW                 | Describe a flow from its XML                                                                        |                          FLOW_XML                           |
-| PROMPT_DESCRIBE_FLOW_DIFF            | Describe the differences between 2 flow versions by comparing their XML                             |               FLOW_XML_NEW, FLOW_XML_PREVIOUS               |
-| PROMPT_DESCRIBE_OBJECT               | Describe Object using sfdx-hardis generated info based on project metadatas                         | OBJECT_NAME, OBJECT_XML, ALL_OBJECTS_LIST, ALL_OBJECT_LINKS |
-| PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD | Complete fields and validation rules descriptions in input markdown tables generated by sfdx-hardis |                    OBJECT_NAME, MARKDOWN                    |
-| PROMPT_DESCRIBE_APEX                 | Describe an Apex class from its code                                                                |                    CLASS_NAME, APEX_CODE                    |
+| Prompt Template                           | Description                                                                                         |                          Variables                          |
+|-------------------------------------------|-----------------------------------------------------------------------------------------------------|:-----------------------------------------------------------:|
+| PROMPT_SOLVE_DEPLOYMENT_ERROR             | Ask AI about how to solve a deployment error                                                        |                            ERROR                            |
+| PROMPT_DESCRIBE_FLOW                      | Describe a flow from its XML                                                                        |                          FLOW_XML                           |
+| PROMPT_DESCRIBE_FLOW_DIFF                 | Describe the differences between 2 flow versions by comparing their XML                             |               FLOW_XML_NEW, FLOW_XML_PREVIOUS               |
+| PROMPT_DESCRIBE_OBJECT                    | Describe Object using sfdx-hardis generated info based on project metadatas                         | OBJECT_NAME, OBJECT_XML, ALL_OBJECTS_LIST, ALL_OBJECT_LINKS |
+| PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD      | Complete fields and validation rules descriptions in input markdown tables generated by sfdx-hardis |                    OBJECT_NAME, MARKDOWN                    |
+| PROMPT_DESCRIBE_APEX                      | Describe an Apex class from its code                                                                |                    CLASS_NAME, APEX_CODE                    |
+| PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS | Prompt used by coding agents to fix deployment errors                                               |              ERRORS, FAILED_TESTS, TARGET_ORG               |

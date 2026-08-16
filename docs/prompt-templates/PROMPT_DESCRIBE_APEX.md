@@ -35,7 +35,9 @@ You are a developer working on a Salesforce project. Your goal is to summarize t
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_APEX.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_APEX.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_DESCRIBE_APEX.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 

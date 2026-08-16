@@ -6,6 +6,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { getConfig } from '../../../../config/index.js';
 import { uxLog } from '../../../../common/utils/index.js';
 import { getPoolStorage } from '../../../../common/utils/poolUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -36,13 +37,29 @@ The command's technical implementation involves:
 - **Data Display:** It logs the retrieved pool configuration and pool storage content to the console in a human-readable format.
 - **Error Handling:** It checks if a scratch org pool is configured for the project and provides a warning message if it's not.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:pool:view --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:scratch:pool:view'];
+  public static examples = ['$ sf hardis:scratch:pool:view',
+    '$ sf hardis:scratch:pool:view --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -67,16 +84,14 @@ The command's technical implementation involves:
     // Get pool configuration
     const config = await getConfig('project');
     const poolConfig = config.poolConfig || {};
-    uxLog("log", this, 'Pool config: ' + c.grey(JSON.stringify(poolConfig, null, 2)));
+    uxLog("log", this, t('poolConfig') + c.grey(JSON.stringify(poolConfig, null, 2)));
 
     // Missing scratch orgs pool configuration
     if (!poolConfig.storageService) {
       uxLog(
         "warning",
         this,
-        c.yellow(
-          `There is not scratch orgs pool configured on this project. Please see with your tech lead about using command hardis:scratch:pool:configure`
-        )
+        c.yellow(t('noScratchOrgsPoolConfiguredLocalAuth'))
       );
       return { status: 1, outputString: 'Scratch org pool configuration to create' };
     }
@@ -92,7 +107,7 @@ The command's technical implementation involves:
     const availableNumber = scratchOrgs.length;
 
     // Display logs
-    uxLog("action", this, c.cyan(`There are ${c.bold(availableNumber)} available scratch orgs`));
+    uxLog("action", this, c.cyan(t('thereAreAvailableScratchOrgs', { availableNumber: c.bold(availableNumber) })));
 
     // Return an object to be displayed with --json
     return {

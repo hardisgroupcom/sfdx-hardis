@@ -47,6 +47,8 @@ ___
 
 See [Handle Deployment errors](salesforce-ci-cd-solve-deployment-errors.md)
 
+The job log ends with a short deployment summary (components, Apex tests, code coverage, duration). The complete deployment response is available in the job artifacts, in `hardis-report/deploy-result-<package label>.json`.
+
 ___
 
 ### Code Quality job

@@ -4,8 +4,13 @@ on:
   schedule:
     - cron: '50 6 * * 0'
 
+permissions: read-all
+
 jobs:
   update:
-    uses: salesforcecli/github-workflows/.github/workflows/devScriptsUpdate.yml@main
+    uses: salesforcecli/github-workflows/.github/workflows/devScriptsUpdate.yml@main # zizmor: ignore[unpinned-uses]
+    permissions:
+      contents: write
+      pull-requests: write
     secrets:
       SVC_CLI_BOT_GITHUB_TOKEN: ${{ secrets.SVC_CLI_BOT_GITHUB_TOKEN }}

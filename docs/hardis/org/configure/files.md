@@ -6,6 +6,8 @@
 
 ## Command Behavior
 
+> **This command requires human interaction and must be called manually, preferably from the [VS Code SFDX Hardis UI](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis). It is not suitable for automation or AI agent usage.**
+
 **Configures a project for exporting file attachments from a Salesforce org.**
 
 This command streamlines the setup of configurations for mass downloading files (such as Notes, Attachments, or Salesforce Files) associated with Salesforce records. It's particularly useful for data backups, migrations, or integrating Salesforce files with external systems.
@@ -17,6 +19,7 @@ Key functionalities:
 - **`export.json` Generation:** Creates an `export.json` file within the designated project folder. This file contains the configuration for the file export operation, including:
   - **SOQL Query:** A SOQL query to select the parent records from which files will be exported.
   - **File Types:** Specifies which types of files (e.g., `ContentVersion`, `Attachment`) to include.
+  - **File Size Filtering:** Minimum file size in KB to filter files during export (files smaller than this will be skipped).
   - **Output Folder/File Naming:** Defines how the exported files and their containing folders will be named based on record fields.
   - **Overwrite Options:** Controls whether existing files or parent records should be overwritten during the export.
 

@@ -18,6 +18,7 @@ import { generateCsvFile, generateReportPath } from '../../../common/utils/files
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -61,9 +62,19 @@ The command's technical implementation involves:
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications (e.g., to Slack, MS Teams, Grafana) about the presence and count of inactive metadata, making it suitable for automated monitoring in CI/CD pipelines.
 - **Error Handling:** It includes basic error handling for file operations and ensures that the process continues even if some files cannot be read.
 </details>
-`;
 
-  public static examples = ['$ sf hardis:lint:metadatastatus'];
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:lint:metadatastatus --agent
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+
+  public static examples = ['$ sf hardis:lint:metadatastatus', '$ sf hardis:lint:metadatastatus --agent'];
   /* jscpd:ignore-start */
   public static flags: any = {
     debug: Flags.boolean({
@@ -80,6 +91,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': optionalOrgFlagWithDeprecations,
   };
@@ -129,55 +144,55 @@ The command's technical implementation involves:
       notifSeverity = 'warning';
       if (inactiveApprovalProcesses.length > 0) {
         attachments.push({
-          text: `*Inactive Approval Processes*\n${inactiveApprovalProcesses.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Approval Processes**\n${inactiveApprovalProcesses.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveAssignmentRules.length > 0) {
         attachments.push({
-          text: `*Inactive Assignment Rules*\n${inactiveAssignmentRules.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Assignment Rules**\n${inactiveAssignmentRules.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveAutoResponseRules.length > 0) {
         attachments.push({
-          text: `*Inactive Auto Response Rules*\n${inactiveAutoResponseRules.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Auto Response Rules**\n${inactiveAutoResponseRules.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveEscalationRules.length > 0) {
         attachments.push({
-          text: `*Inactive Escalation Rules*\n${inactiveEscalationRules.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Escalation Rules**\n${inactiveEscalationRules.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (draftFlows.length > 0) {
         attachments.push({
-          text: `*Inactive Flows*\n${draftFlows.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Flows**\n${draftFlows.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveForecastingTypes.length > 0) {
         attachments.push({
-          text: `*Inactive Forecasting Types*\n${inactiveForecastingTypes.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Forecasting Types**\n${inactiveForecastingTypes.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveRecordTypes.length > 0) {
         attachments.push({
-          text: `*Inactive Record Types*\n${inactiveRecordTypes.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Record Types**\n${inactiveRecordTypes.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveValidationRules.length > 0) {
         attachments.push({
-          text: `*Inactive Validation Rules*\n${inactiveValidationRules.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Validation Rules**\n${inactiveValidationRules.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveWorkflows.length > 0) {
         attachments.push({
-          text: `*Inactive Workflow Rules*\n${inactiveWorkflows.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Workflow Rules**\n${inactiveWorkflows.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
 
-      notifText = `${this.inactiveItems.length} inactive configuration elements were found in ${branchMd}`;
+      notifText = `**${this.inactiveItems.length}** inactive configuration elements were found in ${branchMd}`;
       // Build result file
       await this.buildCsvFile();
     } else {
-      uxLog("other", this, 'No draft flow or validation rule files detected.');
+      uxLog("other", this, t('noDraftFlowOrValidationRuleFiles'));
     }
     // Post notifications
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email

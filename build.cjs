@@ -1,22 +1,183 @@
 #!/usr/bin/node
 /* eslint-disable */
 const fs = require("fs-extra");
+const https = require("https");
 const yaml = require("js-yaml");
+
+const SDR_METADATA_REGISTRY_URL =
+  "https://raw.githubusercontent.com/forcedotcom/source-deploy-retrieve/refs/heads/main/src/registry/metadataRegistry.json";
+const METADATA_LIST_FILE = "./src/common/metadata-utils/metadataList.ts";
 
 class SfdxHardisBuilder {
   async run() {
     console.log("Start additional building of sfdx-hardis repository...");
+    await this.updateMetadataListFromRegistry();
     await this.generatePagesFromReadme();
     await this.buildDeployTipsDoc();
     await this.buildPromptTemplatesDocs();
+    await this.buildTemplatesSummaries();
     this.truncateReadme();
     // this.fixOnlineIndex();
     console.log("All done.");
   }
 
+  async updateMetadataListFromRegistry() {
+    console.log("Updating metadata list from source-deploy-retrieve registry...");
+    let metadataRegistry;
+    try {
+      metadataRegistry = await this.fetchJson(SDR_METADATA_REGISTRY_URL);
+    } catch (e) {
+      console.warn(`Warning: Could not download metadata registry (network unavailable?): ${e.message}`);
+      console.warn("Skipping metadata list update.");
+      return;
+    }
+    const metadataTypes = this.buildMetadataTypesList(metadataRegistry);
+    const metadataListContent = this.buildMetadataListFileContent(metadataTypes);
+    this.writeFileIfChanged(METADATA_LIST_FILE, metadataListContent);
+    console.log(`Updated ${METADATA_LIST_FILE} from remote metadata registry`);
+  }
+
+  fetchJson(url) {
+    return new Promise((resolve, reject) => {
+      https
+        .get(url, (response) => {
+          if (response.statusCode !== 200) {
+            reject(new Error(`Unable to download ${url} (status: ${response.statusCode})`));
+            return;
+          }
+
+          let data = "";
+          response.on("data", (chunk) => {
+            data += chunk;
+          });
+
+          response.on("end", () => {
+            try {
+              resolve(JSON.parse(data));
+            } catch (e) {
+              reject(new Error(`Invalid JSON response from ${url}: ${(e).message}`));
+            }
+          });
+        })
+        .on("error", (error) => {
+          reject(new Error(`Unable to download ${url}: ${error.message}`));
+        });
+    });
+  }
+
+  buildMetadataTypesList(metadataRegistry) {
+    const metadataTypesById = metadataRegistry?.types || {};
+    const sortedTypeIds = Object.keys(metadataTypesById).sort();
+    const metadataTypes = [];
+    const generatedChildTypeIds = new Set();
+
+    for (const typeId of sortedTypeIds) {
+      const type = metadataTypesById[typeId];
+      if (!type || !type.name || !type.directoryName) {
+        continue;
+      }
+
+      const childrenById = type?.children?.types || {};
+      const childNames = Object.values(childrenById)
+        .map((childType) => childType?.name)
+        .filter(Boolean);
+      const metadataType = this.mapRegistryTypeToMetadataType(type, {
+        childXmlNames: childNames.length > 0 ? childNames : undefined,
+      });
+      metadataTypes.push(metadataType);
+
+      for (const childTypeId of Object.keys(childrenById).sort()) {
+        if (metadataTypesById[childTypeId] || generatedChildTypeIds.has(childTypeId)) {
+          continue;
+        }
+        const childType = childrenById[childTypeId];
+        if (!childType || !childType.name || !childType.directoryName) {
+          continue;
+        }
+
+        generatedChildTypeIds.add(childTypeId);
+        metadataTypes.push(
+          this.mapRegistryTypeToMetadataType(childType, {
+            parentXmlName: type.name,
+            xmlTag: childType.xmlElementName,
+            key: childType.uniqueIdElement,
+          })
+        );
+      }
+    }
+
+    return metadataTypes;
+  }
+
+  mapRegistryTypeToMetadataType(type, additionalFields = {}) {
+    const metadataType = {
+      directoryName: type.directoryName,
+      inFolder: Boolean(type.inFolder),
+      metaFile: this.isMetaFileType(type),
+      ...(type.suffix ? { suffix: type.suffix } : {}),
+      xmlName: type.name,
+      ...additionalFields,
+    };
+
+    // Keep only defined fields so output stays clean.
+    return Object.fromEntries(Object.entries(metadataType).filter(([, value]) => value !== undefined));
+  }
+
+  isMetaFileType(type) {
+    const adapter = type?.strategies?.adapter;
+    return ["matchingContentFile", "mixedContent", "digitalExperience", "webApplications"].includes(adapter);
+  }
+
+  buildMetadataListFileContent(metadataTypes) {
+    const metadataTypesAsTs = this.toTsLiteral(metadataTypes, 2);
+    return `export function listMetadataTypes() {\n  // Generated from ${SDR_METADATA_REGISTRY_URL}\n  return ${metadataTypesAsTs};\n}\n`;
+  }
+
+  toTsLiteral(value, indentLevel = 0) {
+    const indent = "  ".repeat(indentLevel);
+    const childIndent = "  ".repeat(indentLevel + 1);
+
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return "[]";
+      }
+      const items = value.map((item) => `${childIndent}${this.toTsLiteral(item, indentLevel + 1)},`);
+      return `[\n${items.join("\n")}\n${indent}]`;
+    }
+
+    if (value != null && typeof value === "object") {
+      const keys = Object.keys(value);
+      if (keys.length === 0) {
+        return "{}";
+      }
+
+      const entries = keys.map((key) => {
+        const keyLiteral = /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key) ? key : this.toTsString(key);
+        return `${childIndent}${keyLiteral}: ${this.toTsLiteral(value[key], indentLevel + 1)},`;
+      });
+      return `{\n${entries.join("\n")}\n${indent}}`;
+    }
+
+    if (typeof value === "string") {
+      return this.toTsString(value);
+    }
+
+    return String(value);
+  }
+
+  toTsString(value) {
+    const escapedValue = value
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "\\'")
+      .replace(/\r/g, "\\r")
+      .replace(/\n/g, "\\n")
+      .replace(/\t/g, "\\t");
+    return `'${escapedValue}'`;
+  }
+
   async buildDeployTipsDoc() {
-    console.log("Building salesforce-deployment-assistant-error-list.md doc...");
-    const deployTipsDocFile = "./docs/salesforce-deployment-assistant-error-list.md";
+    console.log("Building salesforce-deployment-agent-error-list.md doc...");
+    const deployTipsDocFile = "./docs/salesforce-deployment-agent-error-list.md";
     const { getAllTips } = await import("./lib/common/utils/deployTipsList.js");
     const deployTips = getAllTips();
     const deployTipsMd = [
@@ -30,7 +191,7 @@ class SfdxHardisBuilder {
       "",
       "sfdx-hardis can help solve solve deployment errors using a predefined list of issues and associated solutions",
       "",
-      "See how to [setup sfdx-hardis deployment assistant](salesforce-deployment-assistant-setup.md)",
+      "See how to [setup Deployment Agent](salesforce-deployment-agent-setup.md)",
       "",
       "If you see a deployment error which is not here yet, please [add it in this file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/deployTipsList.ts) :)",
       ""
@@ -147,7 +308,9 @@ class SfdxHardisBuilder {
         '', '## How to override',
 
         '',
-        `To define your own prompt text, you can define a local file **config/prompt-templates/${templateName}.txt**`,
+        `To define your own prompt text, you can define a local file **config/prompt-templates/${templateName}.md**`,
+        ``,
+        `> For backward compatibility, **config/prompt-templates/${templateName}.txt** is also supported, but **.md is preferred**.`,
         ``,
         `You can also use the command \`sf hardis:doc:override-prompts\` to automatically create all override template files at once.`,
         ``,
@@ -183,7 +346,9 @@ class SfdxHardisBuilder {
         '',
         '## How to override',
         '',
-        `To define your own variable content, you can define a local file **config/prompt-templates/${variableName}.txt**`,
+        `To define your own variable content, you can define a local file **config/prompt-templates/${variableName}.md**`,
+        ``,
+        `> For backward compatibility, **config/prompt-templates/${variableName}.txt** is also supported, but **.md is preferred**.`,
         ``,
         `You can also use the command \`sf hardis:doc:override-prompts\` to automatically create all override variable files at once.`,
         ``
@@ -212,6 +377,34 @@ class SfdxHardisBuilder {
       console.log(`Generated ${pageFile}`);
     }
     console.log("All pages generated from README.md");
+  }
+
+  async buildTemplatesSummaries() {
+    console.log("Building templates summaries...");
+    const GITHUB_RAW_BASE = "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates";
+    const TEMPLATES_ROOT = "./defaults/templates";
+    const subFolders = [
+      { folder: "files", outputFile: `${TEMPLATES_ROOT}/file-templates.json` },
+      { folder: "sfdmu", outputFile: `${TEMPLATES_ROOT}/data-templates.json` },
+    ];
+    for (const { folder, outputFile } of subFolders) {
+      const folderPath = `${TEMPLATES_ROOT}/${folder}`;
+      const files = fs.readdirSync(folderPath).filter((f) => f.endsWith(".json"));
+      const templates = [];
+      for (const file of files.sort()) {
+        const filePath = `${folderPath}/${file}`;
+        const content = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        templates.push({
+          name: file,
+          sfdxHardisLabel: content.sfdxHardisLabel || "",
+          sfdxHardisDescription: content.sfdxHardisDescription || "",
+          url: `${GITHUB_RAW_BASE}/${folder}/${file}`,
+        });
+      }
+      const summary = JSON.stringify({ templates }, null, 2) + "\n";
+      this.writeFileIfChanged(outputFile, summary);
+      console.log(`Written templates summary ${outputFile}`);
+    }
   }
 
   truncateReadme() {

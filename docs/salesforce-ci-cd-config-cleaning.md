@@ -4,7 +4,7 @@ description: Learn how to configure the automated cleaning of sfdx sources befor
 ---
 <!-- markdownlint-disable MD013 -->
 
-- [Why cleaning sources ?](#why-cleaning-sources-)
+- [Why cleaning sources ?](#why-cleaning-sources)
 - [Dashboards](#dashboards)
 - [Destructive Changes](#destructive-changes)
 - [List Views Mine](#list-views-mine)

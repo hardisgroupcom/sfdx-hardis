@@ -1,8 +1,8 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import axios from 'axios';
+import { httpGet } from '../../../common/utils/httpUtils.js';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
@@ -13,6 +13,7 @@ import { managePackageConfig } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -23,13 +24,29 @@ export default class PackageVersionInstall extends SfCommand<any> {
   public static description = `Install a package in an org using its id (starting with **04t**)
 
 Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-hardis.yml\`
+
+### Agent Mode
+
+Use \`--agent\` to disable all interactive prompts. Required flags in agent mode:
+
+- \`--package\`: Package Version Id to install (starting with 04t). Required.
+- \`--installationkey\`: Optional installation key for the package.
+
+All interactive package selection prompts are skipped. The \`managePackageConfig\` step is also skipped.
 `;
 
-  public static examples = ['$ sf hardis:package:install'];
+  public static examples = [
+    '$ sf hardis:package:install',
+    '$ sf hardis:package:install --agent --package 04t...',
+  ];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     package: Flags.string({
       char: 'p',
       description: 'Package Version Id to install (04t...)',
@@ -60,25 +77,32 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(PackageVersionInstall);
+    const agentMode = flags.agent === true;
     const packagesRaw = await fs.readFile(this.allPackagesFileName, 'utf8');
     const packages = JSON.parse(packagesRaw);
     const packageId = flags.package || null;
     const packagesToInstall: any[] = [];
+
+    // In agent mode, require the --package flag
+    if (agentMode && (packageId == null || !packageId.startsWith('04t'))) {
+      throw new SfError("In agent mode, --package flag with a valid package version id (starting with 04t) is required.");
+    }
+
     // If no package Id is sent, ask user what package he/she wants to install
-    if (!isCI && (packageId == null || !packageId.startsWith('04t'))) {
+    if (!isCI && !agentMode && (packageId == null || !packageId.startsWith('04t'))) {
       const allPackages = packages.map((pack) => ({
         title: `${c.yellow(pack.name)} - ${pack.repoUrl || 'Bundle'}`,
         value: pack,
       }));
-      allPackages.push({ title: 'Other', value: 'other' });
+      allPackages.push({ title: t('choiceOther'), value: 'other' });
       const packageResponse = await prompts({
         type: 'select',
         name: 'value',
         message: c.cyanBright(
           `Please select the package you want to install on org  ${c.green(flags['target-org'].getUsername())}`
         ),
-        description: 'Choose which package to install from the available list',
-        placeholder: 'Select a package',
+        description: t('chooseWhichPackageToInstall'),
+        placeholder: t('selectAPackage'),
         choices: allPackages,
         initial: 0,
       });
@@ -91,17 +115,15 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
               'What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request ' +
               c.bold('Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage')
             ),
-            description: 'Enter the package version ID for the package you want to install',
-            placeholder: 'Ex: 04t2p000000XXXXXX',
+            description: t('enterThePackageVersionId'),
+            placeholder: t('exPackageVersionId'),
           },
           {
             type: 'text',
             name: 'installationkey',
-            message: c.cyanBright(
-              'Enter the password for this package (leave empty if package is not protected by a password)'
-            ),
-            description: 'Provide the installation password if the package is protected',
-            placeholder: 'Ex: mypassword123',
+            message: c.cyanBright(t('enterPackagePasswordOrLeaveEmpty')),
+            description: t('provideInstallationPasswordIfProtected'),
+            placeholder: t('exMypassword123'),
           },
         ]);
         const pckg: { SubscriberPackageVersionId?: string; installationkey?: string } = {
@@ -135,7 +157,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
     const packagesToInstallCompleted = await Promise.all(
       packagesToInstall.map(async (pckg) => {
         if (pckg.SubscriberPackageVersionId == null) {
-          const configResp = await axios.get(pckg.configUrl);
+          const configResp = await httpGet(pckg.configUrl, { responseType: 'json' });
           const packageAliases = configResp.data.packageAliases || [];
           pckg.SubscriberPackageName = pckg.package;
           if (pckg.package.includes('@')) {
@@ -156,9 +178,9 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
     // Install packages
     await MetadataUtils.installPackagesOnOrg(packagesToInstallCompleted, null, this, 'install');
     const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
-    uxLog("other", this, c.italic(c.grey('New package list on org:\n' + JSON.stringify(installedPackages, null, 2))));
+    uxLog("other", this, c.italic(c.grey(t('newPackageListOnOrg') + JSON.stringify(installedPackages, null, 2))));
 
-    if (!isCI) {
+    if (!isCI && !agentMode) {
       // Manage package install config storage
       await managePackageConfig(installedPackages, packagesToInstallCompleted);
     }

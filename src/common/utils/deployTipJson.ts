@@ -1,11 +1,13 @@
 // Analyze deployment errors to provide tips to user 😊
 import c from "chalk";
-import format from "string-template";
 import { getAllTips } from "./deployTipsList.js";
+import { formatTemplate as format } from "./stringUtils.js";
 import { stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
 import { updatePullRequestResult } from "./deployTips.js";
 import { shortenLogLines } from "./deployUtils.js";
+import { buildDeployResultSummaryLines, isFullDeployJsonLogRequested } from "./deployResultSummary.js";
+import { t } from './i18n.js';
 
 
 export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, includeInLog = true, options: any): Promise<any> {
@@ -74,7 +76,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
         error: { message: coverageErrorMsg },
         tip: {
           label: "CodeCoverageWarning",
-          message: "Please fix code coverage so your deployment can pass",
+          message: t('pleaseFixCodeCoverageSoYourDeployment'),
           docUrl: "https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm",
         },
       }))
@@ -88,7 +90,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
       error: { message: resultJson.result.errorMessage },
       tip: {
         label: resultJson.result.errorStatusCode || "UNKNOWN",
-        message: "Please fix unknown errors (",
+        message: t('pleaseFixUnknownErrors'),
       },
     }))
     detailedErrorLines.push(...["", "⛔ " + c.red(c.bold("Unknown issue: " + resultJson.result.errorMessage)), ""]);
@@ -97,7 +99,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
   // Fallback : declare an error if we have not been able to identify errors
   if (errorsAndTips.length === 0 && failedTests.length === 0) {
     errorsAndTips.push(({
-      error: { message: "There has been an issue parsing errors, please notify sfdx-hardis maintainers" },
+      error: { message: t('thereHasBeenAnIssueParsingErrors') },
       tip: {
         label: "SfdxHardisInternalError",
         message: "Declare issue on https://github.com/hardisgroupcom/sfdx-hardis/issues",
@@ -146,8 +148,20 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
 
   // Update data that will be used for Pull Request comment
   await updatePullRequestResult(errorsAndTips, failedTests, options);
+  // Build a readable summary instead of the complete deployment JSON, that can be huge in big orgs
+  const summaryBlock = buildDeployResultSummaryLines(resultJson, {
+    check: options?.check === true,
+    label: options?.label,
+    reportFile: options?.deployResultReportFile ?? null,
+  }).join("\n");
+  // The raw output is normally replaced by the summary, but when nothing could be parsed out of it
+  // there is no summary to display, and hiding it would leave no trace at all of what went wrong.
+  const hasParsableResult = !!resultJson?.result;
+  const rawJsonBlock = isFullDeployJsonLogRequested() || !hasParsableResult ? "\n\n" + shortenLogLines(log) : "";
   // Return results
-  const newLog = includeInLog ? shortenLogLines(log) + "\n\n" + detailedErrorLines.join("\n") : shortenLogLines(log);
+  const newLog = includeInLog
+    ? summaryBlock + rawJsonBlock + "\n\n" + detailedErrorLines.join("\n")
+    : summaryBlock + rawJsonBlock;
   return { tips, errorsAndTips, failedTests, errLog: newLog };
 }
 

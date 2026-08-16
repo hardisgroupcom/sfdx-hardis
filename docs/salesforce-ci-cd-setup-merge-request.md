@@ -18,6 +18,8 @@ You will see errors, but it is normal: Follow [Maintainer Guide](salesforce-ci-c
 
 Once all controlling jobs are in success, your CI/CD setup is completed !
 
+Now go through the [Setup Checklist](salesforce-ci-cd-setup-checklist.md) to make sure nothing is missing, especially the integrations.
+
 ## Common issues
 
 ### Translations

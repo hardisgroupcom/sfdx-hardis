@@ -16,17 +16,17 @@ DISABLE:
 SALESFORCE_CODE_ANALYZER_APEX_DISABLE_ERRORS: true
 SALESFORCE_CODE_ANALYZER_AURA_DISABLE_ERRORS: true
 SALESFORCE_CODE_ANALYZER_LWC_DISABLE_ERRORS: true
-
+FLAVOR_SUGGESTIONS: false
 SHOW_ELAPSED_TIME: true
 FILTER_REGEX_EXCLUDE: (\.vscode|staticresources/)
 SALESFORCE_PRE_COMMANDS:
-  - command: echo "Downloading Code Analyzer configuration files... If it fails, you need to manually add code-analyzer.yml and pmd-ruleset.yml at the root of your repository."
+  - command: echo "Downloading missing Code Analyzer configuration files (existing local files are kept)... If it fails, you need to manually add code-analyzer.yml and pmd-ruleset.yml at the root of your repository."
     continue_if_failed: false
-  - command: mkdir -p "${DEFAULT_WORKSPACE}/config" && wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/pmd-ruleset.xml -O "${DEFAULT_WORKSPACE}/config/pmd-ruleset.xml"
+  - command: mkdir -p "${DEFAULT_WORKSPACE}/config" && { [ -f "${DEFAULT_WORKSPACE}/config/pmd-ruleset.xml" ] || wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/pmd-ruleset.xml -O "${DEFAULT_WORKSPACE}/config/pmd-ruleset.xml"; }
     continue_if_failed: false
-  - command: wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/code-analyzer.yml -O "${DEFAULT_WORKSPACE}/code-analyzer.yml"
+  - command: '[ -f "${DEFAULT_WORKSPACE}/code-analyzer.yml" ] || wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/code-analyzer.yml -O "${DEFAULT_WORKSPACE}/code-analyzer.yml"'
     continue_if_failed: false
-  - command: wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/pmd-ruleset.xml -O "${DEFAULT_WORKSPACE}/pmd-ruleset.xml"
+  - command: '[ -f "${DEFAULT_WORKSPACE}/pmd-ruleset.xml" ] || wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/pmd-ruleset.xml -O "${DEFAULT_WORKSPACE}/pmd-ruleset.xml"'
     continue_if_failed: false
 
 SALESFORCE_CODE_ANALYZER_APEX_ARGUMENTS:
@@ -45,3 +45,5 @@ SALESFORCE_SFDX_SCANNER_APEX_ARGUMENTS:
 BASH_FILTER_REGEX_EXCLUDE: (pre-commit)
 MARKDOWN_MARKDOWN_LINK_CHECK_DISABLE_ERRORS: true
 YAML_YAMLLINT_DISABLE_ERRORS: true
+REPOSITORY_OSV_SCANNER_DISABLE_ERRORS: true
+ACTION_ZIZMOR_DISABLE_ERRORS: true

@@ -18,9 +18,12 @@ stages:
   - check_deploy # Simulate deployment to target branch
   - deploy # After a merge, automatically deploys the new commit state into the related Salesforce org
 
-# Jobs are run on sfdx-hardis image, that includes all required dependencies.
-# You can use latest, beta or latest-recommended
-image: hardisgroupcom/sfdx-hardis:latest # If rate limits reached, use ghcr.io/hardisgroupcom/sfdx-hardis:latest
+# Jobs are run on sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+# You can use latest, beta or a version number (ex: v7.23.0), and pin a version if you need reproducible runs.
+# Images are also mirrored on Docker Hub, if your infrastructure can only pull from docker.io: hardisgroupcom/sfdx-hardis:latest
+# To use coding agents for auto-fix of deployment errors, use image ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest (some agents may crash on the alpine-based images)
+# An ubuntu-based variant is also available: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest (bigger, but includes Chrome for mermaid diagrams generation)
+image: ghcr.io/hardisgroupcom/sfdx-hardis:latest
 
 # Force color for output logs for better readability
 variables:
@@ -41,7 +44,8 @@ variables:
 # https://megalinter.io/latest/flavors/salesforce/
 check_quality:
   stage: build
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     - merge_requests
@@ -50,8 +54,8 @@ check_quality:
     variables:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
-  image: oxsecurity/megalinter-salesforce:latest
-  script: ["true"]
+  image: ghcr.io/oxsecurity/megalinter-salesforce:latest
+  script: [ "true" ]
   variables:
     # All available variables are described in documentation
     # https://megalinter.io/latest/config-file/
@@ -68,7 +72,8 @@ check_quality:
 # If auth not configure yet, check this doc: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/
 check_deploy_to_target_branch_org:
   stage: build
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     refs:
@@ -83,14 +88,35 @@ check_deploy_to_target_branch_org:
     ORG_ALIAS: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
     SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD setup
   script:
-    - '[ -z "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ] && exit 0;' # Skip this job if it is launched from web UI and we are not in merge request context
+    - "[ -z \"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME\" ] && exit 0;" # Skip this job if it is launched from web UI and we are not in merge request context
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
+    # Uncomment the lines below to allow coding agents to push auto-fix branches and create Merge Requests
+    # (also requires the sfdx-hardis-ubuntu-with-agents image, an AI API key,
+    # and a CI_SFDX_HARDIS_GITLAB_TOKEN CI/CD variable with api + write_repository scopes)
+    # - |
+    #   if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
+    #     git config user.email "sfdx-hardis-bot@cloudity.com"
+    #     git config user.name "sfdx-hardis Bot"
+    #     git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    #     echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
+    #   fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart --check
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 1 week
 
 # Create scratch org to check the sources push & the unit tests
 create_scratch_org:
   stage: build
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     - merge_requests
@@ -102,6 +128,11 @@ create_scratch_org:
       - $USE_SCRATCH_ORGS == "false"
   interruptible: true
   script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
     - sf hardis:auth:login --devhub
     - sf hardis:scratch:create
   artifacts:
@@ -116,13 +147,19 @@ create_scratch_org:
 # Refresh scratch org pool: IF you use scratch orgs, job to schedule with variable SCRATCH_ORG_POOL: true
 refresh_scratch_org_pool:
   stage: build
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     variables:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
   script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
     - sf hardis:auth:login --devhub
     - sf hardis:scratch:pool:refresh
   artifacts:
@@ -131,9 +168,10 @@ refresh_scratch_org_pool:
 # Run apex unit tests in testing scratch org
 test_apex:
   stage: test
-  when: delayed   # Orgs just created can be not ready yet, let's wait a while before running tests
+  when: delayed # Orgs just created can be not ready yet, let's wait a while before running tests
   start_in: 2 minutes
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     - merge_requests
@@ -148,6 +186,11 @@ test_apex:
     - job: create_scratch_org
       artifacts: true
   script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
     - sf hardis:auth:login --scratchorg || true
     - sf hardis:org:test:apex
   artifacts:
@@ -174,7 +217,8 @@ test_apex:
 # Delete testing scratch org
 clean:
   stage: clean
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   when: on_success
   only:
@@ -190,6 +234,11 @@ clean:
     - job: create_scratch_org
     - job: test_apex
   script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
     - sf hardis:auth:login --devhub
     - sf hardis:auth:login --scratchorg || true
     - sf org delete scratch --no-prompt || true
@@ -198,7 +247,8 @@ clean:
 # Is triggered only when scheduled, or via manual launch
 check_deploy_to_current_branch_org:
   stage: check_deploy
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     - schedules
@@ -209,14 +259,35 @@ check_deploy_to_current_branch_org:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
   script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
+    # Uncomment the lines below to allow coding agents to push auto-fix branches and create Merge Requests
+    # (also requires the sfdx-hardis-ubuntu-with-agents image, an AI API key,
+    # and a CI_SFDX_HARDIS_GITLAB_TOKEN CI/CD variable with api + write_repository scopes)
+    # - |
+    #   if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
+    #     git config user.email "sfdx-hardis-bot@cloudity.com"
+    #     git config user.name "sfdx-hardis Bot"
+    #     git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    #     echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
+    #   fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart --check
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 1 week
 
 # Deploy to branch related org when detecting new commit (after a merged merge request)
 # Don't forget to define variable DEPLOY_BRANCHES to match your branches in .gitlab-ci-config.yml
 deploy_to_org:
   stage: deploy
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     - pushes
@@ -227,5 +298,25 @@ deploy_to_org:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
   script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
+    # Uncomment the lines below to allow coding agents to push auto-fix branches and create Merge Requests
+    # (also requires the sfdx-hardis-ubuntu-with-agents image, an AI API key,
+    # and a CI_SFDX_HARDIS_GITLAB_TOKEN CI/CD variable with api + write_repository scopes)
+    # - |
+    #   if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
+    #     git config user.email "sfdx-hardis-bot@cloudity.com"
+    #     git config user.name "sfdx-hardis Bot"
+    #     git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    #     echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
+    #   fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 1 week

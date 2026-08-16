@@ -6,6 +6,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import c from 'chalk';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -62,10 +63,22 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 ENV CHROMIUM_PATH="/usr/bin/chromium-browser"
 ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 \`\`\`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:fix:listviewmine --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
     '$ sf hardis:org:fix:listviewmine',
+    '$ sf hardis:org:fix:listviewmine --agent',
     '$ sf hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners',
   ];
 
@@ -75,6 +88,10 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
     listviews: Flags.string({
       char: 'l',
       description: `Comma-separated list of listviews following format Object:ListViewName\nExample: Contact:MyContacts,Contact:MyActiveContacts,Opportunity:MYClosedOpportunities`,
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -100,7 +117,7 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
     const { flags } = await this.parse(FixListViewMine);
     this.debugMode = flags.debug || false;
 
-    uxLog("action", this, c.cyan('Setting back listviews to Mine instead of Everything...'));
+    uxLog("action", this, c.cyan(t('settingBackListviewsToMineInsteadOf')));
 
     // Identify listviews to process
     if (flags.listviews) {

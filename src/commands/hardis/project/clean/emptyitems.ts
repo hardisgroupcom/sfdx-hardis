@@ -9,6 +9,7 @@ import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -42,15 +43,31 @@ The command's technical implementation involves:
 - **File Deletion:** If a file is determined to be empty, it is removed from the file system using \`fs.remove\`.
 - **Logging:** Provides clear messages about which files are being removed and a summary of the total number of items cleaned.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:emptyitems --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:clean:emptyitems'];
+  public static examples = ['$ sf hardis:project:clean:emptyitems',
+    '$ sf hardis:project:clean:emptyitems --agent',];
 
   public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: 'force-app',
       description: 'Root folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -77,7 +94,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Removing empty dx managed source files`));
+    uxLog("action", this, c.cyan(t('removingEmptyDxManagedSourceFiles')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const emptyConstraints = [
@@ -97,14 +114,14 @@ The command's technical implementation involves:
         const tag1 = xmlContent[emptyConstraint.tags[0]];
         if (!(tag1 && tag1[emptyConstraint.tags[1]])) {
           await fs.remove(matchingCustomFile);
-          uxLog("action", this, c.cyan(`Removed empty item ${c.yellow(matchingCustomFile)}`));
+          uxLog("action", this, c.cyan(t('removedEmptyItem', { matchingCustomFile: c.yellow(matchingCustomFile) })));
           counter++;
         }
       }
     }
 
     // Summary
-    const msg = `Removed ${c.green(c.bold(counter))} hidden source items`;
+    const msg = `Removed ${c.green(c.bold(counter))} empty source items`;
     uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };

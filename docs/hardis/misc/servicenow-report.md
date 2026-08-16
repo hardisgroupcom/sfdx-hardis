@@ -52,18 +52,32 @@ Example:
     },
     "serviceNowConfig": {
         "tables": [
-            { "tableName": "demand" },
+            { "tableName": "dmn_demand" },
             { "tableName": "incident" }
         ]
     }
 }
 ```
+
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:misc:servicenow-report --config config/user-stories/my-config.json --where-choice "UAT all" --agent
+```
+
+In agent mode:
+- The `--config` flag is recommended. If not provided and multiple config files exist, the first one found is used automatically.
+- The `--where-choice` flag is recommended. If not provided and multiple WHERE choices exist, the first one is used automatically.
+- All interactive prompts are skipped.
   
 
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                 | Default | Required | Options |
 |:--------------------|:-------:|:------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent               | boolean | Run in non-interactive mode for agents and automation                                                       |         |          |         |
 | config<br/>-c       | option  | Path to JSON config file containing user stories and ServiceNow configuration                               |         |          |         |
 | debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                             |         |          |         |
 | flags-dir           | option  | undefined                                                                                                   |         |          |         |
@@ -78,6 +92,14 @@ Example:
 
 ```shell
 $ sf hardis:misc:servicenow-report
+```
+
+```shell
+$ sf hardis:misc:servicenow-report --config config/user-stories/my-config.json --where-choice "UAT all"
+```
+
+```shell
+$ sf hardis:misc:servicenow-report --agent
 ```
 
 

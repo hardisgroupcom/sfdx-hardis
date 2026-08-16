@@ -7,6 +7,7 @@ import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -43,13 +44,29 @@ The command's technical implementation involves:
 - **Post-Creation Command Execution:** If \`--deleteafter\` or \`--install\` flags are set, it executes \`sf package version delete\` or delegates to \`MetadataUtils.installPackagesOnOrg\` respectively.
 - **Error Handling:** Includes checks for missing package arguments and handles errors during package version creation or post-creation actions.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all interactive prompts. Required flags in agent mode:
+
+- \`--package\`: Package name or ID to create a version for (required).
+- \`--installkey\`: Optional installation key for the package version.
+
+All interactive package selection and installation key prompts are skipped.
 `;
 
-  public static examples = ['$ sf hardis:package:version:create'];
+  public static examples = [
+    '$ sf hardis:package:version:create',
+    '$ sf hardis:package:version:create --agent --package "My Package"',
+  ];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -96,6 +113,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(PackageVersionCreate);
+    const agentMode = flags.agent === true;
     this.package = flags.package || null;
     this.install = flags.install || false;
     this.installKey = flags.installkey || null;
@@ -107,18 +125,16 @@ The command's technical implementation involves:
     const packageDirectories: any[] = this.project?.getUniquePackageDirectories() || [];
     // Ask user to select package and input install key if not sent as command arguments
     if (this.package == null) {
-      if (isCI) {
+      if (isCI || agentMode) {
         throw new SfError("You need to send argument 'package'");
       }
       const packageResponse = await prompts([
         {
           type: 'select',
           name: 'packageSelected',
-          message: c.cyanBright(
-            `Please select a package (this is not a drill, it will create an official new version !)`
-          ),
-          description: 'Choose which package to create a new version for - this action creates a permanent version',
-          placeholder: 'Select a package',
+          message: c.cyanBright(t('pleaseSelectPackageNotADrillCreate')),
+          description: t('choosePackageToCreateNewVersionFor'),
+          placeholder: t('selectAPackage'),
           choices: packageDirectories.map((packageDirectory) => {
             return {
               title: packageDirectory?.package || packageDirectory?.path || packageDirectory?.fullPath || packageDirectory?.name,
@@ -129,11 +145,9 @@ The command's technical implementation involves:
         {
           type: 'text',
           name: 'packageInstallationKey',
-          message: c.cyanBright(
-            'Do you want to password protect your package ? (blank means no)'
-          ),
-          description: 'Optionally set a password to protect the package installation',
-          placeholder: 'Ex: mySecretPassword123',
+          message: c.cyanBright(t('doYouWantToPasswordProtectPackage')),
+          description: t('optionallySetPasswordForPackage'),
+          placeholder: t('exMySecretPassword123'),
           initial: config.defaultPackageInstallationKey || '',
         },
       ]);
@@ -150,7 +164,7 @@ The command's technical implementation involves:
       });
     }
     // Create package version
-    uxLog("action", this, c.cyan(`Generating new package version for ${c.green(pckgDirectory.package)}...`));
+    uxLog("action", this, c.cyan(t('generatingNewPackageVersionFor', { pckgDirectory: c.green(pckgDirectory.package) })));
     const createCommand =
       'sf package version create' +
       ` --package "${pckgDirectory.package}"` +

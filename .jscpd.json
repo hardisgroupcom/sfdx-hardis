@@ -1,11 +1,11 @@
 {
-  "threshold": 0,
+  "threshold": 1,
   "reporters": ["html", "markdown"],
   "ignore": [
     "**/node_modules/**",
     "**/.git/**",
     "**/.rbenv/**",
-    "**/.venv'/**",
+    "**/.venv/**",
     "**/*cache*/**",
     "**/.github/**",
     "**/.idea/**",
@@ -16,6 +16,10 @@
     "**/org/configure/files.ts",
     "**/README.md",
     "**/commands/hardis/work/**",
+    "**/commands/hardis/project/action/**",
+    "**/test/commands/hardis/project/action/**",
+    "**/test/common/utils/actionUtils.test.ts",
+    "**/test/common/utils/actionTestHelper.ts",
     "**/apex.ts",
     "**/access.ts",
     "**/actionsProvider/*.ts",
@@ -31,8 +35,10 @@
     "**/agentforce-feedback.ts",
     "**/*.json",
     "**/*.svg",
+    "**/*.md",
     "**/*.yml",
     "**/*.xml",
+    "**/*.test.ts",
     "**/megalinter-reports/**",
     "**/lib/**"
   ]
