@@ -212,6 +212,8 @@ export async function verifyEcaCredentials(
     // If API extraction failed, prompt for manual entry
     if (!extractedSecret) {
       uxLog("action", command, c.cyan(t('ecaSetupUrlForConsumerSecret', { appName })));
+      // Let the user read which External Client App needs its credentials before the browser opens
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       await open(`${instanceUrl}/lightning/setup/ManageExternalClientApplication/home`);
 
       const secretPromptResponse = await prompts({
