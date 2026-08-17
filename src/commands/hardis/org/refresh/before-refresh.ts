@@ -32,6 +32,7 @@ import {
 } from '../../../../common/utils/refresh/externalClientAppUtils.js';
 import {
   collectManualRestoreInventory,
+  generateRescheduleApexScripts,
   saveManualRestoreInventory,
 } from '../../../../common/utils/refresh/manualRestoreInventoryUtils.js';
 import { CONSTANTS, getConfig, setConfig } from '../../../../config/index.js';
@@ -86,7 +87,7 @@ Key functionalities:
 - **Save metadata for restore:** Builds a manifest and retrieves the metadata types you choose so they can be restored after the refresh.
 - **Capture Consumer Secrets:** Attempts to capture Connected App consumer secrets automatically (opens a browser session when possible) and falls back to a short manual prompt when needed.
 - **Collect certificates:** Saves certificate files and their definitions so they can be redeployed later.
-- **Inventory manual actions:** Detects everything that can NOT be restored automatically and saves it in a \`manual-restore-inventory.json\` file: external OAuth authentications (apps like OwnBackup or Microsoft Power Platform authorized via "Log in with Salesforce", whose metadata belongs to the vendor org), Auth Providers, Named & External Credentials (their secrets are never included in metadata), and active scheduled jobs (deactivated by a refresh). The inventory is also exported as \`manual-restore-inventory.csv\` and \`xls/manual-restore-inventory.xlsx\` for human reading. The after-refresh command turns this file into a manual actions checklist.
+- **Inventory manual actions:** Detects everything that can NOT be restored automatically and saves it in a \`manual-restore-inventory.json\` file: external OAuth authentications (apps like OwnBackup or Microsoft Power Platform authorized via "Log in with Salesforce", whose metadata belongs to the vendor org), Auth Providers, Named & External Credentials (their secrets are never included in metadata), and active scheduled jobs (deactivated by a refresh). The inventory is also exported as \`manual-restore-inventory.csv\` and \`xls/manual-restore-inventory.xlsx\` for human reading, and one Apex script per user is generated in \`apex-scripts/\` to reschedule the Scheduled Apex jobs with their original owners. The after-refresh command turns this file into a manual actions checklist.
 - **Export custom settings & records:** Lets you pick custom settings to export as JSON and optionally export records using configured data workspaces.
 - **Persist choices & report:** Stores your backup choices in project config and sends report files for traceability.
 - **Optional cleanup:** Can delete backed-up Connected Apps and External Client Apps from the org so they can be re-uploaded cleanly after the refresh.
@@ -1272,6 +1273,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       ...(this.refreshSandboxConfig.externalClientApps || []),
     ];
     const inventory = await collectManualRestoreInventory(this.conn, savedWithCredentials, this.unretrievableConnectedApps, this);
+    inventory.rescheduleScripts = await generateRescheduleApexScripts(this.saveProjectPath, inventory);
     const inventoryFile = await saveManualRestoreInventory(this.saveProjectPath, inventory);
 
     const externalTools = inventory.externalOauthApps.filter(app => !app.isStandardApp);
@@ -1309,7 +1311,17 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       uxLog("log", this, c.grey(t('scheduledJobsInventoried', { count: inventory.scheduledJobs.length })));
       const jobTypesForReport = ['Scheduled Apex', 'Batch Job', 'Scheduled Flow', 'Data Export'];
       for (const job of inventory.scheduledJobs.filter(j => jobTypesForReport.includes(j.jobType))) {
-        this.refreshActions.push({ step: "List Manual Actions", type: "ScheduledJob", name: job.name, status: "Manual", details: `${job.jobType} (${job.cronExpression}): re-schedule after refresh if missing` });
+        const ownerInfo = job.ownerUsername ? `, owner: ${job.ownerUsername}` : '';
+        this.refreshActions.push({ step: "List Manual Actions", type: "ScheduledJob", name: job.name, status: "Manual", details: `${job.jobType} (${job.cronExpression}${ownerInfo}): re-schedule after refresh if missing` });
+      }
+    }
+
+    if ((inventory.rescheduleScripts || []).length > 0) {
+      const scriptsList = (inventory.rescheduleScripts || []).map(script =>
+        `- ${script.file} (${script.jobsCount} job(s), to run as ${script.ownerUsername})`).join('\n');
+      uxLog("warning", this, c.yellow(t('generatedRescheduleApexScripts', { count: (inventory.rescheduleScripts || []).length, list: scriptsList })));
+      for (const script of inventory.rescheduleScripts || []) {
+        this.refreshActions.push({ step: "List Manual Actions", type: "ApexScript", name: script.file, status: "Manual", details: `Run as ${script.ownerUsername} after refresh to reschedule ${script.jobsCount} Scheduled Apex job(s)` });
       }
     }
 

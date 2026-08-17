@@ -14,6 +14,7 @@ import { t } from '../i18n.js';
 
 export const MANUAL_RESTORE_INVENTORY_FILE = 'manual-restore-inventory.json';
 export const MANUAL_RESTORE_INVENTORY_CSV_FILE = 'manual-restore-inventory.csv';
+export const RESCHEDULE_SCRIPTS_FOLDER = 'apex-scripts';
 
 export interface ExternalOauthApp {
   appName: string;
@@ -63,11 +64,22 @@ export interface CredentialInfo {
 }
 
 export interface ScheduledJobInfo {
+  id: string;
   name: string;
   jobType: string;
   cronExpression: string;
   state: string;
   nextFireTime: string | null;
+  ownerUsername: string | null;
+  ownerName: string | null;
+  apexClassName: string | null;
+}
+
+export interface RescheduleScriptInfo {
+  file: string;
+  ownerUsername: string;
+  ownerName: string;
+  jobsCount: number;
 }
 
 export interface ManualRestoreInventory {
@@ -78,6 +90,7 @@ export interface ManualRestoreInventory {
   externalCredentials: CredentialInfo[];
   namedCredentials: CredentialInfo[];
   scheduledJobs: ScheduledJobInfo[];
+  rescheduleScripts?: RescheduleScriptInfo[];
 }
 
 // CronJobDetail.JobType picklist values
@@ -220,22 +233,63 @@ export async function collectNamedCredentials(conn: Connection, command: SfComma
 }
 
 export async function collectScheduledJobs(conn: Connection, command: SfCommand<any>): Promise<ScheduledJobInfo[]> {
+  let records: any[] = [];
   try {
     const res = await soqlQuery(
-      "SELECT CronJobDetail.Name, CronJobDetail.JobType, CronExpression, State, NextFireTime FROM CronTrigger WHERE State != 'DELETED' ORDER BY CronJobDetail.Name",
+      "SELECT Id, CronJobDetail.Name, CronJobDetail.JobType, CronExpression, State, NextFireTime, OwnerId FROM CronTrigger WHERE State != 'DELETED' ORDER BY CronJobDetail.Name",
       conn
     );
-    return (res?.records || []).map((record: any) => ({
-      name: record.CronJobDetail?.Name || record.Id,
-      jobType: CRON_JOB_TYPE_LABELS[record.CronJobDetail?.JobType] || record.CronJobDetail?.JobType || '',
-      cronExpression: record.CronExpression || '',
-      state: record.State || '',
-      nextFireTime: record.NextFireTime || null,
-    }));
+    records = res?.records || [];
   } catch (e: any) {
     uxLog("warning", command, c.yellow(t('unableToQueryScheduledJobs', { error: e.message || e })));
     return [];
   }
+
+  // Map CronTrigger -> Apex class, so Scheduled Apex jobs can be rescheduled via System.schedule
+  const apexClassByCronTriggerId = new Map<string, string>();
+  try {
+    const apexJobsRes = await soqlQuery(
+      "SELECT CronTriggerId, ApexClass.Name, ApexClass.NamespacePrefix FROM AsyncApexJob WHERE JobType = 'ScheduledApex' AND CronTriggerId != null",
+      conn
+    );
+    for (const record of apexJobsRes?.records || []) {
+      if (record.ApexClass?.Name) {
+        const namespacePrefix = record.ApexClass.NamespacePrefix ? `${record.ApexClass.NamespacePrefix}.` : '';
+        apexClassByCronTriggerId.set(record.CronTriggerId, `${namespacePrefix}${record.ApexClass.Name}`);
+      }
+    }
+  } catch (e: any) {
+    uxLog("warning", command, c.yellow(t('unableToQueryScheduledJobs', { error: e.message || e })));
+  }
+
+  // Resolve job submitters (a scheduled job runs as the user who scheduled it)
+  const usersById = new Map<string, { username: string; name: string }>();
+  const ownerIds = [...new Set(records.map((record: any) => record.OwnerId).filter(Boolean))];
+  if (ownerIds.length > 0) {
+    try {
+      const usersRes = await soqlQuery(
+        `SELECT Id, Username, Name FROM User WHERE Id IN (${ownerIds.map((id) => `'${id}'`).join(',')})`,
+        conn
+      );
+      for (const user of usersRes?.records || []) {
+        usersById.set(user.Id, { username: user.Username, name: user.Name });
+      }
+    } catch (e: any) {
+      uxLog("warning", command, c.yellow(t('unableToQueryScheduledJobs', { error: e.message || e })));
+    }
+  }
+
+  return records.map((record: any) => ({
+    id: record.Id,
+    name: record.CronJobDetail?.Name || record.Id,
+    jobType: CRON_JOB_TYPE_LABELS[record.CronJobDetail?.JobType] || record.CronJobDetail?.JobType || '',
+    cronExpression: record.CronExpression || '',
+    state: record.State || '',
+    nextFireTime: record.NextFireTime || null,
+    ownerUsername: usersById.get(record.OwnerId)?.username || null,
+    ownerName: usersById.get(record.OwnerId)?.name || null,
+    apexClassName: apexClassByCronTriggerId.get(record.Id) || null,
+  }));
 }
 
 export async function collectManualRestoreInventory(
@@ -308,14 +362,73 @@ export function manualRestoreInventoryToRows(inventory: ManualRestoreInventory):
     rows.push({
       Category: 'Scheduled job',
       Name: job.name,
-      Detail: `${job.jobType}${job.cronExpression ? ` (${job.cronExpression})` : ''}`,
-      Users: '',
+      Detail: `${job.jobType}${job.apexClassName ? ` - ${job.apexClassName}` : ''}${job.cronExpression ? ` (${job.cronExpression})` : ''}`,
+      Users: job.ownerUsername || '',
       'Last Used': '',
       'Next Fire Time': job.nextFireTime || '',
-      'Manual Action': 'Re-schedule after refresh if missing',
+      'Manual Action': job.apexClassName
+        ? 'Re-schedule with the generated Apex script, run as the job owner'
+        : 'Re-schedule after refresh if missing',
     });
   }
   return rows;
+}
+
+// One Apex script per job submitter: a scheduled job runs as the user who scheduled it,
+// so each user should run their own script to keep the original job owners after the refresh.
+export async function generateRescheduleApexScripts(
+  saveProjectPath: string,
+  inventory: ManualRestoreInventory
+): Promise<RescheduleScriptInfo[]> {
+  const apexJobs = inventory.scheduledJobs.filter((job) => job.apexClassName && job.cronExpression);
+  if (apexJobs.length === 0) {
+    return [];
+  }
+  const jobsByOwner = new Map<string, ScheduledJobInfo[]>();
+  for (const job of apexJobs) {
+    const ownerKey = job.ownerUsername || 'unknown-user';
+    const ownerJobs = jobsByOwner.get(ownerKey) || [];
+    ownerJobs.push(job);
+    jobsByOwner.set(ownerKey, ownerJobs);
+  }
+
+  const scriptsFolder = path.join(saveProjectPath, RESCHEDULE_SCRIPTS_FOLDER);
+  await fs.ensureDir(scriptsFolder);
+  const scriptInfos: RescheduleScriptInfo[] = [];
+  for (const [ownerUsername, ownerJobs] of jobsByOwner) {
+    const ownerName = ownerJobs[0].ownerName || ownerUsername;
+    const sanitizedUsername = ownerUsername.replace(/[^a-zA-Z0-9.@_-]/g, '_');
+    const scriptFileName = `reschedule-scheduled-jobs-${sanitizedUsername}.apex`;
+    const scriptLines = [
+      `// Scheduled Apex jobs originally submitted by ${ownerName} (${ownerUsername})`,
+      `// in ${inventory.instanceUrl} (inventoried on ${inventory.collectedOn})`,
+      `//`,
+      `// A scheduled job runs as the user who scheduled it, so this script must be executed`,
+      `// AS ${ownerUsername} in the refreshed sandbox. Two ways:`,
+      `// - As an admin: "Login As" this user (Setup > Users), open Developer Console >`,
+      `//   Debug > Open Execute Anonymous Window, and paste the lines below.`,
+      `// - If authenticated to the CLI as this user:`,
+      `//   sf apex run --file "${RESCHEDULE_SCRIPTS_FOLDER}/${scriptFileName}" --target-org <refreshed-sandbox>`,
+      `//`,
+      `// If a class constructor requires parameters, adjust the corresponding line before running.`,
+      ``,
+    ];
+    for (const job of ownerJobs) {
+      const escapedJobName = job.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      scriptLines.push(`System.schedule('${escapedJobName}', '${job.cronExpression}', new ${job.apexClassName}());`);
+    }
+    scriptLines.push(``);
+    const scriptFile = path.join(scriptsFolder, scriptFileName);
+    await fs.writeFile(scriptFile, scriptLines.join('\n'), 'utf8');
+    scriptInfos.push({
+      file: `${RESCHEDULE_SCRIPTS_FOLDER}/${scriptFileName}`,
+      ownerUsername,
+      ownerName,
+      jobsCount: ownerJobs.length,
+    });
+  }
+  scriptInfos.sort((a, b) => a.ownerUsername.localeCompare(b.ownerUsername));
+  return scriptInfos;
 }
 
 export async function saveManualRestoreInventory(saveProjectPath: string, inventory: ManualRestoreInventory): Promise<string> {

@@ -75,7 +75,7 @@ Some items have no credentials to save, so no tool can restore them. The before-
 
 - **External OAuth authentications**: tools like OwnBackup or Microsoft Power Platform connect through "Log in with Salesforce". Their Connected App belongs to the vendor's org, so there is no Consumer Secret to back up. After the refresh, someone has to log in to the sandbox again from each tool. The command lists these apps with their users and last-used dates, by querying `ConnectedApplication` and `OauthToken`.
 - **Auth Providers, Named Credentials and External Credentials**: their metadata is saved and restored, but Salesforce never includes secrets or authenticated principals in metadata. They must be re-entered or re-authenticated by hand.
-- **Scheduled jobs and scheduled flows**: a refresh deactivates them. The inventory keeps the list of active jobs (name, type, cron expression) so you can re-schedule them.
+- **Scheduled jobs and scheduled flows**: a refresh deactivates them. The inventory keeps the list of active jobs (name, type, cron expression, owner), and one Apex script per user is generated under `apex-scripts/` to reschedule the Scheduled Apex jobs. A scheduled job runs as the user who scheduled it, so each script must be executed as its user: as an admin, use "Login As" (Setup > Users) then paste the script content in Developer Console > Execute Anonymous. The after-refresh command offers to run your own script directly. Scheduled Flows re-create their schedule automatically once the Flow is active.
 
 ---
 
@@ -107,7 +107,7 @@ The command will ask you to pick the backup folder created in Step 1, then resto
 5. **Records** - data is re-imported via SFDMU workspaces
 6. **External Client Apps** - all 5 metadata types deployed with their original OAuth credentials
 7. **Connected Apps** - re-deployed with the saved Consumer Secrets (only if Connected Apps creation has been activated via a Salesforce Support case)
-8. **Manual actions checklist** - external OAuth authentications to re-authorize, secrets to re-enter (Auth Providers, Named & External Credentials), scheduled jobs to re-enable, plus reminders for org settings reset by the refresh (email deliverability, `.invalid` user emails, endpoint URLs, Experience Cloud sites, Shield tenant secret rotation)
+8. **Manual actions checklist** - external OAuth authentications to re-authorize, secrets to re-enter (Auth Providers, Named & External Credentials), scheduled jobs to re-enable (the command runs your own reschedule script and gives "Login As" + Execute Anonymous instructions for the other users' scripts), plus reminders for org settings reset by the refresh (email deliverability, `.invalid` user emails, endpoint URLs, Experience Cloud sites, Shield tenant secret rotation)
 
 Each step asks for confirmation before making changes to the org. All performed and pending actions land in a CSV report, so it can be used as a handover document.
 
