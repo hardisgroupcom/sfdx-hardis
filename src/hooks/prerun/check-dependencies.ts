@@ -227,7 +227,6 @@ async function getHardisGitRepoIgnoreContent(isMonitoring: boolean) {
     '.cache/',
     'config/user/',
     'hardis-report/',
-    'scripts/sandbox-refresh/',
     'tmp/',
     '**/__tests__/**',
     // Metadatas to be ignored

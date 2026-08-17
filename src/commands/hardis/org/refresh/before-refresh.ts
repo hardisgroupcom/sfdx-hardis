@@ -7,7 +7,7 @@ import open from 'open';
 import { httpGet } from '../../../../common/utils/httpUtils.js';
 import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
-import { createTempDir, execCommand, execSfdxJson, isCI, isGitRepo, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { createTempDir, execCommand, execSfdxJson, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
@@ -189,6 +189,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.result = { success: true, message: t('beforeRefreshCommandPerformedSuccessfully') };
 
     uxLog("action", this, c.cyan(t('thisCommandWillSaveInformationRefresh')));
+    // The backup files contain secrets in clear text: warn from the very beginning
+    uxLog("warning", this, c.yellow(c.bold(t('sandboxRefreshBackupNeverCommit'))));
 
     // Check org is connected
     if (!accessToken) {
@@ -225,30 +227,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     return this.result;
   }
 
-  // Backups contain credentials in clear text (consumer secrets, custom settings data):
-  // make sure they can never be committed to the repository.
-  private async ensureBackupsAreGitIgnored(): Promise<void> {
-    const gitIgnoreFile = path.join(process.cwd(), '.gitignore');
-    const ignoreLine = 'scripts/sandbox-refresh/';
-    try {
-      if (fs.existsSync(gitIgnoreFile)) {
-        const content = await fs.readFile(gitIgnoreFile, 'utf8');
-        const lines = content.split(/\r?\n/).map(line => line.trim());
-        if (!lines.includes(ignoreLine) && !lines.includes('scripts/sandbox-refresh')) {
-          await fs.writeFile(gitIgnoreFile, content.replace(/\n*$/, '\n') + ignoreLine + '\n', 'utf8');
-          uxLog("warning", this, c.yellow(t('addedSandboxRefreshToGitignore')));
-        }
-      } else if (isGitRepo()) {
-        await fs.writeFile(gitIgnoreFile, ignoreLine + '\n', 'utf8');
-        uxLog("warning", this, c.yellow(t('addedSandboxRefreshToGitignore')));
-      }
-    } catch (e: any) {
-      uxLog("warning", this, c.yellow(t('couldNotUpdateGitignoreForSandboxRefresh', { error: e.message || e })));
-    }
-  }
-
   private async createSaveProject(): Promise<string> {
-    await this.ensureBackupsAreGitIgnored();
     const folderName = this.conn.instanceUrl.replace(/https?:\/\//, '').replace("my.salesforce.com", "").replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
     const sandboxRefreshRootFolder = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
     const projectPath = path.join(sandboxRefreshRootFolder, folderName);
@@ -1654,7 +1633,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
 
     uxLog("success", this, c.green(t('manualActionsInventorySavedIn', { inventoryFile })));
-    WebSocketClient.sendReportFileMessage(inventoryFile, t('manualActionsInventoryTitle'), 'report');
+    WebSocketClient.sendReportFileMessage(inventoryFile, t('manualActionsInventoryTitle') + ' (JSON)', 'report');
   }
 
   // Flush the actions history after each step, so an interrupted run still leaves

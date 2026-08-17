@@ -1134,7 +1134,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           }
         }
       }
-      WebSocketClient.sendReportFileMessage(path.join(this.saveProjectPath, MANUAL_RESTORE_INVENTORY_FILE), t('manualActionsInventoryTitle'), 'report');
+      WebSocketClient.sendReportFileMessage(path.join(this.saveProjectPath, MANUAL_RESTORE_INVENTORY_FILE), t('manualActionsInventoryTitle') + ' (JSON)', 'report');
       const inventoryCsvFile = path.join(this.saveProjectPath, MANUAL_RESTORE_INVENTORY_CSV_FILE);
       if (fs.existsSync(inventoryCsvFile)) {
         WebSocketClient.sendReportFileMessage(inventoryCsvFile, t('manualActionsInventoryTitle') + ' (CSV)', 'report');
