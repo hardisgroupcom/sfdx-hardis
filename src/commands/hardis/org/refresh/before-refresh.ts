@@ -7,7 +7,7 @@ import open from 'open';
 import { httpGet } from '../../../../common/utils/httpUtils.js';
 import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
-import { execCommand, execSfdxJson, isCI, isGitRepo, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, execSfdxJson, isCI, isGitRepo, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
@@ -37,6 +37,10 @@ import {
   generateRescheduleApexScripts,
   saveManualRestoreInventory,
 } from '../../../../common/utils/refresh/manualRestoreInventoryUtils.js';
+import {
+  BEFORE_REFRESH_ACTIONS_HISTORY_FILE,
+  mergeAndSaveRefreshActions,
+} from '../../../../common/utils/refresh/refreshActionsReportUtils.js';
 import { CONSTANTS, getConfig, setConfig } from '../../../../config/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -164,6 +168,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected refreshActions: RefreshActionRow[] = [];
   protected unretrievableConnectedApps: string[] = [];
   protected connectedAppsSavedWithSecret: string[] = [];
+  protected runStartDate: string = new Date().toISOString();
 
 
   public async run(): Promise<AnyJson> {
@@ -303,15 +308,15 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   private async checkConnectedAppsConversion(): Promise<void> {
     uxLog("action", this, c.cyan(t('listingConnectedAppsNotConvertedToEca')));
     while (true) {
-      let connectedAppNames: string[] = [];
+      let connectedAppsProperties: any[] = [];
       try {
         const listRes = await execSfdxJson(`sf org list metadata --metadata-type ConnectedApp --target-org ${this.orgUsername}`, this, { output: false });
-        connectedAppNames = (listRes?.result && Array.isArray(listRes.result) ? listRes.result : []).map((app: any) => app.fullName);
+        connectedAppsProperties = listRes?.result && Array.isArray(listRes.result) ? listRes.result : [];
       } catch (e: any) {
         uxLog("warning", this, c.yellow(t('unableToQueryConnectedApplications', { error: e.message || e })));
         return;
       }
-      if (connectedAppNames.length === 0) {
+      if (connectedAppsProperties.length === 0) {
         uxLog("log", this, c.grey(t('noConnectedAppsWereFoundInThe2')));
         return;
       }
@@ -322,14 +327,25 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         // No ECA in org yet
       }
       const ecaNamesLower = new Set(ecaNames.map(name => name.toLowerCase()));
-      const unconvertedApps = connectedAppNames.filter(name => !ecaNamesLower.has(name.toLowerCase())).sort();
+      const unconvertedAppsProperties = connectedAppsProperties
+        .filter((app: any) => !ecaNamesLower.has((app.fullName || '').toLowerCase()))
+        .sort((a: any, b: any) => (a.fullName || '').localeCompare(b.fullName || ''));
+      const unconvertedApps = unconvertedAppsProperties.map((app: any) => app.fullName);
       if (unconvertedApps.length === 0) {
         uxLog("success", this, c.green(t('allConnectedAppsConverted')));
         return;
       }
 
-      const appsList = unconvertedApps.map(name => `- ${name}`).join('\n');
-      uxLog("warning", this, c.yellow(t('connectedAppsNotConvertedWarning', { count: unconvertedApps.length, appsList })));
+      uxLog("warning", this, c.yellow(t('connectedAppsNotConvertedWarning', { count: unconvertedApps.length })));
+      uxLogTable(
+        this,
+        unconvertedAppsProperties.map((app: any) => ({
+          'Name': app.fullName,
+          'Last Updated Date': app.lastModifiedDate ? String(app.lastModifiedDate).replace('T', ' ').substring(0, 16) : '',
+          'Last Updated By': app.lastModifiedByName || '',
+        })),
+        ['Name', 'Last Updated Date', 'Last Updated By']
+      );
       uxLog("warning", this, c.yellow(t('convertConnectedAppsNowInstructions')));
 
       if (isCI) {
@@ -348,6 +364,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       });
       if (promptConversion.action === 'open') {
         await open(`${this.instanceUrl}/lightning/setup/NavigationMenus/home`);
+        // Wait until the user has finished converting before re-checking the org
+        await prompts({
+          type: 'confirm',
+          name: 'converted',
+          message: t('confirmFinishedConvertingConnectedApps'),
+          description: t('convertConnectedAppsNowDescription'),
+          initial: true
+        });
         continue;
       }
       if (promptConversion.action === 'recheck') {
@@ -1560,9 +1584,22 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       return;
     }
     uxLog("action", this, c.cyan(t('generatingSandboxRefreshActionsReport')));
+    // The report is cumulative across runs: actions of previous runs are kept, except for
+    // sections that rebuild their backup from scratch when re-executed
+    const replaceSteps = ['Create Save Project', 'Retrieve Certificates', 'Save Custom Settings', 'Check Connected Apps Conversion', 'List Manual Actions'];
+    const combinedActions = await mergeAndSaveRefreshActions(
+      this.saveProjectPath,
+      BEFORE_REFRESH_ACTIONS_HISTORY_FILE,
+      this.refreshActions,
+      replaceSteps,
+      this.runStartDate
+    );
+    if (combinedActions.length > this.refreshActions.length) {
+      uxLog("log", this, c.grey(t('reportIncludesPreviousRuns')));
+    }
     // Include the sandbox folder in the file name so reports of different sandboxes do not overwrite each other
     const reportPath = await generateReportPath(`sandbox-refresh-before-actions-${path.basename(this.saveProjectPath)}`, '');
-    await generateCsvFile(this.refreshActions, reportPath, {
+    await generateCsvFile(combinedActions, reportPath, {
       fileTitle: t('sandboxRefreshActionsReport')
     });
   }

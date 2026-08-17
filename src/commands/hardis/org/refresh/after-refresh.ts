@@ -32,6 +32,10 @@ import {
   MANUAL_RESTORE_INVENTORY_FILE,
   MANUAL_RESTORE_INVENTORY_CSV_FILE,
 } from '../../../../common/utils/refresh/manualRestoreInventoryUtils.js';
+import {
+  AFTER_REFRESH_ACTIONS_HISTORY_FILE,
+  mergeAndSaveRefreshActions,
+} from '../../../../common/utils/refresh/refreshActionsReportUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -143,6 +147,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected instanceUrl: any;
   protected orgId: string;
   protected refreshActions: RefreshActionRow[] = [];
+  protected runStartDate: string = new Date().toISOString();
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgRefreshAfterRefresh);
@@ -1226,13 +1231,25 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async generateActionsReport(): Promise<void> {
-    if (this.refreshActions.length === 0) {
+    if (this.refreshActions.length === 0 || !this.saveProjectPath) {
       return;
     }
     uxLog("action", this, c.cyan(t('generatingSandboxRefreshActionsReport')));
+    // The report is cumulative across runs: restores done by a previous run are kept,
+    // the manual actions checklist is rebuilt every run
+    const combinedActions = await mergeAndSaveRefreshActions(
+      this.saveProjectPath,
+      AFTER_REFRESH_ACTIONS_HISTORY_FILE,
+      this.refreshActions,
+      ['Manual Actions'],
+      this.runStartDate
+    );
+    if (combinedActions.length > this.refreshActions.length) {
+      uxLog("log", this, c.grey(t('reportIncludesPreviousRuns')));
+    }
     // Include the sandbox folder in the file name so reports of different sandboxes do not overwrite each other
     const reportPath = await generateReportPath(`sandbox-refresh-after-actions-${path.basename(this.saveProjectPath)}`, '');
-    await generateCsvFile(this.refreshActions, reportPath, {
+    await generateCsvFile(combinedActions, reportPath, {
       fileTitle: t('sandboxRefreshActionsReport')
     });
   }

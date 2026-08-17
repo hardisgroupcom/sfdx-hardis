@@ -135,6 +135,8 @@ Under `scripts/sandbox-refresh/<sandbox-name>/` inside your SFDX project. Do not
 
 The command first detects the existing backup folder and asks whether you want to continue with it or restart from scratch. Restarting requires a second confirmation, then deletes the whole existing backup folder (including saved credentials, so be sure). If you continue, each section detects the previous run and asks whether you want to retrieve again (default: keep the existing backup). If you confirm a new retrieve, certificates and custom settings are cleanly replaced (previous files deleted first). Metadata, Connected Apps and External Client Apps are retrieved on top of the existing files without deleting anything: files of apps already deleted from the org are kept on purpose, they are your backup. The manual actions inventory and reschedule scripts are regenerated, except when the new collection comes back empty, in which case the previous ones are kept.
 
+The actions report is cumulative across runs: it contains everything taken into account by all runs for the sandbox (with a run date on each line). Rows from sections that clean-replace their data (certificates, custom settings) are replaced when the section is re-executed; rows describing backup content still on disk are kept.
+
 **Can I prepare the refresh of several sandboxes at the same time?**
 
 Yes. Each sandbox gets its own backup folder under `scripts/sandbox-refresh/` (named after its instance URL), its own saved selections in `config/.sfdx-hardis.yml` (under `refreshSandboxConfig.sandboxes`), and its own actions report. Running the commands for one sandbox never overwrites the backups or choices of another.
