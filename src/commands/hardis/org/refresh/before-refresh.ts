@@ -1194,16 +1194,24 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async retrieveCertificates() {
+    // Detect a previous run: default is then to keep the existing backup
+    const certsDirForCheck = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'certs');
+    const certsAlreadySaved = fs.existsSync(certsDirForCheck) &&
+      fs.readdirSync(certsDirForCheck).some(file => file.endsWith('.crt'));
     const promptCerts = await prompts({
       type: 'confirm',
       name: 'retrieveCerts',
-      message: t('doYouWantToRetrieveCertificatesFrom', { instanceUrl: this.instanceUrl }),
-      description: t('certificatesCannotBeRetrievedUsingSourceApi'),
-      initial: true
+      message: certsAlreadySaved
+        ? t('certificatesAlreadySavedRetrieveAgain')
+        : t('doYouWantToRetrieveCertificatesFrom', { instanceUrl: this.instanceUrl }),
+      description: certsAlreadySaved
+        ? t('previousCertificatesWillBeReplaced')
+        : t('certificatesCannotBeRetrievedUsingSourceApi'),
+      initial: !certsAlreadySaved
     });
     if (!promptCerts.retrieveCerts) {
       uxLog("log", this, c.grey(`Skipping Certificates retrieval as per user choice`));
-      this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Skipped", details: "User choice" });
+      this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Skipped", details: certsAlreadySaved ? "Kept backup from previous run" : "User choice" });
       return;
     }
 
@@ -1228,6 +1236,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Skipped", details: "No certificates found in org" });
       await fs.remove(path.join(this.saveProjectPath, 'mdapi_certs'));
       return;
+    }
+    // Replace the previous run's certificates so no stale file lingers in the backup
+    if (certsAlreadySaved) {
+      uxLog("log", this, c.grey(t('deletingPreviousSavedItems', { folder: certsDir })));
+      await fs.emptyDir(certsDir);
     }
     uxLog("log", this, c.grey(t('copyingCertificatesFromTo', { mdapiCertsDir, certsDir })));
     await fs.ensureDir(certsDir);
@@ -1269,6 +1282,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         uxLog("log", this, c.grey(t('skippingCustomSettingsRetrievalAsItAlready', { customSettingsFolder })));
         return;
       }
+      // Replace the previous run's export so no stale custom setting lingers in the backup
+      uxLog("log", this, c.grey(t('deletingPreviousSavedItems', { folder: customSettingsFolder })));
+      await fs.emptyDir(customSettingsFolder);
     }
     // List custom settings in the org
     uxLog("action", this, c.cyan(`Listing Custom Settings in the org...`));
