@@ -133,7 +133,7 @@ Under `scripts/sandbox-refresh/<sandbox-name>/` inside your SFDX project. Do not
 
 **What happens if I run before-refresh twice on the same sandbox?**
 
-Each section detects the previous run and asks whether you want to retrieve again (default: keep the existing backup). If you confirm a new retrieve, certificates and custom settings are cleanly replaced (previous files deleted first). Metadata, Connected Apps and External Client Apps are retrieved on top of the existing files without deleting anything: files of apps already deleted from the org are kept on purpose, they are your backup. The manual actions inventory and reschedule scripts are regenerated, except when the new collection comes back empty, in which case the previous ones are kept.
+The command first detects the existing backup folder and asks whether you want to continue with it or restart from scratch. Restarting requires a second confirmation, then deletes the whole existing backup folder (including saved credentials, so be sure). If you continue, each section detects the previous run and asks whether you want to retrieve again (default: keep the existing backup). If you confirm a new retrieve, certificates and custom settings are cleanly replaced (previous files deleted first). Metadata, Connected Apps and External Client Apps are retrieved on top of the existing files without deleting anything: files of apps already deleted from the org are kept on purpose, they are your backup. The manual actions inventory and reschedule scripts are regenerated, except when the new collection comes back empty, in which case the previous ones are kept.
 
 **Can I prepare the refresh of several sandboxes at the same time?**
 

@@ -83,7 +83,7 @@ This command prepares a complete backup prior to a sandbox refresh. It creates a
 
 Key functionalities:
 
-- **Create a save project:** Generates a dedicated project folder to store all artifacts for the sandbox backup.
+- **Create a save project:** Generates a dedicated project folder to store all artifacts for the sandbox backup. When a backup folder already exists for the sandbox, you choose between continuing with it or restarting from scratch (the existing folder is then deleted, after an explicit confirmation).
 - **Check Connected Apps conversion:** Since Spring '26, Connected Apps can not be re-created after a refresh (unless Salesforce Support enables it via a Case), while External Client Apps can be restored with their credentials. The command lists the Connected Apps that have no matching External Client App, warns that they will probably be lost, and pauses so you can convert them in Setup (App Manager). Once you confirm the conversion, the newly converted External Client Apps are saved like the others.
 - **Save External Client Apps:** Retrieves all External Client App metadata (ExternalClientApplication, ExtlClntAppOauthSettings, ExtlClntAppGlobalOauthSettings, ExtlClntAppOauthConfigurablePolicies, ExtlClntAppConfigurablePolicies), verifies that credentials (Consumer Key & Consumer Secret) are present in the retrieved Global OAuth settings, attempts to extract missing Consumer Secrets automatically via OAuth Credentials REST API or prompts for manual entry, and optionally deletes External Client Apps from the org so they can be recreated with the same credentials after the refresh.
 - **Find and select Connected Apps (discouraged):** Lists Connected Apps in the org and lets you pick specific apps, use a name filter, or process all apps. Saving them is discouraged (declined by default) since they can not be restored after the refresh without a Salesforce Case: convert them to External Client Apps instead.
@@ -243,8 +243,40 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const projectPath = path.join(sandboxRefreshRootFolder, folderName);
     if (fs.existsSync(projectPath)) {
       if (fs.existsSync(path.join(projectPath, "sfdx-project.json"))) {
-        uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
-        return projectPath;
+        // A previous run exists for this sandbox: let the user continue with it or restart from scratch
+        if (isCI) {
+          uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
+          return projectPath;
+        }
+        const promptExistingBackup = await prompts({
+          type: 'select',
+          name: 'action',
+          message: t('backupFolderAlreadyExistsContinueOrRestart', { projectPath }),
+          description: t('backupFolderAlreadyExistsDescription'),
+          choices: [
+            { title: t('choiceContinuePreviousBackup'), value: 'continue' },
+            { title: t('choiceRestartBackupFromScratch'), value: 'restart' },
+          ],
+        });
+        if (promptExistingBackup.action !== 'restart') {
+          uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
+          return projectPath;
+        }
+        // Deleting a backup destroys saved credentials: require an explicit second confirmation
+        const confirmDeleteBackup = await prompts({
+          type: 'confirm',
+          name: 'confirmDelete',
+          message: t('confirmDeleteExistingBackup'),
+          description: t('confirmDeleteExistingBackupDescription'),
+          initial: false
+        });
+        if (!confirmDeleteBackup.confirmDelete) {
+          uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
+          return projectPath;
+        }
+        await fs.remove(projectPath);
+        uxLog("warning", this, c.yellow(t('deletedExistingBackupFolder', { projectPath })));
+        this.refreshActions.push({ step: "Create Save Project", type: "Project", name: folderName, status: "Warning", details: "Previous backup deleted: restarted from scratch" });
       }
       else {
         fs.removeSync(projectPath);
