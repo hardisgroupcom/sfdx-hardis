@@ -958,7 +958,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const sandboxes = Object.assign({}, existingRefreshConfig.sandboxes || {});
     if (JSON.stringify(this.refreshSandboxConfig) !== JSON.stringify(sandboxes[sandboxFolderName] || {})) {
       sandboxes[sandboxFolderName] = this.refreshSandboxConfig;
-      await setConfig("project", { refreshSandboxConfig: Object.assign({}, existingRefreshConfig, { sandboxes }) });
+      // Only the per-sandbox format is written: legacy top-level keys are dropped on first save
+      await setConfig("project", { refreshSandboxConfig: { sandboxes } });
       uxLog("log", this, c.cyan(t('refreshSandboxConfigurationHasBeenSavedSuccessfully')));
     }
   }

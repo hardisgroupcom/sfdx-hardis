@@ -2889,70 +2889,27 @@
       "$id": "#/properties/refreshSandboxConfig",
       "description": "Configuration for sandbox refresh. Will be used by command hardis:org:refresh:before-refresh and hardis:org:refresh:after-refresh",
       "properties": {
-        "connectedApps": {
-          "$id": "#/properties/refreshSandboxConfig/connectedApps",
-          "description": "List of connected apps to download before refresh and to upload after refresh",
-          "examples": [
-            [
-              "My_Connected_App_1",
-              "My_Connected_App_2"
-            ]
-          ],
-          "items": {
-            "type": "string"
-          },
-          "title": "Connected Apps",
-          "type": "array"
-        },
-        "customSettings": {
-          "$id": "#/properties/refreshSandboxConfig/customSettings",
-          "description": "List of Custom Settings to download before refresh and to upload after refresh",
-          "examples": [
-            [
-              "MyCustomSetting1__c",
-              "MyCustomSetting2__c"
-            ]
-          ],
-          "items": {
-            "type": "string"
-          },
-          "title": "Custom Settings",
-          "type": "array"
-        },
-        "dataWorkspaces": {
-          "$id": "#/properties/refreshSandboxConfig/dataWorkspaces",
-          "description": "List of data workspaces to download before refresh and to upload after refresh",
-          "examples": [
-            [
-              "scripts/data/AnonymizeAccounts",
-              "scripts/data/AnonymizeContacts",
-              "scripts/data/AnonymizeLeads"
-            ]
-          ],
-          "items": {
-            "type": "string"
-          },
-          "title": "Data Workspaces",
-          "type": "array"
-        },
-        "externalClientApps": {
-          "$id": "#/properties/refreshSandboxConfig/externalClientApps",
-          "description": "List of External Client Apps to download before refresh and to upload after refresh",
-          "examples": [
-            [
-              "My_External_Client_App_1",
-              "My_External_Client_App_2"
-            ]
-          ],
-          "items": {
-            "type": "string"
-          },
-          "title": "External Client Apps",
-          "type": "array"
-        },
         "sandboxes": {
           "$id": "#/properties/refreshSandboxConfig/sandboxes",
-          "description": "Refresh selections stored per sandbox (key is the sandbox backup folder name, derived from its instance URL), so preparing several sandbox refreshes does not overwrite each other's choices. Top-level selections are used as defaults for sandboxes without an entry.",
+          "description": "Refresh selections stored per sandbox (key is the sandbox backup folder name, derived from its instance URL), so preparing several sandbox refreshes does not overwrite each other's choices.",
+          "examples": [
+            {
+              "myorg--uat-sandbox": {
+                "connectedApps": [
+                  "My_Connected_App_1"
+                ],
+                "customSettings": [
+                  "MyCustomSetting1__c"
+                ],
+                "dataWorkspaces": [
+                  "scripts/data/AnonymizeAccounts"
+                ],
+                "externalClientApps": [
+                  "My_External_Client_App_1"
+                ]
+              }
+            }
+          ],
           "additionalProperties": {
             "additionalProperties": false,
             "properties": {
