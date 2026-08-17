@@ -54,15 +54,15 @@ The command is **fully interactive** - it will guide you through each section an
 
 ### What gets saved
 
-| Item                                       | Where it is stored                                                           |
-|--------------------------------------------|------------------------------------------------------------------------------|
-| External Client Apps (+ OAuth credentials) | `scripts/sandbox-refresh/<sandbox>/force-app/…/externalClientApps/`          |
-| Connected Apps (+ Consumer Secrets)        | `scripts/sandbox-refresh/<sandbox>/force-app/…/connectedApps/`               |
-| Certificates                               | `scripts/sandbox-refresh/<sandbox>/force-app/…/certs/`                       |
-| SAML SSO configs                           | `scripts/sandbox-refresh/<sandbox>/force-app/…/samlssoconfigs/`              |
-| Custom Settings (as JSON)                  | `scripts/sandbox-refresh/<sandbox>/savedCustomSettings/`                     |
-| Records (via SFDMU)                        | `scripts/sandbox-refresh/<sandbox>/data/`                                    |
-| Other metadata                             | `scripts/sandbox-refresh/<sandbox>/manifest/package-metadata-to-restore.xml` |
+| Item                                       | Where it is stored                                                                                              |
+|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| External Client Apps (+ OAuth credentials) | `scripts/sandbox-refresh/<sandbox>/force-app/…/externalClientApps/`                                             |
+| Connected Apps (+ Consumer Secrets)        | `scripts/sandbox-refresh/<sandbox>/force-app/…/connectedApps/`                                                  |
+| Certificates                               | `scripts/sandbox-refresh/<sandbox>/force-app/…/certs/`                                                          |
+| SAML SSO configs                           | `scripts/sandbox-refresh/<sandbox>/force-app/…/samlssoconfigs/`                                                 |
+| Custom Settings (as JSON)                  | `scripts/sandbox-refresh/<sandbox>/savedCustomSettings/`                                                        |
+| Records (via SFDMU)                        | `scripts/sandbox-refresh/<sandbox>/data/`                                                                       |
+| Other metadata                             | `scripts/sandbox-refresh/<sandbox>/manifest/package-metadata-to-restore.xml`                                    |
 | Manual actions inventory                   | `scripts/sandbox-refresh/<sandbox>/manual-restore-inventory.json` (+ `.csv` and `xls/*.xlsx` for human reading) |
 
 ### Connected Apps and External Client Apps deletion
