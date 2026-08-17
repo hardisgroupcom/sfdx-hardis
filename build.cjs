@@ -39,7 +39,7 @@ class SfdxHardisBuilder {
 
   fetchJson(url) {
     return new Promise((resolve, reject) => {
-      https
+      const request = https
         .get(url, (response) => {
           if (response.statusCode !== 200) {
             reject(new Error(`Unable to download ${url} (status: ${response.statusCode})`));
@@ -62,6 +62,10 @@ class SfdxHardisBuilder {
         .on("error", (error) => {
           reject(new Error(`Unable to download ${url}: ${error.message}`));
         });
+      // Without a timeout, a stalled connection hangs forever and blocks the pre-commit hook
+      request.setTimeout(30000, () => {
+        request.destroy(new Error(`Timeout downloading ${url}`));
+      });
     });
   }
 

@@ -13,6 +13,12 @@ import { t } from '../i18n.js';
 export interface RefreshSandboxConfig {
   connectedApps?: string[];
 }
+
+// Selections are stored per sandbox under refreshSandboxConfig.sandboxes.<folderName>,
+// so preparing two sandbox refreshes does not overwrite each other's choices.
+export function getSandboxRefreshConfigForFolder(refreshSandboxConfig: any, sandboxFolderName: string): any {
+  return Object.assign({}, refreshSandboxConfig?.sandboxes?.[sandboxFolderName] || {});
+}
 // Define interface for Connected App metadata
 export interface ConnectedApp {
   fullName: string;

@@ -2889,51 +2889,63 @@
       "$id": "#/properties/refreshSandboxConfig",
       "description": "Configuration for sandbox refresh. Will be used by command hardis:org:refresh:before-refresh and hardis:org:refresh:after-refresh",
       "properties": {
-        "connectedApps": {
-          "$id": "#/properties/refreshSandboxConfig/connectedApps",
-          "description": "List of connected apps to download before refresh and to upload after refresh",
+        "sandboxes": {
+          "$id": "#/properties/refreshSandboxConfig/sandboxes",
+          "description": "Refresh selections stored per sandbox (key is the sandbox backup folder name, derived from its instance URL), so preparing several sandbox refreshes does not overwrite each other's choices.",
           "examples": [
-            [
-              "My_Connected_App_1",
-              "My_Connected_App_2"
-            ]
+            {
+              "myorg--uat-sandbox": {
+                "connectedApps": [
+                  "My_Connected_App_1"
+                ],
+                "customSettings": [
+                  "MyCustomSetting1__c"
+                ],
+                "dataWorkspaces": [
+                  "scripts/data/AnonymizeAccounts"
+                ],
+                "externalClientApps": [
+                  "My_External_Client_App_1"
+                ]
+              }
+            }
           ],
-          "items": {
-            "type": "string"
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "connectedApps": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Connected Apps",
+                "type": "array"
+              },
+              "customSettings": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Custom Settings",
+                "type": "array"
+              },
+              "dataWorkspaces": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Data Workspaces",
+                "type": "array"
+              },
+              "externalClientApps": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "External Client Apps",
+                "type": "array"
+              }
+            },
+            "type": "object"
           },
-          "title": "Connected Apps",
-          "type": "array"
-        },
-        "customSettings": {
-          "$id": "#/properties/refreshSandboxConfig/customSettings",
-          "description": "List of Custom Settings to download before refresh and to upload after refresh",
-          "examples": [
-            [
-              "MyCustomSetting1__c",
-              "MyCustomSetting2__c"
-            ]
-          ],
-          "items": {
-            "type": "string"
-          },
-          "title": "Custom Settings",
-          "type": "array"
-        },
-        "dataWorkspaces": {
-          "$id": "#/properties/refreshSandboxConfig/dataWorkspaces",
-          "description": "List of data workspaces to download before refresh and to upload after refresh",
-          "examples": [
-            [
-              "scripts/data/AnonymizeAccounts",
-              "scripts/data/AnonymizeContacts",
-              "scripts/data/AnonymizeLeads"
-            ]
-          ],
-          "items": {
-            "type": "string"
-          },
-          "title": "Data Workspaces",
-          "type": "array"
+          "title": "Per-sandbox Refresh Selections",
+          "type": "object"
         }
       },
       "additionalProperties": false,

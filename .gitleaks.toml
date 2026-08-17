@@ -70,3 +70,20 @@ description = "Grafana username example in CI/CD integration API setup docs"
 matchCondition = "AND"
 paths = ['''docs/salesforce-ci-cd-setup-integration-api\.md''']
 regexes = ['''NOTIF_API_METRICS_BASIC_AUTH_USERNAME=\d+''']
+
+# src/i18n/*.json: the translation key "sandboxRefreshPostChecksReminder" is
+# exactly 32 alphanumeric characters, which is the shape the box-api-access-token
+# rule captures ([a-z0-9]{32}). That rule also needs the word "box" shortly before
+# the match, and the key that precedes it in alphabetical order is
+# "sandboxRefreshConfiguration", whose translated value ends with "sandbox" in
+# several locales (es, fr, it, nl, pl, pt-BR) - so the rule fires on the key name
+# itself. It is an i18n key, not a token.
+#
+# This entry is deliberately secret-scoped only, with no "paths": adding a "paths"
+# key here makes betterleaks skip the matching files wholesale (verified with
+# betterleaks 1.7.3 - a planted AWS key in src/i18n/fr.json went undetected),
+# regardless of matchCondition. Matching on the key name alone keeps every byte of
+# the locale files scanned while suppressing just this one false positive.
+[[allowlists]]
+description = "i18n key sandboxRefreshPostChecksReminder matches the Box token shape"
+regexes = ['''sandboxRefreshPostChecksReminder''']

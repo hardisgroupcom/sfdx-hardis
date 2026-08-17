@@ -7,7 +7,8 @@ import open from 'open';
 import { httpGet } from '../../../../common/utils/httpUtils.js';
 import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
-import { execCommand, execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
+import { createTempDir, execCommand, execSfdxJson, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
@@ -17,6 +18,7 @@ import {
   retrieveConnectedApps,
   validateConnectedApps,
   findConnectedAppFile,
+  getSandboxRefreshConfigForFolder,
   selectConnectedAppsForProcessing,
   createConnectedAppSuccessResponse,
   handleConnectedAppError
@@ -24,12 +26,22 @@ import {
 import {
   ECA_METADATA_TYPES,
   getEcaNames,
+  getEcaNamesWithSavedSecret,
   listExternalClientAppNames,
   retrieveExternalClientApps,
   verifyEcaCredentials,
   deleteExternalClientApps,
   deleteConflictingConnectedApps,
 } from '../../../../common/utils/refresh/externalClientAppUtils.js';
+import {
+  collectManualRestoreInventory,
+  generateRescheduleApexScripts,
+  saveManualRestoreInventory,
+} from '../../../../common/utils/refresh/manualRestoreInventoryUtils.js';
+import {
+  BEFORE_REFRESH_ACTIONS_HISTORY_FILE,
+  mergeAndSaveRefreshActions,
+} from '../../../../common/utils/refresh/refreshActionsReportUtils.js';
 import { CONSTANTS, getConfig, setConfig } from '../../../../config/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -76,12 +88,14 @@ This command prepares a complete backup prior to a sandbox refresh. It creates a
 
 Key functionalities:
 
-- **Create a save project:** Generates a dedicated project folder to store all artifacts for the sandbox backup.
+- **Create a save project:** Generates a dedicated project folder to store all artifacts for the sandbox backup. When a backup folder already exists for the sandbox, you choose between continuing with it or restarting from scratch (the existing folder is then deleted, after an explicit confirmation).
+- **Check Connected Apps conversion:** Since Spring '26, Connected Apps can not be re-created after a refresh (unless Salesforce Support enables it via a Case), while External Client Apps can be restored with their credentials. The command lists the Connected Apps that have no matching External Client App, warns that they will probably be lost, and pauses so you can convert them in Setup (App Manager). Once you confirm the conversion, the newly converted External Client Apps are saved like the others. Vendor-owned apps (whose metadata belongs to the app vendor's org, like OwnBackup or Microsoft Power Platform) can not be converted: they are excluded from this list and handled by the manual actions inventory.
 - **Save External Client Apps:** Retrieves all External Client App metadata (ExternalClientApplication, ExtlClntAppOauthSettings, ExtlClntAppGlobalOauthSettings, ExtlClntAppOauthConfigurablePolicies, ExtlClntAppConfigurablePolicies), verifies that credentials (Consumer Key & Consumer Secret) are present in the retrieved Global OAuth settings, attempts to extract missing Consumer Secrets automatically via OAuth Credentials REST API or prompts for manual entry, and optionally deletes External Client Apps from the org so they can be recreated with the same credentials after the refresh.
-- **Find and select Connected Apps:** Lists Connected Apps in the org and lets you pick specific apps, use a name filter, or process all apps.
+- **Find and select Connected Apps (discouraged):** Lists Connected Apps in the org and lets you pick specific apps, use a name filter, or process all apps. Saving them is discouraged (declined by default) since they can not be restored after the refresh without a Salesforce Case: convert them to External Client Apps instead.
 - **Save metadata for restore:** Builds a manifest and retrieves the metadata types you choose so they can be restored after the refresh.
 - **Capture Consumer Secrets:** Attempts to capture Connected App consumer secrets automatically (opens a browser session when possible) and falls back to a short manual prompt when needed.
 - **Collect certificates:** Saves certificate files and their definitions so they can be redeployed later.
+- **Inventory manual actions:** Detects everything that can NOT be restored automatically and saves it in a \`manual-restore-inventory.json\` file: external OAuth authentications (apps like OwnBackup or Microsoft Power Platform authorized via "Log in with Salesforce", whose metadata belongs to the vendor org), Auth Providers, Named & External Credentials (their secrets are never included in metadata), and active scheduled jobs (deactivated by a refresh). The inventory is also exported as \`manual-restore-inventory.csv\` and \`xls/manual-restore-inventory.xlsx\` for human reading, and one Apex script per user is generated in \`apex-scripts/\` to reschedule the Scheduled Apex jobs with their original owners. The after-refresh command turns this file into a manual actions checklist.
 - **Export custom settings & records:** Lets you pick custom settings to export as JSON and optionally export records using configured data workspaces.
 - **Persist choices & report:** Stores your backup choices in project config and sends report files for traceability.
 - **Optional cleanup:** Can delete backed-up Connected Apps and External Client Apps from the org so they can be re-uploaded cleanly after the refresh.
@@ -99,6 +113,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 - **External Client App Handling:** Retrieves all 5 ECA metadata types, scans \`extlClntAppGlobalOauthSets/\` files for credentials (\`consumerKey\`, \`consumerSecret\`), extracts missing secrets via OAuth Credentials REST API or manual input, writes them back into the XML files, and deletes ECAs from the org using destructive changes so they can be recreated after refresh.
 - **Consumer Secret Handling:** Uses \`puppeteer-core\` with an executable path from \`getChromeExecutablePath()\` (env var \`PUPPETEER_EXECUTABLE_PATH\` may be required) for Connected Apps. Falls back to manual prompt when browser automation cannot be used.
 - **Data & Records:** Exports custom settings to JSON and supports exporting records through SFDMU workspaces chosen interactively.
+- **Manual Actions Inventory:** Connected Apps listed by the Metadata API but not retrievable (owned by an external org) are excluded from the save instead of failing the command, and inventoried through SOQL queries on \`ConnectedApplication\` and \`OauthToken\` (aggregated client-side by app, with users and last used date). Auth Providers, External Credentials, Named Credentials (SOQL + Tooling API) and active \`CronTrigger\` jobs complete the inventory, stored as \`manual-restore-inventory.json\` in the save project.
 - **Config & Reporting:** Updates project/user config under \`config/.sfdx-hardis.yml#refreshSandboxConfig\` and reports artifacts to the WebSocket client.
 - **Error Handling:** Provides clear error messages and a summary response object indicating success/failure and which secrets were captured.
 
@@ -152,6 +167,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected nameFilter: string | undefined;
   protected deleteApps: boolean;
   protected refreshActions: RefreshActionRow[] = [];
+  protected unretrievableConnectedApps: string[] = [];
+  protected connectedAppsSavedWithSecret: string[] = [];
+  protected runStartDate: string = new Date().toISOString();
+
+  // Sections that rebuild their backup data from scratch when re-executed:
+  // their rows from previous runs are replaced instead of accumulated
+  private static readonly REPORT_REPLACE_STEPS = ['Create Save Project', 'Retrieve Certificates', 'Save Custom Settings', 'Check Connected Apps Conversion', 'List Manual Actions'];
 
 
   public async run(): Promise<AnyJson> {
@@ -164,10 +186,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.processAll = flags.all || false;
     this.nameFilter = this.processAll ? undefined : flags.name; // If --all is set, ignore --name
     const config = await getConfig("user");
-    this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
     this.result = { success: true, message: t('beforeRefreshCommandPerformedSuccessfully') };
 
     uxLog("action", this, c.cyan(t('thisCommandWillSaveInformationRefresh')));
+    // The backup files contain secrets in clear text: warn from the very beginning
+    uxLog("warning", this, c.yellow(c.bold(t('sandboxRefreshBackupNeverCommit'))));
 
     // Check org is connected
     if (!accessToken) {
@@ -175,21 +198,31 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
 
     this.saveProjectPath = await this.createSaveProject();
+    // Selections are stored per sandbox, so preparing several sandbox refreshes does not overwrite each other's choices
+    this.refreshSandboxConfig = getSandboxRefreshConfigForFolder(config?.refreshSandboxConfig || {}, path.basename(this.saveProjectPath));
     this.refreshActions.push({ step: "Create Save Project", type: "Project", name: path.basename(this.saveProjectPath), status: "Success", details: this.saveProjectPath });
 
-    await this.retrieveCertificates();
-
-    await this.saveMetadatas();
-
-    await this.saveCustomSettings();
-
-    await this.saveRecords();
-
-    await this.saveExternalClientApps();
-
-    await this.retrieveDeleteConnectedApps(accessToken);
-
-    await this.generateActionsReport();
+    // The actions report must be produced even when a step throws: it is the audit trail.
+    // A checkpoint is saved after each step so an interrupted run (killed process,
+    // cancelled prompt exiting the process) still leaves its completed actions in the history.
+    try {
+      const steps = [
+        () => this.retrieveCertificates(),
+        () => this.saveMetadatas(),
+        () => this.saveCustomSettings(),
+        () => this.saveRecords(),
+        () => this.checkConnectedAppsConversion(),
+        () => this.saveExternalClientApps(),
+        () => this.retrieveDeleteConnectedApps(accessToken),
+        () => this.saveManualActionsInventory(),
+      ];
+      for (const step of steps) {
+        await step();
+        await this.saveActionsCheckpoint();
+      }
+    } finally {
+      await this.generateActionsReport();
+    }
 
     return this.result;
   }
@@ -200,8 +233,40 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const projectPath = path.join(sandboxRefreshRootFolder, folderName);
     if (fs.existsSync(projectPath)) {
       if (fs.existsSync(path.join(projectPath, "sfdx-project.json"))) {
-        uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
-        return projectPath;
+        // A previous run exists for this sandbox: let the user continue with it or restart from scratch
+        if (isCI) {
+          uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
+          return projectPath;
+        }
+        const promptExistingBackup = await prompts({
+          type: 'select',
+          name: 'action',
+          message: t('backupFolderAlreadyExistsContinueOrRestart', { projectPath }),
+          description: t('backupFolderAlreadyExistsDescription'),
+          choices: [
+            { title: t('choiceContinuePreviousBackup'), value: 'continue' },
+            { title: t('choiceRestartBackupFromScratch'), value: 'restart' },
+          ],
+        });
+        if (promptExistingBackup.action !== 'restart') {
+          uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
+          return projectPath;
+        }
+        // Deleting a backup destroys saved credentials: require an explicit second confirmation
+        const confirmDeleteBackup = await prompts({
+          type: 'confirm',
+          name: 'confirmDelete',
+          message: t('confirmDeleteExistingBackup'),
+          description: t('confirmDeleteExistingBackupDescription'),
+          initial: false
+        });
+        if (!confirmDeleteBackup.confirmDelete) {
+          uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
+          return projectPath;
+        }
+        await fs.remove(projectPath);
+        uxLog("warning", this, c.yellow(t('deletedExistingBackupFolder', { projectPath })));
+        this.refreshActions.push({ step: "Create Save Project", type: "Project", name: folderName, status: "Warning", details: "Previous backup deleted: restarted from scratch" });
       }
       else {
         fs.removeSync(projectPath);
@@ -219,6 +284,162 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await fs.remove(folderName);
     uxLog("log", this, c.grey(t('saveProjectCreatedInFolder', { projectPath })));
     return projectPath;
+  }
+
+  // Vendor-owned Connected Apps (their metadata belongs to the app vendor's org) are listed
+  // by the Metadata API but not retrievable, and can not be converted to External Client Apps.
+  // A metadata retrieve probe identifies them so they are not proposed for manual conversion.
+  private async listUnmigratableConnectedApps(candidateNames: string[]): Promise<Set<string>> {
+    const unmigratableLower = new Set<string>();
+    if (candidateNames.length === 0) {
+      return unmigratableLower;
+    }
+    uxLog("action", this, c.cyan(t('checkingWhichConnectedAppsAreMigratable')));
+    // Probe in a temporary blank project, so nothing is written into the backup project
+    const tmpDir = await createTempDir();
+    try {
+      const probeProjectPath = await createBlankSfdxProject(tmpDir);
+      const probeManifest = path.join(probeProjectPath, 'manifest', 'package-connected-apps-probe.xml');
+      await fs.ensureDir(path.dirname(probeManifest));
+      await writePackageXmlFile(probeManifest, { ConnectedApp: candidateNames });
+      const probeRes = await execSfdxJson(
+        `sf project retrieve start --manifest "${probeManifest}" --target-org ${this.orgUsername} --ignore-conflicts --json`,
+        this,
+        { output: false, fail: false, cwd: probeProjectPath }
+      );
+      if (probeRes?.status === 0) {
+        // Non-retrievable apps are reported in the retrieve warnings:
+        // "Load of metadata from db failed ... file name:X" or "Entity of type 'ConnectedApp' named 'X' cannot be found"
+        const problemNamesLower = new Set<string>();
+        for (const message of probeRes?.result?.messages || []) {
+          const problem = String(message.problem || '');
+          const problemMatch = problem.match(/file name:([A-Za-z0-9_]+)/) || problem.match(/named '([^']+)' cannot be found/);
+          if (problemMatch) {
+            problemNamesLower.add(problemMatch[1].toLowerCase());
+          }
+        }
+        const retrievedFiles = probeRes?.result?.files || [];
+        const retrievedNamesLower = new Set(
+          retrievedFiles
+            .filter((file: any) => file.type === 'ConnectedApp')
+            .map((file: any) => String(file.fullName || '').toLowerCase())
+        );
+        // Conclude only when the response shape is recognized, to never exclude apps by mistake
+        if (problemNamesLower.size > 0 || retrievedNamesLower.size > 0) {
+          for (const name of candidateNames) {
+            const nameLower = name.toLowerCase();
+            if (problemNamesLower.has(nameLower) || (retrievedNamesLower.size > 0 && !retrievedNamesLower.has(nameLower))) {
+              unmigratableLower.add(nameLower);
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('unableToCheckMigratableConnectedApps', { error: e.message || e })));
+    } finally {
+      await fs.remove(tmpDir);
+    }
+    return unmigratableLower;
+  }
+
+  // Since Spring '26, Connected Apps can not be re-created after a refresh (unless a Salesforce
+  // Case enabled it), while External Client Apps can be restored with the same credentials.
+  // List the Connected Apps not yet converted to ECAs and pause so the user can convert them
+  // in Setup: the following ECA save step then captures the newly converted apps.
+  private async checkConnectedAppsConversion(): Promise<void> {
+    uxLog("action", this, c.cyan(t('listingConnectedAppsNotConvertedToEca')));
+    let unmigratableAppsLower: Set<string> | null = null;
+    while (true) {
+      let connectedAppsProperties: any[] = [];
+      try {
+        const listRes = await execSfdxJson(`sf org list metadata --metadata-type ConnectedApp --target-org ${this.orgUsername}`, this, { output: false });
+        connectedAppsProperties = listRes?.result && Array.isArray(listRes.result) ? listRes.result : [];
+      } catch (e: any) {
+        uxLog("warning", this, c.yellow(t('unableToQueryConnectedApplications', { error: e.message || e })));
+        return;
+      }
+      if (connectedAppsProperties.length === 0) {
+        uxLog("log", this, c.grey(t('noConnectedAppsWereFoundInThe2')));
+        return;
+      }
+      let ecaNames: string[] = [];
+      try {
+        ecaNames = await listExternalClientAppNames(this.orgUsername, this);
+      } catch {
+        // No ECA in org yet
+      }
+      const ecaNamesLower = new Set(ecaNames.map(name => name.toLowerCase()));
+      let unconvertedAppsProperties = connectedAppsProperties
+        .filter((app: any) => !ecaNamesLower.has((app.fullName || '').toLowerCase()))
+        .sort((a: any, b: any) => (a.fullName || '').localeCompare(b.fullName || ''));
+
+      // Exclude vendor-owned apps: they can not be converted to External Client Apps,
+      // and are handled by the manual actions inventory instead
+      if (unmigratableAppsLower === null) {
+        unmigratableAppsLower = await this.listUnmigratableConnectedApps(unconvertedAppsProperties.map((app: any) => app.fullName));
+        const notMigratableApps = unconvertedAppsProperties.filter((app: any) => unmigratableAppsLower!.has((app.fullName || '').toLowerCase()));
+        if (notMigratableApps.length > 0) {
+          const appsList = notMigratableApps.map((app: any) => `- ${app.fullName}`).join('\n');
+          uxLog("log", this, c.grey(t('connectedAppsNotMigratable', { count: notMigratableApps.length, appsList })));
+        }
+      }
+      unconvertedAppsProperties = unconvertedAppsProperties.filter((app: any) => !unmigratableAppsLower!.has((app.fullName || '').toLowerCase()));
+
+      const unconvertedApps = unconvertedAppsProperties.map((app: any) => app.fullName);
+      if (unconvertedApps.length === 0) {
+        if (unmigratableAppsLower.size === 0) {
+          uxLog("success", this, c.green(t('allConnectedAppsConverted')));
+        }
+        return;
+      }
+
+      uxLog("warning", this, c.yellow(t('connectedAppsNotConvertedWarning', { count: unconvertedApps.length })));
+      uxLogTable(
+        this,
+        unconvertedAppsProperties.map((app: any) => ({
+          'Name': app.fullName,
+          'Last Updated Date': app.lastModifiedDate ? String(app.lastModifiedDate).replace('T', ' ').substring(0, 16) : '',
+          'Last Updated By': app.lastModifiedByName || '',
+        })),
+        ['Name', 'Last Updated Date', 'Last Updated By']
+      );
+      uxLog("warning", this, c.yellow(t('convertConnectedAppsNowInstructions')));
+
+      if (isCI) {
+        return;
+      }
+      const promptConversion = await prompts({
+        type: 'select',
+        name: 'action',
+        message: t('haveYouConvertedConnectedApps'),
+        description: t('convertConnectedAppsNowDescription'),
+        choices: [
+          { title: t('choiceConvertedRecheck'), value: 'recheck' },
+          { title: t('choiceOpenAppManager'), value: 'open' },
+          { title: t('choiceContinueWithoutConverting'), value: 'continue' },
+        ],
+      });
+      if (promptConversion.action === 'open') {
+        await open(`${this.instanceUrl}/lightning/setup/NavigationMenus/home`);
+        // Wait until the user has finished converting before re-checking the org
+        await prompts({
+          type: 'confirm',
+          name: 'converted',
+          message: t('confirmFinishedConvertingConnectedApps'),
+          description: t('convertConnectedAppsNowDescription'),
+          initial: true
+        });
+        continue;
+      }
+      if (promptConversion.action === 'recheck') {
+        continue;
+      }
+      // Continue without converting: these apps will probably be lost after the refresh
+      for (const name of unconvertedApps) {
+        this.refreshActions.push({ step: "Check Connected Apps Conversion", type: "ConnectedApp", name, status: "Warning", details: "Not converted to External Client App: will probably be lost after refresh (Connected App creation requires a Salesforce Case)" });
+      }
+      return;
+    }
   }
 
   private async saveExternalClientApps(): Promise<void> {
@@ -292,8 +513,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         // Verify and capture credentials in Global OAuth settings files using OAuth Credentials REST API
         await verifyEcaCredentials(this.saveProjectPath, this.instanceUrl, this.conn, this);
 
-        // Delete ECAs from org so they can be recreated with same credentials after refresh
-        const ecaNames = getEcaNames(this.saveProjectPath);
+        // Delete ECAs from org so they can be recreated with same credentials after refresh.
+        // Only the apps the user selected are candidates, not every file present in the backup folder.
+        const ecaNames = getEcaNames(this.saveProjectPath).filter(name => selectedEcaNames.includes(name));
         let deleteEcas = this.deleteApps;
         if (!isCI && !this.deleteApps) {
           const ecaNamesStr = ecaNames.join(', ');
@@ -306,23 +528,31 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           });
           deleteEcas = deletePrompt.delete;
         }
+        let deletedEcaNames: string[] = [];
         if (deleteEcas) {
-          const deletedEcaNames = await deleteExternalClientApps(this.orgUsername, ecaNames, this.saveProjectPath, this, true);
+          deletedEcaNames = await deleteExternalClientApps(this.orgUsername, ecaNames, this.saveProjectPath, this, true);
           for (const name of deletedEcaNames) {
             this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Success", details: "Deleted from org before refresh" });
           }
+          // Apps whose Consumer Secret is missing in the backup are protected from deletion
+          const namesWithSecret = await getEcaNamesWithSavedSecret(this.saveProjectPath);
           const notDeletedEcas = ecaNames.filter(n => !deletedEcaNames.includes(n));
           for (const name of notDeletedEcas) {
-            this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Error", details: "Deletion failed" });
+            if (!namesWithSecret.includes(name)) {
+              this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Manual", details: "Not deleted: Consumer Secret missing in backup" });
+            } else {
+              this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Error", details: "Deletion failed" });
+            }
           }
           // Also delete Connected Apps with the same name as deleted ECAs
-          const deletedConflictingApps = await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
+          const deletedConflictingApps = await deleteConflictingConnectedApps(this.orgUsername, deletedEcaNames, this.saveProjectPath, this);
           for (const name of deletedConflictingApps) {
             this.refreshActions.push({ step: "Delete Conflicting Connected Apps", type: "ConnectedApp", name, status: "Success", details: "Deleted from org before refresh" });
           }
         }
         for (const ecaName of selectedEcaNames) {
-          this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Success", details: deleteEcas ? "Saved and deleted from org" : "Saved" });
+          const deletedInfo = deleteEcas && deletedEcaNames.includes(ecaName) ? "Saved and deleted from org" : "Saved";
+          this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Success", details: deletedInfo });
         }
       } else {
         uxLog("log", this, c.grey(t('noExternalClientAppsFoundInTheOrg')));
@@ -340,6 +570,23 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // Warn about Connected Apps deprecation since Spring '26
     uxLog("warning", this, c.yellow(t('connectedAppsDeprecatedWarning')));
     uxLog("action", this, c.cyan(t('convertConnectedAppsToExternalClientApps')));
+
+    // Saving Connected Apps is discouraged: they can not be restored after the refresh
+    // unless Salesforce Support enabled Connected App creation via a Case
+    if (!isCI && !this.processAll && !this.nameFilter) {
+      const promptSaveAnyway = await prompts({
+        type: 'confirm',
+        name: 'saveAnyway',
+        message: t('doYouStillWantToSaveConnectedApps'),
+        description: t('savingConnectedAppsDiscouragedDescription'),
+        initial: false
+      });
+      if (!promptSaveAnyway.saveAnyway) {
+        uxLog("log", this, c.grey(t('skippingConnectedAppsSave')));
+        this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: "All", status: "Skipped", details: "User choice: Connected Apps cannot be restored after refresh without a Salesforce Case" });
+        return;
+      }
+    }
 
     // If metadatas folder is not empty, ask if we want to retrieve them again
     let retrieveConnectedApps = true;
@@ -382,10 +629,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
         // Step 3: Process the selected Connected Apps
         const updatedApps = await this.processConnectedApps(this.orgUsername, selectedApps, this.instanceUrl, accessToken);
+        this.connectedAppsSavedWithSecret = updatedApps.filter(app => app.consumerSecret).map(app => app.fullName);
 
         // Step 4: Delete Connected Apps from org if required (default behavior)
 
-        if (!isCI && !this.deleteApps) {
+        if (!isCI && !this.deleteApps && updatedApps.length > 0) {
           const connectedAppNames = updatedApps.map(app => app.fullName).join(', ');
           const deletePrompt = await prompts({
             type: 'confirm',
@@ -397,7 +645,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           this.deleteApps = deletePrompt.delete;
         }
 
-        if (this.deleteApps) {
+        if (this.deleteApps && updatedApps.length > 0) {
           uxLog("action", this, c.cyan(t('deletingConnectedAppsFrom', { updatedApps: updatedApps.length, conn: this.conn.instanceUrl })));
           await deleteConnectedApps(this.orgUsername, updatedApps, this, this.saveProjectPath);
           uxLog("success", this, c.green(t('connectedAppsWereSuccessfullyDeletedFromThe')));
@@ -415,9 +663,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         for (const app of updatedApps) {
           this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: app.fullName, status: "Success", details: app.consumerSecret ? "Consumer Secret captured" : "No Consumer Secret" });
         }
-        const appsWithoutSecret = selectedApps.filter((a: ConnectedApp) => !updatedApps.some((u: ConnectedApp) => u.fullName === a.fullName));
+        const appsWithoutSecret = selectedApps.filter((a: ConnectedApp) =>
+          !updatedApps.some((u: ConnectedApp) => u.fullName === a.fullName) &&
+          !this.unretrievableConnectedApps.includes(a.fullName));
         for (const app of appsWithoutSecret) {
           this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: app.fullName, status: "Warning", details: "Saved but Consumer Secret not captured" });
+        }
+        for (const appName of this.unretrievableConnectedApps) {
+          this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: appName, status: "Manual", details: "External OAuth app: credentials cannot be saved, re-authorize manually after refresh" });
         }
 
         uxLog("success", this, c.cyan(t('savedRefreshSandboxConfigurationInConfigSfdx')));
@@ -519,11 +772,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     let browserContext: BrowserContext | null = null;
 
     try {
-      // Step 1: Retrieve the Connected Apps from org
-      await this.retrieveConnectedAppsFromOrg(orgUsername, connectedApps, this.saveProjectPath);
+      // Step 1: Retrieve the Connected Apps from org (apps owned by external orgs are not retrievable)
+      const retrievableApps = await this.retrieveConnectedAppsFromOrg(orgUsername, connectedApps, this.saveProjectPath);
+      if (retrievableApps.length === 0) {
+        return updatedApps;
+      }
 
       // Step 2: Query for applicationIds for all Connected Apps
-      const connectedAppIdMap = await this.queryConnectedAppIds(orgUsername, connectedApps);
+      const connectedAppIdMap = await this.queryConnectedAppIds(orgUsername, retrievableApps);
 
       // Step 3: Initialize browser for automation if access token is available
       uxLog("action", this, c.cyan(t('initializingBrowserForAutomatedConnectedAppSecrets')));
@@ -535,7 +791,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
 
       // Step 4: Process each Connected App
-      for (const app of connectedApps) {
+      for (const app of retrievableApps) {
         try {
           const updatedApp = await this.processIndividualApp(
             app,
@@ -567,14 +823,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     orgUsername: string,
     connectedApps: ConnectedApp[],
     saveProjectPath: string
-  ): Promise<void> {
+  ): Promise<ConnectedApp[]> {
     uxLog("action", this, c.cyan(t('retrievingConnectedAppFrom', { connectedApps: connectedApps.length, orgUsername })));
     await retrieveConnectedApps(orgUsername, connectedApps, this, saveProjectPath);
-    this.verifyConnectedAppsRetrieval(connectedApps);
+    return this.classifyRetrievedConnectedApps(connectedApps);
   }
 
-  private verifyConnectedAppsRetrieval(connectedApps: ConnectedApp[]): void {
-    if (connectedApps.length === 0) return;
+  private classifyRetrievedConnectedApps(connectedApps: ConnectedApp[]): ConnectedApp[] {
+    if (connectedApps.length === 0) return [];
 
     // Check if the Connected App files exist in the project
     const missingApps: string[] = [];
@@ -597,18 +853,16 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
     }
 
-    // If any apps are missing, throw an error
+    // Apps whose metadata is owned by an external org (authorized via "Log in with Salesforce",
+    // like OwnBackup or Microsoft Power Platform) are listed by the Metadata API but not retrievable.
+    // They cannot be saved: route them to the manual actions inventory instead of failing.
     if (missingApps.length > 0) {
-      const errorMsg = `Failed to retrieve the following Connected App(s): ${missingApps.join(', ')}`;
-      uxLog("error", this, c.red(errorMsg));
-      const dtlErrorMsg = "This could be due to:\n" +
-        "  - Temporary Salesforce API issues\n" +
-        "  - Permissions or profile issues in the org\n" +
-        "  - Connected Apps that exist but are not accessible\n" +
-        "Please exclude the app or check your permissions in the org then try again.";
-      uxLog("warning", this, c.yellow(dtlErrorMsg));
-      throw new Error(errorMsg);
+      this.unretrievableConnectedApps.push(...missingApps);
+      uxLog("warning", this, c.yellow(t('someConnectedAppsCouldNotBeRetrieved', { missingApps: missingApps.join(', ') })));
+      uxLog("warning", this, c.yellow(t('externalConnectedAppsCannotBeSaved')));
     }
+
+    return connectedApps.filter(app => !missingApps.includes(app.fullName));
   }
 
   private async queryConnectedAppIds(
@@ -848,42 +1102,62 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     consumerSecret: string,
     app: ConnectedApp,
     consumerKey: string
-  ): Promise<ConnectedApp> {
+  ): Promise<ConnectedApp | undefined> {
+    // The secret ends up in an XML file and comes from a browser DOM or a manual paste:
+    // trim whitespace and escape XML special characters
+    const trimmedSecret = (consumerSecret || '').trim();
+    const escapedSecret = trimmedSecret.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const xmlString = await fs.readFile(connectedAppFile, 'utf8');
 
+    let updatedXmlString: string;
     if (xmlString.includes('<consumerSecret>')) {
-      const updatedXmlString = xmlString.replace(
+      updatedXmlString = xmlString.replace(
         /<consumerSecret>.*?<\/consumerSecret>/,
-        `<consumerSecret>${consumerSecret}</consumerSecret>`
+        `<consumerSecret>${escapedSecret}</consumerSecret>`
       );
-      await fs.writeFile(connectedAppFile, updatedXmlString);
-    } else {
+    } else if (xmlString.includes('<consumerKey>')) {
       // Insert consumerSecret right after consumerKey
-      const updatedXmlString = xmlString.replace(
+      updatedXmlString = xmlString.replace(
         /<consumerKey>.*?<\/consumerKey>/,
-        `$&\n        <consumerSecret>${consumerSecret}</consumerSecret>`
+        `$&\n        <consumerSecret>${escapedSecret}</consumerSecret>`
       );
-      await fs.writeFile(connectedAppFile, updatedXmlString);
+    } else {
+      // No OAuth block in the retrieved XML: insert before the closing tag
+      updatedXmlString = xmlString.replace(
+        /<\/ConnectedApp>/,
+        `    <consumerSecret>${escapedSecret}</consumerSecret>\n</ConnectedApp>`
+      );
+    }
+    await fs.writeFile(connectedAppFile, updatedXmlString);
+
+    // Verify the secret really is in the file before the app can be considered safe to delete
+    const verifyXmlData = await parseXmlFile(connectedAppFile);
+    const writtenSecret = verifyXmlData?.ConnectedApp?.consumerSecret?.[0] || '';
+    if (writtenSecret !== trimmedSecret || trimmedSecret === '') {
+      uxLog("error", this, c.red(t('consumerSecretVerificationFailed', { app: app.fullName, connectedAppFile })));
+      return undefined;
     }
 
-    xmlData.ConnectedApp.consumerSecret = [consumerSecret];
+    xmlData.ConnectedApp.consumerSecret = [trimmedSecret];
 
     uxLog("success", this, c.green(t('successfullyAddedConsumerSecretToIn', { app: app.fullName, connectedAppFile })));
 
     return {
       ...app,
       consumerKey: consumerKey,
-      consumerSecret: consumerSecret
+      consumerSecret: trimmedSecret
     };
   }
 
   private async saveConfig(): Promise<void> {
     const config = await getConfig("project");
-    if (!config.refreshSandboxConfig) {
-      config.refreshSandboxConfig = {};
-    }
-    if (JSON.stringify(this.refreshSandboxConfig) !== JSON.stringify(config.refreshSandboxConfig)) {
-      await setConfig("project", { refreshSandboxConfig: this.refreshSandboxConfig });
+    const existingRefreshConfig = config.refreshSandboxConfig || {};
+    const sandboxFolderName = path.basename(this.saveProjectPath);
+    const sandboxes = Object.assign({}, existingRefreshConfig.sandboxes || {});
+    if (JSON.stringify(this.refreshSandboxConfig) !== JSON.stringify(sandboxes[sandboxFolderName] || {})) {
+      sandboxes[sandboxFolderName] = this.refreshSandboxConfig;
+      // Only the per-sandbox format is written: legacy top-level keys are dropped on first save
+      await setConfig("project", { refreshSandboxConfig: { sandboxes } });
       uxLog("log", this, c.cyan(t('refreshSandboxConfigurationHasBeenSavedSuccessfully')));
     }
   }
@@ -901,6 +1175,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       if (!promptResponse.retrieveAgain) {
         uxLog("log", this, c.grey(t('skippingMetadataRetrievalAsItAlreadyExists', { saveProjectPath: this.saveProjectPath })));
         this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Skipped", details: "Already exists - user skipped" });
+        // Make sure the restore manifest exists even when the retrieve is skipped,
+        // otherwise after-refresh would silently skip the whole "Restore Other Metadata" phase
+        if (!fs.existsSync(path.join(this.saveProjectPath, 'manifest', 'package-metadata-to-restore.xml'))) {
+          await this.generatePackageXmlToRestore();
+        }
         return;
       }
     }
@@ -913,6 +1192,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     if (!savePackageXml) {
       uxLog("log", this, c.grey(t('skippingMetadataRetrievalUserChoice')));
       this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Skipped", details: "User choice" });
+      // Keep the restore manifest consistent with already retrieved sources, if any
+      if (!fs.existsSync(path.join(this.saveProjectPath, 'manifest', 'package-metadata-to-restore.xml')) &&
+        fs.existsSync(path.join(this.saveProjectPath, 'force-app', 'main', 'default'))) {
+        await this.generatePackageXmlToRestore();
+      }
       return;
     }
 
@@ -1023,16 +1307,24 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async retrieveCertificates() {
+    // Detect a previous run: default is then to keep the existing backup
+    const certsDirForCheck = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'certs');
+    const certsAlreadySaved = fs.existsSync(certsDirForCheck) &&
+      fs.readdirSync(certsDirForCheck).some(file => file.endsWith('.crt'));
     const promptCerts = await prompts({
       type: 'confirm',
       name: 'retrieveCerts',
-      message: t('doYouWantToRetrieveCertificatesFrom', { instanceUrl: this.instanceUrl }),
-      description: t('certificatesCannotBeRetrievedUsingSourceApi'),
-      initial: true
+      message: certsAlreadySaved
+        ? t('certificatesAlreadySavedRetrieveAgain')
+        : t('doYouWantToRetrieveCertificatesFrom', { instanceUrl: this.instanceUrl }),
+      description: certsAlreadySaved
+        ? t('previousCertificatesWillBeReplaced')
+        : t('certificatesCannotBeRetrievedUsingSourceApi'),
+      initial: !certsAlreadySaved
     });
     if (!promptCerts.retrieveCerts) {
       uxLog("log", this, c.grey(`Skipping Certificates retrieval as per user choice`));
-      this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Skipped", details: "User choice" });
+      this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Skipped", details: certsAlreadySaved ? "Kept backup from previous run" : "User choice" });
       return;
     }
 
@@ -1051,6 +1343,18 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // Copy the extracted certificates to the main directory
     const mdapiCertsDir = path.join(this.saveProjectPath, 'mdapi_certs', 'unpackaged', 'unpackaged', 'certs');
     const certsDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'certs');
+    if (!fs.existsSync(mdapiCertsDir)) {
+      // No certificates in the org: do not crash the whole backup
+      uxLog("log", this, c.grey(t('noCertificatesFoundInOrgSkipping')));
+      this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Skipped", details: "No certificates found in org" });
+      await fs.remove(path.join(this.saveProjectPath, 'mdapi_certs'));
+      return;
+    }
+    // Replace the previous run's certificates so no stale file lingers in the backup
+    if (certsAlreadySaved) {
+      uxLog("log", this, c.grey(t('deletingPreviousSavedItems', { folder: certsDir })));
+      await fs.emptyDir(certsDir);
+    }
     uxLog("log", this, c.grey(t('copyingCertificatesFromTo', { mdapiCertsDir, certsDir })));
     await fs.ensureDir(certsDir);
     await fs.copy(mdapiCertsDir, certsDir, { overwrite: true });
@@ -1091,6 +1395,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         uxLog("log", this, c.grey(t('skippingCustomSettingsRetrievalAsItAlready', { customSettingsFolder })));
         return;
       }
+      // Replace the previous run's export so no stale custom setting lingers in the backup
+      uxLog("log", this, c.grey(t('deletingPreviousSavedItems', { folder: customSettingsFolder })));
+      await fs.emptyDir(customSettingsFolder);
     }
     // List custom settings in the org
     uxLog("action", this, c.cyan(`Listing Custom Settings in the org...`));
@@ -1124,58 +1431,73 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const errorCs: any = [];
     WebSocketClient.sendProgressStartMessage(t('retrievingSelectedCustomSettings', { selectedSettings: selectedSettings.settings.length }), selectedSettings.settings.length);
     let csCounter = 0;
-    // Retrieve each selected Custom Setting
-    try {
-      for (const settingName of selectedSettings.settings) {
-        try {
-          uxLog("log", this, c.cyan(t('retrievingValuesOfCustomSetting', { settingName })));
 
-          // List all fields of the Custom Setting using globalDesc
-          const customSettingDesc = globalDesc.sobjects.find(sobject => sobject.name === settingName);
-          if (!customSettingDesc) {
-            uxLog("error", this, c.red(t('customSettingNotFoundInTheOrg', { settingName })));
-            errorCs.push(settingName);
-            continue;
-          }
-          const csDescribe = await this.conn.sobject(settingName).describe();
-          const fieldList = csDescribe.fields.map(field => field.name).join(', ');
-          uxLog("log", this, c.grey(t('fieldsInCustomSetting', { settingName, fieldList })));
+    const retrieveOneCustomSetting = async (settingName: string): Promise<void> => {
+      try {
+        uxLog("log", this, c.cyan(t('retrievingValuesOfCustomSetting', { settingName })));
 
-          // Use data tree export to retrieve the Custom Setting
-          uxLog("log", this, c.cyan(t('runningTreeExportForCustomSetting', { settingName })));
-          const retrieveCommand = `sf data tree export --query "SELECT ${fieldList} FROM ${settingName}" --target-org ${this.orgUsername} --json`;
-          const csFolder = path.join(customSettingsFolder, settingName);
-          await fs.ensureDir(csFolder);
-          const result = await execSfdxJson(retrieveCommand, this, {
-            output: true,
-            fail: true,
-            cwd: csFolder
-          });
-          if (!(result?.status === 0)) {
-            uxLog("error", this, c.red(t('failedToRetrieveCustomSetting', { settingName, JSON: JSON.stringify(result) })));
-            continue;
-          }
-          const resultFile = path.join(csFolder, `${settingName}.json`);
-          if (fs.existsSync(resultFile)) {
-            uxLog("log", this, c.grey(t('customSettingHasBeenDownloadedTo', { settingName, resultFile })));
-            successCs.push(settingName);
-          }
-          else if (result?.result?.records && result.result.records?.length === 0) {
-            uxLog("warning", this, c.yellow(t('customSettingHasNoRecordsInThe', { settingName })));
-            emptyCs.push(settingName);
-          }
-          else {
-            uxLog("error", this, c.red(t('customSettingWasNotRetrievedCorrectlyNo', { settingName, resultFile })));
-            errorCs.push(settingName);
-            continue;
-          }
-        } catch (error: any) {
+        // List all fields of the Custom Setting using globalDesc
+        const customSettingDesc = globalDesc.sobjects.find(sobject => sobject.name === settingName);
+        if (!customSettingDesc) {
+          uxLog("error", this, c.red(t('customSettingNotFoundInTheOrg', { settingName })));
           errorCs.push(settingName);
-          uxLog("error", this, c.red(t('errorRetrievingCustomSetting', { settingName, error: error.message || error })));
+          return;
         }
+        const csDescribe = await this.conn.sobject(settingName).describe();
+        const fieldList = csDescribe.fields.map(field => field.name).join(', ');
+        uxLog("log", this, c.grey(t('fieldsInCustomSetting', { settingName, fieldList })));
+
+        // Use data tree export to retrieve the Custom Setting
+        uxLog("log", this, c.cyan(t('runningTreeExportForCustomSetting', { settingName })));
+        const retrieveCommand = `sf data tree export --query "SELECT ${fieldList} FROM ${settingName}" --target-org ${this.orgUsername} --json`;
+        const csFolder = path.join(customSettingsFolder, settingName);
+        await fs.ensureDir(csFolder);
+        const result = await execSfdxJson(retrieveCommand, this, {
+          output: true,
+          fail: true,
+          cwd: csFolder
+        });
+        if (!(result?.status === 0)) {
+          uxLog("error", this, c.red(t('failedToRetrieveCustomSetting', { settingName, JSON: JSON.stringify(result) })));
+          errorCs.push(settingName);
+          return;
+        }
+        const resultFile = path.join(csFolder, `${settingName}.json`);
+        if (fs.existsSync(resultFile)) {
+          uxLog("log", this, c.grey(t('customSettingHasBeenDownloadedTo', { settingName, resultFile })));
+          successCs.push(settingName);
+        }
+        else if (result?.result?.records && result.result.records?.length === 0) {
+          uxLog("warning", this, c.yellow(t('customSettingHasNoRecordsInThe', { settingName })));
+          emptyCs.push(settingName);
+        }
+        else {
+          uxLog("error", this, c.red(t('customSettingWasNotRetrievedCorrectlyNo', { settingName, resultFile })));
+          errorCs.push(settingName);
+        }
+      } catch (error: any) {
+        errorCs.push(settingName);
+        uxLog("error", this, c.red(t('errorRetrievingCustomSetting', { settingName, error: error.message || error })));
+      } finally {
         csCounter++;
         WebSocketClient.sendProgressStepMessage(csCounter, selectedSettings.settings.length);
       }
+    };
+
+    // Retrieve the selected Custom Settings, up to 4 in parallel
+    try {
+      const settingsQueue: string[] = [...selectedSettings.settings];
+      const parallelWorkers = Array.from(
+        { length: Math.min(4, settingsQueue.length) },
+        async () => {
+          while (settingsQueue.length > 0) {
+            const settingName = settingsQueue.shift();
+            if (!settingName) break;
+            await retrieveOneCustomSetting(settingName);
+          }
+        }
+      );
+      await Promise.all(parallelWorkers);
     } finally {
       WebSocketClient.sendProgressEndMessage();
     }
@@ -1248,13 +1570,111 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
   }
 
+  private async saveManualActionsInventory(): Promise<void> {
+    uxLog("action", this, c.cyan(t('collectingManualActionsInventory')));
+
+    // Apps saved with their credentials are restorable: exclude them from the manual list.
+    // Built from what was ACTUALLY captured (secret verified in the backup files), not from the selection.
+    const savedWithCredentials = [
+      ...this.connectedAppsSavedWithSecret,
+      ...(await getEcaNamesWithSavedSecret(this.saveProjectPath)),
+    ];
+    const inventory = await collectManualRestoreInventory(this.conn, savedWithCredentials, this.unretrievableConnectedApps, this);
+    inventory.rescheduleScripts = await generateRescheduleApexScripts(this.saveProjectPath, inventory);
+    const inventoryFile = await saveManualRestoreInventory(this.saveProjectPath, inventory, this);
+
+    const externalTools = inventory.externalOauthApps.filter(app => !app.isStandardApp);
+    const standardAppsCount = inventory.externalOauthApps.length - externalTools.length;
+    if (externalTools.length > 0) {
+      const appsList = externalTools.map(app => {
+        const usersInfo = app.users.length > 0 ? `, users: ${app.users.slice(0, 5).join(', ')}${app.users.length > 5 ? ', ...' : ''}` : '';
+        return `- ${app.appName} (${app.tokenCount} OAuth token(s)${usersInfo})`;
+      }).join('\n');
+      uxLog("warning", this, c.yellow(t('externalOauthAppsDetected', { count: externalTools.length, appsList })));
+      for (const app of externalTools) {
+        const usersInfo = app.users.length > 0 ? `, users: ${app.users.join(', ')}` : '';
+        this.refreshActions.push({ step: "List Manual Actions", type: "ExternalOauthApp", name: app.appName, status: "Manual", details: `Re-authorize manually after refresh (${app.tokenCount} OAuth token(s)${usersInfo})` });
+      }
+    }
+    if (standardAppsCount > 0) {
+      uxLog("log", this, c.grey(t('standardOauthAppsAlsoRevoked', { count: standardAppsCount })));
+    }
+
+    const credentialsCount = inventory.authProviders.length + inventory.externalCredentials.length + inventory.namedCredentials.length;
+    if (credentialsCount > 0) {
+      uxLog("warning", this, c.yellow(t('credentialSecretsNotSaved', { count: credentialsCount })));
+      for (const authProvider of inventory.authProviders) {
+        this.refreshActions.push({ step: "List Manual Actions", type: "AuthProvider", name: authProvider.developerName, status: "Manual", details: "Consumer Secret must be re-entered manually after restore" });
+      }
+      for (const externalCredential of inventory.externalCredentials) {
+        this.refreshActions.push({ step: "List Manual Actions", type: "ExternalCredential", name: externalCredential.developerName, status: "Manual", details: "Principals must be re-authenticated or secrets re-entered after restore" });
+      }
+      for (const namedCredential of inventory.namedCredentials) {
+        this.refreshActions.push({ step: "List Manual Actions", type: "NamedCredential", name: namedCredential.developerName, status: "Manual", details: "Check endpoint and re-enter secrets after restore" });
+      }
+    }
+
+    if (inventory.scheduledJobs.length > 0) {
+      uxLog("log", this, c.grey(t('scheduledJobsInventoried', { count: inventory.scheduledJobs.length })));
+      const jobTypesForReport = ['Scheduled Apex', 'Batch Job', 'Scheduled Flow', 'Data Export'];
+      for (const job of inventory.scheduledJobs.filter(j => jobTypesForReport.includes(j.jobType))) {
+        const ownerInfo = job.ownerUsername ? `, owner: ${job.ownerUsername}` : '';
+        this.refreshActions.push({ step: "List Manual Actions", type: "ScheduledJob", name: job.name, status: "Manual", details: `${job.jobType} (${job.cronExpression}${ownerInfo}): re-schedule after refresh if missing` });
+      }
+    }
+
+    if ((inventory.rescheduleScripts || []).length > 0) {
+      const scriptsList = (inventory.rescheduleScripts || []).map(script =>
+        `- ${script.file} (${script.jobsCount} job(s), to run as ${script.ownerUsername})`).join('\n');
+      uxLog("warning", this, c.yellow(t('generatedRescheduleApexScripts', { count: (inventory.rescheduleScripts || []).length, list: scriptsList })));
+      for (const script of inventory.rescheduleScripts || []) {
+        this.refreshActions.push({ step: "List Manual Actions", type: "ApexScript", name: script.file, status: "Manual", details: `Run as ${script.ownerUsername} after refresh to reschedule ${script.jobsCount} Scheduled Apex job(s)` });
+      }
+    }
+
+    uxLog("success", this, c.green(t('manualActionsInventorySavedIn', { inventoryFile })));
+    WebSocketClient.sendReportFileMessage(inventoryFile, t('manualActionsInventoryTitle') + ' (JSON)', 'report');
+  }
+
+  // Flush the actions history after each step, so an interrupted run still leaves
+  // its completed actions in the history. Merging is idempotent for a same run.
+  private async saveActionsCheckpoint(): Promise<void> {
+    if (!this.saveProjectPath || this.refreshActions.length === 0) {
+      return;
+    }
+    try {
+      await mergeAndSaveRefreshActions(
+        this.saveProjectPath,
+        BEFORE_REFRESH_ACTIONS_HISTORY_FILE,
+        this.refreshActions,
+        OrgRefreshBeforeRefresh.REPORT_REPLACE_STEPS,
+        this.runStartDate
+      );
+    } catch {
+      // A checkpoint failure must never break the backup itself
+    }
+  }
+
   private async generateActionsReport(): Promise<void> {
     if (this.refreshActions.length === 0) {
       return;
     }
     uxLog("action", this, c.cyan(t('generatingSandboxRefreshActionsReport')));
-    const reportPath = await generateReportPath('sandbox-refresh-before-actions', '');
-    await generateCsvFile(this.refreshActions, reportPath, {
+    // The report is cumulative across runs: actions of previous runs are kept, except for
+    // sections that rebuild their backup from scratch when re-executed
+    const combinedActions = await mergeAndSaveRefreshActions(
+      this.saveProjectPath,
+      BEFORE_REFRESH_ACTIONS_HISTORY_FILE,
+      this.refreshActions,
+      OrgRefreshBeforeRefresh.REPORT_REPLACE_STEPS,
+      this.runStartDate
+    );
+    if (combinedActions.length > this.refreshActions.length) {
+      uxLog("log", this, c.grey(t('reportIncludesPreviousRuns')));
+    }
+    // Include the sandbox folder in the file name so reports of different sandboxes do not overwrite each other
+    const reportPath = await generateReportPath(`sandbox-refresh-before-actions-${path.basename(this.saveProjectPath)}`, '');
+    await generateCsvFile(combinedActions, reportPath, {
       fileTitle: t('sandboxRefreshActionsReport')
     });
   }
