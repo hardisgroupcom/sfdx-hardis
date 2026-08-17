@@ -9,7 +9,7 @@ import { getApiVersion } from '../../../config/index.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { prompts } from '../prompts.js';
 import { t } from '../i18n.js';
-import { ConnectedApp, deleteConnectedApps } from './connectedAppUtils.js';
+import { ConnectedApp, deleteConnectedApps, retrieveConnectedApps } from './connectedAppUtils.js';
 import { WebSocketClient } from '../../websocketClient.js';
 
 // The 5 metadata types that make up an External Client App
@@ -136,10 +136,11 @@ export async function retrieveExternalClientApps(
   await writePackageXmlFile(ecaPackageXml, packageContent);
 
   uxLog("action", command, c.cyan(t('retrievingExternalClientAppsFromOrg')));
+  // fail: true so a failed retrieve throws instead of silently counting stale files from a previous run
   await execCommand(
     `sf project retrieve start --manifest "${ecaPackageXml}" --target-org ${orgUsername} --ignore-conflicts --json`,
     command,
-    { output: true, fail: false, cwd: saveProjectPath }
+    { output: true, fail: true, cwd: saveProjectPath }
   );
 
   const ecaNames = getEcaNames(saveProjectPath);
@@ -232,6 +233,11 @@ export async function verifyEcaCredentials(
       if (xmlString.includes('<consumerSecret>')) {
         updatedXmlString = xmlString.replace(
           /<consumerSecret>.*?<\/consumerSecret>/,
+          `<consumerSecret>${extractedSecret}</consumerSecret>`
+        );
+      } else if (/<consumerSecret\s*\/>/.test(xmlString)) {
+        updatedXmlString = xmlString.replace(
+          /<consumerSecret\s*\/>/,
           `<consumerSecret>${extractedSecret}</consumerSecret>`
         );
       } else if (xmlString.includes('<consumerKey>')) {
@@ -549,7 +555,35 @@ export async function fetchEcaCredentialsViaApi(
 }
 
 /**
+ * Returns the names of ECAs whose backup contains a non-empty consumerSecret in
+ * their Global OAuth settings file. Only those can be safely deleted before a refresh:
+ * an ECA deleted without its saved secret can never be recreated with the same credentials.
+ */
+export async function getEcaNamesWithSavedSecret(saveProjectPath: string): Promise<string[]> {
+  const globalOauthFolder = path.join(saveProjectPath, 'force-app', 'main', 'default', 'extlClntAppGlobalOauthSets');
+  if (!fs.existsSync(globalOauthFolder)) {
+    return [];
+  }
+  const namesWithSecret: string[] = [];
+  const globalOauthFiles = fs.readdirSync(globalOauthFolder).filter(f => f.endsWith('.ecaGlblOauth-meta.xml'));
+  for (const oauthFile of globalOauthFiles) {
+    const xmlData = await parseXmlFile(path.join(globalOauthFolder, oauthFile));
+    const settings = xmlData?.ExtlClntAppGlobalOauthSettings;
+    if (!settings) {
+      continue;
+    }
+    const consumerSecret = settings.consumerSecret?.[0] || '';
+    if (consumerSecret && String(consumerSecret).trim() !== '') {
+      const appName = settings.externalClientApplication?.[0] || oauthFile.replace('.ecaGlblOauth-meta.xml', '');
+      namesWithSecret.push(appName);
+    }
+  }
+  return namesWithSecret;
+}
+
+/**
  * Delete External Client Apps from org using destructive changes.
+ * Apps whose Consumer Secret is not present in the backup are never deleted.
  */
 export async function deleteExternalClientApps(
   orgUsername: string,
@@ -567,6 +601,18 @@ export async function deleteExternalClientApps(
   if (!fs.existsSync(globalOauthFolder) || fs.readdirSync(globalOauthFolder).filter(f => f.endsWith('.ecaGlblOauth-meta.xml')).length === 0) {
     // No global OAuth settings means no credentials to protect - skip deletion
     return [];
+  }
+
+  // Never delete an ECA whose secret is not in the backup: it could not be recreated identically
+  const namesWithSecret = await getEcaNamesWithSavedSecret(saveProjectPath);
+  const namesWithSecretLower = namesWithSecret.map(name => name.toLowerCase());
+  const missingSecretNames = ecaNames.filter(name => !namesWithSecretLower.includes(name.toLowerCase()));
+  if (missingSecretNames.length > 0) {
+    uxLog("warning", command, c.yellow(t('ecaSkippedDeletionMissingSecret', { ecaNames: missingSecretNames.join(', ') })));
+    ecaNames = ecaNames.filter(name => !missingSecretNames.includes(name));
+    if (ecaNames.length === 0) {
+      return [];
+    }
   }
 
   if (!skipPrompt && !isCI) {
@@ -723,14 +769,18 @@ export async function deployExternalClientApps(
       uxLog("log", command, c.grey(t('ecaSatelliteTypeNoFilesFound', { type })));
     }
   }
-  const ecaPackageXmlPhase2 = path.join(saveProjectPath, 'manifest', 'package-eca-to-restore-phase2.xml');
-  await writePackageXmlFile(ecaPackageXmlPhase2, satelliteContent);
-  uxLog("action", command, c.cyan(t('restoringExternalClientAppsStep2')));
-  await execCommand(
-    `sf project deploy start --manifest "${ecaPackageXmlPhase2}" --target-org ${orgUsername} --ignore-conflicts --json`,
-    command,
-    { output: true, fail: true, cwd: saveProjectPath }
-  );
+  // Skip phase 2 when there is no satellite metadata: deploying an empty manifest would fail
+  // and wrongly mark the parent apps (already deployed in phase 1) as errors
+  if (Object.keys(satelliteContent).length > 0) {
+    const ecaPackageXmlPhase2 = path.join(saveProjectPath, 'manifest', 'package-eca-to-restore-phase2.xml');
+    await writePackageXmlFile(ecaPackageXmlPhase2, satelliteContent);
+    uxLog("action", command, c.cyan(t('restoringExternalClientAppsStep2')));
+    await execCommand(
+      `sf project deploy start --manifest "${ecaPackageXmlPhase2}" --target-org ${orgUsername} --ignore-conflicts --json`,
+      command,
+      { output: true, fail: true, cwd: saveProjectPath }
+    );
+  }
 
   uxLog("success", command, c.green(t('externalClientAppsRestoredSuccessfully', { instanceUrl })));
 
@@ -782,6 +832,15 @@ export async function deleteConflictingConnectedApps(
     if (!deletePrompt.delete) {
       return [];
     }
+  }
+
+  // Best-effort backup of the conflicting Connected Apps metadata before deleting them,
+  // so at least their policies and consumer key are kept in the save project
+  try {
+    uxLog("log", command, c.grey(t('conflictingConnectedAppsBackupAttempt')));
+    await retrieveConnectedApps(orgUsername, conflicting, command, saveProjectPath);
+  } catch (e: any) {
+    uxLog("warning", command, c.yellow(t('errorProcessing', { app: 'Conflicting Connected Apps backup', error: e.message || String(e) })));
   }
 
   uxLog("action", command, c.cyan(t('deletingConflictingConnectedApps')));

@@ -7,7 +7,7 @@ import open from 'open';
 import { httpGet } from '../../../../common/utils/httpUtils.js';
 import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
-import { execCommand, execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, execSfdxJson, isCI, isGitRepo, uxLog } from '../../../../common/utils/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
@@ -25,6 +25,7 @@ import {
 import {
   ECA_METADATA_TYPES,
   getEcaNames,
+  getEcaNamesWithSavedSecret,
   listExternalClientAppNames,
   retrieveExternalClientApps,
   verifyEcaCredentials,
@@ -161,6 +162,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected deleteApps: boolean;
   protected refreshActions: RefreshActionRow[] = [];
   protected unretrievableConnectedApps: string[] = [];
+  protected connectedAppsSavedWithSecret: string[] = [];
 
 
   public async run(): Promise<AnyJson> {
@@ -187,26 +189,52 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.refreshSandboxConfig = getSandboxRefreshConfigForFolder(config?.refreshSandboxConfig || {}, path.basename(this.saveProjectPath));
     this.refreshActions.push({ step: "Create Save Project", type: "Project", name: path.basename(this.saveProjectPath), status: "Success", details: this.saveProjectPath });
 
-    await this.retrieveCertificates();
+    // The actions report must be produced even when a step throws: it is the audit trail
+    try {
+      await this.retrieveCertificates();
 
-    await this.saveMetadatas();
+      await this.saveMetadatas();
 
-    await this.saveCustomSettings();
+      await this.saveCustomSettings();
 
-    await this.saveRecords();
+      await this.saveRecords();
 
-    await this.saveExternalClientApps();
+      await this.saveExternalClientApps();
 
-    await this.retrieveDeleteConnectedApps(accessToken);
+      await this.retrieveDeleteConnectedApps(accessToken);
 
-    await this.saveManualActionsInventory();
-
-    await this.generateActionsReport();
+      await this.saveManualActionsInventory();
+    } finally {
+      await this.generateActionsReport();
+    }
 
     return this.result;
   }
 
+  // Backups contain credentials in clear text (consumer secrets, custom settings data):
+  // make sure they can never be committed to the repository.
+  private async ensureBackupsAreGitIgnored(): Promise<void> {
+    const gitIgnoreFile = path.join(process.cwd(), '.gitignore');
+    const ignoreLine = 'scripts/sandbox-refresh/';
+    try {
+      if (fs.existsSync(gitIgnoreFile)) {
+        const content = await fs.readFile(gitIgnoreFile, 'utf8');
+        const lines = content.split(/\r?\n/).map(line => line.trim());
+        if (!lines.includes(ignoreLine) && !lines.includes('scripts/sandbox-refresh')) {
+          await fs.writeFile(gitIgnoreFile, content.replace(/\n*$/, '\n') + ignoreLine + '\n', 'utf8');
+          uxLog("warning", this, c.yellow(t('addedSandboxRefreshToGitignore')));
+        }
+      } else if (isGitRepo()) {
+        await fs.writeFile(gitIgnoreFile, ignoreLine + '\n', 'utf8');
+        uxLog("warning", this, c.yellow(t('addedSandboxRefreshToGitignore')));
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('couldNotUpdateGitignoreForSandboxRefresh', { error: e.message || e })));
+    }
+  }
+
   private async createSaveProject(): Promise<string> {
+    await this.ensureBackupsAreGitIgnored();
     const folderName = this.conn.instanceUrl.replace(/https?:\/\//, '').replace("my.salesforce.com", "").replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
     const sandboxRefreshRootFolder = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
     const projectPath = path.join(sandboxRefreshRootFolder, folderName);
@@ -304,8 +332,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         // Verify and capture credentials in Global OAuth settings files using OAuth Credentials REST API
         await verifyEcaCredentials(this.saveProjectPath, this.instanceUrl, this.conn, this);
 
-        // Delete ECAs from org so they can be recreated with same credentials after refresh
-        const ecaNames = getEcaNames(this.saveProjectPath);
+        // Delete ECAs from org so they can be recreated with same credentials after refresh.
+        // Only the apps the user selected are candidates, not every file present in the backup folder.
+        const ecaNames = getEcaNames(this.saveProjectPath).filter(name => selectedEcaNames.includes(name));
         let deleteEcas = this.deleteApps;
         if (!isCI && !this.deleteApps) {
           const ecaNamesStr = ecaNames.join(', ');
@@ -318,23 +347,31 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           });
           deleteEcas = deletePrompt.delete;
         }
+        let deletedEcaNames: string[] = [];
         if (deleteEcas) {
-          const deletedEcaNames = await deleteExternalClientApps(this.orgUsername, ecaNames, this.saveProjectPath, this, true);
+          deletedEcaNames = await deleteExternalClientApps(this.orgUsername, ecaNames, this.saveProjectPath, this, true);
           for (const name of deletedEcaNames) {
             this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Success", details: "Deleted from org before refresh" });
           }
+          // Apps whose Consumer Secret is missing in the backup are protected from deletion
+          const namesWithSecret = await getEcaNamesWithSavedSecret(this.saveProjectPath);
           const notDeletedEcas = ecaNames.filter(n => !deletedEcaNames.includes(n));
           for (const name of notDeletedEcas) {
-            this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Error", details: "Deletion failed" });
+            if (!namesWithSecret.includes(name)) {
+              this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Manual", details: "Not deleted: Consumer Secret missing in backup" });
+            } else {
+              this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Error", details: "Deletion failed" });
+            }
           }
           // Also delete Connected Apps with the same name as deleted ECAs
-          const deletedConflictingApps = await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
+          const deletedConflictingApps = await deleteConflictingConnectedApps(this.orgUsername, deletedEcaNames, this.saveProjectPath, this);
           for (const name of deletedConflictingApps) {
             this.refreshActions.push({ step: "Delete Conflicting Connected Apps", type: "ConnectedApp", name, status: "Success", details: "Deleted from org before refresh" });
           }
         }
         for (const ecaName of selectedEcaNames) {
-          this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Success", details: deleteEcas ? "Saved and deleted from org" : "Saved" });
+          const deletedInfo = deleteEcas && deletedEcaNames.includes(ecaName) ? "Saved and deleted from org" : "Saved";
+          this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Success", details: deletedInfo });
         }
       } else {
         uxLog("log", this, c.grey(t('noExternalClientAppsFoundInTheOrg')));
@@ -394,6 +431,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
         // Step 3: Process the selected Connected Apps
         const updatedApps = await this.processConnectedApps(this.orgUsername, selectedApps, this.instanceUrl, accessToken);
+        this.connectedAppsSavedWithSecret = updatedApps.filter(app => app.consumerSecret).map(app => app.fullName);
 
         // Step 4: Delete Connected Apps from org if required (default behavior)
 
@@ -866,32 +904,50 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     consumerSecret: string,
     app: ConnectedApp,
     consumerKey: string
-  ): Promise<ConnectedApp> {
+  ): Promise<ConnectedApp | undefined> {
+    // The secret ends up in an XML file and comes from a browser DOM or a manual paste:
+    // trim whitespace and escape XML special characters
+    const trimmedSecret = (consumerSecret || '').trim();
+    const escapedSecret = trimmedSecret.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const xmlString = await fs.readFile(connectedAppFile, 'utf8');
 
+    let updatedXmlString: string;
     if (xmlString.includes('<consumerSecret>')) {
-      const updatedXmlString = xmlString.replace(
+      updatedXmlString = xmlString.replace(
         /<consumerSecret>.*?<\/consumerSecret>/,
-        `<consumerSecret>${consumerSecret}</consumerSecret>`
+        `<consumerSecret>${escapedSecret}</consumerSecret>`
       );
-      await fs.writeFile(connectedAppFile, updatedXmlString);
-    } else {
+    } else if (xmlString.includes('<consumerKey>')) {
       // Insert consumerSecret right after consumerKey
-      const updatedXmlString = xmlString.replace(
+      updatedXmlString = xmlString.replace(
         /<consumerKey>.*?<\/consumerKey>/,
-        `$&\n        <consumerSecret>${consumerSecret}</consumerSecret>`
+        `$&\n        <consumerSecret>${escapedSecret}</consumerSecret>`
       );
-      await fs.writeFile(connectedAppFile, updatedXmlString);
+    } else {
+      // No OAuth block in the retrieved XML: insert before the closing tag
+      updatedXmlString = xmlString.replace(
+        /<\/ConnectedApp>/,
+        `    <consumerSecret>${escapedSecret}</consumerSecret>\n</ConnectedApp>`
+      );
+    }
+    await fs.writeFile(connectedAppFile, updatedXmlString);
+
+    // Verify the secret really is in the file before the app can be considered safe to delete
+    const verifyXmlData = await parseXmlFile(connectedAppFile);
+    const writtenSecret = verifyXmlData?.ConnectedApp?.consumerSecret?.[0] || '';
+    if (writtenSecret !== trimmedSecret || trimmedSecret === '') {
+      uxLog("error", this, c.red(t('consumerSecretVerificationFailed', { app: app.fullName, connectedAppFile })));
+      return undefined;
     }
 
-    xmlData.ConnectedApp.consumerSecret = [consumerSecret];
+    xmlData.ConnectedApp.consumerSecret = [trimmedSecret];
 
     uxLog("success", this, c.green(t('successfullyAddedConsumerSecretToIn', { app: app.fullName, connectedAppFile })));
 
     return {
       ...app,
       consumerKey: consumerKey,
-      consumerSecret: consumerSecret
+      consumerSecret: trimmedSecret
     };
   }
 
@@ -920,6 +976,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       if (!promptResponse.retrieveAgain) {
         uxLog("log", this, c.grey(t('skippingMetadataRetrievalAsItAlreadyExists', { saveProjectPath: this.saveProjectPath })));
         this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Skipped", details: "Already exists - user skipped" });
+        // Make sure the restore manifest exists even when the retrieve is skipped,
+        // otherwise after-refresh would silently skip the whole "Restore Other Metadata" phase
+        if (!fs.existsSync(path.join(this.saveProjectPath, 'manifest', 'package-metadata-to-restore.xml'))) {
+          await this.generatePackageXmlToRestore();
+        }
         return;
       }
     }
@@ -932,6 +993,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     if (!savePackageXml) {
       uxLog("log", this, c.grey(t('skippingMetadataRetrievalUserChoice')));
       this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Skipped", details: "User choice" });
+      // Keep the restore manifest consistent with already retrieved sources, if any
+      if (!fs.existsSync(path.join(this.saveProjectPath, 'manifest', 'package-metadata-to-restore.xml')) &&
+        fs.existsSync(path.join(this.saveProjectPath, 'force-app', 'main', 'default'))) {
+        await this.generatePackageXmlToRestore();
+      }
       return;
     }
 
@@ -1070,6 +1136,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // Copy the extracted certificates to the main directory
     const mdapiCertsDir = path.join(this.saveProjectPath, 'mdapi_certs', 'unpackaged', 'unpackaged', 'certs');
     const certsDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'certs');
+    if (!fs.existsSync(mdapiCertsDir)) {
+      // No certificates in the org: do not crash the whole backup
+      uxLog("log", this, c.grey(t('noCertificatesFoundInOrgSkipping')));
+      this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Skipped", details: "No certificates found in org" });
+      await fs.remove(path.join(this.saveProjectPath, 'mdapi_certs'));
+      return;
+    }
     uxLog("log", this, c.grey(t('copyingCertificatesFromTo', { mdapiCertsDir, certsDir })));
     await fs.ensureDir(certsDir);
     await fs.copy(mdapiCertsDir, certsDir, { overwrite: true });
@@ -1270,14 +1343,15 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   private async saveManualActionsInventory(): Promise<void> {
     uxLog("action", this, c.cyan(t('collectingManualActionsInventory')));
 
-    // Apps saved with their credentials are restorable: exclude them from the manual list
+    // Apps saved with their credentials are restorable: exclude them from the manual list.
+    // Built from what was ACTUALLY captured (secret verified in the backup files), not from the selection.
     const savedWithCredentials = [
-      ...(this.refreshSandboxConfig.connectedApps || []).filter((name: string) => !this.unretrievableConnectedApps.includes(name)),
-      ...(this.refreshSandboxConfig.externalClientApps || []),
+      ...this.connectedAppsSavedWithSecret,
+      ...(await getEcaNamesWithSavedSecret(this.saveProjectPath)),
     ];
     const inventory = await collectManualRestoreInventory(this.conn, savedWithCredentials, this.unretrievableConnectedApps, this);
     inventory.rescheduleScripts = await generateRescheduleApexScripts(this.saveProjectPath, inventory);
-    const inventoryFile = await saveManualRestoreInventory(this.saveProjectPath, inventory);
+    const inventoryFile = await saveManualRestoreInventory(this.saveProjectPath, inventory, this);
 
     const externalTools = inventory.externalOauthApps.filter(app => !app.isStandardApp);
     const standardAppsCount = inventory.externalOauthApps.length - externalTools.length;

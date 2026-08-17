@@ -1,5 +1,5 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Connection, Messages } from '@salesforce/core';
+import { Connection, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as path from 'path';
 import c from 'chalk';
@@ -21,6 +21,7 @@ import {
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
 import {
   getEcaNames,
+  getEcaNamesWithSavedSecret,
   listExternalClientAppNames,
   deployExternalClientApps,
   deleteExternalClientApps,
@@ -164,6 +165,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       .filter(dirent => dirent.isDirectory())
       .map(dirent => dirent.name);
 
+    // Compute the backup folder expected for the target org (same transformation as before-refresh),
+    // to protect against restoring the backup of another sandbox into this org
+    const expectedFolderName = this.instanceUrl.replace(/https?:\/\//, '').replace("my.salesforce.com", "").replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+    const expectedFolderIndex = Math.max(subFolders.indexOf(expectedFolderName), 0);
+
     const saveProjectPath = await prompts({
       type: 'select',
       name: 'path',
@@ -173,36 +179,60 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         title: folder,
         value: path.join(saveProjectPathRoot, folder)
       })),
+      initial: expectedFolderIndex,
     });
     this.saveProjectPath = saveProjectPath.path;
+
+    // Hard guard: restoring another sandbox's backup would corrupt both orgs
+    const selectedFolderName = path.basename(this.saveProjectPath);
+    const inventoryForCheck = await loadManualRestoreInventory(this.saveProjectPath);
+    const folderMatchesOrg = selectedFolderName === expectedFolderName;
+    const inventoryMatchesOrg = !inventoryForCheck?.instanceUrl || inventoryForCheck.instanceUrl === this.instanceUrl;
+    if (!folderMatchesOrg || !inventoryMatchesOrg) {
+      uxLog("warning", this, c.yellow(t('backupFolderOrgMismatch', { folder: selectedFolderName, instanceUrl: this.instanceUrl })));
+      const confirmMismatch = await prompts({
+        type: 'confirm',
+        name: 'confirm',
+        message: t('confirmRestoreDifferentOrg', { instanceUrl: this.instanceUrl }),
+        description: t('confirmRestoreDifferentOrgDescription'),
+        initial: false
+      });
+      if (!confirmMismatch.confirm) {
+        throw new SfError(t('restoreCancelledWrongBackupFolder'));
+      }
+    }
+
     // Selections are stored per sandbox: use the ones matching the selected backup folder
     this.refreshSandboxConfig = getSandboxRefreshConfigForFolder(this.refreshSandboxConfig, path.basename(this.saveProjectPath));
 
-    // 1. Restore Certificates
-    await this.restoreCertificates();
+    // The actions report must be produced even when a step throws: it is the audit trail
+    try {
+      // 1. Restore Certificates
+      await this.restoreCertificates();
 
-    // 2. Restore Other Metadata
-    await this.restoreOtherMetadata();
+      // 2. Restore Other Metadata
+      await this.restoreOtherMetadata();
 
-    // 3. Restore SamlSsoConfig
-    await this.restoreSamlSsoConfig();
+      // 3. Restore SamlSsoConfig
+      await this.restoreSamlSsoConfig();
 
-    // 4. Restore Custom Settings
-    await this.restoreCustomSettings();
+      // 4. Restore Custom Settings
+      await this.restoreCustomSettings();
 
-    // 5. Restore saved records
-    await this.restoreRecords();
+      // 5. Restore saved records
+      await this.restoreRecords();
 
-    // 6. Restore External Client Apps
-    await this.restoreExternalClientApps();
+      // 6. Restore External Client Apps
+      await this.restoreExternalClientApps();
 
-    // 7. Restore Connected Apps
-    await this.restoreConnectedApps();
+      // 7. Restore Connected Apps
+      await this.restoreConnectedApps();
 
-    // 8. Display the checklist of manual actions that cannot be automated
-    await this.displayManualActionsChecklist();
-
-    await this.generateActionsReport();
+      // 8. Display the checklist of manual actions that cannot be automated
+      await this.displayManualActionsChecklist();
+    } finally {
+      await this.generateActionsReport();
+    }
 
     return this.result;
   }
@@ -323,7 +353,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // Deploy the metadata using the package.xml
     uxLog("action", this, c.cyan(t('deployingOtherMetadatasToOrg')));
     const deployCmd = `sf project deploy start --manifest "${restorePackageXml}" --target-org ${this.orgUsername} --json`;
-    const deployResult = await execSfdxJson(deployCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
+    // fail: false so a deploy failure is recorded per item in the actions report before throwing
+    const deployResult = await execSfdxJson(deployCmd, this, { output: true, fail: false, cwd: this.saveProjectPath });
     if (deployResult.status === 0) {
       uxLog("success", this, c.green(t('otherMetadataRestoredSuccessfullyInOrg', { instanceUrl: this.instanceUrl })));
       for (const [metadataType, items] of Object.entries(metadataRestore)) {
@@ -552,10 +583,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
             if (!standardFields.includes(key)) {
               newRecord[key] = record[key];
             }
-            // Replace Org Id with the current org one
             if (key === 'SetupOwnerId') {
-              newRecord[key] = this.orgId; // Replace with current org Id
-              deleteExistingCsBefore = true; // Use upsert if SetupOwnerId is present
+              // Org-level record: replace the old Org Id with the refreshed org one.
+              // Profile/User-level records of hierarchy custom settings keep their SetupOwnerId,
+              // as ids are preserved by a sandbox copy from production.
+              if (String(record[key]).startsWith('00D')) {
+                newRecord[key] = this.orgId;
+              }
+              deleteExistingCsBefore = true; // Delete existing records before import
             }
           }
           return newRecord;
@@ -563,30 +598,38 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         // Write the new JSON file without standard fields
         await fs.writeJson(jsonFileForImport, jsonData, { spaces: 2 });
 
-        // Delete existing custom settings before import if needed
-        if (deleteExistingCsBefore) {
-          uxLog("log", this, c.grey(t('deletingExistingCustomSettingsForInOrg', { folder, orgUsername: this.orgUsername })));
-          // Query existing custom settings to delete
-          const query = `SELECT Id FROM ${folder} WHERE SetupOwnerId = '${this.orgId}'`;
-          const queryRes = await soqlQuery(query, this.conn);
-          if (queryRes.records.length > 0) {
-            const idsToDelete = (queryRes?.records.map(record => record.Id) || []).filter((id): id is string => typeof id === 'string');
-            uxLog("log", this, c.grey(t('foundExistingCustomSettingsToDeleteFor', { idsToDelete: idsToDelete.length, folder, orgUsername: this.orgUsername })));
-            const deleteResults = await this.conn.sobject(folder).destroy(idsToDelete, { allOrNone: true });
-            const deletedSuccessFullyIds = deleteResults.filter(result => result.success).map(result => "- " + result.id).join('\n');
-            uxLog("log", this, c.grey(t('deletedExistingCustomSettingsForInOrg', { deletedSuccessFullyIds: deletedSuccessFullyIds.length, folder, orgUsername: this.orgUsername, deletedSuccessFullyIds1: deletedSuccessFullyIds })));
-            const deletedErrorIds = deleteResults.filter(result => !result.success).map(result => "- " + result.id).join('\n');
-            if (deletedErrorIds.length > 0) {
-              uxLog("warning", this, c.yellow(t('failedToDeleteExistingCustomSettingsFor', { folder, orgUsername: this.orgUsername, deletedErrorIds })));
-              continue; // Skip to next setting if deletion failed
-            }
-          } else {
-            uxLog("log", this, c.grey(t('noExistingCustomSettingsFoundForIn', { folder, orgUsername: this.orgUsername })));
-          }
-        }
-        // Import the custom setting using sf data tree import
-        const importCmd = `sf data tree import --files "${jsonFileForImport}" --target-org ${this.orgUsername} --json`;
+        // Delete existing custom settings before import if needed.
+        // Any failure counts the setting as failed and moves to the next one: one bad
+        // custom setting must not abort the whole restore
         try {
+          if (deleteExistingCsBefore) {
+            uxLog("log", this, c.grey(t('deletingExistingCustomSettingsForInOrg', { folder, orgUsername: this.orgUsername })));
+            // Query existing records of every owner being imported (org, profiles, users),
+            // so hierarchy custom settings do not fail on duplicate SetupOwnerId
+            const setupOwnerIds: string[] = [...new Set(
+              (jsonData.records || []).map((record: any) => record.SetupOwnerId).filter(Boolean)
+            )] as string[];
+            const queryRes = setupOwnerIds.length > 0
+              ? await soqlQuery(`SELECT Id FROM ${folder} WHERE SetupOwnerId IN (${setupOwnerIds.map(id => `'${id}'`).join(',')})`, this.conn)
+              : { records: [] as any[] };
+            if (queryRes.records.length > 0) {
+              const idsToDelete = (queryRes?.records.map(record => record.Id) || []).filter((id): id is string => typeof id === 'string');
+              uxLog("log", this, c.grey(t('foundExistingCustomSettingsToDeleteFor', { idsToDelete: idsToDelete.length, folder, orgUsername: this.orgUsername })));
+              const deleteResults = await this.conn.sobject(folder).destroy(idsToDelete, { allOrNone: true });
+              const deletedSuccessFullyIds = deleteResults.filter(result => result.success).map(result => "- " + result.id).join('\n');
+              uxLog("log", this, c.grey(t('deletedExistingCustomSettingsForInOrg', { deletedSuccessFullyIds: deletedSuccessFullyIds.length, folder, orgUsername: this.orgUsername, deletedSuccessFullyIds1: deletedSuccessFullyIds })));
+              const deletedErrorIds = deleteResults.filter(result => !result.success).map(result => "- " + result.id).join('\n');
+              if (deletedErrorIds.length > 0) {
+                uxLog("warning", this, c.yellow(t('failedToDeleteExistingCustomSettingsFor', { folder, orgUsername: this.orgUsername, deletedErrorIds })));
+                failedSettings.push(folder);
+                continue; // Skip to next setting if deletion failed
+              }
+            } else {
+              uxLog("log", this, c.grey(t('noExistingCustomSettingsFoundForIn', { folder, orgUsername: this.orgUsername })));
+            }
+          }
+          // Import the custom setting using sf data tree import
+          const importCmd = `sf data tree import --files "${jsonFileForImport}" --target-org ${this.orgUsername} --json`;
           const importRes = await execSfdxJson(importCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
           if (importRes.status === 0) {
             uxLog("success", this, c.green(t('customSettingRestored', { folder })));
@@ -599,9 +642,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         } catch (e) {
           uxLog("error", this, c.red(t('customSettingRestoreFailed', { folder, JSON: JSON.stringify(e) })));
           failedSettings.push(folder);
+        } finally {
+          csCounter++;
+          WebSocketClient.sendProgressStepMessage(csCounter, selectedSettings.length);
         }
-        csCounter++;
-        WebSocketClient.sendProgressStepMessage(csCounter, selectedSettings.length);
       }
     } finally {
       WebSocketClient.sendProgressEndMessage();
@@ -678,11 +722,26 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       choices: ecaNames.map(name => ({ title: name, value: name })),
       initial: ecaNames,
     });
-    const selectedEcaNames: string[] = promptSelect.selectedApps || [];
+    let selectedEcaNames: string[] = promptSelect.selectedApps || [];
     if (selectedEcaNames.length === 0) {
       uxLog("warning", this, c.yellow(t('noExternalClientAppsSelected')));
       this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "No External Client Apps selected" });
       return;
+    }
+
+    // ECAs whose Consumer Secret is missing in the backup can not be restored with their
+    // original credentials: exclude them and report a manual action instead of a deploy failure
+    const ecaNamesWithSecret = await getEcaNamesWithSavedSecret(this.saveProjectPath);
+    const ecasWithoutSecret = selectedEcaNames.filter(name => !ecaNamesWithSecret.includes(name));
+    if (ecasWithoutSecret.length > 0) {
+      uxLog("warning", this, c.yellow(t('ecasWithoutSecretNotRestored', { count: ecasWithoutSecret.length, ecaNames: ecasWithoutSecret.join(', ') })));
+      for (const name of ecasWithoutSecret) {
+        this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name, status: "Manual", details: "Not restored: Consumer Secret missing in backup" });
+      }
+      selectedEcaNames = selectedEcaNames.filter(name => !ecasWithoutSecret.includes(name));
+      if (selectedEcaNames.length === 0) {
+        return;
+      }
     }
 
     // Delete ECAs that already exist in the org with the same name to avoid conflicts
@@ -771,22 +830,65 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         }
         /* jscpd:ignore-end */
 
-        // Step 3: Delete existing Connected Apps from the org for clean deployment
-        await this.deleteExistingConnectedApps(this.orgUsername, selectedApps);
+        // Step 3: Apps without a Consumer Secret in the backup can not be restored identically:
+        // deleting then redeploying them would generate brand new credentials
+        let appsToRestore: ProjectConnectedApp[] = [];
+        const appsWithoutSecret: ProjectConnectedApp[] = [];
+        for (const app of selectedApps) {
+          const xmlData = await parseXmlFile(app.filePath);
+          const secret = xmlData?.ConnectedApp?.consumerSecret?.[0] || '';
+          if (secret && String(secret).trim() !== '') {
+            appsToRestore.push(app);
+          } else {
+            appsWithoutSecret.push(app);
+          }
+        }
+        if (appsWithoutSecret.length > 0) {
+          const appNamesWithoutSecret = appsWithoutSecret.map(app => app.fullName).join(', ');
+          uxLog("warning", this, c.yellow(t('connectedAppsWithoutSecretInBackup', { count: appsWithoutSecret.length, appNames: appNamesWithoutSecret })));
+          const promptIncludeWithoutSecret = await prompts({
+            type: 'confirm',
+            name: 'include',
+            message: t('includeConnectedAppsWithoutSecretPrompt'),
+            description: t('includeConnectedAppsWithoutSecretDescription'),
+            initial: false
+          });
+          if (promptIncludeWithoutSecret.include) {
+            appsToRestore = appsToRestore.concat(appsWithoutSecret);
+          } else {
+            for (const app of appsWithoutSecret) {
+              this.refreshActions.push({ step: "Restore Connected Apps", type: "ConnectedApp", name: app.fullName, status: "Manual", details: "Not restored: Consumer Secret missing in backup" });
+            }
+          }
+        }
+        if (appsToRestore.length === 0) {
+          uxLog("warning", this, c.yellow(t('noConnectedAppsSelected')));
+          return;
+        }
 
-        // Step 4: Deploy the Connected Apps to the org
-        await this.deployConnectedApps(this.orgUsername, selectedApps);
+        // Step 4: Delete existing Connected Apps from the org for clean deployment
+        await this.deleteExistingConnectedApps(this.orgUsername, appsToRestore);
+
+        // Step 5: Deploy the Connected Apps to the org
+        try {
+          await this.deployConnectedApps(this.orgUsername, appsToRestore);
+        } catch (deployError: any) {
+          for (const app of appsToRestore) {
+            this.refreshActions.push({ step: "Restore Connected Apps", type: "ConnectedApp", name: app.fullName, status: "Error", details: deployError.message || String(deployError) });
+          }
+          throw deployError;
+        }
 
         // Return the result
         uxLog("action", this, c.cyan(t('summary')));
-        const appNames = selectedApps.map(app => `- ${app.fullName}`).join('\n');
-        uxLog("success", this, c.green(t('successfullyRestoredConnectedAppTo', { selectedApps: selectedApps.length, conn: this.conn.instanceUrl, appNames })));
+        const appNames = appsToRestore.map(app => `- ${app.fullName}`).join('\n');
+        uxLog("success", this, c.green(t('successfullyRestoredConnectedAppTo', { selectedApps: appsToRestore.length, conn: this.conn.instanceUrl, appNames })));
         const restoreResult = createConnectedAppSuccessResponse(
-          `Successfully restored ${selectedApps.length} Connected App(s) to the org`,
-          selectedApps.map(app => app.fullName)
+          `Successfully restored ${appsToRestore.length} Connected App(s) to the org`,
+          appsToRestore.map(app => app.fullName)
         );
         this.result = Object.assign(this.result, restoreResult);
-        for (const app of selectedApps) {
+        for (const app of appsToRestore) {
           this.refreshActions.push({ step: "Restore Connected Apps", type: "ConnectedApp", name: app.fullName, status: "Success", details: "" });
         }
       } catch (error: any) {
@@ -1066,11 +1168,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     const rescheduledJobNames: string[] = [];
 
-    // The refreshed sandbox appends a suffix to usernames: compare on the production part
-    const usernameRoot = (username: string) => (username || '').toLowerCase().split('.').slice(0, -1).join('.') || (username || '').toLowerCase();
-    const currentUserScript = rescheduleScripts.find((script: any) =>
-      script.ownerUsername.toLowerCase() === this.orgUsername.toLowerCase() ||
-      usernameRoot(script.ownerUsername) === usernameRoot(this.orgUsername));
+    // Exact username match only: the backup was taken on the same sandbox, so usernames are identical.
+    // Fuzzy matching could run another user's script and silently change job ownership.
+    const currentUserScript =
+      rescheduleScripts.find((script: any) => script.ownerUsername.toLowerCase() === this.orgUsername.toLowerCase());
     if (currentUserScript) {
       const promptRunOwn = await prompts({
         type: 'confirm',
@@ -1091,9 +1192,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           if (runRes?.status === 0 && runRes?.result?.success !== false) {
             uxLog("success", this, c.green(t('rescheduleApexScriptExecuted', { script: currentUserScript.file })));
             this.refreshActions.push({ step: "Manual Actions", type: "ApexScript", name: currentUserScript.file, status: "Success", details: `Executed as ${this.orgUsername} (${currentUserScript.jobsCount} job(s) rescheduled)` });
-            rescheduledJobNames.push(...inventory.scheduledJobs
-              .filter((job: any) => job.apexClassName && (job.ownerUsername || 'unknown-user') === currentUserScript.ownerUsername)
-              .map((job: any) => job.name));
+            // Use the exact job list of the script, not a re-derivation that could diverge
+            rescheduledJobNames.push(...(currentUserScript.jobNames || []));
           } else {
             const errorDetail = runRes?.result?.compileProblem || runRes?.result?.exceptionMessage || runRes?.error || JSON.stringify(runRes?.result || runRes);
             uxLog("error", this, c.red(t('rescheduleApexScriptFailed', { script: currentUserScript.file, error: errorDetail })));
