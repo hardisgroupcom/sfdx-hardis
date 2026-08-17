@@ -7,7 +7,8 @@ import open from 'open';
 import { httpGet } from '../../../../common/utils/httpUtils.js';
 import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
-import { execCommand, execSfdxJson, isCI, isGitRepo, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { createTempDir, execCommand, execSfdxJson, isCI, isGitRepo, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
@@ -88,7 +89,7 @@ This command prepares a complete backup prior to a sandbox refresh. It creates a
 Key functionalities:
 
 - **Create a save project:** Generates a dedicated project folder to store all artifacts for the sandbox backup. When a backup folder already exists for the sandbox, you choose between continuing with it or restarting from scratch (the existing folder is then deleted, after an explicit confirmation).
-- **Check Connected Apps conversion:** Since Spring '26, Connected Apps can not be re-created after a refresh (unless Salesforce Support enables it via a Case), while External Client Apps can be restored with their credentials. The command lists the Connected Apps that have no matching External Client App, warns that they will probably be lost, and pauses so you can convert them in Setup (App Manager). Once you confirm the conversion, the newly converted External Client Apps are saved like the others.
+- **Check Connected Apps conversion:** Since Spring '26, Connected Apps can not be re-created after a refresh (unless Salesforce Support enables it via a Case), while External Client Apps can be restored with their credentials. The command lists the Connected Apps that have no matching External Client App, warns that they will probably be lost, and pauses so you can convert them in Setup (App Manager). Once you confirm the conversion, the newly converted External Client Apps are saved like the others. Vendor-owned apps (whose metadata belongs to the app vendor's org, like OwnBackup or Microsoft Power Platform) can not be converted: they are excluded from this list and handled by the manual actions inventory.
 - **Save External Client Apps:** Retrieves all External Client App metadata (ExternalClientApplication, ExtlClntAppOauthSettings, ExtlClntAppGlobalOauthSettings, ExtlClntAppOauthConfigurablePolicies, ExtlClntAppConfigurablePolicies), verifies that credentials (Consumer Key & Consumer Secret) are present in the retrieved Global OAuth settings, attempts to extract missing Consumer Secrets automatically via OAuth Credentials REST API or prompts for manual entry, and optionally deletes External Client Apps from the org so they can be recreated with the same credentials after the refresh.
 - **Find and select Connected Apps (discouraged):** Lists Connected Apps in the org and lets you pick specific apps, use a name filter, or process all apps. Saving them is discouraged (declined by default) since they can not be restored after the refresh without a Salesforce Case: convert them to External Client Apps instead.
 - **Save metadata for restore:** Builds a manifest and retrieves the metadata types you choose so they can be restored after the refresh.
@@ -306,12 +307,69 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     return projectPath;
   }
 
+  // Vendor-owned Connected Apps (their metadata belongs to the app vendor's org) are listed
+  // by the Metadata API but not retrievable, and can not be converted to External Client Apps.
+  // A metadata retrieve probe identifies them so they are not proposed for manual conversion.
+  private async listUnmigratableConnectedApps(candidateNames: string[]): Promise<Set<string>> {
+    const unmigratableLower = new Set<string>();
+    if (candidateNames.length === 0) {
+      return unmigratableLower;
+    }
+    uxLog("action", this, c.cyan(t('checkingWhichConnectedAppsAreMigratable')));
+    // Probe in a temporary blank project, so nothing is written into the backup project
+    const tmpDir = await createTempDir();
+    try {
+      const probeProjectPath = await createBlankSfdxProject(tmpDir);
+      const probeManifest = path.join(probeProjectPath, 'manifest', 'package-connected-apps-probe.xml');
+      await fs.ensureDir(path.dirname(probeManifest));
+      await writePackageXmlFile(probeManifest, { ConnectedApp: candidateNames });
+      const probeRes = await execSfdxJson(
+        `sf project retrieve start --manifest "${probeManifest}" --target-org ${this.orgUsername} --ignore-conflicts --json`,
+        this,
+        { output: false, fail: false, cwd: probeProjectPath }
+      );
+      if (probeRes?.status === 0) {
+        // Non-retrievable apps are reported in the retrieve warnings:
+        // "Load of metadata from db failed ... file name:X" or "Entity of type 'ConnectedApp' named 'X' cannot be found"
+        const problemNamesLower = new Set<string>();
+        for (const message of probeRes?.result?.messages || []) {
+          const problem = String(message.problem || '');
+          const problemMatch = problem.match(/file name:([A-Za-z0-9_]+)/) || problem.match(/named '([^']+)' cannot be found/);
+          if (problemMatch) {
+            problemNamesLower.add(problemMatch[1].toLowerCase());
+          }
+        }
+        const retrievedFiles = probeRes?.result?.files || [];
+        const retrievedNamesLower = new Set(
+          retrievedFiles
+            .filter((file: any) => file.type === 'ConnectedApp')
+            .map((file: any) => String(file.fullName || '').toLowerCase())
+        );
+        // Conclude only when the response shape is recognized, to never exclude apps by mistake
+        if (problemNamesLower.size > 0 || retrievedNamesLower.size > 0) {
+          for (const name of candidateNames) {
+            const nameLower = name.toLowerCase();
+            if (problemNamesLower.has(nameLower) || (retrievedNamesLower.size > 0 && !retrievedNamesLower.has(nameLower))) {
+              unmigratableLower.add(nameLower);
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('unableToCheckMigratableConnectedApps', { error: e.message || e })));
+    } finally {
+      await fs.remove(tmpDir);
+    }
+    return unmigratableLower;
+  }
+
   // Since Spring '26, Connected Apps can not be re-created after a refresh (unless a Salesforce
   // Case enabled it), while External Client Apps can be restored with the same credentials.
   // List the Connected Apps not yet converted to ECAs and pause so the user can convert them
   // in Setup: the following ECA save step then captures the newly converted apps.
   private async checkConnectedAppsConversion(): Promise<void> {
     uxLog("action", this, c.cyan(t('listingConnectedAppsNotConvertedToEca')));
+    let unmigratableAppsLower: Set<string> | null = null;
     while (true) {
       let connectedAppsProperties: any[] = [];
       try {
@@ -332,12 +390,27 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         // No ECA in org yet
       }
       const ecaNamesLower = new Set(ecaNames.map(name => name.toLowerCase()));
-      const unconvertedAppsProperties = connectedAppsProperties
+      let unconvertedAppsProperties = connectedAppsProperties
         .filter((app: any) => !ecaNamesLower.has((app.fullName || '').toLowerCase()))
         .sort((a: any, b: any) => (a.fullName || '').localeCompare(b.fullName || ''));
+
+      // Exclude vendor-owned apps: they can not be converted to External Client Apps,
+      // and are handled by the manual actions inventory instead
+      if (unmigratableAppsLower === null) {
+        unmigratableAppsLower = await this.listUnmigratableConnectedApps(unconvertedAppsProperties.map((app: any) => app.fullName));
+        const notMigratableApps = unconvertedAppsProperties.filter((app: any) => unmigratableAppsLower!.has((app.fullName || '').toLowerCase()));
+        if (notMigratableApps.length > 0) {
+          const appsList = notMigratableApps.map((app: any) => `- ${app.fullName}`).join('\n');
+          uxLog("log", this, c.grey(t('connectedAppsNotMigratable', { count: notMigratableApps.length, appsList })));
+        }
+      }
+      unconvertedAppsProperties = unconvertedAppsProperties.filter((app: any) => !unmigratableAppsLower!.has((app.fullName || '').toLowerCase()));
+
       const unconvertedApps = unconvertedAppsProperties.map((app: any) => app.fullName);
       if (unconvertedApps.length === 0) {
-        uxLog("success", this, c.green(t('allConnectedAppsConverted')));
+        if (unmigratableAppsLower.size === 0) {
+          uxLog("success", this, c.green(t('allConnectedAppsConverted')));
+        }
         return;
       }
 
