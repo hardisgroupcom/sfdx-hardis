@@ -30,6 +30,10 @@ import {
   deleteExternalClientApps,
   deleteConflictingConnectedApps,
 } from '../../../../common/utils/refresh/externalClientAppUtils.js';
+import {
+  collectManualRestoreInventory,
+  saveManualRestoreInventory,
+} from '../../../../common/utils/refresh/manualRestoreInventoryUtils.js';
 import { CONSTANTS, getConfig, setConfig } from '../../../../config/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -82,6 +86,7 @@ Key functionalities:
 - **Save metadata for restore:** Builds a manifest and retrieves the metadata types you choose so they can be restored after the refresh.
 - **Capture Consumer Secrets:** Attempts to capture Connected App consumer secrets automatically (opens a browser session when possible) and falls back to a short manual prompt when needed.
 - **Collect certificates:** Saves certificate files and their definitions so they can be redeployed later.
+- **Inventory manual actions:** Detects everything that can NOT be restored automatically and saves it in a \`manual-restore-inventory.json\` file: external OAuth authentications (apps like OwnBackup or Microsoft Power Platform authorized via "Log in with Salesforce", whose metadata belongs to the vendor org), Auth Providers, Named & External Credentials (their secrets are never included in metadata), and active scheduled jobs (deactivated by a refresh). The inventory is also exported as \`manual-restore-inventory.csv\` and \`xls/manual-restore-inventory.xlsx\` for human reading. The after-refresh command turns this file into a manual actions checklist.
 - **Export custom settings & records:** Lets you pick custom settings to export as JSON and optionally export records using configured data workspaces.
 - **Persist choices & report:** Stores your backup choices in project config and sends report files for traceability.
 - **Optional cleanup:** Can delete backed-up Connected Apps and External Client Apps from the org so they can be re-uploaded cleanly after the refresh.
@@ -99,6 +104,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 - **External Client App Handling:** Retrieves all 5 ECA metadata types, scans \`extlClntAppGlobalOauthSets/\` files for credentials (\`consumerKey\`, \`consumerSecret\`), extracts missing secrets via OAuth Credentials REST API or manual input, writes them back into the XML files, and deletes ECAs from the org using destructive changes so they can be recreated after refresh.
 - **Consumer Secret Handling:** Uses \`puppeteer-core\` with an executable path from \`getChromeExecutablePath()\` (env var \`PUPPETEER_EXECUTABLE_PATH\` may be required) for Connected Apps. Falls back to manual prompt when browser automation cannot be used.
 - **Data & Records:** Exports custom settings to JSON and supports exporting records through SFDMU workspaces chosen interactively.
+- **Manual Actions Inventory:** Connected Apps listed by the Metadata API but not retrievable (owned by an external org) are excluded from the save instead of failing the command, and inventoried through SOQL queries on \`ConnectedApplication\` and \`OauthToken\` (aggregated client-side by app, with users and last used date). Auth Providers, External Credentials, Named Credentials (SOQL + Tooling API) and active \`CronTrigger\` jobs complete the inventory, stored as \`manual-restore-inventory.json\` in the save project.
 - **Config & Reporting:** Updates project/user config under \`config/.sfdx-hardis.yml#refreshSandboxConfig\` and reports artifacts to the WebSocket client.
 - **Error Handling:** Provides clear error messages and a summary response object indicating success/failure and which secrets were captured.
 
@@ -152,6 +158,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected nameFilter: string | undefined;
   protected deleteApps: boolean;
   protected refreshActions: RefreshActionRow[] = [];
+  protected unretrievableConnectedApps: string[] = [];
 
 
   public async run(): Promise<AnyJson> {
@@ -188,6 +195,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await this.saveExternalClientApps();
 
     await this.retrieveDeleteConnectedApps(accessToken);
+
+    await this.saveManualActionsInventory();
 
     await this.generateActionsReport();
 
@@ -385,7 +394,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
         // Step 4: Delete Connected Apps from org if required (default behavior)
 
-        if (!isCI && !this.deleteApps) {
+        if (!isCI && !this.deleteApps && updatedApps.length > 0) {
           const connectedAppNames = updatedApps.map(app => app.fullName).join(', ');
           const deletePrompt = await prompts({
             type: 'confirm',
@@ -397,7 +406,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           this.deleteApps = deletePrompt.delete;
         }
 
-        if (this.deleteApps) {
+        if (this.deleteApps && updatedApps.length > 0) {
           uxLog("action", this, c.cyan(t('deletingConnectedAppsFrom', { updatedApps: updatedApps.length, conn: this.conn.instanceUrl })));
           await deleteConnectedApps(this.orgUsername, updatedApps, this, this.saveProjectPath);
           uxLog("success", this, c.green(t('connectedAppsWereSuccessfullyDeletedFromThe')));
@@ -415,9 +424,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         for (const app of updatedApps) {
           this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: app.fullName, status: "Success", details: app.consumerSecret ? "Consumer Secret captured" : "No Consumer Secret" });
         }
-        const appsWithoutSecret = selectedApps.filter((a: ConnectedApp) => !updatedApps.some((u: ConnectedApp) => u.fullName === a.fullName));
+        const appsWithoutSecret = selectedApps.filter((a: ConnectedApp) =>
+          !updatedApps.some((u: ConnectedApp) => u.fullName === a.fullName) &&
+          !this.unretrievableConnectedApps.includes(a.fullName));
         for (const app of appsWithoutSecret) {
           this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: app.fullName, status: "Warning", details: "Saved but Consumer Secret not captured" });
+        }
+        for (const appName of this.unretrievableConnectedApps) {
+          this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: appName, status: "Manual", details: "External OAuth app: credentials cannot be saved, re-authorize manually after refresh" });
         }
 
         uxLog("success", this, c.cyan(t('savedRefreshSandboxConfigurationInConfigSfdx')));
@@ -519,11 +533,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     let browserContext: BrowserContext | null = null;
 
     try {
-      // Step 1: Retrieve the Connected Apps from org
-      await this.retrieveConnectedAppsFromOrg(orgUsername, connectedApps, this.saveProjectPath);
+      // Step 1: Retrieve the Connected Apps from org (apps owned by external orgs are not retrievable)
+      const retrievableApps = await this.retrieveConnectedAppsFromOrg(orgUsername, connectedApps, this.saveProjectPath);
+      if (retrievableApps.length === 0) {
+        return updatedApps;
+      }
 
       // Step 2: Query for applicationIds for all Connected Apps
-      const connectedAppIdMap = await this.queryConnectedAppIds(orgUsername, connectedApps);
+      const connectedAppIdMap = await this.queryConnectedAppIds(orgUsername, retrievableApps);
 
       // Step 3: Initialize browser for automation if access token is available
       uxLog("action", this, c.cyan(t('initializingBrowserForAutomatedConnectedAppSecrets')));
@@ -535,7 +552,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
 
       // Step 4: Process each Connected App
-      for (const app of connectedApps) {
+      for (const app of retrievableApps) {
         try {
           const updatedApp = await this.processIndividualApp(
             app,
@@ -567,14 +584,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     orgUsername: string,
     connectedApps: ConnectedApp[],
     saveProjectPath: string
-  ): Promise<void> {
+  ): Promise<ConnectedApp[]> {
     uxLog("action", this, c.cyan(t('retrievingConnectedAppFrom', { connectedApps: connectedApps.length, orgUsername })));
     await retrieveConnectedApps(orgUsername, connectedApps, this, saveProjectPath);
-    this.verifyConnectedAppsRetrieval(connectedApps);
+    return this.classifyRetrievedConnectedApps(connectedApps);
   }
 
-  private verifyConnectedAppsRetrieval(connectedApps: ConnectedApp[]): void {
-    if (connectedApps.length === 0) return;
+  private classifyRetrievedConnectedApps(connectedApps: ConnectedApp[]): ConnectedApp[] {
+    if (connectedApps.length === 0) return [];
 
     // Check if the Connected App files exist in the project
     const missingApps: string[] = [];
@@ -597,18 +614,16 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
     }
 
-    // If any apps are missing, throw an error
+    // Apps whose metadata is owned by an external org (authorized via "Log in with Salesforce",
+    // like OwnBackup or Microsoft Power Platform) are listed by the Metadata API but not retrievable.
+    // They cannot be saved: route them to the manual actions inventory instead of failing.
     if (missingApps.length > 0) {
-      const errorMsg = `Failed to retrieve the following Connected App(s): ${missingApps.join(', ')}`;
-      uxLog("error", this, c.red(errorMsg));
-      const dtlErrorMsg = "This could be due to:\n" +
-        "  - Temporary Salesforce API issues\n" +
-        "  - Permissions or profile issues in the org\n" +
-        "  - Connected Apps that exist but are not accessible\n" +
-        "Please exclude the app or check your permissions in the org then try again.";
-      uxLog("warning", this, c.yellow(dtlErrorMsg));
-      throw new Error(errorMsg);
+      this.unretrievableConnectedApps.push(...missingApps);
+      uxLog("warning", this, c.yellow(t('someConnectedAppsCouldNotBeRetrieved', { missingApps: missingApps.join(', ') })));
+      uxLog("warning", this, c.yellow(t('externalConnectedAppsCannotBeSaved')));
     }
+
+    return connectedApps.filter(app => !missingApps.includes(app.fullName));
   }
 
   private async queryConnectedAppIds(
@@ -1246,6 +1261,60 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       });
       this.refreshActions.push({ step: "Save Records", type: "Records", name: sfdmuPath, status: "Success", details: "" });
     }
+  }
+
+  private async saveManualActionsInventory(): Promise<void> {
+    uxLog("action", this, c.cyan(t('collectingManualActionsInventory')));
+
+    // Apps saved with their credentials are restorable: exclude them from the manual list
+    const savedWithCredentials = [
+      ...(this.refreshSandboxConfig.connectedApps || []).filter((name: string) => !this.unretrievableConnectedApps.includes(name)),
+      ...(this.refreshSandboxConfig.externalClientApps || []),
+    ];
+    const inventory = await collectManualRestoreInventory(this.conn, savedWithCredentials, this.unretrievableConnectedApps, this);
+    const inventoryFile = await saveManualRestoreInventory(this.saveProjectPath, inventory);
+
+    const externalTools = inventory.externalOauthApps.filter(app => !app.isStandardApp);
+    const standardAppsCount = inventory.externalOauthApps.length - externalTools.length;
+    if (externalTools.length > 0) {
+      const appsList = externalTools.map(app => {
+        const usersInfo = app.users.length > 0 ? `, users: ${app.users.slice(0, 5).join(', ')}${app.users.length > 5 ? ', ...' : ''}` : '';
+        return `- ${app.appName} (${app.tokenCount} OAuth token(s)${usersInfo})`;
+      }).join('\n');
+      uxLog("warning", this, c.yellow(t('externalOauthAppsDetected', { count: externalTools.length, appsList })));
+      for (const app of externalTools) {
+        const usersInfo = app.users.length > 0 ? `, users: ${app.users.join(', ')}` : '';
+        this.refreshActions.push({ step: "List Manual Actions", type: "ExternalOauthApp", name: app.appName, status: "Manual", details: `Re-authorize manually after refresh (${app.tokenCount} OAuth token(s)${usersInfo})` });
+      }
+    }
+    if (standardAppsCount > 0) {
+      uxLog("log", this, c.grey(t('standardOauthAppsAlsoRevoked', { count: standardAppsCount })));
+    }
+
+    const credentialsCount = inventory.authProviders.length + inventory.externalCredentials.length + inventory.namedCredentials.length;
+    if (credentialsCount > 0) {
+      uxLog("warning", this, c.yellow(t('credentialSecretsNotSaved', { count: credentialsCount })));
+      for (const authProvider of inventory.authProviders) {
+        this.refreshActions.push({ step: "List Manual Actions", type: "AuthProvider", name: authProvider.developerName, status: "Manual", details: "Consumer Secret must be re-entered manually after restore" });
+      }
+      for (const externalCredential of inventory.externalCredentials) {
+        this.refreshActions.push({ step: "List Manual Actions", type: "ExternalCredential", name: externalCredential.developerName, status: "Manual", details: "Principals must be re-authenticated or secrets re-entered after restore" });
+      }
+      for (const namedCredential of inventory.namedCredentials) {
+        this.refreshActions.push({ step: "List Manual Actions", type: "NamedCredential", name: namedCredential.developerName, status: "Manual", details: "Check endpoint and re-enter secrets after restore" });
+      }
+    }
+
+    if (inventory.scheduledJobs.length > 0) {
+      uxLog("log", this, c.grey(t('scheduledJobsInventoried', { count: inventory.scheduledJobs.length })));
+      const jobTypesForReport = ['Scheduled Apex', 'Batch Job', 'Scheduled Flow', 'Data Export'];
+      for (const job of inventory.scheduledJobs.filter(j => jobTypesForReport.includes(j.jobType))) {
+        this.refreshActions.push({ step: "List Manual Actions", type: "ScheduledJob", name: job.name, status: "Manual", details: `${job.jobType} (${job.cronExpression}): re-schedule after refresh if missing` });
+      }
+    }
+
+    uxLog("success", this, c.green(t('manualActionsInventorySavedIn', { inventoryFile })));
+    WebSocketClient.sendReportFileMessage(inventoryFile, t('manualActionsInventoryTitle'), 'report');
   }
 
   private async generateActionsReport(): Promise<void> {

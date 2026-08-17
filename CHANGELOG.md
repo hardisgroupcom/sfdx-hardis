@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+### Sandbox Refresh
+
+- [hardis:org:refresh:before-refresh and hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): Handle external OAuth apps (OwnBackup and other tools connected via "Log in with Salesforce") that cannot be saved: before-refresh no longer fails on non-retrievable Connected Apps and captures re-authentication requirements, which after-refresh displays as a manual actions checklist.
+
 ### Org Monitoring & Grafana
 
 - New [hardis:org:diagnose:usage-entitlements](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/usage-entitlements/): Monitor usage-based entitlements like Einstein Requests, Flex Credits, Data 360 credits and API calls, and warn when consumption is on track to exceed the allowance before the billing period ends.

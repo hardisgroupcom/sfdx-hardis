@@ -10,6 +10,10 @@
     </types>
     <types>
         <members>*</members>
+        <name>CspTrustedSite</name>
+    </types>
+    <types>
+        <members>*</members>
         <name>CustomMetadata</name>
     </types>
     <types>
@@ -27,6 +31,10 @@
     <types>
         <members>*</members>
         <name>NamedCredential</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>RedirectWhitelistUrl</name>
     </types>
     <types>
         <members>*</members>

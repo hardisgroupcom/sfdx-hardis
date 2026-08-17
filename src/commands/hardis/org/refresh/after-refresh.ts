@@ -25,6 +25,11 @@ import {
   deleteExternalClientApps,
   deleteConflictingConnectedApps,
 } from '../../../../common/utils/refresh/externalClientAppUtils.js';
+import {
+  loadManualRestoreInventory,
+  MANUAL_RESTORE_INVENTORY_FILE,
+  MANUAL_RESTORE_INVENTORY_CSV_FILE,
+} from '../../../../common/utils/refresh/manualRestoreInventoryUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -72,6 +77,7 @@ Key functionalities:
 - **Redeploy saved artifacts:** Restores Connected Apps (with saved secrets), certificates, SAML SSO configs, custom settings and other metadata.
 - **Handle SAML configs:** Cleans and updates SAML XML files and helps you choose certificates to wire into restored configs.
 - **Restore records:** Optionally runs data import from selected SFDMU workspaces to restore record data.
+- **Manual actions checklist:** Reads the \`manual-restore-inventory.json\` file saved before the refresh and lists everything that must be redone by hand: external OAuth authentications (OwnBackup, Microsoft Power Platform and other tools connected via "Log in with Salesforce"), Auth Provider secrets, Named & External Credential secrets and principals, and scheduled jobs to re-enable. Also reminds org-level settings reset by the refresh (email deliverability, .invalid user emails, endpoint URLs, Experience Cloud sites, Shield tenant secret rotation).
 - **Reporting & persistence:** Sends restore reports and can update project config to record what was restored.
 
 This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is intended to be run after a sandbox refresh to re-apply saved metadata, credentials and data.
@@ -86,6 +92,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 - **Metadata & Deployment APIs:** Uses \`sf project deploy start --manifest\` for package-based deploys, \`sf project deploy start --metadata-dir\` for MDAPI artifacts (certificates), and utility functions for Connected App deployment that preserve consumer secrets.
 - **SAML Handling:** Queries active certificates via tooling API, updates SAML XML files, and deploys using \`sf project deploy start -m SamlSsoConfig\`.
 - **Records Handling:** Uses interactive selection of SFDMU workspaces and runs data import utilities to restore records.
+- **Manual Actions Checklist:** Loads \`manual-restore-inventory.json\` from the backup project (produced by the before-refresh command) and reports each entry in the actions CSV with status \`Manual\`, so the report doubles as a post-refresh handover checklist.
 - **Error Handling & Summary:** Aggregates results, logs success/warnings/errors, and returns a structured result indicating which items were restored and any failures.
 
 </details>
@@ -189,6 +196,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     // 7. Restore Connected Apps
     await this.restoreConnectedApps();
+
+    // 8. Display the checklist of manual actions that cannot be automated
+    await this.displayManualActionsChecklist();
 
     await this.generateActionsReport();
 
@@ -950,6 +960,78 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await deployConnectedApps(orgUsername, connectedAppsList, this, this.saveProjectPath);
 
     uxLog("success", this, c.green(t('deploymentOfConnectedAppCompletedSuccessfully', { connectedApps: connectedApps.length })));
+  }
+
+  private async displayManualActionsChecklist(): Promise<void> {
+    uxLog("action", this, c.cyan(t('nowDisplayingManualActionsChecklist')));
+
+    const inventory = await loadManualRestoreInventory(this.saveProjectPath);
+    if (inventory) {
+      const externalTools = inventory.externalOauthApps.filter(app => !app.isStandardApp);
+      const standardAppsCount = inventory.externalOauthApps.length - externalTools.length;
+      if (externalTools.length > 0) {
+        const appsList = externalTools.map(app => {
+          const usersInfo = app.users.length > 0 ? `, users: ${app.users.join(', ')}` : '';
+          const lastUsedInfo = app.lastUsedDate ? `, last used: ${app.lastUsedDate.substring(0, 10)}` : '';
+          return `- ${app.appName}${usersInfo}${lastUsedInfo}`;
+        }).join('\n');
+        uxLog("warning", this, c.yellow(t('reauthorizeExternalOauthAppsAfterRefresh', { count: externalTools.length, appsList })));
+        for (const app of externalTools) {
+          const usersInfo = app.users.length > 0 ? ` (users: ${app.users.join(', ')})` : '';
+          this.refreshActions.push({ step: "Manual Actions", type: "ExternalOauthApp", name: app.appName, status: "Manual", details: `Re-authorize from the external tool with "Log in with Salesforce"${usersInfo}` });
+        }
+      }
+      if (standardAppsCount > 0) {
+        uxLog("log", this, c.grey(t('standardOauthAppsAlsoRevoked', { count: standardAppsCount })));
+      }
+      if (inventory.authProviders.length > 0) {
+        const list = inventory.authProviders.map(item => `- ${item.developerName} (${item.typeInfo})`).join('\n');
+        uxLog("warning", this, c.yellow(t('reenterAuthProviderSecretsAfterRefresh', { count: inventory.authProviders.length, list })));
+        for (const item of inventory.authProviders) {
+          this.refreshActions.push({ step: "Manual Actions", type: "AuthProvider", name: item.developerName, status: "Manual", details: "Re-enter Consumer Secret manually" });
+        }
+      }
+      if (inventory.externalCredentials.length > 0) {
+        const list = inventory.externalCredentials.map(item => `- ${item.developerName} (${item.typeInfo})`).join('\n');
+        uxLog("warning", this, c.yellow(t('reauthenticateExternalCredentialsAfterRefresh', { count: inventory.externalCredentials.length, list })));
+        for (const item of inventory.externalCredentials) {
+          this.refreshActions.push({ step: "Manual Actions", type: "ExternalCredential", name: item.developerName, status: "Manual", details: "Re-authenticate principals or re-enter secrets" });
+        }
+      }
+      if (inventory.namedCredentials.length > 0) {
+        const list = inventory.namedCredentials.map(item => `- ${item.developerName} (${item.typeInfo})`).join('\n');
+        uxLog("warning", this, c.yellow(t('checkNamedCredentialsAfterRefresh', { count: inventory.namedCredentials.length, list })));
+        for (const item of inventory.namedCredentials) {
+          this.refreshActions.push({ step: "Manual Actions", type: "NamedCredential", name: item.developerName, status: "Manual", details: "Check endpoint and re-enter secrets" });
+        }
+      }
+      if (inventory.scheduledJobs.length > 0) {
+        const jobTypesForReport = ['Scheduled Apex', 'Batch Job', 'Scheduled Flow', 'Data Export'];
+        const jobsToDisplay = inventory.scheduledJobs.filter(job => jobTypesForReport.includes(job.jobType));
+        if (jobsToDisplay.length > 0) {
+          const list = jobsToDisplay.map(job => `- ${job.name} (${job.jobType}, ${job.cronExpression})`).join('\n');
+          uxLog("warning", this, c.yellow(t('rescheduleJobsAfterRefresh', { count: jobsToDisplay.length, list })));
+          for (const job of jobsToDisplay) {
+            this.refreshActions.push({ step: "Manual Actions", type: "ScheduledJob", name: job.name, status: "Manual", details: `${job.jobType} (${job.cronExpression}): re-schedule if missing` });
+          }
+        }
+      }
+      WebSocketClient.sendReportFileMessage(path.join(this.saveProjectPath, MANUAL_RESTORE_INVENTORY_FILE), t('manualActionsInventoryTitle'), 'report');
+      const inventoryCsvFile = path.join(this.saveProjectPath, MANUAL_RESTORE_INVENTORY_CSV_FILE);
+      if (fs.existsSync(inventoryCsvFile)) {
+        WebSocketClient.sendReportFileMessage(inventoryCsvFile, t('manualActionsInventoryTitle') + ' (CSV)', 'report');
+      }
+      const inventoryXlsxFile = path.join(this.saveProjectPath, 'xls', MANUAL_RESTORE_INVENTORY_CSV_FILE.replace('.csv', '.xlsx'));
+      if (fs.existsSync(inventoryXlsxFile)) {
+        WebSocketClient.sendReportFileMessage(inventoryXlsxFile, t('manualActionsInventoryTitle') + ' (XLSX)', 'report');
+      }
+    } else {
+      uxLog("warning", this, c.yellow(t('noManualActionsInventoryFound', { file: MANUAL_RESTORE_INVENTORY_FILE })));
+    }
+
+    // Org-level settings reset by a sandbox refresh, not restorable from a backup
+    uxLog("warning", this, c.yellow(t('sandboxRefreshPostChecksReminder')));
+    this.refreshActions.push({ step: "Manual Actions", type: "Reminder", name: "Post-refresh org checks", status: "Manual", details: "Email deliverability, .invalid user emails, endpoint URLs, Experience Cloud sites, scheduled jobs, Shield tenant secret" });
   }
 
   private async generateActionsReport(): Promise<void> {
