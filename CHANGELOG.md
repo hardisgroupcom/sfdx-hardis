@@ -7,6 +7,7 @@
 - [hardis:org:refresh:before-refresh and hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): Handle external OAuth apps (OwnBackup and other tools connected via "Log in with Salesforce") that cannot be saved: before-refresh no longer fails on non-retrievable Connected Apps and captures re-authentication requirements, which after-refresh displays as a manual actions checklist.
 - [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): Generate one Apex script per user to reschedule Scheduled Apex jobs with their original owners, to run with "Login As" + Execute Anonymous (after-refresh executes the current user's own script directly).
 - [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): Keep refresh selections and actions reports separate for each sandbox, so preparing several sandbox refreshes does not overwrite each other's choices.
+- [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): List Connected Apps not yet converted to External Client Apps and pause so they can be converted before the refresh, as Connected Apps can no longer be restored afterwards. Saving and restoring Connected Apps is still possible but discouraged.
 
 ### Org Monitoring & Grafana
 

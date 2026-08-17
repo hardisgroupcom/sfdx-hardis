@@ -34,9 +34,9 @@ Both commands are available in the contextual actions in VsCode extension featur
 
 ## Prerequisite: Migrate Connected Apps to External Client Apps
 
-Since Spring'26, it is not possible to create Connected Apps except if you submit a request via a Salesforce Case.
+Since Spring'26, it is not possible to create Connected Apps except if you submit a request via a Salesforce Case. Concretely: **a Connected App deleted by a sandbox refresh can not be restored**, while an External Client App can be recreated with the same credentials.
 
-It is therefore recommended to **migrate Connected Apps to External Client Apps before refreshing the sandbox**, as External Client Apps can be recreated with the same credentials without needing a Salesforce Case.
+The before-refresh command handles this for you: it lists the Connected Apps that have no matching External Client App, warns that they will probably be lost, and pauses so you can convert them in Setup (App Manager). Once you confirm, it re-checks the org and saves the newly converted External Client Apps with their credentials.
 
 When you migrate a Connected App to an External Client App, the credentials are preserved and the app keeps working without any change for the users. You can migrate as many Connected Apps as you need.
 
@@ -106,7 +106,7 @@ The command will ask you to pick the backup folder created in Step 1, then resto
 4. **Custom Settings** - records are re-imported from the saved JSON files
 5. **Records** - data is re-imported via SFDMU workspaces
 6. **External Client Apps** - all 5 metadata types deployed with their original OAuth credentials
-7. **Connected Apps** - re-deployed with the saved Consumer Secrets (only if Connected Apps creation has been activated via a Salesforce Support case)
+7. **Connected Apps** - discouraged and declined by default: the deploy is rejected unless Connected Apps creation has been activated via a Salesforce Support case. Convert them to External Client Apps before the refresh instead.
 8. **Manual actions checklist** - external OAuth authentications to re-authorize, secrets to re-enter (Auth Providers, Named & External Credentials), scheduled jobs to re-enable (the command runs your own reschedule script and gives "Login As" + Execute Anonymous instructions for the other users' scripts), plus reminders for org settings reset by the refresh (email deliverability, `.invalid` user emails, endpoint URLs, Experience Cloud sites, Shield tenant secret rotation)
 
 Each step asks for confirmation before making changes to the org. All performed and pending actions land in a CSV report, so it can be used as a handover document.

@@ -84,8 +84,9 @@ This command prepares a complete backup prior to a sandbox refresh. It creates a
 Key functionalities:
 
 - **Create a save project:** Generates a dedicated project folder to store all artifacts for the sandbox backup.
+- **Check Connected Apps conversion:** Since Spring '26, Connected Apps can not be re-created after a refresh (unless Salesforce Support enables it via a Case), while External Client Apps can be restored with their credentials. The command lists the Connected Apps that have no matching External Client App, warns that they will probably be lost, and pauses so you can convert them in Setup (App Manager). Once you confirm the conversion, the newly converted External Client Apps are saved like the others.
 - **Save External Client Apps:** Retrieves all External Client App metadata (ExternalClientApplication, ExtlClntAppOauthSettings, ExtlClntAppGlobalOauthSettings, ExtlClntAppOauthConfigurablePolicies, ExtlClntAppConfigurablePolicies), verifies that credentials (Consumer Key & Consumer Secret) are present in the retrieved Global OAuth settings, attempts to extract missing Consumer Secrets automatically via OAuth Credentials REST API or prompts for manual entry, and optionally deletes External Client Apps from the org so they can be recreated with the same credentials after the refresh.
-- **Find and select Connected Apps:** Lists Connected Apps in the org and lets you pick specific apps, use a name filter, or process all apps.
+- **Find and select Connected Apps (discouraged):** Lists Connected Apps in the org and lets you pick specific apps, use a name filter, or process all apps. Saving them is discouraged (declined by default) since they can not be restored after the refresh without a Salesforce Case: convert them to External Client Apps instead.
 - **Save metadata for restore:** Builds a manifest and retrieves the metadata types you choose so they can be restored after the refresh.
 - **Capture Consumer Secrets:** Attempts to capture Connected App consumer secrets automatically (opens a browser session when possible) and falls back to a short manual prompt when needed.
 - **Collect certificates:** Saves certificate files and their definitions so they can be redeployed later.
@@ -199,6 +200,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
       await this.saveRecords();
 
+      await this.checkConnectedAppsConversion();
+
       await this.saveExternalClientApps();
 
       await this.retrieveDeleteConnectedApps(accessToken);
@@ -259,6 +262,71 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await fs.remove(folderName);
     uxLog("log", this, c.grey(t('saveProjectCreatedInFolder', { projectPath })));
     return projectPath;
+  }
+
+  // Since Spring '26, Connected Apps can not be re-created after a refresh (unless a Salesforce
+  // Case enabled it), while External Client Apps can be restored with the same credentials.
+  // List the Connected Apps not yet converted to ECAs and pause so the user can convert them
+  // in Setup: the following ECA save step then captures the newly converted apps.
+  private async checkConnectedAppsConversion(): Promise<void> {
+    uxLog("action", this, c.cyan(t('listingConnectedAppsNotConvertedToEca')));
+    while (true) {
+      let connectedAppNames: string[] = [];
+      try {
+        const listRes = await execSfdxJson(`sf org list metadata --metadata-type ConnectedApp --target-org ${this.orgUsername}`, this, { output: false });
+        connectedAppNames = (listRes?.result && Array.isArray(listRes.result) ? listRes.result : []).map((app: any) => app.fullName);
+      } catch (e: any) {
+        uxLog("warning", this, c.yellow(t('unableToQueryConnectedApplications', { error: e.message || e })));
+        return;
+      }
+      if (connectedAppNames.length === 0) {
+        uxLog("log", this, c.grey(t('noConnectedAppsWereFoundInThe2')));
+        return;
+      }
+      let ecaNames: string[] = [];
+      try {
+        ecaNames = await listExternalClientAppNames(this.orgUsername, this);
+      } catch {
+        // No ECA in org yet
+      }
+      const ecaNamesLower = new Set(ecaNames.map(name => name.toLowerCase()));
+      const unconvertedApps = connectedAppNames.filter(name => !ecaNamesLower.has(name.toLowerCase())).sort();
+      if (unconvertedApps.length === 0) {
+        uxLog("success", this, c.green(t('allConnectedAppsConverted')));
+        return;
+      }
+
+      const appsList = unconvertedApps.map(name => `- ${name}`).join('\n');
+      uxLog("warning", this, c.yellow(t('connectedAppsNotConvertedWarning', { count: unconvertedApps.length, appsList })));
+      uxLog("warning", this, c.yellow(t('convertConnectedAppsNowInstructions')));
+
+      if (isCI) {
+        return;
+      }
+      const promptConversion = await prompts({
+        type: 'select',
+        name: 'action',
+        message: t('haveYouConvertedConnectedApps'),
+        description: t('convertConnectedAppsNowDescription'),
+        choices: [
+          { title: t('choiceConvertedRecheck'), value: 'recheck' },
+          { title: t('choiceOpenAppManager'), value: 'open' },
+          { title: t('choiceContinueWithoutConverting'), value: 'continue' },
+        ],
+      });
+      if (promptConversion.action === 'open') {
+        await open(`${this.instanceUrl}/lightning/setup/NavigationMenus/home`);
+        continue;
+      }
+      if (promptConversion.action === 'recheck') {
+        continue;
+      }
+      // Continue without converting: these apps will probably be lost after the refresh
+      for (const name of unconvertedApps) {
+        this.refreshActions.push({ step: "Check Connected Apps Conversion", type: "ConnectedApp", name, status: "Warning", details: "Not converted to External Client App: will probably be lost after refresh (Connected App creation requires a Salesforce Case)" });
+      }
+      return;
+    }
   }
 
   private async saveExternalClientApps(): Promise<void> {
@@ -389,6 +457,23 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // Warn about Connected Apps deprecation since Spring '26
     uxLog("warning", this, c.yellow(t('connectedAppsDeprecatedWarning')));
     uxLog("action", this, c.cyan(t('convertConnectedAppsToExternalClientApps')));
+
+    // Saving Connected Apps is discouraged: they can not be restored after the refresh
+    // unless Salesforce Support enabled Connected App creation via a Case
+    if (!isCI && !this.processAll && !this.nameFilter) {
+      const promptSaveAnyway = await prompts({
+        type: 'confirm',
+        name: 'saveAnyway',
+        message: t('doYouStillWantToSaveConnectedApps'),
+        description: t('savingConnectedAppsDiscouragedDescription'),
+        initial: false
+      });
+      if (!promptSaveAnyway.saveAnyway) {
+        uxLog("log", this, c.grey(t('skippingConnectedAppsSave')));
+        this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: "All", status: "Skipped", details: "User choice: Connected Apps cannot be restored after refresh without a Salesforce Case" });
+        return;
+      }
+    }
 
     // If metadatas folder is not empty, ask if we want to retrieve them again
     let retrieveConnectedApps = true;
@@ -1217,58 +1302,73 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const errorCs: any = [];
     WebSocketClient.sendProgressStartMessage(t('retrievingSelectedCustomSettings', { selectedSettings: selectedSettings.settings.length }), selectedSettings.settings.length);
     let csCounter = 0;
-    // Retrieve each selected Custom Setting
-    try {
-      for (const settingName of selectedSettings.settings) {
-        try {
-          uxLog("log", this, c.cyan(t('retrievingValuesOfCustomSetting', { settingName })));
 
-          // List all fields of the Custom Setting using globalDesc
-          const customSettingDesc = globalDesc.sobjects.find(sobject => sobject.name === settingName);
-          if (!customSettingDesc) {
-            uxLog("error", this, c.red(t('customSettingNotFoundInTheOrg', { settingName })));
-            errorCs.push(settingName);
-            continue;
-          }
-          const csDescribe = await this.conn.sobject(settingName).describe();
-          const fieldList = csDescribe.fields.map(field => field.name).join(', ');
-          uxLog("log", this, c.grey(t('fieldsInCustomSetting', { settingName, fieldList })));
+    const retrieveOneCustomSetting = async (settingName: string): Promise<void> => {
+      try {
+        uxLog("log", this, c.cyan(t('retrievingValuesOfCustomSetting', { settingName })));
 
-          // Use data tree export to retrieve the Custom Setting
-          uxLog("log", this, c.cyan(t('runningTreeExportForCustomSetting', { settingName })));
-          const retrieveCommand = `sf data tree export --query "SELECT ${fieldList} FROM ${settingName}" --target-org ${this.orgUsername} --json`;
-          const csFolder = path.join(customSettingsFolder, settingName);
-          await fs.ensureDir(csFolder);
-          const result = await execSfdxJson(retrieveCommand, this, {
-            output: true,
-            fail: true,
-            cwd: csFolder
-          });
-          if (!(result?.status === 0)) {
-            uxLog("error", this, c.red(t('failedToRetrieveCustomSetting', { settingName, JSON: JSON.stringify(result) })));
-            continue;
-          }
-          const resultFile = path.join(csFolder, `${settingName}.json`);
-          if (fs.existsSync(resultFile)) {
-            uxLog("log", this, c.grey(t('customSettingHasBeenDownloadedTo', { settingName, resultFile })));
-            successCs.push(settingName);
-          }
-          else if (result?.result?.records && result.result.records?.length === 0) {
-            uxLog("warning", this, c.yellow(t('customSettingHasNoRecordsInThe', { settingName })));
-            emptyCs.push(settingName);
-          }
-          else {
-            uxLog("error", this, c.red(t('customSettingWasNotRetrievedCorrectlyNo', { settingName, resultFile })));
-            errorCs.push(settingName);
-            continue;
-          }
-        } catch (error: any) {
+        // List all fields of the Custom Setting using globalDesc
+        const customSettingDesc = globalDesc.sobjects.find(sobject => sobject.name === settingName);
+        if (!customSettingDesc) {
+          uxLog("error", this, c.red(t('customSettingNotFoundInTheOrg', { settingName })));
           errorCs.push(settingName);
-          uxLog("error", this, c.red(t('errorRetrievingCustomSetting', { settingName, error: error.message || error })));
+          return;
         }
+        const csDescribe = await this.conn.sobject(settingName).describe();
+        const fieldList = csDescribe.fields.map(field => field.name).join(', ');
+        uxLog("log", this, c.grey(t('fieldsInCustomSetting', { settingName, fieldList })));
+
+        // Use data tree export to retrieve the Custom Setting
+        uxLog("log", this, c.cyan(t('runningTreeExportForCustomSetting', { settingName })));
+        const retrieveCommand = `sf data tree export --query "SELECT ${fieldList} FROM ${settingName}" --target-org ${this.orgUsername} --json`;
+        const csFolder = path.join(customSettingsFolder, settingName);
+        await fs.ensureDir(csFolder);
+        const result = await execSfdxJson(retrieveCommand, this, {
+          output: true,
+          fail: true,
+          cwd: csFolder
+        });
+        if (!(result?.status === 0)) {
+          uxLog("error", this, c.red(t('failedToRetrieveCustomSetting', { settingName, JSON: JSON.stringify(result) })));
+          errorCs.push(settingName);
+          return;
+        }
+        const resultFile = path.join(csFolder, `${settingName}.json`);
+        if (fs.existsSync(resultFile)) {
+          uxLog("log", this, c.grey(t('customSettingHasBeenDownloadedTo', { settingName, resultFile })));
+          successCs.push(settingName);
+        }
+        else if (result?.result?.records && result.result.records?.length === 0) {
+          uxLog("warning", this, c.yellow(t('customSettingHasNoRecordsInThe', { settingName })));
+          emptyCs.push(settingName);
+        }
+        else {
+          uxLog("error", this, c.red(t('customSettingWasNotRetrievedCorrectlyNo', { settingName, resultFile })));
+          errorCs.push(settingName);
+        }
+      } catch (error: any) {
+        errorCs.push(settingName);
+        uxLog("error", this, c.red(t('errorRetrievingCustomSetting', { settingName, error: error.message || error })));
+      } finally {
         csCounter++;
         WebSocketClient.sendProgressStepMessage(csCounter, selectedSettings.settings.length);
       }
+    };
+
+    // Retrieve the selected Custom Settings, up to 4 in parallel
+    try {
+      const settingsQueue: string[] = [...selectedSettings.settings];
+      const parallelWorkers = Array.from(
+        { length: Math.min(4, settingsQueue.length) },
+        async () => {
+          while (settingsQueue.length > 0) {
+            const settingName = settingsQueue.shift();
+            if (!settingName) break;
+            await retrieveOneCustomSetting(settingName);
+          }
+        }
+      );
+      await Promise.all(parallelWorkers);
     } finally {
       WebSocketClient.sendProgressEndMessage();
     }
