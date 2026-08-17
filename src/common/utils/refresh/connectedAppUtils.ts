@@ -13,6 +13,18 @@ import { t } from '../i18n.js';
 export interface RefreshSandboxConfig {
   connectedApps?: string[];
 }
+
+// Selections are stored per sandbox under refreshSandboxConfig.sandboxes.<folderName>,
+// so preparing two sandbox refreshes does not overwrite each other's choices.
+// Top-level keys (legacy format) are used as defaults for sandboxes without an entry.
+export function getSandboxRefreshConfigForFolder(refreshSandboxConfig: any, sandboxFolderName: string): any {
+  if (refreshSandboxConfig?.sandboxes?.[sandboxFolderName]) {
+    return Object.assign({}, refreshSandboxConfig.sandboxes[sandboxFolderName]);
+  }
+  const legacyConfig = Object.assign({}, refreshSandboxConfig || {});
+  delete legacyConfig.sandboxes;
+  return legacyConfig;
+}
 // Define interface for Connected App metadata
 export interface ConnectedApp {
   fullName: string;

@@ -131,6 +131,10 @@ Unfortunately there is no way to recover credentials that were not saved. For fu
 
 Under `scripts/sandbox-refresh/<sandbox-name>/` inside your SFDX project. Do not commit and push these backups to source control, they contain sensitive credentials.
 
+**Can I prepare the refresh of several sandboxes at the same time?**
+
+Yes. Each sandbox gets its own backup folder under `scripts/sandbox-refresh/` (named after its instance URL), its own saved selections in `config/.sfdx-hardis.yml` (under `refreshSandboxConfig.sandboxes`), and its own actions report. Running the commands for one sandbox never overwrites the backups or choices of another.
+
 **Does this work for Full sandboxes, Partial Copy, and Developer sandboxes?**
 
 Yes, all sandbox types are supported as long as you can authenticate to them with the Salesforce CLI.

@@ -12,6 +12,7 @@ import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import {
   deleteConnectedApps,
   deployConnectedApps,
+  getSandboxRefreshConfigForFolder,
   toConnectedAppFormat,
   validateConnectedApps,
   selectConnectedAppsForProcessing,
@@ -174,7 +175,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       })),
     });
     this.saveProjectPath = saveProjectPath.path;
-
+    // Selections are stored per sandbox: use the ones matching the selected backup folder
+    this.refreshSandboxConfig = getSandboxRefreshConfigForFolder(this.refreshSandboxConfig, path.basename(this.saveProjectPath));
 
     // 1. Restore Certificates
     await this.restoreCertificates();
@@ -1124,7 +1126,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       return;
     }
     uxLog("action", this, c.cyan(t('generatingSandboxRefreshActionsReport')));
-    const reportPath = await generateReportPath('sandbox-refresh-after-actions', '');
+    // Include the sandbox folder in the file name so reports of different sandboxes do not overwrite each other
+    const reportPath = await generateReportPath(`sandbox-refresh-after-actions-${path.basename(this.saveProjectPath)}`, '');
     await generateCsvFile(this.refreshActions, reportPath, {
       fileTitle: t('sandboxRefreshActionsReport')
     });

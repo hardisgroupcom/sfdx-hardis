@@ -17,6 +17,7 @@ import {
   retrieveConnectedApps,
   validateConnectedApps,
   findConnectedAppFile,
+  getSandboxRefreshConfigForFolder,
   selectConnectedAppsForProcessing,
   createConnectedAppSuccessResponse,
   handleConnectedAppError
@@ -172,7 +173,6 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.processAll = flags.all || false;
     this.nameFilter = this.processAll ? undefined : flags.name; // If --all is set, ignore --name
     const config = await getConfig("user");
-    this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
     this.result = { success: true, message: t('beforeRefreshCommandPerformedSuccessfully') };
 
     uxLog("action", this, c.cyan(t('thisCommandWillSaveInformationRefresh')));
@@ -183,6 +183,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
 
     this.saveProjectPath = await this.createSaveProject();
+    // Selections are stored per sandbox, so preparing several sandbox refreshes does not overwrite each other's choices
+    this.refreshSandboxConfig = getSandboxRefreshConfigForFolder(config?.refreshSandboxConfig || {}, path.basename(this.saveProjectPath));
     this.refreshActions.push({ step: "Create Save Project", type: "Project", name: path.basename(this.saveProjectPath), status: "Success", details: this.saveProjectPath });
 
     await this.retrieveCertificates();
@@ -895,11 +897,12 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
   private async saveConfig(): Promise<void> {
     const config = await getConfig("project");
-    if (!config.refreshSandboxConfig) {
-      config.refreshSandboxConfig = {};
-    }
-    if (JSON.stringify(this.refreshSandboxConfig) !== JSON.stringify(config.refreshSandboxConfig)) {
-      await setConfig("project", { refreshSandboxConfig: this.refreshSandboxConfig });
+    const existingRefreshConfig = config.refreshSandboxConfig || {};
+    const sandboxFolderName = path.basename(this.saveProjectPath);
+    const sandboxes = Object.assign({}, existingRefreshConfig.sandboxes || {});
+    if (JSON.stringify(this.refreshSandboxConfig) !== JSON.stringify(sandboxes[sandboxFolderName] || {})) {
+      sandboxes[sandboxFolderName] = this.refreshSandboxConfig;
+      await setConfig("project", { refreshSandboxConfig: Object.assign({}, existingRefreshConfig, { sandboxes }) });
       uxLog("log", this, c.cyan(t('refreshSandboxConfigurationHasBeenSavedSuccessfully')));
     }
   }
@@ -1334,7 +1337,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       return;
     }
     uxLog("action", this, c.cyan(t('generatingSandboxRefreshActionsReport')));
-    const reportPath = await generateReportPath('sandbox-refresh-before-actions', '');
+    // Include the sandbox folder in the file name so reports of different sandboxes do not overwrite each other
+    const reportPath = await generateReportPath(`sandbox-refresh-before-actions-${path.basename(this.saveProjectPath)}`, '');
     await generateCsvFile(this.refreshActions, reportPath, {
       fileTitle: t('sandboxRefreshActionsReport')
     });

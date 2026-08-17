@@ -2934,6 +2934,61 @@
           },
           "title": "Data Workspaces",
           "type": "array"
+        },
+        "externalClientApps": {
+          "$id": "#/properties/refreshSandboxConfig/externalClientApps",
+          "description": "List of External Client Apps to download before refresh and to upload after refresh",
+          "examples": [
+            [
+              "My_External_Client_App_1",
+              "My_External_Client_App_2"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "External Client Apps",
+          "type": "array"
+        },
+        "sandboxes": {
+          "$id": "#/properties/refreshSandboxConfig/sandboxes",
+          "description": "Refresh selections stored per sandbox (key is the sandbox backup folder name, derived from its instance URL), so preparing several sandbox refreshes does not overwrite each other's choices. Top-level selections are used as defaults for sandboxes without an entry.",
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "connectedApps": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Connected Apps",
+                "type": "array"
+              },
+              "customSettings": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Custom Settings",
+                "type": "array"
+              },
+              "dataWorkspaces": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Data Workspaces",
+                "type": "array"
+              },
+              "externalClientApps": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "External Client Apps",
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "title": "Per-sandbox Refresh Selections",
+          "type": "object"
         }
       },
       "additionalProperties": false,
