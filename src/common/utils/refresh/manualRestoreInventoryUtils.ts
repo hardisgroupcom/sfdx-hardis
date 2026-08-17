@@ -236,11 +236,15 @@ export async function collectNamedCredentials(conn: Connection, command: SfComma
 export async function collectScheduledJobs(conn: Connection, command: SfCommand<any>): Promise<ScheduledJobInfo[]> {
   let records: any[] = [];
   try {
+    // Only jobs that would still fire: completed one-shot schedules and expired crons
+    // have no future NextFireTime and there is nothing to reschedule for them
     const res = await soqlQuery(
-      "SELECT Id, CronJobDetail.Name, CronJobDetail.JobType, CronExpression, State, NextFireTime, OwnerId FROM CronTrigger WHERE State != 'DELETED' ORDER BY CronJobDetail.Name",
+      "SELECT Id, CronJobDetail.Name, CronJobDetail.JobType, CronExpression, State, NextFireTime, OwnerId FROM CronTrigger WHERE State != 'DELETED' AND NextFireTime != null ORDER BY CronJobDetail.Name",
       conn
     );
-    records = res?.records || [];
+    records = (res?.records || []).filter(
+      (record: any) => record.NextFireTime && new Date(record.NextFireTime).getTime() > Date.now()
+    );
   } catch (e: any) {
     uxLog("warning", command, c.yellow(t('unableToQueryScheduledJobs', { error: e.message || e })));
     return [];
