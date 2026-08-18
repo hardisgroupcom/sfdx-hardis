@@ -175,12 +175,11 @@ In agent mode:
       t('errorGrafanaTokenMissing'),
       true
     );
+    uxLog("action", this, c.cyan(t('grafanaInstallStart', { url: grafanaUrl })));
     if (flags['with-alerts'] !== true && (flags['prom-uid'] || flags['loki-uid'])) {
       uxLog("warning", this, c.yellow(t('grafanaDatasourceFlagsIgnored')));
     }
     const client = createGrafanaClient(grafanaUrl, grafanaToken);
-
-    uxLog("action", this, c.cyan(t('grafanaInstallStart', { url: grafanaUrl })));
 
     // Folder
     let folder: any;
@@ -239,6 +238,7 @@ In agent mode:
       } catch (e: any) {
         throw new SfError(t('errorGrafanaAlertsPrepare', { message: e?.message || String(e) }));
       }
+      uxLog("action", this, c.cyan(t('grafanaImportingAlertRules', { count: groups.length })));
       try {
         for (const group of groups) {
           await importGrafanaAlertRuleGroup(client, GRAFANA_V2_FOLDER_UID, group);

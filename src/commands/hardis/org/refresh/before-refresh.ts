@@ -7,9 +7,9 @@ import open from 'open';
 import { httpGet } from '../../../../common/utils/httpUtils.js';
 import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
-import { createTempDir, execCommand, execSfdxJson, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { createTempDir, execCommand, execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
 import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js';
-import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { generateCsvFile, generateReportPath, uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getChromeExecutablePath } from '../../../../common/utils/orgConfigUtils.js';
@@ -249,7 +249,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           ],
         });
         if (promptExistingBackup.action !== 'restart') {
-          uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
+          uxLog("action", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
           return projectPath;
         }
         // Deleting a backup destroys saved credentials: require an explicit second confirmation
@@ -261,7 +261,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           initial: false
         });
         if (!confirmDeleteBackup.confirmDelete) {
-          uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
+          uxLog("action", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
           return projectPath;
         }
         await fs.remove(projectPath);
@@ -394,14 +394,15 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
 
       uxLog("warning", this, c.yellow(t('connectedAppsNotConvertedWarning', { count: unconvertedApps.length })));
-      uxLogTable(
+      await uxLogTableWithReport(
         this,
         unconvertedAppsProperties.map((app: any) => ({
           'Name': app.fullName,
           'Last Updated Date': app.lastModifiedDate ? String(app.lastModifiedDate).replace('T', ' ').substring(0, 16) : '',
           'Last Updated By': app.lastModifiedByName || '',
         })),
-        ['Name', 'Last Updated Date', 'Last Updated By']
+        ['Name', 'Last Updated Date', 'Last Updated By'],
+        { fileNamePrefix: 'connected-apps-not-converted', fileTitle: 'Connected Apps not converted to External Client Apps' }
       );
       uxLog("warning", this, c.yellow(t('convertConnectedAppsNowInstructions')));
 
@@ -479,7 +480,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     const selectedEcaNames: string[] = selectPrompt.selectedApps || [];
     if (selectedEcaNames.length === 0) {
-      uxLog("warning", this, c.yellow(t('noExternalClientAppsSelected')));
+      uxLog("action", this, c.cyan(t('noExternalClientAppsSelected')));
       this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "No External Client Apps selected" });
       return;
     }
@@ -530,6 +531,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         }
         let deletedEcaNames: string[] = [];
         if (deleteEcas) {
+          uxLog("action", this, c.cyan(t('deletingExternalClientAppsFromOrg')));
           deletedEcaNames = await deleteExternalClientApps(this.orgUsername, ecaNames, this.saveProjectPath, this, true);
           for (const name of deletedEcaNames) {
             this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Success", details: "Deleted from org before refresh" });
@@ -555,7 +557,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Success", details: deletedInfo });
         }
       } else {
-        uxLog("log", this, c.grey(t('noExternalClientAppsFoundInTheOrg')));
+        uxLog("action", this, c.cyan(t('noExternalClientAppsFoundInTheOrg')));
         this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Warning", details: "No External Client Apps retrieved from org" });
       }
     } catch (_error: any) {
@@ -582,7 +584,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         initial: false
       });
       if (!promptSaveAnyway.saveAnyway) {
-        uxLog("log", this, c.grey(t('skippingConnectedAppsSave')));
+        uxLog("action", this, c.cyan(t('skippingConnectedAppsSave')));
         this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: "All", status: "Skipped", details: "User choice: Connected Apps cannot be restored after refresh without a Salesforce Case" });
         return;
       }
@@ -1010,7 +1012,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         });
 
         if (!secretPromptResponse.consumerSecret) {
-          uxLog("warning", this, c.yellow(t('skippingDueToMissingConsumerSecret', { app: app.fullName })));
+          uxLog("action", this, c.cyan(t('skippingDueToMissingConsumerSecret', { app: app.fullName })));
           return undefined;
         }
 
@@ -1173,7 +1175,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         initial: false
       });
       if (!promptResponse.retrieveAgain) {
-        uxLog("log", this, c.grey(t('skippingMetadataRetrievalAsItAlreadyExists', { saveProjectPath: this.saveProjectPath })));
+        uxLog("action", this, c.cyan(t('skippingMetadataRetrievalAsItAlreadyExists', { saveProjectPath: this.saveProjectPath })));
         this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Skipped", details: "Already exists - user skipped" });
         // Make sure the restore manifest exists even when the retrieve is skipped,
         // otherwise after-refresh would silently skip the whole "Restore Other Metadata" phase
@@ -1231,7 +1233,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         initial: false
       });
       if (promptResponse.overwrite) {
-        uxLog("log", this, c.grey(t('overwritingDefaultSavePackageXmlTo', { targetFile })));
+        uxLog("action", this, c.cyan(t('overwritingDefaultSavePackageXmlTo', { targetFile })));
         await fs.copy(sourceFile, targetFile, { overwrite: true });
       }
     }
@@ -1250,7 +1252,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       initial: true
     });
     if (!promptRes.checkPackageXml) {
-      uxLog("log", this, c.grey(`Skipping package XML retrieve`));
+      uxLog("action", this, c.cyan(`Skipping package XML retrieve`));
       return null;
     }
     return targetFile;
@@ -1323,7 +1325,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       initial: !certsAlreadySaved
     });
     if (!promptCerts.retrieveCerts) {
-      uxLog("log", this, c.grey(`Skipping Certificates retrieval as per user choice`));
+      uxLog("action", this, c.cyan(`Skipping Certificates retrieval as per user choice`));
       this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Skipped", details: certsAlreadySaved ? "Kept backup from previous run" : "User choice" });
       return;
     }
@@ -1392,7 +1394,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       });
 
       if (!confirmRetrieval.retrieveAgain) {
-        uxLog("log", this, c.grey(t('skippingCustomSettingsRetrievalAsItAlready', { customSettingsFolder })));
+        uxLog("action", this, c.cyan(t('skippingCustomSettingsRetrievalAsItAlready', { customSettingsFolder })));
         return;
       }
       // Replace the previous run's export so no stale custom setting lingers in the backup
@@ -1420,7 +1422,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       initial: initialCs,
     });
     if (selectedSettings.settings.length === 0) {
-      uxLog("warning", this, c.yellow(t('noCustomSettingsSelectedForRetrieval')));
+      uxLog("action", this, c.cyan(t('noCustomSettingsSelectedForRetrieval')));
       this.refreshActions.push({ step: "Save Custom Settings", type: "CustomSetting", name: "N/A", status: "Skipped", details: "No custom settings selected" });
       return;
     }

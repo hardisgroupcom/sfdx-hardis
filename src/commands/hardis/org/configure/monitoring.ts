@@ -121,6 +121,7 @@ The command's technical implementation involves a series of Git operations, file
       }
     }
     const preRequisitesUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
+    uxLog("action", this, c.cyan(t('monitoringPreRequisitesLabel')));
     uxLog("warning", this, c.yellow(t('monitoringPreRequisitesDocumentation') + c.bold(preRequisitesUrl)));
     WebSocketClient.sendReportFileMessage(preRequisitesUrl, t('monitoringPreRequisitesLabel'), "docUrl");
     // Confirm pre-requisites
@@ -139,7 +140,7 @@ The command's technical implementation involves a series of Git operations, file
       const msg =
         'Please follow the instructions to configure the sfdx-hardis monitoring pre-requisites on your Git server\n' +
         preRequisitesUrl;
-      uxLog("warning", this, c.yellow(msg));
+      uxLog("action", this, c.cyan(msg));
       await open(preRequisitesUrl, { wait: true });
       return { outputString: msg };
     }
@@ -167,7 +168,7 @@ The command's technical implementation involves a series of Git operations, file
       // Restart command so the org is selected as default org (will help to select profiles)
       if (currentOrgId !== org.orgId) {
         const infoMsg = t('defaultOrgChangedRestartCommand');
-        uxLog("warning", this, c.yellow(infoMsg));
+        uxLog("action", this, c.cyan(infoMsg));
         const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ') + ' --orginstanceurl ' + org.instanceUrl;
         WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
         return { outputString: infoMsg };
@@ -251,12 +252,13 @@ The command's technical implementation involves a series of Git operations, file
     });
 
     if (confirmPush.value === true) {
+      uxLog("action", this, c.cyan(t('savingMonitoringConfigurationOnServer')));
       await gitAddCommitPush({
         commitMessage: buildConventionalCommitMessage({ subject: 'update monitoring configuration' }),
       });
       uxLog("success", this, c.green(t('yourConfigurationForOrgMonitoringIsNow')));
     } else {
-      uxLog("warning", this, c.yellow(t('pleaseManuallyGitAddCommitAndPush')));
+      uxLog("action", this, c.cyan(t('pleaseManuallyGitAddCommitAndPush')));
     }
     const branch = await getCurrentGitBranch();
     uxLog(

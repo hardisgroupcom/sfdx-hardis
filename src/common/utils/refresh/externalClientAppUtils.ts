@@ -114,6 +114,7 @@ export async function retrieveExternalClientApps(
   command: SfCommand<any>,
   selectedNames?: string[]
 ): Promise<number> {
+  uxLog("action", command, c.cyan(t('retrievingExternalClientAppsFromOrg')));
   // For selected apps, retrieve the parent by exact name and discover satellite member names
   // from the org (they are not a predictable `{appName}{suffix}`). Otherwise use wildcards.
   let packageContent: Record<string, string[]>;
@@ -135,7 +136,6 @@ export async function retrieveExternalClientApps(
   const ecaPackageXml = path.join(saveProjectPath, 'manifest', 'package-eca-to-save.xml');
   await writePackageXmlFile(ecaPackageXml, packageContent);
 
-  uxLog("action", command, c.cyan(t('retrievingExternalClientAppsFromOrg')));
   // fail: true so a failed retrieve throws instead of silently counting stale files from a previous run
   await execCommand(
     `sf project retrieve start --manifest "${ecaPackageXml}" --target-org ${orgUsername} --ignore-conflicts --json`,
@@ -255,9 +255,9 @@ export async function verifyEcaCredentials(
         );
       }
       await fs.writeFile(filePath, updatedXmlString);
-      uxLog("success", command, c.green(t('ecaConsumerSecretAddedSuccessfully', { appName })));
+      uxLog("action", command, c.cyan(t('ecaConsumerSecretAddedSuccessfully', { appName })));
     } else {
-      uxLog("warning", command, c.yellow(t('skippingEcaConsumerSecret', { appName })));
+      uxLog("action", command, c.cyan(t('skippingEcaConsumerSecret', { appName })));
     }
   }
 }
@@ -839,7 +839,7 @@ export async function deleteConflictingConnectedApps(
   // Best-effort backup of the conflicting Connected Apps metadata before deleting them,
   // so at least their policies and consumer key are kept in the save project
   try {
-    uxLog("log", command, c.grey(t('conflictingConnectedAppsBackupAttempt')));
+    uxLog("action", command, c.cyan(t('conflictingConnectedAppsBackupAttempt')));
     await retrieveConnectedApps(orgUsername, conflicting, command, saveProjectPath);
   } catch (e: any) {
     uxLog("warning", command, c.yellow(t('errorProcessing', { app: 'Conflicting Connected Apps backup', error: e.message || String(e) })));

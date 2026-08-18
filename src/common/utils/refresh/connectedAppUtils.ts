@@ -384,7 +384,7 @@ export async function findConnectedAppFile(
   command: SfCommand<any>,
   saveProjectPath: string
 ): Promise<string | null> {
-  uxLog("other", command, c.cyan(t('searchingForConnectedApp', { appName })));
+  uxLog("action", command, c.cyan(t('searchingForConnectedApp', { appName })));
   try {
     // First, try an exact case-sensitive match
     const exactPattern = `**/${appName}.connectedApp-meta.xml`;
@@ -477,7 +477,7 @@ export async function withConnectedAppValidation(
   try {
     validateConnectedAppParams(orgUsername, connectedApps);
   } catch (error: any) {
-    uxLog("log", command, c.yellow(t('skippingOperation', { operationName, error: error.message })));
+    uxLog("action", command, c.cyan(t('skippingOperation', { operationName, error: error.message })));
     return;
   }
 

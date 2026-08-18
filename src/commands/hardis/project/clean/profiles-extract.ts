@@ -303,7 +303,7 @@ In agent mode:
 
         if (statusRes && statusRes.value !== "all") {
           selectedObjects = statusRes.value;
-          uxLog('log', this, `You selected ${selectedObjects.length} objects.`);
+          uxLog('action', this, c.cyan(`You selected ${selectedObjects.length} objects.`));
         }
       } else {
         // In agent/CI mode, use all objects with records
@@ -376,7 +376,7 @@ In agent mode:
       });
       if (statusRes && statusRes.value !== 0) {
         numberOfPersonas = statusRes.value;
-        uxLog('log', this, `Creation of ${numberOfPersonas} personas.`);
+        uxLog('action', this, c.cyan(`Creation of ${numberOfPersonas} personas.`));
       }
     } else {
       uxLog('log', this, `Agent mode: using default of ${numberOfPersonas} persona(s).`);

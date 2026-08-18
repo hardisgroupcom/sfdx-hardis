@@ -106,7 +106,7 @@ The command's technical implementation involves:
     const message = c.cyan(`Successfully initialized sfdmu project ${c.green(sfdmuProjectFolder)}, with ${c.green(
       'export.json'
     )} file.`);
-    uxLog("other", this, message);
+    uxLog("action", this, message);
     uxLog("log", this, c.grey(t('youCanNowConfigureItUsingSfdmu', { sfdmuBaseDoc: c.yellow(sfdmuBaseDoc) })));
     uxLog("log", this, c.grey(t('ifYouDonHaveUniqueFieldTo', { sfdmuExternalIdsDoc: c.yellow(sfdmuExternalIdsDoc) })));
 

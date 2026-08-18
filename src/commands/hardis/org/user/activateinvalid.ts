@@ -4,7 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import sortArray from 'sort-array';
-import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { generateReports, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkQuery, bulkUpdate, soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
@@ -153,7 +153,7 @@ In agent mode:
         usersToActivateFinal = selectUsers.value;
       } else if (confirmSelect.value !== 'all') {
         const outputString = 'Script cancelled by user.';
-        uxLog("warning", this, c.yellow(outputString));
+        uxLog("action", this, c.cyan(outputString));
         return { outputString };
       }
     }
@@ -163,6 +163,7 @@ In agent mode:
       const emailReplaced = user.Email.replace('.invalid', '');
       return { Id: user.Id, Email: emailReplaced };
     });
+    uxLog("action", this, c.cyan(t('reactivatingUsers', { count: userToActivateUpdated.length })));
     const bulkUpdateRes = await bulkUpdate('User', 'update', userToActivateUpdated, conn);
 
     uxLog("action", this, c.cyan(t('resultsOfTheReactivationOfUsersBy', { userToActivateUpdated: userToActivateUpdated.length })));
@@ -173,6 +174,11 @@ In agent mode:
     if (!this.debugMode && userToActivateUpdated.length > this.maxUsersDisplay) {
       uxLog("warning", this, c.yellow(c.italic(t('listTruncatedToFirstUsers', { maxUsersDisplay: this.maxUsersDisplay }))));
     }
+    // The console and the VS Code UI both truncate the list: always offer the full list as a report
+    await generateReports(userToActivateUpdated, ['Id', 'Email'], this, {
+      logFileName: 'reactivated-users',
+      logLabel: 'Reactivated users',
+    });
 
     const activateSuccessNb = bulkUpdateRes.successfulResults.length;
     const activateErrorNb = bulkUpdateRes.failedResults.length;

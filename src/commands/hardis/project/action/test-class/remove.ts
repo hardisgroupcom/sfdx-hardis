@@ -122,7 +122,7 @@ Required in agent mode:
     const existingClasses = await readTestClasses(scope, flags.branch, resolvedPrId);
 
     if (existingClasses.length === 0) {
-      uxLog('log', this, c.grey(t('noApexTestClassesConfigured', { scope })));
+      uxLog('action', this, c.cyan(t('noApexTestClassesConfigured', { scope })));
       return { outputString: 'No Apex test classes configured', classes: [] };
     }
 
@@ -157,12 +157,13 @@ Required in agent mode:
       classesToRemove = (response.value || []) as string[];
 
       if (classesToRemove.length === 0) {
-        uxLog('log', this, c.grey('No classes selected. Nothing to do.'));
+        uxLog('action', this, c.cyan('No classes selected. Nothing to do.'));
         return { outputString: 'No classes selected', classes: existingClasses };
       }
     }
 
     // Remove classes
+    uxLog('action', this, c.cyan(t('savingApexTestClasses')));
     const updatedClasses = existingClasses.filter(cls => !classesToRemove.includes(cls));
     const removed = classesToRemove.filter(cls => existingClasses.includes(cls));
     const notFound = classesToRemove.filter(cls => !existingClasses.includes(cls));

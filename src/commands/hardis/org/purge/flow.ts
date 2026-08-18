@@ -7,7 +7,7 @@ import { execSfdxJson, isCI, uxLog, uxLogTable } from '../../../../common/utils/
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkDelete, bulkDeleteTooling, bulkQuery } from '../../../../common/utils/apiUtils.js';
 import { dedupeFlowInterviewIds, extractBlockingFlowInterviewIds, FLOW_INTERVIEW_BLOCK_MARKER, queryFlowInterviewIdsForFlows } from '../../../../common/utils/flowDeletionUtils.js';
-import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { generateCsvFile, generateReportPath, uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -182,7 +182,7 @@ In agent mode:
       });
 
       if (confirmDelete.value === false) {
-        uxLog("error", this, c.red(t('actionCancelledByUser')));
+        uxLog("action", this, c.cyan(t('actionCancelledByUser')));
         return { outputString: 'Action cancelled by user.' };
       }
     }
@@ -315,7 +315,7 @@ In agent mode:
         description: t('deleteFlowInterviewsDescription'),
       });
       if (confirmDelete.value === false) {
-        uxLog("error", this, c.red(t('actionCancelledByUser')));
+        uxLog("action", this, c.cyan(t('actionCancelledByUser')));
         return { outputString: 'Action cancelled by user.' };
       }
     }
@@ -470,12 +470,17 @@ In agent mode:
     }
     // Display Flow Interviews to delete using uxLogTable
     uxLog("action", this, c.cyan(t('foundFlowInterviewsToDeleteCount', { count: flowsInterviewsToDelete.length })));
-    uxLogTable(this, flowsInterviewsToDelete.map((flow: any) => ({
-      'Name': flow.Name,
-      'Label': flow.InterviewLabel,
-      'Status': flow.InterviewStatus,
-      'Created By': flow.CreatedBy?.Username ?? '',
-    })));
+    await uxLogTableWithReport(
+      this,
+      flowsInterviewsToDelete.map((flow: any) => ({
+        'Name': flow.Name,
+        'Label': flow.InterviewLabel,
+        'Status': flow.InterviewStatus,
+        'Created By': flow.CreatedBy?.Username ?? '',
+      })),
+      ['Name', 'Label', 'Status', 'Created By'],
+      { fileNamePrefix: 'flow-interviews-to-delete', fileTitle: 'Flow Interviews to delete' }
+    );
   }
 
 }

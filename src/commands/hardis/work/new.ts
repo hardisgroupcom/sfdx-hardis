@@ -342,7 +342,7 @@ The command's logic orchestrates various underlying processes:
       // source tracked sandbox
       selectedOrgInfo = await this.selectOrCreateSandbox(branchName, config, flags, selectedOrgType, agentInputs);
     } else {
-      uxLog("warning", this, c.yellow(t('noOrgSelectedEnsureYouKnow')));
+      uxLog("action", this, c.cyan(t('noOrgSelectedEnsureYouKnow')));
     }
 
     uxLog("action", this, c.cyan(t('readyToWorkInBranch', { branchName: c.green(branchName) })));
@@ -563,9 +563,9 @@ The command's logic orchestrates various underlying processes:
     taskName = taskName.replace(/-+/g, '-');
     if (validationRegex != null && !new RegExp(validationRegex).test(taskName)) {
       uxLog(
-        "warning",
+        "action",
         this,
-        c.yellow(t('userStoryNameDoesNotMatchPattern', { taskName: c.bold(taskName), validationRegex: c.bold(validationRegex) }))
+        c.cyan(t('userStoryNameDoesNotMatchPattern', { taskName: c.bold(taskName), validationRegex: c.bold(validationRegex) }))
       );
       return this.promptTaskName(validationRegex, taskNameExample);
     }
@@ -653,11 +653,6 @@ The command's logic orchestrates various underlying processes:
         ? { username: currentScratchOrg.username, instanceUrl: currentScratchOrg.instanceUrl }
         : null;
     } else {
-      // Set selected org as default org
-      await execCommand(`sf config set target-org=${scratchResponse.value.username}`, this, {
-        output: true,
-        fail: true,
-      });
       uxLog(
         "action",
         this,
@@ -667,6 +662,11 @@ The command's logic orchestrates various underlying processes:
           )}`
         )
       );
+      // Set selected org as default org
+      await execCommand(`sf config set target-org=${scratchResponse.value.username}`, this, {
+        output: true,
+        fail: true,
+      });
       // Open selected org
       uxLog("action", this, c.cyan(t('openingScratchOrgInBrowser')));
       await execSfdxJson('sf org open', this, {

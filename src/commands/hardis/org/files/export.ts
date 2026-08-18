@@ -194,9 +194,9 @@ Use \`--agent\` to disable all prompts. Typical usage:
             finalResumeExport = resumePrompt.value === true;
 
             if (finalResumeExport) {
-              uxLog("log", this, c.cyan(t('resumeModeSelectedExistingFilesWillBe')));
+              uxLog("action", this, c.cyan(t('resumeModeSelectedExistingFilesWillBe')));
             } else {
-              uxLog("log", this, c.yellow(t('restartModeSelectedOutputFolderWillBe')));
+              uxLog("action", this, c.cyan(t('restartModeSelectedOutputFolderWillBe')));
             }
           }
         } catch (error) {

@@ -16,8 +16,8 @@ import {
   gitPush,
   normalizeFileStatusPath,
   uxLog,
-  uxLogTable,
 } from '../../../common/utils/index.js';
+import { uxLogTableWithReport } from '../../../common/utils/filesUtils.js';
 import { exportData } from '../../../common/utils/dataUtils.js';
 import { forceSourcePull } from '../../../common/utils/deployUtils.js';
 import { buildAvailableTargetBranches, buildConventionalCommitMessage, callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from '../../../common/utils/gitUtils.js';
@@ -522,7 +522,10 @@ The command's technical implementation involves a series of orchestrated steps:
           File: file
         };
       });
-      uxLogTable(this, filesTable, ['Status', 'File']);
+      await uxLogTableWithReport(this, filesTable, ['Status', 'File'], {
+        fileNamePrefix: 'commit-files-package-xml-updates',
+        fileTitle: 'Files committed with package.xml updates',
+      });
 
       try {
         await git({ output: true }).commit(commitMessage);
@@ -579,7 +582,10 @@ The command's technical implementation involves a series of orchestrated steps:
               Status: 'modified',
               File: file
             }));
-            uxLogTable(this, filesTable, ['Status', 'File']);
+            await uxLogTableWithReport(this, filesTable, ['Status', 'File'], {
+              fileNamePrefix: 'commit-files-cleaned-sources',
+              fileTitle: 'Cleaned files committed',
+            });
 
             await git({ output: true }).commit(commitMessage);
           } catch (e) {
@@ -704,7 +710,10 @@ The command's technical implementation involves a series of orchestrated steps:
           File: file
         };
       });
-      uxLogTable(this, filesTable, ['Status', 'File']);
+      await uxLogTableWithReport(this, filesTable, ['Status', 'File'], {
+        fileNamePrefix: 'commit-files-deployment-plan',
+        fileTitle: 'Files committed with deployment plan updates',
+      });
 
       try {
         await git({ output: true }).commit(commitMessage);

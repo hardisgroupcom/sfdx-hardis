@@ -174,7 +174,7 @@ In agent mode:
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
     });
-    uxLog("log", this, `Processing reportTypes...`);
+    uxLog("action", this, c.cyan(`Processing reportTypes...`));
     for (const reportTypeFile of matchFilesPattern) {
       if (this.debugMode) {
         uxLog("other", this, `Processing ${reportTypeFile}...`);

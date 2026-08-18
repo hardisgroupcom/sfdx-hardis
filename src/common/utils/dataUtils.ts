@@ -188,9 +188,9 @@ export async function getDataWorkspaceDetail(dataWorkspace: string) {
   const exportFile = path.join(dataWorkspace, 'export.json');
   if (!fs.existsSync(exportFile)) {
     uxLog(
-      "warning",
+      "action",
       this,
-      c.yellow(`Your SFDMU folder ${c.bold(dataWorkspace)} must contain an ${c.bold('export.json')} configuration file`)
+      c.cyan(`Your SFDMU folder ${c.bold(dataWorkspace)} must contain an ${c.bold('export.json')} configuration file`)
     );
     return null;
   }

@@ -116,6 +116,7 @@ In agent mode:
     }
 
     // List all commits since the branch creation
+    uxLog("action", this, c.cyan(t('thisCommandWillGitResetSoftYour', { currentGitBranch })));
     const logResult = await git().log([`${targetBranch}..${currentGitBranch}`]);
     const commitstoReset = logResult.all;
     const commitsToResetNumber = commitstoReset.length;

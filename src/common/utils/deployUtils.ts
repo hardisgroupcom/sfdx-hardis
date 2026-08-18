@@ -19,9 +19,9 @@ import {
   replaceJsonInString,
   sortCrossPlatform,
   uxLog,
-  uxLogTable,
 } from './index.js';
 import { getApiVersion, getConfig, getEnvVar, getReportDirectory, setConfig } from '../../config/index.js';
+import { uxLogTableWithReport } from './filesUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { deployCodeCoverageToMarkdown } from '../gitProvider/utilsMarkdown.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
@@ -114,7 +114,10 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
       // Display as a table
       if (files.length > 0) {
         // Use the uxLogTable utility for consistent table output
-        uxLogTable(this, files, ['Type', 'Name', 'State']);
+        await uxLogTableWithReport(this, files, ['Type', 'Name', 'State'], {
+          fileNamePrefix: 'scratch-org-pulled-sources',
+          fileTitle: 'Sources pulled from scratch org',
+        });
       } else {
         uxLog("log", this, c.grey(t('noFilesPulled')));
       }
@@ -150,7 +153,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
         const forceIgnoreLines = forceIgnore.replace('\r\n', '\n').split('\n');
         forceIgnoreLines.push(...forceIgnoreRes.value);
         await fs.writeFile(forceIgnoreFile, forceIgnoreLines.join('\n') + '\n');
-        uxLog("log", this, t('updatedForceignoreFile'));
+        uxLog("action", this, c.cyan(t('updatedForceignoreFile')));
         return await forceSourcePull(scratchOrgAlias, debug);
       }
     }
@@ -1069,14 +1072,15 @@ async function warnOnDuplicateFolderMetadataApiNames(packageXmlFile: string, com
     return;
   }
   uxLog("warning", commandThis, c.yellow(t('duplicateFolderMetadataApiNames', { count: c.bold(duplicates.length) })));
-  uxLogTable(
+  await uxLogTableWithReport(
     commandThis,
     duplicates.map((duplicate) => ({
       Type: duplicate.type,
       'API name': duplicate.apiName,
       Folders: duplicate.members.join(', '),
     })),
-    ['Type', 'API name', 'Folders']
+    ['Type', 'API name', 'Folders'],
+    { fileNamePrefix: 'duplicate-folder-metadata-api-names', fileTitle: 'Duplicate folder metadata API names' }
   );
   uxLog("warning", commandThis, c.yellow(t('duplicateFolderMetadataApiNamesHint')));
 }

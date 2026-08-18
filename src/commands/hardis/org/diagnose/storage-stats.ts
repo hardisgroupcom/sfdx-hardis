@@ -236,7 +236,7 @@ In agent mode, all interactive prompts are skipped with sensible defaults:
       selectedObjects = [...sObjectsFiltered];
       uxLog("log", this, t('agentModeSelectingAllObjects', { count: selectedObjects.length }));
     }
-    uxLog("log", this, `${selectedObjects.length} SObjects selected for analysis.`);
+    uxLog("action", this, c.cyan(`${selectedObjects.length} SObjects selected for analysis.`));
 
     // Get breakdown field from flag or prompt user
     let breakdownField = flags['breakdown-field'];
@@ -304,7 +304,7 @@ In agent mode, all interactive prompts are skipped with sensible defaults:
         this.dateGranularity = 'year';
         uxLog("log", this, t('agentModeDefaultGranularity', { granularity: this.dateGranularity }));
       }
-      uxLog("log", this, `Using ${c.cyan(this.dateGranularity)} granularity for date breakdown.`);
+      uxLog("action", this, c.cyan(`Using ${c.cyan(this.dateGranularity)} granularity for date breakdown.`));
     }
 
     // Prompt for WHERE condition if not provided via flag
@@ -322,7 +322,7 @@ In agent mode, all interactive prompts are skipped with sensible defaults:
     }
 
     if (this.whereCondition) {
-      uxLog("log", this, `Applying WHERE condition: ${c.cyan(this.whereCondition)}`);
+      uxLog("action", this, c.cyan(`Applying WHERE condition: ${c.cyan(this.whereCondition)}`));
     }
 
     // Query objects to know the count of records, storage used and their year of created date

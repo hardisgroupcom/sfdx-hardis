@@ -237,7 +237,7 @@ export const checkConfig = async (options: any) => {
     devHubAliasOk = (process.env.DEVHUB_ALIAS || configProject.devHubAlias) != null;
     // If not found, prompt user project name and store it in user config file
     if (projectName == null) {
-      projectName = promptForProjectName();
+      projectName = await promptForProjectName();
       await setConfig('project', {
         projectName,
         devHubAlias: `DevHub_${projectName}`,
@@ -313,9 +313,9 @@ export async function promptForProjectName() {
   projectName = projectName.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^[^a-zA-Z_]+/, '');
   if (projectName !== userProjectName) {
     uxLog(
-      "warning",
+      "action",
       this,
-      c.yellow(
+      c.cyan(
         t('projectNameHasBeenChanged', { projectName })
       )
     );

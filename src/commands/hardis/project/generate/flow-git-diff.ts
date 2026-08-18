@@ -111,7 +111,7 @@ In agent mode:
     // List states of flow file using git
     const fileHistory = await git().log({ file: this.flowFile });
     if (fileHistory.all.length === 1) {
-      uxLog("success", this, c.green(t('thereIsOnlyOneStateForFlow', { flowFile: this.flowFile })));
+      uxLog("action", this, c.cyan(t('thereIsOnlyOneStateForFlow', { flowFile: this.flowFile })));
       return {};
     }
 

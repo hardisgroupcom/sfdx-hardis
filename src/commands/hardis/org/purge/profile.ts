@@ -167,7 +167,7 @@ In agent mode:
           description: "It's recommended to commit, stash or discard your changes before proceeding.",
         });
         if (!confirmPromptRes.value === true) {
-          uxLog("error", this, c.blue(t('operationCancelledExitingWithoutChanges')));
+          uxLog("action", this, c.cyan(t('operationCancelledExitingWithoutChanges')));
           return {};
         }
       }
@@ -227,7 +227,7 @@ In agent mode:
         initial: true,
       });
       if (!promptDeployRes.value === true) {
-        uxLog("error", this, c.blue(t('deploymentCancelledByUser')));
+        uxLog("action", this, c.cyan(t('deploymentCancelledByUser')));
         return { orgId: flags['target-org'].getOrgId(), outputString: "Profile purge completed without deployment." };
       }
     }

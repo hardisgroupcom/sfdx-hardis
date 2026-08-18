@@ -234,12 +234,12 @@ In agent mode:
       return false;
     }
     // After rotation, the previous credentials sit in the staged slot in "rotated" state: deleting them revokes them immediately
+    uxLog("action", this, c.cyan(t('revokingPreviousEcaCredential', { appName })));
     const previous = await getStagedEcaCredential(conn, appId, consumerId, this);
     if (!previous) {
       uxLog("warning", this, c.yellow(t('noPreviousEcaCredentialToRevoke', { appName })));
       return false;
     }
-    uxLog("action", this, c.cyan(t('revokingPreviousEcaCredential', { appName })));
     await deleteStagedEcaCredential(conn, appId, consumerId, previous.id, this);
     uxLog("success", this, c.green(t('previousEcaCredentialRevoked', { appName })));
     return true;

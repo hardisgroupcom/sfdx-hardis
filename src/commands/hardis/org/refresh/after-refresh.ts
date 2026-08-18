@@ -194,7 +194,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const folderMatchesOrg = selectedFolderName === expectedFolderName;
     const inventoryMatchesOrg = !inventoryForCheck?.instanceUrl || inventoryForCheck.instanceUrl === this.instanceUrl;
     if (!folderMatchesOrg || !inventoryMatchesOrg) {
-      uxLog("warning", this, c.yellow(t('backupFolderOrgMismatch', { folder: selectedFolderName, instanceUrl: this.instanceUrl })));
+      uxLog("action", this, c.cyan(t('backupFolderOrgMismatch', { folder: selectedFolderName, instanceUrl: this.instanceUrl })));
       const confirmMismatch = await prompts({
         type: 'confirm',
         name: 'confirm',
@@ -236,6 +236,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreCertificates(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringCertificates')));
     const certsDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'certs');
     const manifestDir = path.join(this.saveProjectPath, 'manifest');
     const certsPackageXml = path.join(manifestDir, 'package-certificates-to-save.xml');
@@ -279,7 +280,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     const selectedCerts = promptCerts.certs;
     if (selectedCerts.length === 0) {
-      uxLog("log", this, c.yellow(t('noCertificatesSelectedForRestoreSkippingCertificate')));
+      uxLog("action", this, c.cyan(t('noCertificatesSelectedForRestoreSkippingCertificate')));
       this.refreshActions.push({ step: "Restore Certificates", type: "Certificate", name: "N/A", status: "Skipped", details: "No certificates selected" });
       return;
     }
@@ -304,7 +305,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await writePackageXmlFile(path.join(mdApiCertsRestoreFolder, 'package.xml'), packageXmlCerts);
 
     // Deploy using metadata API
-    uxLog("log", this, c.grey(t('deployingCertificatesInOrgUsingMetadataApi', { instanceUrl: this.instanceUrl })));
+    uxLog("action", this, c.cyan(t('deployingCertificatesInOrgUsingMetadataApi', { instanceUrl: this.instanceUrl })));
     await execSfdxJson(
       `sf project deploy start --metadata-dir "${mdApiCertsRestoreFolder}" --target-org ${this.orgUsername}`,
       this,
@@ -317,6 +318,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreOtherMetadata(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringOtherMetadata')));
     const manifestDir = path.join(this.saveProjectPath, 'manifest');
     const restorePackageXml = path.join(manifestDir, 'package-metadata-to-restore.xml');
     // Check if the restore package.xml exists
@@ -343,7 +345,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       initial: true
     });
     if (!prompt.restore) {
-      uxLog("warning", this, c.yellow(t('metadataRestoreCancelledByUser')));
+      uxLog("action", this, c.cyan(t('metadataRestoreCancelledByUser')));
       this.result = Object.assign(this.result, { success: false, message: t('metadataRestoreCancelledByUser') });
       this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Skipped", details: "User cancelled" });
       return;
@@ -427,6 +429,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreSamlSsoConfig(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringSamlSsoConfigs')));
     // 0. List all samlssoconfigs in the project, prompt user to select which to restore
     const samlDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'samlssoconfigs');
     if (!fs.existsSync(samlDir)) {
@@ -449,7 +452,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     const selectedSamlFiles: string[] = promptSaml.samlFiles;
     if (!selectedSamlFiles || selectedSamlFiles.length === 0) {
-      uxLog("log", this, c.yellow(t('noSamlSsoConfigsSelectedForRestore')));
+      uxLog("action", this, c.cyan(t('noSamlSsoConfigsSelectedForRestore')));
       return;
     }
 
@@ -485,7 +488,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       });
       const selectedCertId = certPrompt.certId;
       if (!selectedCertId) {
-        uxLog("warning", this, c.yellow(t('noCertificateSelectedSkippingSamlSsoConfig')));
+        uxLog("action", this, c.cyan(t('noCertificateSelectedSkippingSamlSsoConfig')));
         errors.push(`No certificate selected for ${samlName}`);
         continue;
       }
@@ -510,7 +513,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         initial: true
       });
       if (!promptDeploy.deploy) {
-        uxLog("warning", this, c.yellow(t('samlSsoConfigDeploymentCancelledByUser', { samlFile })));
+        uxLog("action", this, c.cyan(t('samlSsoConfigDeploymentCancelledByUser', { samlFile })));
         errors.push(`Deployment cancelled for ${samlFile}`);
         continue;
       }
@@ -549,6 +552,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreCustomSettings(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringCustomSettings')));
     // Check there are custom settings to restore
     const csDir = path.join(this.saveProjectPath, 'savedCustomSettings');
     if (!fs.existsSync(csDir)) {
@@ -583,7 +587,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     const selectedSettings = promptRestore.settings;
     if (selectedSettings.length === 0) {
-      uxLog("log", this, c.yellow(t('noCustomSettingsSelectedForRestoreSkipping')));
+      uxLog("action", this, c.cyan(t('noCustomSettingsSelectedForRestoreSkipping')));
       this.refreshActions.push({ step: "Restore Custom Settings", type: "CustomSetting", name: "N/A", status: "Skipped", details: "No custom settings selected" });
       return;
     }
@@ -597,7 +601,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       initial: true
     });
     if (!prompt.restore) {
-      uxLog("warning", this, c.yellow(t('customSettingsRestoreCancelledByUser')));
+      uxLog("action", this, c.cyan(t('customSettingsRestoreCancelledByUser')));
       this.refreshActions.push({ step: "Restore Custom Settings", type: "CustomSetting", name: "N/A", status: "Skipped", details: "User cancelled" });
       return;
     }
@@ -711,6 +715,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreRecords(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringRecords')));
     const sfdmuWorkspaces = await selectDataWorkspace({
       selectDataLabel: 'Select data workspaces to use to restore records after sandbox refresh',
       multiple: true,
@@ -731,7 +736,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       description: t('onceConfirmedTheDataLoadingWillStart')
     });
     if (!confirmRestore.confirm) {
-      uxLog("warning", this, c.yellow(t('recordRestoreCancelledByUser')));
+      uxLog("action", this, c.cyan(t('recordRestoreCancelledByUser')));
       this.refreshActions.push({ step: "Restore Records", type: "Records", name: "N/A", status: "Skipped", details: "User cancelled" });
       return;
     }
@@ -746,6 +751,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreExternalClientApps(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringExternalClientApps')));
     // Check if there are External Client Apps in the backup
     const ecaNames = getEcaNames(this.saveProjectPath);
     if (ecaNames.length === 0) {
@@ -767,7 +773,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     let selectedEcaNames: string[] = promptSelect.selectedApps || [];
     if (selectedEcaNames.length === 0) {
-      uxLog("warning", this, c.yellow(t('noExternalClientAppsSelected')));
+      uxLog("action", this, c.cyan(t('noExternalClientAppsSelected')));
       this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "No External Client Apps selected" });
       return;
     }
@@ -826,6 +832,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreConnectedApps(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringConnectedApps')));
     // Check early if there are any Connected Apps in the backup before prompting
     const connectedAppsFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'connectedApps');
     if (!fs.existsSync(connectedAppsFolder) || fs.readdirSync(connectedAppsFolder).length === 0) {
@@ -871,7 +878,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         const selectedApps = await this.selectConnectedApps(connectedApps, this.processAll, this.nameFilter);
 
         if (selectedApps.length === 0) {
-          uxLog("warning", this, c.yellow(t('noConnectedAppsSelected')));
+          uxLog("action", this, c.cyan(t('noConnectedAppsSelected')));
           this.result = Object.assign(this.result, { success: false, message: t('noConnectedAppsSelected') });
           return;
         }
@@ -909,7 +916,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           }
         }
         if (appsToRestore.length === 0) {
-          uxLog("warning", this, c.yellow(t('noConnectedAppsSelected')));
+          uxLog("action", this, c.cyan(t('noConnectedAppsSelected')));
           return;
         }
 
@@ -1084,6 +1091,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const appsToDelete = toConnectedAppFormat(connectedApps);
 
     // Delete the apps without prompting
+    uxLog("action", this, c.cyan(t('deletingConnectedAppsFrom', { updatedApps: appsToDelete.length, conn: orgUsername })));
     await deleteConnectedApps(orgUsername, appsToDelete, this, this.saveProjectPath);
     uxLog("success", this, c.green(t('connectedAppsWereSuccessfullyDeletedFromThe')));
   }
@@ -1108,6 +1116,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     // Convert ProjectConnectedApp to the format needed by deployConnectedApps
     const connectedAppsList = toConnectedAppFormat(connectedApps);
+    uxLog("action", this, c.cyan(t('deployingConnectedAppsToOrg', { count: connectedAppsList.length, orgUsername: orgUsername })));
     await deployConnectedApps(orgUsername, connectedAppsList, this, this.saveProjectPath);
 
     uxLog("success", this, c.green(t('deploymentOfConnectedAppCompletedSuccessfully', { connectedApps: connectedApps.length })));

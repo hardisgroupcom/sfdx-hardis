@@ -185,6 +185,7 @@ Required in agent mode:
 
     // Write back
     actions[index] = action;
+    uxLog("action", this, c.cyan(t('savingDeploymentActions')));
     const configFile = await writeActions(scope, when, actions, flags.branch, resolvedPrId);
 
     uxLog("success", this, c.green(t('actionUpdatedSuccessfully', { label: action.label })));
