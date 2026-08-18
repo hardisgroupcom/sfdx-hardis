@@ -128,6 +128,7 @@ Required in agent mode:
     }
 
     // Rename draft to PR
+    uxLog("action", this, c.cyan(t('savingDeploymentActions')));
     const targetFile = await renameDraftToPr(prId);
 
     uxLog("success", this, c.green(t('draftLinkedToPr', { prId, file: targetFile })));

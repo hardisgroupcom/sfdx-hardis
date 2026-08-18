@@ -3,7 +3,8 @@ import { SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import * as path from 'path';
-import { isCI, uxLog, uxLogTable } from '../../../common/utils/index.js';
+import { isCI, uxLog } from '../../../common/utils/index.js';
+import { uxLogTableWithReport } from '../../../common/utils/filesUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { t } from '../../../common/utils/i18n.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
@@ -183,7 +184,7 @@ In agent mode (and in CI), interactive prompts are skipped. You must pass at lea
       debug: debugMode,
     });
 
-    this.displaySummary(outcome.successes, outcome.failures, outcome.skipped, outputDir);
+    await this.displaySummary(outcome.successes, outcome.failures, outcome.skipped, outputDir);
     WebSocketClient.sendRefreshCommandsMessage();
 
     if (isOutcomeFailed(outcome, ignoreErrors)) {
@@ -199,18 +200,18 @@ In agent mode (and in CI), interactive prompts are skipped. You must pass at lea
     };
   }
 
-  private displaySummary(successes: any[], failures: any[], skipped: any[], outputDir: string): void {
+  private async displaySummary(successes: any[], failures: any[], skipped: any[], outputDir: string): Promise<void> {
     if (successes.length > 0) {
       uxLog('success', this, c.green(t('crudReadSuccessCount', { count: String(successes.length), outputDir })));
-      uxLogTable(this, successes.map((s) => ({ type: s.type, fullName: s.fullName, status: 'OK' })), ['type', 'fullName', 'status']);
+      await uxLogTableWithReport(this, successes.map((s) => ({ type: s.type, fullName: s.fullName, status: 'OK' })), ['type', 'fullName', 'status'], { fileNamePrefix: 'mdapi-read-successes', fileTitle: 'Metadata read successes' });
     }
     if (failures.length > 0) {
       uxLog('warning', this, c.yellow(t('crudReadFailureCount', { count: String(failures.length) })));
-      uxLogTable(this, failures.map((f) => ({ type: f.type, fullName: f.fullName, error: f.error })), ['type', 'fullName', 'error']);
+      await uxLogTableWithReport(this, failures.map((f) => ({ type: f.type, fullName: f.fullName, error: f.error })), ['type', 'fullName', 'error'], { fileNamePrefix: 'mdapi-read-failures', fileTitle: 'Metadata read failures' });
     }
     if (skipped.length > 0) {
       uxLog('warning', this, c.yellow(t('crudSkippedReadCount', { count: String(skipped.length) })));
-      uxLogTable(this, skipped.map((s) => ({ type: s.type, fullName: s.fullName })), ['type', 'fullName']);
+      await uxLogTableWithReport(this, skipped.map((s) => ({ type: s.type, fullName: s.fullName })), ['type', 'fullName'], { fileNamePrefix: 'mdapi-read-skipped', fileTitle: 'Metadata read skipped items' });
     }
   }
 }

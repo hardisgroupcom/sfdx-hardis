@@ -4,6 +4,8 @@
 
 ### Sandbox Refresh
 
+- [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): Detect the restore steps already performed by a previous run and ask for confirmation before doing them again.
+- [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): When the restore of other metadata fails, display the list of components rejected by the org with their error, and tell to remove the failing items from package-metadata-to-restore.xml before running the command again.
 - [hardis:org:refresh:before-refresh and hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): Handle external OAuth apps (OwnBackup and other tools connected via "Log in with Salesforce") that cannot be saved: before-refresh no longer fails on non-retrievable Connected Apps and captures re-authentication requirements, which after-refresh displays as a manual actions checklist.
 - [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): Generate one Apex script per user to reschedule Scheduled Apex jobs with their original owners, to run with "Login As" + Execute Anonymous (after-refresh executes the current user's own script directly).
 - [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): Keep refresh selections and actions reports separate for each sandbox, so preparing several sandbox refreshes does not overwrite each other's choices.
@@ -90,6 +92,11 @@
 
 ### Core
 
+- VS Code UI: log lines, tables and command outputs that come right after a prompt are no longer hidden, as every prompt is now followed by a step header.
+- [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/import/), [hardis:org:data:export](https://sfdx-hardis.cloudity.com/hardis/org/data/export/) and [hardis:org:data:delete](https://sfdx-hardis.cloudity.com/hardis/org/data/delete/): Follow the real progress of SFDMU jobs (phase, object, records processed and failed, Bulk job id) instead of showing a progress bar stuck at "almost done" for the whole data load.
+- [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/import/), [hardis:org:data:export](https://sfdx-hardis.cloudity.com/hardis/org/data/export/) and [hardis:org:data:delete](https://sfdx-hardis.cloudity.com/hardis/org/data/delete/): Display what the SFDMU workspace will do, object by object, and ask for confirmation before touching any data.
+- VS Code UI: tables that can hold more than 20 rows now always come with a CSV/XLSX report, as the UI only renders the first 20 rows.
+- Fix the project name prompt, whose answer was not awaited: `projectName` and `devHubAlias` were written to `.sfdx-hardis.yml` as `[object Promise]` the first time a command asked for them.
 - Reduce the npm dependency tree by ~20% (14 packages removed, among which axios, xml2js, openai, cloudflare and md-to-pdf) to shrink the supply-chain attack surface, with no functional change.
 - Upgrade puppeteer-core to 25.6.0, which drops the unmaintained and vulnerable `extract-zip` transitive dependency (GHSA-jmr9-qjv8-65gv, CVE-2026-56876).
 - CSV and XLSX reports of the Bulk API helpers (`bulkUpdate`, `bulkDelete`) are now written in the reports directory, like every other report, instead of a relative file named after the object and the action.

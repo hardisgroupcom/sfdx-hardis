@@ -142,7 +142,7 @@ Defaults applied: validates each class exists in sources before adding.
       const availableClasses = await getApexTestClasses();
 
       if (availableClasses.length === 0) {
-        uxLog('warning', this, c.yellow(t('noApexClassFoundInTheProject')));
+        uxLog('action', this, c.cyan(t('noApexClassFoundInTheProject')));
         return { outputString: 'No Apex test classes found in sources', classes: existingClasses };
       }
 
@@ -164,12 +164,13 @@ Defaults applied: validates each class exists in sources before adding.
       classesToAdd = (response.value || []) as string[];
 
       if (classesToAdd.length === 0) {
-        uxLog('log', this, c.grey('No classes selected. Nothing to do.'));
+        uxLog('action', this, c.cyan('No classes selected. Nothing to do.'));
         return { outputString: 'No classes selected', classes: existingClasses };
       }
     }
 
     // Add classes (skip duplicates)
+    uxLog('action', this, c.cyan(t('savingApexTestClasses')));
     const updatedClasses = [...existingClasses];
     const added: string[] = [];
 

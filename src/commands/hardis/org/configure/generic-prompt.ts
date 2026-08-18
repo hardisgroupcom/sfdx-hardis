@@ -107,12 +107,13 @@ When \`--agent\` is specified:
         description: t('confirmDeployGenericPromptTemplateDescription'),
       });
       if (!confirmDeploy.value) {
-        uxLog('warning', this, c.yellow(t('deploymentCancelledByUser')));
+        uxLog('action', this, c.cyan(t('deploymentCancelledByUser')));
         return { outputString: 'Deployment cancelled by user' };
       }
     }
 
     // Build temporary MDAPI deploy directory
+    uxLog('action', this, c.cyan(t('deployingGenericPromptTemplate')));
     const tmpDir = await createTempDir();
     try {
       const genAiDir = path.join(tmpDir, 'genAiPromptTemplates');
@@ -165,7 +166,6 @@ When \`--agent\` is specified:
       }
 
       // Deploy
-      uxLog('action', this, c.cyan(t('deployingGenericPromptTemplate')));
       await deployMetadatas({
         deployDir: tmpDir,
         testlevel,
@@ -206,6 +206,7 @@ When \`--agent\` is specified:
     }
 
     if (shouldAssign) {
+      uxLog('action', this, c.cyan(t('assigningEinsteinGptPermSet')));
       const assignResult = await execSfdxJson(
         `sf org assign permset --name EinsteinGPTPromptTemplateUser --target-org ${orgUsername} --json`,
         this,

@@ -408,7 +408,7 @@ export async function resolvePrId(
   if (enteredId) {
     return enteredId;
   }
-  uxLog("log", commandThis, c.grey(t('usingDraftConfig')));
+  uxLog("action", commandThis, c.cyan(t('usingDraftConfig')));
   notifyDraftUsage(commandThis);
   return undefined; // will use draft
 }

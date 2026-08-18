@@ -4,6 +4,7 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { generateReports, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
@@ -162,7 +163,7 @@ Reference: [Salesforce Help - Remove a user's security key](https://help.salesfo
         .filter((u: string) => u);
       if (usernameList.length === 0) {
         const outputString = 'No usernames provided. Script cancelled.';
-        uxLog('warning', this, c.yellow(outputString));
+        uxLog('action', this, c.cyan(outputString));
         return { outputString };
       }
     }
@@ -220,14 +221,16 @@ Reference: [Salesforce Help - Remove a user's security key](https://help.salesfo
       return { username, userId: rec.Id, isActive: true, name: rec.Name, preStatus: 'pending' as const };
     });
 
-    uxLogTable(
+    await uxLogTableWithReport(
       this,
       targets.map((t2) => ({
         Username: t2.username,
         UserId: t2.userId || '',
         IsActive: t2.isActive ? 'true' : 'false',
         PreStatus: t2.preStatus,
-      }))
+      })),
+      ['Username', 'UserId', 'IsActive', 'PreStatus'],
+      { fileNamePrefix: 'unlink-security-key-targets', fileTitle: 'Users targeted by the MFA methods unlink' }
     );
 
     if (!isCI && !this.agentMode) {
@@ -245,7 +248,7 @@ Reference: [Salesforce Help - Remove a user's security key](https://help.salesfo
       });
       if (confirmRes.value !== true) {
         const outputString = 'Script cancelled by user.';
-        uxLog('warning', this, c.yellow(outputString));
+        uxLog('action', this, c.cyan(outputString));
         return { outputString };
       }
     }

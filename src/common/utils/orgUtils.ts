@@ -119,6 +119,7 @@ export async function promptProfiles(
     selectedProfiles = options.multiselect ? profilesSelection.value.split(',') : profilesSelection.value;
   }
   if (options.returnApiName) {
+    uxLog("action", this, c.cyan(t('resolvingProfileApiNames')));
     const apiNames: string[] = [];
     for (const profileName of selectedProfiles) {
       // Map standard profile names to their API names
@@ -218,7 +219,7 @@ export async function promptOrg(
 
   // Cancel
   if (org.cancel === true) {
-    uxLog("error", commandThis, c.red(t('cancelled')));
+    uxLog("action", commandThis, c.cyan(t('cancelled')));
     process.exit(0);
   }
 
@@ -250,6 +251,8 @@ export async function promptOrg(
     const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
     org = loginResult.result;
   }
+
+  uxLog("action", commandThis, c.cyan(t('selectedOrg', { org: c.green(org.username), org1: c.green(org.instanceUrl) })));
 
   if (options.setDefault === true) {
     // Set default username
@@ -290,7 +293,6 @@ export async function promptOrg(
     }
   }
   // uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
-  uxLog("log", commandThis, c.grey(t('selectedOrg', { org: c.green(org.username), org1: c.green(org.instanceUrl) })));
   return orgResponse.org;
 }
 

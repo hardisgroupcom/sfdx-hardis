@@ -2,7 +2,8 @@ import { Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { uxLog } from '../../../../common/utils/index.js';
+import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 import {
   readActions,
@@ -109,7 +110,10 @@ Required in agent mode:
       'Allow Failure': a.allowFailure ? 'Yes' : 'No',
     }));
 
-    uxLogTable(this, tableData, ['#', 'Id', 'Label', 'Type', 'Context', 'Allow Failure']);
+    await uxLogTableWithReport(this, tableData, ['#', 'Id', 'Label', 'Type', 'Context', 'Allow Failure'], {
+      fileNamePrefix: 'deployment-actions',
+      fileTitle: 'Deployment actions',
+    });
 
     return { outputString: `Found ${actions.length} actions`, actions: actions as any };
   }

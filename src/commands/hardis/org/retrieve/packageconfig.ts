@@ -173,7 +173,7 @@ In agent mode:
 
     WebSocketClient.sendRefreshPipelineMessage();
     const message = t('successfullyRetrievedInstalledPackagesConfig');
-    uxLog("success", this, c.green(message));
+    uxLog("action", this, c.cyan(message));
     return { orgId: flags['target-org'].getOrgId(), outputString: message };
   }
 }

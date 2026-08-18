@@ -155,7 +155,7 @@ In agent mode the command runs fully automatically. There are no interactive pro
       const selected: string[] = promptRes.value || [];
       if (selected.length === 0) {
         const statusMessage = t('noAgentTestsSelected');
-        uxLog('warning', this, c.yellow(statusMessage));
+        uxLog('action', this, c.cyan(statusMessage));
         return { orgId: flags['target-org'].getOrgId(), outputString: statusMessage, statusCode: 0 };
       }
       definitionsToRun = definitions.filter((d) => selected.includes(d.apiName));

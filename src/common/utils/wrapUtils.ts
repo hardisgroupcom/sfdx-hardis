@@ -39,6 +39,7 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
   const command = commandBase + " " + commandsArgs;
   let deployRes;
   // Call wrapped sfdx command
+  uxLog("action", commandThis, c.cyan(t('executing', { command })));
   try {
     deployRes = await execCommand(command, commandThis, {
       output: true,

@@ -145,7 +145,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
       }
       const flowName = path.basename(inputFile, ".flow-meta.xml");
 
-      uxLog("log", this, c.grey(t('generatingMarkdownForFlow', { inputFile })));
+      uxLog("action", this, c.cyan(t('generatingMarkdownForFlow', { inputFile })));
       const flowXml = (await fs.readFile(inputFile, "utf8")).toString();
       const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: {} });
       if (!genRes) {

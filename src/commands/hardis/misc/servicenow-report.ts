@@ -217,7 +217,7 @@ In agent mode:
       }
       else if (!isCI && !this.agentMode) {
         // If whereChoice is not provided, prompt user to select one
-        uxLog("warning", this, c.yellow(t('noWhereChoiceProvidedPleaseSelectOne')));
+        uxLog("action", this, c.cyan(t('noWhereChoiceProvidedPleaseSelectOne')));
         // If whereChoices is defined, prompt user to select one
         const whereChoices = Object.keys(this.userStoriesConfig.whereChoices).map((key) => ({
           title: key,

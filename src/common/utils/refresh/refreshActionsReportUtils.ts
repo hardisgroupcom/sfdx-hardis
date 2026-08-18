@@ -22,6 +22,26 @@ function rowKey(row: RefreshActionRow): string {
 }
 
 /**
+ * Read the action rows persisted by the previous runs of a refresh command.
+ * Returns an empty array when no history exists yet or when it can not be parsed.
+ */
+export async function loadRefreshActionsHistory(
+  saveProjectPath: string,
+  historyFileName: string
+): Promise<RefreshActionRow[]> {
+  const historyFile = path.join(saveProjectPath, historyFileName);
+  if (!fs.existsSync(historyFile)) {
+    return [];
+  }
+  try {
+    const historyContent = await fs.readJson(historyFile);
+    return Array.isArray(historyContent) ? historyContent : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Merge the current run's action rows with the ones persisted by previous runs, then save the history.
  *
  * Merge rules:
@@ -41,15 +61,7 @@ export async function mergeAndSaveRefreshActions(
   const stampedCurrentRows = currentRows.map((row) => ({ ...row, runDate: row.runDate || runDate }));
 
   const historyFile = path.join(saveProjectPath, historyFileName);
-  let previousRows: RefreshActionRow[] = [];
-  if (fs.existsSync(historyFile)) {
-    try {
-      const historyContent = await fs.readJson(historyFile);
-      previousRows = Array.isArray(historyContent) ? historyContent : [];
-    } catch {
-      previousRows = [];
-    }
-  }
+  const previousRows: RefreshActionRow[] = await loadRefreshActionsHistory(saveProjectPath, historyFileName);
 
   const reExecutedSteps = new Set(
     stampedCurrentRows.filter((row) => row.status !== 'Skipped').map((row) => row.step)
