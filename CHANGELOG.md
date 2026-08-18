@@ -4,6 +4,7 @@
 
 ### Sandbox Refresh
 
+- [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): Detect the restore steps already performed by a previous run and ask for confirmation before doing them again.
 - [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): When the restore of other metadata fails, display the list of components rejected by the org with their error, and tell to remove the failing items from package-metadata-to-restore.xml before running the command again.
 - [hardis:org:refresh:before-refresh and hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): Handle external OAuth apps (OwnBackup and other tools connected via "Log in with Salesforce") that cannot be saved: before-refresh no longer fails on non-retrievable Connected Apps and captures re-authentication requirements, which after-refresh displays as a manual actions checklist.
 - [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/): Generate one Apex script per user to reschedule Scheduled Apex jobs with their original owners, to run with "Login As" + Execute Anonymous (after-refresh executes the current user's own script directly).

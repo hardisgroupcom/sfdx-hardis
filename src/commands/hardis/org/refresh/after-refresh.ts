@@ -34,6 +34,7 @@ import {
 } from '../../../../common/utils/refresh/manualRestoreInventoryUtils.js';
 import {
   AFTER_REFRESH_ACTIONS_HISTORY_FILE,
+  loadRefreshActionsHistory,
   mergeAndSaveRefreshActions,
 } from '../../../../common/utils/refresh/refreshActionsReportUtils.js';
 import { getConfig } from '../../../../config/index.js';
@@ -59,6 +60,7 @@ interface RefreshActionRow {
   name: string;
   status: string;
   details: string;
+  runDate?: string;
 }
 
 export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
@@ -79,6 +81,7 @@ Key functionalities:
 - **Restore External Client Apps:** Detects saved External Client App metadata (ExternalClientApplication, ExtlClntAppOauthSettings, ExtlClntAppGlobalOauthSettings, ExtlClntAppOauthConfigurablePolicies, ExtlClntAppConfigurablePolicies) and deploys them back to the org, including their saved OAuth credentials (Consumer Key and Consumer Secret).
 - **Select which items to restore:** Finds Connected App XMLs, certificates, custom settings and other artifacts and lets you pick what to restore (or restore all).
 - **Safety checks and validation:** Confirms files exist and prompts before making changes to the target org.
+- **Skip what is already restored:** Reads the actions history of the previous runs on the same backup folder, and asks for confirmation before running again a step that already succeeded (certificates, other metadata, SAML SSO configs, custom settings, records, External Client Apps, Connected Apps, reschedule Apex script).
 - **Prepare org for restore:** Optionally cleans up existing Connected Apps so saved apps can be re-deployed without conflict.
 - **Redeploy saved artifacts:** Restores External Client Apps (with saved credentials), certificates, SAML SSO configs, custom settings and other metadata. Restoring Connected Apps is discouraged (declined by default): since Spring '26 their deploy is rejected unless Salesforce Support has enabled Connected App creation in the org via a Case. Convert them to External Client Apps before the refresh instead.
 - **Handle SAML configs:** Cleans and updates SAML XML files and helps you choose certificates to wire into restored configs.
@@ -99,6 +102,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 - **SAML Handling:** Queries active certificates via tooling API, updates SAML XML files, and deploys using \`sf project deploy start -m SamlSsoConfig\`.
 - **Records Handling:** Uses interactive selection of SFDMU workspaces and runs data import utilities to restore records.
 - **Manual Actions Checklist:** Loads \`manual-restore-inventory.json\` from the backup project (produced by the before-refresh command) and reports each entry in the actions CSV with status \`Manual\`, so the report doubles as a post-refresh handover checklist.
+- **Already Done Detection:** Loads \`sandbox-refresh-after-actions-history.json\` from the backup folder at startup and looks for rows of the step with status \`Success\`. When some exist, it displays them with the date of the last run and prompts (defaulting to no) before executing the step again.
 - **Error Handling & Summary:** Aggregates results, logs success/warnings/errors, and returns a structured result indicating which items were restored and any failures.
 
 </details>
@@ -147,6 +151,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected instanceUrl: any;
   protected orgId: string;
   protected refreshActions: RefreshActionRow[] = [];
+  // Actions performed by the previous runs of after-refresh on the same backup folder,
+  // used to detect steps that have already been done and avoid replaying them silently
+  protected previousActions: RefreshActionRow[] = [];
   protected runStartDate: string = new Date().toISOString();
 
   public async run(): Promise<AnyJson> {
@@ -210,6 +217,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // Selections are stored per sandbox: use the ones matching the selected backup folder
     this.refreshSandboxConfig = getSandboxRefreshConfigForFolder(this.refreshSandboxConfig, path.basename(this.saveProjectPath));
 
+    // Load what previous runs already restored, to ask before doing a step twice
+    this.previousActions = await loadRefreshActionsHistory(this.saveProjectPath, AFTER_REFRESH_ACTIONS_HISTORY_FILE);
+
     // The actions report must be produced even when a step throws: it is the audit trail.
     // A checkpoint is saved after each step so an interrupted run (killed process,
     // cancelled prompt exiting the process) still leaves its completed actions in the history.
@@ -237,6 +247,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
   private async restoreCertificates(): Promise<void> {
     uxLog("action", this, c.cyan(t('refreshRestoringCertificates')));
+    if (!(await this.confirmStepMustRun("Restore Certificates"))) {
+      return;
+    }
     const certsDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'certs');
     const manifestDir = path.join(this.saveProjectPath, 'manifest');
     const certsPackageXml = path.join(manifestDir, 'package-certificates-to-save.xml');
@@ -319,6 +332,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
   private async restoreOtherMetadata(): Promise<void> {
     uxLog("action", this, c.cyan(t('refreshRestoringOtherMetadata')));
+    if (!(await this.confirmStepMustRun("Restore Other Metadata"))) {
+      return;
+    }
     const manifestDir = path.join(this.saveProjectPath, 'manifest');
     const restorePackageXml = path.join(manifestDir, 'package-metadata-to-restore.xml');
     // Check if the restore package.xml exists
@@ -430,6 +446,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
   private async restoreSamlSsoConfig(): Promise<void> {
     uxLog("action", this, c.cyan(t('refreshRestoringSamlSsoConfigs')));
+    if (!(await this.confirmStepMustRun("Restore SAML SSO Configs"))) {
+      return;
+    }
     // 0. List all samlssoconfigs in the project, prompt user to select which to restore
     const samlDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'samlssoconfigs');
     if (!fs.existsSync(samlDir)) {
@@ -553,6 +572,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
   private async restoreCustomSettings(): Promise<void> {
     uxLog("action", this, c.cyan(t('refreshRestoringCustomSettings')));
+    if (!(await this.confirmStepMustRun("Restore Custom Settings"))) {
+      return;
+    }
     // Check there are custom settings to restore
     const csDir = path.join(this.saveProjectPath, 'savedCustomSettings');
     if (!fs.existsSync(csDir)) {
@@ -716,6 +738,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
   private async restoreRecords(): Promise<void> {
     uxLog("action", this, c.cyan(t('refreshRestoringRecords')));
+    if (!(await this.confirmStepMustRun("Restore Records"))) {
+      return;
+    }
     const sfdmuWorkspaces = await selectDataWorkspace({
       selectDataLabel: 'Select data workspaces to use to restore records after sandbox refresh',
       multiple: true,
@@ -752,6 +777,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
   private async restoreExternalClientApps(): Promise<void> {
     uxLog("action", this, c.cyan(t('refreshRestoringExternalClientApps')));
+    if (!(await this.confirmStepMustRun("Restore External Client Apps"))) {
+      return;
+    }
     // Check if there are External Client Apps in the backup
     const ecaNames = getEcaNames(this.saveProjectPath);
     if (ecaNames.length === 0) {
@@ -833,6 +861,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
   private async restoreConnectedApps(): Promise<void> {
     uxLog("action", this, c.cyan(t('refreshRestoringConnectedApps')));
+    if (!(await this.confirmStepMustRun("Restore Connected Apps"))) {
+      return;
+    }
     // Check early if there are any Connected Apps in the backup before prompting
     const connectedAppsFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'connectedApps');
     if (!fs.existsSync(connectedAppsFolder) || fs.readdirSync(connectedAppsFolder).length === 0) {
@@ -1229,12 +1260,17 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const currentUserScript =
       rescheduleScripts.find((script: any) => script.ownerUsername.toLowerCase() === this.orgUsername.toLowerCase());
     if (currentUserScript) {
+      // Running the script twice would schedule the same jobs twice: warn and default to "no"
+      const previousExecutionDate = this.findPreviousSuccessDate("Manual Actions", "ApexScript", currentUserScript.file);
+      if (previousExecutionDate) {
+        uxLog("warning", this, c.yellow(t('rescheduleScriptAlreadyExecuted', { script: currentUserScript.file, date: previousExecutionDate })));
+      }
       const promptRunOwn = await prompts({
         type: 'confirm',
         name: 'runOwn',
         message: t('runOwnRescheduleScriptPrompt', { count: currentUserScript.jobsCount, username: this.orgUsername }),
         description: t('runOwnRescheduleScriptDescription'),
-        initial: true
+        initial: !previousExecutionDate
       });
       if (promptRunOwn.runOwn) {
         const scriptFullPath = path.join(this.saveProjectPath, currentUserScript.file);
@@ -1275,6 +1311,50 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
     }
     return rescheduledJobNames;
+  }
+
+  // Date of the last successful execution of a given action by a previous run, if any
+  private findPreviousSuccessDate(step: string, type: string, name: string): string | null {
+    const previousRows = this.previousActions.filter(
+      row => row.step === step && row.type === type && row.name === name && row.status === "Success");
+    if (previousRows.length === 0) {
+      return null;
+    }
+    const lastRunDate = previousRows.map(row => row.runDate || '').sort().reverse()[0] || '';
+    return this.formatRunDate(lastRunDate);
+  }
+
+  private formatRunDate(runDate: string): string {
+    return runDate ? runDate.substring(0, 16).replace('T', ' ') : '?';
+  }
+
+  // A step already performed by a previous run must not be replayed silently: the actions
+  // history is the audit trail of what has already been restored in the org.
+  // Returns true when the step must run, false when the user chose to keep the previous result.
+  private async confirmStepMustRun(step: string): Promise<boolean> {
+    const previousSuccesses = this.previousActions.filter(row => row.step === step && row.status === "Success");
+    if (previousSuccesses.length === 0) {
+      return true;
+    }
+    const lastRunDate = previousSuccesses.map(row => row.runDate || '').sort().reverse()[0] || '';
+    const formattedDate = this.formatRunDate(lastRunDate);
+    const itemsList = previousSuccesses.map(row => `- ${row.type}: ${row.name}`).join('\n');
+    uxLog("warning", this, c.yellow(t('refreshStepAlreadyPerformed', { step, date: formattedDate, count: previousSuccesses.length, list: itemsList })));
+    const promptRedo = await prompts({
+      type: 'confirm',
+      name: 'redo',
+      message: t('refreshStepAlreadyPerformedPrompt', { step }),
+      description: t('refreshStepAlreadyPerformedPromptDescription'),
+      initial: false
+    });
+    if (promptRedo.redo) {
+      uxLog("action", this, c.cyan(t('refreshStepWillBePerformedAgain', { step })));
+      return true;
+    }
+    uxLog("action", this, c.cyan(t('refreshStepSkippedAlreadyPerformed', { step, date: formattedDate })));
+    // Dedicated type/name so this row never overwrites the rows describing restored items
+    this.refreshActions.push({ step, type: "Step", name: "Already done", status: "Skipped", details: `Already performed on ${formattedDate}, user chose not to do it again` });
+    return false;
   }
 
   // Flush the actions history after each step, so an interrupted run still leaves
