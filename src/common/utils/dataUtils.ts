@@ -2,14 +2,87 @@ import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { elapseEnd, elapseStart, uxLog } from './index.js';
+import { elapseEnd, elapseStart, isAgentMode, isCI, uxLog } from './index.js';
 import { getConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import { isProductionOrg } from './orgUtils.js';
-import { executeSfdmuCommand } from './sfdmuProgress.js';
+import { uxLogTableWithReport } from './filesUtils.js';
+import { executeSfdmuCommand, SfdmuOperationType } from './sfdmuProgress.js';
 import { t } from './i18n.js';
 
 export const DATA_FOLDERS_ROOT = path.join(process.cwd(), 'scripts', 'data');
+
+const DATA_WORKSPACE_TABLE_COLUMNS = ['Object', 'Operation', 'External Id', 'Filter', 'Mock fields'];
+
+// Summarize what sfdmu will do with each object of the workspace, as export.json can be hard to read
+export function buildDataWorkspaceObjectsSummary(exportJson: any): any[] {
+  return (exportJson?.objects || []).map((objectConfig: any) => {
+    const query: string = objectConfig?.query || '';
+    const whereMatch = query.match(/\bWHERE\s+(.+?)(?:\s+(?:ORDER BY|GROUP BY|LIMIT|OFFSET)\b|$)/i);
+    const filter = whereMatch ? whereMatch[1].trim() : '';
+    return {
+      Object: (query.match(/\bFROM\s+([\w.]+)/i) || [])[1] || objectConfig?.objectName || '?',
+      Operation: objectConfig?.deleteFromSource === true ? 'DeleteSource' : objectConfig?.operation || 'Readonly',
+      'External Id': objectConfig?.externalId || '',
+      Filter: filter.length > 60 ? filter.substring(0, 57) + '...' : filter,
+      'Mock fields': (objectConfig?.mockFields || [])
+        .map((mockField: any) => mockField?.name)
+        .filter(Boolean)
+        .join(', '),
+    };
+  });
+}
+
+/**
+ * Displays the content of a sfdmu workspace (export.json), then asks the user to confirm the operation.
+ * The confirmation is requested only when the caller asks for it (interactive hardis:org:data:* commands):
+ * automated flows like deployments, org initialization or sandbox refresh must never be blocked by a prompt.
+ */
+export async function displayDataWorkspaceAndConfirm(
+  commandThis: any,
+  dtl: any,
+  options: { operation: SfdmuOperationType; orgUsername?: string; promptConfirm?: boolean }
+): Promise<void> {
+  // Summary of the objects handled by the workspace
+  const objectsSummary = buildDataWorkspaceObjectsSummary(dtl?.exportJson);
+  if (objectsSummary.length > 0) {
+    const columns = DATA_WORKSPACE_TABLE_COLUMNS.filter(
+      (column) => ['Object', 'Operation'].includes(column) || objectsSummary.some((row) => row[column] !== '')
+    );
+    await uxLogTableWithReport(commandThis, objectsSummary, columns, {
+      fileNamePrefix: `sfdmu-workspace-${options.operation}`,
+      fileTitle: `SFDMU workspace objects`,
+    });
+  }
+  // Full export.json: it can contain many other settings that are not in the summary
+  uxLog('log', commandThis, c.italic(c.grey(t('dataWorkspace') + JSON.stringify(dtl?.exportJson, null, 2))));
+
+  if (options.promptConfirm !== true || isCI || isAgentMode()) {
+    return;
+  }
+  const confirmKey =
+    options.operation === 'import'
+      ? 'confirmDataImport'
+      : options.operation === 'export'
+        ? 'confirmDataExport'
+        : 'confirmDataDelete';
+  const confirmRes = await prompts({
+    type: 'confirm',
+    message: t(confirmKey, { dtl: dtl?.full_label || '', org: options.orgUsername || '' }),
+    description: t('confirmDataOperationDescription'),
+  });
+  if (confirmRes.value !== true) {
+    throw new SfError(t('dataOperationCancelledByUser'));
+  }
+  // The VS Code UI hides everything that follows a prompt until the next action log
+  const startedKey =
+    options.operation === 'import'
+      ? 'sfdmuImportingData'
+      : options.operation === 'export'
+        ? 'sfdmuExportingData'
+        : 'sfdmuDeletingData';
+  uxLog('action', commandThis, c.cyan(t(startedKey)));
+}
 
 // Import data from sfdmu folder
 export async function importData(sfdmuPath: string, commandThis: any, options: any = { cwd: process.cwd() }) {
@@ -25,7 +98,11 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   }
   uxLog("action", commandThis, c.cyan(t('importingDataFromInto', { dtl: c.green(dtl?.full_label), targetUsername })));
   /* jscpd:ignore-start */
-  uxLog("log", commandThis, c.italic(c.grey(t('dataWorkspace') + JSON.stringify(dtl?.exportJson, null, 2))));
+  await displayDataWorkspaceAndConfirm(commandThis, dtl, {
+    operation: 'import',
+    orgUsername: targetUsername,
+    promptConfirm: options.promptConfirm === true,
+  });
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const config = await getConfig('branch');
   const dataImportCommand =
@@ -69,9 +146,13 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
     uxLog("warning", commandThis, c.yellow(`If you see a sfdmu error, you probably need to add a property sfdmuCanModify: YOUR_ORG_INSTANCE_URL in the related config/branches/.sfdx-hardis.YOUR_BRANCH.yml config file.`));
   }
   uxLog("action", commandThis, c.cyan(t('deletingDataFrom', { dtl: c.green(dtl?.full_label) })));
-  uxLog("log", commandThis, c.italic(c.grey(t('dataWorkspace') + JSON.stringify(dtl?.exportJson, null, 2))));
 
   const targetUsername = options.targetUsername || options.conn.username;
+  await displayDataWorkspaceAndConfirm(commandThis, dtl, {
+    operation: 'delete',
+    orgUsername: targetUsername,
+    promptConfirm: options.promptConfirm === true,
+  });
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const dataImportCommand =
     'sf sfdmu:run' +
@@ -101,8 +182,12 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   }
   /* jscpd:ignore-end */
   uxLog("action", commandThis, c.cyan(t('exportingDataFrom', { dtl: c.green(dtl?.full_label) })));
-  uxLog("log", commandThis, c.italic(c.grey(t('dataWorkspace') + JSON.stringify(dtl?.exportJson, null, 2))));
   const sourceUsername = options.sourceUsername || commandThis?.org?.getConnection().username;
+  await displayDataWorkspaceAndConfirm(commandThis, dtl, {
+    operation: 'export',
+    orgUsername: sourceUsername,
+    promptConfirm: options.promptConfirm === true,
+  });
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const dataImportCommand = `sf sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p "${sfdmuPath}" --noprompt`;
   elapseStart(`export ${dtl?.full_label}`);

@@ -20,6 +20,7 @@ Key functionalities:
 - **SFDMU Workspace Integration:** Leverages an existing SFDMU workspace (defined by an `export.json` file) to determine which objects and records to export, along with any filtering or transformation rules.
 - **Interactive Workspace Selection:** If the SFDMU workspace path is not provided via the `--path` flag, it interactively prompts the user to select one.
 - **Org Selection:** Ensures that a target Salesforce org is selected (either via the `--target-org` flag or through an interactive prompt) to specify the source of the data export.
+- **Confirmation Before Exporting:** Displays a summary of the objects handled by the workspace (object, operation, external id, filter, mocked fields) followed by the full `export.json`, then asks for confirmation before querying the org.
 
 See this article for a practical example:
 
@@ -47,6 +48,7 @@ Use `--agent` to disable all prompts. Typical usage:
 
 - The `--path` flag (or `--project-name`) is required in agent mode (no interactive workspace selection).
 - The `--target-org` flag is used directly (no interactive org selection prompt).
+- The workspace content is still displayed, but its confirmation prompt is skipped.
 
 
 ## Parameters

@@ -93,6 +93,8 @@
 ### Core
 
 - VS Code UI: log lines, tables and command outputs that come right after a prompt are no longer hidden, as every prompt is now followed by a step header.
+- [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/import/), [hardis:org:data:export](https://sfdx-hardis.cloudity.com/hardis/org/data/export/) and [hardis:org:data:delete](https://sfdx-hardis.cloudity.com/hardis/org/data/delete/): Follow the real progress of SFDMU jobs (phase, object, records processed and failed, Bulk job id) instead of showing a progress bar stuck at "almost done" for the whole data load.
+- [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/import/), [hardis:org:data:export](https://sfdx-hardis.cloudity.com/hardis/org/data/export/) and [hardis:org:data:delete](https://sfdx-hardis.cloudity.com/hardis/org/data/delete/): Display what the SFDMU workspace will do, object by object, and ask for confirmation before touching any data.
 - VS Code UI: tables that can hold more than 20 rows now always come with a CSV/XLSX report, as the UI only renders the first 20 rows.
 - Fix the project name prompt, whose answer was not awaited: `projectName` and `devHubAlias` were written to `.sfdx-hardis.yml` as `[object Promise]` the first time a command asked for them.
 - Reduce the npm dependency tree by ~20% (14 packages removed, among which axios, xml2js, openai, cloudflare and md-to-pdf) to shrink the supply-chain attack surface, with no functional change.
