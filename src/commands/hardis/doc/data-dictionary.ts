@@ -134,7 +134,7 @@ In agent mode:
         });
         objectNames = promptObjectsRes.value || [];
         if (objectNames.length === 0) {
-          uxLog("warning", this, c.yellow(t('noObjectsSelectedAborting')));
+          uxLog("action", this, c.cyan(t('noObjectsSelectedAborting')));
           return { outputString: 'No objects selected; aborting.', cancelled: true };
         }
         uxLog("log", this, t('sObjectsSelectedForAnalysis', { count: objectNames.length }));
@@ -159,6 +159,7 @@ In agent mode:
       customizedOnly = customizedPromptRes.value === true;
     }
 
+    uxLog("action", this, c.cyan(t('describingObjects', { count: objectNames.length })));
     WebSocketClient.sendProgressStartMessage(t('describingObjects', { count: objectNames.length }));
     const objectDicts: ObjectDataDictionary[] = [];
     let counter = 0;

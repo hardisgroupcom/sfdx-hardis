@@ -318,6 +318,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     const resolvedPrId = scope === 'pr' ? await resolvePrId(this, flags['pr-id'], agentMode) : flags['pr-id'];
 
     // Read existing actions, append, and write back
+    uxLog("action", this, c.cyan(t('savingDeploymentActions')));
     const actions = await readActions(scope, when, flags.branch, resolvedPrId);
     actions.push(action);
     const configFile = await writeActions(scope, when, actions, flags.branch, resolvedPrId);

@@ -13,7 +13,7 @@ import Papa from 'papaparse';
 import ExcelJS from 'exceljs';
 
 // Project Specific Utilities
-import { getCurrentGitBranch, isAgentMode, isCI, isGitRepo, uxLog } from './index.js';
+import { getCurrentGitBranch, isAgentMode, isCI, isGitRepo, uxLog, uxLogTable } from './index.js';
 import { bulkQuery, soqlQuery, bulkQueryByChunks } from './apiUtils.js';
 import { prompts } from './prompts.js';
 import { getApiVersion, getReportDirectory } from '../../config/index.js';
@@ -303,9 +303,9 @@ export class FilesExporter {
       }
       if (this.startChunkNumber === 0) {
         uxLog(
-          "warning",
+          "action",
           this,
-          c.yellow(
+          c.cyan(
             c.italic('Use --startchunknumber command line argument if you do not want to start from first chunk')
           )
         );
@@ -1287,9 +1287,9 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
   const exportFile = path.join(filesWorkspace, 'export.json');
   if (!fs.existsSync(exportFile)) {
     uxLog(
-      "warning",
+      "action",
       this,
-      c.yellow(
+      c.cyan(
         `Your File export folder ${c.bold(filesWorkspace)} must contain an ${c.bold('export.json')} configuration file`
       )
     );
@@ -1520,6 +1520,32 @@ export interface ExcelExportOptions {
   autoWrapWidth?: number;
   // Maximum row height (in points) for auto-wrapped columns, so tall cells stay bounded. Default 150.
   autoWrapMaxHeight?: number;
+}
+
+// The VS Code UI never renders more than UX_LOG_TABLE_MAX_UI_ROWS rows of a table sent by uxLogTable.
+export const UX_LOG_TABLE_MAX_UI_ROWS = 20;
+
+/**
+ * Displays a table in the console / VS Code UI, and generates a CSV + XLSX report when the table
+ * holds more rows than the VS Code UI can display, so the user can open the full list.
+ * Use it instead of uxLogTable each time the number of rows is data-driven and can exceed 20.
+ */
+export async function uxLogTableWithReport(
+  commandThis: any,
+  tableData: any[],
+  columnsOrder: string[] = [],
+  reportOptions: { fileNamePrefix: string; fileTitle?: string; outputFile?: string | null } = { fileNamePrefix: 'report' }
+): Promise<any> {
+  uxLogTable(commandThis, tableData, columnsOrder);
+  if ((tableData || []).length <= UX_LOG_TABLE_MAX_UI_ROWS) {
+    return null;
+  }
+  const reportRows =
+    columnsOrder.length > 0
+      ? tableData.map((row) => Object.fromEntries(columnsOrder.map((col) => [col, row[col] ?? ''])))
+      : tableData;
+  const outputFile = await generateReportPath(reportOptions.fileNamePrefix, reportOptions.outputFile || '');
+  return await generateCsvFile(reportRows, outputFile, { fileTitle: reportOptions.fileTitle || reportOptions.fileNamePrefix });
 }
 
 export async function generateCsvFile(

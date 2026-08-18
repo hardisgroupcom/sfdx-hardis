@@ -123,3 +123,61 @@ uxLogTable(this, [
 - Third arg (optional): column order. Omit to use the keys of the first row.
 - Booleans are auto-rendered as checkbox emoji via `bool2emoji`.
 - The LWC UI receives a JSON payload truncated at 20 rows with a "truncated" indicator row appended when the dataset is larger.
+
+### A table that can hold more than 20 rows must always come with a report file
+
+The VS Code UI never displays more than `UX_LOG_TABLE_MAX_UI_ROWS` (20) rows, and invites the user to open the
+associated CSV / XLS report instead. So every table whose row count is data-driven (query results, file lists,
+metadata items, users, errors...) must also produce a report file.
+
+Use `uxLogTableWithReport` from `src/common/utils/filesUtils.ts`: it displays the table and, when the dataset
+exceeds 20 rows, writes the CSV (plus its XLSX twin) and pushes it to the UI as a report.
+
+```typescript
+import { uxLogTableWithReport } from "../../../common/utils/filesUtils.js";
+
+await uxLogTableWithReport(this, rows, ["type", "fullName", "status"], {
+  fileNamePrefix: "mdapi-read-successes",
+  fileTitle: "Metadata read successes",
+});
+```
+
+- Keep plain `uxLogTable` only for tables whose size is bounded by construction (a fixed summary, a handful of
+  config keys, a per-status counter). Anything that grows with the org or the project needs the report.
+- When the command already generates its own report covering the same rows (`generateReports`,
+  `generateCsvFile`, a generated markdown/XLSX file sent with `sendReportFileMessage`), keep `uxLogTable`:
+  the requirement is that the full list is reachable, not that it is written twice.
+- `fileNamePrefix` must be unique per table inside a command, otherwise two tables overwrite each other's report.
+
+## A prompt must always be followed by an `uxLog("action", ...)`
+
+After the user answers a `prompts()` call, the VS Code UI needs a new section before it renders anything else:
+**any output that is not `uxLog("action", ...)` is hidden**. This covers `log`, `warning`, `error`, `success`,
+`uxLogTable`, and command execution (`execCommand` / `execSfdxJson` / `wrapSfdxCoreCommand` write their own
+lines and open sub-command entries in the UI).
+
+So, on every code path leaving a prompt, the first thing that produces output must be an `action`:
+
+```typescript
+const confirmRes = await prompts({ type: "confirm", name: "value", message: t("confirmDelete") });
+if (confirmRes.value !== true) {
+  // Conclusion of the user's answer: make it the action itself
+  uxLog("action", this, c.cyan(t("operationCancelledByUser")));
+  return {};
+}
+// Real work starts: open the section before anything logs or runs
+uxLog("action", this, c.cyan(t("deletingApexLogs", { count: apexLogsNumber })));
+await execCommand(deleteCommand, this, { output: true, fail: true });
+```
+
+Two ways to fix a case, pick the one that reads best:
+
+1. **Convert the next log into an `action`** when it concludes the user's answer ("cancelled by user",
+   "nothing selected", "skipping X"). Remember to switch the chalk color to `c.cyan` at the same time.
+2. **Insert the missing `action`** when the next output is a detail line, a table, a loop, or a command
+   execution: the phase header was simply missing.
+
+This also applies to the prompt wrappers (`promptOrg`, `promptProfiles`, `promptUserEmail`,
+`promptTargetBranch`, `MetadataUtils.promptMetadataTypes`, `selectDataWorkspace`,
+`selectFilesWorkspace`, the `promptText` / `promptSelect` / `promptConfirm` helpers...), and it crosses
+function boundaries: when a helper ends with a prompt, the caller is responsible for the `action`.

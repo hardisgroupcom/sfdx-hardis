@@ -118,7 +118,7 @@ Use \`--agent\` to disable all prompts. Typical usage:
       });
       if (confirmUpdate.value !== true) {
         const outputString = t('scriptCancelledByUser');
-        uxLog("warning", this, c.yellow(outputString));
+        uxLog("action", this, c.cyan(outputString));
         return { outputString };
       }
     }
@@ -127,6 +127,7 @@ Use \`--agent\` to disable all prompts. Typical usage:
     const networkUpdates = networksQueryRes.records.map((network) => {
       return { Id: network.Id, Status: status };
     });
+    uxLog("action", this, c.cyan(t('updatingCommunitiesStatus', { count: networkUpdates.length, status: status })));
     const updateResults = await conn.sobject("Network").update(networkUpdates, { allOrNone: false });
     let updateSuccessNb = 0;
     let updateErrorsNb = 0;

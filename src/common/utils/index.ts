@@ -304,7 +304,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
           resolve(null);
         });
       });
-      uxLog("other", this, `Git repository cloned. ${c.yellow(t('pleaseRunTheSameCommandAgain'))}`);
+      uxLog("action", this, c.cyan(`Git repository cloned. ${c.yellow(t('pleaseRunTheSameCommandAgain'))}`));
       process.exit(0);
     } else {
       throw new SfError('You need to be at the root of a git repository to run this command');
@@ -385,6 +385,7 @@ export async function selectGitBranch(
 }
 
 export async function gitCheckOutRemote(branchName: string) {
+  uxLog("action", this, c.cyan(t('checkingOutGitBranch', { branchName })));
   // Fail early with a clear message if the branch is checked out in another git worktree
   await assertBranchNotInOtherWorktree(branchName);
   await git().checkout(branchName);
@@ -447,7 +448,7 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
   });
 
   if (!usernamePrompt.username) {
-    uxLog("error", this, c.red(t('gitUsernameIsRequiredToContinue')));
+    uxLog("action", this, c.cyan(t('gitUsernameIsRequiredToContinue')));
     return false;
   }
 
@@ -460,13 +461,14 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
   });
 
   if (!passwordPrompt.password) {
-    uxLog("error", this, c.red(t('gitPasswordPatIsRequiredToContinue')));
+    uxLog("action", this, c.cyan(t('gitPasswordPatIsRequiredToContinue')));
     return false;
   }
 
   const username = usernamePrompt.username;
   const password = passwordPrompt.password;
 
+  uxLog("action", this, c.cyan(t('updatingGitRemoteUrlWithCredentials')));
   try {
     // Get current remote URL
     const origin = await git().getConfig('remote.origin.url');

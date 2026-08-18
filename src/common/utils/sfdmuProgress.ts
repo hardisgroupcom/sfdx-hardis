@@ -5,139 +5,504 @@ import { WebSocketClient } from '../websocketClient.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
 
+/**
+ * Phases of a sfdmu migration job, in chronological order.
+ * They are detected from the headers and messages printed by sfdmu (see sfdmu messages/logging.md)
+ */
+export type SfdmuPhaseKey =
+  | 'starting'
+  | 'preparing'
+  | 'deletingOldData'
+  | 'retrieving'
+  | 'retrievalSummary'
+  | 'updating'
+  | 'deleting'
+  | 'processingSummary'
+  | 'ended';
+
 export interface SfdmuProgressStats {
-  totalRecordsProcessed: number;
-  totalRecordsExpected?: number;
-  objectsProcessed: number;
+  // Overall progress of the current object set, from 0 to 100
+  percent: number;
+  // Current phase
+  phaseKey: SfdmuPhaseKey;
+  phaseLabel: string;
+  phaseStage: number;
+  objectSet: number;
+  // Object currently being processed, and what is done with it
   currentObject?: string;
-  currentRecordsInObject: number;
-  phase?: string;
-  totalObjects?: number;
-  errors: number;
+  currentOperation?: string;
+  currentJobId?: string;
+  // Records of the current object, within the current phase
+  currentObjectProcessed: number;
+  currentObjectExpected?: number;
+  // Cumulated counters
+  totalRecordsProcessed: number;
+  recordsFailed: number;
+  objectsProcessed: number;
+  objects: string[];
   isCompleted: boolean;
+  // Kept for backward compatibility with previous versions of this module
+  errors: number;
 }
+
+export type SfdmuOperationType = 'export' | 'import' | 'delete';
 
 export interface SfdmuOperationOptions {
   command: string;
   cwd?: string;
   commandThis?: any;
-  operationType?: 'export' | 'import' | 'delete';
+  operationType?: SfdmuOperationType;
   onProgress?: (stats: SfdmuProgressStats) => void;
 }
 
 /**
- * Parses SFDMU output lines to extract progress information
- * SFDMU typically outputs lines like:
- * - "[10:30:45] Account (1000 records processed)"
- * - "Processing object: Opportunity"
- * - "Records read: 50"
- * etc.
+ * Percentage range allocated to each phase, depending on what the command does.
+ * The phase where the time is actually spent gets the largest share of the progress bar:
+ * - import: sfdmu reads local CSV files, then writes to the org (STAGE 1 of "Updating the Target")
+ * - export: sfdmu queries the org (STAGE 1 of "Fetching the data"), then writes local CSV files in no time
+ * - delete: sfdmu queries the records to delete, then deletes them
  */
-export function parseSfdmuOutputLine(line: string): Partial<SfdmuProgressStats> | null {
-  if (!line || typeof line !== 'string') {
-    return null;
+function getPhaseRange(phaseKey: SfdmuPhaseKey, stage: number, operationType: SfdmuOperationType): [number, number] {
+  const isExport = operationType === 'export';
+  switch (phaseKey) {
+    case 'starting':
+      return [0, 2];
+    case 'preparing':
+      return [2, 5];
+    case 'deletingOldData':
+      return isExport ? [5, 8] : [5, 14];
+    case 'retrieving':
+      if (isExport) {
+        // The source org is queried in STAGE 1, and the CSV target is not queried at all
+        return stage >= 2 ? [80, 84] : [8, 80];
+      }
+      // The source CSV files are read in STAGE 1, the target org is queried in STAGE 2
+      return stage >= 2 ? [18, 26] : [14, 18];
+    case 'retrievalSummary':
+      return isExport ? [84, 86] : [26, 27];
+    case 'updating':
+    case 'deleting':
+      if (isExport) {
+        return stage >= 2 ? [94, 96] : [86, 94];
+      }
+      return stage >= 2 ? [90, 94] : [27, 90];
+    case 'processingSummary':
+      return isExport ? [96, 97] : [94, 97];
+    case 'ended':
+      return [100, 100];
+    default:
+      return [0, 0];
   }
+}
 
-  const updates: Partial<SfdmuProgressStats> = {};
-  let hasUpdates = false;
+const PHASE_LABELS: Record<SfdmuPhaseKey, string> = {
+  starting: 'Starting migration job',
+  preparing: 'Analysing data',
+  deletingOldData: 'Deleting old data from the target',
+  retrieving: 'Fetching the data',
+  retrievalSummary: 'Data retrieval summary',
+  updating: 'Updating the target',
+  deleting: 'Deleting from the target',
+  processingSummary: 'Data processing summary',
+  ended: 'Migration job ended',
+};
 
-  // Pattern: Phase headers (e.g., "===== MIGRATION JOB STARTED =====")
-  const phaseMatch = line.match(/=====\s*(.*?)\s*=====/);
-  if (phaseMatch) {
-    updates.phase = phaseMatch[1].trim();
-    hasUpdates = true;
-  }
-
-  // Pattern: Object names in braces (e.g., "{Contact} Processing the object ...")
-  const braceObjectMatch = line.match(/\{([^}]+)\}\s*(.*)$/);
-  if (braceObjectMatch) {
-    const objectName = braceObjectMatch[1].trim();
-    const rest = braceObjectMatch[2] || '';
-    if (objectName) {
-      updates.currentObject = objectName;
-      hasUpdates = true;
-    }
-
-    // Pattern: Original query returns N records
-    const originalQueryMatch = rest.match(/returning\s+(\d+)\s+records?/i);
-    if (originalQueryMatch) {
-      updates.totalRecordsExpected = parseInt(originalQueryMatch[1], 10);
-      hasUpdates = true;
-    }
-
-    // Pattern: Data retrieval completed - got N records
-    const gotRecordsMatch = rest.match(/got\s+(\d+)\s+new\s+records?/i);
-    if (gotRecordsMatch) {
-      updates.totalRecordsProcessed = parseInt(gotRecordsMatch[1], 10);
-      hasUpdates = true;
-    }
-
-    // Pattern: Totally processed N records
-    const processedMatch = rest.match(/totally\s+processed\s+(\d+)\s+records?/i);
-    if (processedMatch) {
-      updates.totalRecordsProcessed = parseInt(processedMatch[1], 10);
-      hasUpdates = true;
-    }
-  }
-
-  // Pattern: Object name with record count - "[HH:MM:SS] ObjectName (N records...)"
-  const recordCountMatch = line.match(/\]\s*(\w+)\s*\((\d+)\s*records?/i);
-  if (recordCountMatch) {
-    const objectName = recordCountMatch[1];
-    const recordCount = parseInt(recordCountMatch[2], 10);
-    updates.currentObject = objectName;
-    updates.currentRecordsInObject = recordCount;
-    updates.totalRecordsProcessed = recordCount;
-    hasUpdates = true;
-  }
-
-  // Pattern: Total records processed
-  const totalMatch = line.match(/total.*?(\d+)\s*records?/i);
-  if (totalMatch) {
-    updates.totalRecordsProcessed = parseInt(totalMatch[1], 10);
-    hasUpdates = true;
-  }
-
-  // Pattern: Processing specific object
-  const objectMatch = line.match(/(?:processing|updating|inserting|upserting)[\s:]*(\w+)/i);
-  if (objectMatch) {
-    updates.currentObject = objectMatch[1];
-    hasUpdates = true;
-  }
-
-  // Pattern: In progress... Completed N records
-  const inProgressMatch = line.match(/in\s+progress\.+\s*completed\s+(\d+)\s+records?/i);
-  if (inProgressMatch) {
-    updates.totalRecordsProcessed = parseInt(inProgressMatch[1], 10);
-    hasUpdates = true;
-  }
-
-  // Pattern: The total amount of the retrieved records ...: N
-  const totalRetrievedMatch = line.match(/total\s+amount\s+of\s+the\s+retrieved\s+records.*?\s(\d+)\./i);
-  if (totalRetrievedMatch) {
-    updates.totalRecordsExpected = parseInt(totalRetrievedMatch[1], 10);
-    hasUpdates = true;
-  }
-
-  // Pattern: Error/issue count
-  const errorMatch = line.match(/(\d+)\s*(?:error|issue|failed|warning)/i);
-  if (errorMatch) {
-    updates.errors = parseInt(errorMatch[1], 10);
-    hasUpdates = true;
-  }
-
-  // Pattern: Completion indicators
-  if (line.match(/(?:command\s+succeeded|migration\s+job\s+ended|completed|finished|done|success)/i)) {
-    updates.isCompleted = true;
-    hasUpdates = true;
-  }
-
-  return hasUpdates ? updates : null;
+function fmt(nb: number): string {
+  return nb.toLocaleString('en-US');
 }
 
 /**
- * Executes an SFDMU command with real-time progress tracking
- * Captures stdout/stderr and parses progress information
+ * Stateful parser of the sfdmu output.
+ *
+ * sfdmu prints its real progress on stdout (and warnings on stderr): phase headers, the number of
+ * records it is about to process for each object, then a line every few seconds while the Bulk /
+ * REST job runs. This tracker turns that stream into a monotonic 0-100 percentage, so the caller
+ * does not need to interrogate the Salesforce Bulk API to know where the job stands.
+ */
+export class SfdmuProgressTracker {
+  public percent = 0;
+  public phaseKey: SfdmuPhaseKey = 'starting';
+  public phaseStage = 1;
+  public objectSet = 1;
+  public currentObject: string | undefined;
+  public currentOperation: string | undefined;
+  public currentJobId: string | undefined;
+  public totalRecordsProcessed = 0;
+  public recordsFailed = 0;
+  public isCompleted = false;
+
+  // Number of records returned by the original query of each object, collected while sfdmu analyses data.
+  // Used as an estimate for the objects that have not started yet in the current phase.
+  private objectExpected: Map<string, number> = new Map();
+  // Number of records announced by sfdmu for each object within the current phase
+  private phaseExpected: Map<string, number> = new Map();
+  // Number of records processed for each object within the current phase
+  private phaseProcessed: Map<string, number> = new Map();
+  // Number of failed records for each object of each phase (sfdmu reports a cumulated count per batch)
+  private failedByObject: Map<string, number> = new Map();
+  private objectsSeen: Set<string> = new Set();
+  private objectsProcessed: Set<string> = new Set();
+  private newObjectSet = false;
+
+  constructor(private operationType: SfdmuOperationType = 'import') {}
+
+  public getStats(): SfdmuProgressStats {
+    return {
+      percent: this.percent,
+      phaseKey: this.phaseKey,
+      phaseLabel: PHASE_LABELS[this.phaseKey],
+      phaseStage: this.phaseStage,
+      objectSet: this.objectSet,
+      currentObject: this.currentObject,
+      currentOperation: this.currentOperation,
+      currentJobId: this.currentJobId,
+      currentObjectProcessed: this.currentObject ? this.phaseProcessed.get(this.currentObject) || 0 : 0,
+      currentObjectExpected: this.currentObject ? this.phaseExpected.get(this.currentObject) : undefined,
+      totalRecordsProcessed: this.totalRecordsProcessed,
+      recordsFailed: this.recordsFailed,
+      objectsProcessed: this.objectsProcessed.size,
+      objects: Array.from(this.objectsSeen),
+      isCompleted: this.isCompleted,
+      errors: this.recordsFailed,
+    };
+  }
+
+  /** True when a new object set started: the caller should restart a fresh progress bar */
+  public consumeNewObjectSet(): boolean {
+    const res = this.newObjectSet;
+    this.newObjectSet = false;
+    return res;
+  }
+
+  /**
+   * Parses a single sfdmu output line and updates the internal state.
+   * Returns true when the line changed something worth reporting.
+   */
+  public processLine(line: string): boolean {
+    if (!line || typeof line !== 'string') {
+      return false;
+    }
+    let changed = false;
+    changed = this.parsePhaseHeader(line) || changed;
+    changed = this.parseObjectContext(line) || changed;
+    changed = this.parseCounters(line) || changed;
+    changed = this.parseCompletion(line) || changed;
+    if (changed) {
+      this.computePercent();
+    }
+    return changed;
+  }
+
+  private setPhase(phaseKey: SfdmuPhaseKey, stage = 1, resetPhaseCounters = true) {
+    if (this.phaseKey === phaseKey && this.phaseStage === stage) {
+      return;
+    }
+    this.phaseKey = phaseKey;
+    this.phaseStage = stage;
+    if (resetPhaseCounters) {
+      this.phaseExpected = new Map();
+      this.phaseProcessed = new Map();
+      this.currentJobId = undefined;
+      this.currentOperation = undefined;
+      // sfdmu always names the object it works on before doing anything with it
+      this.currentObject = undefined;
+    }
+  }
+
+  private parsePhaseHeader(line: string): boolean {
+    // ===== OBJECT SET #1 STARTED =====
+    const objectSetMatch = line.match(/=====\s*OBJECT SET #(\d+) STARTED\s*=====/i);
+    if (objectSetMatch) {
+      const setNb = parseInt(objectSetMatch[1], 10);
+      if (setNb !== this.objectSet || this.percent > 0) {
+        this.objectSet = setNb;
+        this.newObjectSet = true;
+        this.percent = 0;
+        this.objectExpected = new Map();
+        this.currentObject = undefined;
+      }
+      this.setPhase('preparing');
+      return true;
+    }
+    // ===== MIGRATION JOB STARTED =====
+    if (line.match(/=====\s*MIGRATION JOB STARTED\s*=====/i)) {
+      this.setPhase('starting');
+      return true;
+    }
+    // ===== Fetching the data (STAGE 1) =====
+    const retrievingMatch = line.match(/=====\s*Fetching the data \(STAGE (\d+)\)\s*=====/i);
+    if (retrievingMatch) {
+      this.setPhase('retrieving', parseInt(retrievingMatch[1], 10));
+      return true;
+    }
+    // ===== DATA RETRIEVAL SUMMARY =====
+    if (line.match(/=====\s*DATA RETRIEVAL SUMMARY\s*=====/i)) {
+      this.setPhase('retrievalSummary');
+      return true;
+    }
+    // ===== Updating the Target (STAGE 1) =====
+    const updatingMatch = line.match(/=====\s*Updating the Target \(STAGE (\d+)\)\s*=====/i);
+    if (updatingMatch) {
+      this.setPhase('updating', parseInt(updatingMatch[1], 10));
+      return true;
+    }
+    // ===== Deleting from the Target (STAGE 1) =====
+    const deletingMatch = line.match(/=====\s*Deleting from the Target \(STAGE (\d+)\)\s*=====/i);
+    if (deletingMatch) {
+      this.setPhase('deleting', parseInt(deletingMatch[1], 10));
+      return true;
+    }
+    // ===== DATA PROCESSING SUMMARY =====
+    if (line.match(/=====\s*DATA PROCESSING SUMMARY\s*=====/i)) {
+      this.setPhase('processingSummary');
+      return true;
+    }
+    // ===== MIGRATION JOB ENDED =====
+    if (line.match(/=====\s*MIGRATION JOB ENDED\s*=====/i)) {
+      this.setPhase('ended');
+      this.isCompleted = true;
+      return true;
+    }
+    // ANALYSING DATA...
+    if (line.match(/ANALYSING DATA/i)) {
+      this.setPhase('preparing');
+      return true;
+    }
+    // Deleting old data from the Target ...
+    if (line.match(/Deleting old data from the Target/i)) {
+      this.setPhase('deletingOldData');
+      return true;
+    }
+    return false;
+  }
+
+  /** Only the {ObjectName} prefix printed by sfdmu is a reliable source for the current object */
+  private parseObjectContext(line: string): boolean {
+    const braceMatch = line.match(/\{([\w.]+)\}/);
+    if (!braceMatch) {
+      return false;
+    }
+    const objectName = braceMatch[1];
+    if (this.currentObject === objectName) {
+      return false;
+    }
+    this.currentObject = objectName;
+    this.objectsSeen.add(objectName);
+    return true;
+  }
+
+  private parseCounters(line: string): boolean {
+    let changed = false;
+
+    // {Account} The original query string of this object is returning 177373 records from the TARGET org.
+    const originalQueryMatch = line.match(/original query string .*? returning (\d+) records?/i);
+    if (originalQueryMatch && this.currentObject) {
+      this.objectExpected.set(this.currentObject, parseInt(originalQueryMatch[1], 10));
+      changed = true;
+    }
+
+    // {Account} Amount of records to Update: 177373.
+    const amountMatch = line.match(/Amount of records to (\w+): (\d+)/i);
+    if (amountMatch && this.currentObject) {
+      this.currentOperation = amountMatch[1];
+      this.phaseExpected.set(this.currentObject, parseInt(amountMatch[2], 10));
+      changed = true;
+    }
+
+    // {Account} TARGET was not queried since csvfile is set as a TARGET.
+    // {Account} No records to delete.
+    if (line.match(/was not queried since|No records to (?:delete|update|insert)/i) && this.currentObject) {
+      this.phaseExpected.set(this.currentObject, 0);
+      this.phaseProcessed.set(this.currentObject, 0);
+      changed = true;
+    }
+
+    // [Job# 750h70000004EQzAAM:Update] {Account} The job has been created. Uploading data ...
+    const jobMatch = line.match(/\[Job#\s*([\w]+):(\w+)\]/i);
+    if (jobMatch) {
+      this.currentJobId = jobMatch[1] === 'REST' ? undefined : jobMatch[1];
+      this.currentOperation = jobMatch[2];
+      changed = true;
+    }
+
+    // [Batch# 750h70000004EQzAAM:Update] {Account} Processing ... 3600 records processed, 0 records failed.
+    // [Batch# 750h70000004EQzAAM:Update] {Account} Completed. 177373 records processed, 4 records failed.
+    // [Batch# 750h70000004EQzAAM:Update] {Account} Completed with issues. 100 records processed, 2 records failed.
+    const dmlProgressMatch = line.match(/(\d+) records? processed, (\d+) records? failed/i);
+    if (dmlProgressMatch && this.currentObject) {
+      const processed = parseInt(dmlProgressMatch[1], 10);
+      const failed = parseInt(dmlProgressMatch[2], 10);
+      this.setObjectProcessed(this.currentObject, processed);
+      this.setObjectFailed(this.currentObject, failed);
+      const batchMatch = line.match(/\[Batch#\s*([\w]+):(\w+)\]/i);
+      if (batchMatch) {
+        this.currentJobId = batchMatch[1] === 'REST' ? this.currentJobId : batchMatch[1];
+        this.currentOperation = batchMatch[2];
+      }
+      changed = true;
+    }
+
+    // In progress... Completed 2000 records. (or "Completed 2000/177373 records." when the total is known)
+    const queryProgressMatch = line.match(/In progress\.+\s*Completed (\d+)(?:\/(\d+))? records?/i);
+    if (queryProgressMatch && this.currentObject) {
+      this.setObjectProcessed(this.currentObject, parseInt(queryProgressMatch[1], 10));
+      if (queryProgressMatch[2]) {
+        this.phaseExpected.set(this.currentObject, parseInt(queryProgressMatch[2], 10));
+      }
+      changed = true;
+    }
+
+    // {Account} Data retrieval (SOURCE) has been completed. Got 177373 new records.
+    const retrievedMatch = line.match(/Data retrieval \(\w+\) has been completed\. Got (\d+) new records?/i);
+    if (retrievedMatch && this.currentObject) {
+      const nb = parseInt(retrievedMatch[1], 10);
+      this.phaseExpected.set(this.currentObject, nb);
+      this.setObjectProcessed(this.currentObject, nb);
+      this.objectsProcessed.add(this.currentObject);
+      changed = true;
+    }
+
+    // {Account} The Target has been updated. Totally processed 177373 records.
+    const targetUpdatedMatch = line.match(/The Target has been updated\. Totally processed (\d+) records?/i);
+    if (targetUpdatedMatch && this.currentObject) {
+      const nb = parseInt(targetUpdatedMatch[1], 10);
+      this.setObjectProcessed(this.currentObject, Math.max(nb, this.phaseProcessed.get(this.currentObject) || 0));
+      this.phaseExpected.set(this.currentObject, Math.max(nb, this.phaseExpected.get(this.currentObject) || 0));
+      this.objectsProcessed.add(this.currentObject);
+      changed = true;
+    }
+
+    // {Account} Deleting has been completed.
+    if (line.match(/Deleting has been completed/i) && this.currentObject) {
+      const expected = this.phaseExpected.get(this.currentObject);
+      if (expected) {
+        this.setObjectProcessed(this.currentObject, expected);
+      }
+      this.objectsProcessed.add(this.currentObject);
+      changed = true;
+    }
+
+    return changed;
+  }
+
+  /** sfdmu reports a cumulated amount of failed records per batch, so keep the highest value seen */
+  private setObjectFailed(objectName: string, failed: number) {
+    const key = `${this.phaseKey}${this.phaseStage}|${objectName}`;
+    if (failed <= (this.failedByObject.get(key) || 0)) {
+      return;
+    }
+    this.failedByObject.set(key, failed);
+    let total = 0;
+    for (const nb of this.failedByObject.values()) {
+      total += nb;
+    }
+    this.recordsFailed = total;
+  }
+
+  private setObjectProcessed(objectName: string, processed: number) {
+    const previous = this.phaseProcessed.get(objectName) || 0;
+    if (processed < previous) {
+      return;
+    }
+    this.phaseProcessed.set(objectName, processed);
+    if (this.phaseKey === 'updating' || this.phaseKey === 'deleting' || this.phaseKey === 'deletingOldData') {
+      this.totalRecordsProcessed += processed - previous;
+    }
+  }
+
+  private parseCompletion(line: string): boolean {
+    if (line.match(/Execution of the command .*? has been completed/i) || line.match(/Command succeeded/i)) {
+      this.isCompleted = true;
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Completion ratio of the current phase.
+   * Objects that have not started yet are counted with the record amount collected during the analysis,
+   * so the ratio remains meaningful when several objects are processed one after the other.
+   */
+  private getPhaseFraction(): number {
+    const allObjects = new Set([...this.phaseExpected.keys(), ...this.objectExpected.keys()]);
+    let expectedTotal = 0;
+    let processedTotal = 0;
+    for (const objectName of allObjects) {
+      const expected = this.phaseExpected.has(objectName)
+        ? (this.phaseExpected.get(objectName) as number)
+        : this.objectExpected.get(objectName) || 0;
+      expectedTotal += expected;
+      processedTotal += Math.min(expected, this.phaseProcessed.get(objectName) || 0);
+    }
+    return expectedTotal > 0 ? Math.min(1, processedTotal / expectedTotal) : 0;
+  }
+
+  private computePercent() {
+    const [from, to] = getPhaseRange(this.phaseKey, this.phaseStage, this.operationType);
+    const percent = Math.round(from + (to - from) * this.getPhaseFraction());
+    // Progress must never go backwards, even if sfdmu discovers more records to process than announced
+    this.percent = Math.max(this.percent, Math.min(100, percent));
+  }
+
+  /** Label of the phase in progress, with its stage when sfdmu runs it in several passes */
+  public getPhaseLabel(): string {
+    const stageSuffix = this.phaseStage > 1 ? ` (stage ${this.phaseStage})` : '';
+    return `${PHASE_LABELS[this.phaseKey]}${stageSuffix}`;
+  }
+
+  /** False when the console progress line would carry no useful information: the phase line is enough */
+  public hasProgressDetail(): boolean {
+    if (!this.currentObject) {
+      return false;
+    }
+    if (this.phaseExpected.get(this.currentObject) === 0) {
+      // sfdmu has nothing to do with this object in this phase
+      return false;
+    }
+    const processed = this.phaseProcessed.get(this.currentObject) || 0;
+    if (processed > 0) {
+      return true;
+    }
+    // No record processed yet: only worth displaying when sfdmu is about to process some
+    return (
+      this.objectExpected.has(this.currentObject) &&
+      ['retrieving', 'updating', 'deleting', 'deletingOldData'].includes(this.phaseKey)
+    );
+  }
+
+  /** Values to display in the console progress line */
+  public getProgressLabels(): {
+    object: string;
+    processed: string;
+    expected: string;
+    percent: number;
+    failed: string;
+    jobId: string;
+  } {
+    const processed = this.currentObject ? this.phaseProcessed.get(this.currentObject) || 0 : 0;
+    // sfdmu does not always announce how many records it is about to handle: fall back on the amount
+    // returned by the original query of the object, collected while sfdmu was analysing the data
+    const expected = this.currentObject
+      ? (this.phaseExpected.get(this.currentObject) ?? this.objectExpected.get(this.currentObject))
+      : undefined;
+    return {
+      object: this.currentObject
+        ? this.currentOperation
+          ? `${this.currentObject} (${this.currentOperation})`
+          : this.currentObject
+        : this.getPhaseLabel(),
+      processed: fmt(processed),
+      expected: expected === undefined ? '?' : fmt(expected),
+      percent: this.percent,
+      failed: fmt(this.recordsFailed),
+      jobId: this.currentJobId || '',
+    };
+  }
+}
+
+/**
+ * Executes an SFDMU command with real-time progress tracking.
+ * Captures stdout/stderr, parses progress information and forwards it to the console and the VS Code UI.
  */
 export async function executeSfdmuCommandWithProgress(
   options: SfdmuOperationOptions
@@ -150,34 +515,34 @@ export async function executeSfdmuCommandWithProgress(
     const cmd = parts[0]; // 'sf'
     const args = parts.slice(1);
 
-    // Track progress statistics
-    const stats: SfdmuProgressStats = {
-      totalRecordsProcessed: 0,
-      objectsProcessed: 0,
-      currentRecordsInObject: 0,
-      errors: 0,
-      isCompleted: false,
-    };
-
+    const tracker = new SfdmuProgressTracker(operationType || 'import');
     let stdoutData = '';
     let stderrData = '';
-    const objectsSet = new Set<string>();
-    let lastReportedRecords = -1;
-    let lastReportedObject = '';
+    let lastReportedPercent = -1;
     let lastReportedPhase = '';
+    let lastReportedObject = '';
+    let lastReportedFailed = 0;
 
     if (commandThis) {
-      uxLog("log", commandThis, c.grey(t('executing', { command })));
+      uxLog('log', commandThis, c.grey(t('executing', { command })));
     }
 
-    // Send progress start if WebSocket is active
-    if (WebSocketClient.isAlive()) {
+    const progressTitle = () => {
       const msgKey =
-        operationType === 'export' ? 'sfdmuExportingData' :
-          operationType === 'import' ? 'sfdmuImportingData' :
-            operationType === 'delete' ? 'sfdmuDeletingData' :
-              'sfdmuProcessingData';
-      WebSocketClient.sendProgressStartMessage(t(msgKey), 0);
+        operationType === 'export'
+          ? 'sfdmuExportingData'
+          : operationType === 'import'
+            ? 'sfdmuImportingData'
+            : operationType === 'delete'
+              ? 'sfdmuDeletingData'
+              : 'sfdmuProcessingData';
+      return tracker.objectSet > 1 ? `${t(msgKey)} (object set #${tracker.objectSet})` : t(msgKey);
+    };
+
+    // Progress is sent as a percentage: the VS Code UI computes its ETA from the time elapsed
+    // between two steps, so steps must be regular and of the same size.
+    if (WebSocketClient.isAlive()) {
+      WebSocketClient.sendProgressStartMessage(progressTitle(), 100);
     }
 
     const proc = spawn(cmd, args, {
@@ -190,6 +555,58 @@ export async function executeSfdmuCommandWithProgress(
       },
     });
 
+    const handleLine = (line: string) => {
+      const changed = tracker.processLine(line);
+      if (!changed) {
+        return;
+      }
+      const stats = tracker.getStats();
+
+      if (onProgress) {
+        onProgress(stats);
+      }
+
+      // A new object set restarts the progress from scratch
+      if (tracker.consumeNewObjectSet()) {
+        lastReportedPercent = -1;
+        lastReportedPhase = '';
+        lastReportedObject = '';
+        if (WebSocketClient.isAlive()) {
+          WebSocketClient.sendProgressStartMessage(progressTitle(), 100);
+        }
+      }
+
+      // Send one step message per percent so the VS Code UI can compute a meaningful remaining time
+      if (WebSocketClient.isAlive() && stats.percent > lastReportedPercent) {
+        for (let step = Math.max(lastReportedPercent + 1, 1); step <= stats.percent; step++) {
+          WebSocketClient.sendProgressStepMessage(step, 100);
+        }
+      }
+
+      if (commandThis) {
+        const phaseLabel = tracker.getPhaseLabel();
+        const phaseChanged = phaseLabel !== lastReportedPhase;
+        const objectChanged = (stats.currentObject || '') !== lastReportedObject;
+        const percentChanged = stats.percent > lastReportedPercent;
+        const failedChanged = stats.recordsFailed > lastReportedFailed;
+        if (phaseChanged) {
+          uxLog('log', commandThis, c.cyan(t('sfdmuStep', { phase: phaseLabel })));
+        }
+        if ((percentChanged || objectChanged || failedChanged) && tracker.hasProgressDetail()) {
+          const labels = tracker.getProgressLabels();
+          const message =
+            stats.recordsFailed > 0 ? t('sfdmuProgressRecordsFailed', labels) : t('sfdmuProgressRecords', labels);
+          uxLog('log', commandThis, c.grey(message + (labels.jobId ? ` [job ${labels.jobId}]` : '')));
+        }
+        lastReportedPhase = phaseLabel;
+        lastReportedObject = stats.currentObject || '';
+        lastReportedFailed = stats.recordsFailed;
+      }
+      if (stats.percent > lastReportedPercent) {
+        lastReportedPercent = stats.percent;
+      }
+    };
+
     // Handle stdout
     const rlOut = readline.createInterface({
       input: proc.stdout!,
@@ -198,74 +615,11 @@ export async function executeSfdmuCommandWithProgress(
 
     rlOut.on('line', (line: string) => {
       stdoutData += line + '\n';
-
-      // Parse progress from line
-      const parsed = parseSfdmuOutputLine(line);
-      if (parsed) {
-        if (parsed.currentObject) {
-          stats.currentObject = parsed.currentObject;
-          objectsSet.add(parsed.currentObject);
-          stats.objectsProcessed = objectsSet.size;
-        }
-        if (parsed.currentRecordsInObject) {
-          stats.currentRecordsInObject = parsed.currentRecordsInObject;
-        }
-        if (parsed.totalRecordsProcessed) {
-          stats.totalRecordsProcessed = parsed.totalRecordsProcessed;
-        }
-        if (parsed.totalRecordsExpected) {
-          stats.totalRecordsExpected = parsed.totalRecordsExpected;
-        }
-        if (parsed.phase) {
-          stats.phase = parsed.phase;
-        }
-        if (parsed.errors !== undefined) {
-          stats.errors = parsed.errors;
-        }
-        if (parsed.isCompleted) {
-          stats.isCompleted = true;
-        }
-
-        // Update progress
-        if (onProgress) {
-          onProgress(stats);
-        }
-
-        // Send to WebSocket if active
-        if (WebSocketClient.isAlive()) {
-          const totalSteps = stats.totalRecordsExpected || (stats.totalRecordsProcessed + 10);
-          WebSocketClient.sendProgressStepMessage(stats.totalRecordsProcessed, totalSteps);
-        }
-
-        // Log progress to console
-        if (commandThis) {
-          const shouldLogRecords =
-            stats.totalRecordsProcessed >= lastReportedRecords + 1000 ||
-            stats.totalRecordsProcessed === stats.totalRecordsExpected;
-          const shouldLogObject = stats.currentObject !== lastReportedObject;
-          const shouldLogPhase = (stats.phase || '') !== lastReportedPhase;
-          const shouldLogErrors = parsed.errors !== undefined;
-
-          if (shouldLogRecords || shouldLogObject || shouldLogPhase || shouldLogErrors) {
-            const phaseLabel = stats.phase ? ` | ${stats.phase}` : '';
-            uxLog("other", commandThis, c.grey(
-              `Progress: ${stats.objectsProcessed} object(s), ` +
-              `${stats.totalRecordsProcessed} record(s) - ${stats.currentObject || 'Processing'}${phaseLabel}`
-            ));
-            lastReportedRecords = stats.totalRecordsProcessed;
-            lastReportedObject = stats.currentObject || '';
-            lastReportedPhase = stats.phase || '';
-          }
-        }
-      } else if (line.trim()) {
-        // Log non-empty lines that don't contain progress info
-        if (commandThis && (line.includes('error') || line.includes('Error') || line.includes('ERROR'))) {
-          uxLog("warning", commandThis, c.yellow(line));
-        }
-      }
+      handleLine(line);
     });
 
-    // Handle stderr
+    // Handle stderr: sfdmu sends its warnings there, and some of them carry progress information
+    // (for example the final "Completed. N records processed, M records failed." of a batch with errors)
     const rlErr = readline.createInterface({
       input: proc.stderr!,
       crlfDelay: Infinity,
@@ -273,8 +627,9 @@ export async function executeSfdmuCommandWithProgress(
 
     rlErr.on('line', (line: string) => {
       stderrData += line + '\n';
+      handleLine(line);
       if (line.trim() && commandThis) {
-        uxLog("warning", commandThis, c.yellow(`[SFDMU] ${line}`));
+        uxLog('warning', commandThis, c.yellow(`[SFDMU] ${line}`));
       }
     });
 
@@ -283,11 +638,12 @@ export async function executeSfdmuCommandWithProgress(
       rlOut.close();
       rlErr.close();
 
-      stats.isCompleted = true;
+      tracker.isCompleted = true;
+      tracker.percent = 100;
+      const stats = tracker.getStats();
 
-      // Send progress end if WebSocket is active
       if (WebSocketClient.isAlive()) {
-        WebSocketClient.sendProgressEndMessage(stats.totalRecordsProcessed);
+        WebSocketClient.sendProgressEndMessage(100);
       }
 
       if (code === 0) {
@@ -298,9 +654,7 @@ export async function executeSfdmuCommandWithProgress(
           stats,
         });
       } else {
-        const error = new Error(
-          `SFDMU command failed with exit code ${code}: ${stderrData || stdoutData}`
-        );
+        const error = new Error(`SFDMU command failed with exit code ${code}: ${stderrData || stdoutData}`);
         reject(error);
       }
     });
@@ -320,7 +674,7 @@ export async function executeSfdmuCommandWithProgress(
 export async function executeSfdmuCommand(
   command: string,
   commandThis: any,
-  options: { cwd?: string; fail?: boolean; output?: boolean; operationType?: 'export' | 'import' | 'delete' } = {}
+  options: { cwd?: string; fail?: boolean; output?: boolean; operationType?: SfdmuOperationType } = {}
 ): Promise<{ stdout: string; stderr: string }> {
   try {
     const result = await executeSfdmuCommandWithProgress({

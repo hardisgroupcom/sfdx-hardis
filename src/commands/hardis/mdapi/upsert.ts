@@ -2,7 +2,8 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { isCI, uxLog, uxLogTable } from '../../../common/utils/index.js';
+import { isCI, uxLog } from '../../../common/utils/index.js';
+import { uxLogTableWithReport } from '../../../common/utils/filesUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { t } from '../../../common/utils/i18n.js';
 import {
@@ -147,7 +148,7 @@ In agent mode (and in CI), the overwrite confirmation prompt is skipped and the 
     // Whole-component overwrite confirmation (interactive only).
     if (!isCI && !agentMode && components.length > 0) {
       uxLog('warning', this, c.yellow(t('crudOverwriteWarning', { count: String(components.length) })));
-      uxLogTable(this, components, ['type', 'fullName']);
+      await uxLogTableWithReport(this, components, ['type', 'fullName'], { fileNamePrefix: 'mdapi-upsert-components', fileTitle: 'Metadata components to overwrite' });
       const confirm = await prompts({
         type: 'confirm',
         name: 'value',
@@ -156,7 +157,7 @@ In agent mode (and in CI), the overwrite confirmation prompt is skipped and the 
         initial: false,
       });
       if (confirm.value !== true) {
-        uxLog('log', this, t('crudDeployCancelled'));
+        uxLog('action', this, c.cyan(t('crudDeployCancelled')));
         return { successes: [], failures: [], cancelled: true };
       }
     }
@@ -171,7 +172,7 @@ In agent mode (and in CI), the overwrite confirmation prompt is skipped and the 
       debug: debugMode,
     });
 
-    this.displaySummary(outcome.successes, outcome.failures, outcome.skipped);
+    await this.displaySummary(outcome.successes, outcome.failures, outcome.skipped);
 
     if (isOutcomeFailed(outcome, ignoreErrors)) {
       throw new SfError(t('crudDeployFailedSummary', { count: String(outcome.failures.length) }));
@@ -185,22 +186,23 @@ In agent mode (and in CI), the overwrite confirmation prompt is skipped and the 
     };
   }
 
-  private displaySummary(successes: any[], failures: any[], skipped: any[]): void {
+  private async displaySummary(successes: any[], failures: any[], skipped: any[]): Promise<void> {
     if (successes.length > 0) {
       uxLog('success', this, c.green(t('crudDeploySuccessCount', { count: String(successes.length) })));
-      uxLogTable(
+      await uxLogTableWithReport(
         this,
         successes.map((s) => ({ type: s.type, fullName: s.fullName, action: s.created ? 'created' : 'updated' })),
-        ['type', 'fullName', 'action']
+        ['type', 'fullName', 'action'],
+        { fileNamePrefix: 'mdapi-upsert-successes', fileTitle: 'Metadata upsert successes' }
       );
     }
     if (failures.length > 0) {
       uxLog('warning', this, c.yellow(t('crudDeployFailureCount', { count: String(failures.length) })));
-      uxLogTable(this, failures.map((f) => ({ type: f.type, fullName: f.fullName, error: f.error })), ['type', 'fullName', 'error']);
+      await uxLogTableWithReport(this, failures.map((f) => ({ type: f.type, fullName: f.fullName, error: f.error })), ['type', 'fullName', 'error'], { fileNamePrefix: 'mdapi-upsert-failures', fileTitle: 'Metadata upsert failures' });
     }
     if (skipped.length > 0) {
       uxLog('warning', this, c.yellow(t('crudSkippedUpsertCount', { count: String(skipped.length) })));
-      uxLogTable(this, skipped.map((s) => ({ type: s.type, fullName: s.fullName })), ['type', 'fullName']);
+      await uxLogTableWithReport(this, skipped.map((s) => ({ type: s.type, fullName: s.fullName })), ['type', 'fullName'], { fileNamePrefix: 'mdapi-upsert-skipped', fileTitle: 'Metadata upsert skipped items' });
     }
   }
 }

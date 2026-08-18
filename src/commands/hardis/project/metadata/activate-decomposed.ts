@@ -216,7 +216,7 @@ In agent mode:
 
         // Check if user cancelled the selection
         if (!selectionResult.selectedTypes || selectionResult.selectedTypes.length === 0) {
-          uxLog("warning", this, c.yellow(t('operationCancelledByUser')));
+          uxLog("action", this, c.cyan(t('operationCancelledByUser')));
           results.cancelled = true;
           return results;
         }
@@ -519,6 +519,7 @@ In agent mode:
         }
         if (shouldRetry) {
           // Unset default org
+          uxLog("action", this, c.cyan(t('unsetsDefaultOrgAndRetryDecomposition')));
           await execCommand('sf config unset target-org', this, { fail: true, debug: flags.debug });
           uxLog("log", this, c.green(t('defaultOrgUnsetSuccessfullyRetryingDecompositionOf', { metadataType: metadataType.name })));
           // Retry decomposition

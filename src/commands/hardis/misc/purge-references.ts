@@ -147,6 +147,7 @@ In agent mode:
       if (retrieveNeedRes.value === false) {
         const metadatas = await MetadataUtils.promptMetadataTypes();
         const metadataArg = metadatas.map((metadataType: any) => metadataType.xmlName).join(' ');
+        uxLog("action", this, c.cyan(t('retrievingMetadatasFromOrg')));
         await execCommand(`sf project retrieve start --ignore-conflicts --metadata ${metadataArg}`, this, { fail: true });
       }
     }

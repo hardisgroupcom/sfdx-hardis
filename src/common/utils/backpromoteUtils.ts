@@ -11,7 +11,6 @@ import {
   gitFetch,
   isCI,
   uxLog,
-  uxLogTable,
 } from './index.js';
 import { buildOrgManifest } from './deployUtils.js';
 import { analyzeDeployErrorLogs } from './deployTips.js';
@@ -20,7 +19,7 @@ import { GitProvider } from '../gitProvider/index.js';
 // callSfdxGitDelta is used by the command file directly
 
 import { countPackageXmlItems, isPackageXmlEmpty, parsePackageXmlFile, writePackageXmlFile } from './xmlUtils.js';
-import { generateCsvFile, generateReportPath } from './filesUtils.js';
+import { generateCsvFile, generateReportPath, uxLogTableWithReport } from './filesUtils.js';
 import { generatePdfFileFromMarkdown } from './markdownUtils.js';
 import { prompts } from './prompts.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
@@ -752,7 +751,7 @@ export async function promptOpenVisualDiffsInVsCode(
   });
 
   if (confirmRes.value !== true) {
-    uxLog('log', commandThis, c.grey(t('backpromoteVisualDiffsSkippedByUser')));
+    uxLog('action', commandThis, c.cyan(t('backpromoteVisualDiffsSkippedByUser')));
     return false;
   }
 
@@ -856,7 +855,10 @@ export async function promptMetadataValidation(
       'Name': item.member,
       'Conflict': item.hasConflict ? `⚠️ ${t('backpromoteModifiedInOrg')}` : '-',
     }));
-    uxLogTable(commandThis, tableData, ['Type', 'Name', 'Conflict']);
+    await uxLogTableWithReport(commandThis, tableData, ['Type', 'Name', 'Conflict'], {
+      fileNamePrefix: 'backpromote-delta-items',
+      fileTitle: 'Backpromote delta items',
+    });
   }
 
   if (agentMode || isCI) {
@@ -942,7 +944,10 @@ export async function confirmDestructiveChanges(
   }
 
   uxLog('warning', commandThis, c.yellow(t('backpromoteDestructiveChangesWarning', { count: totalItems })));
-  uxLogTable(commandThis, items, ['Type', 'Name']);
+  await uxLogTableWithReport(commandThis, items, ['Type', 'Name'], {
+    fileNamePrefix: 'backpromote-destructive-changes',
+    fileTitle: 'Backpromote destructive changes',
+  });
 
   if (agentMode || isCI) {
     uxLog('warning', commandThis, c.yellow(t('backpromoteDestructiveChangesAutoConfirmed')));
@@ -1206,9 +1211,11 @@ export async function executeBackpromoteActions(
   }
 
   if (selectedActionIds.size === 0) {
-    uxLog('log', commandThis, c.grey(`[Backpromote] ${t('backpromoteNoPhaseActionsSelected', { phase: phaseLabel })}`));
+    uxLog('action', commandThis, c.cyan(`[Backpromote] ${t('backpromoteNoPhaseActionsSelected', { phase: phaseLabel })}`));
     return;
   }
+
+  uxLog('action', commandThis, c.cyan(t('backpromoteExecutingActions', { count: selectedActionIds.size })));
 
   // Store connection for actions that need it
   globalThis.jsForceConn = conn;
@@ -1306,9 +1313,9 @@ export async function executeBackpromoteActions(
         }),
       });
       if (actionRes.value === 's' || actionRes.value === 'S') {
-        uxLog('log', commandThis, c.grey(t('backpromoteManualActionSkipped', { label: manualAction.label })));
+        uxLog('action', commandThis, c.cyan(t('backpromoteManualActionSkipped', { label: manualAction.label })));
       } else {
-        uxLog('log', commandThis, c.green(t('backpromoteManualActionCompleted', { label: manualAction.label })));
+        uxLog('action', commandThis, c.cyan(t('backpromoteManualActionCompleted', { label: manualAction.label })));
         // Update state to success
         const entryIdx = actionEntries.findIndex((e) => e.actionLabel === manualAction.label && e.status === 'manual');
         if (entryIdx >= 0) {
@@ -1440,7 +1447,10 @@ async function filterPackageXmlToOrgAvailable(
   // Display filtered-out items
   if (filteredOutItems.length > 0) {
     uxLog('log', commandThis, c.grey(t('backpromoteFilteredOutItems', { count: filteredOutItems.length })));
-    uxLogTable(commandThis, filteredOutItems, ['Type', 'Name']);
+    await uxLogTableWithReport(commandThis, filteredOutItems, ['Type', 'Name'], {
+      fileNamePrefix: 'backpromote-filtered-out-items',
+      fileTitle: 'Backpromote filtered out items',
+    });
   }
   uxLog('log', commandThis, c.grey(t('backpromoteFilteredRemainingItems', { count: remainingCount })));
 

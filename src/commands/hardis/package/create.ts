@@ -157,6 +157,7 @@ All interactive prompts for package name, path, and type are skipped.
       ` --name "${packageName}"` +
       ` --package-type ${packageType}` +
       ` --path "${packagePath}"`;
+    uxLog("action", this, c.cyan(t('creatingSalesforcePackage', { packageName })));
     const packageCreateResult = await execSfdxJson(packageCreateCommand, this, {
       output: true,
       fail: true,

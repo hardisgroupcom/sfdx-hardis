@@ -9,6 +9,8 @@
 ## Logging
 
 - Use `uxLog(level, context, message)` for all logging. See the `uxlog-usage` skill for the level/color pairing and when to use each level.
+- After a `prompts()` answer, the next thing that produces output must be `uxLog("action", ...)`: the VS Code UI hides everything else (log, warning, error, success, tables, and `execCommand` / `execSfdxJson` output).
+- A `uxLogTable` whose row count is data-driven must also produce a report file: use `uxLogTableWithReport` (from `filesUtils.ts`), because the VS Code UI never renders more than 20 rows.
 - Use `chalk` (commonly aliased as `c`) for colors.
 - No emojis at the beginning of log lines.
 - Use `uxLogTable` from `src/common/utils/index.js` for formatted tables.

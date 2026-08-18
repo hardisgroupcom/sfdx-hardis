@@ -169,6 +169,7 @@ Optional flag:
     // Create sfdx project only if not existing
     if (!isSfdxProject()) {
       const createCommand = 'sf project generate' + ` --name "${projectName}"` + ' --manifest';
+      uxLog("action", this, c.cyan(t('creatingSfdxProject')));
       await execCommand(createCommand, this, {
         output: true,
         fail: true,
@@ -229,7 +230,7 @@ Optional flag:
     await setConfig('project', {
       autoCleanTypes: defaultAutoCleanTypes
     });
-    uxLog("warning", this, c.yellow(t('autocleantypesHasBeenActivatedOnTheNew', { defaultAutoCleanTypes: defaultAutoCleanTypes.join(",") })));
+    uxLog("action", this, c.cyan(t('autocleantypesHasBeenActivatedOnTheNew', { defaultAutoCleanTypes: defaultAutoCleanTypes.join(",") })));
     uxLog("warning", this, c.bold(c.yellow(t('ifInstallCiCdOnExistingOrgMinimizeProfiles'))));
     // Message instructions
     uxLog(

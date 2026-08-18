@@ -5,7 +5,7 @@ import * as path from 'path';
 import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
-import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
@@ -34,6 +34,7 @@ import {
 } from '../../../../common/utils/refresh/manualRestoreInventoryUtils.js';
 import {
   AFTER_REFRESH_ACTIONS_HISTORY_FILE,
+  loadRefreshActionsHistory,
   mergeAndSaveRefreshActions,
 } from '../../../../common/utils/refresh/refreshActionsReportUtils.js';
 import { getConfig } from '../../../../config/index.js';
@@ -59,6 +60,7 @@ interface RefreshActionRow {
   name: string;
   status: string;
   details: string;
+  runDate?: string;
 }
 
 export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
@@ -79,6 +81,7 @@ Key functionalities:
 - **Restore External Client Apps:** Detects saved External Client App metadata (ExternalClientApplication, ExtlClntAppOauthSettings, ExtlClntAppGlobalOauthSettings, ExtlClntAppOauthConfigurablePolicies, ExtlClntAppConfigurablePolicies) and deploys them back to the org, including their saved OAuth credentials (Consumer Key and Consumer Secret).
 - **Select which items to restore:** Finds Connected App XMLs, certificates, custom settings and other artifacts and lets you pick what to restore (or restore all).
 - **Safety checks and validation:** Confirms files exist and prompts before making changes to the target org.
+- **Skip what is already restored:** Reads the actions history of the previous runs on the same backup folder, and asks for confirmation before running again a step that already succeeded (certificates, other metadata, SAML SSO configs, custom settings, records, External Client Apps, Connected Apps, reschedule Apex script).
 - **Prepare org for restore:** Optionally cleans up existing Connected Apps so saved apps can be re-deployed without conflict.
 - **Redeploy saved artifacts:** Restores External Client Apps (with saved credentials), certificates, SAML SSO configs, custom settings and other metadata. Restoring Connected Apps is discouraged (declined by default): since Spring '26 their deploy is rejected unless Salesforce Support has enabled Connected App creation in the org via a Case. Convert them to External Client Apps before the refresh instead.
 - **Handle SAML configs:** Cleans and updates SAML XML files and helps you choose certificates to wire into restored configs.
@@ -99,6 +102,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 - **SAML Handling:** Queries active certificates via tooling API, updates SAML XML files, and deploys using \`sf project deploy start -m SamlSsoConfig\`.
 - **Records Handling:** Uses interactive selection of SFDMU workspaces and runs data import utilities to restore records.
 - **Manual Actions Checklist:** Loads \`manual-restore-inventory.json\` from the backup project (produced by the before-refresh command) and reports each entry in the actions CSV with status \`Manual\`, so the report doubles as a post-refresh handover checklist.
+- **Already Done Detection:** Loads \`sandbox-refresh-after-actions-history.json\` from the backup folder at startup and looks for rows of the step with status \`Success\`. When some exist, it displays them with the date of the last run and prompts (defaulting to no) before executing the step again.
 - **Error Handling & Summary:** Aggregates results, logs success/warnings/errors, and returns a structured result indicating which items were restored and any failures.
 
 </details>
@@ -147,6 +151,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected instanceUrl: any;
   protected orgId: string;
   protected refreshActions: RefreshActionRow[] = [];
+  // Actions performed by the previous runs of after-refresh on the same backup folder,
+  // used to detect steps that have already been done and avoid replaying them silently
+  protected previousActions: RefreshActionRow[] = [];
   protected runStartDate: string = new Date().toISOString();
 
   public async run(): Promise<AnyJson> {
@@ -194,7 +201,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const folderMatchesOrg = selectedFolderName === expectedFolderName;
     const inventoryMatchesOrg = !inventoryForCheck?.instanceUrl || inventoryForCheck.instanceUrl === this.instanceUrl;
     if (!folderMatchesOrg || !inventoryMatchesOrg) {
-      uxLog("warning", this, c.yellow(t('backupFolderOrgMismatch', { folder: selectedFolderName, instanceUrl: this.instanceUrl })));
+      uxLog("action", this, c.cyan(t('backupFolderOrgMismatch', { folder: selectedFolderName, instanceUrl: this.instanceUrl })));
       const confirmMismatch = await prompts({
         type: 'confirm',
         name: 'confirm',
@@ -209,6 +216,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     // Selections are stored per sandbox: use the ones matching the selected backup folder
     this.refreshSandboxConfig = getSandboxRefreshConfigForFolder(this.refreshSandboxConfig, path.basename(this.saveProjectPath));
+
+    // Load what previous runs already restored, to ask before doing a step twice
+    this.previousActions = await loadRefreshActionsHistory(this.saveProjectPath, AFTER_REFRESH_ACTIONS_HISTORY_FILE);
 
     // The actions report must be produced even when a step throws: it is the audit trail.
     // A checkpoint is saved after each step so an interrupted run (killed process,
@@ -236,6 +246,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreCertificates(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringCertificates')));
+    if (!(await this.confirmStepMustRun("Restore Certificates"))) {
+      return;
+    }
     const certsDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'certs');
     const manifestDir = path.join(this.saveProjectPath, 'manifest');
     const certsPackageXml = path.join(manifestDir, 'package-certificates-to-save.xml');
@@ -279,7 +293,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     const selectedCerts = promptCerts.certs;
     if (selectedCerts.length === 0) {
-      uxLog("log", this, c.yellow(t('noCertificatesSelectedForRestoreSkippingCertificate')));
+      uxLog("action", this, c.cyan(t('noCertificatesSelectedForRestoreSkippingCertificate')));
       this.refreshActions.push({ step: "Restore Certificates", type: "Certificate", name: "N/A", status: "Skipped", details: "No certificates selected" });
       return;
     }
@@ -304,7 +318,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await writePackageXmlFile(path.join(mdApiCertsRestoreFolder, 'package.xml'), packageXmlCerts);
 
     // Deploy using metadata API
-    uxLog("log", this, c.grey(t('deployingCertificatesInOrgUsingMetadataApi', { instanceUrl: this.instanceUrl })));
+    uxLog("action", this, c.cyan(t('deployingCertificatesInOrgUsingMetadataApi', { instanceUrl: this.instanceUrl })));
     await execSfdxJson(
       `sf project deploy start --metadata-dir "${mdApiCertsRestoreFolder}" --target-org ${this.orgUsername}`,
       this,
@@ -317,6 +331,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreOtherMetadata(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringOtherMetadata')));
+    if (!(await this.confirmStepMustRun("Restore Other Metadata"))) {
+      return;
+    }
     const manifestDir = path.join(this.saveProjectPath, 'manifest');
     const restorePackageXml = path.join(manifestDir, 'package-metadata-to-restore.xml');
     // Check if the restore package.xml exists
@@ -343,7 +361,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       initial: true
     });
     if (!prompt.restore) {
-      uxLog("warning", this, c.yellow(t('metadataRestoreCancelledByUser')));
+      uxLog("action", this, c.cyan(t('metadataRestoreCancelledByUser')));
       this.result = Object.assign(this.result, { success: false, message: t('metadataRestoreCancelledByUser') });
       this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Skipped", details: "User cancelled" });
       return;
@@ -366,22 +384,71 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
     }
     else {
-      uxLog("error", this, c.red(t('failedToRestoreOtherMetadataInOrg', { instanceUrl: this.instanceUrl, deployResult: deployResult.error })));
-      this.result = Object.assign(this.result, { success: false, message: t('failedToRestoreOtherMetadata', { deployResult: deployResult.error }) });
+      // The complete deploy JSON, listing why the org rejected each item, is in the stdout of the failed command
+      const deployErrorJson = deployResult?.error?.stdout || deployResult?.errorMessage || String(deployResult?.error || "Deployment failed");
+      const componentFailures = this.extractComponentFailures(deployErrorJson);
+      // Error message summing up the failures: the raw deploy JSON is used only when it can not be parsed
+      let errorSummary = deployErrorJson;
+      if (componentFailures.length > 0) {
+        errorSummary = componentFailures.map(failure => `${failure.type} ${failure.fullName}: ${failure.error}`).join('\n');
+        uxLog("error", this, c.red(t('failedToRestoreComponentsInOrg', { count: componentFailures.length, instanceUrl: this.instanceUrl })));
+        uxLogTable(this, componentFailures, ['type', 'fullName', 'error']);
+      }
+      else {
+        uxLog("error", this, c.red(t('failedToRestoreOtherMetadataInOrg', { instanceUrl: this.instanceUrl, deployResult: deployErrorJson })));
+      }
+      uxLog("warning", this, c.yellow(t('updatePackageMetadataToRestoreAdvice', { restorePackageXml })));
+      this.result = Object.assign(this.result, { success: false, message: t('failedToRestoreOtherMetadata', { deployResult: errorSummary }) });
+      // Report cells must stay short: the deploy JSON can weigh several MB and would break the report generation
+      const actionDetails = "Deployment failed: see the command logs for the detailed errors";
+      const errorByComponent = new Map<string, string>();
+      for (const failure of componentFailures) {
+        errorByComponent.set(`${failure.type}:${failure.fullName}`, failure.error.substring(0, 500));
+      }
       for (const [metadataType, items] of Object.entries(metadataRestore)) {
         const itemList = Array.isArray(items) ? items : [String(items)];
         for (const itemName of itemList) {
-          this.refreshActions.push({ step: "Restore Other Metadata", type: metadataType, name: itemName, status: "Error", details: deployResult.error || "Deployment failed" });
+          const componentError = errorByComponent.get(`${metadataType}:${itemName}`);
+          this.refreshActions.push({ step: "Restore Other Metadata", type: metadataType, name: itemName, status: "Error", details: componentError || actionDetails });
         }
       }
       if (Object.keys(metadataRestore).length === 0) {
-        this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Error", details: deployResult.error || "Deployment failed" });
+        this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Error", details: actionDetails });
       }
-      throw new Error(`Failed to restore other metadata:\n${JSON.stringify(deployResult, null, 2)}`);
+      throw new SfError(`Failed to restore other metadata:\n${errorSummary}`);
     }
   }
 
+  // Extract the components rejected by the org from the JSON output of a failed deploy command
+  private extractComponentFailures(deployErrorJson: string): Array<{ type: string; fullName: string; error: string }> {
+    const jsonStart = typeof deployErrorJson === "string" ? deployErrorJson.indexOf('{') : -1;
+    if (jsonStart === -1) {
+      return [];
+    }
+    let parsed: any;
+    try {
+      parsed = JSON.parse(deployErrorJson.substring(jsonStart));
+    } catch {
+      // Output is not parseable JSON (truncated, or mixed with other logs): fall back to the raw error
+      return [];
+    }
+    const failures = parsed?.result?.details?.componentFailures ?? parsed?.details?.componentFailures ?? [];
+    return (Array.isArray(failures) ? failures : [failures])
+      .filter(failure => failure?.success === false || failure?.problem)
+      .map(failure => {
+        return {
+          type: failure.componentType || "",
+          fullName: failure.fullName || failure.fileName || "",
+          error: failure.problem || failure.problemType || "",
+        };
+      });
+  }
+
   private async restoreSamlSsoConfig(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringSamlSsoConfigs')));
+    if (!(await this.confirmStepMustRun("Restore SAML SSO Configs"))) {
+      return;
+    }
     // 0. List all samlssoconfigs in the project, prompt user to select which to restore
     const samlDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'samlssoconfigs');
     if (!fs.existsSync(samlDir)) {
@@ -404,7 +471,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     const selectedSamlFiles: string[] = promptSaml.samlFiles;
     if (!selectedSamlFiles || selectedSamlFiles.length === 0) {
-      uxLog("log", this, c.yellow(t('noSamlSsoConfigsSelectedForRestore')));
+      uxLog("action", this, c.cyan(t('noSamlSsoConfigsSelectedForRestore')));
       return;
     }
 
@@ -440,7 +507,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       });
       const selectedCertId = certPrompt.certId;
       if (!selectedCertId) {
-        uxLog("warning", this, c.yellow(t('noCertificateSelectedSkippingSamlSsoConfig')));
+        uxLog("action", this, c.cyan(t('noCertificateSelectedSkippingSamlSsoConfig')));
         errors.push(`No certificate selected for ${samlName}`);
         continue;
       }
@@ -465,7 +532,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         initial: true
       });
       if (!promptDeploy.deploy) {
-        uxLog("warning", this, c.yellow(t('samlSsoConfigDeploymentCancelledByUser', { samlFile })));
+        uxLog("action", this, c.cyan(t('samlSsoConfigDeploymentCancelledByUser', { samlFile })));
         errors.push(`Deployment cancelled for ${samlFile}`);
         continue;
       }
@@ -504,6 +571,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreCustomSettings(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringCustomSettings')));
+    if (!(await this.confirmStepMustRun("Restore Custom Settings"))) {
+      return;
+    }
     // Check there are custom settings to restore
     const csDir = path.join(this.saveProjectPath, 'savedCustomSettings');
     if (!fs.existsSync(csDir)) {
@@ -538,7 +609,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     const selectedSettings = promptRestore.settings;
     if (selectedSettings.length === 0) {
-      uxLog("log", this, c.yellow(t('noCustomSettingsSelectedForRestoreSkipping')));
+      uxLog("action", this, c.cyan(t('noCustomSettingsSelectedForRestoreSkipping')));
       this.refreshActions.push({ step: "Restore Custom Settings", type: "CustomSetting", name: "N/A", status: "Skipped", details: "No custom settings selected" });
       return;
     }
@@ -552,7 +623,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       initial: true
     });
     if (!prompt.restore) {
-      uxLog("warning", this, c.yellow(t('customSettingsRestoreCancelledByUser')));
+      uxLog("action", this, c.cyan(t('customSettingsRestoreCancelledByUser')));
       this.refreshActions.push({ step: "Restore Custom Settings", type: "CustomSetting", name: "N/A", status: "Skipped", details: "User cancelled" });
       return;
     }
@@ -666,6 +737,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreRecords(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringRecords')));
+    if (!(await this.confirmStepMustRun("Restore Records"))) {
+      return;
+    }
     const sfdmuWorkspaces = await selectDataWorkspace({
       selectDataLabel: 'Select data workspaces to use to restore records after sandbox refresh',
       multiple: true,
@@ -686,7 +761,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       description: t('onceConfirmedTheDataLoadingWillStart')
     });
     if (!confirmRestore.confirm) {
-      uxLog("warning", this, c.yellow(t('recordRestoreCancelledByUser')));
+      uxLog("action", this, c.cyan(t('recordRestoreCancelledByUser')));
       this.refreshActions.push({ step: "Restore Records", type: "Records", name: "N/A", status: "Skipped", details: "User cancelled" });
       return;
     }
@@ -701,6 +776,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreExternalClientApps(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringExternalClientApps')));
+    if (!(await this.confirmStepMustRun("Restore External Client Apps"))) {
+      return;
+    }
     // Check if there are External Client Apps in the backup
     const ecaNames = getEcaNames(this.saveProjectPath);
     if (ecaNames.length === 0) {
@@ -722,7 +801,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     let selectedEcaNames: string[] = promptSelect.selectedApps || [];
     if (selectedEcaNames.length === 0) {
-      uxLog("warning", this, c.yellow(t('noExternalClientAppsSelected')));
+      uxLog("action", this, c.cyan(t('noExternalClientAppsSelected')));
       this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "No External Client Apps selected" });
       return;
     }
@@ -781,6 +860,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   }
 
   private async restoreConnectedApps(): Promise<void> {
+    uxLog("action", this, c.cyan(t('refreshRestoringConnectedApps')));
+    if (!(await this.confirmStepMustRun("Restore Connected Apps"))) {
+      return;
+    }
     // Check early if there are any Connected Apps in the backup before prompting
     const connectedAppsFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'connectedApps');
     if (!fs.existsSync(connectedAppsFolder) || fs.readdirSync(connectedAppsFolder).length === 0) {
@@ -826,7 +909,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         const selectedApps = await this.selectConnectedApps(connectedApps, this.processAll, this.nameFilter);
 
         if (selectedApps.length === 0) {
-          uxLog("warning", this, c.yellow(t('noConnectedAppsSelected')));
+          uxLog("action", this, c.cyan(t('noConnectedAppsSelected')));
           this.result = Object.assign(this.result, { success: false, message: t('noConnectedAppsSelected') });
           return;
         }
@@ -864,7 +947,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           }
         }
         if (appsToRestore.length === 0) {
-          uxLog("warning", this, c.yellow(t('noConnectedAppsSelected')));
+          uxLog("action", this, c.cyan(t('noConnectedAppsSelected')));
           return;
         }
 
@@ -1039,6 +1122,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const appsToDelete = toConnectedAppFormat(connectedApps);
 
     // Delete the apps without prompting
+    uxLog("action", this, c.cyan(t('deletingConnectedAppsFrom', { updatedApps: appsToDelete.length, conn: orgUsername })));
     await deleteConnectedApps(orgUsername, appsToDelete, this, this.saveProjectPath);
     uxLog("success", this, c.green(t('connectedAppsWereSuccessfullyDeletedFromThe')));
   }
@@ -1063,6 +1147,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     // Convert ProjectConnectedApp to the format needed by deployConnectedApps
     const connectedAppsList = toConnectedAppFormat(connectedApps);
+    uxLog("action", this, c.cyan(t('deployingConnectedAppsToOrg', { count: connectedAppsList.length, orgUsername: orgUsername })));
     await deployConnectedApps(orgUsername, connectedAppsList, this, this.saveProjectPath);
 
     uxLog("success", this, c.green(t('deploymentOfConnectedAppCompletedSuccessfully', { connectedApps: connectedApps.length })));
@@ -1175,12 +1260,17 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const currentUserScript =
       rescheduleScripts.find((script: any) => script.ownerUsername.toLowerCase() === this.orgUsername.toLowerCase());
     if (currentUserScript) {
+      // Running the script twice would schedule the same jobs twice: warn and default to "no"
+      const previousExecutionDate = this.findPreviousSuccessDate("Manual Actions", "ApexScript", currentUserScript.file);
+      if (previousExecutionDate) {
+        uxLog("warning", this, c.yellow(t('rescheduleScriptAlreadyExecuted', { script: currentUserScript.file, date: previousExecutionDate })));
+      }
       const promptRunOwn = await prompts({
         type: 'confirm',
         name: 'runOwn',
         message: t('runOwnRescheduleScriptPrompt', { count: currentUserScript.jobsCount, username: this.orgUsername }),
         description: t('runOwnRescheduleScriptDescription'),
-        initial: true
+        initial: !previousExecutionDate
       });
       if (promptRunOwn.runOwn) {
         const scriptFullPath = path.join(this.saveProjectPath, currentUserScript.file);
@@ -1221,6 +1311,50 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
     }
     return rescheduledJobNames;
+  }
+
+  // Date of the last successful execution of a given action by a previous run, if any
+  private findPreviousSuccessDate(step: string, type: string, name: string): string | null {
+    const previousRows = this.previousActions.filter(
+      row => row.step === step && row.type === type && row.name === name && row.status === "Success");
+    if (previousRows.length === 0) {
+      return null;
+    }
+    const lastRunDate = previousRows.map(row => row.runDate || '').sort().reverse()[0] || '';
+    return this.formatRunDate(lastRunDate);
+  }
+
+  private formatRunDate(runDate: string): string {
+    return runDate ? runDate.substring(0, 16).replace('T', ' ') : '?';
+  }
+
+  // A step already performed by a previous run must not be replayed silently: the actions
+  // history is the audit trail of what has already been restored in the org.
+  // Returns true when the step must run, false when the user chose to keep the previous result.
+  private async confirmStepMustRun(step: string): Promise<boolean> {
+    const previousSuccesses = this.previousActions.filter(row => row.step === step && row.status === "Success");
+    if (previousSuccesses.length === 0) {
+      return true;
+    }
+    const lastRunDate = previousSuccesses.map(row => row.runDate || '').sort().reverse()[0] || '';
+    const formattedDate = this.formatRunDate(lastRunDate);
+    const itemsList = previousSuccesses.map(row => `- ${row.type}: ${row.name}`).join('\n');
+    uxLog("warning", this, c.yellow(t('refreshStepAlreadyPerformed', { step, date: formattedDate, count: previousSuccesses.length, list: itemsList })));
+    const promptRedo = await prompts({
+      type: 'confirm',
+      name: 'redo',
+      message: t('refreshStepAlreadyPerformedPrompt', { step }),
+      description: t('refreshStepAlreadyPerformedPromptDescription'),
+      initial: false
+    });
+    if (promptRedo.redo) {
+      uxLog("action", this, c.cyan(t('refreshStepWillBePerformedAgain', { step })));
+      return true;
+    }
+    uxLog("action", this, c.cyan(t('refreshStepSkippedAlreadyPerformed', { step, date: formattedDate })));
+    // Dedicated type/name so this row never overwrites the rows describing restored items
+    this.refreshActions.push({ step, type: "Step", name: "Already done", status: "Skipped", details: `Already performed on ${formattedDate}, user chose not to do it again` });
+    return false;
   }
 
   // Flush the actions history after each step, so an interrupted run still leaves

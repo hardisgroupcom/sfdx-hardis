@@ -462,6 +462,7 @@ In agent mode:
             description: t('appsAddedToIgnoreListDescription'),
           });
           if (ignorePromptRes?.value.length > 0) {
+            uxLog("action", this, c.cyan(t('updatingUnsecureConnectedAppsIgnoreList')));
             const config = await getConfig("project");
             const monitoringUnsecureConnectedAppsIgnore = config.monitoringUnsecureConnectedAppsIgnore || [];
             for (const appName of ignorePromptRes.value) {
@@ -572,6 +573,7 @@ In agent mode:
   }
 
   private async revokeOAuthTokens(tokensToRevoke: any[], allOAuthTokens: any[], conn: Connection): Promise<any[]> {
+    uxLog("action", this, c.cyan(t('deletingOAuthTokens', { count: tokensToRevoke.length })));
     WebSocketClient.sendProgressStartMessage(t('deletingOAuthTokens', { count: tokensToRevoke.length }), tokensToRevoke.length);
     const revokedTokens: any[] = [];
     let counter = 0;

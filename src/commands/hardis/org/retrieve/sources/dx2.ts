@@ -134,7 +134,7 @@ Use \`--agent\` to disable all prompts. Typical usage:
       const packageXmlTmp = path.join(process.cwd(), 'tmp', 'retrievePackage.xml');
       await fs.ensureDir(path.dirname(packageXmlTmp));
       await fs.copy(packageXml || '', packageXmlTmp);
-      uxLog("log", this, c.grey(t('copiedTo', { packageXml, packageXmlTmp })));
+      uxLog("action", this, c.cyan(t('copiedTo', { packageXml, packageXmlTmp })));
       packageXml = path.relative(process.cwd(), packageXmlTmp);
     }
 

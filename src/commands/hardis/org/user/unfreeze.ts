@@ -255,7 +255,7 @@ The command's technical implementation involves:
       });
       if (confirmunfreeze.value !== true) {
         const outputString = 'Script cancelled by user.';
-        uxLog("warning", this, c.yellow(outputString));
+        uxLog("action", this, c.cyan(outputString));
         return { outputString };
       }
     }
@@ -264,6 +264,7 @@ The command's technical implementation involves:
     const userLoginsFrozen = userLoginsToUnfreeze.map((userLogin) => {
       return { Id: userLogin.Id, IsFrozen: false };
     });
+    uxLog("action", this, c.cyan(t('unfreezingUserLogins', { count: userLoginsFrozen.length })));
     const bulkUpdateRes = await bulkUpdate('UserLogin', 'update', userLoginsFrozen, conn);
 
     const unfreezeSuccessNb = bulkUpdateRes.successfulResults.length;

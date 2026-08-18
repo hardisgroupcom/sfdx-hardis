@@ -29,6 +29,7 @@ Key functionalities:
   - Requires explicit configuration via \`sfdmuCanModify\` in .sfdx-hardis.yml config file
   - Or via \`SFDMU_CAN_MODIFY\` environment variable
 - **Interactive Mode:** Provides user-friendly prompts for workspace and org selection when not in CI mode.
+- **Confirmation Before Loading:** Displays a summary of the objects handled by the workspace (object, operation, external id, filter, mocked fields) followed by the full \`export.json\`, then asks for confirmation before writing anything to the org.
 - **CI/CD Integration:** Supports non-interactive execution with \`--no-prompt\` flag for automated pipelines.
 - **SFDMU Integration:** Leverages the powerful SFDX Data Loader (sfdmu) plugin for reliable data import operations.
 
@@ -48,6 +49,7 @@ The command's technical implementation involves:
 - **Org Authentication:** Leverages the \`target-org\` flag with \`requiredOrgFlagWithDeprecations\` to obtain and validate org authentication.
 - **Interactive Prompting:** When not in CI mode and \`--no-prompt\` is not set, uses \`promptOrgUsernameDefault()\` to allow users to confirm or change the target org.
 - **Data Import Execution:** Delegates the actual import operation to \`importData()\` utility function, passing the workspace path, command context, and target username.
+- **Workspace Display and Confirmation:** \`displayDataWorkspaceAndConfirm()\` prints the objects summary table and the \`export.json\` content, then prompts for confirmation. The prompt is skipped in CI, in agent mode and with \`--no-prompt\`.
 - **Safety Configuration:** Checks for production org protection configuration in project settings or environment variables before allowing modification of production instances.
 - **Path Resolution:** Supports both explicit path specification via \`--path\` flag and project name lookup via \`--project-name\` flag.
 - **Result Reporting:** Returns structured output with success message and import details for programmatic consumption.
@@ -63,6 +65,7 @@ Use \`--agent\` to disable all prompts. Typical usage:
 
 - The \`--path\` flag (or \`--project-name\`) is required in agent mode (no interactive workspace selection).
 - The \`--target-org\` flag is used directly (no interactive org selection prompt).
+- The workspace content is still displayed, but its confirmation prompt is skipped.
 `;
 
   public static examples = [
@@ -148,6 +151,7 @@ Use \`--agent\` to disable all prompts. Typical usage:
     // Export data from org
     await importData(sfdmuPath || '', this, {
       targetUsername: orgUsername,
+      promptConfirm: !isCI && !agentMode && noPrompts === false,
     });
 
     // Output message

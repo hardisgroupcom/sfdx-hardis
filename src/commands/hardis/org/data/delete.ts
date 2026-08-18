@@ -25,6 +25,8 @@ This command provides a powerful and controlled way to remove data from your Sal
 - **Environment Reset:** Preparing sandboxes for new development cycles by clearing specific data sets.
 - **Compliance:** Deleting data to meet regulatory requirements.
 
+Before anything is deleted, the command displays a summary of the objects handled by the workspace (object, operation, external id, filter) followed by the full \`export.json\`, then asks for confirmation.
+
 **Important Considerations for Production Environments:**
 
 If you intend to run this command in a production environment, you must:
@@ -55,6 +57,7 @@ Use \`--agent\` to disable all prompts. Typical usage:
 
 - The \`--path\` flag is required in agent mode (no interactive workspace selection).
 - The \`--target-org\` flag is used directly (no interactive org selection prompt).
+- The workspace content is still displayed, but its confirmation prompt is skipped.
 `;
 
   public static examples = ['$ sf hardis:org:data:delete', '$ sf hardis:org:data:delete --agent --path ./scripts/data/MyDataProject --target-org myOrg'];
@@ -112,6 +115,7 @@ Use \`--agent\` to disable all prompts. Typical usage:
     // Export data from org
     await deleteData(sfdmuPath || '', this, {
       targetUsername: orgUsername,
+      promptConfirm: !isCI && !agentMode,
     });
 
     // Output message

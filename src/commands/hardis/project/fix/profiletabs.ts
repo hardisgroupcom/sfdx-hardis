@@ -178,6 +178,7 @@ In agent mode:
     }
 
     // Apply updates on Profiles
+    uxLog("action", this, c.cyan(t('updatingProfileTabVisibilities', { count: profilesToUpdate.length })));
     for (const profileFile of profilesToUpdate) {
       const profile = await parseXmlFile(profileFile);
       let tabVisibilities = profile.Profile['tabVisibilities'] || [];

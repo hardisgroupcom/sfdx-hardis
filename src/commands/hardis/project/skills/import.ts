@@ -169,6 +169,7 @@ Key functionalities:
     }
 
     // Copy all files
+    uxLog("action", this, c.cyan(t("skillsImportCopyingFiles")));
     let copiedCount = 0;
     let skippedCount = 0;
 
@@ -237,7 +238,7 @@ Key functionalities:
       }
       const updated = [...existing, repoUrl];
       await setConfig('project', { skillsRepoAddOns: updated });
-      uxLog("log", this, c.grey(t("skillsImportAddonSaved", { repo: repoUrl })));
+      uxLog("action", this, c.cyan(t("skillsImportAddonSaved", { repo: repoUrl })));
       return;
     }
 

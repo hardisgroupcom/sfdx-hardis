@@ -253,7 +253,7 @@ The command's technical implementation involves:
       });
       if (confirmfreeze.value !== true) {
         const outputString = 'Script cancelled by user.';
-        uxLog("warning", this, c.yellow(outputString));
+        uxLog("action", this, c.cyan(outputString));
         return { outputString };
       }
     }
@@ -262,6 +262,7 @@ The command's technical implementation involves:
     const userLoginsFrozen = userLoginsToFreeze.map((userLogin) => {
       return { Id: userLogin.Id, IsFrozen: true };
     });
+    uxLog("action", this, c.cyan(t('freezingUserLogins', { count: userLoginsFrozen.length })));
     const bulkUpdateRes = await bulkUpdate('UserLogin', 'update', userLoginsFrozen, conn);
 
     const freezeSuccessNb = bulkUpdateRes.successfulResults.length;

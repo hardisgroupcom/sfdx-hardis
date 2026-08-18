@@ -130,11 +130,13 @@ In agent mode:
         description: t('confirmDeleteApexLogsDescription'),
       });
       if (confirmRes.value === false) {
+        uxLog("action", this, c.cyan(t('operationCancelledByUser')));
         return {};
       }
     }
 
     // Perform delete
+    uxLog("action", this, c.cyan(t('deletingApexLogs', { count: apexLogsNumber })));
     const deleteCommand = `sf data delete bulk --sobject ApexLog --file ${apexLogsToDeleteCsv}`;
     await execCommand(deleteCommand, this, {
       output: true,

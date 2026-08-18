@@ -853,7 +853,7 @@ In agent mode:
         const selectedObjects = promptObjectsRes.value || [];
         if (!selectedObjects.length) {
           const outputString = 'No objects selected; aborting.';
-          uxLog("warning", this, c.yellow(t('noObjectsSelectedAborting')));
+          uxLog("action", this, c.cyan(t('noObjectsSelectedAborting')));
           return { outputString, cancelled: true };
         }
         uniqueObjects = selectedObjects;
@@ -933,7 +933,7 @@ In agent mode:
     const proceed = await this.confirmApiUsage(plannedApiCalls, uniqueObjects, agentMode);
     if (!proceed) {
       const outputString = 'Operation cancelled by user.';
-      uxLog("warning", this, c.yellow(outputString));
+      uxLog("action", this, c.cyan(outputString));
       return { outputString, cancelled: true };
     }
 
@@ -995,6 +995,7 @@ In agent mode:
     const aggregatedSkipped: SkippedFieldInfo[] = [];
     const totalRecordsMap: Record<string, number> = {};
 
+    uxLog("action", this, c.cyan(t('processingFieldUsage', { count: objectContexts.length })));
     WebSocketClient.sendProgressStartMessage(t('processingFieldUsage', { count: objectContexts.length }));
     counter = 0;
     for (const context of objectContexts) {

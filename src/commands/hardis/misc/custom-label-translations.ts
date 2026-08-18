@@ -214,6 +214,7 @@ The command's technical implementation involves:
       labelNames = flags.label.split(',').map(label => label.trim());
     } else if (!isCI && !agentMode) {
       const selection = await CustomLabelTranslations.promptExtractionMethod();
+      uxLog("action", this, c.cyan(t('extractingCustomLabelTranslations')));
       if (selection.type == 'labels') {
         labelNames = selection.values;
       } else if (selection.type == 'lwc') {

@@ -183,6 +183,7 @@ export async function resolveReleaseScope(
   }
 
   // Post mode: list merge commits on target branch and prompt user to select
+  uxLog("action", commandRef, c.cyan(t("releaseNotesListingMergeCommits", { branch: targetBranch })));
   const mergeCommits = await listMergeCommitsOnBranch(targetBranch);
   if (mergeCommits.length > 0) {
     const selected = await promptMergeCommit(mergeCommits, agentMode, commandRef);
@@ -201,7 +202,7 @@ export async function resolveReleaseScope(
     }
   }
 
-  uxLog("warning", commandRef, c.yellow(t("releaseNotesNoMergeCommitsFound", { branch: targetBranch })));
+  uxLog("action", commandRef, c.cyan(t("releaseNotesNoMergeCommitsFound", { branch: targetBranch })));
 
   // Fallback: use source-branch delta if no merge commits found
   if (sourceBranch) {
