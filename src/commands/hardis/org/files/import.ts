@@ -112,7 +112,7 @@ Use \`--agent\` to disable all prompts. Typical usage:
       this.handleOverwrite = true;
     }
 
-    const importOptions: any = { handleOverwrite: this.handleOverwrite };
+    const importOptions: any = { handleOverwrite: this.handleOverwrite, agentMode: agentMode };
 
     // Import files into org
     const importResult = await new FilesImporter(
