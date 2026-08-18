@@ -5,7 +5,7 @@ import * as path from 'path';
 import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
-import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
@@ -366,19 +366,64 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
     }
     else {
-      uxLog("error", this, c.red(t('failedToRestoreOtherMetadataInOrg', { instanceUrl: this.instanceUrl, deployResult: deployResult.error })));
-      this.result = Object.assign(this.result, { success: false, message: t('failedToRestoreOtherMetadata', { deployResult: deployResult.error }) });
+      // The complete deploy JSON, listing why the org rejected each item, is in the stdout of the failed command
+      const deployErrorJson = deployResult?.error?.stdout || deployResult?.errorMessage || String(deployResult?.error || "Deployment failed");
+      const componentFailures = this.extractComponentFailures(deployErrorJson);
+      // Error message summing up the failures: the raw deploy JSON is used only when it can not be parsed
+      let errorSummary = deployErrorJson;
+      if (componentFailures.length > 0) {
+        errorSummary = componentFailures.map(failure => `${failure.type} ${failure.fullName}: ${failure.error}`).join('\n');
+        uxLog("error", this, c.red(t('failedToRestoreComponentsInOrg', { count: componentFailures.length, instanceUrl: this.instanceUrl })));
+        uxLogTable(this, componentFailures, ['type', 'fullName', 'error']);
+      }
+      else {
+        uxLog("error", this, c.red(t('failedToRestoreOtherMetadataInOrg', { instanceUrl: this.instanceUrl, deployResult: deployErrorJson })));
+      }
+      uxLog("warning", this, c.yellow(t('updatePackageMetadataToRestoreAdvice', { restorePackageXml })));
+      this.result = Object.assign(this.result, { success: false, message: t('failedToRestoreOtherMetadata', { deployResult: errorSummary }) });
+      // Report cells must stay short: the deploy JSON can weigh several MB and would break the report generation
+      const actionDetails = "Deployment failed: see the command logs for the detailed errors";
+      const errorByComponent = new Map<string, string>();
+      for (const failure of componentFailures) {
+        errorByComponent.set(`${failure.type}:${failure.fullName}`, failure.error.substring(0, 500));
+      }
       for (const [metadataType, items] of Object.entries(metadataRestore)) {
         const itemList = Array.isArray(items) ? items : [String(items)];
         for (const itemName of itemList) {
-          this.refreshActions.push({ step: "Restore Other Metadata", type: metadataType, name: itemName, status: "Error", details: deployResult.error || "Deployment failed" });
+          const componentError = errorByComponent.get(`${metadataType}:${itemName}`);
+          this.refreshActions.push({ step: "Restore Other Metadata", type: metadataType, name: itemName, status: "Error", details: componentError || actionDetails });
         }
       }
       if (Object.keys(metadataRestore).length === 0) {
-        this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Error", details: deployResult.error || "Deployment failed" });
+        this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Error", details: actionDetails });
       }
-      throw new Error(`Failed to restore other metadata:\n${JSON.stringify(deployResult, null, 2)}`);
+      throw new SfError(`Failed to restore other metadata:\n${errorSummary}`);
     }
+  }
+
+  // Extract the components rejected by the org from the JSON output of a failed deploy command
+  private extractComponentFailures(deployErrorJson: string): Array<{ type: string; fullName: string; error: string }> {
+    const jsonStart = typeof deployErrorJson === "string" ? deployErrorJson.indexOf('{') : -1;
+    if (jsonStart === -1) {
+      return [];
+    }
+    let parsed: any;
+    try {
+      parsed = JSON.parse(deployErrorJson.substring(jsonStart));
+    } catch {
+      // Output is not parseable JSON (truncated, or mixed with other logs): fall back to the raw error
+      return [];
+    }
+    const failures = parsed?.result?.details?.componentFailures ?? parsed?.details?.componentFailures ?? [];
+    return (Array.isArray(failures) ? failures : [failures])
+      .filter(failure => failure?.success === false || failure?.problem)
+      .map(failure => {
+        return {
+          type: failure.componentType || "",
+          fullName: failure.fullName || failure.fileName || "",
+          error: failure.problem || failure.problemType || "",
+        };
+      });
   }
 
   private async restoreSamlSsoConfig(): Promise<void> {
