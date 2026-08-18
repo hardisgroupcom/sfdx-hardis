@@ -40,6 +40,24 @@ A single dashboard that gives one-click access to every other workbench, with lo
 
 ![Welcome panel](assets/images/welcome.png)
 
+### DevOps Pipeline view
+
+A live diagram of your branches, their merge targets and the Salesforce org each one deploys to, with the open pull requests and the contribution shortcuts right below it.
+
+![DevOps Pipeline](assets/images/devops-pipeline.png)
+
+### Org Monitoring Workbench
+
+The full catalog of monitoring and diagnostic commands, grouped by theme (org activity, Apex tests & security, user activity, technical debt...), each runnable in one click.
+
+![Org Monitoring Workbench](assets/images/org-monitoring.png)
+
+### Command execution panel
+
+Every command runs in its own tab, with a timeline of the steps, the questions asked by the CLI rendered as forms, live progress bars and the generated reports available in a single click.
+
+![Command execution panel](assets/images/command-runner.png)
+
 ### Orgs Manager
 
 Connect to new orgs, switch between sandboxes, scratch orgs and Dev Hubs, and clean up stale authentications - all from one panel. Token and URL handling is performed by the sfdx-hardis CLI; nothing sensitive is ever displayed or logged.

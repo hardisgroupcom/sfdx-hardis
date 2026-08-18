@@ -100,6 +100,12 @@
   - Items are sorted alphabetically in every sheet of the generated XLSX report.
   - Profile field access is limited to profiles of active users, and system fields that cannot have field-level security are skipped.
 
+### Documentation
+
+- Refresh every VS Code extension screenshot and animation of the documentation with the new design of the extension (light theme, English), including the Welcome page, the Setup panel, the DevOps Pipeline, the Orgs Manager, the Metadata Retriever, the Data and Files workbenches, the Documentation and Monitoring workbenches, the command execution panel and all the menu entries illustrating the CI/CD guides.
+- [VS Code extension](https://sfdx-hardis.cloudity.com/vscode-extension/): Document the DevOps Pipeline view, the Org Monitoring Workbench and the command execution panel, each with its own screenshot.
+- Remove 31 images that no documentation page referenced anymore.
+
 ## [7.23.0] 2026-07-26
 
 ### Org Monitoring & Grafana
