@@ -141,6 +141,7 @@ Use \`--agent\` to disable all prompts. Typical usage:
       recordsChunkSize: recordsChunkSize,
       startChunkNumber: startChunkNumber,
       resumeExport: resumeExport,
+      agentMode: agentMode,
     };
 
     // Identify files workspace if not defined

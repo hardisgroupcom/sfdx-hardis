@@ -48,6 +48,7 @@ export class FilesExporter {
   private logFile: string;
   private hasExistingFiles: boolean;
   private resumeExport: boolean;
+  private agentMode: boolean;
 
   private totalRestApiCalls = 0;
   private totalBulkApiCalls = 0;
@@ -68,7 +69,7 @@ export class FilesExporter {
   constructor(
     filesPath: string,
     conn: Connection,
-    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number; resumeExport?: boolean },
+    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number; resumeExport?: boolean; agentMode?: boolean },
     commandThis: any
   ) {
     this.filesPath = filesPath;
@@ -78,6 +79,7 @@ export class FilesExporter {
     this.parentRecordsChunkSize = 100000;
     this.startChunkNumber = options?.startChunkNumber || 0;
     this.resumeExport = options?.resumeExport || false;
+    this.agentMode = options?.agentMode || false;
     this.hasExistingFiles = fs.existsSync(path.join(this.filesPath, 'export'));
     this.commandThis = commandThis;
     if (options.exportConfig) {
@@ -287,7 +289,7 @@ export class FilesExporter {
     }
 
     // Request user confirmation
-    if (!isCI) {
+    if (!isCI && !this.agentMode) {
       const warningMessage = c.cyanBright(
         `This export of files could run on ${c.bold(c.yellow(countSoqlQueryRes.totalSize))} records, in ${c.bold(
           c.yellow(this.chunksNumber)
@@ -961,6 +963,7 @@ export class FilesImporter {
   private dtl: any = null; // export config
   private exportedFilesFolder: string = '';
   private handleOverwrite = false;
+  private agentMode: boolean;
   private logFile: string;
 
   // Statistics tracking
@@ -977,12 +980,13 @@ export class FilesImporter {
   constructor(
     filesPath: string,
     conn: Connection,
-    options: { exportConfig?: any; handleOverwrite?: boolean },
+    options: { exportConfig?: any; handleOverwrite?: boolean; agentMode?: boolean },
     commandThis: any
   ) {
     this.filesPath = filesPath;
     this.exportedFilesFolder = path.join(this.filesPath, 'export');
     this.handleOverwrite = options?.handleOverwrite === true;
+    this.agentMode = options?.agentMode === true;
     this.conn = conn;
     this.commandThis = commandThis;
     if (options.exportConfig) {
@@ -1231,7 +1235,7 @@ export class FilesImporter {
 
     // Check if there are enough API calls available
     // Request user confirmation
-    if (!isCI) {
+    if (!isCI && !this.agentMode) {
       const warningMessage = c.cyanBright(
         `Files import consumes one REST API call per uploaded file.
         (Estimation: ${bulkCallsNb} Bulks calls and ${totalFilesNumber} REST calls) Do you confirm you want to proceed ?`
