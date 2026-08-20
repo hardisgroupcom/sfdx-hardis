@@ -116,6 +116,7 @@
 - [VS Code extension](https://sfdx-hardis.cloudity.com/vscode-extension/): Document the DevOps Pipeline view, the Org Monitoring Workbench and the command execution panel, each with its own screenshot.
 - Redraw the CI/CD schemas of the Release and Delta-deployment pages (ci-cd-schema-release, ci-cd-schema-delta, ci-cd-schema-delta-off) in the same clean style as the main BUILD & RUN architecture schema; the Delta OFF page no longer shows the Delta ON image by mistake.
 - Remove 31 images that no documentation page referenced anymore, and a broken reference to an image that never existed (release-notes-example.png).
+- Rewrite the [deployment actions guide](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/) for end users: plain-language walkthrough from the DevOps Pipeline, one illustrated section per action type (command, data, Apex, Experience Cloud publication, scheduled batch, package.xml exclusions, manual step), with the YAML reference moved into collapsible technical sections.
 - The Publish a User Story page now illustrates Save / Publish User Story with its animation only: the redundant static screenshot shown right below it was removed.
 
 ## [7.23.0] 2026-07-26
