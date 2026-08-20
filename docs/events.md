@@ -38,11 +38,11 @@ Wroclaw, Poland - 20/03/2026
 
 <img width="951" height="753" alt="Polish Dreamin 2026" src="https://github.com/user-attachments/assets/4cebe084-f7b6-4d6e-aa22-c3cb305222ea" />
 
-### Irish Dreamin '26
+### Irish Dreamin '26, Dublin
 
 No-Cost DevOps: Enterprise-Grade CI/CD with SFDX-HARDIS, by Abdeslam Loukili
 
-Ireland - 19/03/2026
+Dublin, Ireland - 19/03/2026
 
 ![Irish Dreamin 2026 - Abdeslam Loukili](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/irish-dreamin-abdeslam-loukili.jpg)
 
