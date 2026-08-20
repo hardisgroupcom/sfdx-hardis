@@ -114,6 +114,7 @@
   - The animated GIFs (DevOps Pipeline, Orgs Manager, Metadata Retriever, Monitoring Config, Documentation Workbench, New User Story, Save / Publish User Story, package installation) are regenerated in the new design, and the outdated extension tour animation (extension-demo.gif) is removed, and are 10 to 100 times lighter than before (0.2-0.8 MB instead of 12-29 MB), so the pages displaying them load much faster.
   - The New User Story and Save / Publish User Story animations now replay the real questions and steps of `hardis:work:new` and `hardis:work:save`, up to the actions bar proposing to create the Pull Request.
 - [VS Code extension](https://sfdx-hardis.cloudity.com/vscode-extension/): Document the DevOps Pipeline view, the Org Monitoring Workbench and the command execution panel, each with its own screenshot.
+- Redraw the CI/CD schemas of the Release and Delta-deployment pages (ci-cd-schema-release, ci-cd-schema-delta, ci-cd-schema-delta-off) in the same clean style as the main BUILD & RUN architecture schema; the Delta OFF page no longer shows the Delta ON image by mistake.
 - Remove 31 images that no documentation page referenced anymore, and a broken reference to an image that never existed (release-notes-example.png).
 - The Publish a User Story page now illustrates Save / Publish User Story with its animation only: the redundant static screenshot shown right below it was removed.
 

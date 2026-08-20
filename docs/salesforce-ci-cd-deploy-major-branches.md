@@ -19,7 +19,7 @@ Major branches are git branches that have a CI/CD associated org, and each new c
 
 Examples:
 
-- **Minor to major**: When a merge request from `dev_nico` to `ìntegration` **(A)** is validated and merged, a new state (commit) is detected in branch `integration`, so CI server automatically deploys to `associated Salesforce org Integration` **(B)**
+- **Minor to major**: When a merge request from `feature/crm-123` to `integration` **(A)** is validated and merged, a new state (commit) is detected in branch `integration`, so CI server automatically deploys to `associated Salesforce org Integration` **(B)**
 
 - **Major to Major**: When a merge request from `integration` to `uat` **(C)** is validated and merged, a new state (commit) is detected in branch `uat`, so CI server automatically deploys to `associated Salesforce org UAT` **(D)**
 
