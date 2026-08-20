@@ -115,6 +115,7 @@
   - The New User Story and Save / Publish User Story animations now replay the real questions and steps of `hardis:work:new` and `hardis:work:save`, up to the actions bar proposing to create the Pull Request.
 - [VS Code extension](https://sfdx-hardis.cloudity.com/vscode-extension/): Document the DevOps Pipeline view, the Org Monitoring Workbench and the command execution panel, each with its own screenshot.
 - Remove 31 images that no documentation page referenced anymore, and a broken reference to an image that never existed (release-notes-example.png).
+- The Publish a User Story page now illustrates Save / Publish User Story with its animation only: the redundant static screenshot shown right below it was removed.
 
 ## [7.23.0] 2026-07-26
 

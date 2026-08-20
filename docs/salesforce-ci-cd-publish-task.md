@@ -68,8 +68,6 @@ If you want to create a Pull Request / Merge Request, click on the related butto
 
 [![](assets/images/save-publish-pr-2026.gif)](https://www.youtube.com/watch?v=-h94uLQB62I)
 
-![](assets/images/screenshot-work-save.png)
-
 > ![Under the hood](assets/images/engine.png) **Under the hood**
 >
 > The script performs the following operations:
