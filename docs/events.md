@@ -70,7 +70,7 @@ London, UK - 20/11/2025
 
 ### Trailblazer Developer Group '25, Berlin (online)
 
-[Summer of Docs – Auto-Document Your Salesforce Org Like a Pro](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-developer-group-berlin-germany-presents-summer-of-docs-auto-document-your-salesforce-org-like-a-pro/), by [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
+[Summer of Docs: Auto-Document Your Salesforce Org Like a Pro](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-developer-group-berlin-germany-presents-summer-of-docs-auto-document-your-salesforce-org-like-a-pro/), by [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/berlin-user-group-docgen.png)
 

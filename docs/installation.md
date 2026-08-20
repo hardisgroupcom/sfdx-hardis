@@ -1,14 +1,14 @@
 ### With IDE
 
-You can install [Visual Studio Code](https://code.visualstudio.com/), then VSCode Extension [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+You can install [Visual Studio Code](https://code.visualstudio.com/), then the VS Code extension [SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
-Once installed, click on ![Hardis Group button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in VsCode left bar, click on **Install dependencies** and follow the additional installation instructions :)
+Once installed, click on ![SFDX Hardis button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in the VS Code left bar, click on **Install dependencies** and follow the installation instructions.
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-highlight.png)
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-screenshot.png)
 
-When you are all green, you are all good 😊
+When everything is green, you are all set.
 
 _You can also watch the video tutorial below_
 
@@ -21,7 +21,7 @@ ___
 #### Pre-requisites
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
-- Install Salesforce DX by running `npm install @salesforce/cli --global` command line
+- Install the Salesforce CLI by running `npm install @salesforce/cli --global`
 
 #### Plugin installation
 

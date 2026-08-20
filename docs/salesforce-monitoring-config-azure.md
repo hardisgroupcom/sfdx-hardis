@@ -14,7 +14,7 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 
 ### Configure a ByPass in Azure Settings
 
-- Go to Project Settings –> Repositories –> select your repository and then click on the Security tab.
+- Go to **Project Settings** -> **Repositories** -> select your repository, then click the **Security** tab.
 
 - Select your **Build Service** and set **Bypass policies when pushing** and **Contribute** to **Allowed**
 
@@ -22,9 +22,9 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 
 ## Run sfdx-hardis configuration command
 
-- Run command **Configuration -> Configure Org Monitoring** in VsCode SFDX Hardis, then follow instructions.
+- Run command **Configuration -> Configure Org Monitoring** in the VS Code SFDX Hardis extension, then follow the instructions.
 
-- **When prompted to setup CI/CD variables, copy-paste their names and values in a notepad the continue the instructions**
+- **When prompted to set up CI/CD variables, copy their names and values into a notepad, then continue the instructions**
 
 ## Create Pipeline
 
@@ -36,7 +36,7 @@ _Skip this step if you already created the pipeline for the monitoring of anothe
 
 - Where is your code -> **Azure Repos Git**
 
-- Select your monitoring git repository: **Existing Azure Pipelines YAML file**
+- Select your monitoring git repository, then **Existing Azure Pipelines YAML file**
 
 - Select your git branch then select **azure-pipelines.yml**
 
@@ -54,15 +54,15 @@ For each variable sfdx-hardis command **Configure org monitoring** told you to d
 
 - Go to **Project -> Pipelines**
 - Select your pipeline
-- Click on **Edit** , then on **Variables**
-- Input variable name and value
-- Don't forget to click on **save** !
+- Click **Edit**, then **Variables**
+- Enter the variable name and value
+- Don't forget to click **Save**
 
 ![](assets/images/screenshot-monitoring-azure-variable.png)
 
 ### Update azure-pipelines.yml
 
-- Open **azure-pipelines.yml** in VsCode and update all places where `MANUAL` is found
+- Open **azure-pipelines.yml** in VS Code and update all places where `MANUAL` is found
   - schedule triggers
   - environment variables
 
@@ -93,9 +93,9 @@ schedules:
 
 ## Schedule the monitoring job
 
-Schedule is already included within **azure-pipelines.yml**.
+The schedule is already included in **azure-pipelines.yml**.
 
-Default is everyday at 4 AM, but you can update the [CRON expression](https://crontab.cronhub.io/).
+The default is every day at 4 AM, but you can update the [CRON expression](https://crontab.cronhub.io/).
 
 ```yaml
 schedules:

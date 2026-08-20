@@ -65,7 +65,7 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 [![sfdx-hardis 2025 new features](https://img.youtube.com/vi/JRKH5COUVQ0/0.jpg)](https://youtu.be/JRKH5COUVQ0){target=blank}
 
-- SFDX-HARDIS – A demo with Nicolas Vuillamy from Cloudity
+- SFDX-HARDIS: A demo with Nicolas Vuillamy from Cloudity
 
 [![SalesforceDevOps.net Demo](https://img.youtube.com/vi/qP6MaZUGzik/0.jpg)](https://www.youtube.com/watch?v=qP6MaZUGzik){target=blank}
 

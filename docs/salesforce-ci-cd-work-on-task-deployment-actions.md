@@ -1,10 +1,16 @@
+---
+title: Deployment actions on a Salesforce CI/CD project
+description: Automate and track the steps around your deployments: data loads, Apex scripts, community publishing, scheduled batches and manual steps
+---
+<!-- markdownlint-disable MD013 -->
+
 ## Deployment actions
 
 ### What are deployment actions?
 
-Deploying a User Story is not always just about metadata. Sometimes something else must happen around the deployment: load reference records, run an Apex script, publish an Experience Cloud site, schedule a batch job, or simply remind a human to flip a switch in Setup.
+Deploying a User Story is not always just about metadata. Sometimes something else must happen around the deployment: load reference records, run an Apex script, publish an Experience Cloud site, schedule a batch job, or simply remind someone to activate a setting in Setup.
 
-**Deployment actions** let you declare these steps once, together with your Pull Request. sfdx-hardis then runs them automatically in every org your work is deployed to (integration, uat, preprod, production...), in the right order, exactly once per org - and keeps a visible record of what has been done where.
+**Deployment actions** let you declare these steps once, together with your Pull Request. sfdx-hardis then runs them automatically in every org your work is deployed to (integration, uat, preprod, production...), in the right order, exactly once per org, and keeps a visible record of what has been done where.
 
 You can automate (or track) the following kinds of steps:
 
@@ -14,11 +20,11 @@ You can automate (or track) the following kinds of steps:
 - [Publish an Experience Cloud site](#publish-an-experience-cloud-site)
 - [Schedule an Apex batch](#schedule-an-apex-batch)
 - [Remove items from package.xml](#remove-items-from-packagexml)
-- [Manual step](#manual-step) (something a human must do)
+- [Manual step](#manual-step) (something a person must do)
 
 Actions can be attached to a **Pull Request** (they follow your User Story from org to org) or to the **whole project** (they run at every deployment).
 
-### Manage your actions from Visual Studio Code
+### Manage your actions from VS Code
 
 Everything can be done with clicks in the [VS Code SFDX Hardis extension](https://sfdx-hardis.cloudity.com/vscode-extension/), from the **DevOps Pipeline** panel:
 
@@ -26,9 +32,13 @@ Everything can be done with clicks in the [VS Code SFDX Hardis extension](https:
 
     ![My Pull Request card](assets/images/card-my-pull-request.png)
 
-2. In the window that opens, go to the **Deployment Actions** tab. There you can **Add New Action**, or click an existing action to view and edit it.
+2. In the window that opens, go to the **Deployment Actions** tab. It lists the actions already attached to your Pull Request (Merge Request on GitLab), with their type and when they run.
 
-    ![Edit deployment action](assets/images/screenshot-edit-deployment-action.jpg)
+    ![List of the deployment actions of a Pull Request](assets/images/screenshot-pr-deployment-actions-list.jpg)
+
+3. Click **Add New Action** to create an action, or click an existing action to view and edit it.
+
+    ![Deployment action editor](assets/images/screenshot-edit-deployment-action.jpg)
 
 You can also review the deployment actions of already merged Pull Requests: click a major branch (like `integration`) in the pipeline diagram, then open its **Deployment Actions** tab.
 
@@ -88,7 +98,7 @@ Each action is an object with the following required and optional properties.
 | `includeTargetBranches` | array   |    No     | Run the action only when the deployment targets one of these branches. See [Choose the target orgs](#choose-the-target-orgs).                                                                     |
 | `excludeTargetBranches` | array   |    No     | Run the action on every target branch except these ones. See [Choose the target orgs](#choose-the-target-orgs).                                                                                   |
 | `allowFailure`          | boolean |    No     | If true and the action fails, the deployment continues but the result is marked failed/allowed.                                                                                                   |
-| `runOnlyOnceByOrg`      | boolean |    No     | Default: `true`. If true, the action runs only once per target org. Execution state is tracked in a dedicated "Deployment Actions" PR comment (see below) - no Salesforce custom object required. |
+| `runOnlyOnceByOrg`      | boolean |    No     | Default: `true`. If true, the action runs only once per target org. Execution state is tracked in a dedicated "Deployment Actions" PR comment (see below), no Salesforce custom object required.  |
 
 </details>
 
@@ -99,7 +109,7 @@ For each action you choose two simple things, visible in the editor:
 - **When**: before or after the metadata deployment.
 - **Execution Contexts**: run it during **validation jobs** (the simulated deployment when the Pull Request is checked), during **deployment jobs** (the real deployment after the merge), or both.
 
-By default, an action **runs only once per org**: once it has been performed in `uat`, it will not run there again, but it will still run in `preprod` and production when your work gets promoted. Failed actions are automatically retried at the next deployment. Manual steps wait until a human confirms them (see below).
+By default, an action **runs only once per org**: once it has been performed in `uat`, it will not run there again, but it will still run in `preprod` and production when your work gets promoted. Failed actions are automatically retried at the next deployment. Manual steps wait until someone confirms them (see below).
 
 > Post-deployment actions are never run when the metadata deployment failed. They are proposed again during the next successful deployment.
 
@@ -107,7 +117,7 @@ By default, an action **runs only once per org**: once it has been performed in 
 
 **Execution contexts** map to the `context` property: `all` (default), `check-deployment-only` (validation job of the Pull Request), `process-deployment-only` (real deployment after merge).
 
-**runOnlyOnceByOrg - skip-on-next-run logic**
+**runOnlyOnceByOrg: skip-on-next-run logic**
 
 When `runOnlyOnceByOrg` is `true` (the default), the "Deployment Actions" PR comment is used as the state store:
 
@@ -128,15 +138,15 @@ The actions collected for a deployment depend on the branch the merged Pull Requ
 
 | Merge                                                              | Scope                                              |
 |--------------------------------------------------------------------|----------------------------------------------------|
-| From a feature branch (ex: `feature/my-story` -> `integration`)    | Only the Pull Request that has just been merged    |
-| Between major branches (ex: `integration` -> `uat`)                | Every Pull Request merged since the previous merge |
-| From a retrofit branch (ex: `retrofit/from-main` -> `integration`) | Every Pull Request merged since the previous merge |
+| From a feature branch (ex: `feature/my-story` to `integration`)    | Only the Pull Request that has just been merged    |
+| Between major branches (ex: `integration` to `uat`)                | Every Pull Request merged since the previous merge |
+| From a retrofit branch (ex: `retrofit/from-main` to `integration`) | Every Pull Request merged since the previous merge |
 
 - Between major branches, the batch is every Pull Request merged into the source major branch since its last promotion.
 - Into the production branch (which has no promotion target), the batch is every Pull Request carried by the go-live merge itself.
 - Pull Requests merged into upstream branches are part of the batch as soon as their commits arrive in the window: a hotfix merged into `main` is collected when a retrofit branch brings it down to `integration`, so its actions run there too.
 
-In every case, `runOnlyOnceByOrg` state tracking ensures each action runs only in the orgs where it has not been performed yet. The same scope applies to the Apex test classes selected from Pull Requests when `enableDeploymentApexTestClasses` is active.
+In every case, `runOnlyOnceByOrg` state tracking makes sure each action runs only in the orgs where it has not been performed yet. The same scope applies to the Apex test classes selected from Pull Requests when `enableDeploymentApexTestClasses` is active.
 
 The resolved scope is visible in two places:
 
@@ -149,7 +159,7 @@ The resolved scope is visible in two places:
 
 ### Choose the target orgs
 
-By default an action runs in every org your work is deployed to. In the editor, the **Target orgs** field lets you restrict it: run it **everywhere**, only on **some major branches** (for example only `uat`), or **everywhere except** a few (for example everywhere but production). You can also target **developer sandboxes** specifically.
+By default, an action runs in every org your work is deployed to. In the editor, the **Target orgs** field lets you restrict it: run it **everywhere**, only on **some major branches** (for example only `uat`), or **everywhere except** a few (for example everywhere but production). You can also target **developer sandboxes** specifically.
 
 <details markdown="1"><summary>Technical: includeTargetBranches / excludeTargetBranches</summary>
 
@@ -214,7 +224,7 @@ Setting both properties on the same action is a configuration error. `sf hardis:
 
 #### Run a command
 
-Runs any command line (a `sf` command, a script, anything your CI runner can execute). Perfect for the automations that do not fit any other type.
+Runs any command line (a `sf` command, a script, anything your CI runner can execute). Use it for the automations that do not fit any other type.
 
 ![Command deployment action](assets/images/screenshot-deployment-action-command.jpg)
 
@@ -378,7 +388,7 @@ Only available as a **pre-deploy** action. The removal applies to the temporary 
 
 #### Manual step
 
-Some things cannot be automated: activating a setting in Setup, warning a team, checking an external system. A manual step describes what must be done; sfdx-hardis reminds the right person at the right time, in the Pull Request comments, with a checkbox to tick once it is done.
+Some things cannot be automated: activating a setting in Setup, warning a team, checking an external system. A manual step describes what must be done. sfdx-hardis reminds the right person at the right time, in the Pull Request comments, with a checkbox to tick once it is done.
 
 ![Manual deployment action](assets/images/screenshot-deployment-action-manual.jpg)
 
@@ -406,14 +416,14 @@ The Pull Request comments show the instructions (rendered as markdown) and an un
 
 After every deployment, sfdx-hardis creates or updates a **"Deployment Actions"** comment on the Pull Request. At a glance, it shows:
 
-- the **manual steps still waiting** to be performed, as a checklist - tick a box once you have done the action, and sfdx-hardis records it,
+- the **manual steps still waiting** to be performed, as a checklist: tick a box once you have done the action, and sfdx-hardis records it,
 - a **status matrix**: one row per action, one column per org, so release managers can see in which orgs each action has been performed, has failed, or is still pending.
 
 This works on GitHub, GitLab, Azure DevOps and Bitbucket.
 
 <details markdown="1"><summary>Technical: the Deployment Actions PR comment format</summary>
 
-**Comment structure** - one shared comment per PR, across all CI workflows:
+**Comment structure**: one shared comment per PR, across all CI workflows:
 
 - A **Pending manual actions** checklist: one checkbox per manual action still waiting to be performed in an org.
 - A **Status by org branch** matrix: one row per action, one column per org branch.
@@ -441,7 +451,7 @@ Columns are ordered from dev to production (integration → uat → preprod → 
 | Icon | Status    | Meaning                                                          |
 |------|-----------|------------------------------------------------------------------|
 | ✅    | `success` | Executed successfully (or confirmed as done via its checkbox)    |
-| ❌    | `failed`  | Executed but failed - will be retried next run                   |
+| ❌    | `failed`  | Executed but failed, will be retried next run                    |
 | 👋   | `manual`  | Manual step - waiting for a human to perform it and tick the box |
 | ⚪    | `skipped` | Skipped (e.g. already run via `runOnlyOnceByOrg`)                |
 | ⬜    | -         | Not run in this org branch yet                                   |

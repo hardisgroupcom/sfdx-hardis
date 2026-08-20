@@ -20,7 +20,7 @@ Download all legacy Dashboard JSON files from [this sfdx-hardis repo folder](htt
 
 ## Create Dashboard folder
 
-Go in menu **Dashboards** then click on **New** then **New folder**
+Go to the **Dashboards** menu, then click **New** and **New folder**
 
 ![](assets/images/grafana-config-14.jpg)
 
@@ -32,7 +32,7 @@ Create folder `Sfdx-hardis Dashboards`
 
 ## Import legacy v1 Grafana Dashboards
 
-For each downloaded Dashboard JSON file, process the following actions.
+For each downloaded Dashboard JSON file, perform the following actions.
 
 Click **New** then **Import**
 
@@ -46,7 +46,7 @@ Click on **Upload Dashboard JSON File** and select one of the Dashboards JSON fi
 
 ___
 
-- Let Name, Folder and UID default values
+- Leave the default values for Name, Folder and UID
 - Select your Loki or Prometheus source. They can be:
   - **grafanacloud-YOURORGNAME-logs (Loki)**
   - **grafanacloud-YOURORGNAME-prom (Prometheus)**
@@ -61,7 +61,7 @@ Click **Import**
 
 ___
 
-Repeat the operation for all Dashboard JSON files, and you're all set !
+Repeat the operation for all Dashboard JSON files, and you're all set.
 
 ![](assets/images/grafana-config-21.jpg)
 

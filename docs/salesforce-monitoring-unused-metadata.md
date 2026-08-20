@@ -1,14 +1,14 @@
 ---
-title: Unused Metadatas (Salesforce monitoring)
-description: Schedule daily checks unused metadatas with sfdx-hardis Monitoring
+title: Unused Metadata (Salesforce monitoring)
+description: Schedule daily checks of unused metadata with sfdx-hardis Monitoring
 ---
 <!-- markdownlint-disable MD013 -->
 
-### Detect metadatas that are not used
+### Detect metadata that is not used
 
-If there are elements that are not used by anything, maybe they should be removed !
+If there are elements that are not used by anything, maybe they should be removed.
 
-Today working with:
+Currently supported metadata types:
 
 - Custom Labels
 - Custom Permissions

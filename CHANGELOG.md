@@ -109,6 +109,12 @@
 
 ### Documentation
 
+- Reorganize the [Salesforce CI/CD documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/) for the v8 release:
+  - The CI/CD overview page now presents the contribution workflow from User Story to production, the deployment actions and the release tooling, with the new screenshots of the extension.
+  - The Contributor Guide is organized as numbered steps (get ready, start a User Story, work in your org, publish, create the Pull Request, check the results), with an overview page that explains the vocabulary (major branch, dev sandbox, Pull Request, release manager) to beginners.
+  - The Release Manager Guide and the Setup Guide get their own overview pages, numbered setup steps, and a project configuration section.
+  - Every guide was reviewed for clarity: plain wording, consistent "Pull Request" terminology, modern `sf` commands, fixed links and anchors, and the deployment actions pages no longer mention a beta status.
+  - New screenshots: the Installed Packages panel, the Pipeline Settings panel, the contribution cards of the DevOps Pipeline, the Pull Requests merged in a major branch and the deployment actions of a Pull Request.
 - Refresh every VS Code extension screenshot and animation of the documentation with the new design of the extension (light theme, English), including the Welcome page, the Setup panel, the DevOps Pipeline, the Orgs Manager, the Metadata Retriever, the Data and Files workbenches, the Documentation and Monitoring workbenches, the command execution panel and all the menu entries illustrating the CI/CD guides.
   - The sample data behind the screenshots is modeled on real sfdx-hardis projects: the DevOps Pipeline now shows open pull requests, feature branches, a promotion and running CI jobs, the monitoring workbenches a real monitoring configuration, and the org list real-life connection states.
   - The animated GIFs (DevOps Pipeline, Orgs Manager, Metadata Retriever, Monitoring Config, Documentation Workbench, New User Story, Save / Publish User Story, package installation) are regenerated in the new design, and the outdated extension tour animation (extension-demo.gif) is removed, and are 10 to 100 times lighter than before (0.2-0.8 MB instead of 12-29 MB), so the pages displaying them load much faster.

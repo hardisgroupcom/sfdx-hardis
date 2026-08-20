@@ -19,7 +19,7 @@ This means you can get practical, contextual deployment hints directly from your
 
 Deployment hints are available in:
 
-- Pull Request / Merge Request comments (GitHub, Gitlab, Azure DevOps, Bitbucket)
+- Pull Request comments (GitHub, GitLab, Azure DevOps, Bitbucket)
 - Console logs
 
 ![](assets/images/AI-deployment-assistant-console.png)

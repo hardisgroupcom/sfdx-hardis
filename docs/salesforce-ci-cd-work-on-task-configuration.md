@@ -1,51 +1,51 @@
 ---
-title: Perform configuration in your Salesforce org
-description: Learn how to perform configuration on a CI/CD project with a tracked sandbox or a scratch org
+title: Configuration guidelines on a Salesforce CI/CD project
+description: Guidelines to follow when you configure your dev sandbox or scratch org on a Salesforce CI/CD project
 ---
 <!-- markdownlint-disable MD013 -->
 
-- [Configuration](#configuration)
-  - [Api names](#api-names)
+- [Configuration guidelines](#configuration-guidelines)
+  - [API names](#api-names)
   - [Access management](#access-management)
   - [Flows](#flows)
   - [Hardcoded Ids](#hardcoded-ids)
   - [Images](#images)
   - [User references](#user-references)
 
-## Configuration
+## Configuration guidelines
 
-Please follow as much as possible these recommendations when you work on a CI/CD Salesforce project, otherwise it will generate more release management charges and risks of regressions.
+Follow these recommendations as much as possible when you work on a Salesforce CI/CD project. Each time one of them is not respected, the release manager has more manual work to do and the risk of regression grows.
 
-### Api names
+### API names
 
-- **Do not rename API names** (field names, picklist values, pages...)
+- **Do not rename API names** (field names, picklist values, pages...). Git keeps the history of your updates, and a rename is seen as a deletion plus a creation.
 
-- **Do not prefix API Names with numbers**: Git provides historization of updates, so it's better to have elements sorted by alphabetical order than by order of creation
+- **Do not prefix API names with numbers**. Git keeps the history of the updates, so it is better to have elements sorted alphabetically than by order of creation.
 
-- **Do not change the type of custom fields**: It forces the release manager to perform manual actions
+- **Do not change the type of a custom field**. It forces the release manager to perform manual actions in every org.
 
 ### Access management
 
-- Always **use Permission Sets** instead of Profiles. If you need profiles, discuss with your release manager.
+- Always **use Permission Sets** instead of Profiles. If you think you need a Profile, discuss it with your release manager first. See [Profiles and Permission Sets](salesforce-ci-cd-work-on-task-profiles.md).
 
-- If you create a **Custom Profile**, please notify your release manager.
-  - Before the first deployment, this Profile **must be created manually in the target org by cloning "Minimum access" Profile**
+- If you create a **custom Profile**, notify your release manager.
+  - Before the first deployment, this Profile **must be created manually in the target org by cloning the "Minimum Access" Profile**.
 
 ### Flows
 
-- If you need to update Flows, discuss to make sure that no other member of the team is updating the same Flow in another branch/org
-  - _If it happens, conflicts are not manageable so one of you will later need to perform the updates again_
+- If you need to update a Flow, check first that no other member of the team is updating the same Flow in another branch or org.
+  - If it happens, the conflicts cannot be merged, so one of you will have to redo the updates later.
 
 ### Hardcoded Ids
 
-- **Never use hardcoded Ids** in Flows and Formulas (or anywhere else)
+- **Never use hardcoded Ids** in Flows, formulas, or anywhere else. Ids are different in every org.
 
 ### Images
 
-- Use **static resources** or **content assets** to store images
+- Store images in **static resources** or **content assets**, so they are deployed with your metadata.
 
 ### User references
 
-- Do not use direct references to users, use [Public Groups](https://developer.salesforce.com/docs/atlas.en-us.securityImplGuide.meta/securityImplGuide/user_groups.htm) instead
+- Do not reference users directly. Use [Public Groups](https://developer.salesforce.com/docs/atlas.en-us.securityImplGuide.meta/securityImplGuide/user_groups.htm) instead.
 
-- Share your reports and email templates with public groups, not named users.
+- Share your reports and email templates with public groups, not with named users.

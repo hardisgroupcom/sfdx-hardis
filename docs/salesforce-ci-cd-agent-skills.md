@@ -60,10 +60,10 @@ sf hardis:work:new --agent --task-name "MYPROJECT-123 My User Story" --target-br
 
 ### Behavior in agent mode
 
-- **Branch prefix**: uses `--branch-prefix` when provided, otherwise first configured `branchPrefixChoices` value, fallback `feature`.
+- **Branch prefix**: uses `--branch-prefix` when provided, otherwise the first configured `branchPrefixChoices` value, with `feature` as fallback.
 - **Org type**: computed automatically from `allowedOrgTypes` in `config/.sfdx-hardis.yml`.
 - **Scratch mode**: always creates a new scratch org (when applicable).
-- **Skips**: sandbox initialization, updating default target branch in user config.
+- **Skips**: sandbox initialization and the update of the default target branch in the user config.
 
 ### Example `config/.sfdx-hardis.yml`
 
@@ -100,7 +100,7 @@ sf hardis:work:save --agent --targetbranch integration
 
 | Flag             | Description                                                                           |
 |------------------|---------------------------------------------------------------------------------------|
-| `--targetbranch` | Merge request target branch. Auto-resolved from config if omitted.                    |
+| `--targetbranch` | Pull Request target branch. Auto-resolved from config if omitted.                     |
 | `--noclean`      | Skip automated source cleaning.                                                       |
 | `--nogit`        | Skip git commit and push (useful if you only want cleaning + package.xml generation). |
 
@@ -184,7 +184,7 @@ For any agent that can execute shell commands, the pattern is the same:
 1. **New User Story**: `sf hardis:work:new --agent --task-name "<name>" --target-branch <branch> --branch-prefix <feature|fix|retrofit>`
 2. **Save Work**: `sf hardis:work:save --agent`
 
-Ensure the agent has access to:
+Make sure the agent has access to:
 
 - The project directory (with `config/.sfdx-hardis.yml` configured)
 - An authenticated Salesforce CLI session
@@ -205,7 +205,7 @@ graph TD
   E --> F[Changes pushed to remote]
   F --> G{Authenticated to<br/>target deployment org?}
   G -->|Yes| H["sf hardis:project:deploy:smart --agent --check<br/>--source-branch feature/PROJ-123<br/>--target-branch integration<br/>--target-org deploy@myclient.com.integration"]
-  G -->|No – CI will validate| I["CI/CD pipeline runs<br/>deployment checks"]
+  G -->|No, CI will validate| I["CI/CD pipeline runs<br/>deployment checks"]
   H -->|Simulation passes| I
   H -->|Errors found| C
 
@@ -224,15 +224,15 @@ graph TD
 
 ## Troubleshooting
 
-| Issue                                               | Solution                                                                                                                                                                                  |
-|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `target-branch is required with --agent`            | Provide `--target-branch <branch>` or configure `availableTargetBranches` in `config/.sfdx-hardis.yml`.                                                                                   |
-| `target-branch="X" is not an allowed target branch` | Check `availableTargetBranches` in `config/.sfdx-hardis.yml` and use one of the listed branches.                                                                                          |
-| `target branch cannot be resolved` (`work:save`)    | Provide `--targetbranch <branch>` explicitly, or ensure the current branch was created with `work:new`.                                                                                   |
-| Authentication errors                               | Ensure `sf org login` has been run and a default org is set before invoking agent commands.                                                                                               |
-| `sfdx-git-delta` not found (`work:save`)            | Install the plugin: `sf plugins install sfdx-git-delta`                                                                                                                                   |
-| `deploy:smart` simulation fails with wrong org      | Make sure `config/branches/.sfdx-hardis-<target-branch>.yml` exists and contains `targetUsername`. If not authenticated to the target org, skip the step - CI/CD will validate on the PR. |
-| `deploy:smart` simulation uses wrong branch scope   | Provide `--source-branch` explicitly; without it the local git branch is used for delta/PR scope.                                                                                         |
+| Issue                                               | Solution                                                                                                                                                                                           |
+|-----------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `target-branch is required with --agent`            | Provide `--target-branch <branch>` or configure `availableTargetBranches` in `config/.sfdx-hardis.yml`.                                                                                            |
+| `target-branch="X" is not an allowed target branch` | Check `availableTargetBranches` in `config/.sfdx-hardis.yml` and use one of the listed branches.                                                                                                   |
+| `target branch cannot be resolved` (`work:save`)    | Provide `--targetbranch <branch>` explicitly, or make sure the current branch was created with `work:new`.                                                                                         |
+| Authentication errors                               | Make sure `sf org login` has been run and a default org is set before invoking agent commands.                                                                                                     |
+| `sfdx-git-delta` not found (`work:save`)            | Install the plugin: `sf plugins install sfdx-git-delta`                                                                                                                                            |
+| `deploy:smart` simulation fails with wrong org      | Make sure `config/branches/.sfdx-hardis-<target-branch>.yml` exists and contains `targetUsername`. If not authenticated to the target org, skip the step: CI/CD will validate on the Pull Request. |
+| `deploy:smart` simulation uses wrong branch scope   | Provide `--source-branch` explicitly; without it the local git branch is used for the delta and Pull Request scope.                                                                                |
 
 ---
 
@@ -252,13 +252,13 @@ Without `--packages` or `--update-all-config`, the command **only lists** instal
 
 Choose one of three update strategies:
 
-**Option A** - Update only specific packages by name:
+**Option A**: update only specific packages by name:
 
 ```bash
 sf hardis:org:retrieve:packageconfig --agent --packages "MyManagedPkg,AnotherPkg" --target-org myOrg@example.com
 ```
 
-**Option B** - Update only packages already present in your project config (version upgrade):
+**Option B**: update only packages already present in your project config (version upgrade):
 
 ```bash
 sf hardis:org:retrieve:packageconfig --agent --update-existing-config --target-org myOrg@example.com
@@ -266,7 +266,7 @@ sf hardis:org:retrieve:packageconfig --agent --update-existing-config --target-o
 
 This is the safest option for automation: it upgrades versions of known packages without adding new ones.
 
-**Option C** - Update config with all retrieved packages:
+**Option C**: update config with all retrieved packages:
 
 ```bash
 sf hardis:org:retrieve:packageconfig --agent --update-all-config --target-org myOrg@example.com
@@ -317,7 +317,7 @@ $ARGUMENTS
 
 Runs a full smart deployment **validation** (check/simulate mode) against a target org without applying any changes. Run this **after `hardis:work:save`** so that the committed and pushed sources are used for delta scope and git diff calculations.
 
-This step is **optional**: if the Salesforce CLI is not authenticated to the target deployment org locally, skip it - the CI/CD pipeline will run the same validation automatically when the pull request is opened.
+This step is **optional**: if the Salesforce CLI is not authenticated to the target deployment org locally, skip it: the CI/CD pipeline runs the same validation automatically when the Pull Request is opened.
 
 ### Usage
 
@@ -328,7 +328,7 @@ sf hardis:project:deploy:smart --agent --check \
   --target-org deploy@myclient.com.integration
 ```
 
-> **Note**: `--target-org` must be the **target deployment org** (e.g. the integration sandbox), not the developer's current working org. If you are not authenticated to it locally, skip this step - CI/CD will validate the deployment on the pull request.
+> **Note**: `--target-org` must be the **target deployment org** (e.g. the integration sandbox), not the developer's current working org. If you are not authenticated to it locally, skip this step: CI/CD will validate the deployment on the Pull Request.
 
 ### Required flags in agent mode
 
@@ -336,13 +336,13 @@ sf hardis:project:deploy:smart --agent --check \
 |-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `--target-org`    | The **target deployment org** to validate against (e.g. `deploy@myclient.com.integration`). Must be authenticated locally. This is a different org from the developer's current working org. |
 | `--check`         | Explicit simulation flag. Implicit in agent mode but should always be passed to make the intent clear.                                                                                       |
-| `--source-branch` | Source git branch. Overrides local branch detection so delta scope and PR comment tracking use the correct branch.                                                                           |
+| `--source-branch` | Source git branch. Overrides local branch detection so delta scope and Pull Request comment tracking use the correct branch.                                                                 |
 | `--target-branch` | Target git branch. Sets `FORCE_TARGET_BRANCH` and loads `config/branches/.sfdx-hardis-BRANCHNAME.yml`, which provides the correct `targetUsername` for that environment automatically.       |
 
 ### Behavior in agent mode
 
-- **Optional step**: if the Salesforce CLI is not authenticated to the target deployment org, skip this command entirely. The pull request CI/CD pipeline performs the same validation.
-- **Always simulation**: deployment is forced into check/validate mode - `--check` is implicit but should be passed explicitly. No changes are applied to the org.
+- **Optional step**: if the Salesforce CLI is not authenticated to the target deployment org, skip this command entirely. The Pull Request CI/CD pipeline performs the same validation.
+- **Always simulation**: deployment is forced into check/validate mode: `--check` is implicit but should be passed explicitly. No changes are applied to the org.
 - **Target org is the deployment org**: unlike day-to-day usage where `--target-org` is the developer's sandbox, here it must point to the environment being simulated (integration, uat, etc.).
 - **Target username from config**: the `targetUsername` used for deployment commands is read from the target branch config file; the `--target-org` flag provides the authenticated connection.
 - **Source branch override**: sets `FORCE_SOURCE_BRANCH` so delta deployment scope uses the correct base branch.
@@ -361,13 +361,13 @@ allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion
 user-invocable: true
 ---
 
-This step is **optional** and must run **after `hardis:work:save`** (the commits must exist before the simulation can use them for delta scope). If the Salesforce CLI is not authenticated to the target deployment org locally, skip it and inform the user - the CI/CD pipeline will perform the same validation when the pull request is opened.
+This step is **optional** and must run **after `hardis:work:save`** (the commits must exist before the simulation can use them for delta scope). If the Salesforce CLI is not authenticated to the target deployment org locally, skip it and inform the user: the CI/CD pipeline will perform the same validation when the Pull Request is opened.
 
 1. Check whether the target deployment org is authenticated locally:
    ```bash
    sf org list --json
    ```
-   If the target org username is not listed, skip the simulation and tell the user that CI/CD will validate it on the PR.
+   If the target org username is not listed, skip the simulation and tell the user that CI/CD will validate it on the Pull Request.
 
 2. If authenticated, run the simulation:
    ```bash
@@ -391,7 +391,7 @@ $ARGUMENTS
 
 ## Deployment Actions Commands (`hardis:project:action:*`)
 
-Deployment actions are pre- or post-deployment steps stored in YAML config files and executed automatically during CI/CD pipelines. They can be scoped to the whole **project**, a specific **branch**, or a **pull request**.
+Deployment actions are pre- or post-deployment steps stored in YAML config files and executed automatically during CI/CD pipelines. They can be scoped to the whole **project**, a specific **branch**, or a **Pull Request**.
 
 | Scope     | Config file                                 |
 |-----------|---------------------------------------------|
@@ -428,10 +428,10 @@ sf hardis:project:action:list --agent --scope pr --pr-id 123 --when post-deploy 
 
 #### Optional flags
 
-| Flag       | Description                                                       |
-|------------|-------------------------------------------------------------------|
-| `--pr-id`  | PR ID (for `pr` scope). Use `current` to auto-detect from branch. |
-| `--branch` | Branch name (for `branch` scope, defaults to current branch).     |
+| Flag       | Description                                                                 |
+|------------|-----------------------------------------------------------------------------|
+| `--pr-id`  | Pull Request ID (for `pr` scope). Use `current` to auto-detect from branch. |
+| `--branch` | Branch name (for `branch` scope, defaults to current branch).               |
 
 ---
 
@@ -456,7 +456,7 @@ sf hardis:project:action:create --agent \
   --apex-script scripts/apex/setup-custom-settings.apex
 ```
 
-When `--pr-id` is omitted for `pr` scope, actions are saved to a **draft file** (`scripts/actions/.sfdx-hardis.draft.yml`). Run `hardis:project:action:link-pull-request` to associate the draft with a PR once it is created.
+When `--pr-id` is omitted for `pr` scope, actions are saved to a **draft file** (`scripts/actions/.sfdx-hardis.draft.yml`). Run `hardis:project:action:link-pull-request` to associate the draft with a Pull Request once it is created.
 
 #### Required flags
 
@@ -480,14 +480,14 @@ When `--pr-id` is omitted for `pr` scope, actions are saved to a **draft file** 
 
 #### Optional flags
 
-| Flag                     | Default | Description                                                                             |
-|--------------------------|---------|-----------------------------------------------------------------------------------------|
-| `--pr-id`                |         | PR ID (for `pr` scope). `current` auto-detects from branch.                             |
-| `--branch`               |         | Branch name (for `branch` scope).                                                       |
-| `--context`              | `all`   | `all`, `check-deployment-only`, or `process-deployment-only`                            |
-| `--allow-failure`        | `false` | Do not block deployment if action fails                                                 |
-| `--run-only-once-by-org` | `true`  | Execute only once per target org (state tracked in the "Deployment Actions" PR comment) |
-| `--custom-username`      |         | Run action as a specific Salesforce user                                                |
+| Flag                     | Default | Description                                                                                       |
+|--------------------------|---------|---------------------------------------------------------------------------------------------------|
+| `--pr-id`                |         | Pull Request ID (for `pr` scope). `current` auto-detects from branch.                             |
+| `--branch`               |         | Branch name (for `branch` scope).                                                                 |
+| `--context`              | `all`   | `all`, `check-deployment-only`, or `process-deployment-only`                                      |
+| `--allow-failure`        | `false` | Do not block deployment if action fails                                                           |
+| `--run-only-once-by-org` | `true`  | Execute only once per target org (state tracked in the "Deployment Actions" Pull Request comment) |
+| `--custom-username`      |         | Run action as a specific Salesforce user                                                          |
 
 ---
 
@@ -578,7 +578,7 @@ One of:
 
 ### `hardis:project:action:link-pull-request --agent` - Link Draft Actions to a PR
 
-When actions were created for `pr` scope without a specific `--pr-id`, they are saved in a draft file. This command renames the draft to the target PR file so the actions are picked up during CI/CD for that PR.
+When actions were created for `pr` scope without a specific `--pr-id`, they are saved in a draft file. This command renames the draft to the file of the target Pull Request, so the actions are picked up during CI/CD for that Pull Request.
 
 ```bash
 # Link draft to PR 123
@@ -590,9 +590,9 @@ sf hardis:project:action:link-pull-request --agent --pr-id current
 
 #### Required flags in agent mode
 
-| Flag      | Description                                                   |
-|-----------|---------------------------------------------------------------|
-| `--pr-id` | PR number, or `current` to detect from the current git branch |
+| Flag      | Description                                                             |
+|-----------|-------------------------------------------------------------------------|
+| `--pr-id` | Pull Request number, or `current` to detect from the current git branch |
 
 ---
 
@@ -603,7 +603,7 @@ sf hardis:project:action:link-pull-request --agent --pr-id current
 ```markdown
 ---
 name: manage-deployment-actions
-description: Create, list, update, delete, or reorder deployment actions that run before or after Salesforce deployments. Actions are scoped to the whole project, a specific branch, or a pull request. Use when the user asks to add, modify, or remove pre-deploy or post-deploy steps. Use this skill even if the user says "add a pre-deploy action", "create a deployment step", "list actions", "delete action", "reorder steps", or "link draft actions to PR".
+description: Create, list, update, delete, or reorder deployment actions that run before or after Salesforce deployments. Actions are scoped to the whole project, a specific branch, or a Pull Request. Use when the user asks to add, modify, or remove pre-deploy or post-deploy steps. Use this skill even if the user says "add a pre-deploy action", "create a deployment step", "list actions", "delete action", "reorder steps", or "link draft actions to PR".
 argument-hint: "[description of what the user wants to do]"
 allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion
 user-invocable: true
@@ -630,7 +630,7 @@ sf hardis:project:action:create --agent \
   [--pr-id <id>] [--context all|check-deployment-only|process-deployment-only]
 ```
 
-If `--pr-id` is omitted for `pr` scope, actions go to a draft file. Run `link-pull-request` once the PR is created.
+If `--pr-id` is omitted for `pr` scope, actions go to a draft file. Run `link-pull-request` once the Pull Request is created.
 
 ## Update an action (provide only the flags to change)
 
@@ -674,9 +674,9 @@ $ARGUMENTS
 
 ## See Also
 
-- [Create New User Story](salesforce-ci-cd-create-new-task.md) - interactive guide
-- [Publish a User Story](salesforce-ci-cd-publish-task.md) - interactive guide
-- [Coding Agent Auto-Fix (Beta)](salesforce-deployment-agent-autofix.md) - auto-fix deployment errors with coding agents
+- [Create New User Story](salesforce-ci-cd-create-new-task.md): interactive guide
+- [Publish a User Story](salesforce-ci-cd-publish-task.md): interactive guide
+- [Coding Agent Auto-Fix (Beta)](salesforce-deployment-agent-autofix.md): auto-fix deployment errors with coding agents
 - [`hardis:work:new` command reference](hardis/work/new.md)
 - [`hardis:work:save` command reference](hardis/work/save.md)
 - [`hardis:project:deploy:smart` command reference](hardis/project/deploy/smart.md)

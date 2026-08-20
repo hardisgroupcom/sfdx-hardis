@@ -41,7 +41,7 @@ This pipeline will deploy changes to the Salesforce org when a Pull Request is m
 
 ### Check Pull Request Pipeline
 
-By default, Azure Pipelines might trigger on every commit to any branch. We want to restrict this and ensure it runs for Pull Requests.
+By default, Azure Pipelines might trigger on every commit to any branch. We want to restrict it so that it only runs for Pull Requests.
 
 1. **Disable Continuous Integration trigger:**
 
@@ -69,13 +69,13 @@ This pipeline should run automatically when changes are pushed (merged) to major
    - Go to **Pipelines** -> Select "Deploy to org" pipeline -> **Edit**
    - Open the menu **⋮** (Triggers)
    - In **Branch filters**, tick **Override the YAML continuous integration trigger from here**
-   - Ensure **Enable continuous integration** is checked
+   - Make sure **Enable continuous integration** is checked
    - **Include** all your major branches (e.g., `integration`, `uat`, `production`...)
    - **Save**
 
 ## Azure Pull Request notes
 
-In order to avoid to have to open job logs to see deployment errors, sfdx-hardis can post them as a thread on the Pull Request UI
+To avoid having to open job logs to see deployment errors, sfdx-hardis can post them as a thread on the Pull Request UI.
 
 ### Global configuration
 
@@ -93,17 +93,17 @@ To use this capability:
 
 If you want to use **Flow Diff** (visual diff of flow differences):
 
-- Create an Azure boards ticket exactly named **sfdx-hardis tech attachments**. IT will be used to link uploaded images.
+- Create an Azure Boards work item named exactly **sfdx-hardis tech attachments**. It will be used to link the uploaded images.
 
-  - If you prefer to name it differently, define variable `AZURE_ATTACHMENTS_WORK_ITEM_ID` with the number of your ticket as value.
+  - If you prefer to name it differently, define the variable `AZURE_ATTACHMENTS_WORK_ITEM_ID` with the number of your work item as value.
 
-- An Azure Work item can have only 100 attached images, so frequently delete old image attachments, or delete the ticket then recreate it with the same name.
+- An Azure work item can only have 100 attached images, so regularly delete old image attachments, or delete the work item and recreate it with the same name.
 
 ![Screenshot](assets/images/az-tech-work-item.png)
 
 ### Examples
 
-Everytime you will make a pull request, the CI job will post its result as comment !
+Every time you create a Pull Request, the CI job posts its result as a comment.
 
 - Example with deployment errors
 
@@ -113,15 +113,15 @@ Everytime you will make a pull request, the CI job will post its result as comme
 
 ![](assets/images/azure-pr-comment-failed-tests.jpg)
 
-- Example when all is ok :)
+- Example with deployment success
 
 ![](assets/images/azure-pr-comment.jpg)
 
 Notes:
 
-- This integration works with sfdx-hardis pipeline, but also on home-made pipelines, just call [sf hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) instead of `sf project:deploy:start` !
+- This integration works with the sfdx-hardis pipeline, but also with home-made pipelines: just call [sf hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) instead of `sf project:deploy:start`.
 
-- This integration use the following variables:
+- This integration uses the following variables:
   - SYSTEM_ACCESSTOKEN: $(System.AccessToken)
   - CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
   - SYSTEM_COLLECTIONURI: $(System.CollectionUri)
@@ -131,7 +131,7 @@ Notes:
   - SYSTEM_TEAMPROJECT: $(System.TeamProject)
   - BUILD_BUILD_ID: $(Build.BuildId)
   - BUILD_REPOSITORY_ID: $(Build.Repository.ID)
-  - AZURE_ATTACHMENTS_WORK_ITEM_ID (optional: identifier of the Work Items used to attach images)
+  - AZURE_ATTACHMENTS_WORK_ITEM_ID (optional: identifier of the work item used to attach images)
 
 ## Using Azure DevOps integration from Jenkins
 
@@ -143,14 +143,14 @@ When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins envir
 
 The following variables are **automatically derived** from Jenkins built-in variables:
 
-- `SYSTEM_COLLECTIONURI`, `SYSTEM_TEAMPROJECT`, `BUILD_REPOSITORY_ID` - parsed from `GIT_URL` (git remote)
-- `BUILD_REPOSITORYNAME` - from `BUILD_REPOSITORY_ID`
-- `BUILD_SOURCEBRANCHNAME` - from `GIT_BRANCH` / `CHANGE_BRANCH`
-- `BUILD_BUILDID`, `BUILD_BUILD_ID` - from `BUILD_NUMBER`
-- `SYSTEM_JOB_DISPLAY_NAME` - from `JOB_NAME`
-- `SYSTEM_JOB_ID` - from `BUILD_NUMBER`
-- `SYSTEM_PULLREQUEST_PULLREQUESTID` - from `CHANGE_ID` (Jenkins Multibranch Pipeline)
-- Job URL - from `BUILD_URL`
+- `SYSTEM_COLLECTIONURI`, `SYSTEM_TEAMPROJECT`, `BUILD_REPOSITORY_ID`: parsed from `GIT_URL` (git remote)
+- `BUILD_REPOSITORYNAME`: from `BUILD_REPOSITORY_ID`
+- `BUILD_SOURCEBRANCHNAME`: from `GIT_BRANCH` / `CHANGE_BRANCH`
+- `BUILD_BUILDID`, `BUILD_BUILD_ID`: from `BUILD_NUMBER`
+- `SYSTEM_JOB_DISPLAY_NAME`: from `JOB_NAME`
+- `SYSTEM_JOB_ID`: from `BUILD_NUMBER`
+- `SYSTEM_PULLREQUEST_PULLREQUESTID`: from `CHANGE_ID` (Jenkins Multibranch Pipeline)
+- Job URL: from `BUILD_URL`
 
 ## Instructions for using Coding Agents
 

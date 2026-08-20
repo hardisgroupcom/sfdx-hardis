@@ -5,6 +5,8 @@ description: Learn how to use package-no-overwrite.xml to protect metadata that 
 
 <!-- markdownlint-disable MD013 MD033 -->
 
+## Overwrite management
+
 - [What is overwrite management?](#what-is-overwrite-management)
 - [package-no-overwrite.xml](#package-no-overwritexml)
   - [How it works](#how-it-works)
@@ -17,19 +19,19 @@ description: Learn how to use package-no-overwrite.xml to protect metadata that 
 
 ---
 
-## What is overwrite management?
+### What is overwrite management?
 
 On most Salesforce projects, **certain metadata types are intentionally maintained directly in the org** via Setup (e.g. production-only credentials, reports managed by business users, org-specific configurations). Deploying these metadata types via CI/CD risks overwriting changes made directly in the org.
 
-**Overwrite management** lets you declare which metadata items should be **deployed only the first time** (when they don't yet exist in the target org) and **left untouched on subsequent deployments** - even if they are tracked in your `package.xml`.
+**Overwrite management** lets you declare which metadata items should be **deployed only the first time** (when they don't yet exist in the target org) and **left untouched on subsequent deployments**, even if they are tracked in your `package.xml`.
 
 This is controlled by the file `manifest/package-no-overwrite.xml`.
 
 ---
 
-## package-no-overwrite.xml
+### package-no-overwrite.xml
 
-### How it works
+#### How it works
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "secondaryColor": "#f3f3f3", "tertiaryColor": "#ffffff", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
@@ -55,24 +57,24 @@ flowchart TD
 
 The rule applied by `package-no-overwrite.xml` is:
 
-> **An item listed in `package-no-overwrite.xml` is deployed the first time it does not yet exist in the target org. Once it exists in the org, it will never be overwritten by CI/CD - it must be maintained manually via Salesforce Setup.**
+> **An item listed in `package-no-overwrite.xml` is deployed the first time it does not yet exist in the target org. Once it exists in the org, it will never be overwritten by CI/CD: it must be maintained manually via Salesforce Setup.**
 
 In practice, during each deployment:
 
 1. sfdx-hardis reads `manifest/package-no-overwrite.xml`
 2. It queries the target org to build its full metadata inventory
 3. Items that appear in **both** `package-no-overwrite.xml` **and** the target org are removed from the deployment package
-4. The remaining package is deployed - no org-side customizations are ever overwritten
+4. The remaining package is deployed: no org-side customizations are overwritten
 
 The job logs describe each of these steps:
 
 - the target org content listing, to detect which `package-no-overwrite.xml` items already exist there;
-- per metadata type, how many items already exist in the target org and will be protected (not overwritten) - items absent from the org are created by the deployment;
+- per metadata type, how many items already exist in the target org and will be protected (not overwritten), while items absent from the org are created by the deployment;
 - per metadata type, how many items are skipped because they are protected, and how many remain to deploy;
 - the full list of protected items, written to a `calculated-package-no-overwrite.xml` file (its path is shown in the log);
 - the final `package.xml` to deploy, displayed after all package filtering steps (or summarized when it holds more than 100 items).
 
-### When to use it
+#### When to use it
 
 Use `package-no-overwrite.xml` for metadata that:
 
@@ -88,7 +90,7 @@ Common metadata types to protect:
 | `ConnectedApp`                             | Contains org-unique OAuth settings                                                                                                       | All (`*`)            |
 | `ExternalCredential`                       | Named Credentials v2 (API 57.0+): defines auth protocol and named principals; actual secrets are org-specific and stored at runtime only | All (`*`)            |
 | `NamedCredential`                          | Endpoint URLs and auth references vary per environment                                                                                   | All (`*`)            |
-| `ExtlClntAppGlobalOauthSettings`           | External Client Apps (API 59.0+): contains OAuth consumer key and consumer secret - highly sensitive, never overwrite                    | All (`*`)            |
+| `ExtlClntAppGlobalOauthSettings`           | External Client Apps (API 59.0+): contains OAuth consumer key and consumer secret, highly sensitive, never overwrite                    | All (`*`)            |
 | `RemoteSiteSetting`                        | URLs differ between orgs                                                                                                                 | All (`*`)            |
 | `ApprovalProcess`                          | May reference usernames specific to that org                                                                                             | All (`*`)            |
 | `SamlSsoConfig`                            | SSO configuration is org/IdP-specific                                                                                                    | All (`*`)            |
@@ -97,16 +99,16 @@ Common metadata types to protect:
 | `FlexiPage`                                | Only those embedding hardcoded dashboard or record IDs per org                                                                           | Named items only     |
 | `CustomApplication`                        | Only those embedding hardcoded dashboard IDs per org                                                                                     | Named items only     |
 
-### Setup
+#### Setup
 
 1. Create the file `manifest/package-no-overwrite.xml` at the root of your Salesforce project
 2. Use the **same XML format as `package.xml`**
-3. List the metadata types and members to protect - see [Wildcard support](#wildcard-support) below
+3. List the metadata types and members to protect (see [Wildcard support](#wildcard-support) below)
 4. Commit the file to your repository
 
 > The file was formerly named `packageDeployOnce.xml`. Both names are still recognized for backward compatibility, but `package-no-overwrite.xml` is the current standard.
 
-### Wildcard support
+#### Wildcard support
 
 Member entries support three matching modes:
 
@@ -119,7 +121,7 @@ Member entries support three matching modes:
 Glob patterns use `*` as a wildcard that matches any sequence of characters. Multiple patterns can be mixed within the same `<types>` block.
 
 ```xml
-<!-- Protect all Data Cloud (DLM) objects - matched by suffix wildcard -->
+<!-- Protect all Data Cloud (DLM) objects, matched by suffix wildcard -->
 <types>
   <members>*__dlm</members>
   <name>CustomObject</name>
@@ -132,7 +134,7 @@ Glob patterns use `*` as a wildcard that matches any sequence of characters. Mul
 </types>
 ```
 
-### Reports and Dashboards: the folder is ignored when matching
+#### Reports and Dashboards: the folder is ignored when matching
 
 The API name of a `Report` or of a `Dashboard` is unique in the whole org, so `Mercury/My_Report` and `Global_Follow_up/My_Report` are the **same** component, stored in one folder or in the other. sfdx-hardis matches these two types on their API name only, so a report listed in `package-no-overwrite.xml` stays protected even when your sources place it in a folder different from the one it currently sits in the target org.
 
@@ -149,7 +151,7 @@ When you see this warning, keep a single folder per API name in your sources and
 
 Note that a nested source path such as `reports/Mercury/Global_Follow_up/My_Report.report-meta.xml` does not create a subfolder of `Mercury` in the org: the report lands in a top-level folder named `Global_Follow_up`.
 
-### Configuration options
+#### Configuration options
 
 | Configuration                                  | Description                                                                                                                                    |
 |:-----------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------|
@@ -165,7 +167,7 @@ packageNoOverwritePath: manifest/package-no-overwrite-production.xml
 
 This allows you to define stricter protections for production while keeping a more permissive list for lower environments.
 
-### Example
+#### Example
 
 ```xml
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>

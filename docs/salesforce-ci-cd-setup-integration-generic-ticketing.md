@@ -8,33 +8,33 @@ description: Enrich pull requests & notifications with ticketing info
 - [Configuration](#configuration)
   - [Regular Expression to identify a Ticket](#regular-expression-to-identify-a-ticket)
   - [URL Builder for Ticket Hyperlinks](#url-builder-for-ticket-hyperlinks)
-- [Gitlab configuration](#gitlab-configuration)
+- [GitLab configuration](#gitlab-configuration)
 - [Technical notes](#technical-notes)
 
 ## Generic ticketing integration
 
-If you use a ticketing system on your project, sfdx-hardis can use it to enrich its integrations
+If you use a ticketing system on your project, sfdx-hardis can use it to enrich its integrations.
 
-Sfdx-hardis will automatically analyze commits and PR/MR descriptions to collect tickets and build their urls !
+sfdx-hardis automatically analyzes commits and Pull Request descriptions to collect tickets and build their URLs.
 
 ![](assets/images/screenshot-generic-ticketing.jpg)
 
 ## Configuration
 
-You need to define 2 properties in .sfdx-hardis.yml, or 2 environment variables in your CI/CD configuration.
+You need to define two properties in .sfdx-hardis.yml, or two environment variables in your CI/CD configuration.
 
-> It is recommended to use .sfdx-hardis.yml to store these properties, so the VsCode extension will be able to use them for UI features.
+> It is recommended to store these properties in .sfdx-hardis.yml, so that the VS Code SFDX Hardis extension can use them for UI features.
 
 ### Regular Expression to identify a Ticket
 
 - .sfdx-hardis.yml property: **genericTicketingProviderRegex**
 - ENV variable: **GENERIC_TICKETING_PROVIDER_REGEX**
 
-Regular expression allowing to detect your ticketing system identifiers in the commits / PR texts.
+Regular expression used to detect your ticketing system identifiers in commit and Pull Request texts.
 
 You can use <https://regex101.com/> to check your Regular Expression.
 
-Example: `([R|I][0-9]+-[0-9]+)` to detect EasyVista references, that can look like `I240103-0133` or
+Example: `([R|I][0-9]+-[0-9]+)` to detect EasyVista references, which can look like `I240103-0133` or
 `R230904-0026`
 
 ### URL Builder for Ticket Hyperlinks
@@ -42,19 +42,19 @@ Example: `([R|I][0-9]+-[0-9]+)` to detect EasyVista references, that can look li
 - .sfdx-hardis.yml property: **genericTicketingProviderUrlBuilder**
 - ENV variable: **GENERIC_TICKETING_PROVIDER_URL_BUILDER**
 
-Template string allowing to build a hyperlink from a ticket identifier.
+Template string used to build a hyperlink from a ticket identifier.
 
-Must contain a **{REF}** segment that will be replaced by the ticket identifier.
+It must contain a **{REF}** segment, which is replaced by the ticket identifier.
 
 Example: `https://instance.easyvista.com/index.php?ticket={REF}`
 
-## Gitlab configuration
+## GitLab configuration
 
-If you are using Gitlab, you need to update the Merge Request Settings
+If you are using GitLab, you need to update the Merge Request settings.
 
 Go to Project -> Settings -> Merge Requests
 
-Update **Merge Commit Message Template** with the following value
+Update **Merge Commit Message Template** with the following value:
 
 ```sh
 %{title} Merge branch '%{source_branch}' into '%{target_branch}'
@@ -68,7 +68,7 @@ See merge request %{reference}
 %{all_commits}
 ```
 
-Update **Squash Commit Message Template** with the following value
+Update **Squash Commit Message Template** with the following value:
 
 ```sh
 %{title} Merge branch '%{source_branch}' into '%{target_branch}'
@@ -84,7 +84,7 @@ See merge request %{reference}
 
 ## Technical notes
 
-This integration use the following variables, that must be available from the pipelines or in .sfdx-hardis.yml:
+This integration uses the following variables, which must be available from the pipelines or in .sfdx-hardis.yml:
 
 - genericTicketingProviderRegex or GENERIC_TICKETING_PROVIDER_REGEX
 - genericTicketingProviderUrlBuilder or GENERIC_TICKETING_PROVIDER_URL_BUILDER

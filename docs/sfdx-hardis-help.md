@@ -1,6 +1,6 @@
 ---
 title: sfdx-hardis help
-description: Get help and support for sfdx-hardis - professional support subscriptions from Cloudity and community support via GitHub Issues
+description: Get help and support for sfdx-hardis: professional support subscriptions from Cloudity and community support via GitHub Issues
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -8,7 +8,7 @@ description: Get help and support for sfdx-hardis - professional support subscri
 
 ## Professional Support - Cloudity Professional Services
 
-For teams that need guaranteed response times, hands-on expertise, and peace of mind, **[Cloudity](https://cloudity.com/){target=blank}** - the company behind sfdx-hardis - offers **monthly and yearly support subscriptions**.
+For teams that need guaranteed response times, hands-on expertise, and peace of mind, **[Cloudity](https://cloudity.com/){target=blank}**, the company behind sfdx-hardis, offers **monthly and yearly support subscriptions**.
 
 ### What you get
 
@@ -21,7 +21,7 @@ For teams that need guaranteed response times, hands-on expertise, and peace of 
 Your subscription directly funds the continued development of sfdx-hardis, so even when you are not actively using support, you are contributing to:
 
 - Keeping the toolchain **up to date with Salesforce releases and security patches**.
-- Implementing **amazing new features** that benefit the entire community.
+- Implementing **new features** that benefit the entire community.
 - Maintaining the quality and reliability of the open-source project.
 
 ### Subscribe or get in touch

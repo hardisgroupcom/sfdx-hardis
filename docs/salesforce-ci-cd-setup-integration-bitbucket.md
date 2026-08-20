@@ -6,25 +6,26 @@ description: Post Comments on Bitbucket Pull Request from CI jobs
 
 ## Bitbucket Pull Request comments
 
-In order to avoid to have to open job logs to see deployment errors, sfdx-hardis can post them as a comment on the Pull Request UI
+To avoid having to open job logs to see deployment errors, sfdx-hardis can post them as a comment on the Pull Request UI.
 
 To use this capability:
 
-- Go to **Repository Settings -> Access Tokens**  Create Repository Access Token with the following scopes:
+- Go to **Repository Settings -> Access Tokens** and create a Repository Access Token with the following scopes:
   - pullrequest
   - pullrequest:write
   - repository
   - repository:write
-- Go to **Repository Settings > Repository Variables** Create a variable named CI_SFDX_HARDIS_BITBUCKET_TOKEN and provide the access token value
+- Go to **Repository Settings -> Repository Variables** and create a variable named CI_SFDX_HARDIS_BITBUCKET_TOKEN with the access token as value
 
-Everytime you will make a pull request, the CI job will post its result as a comment !
+Every time you create a Pull Request, the CI job posts its result as a comment.
 
-- Example when all is ok :)
+- Example with deployment success
+
 ![](assets/images/screenshot-bitbucket-success.png)
 
 Notes:
 
-- This integration works with sfdx-hardis pipeline, but also on home-made pipelines, just call [sf hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) instead of `sf project:deploy:start` !
+- This integration works with the sfdx-hardis pipeline, but also with home-made pipelines: just call [sf hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) instead of `sf project:deploy:start`.
 
 - This integration uses the following variables:
   - CI_SFDX_HARDIS_BITBUCKET_TOKEN
@@ -44,11 +45,11 @@ When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins envir
 
 The following variables are **automatically derived** from Jenkins built-in variables:
 
-- `BITBUCKET_WORKSPACE`, `BITBUCKET_REPO_SLUG` - parsed from `GIT_URL` (git remote)
-- `BITBUCKET_BRANCH` - from `GIT_BRANCH` / `CHANGE_BRANCH`
-- `BITBUCKET_BUILD_NUMBER` - from `BUILD_NUMBER`
-- `BITBUCKET_PR_ID` - from `CHANGE_ID` (Jenkins Multibranch Pipeline)
-- Job URL - from `BUILD_URL`
+- `BITBUCKET_WORKSPACE`, `BITBUCKET_REPO_SLUG`: parsed from `GIT_URL` (git remote)
+- `BITBUCKET_BRANCH`: from `GIT_BRANCH` / `CHANGE_BRANCH`
+- `BITBUCKET_BUILD_NUMBER`: from `BUILD_NUMBER`
+- `BITBUCKET_PR_ID`: from `CHANGE_ID` (Jenkins Multibranch Pipeline)
+- Job URL: from `BUILD_URL`
 
 ## Instructions for using Coding Agents
 

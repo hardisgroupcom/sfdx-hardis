@@ -5,6 +5,8 @@ description: Add the hardis-report artifact upload step to existing GitHub, GitL
 
 <!-- markdownlint-disable MD013 -->
 
+## Publish job artifacts
+
 During check and deployment jobs, sfdx-hardis writes its detailed reports in the **hardis-report** folder of the workspace:
 
 - the complete deployment result JSON (`deploy-result-*.json`), not displayed in the console anymore to keep logs readable
@@ -15,7 +17,7 @@ If your pipeline was generated recently, the artifact upload step is already the
 
 Add the step matching your platform at the end of every job running `sf hardis:project:deploy:smart` (check and deployment jobs), or any other sfdx-hardis command whose reports you want to keep.
 
-## GitHub Actions
+### GitHub Actions
 
 Add at the end of the `steps` of the job, in `.github/workflows/check-deploy.yml` and `.github/workflows/process-deploy.yml`:
 
@@ -31,7 +33,7 @@ Add at the end of the `steps` of the job, in `.github/workflows/check-deploy.yml
 
 Artifacts are then downloadable from the run page, in the **Artifacts** section.
 
-## GitLab CI
+### GitLab CI
 
 Add an `artifacts` property to the check and deployment jobs of `.gitlab-ci.yml`:
 
@@ -45,7 +47,7 @@ artifacts:
 
 Artifacts are then downloadable from the job page, in the right side panel.
 
-## Azure Pipelines
+### Azure Pipelines
 
 Add at the end of the `steps` of the job, in `azure-pipelines-checks.yml` and `azure-pipelines-deployment.yml`:
 
@@ -59,7 +61,7 @@ Add at the end of the `steps` of the job, in `azure-pipelines-checks.yml` and `a
 
 Artifacts are then available from the run page, in **Related > Published artifacts**.
 
-## Bitbucket Pipelines
+### Bitbucket Pipelines
 
 Add an `artifacts` property to the check and deployment steps of `bitbucket-pipelines.yml`:
 
@@ -70,7 +72,7 @@ artifacts:
 
 Artifacts are then downloadable from the pipeline page, in the **Artifacts** tab.
 
-## Jenkins
+### Jenkins
 
 Add a `post` section to the check and deployment stages of your `Jenkinsfile`:
 
@@ -84,6 +86,6 @@ Add a `post` section to the check and deployment stages of your `Jenkinsfile`:
 
 Artifacts are then available from the build page, in **Archived artifacts**.
 
-## Reference pipelines
+### Reference pipelines
 
 The up-to-date pipeline templates shipped with sfdx-hardis already contain these steps: [defaults/ci](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/defaults/ci). Compare them with your own pipelines when in doubt.

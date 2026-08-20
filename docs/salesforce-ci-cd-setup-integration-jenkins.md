@@ -57,9 +57,9 @@ The pipeline also accepts the following optional credentials. Create them if you
 |------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `SLACK_TOKEN` + `SLACK_CHANNEL_ID`                                                                                                                   | Slack notifications                                                                                                                                                                                |
 | `NOTIF_EMAIL_ADDRESS`                                                                                                                                | Email notifications                                                                                                                                                                                |
-| `JIRA_HOST` + `JIRA_EMAIL` + `JIRA_TOKEN` / `JIRA_PAT`                                                                                               | JIRA integration                                                                                                                                                                                   |
+| `JIRA_HOST` + `JIRA_EMAIL` + `JIRA_TOKEN` / `JIRA_PAT`                                                                                               | Jira integration                                                                                                                                                                                   |
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`                                                                                            | AI auto-fix of deployment errors                                                                                                                                                                   |
-| one of: `GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`, `CI_SFDX_HARDIS_BITBUCKET_TOKEN`, `CI_SFDX_HARDIS_AZURE_TOKEN` | Git provider integration: post deployment comments on PRs/MRs and allow the coding agent to push fix branches and open PRs. See [Git provider integration from Jenkins](#git-provider-integration) |
+| one of: `GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`, `CI_SFDX_HARDIS_BITBUCKET_TOKEN`, `CI_SFDX_HARDIS_AZURE_TOKEN` | Git provider integration: post deployment comments on Pull Requests and allow the coding agent to push fix branches and open Pull Requests. See [Git provider integration](#git-provider-integration) |
 | `SFDX_AUTH_URL_TECHNICAL_ORG`                                                                                                                        | Technical org authentication (DevHub or scratch org workflows)                                                                                                                                     |
 
 ## Create the Multibranch Pipeline
@@ -70,7 +70,7 @@ The pipeline also accepts the following optional credentials. Create them if you
 - Under **Branch Sources**, add your Git server and point it to your Salesforce project repository
 - Under **Build Configuration**, leave the default **by Jenkinsfile** (the `Jenkinsfile` is at the repository root)
 - Under **Scan Multibranch Pipeline Triggers**, enable **Periodically if not otherwise run** (e.g. every hour) so Jenkins discovers new branches automatically
-- Click **Save** - Jenkins will scan the repository and create one sub-job per branch it finds
+- Click **Save**: Jenkins scans the repository and creates one sub-job per branch it finds
 
 ## Update the Jenkinsfile
 
@@ -108,7 +108,7 @@ def DEPLOYMENT_BRANCHES = [
 ]
 ```
 
-The `Deployment` stage automatically uses this list in its `when` condition - no other changes needed when adding or removing branches.
+The `Deployment` stage automatically uses this list in its `when` condition, so no other change is needed when adding or removing branches.
 
 ### 3 - Commit and push
 
@@ -125,7 +125,7 @@ Commit the updated `Jenkinsfile` and push. Jenkins will pick up the changes on t
 
 When running on Jenkins, sfdx-hardis **automatically detects** the Jenkins environment and maps its built-in variables (`GIT_URL`, `GIT_BRANCH`, `BUILD_URL`, `BUILD_NUMBER`, `JOB_NAME`, `CHANGE_ID`, etc.) to the native equivalents of your git provider (GitHub, GitLab, Azure DevOps, or Bitbucket).
 
-This means you only need to set the **authentication token** for your git provider - all other CI variables are derived automatically.
+This means you only need to set the **authentication token** for your git provider: all other CI variables are derived automatically.
 
 | Git provider | Required credential              | Documentation                                                                                                     |
 |--------------|----------------------------------|-------------------------------------------------------------------------------------------------------------------|
@@ -144,8 +144,8 @@ Jenkins variables used for auto-detection:
 | `BUILD_URL`      | Link to the current build page                     |
 | `BUILD_NUMBER`   | Build identifier                                   |
 | `JOB_NAME`       | Job/workflow name                                  |
-| `CHANGE_ID`      | Pull/Merge request number (Multibranch Pipeline)   |
-| `CHANGE_BRANCH`  | Source branch of a PR build                        |
+| `CHANGE_ID`      | Pull Request number (Multibranch Pipeline)         |
+| `CHANGE_BRANCH`  | Source branch of a Pull Request build              |
 
 ## Auto-fix branches
 

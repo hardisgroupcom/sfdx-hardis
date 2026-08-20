@@ -25,7 +25,7 @@ Credentials are injected per-stage using `withCredentials()` so that each stage 
 withCredentials([
     string(credentialsId: 'SFDX_CLIENT_ID_INTEGRATION',  variable: 'SFDX_CLIENT_ID_INTEGRATION'),
     string(credentialsId: 'SFDX_CLIENT_KEY_INTEGRATION', variable: 'SFDX_CLIENT_KEY_INTEGRATION'),
-    // Optional credentials use `optional: true` - missing ones are silently ignored
+    // Optional credentials use `optional: true`: missing ones are silently ignored
     string(credentialsId: 'SLACK_TOKEN', variable: 'SLACK_TOKEN', optional: true),
 ]) {
     sh 'sf hardis:auth:login'
@@ -33,7 +33,7 @@ withCredentials([
 }
 ```
 
-Impacted files if present in your repo:
+Impacted files, if present in your repository:
 
 - `Jenkinsfile`
 

@@ -20,7 +20,7 @@ Sfdx-hardis is a **CLI and visual productivity tools suite for Salesforce**, by 
 
 ![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
 
-It is free and Open-Source, and will allow you to simply:
+It is free and open-source, and lets you:
 
 - [Deliver your projects with **State of the art Salesforce DevOps**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
@@ -34,11 +34,11 @@ It is free and Open-Source, and will allow you to simply:
 
 ![Salesforce AI Generated Documentation](https://sfdx-hardis.cloudity.com/assets/images/screenshot-object-diagram.jpg)
 
-- Enjoy many commands that will **save your minutes, hours or even days** in your daily **Admin or Developer** work.
+- Use many commands that **save minutes, hours or even days** of your daily **admin or developer** work.
 
 ![Productivity commands](https://sfdx-hardis.cloudity.com/assets/images/ProductivityCommands.png)
 
-If you need guidance about how to leverage sfdx-hardis to bring more value to your business, Cloudity's international multi-cloud teams of business experts and technical experts can help: [contact us](https://cloudity.com/contact-us/) !
+If you need help to get the most out of sfdx-hardis, Cloudity's international teams of business and technical experts can help: [contact us](https://cloudity.com/contact-us/).
 
 [![Cloudity](https://sfdx-hardis.cloudity.com/assets/images/cloudity-banner.png)](https://cloudity.com/contact-us/)
 
@@ -46,7 +46,7 @@ If you need guidance about how to leverage sfdx-hardis to bring more value to yo
 
 ___
 
-**sfdx-hardis** commands and configuration are best used with an UI in [**SFDX Hardis Visual Studio Code Extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+**sfdx-hardis** commands and configuration are best used from the [**SFDX Hardis Visual Studio Code extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
 ___
 
@@ -64,15 +64,15 @@ _See Dreamforce presentation_
 
 ### With IDE
 
-You can install [Visual Studio Code](https://code.visualstudio.com/), then VSCode Extension [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+You can install [Visual Studio Code](https://code.visualstudio.com/), then the VS Code extension [SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
-Once installed, click on ![Hardis Group button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in VsCode left bar, click on **Install dependencies** and follow the additional installation instructions :)
+Once installed, click on ![SFDX Hardis button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in the VS Code left bar, click on **Install dependencies** and follow the installation instructions.
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-highlight.png)
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-screenshot.png)
 
-When you are all green, you are all good 😊
+When everything is green, you are all set.
 
 _You can also watch the video tutorial below_
 
@@ -85,7 +85,7 @@ ___
 #### Pre-requisites
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
-- Install Salesforce DX by running `npm install @salesforce/cli --global` command line
+- Install the Salesforce CLI by running `npm install @salesforce/cli --global`
 
 #### Plugin installation
 
@@ -193,12 +193,6 @@ Casablanca, Morocco - 24/10/2026
 
 <img width="800" height="800" alt="North Africa Dreamin' 2026" src="https://github.com/user-attachments/assets/c5ff790c-48c3-4673-8c19-f1db63ff8971" />
 
-### Irish Dreamin
-
-No-Cost DevOps: Enterprise-Grade CI/CD with SFDX-HARDIS, by Abdeslam Loukili
-
-![Irish Dreamin - Abdeslam Loukili](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/irish-dreamin-abdeslam-loukili.jpg)
-
 ### Czech Dreamin '26, Prague
 
 [Refresh your full sandboxes without needing to reconfigure everything](https://czechdreamin.com/)
@@ -231,6 +225,14 @@ Wroclaw, Poland - 20/03/2026
 
 <img width="951" height="753" alt="Polish Dreamin 2026" src="https://github.com/user-attachments/assets/4cebe084-f7b6-4d6e-aa22-c3cb305222ea" />
 
+### Irish Dreamin '26, Dublin
+
+No-Cost DevOps: Enterprise-Grade CI/CD with SFDX-HARDIS, by Abdeslam Loukili
+
+Dublin, Ireland - 19/03/2026
+
+![Irish Dreamin 2026 - Abdeslam Loukili](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/irish-dreamin-abdeslam-loukili.jpg)
+
 ### French Touch Dreamin '25
 
 Refresh your full sandboxes without needing to reconfigure everything - with [Mehdi Abdennasser](https://www.linkedin.com/in/mehdi-abdennasser/)
@@ -255,7 +257,7 @@ London, UK - 20/11/2025
 
 ### Trailblazer Developer Group '25, Berlin (online)
 
-[Summer of Docs – Auto-Document Your Salesforce Org Like a Pro](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-developer-group-berlin-germany-presents-summer-of-docs-auto-document-your-salesforce-org-like-a-pro/), by [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
+[Summer of Docs: Auto-Document Your Salesforce Org Like a Pro](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-developer-group-berlin-germany-presents-summer-of-docs-auto-document-your-salesforce-org-like-a-pro/), by [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/berlin-user-group-docgen.png)
 
@@ -386,7 +388,7 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 [![sfdx-hardis 2025 new features](https://img.youtube.com/vi/JRKH5COUVQ0/0.jpg)](https://youtu.be/JRKH5COUVQ0){target=blank}
 
-- SFDX-HARDIS – A demo with Nicolas Vuillamy from Cloudity
+- SFDX-HARDIS: A demo with Nicolas Vuillamy from Cloudity
 
 [![SalesforceDevOps.net Demo](https://img.youtube.com/vi/qP6MaZUGzik/0.jpg)](https://www.youtube.com/watch?v=qP6MaZUGzik){target=blank}
 
@@ -454,20 +456,20 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 <!-- contributing.md start -->
 
-Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you !)
+Everyone is welcome to contribute to sfdx-hardis (even juniors: we will help you).
 
 ### Salesforce CLI Plugin: sfdx-hardis
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
-- Install typescript by running `npm install typescript --global`
+- Install TypeScript by running `npm install typescript --global`
 - Install yarn by running `npm install yarn --global`
-- Install Salesforce DX by running `npm install @salesforce/cli --global` command line
+- Install the Salesforce CLI by running `npm install @salesforce/cli --global`
 - Fork <https://github.com/hardisgroupcom/sfdx-hardis> and clone it (or just clone if you are an internal contributor)
 - At the root of the repository:
   - Run `yarn` to install dependencies
-  - Run `sf plugins link` to link the local sfdx-hardis to SFDX CLI
-  - Run `tsc --watch` to transpile typescript into js everytime you update a TS file
-- Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand --someparameter somevalue` (you can also debug commands using VsCode Sfdx-Hardis setting)
+  - Run `sf plugins link` to link the local sfdx-hardis to the Salesforce CLI
+  - Run `tsc --watch` to transpile TypeScript into JavaScript every time you update a TS file
+- Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand --someparameter somevalue` (you can also debug commands with the VS Code SFDX Hardis extension debug setting)
 
 Note: To test a feature from CI, you can add the following code in your workflow before running sfdx-hardis commands:
 
@@ -486,18 +488,18 @@ sf plugins link
 cd -
 ```
 
-### VsCode Extension: vscode-sfdx-hardis
+### VS Code Extension: vscode-sfdx-hardis
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
-- Install typescript by running `npm install typescript --global`
+- Install TypeScript by running `npm install typescript --global`
 - Install yarn by running `npm install yarn --global`
 - Install Visual Studio Code Insiders ([download here](https://code.visualstudio.com/insiders/))
 - Fork <https://github.com/hardisgroupcom/vscode-sfdx-hardis> and clone it (or just clone if you are an internal contributor)
 - At the root of the repository:
   - Run `yarn` to install dependencies
-- To test your code in the VsCode Extension:
-  - Open the `vscode-sfdx-hardis` folder in VsCode Insiders
-  - Press `F5` to open a new VsCode window with the extension loaded (or menu Run -> Start Debugging)
+- To test your code in the VS Code extension:
+  - Open the `vscode-sfdx-hardis` folder in VS Code Insiders
+  - Press `F5` to open a new VS Code window with the extension loaded (or menu Run > Start Debugging)
   - In the new window, open a Salesforce DX project
   - Run commands from the command palette (Ctrl+Shift+P) or use the buttons in the panel or webviews
 
@@ -538,14 +540,38 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Michael Havrilla](https://www.linkedin.com/in/%F0%9F%92%BB-michael-havrilla-69063036/), for the integration with Vector.dev allowing to provide monitoring logs to external systems like DataDog
 - [Teoman Sertcelik](https://www.linkedin.com/in/teoman-sertcelik/), for allowing to configure authentication using External Client App
 - [Fernando Fernandez](https://www.linkedin.com/in/fernandofernandez1/), for the great command that [detects objects fields usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/)
-- [Yamilet Oliva](https://www.linkedin.com/in/yamiletoliva/), for sfdx-hardis spanish translation
+- [Yamilet Oliva](https://www.linkedin.com/in/yamiletoliva/), for sfdx-hardis spanish translation and the enriched Flow error monitoring notifications
 - [Shinnosuke Takakura](https://www.linkedin.com/in/shinnosuke-takakura-9041ba217/), for sfdx-hardis japanese translation
 - [Dagmara Ryborz](https://www.linkedin.com/in/dagmara-ryborz-7618b991/), for Polish translation
-- [Matt Carvin](https://www.linkedin.com/in/matthew-carvin/), for underused permission sets command
-- [Salik Lennert Pedersen](https://www.linkedin.com/in/saliklp/), for his numerous bug fixes
+- [Matt Carvin](https://www.linkedin.com/in/matthew-carvin/), for the [underused permission sets command](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/underusedpermsets/) and the real deployment metrics of [smart deploy](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/)
+- [Salik Lennert Pedersen](https://www.linkedin.com/in/saliklp/), for his numerous bug fixes, the [hardis:mdapi:read](https://sfdx-hardis.cloudity.com/hardis/mdapi/read/) and [hardis:mdapi:upsert](https://sfdx-hardis.cloudity.com/hardis/mdapi/upsert/) commands, git worktrees support and Flow deletion in destructive changes
 - [Ryad Meguimi](https://www.linkedin.com/in/ryad-meguimi/), for the Light & Dark modes and the whole refactoring of CSS
 - [Nicholas Fiorendi](https://www.linkedin.com/in/nicholas-fiorendi/), for Italian translation
 - [Timo Pouw](https://www.linkedin.com/in/timopouw/), for Dutch translation
+- [Quentin Tiercelin](https://github.com/TiercelinQ), for the commands to [detect unsecure permissions](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions/) and [generate a data dictionary](https://sfdx-hardis.cloudity.com/hardis/doc/data-dictionary/)
+- [Pranay Jaiswal](https://github.com/pranayjswl007), for smarter [audit trail monitoring](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/) with allowed actions per user
+- [Maciej Ptak](https://github.com/0ptaq0), for fixing Flow git diff on projects with custom package directories
+- [Eric Mulder](https://github.com/ericmulder-welisa), for revising the [sandbox setup and best practices documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-activate-org/)
+- [Maxime Guenego](https://github.com/maximeg44), for the metadata lint commands: [unused metadata](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/), [inactive metadata](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/) and [missing descriptions](https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/)
+- [Meric Asaner](https://github.com/masaner), for the [unused users detection](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/) and bulkified Flow deletions
+- [Brahim Laissaoui](https://github.com/laissaouibrahim), for major [files export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) improvements (batched processing, Attachments support)
+- [Dimitri Monge](https://github.com/dimitrimonge), for the [user freeze/unfreeze](https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/) commands and the Jenkins and GitHub Actions pipeline templates
+- [zzyviolette](https://github.com/zzyviolette), for restoring Connected Apps after a [sandbox refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/)
+- [Yan Imensar](https://github.com/yan-imensar), for the [MS Teams notifications integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-ms-teams/)
+- [Maksym Petrov](https://github.com/maksym-petrov-ct), for Apex Trigger support in [project documentation generation](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) and CI runner cost savings
+- [Manoel Calixto](https://github.com/manoelcalixto), for robustness fixes on sources cleaning and Flow documentation
+- [Piotr](https://github.com/piotrekkr), for the [files export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) filename format options
+- [Thomas Prouvot](https://github.com/tprouvot), for the [Experience Cloud communities activation command](https://sfdx-hardis.cloudity.com/hardis/org/community/update/)
+- [JMMlw](https://github.com/JMMlw), for the [profile purge command](https://sfdx-hardis.cloudity.com/hardis/org/purge/profile/)
+- [mbobard](https://github.com/mbobard), for the [System.debug cleaning command](https://sfdx-hardis.cloudity.com/hardis/project/clean/systemdebug/)
+- [Juliano de Medeiros Machado](https://github.com/JulianoMedeirosMachado), for keeping original translations in [custom label translations](https://sfdx-hardis.cloudity.com/hardis/misc/custom-label-translations/)
+- [Alain Bates](https://github.com/Alainbates), for the Bitbucket Git provider support
+- [Theodoor van Donge](https://github.com/thvd), for switching [Apex logs purge](https://sfdx-hardis.cloudity.com/hardis/org/purge/apexlog/) to the Tooling API
+- [Kris Goncalves](https://github.com/kg345), for the option to hide Apex code in [generated project documentation](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)
+- [Clément Fernandez](https://github.com/clemfernandez), for the [metadata duplicates detection command](https://sfdx-hardis.cloudity.com/hardis/project/metadata/findduplicates/) and many early improvements
+- [Mehdi](https://github.com/Mehdi-Cloudity), for the [bypass generation command](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/) and its application to Flows, Validation Rules and Triggers
+- [Mathieu Rodrigues](https://github.com/MathieuRodriguesCloudity), for the SFDMU configuration for CPQ projects
+- [Hasnioui-Ysf](https://github.com/Hasnioui-Ysf), for the work on Permission Sets management
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 
@@ -560,8 +586,6 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - Dutch: [Timo Pouw](https://www.linkedin.com/in/timopouw/)
 
 <!-- contributors.md end -->
-
-
 
 ## Commands
 

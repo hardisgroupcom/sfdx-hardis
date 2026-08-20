@@ -1,46 +1,44 @@
 ---
-title: Configure Orgs
-description: Learn how to activate Dev Hub and Sandbox Tracking on a CI/CD Salesforce project, and apply org settings
+title: Prepare the Salesforce orgs for CI/CD
+description: Learn how to activate Dev Hub and sandbox source tracking, apply the org settings, and create the major org sandboxes for a Salesforce CI/CD project
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Production Org Settings
+## Prepare the Salesforce orgs
 
-### Dev Hub and Sandbox Tracking
+### Production org settings
 
-You must declare an org (usually production) as a DevHub and activate sandbox tracking to be able to work with advanced features of Salesforce DX
+#### Dev Hub and sandbox source tracking
 
-- Login to Dev Hub org
+You must declare an org (usually production) as a Dev Hub and activate sandbox source tracking to work with the advanced features of Salesforce DX.
 
+- Log in to the Dev Hub org
 - Go to `Setup -> Dev Hub`
-
 - [Activate Dev Hub](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_enable_devhub.htm)
+- [Activate sandbox source tracking](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_enable_source_tracking_sandboxes.htm)
+  - If sandboxes already existed, you need to refresh them to activate their source tracking
+  - To use **Create from** with an existing sandbox, refresh it before cloning, otherwise the new sandbox will not have source tracking activated
 
-- [Activate Sandbox tracking](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_enable_source_tracking_sandboxes.htm)
-  - If sandbox were already existing, you need to refresh them if you want their source tracking to be activated
-  - To use **Create from** from an existing sandbox, you need to refresh it before the cloning, else the nex sandbox won't have the tracking activated
+#### Activate Experience Bundle metadata
 
-### Activate Experience Bundle Metadata
-
-- Go to Setup -> Digital Experiences
-
+- Go to `Setup -> Digital Experiences`
 - Activate **Enable ExperienceBundle Metadata API**
 
-## Major orgs
+### Major orgs
 
-When there is a new state of a major branch (after a merge), a deployment to the related major Org will be automatically triggered by the CI server.
+When a major branch gets a new state (after a merge), the CI server automatically deploys it to the related major org.
 
-You need to have a Salesforce sandbox corresponding to each major branch.
+You need a Salesforce sandbox for each major branch.
 
-> Create major orgs sandbox by cloning from Production.
+> Create the major org sandboxes by cloning from Production.
 
-> If you have existing sandboxes, it's is highly recommended to refresh them before activating the pipeline
+> If you have existing sandboxes, it is highly recommended to refresh them before activating the pipeline.
 
 Example:
 
-- Branch `preprod` - create a developer named `Preprod`
-- Branch `uat` - create a developer named `UAT`
-- Branch `integration` - create a sandbox named `Integci` (sandbox name has 10 character limit)
+- Branch `preprod`: create a sandbox named `Preprod`
+- Branch `uat`: create a sandbox named `UAT`
+- Branch `integration`: create a sandbox named `Integci` (sandbox names are limited to 10 characters)
 
 Depending on the number of "bigger" sandboxes you have available, here are the recommended sandbox types for each major org:
 
@@ -50,10 +48,12 @@ Depending on the number of "bigger" sandboxes you have available, here are the r
 | Partial + 1 Full | dev SB | Full SB    | partial SB |
 | Partial + 2 Full | dev SB | Full SB    | Full SB    |
 
-If you are converting an existing project to CI/CD and already have existing orgs, just create an org `Integration`, and you'll refresh later `UAT` and `PreProd`, once your setup will be more advanced.
+If you are converting an existing project to CI/CD and already have orgs, just create an `Integration` org now. You will refresh `UAT` and `PreProd` later, once your setup is more advanced.
 
-It is **very important that Integ is a dev sandbox**, because you'll clone it to create the sandboxes where people will actually perform the implementation (and you can clone only sandboxes of the same type).
+It is **very important that Integ is a developer sandbox**: you will clone it to create the sandboxes where people actually implement the User Stories, and you can only clone sandboxes of the same type.
 
-## Developer sandboxes
+### Developer sandboxes
 
-The actual development work is done in developer sandboxes that need to be created from the Integration org.
+The actual development work is done in developer sandboxes, which must be created from the Integration org.
+
+You can now go to step [3. Initialize the SFDX project](salesforce-ci-cd-setup-init-project.md).

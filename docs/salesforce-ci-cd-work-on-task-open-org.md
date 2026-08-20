@@ -1,16 +1,16 @@
 ---
 title: Open your Salesforce org
-description: Learn how to open your org with a tracked sandbox or a scratch org
+description: Learn how to open the dev sandbox or scratch org of your User Story from the VS Code SFDX Hardis extension
 ---
 <!-- markdownlint-disable MD013 -->
 
-### Open your org
+## Open your org
 
-You can use Salesforce Setup to configure your org as you would do on any sandbox.
+Your dev sandbox or scratch org is a regular Salesforce org: you configure it with Salesforce Setup, as you would do in any sandbox.
 
-- Open your Salesforce DX project with Visual Studio Code
-- Open VsCode SFDX Hardis extension by clicking on ![Hardis Group button](assets/images/hardis-button.jpg) in VsCode left bar _(loading can task several seconds)_
-- Click on ![Open current org button](assets/images/btn-open-org.jpg) to open your org in browser
-  - _If you want to use another org, use menu ![Select org button](assets/images/btn-select-org.jpg) to select another one_
-- Perform your configurations in the org
-- Once you have finished, you can [publish your User Story](salesforce-ci-cd-publish-task.md)
+- Open your Salesforce DX project with VS Code.
+- Open the VS Code SFDX Hardis extension by clicking ![SFDX Hardis button](assets/images/hardis-button.jpg) in the VS Code left bar (loading can take a few seconds).
+- Click ![Open current org button](assets/images/btn-open-org.jpg) to open your org in the browser.
+  - If you want to work in another org, use ![Select org button](assets/images/btn-select-org.jpg) to select it first.
+- Perform your configuration in the org, following the [configuration guidelines](salesforce-ci-cd-work-on-task-configuration.md).
+- When you are done, [publish your User Story](salesforce-ci-cd-publish-task.md).

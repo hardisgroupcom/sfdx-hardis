@@ -32,9 +32,7 @@ Key: **UNDERUSED_PERMSETS**
 ### Grafana example
 
 <!-- TODO: Add screenshot when available -->
-<!-- ![](assets/images/screenshot-monitoring-underused-permsets-grafana.jpg) -->
 
 ### Slack example
 
 <!-- TODO: Add screenshot when available -->
-<!-- ![](assets/images/screenshot-monitoring-underused-permsets.jpg) -->

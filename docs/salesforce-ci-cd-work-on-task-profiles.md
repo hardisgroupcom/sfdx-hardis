@@ -1,14 +1,14 @@
 ---
-title: Handle Profiles on a Salesforce CI/CD project
-description: Learn how to handle the profile mess !
+title: Profiles and Permission Sets on a Salesforce CI/CD project
+description: Learn how to handle Profiles and Permission Sets on a Salesforce CI/CD project, and which Profile settings cannot be deployed
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Deploy Profiles
+## Profiles and Permission Sets
 
 ### Use Permission Sets
 
-In case an attribute is available on Profiles and Permission Sets: **USE PERMISSION SETS** :)
+When an attribute is available on both Profiles and Permission Sets, **use Permission Sets**. This applies to:
 
 - Apex Class Access (`classAccesses`)
 - Custom Metadata Type Access (`customMetadataTypeAccesses`)
@@ -16,39 +16,38 @@ In case an attribute is available on Profiles and Permission Sets: **USE PERMISS
 - Field Permissions (`fieldPermissions`)
 - Object Permissions (`objectPermissions`)
 - Page Access (`pageAccesses`)
-- User Permissions (`userPermissions (except on Admin Profile)`)
+- User Permissions (`userPermissions`, except on the Admin Profile)
 
-If you are on a build project, it is recommended to [automate Minimize Profile](https://sfdx-hardis.cloudity.com/hardis/project/clean/minimizeprofiles/) so such attributes are [automatically removed from Profiles before Merge Requests](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-cleaning/#minimize-profiles).
+If you are on a build project, it is recommended to [automate Minimize Profiles](https://sfdx-hardis.cloudity.com/hardis/project/clean/minimizeprofiles/) so such attributes are [automatically removed from Profiles before the Pull Request](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-cleaning/#minimize-profiles) (Merge Request on GitLab).
 
 ### Tab visibility
 
-When you retrieve a profile, standard tabs visibility is not present in the XML.
+When you retrieve a Profile, the visibility of standard tabs is not present in the XML.
 
-This is quite boring because if you do nothing, Calendar, Tasks, Home or Contact tab visibilities won't be deployed !
+If you do nothing, the visibility of the Calendar, Tasks, Home or Contact tabs is not deployed.
 
-To avoid that, standard tab visibility must be added in the Profile XML.
+To avoid that, the standard tab visibility must be added in the Profile XML.
 
-You can use sfdx-hardis command [Fix Profile Tabs](https://sfdx-hardis.cloudity.com/hardis/project/fix/profiletabs/) to Show / Hide tabs in your Profile XML files.
+Use the sfdx-hardis command [Fix Profile Tabs](https://sfdx-hardis.cloudity.com/hardis/project/fix/profiletabs/) to show or hide tabs in your Profile XML files.
 
 ### Application visibility
 
-While you can deploy custom application visibility settings through the Profile XML, **hiding standard applications for a profile cannot be deployed** via metadata.
+You can deploy the visibility of custom applications through the Profile XML, but **hiding a standard application for a Profile cannot be deployed** with metadata.
 
 This is a Salesforce platform limitation: standard applications can be set as visible or default in the Profile XML, but hiding them must be done manually in the target org.
 
 **Manual steps required:**
 
-1. Go to **Setup** in the target org
-2. Navigate to **Profiles**
-3. Select the profile you want to modify
-4. Scroll to the **Custom App Settings** section
-5. Find the standard application(s) you want to hide
-6. Uncheck the **Visible** checkbox for the application(s)
-7. Save the profile
+1. Go to **Setup** in the target org.
+2. Open **Profiles**.
+3. Select the Profile you want to modify.
+4. Scroll to the **Custom App Settings** section.
+5. Find the standard application(s) you want to hide.
+6. Uncheck the **Visible** checkbox for the application(s).
+7. Save the Profile.
 
 **Important notes:**
 
-- Ensure at least one application remains set as the default for each profile (see [Missing profile default application](sf-deployment-assistant/Missing-profile-default-application.md))
-- This manual step must be repeated in each environment (sandbox, pre-production, production)
-- Document this manual step in your deployment checklist or use [deployment actions](salesforce-ci-cd-work-on-task-deployment-actions.md#manual-step) to track it
-
+- Make sure at least one application remains set as the default for each Profile (see [Missing profile default application](sf-deployment-assistant/Missing-profile-default-application.md)).
+- This manual step must be repeated in each environment (sandbox, preprod, production).
+- Track this manual step with a [manual deployment action](salesforce-ci-cd-work-on-task-deployment-actions.md#manual-step) on your Pull Request, so nobody forgets it.

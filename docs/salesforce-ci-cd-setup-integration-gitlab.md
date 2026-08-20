@@ -4,9 +4,9 @@ description: Post Notes on Gitlab Merge Request from CI jobs
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Gitlab Merge request notes
+## GitLab Merge Request notes
 
-In order to avoid to have to open job logs to see deployment errors, sfdx-hardis can post them as Notes on the Merge Request UI
+To avoid having to open job logs to see deployment errors, sfdx-hardis can post them as notes on the Merge Request UI.
 
 To use this capability:
 
@@ -15,12 +15,12 @@ To use this capability:
 ![image](https://github.com/hardisgroupcom/sfdx-hardis/assets/129843004/b6669469-d71a-4cd8-9c5b-5d1d7d03e341)
 
 
-- Go to Settings -> CI/CD -> Variables -> Create a variable named **CI_SFDX_HARDIS_GITLAB_TOKEN** and past the access token value
+- Go to Settings -> CI/CD -> Variables -> Create a variable named **CI_SFDX_HARDIS_GITLAB_TOKEN** and paste the access token value
 
 ![image](https://github.com/hardisgroupcom/sfdx-hardis/assets/129843004/e4e0b473-0327-4856-88e4-070c2084ba48)
 
 
-Everytime you will make a merge request, the CI job will post its result as comment !
+Every time you create a Merge Request, the CI job posts its result as a note.
 
 - Example with deployment errors
 
@@ -32,16 +32,16 @@ Everytime you will make a merge request, the CI job will post its result as comm
 
 Notes:
 
-- This integration works with sfdx-hardis pipeline, but also on home-made pipelines, just call [sf hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) instead of `sf project:deploy:start` !
+- This integration works with the sfdx-hardis pipeline, but also with home-made pipelines: just call [sf hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) instead of `sf project:deploy:start`.
 
-- This integration use the following variables:
+- This integration uses the following variables:
   - CI_SFDX_HARDIS_GITLAB_TOKEN
-  - CI_SERVER_URL (provided by Gitlab CI)
-  - CI_PROJECT_ID (provided by Gitlab CI)
-  - CI_MERGE_REQUEST_IID (provided by Gitlab CI)
-  - CI_JOB_NAME (provided by Gitlab CI)
-  - CI_JOB_URL (provided by Gitlab CI)
-  - GITLAB_API_REJECT_UNAUTHORIZED: set to `"false"` if you want to allow connection even without certificate (can be useful on on-premise GitLab instance)
+  - CI_SERVER_URL (provided by GitLab CI)
+  - CI_PROJECT_ID (provided by GitLab CI)
+  - CI_MERGE_REQUEST_IID (provided by GitLab CI)
+  - CI_JOB_NAME (provided by GitLab CI)
+  - CI_JOB_URL (provided by GitLab CI)
+  - GITLAB_API_REJECT_UNAUTHORIZED: set to `"false"` to allow the connection even without a valid certificate (can be useful on on-premise GitLab instances)
 
 ## Using GitLab integration from Jenkins
 
@@ -53,13 +53,13 @@ When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins envir
 
 The following variables are **automatically derived** from Jenkins built-in variables:
 
-- `CI_SERVER_URL`, `CI_PROJECT_PATH` - parsed from `GIT_URL` (git remote)
-- `CI_PROJECT_ID` - resolved via the GitLab API using the project path
-- `CI_COMMIT_REF_NAME` - from `GIT_BRANCH` / `CHANGE_BRANCH`
-- `CI_JOB_URL` - from `BUILD_URL`
-- `CI_JOB_NAME` - from `JOB_NAME`
-- `CI_MERGE_REQUEST_IID` - from `CHANGE_ID` (Jenkins Multibranch Pipeline)
-- `CI_PROJECT_URL` - constructed from `CI_SERVER_URL` and `CI_PROJECT_PATH`
+- `CI_SERVER_URL`, `CI_PROJECT_PATH`: parsed from `GIT_URL` (git remote)
+- `CI_PROJECT_ID`: resolved via the GitLab API using the project path
+- `CI_COMMIT_REF_NAME`: from `GIT_BRANCH` / `CHANGE_BRANCH`
+- `CI_JOB_URL`: from `BUILD_URL`
+- `CI_JOB_NAME`: from `JOB_NAME`
+- `CI_MERGE_REQUEST_IID`: from `CHANGE_ID` (Jenkins Multibranch Pipeline)
+- `CI_PROJECT_URL`: built from `CI_SERVER_URL` and `CI_PROJECT_PATH`
 
 ## Instructions for using Coding Agents
 

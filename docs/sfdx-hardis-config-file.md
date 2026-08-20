@@ -1,6 +1,6 @@
 ---
 title: sfdx-hardis Configuration
-description: Overview of sfdx-hardis configuration - VS Code UI, config file, environment variables, and links to topic-specific configuration guides
+description: Overview of sfdx-hardis configuration: VS Code UI, config file, environment variables, and links to topic-specific configuration guides
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -27,11 +27,11 @@ Behind the scenes, all configuration is stored in **`config/.sfdx-hardis.yml`** 
 
 Three configuration layers are merged at runtime:
 
-| Layer       | File                                        | Scope                       |
-|-------------|---------------------------------------------|-----------------------------|
-| **Project** | `config/.sfdx-hardis.yml`                   | Shared - committed to git   |
-| **Branch**  | `config/branches/.sfdx-hardis.<branch>.yml` | Per-environment overrides   |
-| **User**    | `config/user/.sfdx-hardis.<username>.yml`   | Per-developer - git-ignored |
+| Layer       | File                                        | Scope                      |
+|-------------|---------------------------------------------|----------------------------|
+| **Project** | `config/.sfdx-hardis.yml`                   | Shared, committed to git   |
+| **Branch**  | `config/branches/.sfdx-hardis.<branch>.yml` | Per-environment overrides  |
+| **User**    | `config/user/.sfdx-hardis.<username>.yml`   | Per-developer, git-ignored |
 
 See the [**full list of configuration properties**](schema/sfdx-hardis-json-schema-parameters.html) for every supported key, its type, default value, and description.
 
@@ -39,7 +39,7 @@ See the [**full list of configuration properties**](schema/sfdx-hardis-json-sche
 
 ## Environment Variables
 
-Many runtime behaviours can be controlled through environment variables - useful for CI/CD pipelines where you cannot ship secrets or machine-specific settings in a committed file.
+Many runtime behaviours can be controlled through environment variables, which is useful for CI/CD pipelines where you cannot ship secrets or machine-specific settings in a committed file.
 
 See the [**complete list of environment variables**](all-env-variables.md).
 

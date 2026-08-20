@@ -23,7 +23,7 @@ It contains core rules and can optionally be integrated with AI to provide the b
 
 ## Integrations
 
-Deployment Agent provides tips in Pull Request comments (GitHub, Gitlab, Azure, Bitbucket).
+Deployment Agent provides tips in Pull Request comments (GitHub, GitLab, Azure, Bitbucket).
 
 It also provides tips in console logs.
 
@@ -37,4 +37,4 @@ Follow these instructions to get started in a few minutes.
 - [Agent deployment Hints](salesforce-deployment-agent-hints.md)
 - [Coding Agent Auto-Fix (Beta)](salesforce-deployment-agent-autofix.md)
 - [Flow Visual Git Diff](salesforce-deployment-agent-flow-visual-git-diff.md)
-- [sfdx-hardis AI setup instructions](salesforce-ai-setup.md) (requires an OpenAI API key)
+- [sfdx-hardis AI setup instructions](salesforce-ai-setup.md) (requires an AI provider to be configured)

@@ -1,54 +1,58 @@
 ---
 title: Solve Salesforce MegaLinter errors
-description: Learn how to solve MegaLinter errors in a Salesforce CI/CD merge request
+description: Learn how to solve the MegaLinter errors reported on the Pull Request of a Salesforce CI/CD project
 ---
 <!-- markdownlint-disable MD013 -->
 
 - [Apex best practices using PMD](#apex-best-practices-using-pmd)
-- [LWC best practices using eslint](#lwc-best-practices-using-eslint)
+- [LWC best practices using ESLint](#lwc-best-practices-using-eslint)
 - [Security issues](#security-issues)
 - [Excessive copy-pastes](#excessive-copy-pastes)
 - [Example of .mega-linter.yml config file](#example-of-mega-linteryml-config-file)
 
-## Apex best practices using PMD
+## Solve MegaLinter errors
 
-You don't want technical debt on your project !
+MegaLinter posts a comment on your Pull Request (Merge Request on GitLab) with the result of each linter. This page explains how to handle the most common errors.
 
-Download job artifacts that will contain a file `sfdx-scanner-report-apex.csv`.
+### Apex best practices using PMD
 
-![](assets/images/screenshot-download-artifacts.jpg)
+PMD checks your Apex classes against a list of best practices, to keep technical debt out of the project.
 
-Open the file to see the errors
+Download the job artifacts: they contain a file named `sfdx-scanner-report-apex.csv`.
 
-![](assets/images/screenshot-apex-errors.jpg)
+![Download the artifacts of the MegaLinter job](assets/images/screenshot-download-artifacts.jpg)
 
-- If the errors are in code that has been written by a developer, solve it
+Open the file to see the errors.
 
-- If the errors are from imported or generated classes, you can bypass them by adding annotation `@SuppressWarnings('PMD')` at the top of the classes
+![Apex errors in the PMD report](assets/images/screenshot-apex-errors.jpg)
 
-- `// NOPMD` at the end of a line will make an issue ignored, but again use it only in case of false positive, never to "Publish more quickly", else you'll create [technical debt](https://en.wikipedia.org/wiki/Technical_debt).
-  - If you use `// NOPMD`, specify why as comment . Example: `// NOPMD Strings already escaped before`
+- If the errors are in code written by a developer of the project, fix the code.
 
-## LWC best practices using eslint
+- If the errors are in imported or generated classes, you can bypass them by adding the annotation `@SuppressWarnings('PMD')` at the top of the class.
 
-sfdx-scanner-lwc embedded in MegaLinter is hard to use.
+- `// NOPMD` at the end of a line makes PMD ignore that line. Use it only for false positives, never to publish faster, otherwise you create [technical debt](https://en.wikipedia.org/wiki/Technical_debt).
+  - If you use `// NOPMD`, say why in a comment. Example: `// NOPMD Strings already escaped before`
 
-If you don't succeed, you can define `SALESFORCE_SFDX_SCANNER_LWC` in `DISABLE_LINTERS` property in `.mega-linter.yml` config file.
+### LWC best practices using ESLint
 
-## Security issues
+The LWC scanner embedded in MegaLinter (`sfdx-scanner-lwc`) is hard to configure.
 
-Solve the security issues if they are critical like hardcoded tokens, or bypass the linters (release manager action only)
+If you cannot make it work, your release manager can add `SALESFORCE_SFDX_SCANNER_LWC` to the `DISABLE_LINTERS` property of the `.mega-linter.yml` config file.
 
-## Excessive copy-pastes
+### Security issues
 
-Refactor your code to avoid excessive copy-pastes !
+Fix the security issues when they are real, like hardcoded tokens or passwords. If a finding is a false positive, ask your release manager: only the release manager can bypass a linter.
 
-You can also add exceptions in `.jscpd.json` file, but really in case it has sense, not out of laziness
+### Excessive copy-pastes
 
-## Example of .mega-linter.yml config file
+Refactor your code to remove the duplicated blocks.
+
+You can also add exceptions in the `.jscpd.json` file, but only when the duplication really makes sense, not to save time.
+
+### Example of .mega-linter.yml config file
 
 ```yaml
-# Extend from shared sfdx-hardis Mega-Linter configuration :)
+# Extend from the shared sfdx-hardis MegaLinter configuration
 EXTENDS:
   - https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.mega-linter-config.yml
 
@@ -57,7 +61,5 @@ DISABLE_LINTERS:
 - SALESFORCE_SFDX_SCANNER_AURA
 - CSS_STYLELINT
 
-SALESFORCE_SFDX_SCANNER_APEX_DISABLE_ERRORS_IF_LESS_THAN: 6 # ONLY THE RELEASE MANAGER CAN UPDATE THIS VALUE !
+SALESFORCE_SFDX_SCANNER_APEX_DISABLE_ERRORS_IF_LESS_THAN: 6 # ONLY THE RELEASE MANAGER CAN UPDATE THIS VALUE
 ```
-
-

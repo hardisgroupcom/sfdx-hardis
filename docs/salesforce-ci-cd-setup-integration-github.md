@@ -6,9 +6,9 @@ description: Post Deployment Status Comments on GitHub Pull Request from CI jobs
 
 ## GitHub Pull Requests comments
 
-In order to avoid to have to open job logs to see deployment errors, sfdx-hardis can post them as Comment on the Pull Request UI
+To avoid having to open job logs to see deployment errors, sfdx-hardis can post them as a comment on the Pull Request UI.
 
-To use this capability, all you need is to have **permissions on your workflows** and send your **GITHUB_TOKEN** (see [full example](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/process-deploy.yml))
+To use this capability, all you need is to set **permissions on your workflows** and to pass your **GITHUB_TOKEN** to the job (see [full example](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/process-deploy.yml))
 
 ```yaml
     permissions:
@@ -20,7 +20,7 @@ To use this capability, all you need is to have **permissions on your workflows*
         FORCE_COLOR: "1"
 ```
 
-Everytime you will make a Pull Request, the CI job will post its result as comment !
+Every time you create a Pull Request, the CI job posts its result as a comment.
 
 - Example with deployment success
 
@@ -32,15 +32,15 @@ Everytime you will make a Pull Request, the CI job will post its result as comme
 
 Notes:
 
-- This integration works with sfdx-hardis pipeline, but also on home-made pipelines, just call [sf hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) instead of `sf project:deploy:start` !
+- This integration works with the sfdx-hardis pipeline, but also with home-made pipelines: just call [sf hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) instead of `sf project:deploy:start`.
 
-- This integration use the following variables:
+- This integration uses the following variables:
 
-  - GITHUB_TOKEN (provided by GitHub but has to be send as option to the deployment jobs)
+  - GITHUB_TOKEN (provided by GitHub, but it has to be passed as an environment variable to the deployment jobs)
 
 ## Using GitHub integration without GitHub Actions
 
-You might want to use GitHub integration with other tools than GitHub Actions, like Jenkins or Codefresh.
+You might want to use the GitHub integration with tools other than GitHub Actions, like Jenkins or Codefresh.
 
 ### Jenkins
 
@@ -52,12 +52,12 @@ When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins envir
 
 The following variables are **automatically derived** from Jenkins built-in variables (`GIT_URL`, `GIT_BRANCH`, `BUILD_URL`, `BUILD_NUMBER`, `JOB_NAME`, `CHANGE_ID`):
 
-- `GITHUB_REPOSITORY`, `GITHUB_REPOSITORY_OWNER`, `GITHUB_SERVER_URL` - parsed from `GIT_URL` (git remote)
-- `GITHUB_REF`, `GITHUB_REF_NAME` - from `GIT_BRANCH` / `CHANGE_BRANCH`
-- `GITHUB_RUN_ID` - from `BUILD_NUMBER`
-- `GITHUB_WORKFLOW` - from `JOB_NAME`
-- Pull request number - from `CHANGE_ID` (Jenkins Multibranch Pipeline)
-- Job URL - from `BUILD_URL`
+- `GITHUB_REPOSITORY`, `GITHUB_REPOSITORY_OWNER`, `GITHUB_SERVER_URL`: parsed from `GIT_URL` (git remote)
+- `GITHUB_REF`, `GITHUB_REF_NAME`: from `GIT_BRANCH` / `CHANGE_BRANCH`
+- `GITHUB_RUN_ID`: from `BUILD_NUMBER`
+- `GITHUB_WORKFLOW`: from `JOB_NAME`
+- Pull Request number: from `CHANGE_ID` (Jenkins Multibranch Pipeline)
+- Job URL: from `BUILD_URL`
 
 ### Other CI systems
 
@@ -65,7 +65,7 @@ For other CI systems (Codefresh, etc.), you need to manually set the following v
 
 | Variable                | Description                                                                                                                                                                    |
 |:------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| GITHUB_TOKEN            | You might need to Create a [GitHub Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) |
+| GITHUB_TOKEN            | You might need to create a [GitHub Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) |
 | GITHUB_REPOSITORY       | ex: `MyClient/crm-salesforce`                                                                                                                                                  |
 | GITHUB_REPOSITORY_OWNER | ex: `MyClient`                                                                                                                                                                 |
 | GITHUB_SERVER_URL       | ex: `https://github.mycompanydomain.com`                                                                                                                                       |
@@ -74,8 +74,8 @@ For other CI systems (Codefresh, etc.), you need to manually set the following v
 | GITHUB_WORKFLOW         | ex: `Simulate Deployment (sfdx-hardis)`                                                                                                                                        |
 | GITHUB_REF              | ex: `refs/pull/503/merge`                                                                                                                                                      |
 | GITHUB_REF_NAME         | ex: `503/merge`                                                                                                                                                                |
-| GITHUB_RUN_ID           | ex: `14282257027`. If you can't have it, to not set the variable.                                                                                                              |
-| PIPELINE_JOB_URL        | Direct link to the page where we can see your job results. ex: `https://yourserver.com/jobs/345`                                                                               |
+| GITHUB_RUN_ID           | ex: `14282257027`. If you cannot get it, do not set the variable.                                                                                                              |
+| PIPELINE_JOB_URL        | Direct link to the page showing your job results. ex: `https://yourserver.com/jobs/345`                                                                                        |
 
 ## Instructions for using Coding Agents
 

@@ -87,66 +87,68 @@ extra:
 nav:
   - Home: index.md
   - Installation: installation.md
-  - VsCode Extension: vscode-extension.md
+  - VS Code Extension: vscode-extension.md
   - Configuration: sfdx-hardis-config-file.md
   - Salesforce CI/CD:
-      - CI/CD Home: salesforce-ci-cd-home.md
+      - Overview: salesforce-ci-cd-home.md
       - Contributor Guide:
-          - Contributor Guide Home: salesforce-ci-cd-use-home.md
-          - Pre-requisites:
-              - Prepare your computer: salesforce-ci-cd-use-install.md
+          - Overview: salesforce-ci-cd-use-home.md
+          - Get ready:
+              - Install the tools: salesforce-ci-cd-use-install.md
+              - Create a Git access token: salesforce-ci-cd-git-tokens.md
               - Clone the repository: salesforce-ci-cd-clone-repository.md
-              - Create Git access tokens: salesforce-ci-cd-git-tokens.md
-          - Create new User Story: salesforce-ci-cd-create-new-task.md
-          - Work on your dev org:
-              - Work home: salesforce-ci-cd-work-on-task.md
+          - 1. Start a User Story: salesforce-ci-cd-create-new-task.md
+          - 2. Work in your org:
+              - Overview: salesforce-ci-cd-work-on-task.md
               - Open your org: salesforce-ci-cd-work-on-task-open-org.md
-              - Configure Salesforce: salesforce-ci-cd-work-on-task-configuration.md
-              - Handle Profiles: salesforce-ci-cd-work-on-task-profiles.md
+              - Configuration guidelines: salesforce-ci-cd-work-on-task-configuration.md
+              - Profiles and Permission Sets: salesforce-ci-cd-work-on-task-profiles.md
+              - Development guidelines: salesforce-ci-cd-work-on-task-development.md
               - Install packages: salesforce-ci-cd-work-on-task-install-packages.md
-              - Deployment actions (beta): salesforce-ci-cd-work-on-task-deployment-actions.md
-              - Develop in Salesforce: salesforce-ci-cd-work-on-task-development.md
-          - Save / Publish your User Story: salesforce-ci-cd-publish-task.md
-          - Create Pull Request:
-              - On Gitlab: salesforce-ci-cd-merge-request-gitlab.md
-              - On Azure: salesforce-ci-cd-pull-request-azure.md
-              - On Github: salesforce-ci-cd-pull-request-github.md
+              - Deployment actions: salesforce-ci-cd-work-on-task-deployment-actions.md
+          - 3. Publish your User Story: salesforce-ci-cd-publish-task.md
+          - 4. Create the Pull Request:
+              - On GitHub: salesforce-ci-cd-pull-request-github.md
+              - On GitLab: salesforce-ci-cd-merge-request-gitlab.md
+              - On Azure DevOps: salesforce-ci-cd-pull-request-azure.md
               - On Bitbucket: salesforce-ci-cd-pull-request-bitbucket.md
-          - Check Pull Request results:
-              - Merge Request results Home: salesforce-ci-cd-handle-merge-request-results.md
+          - 5. Check the Pull Request results:
+              - Overview: salesforce-ci-cd-handle-merge-request-results.md
               - Solve deployment errors: salesforce-ci-cd-solve-deployment-errors.md
               - Solve MegaLinter errors: salesforce-ci-cd-solve-megalinter-errors.md
+          - Work with AI coding agents: salesforce-ci-cd-agent-skills.md
       - Release Manager Guide:
-          - Release Manager Home: salesforce-ci-cd-release-home.md
-          - Validate a merge request: salesforce-ci-cd-validate-merge-request.md
+          - Overview: salesforce-ci-cd-release-home.md
+          - Review and merge Pull Requests: salesforce-ci-cd-validate-merge-request.md
           - Deploy to major orgs: salesforce-ci-cd-deploy-major-branches.md
-          - Handle RUN / Hotfix to Production: salesforce-ci-cd-hotfixes.md
-          - Smart Deploy Workflow: salesforce-ci-cd-smart-deployment.md
-          - DORA Metrics Report: hardis/doc/salesforce-ci-cd-dora-report.md
+          - Hotfixes and retrofit (RUN): salesforce-ci-cd-hotfixes.md
           - Release Notes: hardis/doc/salesforce-ci-cd-release-notes.md
-          - CI/CD Configuration:
-              - CI/CD Config Home: salesforce-ci-cd-config-home.md
-              - All Environment Variables: all-env-variables.md
-              - Overwrite Management: salesforce-ci-cd-config-overwrite.md
+          - DORA Metrics: hardis/doc/salesforce-ci-cd-dora-report.md
+          - Smart Deploy internals: salesforce-ci-cd-smart-deployment.md
+          - Project configuration:
+              - Overview: salesforce-ci-cd-config-home.md
+              - Overwrite management: salesforce-ci-cd-config-overwrite.md
               - Delta deployments: salesforce-ci-cd-config-delta-deployment.md
               - Automated cleaning: salesforce-ci-cd-config-cleaning.md
               - Source retrieve issues: salesforce-ci-cd-retrieve.md
-              - Auxiliary repository clean up tasks: salesforce-ci-cd-manual-repo-clean.md
-          - sfdx-hardis for packaging: salesforce-ci-cd-packaging.md
-          - sfdx-hardis for Conga: salesforce-ci-cd-conga.md
-          - sfdx-hardis for CPQ: salesforce-ci-cd-cpq.md
+              - Repository clean up: salesforce-ci-cd-manual-repo-clean.md
+              - Environment variables: all-env-variables.md
+          - Special cases:
+              - Managed packages (ISV): salesforce-ci-cd-packaging.md
+              - Conga Composer: salesforce-ci-cd-conga.md
+              - Salesforce CPQ: salesforce-ci-cd-cpq.md
       - Setup Guide:
-          - CI/CD Setup Home: salesforce-ci-cd-setup-home.md
-          - Init Git repository: salesforce-ci-cd-setup-git.md
-          - Configure Orgs: salesforce-ci-cd-setup-activate-org.md
-          - Init SFDX Project: salesforce-ci-cd-setup-init-project.md
-          - CI Server Authentication: salesforce-ci-cd-setup-auth.md
-          - Init from Existing Org: salesforce-ci-cd-setup-existing-org.md
-          - First merge request: salesforce-ci-cd-setup-merge-request.md
+          - Overview: salesforce-ci-cd-setup-home.md
+          - 1. Create the Git repository: salesforce-ci-cd-setup-git.md
+          - 2. Prepare the Salesforce orgs: salesforce-ci-cd-setup-activate-org.md
+          - 3. Initialize the SFDX project: salesforce-ci-cd-setup-init-project.md
+          - 4. Configure CI authentication: salesforce-ci-cd-setup-auth.md
+          - 5. Retrieve an existing org (optional): salesforce-ci-cd-setup-existing-org.md
+          - 6. First Pull Request: salesforce-ci-cd-setup-merge-request.md
           - Publish job artifacts: salesforce-ci-cd-setup-publish-artifacts.md
-          - Checklist: salesforce-ci-cd-setup-checklist.md
+          - Setup checklist: salesforce-ci-cd-setup-checklist.md
   - Org Monitoring:
-      - Monitoring home: salesforce-monitoring-home.md
+      - Overview: salesforce-monitoring-home.md
       - List of checks:
           - Metadata Backup: salesforce-monitoring-metadata-backup.md
           - Suspect Setup Actions: salesforce-monitoring-suspect-audit-trail.md
@@ -179,7 +181,7 @@ nav:
           - Consumption utilization alerts: salesforce-monitoring-consumption-alerts.md
           - Agentforce and Data 360 credits: salesforce-monitoring-ai-usage.md
       - Configuration:
-          - Configuration guide: salesforce-monitoring-config-home.md
+          - Overview: salesforce-monitoring-config-home.md
           - GitHub: salesforce-monitoring-config-github.md
           - Gitlab: salesforce-monitoring-config-gitlab.md
           - Azure: salesforce-monitoring-config-azure.md
@@ -190,7 +192,7 @@ nav:
           - Google Chat: salesforce-ci-cd-setup-integration-google-chat.md
       - Sandbox Refresh: salesforce-sandbox-refresh.md
   - Generate Documentation:
-      - Doc Gen Home: salesforce-project-documentation.md
+      - Overview: salesforce-project-documentation.md
       - Generate: salesforce-project-doc-generate.md
       - Improve with AI: salesforce-project-doc-ai.md
       - Complete manually: salesforce-project-doc-complete-manually.md
@@ -199,11 +201,11 @@ nav:
       - Host on Cloudflare: salesforce-project-doc-cloudflare.md
       - Publish to Confluence: salesforce-project-doc-confluence.md
   - AI & Agents:
-      - AI Agents Overview: salesforce-agentic-automation.md
+      - Overview: salesforce-agentic-automation.md
       - Using Coding Agents (Skills): salesforce-ci-cd-agent-skills.md
       - Data Workspaces (SFDMU): salesforce-ci-cd-agent-data-workspaces.md
       - Deployment Agent:
-          - Deployment Agent home: salesforce-deployment-agent-home.md
+          - Overview: salesforce-deployment-agent-home.md
           - Agent deployment Hints: salesforce-deployment-agent-hints.md
           - Coding Agent Auto-Fix (Beta): salesforce-deployment-agent-autofix.md
           - Flow Visual Git Diff: salesforce-deployment-agent-flow-visual-git-diff.md
@@ -239,7 +241,7 @@ nav:
               - Formatting Requirements: prompt-templates/VARIABLE_FORMATTING_REQUIREMENTS.md
               - Output Format Markdown Doc: prompt-templates/VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC.md
   - Integrations:
-      - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
+      - Overview: salesforce-ci-cd-setup-integrations-home.md
       - Git Platforms:
           - GitHub: salesforce-ci-cd-setup-integration-github.md
           - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md

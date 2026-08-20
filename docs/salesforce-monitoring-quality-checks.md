@@ -6,10 +6,10 @@ description: Schedule daily technical debt measurement with sfdx-hardis monitori
 
 ## Quality Checks with MegaLinter
 
-Will check if best practices are applied for:
+Checks whether best practices are applied for:
 
 - Apex with PMD
-- LWC & Aura with eslint
+- LWC & Aura with ESLint
 - Flows with Lightning Flow Scanner
 - Security with checkov, gitleaks, secretlint, trivy...
 

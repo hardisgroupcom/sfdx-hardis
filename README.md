@@ -19,7 +19,7 @@ Sfdx-hardis is a **CLI and visual productivity tools suite for Salesforce**, by 
 
 ![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
 
-It is free and Open-Source, and will allow you to simply:
+It is free and open-source, and lets you:
 
 - [Deliver your projects with **State of the art Salesforce DevOps**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
@@ -33,11 +33,11 @@ It is free and Open-Source, and will allow you to simply:
 
 ![Salesforce AI Generated Documentation](https://sfdx-hardis.cloudity.com/assets/images/screenshot-object-diagram.jpg)
 
-- Enjoy many commands that will **save your minutes, hours or even days** in your daily **Admin or Developer** work.
+- Use many commands that **save minutes, hours or even days** of your daily **admin or developer** work.
 
 ![Productivity commands](https://sfdx-hardis.cloudity.com/assets/images/ProductivityCommands.png)
 
-If you need guidance about how to leverage sfdx-hardis to bring more value to your business, Cloudity's international multi-cloud teams of business experts and technical experts can help: [contact us](https://cloudity.com/contact-us/) !
+If you need help to get the most out of sfdx-hardis, Cloudity's international teams of business and technical experts can help: [contact us](https://cloudity.com/contact-us/).
 
 [![Cloudity](https://sfdx-hardis.cloudity.com/assets/images/cloudity-banner.png)](https://cloudity.com/contact-us/)
 
@@ -45,7 +45,7 @@ If you need guidance about how to leverage sfdx-hardis to bring more value to yo
 
 ___
 
-**sfdx-hardis** commands and configuration are best used with an UI in [**SFDX Hardis Visual Studio Code Extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+**sfdx-hardis** commands and configuration are best used from the [**SFDX Hardis Visual Studio Code extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
 ___
 
@@ -63,15 +63,15 @@ _See Dreamforce presentation_
 
 ### With IDE
 
-You can install [Visual Studio Code](https://code.visualstudio.com/), then VSCode Extension [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+You can install [Visual Studio Code](https://code.visualstudio.com/), then the VS Code extension [SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
-Once installed, click on ![Hardis Group button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in VsCode left bar, click on **Install dependencies** and follow the additional installation instructions :)
+Once installed, click on ![SFDX Hardis button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in the VS Code left bar, click on **Install dependencies** and follow the installation instructions.
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-highlight.png)
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-screenshot.png)
 
-When you are all green, you are all good 😊
+When everything is green, you are all set.
 
 _You can also watch the video tutorial below_
 
@@ -84,7 +84,7 @@ ___
 #### Pre-requisites
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
-- Install Salesforce DX by running `npm install @salesforce/cli --global` command line
+- Install the Salesforce CLI by running `npm install @salesforce/cli --global`
 
 #### Plugin installation
 
@@ -256,7 +256,7 @@ London, UK - 20/11/2025
 
 ### Trailblazer Developer Group '25, Berlin (online)
 
-[Summer of Docs – Auto-Document Your Salesforce Org Like a Pro](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-developer-group-berlin-germany-presents-summer-of-docs-auto-document-your-salesforce-org-like-a-pro/), by [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
+[Summer of Docs: Auto-Document Your Salesforce Org Like a Pro](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-developer-group-berlin-germany-presents-summer-of-docs-auto-document-your-salesforce-org-like-a-pro/), by [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/berlin-user-group-docgen.png)
 
@@ -387,7 +387,7 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 [![sfdx-hardis 2025 new features](https://img.youtube.com/vi/JRKH5COUVQ0/0.jpg)](https://youtu.be/JRKH5COUVQ0){target=blank}
 
-- SFDX-HARDIS – A demo with Nicolas Vuillamy from Cloudity
+- SFDX-HARDIS: A demo with Nicolas Vuillamy from Cloudity
 
 [![SalesforceDevOps.net Demo](https://img.youtube.com/vi/qP6MaZUGzik/0.jpg)](https://www.youtube.com/watch?v=qP6MaZUGzik){target=blank}
 
@@ -455,20 +455,20 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 <!-- contributing.md start -->
 
-Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you !)
+Everyone is welcome to contribute to sfdx-hardis (even juniors: we will help you).
 
 ### Salesforce CLI Plugin: sfdx-hardis
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
-- Install typescript by running `npm install typescript --global`
+- Install TypeScript by running `npm install typescript --global`
 - Install yarn by running `npm install yarn --global`
-- Install Salesforce DX by running `npm install @salesforce/cli --global` command line
+- Install the Salesforce CLI by running `npm install @salesforce/cli --global`
 - Fork <https://github.com/hardisgroupcom/sfdx-hardis> and clone it (or just clone if you are an internal contributor)
 - At the root of the repository:
   - Run `yarn` to install dependencies
-  - Run `sf plugins link` to link the local sfdx-hardis to SFDX CLI
-  - Run `tsc --watch` to transpile typescript into js everytime you update a TS file
-- Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand --someparameter somevalue` (you can also debug commands using VsCode Sfdx-Hardis setting)
+  - Run `sf plugins link` to link the local sfdx-hardis to the Salesforce CLI
+  - Run `tsc --watch` to transpile TypeScript into JavaScript every time you update a TS file
+- Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand --someparameter somevalue` (you can also debug commands with the VS Code SFDX Hardis extension debug setting)
 
 Note: To test a feature from CI, you can add the following code in your workflow before running sfdx-hardis commands:
 
@@ -487,18 +487,18 @@ sf plugins link
 cd -
 ```
 
-### VsCode Extension: vscode-sfdx-hardis
+### VS Code Extension: vscode-sfdx-hardis
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
-- Install typescript by running `npm install typescript --global`
+- Install TypeScript by running `npm install typescript --global`
 - Install yarn by running `npm install yarn --global`
 - Install Visual Studio Code Insiders ([download here](https://code.visualstudio.com/insiders/))
 - Fork <https://github.com/hardisgroupcom/vscode-sfdx-hardis> and clone it (or just clone if you are an internal contributor)
 - At the root of the repository:
   - Run `yarn` to install dependencies
-- To test your code in the VsCode Extension:
-  - Open the `vscode-sfdx-hardis` folder in VsCode Insiders
-  - Press `F5` to open a new VsCode window with the extension loaded (or menu Run -> Start Debugging)
+- To test your code in the VS Code extension:
+  - Open the `vscode-sfdx-hardis` folder in VS Code Insiders
+  - Press `F5` to open a new VS Code window with the extension loaded (or menu Run > Start Debugging)
   - In the new window, open a Salesforce DX project
   - Run commands from the command palette (Ctrl+Shift+P) or use the buttons in the panel or webviews
 

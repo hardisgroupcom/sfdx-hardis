@@ -6,11 +6,11 @@ description: Learn how to configure CI/CD variables for CI Server authentication
 
 ## Define sfdx-hardis environment variables
 
-- Go to **Repository -> Settings > Secret and variables -> Actions** _(you must have Github authorizations to access this menu)_
+- Go to **Repository -> Settings -> Secrets and variables -> Actions** _(you must have GitHub permissions to access this menu)_
 
 ![](assets/images/screenshot-monitoring-github-variable.png.jpg)
 
-- Create the new secret with the following info:
+- Create a new secret with the following info:
   - name: **YOUR_VARIABLE_NAME**
   - value: `Your variable value`
 
@@ -20,7 +20,7 @@ More info: [GitHub documentation](https://docs.github.com/en/actions/security-gu
 
 ## Reference variables in your pipeline YAML files
 
-When you defined your secret variables in GitHub Actions, you need to reference them in your pipeline YAML files using the syntax `VARIABLE_NAME: ${{ secrets.VARIABLE_NAME }}`, so their values are correctly passed to the pipeline.
+Once you have defined your secret variables in GitHub Actions, reference them in your pipeline YAML files with the syntax `VARIABLE_NAME: ${{ secrets.VARIABLE_NAME }}`, so that their values are passed to the pipeline.
 
 Example:
 
@@ -29,7 +29,7 @@ Example:
           SFDX_CLIENT_KEY_MY_ORG: ${{ secrets.SFDX_CLIENT_KEY_MY_ORG }}
 ```
 
-Impacted YAML files if present in your repo:
+Impacted YAML files, if present in your repository:
 
 - `.github/workflows/check-deploy.yml`
 - `.github/workflows/process-deploy.yml`

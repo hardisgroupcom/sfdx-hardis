@@ -1,27 +1,27 @@
 ---
-title: Create a pull request using Azure
-description: Learn how to create a merge request using Azure on a Salesforce CI/CD project
+title: Create a Pull Request on Azure DevOps
+description: Learn how to create a Pull Request on Azure DevOps to publish your User Story on a Salesforce CI/CD project
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Create a Pull Request using Azure
+## Create a Pull Request on Azure DevOps
 
-- Go in your online repository in your web browser (example: `https://dev.azure.com/mycompany/trailheadapps/dreamhouse-lwc`)
+Once your branch is pushed (see [Publish your User Story](salesforce-ci-cd-publish-task.md)), create a Pull Request to ask for your work to be merged into the target major branch. At the end of the **Save / Publish** command, sfdx-hardis shows a **Create Pull Request** button that opens the right page directly. Otherwise, follow these steps.
 
-- Go to menu **Repos -> Pull Requests**
+1. Open your repository in your web browser (example: `https://dev.azure.com/mycompany/myproject/_git/dreamhouse-lwc`).
 
-- Click on  **New pull request**
+2. Go to **Repos > Pull requests** and click **New pull request**.
 
-![](assets/images/azure-pull-request-1.jpg){ align=center }
+    ![New pull request button on Azure DevOps](assets/images/azure-pull-request-1.jpg){ align=center }
 
-![](assets/images/azure-pull-request-2.jpg){ align=center }
+3. Select your User Story branch as the source and the target major branch (for example `integration`) as the destination. Add a meaningful title and description. If you use a ticketing system like Jira or Azure Boards, put the ticket number in the title.
 
-- Click on **Create**
+    ![Pull request form on Azure DevOps](assets/images/azure-pull-request-2.jpg){ align=center }
 
-- Controlling jobs are automatically launched, you can now ask your release manager to [**validate the merge request**](salesforce-ci-cd-validate-merge-request.md)
-  - _If you are a developer, (or even a business consultant depending on the project organization), you may have the responsibility to make sure than controlling jobs are valid (**check-deploy job** and **code-quality job** in **success**) and eventually fix the errors (See [Handle merge requests errors](salesforce-ci-cd-handle-merge-request-results.md))_
+4. Click **Create**.
 
-- If you need to add additional updates to an existing merge requests, you just this to follow again [this guide](salesforce-ci-cd-publish-task.md) from the beginning, except the part "Create a merge request". Any new commit pushed on a branch where there is already a merge request will trigger again the [control jobs](salesforce-ci-cd-validate-merge-request.md#control-jobs).
+### After creation
 
-
-
+- The validation jobs start automatically and post their results as comments on the Pull Request. See [Check the Pull Request results](salesforce-ci-cd-handle-merge-request-results.md).
+- To add more updates to an open Pull Request, do not create a new one: commit again and run **Save / Publish** again, as described in [Publish your User Story](salesforce-ci-cd-publish-task.md). Every new commit pushed to your branch runs the validation jobs again.
+- When the jobs are green, your release manager [reviews and merges the Pull Request](salesforce-ci-cd-validate-merge-request.md). Depending on the organization of the project, you may be responsible for getting the jobs green yourself before asking for the review.

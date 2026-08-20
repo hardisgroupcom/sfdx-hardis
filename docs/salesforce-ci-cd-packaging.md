@@ -4,37 +4,39 @@ description: Learn how to generate Salesforce 2nd generation packages (2GP) with
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Pre-requisites
+## Managed packages (ISV)
 
-sfdx-hardis menus allow to create new packages and new package versions, but to do that you need some pre-requisites.
+### Pre-requisites
 
-- In order to generate packages, you first need a Dev Hub to link them.
+sfdx-hardis menus let you create new packages and new package versions, but you first need some pre-requisites.
+
+- To generate packages, you first need a Dev Hub to link them to.
 
   - Instructions in [Salesforce Documentation](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_dev2gp_before_know_orgs.htm)
 
-- If you need to use a namespace with a package (managed or unmanaged), you also need to link you Dev Hub and a dev org where you will create the namespace.
+- If you need to use a namespace with a package (managed or unmanaged), you also need to link your Dev Hub and a dev org where you will create the namespace.
 
   - Instructions in [Salesforce Documentation](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_dev2gp_create_namespace.htm)
 
-- Then you need a sfdx-hardis flavored sfdx project, that you can create with `sf hardis:project:create`, using scratch orgs only option.
+- Then you need an sfdx-hardis flavored SFDX project, that you can create with `sf hardis:project:create`, with the scratch orgs only option.
 
-- Last, create your package folder (ex: `my-package`) at the root of the repository, following the same structure than `force-app`: it will contain your package content.
+- Last, create your package folder (ex: `my-package`) at the root of the repository, with the same structure as `force-app`: it will contain your package content.
 
-## New package
+### New package
 
-Use sfdx-hardis menu **Packaging -> Create a new package** and follow instructions (select the folder that you just created, don't use `force-app`)
+Use sfdx-hardis menu **Packaging -> Create a new package** and follow the instructions (select the folder that you just created, do not use `force-app`)
 
 ___
 
-## New package version
+### New package version
 
-### Git branch
+#### Git branch
 
 Create a git sub-branch of your packaging branch (for example `pkg/release-v0.1.0`)
 
 ___
 
-### Increment package version
+#### Increment package version
 
 Before being able to generate a new package version, you need to increment the package version in `sfdx-project.json`.
 
@@ -63,17 +65,17 @@ Before being able to generate a new package version, you need to increment the p
 
 ___
 
-### Run create package version command
+#### Run create package version command
 
-Run sfdx-hardis command **Packaging -> Create new package version**
+Run the sfdx-hardis command **Packaging -> Create new package version**
 
-![](assets/images/btn-package-version.jpg)
+![Create new package version button](assets/images/btn-package-version.jpg)
 
-Select the package you want to create a version, and input an installation if necessary (otherwise let it blank)
+Select the package you want to create a version for, and enter an installation password if necessary (otherwise leave it blank)
 
-![](assets/images/select-package.jpg)
+![Select the package](assets/images/select-package.jpg)
 
-![](assets/images/package-password.jpg)
+![Enter the package installation password](assets/images/package-password.jpg)
 
 After some time, the new package version will be generated, and you will be able to find its ID in your `sfdx-project.json`
 
@@ -94,29 +96,29 @@ For example, `1.1.4.NEXT` can fail, and `1.2.0.NEXT` will pass
 
 ___
 
-### Test the beta version
+#### Test the beta version
 
- _(optional but recommended)_
+_(optional but recommended)_
 
 The latest entry is the one you can use to install the beta package version (every created package version is a beta by default)
 
 Example of URL to append at the end of your org domain name: `/packaging/installPackage.apexp?p0=04t7S000000gYp7QAG`
 
-Install the beta package in a dummy sandbox to check that its content is ok for you
+Install the beta package in a dummy sandbox to check its content
 
 ___
 
-### Pull request to packaging branch
+#### Pull Request to packaging branch
 
-Once you decide the package is ok for you, make a Pull Request to the `packaging` branch (or `main` branch, depending on your project config)
+Once the package is good for you, create a Pull Request to the `packaging` branch (or `main` branch, depending on your project config)
 
 ___
 
-### Promote the beta
+#### Promote the beta
 
-Once you merged your PR in packaging branch (after checking the control jobs are green), you can promote the package.
+Once your Pull Request is merged in the packaging branch (after checking that the control jobs are green), you can promote the package.
 
-> **WARNING**: Promoting a package is a sensitive operation, because it declares it as production-ready, then you can not remove metadatas from it, and you must respect ascending compatibility to generate new package versions !
+> **WARNING**: Promoting a package is a sensitive operation, because it declares it as production-ready, then you can not remove metadata from it, and you must respect ascending compatibility to generate new package versions.
 
 To promote a package version, run the following command
 
@@ -124,11 +126,11 @@ To promote a package version, run the following command
 
 Example: `sf hardis:package:version:promote`
 
-Note: When later you will **create a new scratch org** in a new development branch, if you have issues, just increment again the `versionNumber` in `sfdx-project.json`
+Note: if you later have issues when you **create a new scratch org** in a new development branch, just increment again the `versionNumber` in `sfdx-project.json`
 
 ___
 
-### Create version git tag
+#### Create version git tag
 
 Once you promoted a package, **create a git tag** with the version id on the commit corresponding to your merged Pull Request
 

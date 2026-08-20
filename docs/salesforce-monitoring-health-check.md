@@ -6,7 +6,7 @@ description: Schedule weekly checks of Salesforce Security Health Check with sfd
 
 ## Security Health Check
 
-Salesforce provide a [Security Health Check](https://help.salesforce.com/s/articleView?id=sf.security_health_check.htm&type=5) feature to analyze the security settings of your org, and compare them to Salesforce recommended values, or to a custom baseline.
+Salesforce provides a [Security Health Check](https://help.salesforce.com/s/articleView?id=sf.security_health_check.htm&type=5) feature to analyze the security settings of your org, and compare them with Salesforce recommended values, or with a custom baseline.
 
 The command reads the Salesforce Security Health Check report and summarizes how your org compares to the baseline across these areas:
 
