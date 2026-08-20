@@ -50,10 +50,6 @@ ___
 
 ___
 
-_See sfdx-hardis v7 Walkthrough_
-
-[![sfdx-hardis v7 walkthrough](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-v7-demo.png)](https://www.youtube.com/watch?v=t8jT6IPd9n4)
-
 _Featured on SalesforceBen_
 
 [![SalesforceBen Interview](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfben-sfdx-hardis.jpg)](https://www.youtube.com/watch?v=vtWx_IWoL9k)
