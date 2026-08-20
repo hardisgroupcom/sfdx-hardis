@@ -6,12 +6,6 @@ Casablanca, Morocco - 24/10/2026
 
 <img width="800" height="800" alt="North Africa Dreamin' 2026" src="https://github.com/user-attachments/assets/c5ff790c-48c3-4673-8c19-f1db63ff8971" />
 
-### Irish Dreamin
-
-No-Cost DevOps: Enterprise-Grade CI/CD with SFDX-HARDIS, by Abdeslam Loukili
-
-![Irish Dreamin - Abdeslam Loukili](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/irish-dreamin-abdeslam-loukili.jpg)
-
 ### Czech Dreamin '26, Prague
 
 [Refresh your full sandboxes without needing to reconfigure everything](https://czechdreamin.com/)
@@ -43,6 +37,14 @@ Valencia, Spain - 27/03/2026
 Wroclaw, Poland - 20/03/2026
 
 <img width="951" height="753" alt="Polish Dreamin 2026" src="https://github.com/user-attachments/assets/4cebe084-f7b6-4d6e-aa22-c3cb305222ea" />
+
+### Irish Dreamin '26
+
+No-Cost DevOps: Enterprise-Grade CI/CD with SFDX-HARDIS, by Abdeslam Loukili
+
+Ireland - 19/03/2026
+
+![Irish Dreamin 2026 - Abdeslam Loukili](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/irish-dreamin-abdeslam-loukili.jpg)
 
 ### French Touch Dreamin '25
 
