@@ -110,8 +110,10 @@
 ### Documentation
 
 - Refresh every VS Code extension screenshot and animation of the documentation with the new design of the extension (light theme, English), including the Welcome page, the Setup panel, the DevOps Pipeline, the Orgs Manager, the Metadata Retriever, the Data and Files workbenches, the Documentation and Monitoring workbenches, the command execution panel and all the menu entries illustrating the CI/CD guides.
+  - The sample data behind the screenshots is modeled on real sfdx-hardis projects: the DevOps Pipeline now shows open pull requests, feature branches, a promotion and running CI jobs, the monitoring workbenches a real monitoring configuration, and the org list real-life connection states.
+  - The animated GIFs (extension tour, DevOps Pipeline, Orgs Manager, Metadata Retriever, Monitoring Config, Documentation Workbench, New/Save/Publish User Story) are regenerated in the new design, and are 10 to 100 times lighter than before (0.2-0.8 MB instead of 12-29 MB), so the pages displaying them load much faster.
 - [VS Code extension](https://sfdx-hardis.cloudity.com/vscode-extension/): Document the DevOps Pipeline view, the Org Monitoring Workbench and the command execution panel, each with its own screenshot.
-- Remove 31 images that no documentation page referenced anymore.
+- Remove 31 images that no documentation page referenced anymore, and a broken reference to an image that never existed (release-notes-example.png).
 
 ## [7.23.0] 2026-07-26
 

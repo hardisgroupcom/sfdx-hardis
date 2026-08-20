@@ -72,6 +72,3 @@ sf hardis:doc:release-notes --agent --mode post --target-branch main
 sf hardis:doc:release-notes --mode post --from-date 2026-01-01 --to-date 2026-03-31 --no-pdf
 ```
 
-### Example output
-
-![Release Notes Example](../../assets/images/release-notes-example.png)
