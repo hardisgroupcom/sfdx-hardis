@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-Upcoming v8 release, focused on **Deployment Actions**, **Pull Request feedback**, **sandbox refresh**, **usage and cost monitoring**, and CI/CD pipelines running in the **sfdx-hardis Docker image**.
+## [8.0.0] 2026-08-21
 
 ### Summary
 
@@ -31,6 +31,8 @@ Upcoming v8 release, focused on **Deployment Actions**, **Pull Request feedback*
   - **Manual actions can be marked as done by ticking their checkbox** in any comment: the next job records them for the org branch and ticks the same checkbox everywhere else.
   - Comments only mention what they actually contain, say **which Pull Requests** the deployment actions and Apex test classes come from, and explain **when Quick Deploy applies**, so "Apex tests: none run" on a merge job is no longer a surprise.
   - The **commits summary** is collapsed by default, hides technical merge commits and truncates very long commit bodies. The **Tickets** section warns when ticket details could not be retrieved from **JIRA**.
+  - Fix the **deployment comment** displaying no banner and no result title when the deployment used **Quick Deploy**: a successful Quick Deploy recorded no deployment status, so the comment stayed in its "waiting for a result" state.
+  - A deployment that succeeds now displays **success alone**: when a job is run again after a failure, for example once a manual action has been performed, the failure title and the failure banner of the previous attempt are replaced instead of being kept.
   - Set `SFDX_HARDIS_PR_COMMENT_BANNERS=false`, `SFDX_HARDIS_PR_COMMENT_NAV=false` or `SFDX_HARDIS_PR_DESCRIPTION_NAV=false` to opt out of banners and navigation.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/):
   - **Delete the Flows listed in destructive changes**: they are removed from the manifest sent to the org and deleted through the **Tooling API** (deactivate, then delete every version), because a Flow deletion can neither be validated by a `--check` deployment nor survive a **Quick Deploy**. A `--check` reports the **deletion plan** in the Pull Request comment, and fails if **Flow Interviews** block a deletion.

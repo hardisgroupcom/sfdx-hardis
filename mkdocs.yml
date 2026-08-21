@@ -86,6 +86,7 @@ extra:
   generator: false
 nav:
   - Home: index.md
+  - What's new in v8: sfdx-hardis-v8.md
   - Installation: installation.md
   - VS Code Extension: vscode-extension.md
   - Configuration: sfdx-hardis-config-file.md

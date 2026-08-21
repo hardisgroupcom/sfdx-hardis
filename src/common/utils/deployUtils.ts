@@ -212,6 +212,40 @@ export function shouldReportNoMetadataDeploymentSuccess(
   return !prData?.deployStatus && prData?.status !== 'invalid';
 }
 
+/**
+ * Pull Request data recording a successful QuickDeploy.
+ *
+ * A QuickDeploy releases a validation already performed by the validation job: it runs no Apex
+ * test and returns no code coverage, so it skips the deployment result parsing that records the
+ * status of a regular deployment. Without an explicit status here, the deployment comment stays
+ * "tovalidate": it displays neither its result title nor its deployment banner.
+ *
+ * The last deployment result always wins: a failure recorded earlier (ex: a previous attempt of
+ * the same job, fixed by a manual action before the job was run again) is cleared, so the comment
+ * displays the success alone instead of keeping a failure title or a failure banner. A failure
+ * happening after this point (deployment actions, code coverage) is recorded later, so it still
+ * takes over.
+ */
+export function buildDeploymentSuccessPrData(
+  existingPrData: Partial<PullRequestData>,
+  options: { check?: boolean; quickDeploy?: boolean } = {}
+): Partial<PullRequestData> {
+  const successTitle = options.check === true ? '✅ Deployment check success' : '✅ Deployment success';
+  // A title recorded by a failed attempt must not survive the success that follows it
+  const previousTitle = existingPrData.title?.startsWith('❌') ? undefined : existingPrData.title;
+  const prData: Partial<PullRequestData> = {
+    messageKey: existingPrData.messageKey ?? 'deployment',
+    title: previousTitle ?? successTitle,
+    deployStatus: 'valid',
+    status: 'valid',
+  };
+  if (options.quickDeploy === true) {
+    // Displayed in the Pull Request comment: explains why no Apex test ran on this job
+    prData.usedQuickDeploy = true;
+  }
+  return prData;
+}
+
 // Populate pullRequestData with a success message when there is no metadata to deploy,
 // so the resulting PR comment is rendered as a successful deployment instead of an empty body.
 // Without it the comment carries no status at all, so it displays neither its result title nor
@@ -483,8 +517,8 @@ export async function smartDeploy(
             );
             quickDeploy = true;
             deploymentMetrics.quickDeploy = true;
-            // Displayed in the Pull Request comment: explains why no Apex test ran on this job
-            setPullRequestData({ usedQuickDeploy: true });
+            // Records the success and explains why no Apex test ran on this job
+            setPullRequestData(buildDeploymentSuccessPrData(getPullRequestData(), { check: check, quickDeploy: true }));
             // Store complete deployment result as a CI artifact, then display a readable summary
             const quickDeployReportFile = await writeDeployResultReportFile(
               { status: quickDeployRes.status, result: quickDeployRes.result },
@@ -678,17 +712,14 @@ export async function smartDeploy(
         }
       } else {
         // Handle notif message when there is no apex
-        const existingPrData = getPullRequestData();
-        const prDataCodeCoverage: PullRequestData = {
-          messageKey: existingPrData.messageKey ?? 'deployment',
-          title: existingPrData.title ?? (check ? '✅ Deployment check success' : '✅ Deployment success'),
+        const prDataCodeCoverage: Partial<PullRequestData> = {
+          ...buildDeploymentSuccessPrData(getPullRequestData(), { check: check, quickDeploy: quickDeploy }),
           codeCoverageMarkdownBody:
             testlevel === 'NoTestRun'
               ? '⚠️ Apex Tests has not been run thanks to useSmartDeploymentTests' :
               branchConfig?.skipCodeCoverage === true
                 ? '✅⚠️ Code coverage has been skipped for this level'
                 : '✅ No code coverage: It seems there is not Apex in this project',
-          deployStatus: 'valid',
         };
         setPullRequestData(prDataCodeCoverage);
       }
