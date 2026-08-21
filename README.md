@@ -2,8 +2,6 @@
 
 [![sfdx-hardis by Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner.png)](https://sfdx-hardis.cloudity.com)
 
-_Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl) _and [_Dreamforce 24!_](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH)_ - [**See sfdx-hardis v7 Walkthrough video**](https://www.youtube.com/watch?v=t8jT6IPd9n4)
-
 **New:** [**What's new in sfdx-hardis v8**](https://sfdx-hardis.cloudity.com/sfdx-hardis-v8/) - Deployment Actions are generally available, Pull Request comments are redesigned, and the VS Code extension is rebuilt.
 
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
@@ -45,11 +43,11 @@ If you need help to get the most out of sfdx-hardis, Cloudity's international te
 
 [_See online documentation for a better navigation_](https://sfdx-hardis.cloudity.com)
 
-___
+---
 
 **sfdx-hardis** commands and configuration are best used from the [**SFDX Hardis Visual Studio Code extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
-___
+---
 
 _Featured on SalesforceBen_
 
@@ -79,7 +77,7 @@ _You can also watch the video tutorial below_
 
 [![Installation tutorial](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/play-install-tuto.png)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
 
-___
+---
 
 ### As SFDX Plugin
 
@@ -104,7 +102,7 @@ sf plugins install sfdmu
 
 If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.
 
-___
+---
 
 ### Docker
 
