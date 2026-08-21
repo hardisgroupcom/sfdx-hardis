@@ -56,10 +56,10 @@ The command is **fully interactive**: it guides you through each section and let
 
 | Item                                       | Where it is stored                                                                                              |
 |--------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| External Client Apps (+ OAuth credentials) | `scripts/sandbox-refresh/<sandbox>/force-app/.../externalClientApps/`                                             |
-| Connected Apps (+ Consumer Secrets)        | `scripts/sandbox-refresh/<sandbox>/force-app/.../connectedApps/`                                                  |
-| Certificates                               | `scripts/sandbox-refresh/<sandbox>/force-app/.../certs/`                                                          |
-| SAML SSO configs                           | `scripts/sandbox-refresh/<sandbox>/force-app/.../samlssoconfigs/`                                                 |
+| External Client Apps (+ OAuth credentials) | `scripts/sandbox-refresh/<sandbox>/force-app/.../externalClientApps/`                                           |
+| Connected Apps (+ Consumer Secrets)        | `scripts/sandbox-refresh/<sandbox>/force-app/.../connectedApps/`                                                |
+| Certificates                               | `scripts/sandbox-refresh/<sandbox>/force-app/.../certs/`                                                        |
+| SAML SSO configs                           | `scripts/sandbox-refresh/<sandbox>/force-app/.../samlssoconfigs/`                                               |
 | Custom Settings (as JSON)                  | `scripts/sandbox-refresh/<sandbox>/savedCustomSettings/`                                                        |
 | Records (via SFDMU)                        | `scripts/sandbox-refresh/<sandbox>/data/`                                                                       |
 | Other metadata                             | `scripts/sandbox-refresh/<sandbox>/manifest/package-metadata-to-restore.xml`                                    |

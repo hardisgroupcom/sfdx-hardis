@@ -8,11 +8,11 @@ description: Where the configuration of a sfdx-hardis CI/CD project lives, how t
 
 The behavior of the pipeline is driven by the `.sfdx-hardis.yml` files of the repository:
 
-| File                                        | Scope                                                              |
-|---------------------------------------------|--------------------------------------------------------------------|
-| `config/.sfdx-hardis.yml`                   | The whole project. Committed to Git.                               |
-| `config/branches/.sfdx-hardis.<branch>.yml` | One major branch and its org (authentication, branch overrides).   |
-| `config/user/.sfdx-hardis.<username>.yml`   | One contributor on their own computer. Ignored by Git.             |
+| File                                        | Scope                                                            |
+|---------------------------------------------|------------------------------------------------------------------|
+| `config/.sfdx-hardis.yml`                   | The whole project. Committed to Git.                             |
+| `config/branches/.sfdx-hardis.<branch>.yml` | One major branch and its org (authentication, branch overrides). |
+| `config/user/.sfdx-hardis.<username>.yml`   | One contributor on their own computer. Ignored by Git.           |
 
 The easiest way to edit them is the **Pipeline Settings** panel of the VS Code SFDX Hardis extension, which presents every option as a form with its documentation.
 

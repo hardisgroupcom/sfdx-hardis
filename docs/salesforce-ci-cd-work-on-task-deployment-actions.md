@@ -88,19 +88,19 @@ commandsPostDeploy:
 
 Each action is an object with the following required and optional properties.
 
-| Field                   | Type    | Required? | Description                                                                                                                                                                                       |
-|-------------------------|---------|:---------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `id`                    | string  |    Yes    | Unique identifier for the action.                                                                                                                                                                 |
-| `label`                 | string  |    Yes    | Human-readable description of the action.                                                                                                                                                         |
-| `type`                  | string  |    Yes    | One of `command`, `data`, `apex`, `publish-community`, `schedule-batch`, `remove-packagexml-items`, `manual`.                                                                                     |
-| `context`               | string  |    Yes    | When the action should run. Allowed values: `all` (default), `check-deployment-only`, `process-deployment-only`.                                                                                  |
-| `command`               | string  |    No     | Shell command to run (used by `command` type).                                                                                                                                                    |
-| `parameters`            | object  |    No     | Parameters of the action (see action types)                                                                                                                                                       |
-| `customUsername`        | string  |    No     | Run the action with a specific username instead of the default target org.                                                                                                                        |
-| `includeTargetBranches` | array   |    No     | Run the action only when the deployment targets one of these branches. See [Choose the target orgs](#choose-the-target-orgs).                                                                     |
-| `excludeTargetBranches` | array   |    No     | Run the action on every target branch except these ones. See [Choose the target orgs](#choose-the-target-orgs).                                                                                   |
-| `allowFailure`          | boolean |    No     | If true and the action fails, the deployment continues but the result is marked failed/allowed.                                                                                                   |
-| `runOnlyOnceByOrg`      | boolean |    No     | Default: `true`. If true, the action runs only once per target org. Execution state is tracked in a dedicated "Deployment Actions" PR comment (see below), no Salesforce custom object required.  |
+| Field                   | Type    | Required? | Description                                                                                                                                                                                      |
+|-------------------------|---------|:---------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`                    | string  |    Yes    | Unique identifier for the action.                                                                                                                                                                |
+| `label`                 | string  |    Yes    | Human-readable description of the action.                                                                                                                                                        |
+| `type`                  | string  |    Yes    | One of `command`, `data`, `apex`, `publish-community`, `schedule-batch`, `remove-packagexml-items`, `manual`.                                                                                    |
+| `context`               | string  |    Yes    | When the action should run. Allowed values: `all` (default), `check-deployment-only`, `process-deployment-only`.                                                                                 |
+| `command`               | string  |    No     | Shell command to run (used by `command` type).                                                                                                                                                   |
+| `parameters`            | object  |    No     | Parameters of the action (see action types)                                                                                                                                                      |
+| `customUsername`        | string  |    No     | Run the action with a specific username instead of the default target org.                                                                                                                       |
+| `includeTargetBranches` | array   |    No     | Run the action only when the deployment targets one of these branches. See [Choose the target orgs](#choose-the-target-orgs).                                                                    |
+| `excludeTargetBranches` | array   |    No     | Run the action on every target branch except these ones. See [Choose the target orgs](#choose-the-target-orgs).                                                                                  |
+| `allowFailure`          | boolean |    No     | If true and the action fails, the deployment continues but the result is marked failed/allowed.                                                                                                  |
+| `runOnlyOnceByOrg`      | boolean |    No     | Default: `true`. If true, the action runs only once per target org. Execution state is tracked in a dedicated "Deployment Actions" PR comment (see below), no Salesforce custom object required. |
 
 </details>
 
