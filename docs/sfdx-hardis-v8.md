@@ -255,7 +255,7 @@ Subscriptions also fund the development of the open-source project, the new feat
 
 <div style="text-align:center; margin:2rem 0;">
   <a href="https://cloudity.com/contact-us/" target="_blank" rel="noopener noreferrer">
-    <img src="https://github.com/hardisgroupcom/sfdx-hardis/main/docs/assets/images/cloudity-banner.png" alt="Cloudity" style="max-width:100%;" />
+    <img src="https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/main/docs/assets/images/cloudity-banner.png" alt="Cloudity" style="max-width:100%;" />
   </a>
   <br/>
   <a href="https://cloudity.com/contact-us/" target="_blank" rel="noopener noreferrer" role="button" aria-label="Cloudity Professional Services"
