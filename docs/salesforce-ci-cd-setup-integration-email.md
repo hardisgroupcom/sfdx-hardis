@@ -6,21 +6,21 @@ description: Learn how to receive Email notifications with attached reports from
 
 ## Email Integration
 
-You can receive notifications on one or multiple e-mail addresses when sfdx-hardis events are happening:
+You can receive notifications at one or several email addresses when sfdx-hardis events happen:
 
-- Deployment from a major branch to a major Salesforce org (ex: integration git branch to Integration Org)
+- Deployment from a major branch to a major Salesforce org (e.g. integration git branch to Integration org)
 - Salesforce [Org Monitoring](salesforce-monitoring-home.md)
   - Latest updates
-  - Failing apex tests
+  - Failing Apex tests
   - Monitoring checks notifications
 
-Note: Salesforce email sending capabilities are used, so every email will count in your org daily email limit.
+Note: Salesforce email sending capabilities are used, so every email counts against the daily email limit of your org.
 
 ![](assets/images/screenshot-notif-email.jpg)
 
 ## Configuration
 
-Define CI/CD variable **NOTIF_EMAIL_ADDRESS** with the related email(s)
+Define the CI/CD variable **NOTIF_EMAIL_ADDRESS** with the recipient address(es).
 
 Examples:
 
@@ -54,12 +54,12 @@ See [Monitoring configuration](salesforce-monitoring-config-home.md#fine-grained
 
 ## Troubleshooting
 
-If the emails are not sent, apply the following configuration on the Monitoring / Deployment user settings
+If the emails are not sent, apply the following configuration in the settings of the Monitoring / Deployment user:
 
 - Send through Salesforce
 
 ![](assets/images/screenshot-email-config.jpg)
 
-That's all, you're all set !
+That's all, you're all set.
 
 

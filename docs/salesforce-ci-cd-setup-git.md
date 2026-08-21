@@ -1,71 +1,80 @@
 ---
-title: Configure Git Branches for Salesforce CI/CD
-description: Learn how to configure the repository, create and protect branches, and define merge rules
+title: Create the Git repository for Salesforce CI/CD
+description: Learn how to create the repository, create and protect the major branches, and define the merge rules
 ---
 <!-- markdownlint-disable MD013 -->
 
-- [Create git repository](#create-git-repository)
-- [Create major branches](#create-major-branches)
+## Create the Git repository
+
+- [Create the repository](#create-the-repository)
+- [Create the major branches](#create-the-major-branches)
   - [Small project](#small-project)
   - [Medium project](#medium-project)
   - [Complex project](#complex-project)
-- [Protect major branches](#protect-major-branches)
-- [Define merge rules](#define-merge-rules)
+- [Protect the major branches](#protect-the-major-branches)
+- [Define the merge rules](#define-the-merge-rules)
 
-## Create git repository
+### Create the repository
 
-Your git repository will be used to store and manage the versioning of your Salesforce DX sources
+Your git repository stores and versions your Salesforce DX sources.
 
-- Create a new repository, for example _myclient-sfdx_
+- Create a new repository on your Git platform (GitHub, GitLab, Azure DevOps or Bitbucket), for example _myclient-sfdx_
   - Select `Initialize repository with a README`
 
-## Create major branches
+### Create the major branches
 
-In `Repository -> Branches`, create the branch tree according to the complexity of your project
+In the branches section of your Git platform (for example `Repository -> Branches` on GitLab), create the branch tree that matches the complexity of your project.
 
-Below are examples of branches tree that you can define.
+Below are examples of branch trees that you can define.
 
-### Small project
+#### Small project
 
-- **main** (will be related to Production org)
-  - **preprod** (will be related to PreProd org)
+- **main** (related to the Production org)
+  - **preprod** (related to the PreProd org)
 
-### Medium project
+#### Medium project
 
-- **main** (will be related to Production org)
-  - **preprod** (will be related to PreProd org)
-    - **integration** (will be related to Integration org)
+- **main** (related to the Production org)
+  - **preprod** (related to the PreProd org)
+    - **integration** (related to the Integration org)
 
-### Complex project
+#### Complex project
 
-- **main** (will be related to Production org)
-  - **preprod** (will be related to PreProd org)
-    - **uat** (will be related to UAT org)
-      - **integration** (will be related to Integration org)
+- **main** (related to the Production org)
+  - **preprod** (related to the PreProd org)
+    - **uat** (related to the UAT org)
+      - **integration** (related to the Integration org)
 
-Example of branching strategy
+Example of branching strategy:
 
-![](assets/images/ci-cd-schema-main.jpg){ align=center }
+![Branching strategy with main, preprod, uat and integration](assets/images/ci-cd-schema-main.jpg){ align=center }
 
-## Protect major branches
+### Protect the major branches
 
-To avoid messes, protected branches must be updated only using [Merge Requests](https://docs.gitlab.com/ee/user/project/merge_requests/)
+Protected branches can only be updated through Pull Requests (Merge Requests on GitLab). This avoids accidental pushes to a branch that deploys to an org.
 
-- Go to menu `Settings -> Repository`
-- Define your developments target branch (usually _integration_) as **Default Branch**
-- Protect all branches that will have a corresponding Salesforce org (main, preprod, uat, integration...)
+In your Git platform settings (for example `Settings -> Repository` on GitLab):
 
-Recommended practice is to set **Maintainer** in **Allowed to merge** to all protected branches, except **integration**
+- Define your development target branch (usually _integration_) as the **default branch**
+- Protect all branches that have a corresponding Salesforce org (main, preprod, uat, integration...)
 
-Example
+The recommended practice is to allow only release managers (role **Maintainer** on GitLab) to merge into the protected branches, except **integration**.
 
-![protected branches](assets/images/protected-branches.jpg)
+Example on GitLab:
 
-## Define merge rules
+![Protected branches settings on GitLab](assets/images/protected-branches.jpg)
 
-Let's make sure that merge request jobs will be valid before being merged ! (can be deactivated later but at your own risk)
+### Define the merge rules
 
-- Go in menu `Settings -> General` , then in section `Merge requests` (expand)
-- Leave all default values, except checkbox **Pipelines must succeed** that must be checked
+Make sure that the control jobs of a Pull Request must pass before it can be merged. You can deactivate this rule later, at your own risk.
 
-![merge checks](assets/images/merge-checks.jpg)
+On GitLab:
+
+- Go to `Settings -> General`, then expand the `Merge requests` section
+- Leave all default values, except the checkbox **Pipelines must succeed**, which must be checked
+
+![Merge checks settings on GitLab](assets/images/merge-checks.jpg)
+
+On other platforms, use the equivalent setting: required status checks in the branch protection rules (GitHub), build validation in the branch policies (Azure DevOps), or merge checks (Bitbucket).
+
+You can now go to step [2. Prepare the Salesforce orgs](salesforce-ci-cd-setup-activate-org.md).

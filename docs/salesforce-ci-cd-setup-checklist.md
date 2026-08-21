@@ -5,13 +5,15 @@ description: Chronological checklist to verify that your Salesforce CI/CD setup 
 
 <!-- markdownlint-disable MD013 -->
 
-This checklist follows the [Setup Guide](salesforce-ci-cd-setup-home.md) in chronological order, with the [initialization merge request](salesforce-ci-cd-setup-merge-request.md) as the pivot: some items must be done **before** it, others only make sense **after** it.
+## Setup checklist
+
+This checklist follows the [Setup Guide](salesforce-ci-cd-setup-home.md) in chronological order, with the [initialization Pull Request](salesforce-ci-cd-setup-merge-request.md) (Merge Request on GitLab) as the pivot: some items must be done **before** it, others only make sense **after** it.
 
 Go through every item in order and tick the boxes. Any box you leave empty is either a deliberate choice for your project, or a gap to fix before you let the team work on the pipeline.
 
 Sections that depend on a platform are grouped by platform: find your platform, then tick only its own items.
 
-- [Before the first merge request](#before-the-first-merge-request)
+- [Before the first Pull Request](#before-the-first-pull-request)
   - [Git repository](#git-repository)
   - [Salesforce orgs](#salesforce-orgs)
   - [SFDX project](#sfdx-project)
@@ -23,8 +25,8 @@ Sections that depend on a platform are grouped by platform: find your platform, 
   - [Ticketing integration](#ticketing-integration)
   - [AI integration](#ai-integration)
   - [Coding agents auto-fix](#coding-agents-auto-fix)
-- [The first merge request](#the-first-merge-request)
-- [After the first merge request](#after-the-first-merge-request)
+- [The first Pull Request](#the-first-pull-request)
+- [After the first Pull Request](#after-the-first-pull-request)
   - [Integrations verification](#integrations-verification)
   - [Delta deployments](#delta-deployments)
   - [Other major orgs](#other-major-orgs)
@@ -35,25 +37,25 @@ Sections that depend on a platform are grouped by platform: find your platform, 
 
 ---
 
-## Before the first merge request
+### Before the first Pull Request
 
-Everything in this phase must be in place before you open the initialization merge request, otherwise its control jobs cannot even run.
+Everything in this phase must be in place before you open the initialization Pull Request, otherwise its control jobs cannot even run.
 
-### Git repository
+#### Git repository
 
-_See [Init Git repository](salesforce-ci-cd-setup-git.md)_
+_See [Create the Git repository](salesforce-ci-cd-setup-git.md)_
 
 - [ ] The repository exists and contains the sfdx-hardis project sources.
 - [ ] One major branch exists for each major Salesforce org (for example `main`, `preprod`, `uat`, `integration`).
 - [ ] The lowest major branch (usually `integration`) is set as **default branch**.
-- [ ] All major branches are **protected**: they can only be updated through Merge Requests / Pull Requests.
-- [ ] **Allowed to merge** is restricted to Release Managers / Maintainers on all major branches except the lowest one.
+- [ ] All major branches are **protected**: they can only be updated through Pull Requests.
+- [ ] **Allowed to merge** is restricted to release managers / Maintainers on all major branches except the lowest one.
 - [ ] Source branches are deleted after merge, and squash is enforced for User Story branches.
 - [ ] The `cicd` initialization branch has been created, under the lowest major branch (usually `integration`).
 
-### Salesforce orgs
+#### Salesforce orgs
 
-_See [Configure Orgs](salesforce-ci-cd-setup-activate-org.md)_
+_See [Prepare the Salesforce orgs](salesforce-ci-cd-setup-activate-org.md)_
 
 - [ ] **Dev Hub** is activated on the production org.
 - [ ] **Sandbox source tracking** is activated on the Dev Hub, **before** creating or refreshing the sandboxes.
@@ -63,11 +65,11 @@ _See [Configure Orgs](salesforce-ci-cd-setup-activate-org.md)_
 - [ ] Developer sandboxes are created **from the Integration org**, not from production.
 - [ ] The Integration org has a **dedicated CI user** with the permissions needed to deploy (System Administrator profile or equivalent), pre-authorized on the External Client App.
 
-> The sandboxes of the other major branches (UAT, PreProd...) are **not needed yet**. Create or refresh them after the first merge request, once the pipeline works on the first level.
+> The sandboxes of the other major branches (UAT, PreProd...) are **not needed yet**. Create or refresh them after the first Pull Request, once the pipeline works on the first level.
 
-### SFDX project
+#### SFDX project
 
-_See [Init SFDX Project](salesforce-ci-cd-setup-init-project.md)_
+_See [Initialize the SFDX project](salesforce-ci-cd-setup-init-project.md)_
 
 - [ ] The project was created with `sf hardis:project:create` (not the default Salesforce command).
 - [ ] `manifest/package.xml` contains the metadata to deploy, with a current Salesforce API version.
@@ -75,14 +77,14 @@ _See [Init SFDX Project](salesforce-ci-cd-setup-init-project.md)_
 - [ ] `config/.sfdx-hardis.yml` exists, with `developmentBranch`, `availableTargetBranches` and the branch/org mapping filled in.
 - [ ] `config/branches/.sfdx-hardis.<branch>.yml` exists for the lowest major branch, with the right `targetUsername` and `instanceUrl` (the other major branches come later, with their org).
 - [ ] Installed packages are listed in `config/.sfdx-hardis.yml`, with `installDuringDeployments` and `installOnScratchOrgs` set according to your needs. _See [Retrieve installed packages](salesforce-ci-cd-setup-existing-org.md#retrieve-installed-packages)_
-- [ ] `SFDX_DISABLE_FLOW_DIFF` is set to `true` **directly in the workflow file** of your git provider (`check-deploy.yml`, `.gitlab-ci.yml`, `azure-pipelines-checks.yml`, `bitbucket-pipelines.yml`, `Jenkinsfile`), for the duration of the setup, to avoid flooding merge requests with comments.
+- [ ] `SFDX_DISABLE_FLOW_DIFF` is set to `true` **directly in the workflow file** of your git provider (`check-deploy.yml`, `.gitlab-ci.yml`, `azure-pipelines-checks.yml`, `bitbucket-pipelines.yml`, `Jenkinsfile`), for the duration of the setup, to avoid flooding Pull Requests with comments.
 - [ ] `.gitignore` and `.forceignore` do not exclude metadata that must be versioned, and do exclude local artifacts.
 
-### CI server authentication
+#### CI server authentication
 
-_See [CI Server Authentication](salesforce-ci-cd-setup-auth.md)_
+_See [Configure CI authentication](salesforce-ci-cd-setup-auth.md)_
 
-- [ ] `sf hardis:project:configure:auth` has been run for the **lowest major branch** (usually `integration`): it is the only one required to run the initialization merge request. The other major branches are done later, when their sandbox exists.
+- [ ] `sf hardis:project:configure:auth` has been run for the **lowest major branch** (usually `integration`): it is the only one required to run the initialization Pull Request. The other major branches are done later, when their sandbox exists.
 - [ ] An **External Client App** is present in the target org, with the certificate uploaded as Digital Signature and the CI user pre-authorized.
 - [ ] `SFDX_CLIENT_ID_<ALIAS>` is defined in the CI/CD variables, `<ALIAS>` being the uppercased branch name.
 - [ ] `SFDX_CLIENT_KEY_<ALIAS>` (AES passphrase) and/or `SFDX_CLIENT_CERT_<ALIAS>` is defined, matching the [certificate storage mode](salesforce-ci-cd-setup-auth.md#certificate-storage-modes) you selected.
@@ -91,7 +93,7 @@ _See [CI Server Authentication](salesforce-ci-cd-setup-auth.md)_
 - [ ] No `SFDX_AUTH_URL_*` variable is used for a major org (it embeds a long-lived refresh token, reserve it for scratch orgs and Dev Hub).
 - [ ] Login works from the CI server: a pipeline job reaches the org without falling back to an interactive prompt.
 
-### Git provider and CI server
+#### Git provider and CI server
 
 Find your platform below and tick only its items. Only what **you** have to do is listed: whatever the default sfdx-hardis workflow files already contain (job permissions, token passing, variable mapping for the default branch names, coding agent snippets, `auto-fix/` branch skipping) is not repeated here.
 
@@ -122,11 +124,11 @@ Find your platform below and tick only its items. Only what **you** have to do i
   - [ ] A repository access token with scopes `pullrequest`, `pullrequest:write`, `repository`, `repository:write` is stored in variable `CI_SFDX_HARDIS_BITBUCKET_TOKEN`, so results are posted as Pull Request comments.
 - **Jenkins** _(see [Jenkins setup](salesforce-ci-cd-setup-auth-jenkins.md))_
   - [ ] File `Jenkinsfile` is kept, the workflow files of the other providers are deleted.
-  - [ ] The job is a **Multibranch Pipeline**, so `CHANGE_ID` is available and merge request comments can be posted.
+  - [ ] The job is a **Multibranch Pipeline**, so `CHANGE_ID` is available and Pull Request comments can be posted.
   - [ ] Credentials are declared in Jenkins and exposed to the build as environment variables.
   - [ ] The token of your git provider is set: `CI_SFDX_HARDIS_GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`, `CI_SFDX_HARDIS_AZURE_TOKEN` or `CI_SFDX_HARDIS_BITBUCKET_TOKEN`. The other variables are derived from the Jenkins built-in ones.
 
-### Pipelines
+#### Pipelines
 
 The default workflow files already declare the three jobs (check deploy, code quality, deployment), their triggers and their artifacts. What is left to you:
 
@@ -135,9 +137,9 @@ The default workflow files already declare the three jobs (check deploy, code qu
 - [ ] The CI runner has enough minutes / capacity for the deployments.
 - [ ] `SFDX_DEPLOY_WAIT_MINUTES` is increased if your deployments need more than the default 120 minutes.
 
-### Project configuration
+#### Project configuration
 
-_See [Maintainer Guide](salesforce-ci-cd-config-home.md) and the [full list of configuration properties](schema/sfdx-hardis-json-schema-parameters.html)_
+_See [Project configuration guide](salesforce-ci-cd-config-home.md) and the [full list of configuration properties](schema/sfdx-hardis-json-schema-parameters.html)_
 
 **Overwrite management is the most important part of this section.** Without `manifest/package-no-overwrite.xml`, every deployment overwrites the metadata that is maintained directly in the orgs: business users lose their Reports and Dashboards, and org-specific credentials and URLs are replaced by the ones of another environment. _See [Overwrite management](salesforce-ci-cd-config-overwrite.md)_
 
@@ -151,12 +153,12 @@ _See [Maintainer Guide](salesforce-ci-cd-config-home.md) and the [full list of c
 
 Then the rest of the project configuration:
 
-- [ ] [Automated sources cleaning](salesforce-ci-cd-config-cleaning.md) is configured (`autoCleanTypes`), so User Story branches are cleaned before merge requests.
+- [ ] [Automated sources cleaning](salesforce-ci-cd-config-cleaning.md) is configured (`autoCleanTypes`), so User Story branches are cleaned before Pull Requests.
 - [ ] Apex test configuration matches your policy (test level, minimum coverage).
 - [ ] New User Story options are set (`availableTargetBranches`, `availableTargetBranchesLabels`, `sharedDevSandboxes`, `allowedOrgTypes`...) so contributors get the right prompts.
-- [ ] Delta deployments are **NOT activated**: `useDeltaDeployment` is absent from `config/.sfdx-hardis.yml`, or set to `false`. The initialization merge request must deploy the **full package**. _See [Delta deployments](salesforce-ci-cd-config-delta-deployment.md)_
+- [ ] Delta deployments are **NOT activated**: `useDeltaDeployment` is absent from `config/.sfdx-hardis.yml`, or set to `false`. The initialization Pull Request must deploy the **full package**. _See [Delta deployments](salesforce-ci-cd-config-delta-deployment.md)_
 
-### Notification channels
+#### Notification channels
 
 _Overview: [Configure integrations](salesforce-ci-cd-setup-integrations-home.md)_
 
@@ -181,7 +183,7 @@ At least one channel must be configured, otherwise nobody is told when a deploym
   - [ ] Metrics endpoint defined in `NOTIF_API_METRICS_URL`, with its own auth variables, if you want Prometheus metrics.
   - [ ] sfdx-hardis dashboards imported in Grafana.
 
-### Ticketing integration
+#### Ticketing integration
 
 - **Jira** _(see [Jira integration](salesforce-ci-cd-setup-integration-jira.md))_
   - [ ] `jiraHost` is defined in `.sfdx-hardis.yml`, so the VS Code extension can use it too.
@@ -194,7 +196,7 @@ At least one channel must be configured, otherwise nobody is told when a deploym
   - [ ] `genericTicketingProviderRegex` is defined in `.sfdx-hardis.yml` and tested against real ticket references.
   - [ ] `genericTicketingProviderUrlBuilder` is defined in `.sfdx-hardis.yml`, with its `{REF}` segment.
 
-### AI integration
+#### AI integration
 
 _Optional, but it makes deployment errors much faster to solve. See [Setup AI integration](salesforce-ai-setup.md)_
 
@@ -213,7 +215,7 @@ _Optional, but it makes deployment errors much faster to solve. See [Setup AI in
   - [ ] API keys are stored as **masked secrets**, never committed in `.sfdx-hardis.yml`.
   - [ ] The security implications have been reviewed with the client, and the cost settings are understood (`AI_MAXIMUM_CALL_NUMBER`, `MAX_DEPLOYMENT_TIPS_AI_CALLS`).
 
-### Coding agents auto-fix
+#### Coding agents auto-fix
 
 _Optional. Only if you want the pipeline to fix deployment errors and push fix branches. See [Coding Agent Auto-Fix](salesforce-deployment-agent-autofix.md)_
 
@@ -223,82 +225,82 @@ The default workflow files already contain the `git remote set-url` snippet and 
 - [ ] Auto-fix is enabled: `codingAgentAutoFix: true` in `.sfdx-hardis.yml`.
 - [ ] The agent is chosen: `codingAgent` in `.sfdx-hardis.yml` (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`).
 - [ ] The API key of the chosen agent is set as a masked secret (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY` / `CODEX_API_KEY`, `GEMINI_API_KEY`, `COPILOT_GITHUB_TOKEN`), unless it reuses `LANGCHAIN_LLM_MODEL_API_KEY`.
-- [ ] The token that lets the pipeline push branches and open merge requests is available:
+- [ ] The token that lets the pipeline push branches and open Pull Requests is available:
   - [ ] **GitHub**: `CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN`, either `secrets.GITHUB_TOKEN` with `contents: write` and `pull-requests: write`, or a fine-grained PAT with `Contents` and `Pull requests` read and write.
   - [ ] **GitLab**: `CI_SFDX_HARDIS_GITLAB_TOKEN` with scopes **api** and **write_repository**.
   - [ ] **Azure DevOps**: **Allow scripts to access OAuth token** enabled in the pipeline settings, or a PAT mapped to `CI_SFDX_HARDIS_AZURE_TOKEN`.
   - [ ] **Bitbucket**: `CI_SFDX_HARDIS_BITBUCKET_TOKEN`.
-- [ ] Branch protection rules allow the bot to push `auto-fix/*` branches and open merge requests.
+- [ ] Branch protection rules allow the bot to push `auto-fix/*` branches and open Pull Requests.
 
 ---
 
-## The first merge request
+### The first Pull Request
 
-_See [First merge request](salesforce-ci-cd-setup-merge-request.md)_
+_See [First Pull Request](salesforce-ci-cd-setup-merge-request.md)_
 
-This is the initialization merge request: it deploys the **full package** to your lowest major org. Expect several rounds of errors and configuration fixes before it goes green.
+This is the initialization Pull Request: it deploys the **full package** to your lowest major org. Expect several rounds of errors and configuration fixes before it goes green.
 
-- [ ] The merge request has `cicd` as source branch and the lowest major branch (usually `integration`) as target.
+- [ ] The Pull Request has `cicd` as source branch and the lowest major branch (usually `integration`) as target.
 - [ ] `manifest/destructiveChanges.xml` is reviewed one last time before you merge: still empty, or containing **exactly** the metadata you decided to delete from the orgs, and nothing else.
-- [ ] The **check deploy** job is triggered by the merge request, and ends green. _See [Solve deployment errors](salesforce-ci-cd-solve-deployment-errors.md)_
+- [ ] The **check deploy** job is triggered by the Pull Request, and ends green. _See [Solve deployment errors](salesforce-ci-cd-solve-deployment-errors.md)_
 - [ ] The **code quality** (MegaLinter) job is green, or its remaining errors are known and accepted. _See [Handle MegaLinter errors](salesforce-ci-cd-solve-megalinter-errors.md)_
-- [ ] The merge request has been merged, and the deployment job **deployed the full package** to the Integration org.
+- [ ] The Pull Request has been merged, and the deployment job **deployed the full package** to the Integration org.
 - [ ] The `cicd` branch is deleted.
 
 ---
 
-## After the first merge request
+### After the first Pull Request
 
 The pipeline works on the first level. Now verify what could not be verified before, then extend to the other major orgs.
 
-> **Every remaining configuration change goes through a new branch and a new merge request.** The `cicd` branch is gone and the major branches are protected, so from now on org authentication, delta deployments, cleaning options and any other `.sfdx-hardis.yml` update follow the same contribution process as a User Story, with the control jobs running on them.
+> **Every remaining configuration change goes through a new branch and a new Pull Request.** The `cicd` branch is gone and the major branches are protected, so from now on org authentication, delta deployments, cleaning options and any other `.sfdx-hardis.yml` update follow the same contribution process as a User Story, with the control jobs running on them.
 
-### Integrations verification
+#### Integrations verification
 
-Open a small test merge request with a real change and check what actually shows up.
+Open a small test Pull Request with a real change and check what actually shows up.
 
-- [ ] A deployment status comment is posted by the pipeline on the merge request, with the deployment errors and failing test classes when there are any.
+- [ ] A deployment status comment is posted by the pipeline on the Pull Request, with the deployment errors and failing test classes when there are any.
 - [ ] Quick Deploy is effective: after a successful validation job, the deployment job reuses the validated deployment instead of running a full one (`SFDX_HARDIS_QUICK_DEPLOY` is not set to `false`). _See [Smart Deployments](salesforce-ci-cd-smart-deployment.md)_
 - [ ] **A real notification has been received** on each configured channel, coming from an actual deployment job.
-- [ ] Ticket references and links appear in merge request comments and in notifications.
+- [ ] Ticket references and links appear in Pull Request comments and in notifications.
 - [ ] Tickets get a comment and a deployment tag once deployed in a major org (`DEPLOYED_TAG_TEMPLATE` if you customized the tag).
 - [ ] A deployment error produces an AI assisted explanation in the comment, if you configured an LLM provider.
-- [ ] Flow visual git diff works: once `SFDX_DISABLE_FLOW_DIFF` is back to `false`, a Flow change in a merge request produces a diagram in the comment.
+- [ ] Flow visual git diff works: once `SFDX_DISABLE_FLOW_DIFF` is back to `false`, a Flow change in a Pull Request produces a diagram in the comment.
 
-### Delta deployments
+#### Delta deployments
 
 _See [Delta deployments](salesforce-ci-cd-config-delta-deployment.md)_
 
-- [ ] Delta deployments are activated **only now** that the initialization merge request is merged: `useDeltaDeployment: true` in `config/.sfdx-hardis.yml`.
-- [ ] The activation is committed in a **new branch and merged with its own merge request**.
+- [ ] Delta deployments are activated **only now** that the initialization Pull Request is merged: `useDeltaDeployment: true` in `config/.sfdx-hardis.yml`.
+- [ ] The activation is committed in a **new branch and merged with its own Pull Request**.
 - [ ] Delta deployments are enabled for the **first level only** (User Story branches to `integration`). Between major orgs (`integration` to `uat`, `uat` to `preprod`...), full deployments are used, as delta is not recommended there.
 
-### Other major orgs
+#### Other major orgs
 
 Now that the first level works, set up the orgs of the upper major branches.
 
-_See [Configure Orgs](salesforce-ci-cd-setup-activate-org.md) for the recommended sandbox types_
+_See [Prepare the Salesforce orgs](salesforce-ci-cd-setup-activate-org.md) for the recommended sandbox types_
 
 - [ ] The sandbox of each remaining major branch (UAT, PreProd...) is **created or refreshed from production**, so it starts from a state close to production.
 - [ ] Each of them has a **dedicated CI user** with the permissions needed to deploy, pre-authorized on the External Client App.
-- [ ] `sf hardis:project:configure:auth` has been run for each of these major branches, **from a new branch**, and its output (`config/branches/.sfdx-hardis.<branch>.yml`, encrypted key files) is merged with its own merge request.
+- [ ] `sf hardis:project:configure:auth` has been run for each of these major branches, **from a new branch**, and its output (`config/branches/.sfdx-hardis.<branch>.yml`, encrypted key files) is merged with its own Pull Request.
 - [ ] Their `SFDX_CLIENT_ID_<ALIAS>` and `SFDX_CLIENT_KEY_<ALIAS>` / `SFDX_CLIENT_CERT_<ALIAS>` variables are defined and masked.
-- [ ] The External Client App of the **production** org is in place, created manually if Apex test errors prevented the automated deployment. _See [CI Server Authentication](salesforce-ci-cd-setup-auth.md)_
+- [ ] The External Client App of the **production** org is in place, created manually if Apex test errors prevented the automated deployment. _See [Configure CI authentication](salesforce-ci-cd-setup-auth.md)_
 
-### End to end validation
+#### End to end validation
 
 The setup is only complete when a change travels all the way to production.
 
 - [ ] A **User Story branch** can be created with `sf hardis:work:new`, and it creates or assigns the expected sandbox.
-- [ ] `sf hardis:work:save` runs successfully: it updates `package.xml`, applies the cleanings and prepares the merge request.
-- [ ] The validation job on the merge request **passes** for a real change.
+- [ ] `sf hardis:work:save` runs successfully: it updates `package.xml`, applies the cleanings and prepares the Pull Request.
+- [ ] The validation job on the Pull Request **passes** for a real change.
 - [ ] After merge, the deployment job **deploys to the matching org**, and the change is visible in the Salesforce Setup.
 - [ ] **Overwrite management really protects the orgs**: the items of `package-no-overwrite.xml` that already exist in the target org are removed from the deployed package, and their version in the org is left untouched. Check it on a Report or a Named Credential of a major org.
 - [ ] The Apex tests actually pass on every major org.
 - [ ] The same has been verified for **every** major branch, up to production. A pipeline that only works on `integration` is not a finished setup.
 - [ ] Deploying to production has been done at least once from the pipeline, not manually.
 
-### Setup clean up
+#### Setup clean up
 
 Easy to forget, and it changes the daily experience of the team.
 
@@ -308,16 +310,16 @@ Easy to forget, and it changes the daily experience of the team.
 - [ ] Leftover translations of deleted Dashboards and Reports are removed from `translations/*.xml`. _See [Common issues](salesforce-ci-cd-setup-merge-request.md#common-issues)_
 - [ ] No credential, token or Salesforce URL with a session is present in the git history.
 
-### Team onboarding
+#### Team onboarding
 
-- [ ] Every contributor installed the required tooling and the VS Code sfdx-hardis extension. _See [Installation guide](salesforce-ci-cd-use-install.md)_
+- [ ] Every contributor installed the required tooling and the VS Code SFDX Hardis extension. _See [Installation guide](salesforce-ci-cd-use-install.md)_
 - [ ] Every contributor cloned the repository and can create a User Story branch. _See [Clone repository](salesforce-ci-cd-clone-repository.md)_
-- [ ] The team knows the [contribution process](salesforce-ci-cd-use-home.md): create a User Story, work on it, publish it, handle merge request results.
-- [ ] Release Managers know how to [validate a merge request](salesforce-ci-cd-validate-merge-request.md) and how to handle [hotfixes](salesforce-ci-cd-hotfixes.md).
+- [ ] The team knows the [contribution process](salesforce-ci-cd-use-home.md): create a User Story, work on it, publish it, handle Pull Request results.
+- [ ] Release managers know how to [review and merge Pull Requests](salesforce-ci-cd-validate-merge-request.md) and how to handle [hotfixes](salesforce-ci-cd-hotfixes.md).
 - [ ] The team knows that **custom Profiles deployed for the first time must be created manually** in the target org, cloned from "Minimal Access".
 - [ ] Someone owns the pipeline: they get the notifications and they know where the job logs and artifacts are.
 
-### Going further
+#### Going further
 
 Not part of the CI/CD pipeline itself, but usually set up right after.
 

@@ -7,7 +7,7 @@ description: Free Salesforce Metadata BackUp, plus many extra monitoring feature
 
 ## Salesforce Org Monitoring
 
-Keep a **daily, version-tracked backup** of every metadata in your Salesforce orgs, with **before/after diffs**, **quality and security checks**, and **notifications** routed where your team actually reads them.
+Keep a **daily, version-tracked backup** of all the metadata in your Salesforce orgs, with **before/after diffs**, **quality and security checks**, and **notifications** routed where your team actually reads them.
 
 ![Monitoring configuration preview](assets/images/monitoring-config-2026.gif)
 
@@ -136,6 +136,10 @@ See [Monitoring configuration](salesforce-monitoring-config-home.md#monitoring-c
 | [Detect Apex and Flow errors](salesforce-monitoring-apex-flow-errors.md)                                                    | Daily     |
 | [Detect unsecured Connected Apps in an org](salesforce-monitoring-unsecured-connected-apps.md)                              | Daily     |
 | [Analyze metadata deployments and validations](salesforce-monitoring-deployments.md)                                        | Daily     |
+| [Detect usage-based entitlements consumed too fast](salesforce-monitoring-usage-entitlements.md)                            | Daily     |
+| [Collect the consumption utilization alerts Salesforce raises](salesforce-monitoring-consumption-alerts.md)                 | Daily     |
+| [Agent tests](salesforce-monitoring-agent-tests.md)                                                                         | Weekly    |
+| [Track Agentforce and Data 360 credit usage](salesforce-monitoring-ai-usage.md)                                             | Weekly    |
 | [Audit Multi-Factor Authentication (MFA) configuration](salesforce-monitoring-mfa.md)                                       | Weekly    |
 | [Extract licenses information](salesforce-monitoring-licenses-overview.md)                                                  | Weekly    |
 | [Detect custom elements with no access rights defined in permission sets](salesforce-monitoring-missing-access.md)          | Weekly    |

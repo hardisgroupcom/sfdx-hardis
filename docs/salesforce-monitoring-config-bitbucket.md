@@ -4,9 +4,9 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Cloning repo from VsCode
+## Cloning the repository from VS Code
 
-If you have issues to authenticate to Bitbucket from VsCode, [create an App Password in Bitbucket personal settings](https://support.atlassian.com/bitbucket-cloud/docs/create-an-app-password/).
+If you have trouble authenticating to Bitbucket from VS Code, [create an App Password in your Bitbucket personal settings](https://support.atlassian.com/bitbucket-cloud/docs/create-an-app-password/).
 
 ## Pre-requisites
 
@@ -14,12 +14,12 @@ There are no pre-requisites
 
 ## Run sfdx-hardis configuration command
 
-- Run command **Configuration -> Configure Org Monitoring** in VsCode SFDX Hardis, then follow instructions.
+- Run command **Configuration -> Configure Org Monitoring** in the VS Code SFDX Hardis extension, then follow the instructions.
 
 ## Define sfdx-hardis environment variables
 
 - Go to **Project -> Repository Settings > Repository Variables** _(you must have Bitbucket authorizations to access this menu)_
-- For each variable sfdx-hardis command **Configure org monitoring** tells you to define, create with name and value given in sfdx-hardis command logs
+- For each variable the sfdx-hardis command **Configure org monitoring** tells you to define, create it with the name and value given in the sfdx-hardis command logs
 
 ![](assets/images/screenshot-bitbucket-variables.png)
 

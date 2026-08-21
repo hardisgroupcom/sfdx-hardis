@@ -7,9 +7,7 @@ description: Automatically fix deployment errors using AI coding agents
 
 # Coding Agent Auto-Fix (Beta)
 
-!!! warning "Beta Feature"
-
-> This feature is currently in **beta**. AI coding agents can make mistakes: **all proposed changes must be carefully reviewed by an expert** before merging. Never blindly accept auto-fix Pull Requests.
+> **Beta feature:** this feature is currently in **beta**. AI coding agents can make mistakes, so **all proposed changes must be carefully reviewed by an expert** before merging. Never blindly accept auto-fix Pull Requests.
 
 ## Overview
 
@@ -72,10 +70,10 @@ This loop can run multiple times (`PR-2`, `PR-3`, etc.) until the check deploy j
 
 ### 1. Install a coding agent CLI
 
-If you are using the **sfdx-hardis Docker images** (the default in the CI/CD pipeline templates), switch to a **`-with-agents`** image variant, that has all agent CLIs pre-installed:
+If you are using the **sfdx-hardis Docker images** (the default in the CI/CD pipeline templates), switch to a **`-with-agents`** image variant, which has all agent CLIs pre-installed:
 
 - `ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest` (GitHub Actions, Azure Pipelines, Bitbucket Pipelines)
-- `ghcr.io/hardisgroupcom/sfdx-hardis-with-agents:latest` (GitLab CI, alpine-based: some agents may crash on Alpine/musl, prefer the ubuntu variant if so)
+- `ghcr.io/hardisgroupcom/sfdx-hardis-with-agents:latest` (GitLab CI, Alpine-based: some agents may crash on Alpine/musl; if so, prefer the Ubuntu variant)
 
 If your CI/CD pipeline installs Salesforce CLI with npm instead of using the Docker images, install the CLI(s) you want to use:
 
@@ -114,13 +112,11 @@ In **CI/CD**, the coding agent CLI needs to authenticate with its AI provider. Y
 | Gemini  | `GEMINI_API_KEY`                                                                          |
 | Copilot | `COPILOT_GITHUB_TOKEN`, `GH_TOKEN` or `GITHUB_TOKEN` (usually already available in CI/CD) |
 
-**Tip:** If you already have a LangChain AI provider configured (see [AI setup](salesforce-ai-setup.md)), sfdx-hardis will automatically **reuse** `LANGCHAIN_LLM_MODEL_API_KEY` so you don't need to set a separate key.
+**Tip:** If you already have a LangChain AI provider configured (see [AI setup](salesforce-ai-setup.md)), sfdx-hardis automatically **reuses** `LANGCHAIN_LLM_MODEL_API_KEY`, so you do not need to set a separate key.
 
-!!! tip "Local mode - no API key needed"
-
-  When running **outside CI/CD** (i.e. on your local machine), sfdx-hardis uses the configured `codingAgent` (for example `claude`) with your existing local CLI authentication session.
-
-  Example: if `codingAgent: claude` is configured and `claude login` has already been completed, commands will run with Claude directly, **without requiring API key environment variables**.
+> **Local mode: no API key needed.** When running **outside CI/CD** (i.e. on your local machine), sfdx-hardis uses the configured `codingAgent` (for example `claude`) with your existing local CLI authentication session.
+>
+> Example: if `codingAgent: claude` is configured and `claude login` has already been completed, commands run with Claude directly, **without requiring API key environment variables**.
 
 ### 4. Choose a coding agent
 
@@ -168,14 +164,12 @@ See [prompt templates documentation](salesforce-ai-prompts.md) for more details 
 
 ## Security considerations
 
-!!! danger "Expert review required"
-
-AI coding agents can produce incorrect or incomplete fixes. **Every auto-fix Pull Request must be reviewed and validated by an expert** before merging. Treat these PRs the same way you would treat any code contribution - run tests, inspect changes, and verify correctness.
+> **Expert review required:** AI coding agents can produce incorrect or incomplete fixes. **Every auto-fix Pull Request must be reviewed and validated by an expert** before merging. Treat these Pull Requests the same way you would treat any code contribution: run tests, inspect changes, and verify correctness.
 
 - The coding agent runs with `--allow-all-tools` / full auto-approval mode so it can read and modify files autonomously
-- The agent is **instructed to never deploy** anything to Salesforce - it only modifies local files
+- The agent is **instructed to never deploy** anything to Salesforce: it only modifies local files
 - The agent **can query** the target org for metadata/data (read-only) to understand the current state
-- All changes go through a **Pull Request** for human review before being merged - **do not auto-merge these PRs**
+- All changes go through a **Pull Request** for human review before being merged. **Do not auto-merge these Pull Requests**
 - It is recommended to run coding agents in a **restricted CI/CD environment** (container, VM) with limited permissions
 
 ## Example CI/CD configuration

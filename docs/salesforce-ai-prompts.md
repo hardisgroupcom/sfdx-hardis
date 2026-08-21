@@ -4,7 +4,7 @@ description: Learn how to use and override prompt templates to generate document
 ---
 <!-- markdownlint-disable MD013 -->
 
-Sfdx-hardis uses a set of predefined prompt templates to interact with AI providers for various Salesforce-related tasks. These prompts are designed to cover common use cases such as describing metadata, generating documentation, and solving deployment errors.
+sfdx-hardis uses a set of predefined prompt templates to interact with AI providers for various Salesforce-related tasks. These prompts are designed to cover common use cases such as describing metadata, generating documentation, and solving deployment errors.
 
 ## How Prompts Work
 
@@ -14,8 +14,8 @@ Each prompt template defines a specific task and includes variables that are dyn
 
 You can override any predefined prompt template by providing a local text file with the same name as the template. This allows you to tailor the AI's behavior to your organization's needs without modifying the core plugin code.
 
-- Place your custom prompt text files in the appropriate override directory as described in the documentation.
-- The system will automatically use your custom version instead of the default if it is present.
+- Place your custom prompt files in the `config/prompt-templates/` folder of your project (see the example below).
+- sfdx-hardis automatically uses your custom version instead of the default one when it is present.
 
 ### Example
 

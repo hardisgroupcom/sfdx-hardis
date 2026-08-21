@@ -1,6 +1,6 @@
 ---
-title: Configure Salesforce Org Monitoring with Github
-description: Learn how to configure a monitoring repository for a Salesforce Org, using sfdx-hardis and Github Actions
+title: Configure Salesforce Org Monitoring with GitHub
+description: Learn how to configure a monitoring repository for a Salesforce Org, using sfdx-hardis and GitHub Actions
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -15,12 +15,12 @@ None
 
 ## Run sfdx-hardis configuration command
 
-- Run command **Configuration -> Configure Org Monitoring** in VsCode SFDX Hardis, then follow instructions.
+- Run command **Configuration -> Configure Org Monitoring** in the VS Code SFDX Hardis extension, then follow the instructions.
 
 ## Define sfdx-hardis environment variables
 
-- Go to **Repository -> Settings > Secret and variables -> Actions** _(you must have Github authorizations to access this menu)_
-- For each variable sfdx-hardis command **Configure org monitoring** tells you to define, click on **New repository secret**,  with name and value given in sfdx-hardis command logs
+- Go to **Repository -> Settings > Secrets and variables -> Actions** _(you must have GitHub authorizations to access this menu)_
+- For each variable the sfdx-hardis command **Configure org monitoring** tells you to define, click **New repository secret** and enter the name and value given in the sfdx-hardis command logs
 
 ![](assets/images/screenshot-monitoring-github-variable.png.jpg)
 
@@ -28,19 +28,19 @@ None
 
 ## Update org-monitoring.yml
 
-WARNING: Scheduling can be run only on main branch on GitHub Actions, so there is a specific config.
+Warning: on GitHub Actions, scheduled workflows only run on the main branch, so the configuration is specific.
 
-- Configure all your monitored org using VsCode SFDX Hardis command "Configure Org Monitoring" (jobs will fail but that's ok)
-  - Reply questions, configure variables, let sfdx-hardis upload connected apps...
-  - This will create one git branch per monitored org
+- Configure all your monitored orgs with the VS Code SFDX Hardis extension command **Configure Org Monitoring** (the jobs will fail at this stage, which is expected)
+  - Answer the questions, configure the variables, let sfdx-hardis upload the Connected Apps...
+  - This creates one git branch per monitored org
 
-AND ONLY THEN:
+Only then:
 
-- Checkout your "main" branch, create a file `.github/workflows/org-monitoring.yml` and copy there the content of [org-monitoring.yml](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.github/workflows/org-monitoring.yml)
-  - Do a CTRL+F and look for **MANUAL**
-  - Add your monitored git branches here where asked to replace
-  - Add your authentication variable names where asked to replace
-  - Commit & push: there should be a SINGLE GitHub Actions job (using matrix) that will run the monitoring on all orgs
+- Check out your `main` branch, create the file `.github/workflows/org-monitoring.yml` and copy into it the content of [org-monitoring.yml](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.github/workflows/org-monitoring.yml)
+  - Search (Ctrl+F) for **MANUAL**
+  - Add your monitored git branches where indicated
+  - Add your authentication variable names where indicated
+  - Commit and push: a single GitHub Actions job (using a matrix) will run the monitoring on all orgs
 
 Examples:
 
@@ -54,9 +54,9 @@ Examples:
 
 ## Schedule the monitoring job
 
-Schedule is already included within **org-monitoring.yml** in **main** branch.
+The schedule is already included in **org-monitoring.yml** on the **main** branch.
 
-Default is everyday at midnight, but you can update the [CRON expression](https://crontab.cronhub.io/).
+The default is every day at midnight, but you can update the [CRON expression](https://crontab.cronhub.io/).
 
 ```yaml
 on:

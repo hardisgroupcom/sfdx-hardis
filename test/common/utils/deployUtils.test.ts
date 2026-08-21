@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { TestContext } from '@salesforce/core/testSetup';
-import { isDeployCheckCoverageOnlyFailure, shouldReportNoMetadataDeploymentSuccess } from '../../../src/common/utils/deployUtils.js';
+import { buildDeploymentSuccessPrData, isDeployCheckCoverageOnlyFailure, shouldReportNoMetadataDeploymentSuccess } from '../../../src/common/utils/deployUtils.js';
 
 describe('Deploy Utils - No metadata deployed success', () => {
   // A remove-packagexml-items pre-deploy action can empty the only package.xml of the plan, so
@@ -25,6 +25,40 @@ describe('Deploy Utils - No metadata deployed success', () => {
     expect(shouldReportNoMetadataDeploymentSuccess(0, false, { deployStatus: 'valid' })).to.equal(false);
     expect(shouldReportNoMetadataDeploymentSuccess(0, false, { deployStatus: 'invalid' })).to.equal(false);
     expect(shouldReportNoMetadataDeploymentSuccess(0, false, { status: 'invalid' })).to.equal(false);
+  });
+});
+
+describe('Deploy Utils - Deployment success status', () => {
+  // A QuickDeploy runs no Apex test and returns no code coverage, so it skips the result parsing
+  // that records the status of a regular deployment. Without an explicit status the deployment
+  // comment stayed "tovalidate": no result title and no deployment banner.
+  it('records a successful QuickDeploy', () => {
+    const prData = buildDeploymentSuccessPrData({}, { quickDeploy: true });
+    expect(prData.status).to.equal('valid');
+    expect(prData.deployStatus).to.equal('valid');
+    expect(prData.usedQuickDeploy).to.equal(true);
+    expect(prData.title).to.equal('✅ Deployment success');
+    expect(prData.messageKey).to.equal('deployment');
+  });
+
+  it('records a successful validation with its own title', () => {
+    const prData = buildDeploymentSuccessPrData({}, { check: true });
+    expect(prData.title).to.equal('✅ Deployment check success');
+    expect(prData.usedQuickDeploy).to.equal(undefined);
+  });
+
+  it('keeps a title and a message key already set by a previous step', () => {
+    const prData = buildDeploymentSuccessPrData({ messageKey: 'deployment', title: '✅ Deployment success - No metadata to deploy' });
+    expect(prData.title).to.equal('✅ Deployment success - No metadata to deploy');
+  });
+
+  // A job re-run after a manual fix must display its success alone: the failure of the previous
+  // attempt must not keep its title, its status or its failure banner on the comment
+  it('clears a failure recorded before the deployment succeeded', () => {
+    const prData = buildDeploymentSuccessPrData({ status: 'invalid', deployStatus: 'invalid', title: '❌ Deployment failure' });
+    expect(prData.status).to.equal('valid');
+    expect(prData.deployStatus).to.equal('valid');
+    expect(prData.title).to.equal('✅ Deployment success');
   });
 });
 

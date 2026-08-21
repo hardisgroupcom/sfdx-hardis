@@ -6,29 +6,29 @@ description: Manage sfdx integrations with Gitlab, GitHub, Azure, BitBucket, Mic
 
 ![](assets/images/integrations.png)
 
-Every info that sfdx-hardis can provide is available in log files or console terminals.
+sfdx-hardis works out of the box without any integration: everything it reports is available in the job logs and in the terminal.
 
-In order to enhance the user experience, integrations with external tools must be configured.
+Configuring integrations with external tools makes that information easier to reach: deployment results posted directly in Pull Requests, notifications sent to Slack, Microsoft Teams, Google Chat or Email, links to your tickets, and AI assistance to solve deployment errors.
 
 ## Git Providers
 
-Depending of your git provider, configure one of the following integrations.
+Depending on your git provider, configure one of the following integrations.
 
 - [GitHub](salesforce-ci-cd-setup-integration-github.md)
-  - Deployment status in Merge Request notes
-  - Quick Deploy to enhance performances
+  - Deployment status in Pull Request comments
+  - Quick Deploy to improve performance
 
-- [Gitlab](salesforce-ci-cd-setup-integration-gitlab.md)
+- [GitLab](salesforce-ci-cd-setup-integration-gitlab.md)
   - Deployment status in Merge Request notes
-  - Quick Deploy to enhance performances
+  - Quick Deploy to improve performance
 
 - [Azure Pipelines](salesforce-ci-cd-setup-integration-azure.md)
   - Deployment status in Pull Request threads
-  - Quick Deploy to enhance performances
+  - Quick Deploy to improve performance
 
-- [BitBucket](salesforce-ci-cd-setup-integration-bitbucket.md)
+- [Bitbucket](salesforce-ci-cd-setup-integration-bitbucket.md)
   - Deployment status in Pull Request comments
-  - Quick Deploy to enhance performance
+  - Quick Deploy to improve performance
 
 ## Pull Request comments
 
@@ -86,31 +86,31 @@ On Azure DevOps, the description of a completed Pull Request can no longer be ed
 - [Email](salesforce-ci-cd-setup-integration-email.md)
   - Notifications
 
-- [API (ex: Grafana)](salesforce-ci-cd-setup-integration-api.md)
+- [API (e.g. Grafana)](salesforce-ci-cd-setup-integration-api.md)
   - Notifications
 
 ## Ticketing providers
 
 - [Jira](salesforce-ci-cd-setup-integration-jira.md)
-  - Enrich MR/PR comments by adding tickets references and links
-  - Enrich notifications comments by adding tickets references and links
-  - Post a comment and a label on JIRA issues when they are deployed in a major org
+  - Enrich Pull Request comments with ticket references and links
+  - Enrich notifications with ticket references and links
+  - Post a comment and a label on Jira issues when they are deployed in a major org
 
 - [Azure Boards](salesforce-ci-cd-setup-integration-azure-boards.md)
-  - Enrich MR/PR comments by adding work items references and links
-  - Enrich notifications comments by adding work items references and links
-  - Post a comment and a tag on Azure Work Items when they are deployed in a major org
+  - Enrich Pull Request comments with work item references and links
+  - Enrich notifications with work item references and links
+  - Post a comment and a tag on Azure work items when they are deployed in a major org
 
 - [Generic ticketing](salesforce-ci-cd-setup-integration-generic-ticketing.md)
-  - Enrich MR/PR comments by adding tickets references and links
-  - Enrich notifications comments by adding tickets references and links
+  - Enrich Pull Request comments with ticket references and links
+  - Enrich notifications with ticket references and links
 
 ## Large Language Models (AI)
 
-- [Agentforce](salesforce-ai-setup.md/#with-agentforce)
+- [Agentforce](salesforce-ai-setup.md#with-agentforce)
   - Deployment Agent
   - Project Documentation
 
-- [OpenAi, Anthropic, Gemini, Ollama](salesforce-ai-setup.md/#with-langchain)
+- [OpenAI, Anthropic, Gemini, Ollama](salesforce-ai-setup.md#with-langchain)
   - Deployment Agent
   - Project Documentation

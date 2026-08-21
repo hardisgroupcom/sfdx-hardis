@@ -10,19 +10,19 @@ description: Enrich pull requests with Azure Work Items info and post comments &
 
 ## Azure Boards integration
 
-If you use Azure Work Items on your project, sfdx-hardis can use it to enrich its integrations
+If you use Azure Boards work items on your project, sfdx-hardis can use them to enrich its integrations.
 
-Sfdx-hardis will automatically analyze commits and PR/MR descriptions to collect Work Items references !
+sfdx-hardis automatically analyzes commits and Pull Request descriptions to collect work item references.
 
-Make sure to link your Work Items to your Pull Requests before submitting them !
+Make sure to link your work items to your Pull Requests before submitting them.
 
 ### Update Work Items
 
-Add **comments** and **tags** on JIRA tickets when they are deployed in a major org
+Add **comments** and **tags** on work items when they are deployed in a major org.
 
-Default tag is `UPPERCASE(branch_name) + "_DEPLOYED"`.
+The default tag is `UPPERCASE(branch_name) + "_DEPLOYED"`.
 
-To override it, define env variable **DEPLOYED_TAG_TEMPLATE**, that must contain `{BRANCH}`.
+To override it, define the environment variable **DEPLOYED_TAG_TEMPLATE**, which must contain `{BRANCH}`.
 
 Example: `DEPLOYED_TO_{BRANCH}`
 
@@ -30,7 +30,7 @@ Example: `DEPLOYED_TO_{BRANCH}`
 
 ## Technical notes
 
-This integration use the following variables, that must be available from the pipelines:
+This integration uses the following variables, which must be available from the pipelines:
 
 - SYSTEM_COLLECTIONURI
 - SYSTEM_ACCESSTOKEN

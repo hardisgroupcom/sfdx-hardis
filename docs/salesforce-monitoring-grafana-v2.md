@@ -116,8 +116,8 @@ Single-org overview, the hub for one org.
 ![Org Home](assets/images/grafana-v2-org-home.png)
 
 - Weekly **health score** with sub-scores bar gauge
-- **Org limits** gauges (storage, API, bulk, platform events, async apex) - click to open Limits & Capacity
-- **Org activity**: Apex/Flow errors (last run + 30d daily average), updated metadatas, suspect setup actions, legacy API calls, release updates
+- **Org limits** gauges (storage, API, bulk, platform events, async Apex): click to open Limits & Capacity
+- **Org activity**: Apex/Flow errors (last run + 30d daily average), updated metadata, suspect setup actions, legacy API calls, release updates
 - **Users and adoption**: active/inactive user counts
 - **Tests and security**: Apex coverage, failing test classes, Security Health Check, unsecured Connected Apps, MFA bypass users
 

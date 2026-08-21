@@ -26,7 +26,7 @@ This helps reviewers:
 
 ## Disable if needed
 
-To disable Flow Visual Git Diff in PR comments, set:
+To disable Flow Visual Git Diff in Pull Request comments, set:
 
 ```bash
 SFDX_DISABLE_FLOW_DIFF=true

@@ -17,14 +17,14 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 
 ### Install required Jenkins plugins
 
-Make sure the following plugins are installed on your Jenkins instance (**Manage Jenkins → Plugins**):
+Make sure the following plugins are installed on your Jenkins instance (**Manage Jenkins -> Plugins**):
 
-| Plugin                                                                        | Purpose                                                                             |
-|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| [Docker Pipeline](https://plugins.jenkins.io/docker-workflow/)                | Run pipeline stages inside a Docker container                                       |
-| [Credentials Binding](https://plugins.jenkins.io/credentials-binding/) ≥ 1.24 | Inject credentials as environment variables (required for `optional: true` support) |
-| [Pipeline](https://plugins.jenkins.io/workflow-aggregator/)                   | Declarative / scripted pipeline support                                             |
-| [Multibranch Pipeline](https://plugins.jenkins.io/workflow-multibranch/)      | Automatically create one job per monitoring branch                                  |
+| Plugin                                                                               | Purpose                                                                             |
+|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [Docker Pipeline](https://plugins.jenkins.io/docker-workflow/)                       | Run pipeline stages inside a Docker container                                       |
+| [Credentials Binding](https://plugins.jenkins.io/credentials-binding/) 1.24 or later | Inject credentials as environment variables (required for `optional: true` support) |
+| [Pipeline](https://plugins.jenkins.io/workflow-aggregator/)                          | Declarative / scripted pipeline support                                             |
+| [Multibranch Pipeline](https://plugins.jenkins.io/workflow-multibranch/)             | Automatically create one job per monitoring branch                                  |
 
 Docker must also be available on the Jenkins node (the pipeline mounts `/var/run/docker.sock` for MegaLinter).
 
@@ -32,7 +32,7 @@ Docker must also be available on the Jenkins node (the pipeline mounts `/var/run
 
 The pipeline needs to push commits back to the repository. Create a **Username with password** credential:
 
-- Go to **Dashboard → Manage Jenkins → Credentials → (global)**
+- Go to **Dashboard -> Manage Jenkins -> Credentials -> (global)**
 - Click **Add Credentials**
 - Kind: **Username with password**
 - Username: your git username (e.g. your GitHub / GitLab / Azure DevOps / Bitbucket username)
@@ -42,7 +42,7 @@ The pipeline needs to push commits back to the repository. Create a **Username w
 
 ## Run sfdx-hardis configuration command
 
-- Run command **Configuration → Configure Org Monitoring** in VsCode SFDX Hardis, then follow instructions.
+- Run command **Configuration -> Configure Org Monitoring** in the VS Code SFDX Hardis extension, then follow the instructions.
 
 - **When prompted to set up CI/CD variables, copy-paste their names and values into a notepad before continuing.**
 
@@ -50,14 +50,14 @@ The pipeline needs to push commits back to the repository. Create a **Username w
 
 For each variable the **Configure org monitoring** command tells you to define, create a **Secret text** credential in Jenkins:
 
-- Go to **Dashboard → Manage Jenkins → Credentials → (global)**
+- Go to **Dashboard -> Manage Jenkins -> Credentials -> (global)**
 - Click **Add Credentials**
 - Kind: **Secret text**
 - Secret: paste the value given by sfdx-hardis
 - ID: the variable name given by sfdx-hardis (e.g. `SFDX_CLIENT_ID_MONITORING_MYCLIENT`)
 - Click **Create**
 
-Repeat for every `SFDX_CLIENT_ID_*` and `SFDX_CLIENT_KEY_*` pair, and for any optional notification credentials (`SLACK_TOKEN`, `SLACK_CHANNEL_ID`, `NOTIF_EMAIL_ADDRESS`, `NOTIF_API_*`, …).
+Repeat for every `SFDX_CLIENT_ID_*` and `SFDX_CLIENT_KEY_*` pair, and for any optional notification credentials (`SLACK_TOKEN`, `SLACK_CHANNEL_ID`, `NOTIF_EMAIL_ADDRESS`, `NOTIF_API_*`, ...).
 
 ![](assets/images/screenshot-monitoring-jenkins-variable.png)
 
@@ -65,13 +65,13 @@ Repeat for every `SFDX_CLIENT_ID_*` and `SFDX_CLIENT_KEY_*` pair, and for any op
 
 _Skip this step if you already created a Multibranch Pipeline for another monitoring org on the same repository._
 
-- Go to **Dashboard → New Item**
+- Go to **Dashboard -> New Item**
 - Enter a name (e.g. `salesforce-monitoring`)
 - Select **Multibranch Pipeline** and click **OK**
 - Under **Branch Sources**, add your Git server and point it to your monitoring repository
 - Under **Build Configuration**, leave the default **by Jenkinsfile** (the `Jenkinsfile` is at the root of each monitoring branch)
 - Under **Scan Multibranch Pipeline Triggers**, enable **Periodically if not otherwise run** (e.g. every hour) so Jenkins discovers new branches automatically
-- Click **Save** - Jenkins will scan the repository and create one sub-job per monitoring branch it finds
+- Click **Save**: Jenkins scans the repository and creates one sub-job per monitoring branch it finds
 
 ## Update Jenkinsfile
 
@@ -107,6 +107,6 @@ triggers {
 }
 ```
 
-To change the schedule, edit the cron expression and commit the updated `Jenkinsfile`. The `H` symbol spreads load across Jenkins agents - replace it with a fixed minute if you need a precise time.
+To change the schedule, edit the cron expression and commit the updated `Jenkinsfile`. The `H` symbol spreads load across Jenkins agents; replace it with a fixed minute if you need a precise time.
 
 > **Tip:** Schedule monitoring jobs for different orgs at different hours (e.g. production at 1 AM, pre-prod at 2 AM) so notifications remain readable.

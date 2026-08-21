@@ -6,13 +6,13 @@ description: Customize Mermaid colors and node styles used in sfdx-hardis genera
 
 ## Override Mermaid theme
 
-When sfdx-hardis generates Flow documentation or Flow history diffs, it now reads the `mermaidTheme` property from your project configuration.
+When sfdx-hardis generates Flow documentation or Flow history diffs, it reads the `mermaidTheme` property from your project configuration.
 
 This configuration only overrides the defaults shipped with sfdx-hardis. You can define just one color or one node type, and every property you do not provide keeps the built-in Mermaid rendering style.
 
-The same configuration is also used in CI/CD pipelines when sfdx-hardis generates visual Flow diffs for monitoring, history pages, or pull request analysis. This means your local generated docs and your pipeline-generated Flow diffs stay visually consistent.
+The same configuration is also used in CI/CD pipelines when sfdx-hardis generates visual Flow diffs for monitoring, history pages, or Pull Request analysis. This means your local generated docs and your pipeline-generated Flow diffs stay visually consistent.
 
-Define it in `config/.sfdx-hardis.yml`, then regenerate your documentation:
+Define it in `config/.sfdx-hardis.yml`, then regenerate your documentation.
 
 ## Supported keys
 
@@ -73,6 +73,7 @@ Nested keys and flat aliases both merge with the built-in defaults. Any property
 ## Examples
 
 ### Flat Config override
+
 ```yaml
 mermaidTheme:
   decisionColor: "#8ECAE6"
@@ -90,6 +91,7 @@ mermaidTheme:
 ```
 
 ### "Salesforce" Nested Config override
+
 ```yaml
 mermaidTheme:
   actionCalls:
@@ -245,19 +247,19 @@ mermaidTheme:
 After updating `config/.sfdx-hardis.yml`, regenerate the relevant documentation:
 
 ```sh
-sf hardis doc project2markdown
+sf hardis:doc:project2markdown
 ```
 
 For a single Flow:
 
 ```sh
-sf hardis doc flow2markdown --inputfile force-app/main/default/flows/MyFlow.flow-meta.xml
+sf hardis:doc:flow2markdown --inputfile force-app/main/default/flows/MyFlow.flow-meta.xml
 ```
 
 For Flow history diffs:
 
 ```sh
-sf hardis project generate flow-git-diff --flow force-app/main/default/flows/MyFlow.flow-meta.xml --commit-before allStates
+sf hardis:project:generate:flow-git-diff --flow force-app/main/default/flows/MyFlow.flow-meta.xml --commit-before allStates
 ```
 
 If you run these commands in CI, the same `mermaidTheme` overrides are applied automatically there as well.

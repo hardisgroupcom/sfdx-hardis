@@ -7,47 +7,47 @@ description: Enrich pull requests with JIRA info and post comments & tags on tic
 - [Jira integration](#jira-integration)
   - [For git providers](#for-git-providers)
   - [For notifications providers](#for-notifications-providers)
-  - [Update JIRA issues](#update-jira-issues)
+  - [Update Jira issues](#update-jira-issues)
 - [Global Configuration](#global-configuration)
-  - [Identify JIRA tickets](#identify-jira-tickets)
+  - [Identify Jira tickets](#identify-jira-tickets)
   - [Jira Cloud](#jira-cloud)
   - [Jira On-Premise](#jira-on-premise)
-- [Gitlab configuration](#gitlab-configuration)
+- [GitLab configuration](#gitlab-configuration)
 - [Technical notes](#technical-notes)
 
 ## Jira integration
 
-If you use JIRA on your project, sfdx-hardis can use it to enrich its integrations
+If you use Jira on your project, sfdx-hardis can use it to enrich its integrations.
 
-Sfdx-hardis will automatically analyze commits and PR/MR descriptions to collect JIRA tickets URLS !
+sfdx-hardis automatically analyzes commits and Pull Request descriptions to collect Jira ticket URLs.
 
-You can **use the full URL of JIRA tickets** in your commits and PR/MR descriptions.
+You can **use the full URL of Jira tickets** in your commits and Pull Request descriptions.
 
-> Use `https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4` , not `CLOUDITY-4` !
+> Use `https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4`, not `CLOUDITY-4`.
 
-If you don't use full URL, a default expression will be used, that you can override for a better accuracy ([see Identify JIRA Tickets](#identify-jira-tickets) )
+If you do not use full URLs, a default regular expression is used, which you can override for better accuracy (see [Identify Jira tickets](#identify-jira-tickets)).
 
-> In that case, `CLOUDITY-4` will be detected, but make sure that JIRA_HOST is defined
+> In that case, `CLOUDITY-4` is detected, but make sure that JIRA_HOST is defined.
 
 ### For git providers
 
-Github, Gitlab, Azure, Bitbucket: Post references to JIRA tickets in PR/MR comments
+GitHub, GitLab, Azure, Bitbucket: post references to Jira tickets in Pull Request comments
 
 ![](assets/images/screenshot-jira-gitlab.jpg)
 
 ### For notifications providers
 
-Slack, MsTeams: Add deployed JIRA tickets in deployment notifications
+Slack, Microsoft Teams: add deployed Jira tickets to deployment notifications
 
 ![](assets/images/screenshot-jira-slack.jpg)
 
-### Update JIRA issues
+### Update Jira issues
 
-Add comments and tags on JIRA tickets when they are deployed in a major org
+Add comments and tags on Jira tickets when they are deployed in a major org.
 
-Default tag is `UPPERCASE(branch_name) + "_DEPLOYED"`.
+The default tag is `UPPERCASE(branch_name) + "_DEPLOYED"`.
 
-To override it, define env variable **DEPLOYED_TAG_TEMPLATE**, that must contain `{BRANCH}`.
+To override it, define the environment variable **DEPLOYED_TAG_TEMPLATE**, which must contain `{BRANCH}`.
 
 Example: `DEPLOYED_TO_{BRANCH}`
 
@@ -55,51 +55,53 @@ Example: `DEPLOYED_TO_{BRANCH}`
 
 ## Global configuration
 
-> Prioritize defining these properties in **.sfdx-hardis.yml** file when possible, so VS Code extension can use them for UI features.
+> When possible, define these properties in the **.sfdx-hardis.yml** file, so that the VS Code SFDX Hardis extension can use them for UI features.
 
-### Identify JIRA Tickets
+### Identify Jira tickets
 
 - .sfdx-hardis.yml property: **jiraTicketRegex** or ENV variable **JIRA_TICKET_REGEX**
 
-Define regular expression with a capturing group allowing to identify the JIRA tickets of your project in commit & Pull Requests titles & bodies, for example `(CLOUDITY-[0-9]+)`
+Define a regular expression with a capturing group that identifies the Jira tickets of your project in commit and Pull Request titles and bodies, for example `(CLOUDITY-[0-9]+)`.
 
-If not defined, default value is `(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\d{1,6})(?=[^a-zA-Z0-9_-]|$)`
+If not defined, the default value is `(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\d{1,6})(?=[^a-zA-Z0-9_-]|$)`
 
 ### Jira Cloud
 
-Define variables
+Define the following variables:
 
 - .sfdx-hardis.yml property **jiraHost** or ENV variable **JIRA_HOST** (example: `https://sfdx-hardis.atlassian.net/`)
 
-For Basic Auth: 
+For Basic Auth:
+
 - **JIRA_EMAIL** (example: `nicolas.vuillamy@cloudity.com`)
-- **JIRA_TOKEN**, to create following [Atlassian documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
+- **JIRA_TOKEN**, to create by following the [Atlassian documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
 
-If instead you wish to use Service Accounts with OAuth2 define the following:
-- **JIRA_CLIENT_ID** 
-- **JIRA_CLIENT_SECRET**, to create following [Atlassian documentation](https://support.atlassian.com/user-management/docs/create-oauth-2-0-credential-for-service-accounts/)
+If you prefer to use Service Accounts with OAuth2, define the following:
 
-Remember to give the right scopes
-- **read:jira-work** Used to read the Jira issue data for use in pull request comment.
-- **write:jira-work** Used to post comment and update deployment label on issue.
+- **JIRA_CLIENT_ID**
+- **JIRA_CLIENT_SECRET**, to create by following the [Atlassian documentation](https://support.atlassian.com/user-management/docs/create-oauth-2-0-credential-for-service-accounts/)
 
+Remember to grant the right scopes:
+
+- **read:jira-work**: used to read Jira issue data for Pull Request comments.
+- **write:jira-work**: used to post comments and update the deployment label on issues.
 
 ### Jira On-Premise
 
-_Note: Does not seems to work with every on-premise JIRA servers_
+_Note: this does not seem to work with every on-premise Jira server._
 
-Define CI/CD variables
+Define the following CI/CD variables:
 
-- .sfdx-hardis.yml property **jiraHost** or ENV variable **JIRA_HOST** (examples: `https://jira.cloudity.com/` , or with path like `https://pid.cloudity.com/jira/`)
-- **JIRA_PAT**, to create following [Atlassian Documentation](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html) (section **Creating PATs in the application**)
+- .sfdx-hardis.yml property **jiraHost** or ENV variable **JIRA_HOST** (examples: `https://jira.cloudity.com/`, or with a path like `https://pid.cloudity.com/jira/`)
+- **JIRA_PAT**, to create by following the [Atlassian documentation](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html) (section **Creating PATs in the application**)
 
-## Gitlab configuration
+## GitLab configuration
 
-If you are using Gitlab, you need to update the Merge Request Settings
+If you are using GitLab, you need to update the Merge Request settings.
 
 Go to Project -> Settings -> Merge Requests
 
-Update **Merge Commit Message Template** with the following value
+Update **Merge Commit Message Template** with the following value:
 
 ```sh
 %{title} Merge branch '%{source_branch}' into '%{target_branch}'
@@ -113,7 +115,7 @@ See merge request %{reference}
 %{all_commits}
 ```
 
-Update **Squash Commit Message Template** with the following value
+Update **Squash Commit Message Template** with the following value:
 
 ```sh
 %{title} Merge branch '%{source_branch}' into '%{target_branch}'
@@ -129,7 +131,7 @@ See merge request %{reference}
 
 ## Technical notes
 
-This integration use the following variables, that must be available from the pipelines:
+This integration uses the following variables, which must be available from the pipelines:
 
 - JIRA_HOST
 - JIRA_EMAIL

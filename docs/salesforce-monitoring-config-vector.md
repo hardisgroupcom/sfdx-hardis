@@ -1,3 +1,9 @@
+---
+title: Vector configuration for sfdx-hardis Monitoring
+description: Collect sfdx-hardis notification logs with Vector and send them to Loki or Datadog for Grafana dashboards
+---
+<!-- markdownlint-disable MD013 -->
+
 # Vector Configuration for sfdx-hardis Monitoring
 
 This guide explains how to configure Vector to collect sfdx-hardis notification logs and send them to Loki or Datadog for monitoring with Grafana dashboards.
@@ -13,7 +19,7 @@ This guide is part of the [sfdx-hardis monitoring suite](salesforce-monitoring-h
 **Benefits:**
 
 - **Local monitoring** without external API infrastructure
-- **Loki ingestion** via Vector for Grafana dashboards  
+- **Loki ingestion** via Vector for Grafana dashboards
 - **Audit trails** of all notifications in NDJSON format
 - **Offline development** and debugging
 - **Multiple destinations** (Loki, Datadog, or both)
@@ -94,7 +100,7 @@ sf hardis:org:monitor:limits --target-org myorg
 # Logs will be written to ./logs/sfdx-hardis-logs.json
 ```
 
-You can use both file logging AND API endpoint simultaneously:
+You can use both file logging and the API endpoint at the same time:
 
 ```bash
 # Send to API AND write to file
@@ -121,7 +127,7 @@ sf hardis:org:monitor:all
 
 This setup is configured to work with the dashboards provided by sfdx-hardis.
 
-If you're using a monitoring stack (Vector + Loki + Grafana), configure Vector to watch the log file: 
+If you're using a monitoring stack (Vector + Loki + Grafana), configure Vector to watch the log file:
 
 **1. Set the log file path to your logs directory:**
 
@@ -131,12 +137,13 @@ export NOTIF_API_LOGS_JSON_FILE=/path/to/monitoring/logs/sfdx-hardis-logs.json
 
 **2. Vector Configuration** [config/vector/vector.toml](#sample-vector-configuration)
 
-The default Vector configuration is already compatible! It:
+The default Vector configuration is already compatible. It:
+
 - Reads NDJSON files from the logs directory
 - Parses JSON and extracts all fields
 - Sends to Loki with proper labels
 
-No changes needed if you're using the standard Vector config!
+No changes are needed if you use the standard Vector configuration.
 
 ## Query in Grafana
 
@@ -181,21 +188,20 @@ fi
 
 ## Related Environment Variables
 
-- **NOTIF_API_LOGS_JSON_FILE** : Path to write notification logs
-- **NOTIF_API_METRICS_URL** : Metrics endpoint (Prometheus Pushgateway or Grafana Cloud)
-- **DD_API_KEY** : Datadog API key (if using Datadog sink)
-- **DD_URL** : Datadog endpoint URL (if using Datadog sink)
-- **LOG_FILES_PATH** :  Vector: Path to watch for log files (only for vector)
+- **NOTIF_API_LOGS_JSON_FILE**: Path to write notification logs
+- **NOTIF_API_METRICS_URL**: Metrics endpoint (Prometheus Pushgateway or Grafana Cloud)
+- **DD_API_KEY**: Datadog API key (if using the Datadog sink)
+- **DD_URL**: Datadog endpoint URL (if using the Datadog sink)
+- **LOG_FILES_PATH**: Path that Vector watches for log files (Vector only)
 
-
-**Note:** If `NOTIF_API_METRICS_URL` contains `/metrics/job/` or `pushgateway`, metrics are automatically formatted for Prometheus. Otherwise, InfluxDB format is used. 
+**Note:** If `NOTIF_API_METRICS_URL` contains `/metrics/job/` or `pushgateway`, metrics are automatically formatted for Prometheus. Otherwise, InfluxDB format is used.
 
 ## Next Steps
 
 After setting up Vector, you can:
 
-1. **Set up Grafana dashboards** - See [Monitoring Configuration](salesforce-monitoring-config-home.md)
-2. **Configure metrics collection** - Use `NOTIF_API_METRICS_URL` for Prometheus/Pushgateway
+1. **Set up Grafana dashboards**: See [Org Monitoring by sfdx-hardis (Grafana Dashboards v2)](salesforce-monitoring-grafana-v2.md)
+2. **Configure metrics collection**: Use `NOTIF_API_METRICS_URL` for Prometheus/Pushgateway
 
 ## Additional Resources
 
@@ -208,11 +214,9 @@ After setting up Vector, you can:
 
 ### sfdx-hardis Monitoring Guides
 
-- [Monitoring Home](salesforce-monitoring-home.md) - Overview of all monitoring features
-- [Monitoring Configuration](salesforce-monitoring-config-home.md) - Configuration guides
-- [API Integration](salesforce-ci-cd-setup-integration-api.md) - Direct API integration (without Vector)
-
-
+- [Monitoring Home](salesforce-monitoring-home.md): Overview of all monitoring features
+- [Monitoring Configuration](salesforce-monitoring-config-home.md): Configuration guides
+- [API Integration](salesforce-ci-cd-setup-integration-api.md): Direct API integration (without Vector)
 
 ## Sample Vector Configuration
 
@@ -359,7 +363,7 @@ data_dir = "/var/lib/vector"
 
 **2. For Datadog only:**
 
-- Remove or comment out the `[sinks.loki]` section  
+- Remove or comment out the `[sinks.loki]` section
 - Keep the `[sinks.datadog]` section and set `DD_API_KEY` and `DD_URL` environment variables
 
 **3. For both Loki and Datadog:**

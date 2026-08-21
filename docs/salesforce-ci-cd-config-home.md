@@ -1,77 +1,57 @@
 ---
 title: Configure a Salesforce CI/CD Project using sfdx-hardis
-description: Learn how to configure your Salesforce CI/CD project so it works easily with VsCode SFDX Hardis
+description: Where the configuration of a sfdx-hardis CI/CD project lives, how to edit it from VS Code, and the main options to review after the setup
 ---
 <!-- markdownlint-disable MD013 -->
 
-- New User Story Options(#new-user-story-options)
-- [package.xml](#packagexml)
-  * [Overwrite Management](#overwrite-management)
-  * [Delta deployments](#delta-deployments)
-- [destructiveChanges.xml](#destructivechangesxml)
-- [Automated sources cleaning](#automated-sources-cleaning)
-- [Source retrieve issues](#source-retrieve-issues)
-- [All configuration properties](#all-configuration-properties)
+## Project configuration
 
-## New User Story options
+The behavior of the pipeline is driven by the `.sfdx-hardis.yml` files of the repository:
 
-Look at all the [Overwrite properties of new User Story command](https://sfdx-hardis.cloudity.com/hardis/work/new/) to define the appropriate values of your project.
+| File                                        | Scope                                                            |
+|---------------------------------------------|------------------------------------------------------------------|
+| `config/.sfdx-hardis.yml`                   | The whole project. Committed to Git.                             |
+| `config/branches/.sfdx-hardis.<branch>.yml` | One major branch and its org (authentication, branch overrides). |
+| `config/user/.sfdx-hardis.<username>.yml`   | One contributor on their own computer. Ignored by Git.           |
 
-## package.xml
+The easiest way to edit them is the **Pipeline Settings** panel of the VS Code SFDX Hardis extension, which presents every option as a form with its documentation.
 
-A Salesforce CI/CD repository contains a file **manifest/package.xml**.
+![Global Pipeline Settings panel](assets/images/pipeline-config.png)
 
-- It contains **all metadatas** that will be **deployed** by the **CI server**.
+The complete list of properties, with their type, default value and description, is in the [configuration reference](schema/sfdx-hardis-json-schema-parameters.html). Many options can also be set with [environment variables](all-env-variables.md) on the CI server.
 
-- It is **automatically updated** when [preparing merge requests](salesforce-ci-cd-publish-task.md#prepare-merge-request) by command [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)
+---
 
-### Overwrite Management
+### What to review after the setup
 
-- It is highly recommended to [**configure overwrite management**](salesforce-ci-cd-config-overwrite.md), to **avoid to overwrite metadatas that are maintained directly in production on purpose**
-  - Dashboards
-  - Reports
-  - Remote site settings
-  - Named credentials
-  - ...
+#### User Story options
 
-  _See [Overwrite management configuration documentation](salesforce-ci-cd-config-overwrite.md)_
+The **New User Story** command asks contributors for a target branch, a User Story name and an org. Configure the proposed values (available target branches and their labels, branch prefixes, naming rules, shared dev sandboxes...) with the [User Story options of `hardis:work:new`](hardis/work/new.md).
 
-### Delta deployments
+#### package.xml and destructiveChanges.xml
 
-- You can also use [**delta deployments**](salesforce-ci-cd-config-delta-deployment.md) if your project is big and you have performances issues.
+The repository contains `manifest/package.xml`, the list of all metadata deployed by the CI server, and `manifest/destructiveChanges.xml`, the list of metadata it deletes. Both files are updated automatically by the [Save / Publish command](salesforce-ci-cd-publish-task.md#prepare-merge-request) (`hardis:work:save`), so contributors never edit them by hand.
 
-### Source retrieve issues
+#### Overwrite management
 
-Handle cases when force:source:pull does not retrieve every updated source.
+Some metadata is maintained directly in production on purpose: dashboards, reports, remote site settings, named credentials... [Overwrite management](salesforce-ci-cd-config-overwrite.md) lists the metadata the pipeline must never overwrite when it already exists in the target org. Configure it early: it is the best protection against a deployment erasing someone's work.
 
-_[See how to force the retrieve of named sources](salesforce-ci-cd-retrieve.md)_
+#### Delta deployments
 
-___
+By default the CI server deploys the whole `package.xml`. On large projects, [delta deployments](salesforce-ci-cd-config-delta-deployment.md) deploy only the metadata changed by the Pull Request, which makes validations and deployments much faster.
 
-## destructiveChanges.xml
+#### Automated cleaning
 
-A Salesforce CI/CD repository contains a file **manifest/destructiveChanges.xml**.
+Before each Pull Request, `hardis:work:save` can [clean the sources](salesforce-ci-cd-config-cleaning.md): remove the items listed in `destructiveChanges.xml`, remove from Profiles the attributes that belong in Permission Sets, remove Flow positions and more.
 
-- It contains **all metadatas** that will be **deleted** by the **CI server**.
+#### Deployment actions
 
-- It is **automatically updated** when [preparing merge requests](salesforce-ci-cd-publish-task.md#prepare-merge-request) by command [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)
+Contributors can attach [deployment actions](salesforce-ci-cd-work-on-task-deployment-actions.md) to their Pull Requests. Actions that must run at every deployment of the project are declared in `config/.sfdx-hardis.yml` (`commandsPreDeploy` / `commandsPostDeploy`), from the **Pre-Post Deploy Commands** tab of the Pipeline Settings panel.
 
-___
+#### Source retrieve issues
 
-## Automated sources cleaning
+When `hardis:scratch:pull` misses some metadata types, see [Source retrieve issues](salesforce-ci-cd-retrieve.md).
 
-You can configure automated cleaning of sources before creating merge requests, using command [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)
+#### Repository clean up
 
-Those cleanings can be:
-
-- Deletion of sources existing in `destructiveChanges.xml`
-- Remove from Profiles elements that are existing in Permission Sets, like Objects access configuration.
-- etc ...
-
-  _See [Overwrite cleaning configuration documentation](salesforce-ci-cd-config-cleaning.md)_
-
-___
-
-## All configuration properties
-
-**.sfdx-hardis.yml** allows to make your project highly configuration. Have a look at its [list of configuration properties](schema/sfdx-hardis-json-schema-parameters.html) !
+To remove files from the repository without deleting them from the orgs, see [Repository clean up](salesforce-ci-cd-manual-repo-clean.md).

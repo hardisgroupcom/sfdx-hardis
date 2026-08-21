@@ -1,29 +1,31 @@
 ---
-title: First merge request
-description: Learn how to create your first merge request to complete your Salesforce CI/CD Setup
+title: First Pull Request
+description: Learn how to create your first Pull Request (Merge Request on GitLab) to complete your Salesforce CI/CD setup
 ---
 <!-- markdownlint-disable MD013 -->
 
-- [Initialization merge request](#initialization-merge-request)
+## First Pull Request
+
+- [Initialization Pull Request](#initialization-pull-request)
 - [Common issues](#common-issues)
   - [Translations](#translations)
 
-## Initialization merge request
+### Initialization Pull Request
 
-[Create your first merge request](salesforce-ci-cd-publish-task.md) with branch **cicd** as source, and your lower major branch as target (usually **integration**)
+[Create your first Pull Request](salesforce-ci-cd-publish-task.md) (Merge Request on GitLab) with the branch **cicd** as source, and your lowest major branch as target (usually **integration**).
 
-Make sure that before merging your first merge request, file **manifest/destructiveChange.xml** is empty
+Before merging this first Pull Request, make sure that the file **manifest/destructiveChanges.xml** is empty.
 
-You will see errors, but it is normal: Follow [Maintainer Guide](salesforce-ci-cd-config-home.md) to complete your configuration !
+You will see errors, and it is normal: follow the [Project configuration guide](salesforce-ci-cd-config-home.md) to complete your configuration.
 
-Once all controlling jobs are in success, your CI/CD setup is completed !
+Once all control jobs succeed, your CI/CD setup is complete.
 
-Now go through the [Setup Checklist](salesforce-ci-cd-setup-checklist.md) to make sure nothing is missing, especially the integrations.
+Now go through the [Setup checklist](salesforce-ci-cd-setup-checklist.md) to make sure nothing is missing, especially the integrations.
 
-## Common issues
+### Common issues
 
-### Translations
+#### Translations
 
-If you removed Dashboards and reports from the repo, their translations can remain in files like **translations/en_US.xml**
+If you removed Dashboards and Reports from the repository, their translations can remain in files like **translations/en_US.translation-meta.xml**.
 
-Remove all related XML blocks as they contain unused translations.
+Remove all the related XML blocks, as they contain unused translations.

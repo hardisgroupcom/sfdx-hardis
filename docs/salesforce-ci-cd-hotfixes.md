@@ -1,68 +1,80 @@
 ---
-title: Handle deployment of hotfix in production with Salesforce CI/CD
-description: Learn how to handle hotfixes in a sfdx-hardis CI/CD environment, handling RUN and BUILD layers
+title: Hotfixes and retrofit with Salesforce CI/CD
+description: Learn how to deploy a hotfix to production with sfdx-hardis using the BUILD and RUN streams, then retrofit it into the BUILD branches
 ---
 <!-- markdownlint-disable MD013 -->
 
-## BUILD & RUN
+## Hotfixes and retrofit
 
-Except for projects in maintenance that contain RUN only, a project is separated into 2 sections:
+- [BUILD and RUN](#build-and-run)
+  - [The BUILD](#the-build)
+  - [The RUN](#the-run)
+- [Hotfix process](#hotfix-process)
+  - [1. Implement the hotfix](#1-implement-the-hotfix)
+  - [2. Deploy in the RUN stream](#2-deploy-in-the-run-stream)
+  - [3. Retrofit in the BUILD stream](#3-retrofit-in-the-build-stream)
 
-- the RUN stream: Fast cycle, to often deploy minor changes and fixes
+___
 
-- the BUILD stream: Project cycle, to build more advanced features and enhancements, that require User Acceptance Testing
+## BUILD and RUN
 
-![](assets/images/ci-cd-schema-build-run.jpg)
+Except for projects in maintenance that only have a RUN, a project is split in two streams:
 
-### THE BUILD
+- the **RUN** stream: a fast cycle, to often deploy minor changes and fixes
+- the **BUILD** stream: the project cycle, to build larger features and enhancements that require User Acceptance Testing
 
-This is the layer where you prepare the **next major or minor version**.
+![BUILD and RUN streams with their branches and orgs](assets/images/ci-cd-schema-build-run.jpg)
 
-Such new features will go through **integration level**, then **uat level** where they will be **qualified and validated by business users**.
+### The BUILD
 
-When the User Acceptance Test will be validated in **uat org**, then **uat can be merged into preprod**, and just after minimal tests (mostly technical), **preprod will soon be merged into production**.
+This is the stream where you prepare the **next major or minor version**.
 
-Is it important that **major features or enhancements are not tested directly at preprod level**, because while the next version is being validated in preprod, it is **not possible for the RUN to deploy anything into production**.
+New features go through the **integration level**, then the **uat level**, where **business users qualify and validate them**.
 
-### THE RUN
+Once the User Acceptance Test is validated in the **uat org**, **uat is merged into preprod**. After minimal (mostly technical) tests, **preprod is merged into production**.
 
-Daily maintenance of the production Salesforce org must be very reactive, the RUN level will allow you to often **deploy patch versions**.
+Major features or enhancements must **not be tested directly at preprod level**: while the next version is being validated in preprod, the RUN **cannot deploy anything into production**.
 
-As we usually can not wait for the next minor or major version to be deployed in production, projects need a way to quickly deploy hot fixes into production. That layer is called the RUN, and is exclusively about **preprod** and **main** branches.
+### The RUN
 
-To summarize, you will **publish at RUN level, but also at BUILD level**, so when the BUILD will be merged in the RUN, **there will be no overwrite triggering regressions**.
+The daily maintenance of the production org must be very reactive: the RUN stream lets you often **deploy patch versions**.
 
-The **hotfix process** is the following:
+As you usually cannot wait for the next minor or major version to reach production, you need a way to quickly deploy hotfixes. That stream is the RUN, and it only involves the **preprod** and **main** branches.
 
-_Note: in this example, we merge directly in **preprod**, but in more advanced organizations we can define a branch/org **uat_run** as intermediate layer before merging to preprod_
+To summarize, you **publish at RUN level, then also at BUILD level** (the retrofit), so that when the BUILD is later merged into the RUN, **no overwrite triggers a regression**.
 
-- IMPLEMENT **HOTFIX** _**(1)**_
+___
 
-  - Create new User Story with **preprod as target when prompted**, named `my-very-hot-hotfix` for example
+## Hotfix process
 
-  - Work on a dev sandbox that has been cloned from production
+The hotfix process has three phases:
 
-- DEPLOYMENT IN **RUN LAYER** _**(2)**_
+1. **Implement the hotfix** on a branch that targets `preprod`
+2. **Promote `preprod` to `main`**: the hotfix reaches production
+3. **Retrofit `main` (or `preprod`) into `integration`**: the BUILD gets the hotfix too
 
-  - Create Pull Request from `my-very-hot-hotfix` to `preprod` & merge it after controls (do not select “delete after merge” )
+_Note: in this example, the hotfix is merged directly into **preprod**. More advanced organizations can define a **uat_run** branch and org as an intermediate level before preprod._
 
-  - Create Pull request from `preprod` to `main`
+### 1. Implement the hotfix
 
-  - Merge `preprod` to `main` after control checks are green.
+- [Start a new User Story](salesforce-ci-cd-create-new-task.md) and select **preprod as target branch when prompted**. Name it `my-very-hot-hotfix`, for example
+- Work on a dev sandbox that has been cloned from production
 
-- RETROFIT IN **BUILD LAYER** _**(3)**_
+### 2. Deploy in the RUN stream
 
-It is recommended to activate sf-gt-merge-driver to auto-solve many conflicts during the retrofit step.
+- Create a Pull Request (Merge Request on GitLab) from `my-very-hot-hotfix` to `preprod`, and merge it once the control jobs pass (do not select **Delete source branch after merge**)
+- Create a Pull Request from `preprod` to `main`
+- Merge it once the control jobs are green: the hotfix is deployed in production
 
-![activate-merge-driver](assets/images/activate-merge-driver-in-sfdx-hardis.gif)
+### 3. Retrofit in the BUILD stream
 
-  - Create a sub-branch to `integration`, named `retrofit-from-run` for example
+Activate the [sf-git-merge-driver](https://github.com/jayree/sf-git-merge-driver) plugin before the retrofit: it automatically solves many XML conflicts.
 
-  - Using Git IDE, manually merge `main` (or `preprod`) branch into `retrofit-from-run`
+![Activate the merge driver from the VS Code SFDX Hardis extension](assets/images/activate-merge-driver-in-sfdx-hardis.gif)
 
-  - If there are git conflicts, solve them before committing
-
-  - Create Pull Request from `retrofit-from-run` to `integration`
-
-  - Merge the Pull Request into `integration`: your retrofit from the RUN to the BUILD is over :)
-    - You might refresh dev sandboxes if your retrofits have lots of impacts
+- Create a sub-branch of `integration` named `retrofit/from-main`, for example. Keep the `retrofit/` prefix: sfdx-hardis recognizes it and carries the [deployment actions](salesforce-ci-cd-work-on-task-deployment-actions.md) of every Pull Request included in the retrofit
+- Using your git IDE, merge the `main` (or `preprod`) branch into `retrofit/from-main`
+- If there are git conflicts, solve them before committing
+- Create a Pull Request from `retrofit/from-main` to `integration`
+- Merge the Pull Request into `integration`: the retrofit from the RUN to the BUILD is done
+  - If the retrofit has many impacts, consider refreshing the dev sandboxes

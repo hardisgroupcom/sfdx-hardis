@@ -9,39 +9,39 @@ description: Learn how to wire AI into sfdx-hardis deployments
 
 ## Security considerations
 
-sfdx-hardis uses **prompt via API** to collect analysis: only **Metadata XML** or **JSON deployment errors** are sent in the prompts.
+sfdx-hardis sends **prompts via API** to collect its analyses: only **metadata XML** or **JSON deployment errors** are sent in the prompts.
 
-If you follow Flows best practices and **do not hardcode credentials / tokens in variables**, there is no serious risk to send metadata XML to an external LLM (**but be aware that you do !**)
+If you follow Flow best practices and **do not hardcode credentials or tokens in variables**, sending metadata XML to an external LLM carries no serious risk (**but be aware that you are doing it**).
 
-You can see the prompts content if you set env variable `DEBUG_PROMPTS=true`.
+You can see the content of the prompts by setting the environment variable `DEBUG_PROMPTS=true`.
 
-See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and how to override them.
+See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md), and how to override them.
 
-| If you use AI for generated project documentation, it is highly recommended to run it locally the first time to generate and commit AI cache, as it can make hundreds of API calls, so take some time.
+> If you use AI for the generated project documentation, it is highly recommended to run it locally the first time, to generate and commit the AI cache: the generation can make hundreds of API calls and take some time.
 
 ## Main configuration
 
-> You're lost ? Contact [Cloudity](https://cloudity.com/contact-us/), we can do it for you :)
+> Feeling lost? Contact [Cloudity](https://cloudity.com/contact-us/), we can set it up for you.
 
 [![Cloudity](assets/images/cloudity-banner.png)](https://cloudity.com/contact-us/){target=blank}
 
 ### Common variables
 
-| Variable                     | Description                                                                                                                                                                                             | Default |
-|------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| AI_MAXIMUM_CALL_NUMBER       | Maximum allowed number of calls to AI Providers during a single sfdx-hardis command                                                                                                                     | `10000` |
-| PROMPTS_LANGUAGE             | Language to use for prompts results (`en`,`fr`, or any [ISO Language code](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes))                                                               | `en`    |
-| DEBUG_PROMPTS                | Set to true if you want prompts requests and responses in logs                                                                                                                                          | `false` |
-| MAX_DEPLOYMENT_TIPS_AI_CALLS | Maximum number of errors that will be analyzed by AI for a single Pull Request                                                                                                                          | `20`    |
-| DISABLE_AI                   | In case you want to disable API calls to API without removing your configuration, set to true                                                                                                           | `false` |
-| IGNORE_AI_CACHE              | Some processes like Flow description use AI cache files to save calls to prompts API, disable by setting to true                                                                                        | `false` |
-| AI_MAX_TIMEOUT_MINUTES       | If you are running sfdx-hardis from a CI/CD job, AI will stopped to be called after 30 minutes, to not mess with the timeouts of other jobs. You can increase this value to however minutes you want :) | `30`    |
+| Variable                     | Description                                                                                                                                                                                 | Default |
+|------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
+| AI_MAXIMUM_CALL_NUMBER       | Maximum allowed number of calls to AI Providers during a single sfdx-hardis command                                                                                                         | `10000` |
+| PROMPTS_LANGUAGE             | Language of the prompt results (`en`,`fr`, or any [ISO Language code](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes))                                                        | `en`    |
+| DEBUG_PROMPTS                | Set to true to log prompt requests and responses                                                                                                                                            | `false` |
+| MAX_DEPLOYMENT_TIPS_AI_CALLS | Maximum number of errors that will be analyzed by AI for a single Pull Request                                                                                                              | `20`    |
+| DISABLE_AI                   | Set to true to disable AI calls without removing your configuration                                                                                                                         | `false` |
+| IGNORE_AI_CACHE              | Some processes like Flow description use AI cache files to save calls to the AI API; set to true to disable the cache                                                                       | `false` |
+| AI_MAX_TIMEOUT_MINUTES       | When sfdx-hardis runs in a CI/CD job, AI stops being called after 30 minutes, to avoid interfering with the timeouts of other jobs. You can raise this value to as many minutes as you want | `30`    |
 
 ### With Agentforce
 
 - Agentforce must be activated on the default org used when you call the sfdx-hardis command
 
-> You can do that with Salesforce Freemium feature [Salesforce Foundations](https://www.salesforce.com/crm/foundations/), that offers 200000 Einstein Prompts
+> You can do that with the free [Salesforce Foundations](https://www.salesforce.com/crm/foundations/) offer, which includes 200,000 Einstein prompts
 
 ![Salesforce Foundations free tier](assets/images/foundations.png)
 
@@ -50,16 +50,16 @@ See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and ho
 
 > **Quick setup:** Run [`sf hardis:org:configure:generic-prompt`](hardis/org/configure/generic-prompt.md) to deploy the `SfdxHardisGenericPrompt` template and optionally assign the `EinsteinGPTPromptTemplateUser` Permission Set to your user in a single interactive step. Then **manually** add `useAgentforce: true` to your `.sfdx-hardis.yml` config file or set the `USE_AGENTFORCE` env variable to enable Agentforce integration.
 
-| Variable                           | Description                                                                                                                                                                                                                                                              | Default                                                                                                        |
-|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
-| USE_AGENTFORCE                     | Set to true to activate the use of Agentforce prompts                                                                                                                                                                                                                    | false                                                                                                          |
-| GENERIC_AGENTFORCE_PROMPT_TEMPLATE | Set this variable to override default prompt template                                                                                                                                                                                                                    | `SfdxHardisGenericPrompt`                                                                                      |
-| GENERIC_AGENTFORCE_PROMPT_URL      | Set this variable to override default prompt url                                                                                                                                                                                                                         | `/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{GENERIC_AGENTFORCE_PROMPT_TEMPLATE}}/generations` |
-| SFDX_AUTH_URL_TECHNICAL_ORG        | If you want to use another org to call Agentforce (like a [Developer Org](https://developer.salesforce.com/signup) just to test the feature), you can define this variable (get Auth Url using `sf org auth show-sfdx-auth-url --target-org <alias> --no-prompt --json`) | <!-- -->                                                                                                       |
+| Variable                           | Description                                                                                                                                                                                                                                                                 | Default                                                                                                        |
+|------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| USE_AGENTFORCE                     | Set to true to activate the use of Agentforce prompts                                                                                                                                                                                                                       | false                                                                                                          |
+| GENERIC_AGENTFORCE_PROMPT_TEMPLATE | Set this variable to override the default prompt template                                                                                                                                                                                                                   | `SfdxHardisGenericPrompt`                                                                                      |
+| GENERIC_AGENTFORCE_PROMPT_URL      | Set this variable to override the default prompt URL                                                                                                                                                                                                                        | `/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{GENERIC_AGENTFORCE_PROMPT_TEMPLATE}}/generations` |
+| SFDX_AUTH_URL_TECHNICAL_ORG        | If you want to use another org to call Agentforce (like a [Developer Org](https://developer.salesforce.com/signup) just to test the feature), you can define this variable (get the auth URL with `sf org auth show-sfdx-auth-url --target-org <alias> --no-prompt --json`) | <!-- -->                                                                                                       |
 
-![](assets/images//screenshot-agentforce-config-1.jpg)
+![](assets/images/screenshot-agentforce-config-1.jpg)
 
-![](assets/images//screenshot-agentforce-config-2.jpg)
+![](assets/images/screenshot-agentforce-config-2.jpg)
 
 #### Configure Agentforce via .sfdx-hardis.yml
 
@@ -73,9 +73,9 @@ API keys or technical org auth URLs still have to be provided via secure environ
 
 ### With LangChain
 
-[LangChainJs](https://js.langchain.com/docs/integrations/chat/) provides a unified interface to work with multiple LLM providers. This way to use AI provides better extensibility and future-proofing to extend support for more providers.
+[LangChain.js](https://js.langchain.com/docs/integrations/chat/) provides a unified interface to work with multiple LLM providers. This makes it easier to add support for more providers in the future.
 
-Currently supported LangchainJS providers:
+Currently supported LangChain.js providers:
 
 - Ollama
 - OpenAI
@@ -100,7 +100,7 @@ For Ollama:
 
 - Visit [Ollama's official website](https://ollama.ai/) and download the appropriate version for your operating system
 - Follow the installation instructions for your platform
-- After installation, pull your preferred model e.g. `ollama pull qwen2.5-coder:14b` and start the Ollama service with `ollama serve`
+- After installation, pull your preferred model (e.g. `ollama pull qwen2.5-coder:14b`) and start the Ollama service with `ollama serve`
 
 ```sh
 USE_LANGCHAIN_LLM=true
@@ -170,14 +170,14 @@ Only values that are safe to commit (model, provider, tuning) are loaded from th
 
 ### With OpenAI Directly
 
-You need to define env variable OPENAI_API_KEY (or use gateway authentication) and make it available to your CI/CD workflow.
+You need to define the environment variable OPENAI_API_KEY (or use gateway authentication) and make it available to your CI/CD workflow.
 
-To get an OpenAi API key , register on [OpenAi Platform](https://platform.openai.com/).
+To get an OpenAI API key, register on the [OpenAI Platform](https://platform.openai.com/).
 
 | Variable                | Description                                                                               | Default       |
 |-------------------------|-------------------------------------------------------------------------------------------|---------------|
-| OPENAI_API_KEY          | Your openai account API key (not required when using gateway headers)                     |               |
-| OPENAI_MODEL            | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/)) | `gpt-4o-mini` |
+| OPENAI_API_KEY          | Your OpenAI account API key (not required when using gateway headers)                     |               |
+| OPENAI_MODEL            | OpenAI model used to perform prompts (see [models list](https://openai.com/api/pricing/)) | `gpt-4o-mini` |
 | OPENAI_SERVICE_TIER     | Optional OpenAI service tier for supported projects (`auto`, `default`, `flex`)           |               |
 | OPENAI_REASONING_EFFORT | Optional reasoning effort for supported OpenAI reasoning models (`low`, `medium`, `high`) |               |
 | OPENAI_BASE_URL         | Base URL for OpenAI API (for corporate gateways/proxies)                                  |               |
@@ -253,22 +253,22 @@ If you have configured one of the AI providers above (LangChain, OpenAI, Codex),
 
 The API key configured for your AI provider (e.g. `LANGCHAIN_LLM_MODEL_API_KEY`) is automatically reused by the coding agent CLI, so no extra key configuration is needed.
 
-**Local mode:** When running outside CI/CD (on your local machine), sfdx-hardis will automatically detect installed coding agent CLIs and use them **without any API key environment variables**. Agents authenticate via their own login mechanisms (`claude login`, `gh auth login`, etc.).
+**Local mode:** When running outside CI/CD (on your local machine), sfdx-hardis automatically detects installed coding agent CLIs and uses them **without any API key environment variables**. Agents authenticate via their own login mechanisms (`claude login`, `gh auth login`, etc.).
 
-> **Use with caution:** This feature is in beta. AI coding agents can make mistakes - all proposed changes must be reviewed by an expert before merging.
+> **Use with caution:** This feature is in beta. AI coding agents can make mistakes: all proposed changes must be reviewed by an expert before merging.
 
 See [Coding Agent Auto-Fix](salesforce-deployment-agent-autofix.md) for full setup instructions.
 
 ## Templates
 
-You can override default prompts by defining the following environment variables.
+You can override the default prompts by defining the following environment variables.
 
-| Prompt Template                           | Description                                                                                         |                          Variables                          |
-|-------------------------------------------|-----------------------------------------------------------------------------------------------------|:-----------------------------------------------------------:|
-| PROMPT_SOLVE_DEPLOYMENT_ERROR             | Ask AI about how to solve a deployment error                                                        |                            ERROR                            |
-| PROMPT_DESCRIBE_FLOW                      | Describe a flow from its XML                                                                        |                          FLOW_XML                           |
-| PROMPT_DESCRIBE_FLOW_DIFF                 | Describe the differences between 2 flow versions by comparing their XML                             |               FLOW_XML_NEW, FLOW_XML_PREVIOUS               |
-| PROMPT_DESCRIBE_OBJECT                    | Describe Object using sfdx-hardis generated info based on project metadatas                         | OBJECT_NAME, OBJECT_XML, ALL_OBJECTS_LIST, ALL_OBJECT_LINKS |
-| PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD      | Complete fields and validation rules descriptions in input markdown tables generated by sfdx-hardis |                    OBJECT_NAME, MARKDOWN                    |
-| PROMPT_DESCRIBE_APEX                      | Describe an Apex class from its code                                                                |                    CLASS_NAME, APEX_CODE                    |
-| PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS | Prompt used by coding agents to fix deployment errors                                               |              ERRORS, FAILED_TESTS, TARGET_ORG               |
+| Prompt Template                           | Description                                                                                 |                          Variables                          |
+|-------------------------------------------|---------------------------------------------------------------------------------------------|:-----------------------------------------------------------:|
+| PROMPT_SOLVE_DEPLOYMENT_ERROR             | Ask AI about how to solve a deployment error                                                |                            ERROR                            |
+| PROMPT_DESCRIBE_FLOW                      | Describe a flow from its XML                                                                |                          FLOW_XML                           |
+| PROMPT_DESCRIBE_FLOW_DIFF                 | Describe the differences between two Flow versions by comparing their XML                   |               FLOW_XML_NEW, FLOW_XML_PREVIOUS               |
+| PROMPT_DESCRIBE_OBJECT                    | Describe an object using sfdx-hardis generated info based on project metadata               | OBJECT_NAME, OBJECT_XML, ALL_OBJECTS_LIST, ALL_OBJECT_LINKS |
+| PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD      | Complete field and validation rule descriptions in markdown tables generated by sfdx-hardis |                    OBJECT_NAME, MARKDOWN                    |
+| PROMPT_DESCRIBE_APEX                      | Describe an Apex class from its code                                                        |                    CLASS_NAME, APEX_CODE                    |
+| PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS | Prompt used by coding agents to fix deployment errors                                       |              ERRORS, FAILED_TESTS, TARGET_ORG               |

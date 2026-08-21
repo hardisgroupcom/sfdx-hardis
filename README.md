@@ -4,10 +4,12 @@
 
 _Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl) _and [_Dreamforce 24!_](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH)_ - [**See sfdx-hardis v7 Walkthrough video**](https://www.youtube.com/watch?v=t8jT6IPd9n4)
 
+**New:** [**What's new in sfdx-hardis v8**](https://sfdx-hardis.cloudity.com/sfdx-hardis-v8/) - Deployment Actions are generally available, Pull Request comments are redesigned, and the VS Code extension is rebuilt.
+
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/total](https://img.shields.io/npm/dt/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
-[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-196.7k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
+[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-201.1k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
 [![GitHub stars](https://img.shields.io/github/stars/hardisgroupcom/sfdx-hardis)](https://GitHub.com/hardisgroupcom/sfdx-hardis/stargazers/)
 [![GitHub contributors](https://img.shields.io/github/contributors/hardisgroupcom/sfdx-hardis.svg)](https://gitHub.com/hardisgroupcom/sfdx-hardis/graphs/contributors/)
 [![MegaLinter](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml/badge.svg?branch=main)](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml?query=branch%3Amain)
@@ -19,7 +21,7 @@ Sfdx-hardis is a **CLI and visual productivity tools suite for Salesforce**, by 
 
 ![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
 
-It is free and Open-Source, and will allow you to simply:
+It is free and open-source, and lets you:
 
 - [Deliver your projects with **State of the art Salesforce DevOps**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
@@ -33,11 +35,11 @@ It is free and Open-Source, and will allow you to simply:
 
 ![Salesforce AI Generated Documentation](https://sfdx-hardis.cloudity.com/assets/images/screenshot-object-diagram.jpg)
 
-- Enjoy many commands that will **save your minutes, hours or even days** in your daily **Admin or Developer** work.
+- Use many commands that **save minutes, hours or even days** of your daily **admin or developer** work.
 
 ![Productivity commands](https://sfdx-hardis.cloudity.com/assets/images/ProductivityCommands.png)
 
-If you need guidance about how to leverage sfdx-hardis to bring more value to your business, Cloudity's international multi-cloud teams of business experts and technical experts can help: [contact us](https://cloudity.com/contact-us/) !
+If you need help to get the most out of sfdx-hardis, Cloudity's international teams of business and technical experts can help: [contact us](https://cloudity.com/contact-us/).
 
 [![Cloudity](https://sfdx-hardis.cloudity.com/assets/images/cloudity-banner.png)](https://cloudity.com/contact-us/)
 
@@ -45,15 +47,9 @@ If you need guidance about how to leverage sfdx-hardis to bring more value to yo
 
 ___
 
-**sfdx-hardis** commands and configuration are best used with an UI in [**SFDX Hardis Visual Studio Code Extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
-
-[![VsCode SFDX Hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/extension-demo.gif)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+**sfdx-hardis** commands and configuration are best used from the [**SFDX Hardis Visual Studio Code extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
 ___
-
-_See sfdx-hardis v7 Walkthrough_
-
-[![sfdx-hardis v7 walkthrough](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-v7-demo.png)](https://www.youtube.com/watch?v=t8jT6IPd9n4)
 
 _Featured on SalesforceBen_
 
@@ -69,15 +65,15 @@ _See Dreamforce presentation_
 
 ### With IDE
 
-You can install [Visual Studio Code](https://code.visualstudio.com/), then VSCode Extension [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+You can install [Visual Studio Code](https://code.visualstudio.com/), then the VS Code extension [SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
-Once installed, click on ![Hardis Group button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in VsCode left bar, click on **Install dependencies** and follow the additional installation instructions :)
+Once installed, click on ![SFDX Hardis button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in the VS Code left bar, click on **Install dependencies** and follow the installation instructions.
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-highlight.png)
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-screenshot.png)
 
-When you are all green, you are all good 😊
+When everything is green, you are all set.
 
 _You can also watch the video tutorial below_
 
@@ -90,7 +86,7 @@ ___
 #### Pre-requisites
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
-- Install Salesforce DX by running `npm install @salesforce/cli --global` command line
+- Install the Salesforce CLI by running `npm install @salesforce/cli --global`
 
 #### Plugin installation
 
@@ -190,6 +186,54 @@ sf hardis:<COMMAND> <OPTIONS>
 
 <!-- events.md start -->
 
+### North Africa Dreamin' 2026, Casablanca (upcoming)
+
+[Non-deterministic + deterministic Agentic Engineering: Delegate your Salesforce job to Agents but ensure their reliability with CI/CD](https://www.linkedin.com/posts/nad2026-trailblazercommunity-salesforce-share-7488021542417821696-f-Yd/)
+
+Casablanca, Morocco - 24/10/2026
+
+<img width="800" height="800" alt="North Africa Dreamin' 2026" src="https://github.com/user-attachments/assets/c5ff790c-48c3-4673-8c19-f1db63ff8971" />
+
+### Czech Dreamin '26, Prague
+
+[Refresh your full sandboxes without needing to reconfigure everything](https://czechdreamin.com/)
+
+Prague, Czechia - 29/05/2026
+
+<img width="1280" height="591" alt="Czech Dreamin 2026" src="https://github.com/user-attachments/assets/fe84473e-508c-4e3d-a2b5-5eaaae24a575" />
+
+### Wir Sind Ohana '26, Berlin
+
+[When was the last time you refreshed your sandboxes to have fresh data?](https://wirsindohana.de/)
+
+Berlin, Germany - 08/05/2026
+
+<img width="1217" height="913" alt="Wir Sind Ohana 2026" src="https://github.com/user-attachments/assets/a2aaf53d-4b33-4370-a225-2453fdf766e6" />
+
+### Dream Ole '26, Valencia
+
+Refresh your full sandboxes without needing to reconfigure everything, with [Louise Lockie](https://www.linkedin.com/in/louise-lockie/)
+
+Valencia, Spain - 27/03/2026
+
+<img width="1216" height="913" alt="Dream Ole 2026" src="https://github.com/user-attachments/assets/50c6fec2-4061-4ec4-b9f8-c9e4a8f2d7d1" />
+
+### Polish Dreamin '26, Wroclaw
+
+[Refresh your full sandboxes without needing to reconfigure everything](https://coffeeforce.pl/dreamin/speaker/nicolas-vuillamy/)
+
+Wroclaw, Poland - 20/03/2026
+
+<img width="951" height="753" alt="Polish Dreamin 2026" src="https://github.com/user-attachments/assets/4cebe084-f7b6-4d6e-aa22-c3cb305222ea" />
+
+### Irish Dreamin '26, Dublin
+
+No-Cost DevOps: Enterprise-Grade CI/CD with SFDX-HARDIS, by Abdeslam Loukili
+
+Dublin, Ireland - 19/03/2026
+
+![Irish Dreamin 2026 - Abdeslam Loukili](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/irish-dreamin-abdeslam-loukili.jpg)
+
 ### French Touch Dreamin '25
 
 Refresh your full sandboxes without needing to reconfigure everything - with [Mehdi Abdennasser](https://www.linkedin.com/in/mehdi-abdennasser/)
@@ -214,7 +258,7 @@ London, UK - 20/11/2025
 
 ### Trailblazer Developer Group '25, Berlin (online)
 
-[Summer of Docs – Auto-Document Your Salesforce Org Like a Pro](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-developer-group-berlin-germany-presents-summer-of-docs-auto-document-your-salesforce-org-like-a-pro/), by [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
+[Summer of Docs: Auto-Document Your Salesforce Org Like a Pro](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-developer-group-berlin-germany-presents-summer-of-docs-auto-document-your-salesforce-org-like-a-pro/), by [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/berlin-user-group-docgen.png)
 
@@ -345,7 +389,7 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 [![sfdx-hardis 2025 new features](https://img.youtube.com/vi/JRKH5COUVQ0/0.jpg)](https://youtu.be/JRKH5COUVQ0){target=blank}
 
-- SFDX-HARDIS – A demo with Nicolas Vuillamy from Cloudity
+- SFDX-HARDIS: A demo with Nicolas Vuillamy from Cloudity
 
 [![SalesforceDevOps.net Demo](https://img.youtube.com/vi/qP6MaZUGzik/0.jpg)](https://www.youtube.com/watch?v=qP6MaZUGzik){target=blank}
 
@@ -413,20 +457,20 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 <!-- contributing.md start -->
 
-Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you !)
+Everyone is welcome to contribute to sfdx-hardis (even juniors: we will help you).
 
 ### Salesforce CLI Plugin: sfdx-hardis
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
-- Install typescript by running `npm install typescript --global`
+- Install TypeScript by running `npm install typescript --global`
 - Install yarn by running `npm install yarn --global`
-- Install Salesforce DX by running `npm install @salesforce/cli --global` command line
+- Install the Salesforce CLI by running `npm install @salesforce/cli --global`
 - Fork <https://github.com/hardisgroupcom/sfdx-hardis> and clone it (or just clone if you are an internal contributor)
 - At the root of the repository:
   - Run `yarn` to install dependencies
-  - Run `sf plugins link` to link the local sfdx-hardis to SFDX CLI
-  - Run `tsc --watch` to transpile typescript into js everytime you update a TS file
-- Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand --someparameter somevalue` (you can also debug commands using VsCode Sfdx-Hardis setting)
+  - Run `sf plugins link` to link the local sfdx-hardis to the Salesforce CLI
+  - Run `tsc --watch` to transpile TypeScript into JavaScript every time you update a TS file
+- Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand --someparameter somevalue` (you can also debug commands with the VS Code SFDX Hardis extension debug setting)
 
 Note: To test a feature from CI, you can add the following code in your workflow before running sfdx-hardis commands:
 
@@ -445,18 +489,18 @@ sf plugins link
 cd -
 ```
 
-### VsCode Extension: vscode-sfdx-hardis
+### VS Code Extension: vscode-sfdx-hardis
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
-- Install typescript by running `npm install typescript --global`
+- Install TypeScript by running `npm install typescript --global`
 - Install yarn by running `npm install yarn --global`
 - Install Visual Studio Code Insiders ([download here](https://code.visualstudio.com/insiders/))
 - Fork <https://github.com/hardisgroupcom/vscode-sfdx-hardis> and clone it (or just clone if you are an internal contributor)
 - At the root of the repository:
   - Run `yarn` to install dependencies
-- To test your code in the VsCode Extension:
-  - Open the `vscode-sfdx-hardis` folder in VsCode Insiders
-  - Press `F5` to open a new VsCode window with the extension loaded (or menu Run -> Start Debugging)
+- To test your code in the VS Code extension:
+  - Open the `vscode-sfdx-hardis` folder in VS Code Insiders
+  - Press `F5` to open a new VS Code window with the extension loaded (or menu Run > Start Debugging)
   - In the new window, open a Salesforce DX project
   - Run commands from the command palette (Ctrl+Shift+P) or use the buttons in the panel or webviews
 

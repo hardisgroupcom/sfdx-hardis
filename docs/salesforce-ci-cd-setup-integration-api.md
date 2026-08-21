@@ -6,22 +6,22 @@ description: Learn how to send notifications to external apis like Grafana
 
 ## API Integration
 
-You can send notifications to an external API endpoints, for example to [build Grafana dashboards](#grafana-setup)
+You can send notifications to an external API endpoint, for example to [build Grafana dashboards](#grafana-setup):
 
-- Deployment from a major branch to a major Salesforce org (ex: integration git branch to Integration Org)
+- Deployment from a major branch to a major Salesforce org (e.g. integration git branch to Integration org)
 - Salesforce [Org Monitoring](salesforce-monitoring-home.md)
   - Latest updates
-  - Failing apex tests
+  - Failing Apex tests
   - Monitoring checks notifications
 
 ## Logs Configuration
 
 Define the following CI/CD variables:
 
-- **NOTIF_API_URL** : API endpoint
-- **NOTIF_API_BASIC_AUTH_USERNAME** : Basic auth username _(if using Basic Auth)_
-- **NOTIF_API_BASIC_AUTH_PASSWORD** : Basic auth password/token _(if using Basic Auth)_
-- **NOTIF_API_BEARER_TOKEN** : Bearer token _(if using bearer auth)_
+- **NOTIF_API_URL**: API endpoint
+- **NOTIF_API_BASIC_AUTH_USERNAME**: Basic auth username _(if using Basic Auth)_
+- **NOTIF_API_BASIC_AUTH_PASSWORD**: Basic auth password/token _(if using Basic Auth)_
+- **NOTIF_API_BEARER_TOKEN**: Bearer token _(if using bearer auth)_
 
 Examples of configuration:
 
@@ -62,9 +62,9 @@ Example of logs sent to Loki:
 
 ## Metrics Configuration
 
-Additionally, you can send metrics in Prometheus format to a secondary API endpoint.
+You can also send metrics in Prometheus format to a secondary API endpoint.
 
-The configuration is the same than for logs, but with different variable names.
+The configuration is the same as for logs, but with different variable names.
 
 - **NOTIF_API_METRICS_URL**
 - **NOTIF_API_METRICS_BASIC_AUTH_USERNAME**
@@ -79,7 +79,7 @@ NOTIF_API_METRICS_BASIC_AUTH_USERNAME=345673
 NOTIF_API_METRICS_BASIC_AUTH_PASSWORD=GHTRGDHDHdhghg23345DFG^sfg!ss
 ```
 
-Example of metrics sent to Prometheus
+Example of metrics sent to Prometheus:
 
 ```text
 ApexTestsFailingClasses,source=sfdx-hardis,type=APEX_TESTS,orgIdentifier=hardis-group,gitIdentifier=monitoring-hardis-org/monitoring_hardis_group metric=0.00
@@ -107,12 +107,12 @@ See [Monitoring configuration](salesforce-monitoring-config-home.md#fine-grained
 
 ## Skip Configuration
 
-> The API channel is always sent by default when `NOTIF_API_URL` is configured, regardless of the per-channel severity threshold. To filter what reaches the API per notification type, use either the env vars below, or set `api: off` (or any other threshold) in the per-entry `notifications` block of `monitoringCommands` -- see [Monitoring configuration](salesforce-monitoring-config-home.md#fine-grained-routing-per-notification-type).
+> The API channel is always sent by default when `NOTIF_API_URL` is configured, regardless of the per-channel severity threshold. To filter what reaches the API per notification type, use either the env vars below, or set `api: off` (or any other threshold) in the per-entry `notifications` block of `monitoringCommands` (see [Monitoring configuration](salesforce-monitoring-config-home.md#fine-grained-routing-per-notification-type)).
 
 You can skip sending logs or metrics to the API based on notification type by defining the following CI/CD variables:
 
-- **NOTIF_API_SKIP_LOGS** : Comma-separated list of notification types to skip for logs, or `all` to skip all logs
-- **NOTIF_API_SKIP_METRICS** : Comma-separated list of notification types to skip for metrics, or `all` to skip all metrics
+- **NOTIF_API_SKIP_LOGS**: Comma-separated list of notification types to skip for logs, or `all` to skip all logs
+- **NOTIF_API_SKIP_METRICS**: Comma-separated list of notification types to skip for metrics, or `all` to skip all metrics
 
 Examples of configuration:
 
@@ -143,17 +143,17 @@ NOTIF_API_ANONYMIZE=false   # send raw values even in CI
 NOTIF_API_ANONYMIZE=true    # anonymize even in local runs
 ```
 
-Note: anonymization only applies to new entries. Entries sent before enabling it keep their original values until your logs retention expires (you can use the Loki delete API to purge them earlier).
+Note: anonymization only applies to new entries. Entries sent before enabling it keep their original values until your log retention expires (you can use the Loki delete API to purge them earlier).
 
 ## Troubleshooting
 
-If you want to see the content of the API notifications in execution logs, you can define `NOTIF_API_DEBUG=true`
+If you want to see the content of the API notifications in the execution logs, define `NOTIF_API_DEBUG=true`.
 
-## Grafana Setup 
+## Grafana Setup
 
-If you don't have a Grafana server, you can use Grafana Cloud Free Tier (14 days of logs & metrics retention + 3 users, no credit card required, free forever)
+If you don't have a Grafana server, you can use the Grafana Cloud Free Tier (14 days of logs and metrics retention, 3 users, no credit card required, free forever).
 
-If you do have a Grafana server and want to use a log aggregation tool like vector to ingest logs, there is a setup doc [Salesforce Monitoring Setup with Vector/Datadog and PushGateways](salesforce-monitoring-config-vector.md)
+If you do have a Grafana server and want to use a log aggregation tool like Vector to ingest logs, see [Salesforce Monitoring Setup with Vector/Datadog and PushGateways](salesforce-monitoring-config-vector.md).
 
 ### Create Grafana Account
 
@@ -163,19 +163,19 @@ Create a Grafana Cloud Free account at [this url](https://grafana.com/auth/sign-
 
 ___
 
-Input a Grafana Cloud org name (sfdxhardis in the example)
+Enter a Grafana Cloud org name (sfdxhardis in the example)
 
 ![](assets/images/grafana-config-2.jpg)
 
 ___
 
-Next screen, you can skip setup
+On the next screen, you can skip the setup
 
 ![](assets/images/grafana-config-3.jpg)
 
 ### Gather URLs & auth info
 
-Create a notepad when you copy paste the following text
+Open a notepad and copy-paste the following text into it:
 
 ```sh
 NOTIF_API_URL=
@@ -194,19 +194,19 @@ Go to **Connections** -> **Data Sources** and click on **grafanacloud-YOURORGNAM
 
 ___
 
-Build Logs push url
+Build the logs push URL:
 
-- Copy value of Connection URL (something like `https://logs-prod-012.grafana.net/`)
+- Copy the value of Connection URL (something like `https://logs-prod-012.grafana.net/`)
 - Add `/loki/api/v1/push` at the end
-- Copy value to variables `NOTIF_API_URL`
+- Copy the value to the variable `NOTIF_API_URL`
 
 Example: `NOTIF_API_URL=https://logs-prod-012.grafana.net/loki/api/v1/push`
 
-Copy value of Authentication -> User and paste it with variable `NOTIF_API_BASIC_AUTH_USERNAME`
+Copy the value of Authentication -> User and paste it as the value of the variable `NOTIF_API_BASIC_AUTH_USERNAME`
 
 Example: `NOTIF_API_BASIC_AUTH_USERNAME=898189`
 
-Leave NOTIF_API_BASIC_AUTH_PASSWORD empty for now, you can't get it here
+Leave `NOTIF_API_BASIC_AUTH_PASSWORD` empty for now, you cannot get it here.
 
 ![](assets/images/grafana-config-5.jpg)
 
@@ -220,20 +220,20 @@ Go to **Connections** -> **Data Sources** and click on **grafanacloud-YOURORGNAM
 
 ___
 
-Build Metrics push url
+Build the metrics push URL:
 
-- Copy value of Connection URL (something like `https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom`)
+- Copy the value of Connection URL (something like `https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom`)
 - Replace `prometheus` by `influx`
 - Replace `api/prom` by `api/v1/push/influx/write`
-- Then copy value to variables `NOTIF_API_METRICS_URL`
+- Then copy the value to the variable `NOTIF_API_METRICS_URL`
 
 Example: `NOTIF_API_METRICS_URL=https://influx-prod-24-prod-eu-west-2.grafana.net/api/v1/push/influx/write`
 
-Copy value of Authentication -> User and paste it with variable `NOTIF_API_METRICS_BASIC_AUTH_USERNAME`
+Copy the value of Authentication -> User and paste it as the value of the variable `NOTIF_API_METRICS_BASIC_AUTH_USERNAME`
 
 Example: `NOTIF_API_METRICS_BASIC_AUTH_USERNAME=1596503`
 
-Leave `NOTIF_API_METRICS_BASIC_AUTH_PASSWORD` empty for now, you can't get it here
+Leave `NOTIF_API_METRICS_BASIC_AUTH_PASSWORD` empty for now, you cannot get it here.
 
 ![](assets/images/grafana-config-7.jpg)
 
@@ -247,10 +247,10 @@ Go to **Administration** -> **Users and Access** -> **Cloud Access Policies**, t
 
 ___
 
-Create the access policy
+Create the access policy:
 
 - Define sfdxhardis as name and display name
-- Select **write** for items **metrics, logs, traces, profiles, alerts** (only metrics and logs are used today, but who knows hat new features we'll release in the future !)
+- Select **write** for items **metrics, logs, traces, profiles, alerts** (only metrics and logs are used today, but future features may use the others)
 - Click on **Create**
 
 ![](assets/images/grafana-config-9.jpg)
@@ -263,13 +263,13 @@ On the new Access Policy `sfdxhardis`, click on **Add Token** at the bottom righ
 
 ___
 
-Name it sfdxhardis-token, let `No expiration` then click **Create**
+Name it sfdxhardis-token, keep `No expiration`, then click **Create**
 
 ![](assets/images/grafana-config-11.jpg)
 
 ___
 
-On the next screen, click on **Copy to clipboard** then paste in your notepad in front of variables **NOTIF_API_BASIC_AUTH_PASSWORD** and **NOTIF_API_METRICS_BASIC_AUTH_PASSWORD**
+On the next screen, click on **Copy to clipboard**, then paste the token in your notepad as the value of the variables **NOTIF_API_BASIC_AUTH_PASSWORD** and **NOTIF_API_METRICS_BASIC_AUTH_PASSWORD**
 
 ![](assets/images/grafana-config-12.jpg)
 
@@ -282,16 +282,16 @@ NOTIF_API_METRICS_BASIC_AUTH_PASSWORD=glc_eyJvIjoiMTEzMjI4OCIsIm4iOiJzZmR4aGFyZG
 
 ### Configure CI variables on repository
 
-Now configure the 6 variables on the monitoring repository. (Ignore other paragraphs, except those who explain how to modify the pipeline YML to access protected variables)
+Now configure the six variables on the monitoring repository (ignore the other paragraphs, except those explaining how to modify the pipeline YAML to access protected variables).
 
 - [GitHub](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-github/#define-sfdx-hardis-environment-variables)
-- [Gitlab](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-gitlab/#define-sfdx-hardis-environment-variables)
+- [GitLab](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-gitlab/#define-sfdx-hardis-environment-variables)
 - [Azure](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-azure/#configure-cicd-variables)
-- [BitBucket](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-bitbucket/#define-sfdx-hardis-environment-variables)
+- [Bitbucket](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-bitbucket/#define-sfdx-hardis-environment-variables)
 
-Now you can force a run of your monitoring job (just add a dumb commit on a monitoring_xxxx branch to trigger it)
+Now you can force a run of your monitoring job (just push a dummy commit on a monitoring_xxxx branch to trigger it).
 
-Optionally , you can look in the logs, you should see \[ApiProvider\] and \[ApiMetricProvider\] items.
+Optionally, look in the logs: you should see \[ApiProvider\] and \[ApiMetricProvider\] items.
 
 ![](assets/images/grafana-config-13.jpg)
 
@@ -299,8 +299,8 @@ Optionally , you can look in the logs, you should see \[ApiProvider\] and \[ApiM
 
 Your Grafana now receives sfdx-hardis logs and metrics. Import the dashboards:
 
-- **[Org Monitoring by sfdx-hardis (Dashboards v2)](salesforce-monitoring-grafana-v2.md)** - the current set: fleet overview, trends and averages, limit forecasts, org health score, drill-down navigation, and a ready-to-enable alert pack
-- [Legacy Grafana Dashboards (v1)](salesforce-monitoring-grafana-v1-legacy.md) - frozen, kept for existing installations
+- **[Org Monitoring by sfdx-hardis (Dashboards v2)](salesforce-monitoring-grafana-v2.md)**: the current set, with fleet overview, trends and averages, limit forecasts, org health score, drill-down navigation, and a ready-to-enable alert pack
+- [Legacy Grafana Dashboards (v1)](salesforce-monitoring-grafana-v1-legacy.md): frozen, kept for existing installations
 
 ![Fleet Overview](assets/images/grafana-v2-fleet.png)
 

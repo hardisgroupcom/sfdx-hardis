@@ -17,7 +17,7 @@ sf hardis:doc:project2markdown
 sf hardis:doc:mkdocs-to-confluence
 ```
 
-You can also override Confluence targeting and naming from CLI flags:
+You can also override Confluence targeting and naming with CLI flags:
 
 ```bash
 sf hardis:doc:mkdocs-to-confluence \
@@ -83,7 +83,7 @@ Examples:
 - `CONFLUENCE_PARENT_PAGE_ID_NL`
 - `CONFLUENCE_PAGE_SUFFIX_PT_BR`
 
-> **Tip - finding the parent page ID:** open the target parent page in Confluence and look at the URL:
+> **Tip: to find the parent page ID**, open the target parent page in Confluence and look at the URL:
 > `https://mycompany.atlassian.net/wiki/spaces/MYSPACE/pages/**123456789**/My+Page`
 > The number between `/pages/` and the title is the ID.
 

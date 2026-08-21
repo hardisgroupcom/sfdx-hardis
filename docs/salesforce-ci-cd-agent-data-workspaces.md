@@ -497,12 +497,12 @@ scripts/data/
 
 ## Integrating Data Workspaces with Deployment Actions
 
-Data imports can be wired into the CI/CD pipeline as **deployment actions** - steps that run before or after metadata deployment.
+Data imports can be wired into the CI/CD pipeline as **deployment actions**: steps that run before or after metadata deployment.
 
 ### Using the CLI
 
 ```bash
-# Add a post-deploy data import for a pull request
+# Add a post-deploy data import for a Pull Request
 sf hardis:project:action:create --agent \
   --scope pr --pr-id 123 --when post-deploy \
   --type data --label "Import email templates" --sfdmu-project EmailTemplates
@@ -1089,10 +1089,10 @@ Migrate ContentVersion, Attachment, and Note files:
 
 ## See Also
 
-- [SFDMU Documentation](https://help.sfdmu.com/) - complete SFDMU reference
-- [Deployment actions](salesforce-ci-cd-work-on-task-deployment-actions.md) - all deployment action types
-- [Using sfdx-hardis with AI Coding Agents](salesforce-ci-cd-agent-skills.md) - other agent skills
-- [AI Agents Overview](salesforce-agentic-automation.md) - all agent-compatible commands
+- [SFDMU Documentation](https://help.sfdmu.com/): complete SFDMU reference
+- [Deployment actions](salesforce-ci-cd-work-on-task-deployment-actions.md): all deployment action types
+- [Using sfdx-hardis with AI Coding Agents](salesforce-ci-cd-agent-skills.md): other agent skills
+- [AI Agents Overview](salesforce-agentic-automation.md): all agent-compatible commands
 - [`hardis:org:data:export` command reference](hardis/org/data/export.md)
 - [`hardis:org:data:import` command reference](hardis/org/data/import.md)
 - [`hardis:org:data:delete` command reference](hardis/org/data/delete.md)

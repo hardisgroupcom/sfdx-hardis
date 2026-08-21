@@ -1,14 +1,14 @@
 ---
-title: How to monitor your Salesforce Org
-description: Learn how to configure a monitoring repository for a Salesforce Org, using sfdx-hardis, then how to read reports
+title: Configure Salesforce Org Monitoring
+description: How to create and configure a monitoring repository for your Salesforce orgs with sfdx-hardis, on GitHub, GitLab, Azure, Bitbucket or Jenkins
 ---
 <!-- markdownlint-disable MD013 -->
 
 - [Video tutorial](#video-tutorial)
 - [Instructions](#instructions)
   - [Common instructions](#common-instructions)
-  - [Github](#github)
-  - [Gitlab](#gitlab)
+  - [GitHub](#github)
+  - [GitLab](#gitlab)
   - [Azure](#azure)
   - [Bitbucket](#bitbucket)
   - [Jenkins (any Git server)](#jenkins-any-git-server)
@@ -23,25 +23,25 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 
 ### Common instructions
 
-All you need to configure sfdx-hardis Org Monitoring is a **GitHub**, **Gitlab**, **Azure**, **BitBucket** or any Git server accessible from a **Jenkins** instance.
+All you need to configure sfdx-hardis Org Monitoring is a **GitHub**, **GitLab**, **Azure**, **Bitbucket** or any Git server accessible from a **Jenkins** instance.
 
 - Create and clone a git repository (initialize it with README)
-- Open it with Visual Studio Code, then open [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) extension menu.
-  - If you need installations instructions, please [visit documentation page](salesforce-ci-cd-use-install.md)
+- Open it with Visual Studio Code, then open the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) menu.
+  - If you need installation instructions, see the [installation documentation page](salesforce-ci-cd-use-install.md)
 
-- Follow instructions, that can be specific according to your git provider
+- Follow the instructions, which can differ depending on your git provider
 
-> Tip: Schedule monitoring jobs at different hours so the notifications are more readable, for example production at 1AM and preprod at 2AM
+> Tip: Schedule monitoring jobs at different hours so the notifications are more readable, for example production at 1 AM and preprod at 2 AM
 
-### Github
+### GitHub
 
 - [GitHub configuration](salesforce-monitoring-config-github.md)
   - [Pre-requisites](salesforce-monitoring-config-github.md#pre-requisites)
   - [Schedule monitoring job](salesforce-monitoring-config-github.md#schedule-the-monitoring-job)
 
-### Gitlab
+### GitLab
 
-- [Gitlab configuration](salesforce-monitoring-config-gitlab.md)
+- [GitLab configuration](salesforce-monitoring-config-gitlab.md)
   - [Pre-requisites](salesforce-monitoring-config-gitlab.md#pre-requisites)
   - [Schedule monitoring job](salesforce-monitoring-config-gitlab.md#schedule-the-monitoring-job)
 
@@ -65,9 +65,9 @@ All you need to configure sfdx-hardis Org Monitoring is a **GitHub**, **Gitlab**
 
 ## Notifications
 
-For a better user experience, it is highly recommended to configure notifications !
+For a better user experience, we highly recommend configuring notifications.
 
-You can wire any combination of the following targets - they are fully independent and can be enabled in parallel:
+You can wire any combination of the following targets. They are fully independent and can be enabled in parallel:
 
 - [Slack instructions](salesforce-ci-cd-setup-integration-slack.md) - post to one or several Slack channels (global, branch-scoped, errors-only)
 - [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md) - post to Teams channels via incoming webhooks
@@ -76,9 +76,9 @@ You can wire any combination of the following targets - they are fully independe
 
 sfdx-hardis groups these targets into three channels, and you can configure each channel independently per notification type:
 
-- **messaging** -- Slack and Microsoft Teams
-- **email** -- email recipients
-- **api** -- the sfdx-hardis API / metrics provider (e.g. Grafana Loki, Prometheus). The `api` channel is always sent when configured, unless explicitly set to `off`.
+- **messaging**: Slack and Microsoft Teams
+- **email**: email recipients
+- **api**: the sfdx-hardis API / metrics provider (e.g. Grafana Loki, Prometheus). The `api` channel is always sent when configured, unless explicitly set to `off`.
 
 The full configuration (frequency, per-channel severity thresholds, custom commands) can be edited from the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) UI, or directly in `.sfdx-hardis.yml`:
 
@@ -151,11 +151,11 @@ You can fine-tune which monitoring commands run, how often, and how their notifi
 
 Each entry accepts a `frequency` field with one of:
 
-- `daily` -- runs every run
-- `weekly` -- runs once per week. The firing day is configurable via `frequencyDay` (`monday`..`sunday`, default `saturday`)
-- `biweekly` -- runs every other week. Same `frequencyDay` selector. The anchor uses ISO week parity so two `biweekly` entries with the same `frequencyDay` always fire on the same calendar weeks
-- `monthly` -- runs once per month. The firing day is configurable via `frequencyDayOfMonth` (`1`..`31`, default `1`). Values larger than the current month's last day are clamped to the last day, so `31` reliably means "last day of the month"
-- `off` -- never runs unless `--force-all` is passed to `hardis:org:monitor:all` (or env var `MONITORING_IGNORE_FREQUENCY=true` is set)
+- `daily`: runs on every run
+- `weekly`: runs once per week. The firing day is configurable via `frequencyDay` (`monday`..`sunday`, default `saturday`)
+- `biweekly`: runs every other week. Same `frequencyDay` selector. The anchor uses ISO week parity so two `biweekly` entries with the same `frequencyDay` always fire on the same calendar weeks
+- `monthly`: runs once per month. The firing day is configurable via `frequencyDayOfMonth` (`1`..`31`, default `1`). Values larger than the current month's last day are clamped to the last day, so `31` reliably means "last day of the month"
+- `off`: never runs unless `--force-all` is passed to `hardis:org:monitor:all` (or env var `MONITORING_IGNORE_FREQUENCY=true` is set)
 
 Example overriding cadence + day:
 
@@ -189,16 +189,16 @@ monitoringCommands:
 
 ## Troubleshooting
 
-You might want to customize which metadatas types are backuped, because you can't monitor more than 10000 items.
+You might want to customize which metadata types are backed up, because you can't monitor more than 10000 items.
 
 If there are more than 10000 items, your monitoring job will crash.
 
 In that case, you can:
 
-- Single Branch scope: Manually update file `manifest/package-skip-items.xml` in the branch corresponding to an org, then commit and push. It works with:
+- Single branch scope: manually update the file `manifest/package-skip-items.xml` in the branch corresponding to an org, then commit and push. It works with:
   - Full wildcard (`<members>*</members>`)
   - Named metadata (`<members>Account.Name</members>`)
-  - Partial wildcards names (`<members>pi__*</members>` , `<members>*__dlm</members>` , or `<members>prefix*suffix</members>`)
+  - Partial wildcard names (`<members>pi__*</members>`, `<members>*__dlm</members>`, or `<members>prefix*suffix</members>`)
 
-- All branches scope: Define CI/CD env var **MONITORING_BACKUP_SKIP_METADATA_TYPES** with the list of additional metadata types you want to skip
-  - example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`
+- All branches scope: define the CI/CD env var **MONITORING_BACKUP_SKIP_METADATA_TYPES** with the list of additional metadata types you want to skip
+  - example: `MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation`

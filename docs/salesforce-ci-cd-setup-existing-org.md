@@ -1,36 +1,39 @@
 ---
-title: Initialize sfdx sources from Salesforce org
-description: Learn how to initialize sfdx sources from a Salesforce org
+title: Retrieve an existing org into the SFDX project
+description: Learn how to initialize the SFDX sources of a CI/CD project from an existing Salesforce org, and how to clean the retrieved metadata
 ---
 
 <!-- markdownlint-disable MD013 -->
 
-If this is a new Salesforce project, or if you want to setup CI/CD in **incremental mode**, you can skip this step and directly go to [Create first merge request](#create-first-merge-request).
+## Retrieve an existing org (optional)
 
-Thanks to tracked sandboxes, you can also decide to opt for an **half-incremental init**, with only some metadata types like Apex, LWC & Permission sets. In that case retrieve manually the metadatas you need, for example with Org Browser.
+If this is a new Salesforce project, or if you want to set up CI/CD in **incremental mode**, you can skip this step and go directly to [Create the first Pull Request](#create-the-first-pull-request).
 
-If you want to go for a **full init setup**, follow the steps below !
+Thanks to source-tracked sandboxes, you can also opt for a **half-incremental init**, with only some metadata types like Apex, LWC and Permission Sets. In that case, retrieve manually the metadata you need, for example with the Metadata Retriever of the VS Code SFDX Hardis extension.
 
-- [Retrieve Metadatas](#retrieve-metadatas)
-- [Automated Metadatas Cleaning](#automated-metadatas-cleaning)
-  - [Remove Managed items](#remove-managed-items)
+If you want a **full init**, follow the steps below.
+
+- [Retrieve metadata](#retrieve-metadata)
+- [Automated metadata cleaning](#automated-metadata-cleaning)
+  - [Remove managed items](#remove-managed-items)
   - [Remove (hidden) files](#remove-hidden-files)
   - [Remove empty items](#remove-empty-items)
-  - [Standard objects without custom](#standard-objects-without-custom)
-- [Manual Metadata Cleaning](#manual-metadata-cleaning)
+  - [Standard objects without customization](#standard-objects-without-customization)
+- [Manual metadata cleaning](#manual-metadata-cleaning)
 - [Retrieve installed packages](#retrieve-installed-packages)
-- [Create first merge request](#create-first-merge-request)
+- [Create the first Pull Request](#create-the-first-pull-request)
 
-## Retrieve Metadatas
+### Retrieve metadata
 
-- Run the generate package xml command : [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/)
-- Clean up the generated package created by removing the unnecessary metadatas
-- Run retrieve metadata command : [sf project:retrieve:start](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_retrieve_start_unified)
+- Run the generate package.xml command: [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/)
+- Clean up the generated package.xml by removing the unnecessary metadata
+- Run the retrieve command: [sf project retrieve start](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_retrieve_start_unified)
 
-Example :
+Example:
 
-- `sf hardis:org:generate:packagexmlfull --targetusername nico@example.com --outputfile ./packagexmlfull.xml`
-- Remove Document part on packagexmlfull.xml
+- `sf hardis:org:generate:packagexmlfull --target-org nico@example.com --outputfile ./packagexmlfull.xml`
+- Remove the Document part from packagexmlfull.xml
+
   ```xml
       <types>
           <members>Doc1</members>
@@ -39,15 +42,16 @@ Example :
           <name>Document</name>
       </types>
   ```
-- `sf project:retrieve:start -x ./packagexmlfull.xml --ignore-conflicts`
 
-## Automated Metadatas Cleaning
+- `sf project retrieve start -x ./packagexmlfull.xml --ignore-conflicts`
 
-You have way too many metadatas locally, including standard and managed items that are not customize so are not needed in the repository.
+### Automated metadata cleaning
 
-Proceed to the following steps to automatically remove many of them, then proceed to the final manual cleaning
+You now have way too much metadata locally, including standard and managed items that are not customized, so not needed in the repository.
 
-### Remove Managed items
+Follow these steps to automatically remove many of them, then proceed to the final manual cleaning.
+
+#### Remove managed items
 
 Run the following command to delete all elements with a namespace.
 
@@ -55,64 +59,64 @@ Run the following command to delete all elements with a namespace.
 sf hardis:project:clean:manageditems --namespace SOMENAMESPACE
 ```
 
-### Remove (hidden) files
+#### Remove (hidden) files
 
-Some items have no namespace but are managed anyway, and contain `(hidden)`, so they must me deleted with the following command.
+Some items have no namespace but are managed anyway, and contain `(hidden)`. Delete them with the following command.
 
 ```shell
 sf hardis:project:clean:hiddenitems
 ```
 
-### Remove empty items
+#### Remove empty items
 
-Some files are empty and do not need to be kept in repository, remove them using the following command.
+Some files are empty and do not need to be kept in the repository. Remove them with the following command.
 
 ```shell
 sf hardis:project:clean:emptyitems
 ```
 
-### Standard objects without custom
+#### Standard objects without customization
 
 The retrieve command pulled all standard objects and fields.
 
-Those which has never been customized do not need to remain in repository, delete them using the following command (that can take some time)
+Those that have never been customized do not need to remain in the repository. Delete them with the following command (it can take some time).
 
 ```shell
 sf hardis:project:clean:standarditems
 ```
 
-## Manual Metadata Cleaning
+### Manual metadata cleaning
 
-Automated Metadata cleaning removed a lot of items, but many are remaining that are useless in the repo.
+The automated cleaning removed a lot of items, but many useless ones remain in the repository.
 
-Manually delete files (or even folders) that are maintained directly in production org
+Manually delete the files (or even folders) that are maintained directly in the production org:
 
-- `applications`: Delete the ones **starting with `standard__`**
-- `àppMenus`: Delete all folder
-- `cleanDataServices`: Delete all folder
-- `dashboards`: Delete **all user dashboards**
-- `emailServices`: Delete all folder
-- `flowDefinitions` : Delete all folder (Salesforce now uses `flow` folder)
-- `installedPackages`: Delete all folder
-- `layouts`: Delete all **standard layouts that has not been customized**
-- `profiles` : Delete all **standard** profiles
-- `profilePasswordPolicies`: Delete all folder
-- `profileSessionSettings`: Delete all folder,
-- `reports`: Delete **all reports that have been created directly in production org**
+- `applications`: delete the ones **starting with `standard__`**
+- `appMenus`: delete the whole folder
+- `cleanDataServices`: delete the whole folder
+- `dashboards`: delete **all user dashboards**
+- `emailServices`: delete the whole folder
+- `flowDefinitions`: delete the whole folder (Salesforce now uses the `flows` folder)
+- `installedPackages`: delete the whole folder
+- `layouts`: delete all **standard layouts that have not been customized**
+- `profiles`: delete all **standard** profiles
+- `profilePasswordPolicies`: delete the whole folder
+- `profileSessionSettings`: delete the whole folder
+- `reports`: delete **all reports that have been created directly in the production org**
 
-## Retrieve installed packages
+### Retrieve installed packages
 
-Use **DevOps Pipeline -> Installed Packages** to retrieve the list of Packages of your project.
+Use **DevOps Pipeline -> Installed Packages**, then **Retrieve from org**, to retrieve the list of packages of your project.
 
-See [Retrieve Packages Documentation](salesforce-ci-cd-work-on-task-install-packages.md)
+See [Install packages](salesforce-ci-cd-work-on-task-install-packages.md).
 
-> CLI Alternative: `sf hardis:org:retrieve:packageconfig -u YOUR_PROD_ORG_USER`
+> CLI alternative: `sf hardis:org:retrieve:packageconfig --target-org YOUR_PROD_ORG_USER`
 
-This will update file **config/.sfdx-hardis.yml**
+This updates the file **config/.sfdx-hardis.yml**.
 
-- Keep only the packages that you are using in all orgs.
-- Define **installDuringDeployments** property to `true` if you need this package installed on all orgs
-- Define **installOnScratchOrgs** property to `true` if you are using scratch orgs and need this package installed when you create a new scratch org
+- Keep only the packages that you use in all orgs
+- Set the **installDuringDeployments** property to `true` if you need the package installed on all orgs
+- Set the **installOnScratchOrgs** property to `true` if you use scratch orgs and need the package installed when you create a new scratch org
 
 _Example:_
 
@@ -138,10 +142,10 @@ installedPackages:
     installDuringDeployments: true
 ```
 
-## Create first merge request
+### Create the first Pull Request
 
-> Don't forget to run ![](assets/images/btn-save-publish-task.jpg) and to follow other instructions before creating your initial merge request !
+> Do not forget to run ![Save / Publish my User Story](assets/images/btn-save-publish-task.jpg) and to follow the other instructions before creating your initial Pull Request (Merge Request on GitLab).
 
-Time to [create the first merge request](salesforce-ci-cd-setup-merge-request.md) !
+Time to [create the first Pull Request](salesforce-ci-cd-setup-merge-request.md).
 
-You'll probably have many updates to perform in new commits before having all jobs in green :)
+You will probably have many updates to make in new commits before all jobs are green.

@@ -17,15 +17,15 @@ Key: **DEPLOYMENTS**
 - Queries DeployRequest via Tooling API (excludes InProgress)
 - Distinguishes deployments from validations (CheckOnly)
 - Tracks status (Succeeded, Failed, Canceled)
-- Calculates pending time (CreatedDate → StartDate) and duration (StartDate → CompletedDate)
+- Calculates pending time (CreatedDate -> StartDate) and duration (StartDate -> CompletedDate)
 - Generates CSV/XLSX report and sends notifications (Grafana, Slack, MS Teams)
 
 ### Options
 
-- `--period daily|weekly|all` – Time period: daily (last 24h), weekly (last 7 days), or all (default: daily). No limit applied; Salesforce retains DeployRequest records for ~30 days.
+- `--period daily|weekly|all`: time period, either daily (last 24h), weekly (last 7 days), or all (default: daily). No limit applied; Salesforce retains DeployRequest records for ~30 days.
 
 ### Metrics reported
 
-- **Success rate %** – Succeeded / total for deployments and validations
-- **Average duration (min)** – Mean deployment/validation time (StartDate → CompletedDate)
-- **Average pending (min)** – Mean queue time (CreatedDate → StartDate)
+- **Success rate %**: Succeeded / total for deployments and validations
+- **Average duration (min)**: Mean deployment/validation time (StartDate -> CompletedDate)
+- **Average pending (min)**: Mean queue time (CreatedDate -> StartDate)

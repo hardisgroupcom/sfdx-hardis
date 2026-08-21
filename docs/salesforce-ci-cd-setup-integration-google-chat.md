@@ -6,12 +6,12 @@ description: Send notifications on Google Chat spaces during CI/CD operations
 
 ## Google Chat Integration
 
-You can receive notifications on Google Chat spaces when sfdx-hardis events are happening:
+You can receive notifications on Google Chat spaces when sfdx-hardis events happen:
 
-- Deployment from a major branch to a major Salesforce org (ex: integration git branch to Integration Org)
+- Deployment from a major branch to a major Salesforce org (e.g. integration git branch to Integration org)
 - Salesforce [Org Monitoring](salesforce-monitoring-home.md)
   - Latest updates
-  - Failing apex tests
+  - Failing Apex tests
   - Monitoring checks notifications
 
 ## Prerequisite: Google Workspace
@@ -37,17 +37,17 @@ To test the integration without a corporate Workspace account, you have two opti
 
 ### Configure sfdx-hardis for Google Chat
 
-- Create a secret value named **GOOGLE_CHAT_WEBHOOK_URL** with the webhook URL in your Git provider configuration
+- Create a secret value named **GOOGLE_CHAT_WEBHOOK_URL** with the webhook URL in your git provider configuration
 
-- Additionally, you can create branch-scoped webhooks by creating appropriate variables
-  - Example: Variable **GOOGLE_CHAT_WEBHOOK_URL_INTEGRATION** for integration branch
+- You can also create branch-scoped webhooks by defining the matching variables
+  - Example: Variable **GOOGLE_CHAT_WEBHOOK_URL_INTEGRATION** for the integration branch
 
 - You can also define an additional webhook to receive only warning, error and critical notifications
   - Example: Variable **GOOGLE_CHAT_WEBHOOK_URL_ERRORS_WARNINGS**
 
 - Make sure all those variables are visible to your CI/CD pipelines
 
-That's all, you're all set !
+That's all, you're all set.
 
 ## Per notification type severity threshold
 

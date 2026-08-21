@@ -1,16 +1,16 @@
 ---
-title: Inactive Metadatas (Salesforce monitoring)
-description: Schedule daily checks of inactive metadata (Flows, Validation rules...) with sfdx-hardis Monitoring
+title: Inactive Metadata (Salesforce monitoring)
+description: Schedule daily checks of inactive metadata (Flows, Validation Rules...) with sfdx-hardis Monitoring
 ---
 <!-- markdownlint-disable MD013 -->
 
 ## Detect inactive metadata
 
-Are you sure this **inactive flow** should be inactive ?
+Are you sure this **inactive Flow** should be inactive?
 
-And what about this **deactivated Validation** Rule ?
+And what about this **deactivated Validation Rule**?
 
-Maybe it's time to remove them !
+Maybe it's time to remove them.
 
 Full list of metadata types that are checked:
 

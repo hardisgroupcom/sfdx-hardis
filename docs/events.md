@@ -1,3 +1,51 @@
+### North Africa Dreamin' 2026, Casablanca (upcoming)
+
+[Non-deterministic + deterministic Agentic Engineering: Delegate your Salesforce job to Agents but ensure their reliability with CI/CD](https://www.linkedin.com/posts/nad2026-trailblazercommunity-salesforce-share-7488021542417821696-f-Yd/)
+
+Casablanca, Morocco - 24/10/2026
+
+<img width="800" height="800" alt="North Africa Dreamin' 2026" src="https://github.com/user-attachments/assets/c5ff790c-48c3-4673-8c19-f1db63ff8971" />
+
+### Czech Dreamin '26, Prague
+
+[Refresh your full sandboxes without needing to reconfigure everything](https://czechdreamin.com/)
+
+Prague, Czechia - 29/05/2026
+
+<img width="1280" height="591" alt="Czech Dreamin 2026" src="https://github.com/user-attachments/assets/fe84473e-508c-4e3d-a2b5-5eaaae24a575" />
+
+### Wir Sind Ohana '26, Berlin
+
+[When was the last time you refreshed your sandboxes to have fresh data?](https://wirsindohana.de/)
+
+Berlin, Germany - 08/05/2026
+
+<img width="1217" height="913" alt="Wir Sind Ohana 2026" src="https://github.com/user-attachments/assets/a2aaf53d-4b33-4370-a225-2453fdf766e6" />
+
+### Dream Ole '26, Valencia
+
+Refresh your full sandboxes without needing to reconfigure everything, with [Louise Lockie](https://www.linkedin.com/in/louise-lockie/)
+
+Valencia, Spain - 27/03/2026
+
+<img width="1216" height="913" alt="Dream Ole 2026" src="https://github.com/user-attachments/assets/50c6fec2-4061-4ec4-b9f8-c9e4a8f2d7d1" />
+
+### Polish Dreamin '26, Wroclaw
+
+[Refresh your full sandboxes without needing to reconfigure everything](https://coffeeforce.pl/dreamin/speaker/nicolas-vuillamy/)
+
+Wroclaw, Poland - 20/03/2026
+
+<img width="951" height="753" alt="Polish Dreamin 2026" src="https://github.com/user-attachments/assets/4cebe084-f7b6-4d6e-aa22-c3cb305222ea" />
+
+### Irish Dreamin '26, Dublin
+
+No-Cost DevOps: Enterprise-Grade CI/CD with SFDX-HARDIS, by Abdeslam Loukili
+
+Dublin, Ireland - 19/03/2026
+
+![Irish Dreamin 2026 - Abdeslam Loukili](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/irish-dreamin-abdeslam-loukili.jpg)
+
 ### French Touch Dreamin '25
 
 Refresh your full sandboxes without needing to reconfigure everything - with [Mehdi Abdennasser](https://www.linkedin.com/in/mehdi-abdennasser/)
@@ -22,7 +70,7 @@ London, UK - 20/11/2025
 
 ### Trailblazer Developer Group '25, Berlin (online)
 
-[Summer of Docs – Auto-Document Your Salesforce Org Like a Pro](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-developer-group-berlin-germany-presents-summer-of-docs-auto-document-your-salesforce-org-like-a-pro/), by [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
+[Summer of Docs: Auto-Document Your Salesforce Org Like a Pro](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-developer-group-berlin-germany-presents-summer-of-docs-auto-document-your-salesforce-org-like-a-pro/), by [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/berlin-user-group-docgen.png)
 

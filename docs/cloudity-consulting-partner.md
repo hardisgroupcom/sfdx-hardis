@@ -11,7 +11,7 @@ description: See how Cloudity can help you as a Salesforce Consulting Partner
 
 ___
 
-At Cloudity, we love **sharing our technical expertise**, such as sfdx-hardis as Open-Source, but that’s **just a small part of everything we do** !
+At Cloudity, we love **sharing our technical expertise**, such as sfdx-hardis as Open-Source, but that's **just a small part of everything we do**.
 
 Cloudity is a **European Salesforce consulting partner** specializing in **customer engagement** and **employee collaboration**, combining senior expertise with local insight to deliver solutions that set the bar high for quality.
 
@@ -23,9 +23,9 @@ Our services span the full delivery lifecycle:
 - **Design & Build**: Salesforce implementation, revenue lifecycle management, field service, marketing, AI & data solutions, international rollouts
 - **Run**: managed services, center of expertise, release management, monitoring & security
 
-We serve industries including manufacturing, financial services, healthcare & life sciences, consumer goods, energy & utilities, technology, logistics and more: as a trusted **Salesforce** partner.
+We serve industries including manufacturing, financial services, healthcare & life sciences, consumer goods, energy & utilities, technology, logistics and more, as a trusted **Salesforce** partner.
 
-Want to know more ? Contact us on our [**WebSite**](https://cloudity.com/) !
+Want to know more? Contact us on our [**website**](https://cloudity.com/).
 
 <div style="text-align: center;">
     <a href="https://cloudity.com/" target="_blank"><img src="https://sfdx-hardis.cloudity.com/assets/images/cloudity-map.jpg" alt="description" /></a>

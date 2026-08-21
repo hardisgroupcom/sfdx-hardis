@@ -1,15 +1,15 @@
 ---
 title: All Environment Variables
-description: Comprehensive list of all environment variables used in sfdx-hardis
+description: Complete list of all environment variables used in sfdx-hardis
 ---
 
 <!-- markdownlint-disable MD013 -->
 
 ## All Environment Variables
 
-Here is a comprehensive list of all environment variables that can be used in sfdx-hardis source code.
+Here is the complete list of environment variables that can be used with sfdx-hardis.
 
-This list has been generated with GitHub Copilot so if you see any incoherence please raise an issue :)
+This list was initially generated with GitHub Copilot, so if you spot an inconsistency, please raise an issue.
 
 ## Table of Contents
 
@@ -90,7 +90,7 @@ These variables control specific behaviors and configurations within sfdx-hardis
 | **DEBUG**                                 | Enable debug logging output                                                                                                                                          | `undefined`   | `'true'`, `'false'`                                                       | [`src/common/websocketClient.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/websocketClient.ts)                                                 |
 | **DEBUG_DEPLOY**                          | Enable debug logging for deployment operations                                                                                                                       | `undefined`   | `'true'`, `'false'`                                                       | [`src/common/utils/orgUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/orgUtils.ts)                                                   |
 | **APEX_CHARACTER_LIMIT**                  | Maximum Apex code character limit for org (classes + triggers, excludes @isTest). Used by limits monitoring.                                                         | `6000000`     | Positive integers (e.g., `'3000000'`, `'10000000'`)                       | [`src/common/utils/apexLimitUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/apexLimitUtils.ts)                                       |
-| **APEX_FLEX_QUEUE_THRESHOLD**             | Minimum count of `AsyncApexJob` rows with `Status = 'Holding'` to raise a warning (Apex flex queue monitor). **Error** severity when count reaches 100 (queue full). | `90`          | Integers `1`–`100` (e.g., `'90'`, `'95'`)                                 | [`src/commands/hardis/org/diagnose/flex-queue.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/diagnose/flex-queue.ts)               |
+| **APEX_FLEX_QUEUE_THRESHOLD**             | Minimum count of `AsyncApexJob` rows with `Status = 'Holding'` to raise a warning (Apex flex queue monitor). **Error** severity when count reaches 100 (queue full). | `90`          | Integers `1`-`100` (e.g., `'90'`, `'95'`)                                 | [`src/commands/hardis/org/diagnose/flex-queue.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/diagnose/flex-queue.ts)               |
 | **MONITORING_BACKUP_SKIP_METADATA_TYPES** | Metadata types to skip during backup monitoring                                                                                                                      | `undefined`   | Comma-separated metadata type names (e.g., `'Document,Report,Dashboard'`) | Found in changelog and documentation                                                                                                                                     |
 | **MONITORING_SKIP_APEX_LIMIT**            | Skip Apex character limit monitoring when running org limits check                                                                                                   | `undefined`   | `'true'`, `'false'`                                                       | [`src/commands/hardis/org/monitor/limits.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/monitor/limits.ts)                         |
 | **DEPRECATED_APEX_API_VERSION**           | API version threshold for apex-api-version diagnose. Classes/triggers with ApiVersion at or below this are flagged.                                                  | `50`          | Positive integers (e.g., `'50'`, `'55'`)                                  | [`src/commands/hardis/org/diagnose/apex-api-version.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/diagnose/apex-api-version.ts)   |
@@ -250,9 +250,7 @@ These variables control the **coding agent auto-fix** feature, which uses AI cod
 
 All non-secret options can also be set in `.sfdx-hardis.yml` using camelCase keys: `codingAgentAutoFix`, `codingAgentGenerateReports`, `codingAgent`, `codingAgentModel`, `codingAgentMaxTurns`.
 
-!!! tip "Local mode"
-
-    When running outside CI/CD (locally), sfdx-hardis auto-detects installed coding agent CLIs **without requiring API key environment variables**. Agents use their own login (`claude login`, `gh auth login`, etc.).
+> **Local mode:** when running outside CI/CD (locally), sfdx-hardis auto-detects installed coding agent CLIs **without requiring API key environment variables**. Agents use their own login (`claude login`, `gh auth login`, etc.).
 
 ### Codex (direct) variables
 

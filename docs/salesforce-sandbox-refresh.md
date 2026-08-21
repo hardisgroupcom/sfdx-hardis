@@ -26,7 +26,7 @@ sfdx-hardis provides two commands that together make sandbox refreshes painless:
 | **Before refresh** | `sf hardis:org:refresh:before-refresh` | Backs up everything that would be lost |
 | **After refresh**  | `sf hardis:org:refresh:after-refresh`  | Restores everything from the backup    |
 
-Both commands are available in the contextual actions in VsCode extension feature **Orgs Manager**.
+Both commands are also available from the contextual actions of the **Orgs Manager** feature of the VS Code SFDX Hardis extension.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/cMzzWDIARbo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -34,7 +34,7 @@ Both commands are available in the contextual actions in VsCode extension featur
 
 ## Prerequisite: Migrate Connected Apps to External Client Apps
 
-Since Spring'26, it is not possible to create Connected Apps except if you submit a request via a Salesforce Case. Concretely: **a Connected App deleted by a sandbox refresh can not be restored**, while an External Client App can be recreated with the same credentials.
+Since Spring '26, Connected Apps can no longer be created unless you submit a request through a Salesforce Case. In practice: **a Connected App deleted by a sandbox refresh cannot be restored**, while an External Client App can be recreated with the same credentials.
 
 The before-refresh command handles this for you: it lists the Connected Apps that have no matching External Client App, warns that they will probably be lost, and pauses so you can convert them in Setup (App Manager). Once you confirm, it re-checks the org and saves the newly converted External Client Apps with their credentials.
 
@@ -50,16 +50,16 @@ Run this command while connected to the sandbox you are about to refresh:
 sf hardis:org:refresh:before-refresh --target-org <sandbox-alias>
 ```
 
-The command is **fully interactive** - it will guide you through each section and let you choose what to save.
+The command is **fully interactive**: it guides you through each section and lets you choose what to save.
 
 ### What gets saved
 
 | Item                                       | Where it is stored                                                                                              |
 |--------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| External Client Apps (+ OAuth credentials) | `scripts/sandbox-refresh/<sandbox>/force-app/…/externalClientApps/`                                             |
-| Connected Apps (+ Consumer Secrets)        | `scripts/sandbox-refresh/<sandbox>/force-app/…/connectedApps/`                                                  |
-| Certificates                               | `scripts/sandbox-refresh/<sandbox>/force-app/…/certs/`                                                          |
-| SAML SSO configs                           | `scripts/sandbox-refresh/<sandbox>/force-app/…/samlssoconfigs/`                                                 |
+| External Client Apps (+ OAuth credentials) | `scripts/sandbox-refresh/<sandbox>/force-app/.../externalClientApps/`                                           |
+| Connected Apps (+ Consumer Secrets)        | `scripts/sandbox-refresh/<sandbox>/force-app/.../connectedApps/`                                                |
+| Certificates                               | `scripts/sandbox-refresh/<sandbox>/force-app/.../certs/`                                                        |
+| SAML SSO configs                           | `scripts/sandbox-refresh/<sandbox>/force-app/.../samlssoconfigs/`                                               |
 | Custom Settings (as JSON)                  | `scripts/sandbox-refresh/<sandbox>/savedCustomSettings/`                                                        |
 | Records (via SFDMU)                        | `scripts/sandbox-refresh/<sandbox>/data/`                                                                       |
 | Other metadata                             | `scripts/sandbox-refresh/<sandbox>/manifest/package-metadata-to-restore.xml`                                    |
@@ -67,7 +67,7 @@ The command is **fully interactive** - it will guide you through each section an
 
 ### Connected Apps and External Client Apps deletion
 
-In order to be able to recreate Connected Apps and External Client Apps with the same credentials, they need to be deleted from the org before the refresh. The command will automatically delete them after saving their details, and will keep a log of what was deleted so that they can be re-created in the after-refresh step.
+To recreate Connected Apps and External Client Apps with the same credentials, they must be deleted from the org before the refresh. The command automatically deletes them after saving their details, and keeps a log of what was deleted so that they can be re-created in the after-refresh step.
 
 ### What cannot be restored: the manual actions inventory
 
@@ -81,7 +81,7 @@ Some items have no credentials to save, so no tool can restore them. The before-
 
 ## Step 2: Refresh the sandbox in Salesforce
 
-Trigger the sandbox refresh normally from **Salesforce Setup → Sandboxes**. 
+Trigger the sandbox refresh normally from **Salesforce Setup -> Sandboxes**.
 Wait until the refresh is complete and you can log in again.
 
 > **Important:** Do **not** run the after-refresh command until the sandbox is fully refreshed and accessible.
@@ -129,7 +129,7 @@ Unfortunately there is no way to recover credentials that were not saved. For fu
 
 **Where are the backups stored?**
 
-Under `scripts/sandbox-refresh/<sandbox-name>/` inside your SFDX project. Do not commit and push these backups to source control, they contain sensitive credentials.
+Under `scripts/sandbox-refresh/<sandbox-name>/` inside your SFDX project. Do not commit these backups to source control: they contain sensitive credentials.
 
 **What happens if I run before-refresh twice on the same sandbox?**
 
