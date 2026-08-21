@@ -27,7 +27,7 @@ A few words you will meet everywhere in this guide:
 |------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
 | **Major branch / major org** | A Git branch whose content is deployed by the CI server to a Salesforce org: `integration`, `uat`, `preprod`, `main` (production)...       |
 | **User Story branch**        | Your own branch, created from a major branch, where your changes live until they are merged.                                              |
-| **Dev sandbox / scratch org** | The org where you implement your User Story. Your release manager tells you which one to use.                                             |
+| **Dev sandbox / scratch org** | The org where you implement your User Story. A dev sandbox can be yours alone or shared by several contributors; your release manager tells you which one to use. |
 | **Pull Request**             | The request to merge your branch into a major branch. It triggers the validation jobs and is reviewed by the release manager.             |
 | **Release manager**          | The person who organizes the releases, reviews the Pull Requests and configures the project. Ask them when in doubt.                      |
 

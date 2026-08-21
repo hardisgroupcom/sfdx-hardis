@@ -1,6 +1,6 @@
 ---
 title: Deployment actions on a Salesforce CI/CD project
-description: Automate and track the steps around your deployments: data loads, Apex scripts, community publishing, scheduled batches and manual steps
+description: "Automate and track the steps around your deployments: data loads, Apex scripts, community publishing, scheduled batches and manual steps"
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -39,6 +39,8 @@ Everything can be done with clicks in the [VS Code SFDX Hardis extension](https:
 3. Click **Add New Action** to create an action, or click an existing action to view and edit it.
 
     ![Deployment action editor](assets/images/screenshot-edit-deployment-action.jpg)
+
+Deployment actions are declared on the Pull Requests of User Stories (feature or fix branches). A Pull Request between two major branches, like a promotion from `integration` to `uat`, carries no action of its own: its **Deployment Actions** tab lists, read-only, the actions of the User Story Pull Requests it brings along, with their author and Pull Request.
 
 You can also review the deployment actions of already merged Pull Requests: click a major branch (like `integration`) in the pipeline diagram, then open its **Deployment Actions** tab.
 

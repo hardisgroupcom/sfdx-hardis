@@ -1,6 +1,6 @@
 ---
 title: sfdx-hardis help
-description: Get help and support for sfdx-hardis: professional support subscriptions from Cloudity and community support via GitHub Issues
+description: "Get help and support for sfdx-hardis: professional support subscriptions from Cloudity and community support via GitHub Issues"
 ---
 <!-- markdownlint-disable MD013 -->
 

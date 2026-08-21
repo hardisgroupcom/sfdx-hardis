@@ -56,6 +56,8 @@ With Salesforce DX, each member of the team works in a personal org: a source-tr
 
 The [release manager](salesforce-ci-cd-release-home.md) of the project decides whether the team works with [**source-tracked sandboxes**](#source-tracked-sandbox) or with [**scratch orgs**](#scratch-org), and, in sandbox mode, **which sandbox you must use**. Ask them before you start.
 
+Dev sandboxes can be **individual** (one sandbox per contributor) or **shared** by several members of the team, which saves sandboxes on projects where they are limited. On a shared sandbox, the **New User Story** command can deploy the content of the target branch to the sandbox before you start, so every contributor works on the same base. Your release manager configures this (`sharedDevSandboxes` in `.sfdx-hardis.yml`).
+
 ___
 
 ### Source-tracked sandbox

@@ -1,6 +1,6 @@
 ---
 title: VS Code Extension for sfdx-hardis
-description: The graphical companion to the sfdx-hardis CLI: workbenches, pipeline view, monitoring config and AI assistance directly in Visual Studio Code.
+description: "The graphical companion to the sfdx-hardis CLI: workbenches, pipeline view, monitoring config and AI assistance directly in Visual Studio Code."
 ---
 <!-- markdownlint-disable MD013 -->
 

@@ -15,7 +15,7 @@ DevOps practices work best when one or two team members take the role of **relea
 ### Responsibilities
 
 - **Support the team**: train and help the contributors with the [Contributor Guide](salesforce-ci-cd-use-home.md), and answer their questions about branches and orgs.
-- **Provide orgs**: create and refresh the [source-tracked dev sandboxes](salesforce-ci-cd-create-new-task.md#source-tracked-sandbox) that contributors work in, and the sandboxes of the major branches.
+- **Provide orgs**: create and refresh the [source-tracked dev sandboxes](salesforce-ci-cd-create-new-task.md#source-tracked-sandbox) that contributors work in (one per contributor, or shared by several of them), and the sandboxes of the major branches.
 - [**Review and merge Pull Requests**](salesforce-ci-cd-validate-merge-request.md): check the validation jobs, solve conflicts, merge into the major branches.
 - [**Deploy to major orgs**](salesforce-ci-cd-deploy-major-branches.md): promote the changes from `integration` to `uat`, `preprod` and production with Pull Requests between major branches.
 - [**Handle hotfixes and retrofits**](salesforce-ci-cd-hotfixes.md): run the RUN stream in parallel with the BUILD stream without regressions.

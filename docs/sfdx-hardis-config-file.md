@@ -1,6 +1,6 @@
 ---
 title: sfdx-hardis Configuration
-description: Overview of sfdx-hardis configuration: VS Code UI, config file, environment variables, and links to topic-specific configuration guides
+description: "Overview of sfdx-hardis configuration: VS Code UI, config file, environment variables, and links to topic-specific configuration guides"
 ---
 <!-- markdownlint-disable MD013 -->
 
