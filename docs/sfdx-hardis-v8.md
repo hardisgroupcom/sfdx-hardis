@@ -12,7 +12,7 @@ description: "Deployment Actions are generally available, Pull Request comments 
 v8 ships the **sfdx-hardis plugin** and the **VS Code extension** together. The headline is **Deployment Actions leaving beta**, but the whole contribution loop got faster and easier to read: Pull Request comments you can understand at a glance, a rebuilt extension, pipelines that start in seconds, and new commands to watch what your org actually costs.
 
 | What changed                                                                                  | Why you care                                                                                                     |
-| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+|-----------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
 | [**Deployment Actions are generally available**](#deployment-actions-are-generally-available) | Everything that must happen around a deployment is declared on the Pull Request and runs by itself, in every org |
 | [**Pull Request comments redesigned**](#pull-request-comments-you-can-read-at-a-glance)       | You know in one second which comment you are reading and how the deployment went                                 |
 | [**VS Code extension rebuilt**](#the-vs-code-extension-got-a-full-redesign)                   | One consistent design, readable tables, and a command panel that shows a whole run on a single screen            |
@@ -33,7 +33,7 @@ A deployment action is anything that must happen **around** a metadata deploymen
 ![Deployment actions of a Pull Request](assets/images/screenshot-pr-deployment-actions-list.jpg)
 
 | Action type                  | What it does                                                              |
-| ---------------------------- | ------------------------------------------------------------------------- |
+|------------------------------|---------------------------------------------------------------------------|
 | **Command**                  | Runs a Salesforce CLI or sfdx-hardis command                              |
 | **Data**                     | Loads an SFDMU data workspace (reference data, settings records)          |
 | **Apex**                     | Runs an anonymous Apex script                                             |
@@ -123,7 +123,7 @@ Every panel now shares the same header, the same cards and buttons, the **offici
 Waiting was the most common complaint about the extension. v8 attacks it from both sides.
 
 | Before                                                                                                        | Now                                                                                            |
-| ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+|---------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
 | Clicking a command could wait **more than 10 seconds** for the Salesforce CLI to boot before showing anything | The execution tab opens **immediately** on click                                               |
 | Commands run in a terminal waited for the terminal to be ready                                                | They **start immediately**, and use **Git Bash** automatically on Windows when it is installed |
 | VS Code could freeze several times a day after a file was created or renamed                                  | Fixed, and VS Code **starts faster**                                                           |
@@ -141,7 +141,7 @@ New at startup: a warning when the Salesforce Extensions setting **Source Tracki
 Salesforce bills more and more on usage. Three new monitoring commands make that visible before the invoice does.
 
 | Command                                                                     | What it reports                                                                                                                                                     |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-----------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [**Usage-based entitlements**](salesforce-monitoring-usage-entitlements.md) | Einstein Requests, Flex Credits, Data 360 credits, API calls, and a **warning when consumption is on track to exceed the allowance** before the billing period ends |
 | [**Consumption alerts**](salesforce-monitoring-consumption-alerts.md)       | The consumption and license utilization alerts Salesforce raises on the org                                                                                         |
 | [**Agentforce and Data 360 credits**](salesforce-monitoring-ai-usage.md)    | Credit consumption broken down **by agent and by action** (requires Data 360)                                                                                       |
@@ -202,7 +202,7 @@ Two new pages help you check your setup: the [CI/CD Setup Checklist](salesforce-
 Both projects went on a diet, for the same reason: every third-party package is code you have to trust.
 
 |                                        | Before | v8                                                                                 |
-| -------------------------------------- | ------ | ---------------------------------------------------------------------------------- |
+|----------------------------------------|--------|------------------------------------------------------------------------------------|
 | **Plugin** dependency tree             | 100%   | **~20% smaller** (axios, xml2js, openai, cloudflare, md-to-pdf and others removed) |
 | **Extension** direct dependencies      | 28     | **14**                                                                             |
 | **Extension** total packages installed | 327    | **287**                                                                            |
@@ -216,7 +216,7 @@ Widely used but replaceable packages were replaced by capabilities already built
 A few behaviors changed on purpose. Check these if they apply to your project.
 
 | Change                                                                                                                                                                                                                                                        | What to do                                                                                                                                                    |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Post-deployment actions no longer run when the deployment failed.** The `skipIfError` property is removed and ignored.                                                                                                                                      | If an action relied on `skipIfError: false` to run after a failed deployment, move it elsewhere.                                                              |
 | **`packageXmlToDeploy`, `packageXmlToDelete` and `packageXmlToDeletePreDeploy` are no longer ignored.** A bug made the default `manifest/` and `config/` paths always win, so a custom destructive manifest could delete nothing and still exit with success. | If you set one of these properties, review what your next deployment will actually deploy and delete.                                                         |
 | **A Flow in destructive changes is deleted outside the deployment transaction.**                                                                                                                                                                              | A failed deployment leaves the Flow deactivated or deleted instead of rolling it back. Every step is re-runnable, so retrying the pipeline converges.         |
