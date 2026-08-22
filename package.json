@@ -5,9 +5,12 @@
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
   "version": "8.0.0",
   "dependencies": {
-    "@actions/github": "7.0.0",
     "@cparra/apexdocs": "3.24.2",
     "@gitbeaker/rest": "43.8.0",
+    "@inquirer/checkbox": "5.2.2",
+    "@inquirer/input": "5.1.3",
+    "@inquirer/number": "4.2.0",
+    "@inquirer/select": "5.2.2",
     "@langchain/anthropic": "1.5.1",
     "@langchain/core": "1.2.1",
     "@langchain/google-genai": "2.2.0",
@@ -18,7 +21,6 @@
     "@salesforce/core": "8.29.0",
     "@salesforce/sf-plugins-core": "11.3.12",
     "@salesforce/source-deploy-retrieve": "12.31.5",
-    "@slack/types": "2.22.0",
     "@slack/web-api": "7.19.0",
     "@supercharge/promise-pool": "3.2.0",
     "@xmldom/xmldom": "0.9.10",
@@ -28,34 +30,21 @@
     "chalk": "5.6.2",
     "chrome-launcher": "1.2.1",
     "cosmiconfig": "9.0.2",
-    "cross-spawn": "7.0.6",
-    "debug": "4.4.3",
     "diff": "8.0.3",
-    "dotenv": "16.6.1",
     "exceljs": "4.4.0",
-    "farmhash": "5.0.1",
     "fast-xml-parser": "5.10.1",
-    "form-data": "4.0.6",
-    "fs-extra": "11.4.0",
     "glob": "13.0.6",
     "i18next": "25.10.10",
-    "inquirer": "10.2.2",
     "jira.js": "5.3.1",
     "js-yaml": "4.3.1",
-    "jsdoc-to-markdown": "9.1.3",
-    "langchain": "1.5.3",
     "marked": "14.1.4",
-    "open": "10.2.0",
-    "ora": "8.2.0",
     "papaparse": "5.5.3",
     "pptxgenjs": "^4.0.1",
     "puppeteer-core": "25.8.0",
     "sanitize-html": "^2.17.7",
     "semver": "7.8.5",
     "simple-git": "3.36.0",
-    "sort-array": "4.1.5",
     "undici": "8.10.0",
-    "which": "4.0.0",
     "ws": "8.21.1",
     "xpath": "0.0.34"
   },
@@ -67,7 +56,6 @@
     "@babel/core": "7.29.6",
     "@cparra/apexdocs/js-yaml": "4.3.1",
     "@sigstore/core": "3.2.1",
-    "form-data": "4.0.6",
     "fast-xml-parser": "5.10.1",
     "lodash": "4.18.0",
     "lodash-es": "4.18.0",
@@ -76,14 +64,15 @@
     "qs": "6.15.2",
     "tar": "7.5.21",
     "tmp": "0.2.7",
-    "mute-stream": "3.0.0",
     "ws": "8.21.1",
     "fast-uri": "3.1.5",
     "simple-git": "3.36.0",
-    "langsmith": "0.7.1",
     "linkify-it": "5.0.2",
     "**/yargs": "18.0.0",
-    "undici": "8.10.0"
+    "undici": "8.10.0",
+    "form-data": "4.0.6",
+    "mute-stream": "3.0.0",
+    "langsmith": "0.7.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -91,19 +80,15 @@
     "@salesforce/cli-plugins-testkit": "5.3.64",
     "@salesforce/dev-config": "4.3.3",
     "@salesforce/dev-scripts": "10.2.12",
+    "@slack/types": "2.22.0",
     "@types/adm-zip": "0.5.8",
     "@types/columnify": "1.5.4",
     "@types/cosmiconfig": "6.0.3",
-    "@types/cross-spawn": "6.0.6",
     "@types/diff": "6.0.0",
-    "@types/fs-extra": "11.0.4",
     "@types/glob": "8.1.0",
-    "@types/inquirer": "9.0.8",
     "@types/js-yaml": "4.0.9",
     "@types/papaparse": "5.5.2",
     "@types/sanitize-html": "2.16.1",
-    "@types/sort-array": "4.1.2",
-    "@types/which": "3.0.4",
     "@types/ws": "8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.62.1",
@@ -117,7 +102,7 @@
     "typescript": "5.9.3"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "files": [
     "/lib",
@@ -216,7 +201,8 @@
     "test:nuts:org": "mocha \"test/nuts-org/**/*.nut.ts\" --slow 10000 --timeout 1800000",
     "test:only": "wireit",
     "update:docker-pulls": "node scripts/update-docker-pulls.mjs",
-    "version": "oclif readme"
+    "version": "oclif readme",
+    "check:deps": "wireit"
   },
   "publishConfig": {
     "access": "public"
@@ -277,7 +263,8 @@
       "dependencies": [
         "test:compile",
         "test:only",
-        "lint"
+        "lint",
+        "check:deps"
       ]
     },
     "test:only": {
@@ -330,6 +317,17 @@
         "./*.md",
         "./!(CHANGELOG).md",
         "messages/**/*.md"
+      ],
+      "output": []
+    },
+    "check:deps": {
+      "command": "node ./scripts/check-dependencies.mjs",
+      "files": [
+        "package.json",
+        "yarn.lock",
+        "scripts/check-dependencies.mjs",
+        "src/**/*.ts",
+        "bin/**"
       ],
       "output": []
     }
