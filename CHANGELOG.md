@@ -5,6 +5,7 @@
 ### Documentation
 
 - The [Installation page](https://sfdx-hardis.cloudity.com/installation/) is **rewritten for first-time users**: a table to pick between **VS Code**, the **CLI plugin** and the **Docker images**, then the VS Code setup **step by step**, with the IDE compatibility table and the troubleshooting tips moved to the end.
+- [Deployment Actions](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/#choose-the-target-orgs): the **Target orgs** section now shows two screenshots of the editor, one action restricted to `uat` and `main` to enable an integration, and one running everywhere except `main` to upsert the sample records used to test the agents.
 
 ## [8.0.0] 2026-08-21
 

@@ -163,6 +163,14 @@ The resolved scope is visible in two places:
 
 By default, an action runs in every org your work is deployed to. In the editor, the **Target orgs** field lets you restrict it: run it **everywhere**, only on **some major branches** (for example only `uat`), or **everywhere except** a few (for example everywhere but production). You can also target **developer sandboxes** specifically.
 
+Choose **Only these branches** when the action makes sense in a few orgs only. In the example below, the ERP is connected to the uat and production orgs only, so the action that enables the integration runs in `uat` and `main`, and nowhere else.
+
+![Deployment action running on uat and main only](assets/images/screenshot-deployment-action-target-orgs-include.jpg)
+
+Choose **All except these branches** when the action must run everywhere but a few orgs, most often production. In the example below, the Apex script that upserts the sample records used to test the agents runs in every org except `main`.
+
+![Deployment action running everywhere except main](assets/images/screenshot-deployment-action-target-orgs-exclude.jpg)
+
 <details markdown="1"><summary>Technical: includeTargetBranches / excludeTargetBranches</summary>
 
 Two mutually exclusive properties control the target orgs:
