@@ -11,7 +11,7 @@ import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/i
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { CONSTANTS, getConfig, getEnvVarList, setConfig } from '../../../../config/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
-import sortArray from 'sort-array';
+import sortArray from '../../../../common/utils/sortArray.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
 

@@ -15,7 +15,7 @@
  * org NUTs must never run with mocha --parallel.
  */
 import { TestSession, execCmd } from '@salesforce/cli-plugins-testkit';
-import fs from 'fs-extra';
+import fs from '../../../src/common/utils/fsUtils.js';
 import * as os from 'os';
 import * as path from 'path';
 import { execSync } from 'child_process';

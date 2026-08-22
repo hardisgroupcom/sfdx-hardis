@@ -1,7 +1,7 @@
 import { Connection } from '@salesforce/core';
 import { getNested, uxLog } from './index.js';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as path from 'path';
 import { t } from './i18n.js';
 

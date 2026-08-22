@@ -31,7 +31,7 @@ import { callSfdxGitDelta } from '../../../common/utils/gitUtils.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { countPackageXmlItems, isPackageXmlEmpty } from '../../../common/utils/xmlUtils.js';
 import { t } from '../../../common/utils/i18n.js';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');

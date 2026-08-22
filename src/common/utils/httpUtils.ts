@@ -145,6 +145,10 @@ export async function httpPut<T = any>(url: string, data?: any, config: HttpRequ
   return request<T>('PUT', url, data, config);
 }
 
+export async function httpPatch<T = any>(url: string, data?: any, config: HttpRequestConfig = {}): Promise<HttpResponse<T>> {
+  return request<T>('PATCH', url, data, config);
+}
+
 export async function httpDelete<T = any>(url: string, config: HttpRequestConfig = {}): Promise<HttpResponse<T>> {
   return request<T>('DELETE', url, undefined, config);
 }
@@ -153,6 +157,7 @@ export interface HttpClient {
   get<T = any>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
   post<T = any>(url: string, data?: any, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
   put<T = any>(url: string, data?: any, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
+  patch<T = any>(url: string, data?: any, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
   delete<T = any>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
 }
 
@@ -169,6 +174,7 @@ export function createHttpClient(defaults: { baseURL: string; headers?: Record<s
     get: (url, config) => httpGet(fullUrl(url), mergeConfig(config)),
     post: (url, data, config) => httpPost(fullUrl(url), data, mergeConfig(config)),
     put: (url, data, config) => httpPut(fullUrl(url), data, mergeConfig(config)),
+    patch: (url, data, config) => httpPatch(fullUrl(url), data, mergeConfig(config)),
     delete: (url, config) => httpDelete(fullUrl(url), mergeConfig(config)),
   };
 }

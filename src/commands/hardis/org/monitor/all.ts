@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
 import { execCommand, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';

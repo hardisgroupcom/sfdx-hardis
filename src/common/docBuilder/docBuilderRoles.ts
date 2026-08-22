@@ -1,5 +1,5 @@
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
-import fs from "fs-extra";
+import fs from '../utils/fsUtils.js';
 import path from "path";
 import { uxLog } from "../utils/index.js";
 import c from "chalk";

@@ -82,7 +82,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Reads and writes YAML config files using \`js-yaml\` and \`fs-extra\`.
+- Reads and writes YAML config files using \`js-yaml\` and Node.js \`fs\`.
 - Validates that referenced files (Apex scripts) and workspaces (SFDMU projects) exist before saving.
 - Generates action ID with \`crypto.randomUUID()\`.
 - Supports three config scopes: project (\`config/.sfdx-hardis.yml\`), branch (\`config/branches/.sfdx-hardis.<branch>.yml\`), PR (\`scripts/actions/.sfdx-hardis.<prId>.yml\`).

@@ -125,7 +125,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
     { prompts },
   ] = await Promise.all([
     import('chalk'),
-    import('fs-extra'),
+    import('../../common/utils/fsUtils.js'),
     import('../../config/index.js'),
     import('../../common/utils/prompts.js'),
   ]);

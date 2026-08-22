@@ -1,4 +1,4 @@
-import sortArray from "sort-array";
+import sortArray from '../utils/sortArray.js';
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";

@@ -7,7 +7,7 @@
  * scratch orgs. Do not run this file with mocha --parallel.
  */
 import { expect } from 'chai';
-import fs from 'fs-extra';
+import fs from '../../src/common/utils/fsUtils.js';
 import * as path from 'path';
 import {
   addApexClassToManifest,

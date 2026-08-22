@@ -127,7 +127,7 @@ groups:
     });
 
     it('parses the real alert pack file with every rule paused', async () => {
-      const fs = await import('fs-extra');
+      const fs = await import('../../../src/common/utils/fsUtils.js');
       const yamlText = await fs.default.readFile('docs/grafana/alerts-v2/sfdx-hardis-alerts.yaml', 'utf8');
       const groups = buildAlertRuleGroups(yamlText, 'prom-uid', 'loki-uid', GRAFANA_V2_FOLDER_UID);
       assert.ok(groups.length >= 1);

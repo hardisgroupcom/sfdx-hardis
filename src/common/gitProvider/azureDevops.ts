@@ -1,7 +1,7 @@
 import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
 import * as azdev from "azure-devops-node-api";
 import c from "chalk";
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../utils/index.js";
 import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";

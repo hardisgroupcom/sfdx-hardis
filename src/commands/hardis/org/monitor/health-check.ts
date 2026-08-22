@@ -11,7 +11,7 @@ import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../.
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
-import sortArray from 'sort-array';
+import sortArray from '../../../../common/utils/sortArray.js';
 import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);

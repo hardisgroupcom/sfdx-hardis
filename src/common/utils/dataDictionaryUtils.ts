@@ -1,5 +1,5 @@
 import path from 'path';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import Papa from 'papaparse';
 import { Connection } from '@salesforce/core';
 import c from 'chalk';

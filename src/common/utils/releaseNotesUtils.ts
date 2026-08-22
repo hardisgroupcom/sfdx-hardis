@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import c from "chalk";
-import fs from "fs-extra";
+import fs from './fsUtils.js';
 import * as os from "os";
 import * as path from "path";
 import Papa from "papaparse";

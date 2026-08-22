@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 // External Libraries and Node.js Modules
 import { glob } from 'glob';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import * as path from 'path';
 
 // Salesforce Specific

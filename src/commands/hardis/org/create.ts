@@ -4,7 +4,7 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { assert } from 'console';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import { dateHelper } from '../../../common/utils/dateHelper.js';
 import * as os from 'os';
 import * as path from 'path';
@@ -49,7 +49,7 @@ The command's technical implementation involves:
 
 - **Configuration Loading:** It loads project and user configurations using \`getConfig\` to retrieve settings like \`projectName\`, \`devHubAlias\`, and \`userEmail\`.
 - **Git Integration:** Retrieves the current Git branch name using \`getCurrentGitBranch\` to inform sandbox naming.
-- **File System Operations:** Uses \`fs-extra\` to manage sandbox definition files (reading \`project-sandbox-def.json\`, writing a user-specific definition file) and temporary directories.
+- **File System Operations:** Uses Node.js \`fs\` to manage sandbox definition files (reading \`project-sandbox-def.json\`, writing a user-specific definition file) and temporary directories.
 - **Salesforce CLI Execution:** Executes Salesforce CLI commands (\`sf org create sandbox\`, \`sf data get record\`, \`sf data update record\`, \`sf org open\`) using \`execSfdxJson\` for sandbox creation, user updates, and opening the org in a browser.
 - **Cache Management:** Clears the Salesforce CLI org list cache (\`clearCache('sf org list')\`) to ensure the newly created sandbox is immediately recognized.
 - **Initialization Utilities:** Calls a suite of utility functions (\`initPermissionSetAssignments\`, \`initApexScripts\`, \`initOrgData\`) to perform post-creation setup tasks.

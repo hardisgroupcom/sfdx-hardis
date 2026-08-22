@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 // External Libraries
 import { glob } from 'glob';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import { parseXmlString } from '../../../common/utils/xmlUtils.js';
 import * as path from 'path';
 import c from 'chalk';
@@ -179,12 +179,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
     return new Promise((resolve, reject) => {
       try {
-        fs.readFile(labelFilePath, 'utf-8', (errorReadingFile, data) => {
-          if (errorReadingFile) {
-            reject(errorReadingFile);
-            return;
-          }
-
+        fs.readFile(labelFilePath, 'utf-8').then((data) => {
           let result: any;
           try {
             result = parseXmlString(data);
@@ -226,7 +221,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
             resolve(unusedLabels);
           }
-        });
+        }, (errorReadingFile) => reject(errorReadingFile));
       } catch (error) {
         uxLog("warning", this, c.yellow(t('errorProcessingLabelFile', { error })));
         reject(error);

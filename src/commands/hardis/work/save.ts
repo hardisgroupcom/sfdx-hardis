@@ -3,8 +3,8 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
-import open from 'open';
+import fs from '../../../common/utils/fsUtils.js';
+import { open } from '../../../common/utils/openUtils.js';
 import * as path from 'path';
 import {
   createTempDir,

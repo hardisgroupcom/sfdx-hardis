@@ -4,7 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { glob } from 'glob';
-import sortArray from 'sort-array';
+import sortArray from '../../../../common/utils/sortArray.js';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';

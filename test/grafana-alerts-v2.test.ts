@@ -3,7 +3,7 @@
 // OK on no-data/exec-error, A(query) -> B(reduce) -> C(threshold) shape, datasource
 // placeholders only, no stack-specific string, daily-sample-safe lookback windows.
 import { strict as assert } from 'assert';
-import fs from 'fs-extra';
+import fs from '../src/common/utils/fsUtils.js';
 import * as path from 'path';
 import yaml from 'js-yaml';
 

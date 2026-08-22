@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import c from "chalk";
 import * as os from "os";
 import * as path from "path";

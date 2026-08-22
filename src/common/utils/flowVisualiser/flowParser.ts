@@ -3,7 +3,7 @@ import { resolveMermaidTheme, type MermaidNodeConfig, type ResolvedMermaidTheme 
 import { getLargeXmlParser } from '../xmlUtils.js';
 import { CONSTANTS } from "../../../config/index.js";
 import { getCurrentGitBranch } from "../index.js";
-import farmhash from 'farmhash';
+import { fingerprint32 } from '../farmhashFingerprint.js';
 import { buildCustomMarkdownTable, buildGenericMarkdownTable, flowNodeToMarkdown, handleFilterItems, handleInputParameters, handleprocessMetadataValues, handleSchedule, handleScheduledPaths, mdEndSection, simplifyNode, stringifyValue } from "./nodeFormatUtils.js";
 
 interface FlowMap {
@@ -419,7 +419,7 @@ async function getNodeDefStr(
         // Remove not relevant properties from node display
         const nodeSimplified = simplifyNode(flowMap[property]?.flowNodeDescription || flowMap[property]);
         // Mermaid compare node
-        const tooltipClassMermaid = `click ${property} "#${property.toLowerCase()}" "${farmhash.fingerprint32(JSON.stringify(nodeSimplified))}"`;
+        const tooltipClassMermaid = `click ${property} "#${property.toLowerCase()}" "${fingerprint32(JSON.stringify(nodeSimplified))}"`;
         nodeDefStr += tooltipClassMermaid + "\n\n"
         // Markdown details
         nodeDetailMd += `### ${property}\n\n` + flowNodeToMarkdown(nodeSimplified, allproperties);
@@ -446,7 +446,7 @@ function getGeneralInfoMd(flowObj: any, flowMap: FlowMap) {
             delete flowObjCopy[nodeKey];
         }
     }
-    const startFingerPrint = farmhash.fingerprint32(JSON.stringify(flowObjCopy));
+    const startFingerPrint = fingerprint32(JSON.stringify(flowObjCopy));
     handleInputParameters(flowObjCopy, Object.keys(flowMap));
     let startNodeLabel = "START";
     let detailTablesMd = ""

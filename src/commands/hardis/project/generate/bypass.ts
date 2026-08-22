@@ -14,7 +14,7 @@ import { prompts } from "../../../../common/utils/prompts.js";
 import c from "chalk";
 import path from "path";
 import fs from "fs";
-import * as fsExtra from "fs-extra";
+import fsExtra from '../../../../common/utils/fsUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
@@ -184,7 +184,7 @@ The command's technical implementation involves:
   - Queries \`FlowDefinitionView\` to find record-triggered flows for selected sObjects.
 - **Interactive Prompts:** Uses the \`prompts\` library for user-friendly selection of sObjects, automation types, and implementation options when flags are not provided.
 - **XML Generation:** Dynamically generates Custom Permission and Permission Set XML files with descriptive labels and comments indicating their purpose.
-- **File System Operations:** Uses \`fs-extra\` to create directory structures and write metadata files to \`force-app/main/default/customPermissions/\` and \`force-app/main/default/permissionsets/\`.
+- **File System Operations:** Uses Node.js \`fs\` to create directory structures and write metadata files to \`force-app/main/default/customPermissions/\` and \`force-app/main/default/permissionsets/\`.
 - **Metadata Retrieval:** When \`--metadata-source org\` is used, executes \`sf project retrieve start --metadata\` commands in chunks of 25 records to retrieve current automation metadata from the org.
 - **Smart Bypass Implementation:**
   - **Validation Rules:** Modifies \`errorConditionFormula\` XML nodes to wrap existing formulas with \`AND(NOT($Permission.Bypass...), ...)\` checks.

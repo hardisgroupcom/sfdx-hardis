@@ -1,5 +1,5 @@
 import c from "chalk";
-import Debug from "debug";
+import { debuglog } from "util";
 import { GitProvider } from '../gitProvider/index.js';
 import { PullRequestCommentRef } from '../gitProvider/gitProviderRoot.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
@@ -9,7 +9,8 @@ import { t } from './i18n.js';
 import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
 import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/prCommentNav.js';
 
-const debug = Debug("sfdxhardis");
+// Enable with NODE_DEBUG=sfdxhardis
+const debug = debuglog("sfdxhardis");
 
 export const DEPLOYMENT_ACTIONS_MARKER = '<!-- sfdx-hardis deployment-actions-state -->';
 

@@ -1,6 +1,6 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as yaml from 'js-yaml';
 import * as path from 'path';
 import { getCurrentGitBranch, isCI, uxLog } from './index.js';

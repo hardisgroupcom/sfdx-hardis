@@ -1,6 +1,6 @@
 import { Org, SfError } from '@salesforce/core';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import { createTempDir, getCurrentGitBranch, uxLog } from './index.js';
 import { getEnvVar } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';

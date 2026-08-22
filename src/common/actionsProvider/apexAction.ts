@@ -1,6 +1,6 @@
 import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import { execCommand, uxLog } from '../utils/index.js';
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import c from 'chalk';
 
 export class ApexAction extends ActionsProvider {

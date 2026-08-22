@@ -1,6 +1,6 @@
 import c from 'chalk';
 import * as path from 'path';
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import { SfError } from '@salesforce/core';
 import { sortCrossPlatform, uxLog } from '../utils/index.js';
 import { countPackageXmlItems, parsePackageXmlFile } from '../utils/xmlUtils.js';

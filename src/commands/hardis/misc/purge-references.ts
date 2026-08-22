@@ -3,8 +3,8 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
-import ora, { Ora } from 'ora';
+import fs from '../../../common/utils/fsUtils.js';
+import { createSpinner, Spinner } from '../../../common/utils/spinner.js';
 import * as path from 'path';
 
 import { execCommand, isCI, uxLog } from '../../../common/utils/index.js';
@@ -103,7 +103,7 @@ In agent mode:
   protected referenceStrings: string[] = [];
   protected referenceStringsLabel: string;
   protected allMatchingSourceFiles: string[] = [];
-  protected spinnerCustom: Ora;
+  protected spinnerCustom: Spinner;
 
   public async run(): Promise<AnyJson> {
     uxLog("warning", this, c.yellow(c.bold(PurgeRef.description)));
@@ -153,9 +153,8 @@ In agent mode:
     }
 
     // Find sources that contain references
-    this.spinnerCustom = ora({
+    this.spinnerCustom = createSpinner({
       text: `Browsing sources to find references to ${this.referenceStringsLabel}...`,
-      spinner: 'moon',
     }).start();
     const packageDirectories = this.project?.getPackageDirectories() || [];
     this.allMatchingSourceFiles = [];

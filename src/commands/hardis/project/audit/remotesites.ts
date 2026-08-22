@@ -2,11 +2,11 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import c from 'chalk';
 import { glob } from 'glob';
 import { extractRegistrableDomain } from '../../../../common/utils/domainUtils.js';
-import sortArray from 'sort-array';
+import sortArray from '../../../../common/utils/sortArray.js';
 import * as url from 'url';
 import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';

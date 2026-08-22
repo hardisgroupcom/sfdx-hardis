@@ -3,9 +3,9 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
-import open from 'open';
+import { open } from '../../../../common/utils/openUtils.js';
 import {
   buildOrgSlugFromInstanceUrl,
   ensureGitBranch,
@@ -60,7 +60,7 @@ The command's technical implementation involves a series of Git operations, file
 
 - **Git Operations:** Utilizes \`ensureGitRepository\`, \`getGitRepoName\`, \`execCommand\` (for \`git add\`, \`git stash\`), \`ensureGitBranch\`, and \`gitAddCommitPush\` to manage the Git repository, branches, and commits.
 - **Interactive Prompts:** Employs the \`prompts\` library to interact with the user for confirmations and selections.
-- **File System Management:** Uses \`fs-extra\` for copying default monitoring files (\`defaults/monitoring\`) and managing the SFDX project structure.
+- **File System Management:** Uses Node.js \`fs\` for copying default monitoring files (\`defaults/monitoring\`) and managing the SFDX project structure.
 - **Salesforce CLI Integration:** Calls \`sf project generate\` to create a new SFDX project and uses \`promptOrg\` for Salesforce org authentication and selection.
 - **Configuration Management:** Updates the \`.sfdx-hardis.yml\` file using \`setInConfigFile\` to store org-specific monitoring configurations.
 - **SSL Certificate Generation:** Leverages \`generateSSLCertificate\` to create the necessary SSL certificates for JWT-based authentication to the Salesforce org.

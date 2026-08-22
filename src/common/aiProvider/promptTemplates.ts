@@ -1,6 +1,6 @@
 import { UtilsAi } from "./utils.js";
 import path from "path";
-import fs from "fs-extra";
+import fs from '../utils/fsUtils.js';
 import { PromptTemplateDefinition } from "./promptTemplates/types.js";
 import { PROMPT_TEMPLATES as IMPORTED_PROMPT_TEMPLATES } from "./promptTemplates/index.js";
 import { PROMPT_VARIABLES, PromptVariable } from "./promptTemplates/variablesIndex.js";

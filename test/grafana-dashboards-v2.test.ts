@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert';
-import fs from 'fs-extra';
+import fs from '../src/common/utils/fsUtils.js';
 import path from 'path';
 
 // Portability lint for the "Org Monitoring by sfdx-hardis" (v2) Grafana dashboards.

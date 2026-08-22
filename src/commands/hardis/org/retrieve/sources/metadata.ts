@@ -4,7 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import * as child from 'child_process';
-import fs from 'fs-extra';
+import fs from '../../../../../common/utils/fsUtils.js';
 import * as path from 'path';
 import { MetadataUtils } from '../../../../../common/metadata-utils/index.js';
 import { ensureGitRepository, execCommand, isMonitoringJob, uxLog } from '../../../../../common/utils/index.js';
@@ -42,7 +42,7 @@ The command's technical implementation involves:
 
 - **Git Repository Check:** Ensures the current directory is a Git repository and initializes it if necessary.
 - **\`MetadataUtils.retrieveMetadatas\`:** This utility is the core of the retrieval process. It connects to the Salesforce org, retrieves metadata based on the provided \`package.xml\` and filtering options (e.g., \`filterManagedItems\`), and places the retrieved files in a specified folder.
-- **File System Operations:** Uses \`fs-extra\` to manage directories and copy retrieved files to the target folder.
+- **File System Operations:** Uses Node.js \`fs\` to manage directories and copy retrieved files to the target folder.
 - **Post-Retrieval Actions (for Monitoring Jobs):** If the command detects it's running within a monitoring CI/CD job (\`isMonitoringJob()\`):
   - It updates the \`.gitlab-ci.yml\` file if \`AUTO_UPDATE_GITLAB_CI_YML\` is set.
   - It converts the retrieved metadata into SFDX format using \`sf project convert mdapi\`.

@@ -1,9 +1,9 @@
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as path from 'path';
 import { glob } from 'glob';
 import Papa from 'papaparse';
-import sortArray from 'sort-array';
+import sortArray from './sortArray.js';
 import { Connection } from '@salesforce/core';
 
 import { uxLog } from './index.js';

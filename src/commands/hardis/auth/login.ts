@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import { authOrg } from '../../../common/utils/authUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
 import { t } from '../../../common/utils/i18n.js';

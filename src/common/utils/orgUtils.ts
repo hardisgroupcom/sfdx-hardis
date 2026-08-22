@@ -1,14 +1,14 @@
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { prompts } from './prompts.js';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as path from 'path';
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isCI, uxLog } from './index.js';
 import { getOrgAccessToken } from './credentialUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getConfig, setConfig } from '../../config/index.js';
 import { isValidEmail } from './stringUtils.js';
-import sortArray from 'sort-array';
+import sortArray from './sortArray.js';
 import { AuthInfo, Connection, SfError } from '@salesforce/core';
 import { importData } from './dataUtils.js';
 import { soqlQuery, soqlQueryTooling } from './apiUtils.js';

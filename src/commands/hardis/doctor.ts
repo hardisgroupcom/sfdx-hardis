@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import * as os from 'node:os';
 import { httpGet } from '../../common/utils/httpUtils.js';
 import c from 'chalk';
-import open from 'open';
+import { open } from '../../common/utils/openUtils.js';
 import semver from 'semver';
 import { getEnvVar } from '../../config/index.js';
 import { isCI, uxLog, uxLogTable } from '../../common/utils/index.js';

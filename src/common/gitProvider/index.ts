@@ -5,7 +5,7 @@ import { GithubProvider } from "./github.js";
 import { GitlabProvider } from "./gitlab.js";
 import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
 import { BitbucketProvider } from "./bitbucket.js";
-import Debug from "debug";
+import { debuglog } from "util";
 import { CONSTANTS, getEnvVar, PrCommentBannerKey } from "../../config/index.js";
 import { prompts } from "../utils/prompts.js";
 import { removeMermaidLinks } from "../utils/mermaidUtils.js";
@@ -24,7 +24,8 @@ import {
   SFDX_HARDIS_COMMENT_MARKER,
   upsertNavInDescription,
 } from "./prCommentNav.js";
-const debug = Debug("sfdxhardis");
+// Enable with NODE_DEBUG=sfdxhardis
+const debug = debuglog("sfdxhardis");
 
 export abstract class GitProvider {
   static async getInstance(prompt = false): Promise<GitProviderRoot | null> {

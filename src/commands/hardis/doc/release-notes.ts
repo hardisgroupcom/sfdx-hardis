@@ -3,7 +3,7 @@ import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from "@salesforce/s
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import fs from "fs-extra";
+import fs from '../../../common/utils/fsUtils.js';
 import * as path from "path";
 import { t } from "../../../common/utils/i18n.js";
 import { uxLog, uxLogTable } from "../../../common/utils/index.js";

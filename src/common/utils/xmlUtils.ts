@@ -1,7 +1,7 @@
 // XML Utils functions
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as path from 'path';
 import * as util from 'util';
 import { XMLBuilder, XMLParser, XMLValidator } from 'fast-xml-parser';

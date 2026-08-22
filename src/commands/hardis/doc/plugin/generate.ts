@@ -3,9 +3,9 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
-import sortArray from 'sort-array';
+import sortArray from '../../../../common/utils/sortArray.js';
 import { setDeepValue } from '../../../../common/utils/objectUtils.js';
 import * as yaml from 'js-yaml';
 import { uxLog } from '../../../../common/utils/index.js';
@@ -58,7 +58,7 @@ The command's technical implementation involves:
   - Code blocks for each example provided in the command's \`examples\` property.
 - **Navigation Structure:** It builds a nested JavaScript object (\`commandsNav\`) that mirrors the command hierarchy, which is then converted to YAML and inserted into \`mkdocs.yml\` to create the navigation menu.
 - **Index and Commands Page Generation:** It reads the project's \`README.md\` and extracts relevant sections to create the \`index.md\` file. It also generates a separate \`commands.md\` file listing all commands.
-- **File System Operations:** It uses \`fs-extra\` to create directories, copy default MkDocs files (\`defaults/mkdocs\`), and write the generated Markdown and YAML files.
+- **File System Operations:** It uses Node.js \`fs\` to create directories, copy default MkDocs files (\`defaults/mkdocs\`), and write the generated Markdown and YAML files.
 - **YAML Serialization:** It uses \`js-yaml\` to serialize the navigation object into YAML format for \`mkdocs.yml\`.
 </details>
 

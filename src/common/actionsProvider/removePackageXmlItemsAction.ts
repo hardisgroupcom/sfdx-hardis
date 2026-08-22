@@ -3,7 +3,7 @@ import { uxLog } from '../utils/index.js';
 import { countPackageXmlItems, isPackageXmlEmpty, removePackageXmlFilesContent } from '../utils/xmlUtils.js';
 import { t } from '../utils/i18n.js';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import path from 'path';
 
 // Accept a single "TypeName:Member1,Member2" string as well as the documented list format

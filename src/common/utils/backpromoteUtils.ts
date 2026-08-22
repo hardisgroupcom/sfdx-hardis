@@ -2,7 +2,7 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import * as Diff from 'diff';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as path from 'path';
 import {
   createTempDir,

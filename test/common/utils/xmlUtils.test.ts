@@ -5,7 +5,7 @@
 // implementation: any change to the XML engine must keep them byte-identical
 // (metadata XML round-trip fidelity is critical for CI/CD diffs).
 import { expect } from 'chai';
-import fs from 'fs-extra';
+import fs from '../../../src/common/utils/fsUtils.js';
 import * as os from 'os';
 import * as path from 'path';
 import {

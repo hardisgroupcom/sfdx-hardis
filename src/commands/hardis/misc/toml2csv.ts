@@ -3,9 +3,9 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import { DateHelper } from '../../../common/utils/dateHelper.js';
-import ora from 'ora';
+import { createSpinner } from '../../../common/utils/spinner.js';
 import * as path from 'path';
 import * as readline from 'readline';
 
@@ -45,7 +45,7 @@ Key functionalities:
 
 The command's technical implementation involves:
 
-- **File I/O:** Uses \`fs-extra\` for file system operations (reading TOML, writing CSVs, creating directories) and \`readline\` for efficient line-by-line processing of large TOML files.
+- **File I/O:** Uses Node.js \`fs\` for file system operations (reading TOML, writing CSVs, creating directories) and \`readline\` for efficient line-by-line processing of large TOML files.
 - **Configuration Loading:** Reads and parses the \`transfoConfig.json\` file, which defines the mapping rules, transformations, and filters. It also loads external enum files if specified in the configuration.
 - **Data Processing Pipeline:** Iterates through each line of the TOML file:
   - Identifies section headers to determine the current data context.
@@ -208,7 +208,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     );
 
     // Start spinner
-    this.spinnerCustom = ora({ text: `Processing...`, spinner: 'moon' }).start();
+    this.spinnerCustom = createSpinner({ text: `Processing...` }).start();
     this.spinnerInterval = setInterval(() => {
       this.updateSpinner();
     }, 10000);

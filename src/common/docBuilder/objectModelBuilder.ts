@@ -1,6 +1,6 @@
 import c from "chalk";
 import { glob } from "glob";
-import fs from "fs-extra";
+import fs from '../utils/fsUtils.js';
 import * as path from "path";
 import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from "../utils/projectUtils.js";

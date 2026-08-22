@@ -1,5 +1,5 @@
 import c from "chalk";
-import fs from "fs-extra"
+import fs from '../utils/fsUtils.js';
 import * as path from "path"
 import { MetadataUtils } from "../metadata-utils/index.js";
 import { uxLog } from "../utils/index.js";

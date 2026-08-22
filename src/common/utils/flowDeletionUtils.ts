@@ -15,7 +15,7 @@
 // manifest. Every step is idempotent, so a pipeline retry converges.
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as path from 'path';
 import { extractRegexMatches, uxLog, uxLogTable } from './index.js';
 import { parsePackageXmlFile, writePackageXmlFile } from './xmlUtils.js';

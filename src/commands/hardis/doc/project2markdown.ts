@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import c from "chalk";
 import * as path from "path";
 import { process as ApexDocGen } from '@cparra/apexdocs';
 import { XMLBuilder } from "fast-xml-parser";
-import sortArray from 'sort-array';
+import sortArray from '../../../common/utils/sortArray.js';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';

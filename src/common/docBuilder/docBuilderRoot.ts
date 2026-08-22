@@ -4,7 +4,7 @@ import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from '../aiProvider/promptTemplates.js';
 import { AiProvider } from '../aiProvider/index.js';
 import { getLargeXmlParser } from '../utils/xmlUtils.js';
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import path from 'path';
 import { getMetaHideLines, includeFromFile } from './docUtils.js';
 import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';

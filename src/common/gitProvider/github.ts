@@ -1,15 +1,14 @@
-import * as github from "@actions/github";
 import c from "chalk";
 import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
-import { GitHub } from "@actions/github/lib/utils.js";
+import { GithubApiClient, getGithubActionsContext } from "./githubApiClient.js";
 import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
 
 export class GithubProvider extends GitProviderRoot {
-  private octokit: InstanceType<typeof GitHub>;
+  private api: GithubApiClient;
   private repoOwner: string | null;
   private repoName: string | null;
   public serverUrl: string | null;
@@ -22,13 +21,14 @@ export class GithubProvider extends GitProviderRoot {
     super();
     const tokenName = process.env.CI_SFDX_HARDIS_GITHUB_TOKEN ? "CI_SFDX_HARDIS_GITHUB_TOKEN" : process.env.PAT ? "PAT" : "GITHUB_TOKEN";
     const token = process.env[tokenName];
-    this.octokit = github.getOctokit(token || "");
-    this.repoOwner = github?.context?.repo?.owner || process.env.GITHUB_REPOSITORY_OWNER || null;
-    this.repoName = github?.context?.repo?.repo || process.env?.GITHUB_REPOSITORY?.split("/")[1] || null
-    this.serverUrl = github?.context?.serverUrl || process.env.GITHUB_SERVER_URL || null;
-    this.workflow = github?.context?.workflow || process.env.GITHUB_WORKFLOW || null;
-    this.branch = github?.context?.ref || process.env.GITHUB_REF || null;
-    const ctxPrNumber = github?.context?.payload?.pull_request?.number;
+    const context = getGithubActionsContext();
+    this.api = new GithubApiClient(token || "", { apiUrl: context.apiUrl, graphqlUrl: context.graphqlUrl });
+    this.repoOwner = context.repo?.owner || process.env.GITHUB_REPOSITORY_OWNER || null;
+    this.repoName = context.repo?.repo || process.env?.GITHUB_REPOSITORY?.split("/")[1] || null
+    this.serverUrl = context.serverUrl || process.env.GITHUB_SERVER_URL || null;
+    this.workflow = context.workflow || process.env.GITHUB_WORKFLOW || null;
+    this.branch = context.ref || process.env.GITHUB_REF || null;
+    const ctxPrNumber = context.payload?.pull_request?.number;
     const envRefFirstSegment = process.env.GITHUB_REF_NAME ? process.env.GITHUB_REF_NAME.split("/")?.[0] || "" : "";
     const envPrNumber = envRefFirstSegment ? parseInt(envRefFirstSegment, 10) : NaN;
     const jenkinsPrNumber = isJenkins() ? parseInt(getJenkinsPrNumber() || "", 10) : NaN;
@@ -40,7 +40,7 @@ export class GithubProvider extends GitProviderRoot {
           : Number.isFinite(jenkinsPrNumber) && jenkinsPrNumber > 0
             ? jenkinsPrNumber
             : null;
-    this.runId = github?.context?.runId || process.env.GITHUB_RUN_ID || null;
+    this.runId = context.runId || process.env.GITHUB_RUN_ID || null;
   }
 
   // Auto-detect GitHub CI variables from token + local git remote URL
@@ -144,24 +144,60 @@ export class GithubProvider extends GitProviderRoot {
     uxLog("log", this, "2) Set variable: GITHUB_TOKEN (or a PAT mapped to GITHUB_TOKEN).");
     uxLog("log", this, "3) How to get value: use secrets.GITHUB_TOKEN with repository workflow permissions set to Read and write; or create a Fine-grained PAT with Repository contents Read/Write and Pull requests Read/Write.");
   }
+
+  // REST path of a repository (/repos/{owner}/{repo}), with the given owner and name
+  // or the ones detected from the context
+  private repoPath(owner?: string | null, repo?: string | null): string {
+    return `/repos/${encodeURIComponent(owner ?? this.repoOwner ?? "")}/${encodeURIComponent(repo ?? this.repoName ?? "")}`;
+  }
+
+  // GET /repos/{owner}/{repo}/pulls
+  private async listPulls(params: Record<string, any>, owner?: string | null, repo?: string | null): Promise<any[]> {
+    const response = await this.api.get<any[]>(`${this.repoPath(owner, repo)}/pulls`, { params });
+    return Array.isArray(response.data) ? response.data : [];
+  }
+
+  // GET /repos/{owner}/{repo}/issues/{issue_number}/comments (first page, like octokit listComments)
+  private async listIssueComments(issueNumber: number, owner?: string | null, repo?: string | null): Promise<any[]> {
+    const response = await this.api.get<any[]>(`${this.repoPath(owner, repo)}/issues/${issueNumber}/comments`);
+    return Array.isArray(response.data) ? response.data : [];
+  }
+
+  // POST /repos/{owner}/{repo}/issues/{issue_number}/comments
+  private async createIssueComment(issueNumber: number, body: string) {
+    return this.api.post<any>(`${this.repoPath()}/issues/${issueNumber}/comments`, { body });
+  }
+
+  // PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}
+  private async updateIssueComment(commentId: number, body: string) {
+    return this.api.patch<any>(`${this.repoPath()}/issues/comments/${commentId}`, { body });
+  }
+
+  // GET /repos/{owner}/{repo}/compare/{base}...{head}
+  private async compareCommits(base: string, head: string): Promise<any> {
+    const response = await this.api.get<any>(
+      `${this.repoPath()}/compare/${encodeURIComponent(base)}...${encodeURIComponent(head)}`,
+      { params: { per_page: 1000 } },
+    );
+    return response.data;
+  }
+
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId: string | null = null;
     uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubListingClosedPullRequests')));
-    const latestPullRequestsOnBranch = await this.octokit.rest.pulls.list({
-      owner: this.repoOwner || "",
-      repo: this.repoName || "",
+    const latestPullRequestsOnBranch = await this.listPulls({
       state: "closed",
       direction: "desc",
       per_page: 10,
       base: gitBranch,
-    });
-    if (latestPullRequestsOnBranch.data.length > 0) {
+    }, this.repoOwner || "", this.repoName || "");
+    if (latestPullRequestsOnBranch.length > 0) {
       // Select the PR whose merge commit matches the commit currently being deployed (HEAD).
       // When several PRs are merged around the same time, the most recently closed PR is not
       // necessarily the one that produced this build's commit. Using its validation id would make
       // QuickDeploy reuse an unrelated PR's deployment and deploy the wrong metadata.
       const sha = await git().revparse(["HEAD"]);
-      const matchingPullRequest = latestPullRequestsOnBranch.data.find((pr) => this.isPullRequestMatchingCommit(pr, sha)) || null;
+      const matchingPullRequest = latestPullRequestsOnBranch.find((pr) => this.isPullRequestMatchingCommit(pr, sha)) || null;
       if (matchingPullRequest == null) {
         uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('noPrMatchingDeployedCommit', { sha })));
         return null;
@@ -191,15 +227,11 @@ export class GithubProvider extends GitProviderRoot {
     latestPullRequest: any,
   ): Promise<string | null> {
     uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubListingPrComments', { prId: latestPullRequestId })));
-    const existingComments = await this.octokit.rest.issues.listComments({
-      owner: repoOwner,
-      repo: repoName,
-      issue_number: latestPullRequestId,
-    });
+    const existingComments = await this.listIssueComments(latestPullRequestId, repoOwner, repoName);
     // A PR can hold several deployment-id comments, one per pipeline run. Scan every comment and
     // select the most recent one by date, otherwise QuickDeploy would reuse an outdated validation id.
     let latestDeploymentTime = -1;
-    for (const existingComment of existingComments.data) {
+    for (const existingComment of existingComments) {
       if ((existingComment.body || "").includes("<!-- sfdx-hardis deployment-id ")) {
         const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingComment.body || "");
         if (matches) {
@@ -275,11 +307,7 @@ export class GithubProvider extends GitProviderRoot {
   public async getPullRequestInfo(): Promise<CommonPullRequestInfo | null> {
     // Case when PR is found in the context
     if (this.prNumber !== null && this.repoOwner !== null) {
-      const pullRequest = await this.octokit.rest.pulls.get({
-        owner: this.repoOwner,
-        repo: this.repoName || "",
-        pull_number: this.prNumber,
-      });
+      const pullRequest = await this.api.get<any>(`${this.repoPath(this.repoOwner, this.repoName || "")}/pulls/${this.prNumber}`);
       // Add cross git provider properties used by sfdx-hardis
       if (pullRequest) {
         return this.completePullRequestInfo(pullRequest.data);
@@ -289,7 +317,7 @@ export class GithubProvider extends GitProviderRoot {
     const sha = await git().revparse(["HEAD"]);
     let graphQlRes: any = null;
     try {
-      graphQlRes = await this.octokit.graphql(
+      graphQlRes = await this.api.graphql(
         `
       query associatedPRs($sha: String, $repo: String!, $owner: String!){
         repository(name: $repo, owner: $owner) {
@@ -387,13 +415,9 @@ ${getBannerMarkdownAndLink()}
 
     // Check for existing note from a previous run
     uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubListingPrCommentsAll')));
-    const existingComments = await this.octokit.rest.issues.listComments({
-      owner: this.repoOwner || "",
-      repo: this.repoName,
-      issue_number: this.prNumber,
-    });
+    const existingComments = await this.listIssueComments(this.prNumber, this.repoOwner || "", this.repoName);
     let existingCommentId: number | null = null;
-    for (const existingComment of existingComments.data) {
+    for (const existingComment of existingComments) {
       if (existingComment?.body?.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
         existingCommentId = existingComment.id;
       }
@@ -403,13 +427,7 @@ ${getBannerMarkdownAndLink()}
     if (existingCommentId) {
       // Update existing note
       uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubUpdatingPrComment')));
-      const githubCommentEditResult = await this.octokit.rest.issues.updateComment({
-        owner: this.repoOwner || "",
-        repo: this.repoName,
-        issue_number: this.prNumber,
-        comment_id: existingCommentId,
-        body: messageBody,
-      });
+      const githubCommentEditResult = await this.updateIssueComment(existingCommentId, messageBody);
       const prResult: PullRequestMessageResult = {
         posted: githubCommentEditResult.data.id > 0,
         providerResult: githubCommentEditResult,
@@ -418,12 +436,7 @@ ${getBannerMarkdownAndLink()}
     } else {
       // Create new note if no existing not was found
       uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubAddingPrComment')));
-      const githubCommentCreateResult = await this.octokit.rest.issues.createComment({
-        owner: this.repoOwner || "",
-        repo: this.repoName,
-        issue_number: this.prNumber,
-        body: messageBody,
-      });
+      const githubCommentCreateResult = await this.createIssueComment(this.prNumber, messageBody);
       const prResult: PullRequestMessageResult = {
         posted: githubCommentCreateResult.data.id > 0,
         providerResult: githubCommentCreateResult,
@@ -435,7 +448,7 @@ ${getBannerMarkdownAndLink()}
   public async listPullRequests(
     filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
   ): Promise<CommonPullRequestInfo[] | null> {
-    if (!this.octokit || !this.repoOwner || !this.repoName) {
+    if (!this.api || !this.repoOwner || !this.repoName) {
       return null;
     }
     const state = filters.status === "merged" || filters.status === "closed" ? "closed" : filters.status === "open" ? "open" : "all";
@@ -446,8 +459,6 @@ ${getBannerMarkdownAndLink()}
     try {
       while (page <= maxPages) {
         const params: any = {
-          owner: this.repoOwner,
-          repo: this.repoName,
           state,
           sort: "updated",
           direction: "desc",
@@ -457,10 +468,10 @@ ${getBannerMarkdownAndLink()}
         if (filters.targetBranch) {
           params.base = filters.targetBranch;
         }
-        const response = await this.octokit.rest.pulls.list(params);
-        if (response.data.length === 0) break;
+        const prs = await this.listPulls(params);
+        if (prs.length === 0) break;
 
-        for (const pr of response.data) {
+        for (const pr of prs) {
           // Filter merged-only when requested
           if (filters.status === "merged" && !pr.merged_at) continue;
           // Filter by minDate on creation
@@ -470,9 +481,9 @@ ${getBannerMarkdownAndLink()}
         }
 
         // Stop if we have gone past the date window
-        const lastPr = response.data[response.data.length - 1];
+        const lastPr = prs[prs.length - 1];
         if (filters.minDate && new Date(lastPr.updated_at) < filters.minDate) break;
-        if (response.data.length < 100) break;
+        if (prs.length < 100) break;
         page++;
       }
     } catch (e: any) {
@@ -488,15 +499,13 @@ ${getBannerMarkdownAndLink()}
     targetBranchName: string,
     childBranchesNames: string[],
   ): Promise<CommonPullRequestInfo[]> {
-    if (!this.octokit || !this.repoOwner || !this.repoName) {
+    if (!this.api || !this.repoOwner || !this.repoName) {
       return [];
     }
 
     try {
       // Step 1: Find the last merged PR from currentBranch to targetBranch
-      const { data: mergedPRs } = await this.octokit.rest.pulls.list({
-        owner: this.repoOwner,
-        repo: this.repoName,
+      const mergedPRs = await this.listPulls({
         state: "closed",
         head: `${this.repoOwner}:${currentBranchName}`,
         base: targetBranchName,
@@ -519,15 +528,14 @@ ${getBannerMarkdownAndLink()}
         per_page: 1000,
       };
 
-      const { data: comparison } =
-        await this.octokit.rest.repos.compareCommits(compareOptions);
+      const comparison = await this.compareCommits(compareOptions.base, compareOptions.head);
       uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubComparingCommits', { base: compareOptions.base, head: compareOptions.head })));
 
       if (!comparison.commits || comparison.commits.length === 0) {
         return [];
       }
 
-      const commitSHAs = new Set(comparison.commits.map((c) => c.sha));
+      const commitSHAs = new Set<string>(comparison.commits.map((c) => c.sha));
 
       // Step 3-6: Match merged PRs targeting currentBranch and child branches against those commits
       const allBranches = [currentBranchName, ...childBranchesNames];
@@ -550,30 +558,20 @@ ${getBannerMarkdownAndLink()}
     childBranchesNames: string[],
     mergeCommitId: string,
   ): Promise<CommonPullRequestInfo[]> {
-    if (!this.octokit || !this.repoOwner || !this.repoName || !mergeCommitId) {
+    if (!this.api || !this.repoOwner || !this.repoName || !mergeCommitId) {
       return [];
     }
     try {
       // Step 1: Resolve the merge commit's first parent (the mainline before the go live)
-      const { data: mergeCommit } = await this.octokit.rest.repos.getCommit({
-        owner: this.repoOwner,
-        repo: this.repoName,
-        ref: mergeCommitId,
-      });
+      const { data: mergeCommit } = await this.api.get<any>(`${this.repoPath()}/commits/${encodeURIComponent(mergeCommitId)}`);
       const firstParent = mergeCommit?.parents?.[0]?.sha;
       if (!firstParent) {
         return [];
       }
 
       // Step 2: Commits introduced by the go live
-      const { data: comparison } = await this.octokit.rest.repos.compareCommits({
-        owner: this.repoOwner,
-        repo: this.repoName,
-        base: firstParent,
-        head: mergeCommitId,
-        per_page: 1000,
-      });
-      const commitSHAs = new Set((comparison.commits || []).map((c) => c.sha));
+      const comparison = await this.compareCommits(firstParent, mergeCommitId);
+      const commitSHAs = new Set<string>((comparison.commits || []).map((c) => c.sha));
       commitSHAs.add(mergeCommitId);
 
       // Step 3-6: Match merged PRs targeting branchName and child branches against those commits
@@ -597,9 +595,7 @@ ${getBannerMarkdownAndLink()}
   ): Promise<CommonPullRequestInfo[]> {
     const prPromises = allBranches.map(async (branchName) => {
       try {
-        const { data: prs } = await this.octokit!.rest.pulls.list({
-          owner: this.repoOwner!,
-          repo: this.repoName!,
+        const prs = await this.listPulls({
           state: "closed",
           base: branchName,
           per_page: 1000,
@@ -636,7 +632,7 @@ ${getBannerMarkdownAndLink()}
   // notifications can name the person who triggered the run rather than showing a bare handle.
   // Most accounts hide their email, in which case only the name is returned.
   public async resolveUserIdentity(login: string): Promise<{ name: string | null; email: string | null } | null> {
-    const { data } = await this.octokit.rest.users.getByUsername({ username: login });
+    const { data } = await this.api.get<any>(`/users/${encodeURIComponent(login)}`);
     return { name: data?.name || null, email: data?.email || null };
   }
 
@@ -665,9 +661,7 @@ ${getBannerMarkdownAndLink()}
       return { created: false, pullRequestUrl: null, providerResult: { error: "Missing repo owner or name" } };
     }
     uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubCreatingPullRequest', { source: request.sourceBranch, target: request.targetBranch })));
-    const result = await this.octokit.rest.pulls.create({
-      owner: this.repoOwner,
-      repo: this.repoName,
+    const result = await this.api.post<any>(`${this.repoPath()}/pulls`, {
       title: request.title,
       body: request.body,
       head: request.sourceBranch,
@@ -682,38 +676,26 @@ ${getBannerMarkdownAndLink()}
 
   public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
     if (!this.repoOwner || !this.repoName) return null;
-    const result = await this.octokit.rest.pulls.list({
-      owner: this.repoOwner,
-      repo: this.repoName,
+    const prs = await this.listPulls({
       state: "open",
       head: `${this.repoOwner}:${sourceBranch}`,
       base: targetBranch,
     });
-    const pr = result.data?.[0];
+    const pr = prs?.[0];
     if (!pr) return null;
     return { pullRequestUrl: pr.html_url, id: pr.number };
   }
 
   public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
     if (!this.repoOwner || !this.repoName) return;
-    await this.octokit.rest.pulls.update({
-      owner: this.repoOwner,
-      repo: this.repoName,
-      pull_number: id,
-      title,
-      body,
-    });
+    await this.api.patch<any>(`${this.repoPath()}/pulls/${id}`, { title, body });
   }
 
   public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
     const issueNumber = prNumber || this.prNumber;
     if (!issueNumber) return null;
-    const comments = await this.octokit.rest.issues.listComments({
-      owner: this.repoOwner || '',
-      repo: this.repoName || '',
-      issue_number: issueNumber,
-    });
-    for (const comment of comments.data) {
+    const comments = await this.listIssueComments(issueNumber, this.repoOwner || '', this.repoName || '');
+    for (const comment of comments) {
       if (comment?.body?.includes(marker)) {
         return comment.body;
       }
@@ -724,33 +706,19 @@ ${getBannerMarkdownAndLink()}
   public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
     const issueNumber = prNumber || this.prNumber;
     if (!issueNumber) return;
-    const comments = await this.octokit.rest.issues.listComments({
-      owner: this.repoOwner || '',
-      repo: this.repoName || '',
-      issue_number: issueNumber,
-    });
+    const comments = await this.listIssueComments(issueNumber, this.repoOwner || '', this.repoName || '');
     let existingId: number | null = null;
-    for (const comment of comments.data) {
+    for (const comment of comments) {
       if (comment?.body?.includes(marker)) {
         existingId = comment.id;
         break;
       }
     }
     if (existingId) {
-      await this.octokit.rest.issues.updateComment({
-        owner: this.repoOwner || '',
-        repo: this.repoName || '',
-        comment_id: existingId,
-        body,
-      });
+      await this.updateIssueComment(existingId, body);
       uxLog("log", this, c.grey(`[GitHub] Updated Deployment Actions comment on PR #${issueNumber}`));
     } else {
-      await this.octokit.rest.issues.createComment({
-        owner: this.repoOwner || '',
-        repo: this.repoName || '',
-        issue_number: issueNumber,
-        body,
-      });
+      await this.createIssueComment(issueNumber, body);
       uxLog("log", this, c.grey(`[GitHub] Created Deployment Actions comment on PR #${issueNumber}`));
     }
   }
@@ -760,11 +728,8 @@ ${getBannerMarkdownAndLink()}
     if (!issueNumber) return [];
     // Paginate: a long-lived PR can carry more comments than a single page,
     // and a ticked checkbox in a later comment must not be missed
-    const comments = await this.octokit.paginate(this.octokit.rest.issues.listComments, {
-      owner: this.repoOwner || '',
-      repo: this.repoName || '',
-      issue_number: issueNumber,
-      per_page: 100,
+    const comments = await this.api.paginate<any>(`${this.repoPath(this.repoOwner || '', this.repoName || '')}/issues/${issueNumber}/comments`, {
+      params: { per_page: 100 },
     });
     const results: PullRequestCommentRef[] = [];
     for (const comment of comments) {
@@ -777,12 +742,7 @@ ${getBannerMarkdownAndLink()}
 
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
     if (!commentRef?.ref) return;
-    await this.octokit.rest.issues.updateComment({
-      owner: this.repoOwner || '',
-      repo: this.repoName || '',
-      comment_id: commentRef.ref,
-      body,
-    });
+    await this.updateIssueComment(commentRef.ref, body);
     uxLog("log", this, c.grey('[GitHub] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
 }
