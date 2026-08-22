@@ -365,3 +365,9 @@ CVE-2026-56858
 CVE-2026-56859
 CVE-2026-56860
 CVE-2026-56862
+
+# https://avd.aquasec.com/nvd/cve-2026-73566 (GHSA-r292-9mhp-454m)
+# node-tar: the mapHas helper behind filesFilter recurses once per path segment, so a crafted long-path header blows the stack and kills the process (DoS, HIGH). Fixed in 7.5.21.
+# sfdx-hardis own tree is already pinned to tar 7.5.21 in yarn.lock. The copies reported in the images are the ones npm bundles: 7.5.16 in the npm shipped with the Node 24 runtime (node:24-alpine for the Alpine image, NodeSource for the Ubuntu image) and 7.5.19 in the npm shrinkwrapped inside @salesforce/cli. npm@12.0.2, the current latest, still bundles 7.5.19, so there is no version to upgrade to from this repo and our yarn resolutions cannot reach a globally npm-installed package.
+# The vulnerable path needs tar.t() or tar.x() to be called with a non-empty member-selection list; npm extracts whole package tarballs with no file list, so filesFilter never runs. Remove once npm ships a bundled tar >= 7.5.21. Added 2026-08-22.
+CVE-2026-73566
