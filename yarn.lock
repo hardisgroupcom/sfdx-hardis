@@ -2051,10 +2051,10 @@
     "@pnpm/network.ca-file" "^1.0.1"
     config-chain "^1.1.11"
 
-"@puppeteer/browsers@3.2.0":
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/@puppeteer/browsers/-/browsers-3.2.0.tgz#269293687a4c701a0a4701a15b50e9c0e337de93"
-  integrity sha512-LlBrE8oqGfU7b1Nk2d5Q1SbuPhZxTj0cJEMDPEws28OjNMELlflekmPPuf4FnK03x0ZRjKaYwJElUcKK4kyqJA==
+"@puppeteer/browsers@3.2.1":
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/@puppeteer/browsers/-/browsers-3.2.1.tgz#3e55213975c3e574c77c1abc7fed3e947c01ab47"
+  integrity sha512-KDz+3qDRdBAlRlMjmKyj6dEs33YHTk/xRHEENSXq6TNnhgoU15ruSHtEBeVF6OZ9tBDY55Se4P0nFMNsipzU9A==
   dependencies:
     modern-tar "^0.8.0"
     yargs "^18.0.0"
@@ -4523,10 +4523,10 @@ devlop@^1.0.0:
   dependencies:
     dequal "^2.0.0"
 
-devtools-protocol@0.0.1653615:
-  version "0.0.1653615"
-  resolved "https://registry.yarnpkg.com/devtools-protocol/-/devtools-protocol-0.0.1653615.tgz#c600e0c619612156b2422a66d958ba188d87dbe8"
-  integrity sha512-pGVkY3T/qXxAp2nFPodwYqOevk6ncNMSmvL8QfRCx5ZWGd6Vor7AFNmyaA8Zs6uJyP1QAfjuLandCgvSix1BNA==
+devtools-protocol@0.0.1666840:
+  version "0.0.1666840"
+  resolved "https://registry.yarnpkg.com/devtools-protocol/-/devtools-protocol-0.0.1666840.tgz#796cbc307f82750afc13a3b471c829bf3da19a65"
+  integrity sha512-gCcO42XCHKEs7Ag0S7aGYsnJ7hlgrO3qderYqeiY0Eqk+0GFfuvT13IA0hHreJTa2KCdDVyGMeOhdMNmrrTjVg==
 
 diff@8.0.3:
   version "8.0.3"
@@ -8517,14 +8517,14 @@ punycode@^2.1.0:
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.3.1.tgz#027422e2faec0b25e1549c3e1bd8309b9133b6e5"
   integrity sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==
 
-puppeteer-core@25.6.0:
-  version "25.6.0"
-  resolved "https://registry.yarnpkg.com/puppeteer-core/-/puppeteer-core-25.6.0.tgz#2aee8f519f530dbbe864cc9ee25419a2d1bd8bab"
-  integrity sha512-GJ67rjZdVQzZmD2Ab0cgttfQN9j387QYMv3t6MN3/4nmjursNt6M5Utj4/T/4y0AwNrSwJzjw6Q/zuWFEIizOg==
+puppeteer-core@25.8.0:
+  version "25.8.0"
+  resolved "https://registry.yarnpkg.com/puppeteer-core/-/puppeteer-core-25.8.0.tgz#ca64b005aa21732ca8f5f3f98379739114ae09c5"
+  integrity sha512-LDOrawV8vfCVk+yLj2ozvajNP4Sv3OV9y3Tpiyy2g2Z+aQlbcozP6KJfI4iSBq7YQER+86ihEtPa5ioiZyWxMQ==
   dependencies:
-    "@puppeteer/browsers" "3.2.0"
+    "@puppeteer/browsers" "3.2.1"
     chromium-bidi "17.0.2"
-    devtools-protocol "0.0.1653615"
+    devtools-protocol "0.0.1666840"
     typed-query-selector "^2.12.2"
     webdriver-bidi-protocol "0.4.2"
     ws "^8.21.1"
