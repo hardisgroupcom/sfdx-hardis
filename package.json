@@ -50,7 +50,7 @@
     "papaparse": "5.5.3",
     "pptxgenjs": "^4.0.1",
     "puppeteer-core": "25.6.0",
-    "sanitize-html": "^2.14.0",
+    "sanitize-html": "^2.17.7",
     "semver": "7.8.5",
     "simple-git": "3.36.0",
     "sort-array": "4.1.5",
