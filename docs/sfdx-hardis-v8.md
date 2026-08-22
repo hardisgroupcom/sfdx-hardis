@@ -201,13 +201,16 @@ Two new pages help you check your setup: the [CI/CD Setup Checklist](salesforce-
 
 Both projects went on a diet, for the same reason: every third-party package is code you have to trust.
 
-|                                        | Before | v8                                                                                 |
-|----------------------------------------|--------|------------------------------------------------------------------------------------|
-| **Plugin** dependency tree             | 100%   | **~20% smaller** (axios, xml2js, openai, cloudflare, md-to-pdf and others removed) |
-| **Extension** direct dependencies      | 28     | **14**                                                                             |
-| **Extension** total packages installed | 327    | **287**                                                                            |
+|                                        | Before (v7.23) | v8                                                                                                                                 |
+|----------------------------------------|----------------|------------------------------------------------------------------------------------------------------------------------------------|
+| **Plugin** direct dependencies         | 65             | **42** (axios, xml2js, openai, cloudflare, md-to-pdf, fs-extra, inquirer, octokit, farmhash, ora, open, dotenv and others removed) |
+| **Plugin** total packages installed    | 1091           | **518** (**-53%**)                                                                                                                 |
+| **Extension** direct dependencies      | 28             | **14**                                                                                                                             |
+| **Extension** total packages installed | 327            | **287**                                                                                                                            |
 
 Widely used but replaceable packages were replaced by capabilities already built into Node.js and VS Code, with no change in behavior. Fewer packages means a **smaller supply-chain attack surface**, less exposure to a compromised or vulnerable dependency, and a **faster install** of the plugin, the extension and the Docker images.
+
+A guardrail keeps it that way: the plugin test suite fails when a dependency is declared but never imported, or when the lock file grows past a ceiling.
 
 ---
 
@@ -222,6 +225,7 @@ A few behaviors changed on purpose. Check these if they apply to your project.
 | **A Flow in destructive changes is deleted outside the deployment transaction.**                                                                                                                                                                              | A failed deployment leaves the Flow deactivated or deleted instead of rolling it back. Every step is re-runnable, so retrying the pipeline converges.         |
 | **`--check` no longer validates Flow destructive members against the org.**                                                                                                                                                                                   | A Flow missing from the target org is reported as `FLOW_DELETE_NOOP` and passes, because the same destructive changes are replayed along the promotion chain. |
 | **Connected Apps can no longer be restored after a sandbox refresh.**                                                                                                                                                                                         | Convert them to External Client Apps before your next refresh.                                                                                                |
+| **The plugin requires Node.js 22 or more**, like the Salesforce CLI.                                                                                                                                                                                          | Upgrade Node.js on machines and CI runners that still use Node.js 20.                                                                                         |
 
 ---
 
