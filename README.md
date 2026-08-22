@@ -90,7 +90,7 @@ If VS Code is already on your computer, jump to step 2.
 #### Step 2: Install the SFDX Hardis extension
 
 - Start VS Code.
-- In the vertical bar of icons on the left, called the Activity Bar, click the **Extensions** icon (the four small squares). Keyboard shortcut: `Ctrl+Shift+X`, or `Cmd+Shift+X` on macOS.
+- In the vertical bar of icons on the left, called the Activity Bar, click the **Extensions** icon <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/vscode-extensions-icon.svg" alt="VS Code Extensions icon" height="22"/> (four small squares, one detached). Keyboard shortcut: `Ctrl+Shift+X`, or `Cmd+Shift+X` on macOS.
 - Type `sfdx hardis` in the search box.
 - Click **SFDX Hardis** in the results, then click **Install**.
 

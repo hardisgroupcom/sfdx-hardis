@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Visual Studio Code Extensions icon">
+  <rect width="48" height="48" rx="8" fill="#333333"/>
+  <g fill="#cccccc">
+    <rect x="9" y="21" width="8.5" height="8.5" rx="1"/>
+    <rect x="9" y="31.5" width="8.5" height="8.5" rx="1"/>
+    <rect x="19.5" y="31.5" width="8.5" height="8.5" rx="1"/>
+    <rect x="22.5" y="8" width="8.5" height="8.5" rx="1" transform="rotate(-12 26.75 12.25)"/>
+  </g>
+</svg>
