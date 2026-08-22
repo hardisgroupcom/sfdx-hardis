@@ -894,21 +894,18 @@
   dependencies:
     chalk "^4.1.0"
 
-"@cparra/apex-reflection@3.1.0":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@cparra/apex-reflection/-/apex-reflection-3.1.0.tgz#3cfb5623450350c1f8d440ccf38fbcf68987768f"
-  integrity sha512-IomkjSD5W79pcJeXDpgaGQOXZGuHUxX66XWNwgy0VDwze3RHglbqk4t9kC02x9a6ddcaxAUwbjbyVhrNfGySMA==
+"@cparra/apex-reflection@4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@cparra/apex-reflection/-/apex-reflection-4.0.0.tgz#1ea8ec3fe596d2f55b9fb89c8a1e71d9390a8957"
+  integrity sha512-54b8sVWxX5uxVW0nVVU3KnbNY6jN3jCI61kRTBE146/nwjVd9xLW35ZMiyKuKHIrJrAHEwfT37b71hxXPaXcoQ==
 
-"@cparra/apexdocs@3.23.1":
-  version "3.23.1"
-  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.23.1.tgz#188508909c172de662ef7a81e4290cd7b08ae027"
-  integrity sha512-zpPj8o3l2co9j7wnssPv8qNSEe8cuwPAP7xckPXNgt0ADpMe2r0yMqfM1i69HiJFqZByLgpPmrQQeqHIofpwzQ==
+"@cparra/apexdocs@3.24.2":
+  version "3.24.2"
+  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.24.2.tgz#51bcb192955783a2f5b075dfa7b0889e0cb0ee9a"
+  integrity sha512-km8ctLoDt3c5mAd8zmxyMWttP+KNPnXlc6Epej95e2vJs8oqjFZGea9rZXuaXRBuoCw+WtJdqG0lg4PMqOiPGQ==
   dependencies:
-    "@cparra/apex-reflection" "3.1.0"
+    "@cparra/apex-reflection" "4.0.0"
     "@salesforce/source-deploy-retrieve" "^12.20.1"
-    "@types/js-yaml" "^4.0.9"
-    "@types/yargs" "^17.0.32"
-    chalk "^4.1.2"
     cosmiconfig "^9.0.0"
     cosmiconfig-typescript-loader "^5.0.0"
     fast-xml-parser "^5.5.9"
@@ -2684,7 +2681,7 @@
   resolved "https://registry.yarnpkg.com/@types/istanbul-lib-coverage/-/istanbul-lib-coverage-2.0.6.tgz#7739c232a1fee9b4d3ce8985f314c0c6d33549d7"
   integrity sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==
 
-"@types/js-yaml@4.0.9", "@types/js-yaml@^4.0.9":
+"@types/js-yaml@4.0.9":
   version "4.0.9"
   resolved "https://registry.yarnpkg.com/@types/js-yaml/-/js-yaml-4.0.9.tgz#cd82382c4f902fed9691a2ed79ec68c5898af4c2"
   integrity sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg==
@@ -2880,18 +2877,6 @@
   integrity sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==
   dependencies:
     "@types/node" "*"
-
-"@types/yargs-parser@*":
-  version "21.0.3"
-  resolved "https://registry.yarnpkg.com/@types/yargs-parser/-/yargs-parser-21.0.3.tgz#815e30b786d2e8f0dcd85fd5bcf5e1a04d008f15"
-  integrity sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==
-
-"@types/yargs@^17.0.32":
-  version "17.0.35"
-  resolved "https://registry.yarnpkg.com/@types/yargs/-/yargs-17.0.35.tgz#07013e46aa4d7d7d50a49e15604c1c5340d4eb24"
-  integrity sha512-qUHkeCyQFxMXg79wQfTtfndEC+N9ZZg76HJftDJp+qH2tV7Gj4OJi7l+PiWwJ+pWtW8GwSmqsDj/oymhrTWXjg==
-  dependencies:
-    "@types/yargs-parser" "*"
 
 "@typescript-eslint/eslint-plugin@^6.21.0":
   version "6.21.0"

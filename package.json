@@ -6,7 +6,7 @@
   "version": "8.0.0",
   "dependencies": {
     "@actions/github": "7.0.0",
-    "@cparra/apexdocs": "3.23.1",
+    "@cparra/apexdocs": "3.24.2",
     "@gitbeaker/rest": "43.8.0",
     "@langchain/anthropic": "1.5.1",
     "@langchain/core": "1.2.1",
