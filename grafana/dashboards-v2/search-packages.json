@@ -1,0 +1,261 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Find which monitored orgs have a given installed package.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": false,
+      "tags": [
+        "sfdx-hardis-v2"
+      ],
+      "targetBlank": false,
+      "title": "Org Monitoring by sfdx-hardis",
+      "type": "dashboards"
+    }
+  ],
+  "panels": [
+    {
+      "id": 155,
+      "type": "table",
+      "title": "Orgs with package \"$package\"",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds_loki}"
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds_loki}"
+          },
+          "expr": "{source=\"sfdx-hardis\", type=\"BACKUP\", $env} |~ `\"SubscriberPackageName\":\"[^\"]*(?i:$package)` | line_format `{{ regexReplaceAll \"(?s).*?\\\"SubscriberPackageName\\\":\\\"([^\\\"]*(?i:$package)[^\\\"]*)\\\",\\\"SubscriberPackageNamespace\\\":\\\"[^\\\"]*\\\",\\\"SubscriberPackageVersionId\\\":\\\"[^\\\"]*\\\",\\\"SubscriberPackageVersionName\\\":\\\"[^\\\"]*\\\",\\\"SubscriberPackageVersionNumber\\\":\\\"([^\\\"]*)\\\"\" __line__ \"$1 (v$2) ¦ \" }}` | line_format `{{ regexReplaceAll \"(?s) ¦ [^¦]*$\" __line__ \"\" }}`",
+          "queryType": "range",
+          "direction": "backward",
+          "refId": "A",
+          "maxLines": 1000
+        }
+      ],
+      "description": "Click a row to open the org dashboard.",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "orgIdentifier"
+              }
+            ],
+            "keepTime": false,
+            "replace": false,
+            "source": "labels"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "orgIdentifier": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "Line": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "orgIdentifier": "Org",
+              "Line": "Matching packages (version)"
+            },
+            "indexByName": {
+              "orgIdentifier": 0,
+              "Line": 1
+            },
+            "excludeByName": {
+              "__proxy_source__": true
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open org dashboard",
+              "url": "/d/sfdx-hardis-v2-org-home/?var-org=${__data.fields[\"Org\"]}&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}"
+            }
+          ],
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      }
+    }
+  ],
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 42,
+  "tags": [
+    "sfdx-hardis-v2",
+    "sfdx-hardis"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "ds_prom",
+        "label": "Prometheus datasource",
+        "description": "The Prometheus/Mimir datasource receiving sfdx-hardis metrics (NOTIF_API_METRICS_URL)",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "options": [],
+        "refresh": 1,
+        "regex": "/^(?!.*(alert-state-history|usage-insights|ml-metrics)).*/",
+        "skipUrlSync": false
+      },
+      {
+        "name": "ds_loki",
+        "label": "Loki datasource",
+        "description": "The Loki datasource receiving sfdx-hardis logs (NOTIF_API_URL)",
+        "type": "datasource",
+        "query": "loki",
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "options": [],
+        "refresh": 1,
+        "regex": "/^(?!.*(alert-state-history|usage-insights|ml-metrics)).*/",
+        "skipUrlSync": false
+      },
+      {
+        "name": "env",
+        "label": "Environment",
+        "description": "Filter orgs by environment type (sandboxes are recognized by their org identifier)",
+        "type": "custom",
+        "query": "All : orgIdentifier=~\".+\", Production only : orgIdentifier!~\".*sandbox.*\", Sandboxes only : orgIdentifier=~\".*sandbox.*\"",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "orgIdentifier=~\".+\""
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "orgIdentifier=~\".+\""
+          },
+          {
+            "selected": false,
+            "text": "Production only",
+            "value": "orgIdentifier!~\".*sandbox.*\""
+          },
+          {
+            "selected": false,
+            "text": "Sandboxes only",
+            "value": "orgIdentifier=~\".*sandbox.*\""
+          }
+        ],
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "skipUrlSync": false
+      },
+      {
+        "name": "package",
+        "label": "Package",
+        "description": "Installed package name fragment",
+        "type": "textbox",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "hide": 0,
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "92 - Search: Packages",
+  "uid": "sfdx-hardis-v2-search-packages",
+  "version": 1,
+  "weekStart": ""
+}
