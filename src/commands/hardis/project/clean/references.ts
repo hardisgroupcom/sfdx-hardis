@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
 import { glob } from 'glob';
 import { createTempDir, execCommand, isCI, removeObjectPropertyLists, uxLog } from '../../../../common/utils/index.js';

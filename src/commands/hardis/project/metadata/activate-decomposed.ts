@@ -4,7 +4,7 @@ import { Messages } from '@salesforce/core';
 import c from 'chalk';
 import { execCommand, isCI, uxLog } from '../../../../common/utils/index.js';
 import { getConfig } from '../../../../config/index.js';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import path from 'path';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { isSfdxProject } from '../../../../common/utils/projectUtils.js';

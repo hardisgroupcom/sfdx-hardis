@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import { glob } from 'glob';
 import * as path from 'path';
 import { isCI, uxLog } from '../../../common/utils/index.js';
@@ -43,7 +43,7 @@ The command's technical implementation involves:
 - **Interactive Prompts:** If no \`package.xml\` files are specified, it uses the \`prompts\` library to allow the user to interactively select files to merge.
 - **\`appendPackageXmlFilesContent\` Utility:** The core merging logic is handled by the \`appendPackageXmlFilesContent\` utility function. This function reads the content of each input \`package.xml\` file, combines their metadata types and members, and writes the consolidated content to the specified result file.
 - **XML Manipulation:** Internally, \`appendPackageXmlFilesContent\` parses the XML of each \`package.xml\`, merges the \`<types>\` and \`<members>\` elements, and then rebuilds the XML structure for the output file.
-- **File System Operations:** It uses \`fs-extra\` to ensure the output directory exists and to write the merged \`package.xml\` file.
+- **File System Operations:** It uses Node.js \`fs\` to ensure the output directory exists and to write the merged \`package.xml\` file.
 - **WebSocket Communication:** It uses \`WebSocketClient.requestOpenFile\` to open the generated merged \`package.xml\` file in VS Code for immediate review.
 </details>
 

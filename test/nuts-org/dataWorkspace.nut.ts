@@ -6,7 +6,7 @@
  * records already imported by the scratch org initialization.
  */
 import { expect } from 'chai';
-import fs from 'fs-extra';
+import fs from '../../src/common/utils/fsUtils.js';
 import * as path from 'path';
 import {
     countAccounts,

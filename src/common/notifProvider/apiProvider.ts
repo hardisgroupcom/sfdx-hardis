@@ -11,7 +11,7 @@ import { anonymizeApiPayloadData, shouldAnonymizeApiData } from "./apiAnonymizer
 import { convertMarkdownToPlainText } from "./markdownToPlainText.js";
 import { GitProvider } from "../gitProvider/index.js";
 import { httpPost, HttpRequestConfig } from "../utils/httpUtils.js";
-import fs from "fs-extra";
+import fs from '../utils/fsUtils.js';
 import * as path from "path";
 import { t } from '../utils/i18n.js';
 

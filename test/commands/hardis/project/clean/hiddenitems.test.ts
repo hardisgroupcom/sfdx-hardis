@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
-import fs from 'fs-extra';
+import fs from '../../../../../src/common/utils/fsUtils.js';
 import * as os from 'os';
 import * as path from 'path';
 import CleanHiddenItems from '../../../../../src/commands/hardis/project/clean/hiddenitems.js';

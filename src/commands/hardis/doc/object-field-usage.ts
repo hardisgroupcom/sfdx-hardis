@@ -3,7 +3,7 @@ import { Flags, SfCommand, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { AnyJson } from '@salesforce/ts-types';
 import { Connection, Messages } from '@salesforce/core';
 import c from 'chalk';
-import sortArray from 'sort-array';
+import sortArray from '../../../common/utils/sortArray.js';
 import { generateReports, isCI, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../../../common/utils/apiUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';

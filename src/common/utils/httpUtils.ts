@@ -5,7 +5,7 @@
 // - params / auth (basic) / headers / timeout config options
 // - HTTP_PROXY / HTTPS_PROXY / NO_PROXY env vars are honored (like axios and
 //   make-fetch-happen did) through undici's EnvHttpProxyAgent
-import { fetch as undiciFetch, EnvHttpProxyAgent } from 'undici';
+import { fetch as undiciFetch, EnvHttpProxyAgent, FormData as UndiciFormData } from 'undici';
 
 let envProxyAgent: EnvHttpProxyAgent | null = null;
 let fetchOverrideForTests: ((url: string, init: any) => Promise<any>) | null = null;
@@ -99,12 +99,30 @@ async function parseResponseData(response: Response, responseType?: 'json' | 'te
   return text;
 }
 
+// The undici fetch only recognizes its own FormData class: the global (Node.js) FormData
+// would be serialized as the string "[object FormData]". Copy the entries over.
+function toUndiciFormData(form: any): UndiciFormData {
+  if (form instanceof UndiciFormData) {
+    return form;
+  }
+  const converted = new UndiciFormData();
+  for (const [name, value] of form.entries() as Iterable<[string, any]>) {
+    if (typeof value === 'string') {
+      converted.append(name, value);
+    } else {
+      converted.append(name, value, value.name);
+    }
+  }
+  return converted;
+}
+
 async function request<T = any>(method: string, url: string, data?: any, config: HttpRequestConfig = {}): Promise<HttpResponse<T>> {
   // FormData bodies are passed through so fetch sets the multipart boundary itself
-  const isJsonBody = data !== undefined && typeof data !== 'string' && !(data instanceof FormData);
-  const body = data === undefined ? undefined : (isJsonBody ? JSON.stringify(data) : data);
+  const isFormData = data instanceof FormData || data instanceof UndiciFormData;
+  const isJsonBody = data !== undefined && typeof data !== 'string' && !isFormData;
+  const body = data === undefined ? undefined : isJsonBody ? JSON.stringify(data) : isFormData ? toUndiciFormData(data) : data;
   const headersToSend = buildHeaders(config, isJsonBody);
-  if (data instanceof FormData) {
+  if (isFormData) {
     // Let fetch compute the multipart Content-Type (with boundary) itself
     for (const headerName of Object.keys(headersToSend)) {
       if (headerName.toLowerCase() === 'content-type') {
@@ -145,6 +163,10 @@ export async function httpPut<T = any>(url: string, data?: any, config: HttpRequ
   return request<T>('PUT', url, data, config);
 }
 
+export async function httpPatch<T = any>(url: string, data?: any, config: HttpRequestConfig = {}): Promise<HttpResponse<T>> {
+  return request<T>('PATCH', url, data, config);
+}
+
 export async function httpDelete<T = any>(url: string, config: HttpRequestConfig = {}): Promise<HttpResponse<T>> {
   return request<T>('DELETE', url, undefined, config);
 }
@@ -153,6 +175,7 @@ export interface HttpClient {
   get<T = any>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
   post<T = any>(url: string, data?: any, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
   put<T = any>(url: string, data?: any, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
+  patch<T = any>(url: string, data?: any, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
   delete<T = any>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
 }
 
@@ -169,6 +192,7 @@ export function createHttpClient(defaults: { baseURL: string; headers?: Record<s
     get: (url, config) => httpGet(fullUrl(url), mergeConfig(config)),
     post: (url, data, config) => httpPost(fullUrl(url), data, mergeConfig(config)),
     put: (url, data, config) => httpPut(fullUrl(url), data, mergeConfig(config)),
+    patch: (url, data, config) => httpPatch(fullUrl(url), data, mergeConfig(config)),
     delete: (url, config) => httpDelete(fullUrl(url), mergeConfig(config)),
   };
 }

@@ -1,8 +1,8 @@
 import c from "chalk"
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as Diff from "diff";
 import * as path from "path";
-import which from "which";
+import { which } from './whichUtils.js';
 import { execCommand, git, isDockerRunning, uxLog } from "./index.js";
 import { parseFlow } from "./flowVisualiser/flowParser.js";
 import { getConfig, getReportDirectory } from "../../config/index.js";

@@ -1,6 +1,6 @@
 import { Connection, SfError } from "@salesforce/core";
-import fs from 'fs-extra';
-import ora from "ora";
+import fs from './fsUtils.js';
+import { createSpinner } from './spinner.js';
 import * as path from "path";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
@@ -110,9 +110,8 @@ export class FileDownloader {
   }
 
   public async download(): Promise<{ success: boolean, outputFile: string, error?: any }> {
-    const spinnerCustom = ora({
+    const spinnerCustom = createSpinner({
       text: `Downloading ${this.label}...`,
-      spinner: 'moon',
     }).start();
 
     if (this.outputFile == null) {

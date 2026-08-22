@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
@@ -41,7 +41,7 @@ The command performs the following technical steps:
 - **Data Structuring:** The extracted data is then structured into a list of objects, making it easy to process.
 - **CSV Generation:** It constructs a CSV file with two columns: 'Permission set group' and 'Permission sets'. The 'Permission sets' column lists all assigned permission sets for each group, enclosed in quotes and separated by commas. The CSV file is saved to a temporary directory or a user-specified path.
 - **Markdown Generation:** It generates a Markdown file (\`docs/permission-set-groups.md\`) that includes a title, a table of contents, and detailed sections for each Permission Set Group. Each section lists the group's name, label, description, and a bulleted list of its assigned Permission Sets.
-- **File System Operations:** It uses \`fs-extra\` to ensure output directories exist and to write the generated CSV and Markdown files.
+- **File System Operations:** It uses Node.js \`fs\` to ensure output directories exist and to write the generated CSV and Markdown files.
 - **VS Code Integration:** It uses \`WebSocketClient.requestOpenFile\` to automatically open the generated CSV and Markdown files in VS Code, enhancing the user experience.
 
 ### Agent Mode

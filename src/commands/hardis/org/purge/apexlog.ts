@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
 import { execCommand, isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
@@ -39,7 +39,7 @@ The command's technical implementation involves:
 - **CSV Export:** The retrieved log IDs are temporarily exported to a CSV file (\`ApexLogsToDelete_*.csv\`) in the \`./tmp\` directory.
 - **User Confirmation:** It uses the \`prompts\` library to ask for user confirmation before proceeding with the deletion, displaying the count of logs to be purged.
 - **Bulk API Deletion:** It then uses the Salesforce CLI's \`sf data delete bulk\` command, pointing to the generated CSV file, to perform the mass deletion of Apex logs.
-- **File System Operations:** It uses \`fs-extra\` to create the temporary directory and manage the CSV file.
+- **File System Operations:** It uses Node.js \`fs\` to create the temporary directory and manage the CSV file.
 - **Error Handling:** Includes error handling for the query and deletion operations.
 </details>
 

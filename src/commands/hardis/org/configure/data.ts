@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import { toPascalCase } from '../../../../common/utils/stringUtils.js';
@@ -48,7 +48,7 @@ The command's technical implementation involves:
 
 - **SFDMU Integration:** It acts as a setup wizard for SFDMU, generating the necessary configuration files that the \`sfdmu\` plugin consumes.
 - **Interactive Prompts:** Uses the \`prompts\` library to gather user input for various configuration parameters, such as the data path, label, and description.
-- **File System Operations:** Employs \`fs-extra\` to create directories (e.g., \`data/your-project-name/\`) and write the \`export.json\` and any additional configuration files.
+- **File System Operations:** Employs Node.js \`fs\` to create directories (e.g., \`data/your-project-name/\`) and write the \`export.json\` and any additional configuration files.
 - **JSON Manipulation:** Constructs the \`export.json\` content dynamically based on user input and selected templates, including defining objects, queries, and operations.
 - **PascalCase Conversion:** Uses \`pascalcase\` to format the SFDMU folder name consistently.
 - **Configuration Persistence:** Updates the project's \`sfdx-hardis.yml\` file (via \`setConfig\`) to include the newly configured data package if it's intended for scratch org initialization.

@@ -1,4 +1,4 @@
-import fs from 'fs-extra';
+import fs from '../fsUtils.js';
 import * as path from 'path';
 import c from 'chalk';
 import { glob } from 'glob';

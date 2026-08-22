@@ -4,7 +4,7 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import * as child from 'child_process';
-import fs from 'fs-extra';
+import fs from '../../../../../common/utils/fsUtils.js';
 import * as path from 'path';
 import * as util from 'util';
 const exec = util.promisify(child.exec);
@@ -49,7 +49,7 @@ The command's technical implementation involves:
 - **\`MetadataUtils.retrieveMetadatas\`:** This utility is used to connect to the Salesforce org and retrieve metadata in Metadata API format. It supports filtering by metadata types and excluding certain items.
 - **SFDX Project Creation:** It executes \`sf project generate\` to create a new SFDX project structure within a temporary directory.
 - **MDAPI to SFDX Conversion:** It then uses \`sf project convert mdapi\` to convert the retrieved metadata from the MDAPI format to the SFDX source format.
-- **File System Operations:** It uses \`fs-extra\` to copy the converted SFDX sources to the main project folder, while preserving important project files like \`.gitignore\` and \`sfdx-project.json\`.
+- **File System Operations:** It uses Node.js \`fs\` to copy the converted SFDX sources to the main project folder, while preserving important project files like \`.gitignore\` and \`sfdx-project.json\`.
 - **Org Shape Handling:** If \`--shape\` is enabled, it copies the generated \`package.xml\` and stores information about installed packages using \`setConfig\`.
 - **Error Handling:** Includes robust error handling for Salesforce CLI commands and file system operations.
 - **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshCommandsMessage\` to notify connected VS Code clients about changes to the project.

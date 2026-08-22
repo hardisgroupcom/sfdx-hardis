@@ -1,8 +1,8 @@
 import { PromptTemplate } from "./promptTemplates.js";
 import path from 'path';
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import { getLargeXmlParser } from '../utils/xmlUtils.js';
-import farmhash from 'farmhash';
+import { fingerprint32 } from '../utils/farmhashFingerprint.js';
 import { getConfig } from "../../config/index.js";
 
 export class UtilsAi {
@@ -66,17 +66,17 @@ export class UtilsAi {
       if (typeof promptParameter === "string" && promptParameter.includes("<xml")) {
         try {
           const xmlObj = getLargeXmlParser().parse(UtilsAi.normalizeString(promptParameter));
-          return farmhash.fingerprint32(UtilsAi.normalizeString(JSON.stringify(xmlObj)));
+          return fingerprint32(UtilsAi.normalizeString(JSON.stringify(xmlObj)));
         }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         catch (e) {
-          return farmhash.fingerprint32(UtilsAi.normalizeString(promptParameter));
+          return fingerprint32(UtilsAi.normalizeString(promptParameter));
         }
       }
       else if (typeof promptParameter === "string") {
-        return farmhash.fingerprint32(UtilsAi.normalizeString(promptParameter));
+        return fingerprint32(UtilsAi.normalizeString(promptParameter));
       }
-      return farmhash.fingerprint32(UtilsAi.normalizeString(JSON.stringify(promptParameter)));
+      return fingerprint32(UtilsAi.normalizeString(JSON.stringify(promptParameter)));
     });
     return parametersFingerPrints.join("-");
   }

@@ -3,12 +3,12 @@
 import c from 'chalk';
 import { glob } from 'glob';
 import * as path from 'path';
-import sortArray from 'sort-array';
+import sortArray from '../../../common/utils/sortArray.js';
 
 // Salesforce Specific
 import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import { AnyJson } from '@salesforce/ts-types';
 
 // Common Utilities

@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import fs, { ensureDir } from 'fs-extra';
+import fs, { ensureDir } from '../../../common/utils/fsUtils.js';
 import c from "chalk";
 import * as path from "path";
 import { Messages, SfError } from '@salesforce/core';
@@ -58,7 +58,7 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
 - **Permission Set Assignment:** After successful deployment, it calls \`initPermissionSetAssignments\` to assign the newly created permission set to the current user.
 - **Browser Launch:** For non-CI environments, it uses \`execCommand\` to open the deployed Custom Tab in the user's default browser.
 - **Error Handling and Cleanup:** It includes error handling for deployment failures (e.g., static resource size limits) and ensures that the \`mkdocs.yml\` file is restored to its original state after execution.
-- **File System Operations:** It extensively uses \`fs-extra\` for file manipulation, including creating directories, moving files, and writing XML content.
+- **File System Operations:** It extensively uses Node.js \`fs\` for file manipulation, including creating directories, moving files, and writing XML content.
 </details>
 
 ### Agent Mode

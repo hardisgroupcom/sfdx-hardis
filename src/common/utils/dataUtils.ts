@@ -1,6 +1,6 @@
 import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as path from 'path';
 import { elapseEnd, elapseStart, isAgentMode, isCI, uxLog } from './index.js';
 import { getConfig } from '../../config/index.js';

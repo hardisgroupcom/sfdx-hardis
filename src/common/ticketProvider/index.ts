@@ -1,5 +1,5 @@
 import c from "chalk";
-import sortArray from "sort-array";
+import sortArray from '../utils/sortArray.js';
 import { JiraProvider } from "./jiraProvider.js";
 import { clearTicketCollectionIssues, TicketProviderRoot } from "./ticketProviderRoot.js";
 import { uxLog } from "../utils/index.js";

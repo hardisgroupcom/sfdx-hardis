@@ -6,7 +6,7 @@ import { ensureGitRepository, execCommand, uxLog } from '../../../common/utils/i
 import { parseXmlFile, writeXmlFile } from '../../../common/utils/xmlUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import * as path from 'path';
 import { CONSTANTS, getConfig, promptForProjectName, setConfig } from '../../../config/index.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';

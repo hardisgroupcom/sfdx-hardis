@@ -10,7 +10,7 @@ import { isCI, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { glob } from 'glob';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../common/utils/notifUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../common/notifProvider/index.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';

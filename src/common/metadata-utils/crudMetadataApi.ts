@@ -8,7 +8,7 @@ import {
 } from '@salesforce/source-deploy-retrieve';
 import { XMLBuilder, XMLParser } from 'fast-xml-parser';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import * as path from 'path';
 import { createTempDir, uxLog } from '../utils/index.js';
 import { t } from '../utils/i18n.js';

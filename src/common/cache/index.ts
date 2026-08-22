@@ -1,4 +1,4 @@
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import * as os from 'os';
 import * as path from 'path';
 

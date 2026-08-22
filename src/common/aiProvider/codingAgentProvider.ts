@@ -1,6 +1,6 @@
 import c from "chalk";
 import path from "path";
-import fs from "fs-extra";
+import fs from '../utils/fsUtils.js';
 import { execCommand, isCI, uxLog } from "../utils/index.js";
 import { getConfig, getEnvVar, getReportDirectory } from "../../config/index.js";
 import { t } from "../utils/i18n.js";

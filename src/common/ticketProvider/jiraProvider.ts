@@ -1,7 +1,7 @@
 import { Version2Client, Version3Client, Version3Models } from "jira.js";
 import { recordTicketCollectionIssue, TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
-import sortArray from "sort-array";
+import sortArray from '../utils/sortArray.js';
 import { Ticket } from "./index.js";
 import { extractRegexMatches, getCurrentGitBranch, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";

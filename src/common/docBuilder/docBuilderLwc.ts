@@ -1,7 +1,7 @@
 import { DocBuilderRoot } from "./docBuilderRoot.js";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
-import jsdoc2md from "jsdoc-to-markdown";
-import fs from "fs-extra";
+import { renderJsdocMarkdown } from "../utils/jsdocMarkdown.js";
+import fs from '../utils/fsUtils.js';
 import path from "path";
 import { t } from '../utils/i18n.js';
 
@@ -65,7 +65,8 @@ export class DocBuilderLwc extends DocBuilderRoot {
       const jsFile = path.join(lwcPath, `${this.metadataName}.js`);
 
       if (fs.existsSync(jsFile)) {
-        const jsdocOutput = await jsdoc2md.render({ files: jsFile });
+        const jsSource = await fs.readFile(jsFile, "utf-8");
+        const jsdocOutput = renderJsdocMarkdown(jsSource, { fileName: path.basename(jsFile) });
         return jsdocOutput || t('docMdNoJsDocAvailable');
       } else {
         return t('docMdNoJsFileFound');

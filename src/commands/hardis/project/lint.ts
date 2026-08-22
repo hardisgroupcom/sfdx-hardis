@@ -5,8 +5,8 @@ import { AnyJson } from '@salesforce/ts-types';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import c from 'chalk';
 import { t } from '../../../common/utils/i18n.js';
-import fs from 'fs-extra';
-import { sync as spawnSync } from 'cross-spawn';
+import fs from '../../../common/utils/fsUtils.js';
+import { spawnSync } from 'child_process';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -133,9 +133,16 @@ In agent mode, all interactive prompts are skipped and default values are used.
   // The version is pinned to the major sfdx-hardis is aligned with, so a new
   // mega-linter-runner major cannot change behavior without an sfdx-hardis release.
   private runMegaLinterRunner(args: string[]): { status: number | null } {
-    const spawnRes = spawnSync('npx', ['--yes', 'mega-linter-runner@10', ...args], {
+    // On Windows, npx is a .cmd script: it must run through the shell, so arguments
+    // containing spaces are quoted by hand because Node joins them without quoting.
+    const isWindows = process.platform === 'win32';
+    const npxArgs = ['--yes', 'mega-linter-runner@10', ...args].map((arg) =>
+      isWindows && /\s/.test(arg) ? `"${arg}"` : arg
+    );
+    const spawnRes = spawnSync(isWindows ? 'npx.cmd' : 'npx', npxArgs, {
       stdio: 'inherit',
       windowsHide: true,
+      shell: isWindows,
     });
     if (spawnRes.error) {
       uxLog("error", this, c.red(`Unable to run npx mega-linter-runner: ${spawnRes.error.message}`));

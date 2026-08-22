@@ -1,13 +1,13 @@
 import { GitProviderRoot, PullRequestCommentRef } from './gitProviderRoot.js';
 import c from 'chalk';
-import fs from "fs-extra";
-import FormData from 'form-data'
+import fs from '../utils/fsUtils.js';
 import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { getCurrentGitBranch, git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
+import { httpPost } from '../utils/httpUtils.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./jenkinsUtils.js";
 const { Bitbucket } = bbPkg;
 
@@ -15,6 +15,7 @@ export class BitbucketProvider extends GitProviderRoot {
   private bitbucket: InstanceType<typeof Bitbucket>;
   public serverUrl: string = 'https://bitbucket.org';
   public token: string;
+  private email: string;
 
   constructor() {
     super();
@@ -23,11 +24,19 @@ export class BitbucketProvider extends GitProviderRoot {
     // token (token only). An Atlassian account API token must instead be used as
     // Basic auth, with the account email as the username. Pick the scheme based
     // on whether CI_SFDX_HARDIS_BITBUCKET_EMAIL is provided.
-    const email = process.env.CI_SFDX_HARDIS_BITBUCKET_EMAIL || '';
-    const clientOptions = email
-      ? { auth: { username: email, password: this.token } }
+    this.email = process.env.CI_SFDX_HARDIS_BITBUCKET_EMAIL || '';
+    const clientOptions = this.email
+      ? { auth: { username: this.email, password: this.token } }
       : { auth: { token: this.token } };
     this.bitbucket = new Bitbucket(clientOptions as any);
+  }
+
+  // Same credentials as the bitbucket client, for direct REST calls
+  private getAuthorizationHeader(): string {
+    if (this.email) {
+      return 'Basic ' + Buffer.from(`${this.email}:${this.token}`).toString('base64');
+    }
+    return `Bearer ${this.token}`;
   }
 
   // Auto-detect Bitbucket CI variables from token + local git remote URL
@@ -786,13 +795,17 @@ ${getBannerMarkdownAndLink()}
   public async uploadImage(localImagePath: string): Promise<string | null> {
     try {
       const imageName = path.basename(localImagePath);
+      // The bitbucket client relies on node-fetch v2, which cannot serialize a native FormData:
+      // the upload calls the Downloads REST endpoint directly with the same credentials
       const filesForm = new FormData();
-      filesForm.append("files", fs.createReadStream(localImagePath));
-      const attachmentResponse = await this.bitbucket.repositories.createDownload({
-        workspace: process.env.BITBUCKET_WORKSPACE || "",
-        repo_slug: process.env.BITBUCKET_REPO_SLUG || "",
-        _body: filesForm as any,
-      });
+      filesForm.append("files", new Blob([await fs.readFile(localImagePath)]), imageName);
+      const workspace = process.env.BITBUCKET_WORKSPACE || "";
+      const repoSlug = process.env.BITBUCKET_REPO_SLUG || "";
+      const attachmentResponse = await httpPost(
+        `https://api.bitbucket.org/2.0/repositories/${workspace}/${repoSlug}/downloads`,
+        filesForm,
+        { headers: { Authorization: this.getAuthorizationHeader() } }
+      );
       if (attachmentResponse) {
         const imageRef = `${this.serverUrl}/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/downloads/${imageName}`;
         uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketImageUploaded', { imageRef })));

@@ -1,7 +1,7 @@
 import { Connection, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { uxLog } from "./index.js";
-import fs from "fs-extra";
+import fs from './fsUtils.js';
 import path from "path";
 
 export const DATA_CLOUD_QUERIES_FOLDER_ROOT = path.join(process.cwd(), 'scripts', 'data-cloud-queries');

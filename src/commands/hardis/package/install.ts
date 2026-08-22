@@ -4,7 +4,7 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { httpGet } from '../../../common/utils/httpUtils.js';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import * as path from 'path';
 // import * as packages from '../../../../defaults/packages.json'
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';

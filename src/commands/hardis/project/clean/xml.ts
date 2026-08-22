@@ -3,10 +3,10 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import { glob } from 'glob';
 import * as path from 'path';
-import sortArray from 'sort-array';
+import sortArray from '../../../../common/utils/sortArray.js';
 // @xmldom/xmldom and xpath are kept on purpose: they power the user-facing
 // XPath-based cleaning feature (cleanXmlPatterns config), which cannot be
 // expressed with fast-xml-parser. See DEPENDENCY_REDUCTION_PLAN.md.

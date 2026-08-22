@@ -10,7 +10,7 @@ import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/i
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { dateHelper } from '../../../../common/utils/dateHelper.js';
-import sortArray from 'sort-array';
+import sortArray from '../../../../common/utils/sortArray.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';

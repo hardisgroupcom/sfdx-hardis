@@ -1,7 +1,7 @@
 import { uxLog } from './index.js';
 import c from 'chalk';
 import { Connection } from '@salesforce/core';
-import ora, { Ora } from 'ora';
+import { createSpinner, Spinner } from './spinner.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { generateCsvFile, generateReportPath } from './filesUtils.js';
 import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
@@ -113,7 +113,7 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
   conn.bulk2.pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 60000; // 60 sec
   // Start query
   try {
-    spinnerQ = ora({ text: `[BulkApiV2] Bulk Query: ${queryLabel}`, spinner: 'moon' }).start();
+    spinnerQ = createSpinner({ text: `[BulkApiV2] Bulk Query: ${queryLabel}` }).start();
     const recordStream = await conn.bulk2.query(soqlQuery);
     recordStream.on('error', (err) => {
       uxLog("warning", this, c.yellow(t('bulkQueryError') + err));
@@ -194,7 +194,7 @@ export async function bulkQueryByChunks(
   return results;
 }
 
-let spinner: Ora;
+let spinner: Spinner;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkUpdate(
   objectName: string,
@@ -212,7 +212,7 @@ export async function bulkUpdate(
   conn.bulk2.pollInterval = process.env.BULKAPIV2_POLL_INTERVAL ? Number(process.env.BULKAPIV2_POLL_INTERVAL) : 5000; // 5 sec
   conn.bulk2.pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 60000; // 60 sec
   // Initialize Job
-  spinner = ora({ text: `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on ${c.bold(records.length)} records of object ${c.bold(objectName)}`, spinner: 'moon' }).start();
+  spinner = createSpinner({ text: `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on ${c.bold(records.length)} records of object ${c.bold(objectName)}` }).start();
   const job = conn.bulk2.createJob({
     operation: action as any,
     object: objectName,

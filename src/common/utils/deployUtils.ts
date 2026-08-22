@@ -1,9 +1,9 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import { glob } from 'glob';
 import * as path from 'path';
-import sortArray from 'sort-array';
+import sortArray from './sortArray.js';
 import {
   createTempDir,
   elapseEnd,

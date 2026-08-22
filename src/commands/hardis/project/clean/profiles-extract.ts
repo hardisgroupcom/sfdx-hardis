@@ -13,7 +13,7 @@ import * as path from 'path';
 import { getConfig, getReportDirectory, setConfig } from '../../../../config/index.js';
 import { Messages } from '@salesforce/core';
 import { PromisePool } from '@supercharge/promise-pool';
-import sortArray from 'sort-array';
+import sortArray from '../../../../common/utils/sortArray.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 

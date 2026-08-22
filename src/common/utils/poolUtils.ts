@@ -1,5 +1,5 @@
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import { dateHelper } from './dateHelper.js';
 import * as os from 'os';
 import * as path from 'path';

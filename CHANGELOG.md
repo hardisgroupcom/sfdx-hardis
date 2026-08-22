@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+### Dependencies
+
+- **Smaller supply-chain attack surface**: 14 more npm dependencies removed (`@actions/github`, `jsdoc-to-markdown`, `inquirer`, `fs-extra`, `ora`, `open`, `sort-array`, `farmhash`, `cross-spawn`, `which`, `debug`, `dotenv`, `form-data`, unused `langchain`), replaced by Node.js built-ins and small internal helpers; `yarn test` now fails when a dependency is unused or the lock file grows past a ceiling. Node.js 22 or more is required (like the Salesforce CLI).
+
 ### Documentation
 
 - The [Installation page](https://sfdx-hardis.cloudity.com/installation/) is **rewritten for first-time users**: a table to pick between **VS Code**, the **CLI plugin** and the **Docker images**, then the VS Code setup **step by step**, with the IDE compatibility table and the troubleshooting tips moved to the end.

@@ -2,7 +2,7 @@
 import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import c from "chalk";
 import * as path from "path";
-import fs from "fs-extra";
+import fs from '../../../common/utils/fsUtils.js';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
@@ -45,7 +45,7 @@ The command leverages several internal utilities and external libraries to achie
 - **Mermaid Integration:** Employs \`generateMarkdownFileWithMermaid\` to embed Mermaid diagrams within the Markdown output, which are then rendered by compatible Markdown viewers.
 - **AI Integration:** If enabled, it interacts with an AI service (via \`describeWithAi\` option) to generate a high-level summary of the Flow.
 - **Git History Analysis:** For the \`--with-history\` flag, it uses \`generateHistoryDiffMarkdown\` to analyze Git history and present changes to the Flow.
-- **File System Operations:** Uses \`fs-extra\` for file system operations like reading input files, creating output directories (e.g., \`docs/flows/\`), and writing Markdown and PDF files.
+- **File System Operations:** Uses Node.js \`fs\` for file system operations like reading input files, creating output directories (e.g., \`docs/flows/\`), and writing Markdown and PDF files.
 - **Salesforce CLI Integration:** Uses \`@salesforce/sf-plugins-core\` for command-line parsing and \`setConnectionVariables\` for Salesforce organization context.
 - **WebSocket Communication:** Interacts with a WebSocket client (\`WebSocketClient.requestOpenFile\`) to open the generated Markdown file in a VS Code tab, enhancing user experience.
 </details>

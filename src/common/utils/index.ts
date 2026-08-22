@@ -1,17 +1,16 @@
 import c from 'chalk';
 import * as child from 'child_process';
-import { spawn as crossSpawn } from 'cross-spawn';
 import * as crypto from 'crypto';
 import { stringifyCsv } from './csvUtils.js';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as os from 'os';
 import * as path from 'path';
 
 import * as util from 'util';
-import which from 'which';
+import { which } from './whichUtils.js';
 const exec = util.promisify(child.exec);
 import { Connection, SfError } from '@salesforce/core';
-import ora from 'ora';
+import { createSpinner } from './spinner.js';
 import { simpleGit, FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS, getApiVersion, getApiVersionNumber, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
@@ -300,7 +299,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
       }
       // Git clone
       await new Promise((resolve) => {
-        crossSpawn('git', ['clone', cloneUrl, '.'], { stdio: 'inherit' }).on('close', () => {
+        child.spawn('git', ['clone', cloneUrl, '.'], { stdio: 'inherit' }).on('close', () => {
           resolve(null);
         });
       });
@@ -936,7 +935,7 @@ export async function execCommand(
   const output = options.output !== null ? options.output : !commandThis?.argv?.includes('--json');
   let spinner: any;
   if (output && !(options.spinner === false)) {
-    spinner = ora({ text: commandLog, spinner: 'moon' }).start();
+    spinner = createSpinner({ text: commandLog }).start();
     if (globalThis.hardisLogFileStream) {
       globalThis.hardisLogFileStream.write(stripAnsi(commandLog) + '\n');
     }

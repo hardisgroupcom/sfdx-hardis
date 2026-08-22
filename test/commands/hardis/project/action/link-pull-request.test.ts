@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import fs from 'fs-extra';
+import fs from '../../../../../src/common/utils/fsUtils.js';
 import * as yaml from 'js-yaml';
 import * as path from 'path';
 import { renameDraftToPr } from '../../../../../src/common/utils/actionUtils.js';

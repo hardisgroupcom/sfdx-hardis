@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 
 export const SUPPORTED_LOCALES = ['de', 'en', 'es', 'fr', 'it', 'ja', 'nl', 'pl', 'pt-BR'];
 

@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 // External Libraries and Node.js Modules
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import { parseXmlString } from '../../../common/utils/xmlUtils.js';
 import { glob } from 'glob';
 import * as path from 'path';
@@ -213,15 +213,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
   }
 
   private readFileAsync(filePath: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(data);
-        }
-      });
-    });
+    return fs.readFile(filePath, 'utf8');
   }
 
   private async buildCsvFile(fieldsWithoutDescription: any[]): Promise<void> {

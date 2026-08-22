@@ -1,7 +1,7 @@
-import fs from 'fs-extra';
+import fs from '../fsUtils.js';
 import * as path from 'path';
 import c from 'chalk';
-import open from 'open';
+import { open } from '../openUtils.js';
 import { Connection, SfError } from '@salesforce/core';
 import { execCommand, execSfdxJson, isCI, createTempDir, uxLog } from '../index.js';
 import { parseXmlFile, writePackageXmlFile, writeXmlFile } from '../xmlUtils.js';

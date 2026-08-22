@@ -1,7 +1,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import c from "chalk";
 import * as path from "path";
-import fs from "fs-extra";
+import fs from '../../../common/utils/fsUtils.js';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { isCI, uxLog } from '../../../common/utils/index.js';
@@ -62,7 +62,7 @@ The command's technical implementation involves:
   - Construct a new XML structure containing only the filtered labels.
   - Build a new XML string with proper formatting and write it to a new file.
 - **Interactive Prompts:** The \`prompts\` library is used extensively to guide the user through the selection of extraction methods (labels or LWC) and specific labels/components.
-- **File System Operations:** It uses \`fs-extra\` for creating output directories (\`extracted-translations/\`) and writing the generated translation files.
+- **File System Operations:** It uses Node.js \`fs\` for creating output directories (\`extracted-translations/\`) and writing the generated translation files.
 - **WebSocket Communication:** It uses \`WebSocketClient.requestOpenFile\` to open the output directory in VS Code for easy access to the generated files.
 </details>
 `;

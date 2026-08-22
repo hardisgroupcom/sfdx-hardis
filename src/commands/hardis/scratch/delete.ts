@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { execCommand, execSfdxJson, isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import c from 'chalk';
-import sortArray from 'sort-array';
+import sortArray from '../../../common/utils/sortArray.js';
 import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);

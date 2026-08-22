@@ -14,7 +14,7 @@ import { Connection, SfError } from '@salesforce/core';
 import { httpGet } from '../common/utils/httpUtils.js';
 import c from 'chalk';
 import { cosmiconfig } from 'cosmiconfig';
-import fs from 'fs-extra';
+import fs from '../common/utils/fsUtils.js';
 import * as yaml from 'js-yaml';
 import * as os from 'os';
 import * as path from 'path';

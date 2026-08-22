@@ -11,9 +11,9 @@ import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/i
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { CONSTANTS, getEnvVar } from '../../../../config/index.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import { glob } from 'glob';
-import sortArray from 'sort-array';
+import sortArray from '../../../../common/utils/sortArray.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');

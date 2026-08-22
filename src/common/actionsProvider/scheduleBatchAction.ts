@@ -4,7 +4,7 @@ import { createTempDir, execCommand, uxLog } from '../utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../utils/apiUtils.js';
 import { t } from '../utils/i18n.js';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import path from 'path';
 
 export class ScheduleBatchAction extends ActionsProvider {

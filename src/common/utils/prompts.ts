@@ -1,6 +1,8 @@
 import c from "chalk";
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-import inquirer from "inquirer";
+import checkbox from "@inquirer/checkbox";
+import input from "@inquirer/input";
+import number from "@inquirer/number";
+import select from "@inquirer/select";
 import { SfError } from "@salesforce/core";
 import { isCI, uxLog } from "./index.js";
 import { WebSocketClient } from "../websocketClient.js";
@@ -147,34 +149,93 @@ function stopPrompt() {
   process.exit(0);
 }
 
-async function terminalPrompts(questions: PromptsQuestion[]) {
-  const inquirerQuestions: any = [];
-  for (const question of questions) {
-    const inquirerQuestion: any = {
-      name: question.name,
-      type: question.type === "text" ? "input" : question.type === "multiselect" ? "checkbox" : question.type === "select" ? "list" : question.type,
-      message: question.message,
-    };
-    if (question.choices) {
-      inquirerQuestion.choices = question.choices.map((qstn) => {
-        return {
-          name: qstn.title,
-          value: qstn.value,
-        };
-      });
-    }
-    if (question.default) {
-      inquirerQuestion.default = question.default;
-    } else if (question.initial) {
-      inquirerQuestion.default = question.initial;
-    }
-    if (question.validate) {
-      inquirerQuestion.validate = question.validate;
-    }
-    inquirerQuestions.push(inquirerQuestion);
+// Resolves the default of a choice-based question: callers pass either a choice value
+// or (legacy behavior) the index of the choice in the list
+export function resolveDefaultChoiceValue(defaultValue: unknown, choices: Array<any>): unknown {
+  if (defaultValue === undefined || defaultValue === null) {
+    return undefined;
   }
+  if (choices.some((choice) => choice.value === defaultValue)) {
+    return defaultValue;
+  }
+  if (typeof defaultValue === "number" && Number.isInteger(defaultValue) && choices[defaultValue] !== undefined) {
+    return choices[defaultValue].value;
+  }
+  return defaultValue;
+}
+
+export function getQuestionDefault(question: PromptsQuestion): unknown {
+  // Same precedence as before: default first, then initial (0 and "" are treated as unset)
+  if (question.default) {
+    return question.default;
+  }
+  if (question.initial) {
+    return question.initial;
+  }
+  return undefined;
+}
+
+export interface TerminalPromptFunctions {
+  select: (config: any) => Promise<any>;
+  checkbox: (config: any) => Promise<any>;
+  input: (config: any) => Promise<any>;
+  number: (config: any) => Promise<any>;
+}
+
+let terminalPromptFunctions: TerminalPromptFunctions = { select, checkbox, input, number };
+
+/** Replaces the terminal prompt implementations (unit tests only). Pass null to restore the defaults. */
+export function setTerminalPromptFunctionsForTests(functions: TerminalPromptFunctions | null): void {
+  terminalPromptFunctions = functions || { select, checkbox, input, number };
+}
+
+// Builds the @inquirer configuration of a question and asks it in the terminal
+export async function askTerminalQuestion(question: PromptsQuestion): Promise<any> {
+  const defaultValue = getQuestionDefault(question);
+  const validate = question.validate ? (value: any) => question.validate!(value) : undefined;
+  const choices = (question.choices || []).map((choice) => ({
+    name: choice.title,
+    value: choice.value,
+    description: choice.description,
+  }));
+  const pageSize = question.optionsPerPage || 9999;
+  if (question.type === "select") {
+    return terminalPromptFunctions.select({
+      message: question.message,
+      choices: choices,
+      default: resolveDefaultChoiceValue(defaultValue, choices),
+      pageSize: pageSize,
+    });
+  }
+  if (question.type === "multiselect") {
+    const defaultValues = Array.isArray(defaultValue) ? defaultValue : [];
+    return terminalPromptFunctions.checkbox({
+      message: question.message,
+      choices: choices.map((choice) => ({ ...choice, checked: defaultValues.includes(choice.value) })),
+      pageSize: pageSize,
+      validate: validate,
+    });
+  }
+  if (question.type === "number") {
+    return terminalPromptFunctions.number({
+      message: question.message,
+      default: typeof defaultValue === "number" ? defaultValue : undefined,
+      validate: validate,
+    });
+  }
+  return terminalPromptFunctions.input({
+    message: question.message,
+    default: typeof defaultValue === "string" ? defaultValue : undefined,
+    validate: validate,
+  });
+}
+
+async function terminalPrompts(questions: PromptsQuestion[]) {
+  const answers: Record<string, any> = {};
   try {
-    const answers = await (inquirer as any).prompt(inquirerQuestions);
+    for (const question of questions) {
+      answers[question.name || "value"] = await askTerminalQuestion(question);
+    }
     return answers;
   } catch (e) {
     throw new SfError("Error while prompting: " + (e as Error).message);

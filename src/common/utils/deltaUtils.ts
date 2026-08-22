@@ -1,7 +1,7 @@
 
 import { parsePackageXmlFile, writePackageXmlFile, removePackageXmlFilesContent, appendPackageXmlFilesContent } from './xmlUtils.js';
 import { getFileAtCommit } from './gitUtils.js';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as path from 'path';
 import { createTempDir, uxLog } from './index.js';
 import c from 'chalk';

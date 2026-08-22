@@ -1,9 +1,9 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Connection, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import c from 'chalk';
-import open from 'open';
+import { open } from '../../../../common/utils/openUtils.js';
 import { httpGet } from '../../../../common/utils/httpUtils.js';
 import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';

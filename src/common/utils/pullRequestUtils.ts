@@ -2,7 +2,7 @@ import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
 import { uxLog } from "./index.js";
 import c from "chalk";
 import path from "path";
-import fs from "fs-extra";
+import fs from './fsUtils.js';
 import yaml from "js-yaml";
 import { isRetrofit, listMajorOrgs } from "./orgConfigUtils.js";
 import { SfError } from "@salesforce/core";

@@ -1,9 +1,9 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import AdmZip from 'adm-zip';
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import * as path from 'path';
-import sortArray from 'sort-array';
+import sortArray from '../utils/sortArray.js';
 import {
   elapseEnd,
   elapseStart,

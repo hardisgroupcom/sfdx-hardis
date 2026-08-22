@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import * as path from "path";
 import { createTempDir, execCommand, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
@@ -12,7 +12,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { CONSTANTS } from '../../../../config/index.js';
-import sortArray from 'sort-array';
+import sortArray from '../../../../common/utils/sortArray.js';
 import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
@@ -82,7 +82,7 @@ The command's technical implementation involves:
 - **Date Calculation:** Uses \`moment\` to calculate the time since the last OAuth token usage.
 - **Report Generation:** It uses \`generateCsvFile\` to create the CSV report of unused Connected Apps.
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
-- **File System Operations:** Uses \`fs-extra\` for creating and removing temporary directories and files.
+- **File System Operations:** Uses Node.js \`fs\` for creating and removing temporary directories and files.
 - **Environment Variable Reading:** Reads the \`ALLOWED_INACTIVE_CONNECTED_APPS\` environment variable to customize the list of ignored Connected Apps.
 </details>
 

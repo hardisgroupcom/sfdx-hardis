@@ -1,4 +1,4 @@
-import fs from 'fs-extra';
+import fs from '../fsUtils.js';
 import * as path from 'path';
 
 // The actions report is the audit trail of a sandbox refresh: when before-refresh or

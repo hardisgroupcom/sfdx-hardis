@@ -12,7 +12,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { DeployRecord, parseDatetime, minutesBetween } from '../../../../common/utils/deployUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { prepareOrgNotificationContext } from '../../../../common/utils/orgNotificationContext.js';
-import sortArray from 'sort-array';
+import sortArray from '../../../../common/utils/sortArray.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');

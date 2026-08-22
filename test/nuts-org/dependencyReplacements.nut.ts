@@ -14,7 +14,7 @@
  * Runs only via `yarn test:nuts:org`.
  */
 import { expect } from 'chai';
-import fs from 'fs-extra';
+import fs from '../../src/common/utils/fsUtils.js';
 import * as path from 'path';
 import {
   getSharedNutOrgSession,

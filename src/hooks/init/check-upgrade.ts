@@ -35,7 +35,7 @@ async function runUpgradeCheck(): Promise<void> {
     { shouldCheckForUpgrade, isUpgradeAvailable, fetchLatestPackageVersion },
   ] = await Promise.all([
     import('chalk'),
-    import('fs-extra'),
+    import('../../common/utils/fsUtils.js'),
     import('url'),
     import('path'),
     import('../../common/cache/index.js'),

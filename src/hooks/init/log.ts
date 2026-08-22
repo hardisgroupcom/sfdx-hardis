@@ -15,15 +15,17 @@ const hook: Hook<'init'> = async (options) => {
     { default: fs },
     path,
     os,
-    dotenv,
   ] = await Promise.all([
-    import('fs-extra'),
+    import('../../common/utils/fsUtils.js'),
     import('path'),
     import('os'),
-    import('dotenv'),
   ]);
-  // Handle variables defined in .env file
-  dotenv.config();
+  // Handle variables defined in .env file (existing environment variables are not overridden)
+  try {
+    process.loadEnvFile();
+  } catch {
+    // No .env file in the current directory
+  }
   // Debug env variables
   if (process.env.SFDX_HARDIS_DEBUG_ENV === 'true') {
     console.log('ENV VARS:\n' + JSON.stringify(process.env, null, 2));

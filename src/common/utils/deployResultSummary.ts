@@ -1,7 +1,7 @@
 // Build and display a readable summary of a Salesforce deployment result,
 // instead of dumping the complete (and often huge) deployment JSON in CI logs.
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as path from 'path';
 import { CONSTANTS, getEnvVar, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';

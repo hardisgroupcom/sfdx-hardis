@@ -1,8 +1,8 @@
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import { glob } from 'glob';
 import puppeteer, { Browser } from 'puppeteer-core';
-import sortArray from 'sort-array';
+import sortArray from './sortArray.js';
 import * as chromeLauncher from 'chrome-launcher';
 import * as yaml from 'js-yaml';
 import { uxLog } from './index.js';

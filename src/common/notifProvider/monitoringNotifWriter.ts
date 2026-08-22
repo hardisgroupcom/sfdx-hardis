@@ -1,4 +1,4 @@
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import * as path from 'path';
 import c from 'chalk';
 import { uxLog } from '../utils/index.js';
