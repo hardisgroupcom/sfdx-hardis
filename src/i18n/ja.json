@@ -363,6 +363,7 @@
   "checkingForUnusedLabels": "未使用のカスタム表示ラベルを確認しています...",
   "checkingIfTheOrgUsernameHasChanged": "組織のユーザー名が {{prevUserName}} から変更されたかどうかを確認しています...",
   "checkingMetadataTypesEligibleForDecomposition": "分解対象のメタデータタイプを確認しています（ベータ機能）",
+  "checkingOrgConnectionStatus": "組織 {{org}} の接続状態を確認しています...",
   "checkingOutGitBranch": "git ブランチ {{branchName}} をチェックアウトしています...",
   "checkingOutLatestVersionOfBranch": "{{repoUrl}} から branch {{branch}} の最新バージョンをチェックアウトしています...",
   "checkingSobjectsForRecords": "SObject のレコードを確認しています...",

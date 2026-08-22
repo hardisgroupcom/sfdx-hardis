@@ -347,6 +347,8 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
     targetOrg = targetOrg.username;
   }
   else {
+    // Always log an action before running sf org display, so the VS Code UI does not look stuck after a prompt
+    uxLog("action", this, c.cyan(t('checkingOrgConnectionStatus', { org: c.green(targetOrg) })));
     const displayOrgCommand = `sf org display --target-org ${targetOrg}`;
     const displayResult = await execSfdxJson(displayOrgCommand, this, {
       fail: false,

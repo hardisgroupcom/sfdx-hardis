@@ -363,6 +363,7 @@
   "checkingForUnusedLabels": "Vérification des labels inutilisés...",
   "checkingIfTheOrgUsernameHasChanged": "Vérification si le nom d'utilisateur de l'org a changé depuis {{prevUserName}}...",
   "checkingMetadataTypesEligibleForDecomposition": "Vérification des types de métadonnées éligibles à la décomposition (fonctionnalité Beta)",
+  "checkingOrgConnectionStatus": "Vérification du statut de connexion de l'org {{org}} ...",
   "checkingOutGitBranch": "Checkout de la branche git {{branchName}}...",
   "checkingOutLatestVersionOfBranch": "Récupération de la dernière version de la branche {{branch}} depuis {{repoUrl}}...",
   "checkingSobjectsForRecords": "Vérification des SObjects pour les enregistrements...",
