@@ -87,6 +87,8 @@ Contributors declare the steps that must happen around the deployment of their U
 - **Automated actions** (run a command, import data with SFDMU, run an Apex script, publish an Experience Cloud site, schedule an Apex batch, remove items from package.xml) run by themselves in each org at deployment time. You have nothing to do.
 - **Manual steps** appear as checkboxes in the **Deployment Actions** comment of the Pull Request. Perform them at the right moment (before or after the deployment, as described in the step), then tick the box so sfdx-hardis records them as done. See [Track what has been done](salesforce-ci-cd-work-on-task-deployment-actions.md#track-what-has-been-done).
 
+**Reviewing the manual steps is part of reviewing the Pull Request.** A manual step will be replayed in uat, preprod and production, maybe months later, maybe by someone else. Read each one as if you did not know the project, and ask yourself: can I do this without asking the author anything? If the step does not say the **exact Setup path**, the **exact name of the item**, the **value to set** and **how to check it worked**, reject the Pull Request and ask for a [click by click description](salesforce-ci-cd-work-on-task-deployment-actions.md#write-the-instructions-click-by-click). A good rule to give the team: *describe the manual action as if it was for someone who does not know Salesforce at all.*
+
 **IMPORTANT**: If **custom Profiles** are deployed for the **first time**, you MUST **create them manually** in the target org, by **cloning them from the "Minimal Access" Profile**.
 
 ___

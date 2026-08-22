@@ -10,7 +10,7 @@ description: "Automate and track the steps around your deployments: data loads, 
 
 Deploying a User Story is not always just about metadata. Sometimes something else must happen around the deployment: load reference records, run an Apex script, publish an Experience Cloud site, schedule a batch job, or simply remind someone to activate a setting in Setup.
 
-**Deployment actions** let you declare these steps once, together with your Pull Request. sfdx-hardis then runs them automatically in every org your work is deployed to (integration, uat, preprod, production...), in the right order, exactly once per org, and keeps a visible record of what has been done where.
+**Deployment actions** let you declare these steps once, together with your Pull Request. sfdx-hardis then runs them automatically in every org your work is deployed to (integration, uat, preprod, production...), in the right order, exactly once per org, and keeps a visible record of what has been done where. Even the steps a human must perform are declared the same way, so they are replayed identically from one org to the next instead of living in someone's memory or in a chat message.
 
 You can automate (or track) the following kinds of steps:
 
@@ -390,9 +390,27 @@ Only available as a **pre-deploy** action. The removal applies to the temporary 
 
 #### Manual step
 
-Some things cannot be automated: activating a setting in Setup, warning a team, checking an external system. A manual step describes what must be done. sfdx-hardis reminds the right person at the right time, in the Pull Request comments, with a checkbox to tick once it is done.
+Some things cannot be automated: activating a feature that has no API, warning a team, checking an external system. A manual step describes what must be done. sfdx-hardis reminds the right person at the right time, in the Pull Request comments, with a checkbox to tick once it is done.
+
+Before declaring a manual step, check whether it can be scripted: a setting that can be changed with an `sf` command, an Apex anonymous script or a data load belongs in a [command](#run-a-command), [Apex](#run-an-apex-script) or [data](#import-data-sfdmu) action, which runs by itself in every org. Keep `manual` for what really needs a human.
 
 ![Manual deployment action](assets/images/screenshot-deployment-action-manual.jpg)
+
+##### Write the instructions click by click
+
+A manual step is performed several times: in integration, then uat, then preprod, then production, sometimes months apart, often by a different person each time. When a manual step goes wrong, it is rarely the action itself: it is a one-line description that assumed the reader already knew which setting and which value.
+
+So the rule is: **describe the manual action as if it was for someone who does not know Salesforce at all.** Good instructions say:
+
+- the **exact Setup path**, starting from the Quick Find box,
+- the **exact name** of the item to change (field, setting, named credential, user, permission set...),
+- the **exact value** to set, per org if it differs,
+- **how to check** that it worked,
+- **what to do if it is already done** (usually: nothing, tick the box anyway).
+
+No need to say in which orgs the step applies: that is the job of the **Target orgs** field of the action (see [Choose the target orgs](#choose-the-target-orgs)), and the status matrix shows who still has to do it where.
+
+The release manager reads the manual steps when reviewing the Pull Request, and rejects it when a step is not replayable by someone else (see [Validate a Pull Request](salesforce-ci-cd-validate-merge-request.md#deployment-actions)).
 
 <details markdown="1"><summary>Technical: manual action (YAML)</summary>
 
@@ -402,13 +420,34 @@ The Pull Request comments show the instructions (rendered as markdown) and an un
 |---------------------------|----------------------------------------------------------------------------------------------------------------------------------|---------|
 | `parameters.instructions` | Human-readable instructions or checklist for the operator/reviewer, in markdown format. Use a YAML block to preserve formatting. |         |
 
+Too short: which named credential? what is the expected value? how do I know it worked?
+
 ```yaml
 - id: url-check
   label: Check external callback URL
   type: manual
   parameters:
+    instructions: Check that the callback URL is correct in Named Credentials.
+  context: process-deployment-only
+```
+
+Click by click: anyone can replay it in uat, preprod or production.
+
+```yaml
+- id: url-check
+  label: Set the ERP callback URL in Named Credential ERP_Callback
+  type: manual
+  parameters:
     instructions: |
-      Verify that the callback URL in `Setup > Named Credentials` is reachable from the target org and matches the production URL.
+      1. Open **Setup**, type `Named Credentials` in the Quick Find box, then open **Named Credentials**.
+      2. Click **ERP_Callback**, then **Edit**.
+      3. Set **URL** to the value of the org you are in (ask the integration team if it is not in the list):
+         - uat: `https://erp-uat.example.com/callback`
+         - preprod: `https://erp-preprod.example.com/callback`
+         - production: `https://erp.example.com/callback`
+      4. Click **Save**.
+      5. Check: open **ERP_Callback** again, the URL shown is the one of the list above.
+         If it was already correct, there is nothing to do: tick the box anyway.
   context: process-deployment-only
 ```
 
