@@ -2,6 +2,16 @@
 
 You can install [Visual Studio Code](https://code.visualstudio.com/), then the VS Code extension [SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
+The extension is published on both the Visual Studio Marketplace and the [Open VSX Registry](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis), so it is fully compatible with every VS Code-based IDE, on desktop or in the browser:
+
+|                                                                                                                                                                                                                                                                                                                                                                                                      | IDE                                                                                                                         | Install from                                                                                                        |
+|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-vscode.png" alt="Visual Studio Code" height="32"/>                                                                                                                                                                                                                                                           | [Visual Studio Code](https://code.visualstudio.com/)                                                                        | [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) |
+| <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-agentforce-vibes.png" alt="Agentforce Vibes IDE" height="32"/>                                                                                                                                                                                                                                               | [Agentforce Vibes IDE](https://www.salesforce.com/agentforce/developers/vibe-coding/ide/) and other browser IDEs            | [Open VSX](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)                                       |
+| <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-cursor.png" alt="Cursor" height="32"/> <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-windsurf.png" alt="Windsurf" height="32"/> <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-vscodium.png" alt="VSCodium" height="32"/> | [Cursor](https://cursor.com/), [Windsurf](https://windsurf.com/), [VSCodium](https://vscodium.com/) and other VS Code forks | [Open VSX](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)                                       |
+
+The only requirement is the same as for VS Code: the IDE must be able to run the Salesforce CLI (Agentforce Vibes IDE ships it preinstalled).
+
 Once installed, click on ![SFDX Hardis button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in the VS Code left bar, click on **Install dependencies** and follow the installation instructions.
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-highlight.png)
@@ -14,7 +24,7 @@ _You can also watch the video tutorial below_
 
 [![Installation tutorial](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/play-install-tuto.png)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
 
-___
+---
 
 ### As SFDX Plugin
 
@@ -39,7 +49,7 @@ sf plugins install sfdmu
 
 If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.
 
-___
+---
 
 ### Docker
 

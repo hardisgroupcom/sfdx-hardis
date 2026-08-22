@@ -18,6 +18,8 @@ If you never installed the Salesforce CLI, skip this step.
 
 Download and install [Visual Studio Code](https://code.visualstudio.com/) (VS Code). It is the editor you will use every day on the project.
 
+> **Not using VS Code?** The SFDX Hardis extension is fully compatible with every VS Code-based IDE: [Agentforce Vibes IDE](https://www.salesforce.com/agentforce/developers/vibe-coding/ide/) in your browser, [Cursor](https://cursor.com/), [Windsurf](https://windsurf.com/), [VSCodium](https://vscodium.com/) and other VS Code forks. In these IDEs, install it from [Open VSX](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis) instead of the Visual Studio Marketplace, then follow the same steps.
+
 ### 3. Install the VS Code SFDX Hardis extension
 
 - Open VS Code.
