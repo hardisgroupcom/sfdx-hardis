@@ -6,7 +6,7 @@ description: "The graphical companion to the sfdx-hardis CLI: workbenches, pipel
 
 Every command documented on this site can also be triggered from the **[VS Code SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)** extension, a graphical companion built on top of the CLI.
 
-If you prefer clicks to flags, install the extension and skip the terminal: see [Installation](installation.md#with-ide).
+If you prefer clicks to flags, install the extension and skip the terminal: see [Installation](installation.md#install-with-visual-studio-code-recommended).
 
 ---
 
