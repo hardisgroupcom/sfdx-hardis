@@ -2,11 +2,11 @@
 
 There are three ways to install sfdx-hardis, and you only need one of them.
 
-| Your situation | What to install | Terminal needed |
-|---|---|---|
-| You want to use sfdx-hardis on your computer, with menus and buttons instead of commands. This is how most people use it. | [Visual Studio Code and the SFDX Hardis extension](#install-with-visual-studio-code-recommended) | No |
-| You are at ease with a terminal and only want the commands. | [The sfdx-hardis plugin for Salesforce CLI](#install-as-a-salesforce-cli-plugin) | Yes |
-| You are setting up a CI/CD pipeline (GitHub, GitLab, Azure, Bitbucket). | [A ready to use Docker image](#run-in-cicd-with-a-docker-image) | Yes |
+| Your situation                                                                                                            | What to install                                                                                  | Terminal needed |
+|---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|-----------------|
+| You want to use sfdx-hardis on your computer, with menus and buttons instead of commands. This is how most people use it. | [Visual Studio Code and the SFDX Hardis extension](#install-with-visual-studio-code-recommended) | No              |
+| You are at ease with a terminal and only want the commands.                                                               | [The sfdx-hardis plugin for Salesforce CLI](#install-as-a-salesforce-cli-plugin)                 | Yes             |
+| You are setting up a CI/CD pipeline (GitHub, GitLab, Azure, Bitbucket).                                                   | [A ready to use Docker image](#run-in-cicd-with-a-docker-image)                                  | Yes             |
 
 Not sure? Take the first one: it also installs the command line version for you.
 
