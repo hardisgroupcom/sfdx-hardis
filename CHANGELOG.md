@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+### Documentation
+
+- The [Installation page](https://sfdx-hardis.cloudity.com/installation/) is **rewritten for first-time users**: a table to pick between **VS Code**, the **CLI plugin** and the **Docker images**, then the VS Code setup **step by step**, with the IDE compatibility table and the troubleshooting tips moved to the end.
+
 ## [8.0.0] 2026-08-21
 
 ### Summary
