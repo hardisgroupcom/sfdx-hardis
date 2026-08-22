@@ -27,6 +27,19 @@ const INIT_TIMEOUT_MS = 10000;
 export const LOG_TYPES = ['log', 'action', 'warning', 'error', 'success', 'table', "other"] as const;
 export type LogType = typeof LOG_TYPES[number];
 
+/**
+ * Structured description of a query attached to a command log line, so the VS Code extension can
+ * follow the query state (running, completed with its number of records, failed) without parsing
+ * the log text. The same `id` links the start line to the completion (or failure) line.
+ */
+export interface CommandLogLineQuery {
+  id: string;
+  type: 'soql' | 'tooling' | 'bulk' | 'datacloud';
+  status: 'running' | 'completed' | 'error';
+  recordCount?: number;
+  batchCount?: number;
+}
+
 /** One entry in a vscodeDiff message - describes a single file pair to open in a side-by-side diff editor. */
 export interface OrgDiffItem {
   leftPath: string;
@@ -257,13 +270,15 @@ static sendMessage(data: any) {
   }
 
   // Send command log line message
-  static sendCommandLogLineMessage(message: string, logType?: LogType, isQuestion?: boolean, alwaysVisible?: boolean) {
+  static sendCommandLogLineMessage(message: string, logType?: LogType, isQuestion?: boolean, alwaysVisible?: boolean, query?: CommandLogLineQuery) {
     WebSocketClient.sendMessage({
       event: 'commandLogLine',
       logType: logType,
       message: message,
       isQuestion: isQuestion,
       alwaysVisible: alwaysVisible,
+      // Only present on the log lines that describe a query start / completion / failure
+      ...(query ? { query } : {}),
     });
   }
 

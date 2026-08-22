@@ -2,6 +2,11 @@
 
 ## [beta] (main)
 
+### Core
+
+- **Queries report their number of records to VS Code**: SOQL, Tooling API, Bulk API and Data Cloud queries now tell the VS Code extension when they start, when they complete (with the number of records retrieved) and when they fail, so the Command Runner can show a record count chip next to each query. A failed query now also logs a `Query failed` line with the error message.
+- Fixed the `Fetching batch X/{{MAX}}` log line of paginated SOQL queries showing a raw placeholder instead of the maximum number of batches.
+
 ### Dependencies
 
 - **Smaller supply-chain attack surface**: 14 more npm dependencies removed (`@actions/github`, `jsdoc-to-markdown`, `inquirer`, `fs-extra`, `ora`, `open`, `sort-array`, `farmhash`, `cross-spawn`, `which`, `debug`, `dotenv`, `form-data`, unused `langchain`), replaced by Node.js built-ins and small internal helpers; `yarn test` now fails when a dependency is unused or the lock file grows past a ceiling. Node.js 22 or more is required (like the Salesforce CLI).

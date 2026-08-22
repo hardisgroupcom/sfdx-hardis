@@ -17,7 +17,7 @@ import { prompts } from './prompts.js';
 import { encryptFile } from '../cryptoUtils.js';
 import { deployMetadatas, shortenLogLines } from './deployUtils.js';
 import { isProductionOrg, promptProfiles, promptUserEmail } from './orgUtils.js';
-import { LogType, WebSocketClient } from '../websocketClient.js';
+import { CommandLogLineQuery, LogType, WebSocketClient } from '../websocketClient.js';
 import { formatElapsedMs } from './dateHelper.js';
 import { buildXmlString, parseXmlString, writeXmlFile } from './xmlUtils.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
@@ -1420,10 +1420,13 @@ export async function generateReports(
 }
 
 // Options for uxLog. `sensitive` obfuscates the value in log files; `alwaysVisible` keeps the
-// enclosing VS Code UI section expanded by default.
+// enclosing VS Code UI section expanded by default; `query` describes the query this line is
+// about (start, completion with its record count, or failure) so the VS Code extension can show
+// its state next to the query text.
 export interface UxLogOptions {
   sensitive?: boolean;
   alwaysVisible?: boolean;
+  query?: CommandLogLineQuery;
 }
 
 export function uxLog(logType: LogType, commandThis: any, textInit: string, optionsOrSensitive: boolean | UxLogOptions = {}): void {
@@ -1466,7 +1469,7 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, opti
 
       // Send message to WebSocket client
       if (logType !== "other") {
-        WebSocketClient.sendCommandLogLineMessage(textToSend, logType, isQuestion, alwaysVisible);
+        WebSocketClient.sendCommandLogLineMessage(textToSend, logType, isQuestion, alwaysVisible, options.query);
       }
     }
   }

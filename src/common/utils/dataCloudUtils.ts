@@ -1,6 +1,8 @@
 import { Connection, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { uxLog } from "./index.js";
+import { startQueryLog } from "./apiUtils.js";
+import { CommandLogLineQuery } from "../websocketClient.js";
 import fs from './fsUtils.js';
 import path from "path";
 
@@ -204,9 +206,10 @@ export async function dataCloudSqlQuery(
   }
 
   const settings = resolveOptions(options);
+  const queryLog = startQueryLog('datacloud');
 
   try {
-    const initialChunk = await submitInitialQuery(query.trim(), conn, settings);
+    const initialChunk = await submitInitialQuery(query.trim(), conn, settings, queryLog);
     if (!initialChunk.metadata.length) {
       throw new SfError(`[DataCloudSqlQuery] Data Cloud SQL query did not return column metadata.\n${JSON.stringify(initialChunk)}`);
     }
@@ -238,7 +241,9 @@ export async function dataCloudSqlQuery(
       rawData.push(...pagination.rawData);
     }
 
-    uxLog("log", this, `[DataCloudSqlQuery] Retrieved ${records.length} records.`);
+    uxLog("log", this, `[DataCloudSqlQuery] Retrieved ${records.length} records.`, {
+      query: { ...queryLog, status: 'completed', recordCount: records.length },
+    });
 
     return {
       queryId: status.queryId,
@@ -253,7 +258,9 @@ export async function dataCloudSqlQuery(
       hasMoreRows: false,
     };
   } catch (error) {
-    throw wrapQueryError(error);
+    const wrappedError = wrapQueryError(error);
+    uxLog("log", this, `[DataCloudSqlQuery] Query failed: ${wrappedError.message}`, { query: { ...queryLog, status: 'error' } });
+    throw wrappedError;
   }
 }
 
@@ -261,9 +268,10 @@ async function submitInitialQuery(
   query: string,
   conn: Connection,
   options: RequiredQueryOptions,
+  queryLog: CommandLogLineQuery,
 ): Promise<DataCloudSqlQueryResult> {
   const endpoint = buildQueryConnectUrl(conn, options);
-  uxLog("log", this, `[DataCloudSqlQuery] Submitting initial query to ${endpoint}:\n${query}`);
+  uxLog("log", this, `[DataCloudSqlQuery] Submitting initial query to ${endpoint}:\n${query}`, { query: queryLog });
   const response = await conn.request<QueryConnectResponse>({
     method: "POST",
     url: endpoint,
