@@ -59,6 +59,20 @@ describe('httpUtils', () => {
     expect(lastRequest.headers['content-type']).to.equal('text/plain');
   });
 
+  it('POSTs a global FormData as a real multipart body (undici fetch only knows its own FormData)', async () => {
+    const form = new FormData();
+    form.append('files', new Blob(['image-bytes']), 'picture.png');
+    form.append('comment', 'hello');
+    await httpPost(`${baseUrl}/text`, form, { headers: { 'Content-Type': 'application/json', Authorization: 'Bearer x' } });
+    expect(lastRequest.headers['content-type']).to.match(/^multipart\/form-data; boundary=/);
+    expect(lastRequest.headers['authorization']).to.equal('Bearer x');
+    expect(lastRequest.body).to.not.contain('[object FormData]');
+    expect(lastRequest.body).to.contain('name="files"; filename="picture.png"');
+    expect(lastRequest.body).to.contain('image-bytes');
+    expect(lastRequest.body).to.contain('name="comment"');
+    expect(lastRequest.body).to.contain('hello');
+  });
+
   it('encodes query params', async () => {
     await httpGet(`${baseUrl}/json`, { params: { q: 'a b', limit: 5 } });
     expect(lastRequest.url).to.equal('/json?q=a+b&limit=5');
