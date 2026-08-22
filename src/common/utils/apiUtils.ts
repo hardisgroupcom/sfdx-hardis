@@ -1,8 +1,9 @@
 import { uxLog } from './index.js';
 import c from 'chalk';
+import { randomUUID } from 'crypto';
 import { Connection } from '@salesforce/core';
 import { createSpinner, Spinner } from './spinner.js';
-import { WebSocketClient } from '../websocketClient.js';
+import { CommandLogLineQuery, WebSocketClient } from '../websocketClient.js';
 import { generateCsvFile, generateReportPath } from './filesUtils.js';
 import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
 import { t } from './i18n.js';
@@ -25,82 +26,103 @@ export function isUnsupportedSObjectError(error: unknown, sObjectName: string): 
   );
 }
 
+// Start tracking a query in the VS Code UI: the returned object is attached to the start line,
+// then to the completion (or failure) line, so the extension can show the query state and its
+// number of records next to the query text.
+export function startQueryLog(type: CommandLogLineQuery['type']): CommandLogLineQuery {
+  return { id: randomUUID(), type, status: 'running' };
+}
+
+// Human readable summary of a completed query, e.g. "Retrieved 12 records in 3 chunks(s)"
+function queryCompletionText(recordCount: number, batchCount: number): string {
+  return batchCount > 1 ? `Retrieved ${recordCount} records in ${batchCount} chunks(s)` : `Retrieved ${recordCount} records`;
+}
+
 // Perform simple SOQL query (max results: 10000)
 export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
+  const query = startQueryLog('soql');
   uxLog(
     "log",
     this,
     c.grey(
       '[SOQL Query] ' +
       c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery)
-    )
+    ),
+    { query }
   );
-  // First query
-  const res = await conn.query(soqlQuery);
-  let pageRes = Object.assign({}, res);
-  let batchCount = 1;
+  try {
+    // First query
+    const res = await conn.query(soqlQuery);
+    let pageRes = Object.assign({}, res);
+    let batchCount = 1;
 
-  // Get all page results
-  while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_CHUNKS) {
-    uxLog("log", this, c.grey(t('fetchingBatch', { batchCount: batchCount + 1, MAX_CHUNKS })));
-    pageRes = await conn.queryMore(pageRes.nextRecordsUrl);
-    res.records.push(...pageRes.records);
-    batchCount++;
+    // Get all page results
+    while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_CHUNKS) {
+      uxLog("log", this, c.grey(t('fetchingBatch', { batchCount: batchCount + 1, MAX: MAX_CHUNKS })));
+      pageRes = await conn.queryMore(pageRes.nextRecordsUrl);
+      res.records.push(...pageRes.records);
+      batchCount++;
+    }
+    if (!pageRes.done) {
+      uxLog("warning", this, c.yellow(t('warningQueryLimitOfRecordsReachedSome', { MAX_RECORDS })));
+      uxLog("warning", this, c.yellow(`Consider using bulkQuery for larger datasets.`));
+    }
+    uxLog("log", this, c.grey(`[SOQL Query] ${queryCompletionText(res.records.length, batchCount)}`), {
+      query: { ...query, status: 'completed', recordCount: res.records.length, batchCount },
+    });
+    return res;
+  } catch (e: any) {
+    uxLog("log", this, c.grey(`[SOQL Query] Query failed: ${e?.message || e}`), { query: { ...query, status: 'error' } });
+    throw e;
   }
-  if (!pageRes.done) {
-    uxLog("warning", this, c.yellow(t('warningQueryLimitOfRecordsReachedSome', { MAX_RECORDS })));
-    uxLog("warning", this, c.yellow(`Consider using bulkQuery for larger datasets.`));
-  }
-  if (batchCount > 1) {
-    uxLog("log", this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
-  }
-  else {
-    uxLog("log", this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records`));
-  }
-  return res;
 }
 
 // Perform simple SOQL query with Tooling API
 // Uses Sforce-Query-Options: batchSize=2000 to avoid default 100-record limit (Tooling API can return fewer by default)
 export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<any> {
+  const query = startQueryLog('tooling');
   uxLog(
     "log",
     this,
     c.grey(
       '[SOQL Query Tooling] ' +
       c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery)
-    )
+    ),
+    { query }
   );
-  const apiVersion = `v${conn.getApiVersion() || '65.0'}`;
-  const queryPath = `/services/data/${apiVersion}/tooling/query/?q=${encodeURIComponent(soqlQuery)}`;
-  const headers: Record<string, string> = {
-    'Sforce-Query-Options': 'batchSize=2000',
-  };
-  const res = await conn.request<{ records: any[]; done: boolean; nextRecordsUrl?: string }>({
-    method: 'GET',
-    url: queryPath,
-    headers,
-  });
-  const result = { records: res.records || [], done: res.done, nextRecordsUrl: res.nextRecordsUrl };
-  let batchCount = 1;
-  while (result.done === false && result.nextRecordsUrl) {
-    const nextPath = result.nextRecordsUrl.startsWith('/') ? result.nextRecordsUrl : `/${result.nextRecordsUrl}`;
-    const pageRes = await conn.request<{ records: any[]; done: boolean; nextRecordsUrl?: string }>({
+  try {
+    const apiVersion = `v${conn.getApiVersion() || '65.0'}`;
+    const queryPath = `/services/data/${apiVersion}/tooling/query/?q=${encodeURIComponent(soqlQuery)}`;
+    const headers: Record<string, string> = {
+      'Sforce-Query-Options': 'batchSize=2000',
+    };
+    const res = await conn.request<{ records: any[]; done: boolean; nextRecordsUrl?: string }>({
       method: 'GET',
-      url: nextPath,
+      url: queryPath,
       headers,
     });
-    result.records.push(...(pageRes.records || []));
-    result.done = pageRes.done;
-    result.nextRecordsUrl = pageRes.nextRecordsUrl;
-    batchCount++;
+    const result = { records: res.records || [], done: res.done, nextRecordsUrl: res.nextRecordsUrl };
+    let batchCount = 1;
+    while (result.done === false && result.nextRecordsUrl) {
+      const nextPath = result.nextRecordsUrl.startsWith('/') ? result.nextRecordsUrl : `/${result.nextRecordsUrl}`;
+      const pageRes = await conn.request<{ records: any[]; done: boolean; nextRecordsUrl?: string }>({
+        method: 'GET',
+        url: nextPath,
+        headers,
+      });
+      result.records.push(...(pageRes.records || []));
+      result.done = pageRes.done;
+      result.nextRecordsUrl = pageRes.nextRecordsUrl;
+      batchCount++;
+    }
+    uxLog("log", this, c.grey(`[SOQL Query Tooling] ${queryCompletionText(result.records.length, batchCount)}`), {
+      query: { ...query, status: 'completed', recordCount: result.records.length, batchCount },
+    });
+    return result;
+  } catch (e: any) {
+    uxLog("log", this, c.grey(`[SOQL Query Tooling] Query failed: ${e?.message || e}`), { query: { ...query, status: 'error' } });
+    throw e;
   }
-  if (batchCount > 1) {
-    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${result.records.length} records in ${batchCount} chunks(s)`));
-  } else {
-    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${result.records.length} records`));
-  }
-  return result;
 }
 
 let spinnerQ;
@@ -108,7 +130,8 @@ const maxRetry = Number(process.env.BULK_QUERY_RETRY || 5);
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3): Promise<any> {
   const queryLabel = soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery;
-  uxLog("log", this, c.grey('[BulkApiV2] ' + c.italic(queryLabel)));
+  const query = startQueryLog('bulk');
+  uxLog("log", this, c.grey('[BulkApiV2] ' + c.italic(queryLabel)), { query });
   conn.bulk2.pollInterval = process.env.BULKAPIV2_POLL_INTERVAL ? Number(process.env.BULKAPIV2_POLL_INTERVAL) : 5000; // 5 sec
   conn.bulk2.pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 60000; // 60 sec
   // Start query
@@ -124,11 +147,16 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     const records = await recordStream.toArray();
     spinnerQ.succeed(`[BulkApiV2] Bulk Query completed with ${records.length} results.`);
     if (WebSocketClient.isAliveWithLwcUI()) {
-      uxLog("log", this, c.grey(`[BulkApiV2] Bulk Query completed with ${records.length} results.`));
+      uxLog("log", this, c.grey(`[BulkApiV2] Bulk Query completed with ${records.length} results.`), {
+        query: { ...query, status: 'completed', recordCount: records.length },
+      });
     }
     return { records: records };
   } catch (e: any) {
     spinnerQ.fail(`[BulkApiV2] Bulk query error: ${e.message}`);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("log", this, c.grey(`[BulkApiV2] Bulk query error: ${e.message}`), { query: { ...query, status: 'error' } });
+    }
     // Try again if the reason is a timeout and max number of retries is not reached yet
     const eStr = e + '';
     if ((eStr.includes('ETIMEDOUT') || eStr.includes('Polling timed out')) && retries < maxRetry) {
