@@ -27,9 +27,11 @@ describe('whichUtils', () => {
   });
 
   it('finds a command through PATHEXT on Windows', () => {
-    const found = whichSync('mytool', { path: [otherDir, binDir].join(path.delimiter), pathExt: '.EXE;.CMD', windows: true });
-    // The PATHEXT extension is appended as written (.CMD): compare case-insensitively
-    expect((found || '').toLowerCase()).to.equal(path.join(binDir, 'mytool.cmd').toLowerCase());
+    // PATHEXT extensions are appended as written, so the fixture extension case must match:
+    // real Windows resolves .CMD to mytool.cmd through its case-insensitive filesystem, but the
+    // Linux CI runners running this simulated Windows branch have a case-sensitive filesystem.
+    const found = whichSync('mytool', { path: [otherDir, binDir].join(path.delimiter), pathExt: '.EXE;.cmd', windows: true });
+    expect(found).to.equal(path.join(binDir, 'mytool.cmd'));
   });
 
   it('finds a command given with its extension on Windows', () => {

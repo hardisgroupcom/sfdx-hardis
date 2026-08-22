@@ -19,6 +19,11 @@ const ALLOWED_UNUSED = {
   pptxgenjs: 'used by the agent-generated monitoring PPTX script at runtime',
 };
 
+// Build tooling that the Salesforce reusable CI workflows install with `yarn add <pkg>` right
+// before running the tests, which lands it in "dependencies" of the checkout even though the
+// committed package.json declares it nowhere. Never imported from src/, so it is skipped here.
+const CI_INJECTED = new Set(['wireit']);
+
 const root = process.cwd();
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 
@@ -47,7 +52,7 @@ function isImported(dependency) {
 const errors = [];
 
 for (const dependency of Object.keys(pkg.dependencies || {})) {
-  if (ALLOWED_UNUSED[dependency]) {
+  if (ALLOWED_UNUSED[dependency] || CI_INJECTED.has(dependency)) {
     continue;
   }
   if (!isImported(dependency)) {
