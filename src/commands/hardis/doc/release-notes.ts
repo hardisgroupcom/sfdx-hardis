@@ -297,7 +297,7 @@ In agent mode:
     const mdOutputFile = outputFile || path.join(releaseNotesDir, mdFileName);
     await fs.writeFile(mdOutputFile, markdown, "utf8");
     uxLog("success", this, c.green(t("releaseNotesComplete", { outputFile: mdOutputFile })));
-    WebSocketClient.sendReportFileMessage(mdOutputFile, t("releaseNotesReportTitle"), "report");
+    WebSocketClient.sendReportFileMessage(mdOutputFile, `${t("releaseNotesReportTitle")} (MD)`, "report");
 
     // 9. Generate PDF (optional)
     let pdfFile: string | undefined;

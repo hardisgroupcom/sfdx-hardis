@@ -6,6 +6,7 @@ import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.j
 import { readActions } from './actionUtils.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
+import { WebSocketClient } from '../websocketClient.js';
 import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
 import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/prCommentNav.js';
 
@@ -139,6 +140,11 @@ export async function loadDeploymentActionsState(sourcePrNumbers: number[]): Pro
   const state = getMultiPrState();
   // Only load PRs we haven't loaded yet (post-deploy may have different PRs than pre-deploy)
   const uniquePrs = [...new Set(sourcePrNumbers)].filter(n => n > 0 && !state.entriesByPr.has(n));
+  const showProgress = uniquePrs.length > 1;
+  if (showProgress) {
+    WebSocketClient.sendProgressStartMessage(t('loadingDeploymentActionsStateFromPrs', { count: uniquePrs.length }), uniquePrs.length);
+  }
+  let counter = 0;
   for (const prNumber of uniquePrs) {
     try {
       const body = await GitProvider.tryGetDeploymentActionsCommentBodyForPr(prNumber);
@@ -155,6 +161,13 @@ export async function loadDeploymentActionsState(sourcePrNumbers: number[]): Pro
       uxLog("warning", null, c.yellow(`Could not load deployment actions state from PR #${prNumber}: ${(e as Error).message}`));
       state.entriesByPr.set(prNumber, []);
     }
+    counter++;
+    if (showProgress) {
+      WebSocketClient.sendProgressStepMessage(counter, uniquePrs.length);
+    }
+  }
+  if (showProgress) {
+    WebSocketClient.sendProgressEndMessage(uniquePrs.length);
   }
 }
 

@@ -758,14 +758,17 @@ async function mapCommitsToPullRequests(
   pullRequests: CommonPullRequestInfo[],
 ): Promise<Map<string, CommonPullRequestInfo[]>> {
   const commitShaToPrs = new Map<string, CommonPullRequestInfo[]>();
-  for (const pr of pullRequests) {
-    const mergeSha = pr.mergeCommitSha;
-    if (!mergeSha) {
-      continue;
-    }
+  const prsWithMergeSha = pullRequests.filter((pr) => pr.mergeCommitSha);
+  const showProgress = prsWithMergeSha.length > 1;
+  if (showProgress) {
+    WebSocketClient.sendProgressStartMessage(t("releaseNotesMappingCommitsToPrs", { count: prsWithMergeSha.length }), prsWithMergeSha.length);
+  }
+  let counter = 0;
+  for (const pr of prsWithMergeSha) {
+    const mergeSha = pr.mergeCommitSha as string;
     let prCommitShas: string[] = [];
     try {
-      const revListOutput = await git().raw(["rev-list", `${mergeSha}^..${mergeSha}`]);
+      const revListOutput = await git({ output: false, displayCommand: false }).raw(["rev-list", `${mergeSha}^..${mergeSha}`]);
       prCommitShas = revListOutput.split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
     } catch {
       // Merge commit without a parent (or unknown locally): fall back to the merge commit alone
@@ -776,6 +779,13 @@ async function mapCommitsToPullRequests(
       prList.push(pr);
       commitShaToPrs.set(sha, prList);
     }
+    counter++;
+    if (showProgress) {
+      WebSocketClient.sendProgressStepMessage(counter, prsWithMergeSha.length);
+    }
+  }
+  if (showProgress) {
+    WebSocketClient.sendProgressEndMessage(prsWithMergeSha.length);
   }
   return commitShaToPrs;
 }
@@ -817,7 +827,7 @@ export async function collectMetadataAttribution(
   try {
     uxLog("action", commandRef, c.cyan(t("releaseNotesCollectingMetadataAttribution")));
     // List the commits of the release range with the files each one touched
-    const logOutput = await git().raw([
+    const logOutput = await git({ output: false, displayCommand: false }).raw([
       "log",
       "--name-only",
       `--format=${GIT_LOG_COMMIT_MARKER}%H|%an|%aI|%s`,
