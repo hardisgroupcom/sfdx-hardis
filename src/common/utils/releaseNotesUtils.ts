@@ -21,6 +21,7 @@ import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { NotifProvider } from "../notifProvider/index.js";
 import { NotifSeverity } from "../notifProvider/types.js";
 import ExcelJS from "exceljs";
+import { MetadataResolver, RegistryAccess, VirtualTreeContainer } from "@salesforce/source-deploy-retrieve";
 import { applyWorksheetFormatting } from "./filesUtils.js";
 import { getNotificationButtons } from "./notifUtils.js";
 import { prompts } from "./prompts.js";
@@ -49,6 +50,27 @@ export interface MetadataChangeMap {
   deleted: Record<string, string[]>;
   addedCount: number;
   deletedCount: number;
+  /** metadata type::member -> Pull Requests and commits that touched it */
+  attribution?: Map<string, MetadataAttribution>;
+}
+
+export interface MetadataCommitInfo {
+  sha: string;
+  title: string;
+  author: string;
+  date: string;
+}
+
+export interface MetadataPrRef {
+  idNumber: number;
+  idStr: string;
+  title: string;
+  authorName: string;
+}
+
+export interface MetadataAttribution {
+  pullRequests: MetadataPrRef[];
+  commits: MetadataCommitInfo[];
 }
 
 export interface ContributorInfo {
@@ -323,6 +345,19 @@ function findTargetBranchFromSource(sourceBranch: string, majorOrgs: any[]): str
   const sourceOrg = majorOrgs.find((o: any) => o.branchName === sourceBranch);
   const targets: string[] = sourceOrg?.mergeTargets || [];
   return targets.length > 0 ? targets[0] : null;
+}
+
+// Merging into a top branch (a major branch with no merge target, e.g. main) is a
+// release; merging into any other major branch (e.g. integration -> uat) is only a
+// promotion. Used to pick the right wording in the generated document.
+export async function isPromotionTarget(targetBranch: string): Promise<boolean> {
+  const majorOrgs = await listMajorOrgs();
+  const targetOrg = majorOrgs.find((o: any) => o.branchName === targetBranch);
+  if (!targetOrg) {
+    // Unknown branch: keep the release wording
+    return false;
+  }
+  return (targetOrg.mergeTargets || []).length > 0;
 }
 
 async function promptSourceBranch(
@@ -681,6 +716,168 @@ export async function collectMetadataChanges(
   }
 }
 
+interface GitLogCommit {
+  sha: string;
+  author: string;
+  date: string;
+  title: string;
+  files: string[];
+}
+
+const GIT_LOG_COMMIT_MARKER = "@@@COMMIT@@@";
+
+function parseGitLogWithFiles(logOutput: string): GitLogCommit[] {
+  const commits: GitLogCommit[] = [];
+  for (const block of logOutput.split(GIT_LOG_COMMIT_MARKER)) {
+    const lines = block.split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
+    if (lines.length === 0) {
+      continue;
+    }
+    const header = lines[0];
+    const pipe1 = header.indexOf("|");
+    const pipe2 = header.indexOf("|", pipe1 + 1);
+    const pipe3 = header.indexOf("|", pipe2 + 1);
+    if (pipe1 < 0 || pipe2 < 0 || pipe3 < 0) {
+      continue;
+    }
+    commits.push({
+      sha: header.substring(0, pipe1),
+      author: header.substring(pipe1 + 1, pipe2),
+      date: header.substring(pipe2 + 1, pipe3),
+      title: header.substring(pipe3 + 1),
+      files: lines.slice(1),
+    });
+  }
+  return commits;
+}
+
+// Map each commit SHA of the release range to the Pull Requests that contain it, using the
+// commits reachable from each PR merge commit but not from its first parent. This covers both
+// real merge commits (the whole feature branch) and squash merges (the single squash commit).
+async function mapCommitsToPullRequests(
+  pullRequests: CommonPullRequestInfo[],
+): Promise<Map<string, CommonPullRequestInfo[]>> {
+  const commitShaToPrs = new Map<string, CommonPullRequestInfo[]>();
+  for (const pr of pullRequests) {
+    const mergeSha = pr.mergeCommitSha;
+    if (!mergeSha) {
+      continue;
+    }
+    let prCommitShas: string[] = [];
+    try {
+      const revListOutput = await git().raw(["rev-list", `${mergeSha}^..${mergeSha}`]);
+      prCommitShas = revListOutput.split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
+    } catch {
+      // Merge commit without a parent (or unknown locally): fall back to the merge commit alone
+      prCommitShas = [mergeSha];
+    }
+    for (const sha of prCommitShas) {
+      const prList = commitShaToPrs.get(sha) || [];
+      prList.push(pr);
+      commitShaToPrs.set(sha, prList);
+    }
+  }
+  return commitShaToPrs;
+}
+
+// Resolve git file paths into metadata members ("type::fullName" keys) using the SDR registry
+// over a virtual file tree, so deleted files resolve too. Non-metadata files are skipped.
+function resolveFilesToMetadataMembers(files: string[]): Map<string, string[]> {
+  const fileToMembers = new Map<string, string[]>();
+  const normalizedFiles = files.map((file) => path.normalize(file));
+  const tree = VirtualTreeContainer.fromFilePaths(normalizedFiles);
+  const resolver = new MetadataResolver(new RegistryAccess(), tree, false);
+  for (let i = 0; i < files.length; i++) {
+    try {
+      const components = resolver.getComponentsFromPath(normalizedFiles[i]);
+      const memberKeys = components.map((cmp) => `${cmp.type.name}::${cmp.fullName}`);
+      if (memberKeys.length > 0) {
+        fileToMembers.set(files[i], memberKeys);
+      }
+    } catch {
+      // Not a Salesforce metadata file
+    }
+  }
+  return fileToMembers;
+}
+
+export async function collectMetadataAttribution(
+  scope: ReleaseNotesScope,
+  metadataChanges: MetadataChangeMap,
+  pullRequests: CommonPullRequestInfo[],
+  commandRef: any,
+): Promise<Map<string, MetadataAttribution>> {
+  const attribution = new Map<string, MetadataAttribution>();
+  if (!scope.fromCommit || !scope.toCommit || scope.fromCommit === scope.toCommit) {
+    return attribution;
+  }
+  if (metadataChanges.addedCount === 0 && metadataChanges.deletedCount === 0) {
+    return attribution;
+  }
+  try {
+    uxLog("action", commandRef, c.cyan(t("releaseNotesCollectingMetadataAttribution")));
+    // List the commits of the release range with the files each one touched
+    const logOutput = await git().raw([
+      "log",
+      "--name-only",
+      `--format=${GIT_LOG_COMMIT_MARKER}%H|%an|%aI|%s`,
+      `${scope.fromCommit}..${scope.toCommit}`,
+    ]);
+    const commits = parseGitLogWithFiles(logOutput);
+    if (commits.length === 0) {
+      return attribution;
+    }
+    const commitShaToPrs = await mapCommitsToPullRequests(pullRequests);
+    const allFiles = [...new Set(commits.flatMap((commit) => commit.files))];
+    const fileToMembers = resolveFilesToMetadataMembers(allFiles);
+
+    // Only keep members that are part of the computed metadata change map
+    const memberKeys = new Set<string>();
+    for (const changeMap of [metadataChanges.added, metadataChanges.deleted]) {
+      for (const [mdType, members] of Object.entries(changeMap)) {
+        for (const member of members) {
+          memberKeys.add(`${mdType}::${member}`);
+        }
+      }
+    }
+
+    for (const commit of commits) {
+      for (const file of commit.files) {
+        for (const memberKey of fileToMembers.get(file) || []) {
+          if (!memberKeys.has(memberKey)) {
+            continue;
+          }
+          let entry = attribution.get(memberKey);
+          if (!entry) {
+            entry = { pullRequests: [], commits: [] };
+            attribution.set(memberKey, entry);
+          }
+          if (!entry.commits.some((commitInfo) => commitInfo.sha === commit.sha)) {
+            entry.commits.push({ sha: commit.sha, title: commit.title, author: commit.author, date: commit.date });
+          }
+          for (const pr of commitShaToPrs.get(commit.sha) || []) {
+            if (!entry.pullRequests.some((prRef) => prRef.idStr === pr.idStr)) {
+              entry.pullRequests.push({
+                idNumber: pr.idNumber,
+                idStr: pr.idStr,
+                title: pr.title || "",
+                authorName: pr.authorName || "",
+              });
+            }
+          }
+        }
+      }
+    }
+    for (const entry of attribution.values()) {
+      entry.pullRequests.sort((a, b) => a.idNumber - b.idNumber);
+      entry.commits.sort((a, b) => a.date.localeCompare(b.date));
+    }
+  } catch (e: any) {
+    uxLog("warning", commandRef, c.yellow(t("releaseNotesMetadataAttributionFailed", { message: e.message })));
+  }
+  return attribution;
+}
+
 export async function collectDeploymentActions(
   pullRequests: CommonPullRequestInfo[],
   commandRef: any,
@@ -856,7 +1053,16 @@ export async function buildReleaseNotesMarkdown(data: ReleaseNotesData, releaseD
   const prUrlMap = new Map<string, string>(data.pullRequests.map((pr) => [pr.idStr, pr.webUrl || ""]));
   const ticketUrlMap = new Map<string, string>(data.tickets.map((tk) => [tk.id, tk.url || ""]));
   const dateStr = releaseDate;
-  const modeLabel = data.scope.mode === "prepare" ? t("releaseNotesPrepareTitle") : t("releaseNotesPostTitle");
+  // A merge into an intermediate major branch is a promotion, not a release
+  const promotion = await isPromotionTarget(data.scope.targetBranch);
+  const modeLabel =
+    data.scope.mode === "prepare"
+      ? promotion
+        ? t("releaseNotesPromotionPrepareTitle")
+        : t("releaseNotesPrepareTitle")
+      : promotion
+        ? t("releaseNotesPromotionTitle")
+        : t("releaseNotesPostTitle");
 
   // Header
   lines.push(`# ${modeLabel} - ${version}`);
@@ -1139,15 +1345,27 @@ export async function buildReleaseNotesXlsx(
     }
 
     // Tab 3: Metadata Changes
+    const attribution = data.metadataChanges.attribution;
+    const buildAttributionCells = (mdType: string, member: string) => {
+      const entry = attribution?.get(`${mdType}::${member}`);
+      return {
+        "Pull Requests": (entry?.pullRequests || [])
+          .map((pr) => `#${pr.idStr} - ${pr.title.replace(/\s+/g, " ")} by ${pr.authorName}`.trim())
+          .join("\n"),
+        Commits: (entry?.commits || [])
+          .map((commitInfo) => `${commitInfo.title} by ${commitInfo.author} on ${commitInfo.date.split("T")[0]}`)
+          .join("\n"),
+      };
+    };
     const metadataRows: any[] = [];
     for (const [mdType, members] of Object.entries(data.metadataChanges.added)) {
       for (const member of members) {
-        metadataRows.push({ Type: prettifyMetadataType(mdType), Member: member, Change: "Added/Modified" });
+        metadataRows.push({ Type: prettifyMetadataType(mdType), Member: member, Change: "Added/Modified", ...buildAttributionCells(mdType, member) });
       }
     }
     for (const [mdType, members] of Object.entries(data.metadataChanges.deleted)) {
       for (const member of members) {
-        metadataRows.push({ Type: prettifyMetadataType(mdType), Member: member, Change: "Deleted" });
+        metadataRows.push({ Type: prettifyMetadataType(mdType), Member: member, Change: "Deleted", ...buildAttributionCells(mdType, member) });
       }
     }
     if (metadataRows.length > 0) {
@@ -1183,7 +1401,13 @@ export async function buildReleaseNotesXlsx(
     for (const csvFile of csvFiles) {
       const worksheet = await workbook.csv.readFile(csvFile);
       worksheet.name = path.basename(csvFile, ".csv");
-      applyWorksheetFormatting(worksheet, {});
+      applyWorksheetFormatting(worksheet, {
+        // Multiline traceability columns of the Metadata Changes tab (one PR / commit per line)
+        columnsCustomStyles: {
+          "Pull Requests": { wrap: true, width: 60, maxHeight: 150, verticalAlignment: "top" },
+          "Commits": { wrap: true, width: 60, maxHeight: 150, verticalAlignment: "top" },
+        },
+      });
     }
     await workbook.xlsx.writeFile(xlsxFile);
     uxLog("action", commandRef, c.cyan(t("pleaseSeeDetailedXlsxLogIn", { xslxFile: c.bold(xlsxFile) })));
