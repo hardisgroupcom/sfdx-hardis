@@ -6,9 +6,11 @@ import {
   checkManualActionCheckboxInBody,
   parseDeploymentActionsCommentBody,
   parseManualActionCheckboxes,
+  syncManualActionCheckboxes,
   type ActionDef,
   type DeploymentActionStateEntry,
 } from '../../../src/common/utils/deploymentActionsStateUtils.js';
+import { GitProvider } from '../../../src/common/gitProvider/index.js';
 
 function entry(overrides: Partial<DeploymentActionStateEntry>): DeploymentActionStateEntry {
   return {
@@ -216,6 +218,62 @@ describe('Deployment Actions state comment (matrix format)', () => {
       const body = buildDeploymentActionsCommentBody([entry({})], undefined, 42);
       expect(body).to.contain('| ID | `action-1` |');
       expect(body).to.contain('| Properties | *not available - YAML file not found* |');
+    });
+  });
+
+  describe('syncManualActionCheckboxes()', () => {
+    const originalList = GitProvider.tryListPullRequestCommentsByMarker;
+    const originalGetBody = GitProvider.tryGetDeploymentActionsCommentBodyForPr;
+
+    afterEach(() => {
+      GitProvider.tryListPullRequestCommentsByMarker = originalList;
+      GitProvider.tryGetDeploymentActionsCommentBodyForPr = originalGetBody;
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+    });
+
+    // Seen on a promotion: the validation comment of Pull Request 483 carried a ticked checkbox of
+    // an action owned by Pull Request 444, outside the scope. On every job scanning that comment,
+    // the tick was recorded again with the job's date, and 444's comment rewritten.
+    it('does not re-record a tick already stored on a Pull Request outside the scope', async () => {
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+      const marker = buildManualActionCheckboxMarker('enable-feature', 'integration', 444, 'pre-deploy');
+      const foreignDone = entry({ actionId: 'enable-feature', actionLabel: 'Enable the feature', orgBranch: 'integration', jobId: '960332', jobUrl: 'https://ci.example.com/960332', date: '2026-07-26T09:00:00.000Z' });
+      const bodies: Record<number, string> = {
+        444: buildDeploymentActionsCommentBody([foreignDone], undefined, 444),
+        483: buildDeploymentActionsCommentBody([], undefined, 483),
+      };
+      const loadedPrs: number[] = [];
+      GitProvider.tryGetDeploymentActionsCommentBodyForPr = async (prNumber: number) => {
+        loadedPrs.push(prNumber);
+        return bodies[prNumber] ?? null;
+      };
+      GitProvider.tryListPullRequestCommentsByMarker = async (_marker: string, prNumber?: number) =>
+        prNumber === 483 ? [{ id: 1, prNumber: 483, body: `- [x] ${marker} Enable the feature` }] : [];
+
+      await syncManualActionCheckboxes([483]);
+
+      // The out-of-scope Pull Request state was loaded on demand, and its entry left untouched
+      expect(loadedPrs).to.include(444);
+      const state = (globalThis as any)._deploymentActionsMultiPrState;
+      const kept = state.entriesByPr.get(444).find((e: DeploymentActionStateEntry) => e.actionId === 'enable-feature');
+      expect(kept.date).to.equal('2026-07-26');
+      expect(kept.jobId).to.equal('960332');
+      expect(state.dirtyPrs.has(444)).to.equal(false);
+    });
+
+    it('still records a tick whose action has no state yet', async () => {
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+      const marker = buildManualActionCheckboxMarker('enable-feature', 'uat', 483, 'pre-deploy');
+      GitProvider.tryGetDeploymentActionsCommentBodyForPr = async () => null;
+      GitProvider.tryListPullRequestCommentsByMarker = async (_marker: string, prNumber?: number) =>
+        prNumber === 483 ? [{ id: 1, prNumber: 483, body: `- [x] ${marker} Enable the feature` }] : [];
+
+      await syncManualActionCheckboxes([483]);
+
+      const state = (globalThis as any)._deploymentActionsMultiPrState;
+      const recorded = state.entriesByPr.get(483).find((e: DeploymentActionStateEntry) => e.actionId === 'enable-feature' && e.orgBranch === 'uat');
+      expect(recorded.status).to.equal('success');
+      expect(recorded.output).to.contain('ticked checkbox');
     });
   });
 
