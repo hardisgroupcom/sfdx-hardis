@@ -15,6 +15,7 @@ import {
   collectPullRequests,
   collectTickets,
   collectMetadataChanges,
+  collectMetadataAttribution,
   collectDeploymentActions,
   collectContributors,
   generateReleaseSummary,
@@ -53,6 +54,8 @@ Supports two modes:
 
 Output includes a **Markdown report** (optionally converted to PDF), a **multi-tab XLSX** with detailed data, and an optional **notification** (Slack, Teams, etc.) for production releases in post mode.
 
+In the XLSX file, the **Metadata Changes** tab lists for each metadata item the Pull Requests (number, title, author) and the commits (title, author, date) that touched it.
+
 The command can determine the release scope from git tags (semver), branch names, commit ranges, or date ranges.
 
 This command is part of [sfdx-hardis Documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-documentation/).
@@ -68,6 +71,8 @@ The command resolves the release scope using one of several strategies:
 4. **Commit-based**: uses explicit commit SHAs
 
 Metadata changes are computed via \`sfdx-git-delta\` (\`sf sgd:source:delta\`), which generates \`package.xml\` (additions) and \`destructiveChanges.xml\` (deletions).
+
+Per-item Pull Request and commit attribution is computed with \`git log --name-only\` over the release commit range: each changed file is resolved to its metadata component with \`@salesforce/source-deploy-retrieve\` over a virtual file tree (so deleted files resolve too), and each commit is mapped to its Pull Request via \`git rev-list\` on the PR merge commit.
 
 Deployment actions are loaded from PR comments (via the \`<!-- sfdx-hardis deployment-actions-state -->\` marker) or from \`scripts/actions/.sfdx-hardis.{PR_ID}.yml\` files.
 
@@ -235,6 +240,7 @@ In agent mode:
     // 4. Collect metadata changes (copies package.xml / destructiveChanges.xml into output dir)
     uxLog("action", this, c.cyan(t("releaseNotesCollectingMetadata")));
     const metadataChanges = await collectMetadataChanges(scope, this, releaseNotesDir);
+    metadataChanges.attribution = await collectMetadataAttribution(scope, metadataChanges, pullRequests, this);
     if (metadataChanges.addedCount > 0 || metadataChanges.deletedCount > 0) {
       const metadataRows: any[] = [];
       for (const [mdType, members] of Object.entries(metadataChanges.added)) {
@@ -291,7 +297,7 @@ In agent mode:
     const mdOutputFile = outputFile || path.join(releaseNotesDir, mdFileName);
     await fs.writeFile(mdOutputFile, markdown, "utf8");
     uxLog("success", this, c.green(t("releaseNotesComplete", { outputFile: mdOutputFile })));
-    WebSocketClient.sendReportFileMessage(mdOutputFile, t("releaseNotesReportTitle"), "report");
+    WebSocketClient.sendReportFileMessage(mdOutputFile, `${t("releaseNotesReportTitle")} (MD)`, "report");
 
     // 9. Generate PDF (optional)
     let pdfFile: string | undefined;
