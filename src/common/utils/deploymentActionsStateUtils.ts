@@ -818,11 +818,17 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
       const pairKey = `${item.actionId}||${item.orgBranch}`;
       if (processedPairs.has(pairKey)) continue;
       processedPairs.add(pairKey);
+      const sourcePr = item.prNumber > 0 ? item.prNumber : comment.prNumber;
+      // A comment can carry checkboxes of Pull Requests outside the current scope (the validation
+      // comment of a promotion lists the manual actions of every Pull Request it carries). Their
+      // state is not loaded with the scope: without this, an already-recorded tick is not found,
+      // gets recorded again with today's date and this job, and the source Pull Request's comment
+      // is rewritten on every run that scans this comment.
+      await loadDeploymentActionsState([sourcePr]);
       if (checkActionInState(item.actionId, item.orgBranch)) continue; // already recorded as done
       const base = findEntryAnyStatus(item.actionId, item.orgBranch) || findEntryAnyStatus(item.actionId, null);
       const label = base?.actionLabel || item.label || item.actionId;
       const { jobId, jobUrl } = await getJobInfoWithUrl();
-      const sourcePr = item.prNumber > 0 ? item.prNumber : comment.prNumber;
       upsertActionInState({
         actionId: item.actionId,
         actionLabel: label,
