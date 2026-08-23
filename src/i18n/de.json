@@ -2608,6 +2608,7 @@
   "pullCommandDidNotReturnExpectedResults": "Pull-Befehl hat keine erwarteten Ergebnisse zurückgegeben\n{{JSON}}",
   "pullLatestUpdatesFromOrgToStageAndCommit": "Neueste Änderungen aus der Org abrufen, um Dateien zu stagen und Ihren commit zu erstellen",
   "pullRequestScopeBatchMerge": "Merge vom Branch {{sourceBranch}}: die Deployment-Aktionen und Apex-Testklassen jedes Pull Requests, der seit dem letzten Merge von {{windowBranch}} nach {{nextBranch}} in {{windowBranch}} gemergt wurde, werden verarbeitet",
+  "pullRequestScopeFeatureBranchCheck": "Validierung des Feature-Branch {{sourceBranch}}: es werden nur die Deployment-Aktionen und Apex-Testklassen verarbeitet, die im Pull Request {{pr}} definiert sind",
   "pullRequestScopeFeatureBranchMerge": "Merge vom Feature-Branch {{sourceBranch}}: es werden nur die Deployment-Aktionen und Apex-Testklassen verarbeitet, die im Pull Request {{pr}} definiert sind",
   "pullRequestScopeGoLiveMerge": "Merge vom Branch {{sourceBranch}} in den obersten Branch {{targetBranch}}: die Deployment-Aktionen und Apex-Testklassen jedes von diesem Merge getragenen Pull Requests werden verarbeitet",
   "pullRequestScopeGoLiveNoMergeCommit": "Kein Merge-Commit für den in {{targetBranch}} gemergten Pull Request {{pr}} gefunden: es werden nur die Deployment-Aktionen und Apex-Testklassen dieses Pull Requests verarbeitet",

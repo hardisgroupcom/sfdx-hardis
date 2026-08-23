@@ -2609,6 +2609,7 @@
   "pullCommandDidNotReturnExpectedResults": "Pull-commando heeft geen verwachte resultaten teruggegeven\n{{JSON}}",
   "pullLatestUpdatesFromOrgToStageAndCommit": "Haal de nieuwste updates op uit de org zodat je bestanden kunt stagen en je commit kunt aanmaken",
   "pullRequestScopeBatchMerge": "Merge vanaf branch {{sourceBranch}}: de deploy-acties en Apex-testklassen van elke Pull Request die sinds de laatste merge van {{windowBranch}} naar {{nextBranch}} in {{windowBranch}} is gemerged worden verwerkt",
+  "pullRequestScopeFeatureBranchCheck": "Validatie van feature branch {{sourceBranch}}: alleen de deploy-acties en Apex-testklassen die op Pull Request {{pr}} zijn gedefinieerd worden verwerkt",
   "pullRequestScopeFeatureBranchMerge": "Merge vanaf feature branch {{sourceBranch}}: alleen de deploy-acties en Apex-testklassen die op Pull Request {{pr}} zijn gedefinieerd worden verwerkt",
   "pullRequestScopeGoLiveMerge": "Merge vanaf branch {{sourceBranch}} naar de hoogste branch {{targetBranch}}: de deploy-acties en Apex-testklassen van elke Pull Request in deze merge worden verwerkt",
   "pullRequestScopeGoLiveNoMergeCommit": "Geen merge-commit gevonden voor Pull Request {{pr}} gemerged in {{targetBranch}}: alleen de deploy-acties en Apex-testklassen van deze Pull Request worden verwerkt",

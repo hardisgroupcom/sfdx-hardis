@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import { isRetrofit } from '../../../src/common/utils/orgConfigUtils.js';
-import { buildPrSearchBranches, isSinglePullRequestScope } from '../../../src/common/utils/pullRequestUtils.js';
+import { buildPrSearchBranches, getSinglePullRequestScopeKind, isSinglePullRequestScope } from '../../../src/common/utils/pullRequestUtils.js';
 
 const MAJOR_BRANCHES = ['main', 'preprod', 'uat', 'integration'];
 
@@ -74,6 +74,37 @@ describe('isSinglePullRequestScope()', () => {
   it('treats every named branch as a feature branch when no major branch is configured', () => {
     expect(isSinglePullRequestScope('integration', [])).to.equal(true);
     expect(isSinglePullRequestScope('retrofit/from-main', [])).to.equal(false);
+  });
+});
+
+describe('getSinglePullRequestScopeKind()', () => {
+  // The validation job of a feature branch used to collect the whole promotion window: the
+  // feature branch had never been merged into the target, so "since the last merge" was its
+  // entire history, and the check comment listed the manual actions of every Pull Request ever
+  // merged upstream (341 of them on one real project).
+  it('scopes the validation job of a feature branch to the checked Pull Request', () => {
+    expect(getSinglePullRequestScopeKind(true, 'feature/my-feature', MAJOR_BRANCHES)).to.equal('check');
+    expect(getSinglePullRequestScopeKind(true, 'fix/my-fix', MAJOR_BRANCHES)).to.equal('check');
+  });
+
+  it('scopes the deployment job of a feature branch to the merged Pull Request', () => {
+    expect(getSinglePullRequestScopeKind(false, 'feature/my-feature', MAJOR_BRANCHES)).to.equal('single-pr');
+  });
+
+  // Checking integration -> uat must list what the promotion will replay, on both jobs.
+  it('keeps the whole batch for a major branch, on the validation job as on the deployment job', () => {
+    expect(getSinglePullRequestScopeKind(true, 'integration', MAJOR_BRANCHES)).to.equal(null);
+    expect(getSinglePullRequestScopeKind(false, 'integration', MAJOR_BRANCHES)).to.equal(null);
+  });
+
+  it('keeps the whole batch for a retrofit branch, on the validation job as on the deployment job', () => {
+    expect(getSinglePullRequestScopeKind(true, 'retrofit/from-main', MAJOR_BRANCHES)).to.equal(null);
+    expect(getSinglePullRequestScopeKind(false, 'retrofit/from-main', MAJOR_BRANCHES)).to.equal(null);
+  });
+
+  it('keeps the whole batch when the source branch is unknown', () => {
+    expect(getSinglePullRequestScopeKind(true, '', MAJOR_BRANCHES)).to.equal(null);
+    expect(getSinglePullRequestScopeKind(false, '', MAJOR_BRANCHES)).to.equal(null);
   });
 });
 
