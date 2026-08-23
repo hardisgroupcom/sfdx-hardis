@@ -6,6 +6,7 @@ import {
   checkManualActionCheckboxInBody,
   parseDeploymentActionsCommentBody,
   parseManualActionCheckboxes,
+  type ActionDef,
   type DeploymentActionStateEntry,
 } from '../../../src/common/utils/deploymentActionsStateUtils.js';
 
@@ -118,6 +119,104 @@ describe('Deployment Actions state comment (matrix format)', () => {
 
     const mixedBody = buildDeploymentActionsCommentBody([entry({ status: 'warning' }), entry({ actionId: 'action-2', status: 'manual' })], undefined, 42);
     expect(mixedBody).to.contain('pr-banner-actions-pending');
+  });
+
+  describe('Action Details section', () => {
+    function actionDef(overrides: Partial<ActionDef>): ActionDef {
+      return {
+        id: 'action-1',
+        label: 'Enable the feature',
+        type: 'command',
+        command: 'echo hello',
+        context: 'all',
+        when: 'pre-deploy',
+        executionOrder: 0,
+        ...overrides,
+      };
+    }
+
+    // The former layout was a single line of "**Key:** value | **Key:** value" pairs and italic
+    // one-liners per org: hard to scan once an action has several parameters or ran in several orgs.
+    it('renders the action properties as a two-column table', () => {
+      const defs = new Map<string, ActionDef>([['action-1', actionDef({ runOnlyOnceByOrg: false, allowFailure: true, customUsername: 'admin@example.com' })]]);
+      const body = buildDeploymentActionsCommentBody([entry({})], defs, 42);
+
+      expect(body).to.contain('| Property | Value |');
+      expect(body).to.contain('| ID | `action-1` |');
+      expect(body).to.contain('| Type | command |');
+      expect(body).to.contain('| Context | all |');
+      expect(body).to.contain('| Run only once per org | no |');
+      expect(body).to.contain('| Allow failure | yes |');
+      expect(body).to.contain('| Custom username | `admin@example.com` |');
+      expect(body).to.contain('| Command | `echo hello` |');
+      expect(body).to.not.contain('**ID:**');
+    });
+
+    it('renders the results by org as a table, with the output below it', () => {
+      const entries = [
+        entry({ output: 'Items removed: 1' }),
+        entry({ orgBranch: 'uat', status: 'manual', jobId: '5678', jobUrl: 'https://ci.example.com/5678', date: '2026-08-15T05:00:00.000Z' }),
+      ];
+      const body = buildDeploymentActionsCommentBody(entries, undefined, 42);
+
+      expect(body).to.contain('**Results by org**');
+      expect(body).to.contain('| Org branch | Status | Date | Job |');
+      expect(body).to.contain('| integration | \u2705 success | 2026-08-14 | [1234](https://ci.example.com/1234) |');
+      expect(body).to.contain('| uat | \ud83d\udc4b waiting for manual execution | 2026-08-15 | [5678](https://ci.example.com/5678) |');
+      expect(body).to.contain('**Output - integration**\n\n```\nItems removed: 1\n```');
+      expect(body).to.not.contain('**Output - uat**');
+      expect(body).to.not.contain('*integration - ');
+    });
+
+    it('renders a warning entry with its label in the results table', () => {
+      const body = buildDeploymentActionsCommentBody([entry({ status: 'warning' })], undefined, 42);
+      expect(body).to.contain('| integration | \u26a0\ufe0f warning (failed, allowed to fail) | 2026-08-14 |');
+    });
+
+    // Numbered, multi-line steps do not read in a table cell: they stay a block under the table
+    it('keeps the manual instructions as a block below the properties table', () => {
+      const instructions = '1. Open Setup.\n2. Turn the feature on.\nExpected result: the toggle is on.';
+      const defs = new Map<string, ActionDef>([['action-1', actionDef({ type: 'manual', command: '', parameters: { instructions } })]]);
+      const body = buildDeploymentActionsCommentBody([entry({ status: 'manual' })], defs, 42);
+
+      expect(body).to.contain('| Type | manual |');
+      expect(body).to.contain('**Instructions**\n\n' + instructions + '\n\n');
+      expect(body).to.not.contain('| Instructions |');
+    });
+
+    it('lists the type-specific parameters and the target branches as rows', () => {
+      const defs = new Map<string, ActionDef>([['action-1', actionDef({
+        type: 'schedule-batch',
+        command: '',
+        includeTargetBranches: ['integration', 'uat'],
+        parameters: { className: 'MyBatch', cronExpression: '0 0 4 ? * SAT', jobName: 'MyBatch_Schedule' },
+      })]]);
+      const body = buildDeploymentActionsCommentBody([entry({})], defs, 42);
+
+      expect(body).to.contain('| Include target branches | integration, uat |');
+      expect(body).to.contain('| Class name | `MyBatch` |');
+      expect(body).to.contain('| Cron expression | `0 0 4 ? * SAT` |');
+      expect(body).to.contain('| Job name | MyBatch_Schedule |');
+    });
+
+    // A pipe would end the cell. Inside inline code the HTML entity is not decoded, so the
+    // backslash escape is used there; plain text keeps the entity like the matrix labels.
+    it('escapes pipes in property values without breaking the table', () => {
+      const defs = new Map<string, ActionDef>([['action-1', actionDef({
+        command: 'cat file | grep x',
+        parameters: { note: 'a | b' },
+      })]]);
+      const body = buildDeploymentActionsCommentBody([entry({})], defs, 42);
+
+      expect(body).to.contain('| Command | `cat file \\| grep x` |');
+      expect(body).to.contain('| note | a &#124; b |');
+    });
+
+    it('still shows the ID when the action definition is not available', () => {
+      const body = buildDeploymentActionsCommentBody([entry({})], undefined, 42);
+      expect(body).to.contain('| ID | `action-1` |');
+      expect(body).to.contain('| Properties | *not available - YAML file not found* |');
+    });
   });
 
   it('shows the banner in place of the title heading, with the title as alt text', () => {
