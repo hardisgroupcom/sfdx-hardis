@@ -581,15 +581,13 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
           return a.orgBranch.localeCompare(b.orgBranch);
         });
 
-        body += `**Results by org:**\n\n`;
+        body += buildActionResultsTable(sortedOrgEntries);
+        // Outputs cannot live in a table cell (code blocks do not render there), so they follow the
+        // table, one block per org branch that produced some output.
         for (const e of sortedOrgEntries) {
-          const statusIcon = getStatusIcon(e.status);
-          const dateStr = e.date ? ` (${e.date.substring(0, 10)})` : '';
-          const jobRef = e.jobUrl ? ` - [${e.jobId}](${e.jobUrl})` : (e.jobId ? ` - ${e.jobId}` : '');
-          body += `*${e.orgBranch} - ${statusIcon} ${e.status}${dateStr}${jobRef}*\n\n`;
           if ((e.output || '').trim() !== '') {
-            const truncated = truncateOutput(e.output);
-            body += '```\n' + truncated + '\n```\n\n';
+            body += `**Output - ${e.orgBranch}**\n\n`;
+            body += '```\n' + truncateOutput(e.output) + '\n```\n\n';
           }
         }
       } else {
@@ -610,51 +608,109 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
 }
 
 /**
- * Build the properties description for an action in the details section.
+ * Human-readable status of a state entry, for the results table of the details section.
+ * Same wording as the matrix legend, so the two tables read alike.
+ */
+function getStatusLabel(status: DeploymentActionStateEntry['status']): string {
+  switch (status) {
+    case 'success': return 'success';
+    case 'failed': return 'failed';
+    case 'warning': return 'warning (failed, allowed to fail)';
+    case 'manual': return 'waiting for manual execution';
+    case 'skipped': return 'skipped';
+    default: return 'unknown';
+  }
+}
+
+/**
+ * Results of an action, one row per org branch it ran in.
+ */
+function buildActionResultsTable(entries: DeploymentActionStateEntry[]): string {
+  let table = `**Results by org**\n\n`;
+  table += `| Org branch | Status | Date | Job |\n`;
+  table += `|------------|--------|------|-----|\n`;
+  for (const e of entries) {
+    const status = `${getStatusIcon(e.status)} ${getStatusLabel(e.status)}`;
+    const date = e.date ? e.date.substring(0, 10) : '';
+    const job = e.jobUrl ? `[${e.jobId}](${e.jobUrl})` : (e.jobId || '');
+    table += `| ${e.orgBranch} | ${status} | ${date} | ${job} |\n`;
+  }
+  return table + '\n';
+}
+
+/**
+ * Build the properties description for an action in the details section: a two-column table,
+ * then the manual instructions as a block (they are numbered, multi-line steps that would not
+ * read in a cell).
  */
 function buildActionPropertiesSection(actionId: string, def?: ActionDef): string {
+  const rows: [string, string][] = [['ID', `\`${actionId}\``]];
   if (!def) {
-    return `**ID:** \`${actionId}\` *(properties not available - YAML file not found)*\n\n`;
+    rows.push(['Properties', '*not available - YAML file not found*']);
+    return buildPropertiesTable(rows);
   }
 
-  let firstLine = `**ID:** \`${actionId}\``;
-  firstLine += ` | **Type:** ${def.type}`;
-  firstLine += ` | **Context:** ${def.context ?? 'all'}`;
-  firstLine += ` | **Run only once per org:** ${def.runOnlyOnceByOrg !== false ? 'yes' : 'no'}`;
-  firstLine += ` | **Allow failure:** ${def.allowFailure === true ? 'yes' : 'no'}`;
+  rows.push(['Type', def.type]);
+  rows.push(['Context', def.context ?? 'all']);
+  rows.push(['Run only once per org', def.runOnlyOnceByOrg !== false ? 'yes' : 'no']);
+  rows.push(['Allow failure', def.allowFailure === true ? 'yes' : 'no']);
   if (def.customUsername) {
-    firstLine += ` | **Custom username:** \`${def.customUsername}\``;
+    rows.push(['Custom username', `\`${def.customUsername}\``]);
   }
-  let section = firstLine + '\n';
+  if (Array.isArray(def.includeTargetBranches) && def.includeTargetBranches.length > 0) {
+    rows.push(['Include target branches', def.includeTargetBranches.join(', ')]);
+  }
+  if (Array.isArray(def.excludeTargetBranches) && def.excludeTargetBranches.length > 0) {
+    rows.push(['Exclude target branches', def.excludeTargetBranches.join(', ')]);
+  }
 
   if (def.type === 'command' && def.command) {
-    section += `**Command:** \`${def.command}\`\n`;
+    rows.push(['Command', `\`${def.command}\``]);
   } else if (def.type === 'apex' && def.parameters?.apexScript) {
-    section += `**Apex script:** \`${def.parameters.apexScript}\`\n`;
+    rows.push(['Apex script', `\`${def.parameters.apexScript}\``]);
   } else if (def.type === 'data' && def.parameters?.sfdmuProject) {
-    section += `**SFDMU project:** \`${def.parameters.sfdmuProject}\`\n`;
+    rows.push(['SFDMU project', `\`${def.parameters.sfdmuProject}\``]);
   } else if (def.type === 'publish-community' && def.parameters?.communityName) {
-    section += `**Community name:** ${def.parameters.communityName}\n`;
-  } else if (def.type === 'manual' && def.parameters?.instructions) {
-    section += `**Instructions:** ${def.parameters.instructions}\n`;
+    rows.push(['Community name', def.parameters.communityName]);
   } else if (def.type === 'schedule-batch') {
-    if (def.parameters?.className) section += `**Class name:** \`${def.parameters.className}\`\n`;
-    if (def.parameters?.cronExpression) section += `**Cron expression:** \`${def.parameters.cronExpression}\`\n`;
-    if (def.parameters?.jobName) section += `**Job name:** ${def.parameters.jobName}\n`;
+    if (def.parameters?.className) rows.push(['Class name', `\`${def.parameters.className}\``]);
+    if (def.parameters?.cronExpression) rows.push(['Cron expression', `\`${def.parameters.cronExpression}\``]);
+    if (def.parameters?.jobName) rows.push(['Job name', def.parameters.jobName]);
   } else if (def.type === 'remove-packagexml-items' && Array.isArray(def.parameters?.packageXmlItems)) {
-    section += `**Package.xml items to remove:** ${def.parameters.packageXmlItems.map((item: string) => `\`${item}\``).join(', ')}\n`;
+    rows.push(['Package.xml items to remove', def.parameters.packageXmlItems.map((item: string) => `\`${item}\``).join(', ')]);
   }
 
   if (def.parameters) {
     const knownParams = new Set(['apexScript', 'sfdmuProject', 'communityName', 'instructions', 'className', 'cronExpression', 'jobName', 'packageXmlItems']);
     for (const [k, v] of Object.entries(def.parameters)) {
       if (!knownParams.has(k)) {
-        section += `**${k}:** ${v}\n`;
+        rows.push([k, String(v)]);
       }
     }
   }
 
-  return section + '\n';
+  let section = buildPropertiesTable(rows);
+  if (def.type === 'manual' && def.parameters?.instructions) {
+    section += `**Instructions**\n\n${def.parameters.instructions.trim()}\n\n`;
+  }
+  return section;
+}
+
+function buildPropertiesTable(rows: [string, string][]): string {
+  let table = `| Property | Value |\n`;
+  table += `|----------|-------|\n`;
+  for (const [property, value] of rows) {
+    table += `| ${property} | ${sanitizeCellValue(value)} |\n`;
+  }
+  return table + '\n';
+}
+
+// A value rendered as inline code (a command, a script path) cannot use the HTML entity for the
+// pipe: entities are not decoded inside code spans, so the reader would see '&#124;'. The
+// backslash escape is what the table syntax provides for that case.
+function sanitizeCellValue(value: string): string {
+  const text = (value || '').replace(/\r?\n/g, ' ');
+  return text.includes('`') ? text.replace(/\|/g, '\\|') : text.replace(/\|/g, '&#124;');
 }
 
 /**
