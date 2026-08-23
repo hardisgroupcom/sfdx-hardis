@@ -7,6 +7,7 @@ import {
   parseDeploymentActionsCommentBody,
   parseManualActionCheckboxes,
   syncManualActionCheckboxes,
+  upsertActionInState,
   type ActionDef,
   type DeploymentActionStateEntry,
 } from '../../../src/common/utils/deploymentActionsStateUtils.js';
@@ -218,6 +219,50 @@ describe('Deployment Actions state comment (matrix format)', () => {
       const body = buildDeploymentActionsCommentBody([entry({})], undefined, 42);
       expect(body).to.contain('| ID | `action-1` |');
       expect(body).to.contain('| Properties | *not available - YAML file not found* |');
+    });
+  });
+
+  describe('upsertActionInState()', () => {
+    afterEach(() => {
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+    });
+
+    // Seen on a promotion: a ticked check-only manual action was recorded success by the checkbox
+    // sync, then the deployment job's context skip overwrote the entry with skipped, so the next
+    // job's sync recorded the tick again - forever.
+    it('keeps a success entry when a skip of the same action and org is tracked afterwards', () => {
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+      upsertActionInState(entry({ status: 'success', jobId: '111', date: '2026-08-23T20:01:00.000Z' }), 483);
+      upsertActionInState(entry({ status: 'skipped', jobId: '222', date: '2026-08-23T20:35:00.000Z' }), 483);
+
+      const state = (globalThis as any)._deploymentActionsMultiPrState;
+      const kept = state.entriesByPr.get(483).find((e: DeploymentActionStateEntry) => e.actionId === 'action-1');
+      expect(kept.status).to.equal('success');
+      expect(kept.jobId).to.equal('111');
+    });
+
+    it('still lets a real outcome replace a success, and a skip replace a skip', () => {
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+      upsertActionInState(entry({ status: 'success' }), 483);
+      upsertActionInState(entry({ status: 'failed', jobId: '333' }), 483);
+      let state = (globalThis as any)._deploymentActionsMultiPrState;
+      expect(state.entriesByPr.get(483)[0].status).to.equal('failed');
+
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+      upsertActionInState(entry({ status: 'skipped', jobId: '444' }), 483);
+      upsertActionInState(entry({ status: 'skipped', jobId: '555' }), 483);
+      state = (globalThis as any)._deploymentActionsMultiPrState;
+      expect(state.entriesByPr.get(483)[0].jobId).to.equal('555');
+      // and a success replaces a skip (the checkbox sync path)
+      upsertActionInState(entry({ status: 'success', jobId: '666' }), 483);
+      expect(state.entriesByPr.get(483)[0].status).to.equal('success');
+    });
+
+    it('records a skip normally when the action has no entry yet for the org', () => {
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+      upsertActionInState(entry({ status: 'skipped', orgBranch: 'uat' }), 483);
+      const state = (globalThis as any)._deploymentActionsMultiPrState;
+      expect(state.entriesByPr.get(483)[0].status).to.equal('skipped');
     });
   });
 

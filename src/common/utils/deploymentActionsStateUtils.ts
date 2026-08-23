@@ -183,6 +183,14 @@ export function upsertActionInState(entry: DeploymentActionStateEntry, sourcePrN
   }
   const entries = state.entriesByPr.get(sourcePrNumber)!;
   const idx = entries.findIndex(e => e.actionId === entry.actionId && e.orgBranch === entry.orgBranch);
+  // A skip is the absence of an outcome, not an outcome: it must never erase the record that the
+  // action was performed in the org. Without this, a ticked check-only manual action ping-pongs
+  // forever on deployment jobs: the checkbox sync records success, the context skip overwrites it
+  // with skipped, and the next job's sync cannot find the success entry and records the tick
+  // again, re-dating the entry and rewriting the Pull Request comment on every run.
+  if (idx >= 0 && entry.status === 'skipped' && entries[idx].status === 'success') {
+    return;
+  }
   if (idx >= 0) {
     entries[idx] = entry;
   } else {
