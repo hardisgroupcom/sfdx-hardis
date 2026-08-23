@@ -248,7 +248,7 @@ describe('Deployment Actions state comment (matrix format)', () => {
         return bodies[prNumber] ?? null;
       };
       GitProvider.tryListPullRequestCommentsByMarker = async (_marker: string, prNumber?: number) =>
-        prNumber === 483 ? [{ id: 1, prNumber: 483, body: `- [x] ${marker} Enable the feature` }] : [];
+        prNumber === 483 ? [{ prNumber: 483, ref: 1, body: `- [x] ${marker} Enable the feature` }] : [];
 
       await syncManualActionCheckboxes([483]);
 
@@ -266,7 +266,7 @@ describe('Deployment Actions state comment (matrix format)', () => {
       const marker = buildManualActionCheckboxMarker('enable-feature', 'uat', 483, 'pre-deploy');
       GitProvider.tryGetDeploymentActionsCommentBodyForPr = async () => null;
       GitProvider.tryListPullRequestCommentsByMarker = async (_marker: string, prNumber?: number) =>
-        prNumber === 483 ? [{ id: 1, prNumber: 483, body: `- [x] ${marker} Enable the feature` }] : [];
+        prNumber === 483 ? [{ prNumber: 483, ref: 1, body: `- [x] ${marker} Enable the feature` }] : [];
 
       await syncManualActionCheckboxes([483]);
 
