@@ -96,6 +96,30 @@ describe('Deployment Actions state comment (matrix format)', () => {
     expect(reparsed[0].jobUrl).to.equal('https://ci.example.com/builds/2026-08-14/1234');
   });
 
+  it('round-trips a warning entry (failed, allowed to fail) through build and parse', () => {
+    const entries = [entry({ status: 'warning' })];
+    const body = buildDeploymentActionsCommentBody(entries, undefined, 42);
+    expect(body).to.contain('⚠️');
+    expect(body).to.contain('⚠️ warning (failed, allowed to fail)');
+
+    const parsed = parseDeploymentActionsCommentBody(body);
+    expect(parsed).to.have.length(1);
+    expect(parsed[0].status).to.equal('warning');
+  });
+
+  // A failure allowed to fail did not block the deployment: the comment must not turn red
+  it('does not show the error banner for a warning entry', () => {
+    const warningBody = buildDeploymentActionsCommentBody([entry({ status: 'warning' })], undefined, 42);
+    expect(warningBody).to.contain('pr-banner-actions-completed');
+    expect(warningBody).to.not.contain('pr-banner-actions-error');
+
+    const failedBody = buildDeploymentActionsCommentBody([entry({ status: 'failed' })], undefined, 42);
+    expect(failedBody).to.contain('pr-banner-actions-error');
+
+    const mixedBody = buildDeploymentActionsCommentBody([entry({ status: 'warning' }), entry({ actionId: 'action-2', status: 'manual' })], undefined, 42);
+    expect(mixedBody).to.contain('pr-banner-actions-pending');
+  });
+
   it('shows the banner in place of the title heading, with the title as alt text', () => {
     const body = buildDeploymentActionsCommentBody([entry({})], undefined, 42);
     expect(body).to.contain('![🛠️ Deployment Actions](');

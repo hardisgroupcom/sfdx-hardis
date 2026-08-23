@@ -1372,7 +1372,7 @@ export interface BackpromoteActionEntry {
   actionId: string;
   actionLabel: string;
   prId: number;
-  status: 'success' | 'failed' | 'manual' | 'skipped';
+  status: 'success' | 'failed' | 'warning' | 'manual' | 'skipped';
   date: string;
 }
 

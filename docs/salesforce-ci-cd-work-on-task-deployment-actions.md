@@ -99,7 +99,7 @@ Each action is an object with the following required and optional properties.
 | `customUsername`        | string  |    No     | Run the action with a specific username instead of the default target org.                                                                                                                       |
 | `includeTargetBranches` | array   |    No     | Run the action only when the deployment targets one of these branches. See [Choose the target orgs](#choose-the-target-orgs).                                                                    |
 | `excludeTargetBranches` | array   |    No     | Run the action on every target branch except these ones. See [Choose the target orgs](#choose-the-target-orgs).                                                                                  |
-| `allowFailure`          | boolean |    No     | If true and the action fails, the deployment continues but the result is marked failed/allowed.                                                                                                  |
+| `allowFailure`          | boolean |    No     | If true and the action fails, the deployment continues and the action is reported as a warning (⚠️) instead of a failure. It runs again on the next deployment, like a failed action.                                                                                                  |
 | `runOnlyOnceByOrg`      | boolean |    No     | Default: `true`. If true, the action runs only once per target org. Execution state is tracked in a dedicated "Deployment Actions" PR comment (see below), no Salesforce custom object required. |
 
 </details>
