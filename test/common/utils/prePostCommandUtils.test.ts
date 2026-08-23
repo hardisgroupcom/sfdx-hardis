@@ -2,7 +2,7 @@
 import { expect } from 'chai';
 import type { ActionResult, PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { buildActionOutput } from '../../../src/common/actionsProvider/actionsProvider.js';
-import { buildActionsResultMarkdown, buildDeploymentScopeSubjects } from '../../../src/common/utils/prePostCommandUtils.js';
+import { buildActionsResultMarkdown, buildDeploymentScopeSubjects, getReportedActionStatus } from '../../../src/common/utils/prePostCommandUtils.js';
 
 function action(overrides: Partial<PrePostCommand>): PrePostCommand {
   return {
@@ -176,11 +176,32 @@ describe('buildActionsResultMarkdown()', () => {
   it('distinguishes a failure allowed to fail from a blocking one in the legend', () => {
     const allowed = [action({ allowFailure: true, result: { statusCode: 'failed' } })];
     expect(buildActionsResultMarkdown('commandsPostDeploy', allowed, false))
-      .to.contain('*Legend: ⚠️ failed (allowed to fail)*');
+      .to.contain('*Legend: ⚠️ warning (failed, allowed to fail)*');
 
     const blocking = [action({ result: { statusCode: 'failed' } })];
     expect(buildActionsResultMarkdown('commandsPostDeploy', blocking, false))
       .to.contain('*Legend: ❌ failed*');
+  });
+
+  // The deployment went on, so the comment must not say the action "failed": a reader scanning
+  // the status column would take it for a blocking error.
+  it('reports a failure allowed to fail as a warning, not as failed', () => {
+    const allowed = action({ label: 'Optional step', allowFailure: true, result: { statusCode: 'failed' } });
+    expect(getReportedActionStatus(allowed)).to.equal('warning');
+
+    const markdown = buildActionsResultMarkdown('commandsPostDeploy', [allowed], false);
+    expect(markdown).to.contain('| ⚠️ | Optional step | command | warning | (Allowed to fail) |');
+    expect(markdown).to.not.contain('| failed |');
+
+    // The internal status code is untouched: it still drives the allow-failure decision
+    expect(allowed.result?.statusCode).to.equal('failed');
+  });
+
+  it('keeps reporting a blocking failure as failed', () => {
+    const blocking = action({ label: 'Required step', result: { statusCode: 'failed' } });
+    expect(getReportedActionStatus(blocking)).to.equal('failed');
+    expect(buildActionsResultMarkdown('commandsPostDeploy', [blocking], false))
+      .to.contain('| ❌ | Required step | command | failed | See details below |');
   });
 
   it('does not render an empty code block for a whitespace-only output', () => {

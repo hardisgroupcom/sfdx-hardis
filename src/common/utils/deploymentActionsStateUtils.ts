@@ -25,7 +25,9 @@ export interface DeploymentActionStateEntry {
   orgBranch: string;
   when: ActionWhen;
   executionOrder: number;
-  status: 'success' | 'failed' | 'manual' | 'skipped';
+  // 'warning' is a failed action whose definition allows failure: the deployment went on, so the
+  // outcome must not read as an error in the comment, but the action did not succeed either.
+  status: 'success' | 'failed' | 'warning' | 'manual' | 'skipped';
   jobId: string;
   jobUrl: string;
   date: string;
@@ -288,8 +290,9 @@ function unsanitizeCellText(text: string): string {
 function statusFromIcon(cell: string): DeploymentActionStateEntry['status'] {
   return cell.includes('\u2705') ? 'success' :
     cell.includes('\u274c') ? 'failed' :
-      cell.includes('\ud83d\udc4b') ? 'manual' :
-        cell.includes('\u26aa') ? 'skipped' : 'failed';
+      cell.includes('\u26a0') ? 'warning' :
+        cell.includes('\ud83d\udc4b') ? 'manual' :
+          cell.includes('\u26aa') ? 'skipped' : 'failed';
 }
 
 function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentActionStateEntry[] {
@@ -368,6 +371,7 @@ function parseLegacyDeploymentActionsCommentBody(body: string): DeploymentAction
 const MATRIX_STATUS_LEGEND: { icon: string; label: string }[] = [
   { icon: '✅', label: 'done' },              // ✅
   { icon: '❌', label: 'failed' },            // ❌
+  { icon: '⚠️', label: 'warning (failed, allowed to fail)' }, // ⚠️
   { icon: '👋', label: 'waiting for manual execution' }, // 👋
   { icon: '⚪', label: 'skipped' },           // ⚪
   { icon: '❓', label: 'unknown' },           // ❓
@@ -388,6 +392,7 @@ function getStatusIcon(status: DeploymentActionStateEntry['status']): string {
   switch (status) {
     case 'success': return '\u2705';   // ✅
     case 'failed': return '\u274c';   // ❌
+    case 'warning': return '\u26a0\ufe0f'; // ⚠️
     case 'manual': return '\ud83d\udc4b'; // 👋
     case 'skipped': return '\u26aa';   // ⚪
     default: return '\u2753';   // ❓
@@ -416,6 +421,8 @@ function getActionsBannerKey(entries: DeploymentActionStateEntry[]): PrCommentBa
   if (entries.length === 0) {
     return null;
   }
+  // A 'warning' entry (failed, allowed to fail) did not block the deployment: it must not turn the
+  // comment red, so it is not an error here and falls through to pending / completed.
   if (entries.some((e) => e.status === 'failed')) {
     return 'actions-error';
   }

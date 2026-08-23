@@ -222,7 +222,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
         orgBranch: orgBranchName,
         when: deployWhen,
         executionOrder: cmdIndex,
-        status: cmd.result.statusCode as 'success' | 'failed' | 'manual' | 'skipped',
+        status: getReportedActionStatus(cmd),
         jobId,
         jobUrl,
         date: new Date().toISOString(),
@@ -523,10 +523,23 @@ function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: bool
   return section;
 }
 
+/**
+ * Status of an action as reported to the user (results table, state comment).
+ * The internal statusCode stays 'failed' for an action allowed to fail, because it drives the
+ * "stop further actions" and "fail the job" decisions; what is reported is a warning, since the
+ * deployment went on.
+ */
+export function getReportedActionStatus(cmd: PrePostCommand): 'success' | 'failed' | 'warning' | 'manual' | 'skipped' {
+  if (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) {
+    return 'warning';
+  }
+  return cmd.result?.statusCode as 'success' | 'failed' | 'manual' | 'skipped';
+}
+
 // Status icons of the actions results table, in the order they are listed in the legend
 const ACTION_STATUS_LEGEND: { icon: string; label: string }[] = [
   { icon: '✅', label: 'success' },
-  { icon: '⚠️', label: 'failed (allowed to fail)' },
+  { icon: '⚠️', label: 'warning (failed, allowed to fail)' },
   { icon: '❌', label: 'failed' },
   { icon: '👋', label: 'waiting for manual execution' },
   { icon: '⚪', label: 'skipped' },
@@ -584,7 +597,7 @@ export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'comm
     usedStatusIcons.push(statusIcon);
     const statusCol = cmd.result?.statusCode === "manual" ?
       'waiting for manual execution' :
-      `${cmd.result?.statusCode || 'not run'}`;
+      `${getReportedActionStatus(cmd) || 'not run'}`;
     const detailCol = (cmd.result?.statusCode === "skipped" || cmd.result?.statusCode === "not-run") ?
       (cmd.result?.skippedReason || '<!-- -->') :
       (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ?
