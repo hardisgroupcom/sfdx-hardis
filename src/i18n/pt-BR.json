@@ -2576,6 +2576,7 @@
   "publishingPagesToConfluence": "Publicando {{count}} páginas no Confluence...",
   "pullCommandDidNotReturnExpectedResults": "O comando pull não retornou os resultados esperados\n{{JSON}}",
   "pullRequestScopeBatchMerge": "Merge a partir da branch {{sourceBranch}}: as ações de deploy e as classes de teste Apex de cada Pull Request mesclado em {{windowBranch}} desde o seu último merge para {{nextBranch}} serão processadas",
+  "pullRequestScopeFeatureBranchCheck": "Validação da branch de funcionalidade {{sourceBranch}}: somente as ações de deploy e as classes de teste Apex definidas no Pull Request {{pr}} serão processadas",
   "pullRequestScopeFeatureBranchMerge": "Merge a partir da branch de funcionalidade {{sourceBranch}}: somente as ações de deploy e as classes de teste Apex definidas no Pull Request {{pr}} serão processadas",
   "pullRequestScopeGoLiveMerge": "Merge a partir da branch {{sourceBranch}} para a branch final {{targetBranch}}: as ações de deploy e as classes de teste Apex de cada Pull Request incluído neste merge serão processadas",
   "pullRequestScopeGoLiveNoMergeCommit": "Nenhum commit de merge encontrado para o Pull Request {{pr}} mesclado em {{targetBranch}}: somente as ações de deploy e as classes de teste Apex deste Pull Request serão processadas",

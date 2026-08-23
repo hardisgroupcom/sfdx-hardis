@@ -117,6 +117,29 @@ export function isSinglePullRequestScope(sourceBranch: string, majorBranchNames:
 }
 
 /**
+ * Resolves the scope kind of a job whose source branch carries a single Pull Request, on both
+ * sides of the merge: 'check' on the validation job, 'single-pr' on the deployment job.
+ *
+ * Returns null when the source is a major or retrofit branch: the job then collects the whole
+ * promotion window, and the caller decides how to bound it.
+ *
+ * The rule is the same on both sides on purpose. When the validation job of a feature branch
+ * collected the promotion window, its comment listed the manual actions of every other Pull
+ * Request merged upstream, and a user could tick them as done from a Pull Request they did not
+ * belong to.
+ */
+export function getSinglePullRequestScopeKind(
+  checkOnly: boolean,
+  sourceBranch: string,
+  majorBranchNames: string[],
+): Extract<PullRequestScopeKind, 'check' | 'single-pr'> | null {
+  if (!isSinglePullRequestScope(sourceBranch, majorBranchNames)) {
+    return null;
+  }
+  return checkOnly ? 'check' : 'single-pr';
+}
+
+/**
  * Build the list of branches whose merged Pull Requests are candidates for a scope window.
  *
  * On top of the recursive child branches of the window's target branch, every major branch is
@@ -158,9 +181,25 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
   let sourceBranchToUse = '';
   let targetBranchToUse = '';
   if (checkOnly) {
-    // ex: feature/my-feature
-    sourceBranchToUse = pullRequestInfo.sourceBranch;
+    // Validation of a feature branch: the checked Pull Request is the whole scope, exactly like
+    // on its deployment job. The window computed below has no meaning for a feature branch
+    // (it was never merged into the target, so "since the last merge" is its whole history,
+    // which contains every Pull Request ever merged upstream).
+    if (getSinglePullRequestScopeKind(true, pullRequestInfo.sourceBranch, majorOrgs.map(o => o.branchName)) === 'check') {
+      uxLog("log", this, c.grey(`[GitProvider] ${t('pullRequestScopeFeatureBranchCheck', {
+        sourceBranch: pullRequestInfo.sourceBranch,
+        pr: pullRequestInfo.idStr,
+      })}`));
+      _cachedPullRequests = [pullRequestInfo];
+      _scopeKind = 'check';
+      logResolvedScope(_cachedPullRequests);
+      return _cachedPullRequests;
+    }
+    // Validation of a major or retrofit branch (ex: integration -> uat): the window is every
+    // Pull Request merged into the source since its last merge into the target.
     // ex: integration
+    sourceBranchToUse = pullRequestInfo.sourceBranch;
+    // ex: uat
     targetBranchToUse = pullRequestInfo.targetBranch;
   }
   else {
@@ -172,7 +211,7 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
     }
     // Merge from a feature branch: the Pull Request that has just been merged is the whole scope.
     // No merge window is needed here, so this does not depend on mergeTargets being configured.
-    if (isSinglePullRequestScope(pullRequestInfo.sourceBranch, majorOrgs.map(o => o.branchName))) {
+    if (getSinglePullRequestScopeKind(false, pullRequestInfo.sourceBranch, majorOrgs.map(o => o.branchName)) === 'single-pr') {
       uxLog("log", this, c.grey(`[GitProvider] ${t('pullRequestScopeFeatureBranchMerge', {
         sourceBranch: pullRequestInfo.sourceBranch,
         pr: pullRequestInfo.idStr,

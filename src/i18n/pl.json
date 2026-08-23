@@ -2609,6 +2609,7 @@
   "pullCommandDidNotReturnExpectedResults": "Polecenie pull nie zwróciło oczekiwanych wyników\n{{JSON}}",
   "pullLatestUpdatesFromOrgToStageAndCommit": "Pobierz najnowsze aktualizacje z org, aby móc przygotować pliki i utworzyć commit",
   "pullRequestScopeBatchMerge": "Merge z branch {{sourceBranch}}: przetworzone zostaną akcje wdrożeniowe i klasy testowe Apex każdego Pull Requesta scalonego do {{windowBranch}} od jego ostatniego merge do {{nextBranch}}",
+  "pullRequestScopeFeatureBranchCheck": "Walidacja branch funkcjonalności {{sourceBranch}}: przetworzone zostaną wyłącznie akcje wdrożeniowe i klasy testowe Apex zdefiniowane w Pull Request {{pr}}",
   "pullRequestScopeFeatureBranchMerge": "Merge z branch funkcjonalności {{sourceBranch}}: przetworzone zostaną wyłącznie akcje wdrożeniowe i klasy testowe Apex zdefiniowane w Pull Request {{pr}}",
   "pullRequestScopeGoLiveMerge": "Merge z branch {{sourceBranch}} do najwyższego branch {{targetBranch}}: przetworzone zostaną akcje wdrożeniowe i klasy testowe Apex każdego Pull Requesta objętego tym merge",
   "pullRequestScopeGoLiveNoMergeCommit": "Nie znaleziono commita merge dla Pull Requesta {{pr}} scalonego do {{targetBranch}}: przetworzone zostaną wyłącznie akcje wdrożeniowe i klasy testowe Apex tego Pull Requesta",

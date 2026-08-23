@@ -136,7 +136,7 @@ Opt out by adding `runOnlyOnceByOrg: false` explicitly on any action that should
 
 **Which Pull Requests are in scope**
 
-The actions collected for a deployment depend on the branch the merged Pull Request comes from.
+The actions collected for a deployment depend on the branch the merged Pull Request comes from. The validation job of a Pull Request applies the same rule to the Pull Request being checked, so the check comment of a feature Pull Request lists only its own actions.
 
 | Merge                                                              | Scope                                              |
 |--------------------------------------------------------------------|----------------------------------------------------|

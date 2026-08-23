@@ -4,6 +4,7 @@
 
 ### Core
 
+- **Validation job of a feature Pull Request scoped to that Pull Request**: the check deployment collected the deployment actions, manual actions and Apex test classes of every Pull Request ever merged upstream (341 on one project), because the promotion window has no meaning for a branch that was never merged into its target. The validation job now applies the same rule as the deployment job: a feature branch carries only its own Pull Request, a major or retrofit branch carries the whole promotion window. The check comment no longer lists manual actions belonging to other Pull Requests.
 - **Queries report their number of records to VS Code**: SOQL, Tooling API, Bulk API and Data Cloud queries now tell the VS Code extension when they start, when they complete (with the number of records retrieved) and when they fail, so the Command Runner can show a record count chip next to each query. A failed query now also logs a `Query failed` line with the error message.
 - Fixed the `Fetching batch X/{{MAX}}` log line of paginated SOQL queries showing a raw placeholder instead of the maximum number of batches.
 - Fixed the VS Code UI looking stuck after an org selection prompt: the org connection check now logs its action before running `sf org display`.
