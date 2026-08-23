@@ -358,6 +358,7 @@
   "checkingForUnusedLabels": "Verificando rótulos não utilizados...",
   "checkingIfTheOrgUsernameHasChanged": "Verificando se o nome de usuário da org mudou de {{prevUserName}}...",
   "checkingMetadataTypesEligibleForDecomposition": "Verificando tipos de metadados elegíveis para decomposição (funcionalidade Beta)",
+  "checkingOrgConnectionStatus": "Verificando o status de conexão da org {{org}} ...",
   "checkingOutGitBranch": "Fazendo checkout da branch git {{branchName}}...",
   "checkingOutLatestVersionOfBranch": "Ativando a versão mais recente da branch {{branch}} de {{repoUrl}}...",
   "checkingSobjectsForRecords": "Verificando SObjects em busca de registros...",

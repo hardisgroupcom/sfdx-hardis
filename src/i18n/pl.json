@@ -363,6 +363,7 @@
   "checkingForUnusedLabels": "Sprawdzanie nieużywanych Custom Labels...",
   "checkingIfTheOrgUsernameHasChanged": "Sprawdzanie, czy nazwa użytkownika org zmieniła się od {{prevUserName}}...",
   "checkingMetadataTypesEligibleForDecomposition": "Sprawdzanie typów metadanych kwalifikujących się do rozłożenia (funkcja Beta)",
+  "checkingOrgConnectionStatus": "Sprawdzanie statusu połączenia z org {{org}} ...",
   "checkingOutGitBranch": "Przełączanie na branch git {{branchName}}...",
   "checkingOutLatestVersionOfBranch": "Pobieranie najnowszej wersji branch {{branch}} z {{repoUrl}}...",
   "checkingSobjectsForRecords": "Sprawdzanie SObjects pod kątem rekordów...",

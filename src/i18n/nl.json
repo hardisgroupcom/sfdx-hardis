@@ -363,6 +363,7 @@
   "checkingForUnusedLabels": "Controleren op ongebruikte labels...",
   "checkingIfTheOrgUsernameHasChanged": "Controleren of de org-gebruikersnaam is gewijzigd van {{prevUserName}}...",
   "checkingMetadataTypesEligibleForDecomposition": "Controleren op metadatatypes die in aanmerking komen voor decompositie (Beta-functie)",
+  "checkingOrgConnectionStatus": "Verbindingsstatus van org {{org}} controleren ...",
   "checkingOutGitBranch": "Git branch {{branchName}} uitchecken...",
   "checkingOutLatestVersionOfBranch": "Nieuwste versie van branch {{branch}} uitchecken van {{repoUrl}}...",
   "checkingSobjectsForRecords": "SObjects controleren op records...",

@@ -6,6 +6,7 @@
 
 - **Queries report their number of records to VS Code**: SOQL, Tooling API, Bulk API and Data Cloud queries now tell the VS Code extension when they start, when they complete (with the number of records retrieved) and when they fail, so the Command Runner can show a record count chip next to each query. A failed query now also logs a `Query failed` line with the error message.
 - Fixed the `Fetching batch X/{{MAX}}` log line of paginated SOQL queries showing a raw placeholder instead of the maximum number of batches.
+- Fixed the VS Code UI looking stuck after an org selection prompt: the org connection check now logs its action before running `sf org display`.
 
 ### Dependencies
 
