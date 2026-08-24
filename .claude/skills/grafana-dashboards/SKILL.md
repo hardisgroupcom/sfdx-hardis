@@ -26,7 +26,7 @@ sfdx-hardis pushes to two backends (see `src/common/notifProvider/apiProvider.ts
 - **Loki** (logs): stream labels `source="sfdx-hardis"`, `type` (notification type key), `orgIdentifier`, `gitIdentifier`, `severity`. The log line is a JSON body: `metric`, `_metrics`, `_metricsKeys`, `_logElements` (detail rows), `_title`, `_logBodyText`, `_dateTime`, `_jobUrl`.
 - **Prometheus/Mimir** (metrics): each `metrics` key of a notification becomes `<Key>_metric` (plus `_max` / `_percent` variants for object-form values), labeled with `source`, `type`, `orgIdentifier`, `gitIdentifier`.
 
-PII: in CI, user fields in `_logElements` are pseudonymized (`user_xxxxxxxxxx`) by `apiAnonymizer.ts`. Dashboards must never rely on readable usernames.
+PII: in CI, sensitive fields in `_logElements` are pseudonymized (`user_xxxxxxxxxx`, `id_xxxxxxxxxx`, `ip_xxxxxxxxxx`) by `src/common/utils/anonymizeUtils.ts` (levels: standard / strict, actor fields readable at standard). Dashboards must never rely on readable usernames.
 
 Two emission rules decide whether a panel can show a number at all:
 
@@ -72,7 +72,7 @@ Any change to a notification type, its `metrics` keys, or its `logElements` shap
 
 1. **New indicator / new metric key**: decide where it surfaces - existing dashboard row, new panel, fleet column, or only the generic Indicator Detail dashboard (which picks up any `type` automatically). Add panels via the generator, with lookback wrapper, per-org aggregation, detail link, and `RECENT_CLI_NOTE` description (older CLIs won't send it yet).
 2. **Renamed/removed metric key**: grep the generator for the old `<Key>_metric` name and update every query, and check `docs/grafana/alerts-v2/` for alert rules using it. Old series keep their data in Prometheus under the old name; mention the rename in the dashboard panel description if history matters.
-3. **Changed `logElements` fields**: check Loki table panels extracting those fields (`jsonArrayToRows`, `extractJson` paths) and the anonymizer's sensitive-key list (`src/common/notifProvider/apiAnonymizer.ts`) if user-identifying fields are involved.
+3. **Changed `logElements` fields**: check Loki table panels extracting those fields (`jsonArrayToRows`, `extractJson` paths) and the anonymizer's field rules (`src/common/utils/anonymizeUtils.ts`) if user-identifying fields are involved.
 4. **New notification type**: it appears automatically in the Indicator Detail dashboard `$type` variable (Loki label values) - explicit panels are only needed if the indicator deserves dedicated visibility.
 5. Regenerate (`node generator.mjs`), run the lint suite, re-import to the `sfdx-hardis-v2` folder, and update `docs/salesforce-monitoring-grafana-v2.md` if the dashboard list or prerequisites changed.
 

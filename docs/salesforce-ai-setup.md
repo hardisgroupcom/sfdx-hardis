@@ -9,7 +9,7 @@ description: Learn how to wire AI into sfdx-hardis deployments
 
 ## Security considerations
 
-sfdx-hardis sends **prompts via API** to collect its analyses: only **metadata XML** or **JSON deployment errors** are sent in the prompts.
+sfdx-hardis sends **prompts via API** to collect its analyses: only **metadata XML** or **JSON deployment errors** are sent in the prompts. The monitoring AI summary input is pre-anonymized: see [Security & Privacy](salesforce-security-privacy.md#ai-and-privacy) for the complete picture of what can leave your environment.
 
 If you follow Flow best practices and **do not hardcode credentials or tokens in variables**, sending metadata XML to an external LLM carries no serious risk (**but be aware that you are doing it**).
 

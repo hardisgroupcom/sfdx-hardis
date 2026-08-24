@@ -110,6 +110,8 @@ Each notification type (audit trail, org limits, Apex tests, ...) can be configu
 - **Email**: [any recipient list](salesforce-ci-cd-setup-integration-email.md), with per-notification-type overrides
 - **API / Grafana / Prometheus**: [external endpoints](salesforce-ci-cd-setup-integration-api.md) for dashboards (e.g. Grafana Loki, Prometheus)
 
+**Personal data stays private**: when monitoring runs in CI, usernames, emails, user Ids and client IPs are replaced by stable pseudonyms in generated reports and in every notification channel, so dashboards and shared files carry no readable end-user identity. Levels and overrides are described in [Security & Privacy](salesforce-security-privacy.md#data-anonymization).
+
 ---
 
 ## Customize the cadence

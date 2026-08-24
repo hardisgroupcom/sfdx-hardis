@@ -19,7 +19,7 @@ What it brings:
 - **DORA metrics** panels (deployment frequency, lead time, change failure rate, MTTR, rework rate)
 - **Drill-down navigation**: every number is clickable and leads to its detail view
 - A ready-to-enable **alert pack** (shipped paused, so it costs nothing until you activate it)
-- **No personal data**: combined with [API data anonymization](salesforce-ci-cd-setup-integration-api.md#data-anonymization), dashboards display counts, aggregates and pseudonyms, never readable usernames
+- **No personal data**: combined with [data anonymization](salesforce-security-privacy.md#data-anonymization), dashboards display counts, aggregates and pseudonyms, never readable usernames
 
 > The previous dashboard set is now **[legacy (v1)](salesforce-monitoring-grafana-v1-legacy.md)**. It keeps working (v2 uses its own folder, UIDs and files) but is frozen: new indicators and features only land in v2.
 
@@ -265,7 +265,7 @@ Then, in both cases:
 
 ## Privacy
 
-Dashboards only display aggregates, counts, and (for detail tables) the pseudonymized identifiers produced by [API data anonymization](salesforce-ci-cd-setup-integration-api.md#data-anonymization), which is enabled by default in CI. Setup audit trail actors stay readable on purpose: auditing setup actions requires knowing who did them.
+Dashboards only display aggregates, counts, and (for detail tables) the pseudonymized identifiers produced by [data anonymization](salesforce-security-privacy.md#data-anonymization), which is enabled by default in CI: `user_<hash>` for usernames, emails and display names, `id_<hash>` for user record Ids, `ip_<hash>` for client IPs. At the default `standard` level, setup audit trail actors stay readable on purpose (auditing setup actions requires knowing who did them); the `strict` level pseudonymizes them too.
 
 ## Troubleshooting
 

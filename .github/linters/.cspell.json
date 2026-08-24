@@ -1579,6 +1579,26 @@
     "agentic",
     "openai",
     "unpublish",
-    "datacloud"
+    "datacloud",
+    "accordionanonymization",
+    "assigneeid",
+    "attackable",
+    "chokepoints",
+    "clientip",
+    "deployedby",
+    "keyprefix",
+    "pseudonymization",
+    "pseudonymizes",
+    "sourceip",
+    "triggeredby",
+    "actionlint",
+    "checkov",
+    "cspell",
+    "lychee",
+    "osv",
+    "trufflehog",
+    "OIDC",
+    "tokenless",
+    "cooldown"
   ]
 }

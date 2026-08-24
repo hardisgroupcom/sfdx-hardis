@@ -449,10 +449,10 @@ nav:
       - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
       - Meet the team: contributors.md
       - Contributing: contributing.md
+  - Security & Privacy: salesforce-security-privacy.md
   - Help & Support: sfdx-hardis-help.md
   - About:
       - Plugins: sfdx-hardis-plugins.md
       - Changelog: CHANGELOG.md
       - License: license.md
-      - Security: SECURITY.md
   - Cloudity, Consulting Partner: cloudity-consulting-partner.md

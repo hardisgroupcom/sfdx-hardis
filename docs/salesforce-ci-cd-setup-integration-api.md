@@ -126,24 +126,9 @@ NOTIF_API_SKIP_METRICS=APEX_TESTS,DEPLOYMENT
 
 ## Data anonymization
 
-When running in CI (which is the case for scheduled monitoring jobs), sfdx-hardis anonymizes end-user identifying fields before sending notifications to the API channel: `Username`, `Email`, `FirstName`, `LastName` values in log elements are replaced by stable pseudonyms like `user_a1b2c3d4e5`, and the same values are scrubbed from notification texts.
+When running in CI, sfdx-hardis pseudonymizes personal data (usernames, emails, names, user Ids, client IPs) in API payloads, generated report files and every notification channel.
 
-Key points:
-
-- Pseudonyms are stable per org (same user always gets the same hash), so distinct-user counts and per-user drill-downs keep working in dashboards. They are salted per org, so the same user is not linkable across orgs.
-- `LastLoginDate` and other dates are kept: they are needed for inactive-user reports and are not personal identifiers.
-- Actor fields of setup actions (`CreatedBy`, `LastModifiedBy`, `DelegateUser` in audit trail entries) are kept readable: they identify administrators acting in Setup, which is exactly what an audit trail is for.
-- Local runs (outside CI) are not anonymized, so locally generated report files stay directly analyzable.
-- Other notification channels (Slack, Teams, Email) are never anonymized.
-
-Override the default behavior with the env var **NOTIF_API_ANONYMIZE**:
-
-```sh
-NOTIF_API_ANONYMIZE=false   # send raw values even in CI
-NOTIF_API_ANONYMIZE=true    # anonymize even in local runs
-```
-
-Note: anonymization only applies to new entries. Entries sent before enabling it keep their original values until your log retention expires (you can use the Loki delete API to purge them earlier).
+Levels, exact field coverage and configuration (`SFDX_HARDIS_ANONYMIZE`, `anonymization` config property) are described in [Security & Privacy](salesforce-security-privacy.md#data-anonymization).
 
 ## Troubleshooting
 

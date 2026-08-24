@@ -31,7 +31,7 @@ None
 Warning: on GitHub Actions, scheduled workflows only run on the main branch, so the configuration is specific.
 
 - Configure all your monitored orgs with the VS Code SFDX Hardis extension command **Configure Org Monitoring** (the jobs will fail at this stage, which is expected)
-  - Answer the questions, configure the variables, let sfdx-hardis upload the Connected Apps...
+  - Answer the questions, configure the variables, let sfdx-hardis upload the External Client Apps...
   - This creates one git branch per monitored org
 
 Only then:

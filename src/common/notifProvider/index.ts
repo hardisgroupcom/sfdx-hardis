@@ -16,6 +16,13 @@ import {
   getEffectiveNotificationConfig,
   severityMeetsThreshold,
 } from "./notificationConfig.js";
+import {
+  AnonymizationLevel,
+  anonymizeNotifMessage,
+  consumeAnonymizationNotice,
+  getAnonymizationLevel,
+  getChannelAnonymizationLevel,
+} from "../utils/anonymizeUtils.js";
 
 export abstract class NotifProvider {
   static getInstances(userConfig?: { notificationConfig?: any[] }): NotifProviderRoot[] {
@@ -63,6 +70,23 @@ export abstract class NotifProvider {
     // Resolve the effective per-channel routing config for this notification type once
     const effectiveConfig = await getEffectiveNotificationConfig(notifMessage.type);
     const failedChannels: string[] = [];
+    // Anonymize the message once per required level (channels can raise the global level),
+    // so every provider receives data matching its channel's anonymization level
+    const globalAnonymizationLevel = await getAnonymizationLevel();
+    const anonymizationNotice = consumeAnonymizationNotice(globalAnonymizationLevel);
+    if (anonymizationNotice) {
+      uxLog("log", this, c.grey(t('anonymizationActive', { level: globalAnonymizationLevel })));
+      if (anonymizationNotice.legacyEnvVarUsed) {
+        uxLog("warning", this, c.yellow(t('anonymizationLegacyEnvVarDeprecated')));
+      }
+    }
+    const anonymizedViews = new Map<AnonymizationLevel, NotifMessage>();
+    const getViewForLevel = (level: AnonymizationLevel): NotifMessage => {
+      if (!anonymizedViews.has(level)) {
+        anonymizedViews.set(level, anonymizeNotifMessage(notifMessage, level));
+      }
+      return anonymizedViews.get(level) as NotifMessage;
+    };
     for (const notifProvider of notifProviders) {
       uxLog("log", this, c.grey(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
       // Skip if matching NOTIFICATIONS_DISABLE except for Api
@@ -108,7 +132,8 @@ export abstract class NotifProvider {
         // NOTIF_EMAIL_ADDRESS, Slack token expired...) must not prevent the other channels
         // from receiving the notification, nor make the calling command fail.
         try {
-          await notifProvider.postNotification(notifMessage);
+          const channelAnonymizationLevel = await getChannelAnonymizationLevel(channel);
+          await notifProvider.postNotification(getViewForLevel(channelAnonymizationLevel));
         } catch (e) {
           failedChannels.push(notifProvider.getLabel());
           uxLog(
@@ -126,7 +151,10 @@ export abstract class NotifProvider {
     // longer fail commands, so they must stay detectable in observability backends.
     const notifOutputDir = process.env.MONITORING_NOTIF_OUTPUT_DIR;
     if (notifOutputDir) {
-      await writeMonitoringNotifFile(notifOutputDir, notifMessage, failedChannels);
+      // Written at the API channel level: these files feed the AI summary prompt,
+      // the PPTX report and the health score, which follow the API channel decision
+      const apiAnonymizationLevel = await getChannelAnonymizationLevel('api');
+      await writeMonitoringNotifFile(notifOutputDir, getViewForLevel(apiAnonymizationLevel), failedChannels);
     }
   }
 

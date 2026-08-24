@@ -499,6 +499,88 @@
       "title": "Allowed org types",
       "type": "array"
     },
+    "anonymization": {
+      "$id": "#/properties/anonymization",
+      "description": "Controls pseudonymization of personal data in generated report files and notifications.\nLevel 'standard' masks end-user identity (usernames, emails, names, user Ids, client IPs); 'strict' also masks technical actors (audit trail users, DeployedBy, TriggeredBy); 'off' disables it.\nDefault: standard when running in CI, off in local runs. Overridable with the SFDX_HARDIS_ANONYMIZE env var.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-security-privacy/#data-anonymization",
+      "examples": [
+        {
+          "level": "strict"
+        },
+        {
+          "level": "standard",
+          "channels": {
+            "email": "strict"
+          }
+        }
+      ],
+      "properties": {
+        "level": {
+          "$id": "#/properties/anonymization/properties/level",
+          "description": "Global anonymization level applied to generated report files and every notification channel.\nApplied to CI runs only, unless enforceLocally is true.",
+          "enum": [
+            "off",
+            "standard",
+            "strict"
+          ],
+          "title": "Anonymization level",
+          "type": "string"
+        },
+        "enforceLocally": {
+          "$id": "#/properties/anonymization/properties/enforceLocally",
+          "default": false,
+          "description": "By default this configuration only applies to CI runs: local runs keep full information in logs and reports. Set to true to enforce the configured anonymization in local runs too.",
+          "title": "Enforce anonymization in local runs",
+          "type": "boolean"
+        },
+        "channels": {
+          "$id": "#/properties/anonymization/properties/channels",
+          "description": "Per-channel level raises: a channel can be stricter than the global level, never weaker (report files are anonymized at the source)",
+          "properties": {
+            "files": {
+              "enum": [
+                "off",
+                "standard",
+                "strict"
+              ],
+              "title": "Generated report files (CSV / XLSX)",
+              "type": "string"
+            },
+            "api": {
+              "enum": [
+                "off",
+                "standard",
+                "strict"
+              ],
+              "title": "API channel (Grafana Loki or other logs endpoint), also used for the AI monitoring summary",
+              "type": "string"
+            },
+            "email": {
+              "enum": [
+                "off",
+                "standard",
+                "strict"
+              ],
+              "title": "Email notifications",
+              "type": "string"
+            },
+            "messaging": {
+              "enum": [
+                "off",
+                "standard",
+                "strict"
+              ],
+              "title": "Messaging notifications (Slack, Microsoft Teams, Google Chat)",
+              "type": "string"
+            }
+          },
+          "title": "Per-channel anonymization levels",
+          "type": "object"
+        }
+      },
+      "title": "Anonymization of personal data",
+      "type": "object"
+    },
     "autoCleanTypes": {
       "$id": "#/properties/autoCleanTypes",
       "description": "When saving/publishing a User Story, sfdx-hardis can automatically clean the sources before submitting a Pull Request.\nSelect the cleanings that will be automatically applied on your project.",
@@ -976,7 +1058,7 @@
           },
           "customUsername": {
             "$id": "#/properties/commandsPostDeploy/items/properties/customUsername",
-            "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the Connected App used by deployment user.",
+            "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the External Client App used by deployment user.",
             "title": "Custom Username",
             "type": "string"
           }
@@ -1217,7 +1299,7 @@
           },
           "customUsername": {
             "$id": "#/properties/commandsPostDeploy/items/properties/customUsername",
-            "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the Connected App used by deployment user.",
+            "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the External Client App used by deployment user.",
             "title": "Custom Username",
             "type": "string"
           }
