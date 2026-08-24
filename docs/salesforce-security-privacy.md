@@ -57,12 +57,14 @@ Key points:
 
 ### Configuration
 
+By default, anonymization is active (at level `standard`) **only when running in CI**. Local runs are never anonymized unless you explicitly ask for it: local logs and report files keep full information so they stay analyzable.
+
 Override the default behavior with the env var **SFDX_HARDIS_ANONYMIZE**:
 
 ```sh
-SFDX_HARDIS_ANONYMIZE=off       # send and write raw values even in CI
-SFDX_HARDIS_ANONYMIZE=standard  # anonymize end-user identity, even in local runs
-SFDX_HARDIS_ANONYMIZE=strict    # also anonymize technical actor fields
+SFDX_HARDIS_ANONYMIZE=off       # disable anonymization everywhere, even in CI
+SFDX_HARDIS_ANONYMIZE=standard  # explicitly enable end-user identity anonymization (this is the only way a local run gets anonymized)
+SFDX_HARDIS_ANONYMIZE=strict    # like standard, plus technical actor fields
 ```
 
 Or with the `anonymization` property in `config/.sfdx-hardis.yml`:
