@@ -4,7 +4,7 @@
 
 ### Core
 
-- Personal data is now anonymized in all reports, notifications, and monitoring output when running in CI - see [Data Anonymization](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-api/#data-anonymization) for details.
+- Personal data is now anonymized in all reports, notifications, and monitoring output when running in CI - see [Security & Privacy](https://sfdx-hardis.cloudity.com/salesforce-security-privacy/#data-anonymization) for details.
 - URLs are now clickable in every generated XLSX file.
 - All configured JIRA credentials are now tried until one works, instead of only the first one.
 - A progress bar replaces per-ticket log lines while collecting JIRA and Azure Boards ticket information.

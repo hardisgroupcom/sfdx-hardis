@@ -502,7 +502,7 @@
     "anonymization": {
       "$id": "#/properties/anonymization",
       "description": "Controls pseudonymization of personal data in generated report files and notifications.\nLevel 'standard' masks end-user identity (usernames, emails, names, user Ids, client IPs); 'strict' also masks technical actors (audit trail users, DeployedBy, TriggeredBy); 'off' disables it.\nDefault: standard when running in CI, off in local runs. Overridable with the SFDX_HARDIS_ANONYMIZE env var.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-api/#data-anonymization",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-security-privacy/#data-anonymization",
       "examples": [
         {
           "level": "strict"
