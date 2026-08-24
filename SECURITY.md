@@ -128,7 +128,9 @@ You can find security scan results and SBOM (Software Build Of Materials) in Cyc
 
 ### Dependencies
 
-We are using [dependabot](https://github.com/dependabot) to keep dependencies up to date.
+We are using [dependabot](https://github.com/dependabot) to keep dependencies up to date. It checks for new versions **every day**, but a new version is only proposed once it has been public for **at least one week** ([cooldown](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/.github/dependabot.yml)): a package compromised by a supply chain attack is usually detected and pulled within days, so waiting keeps a malicious release from being merged before anyone noticed it.
+
+This delay applies to regular version updates only. **Dependabot security updates are exempt from the cooldown**: when a CVE is published for a dependency we use, the fix is proposed immediately.
 
 ## Releases
 

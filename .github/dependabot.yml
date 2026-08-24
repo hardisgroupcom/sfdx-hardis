@@ -3,8 +3,15 @@ updates:
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
-      interval: 'weekly'
-      day: 'saturday'
+      interval: 'daily'
+    # Wait for a new version to have been public for a week before proposing it: a compromised
+    # release published through a supply chain attack is usually detected and pulled within days.
+    # Cooldown applies to version updates only: Dependabot security updates (CVE) are exempt and
+    # are still proposed as soon as the advisory is published.
+    cooldown:
+      default-days: 7
+      include:
+        - '*'
     versioning-strategy: 'increase'
     labels:
       - 'dependencies'
