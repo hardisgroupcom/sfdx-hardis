@@ -18,6 +18,7 @@ import { CONSTANTS } from '../../../../config/index.js';
 import { FileDownloader } from '../../../../common/utils/fileDownloader.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import { anonymizeRows, getChannelAnonymizationLevel } from '../../../../common/utils/anonymizeUtils.js';
 const dnsPromises = dns.promises;
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -441,6 +442,9 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     if (!this.outputFile) {
       throw new Error('Output file path is not initialized');
     }
+    // This streamed writer bypasses generateCsvFile, so it must apply the same anonymization:
+    // the CSV / XLSX carries USER_ID and CLIENT_IP values and ends up as CI artifact and email attachment
+    rows = anonymizeRows(rows, await getChannelAnonymizationLevel('files'));
     this.ensureCsvColumns(rows);
     if (!this.csvColumns || this.csvColumns.length === 0) {
       return;

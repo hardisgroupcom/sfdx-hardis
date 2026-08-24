@@ -14,6 +14,7 @@ import {
   diagnoseMfa,
 } from '../../../../common/utils/mfaDiagnoseUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import { SENSITIVE_VALUES_KEY } from '../../../../common/utils/anonymizeUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -187,6 +188,9 @@ Reference: [Salesforce MFA Requirement](https://help.salesforce.com/s/articleVie
           Item: r.Item,
           'What is wrong': r.Details,
           Recommendation: r.Recommendation,
+          // Keep the sensitive-values marker so uxLogTable anonymization can mask usernames
+          // held in the ambiguous Item / Details columns (stripped before display)
+          ...(SENSITIVE_VALUES_KEY in (r as any) ? { [SENSITIVE_VALUES_KEY]: (r as any)[SENSITIVE_VALUES_KEY] } : {}),
         }))
       );
     }

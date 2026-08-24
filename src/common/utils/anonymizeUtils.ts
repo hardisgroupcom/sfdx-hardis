@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import * as os from 'os';
 import { getConfig, getEnvVar } from '../../config/index.js';
 import { isCI } from './envUtils.js';
 import type { NotifMessage } from '../notifProvider/types.js';
@@ -218,6 +219,9 @@ export function buildOrgIdentifier(instanceUrl: string): string {
 // Called from the shared query utilities: the salt must be known before report generation,
 // which happens before setConnectionVariables in most commands.
 export function registerAnonymizationSalt(instanceUrl: string | null | undefined): void {
+  // Also warm the config cache in the background, so the sync resolution used by console
+  // tables sees the .sfdx-hardis.yml anonymization config and not only env vars / CI default
+  void primeConfigCache();
   if (registeredSalt === null && instanceUrl) {
     registeredSalt = buildOrgIdentifier(instanceUrl);
   }
@@ -234,7 +238,10 @@ export function getAnonymizationSalt(): string {
       registerAnonymizationSalt(conn.instanceUrl);
     }
   }
-  return registeredSalt || '';
+  // Last resort when no org context exists yet: a machine-and-project-stable salt, so
+  // pseudonyms are never plain unsalted hashes (which would be identical across all
+  // installations and dictionary-attackable)
+  return registeredSalt || `${os.hostname()}|${process.cwd()}`;
 }
 
 // ---------------------------------------------------------------------------
