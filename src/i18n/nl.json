@@ -1857,6 +1857,7 @@
   "itSeemsYouAlreadyHaveMetadatasSaved": "Het lijkt erop dat je al metadata hebt opgeslagen van een vorige uitvoering.\nWil je certificaten en metadata opnieuw ophalen?",
   "jiraApiErrorGettingTicket": "Fout bij het ophalen van informatie over {{ticketId}}: {{message}}",
   "jiraProviderAddedLabel": "Label {{tag}} toegevoegd op {{count}} ticket(s): {{tickets}}",
+  "jiraProviderAuthClientCredentials": "JIRA_CLIENT_ID en JIRA_CLIENT_SECRET gebruiken voor authenticatie",
   "jiraProviderAuthConfigIssue": "Dit is waarschijnlijk een JIRA auth-configuratieprobleem, omdat HTML wordt geretourneerd",
   "jiraProviderAuthEmailToken": "JIRA_EMAIL en JIRA_TOKEN gebruiken voor authenticatie",
   "jiraProviderAuthFallback": "JIRA-authenticatie is mislukt ({{message}}): nieuwe poging met {{next}}",

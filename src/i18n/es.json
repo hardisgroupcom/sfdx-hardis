@@ -1857,6 +1857,7 @@
   "itSeemsYouAlreadyHaveMetadatasSaved": "Parece que ya tiene metadatos guardados de una ejecución anterior.\n¿Desea recuperar los certificados y los metadatos de nuevo?",
   "jiraApiErrorGettingTicket": "Error al intentar obtener la información de {{ticketId}}: {{message}}",
   "jiraProviderAddedLabel": "Etiqueta {{tag}} agregada en {{count}} ticket(s): {{tickets}}",
+  "jiraProviderAuthClientCredentials": "Usando JIRA_CLIENT_ID y JIRA_CLIENT_SECRET para la autenticación",
   "jiraProviderAuthConfigIssue": "Probablemente sea un problema de configuración de autenticación en JIRA, ya que se devuelve HTML",
   "jiraProviderAuthEmailToken": "Usando JIRA_EMAIL y JIRA_TOKEN para la autenticación",
   "jiraProviderAuthFallback": "La autenticación en JIRA ha fallado ({{message}}): reintentando con {{next}}",

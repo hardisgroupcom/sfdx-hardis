@@ -16,17 +16,17 @@ type JiraAuth = {
   logMessage: string;
   label: string;
   buildClient: () => Promise<Version2Client | Version3Client | null>;
-  // The Atlassian API gateway answers 404, not 401, when the OAuth2 app cannot see the site
-  notFoundMeansRefused?: boolean;
 };
 
 export class JiraProvider extends TicketProviderRoot {
   // Version3Client for Jira Cloud, Version2Client for Jira Server / Data Center
   private jiraClient: Version2Client | Version3Client | null = null;
   private jiraHost: string | null = null;
+  // A refused credential answers with a login page instead of JSON on some Server/DC instances
+  private static readonly LOGIN_PAGE_ERROR = "JIRA answered with an HTML login page instead of JSON";
+
   // Credentials not tried yet, in order of relevance for the host: consumed by useNextAuth()
   private nextAuths: JiraAuth[] = [];
-  private activeAuth: JiraAuth | null = null;
   // Set as soon as a call answers: the current credential is the right one, stop switching
   private authValidated = false;
 
@@ -38,10 +38,9 @@ export class JiraProvider extends TicketProviderRoot {
     // Client Credentials (Jira Cloud only - uses Atlassian OAuth2 API)
     const clientCredentialsAuth: JiraAuth | null = getEnvVar("JIRA_CLIENT_ID") && getEnvVar("JIRA_CLIENT_SECRET")
       ? {
-        logMessage: "Using JIRA_CLIENT_ID and JIRA_CLIENT_SECRET for authentication",
+        logMessage: t('jiraProviderAuthClientCredentials'),
         label: "JIRA_CLIENT_ID + JIRA_CLIENT_SECRET",
         buildClient: () => this.buildClientCredentialsClient(),
-        notFoundMeansRefused: true,
       }
       : null;
     // Basic Auth (email + API token for Cloud, username + password for Server/DC)
@@ -80,8 +79,13 @@ export class JiraProvider extends TicketProviderRoot {
       return;
     }
     uxLog("log", this, c.grey('[JiraProvider] ' + auth.logMessage));
-    this.activeAuth = auth;
-    this.jiraClient = await auth.buildClient();
+    try {
+      this.jiraClient = await auth.buildClient();
+    } catch (e: any) {
+      // jira.js validates the host when the client is built, and throws if it is malformed
+      uxLog("error", this, c.yellow(`[JiraProvider] Could not build a JIRA client with ${auth.label}: ${e.message}`));
+      this.jiraClient = null;
+    }
   }
 
   /**
@@ -119,16 +123,20 @@ export class JiraProvider extends TicketProviderRoot {
       }
       try {
         const result = await call(client as Version2Client);
+        if (/<!doctype html>/i.test(typeof result === "string" ? result : JSON.stringify(result ?? ""))) {
+          // A JIRA Server behind an SSO proxy answers 200 with its login page rather than a 401:
+          // the credential is refused too, so raise it as such to let the next one be tried.
+          throw new SfError(JiraProvider.LOGIN_PAGE_ERROR);
+        }
         this.authValidated = true;
         return result;
       } catch (e) {
         // Only a 401 means the credential itself is refused: a 403 or a 404 is about permissions
-        // or a missing ticket, and another credential would not do better. The exception is the
-        // Atlassian API gateway, which answers 404 when the OAuth2 app cannot see the site.
+        // or a missing ticket, and another credential would not do better.
         const status = (e as any)?.response?.status;
         const isAuthError = status === 401
           || (e as Error).message?.includes("status code 401")
-          || (status === 404 && this.activeAuth?.notFoundMeansRefused === true);
+          || (e as Error).message === JiraProvider.LOGIN_PAGE_ERROR;
         if (this.authValidated || !isAuthError || this.nextAuths.length === 0) {
           throw e;
         }
@@ -238,6 +246,8 @@ export class JiraProvider extends TicketProviderRoot {
 
     if (!cloudId && resourcesResponse.data.length > 0) {
       cloudId = resourcesResponse.data[0].id; // Fallback to first available resource
+      // Without this warning, the 404 answered by the API gateway for every ticket looks unexplained
+      uxLog("warning", this, c.yellow(`[JiraProvider] No accessible resource matches JIRA_HOST (${this.jiraHost}): using ${resourcesResponse.data[0].url} instead.`));
     }
     return cloudId;
   }
@@ -378,6 +388,9 @@ export class JiraProvider extends TicketProviderRoot {
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
     const activeClient = await this.getJiraClient();
     if (!activeClient) {
+      if (tickets.length > 0) {
+        uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderNoUsableCredential')));
+      }
       return tickets;
     }
     uxLog("action", this, c.cyan('[JiraProvider] ' + t('jiraProviderPostingComments', { count: tickets.length })));

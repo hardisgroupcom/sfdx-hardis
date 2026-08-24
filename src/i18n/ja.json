@@ -1855,6 +1855,7 @@
   "itSeemsYouAlreadyHaveMetadatasSaved": "前回の実行で保存されたメタデータがあるようです。\n証明書とメタデータを再取得しますか？",
   "jiraApiErrorGettingTicket": "{{ticketId}} の情報取得中にエラーが発生しました: {{message}}",
   "jiraProviderAddedLabel": "{{count}} 件のチケットにラベル {{tag}} を追加しました: {{tickets}}",
+  "jiraProviderAuthClientCredentials": "認証に JIRA_CLIENT_ID と JIRA_CLIENT_SECRET を使用しています",
   "jiraProviderAuthConfigIssue": "HTML が返されたため、JIRA の認証設定に問題がある可能性があります",
   "jiraProviderAuthEmailToken": "認証に JIRA_EMAIL と JIRA_TOKEN を使用しています",
   "jiraProviderAuthFallback": "JIRA の認証に失敗しました ({{message}})。{{next}} で再試行します",

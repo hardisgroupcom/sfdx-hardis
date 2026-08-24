@@ -1857,6 +1857,7 @@
   "itSeemsYouAlreadyHaveMetadatasSaved": "Wygląda na to, że masz już zapisane metadane z poprzedniego uruchomienia.\nCzy chcesz ponownie pobrać certyfikaty i metadane?",
   "jiraApiErrorGettingTicket": "Błąd podczas próby pobrania informacji o {{ticketId}}: {{message}}",
   "jiraProviderAddedLabel": "Dodano etykietę {{tag}} do {{count}} zgłoszenia(ń): {{tickets}}",
+  "jiraProviderAuthClientCredentials": "Używanie JIRA_CLIENT_ID i JIRA_CLIENT_SECRET do uwierzytelniania",
   "jiraProviderAuthConfigIssue": "To prawdopodobnie problem z konfiguracją uwierzytelniania JIRA, ponieważ zwracany jest kod HTML",
   "jiraProviderAuthEmailToken": "Używanie JIRA_EMAIL i JIRA_TOKEN do uwierzytelniania",
   "jiraProviderAuthFallback": "Uwierzytelnianie w JIRA nie powiodło się ({{message}}): ponowna próba z {{next}}",
