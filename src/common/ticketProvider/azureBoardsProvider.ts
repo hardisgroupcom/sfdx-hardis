@@ -138,30 +138,40 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       WebSocketClient.sendProgressStartMessage(t('collectingTicketsInfo', { count: azureTicketsNumber }), azureTicketsNumber);
     }
     let collectedTicketsNumber = 0;
-    for (const ticket of tickets) {
-      if (ticket.provider === "AZURE") {
-        const ticketInfo = await azureWorkItemApi.getWorkItem(Number(ticket.id));
-        if (ticketInfo && ticketInfo?.fields) {
-          ticket.foundOnServer = true;
-          ticket.subject = ticketInfo.fields["System.Title"] || "";
-          ticket.status = ticketInfo.fields["System.State"] || "";
-          ticket.statusLabel = ticketInfo.fields["System.State"] || "";
-          if (ticketInfo?._links && ticketInfo._links["html"] && ticketInfo._links["html"]["href"]) {
-            ticket.url = ticketInfo?._links["html"]["href"];
+    // try/finally so the progress bar never stays stuck in the VS Code UI when a fetch throws
+    try {
+      for (const ticket of tickets) {
+        if (ticket.provider === "AZURE") {
+          // One failing work item (deleted id, expired PAT mid-loop...) must not lose the others
+          let ticketInfo: any = null;
+          try {
+            ticketInfo = await azureWorkItemApi.getWorkItem(Number(ticket.id));
+          } catch (e) {
+            ticketInfo = { error: (e as Error).message };
           }
-          // "other" keeps this per-ticket line out of the VS Code UI, where the progress bar shows instead
-          uxLog("other", this, c.grey('[AzureBoardsProvider] ' + t('azureBoardsProviderCollectedWorkItem', { ticketId: ticket.id })));
-        } else {
-          uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderUnableToGetWorkItem', { ticketId: ticket.id, ticketInfo: JSON.stringify(ticketInfo) })));
-        }
-        collectedTicketsNumber++;
-        if (showProgress) {
-          WebSocketClient.sendProgressStepMessage(collectedTicketsNumber, azureTicketsNumber);
+          if (ticketInfo && ticketInfo?.fields) {
+            ticket.foundOnServer = true;
+            ticket.subject = ticketInfo.fields["System.Title"] || "";
+            ticket.status = ticketInfo.fields["System.State"] || "";
+            ticket.statusLabel = ticketInfo.fields["System.State"] || "";
+            if (ticketInfo?._links && ticketInfo._links["html"] && ticketInfo._links["html"]["href"]) {
+              ticket.url = ticketInfo?._links["html"]["href"];
+            }
+            // "other" keeps this per-ticket line out of the VS Code UI, where the progress bar shows instead
+            uxLog("other", this, c.grey('[AzureBoardsProvider] ' + t('azureBoardsProviderCollectedWorkItem', { ticketId: ticket.id })));
+          } else {
+            uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderUnableToGetWorkItem', { ticketId: ticket.id, ticketInfo: JSON.stringify(ticketInfo) })));
+          }
+          collectedTicketsNumber++;
+          if (showProgress) {
+            WebSocketClient.sendProgressStepMessage(collectedTicketsNumber, azureTicketsNumber);
+          }
         }
       }
-    }
-    if (showProgress) {
-      WebSocketClient.sendProgressEndMessage(azureTicketsNumber);
+    } finally {
+      if (showProgress) {
+        WebSocketClient.sendProgressEndMessage(azureTicketsNumber);
+      }
     }
     return tickets;
   }
