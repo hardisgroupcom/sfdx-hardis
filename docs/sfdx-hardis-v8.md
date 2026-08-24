@@ -1,6 +1,6 @@
 ---
 title: "What's new in sfdx-hardis v8"
-description: "Deployment Actions are generally available, Pull Request comments are redesigned, the VS Code extension is rebuilt, and everything starts faster. Here is the complete tour of sfdx-hardis v8."
+description: "The VS Code extension is rebuilt, everything starts faster, Deployment Actions are generally available, and Pull Request comments are redesigned. Here is the complete tour of sfdx-hardis v8."
 ---
 
 <!-- markdownlint-disable MD013 -->
@@ -9,18 +9,77 @@ description: "Deployment Actions are generally available, Pull Request comments 
 
 [![sfdx-hardis by Cloudity](assets/images/sfdx-hardis-banner.png)](https://sfdx-hardis.cloudity.com)
 
-v8 ships the **sfdx-hardis plugin** and the **VS Code extension** together. The headline is **Deployment Actions leaving beta**, but the whole contribution loop got faster and easier to read: Pull Request comments you can understand at a glance, a rebuilt extension, pipelines that start in seconds, and new commands to watch what your org actually costs.
+v8 ships the **sfdx-hardis plugin** and the **VS Code extension** together.
+
+The headline is **Deployment Actions leaving beta**. But there is a lot more:
 
 | What changed                                                                                  | Why you care                                                                                                     |
 |-----------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| [**Deployment Actions are generally available**](#deployment-actions-are-generally-available) | Everything that must happen around a deployment is declared on the Pull Request and runs by itself, in every org |
-| [**Pull Request comments redesigned**](#pull-request-comments-you-can-read-at-a-glance)       | You know in one second which comment you are reading and how the deployment went                                 |
 | [**VS Code extension rebuilt**](#the-vs-code-extension-got-a-full-redesign)                   | One consistent design, readable tables, and a command panel that shows a whole run on a single screen            |
 | [**Everything starts faster**](#everything-starts-faster)                                     | Commands open instantly instead of waiting for the Salesforce CLI to boot                                        |
+| [**Deployment Actions are generally available**](#deployment-actions-are-generally-available) | Everything that must happen around a deployment is declared on the Pull Request and runs by itself, in every org |
+| [**Pull Request comments redesigned**](#pull-request-comments-you-can-read-at-a-glance)       | You know in one second which comment you are reading and how the deployment went                                 |
+| [**Smaller footprint, safer supply chain**](#lighter-and-safer)                               | Half the npm packages removed: faster installs and fewer dependencies to trust                                   |
 | [**Usage and cost monitoring**](#watch-what-your-org-consumes-and-what-it-costs)              | Entitlements, consumption alerts and Agentforce credits, in percentages and in your own currency                 |
 | [**Sandbox refresh covered end to end**](#sandbox-refresh-covered-end-to-end)                 | Connected Apps, Scheduled Apex and restores that survive a failure                                               |
 | [**Flow deletion in destructive changes**](#deleting-a-flow-is-now-part-of-the-deployment)    | Deleting a Flow no longer means a manual step in every org                                                       |
 | [**Pipelines run in the Docker image**](#pipelines-run-in-the-sfdx-hardis-docker-image)       | Faster jobs that a bad dependency release can no longer break                                                    |
+| [**Professional support by Cloudity**](#free-and-supported-if-you-want-it)                    | Still free and open-source, with setup, support subscriptions and Release Manager as a Service if you need them  |
+
+---
+
+## The VS Code extension got a full redesign
+
+Every panel now shares the same header, the same cards and buttons, the **official Salesforce color palette**, and colors that stay readable in **both light and dark themes**.
+
+![Welcome page](assets/images/welcome.png)
+
+- The **Welcome page** shows your setup status at a glance: the Install Dependencies button becomes a live status, and is highlighted only when something actually needs you.
+- **Tables are easier to scan** everywhere: alternate row colors, status as colored pills, initials avatars, branch chips, short dates. **Right-click any cell** to copy its value.
+- In the **DevOps Pipeline** diagram, CI job status is color-coded consistently: blue animated for running, orange for pending, red for failed, green for success.
+
+![DevOps Pipeline](assets/images/devops-pipeline.png)
+
+- The **command execution tab** now shows a whole run as a compact timeline that fits on one screen, with the command name, its status, the org it runs on, the elapsed time and a link to the log file.
+
+![Command execution panel](assets/images/command-runner.png)
+
+- Questions are highlighted, long choice lists are **searchable in place**, and answered questions collapse to a single line showing your answer.
+- Log lines carrying a **big JSON** or a very long text show only their beginning: click to expand, copy, or open in a VS Code tab.
+- Once a command is over, **Run again** replays it with the same parameters.
+- **Extension Settings** are readable at last: real setting names, and each description visible under its name instead of hidden behind a hover icon.
+- Panels **follow your VS Code theme** by default, so they no longer open in light mode inside a dark VS Code.
+
+**Your orgs, color-coded**
+
+![Org type badge in the status bar](assets/images/vscode-org-type-badge.png)
+
+- A status bar badge spells out the type of your default org: **PROD**, **MAJOR**, **SANDBOX**, **SCRATCH** or **DEV ORG**. Click it to open the Orgs Manager.
+- The new **Org color mode** setting chooses how much of the window is colored: status bar only (the new default), title bar too, or the whole activity bar as before.
+- **Select color for current org** now offers a palette with a live preview, instead of asking you to type a color code.
+
+**Find any command**
+
+- **7 new commands** in the Commands panel: MFA Readiness, Unsecure Permissions, Usage-Based Entitlements, Consumption Alerts, AI Credit Usage, Run Agentforce Tests and Data Dictionary.
+- A new **Search** button lists commands from every category and filters as you type, including **17 extra commands** that are not displayed in the panel, like Deployments history analysis, Org licenses, Create sandbox org or Data Cloud SQL query.
+
+---
+
+## Everything starts faster
+
+Waiting was the most common complaint about the extension. v8 attacks it from both sides.
+
+| Before                                                                                                        | Now                                                                                            |
+|---------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| Clicking a command could wait **more than 10 seconds** for the Salesforce CLI to boot before showing anything | The execution tab opens **immediately** on click                                               |
+| Commands run in a terminal waited for the terminal to be ready                                                | They **start immediately**, and use **Git Bash** automatically on Windows when it is installed |
+| VS Code could freeze several times a day after a file was created or renamed                                  | Fixed, and VS Code **starts faster**                                                           |
+| Commands clicked right after startup were rejected with "not initialized yet"                                 | They just run                                                                                  |
+| Panels could stay stuck on a loading spinner                                                                  | They load, and a display error shows a **Try again** button                                    |
+
+The plugin got its share too: commands now connect to the extension **about 5 seconds earlier**, the upgrade check no longer delays startup, [hardis:org:purge:flow](hardis/org/purge/flow.md) deletes Flow versions much faster with fewer API calls, and [hardis:project:clean:profiles-extract](hardis/project/clean/profiles-extract.md) fetches record counts and field extracts concurrently.
+
+New at startup: a warning when the Salesforce Extensions setting **Source Tracking: Enable Conflict Detection** is on, because it checks conflicts in the background and slows down the whole VS Code. One click disables it.
 
 ---
 
@@ -81,58 +140,20 @@ Prefer plain comments? Set `SFDX_HARDIS_PR_COMMENT_BANNERS=false`, `SFDX_HARDIS_
 
 ---
 
-## The VS Code extension got a full redesign
+## Lighter, and safer
 
-Every panel now shares the same header, the same cards and buttons, the **official Salesforce color palette**, and colors that stay readable in **both light and dark themes**.
+Both projects went on a diet, for the same reason: every third-party package is code you have to trust.
 
-![Welcome page](assets/images/welcome.png)
+|                                        | Before (v7.23) | v8                                                                                                                                 |
+|----------------------------------------|----------------|------------------------------------------------------------------------------------------------------------------------------------|
+| **Plugin** direct dependencies         | 65             | **42** (axios, xml2js, openai, cloudflare, md-to-pdf, fs-extra, inquirer, octokit, farmhash, ora, open, dotenv and others removed) |
+| **Plugin** total packages installed    | 1091           | **518** (**-53%**)                                                                                                                 |
+| **Extension** direct dependencies      | 28             | **14**                                                                                                                             |
+| **Extension** total packages installed | 327            | **287**                                                                                                                            |
 
-- The **Welcome page** shows your setup status at a glance: the Install Dependencies button becomes a live status, and is highlighted only when something actually needs you.
-- **Tables are easier to scan** everywhere: alternate row colors, status as colored pills, initials avatars, branch chips, short dates. **Right-click any cell** to copy its value.
-- In the **DevOps Pipeline** diagram, CI job status is color-coded consistently: blue animated for running, orange for pending, red for failed, green for success.
+Widely used but replaceable packages were replaced by capabilities already built into Node.js and VS Code, with no change in behavior. Fewer packages means a **smaller supply-chain attack surface**, less exposure to a compromised or vulnerable dependency, and a **faster install** of the plugin, the extension and the Docker images.
 
-![DevOps Pipeline](assets/images/devops-pipeline.png)
-
-- The **command execution tab** now shows a whole run as a compact timeline that fits on one screen, with the command name, its status, the org it runs on, the elapsed time and a link to the log file.
-
-![Command execution panel](assets/images/command-runner.png)
-
-- Questions are highlighted, long choice lists are **searchable in place**, and answered questions collapse to a single line showing your answer.
-- Log lines carrying a **big JSON** or a very long text show only their beginning: click to expand, copy, or open in a VS Code tab.
-- Once a command is over, **Run again** replays it with the same parameters.
-- **Extension Settings** are readable at last: real setting names, and each description visible under its name instead of hidden behind a hover icon.
-- Panels **follow your VS Code theme** by default, so they no longer open in light mode inside a dark VS Code.
-
-**Your orgs, color-coded**
-
-![Org type badge in the status bar](assets/images/vscode-org-type-badge.png)
-
-- A status bar badge spells out the type of your default org: **PROD**, **MAJOR**, **SANDBOX**, **SCRATCH** or **DEV ORG**. Click it to open the Orgs Manager.
-- The new **Org color mode** setting chooses how much of the window is colored: status bar only (the new default), title bar too, or the whole activity bar as before.
-- **Select color for current org** now offers a palette with a live preview, instead of asking you to type a color code.
-
-**Find any command**
-
-- **7 new commands** in the Commands panel: MFA Readiness, Unsecure Permissions, Usage-Based Entitlements, Consumption Alerts, AI Credit Usage, Run Agentforce Tests and Data Dictionary.
-- A new **Search** button lists commands from every category and filters as you type, including **17 extra commands** that are not displayed in the panel, like Deployments history analysis, Org licenses, Create sandbox org or Data Cloud SQL query.
-
----
-
-## Everything starts faster
-
-Waiting was the most common complaint about the extension. v8 attacks it from both sides.
-
-| Before                                                                                                        | Now                                                                                            |
-|---------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| Clicking a command could wait **more than 10 seconds** for the Salesforce CLI to boot before showing anything | The execution tab opens **immediately** on click                                               |
-| Commands run in a terminal waited for the terminal to be ready                                                | They **start immediately**, and use **Git Bash** automatically on Windows when it is installed |
-| VS Code could freeze several times a day after a file was created or renamed                                  | Fixed, and VS Code **starts faster**                                                           |
-| Commands clicked right after startup were rejected with "not initialized yet"                                 | They just run                                                                                  |
-| Panels could stay stuck on a loading spinner                                                                  | They load, and a display error shows a **Try again** button                                    |
-
-The plugin got its share too: commands now connect to the extension **about 5 seconds earlier**, the upgrade check no longer delays startup, [hardis:org:purge:flow](hardis/org/purge/flow.md) deletes Flow versions much faster with fewer API calls, and [hardis:project:clean:profiles-extract](hardis/project/clean/profiles-extract.md) fetches record counts and field extracts concurrently.
-
-New at startup: a warning when the Salesforce Extensions setting **Source Tracking: Enable Conflict Detection** is on, because it checks conflicts in the background and slows down the whole VS Code. One click disables it.
+A guardrail keeps it that way: the plugin test suite fails when a dependency is declared but never imported, or when the lock file grows past a ceiling.
 
 ---
 
@@ -194,23 +215,6 @@ The default **GitHub Actions**, **Azure Pipelines** and **Bitbucket Pipelines** 
 - **Existing pipelines keep working**: the templates apply when you initialize a new project or monitoring repository.
 
 Two new pages help you check your setup: the [CI/CD Setup Checklist](salesforce-ci-cd-setup-checklist.md) and [how to publish job artifacts](salesforce-ci-cd-setup-publish-artifacts.md) on any platform.
-
----
-
-## Lighter, and safer
-
-Both projects went on a diet, for the same reason: every third-party package is code you have to trust.
-
-|                                        | Before (v7.23) | v8                                                                                                                                 |
-|----------------------------------------|----------------|------------------------------------------------------------------------------------------------------------------------------------|
-| **Plugin** direct dependencies         | 65             | **42** (axios, xml2js, openai, cloudflare, md-to-pdf, fs-extra, inquirer, octokit, farmhash, ora, open, dotenv and others removed) |
-| **Plugin** total packages installed    | 1091           | **518** (**-53%**)                                                                                                                 |
-| **Extension** direct dependencies      | 28             | **14**                                                                                                                             |
-| **Extension** total packages installed | 327            | **287**                                                                                                                            |
-
-Widely used but replaceable packages were replaced by capabilities already built into Node.js and VS Code, with no change in behavior. Fewer packages means a **smaller supply-chain attack surface**, less exposure to a compromised or vulnerable dependency, and a **faster install** of the plugin, the extension and the Docker images.
-
-A guardrail keeps it that way: the plugin test suite fails when a dependency is declared but never imported, or when the lock file grows past a ceiling.
 
 ---
 
