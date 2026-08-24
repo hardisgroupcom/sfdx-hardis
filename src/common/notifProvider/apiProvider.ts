@@ -7,7 +7,6 @@ import { UtilsNotifs } from "./utils.js";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 
 import { getSeverityIcon } from "../utils/notifUtils.js";
-import { anonymizeApiPayloadData, shouldAnonymizeApiData } from "./apiAnonymizer.js";
 import { convertMarkdownToPlainText } from "./markdownToPlainText.js";
 import { GitProvider } from "../gitProvider/index.js";
 import { httpPost, HttpRequestConfig } from "../utils/httpUtils.js";
@@ -107,7 +106,8 @@ export class ApiProvider extends NotifProviderRoot {
   }
 
   // Build message
-  private async buildPayload(notifMessage: NotifMessage) {
+  // Public for testability (mutation regression: notifMessage.data must never be modified)
+  public async buildPayload(notifMessage: NotifMessage) {
     const logTitle = UtilsNotifs.prefixWithSeverityEmoji(
       convertMarkdownToPlainText(notifMessage.text.split("\n")[0]),
       notifMessage.severity,
@@ -158,7 +158,9 @@ export class ApiProvider extends NotifProviderRoot {
       orgIdentifier: orgIdentifier,
       gitIdentifier: `${repoName}/${currentGitBranch}`,
       severity: notifMessage.severity,
-      data: Object.assign(notifMessage.data, {
+      // Copy: mutating notifMessage.data would leak the payload-only fields (_logElements...)
+      // into the monitoring notification files written after the provider loop
+      data: Object.assign({}, notifMessage.data, {
         _dateTime: new Date().toISOString(),
         _severityIcon: getSeverityIcon(notifMessage.severity),
         _title: logTitle,
@@ -174,11 +176,8 @@ export class ApiProvider extends NotifProviderRoot {
     if (jobUrl) {
       this.payload.data._jobUrl = jobUrl;
     }
-    // Anonymize end-user identifying fields (default: only in CI, override with NOTIF_API_ANONYMIZE)
-    if (shouldAnonymizeApiData()) {
-      this.payload.data = anonymizeApiPayloadData(this.payload.data, orgIdentifier);
-      uxLog("log", this, c.grey(t('apiAnonymizationActive')));
-    }
+    // Anonymization is applied upstream by NotifProvider.postNotifications (anonymizeUtils),
+    // so the message received here is already at the API channel level
   }
 
   private async formatPayload() {

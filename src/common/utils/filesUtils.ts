@@ -14,6 +14,12 @@ import ExcelJS from 'exceljs';
 
 // Project Specific Utilities
 import { getCurrentGitBranch, isAgentMode, isCI, isGitRepo, uxLog, uxLogTable } from './index.js';
+import {
+  anonymizeRows,
+  consumeAnonymizationNotice,
+  getChannelAnonymizationLevel,
+  SENSITIVE_VALUES_KEY,
+} from './anonymizeUtils.js';
 import { bulkQuery, soqlQuery, bulkQueryByChunks } from './apiUtils.js';
 import { prompts } from './prompts.js';
 import { getApiVersion, getReportDirectory } from '../../config/index.js';
@@ -1549,7 +1555,14 @@ export async function uxLogTableWithReport(
   }
   const reportRows =
     columnsOrder.length > 0
-      ? tableData.map((row) => Object.fromEntries(columnsOrder.map((col) => [col, row[col] ?? ''])))
+      ? tableData.map((row) => {
+        const projected: Record<string, any> = Object.fromEntries(columnsOrder.map((col) => [col, row[col] ?? '']));
+        // Keep the sensitive-values marker so the report file anonymization still sees it
+        if (row != null && typeof row === 'object' && SENSITIVE_VALUES_KEY in row) {
+          projected[SENSITIVE_VALUES_KEY] = row[SENSITIVE_VALUES_KEY];
+        }
+        return projected;
+      })
       : tableData;
   const outputFile = await generateReportPath(reportOptions.fileNamePrefix, reportOptions.outputFile || '');
   return await generateCsvFile(reportRows, outputFile, { fileTitle: reportOptions.fileTitle || reportOptions.fileNamePrefix });
@@ -1562,6 +1575,17 @@ export async function generateCsvFile(
 ): Promise<any> {
   const result: any = {};
   try {
+    // Anonymize sensitive data in the written file (CI artifact, email attachment):
+    // level "standard" in CI by default, "off" locally, see anonymizeUtils.ts
+    const anonymizationLevel = await getChannelAnonymizationLevel('files');
+    const anonymizationNotice = consumeAnonymizationNotice(anonymizationLevel);
+    if (anonymizationNotice) {
+      uxLog("log", this, c.grey(t('anonymizationActive', { level: anonymizationLevel })));
+      if (anonymizationNotice.legacyEnvVarUsed) {
+        uxLog("warning", this, c.yellow(t('anonymizationLegacyEnvVarDeprecated')));
+      }
+    }
+    data = anonymizeRows(data, anonymizationLevel);
     const csvContent = Papa.unparse(data);
     await fs.writeFile(outputPath, csvContent, 'utf8');
     if (!WebSocketClient.isAliveWithLwcUI()) {

@@ -1,6 +1,7 @@
 import { Connection } from '@salesforce/core';
 import { soqlQuery } from './apiUtils.js';
 import { t } from './i18n.js';
+import { markRowSensitiveValues } from './anonymizeUtils.js';
 
 export type MfaCheckKey =
   | 'phishingResistantReadiness'
@@ -488,7 +489,9 @@ async function checkMfaBypassUsers(
       if (!username || ignoreSet.has(username.toLowerCase())) continue;
       if (a.PermissionSet?.Type === 'Profile') continue;
       const isGroup = a.PermissionSet?.Type === 'Group';
-      rows.push({
+      // Item and Details carry a username / display name: mark them so anonymization catches
+      // them (the Item column holds a settings key on other rows, so key rules cannot apply)
+      rows.push(markRowSensitiveValues<MfaReportRow>({
         Check: checkTitle,
         CheckKey: checkKey,
         Severity: 'warning',
@@ -498,7 +501,7 @@ async function checkMfaBypassUsers(
           source: a.PermissionSet?.Label || a.PermissionSetId,
         }),
         Recommendation: t('mfaRecommendationRemoveBypassPermSet'),
-      });
+      }, [username, a.Assignee?.Name]));
     }
   }
 
@@ -507,7 +510,7 @@ async function checkMfaBypassUsers(
     for (const u of users) {
       if (ignoreSet.has((u.Username || '').toLowerCase())) continue;
       const profile = bypassProfiles.find((p) => p.Id === u.ProfileId);
-      rows.push({
+      rows.push(markRowSensitiveValues<MfaReportRow>({
         Check: checkTitle,
         CheckKey: checkKey,
         Severity: 'warning',
@@ -517,7 +520,7 @@ async function checkMfaBypassUsers(
           source: profile?.Name || u.ProfileId,
         }),
         Recommendation: t('mfaRecommendationRemoveBypassProfile'),
-      });
+      }, [u.Username, u.Name]));
     }
   }
 
@@ -816,7 +819,7 @@ function checkPhishingResistantReadiness(
     const latestMethod = scan.latestByUserId[entry.Id]?.method || '';
 
     if (latestMethod && PHISHING_RESISTANT_METHODS.has(latestMethod)) {
-      rows.push({
+      rows.push(markRowSensitiveValues<MfaReportRow>({
         Check: checkTitle,
         CheckKey: checkKey,
         Severity: 'success',
@@ -827,11 +830,11 @@ function checkPhishingResistantReadiness(
           grantedVia,
         }),
         Recommendation: '',
-      });
+      }, [username, entry.Name]));
     } else {
       notReadyCount++;
       const observed = latestMethod || t('mfaDetailPhishingResistantNone');
-      rows.push({
+      rows.push(markRowSensitiveValues<MfaReportRow>({
         Check: checkTitle,
         CheckKey: checkKey,
         Severity: 'error',
@@ -843,7 +846,7 @@ function checkPhishingResistantReadiness(
           grantedVia,
         }),
         Recommendation: t('mfaRecommendationRegisterPhishingResistant'),
-      });
+      }, [username, entry.Name]));
     }
   }
 
@@ -899,14 +902,14 @@ function checkPrivilegedUsersAuditFromContext(ctx: PrivilegedUserContext): MfaCh
       details = t('mfaDetailPrivilegedUserOk', { name: entry.Name, grantedVia });
     }
 
-    return {
+    return markRowSensitiveValues<MfaReportRow>({
       Check: checkTitle,
       CheckKey: checkKey,
       Severity: severity,
       Item: username,
       Details: details,
       Recommendation: recommendation,
-    };
+    }, [username, entry.Name]);
   });
 
   const bypassCount = rows.filter((r) => r.Severity === 'error').length;
@@ -1049,7 +1052,7 @@ async function checkNonMfaLogins(
 
   const filtered = flagged.filter((r) => !ignoreSet.has((r.Username || '').toLowerCase()));
 
-  const rows: MfaReportRow[] = filtered.map((r) => ({
+  const rows: MfaReportRow[] = filtered.map((r) => markRowSensitiveValues<MfaReportRow>({
     Check: checkTitle,
     CheckKey: checkKey,
     Severity: 'error',
@@ -1060,7 +1063,10 @@ async function checkNonMfaLogins(
       auth: r.AuthMethodReference || '-',
     }),
     Recommendation: t('mfaRecommendationInvestigateNonMfaLogin'),
-  }));
+  }, [
+    { value: r.Username || r.UserId, kind: r.Username ? 'user' : 'id' },
+    r.SourceIp ? { value: r.SourceIp, kind: 'ip' } : null,
+  ]));
 
   const status: MfaCheckResult['status'] = rows.length > 0 ? 'error' : 'success';
   const detail =

@@ -1083,6 +1083,347 @@ Can also be set with the FLOW<em>DELETE</em>RETRY<em>DELAY</em>MS env variable, 
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionanonymization">
+    <div class="card">
+        <div class="card-header" id="headinganonymization">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#anonymization"
+                        aria-expanded="" aria-controls="anonymization" onclick="setAnchor('#anonymization')"><span class="property-name">anonymization</span></button>
+            </h2>
+        </div>
+
+        <div id="anonymization"
+             class="collapse property-definition-div" aria-labelledby="headinganonymization"
+             data-parent="#accordionanonymization">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization" onclick="anchorLink('anonymization')">anonymization</a></div><h4>Anonymization of personal data</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<div class="description collapse" id="collapseDescription_anonymization">
+            <p>Controls pseudonymization of personal data in generated report files and notifications.<br />
+Level 'standard' masks end-user identity (usernames, emails, names, user Ids, client IPs); 'strict' also masks technical actors (audit trail users, DeployedBy, TriggeredBy); 'off' disables it.<br />
+Default: standard when running in CI, off in local runs. Overridable with the SFDX<em>HARDIS</em>ANONYMIZE env var.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_anonymization"
+               aria-expanded="false" aria-controls="collapseDescriptionanonymization"
+            ></a>
+        </div>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="anonymization_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;level&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;strict&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div><div id="anonymization_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;level&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;channels&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;email&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;strict&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="accordion" id="accordionanonymization_level">
+    <div class="card">
+        <div class="card-header" id="headinganonymization_level">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#anonymization_level"
+                        aria-expanded="" aria-controls="anonymization_level" onclick="setAnchor('#anonymization_level')"><span class="property-name">level</span></button>
+            </h2>
+        </div>
+
+        <div id="anonymization_level"
+             class="collapse property-definition-div" aria-labelledby="headinganonymization_level"
+             data-parent="#accordionanonymization_level">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization" onclick="anchorLink('anonymization')">anonymization</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization_level" onclick="anchorLink('anonymization_level')">level</a></div><h4>Anonymization level</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<span class="description"><p>Global anonymization level applied to generated report files and every notification channel</p>
+</span><div class="enum-value" id="anonymization_level_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"off"</li><li class="list-group-item enum-item">"standard"</li><li class="list-group-item enum-item">"strict"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionanonymization_channels">
+    <div class="card">
+        <div class="card-header" id="headinganonymization_channels">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#anonymization_channels"
+                        aria-expanded="" aria-controls="anonymization_channels" onclick="setAnchor('#anonymization_channels')"><span class="property-name">channels</span></button>
+            </h2>
+        </div>
+
+        <div id="anonymization_channels"
+             class="collapse property-definition-div" aria-labelledby="headinganonymization_channels"
+             data-parent="#accordionanonymization_channels">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization" onclick="anchorLink('anonymization')">anonymization</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization_channels" onclick="anchorLink('anonymization_channels')">channels</a></div><h4>Per-channel anonymization levels</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Per-channel level raises: a channel can be stricter than the global level, never weaker (report files are anonymized at the source)</p>
+</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordionanonymization_channels_files">
+    <div class="card">
+        <div class="card-header" id="headinganonymization_channels_files">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#anonymization_channels_files"
+                        aria-expanded="" aria-controls="anonymization_channels_files" onclick="setAnchor('#anonymization_channels_files')"><span class="property-name">files</span></button>
+            </h2>
+        </div>
+
+        <div id="anonymization_channels_files"
+             class="collapse property-definition-div" aria-labelledby="headinganonymization_channels_files"
+             data-parent="#accordionanonymization_channels_files">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization" onclick="anchorLink('anonymization')">anonymization</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization_channels" onclick="anchorLink('anonymization_channels')">channels</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization_channels_files" onclick="anchorLink('anonymization_channels_files')">files</a></div><h4>Generated report files (CSV / XLSX)</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<div class="enum-value" id="anonymization_channels_files_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"off"</li><li class="list-group-item enum-item">"standard"</li><li class="list-group-item enum-item">"strict"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionanonymization_channels_api">
+    <div class="card">
+        <div class="card-header" id="headinganonymization_channels_api">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#anonymization_channels_api"
+                        aria-expanded="" aria-controls="anonymization_channels_api" onclick="setAnchor('#anonymization_channels_api')"><span class="property-name">api</span></button>
+            </h2>
+        </div>
+
+        <div id="anonymization_channels_api"
+             class="collapse property-definition-div" aria-labelledby="headinganonymization_channels_api"
+             data-parent="#accordionanonymization_channels_api">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization" onclick="anchorLink('anonymization')">anonymization</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization_channels" onclick="anchorLink('anonymization_channels')">channels</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization_channels_api" onclick="anchorLink('anonymization_channels_api')">api</a></div><h4>API channel (Grafana Loki or other logs endpoint), also used for the AI monitoring summary</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<div class="enum-value" id="anonymization_channels_api_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"off"</li><li class="list-group-item enum-item">"standard"</li><li class="list-group-item enum-item">"strict"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionanonymization_channels_email">
+    <div class="card">
+        <div class="card-header" id="headinganonymization_channels_email">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#anonymization_channels_email"
+                        aria-expanded="" aria-controls="anonymization_channels_email" onclick="setAnchor('#anonymization_channels_email')"><span class="property-name">email</span></button>
+            </h2>
+        </div>
+
+        <div id="anonymization_channels_email"
+             class="collapse property-definition-div" aria-labelledby="headinganonymization_channels_email"
+             data-parent="#accordionanonymization_channels_email">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization" onclick="anchorLink('anonymization')">anonymization</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization_channels" onclick="anchorLink('anonymization_channels')">channels</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization_channels_email" onclick="anchorLink('anonymization_channels_email')">email</a></div><h4>Email notifications</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<div class="enum-value" id="anonymization_channels_email_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"off"</li><li class="list-group-item enum-item">"standard"</li><li class="list-group-item enum-item">"strict"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionanonymization_channels_messaging">
+    <div class="card">
+        <div class="card-header" id="headinganonymization_channels_messaging">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#anonymization_channels_messaging"
+                        aria-expanded="" aria-controls="anonymization_channels_messaging" onclick="setAnchor('#anonymization_channels_messaging')"><span class="property-name">messaging</span></button>
+            </h2>
+        </div>
+
+        <div id="anonymization_channels_messaging"
+             class="collapse property-definition-div" aria-labelledby="headinganonymization_channels_messaging"
+             data-parent="#accordionanonymization_channels_messaging">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization" onclick="anchorLink('anonymization')">anonymization</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization_channels" onclick="anchorLink('anonymization_channels')">channels</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization_channels_messaging" onclick="anchorLink('anonymization_channels_messaging')">messaging</a></div><h4>Messaging notifications (Slack, Microsoft Teams, Google Chat)</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<div class="enum-value" id="anonymization_channels_messaging_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"off"</li><li class="list-group-item enum-item">"standard"</li><li class="list-group-item enum-item">"strict"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionautoCleanTypes">
     <div class="card">
         <div class="card-header" id="headingautoCleanTypes">

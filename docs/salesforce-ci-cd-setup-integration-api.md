@@ -126,22 +126,54 @@ NOTIF_API_SKIP_METRICS=APEX_TESTS,DEPLOYMENT
 
 ## Data anonymization
 
-When running in CI (which is the case for scheduled monitoring jobs), sfdx-hardis anonymizes end-user identifying fields before sending notifications to the API channel: `Username`, `Email`, `FirstName`, `LastName` values in log elements are replaced by stable pseudonyms like `user_a1b2c3d4e5`, and the same values are scrubbed from notification texts.
+When running in CI (which is the case for scheduled monitoring jobs), sfdx-hardis anonymizes personal data before it leaves the machine. This covers:
+
+- Generated report files (CSV and XLSX), which become CI artifacts and email attachments
+- API channel payloads (log elements, notification title and body text, extra data fields)
+- Email, Slack, Microsoft Teams and Google Chat notification texts
+- The monitoring notification files used by the AI executive summary and the PPTX report (they follow the API channel level)
+- Tables printed in CI console logs
+
+### Levels
+
+Two anonymization levels are available:
+
+- **standard** (default in CI): masks end-user identity. `Username`, `Email`, `FirstName`, `LastName` and user display names become `user_<hash>`, Salesforce user record Ids (`005...` values, `USER_ID`, `AssigneeId`) become `id_<hash>`, client IPs and their resolved hostnames become `ip_<hash>`. Technical actor fields stay readable: `CreatedBy`, `LastModifiedBy` and `DelegateUser` in audit trail entries, `DeployedBy` in deployment history, `TriggeredBy` in security key unlink reports. They identify administrators performing setup actions, which is exactly what an audit trail is for.
+- **strict**: standard, plus the technical actor fields above.
+
+What is NOT anonymized at any level: Salesforce record Ids other than user Ids (deployment Ids, org Ids, permission set Ids...), profile and license names, dates (`LastLoginDate` is needed for inactive-user reports and is not a personal identifier), and metric values.
 
 Key points:
 
-- Pseudonyms are stable per org (same user always gets the same hash), so distinct-user counts and per-user drill-downs keep working in dashboards. They are salted per org, so the same user is not linkable across orgs.
-- `LastLoginDate` and other dates are kept: they are needed for inactive-user reports and are not personal identifiers.
-- Actor fields of setup actions (`CreatedBy`, `LastModifiedBy`, `DelegateUser` in audit trail entries) are kept readable: they identify administrators acting in Setup, which is exactly what an audit trail is for.
-- Local runs (outside CI) are not anonymized, so locally generated report files stay directly analyzable.
-- Other notification channels (Slack, Teams, Email) are never anonymized.
+- Pseudonyms are stable per org (same value always gets the same hash), so distinct-user counts and per-user drill-downs keep working in dashboards, and a pseudonym in a Grafana panel matches the same pseudonym in the XLSX report of the same run. They are salted per org, so the same user is not linkable across orgs.
+- Local runs (outside CI) are not anonymized by default, so locally generated report files stay directly analyzable.
+- Report files are anonymized at generation time: the file on disk is the anonymized artifact, and email attachments are these same files.
 
-Override the default behavior with the env var **NOTIF_API_ANONYMIZE**:
+### Configuration
+
+Override the default behavior with the env var **SFDX_HARDIS_ANONYMIZE**:
 
 ```sh
-NOTIF_API_ANONYMIZE=false   # send raw values even in CI
-NOTIF_API_ANONYMIZE=true    # anonymize even in local runs
+SFDX_HARDIS_ANONYMIZE=off       # send and write raw values even in CI
+SFDX_HARDIS_ANONYMIZE=standard  # anonymize end-user identity, even in local runs
+SFDX_HARDIS_ANONYMIZE=strict    # also anonymize technical actor fields
 ```
+
+Or with the `anonymization` property in `config/.sfdx-hardis.yml`:
+
+```yaml
+anonymization:
+  level: standard # off | standard | strict
+  channels: # optional: a channel can be stricter than the global level, never weaker
+    email: strict
+    messaging: strict
+    api: strict
+    files: strict
+```
+
+Per-channel levels can only raise the global level: report files are anonymized once at the source, so a channel cannot receive rawer data than the global level allows. Note that email attachments are the generated report files, so they follow the `files` level, not the `email` one.
+
+The former **NOTIF_API_ANONYMIZE** env var is deprecated but still honored (`true` maps to `standard`, `false` to `off`).
 
 Note: anonymization only applies to new entries. Entries sent before enabling it keep their original values until your log retention expires (you can use the Loki delete API to purge them earlier).
 

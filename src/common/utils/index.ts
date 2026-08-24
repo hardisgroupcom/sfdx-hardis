@@ -27,6 +27,7 @@ let pluginsStdout: string | null = null;
 
 export { isCI, isAgentMode } from './envUtils.js';
 import { isCI, isAgentMode } from './envUtils.js';
+import { anonymizeRows, getChannelAnonymizationLevel, getChannelAnonymizationLevelSync } from './anonymizeUtils.js';
 
 export function git(options: any = { output: false, displayCommand: true }): SimpleGit {
   const simpleGitInstance = simpleGit();
@@ -1390,6 +1391,8 @@ export async function generateReports(
   const reportFile = path.resolve(`${reportDir}/${logFileName}-${dateSuffix}.csv`);
   const reportFileExcel = path.resolve(`${reportDir}/${logFileName}-${dateSuffix}.xls`);
   await fs.ensureDir(path.dirname(reportFile));
+  // Anonymize sensitive data in the written files (CI artifacts, email attachments)
+  resultSorted = anonymizeRows(resultSorted, await getChannelAnonymizationLevel('files'));
   const csv = stringifyCsv(resultSorted, {
     delimiter: ';',
     columns,
@@ -1481,6 +1484,9 @@ export function uxLogTable(commandThis: any, tableData: any[], columnsOrder: str
   if (!tableData || tableData.length === 0) {
     return;
   }
+  // Anonymize sensitive data in CI console logs (retained artifacts) and strip row markers.
+  // Sync best-effort level resolution: the async chokepoints (files, notifications) are exact.
+  tableData = anonymizeRows(tableData, getChannelAnonymizationLevelSync('files'));
   let columns: string[];
   let displayData = tableData;
   if (columnsOrder && columnsOrder.length > 0) {

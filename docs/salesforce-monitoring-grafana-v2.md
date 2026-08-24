@@ -265,7 +265,7 @@ Then, in both cases:
 
 ## Privacy
 
-Dashboards only display aggregates, counts, and (for detail tables) the pseudonymized identifiers produced by [API data anonymization](salesforce-ci-cd-setup-integration-api.md#data-anonymization), which is enabled by default in CI. Setup audit trail actors stay readable on purpose: auditing setup actions requires knowing who did them.
+Dashboards only display aggregates, counts, and (for detail tables) the pseudonymized identifiers produced by [data anonymization](salesforce-ci-cd-setup-integration-api.md#data-anonymization), which is enabled by default in CI: `user_<hash>` for usernames, emails and display names, `id_<hash>` for user record Ids, `ip_<hash>` for client IPs. At the default `standard` level, setup audit trail actors stay readable on purpose (auditing setup actions requires knowing who did them); the `strict` level pseudonymizes them too.
 
 ## Troubleshooting
 

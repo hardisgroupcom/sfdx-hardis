@@ -499,6 +499,81 @@
       "title": "Allowed org types",
       "type": "array"
     },
+    "anonymization": {
+      "$id": "#/properties/anonymization",
+      "description": "Controls pseudonymization of personal data in generated report files and notifications.\nLevel 'standard' masks end-user identity (usernames, emails, names, user Ids, client IPs); 'strict' also masks technical actors (audit trail users, DeployedBy, TriggeredBy); 'off' disables it.\nDefault: standard when running in CI, off in local runs. Overridable with the SFDX_HARDIS_ANONYMIZE env var.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-api/#data-anonymization",
+      "examples": [
+        {
+          "level": "strict"
+        },
+        {
+          "level": "standard",
+          "channels": {
+            "email": "strict"
+          }
+        }
+      ],
+      "properties": {
+        "level": {
+          "$id": "#/properties/anonymization/properties/level",
+          "description": "Global anonymization level applied to generated report files and every notification channel",
+          "enum": [
+            "off",
+            "standard",
+            "strict"
+          ],
+          "title": "Anonymization level",
+          "type": "string"
+        },
+        "channels": {
+          "$id": "#/properties/anonymization/properties/channels",
+          "description": "Per-channel level raises: a channel can be stricter than the global level, never weaker (report files are anonymized at the source)",
+          "properties": {
+            "files": {
+              "enum": [
+                "off",
+                "standard",
+                "strict"
+              ],
+              "title": "Generated report files (CSV / XLSX)",
+              "type": "string"
+            },
+            "api": {
+              "enum": [
+                "off",
+                "standard",
+                "strict"
+              ],
+              "title": "API channel (Grafana Loki or other logs endpoint), also used for the AI monitoring summary",
+              "type": "string"
+            },
+            "email": {
+              "enum": [
+                "off",
+                "standard",
+                "strict"
+              ],
+              "title": "Email notifications",
+              "type": "string"
+            },
+            "messaging": {
+              "enum": [
+                "off",
+                "standard",
+                "strict"
+              ],
+              "title": "Messaging notifications (Slack, Microsoft Teams, Google Chat)",
+              "type": "string"
+            }
+          },
+          "title": "Per-channel anonymization levels",
+          "type": "object"
+        }
+      },
+      "title": "Anonymization of personal data",
+      "type": "object"
+    },
     "autoCleanTypes": {
       "$id": "#/properties/autoCleanTypes",
       "description": "When saving/publishing a User Story, sfdx-hardis can automatically clean the sources before submitting a Pull Request.\nSelect the cleanings that will be automatically applied on your project.",

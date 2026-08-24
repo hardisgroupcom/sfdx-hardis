@@ -16,6 +16,9 @@ export async function generateMonitoringAiSummary(
 ): Promise<string | null> {
   try {
     uxLog("action", null, c.cyan(t('monitoringAiSummaryStarting')));
+    // Notifications are pre-anonymized at the API channel level when they are written to disk
+    // (see writeMonitoringNotifFile call in NotifProvider.postNotifications), so no personal
+    // data reaches the LLM here beyond what the API channel is allowed to carry
     const sanitizedJson = JSON.stringify(notifications);
     const prompt = await AiProvider.buildPrompt("PROMPT_MONITORING_SUMMARY", {
       NOTIFICATIONS_JSON: sanitizedJson,

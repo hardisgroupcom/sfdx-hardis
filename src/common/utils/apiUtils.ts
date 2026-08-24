@@ -7,6 +7,7 @@ import { CommandLogLineQuery, WebSocketClient } from '../websocketClient.js';
 import { generateCsvFile, generateReportPath } from './filesUtils.js';
 import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
 import { t } from './i18n.js';
+import { registerAnonymizationSalt } from './anonymizeUtils.js';
 
 // Constants for record limits
 const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
@@ -40,6 +41,9 @@ function queryCompletionText(recordCount: number, batchCount: number): string {
 
 // Perform simple SOQL query (max results: 10000)
 export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
+  // Anonymization pseudonyms are salted per org: register the salt as soon as an org is queried,
+  // so report files generated before setConnectionVariables() use the same salt as notifications
+  registerAnonymizationSalt(conn?.instanceUrl);
   const query = startQueryLog('soql');
   uxLog(
     "log",
@@ -80,6 +84,7 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
 // Perform simple SOQL query with Tooling API
 // Uses Sforce-Query-Options: batchSize=2000 to avoid default 100-record limit (Tooling API can return fewer by default)
 export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<any> {
+  registerAnonymizationSalt(conn?.instanceUrl);
   const query = startQueryLog('tooling');
   uxLog(
     "log",
@@ -129,6 +134,7 @@ let spinnerQ;
 const maxRetry = Number(process.env.BULK_QUERY_RETRY || 5);
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3): Promise<any> {
+  registerAnonymizationSalt(conn?.instanceUrl);
   const queryLabel = soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery;
   const query = startQueryLog('bulk');
   uxLog("log", this, c.grey('[BulkApiV2] ' + c.italic(queryLabel)), { query });
