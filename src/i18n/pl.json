@@ -512,6 +512,7 @@
   "colValue": "Wartość",
   "collectingInstalledPackagesData": "Zbieranie danych zainstalowanych pakietów i przygotowywanie elementów pracy...",
   "collectingManualActionsInventory": "Zbieranie inwentarza elementów, których nie można przywrócić automatycznie (zewnętrzne uwierzytelnienia OAuth, sekrety poświadczeń, zaplanowane zadania)...",
+  "collectingTicketsInfo": "Pobieranie informacji o {{count}} ticketach...",
   "collectticketsinfoIsNotImplementedOn": "collectTicketsInfo nie jest zaimplementowane dla ",
   "commandCancelledByUser": "Polecenie anulowane przez użytkownika.",
   "commandCompleted": "Polecenie zakończone",

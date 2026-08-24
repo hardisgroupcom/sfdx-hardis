@@ -512,6 +512,7 @@
   "colValue": "値",
   "collectingInstalledPackagesData": "インストール済みパッケージのデータを収集し、作業項目を準備しています...",
   "collectingManualActionsInventory": "自動的に復元できない項目のインベントリを収集しています(外部OAuth認証、認証情報のシークレット、スケジュールされたジョブ)...",
+  "collectingTicketsInfo": "{{count}} 件のチケットの情報を取得しています...",
   "collectticketsinfoIsNotImplementedOn": "collectTicketsInfo は以下に実装されていません: ",
   "commandCancelledByUser": "コマンドはユーザーによってキャンセルされました。",
   "commandCompleted": "コマンドが完了しました",

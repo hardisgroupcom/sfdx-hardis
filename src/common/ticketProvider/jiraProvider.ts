@@ -9,6 +9,7 @@ import { CONSTANTS, getConfig, getEnvVar } from "../../config/index.js";
 import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
 import { t } from '../utils/i18n.js';
 import { httpGet, httpPost } from "../utils/httpUtils.js";
+import { WebSocketClient } from "../websocketClient.js";
 
 // One way of authenticating to JIRA. The client is built lazily, so that a refused credential can
 // be replaced by the next one without paying for the ones that are never used.
@@ -314,6 +315,12 @@ export class JiraProvider extends TicketProviderRoot {
         c.cyan('[JiraProvider] ' + t('jiraProviderCollectingTickets', { jiraTicketsNumber, jiraHost: this.jiraHost })),
       );
     }
+    // One HTTP call per ticket: show a progress bar instead of flooding the log with one line each
+    const showProgress = jiraTicketsNumber > 1;
+    if (showProgress) {
+      WebSocketClient.sendProgressStartMessage(t('collectingTicketsInfo', { count: jiraTicketsNumber }), jiraTicketsNumber);
+    }
+    let collectedTicketsNumber = 0;
     let failedTicketsNumber = 0;
     let firstErrorMessage = '';
     for (const ticket of tickets) {
@@ -364,7 +371,8 @@ export class JiraProvider extends TicketProviderRoot {
             failedTicketsNumber++;
             firstErrorMessage = firstErrorMessage || 'JIRA returned an unusable response (possibly an authentication redirect)';
           }
-          uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderCollectedTicket', { ticketId: ticket.id })));
+          // "other" keeps this per-ticket line out of the VS Code UI, where the progress bar shows instead
+          uxLog("other", this, c.grey('[JiraProvider] ' + t('jiraProviderCollectedTicket', { ticketId: ticket.id })));
         } else if (!errorCaught) {
           // Resolved without throwing but no usable payload: still a collection failure.
           // The thrown case was already counted and logged in the catch block above.
@@ -372,7 +380,14 @@ export class JiraProvider extends TicketProviderRoot {
           failedTicketsNumber++;
           firstErrorMessage = firstErrorMessage || 'no details returned by the JIRA API';
         }
+        collectedTicketsNumber++;
+        if (showProgress) {
+          WebSocketClient.sendProgressStepMessage(collectedTicketsNumber, jiraTicketsNumber);
+        }
       }
+    }
+    if (showProgress) {
+      WebSocketClient.sendProgressEndMessage(jiraTicketsNumber);
     }
     if (failedTicketsNumber > 0) {
       uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderTicketsCollectionFailed', {

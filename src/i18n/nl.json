@@ -512,6 +512,7 @@
   "colValue": "Waarde",
   "collectingInstalledPackagesData": "Geïnstalleerde packages-data verzamelen en werkitems voorbereiden...",
   "collectingManualActionsInventory": "Bezig met het verzamelen van de inventaris van items die niet automatisch kunnen worden hersteld (externe OAuth-authenticaties, credential secrets, geplande jobs)...",
+  "collectingTicketsInfo": "Informatie van {{count}} tickets ophalen...",
   "collectticketsinfoIsNotImplementedOn": "collectTicketsInfo is niet geïmplementeerd op ",
   "commandCancelledByUser": "Opdracht geannuleerd door gebruiker.",
   "commandCompleted": "Opdracht voltooid",

@@ -486,6 +486,7 @@
   "colGitBranch": "Branch Git",
   "collectingInstalledPackagesData": "Coletando dados de Pacotes Instalados e preparando itens de trabalho...",
   "collectingManualActionsInventory": "Coletando o inventário de itens que não podem ser restaurados automaticamente (autenticações OAuth externas, segredos de credenciais, jobs agendados)...",
+  "collectingTicketsInfo": "Coletando as informações de {{count}} tickets...",
   "collectticketsinfoIsNotImplementedOn": "collectTicketsInfo não está implementado em ",
   "colSalesforceOrg": "Org Salesforce",
   "colSfdxHardisParameter": "Parâmetro do Sfdx-hardis",

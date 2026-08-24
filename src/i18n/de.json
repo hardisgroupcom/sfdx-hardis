@@ -512,6 +512,7 @@
   "colValue": "Wert",
   "collectingInstalledPackagesData": "Daten installierter Pakete werden gesammelt und Work Items vorbereitet...",
   "collectingManualActionsInventory": "Erstellung des Inventars der Elemente, die nicht automatisch wiederhergestellt werden können (externe OAuth-Authentifizierungen, Credential-Secrets, geplante Jobs)...",
+  "collectingTicketsInfo": "Informationen für {{count}} Tickets werden abgerufen...",
   "collectticketsinfoIsNotImplementedOn": "collectTicketsInfo ist nicht implementiert für ",
   "commandCancelledByUser": "Befehl vom Benutzer abgebrochen.",
   "commandCompleted": "Befehl abgeschlossen",

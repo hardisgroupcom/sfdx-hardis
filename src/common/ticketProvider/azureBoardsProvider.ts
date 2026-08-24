@@ -12,6 +12,7 @@ import { getConfig, getEnvVar } from "../../config/index.js";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces.js";
 import { CommonPullRequestInfo } from "../gitProvider/index.js";
+import { WebSocketClient } from "../websocketClient.js";
 import { t } from '../utils/i18n.js';
 /* jscpd:ignore-end */
 
@@ -131,6 +132,12 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       );
     }
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
+    // One HTTP call per work item: show a progress bar instead of flooding the log with one line each
+    const showProgress = azureTicketsNumber > 1;
+    if (showProgress) {
+      WebSocketClient.sendProgressStartMessage(t('collectingTicketsInfo', { count: azureTicketsNumber }), azureTicketsNumber);
+    }
+    let collectedTicketsNumber = 0;
     for (const ticket of tickets) {
       if (ticket.provider === "AZURE") {
         const ticketInfo = await azureWorkItemApi.getWorkItem(Number(ticket.id));
@@ -142,11 +149,19 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           if (ticketInfo?._links && ticketInfo._links["html"] && ticketInfo._links["html"]["href"]) {
             ticket.url = ticketInfo?._links["html"]["href"];
           }
-          uxLog("log", this, c.grey('[AzureBoardsProvider] ' + t('azureBoardsProviderCollectedWorkItem', { ticketId: ticket.id })));
+          // "other" keeps this per-ticket line out of the VS Code UI, where the progress bar shows instead
+          uxLog("other", this, c.grey('[AzureBoardsProvider] ' + t('azureBoardsProviderCollectedWorkItem', { ticketId: ticket.id })));
         } else {
           uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderUnableToGetWorkItem', { ticketId: ticket.id, ticketInfo: JSON.stringify(ticketInfo) })));
         }
+        collectedTicketsNumber++;
+        if (showProgress) {
+          WebSocketClient.sendProgressStepMessage(collectedTicketsNumber, azureTicketsNumber);
+        }
       }
+    }
+    if (showProgress) {
+      WebSocketClient.sendProgressEndMessage(azureTicketsNumber);
     }
     return tickets;
   }
