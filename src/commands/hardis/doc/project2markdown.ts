@@ -14,6 +14,7 @@ import { getLargeXmlParser, parseXmlFile } from '../../../common/utils/xmlUtils.
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
+import { linkifyWorksheetUrls } from '../../../common/utils/filesUtils.js';
 import { glob } from 'glob';
 import { GLOB_IGNORE_PATTERNS, METADATA_DOC_GLOB_IGNORE_PATTERNS, listApexFiles, listFlowFiles, listPageFiles, returnApexType } from '../../../common/utils/projectUtils.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
@@ -2146,6 +2147,9 @@ ${this.htmlInstructions}
     }
 
     // Save the workbook
+    for (const worksheet of workbook.worksheets) {
+      linkifyWorksheetUrls(worksheet);
+    }
     await workbook.xlsx.writeFile(excelFilePath);
     uxLog("success", this, c.green(t('successfullyGeneratedExcelFileAt', { excelFilePath })));
 
