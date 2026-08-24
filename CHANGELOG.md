@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-### Core
+## [8.2.0] 2026-08-25
 
 - Personal data is now anonymized in all reports, notifications, and monitoring output when running in CI - see [Security & Privacy](https://sfdx-hardis.cloudity.com/salesforce-security-privacy/#data-anonymization) for details.
 - URLs are now clickable in every generated XLSX file.
