@@ -100,6 +100,20 @@ Always use the latest sfdx-hardis version to be up to date with security updates
 
 ### Continuous Scanning
 
+Every Pull Request is analyzed by [MegaLinter](https://megalinter.io/) (by [OX Security](https://www.ox.security/)), which detects code smells and security issues thanks to the many linters and scanners it embeds. Its configuration is in [.mega-linter.yml](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/.mega-linter.yml), and each run posts its full report as a Pull Request comment.
+
+Security scanners running on every Pull Request:
+
+| Scanner                                                                                                                                                                                                                      | What it checks                                   |
+|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------|
+| [trufflehog](https://megalinter.io/latest/descriptors/repository_trufflehog/) and [betterleaks](https://megalinter.io/latest/descriptors/repository_betterleaks/)                                                            | Secrets and credentials committed by mistake     |
+| [trivy](https://megalinter.io/latest/descriptors/repository_trivy/), [grype](https://megalinter.io/latest/descriptors/repository_grype/) and [osv-scanner](https://megalinter.io/latest/descriptors/repository_osv_scanner/) | Known vulnerabilities (CVE) in dependencies      |
+| [checkov](https://megalinter.io/latest/descriptors/repository_checkov/)                                                                                                                                                      | Insecure infrastructure and configuration files  |
+| [zizmor](https://megalinter.io/latest/descriptors/action_zizmor/) and [actionlint](https://megalinter.io/latest/descriptors/action_actionlint/)                                                                              | GitHub Actions workflow security and correctness |
+| [hadolint](https://megalinter.io/latest/descriptors/dockerfile_hadolint/)                                                                                                                                                    | Dockerfile issues                                |
+
+The same run also checks code quality with [eslint](https://megalinter.io/latest/descriptors/typescript_eslint/), copy-pasted code with [jscpd](https://megalinter.io/latest/descriptors/copypaste_jscpd/), spelling with [cspell](https://megalinter.io/latest/descriptors/spell_cspell/), JSON and YAML schema conformity with [v8r](https://megalinter.io/latest/descriptors/json_v8r/), and broken documentation links with [lychee](https://megalinter.io/latest/descriptors/spell_lychee/).
+
 All development and release workflows contain security checks using [Trivy](https://trivy.dev/latest/)
 
 - Scan npm package files
@@ -120,7 +134,7 @@ We are using [dependabot](https://github.com/dependabot) to keep dependencies up
 
 - Each release is created using GitHub Release workflows, which are protected by a GitHub Environment requiring at least one manual approval from maintainers (using MFA-protected GitHub Account).
 
-- [NPM Trusted publishers](https://docs.npmjs.com/trusted-publishers) is configured to restrict publishing rights to this specific GitHub action workflow: the low-expiration NPM token used is stored in GitHub Secrets and cannot be used outside of this repository (MFA is also enabled on the NPM account).
+- [NPM Trusted publishers](https://docs.npmjs.com/trusted-publishers) is configured to restrict publishing rights to this specific GitHub action workflow: publishing is tokenless, authenticated with a short-lived OIDC token that GitHub issues to that workflow only, so there is no NPM token to store or leak (MFA is also enabled on the NPM account).
 
 ## Architecture
 

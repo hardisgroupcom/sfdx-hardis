@@ -1590,6 +1590,14 @@
     "pseudonymization",
     "pseudonymizes",
     "sourceip",
-    "triggeredby"
+    "triggeredby",
+    "actionlint",
+    "checkov",
+    "cspell",
+    "lychee",
+    "osv",
+    "trufflehog",
+    "OIDC",
+    "tokenless"
   ]
 }
