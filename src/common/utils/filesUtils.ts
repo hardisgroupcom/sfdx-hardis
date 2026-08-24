@@ -2040,14 +2040,14 @@ const MAX_HYPERLINK_LENGTH = 2000;
  * Returns the number of converted cells.
  */
 export function linkifyWorksheetUrls(worksheet: ExcelJS.Worksheet, onlyColumns?: Set<number>): number {
-  let linkified = 0;
+  let linkCount = 0;
   worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
     // Row 1 holds the column names, not data
-    if (rowNumber === 1 || !row || linkified >= MAX_WORKSHEET_HYPERLINKS) {
+    if (rowNumber === 1 || !row || linkCount >= MAX_WORKSHEET_HYPERLINKS) {
       return;
     }
     row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
-      if (linkified >= MAX_WORKSHEET_HYPERLINKS || (onlyColumns && !onlyColumns.has(colNumber))) {
+      if (linkCount >= MAX_WORKSHEET_HYPERLINKS || (onlyColumns && !onlyColumns.has(colNumber))) {
         return;
       }
       const hyperlinkTarget = extractHyperlinkTarget(cell);
@@ -2056,13 +2056,13 @@ export function linkifyWorksheetUrls(worksheet: ExcelJS.Worksheet, onlyColumns?:
       }
       cell.value = { text: cell.text?.trim() || hyperlinkTarget, hyperlink: hyperlinkTarget };
       cell.font = { ...(cell.font || {}), color: { argb: 'FF0563C1' }, underline: true };
-      linkified++;
+      linkCount++;
     });
   });
-  if (linkified >= MAX_WORKSHEET_HYPERLINKS) {
+  if (linkCount >= MAX_WORKSHEET_HYPERLINKS) {
     uxLog("log", this, c.grey(`[XLSX] Worksheet ${worksheet.name}: only the first ${MAX_WORKSHEET_HYPERLINKS} URLs were made clickable (Excel limit), the next ones stay as text.`));
   }
-  return linkified;
+  return linkCount;
 }
 
 function extractHyperlinkTarget(cell: ExcelJS.Cell): string | null {
