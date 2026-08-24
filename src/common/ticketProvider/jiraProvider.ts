@@ -26,6 +26,11 @@ export class JiraProvider extends TicketProviderRoot {
   // A refused credential answers with a login page instead of JSON on some Server/DC instances
   private static readonly LOGIN_PAGE_ERROR = "JIRA answered with an HTML login page instead of JSON";
 
+  /** A JIRA Server behind an SSO proxy answers 200 with its HTML login page: detect that shape */
+  private static containsHtmlLoginPage(value: any): boolean {
+    return /<!doctype html>/i.test(typeof value === "string" ? value : JSON.stringify(value ?? ""));
+  }
+
   // Credentials not tried yet, in order of relevance for the host: consumed by useNextAuth()
   private nextAuths: JiraAuth[] = [];
   // Set as soon as a call answers: the current credential is the right one, stop switching
@@ -83,8 +88,9 @@ export class JiraProvider extends TicketProviderRoot {
     try {
       this.jiraClient = await auth.buildClient();
     } catch (e: any) {
-      // jira.js validates the host when the client is built, and throws if it is malformed
-      uxLog("error", this, c.yellow(`[JiraProvider] Could not build a JIRA client with ${auth.label}: ${e.message}`));
+      // jira.js validates the host when the client is built, and throws if it is malformed.
+      // Recoverable (the next credential is tried), so warning level.
+      uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderClientBuildError', { label: auth.label, message: e.message })));
       this.jiraClient = null;
     }
   }
@@ -98,7 +104,8 @@ export class JiraProvider extends TicketProviderRoot {
       const accessToken = await this.getOAuthToken();
       const cloudId = await this.getCloudId(accessToken);
       if (!cloudId) {
-        uxLog("error", this, c.yellow("[JiraProvider] Could not resolve Cloud ID for JIRA_HOST from accessible resources."));
+        // Recoverable (the next credential is tried), so warning level
+        uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderCloudIdNotResolved')));
         return null;
       }
       // Client Credentials always target Jira Cloud via the Atlassian API gateway
@@ -107,7 +114,8 @@ export class JiraProvider extends TicketProviderRoot {
         authentication: { oauth2: { accessToken: accessToken } },
       });
     } catch (e: any) {
-      uxLog("error", this, c.yellow(`[JiraProvider] Error initializing OAuth2 client: ${e.message}`));
+      // Recoverable (the next credential is tried), so warning level
+      uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderOauthInitError', { message: e.message })));
       return null;
     }
   }
@@ -124,9 +132,12 @@ export class JiraProvider extends TicketProviderRoot {
       }
       try {
         const result = await call(client as Version2Client);
-        if (/<!doctype html>/i.test(typeof result === "string" ? result : JSON.stringify(result ?? ""))) {
-          // A JIRA Server behind an SSO proxy answers 200 with its login page rather than a 401:
-          // the credential is refused too, so raise it as such to let the next one be tried.
+        // A JIRA Server behind an SSO proxy answers 200 with its login page rather than a 401:
+        // the credential is refused too, so raise it as such to let the next one be tried.
+        // Only sniffed until a credential is validated: a ticket whose text legitimately
+        // contains an HTML doctype must not burn the working credential, and serializing
+        // every payload of the run would be wasted work.
+        if (!this.authValidated && JiraProvider.containsHtmlLoginPage(result)) {
           throw new SfError(JiraProvider.LOGIN_PAGE_ERROR);
         }
         this.authValidated = true;
@@ -248,7 +259,7 @@ export class JiraProvider extends TicketProviderRoot {
     if (!cloudId && resourcesResponse.data.length > 0) {
       cloudId = resourcesResponse.data[0].id; // Fallback to first available resource
       // Without this warning, the 404 answered by the API gateway for every ticket looks unexplained
-      uxLog("warning", this, c.yellow(`[JiraProvider] No accessible resource matches JIRA_HOST (${this.jiraHost}): using ${resourcesResponse.data[0].url} instead.`));
+      uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderHostResourceMismatch', { host: this.jiraHost, url: resourcesResponse.data[0].url })));
     }
     return cloudId;
   }
@@ -362,7 +373,7 @@ export class JiraProvider extends TicketProviderRoot {
           }
           if (ticket.subject === "") {
             uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderUnableToCollectTicket', { ticketId: ticket.id })));
-            if (JSON.stringify(ticketInfo).includes("<!DOCTYPE html>")) {
+            if (JiraProvider.containsHtmlLoginPage(ticketInfo)) {
               uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderAuthConfigIssue')));
             } else {
               uxLog("log", this, c.grey(JSON.stringify(ticketInfo)));
@@ -458,7 +469,7 @@ export class JiraProvider extends TicketProviderRoot {
         // Post comment
         try {
           const commentPostRes = await this.runJiraCall((client) => client.issueComments.addComment({ issueIdOrKey: ticket.id, comment: jiraComment }));
-          if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
+          if (JiraProvider.containsHtmlLoginPage(commentPostRes)) {
             throw new SfError(genericHtmlResponseError);
           }
           commentedTickets.push(ticket);
@@ -476,7 +487,7 @@ export class JiraProvider extends TicketProviderRoot {
           }));
           taggedTickets.push(ticket);
         } catch (e6) {
-          if ((e6 as any).message != null && (e6 as any).message.includes("<!doctype html>")) {
+          if ((e6 as any).message != null && JiraProvider.containsHtmlLoginPage((e6 as any).message)) {
             (e6 as any).message = genericHtmlResponseError;
           }
           uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderErrorAddingLabel', { tag, ticketId: ticket.id, message: (e6 as any).message })));

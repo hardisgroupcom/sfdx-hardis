@@ -2060,7 +2060,7 @@ export function linkifyWorksheetUrls(worksheet: ExcelJS.Worksheet, onlyColumns?:
     });
   });
   if (linkCount >= MAX_WORKSHEET_HYPERLINKS) {
-    uxLog("log", this, c.grey(`[XLSX] Worksheet ${worksheet.name}: only the first ${MAX_WORKSHEET_HYPERLINKS} URLs were made clickable (Excel limit), the next ones stay as text.`));
+    uxLog("log", this, c.grey('[XLSX] ' + t('xlsxHyperlinksLimitReached', { worksheet: worksheet.name, max: MAX_WORKSHEET_HYPERLINKS })));
   }
   return linkCount;
 }
