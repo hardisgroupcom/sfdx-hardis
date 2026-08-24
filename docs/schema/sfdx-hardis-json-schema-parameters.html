@@ -1164,11 +1164,53 @@ Default: standard when running in CI, off in local runs. Overridable with the SF
             />
         </svg>
     <a href="#anonymization_level" onclick="anchorLink('anonymization_level')">level</a></div><h4>Anonymization level</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
-<span class="description"><p>Global anonymization level applied to generated report files and every notification channel</p>
+<span class="description"><p>Global anonymization level applied to generated report files and every notification channel.<br />
+Applied to CI runs only, unless enforceLocally is true.</p>
 </span><div class="enum-value" id="anonymization_level_enum">
             <h4>Must be one of:</h4>
             <ul class="list-group"><li class="list-group-item enum-item">"off"</li><li class="list-group-item enum-item">"standard"</li><li class="list-group-item enum-item">"strict"</li></ul>
             </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionanonymization_enforceLocally">
+    <div class="card">
+        <div class="card-header" id="headinganonymization_enforceLocally">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#anonymization_enforceLocally"
+                        aria-expanded="" aria-controls="anonymization_enforceLocally" onclick="setAnchor('#anonymization_enforceLocally')"><span class="property-name">enforceLocally</span></button>
+            </h2>
+        </div>
+
+        <div id="anonymization_enforceLocally"
+             class="collapse property-definition-div" aria-labelledby="headinganonymization_enforceLocally"
+             data-parent="#accordionanonymization_enforceLocally">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization" onclick="anchorLink('anonymization')">anonymization</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#anonymization_enforceLocally" onclick="anchorLink('anonymization_enforceLocally')">enforceLocally</a></div><h4>Enforce anonymization in local runs</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>By default this configuration only applies to CI runs: local runs keep full information in logs and reports. Set to true to enforce the configured anonymization in local runs too.</p>
+</span>
         
 
         

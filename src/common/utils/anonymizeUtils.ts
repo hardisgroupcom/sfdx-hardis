@@ -61,6 +61,9 @@ const PSEUDONYM_REGEX = /^(user|id|ip)_[0-9a-f]{10}$/;
 interface AnonymizationConfig {
   level?: AnonymizationLevel;
   channels?: Partial<Record<AnonymizationChannel, AnonymizationLevel>>;
+  // The config file only applies to CI runs by default (local logs and reports must keep full
+  // information). Set to true to enforce the configured anonymization in local runs too.
+  enforceLocally?: boolean;
 }
 
 let configCache: AnonymizationConfig | null = null;
@@ -116,7 +119,11 @@ async function primeConfigCache(): Promise<AnonymizationConfig> {
           channels[channel] = channelLevel;
         }
       }
-      parsed = { ...(level !== null ? { level } : {}), channels };
+      parsed = {
+        ...(level !== null ? { level } : {}),
+        channels,
+        enforceLocally: rawAnonymization.enforceLocally === true,
+      };
     }
   } catch {
     parsed = {};
@@ -125,34 +132,56 @@ async function primeConfigCache(): Promise<AnonymizationConfig> {
   return configCache;
 }
 
-// Effective global anonymization level: env var > deprecated env var > config > CI default
-export async function getAnonymizationLevel(): Promise<AnonymizationLevel> {
+// Shared resolution: env var is absolute (explicitly setting it locally works, "off" disables
+// everything including channel raises). Without env var, the config file and the "standard"
+// default only apply to CI runs, unless the config sets enforceLocally: local logs and reports
+// must keep full information by default.
+function computeLevel(
+  config: AnonymizationConfig,
+  isCiRun: boolean,
+  channel: AnonymizationChannel | null
+): AnonymizationLevel {
   const envLevel = getEnvLevel();
-  if (envLevel !== null) {
-    return envLevel;
+  if (envLevel === 'off') {
+    return 'off';
   }
+  const applies = isCiRun || config.enforceLocally === true || envLevel !== null;
+  if (!applies) {
+    return 'off';
+  }
+  const base = envLevel ?? config.level ?? 'standard';
+  if (channel !== null) {
+    return maxLevel(base, config.channels?.[channel] || 'off');
+  }
+  return base;
+}
+
+// Effective global anonymization level: env var (absolute) > config file (CI runs only,
+// unless enforceLocally) > default (standard in CI, off locally).
+// isCiRun is overridable for tests only.
+export async function getAnonymizationLevel(isCiRun: boolean = isCI): Promise<AnonymizationLevel> {
   const config = await primeConfigCache();
-  if (config.level) {
-    return config.level;
-  }
-  return isCI ? 'standard' : 'off';
+  return computeLevel(config, isCiRun, null);
 }
 
 // Per-channel effective level: a channel can only raise the level above the global one,
 // never lower it (the data source is anonymized once, so a channel cannot get rawer data).
-export async function getChannelAnonymizationLevel(channel: AnonymizationChannel): Promise<AnonymizationLevel> {
-  const globalLevel = await getAnonymizationLevel();
+export async function getChannelAnonymizationLevel(
+  channel: AnonymizationChannel,
+  isCiRun: boolean = isCI
+): Promise<AnonymizationLevel> {
   const config = await primeConfigCache();
-  return maxLevel(globalLevel, config.channels?.[channel] || 'off');
+  return computeLevel(config, isCiRun, channel);
 }
 
 // Sync best-effort variant for synchronous call sites (console tables): uses the env vars,
 // the already-primed config cache when available, and the CI default. Chokepoints that can
 // await (file generation, notifications) use the exact async resolution above.
-export function getChannelAnonymizationLevelSync(channel: AnonymizationChannel): AnonymizationLevel {
-  const envLevel = getEnvLevel();
-  const globalLevel = envLevel !== null ? envLevel : configCache?.level || (isCI ? 'standard' : 'off');
-  return maxLevel(globalLevel, configCache?.channels?.[channel] || 'off');
+export function getChannelAnonymizationLevelSync(
+  channel: AnonymizationChannel,
+  isCiRun: boolean = isCI
+): AnonymizationLevel {
+  return computeLevel(configCache || {}, isCiRun, channel);
 }
 
 // One-shot notice so chokepoints can inform the user that anonymization is active
@@ -165,9 +194,10 @@ export function consumeAnonymizationNotice(effectiveLevel: AnonymizationLevel): 
   return { legacyEnvVarUsed };
 }
 
-// Test helper: reset module state between test cases
-export function resetAnonymizationCache(): void {
-  configCache = null;
+// Test helper: reset module state between test cases. An optional config can be injected
+// to test the config-file resolution without writing a .sfdx-hardis.yml file.
+export function resetAnonymizationCache(testConfig: AnonymizationConfig | null = null): void {
+  configCache = testConfig;
   legacyEnvVarUsed = false;
   noticeEmitted = false;
   registeredSalt = null;

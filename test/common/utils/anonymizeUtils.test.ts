@@ -62,6 +62,44 @@ describe('anonymizeUtils', () => {
       assert.equal(await getChannelAnonymizationLevel('email'), 'strict');
       assert.equal(await getChannelAnonymizationLevel('messaging'), 'strict');
     });
+
+    it('defaults to standard in CI and off in local runs', async () => {
+      resetAnonymizationCache({});
+      assert.equal(await getAnonymizationLevel(true), 'standard');
+      assert.equal(await getAnonymizationLevel(false), 'off');
+    });
+
+    it('ignores the config file in local runs unless enforceLocally is set', async () => {
+      // An admin-committed strict config must not anonymize local logs and reports
+      resetAnonymizationCache({ level: 'strict', channels: { email: 'strict' } });
+      assert.equal(await getAnonymizationLevel(false), 'off');
+      assert.equal(await getChannelAnonymizationLevel('email', false), 'off');
+      // The same config applies to CI runs
+      assert.equal(await getAnonymizationLevel(true), 'strict');
+      // enforceLocally makes local runs behave like CI runs
+      resetAnonymizationCache({ level: 'strict', channels: {}, enforceLocally: true });
+      assert.equal(await getAnonymizationLevel(false), 'strict');
+    });
+
+    it('applies config channel raises in CI', async () => {
+      resetAnonymizationCache({ level: 'standard', channels: { email: 'strict' } });
+      assert.equal(await getChannelAnonymizationLevel('email', true), 'strict');
+      assert.equal(await getChannelAnonymizationLevel('messaging', true), 'standard');
+    });
+
+    it('env var off disables everything, including config channel raises', async () => {
+      process.env.SFDX_HARDIS_ANONYMIZE = 'off';
+      resetAnonymizationCache({ level: 'strict', channels: { email: 'strict' }, enforceLocally: true });
+      assert.equal(await getChannelAnonymizationLevel('email', true), 'off');
+    });
+
+    it('env var set locally enables anonymization without enforceLocally', async () => {
+      process.env.SFDX_HARDIS_ANONYMIZE = 'standard';
+      resetAnonymizationCache({ channels: { email: 'strict' } });
+      assert.equal(await getAnonymizationLevel(false), 'standard');
+      // An explicitly anonymized local run also honors the config channel raises
+      assert.equal(await getChannelAnonymizationLevel('email', false), 'strict');
+    });
   });
 
   describe('buildPseudonym', () => {

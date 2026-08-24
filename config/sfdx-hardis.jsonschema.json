@@ -517,7 +517,7 @@
       "properties": {
         "level": {
           "$id": "#/properties/anonymization/properties/level",
-          "description": "Global anonymization level applied to generated report files and every notification channel",
+          "description": "Global anonymization level applied to generated report files and every notification channel.\nApplied to CI runs only, unless enforceLocally is true.",
           "enum": [
             "off",
             "standard",
@@ -525,6 +525,13 @@
           ],
           "title": "Anonymization level",
           "type": "string"
+        },
+        "enforceLocally": {
+          "$id": "#/properties/anonymization/properties/enforceLocally",
+          "default": false,
+          "description": "By default this configuration only applies to CI runs: local runs keep full information in logs and reports. Set to true to enforce the configured anonymization in local runs too.",
+          "title": "Enforce anonymization in local runs",
+          "type": "boolean"
         },
         "channels": {
           "$id": "#/properties/anonymization/properties/channels",
