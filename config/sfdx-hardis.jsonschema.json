@@ -1058,7 +1058,7 @@
           },
           "customUsername": {
             "$id": "#/properties/commandsPostDeploy/items/properties/customUsername",
-            "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the Connected App used by deployment user.",
+            "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the External Client App used by deployment user.",
             "title": "Custom Username",
             "type": "string"
           }
@@ -1299,7 +1299,7 @@
           },
           "customUsername": {
             "$id": "#/properties/commandsPostDeploy/items/properties/customUsername",
-            "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the Connected App used by deployment user.",
+            "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the External Client App used by deployment user.",
             "title": "Custom Username",
             "type": "string"
           }

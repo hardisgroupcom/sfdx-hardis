@@ -290,7 +290,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         throw new SfError(
           `In CI context, you may define:
                 - a .sfdx-hardis.yml file with instanceUrl and targetUsername properties (or INSTANCE_URL and TARGET_USERNAME repo variables)
-                - a repository secret variable SFDX_CLIENT_ID with consumer key of SF CLI connected app
+                - a repository secret variable SFDX_CLIENT_ID with consumer key of the SF CLI External Client App
                 - store server.key file within ssh folder
                 `
         );
@@ -452,7 +452,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
       c.red(
         `[sfdx-hardis] You must set env variable ${c.bold(
           sfdxClientIdVarNameUpper
-        )} with the Consumer Key value defined on SFDX Connected app`
+        )} with the Consumer Key value defined on the SFDX External Client App`
       )
     );
     console.warn(c.yellow(`If you configured ${sfdxClientIdVarNameUpper} but still see this message, you may have forgotten to reference the variable name in your GitHub or Azure YML pipeline.`));

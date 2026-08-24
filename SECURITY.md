@@ -84,7 +84,7 @@ Note: anonymization only applies to new entries. Entries sent before enabling it
 
 ## Credentials
 
-- Authentication between sfdx-hardis and Salesforce orgs is performed using the official Salesforce CLI mechanisms. In CI/CD, a Connected App is created during configuration: each connection requires 2 secured environment variables, one with the Connected App Client Id, and one used to decrypt "on the fly" an encrypted self-signed certificate stored in the repository.
+- Authentication between sfdx-hardis and Salesforce orgs is performed using the official Salesforce CLI mechanisms. In CI/CD, an External Client App (the type Salesforce now recommends, replacing Connected Apps) is created during configuration: each connection requires 2 secured environment variables, one with the External Client App Consumer Key, and one used to decrypt "on the fly" an encrypted self-signed certificate stored in the repository.
 - Integration tokens (Slack, email, API endpoints, LLM API keys...) are provided by you as CI/CD variables and are only used to call the services they belong to.
 - Values logged as sensitive are obfuscated in log files.
 

@@ -1835,10 +1835,10 @@ export async function generateSSLCertificate(
   await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
   // delete temporary cert folder
   await fs.remove(tmpDir);
-  // Generate random consumer key for Connected app
+  // Generate random consumer key for the External Client App
   const consumerKey = crypto.randomBytes(256).toString('base64').substr(0, 119);
 
-  // Ask user if he/she wants to create connected app
+  // Ask user if he/she wants to create the External Client App
   const confirmResponse = await prompts({
     type: 'confirm',
     name: 'value',
