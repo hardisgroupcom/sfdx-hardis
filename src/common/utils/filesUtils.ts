@@ -1524,6 +1524,9 @@ export interface ExcelExportOptions {
   autoWrapWidth?: number;
   // Maximum row height (in points) for auto-wrapped columns, so tall cells stay bounded. Default 150.
   autoWrapMaxHeight?: number;
+  // Turn every cell whose whole content is a URL into a clickable hyperlink (on by default).
+  // Set to false to keep the URLs as plain text; columns with hyperlinkFromValue stay clickable.
+  autoHyperlinks?: boolean;
 }
 
 // The VS Code UI never renders more than UX_LOG_TABLE_MAX_UI_ROWS rows of a table sent by uxLogTable.
@@ -1797,6 +1800,8 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
 
   const columnStylePreferences = new Map<string, ExcelColumnStyle>();
   const columnMaxHeightConstraints = new Map<number, number>();
+  // Columns whose URLs must be clickable even when autoHyperlinks is turned off
+  const forcedHyperlinkColumns = new Set<number>();
   // Set to true when at least one column gets auto-wrapped, so we can top-align the whole sheet
   // afterwards (short cells otherwise float at the bottom of rows made tall by a wrapped neighbor).
   let sheetDidAutoWrap = false;
@@ -1958,22 +1963,21 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
       });
     }
 
-    if (stylePreferences?.hyperlinkFromValue) {
-      column.eachCell?.({ includeEmpty: true }, (cell) => {
-        const hyperlinkTarget = extractHyperlinkTarget(cell);
-        if (!hyperlinkTarget) {
-          return;
-        }
-        const textValue = cell.text?.trim() || hyperlinkTarget;
-        cell.value = { text: textValue, hyperlink: hyperlinkTarget };
-        cell.font = { ...(cell.font || {}), color: { argb: 'FF0563C1' }, underline: true };
-      });
+    if (stylePreferences?.hyperlinkFromValue && columnNumber) {
+      forcedHyperlinkColumns.add(columnNumber);
     }
 
     if (stylePreferences?.maxHeight && columnNumber) {
       columnMaxHeightConstraints.set(columnNumber, stylePreferences.maxHeight);
     }
   });
+
+  // A URL is only useful in a spreadsheet if it can be clicked
+  if (options?.autoHyperlinks !== false) {
+    linkifyWorksheetUrls(worksheet);
+  } else if (forcedHyperlinkColumns.size > 0) {
+    linkifyWorksheetUrls(worksheet, forcedHyperlinkColumns);
+  }
 
   if (sheetDidAutoWrap) {
     // A wrapped column makes its row tall. Cells in the other columns default to bottom alignment,
@@ -2024,18 +2028,57 @@ export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: 
   }
 }
 
+// Excel refuses to open a worksheet holding more than 65,530 hyperlinks, and truncates a link target
+// past 2084 characters. Beyond those limits the URLs stay plain text rather than break the file.
+const MAX_WORKSHEET_HYPERLINKS = 65000;
+const MAX_HYPERLINK_LENGTH = 2000;
+
+/**
+ * Turns every cell whose whole content is a URL into a clickable hyperlink, so that the URL columns
+ * of any generated report (release notes, monitoring, documentation...) can be clicked instead of
+ * being copy-pasted. Pass onlyColumns to restrict the conversion to some column numbers.
+ * Returns the number of converted cells.
+ */
+export function linkifyWorksheetUrls(worksheet: ExcelJS.Worksheet, onlyColumns?: Set<number>): number {
+  let linkCount = 0;
+  worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    // Row 1 holds the column names, not data
+    if (rowNumber === 1 || !row || linkCount >= MAX_WORKSHEET_HYPERLINKS) {
+      return;
+    }
+    row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+      if (linkCount >= MAX_WORKSHEET_HYPERLINKS || (onlyColumns && !onlyColumns.has(colNumber))) {
+        return;
+      }
+      const hyperlinkTarget = extractHyperlinkTarget(cell);
+      if (!hyperlinkTarget) {
+        return;
+      }
+      cell.value = { text: cell.text?.trim() || hyperlinkTarget, hyperlink: hyperlinkTarget };
+      cell.font = { ...(cell.font || {}), color: { argb: 'FF0563C1' }, underline: true };
+      linkCount++;
+    });
+  });
+  if (linkCount >= MAX_WORKSHEET_HYPERLINKS) {
+    uxLog("log", this, c.grey(`[XLSX] Worksheet ${worksheet.name}: only the first ${MAX_WORKSHEET_HYPERLINKS} URLs were made clickable (Excel limit), the next ones stay as text.`));
+  }
+  return linkCount;
+}
+
 function extractHyperlinkTarget(cell: ExcelJS.Cell): string | null {
   const rawValue = typeof cell.value === 'string' ? cell.value : cell.text;
-  if (!rawValue) {
+  if (!rawValue || typeof rawValue !== 'string') {
     return null;
   }
   const trimmed = rawValue.trim();
-  if (!trimmed) {
+  if (!trimmed || trimmed.length > MAX_HYPERLINK_LENGTH) {
     return null;
   }
   return isLikelyHyperlink(trimmed) ? trimmed : null;
 }
 
+// The whole cell must be a single URL: a URL sitting inside a sentence, or one of several URLs
+// listed in the same cell, can not be turned into an Excel hyperlink without losing the rest.
 function isLikelyHyperlink(value: string): boolean {
-  return /^(https?:\/\/|mailto:)/i.test(value);
+  return /^(https?:\/\/|mailto:)\S+$/i.test(value);
 }

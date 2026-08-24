@@ -2,6 +2,13 @@
 
 ## [beta] (main)
 
+### Core
+
+- **URLs are clickable in every generated XLSX file**: a cell whose whole content is a URL (`http`, `https` or `mailto`) now becomes a real Excel hyperlink, so the URL columns of the release notes, the monitoring reports and the project documentation can be clicked instead of copy-pasted. A URL sitting inside a sentence, or several URLs listed in the same cell, stay as text since Excel allows one link per cell.
+- **Every JIRA credential found in the variables is now tried**: only the first one was used, so a job with several credentials set (like the ones sent by the VS Code extension) could be stuck on a refused one and leave every ticket without title nor status. `JIRA_CLIENT_ID` + `JIRA_CLIENT_SECRET`, `JIRA_PAT` and `JIRA_EMAIL` + `JIRA_TOKEN` are now tried one after the other until one answers, and that one is kept for the rest of the run. On a JIRA Server / Data Center host `JIRA_PAT` comes first, since a Personal Access Token sent with Basic Auth is refused with a 401 there.
+- **Progress bar while collecting ticket information**: the JIRA and Azure Boards providers make one call per ticket and logged one line each, so a release covering 33 tickets pushed 33 lines into the VS Code UI. A progress bar shows instead, and the per-ticket lines stay in the console and the log file.
+- Fixed JIRA authentication failures passing unnoticed: the release notes and the Pull Request comments now warn that the tickets will have no title nor status when no credential works.
+
 ## [8.1.0] 2026-08-23
 
 ### Core
