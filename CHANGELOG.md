@@ -2,6 +2,11 @@
 
 ## [beta] (main)
 
+### Core
+
+- **Every JIRA credential found in the variables is now tried**: only the first one was used, so a job with several credentials set (like the ones sent by the VS Code extension) could be stuck on a refused one and leave every ticket without title nor status. `JIRA_CLIENT_ID` + `JIRA_CLIENT_SECRET`, `JIRA_PAT` and `JIRA_EMAIL` + `JIRA_TOKEN` are now tried one after the other until one answers, and that one is kept for the rest of the run. On a JIRA Server / Data Center host `JIRA_PAT` comes first, since a Personal Access Token sent with Basic Auth is refused with a 401 there.
+- Fixed JIRA authentication failures passing unnoticed: the release notes and the Pull Request comments now warn that the tickets will have no title nor status when no credential works.
+
 ## [8.1.0] 2026-08-23
 
 ### Core

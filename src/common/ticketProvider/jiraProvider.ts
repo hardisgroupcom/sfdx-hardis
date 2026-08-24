@@ -10,12 +10,25 @@ import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
 import { t } from '../utils/i18n.js';
 import { httpGet, httpPost } from "../utils/httpUtils.js";
 
+// One way of authenticating to JIRA. The client is built lazily, so that a refused credential can
+// be replaced by the next one without paying for the ones that are never used.
+type JiraAuth = {
+  logMessage: string;
+  label: string;
+  buildClient: () => Promise<Version2Client | Version3Client | null>;
+  // The Atlassian API gateway answers 404, not 401, when the OAuth2 app cannot see the site
+  notFoundMeansRefused?: boolean;
+};
+
 export class JiraProvider extends TicketProviderRoot {
   // Version3Client for Jira Cloud, Version2Client for Jira Server / Data Center
   private jiraClient: Version2Client | Version3Client | null = null;
   private jiraHost: string | null = null;
-  private clientCredentialsEnabled = false;
-  private clientCredentialsInitialized = false;
+  // Credentials not tried yet, in order of relevance for the host: consumed by useNextAuth()
+  private nextAuths: JiraAuth[] = [];
+  private activeAuth: JiraAuth | null = null;
+  // Set as soon as a call answers: the current credential is the right one, stop switching
+  private authValidated = false;
 
   constructor(config: any) {
     super();
@@ -23,33 +36,108 @@ export class JiraProvider extends TicketProviderRoot {
     const sanitizedHost = rawHost.startsWith("http") ? rawHost : `https://${rawHost}`;
     this.jiraHost = sanitizedHost.replace(/\/$/, "");
     // Client Credentials (Jira Cloud only - uses Atlassian OAuth2 API)
-    if (getEnvVar("JIRA_CLIENT_ID") && getEnvVar("JIRA_CLIENT_SECRET")) {
-      this.isActive = true;
-      this.clientCredentialsEnabled = true;
-      uxLog("log", this, c.grey("[JiraProvider] Using JIRA_CLIENT_ID and JIRA_CLIENT_SECRET for authentication"));
-    }
+    const clientCredentialsAuth: JiraAuth | null = getEnvVar("JIRA_CLIENT_ID") && getEnvVar("JIRA_CLIENT_SECRET")
+      ? {
+        logMessage: "Using JIRA_CLIENT_ID and JIRA_CLIENT_SECRET for authentication",
+        label: "JIRA_CLIENT_ID + JIRA_CLIENT_SECRET",
+        buildClient: () => this.buildClientCredentialsClient(),
+        notFoundMeansRefused: true,
+      }
+      : null;
     // Basic Auth (email + API token for Cloud, username + password for Server/DC)
-    else if (getEnvVar("JIRA_EMAIL") && getEnvVar("JIRA_TOKEN")) {
-      const authConfig = {
-        basic: {
-          email: getEnvVar("JIRA_EMAIL") || "",
-          apiToken: getEnvVar("JIRA_TOKEN") || "",
-        },
-      };
-      this.jiraClient = this.createJiraClient(authConfig);
-      this.isActive = true;
-      uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderAuthEmailToken')));
+    const basicAuth = getEnvVar("JIRA_EMAIL") && getEnvVar("JIRA_TOKEN")
+      ? {
+        logMessage: t('jiraProviderAuthEmailToken'),
+        label: "JIRA_EMAIL + JIRA_TOKEN",
+        buildClient: async () => this.createJiraClient({ basic: { email: getEnvVar("JIRA_EMAIL") || "", apiToken: getEnvVar("JIRA_TOKEN") || "" } }),
+      }
+      : null;
+    // Personal access token, sent as a Bearer header
+    const patAuth = getEnvVar("JIRA_PAT")
+      ? {
+        logMessage: t('jiraProviderAuthPat'),
+        label: "JIRA_PAT",
+        buildClient: async () => this.createJiraClient({ oauth2: { accessToken: getEnvVar("JIRA_PAT") || "" } }),
+      }
+      : null;
+    // Every credential found in the variables is kept, so that a refused one can be replaced by the
+    // next one. Jira Server / Data Center answers 401 when a Personal Access Token is sent with
+    // Basic Auth: it only accepts it as a Bearer header, so JIRA_PAT is tried first there. Jira
+    // Cloud API tokens are made for Basic Auth, so that one keeps the priority on Cloud hosts.
+    const hostAuths = this.isJiraCloud() ? [basicAuth, patAuth] : [patAuth, basicAuth];
+    for (const auth of [clientCredentialsAuth, ...hostAuths]) {
+      if (auth) {
+        this.nextAuths.push(auth);
+        this.isActive = true;
+      }
     }
-    // Personal access token
-    else if (getEnvVar("JIRA_PAT")) {
-      const authConfig = {
-        oauth2: {
-          accessToken: getEnvVar("JIRA_PAT") || "",
-        },
-      };
-      this.jiraClient = this.createJiraClient(authConfig);
-      this.isActive = true;
-      uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderAuthPat')));
+  }
+
+  /** Activates the next credential that has not been tried yet */
+  private async useNextAuth(): Promise<void> {
+    const auth = this.nextAuths.shift();
+    if (!auth) {
+      return;
+    }
+    uxLog("log", this, c.grey('[JiraProvider] ' + auth.logMessage));
+    this.activeAuth = auth;
+    this.jiraClient = await auth.buildClient();
+  }
+
+  /**
+   * Client Credentials OAuth2 flow (Jira Cloud only): the access token and the cloud id have to be
+   * resolved from the Atlassian API before the client can be built.
+   */
+  private async buildClientCredentialsClient(): Promise<Version3Client | null> {
+    try {
+      const accessToken = await this.getOAuthToken();
+      const cloudId = await this.getCloudId(accessToken);
+      if (!cloudId) {
+        uxLog("error", this, c.yellow("[JiraProvider] Could not resolve Cloud ID for JIRA_HOST from accessible resources."));
+        return null;
+      }
+      // Client Credentials always target Jira Cloud via the Atlassian API gateway
+      return new Version3Client({
+        host: `https://api.atlassian.com/ex/jira/${cloudId}`,
+        authentication: { oauth2: { accessToken: accessToken } },
+      });
+    } catch (e: any) {
+      uxLog("error", this, c.yellow(`[JiraProvider] Error initializing OAuth2 client: ${e.message}`));
+      return null;
+    }
+  }
+
+  /**
+   * Runs a JIRA API call. If the credentials are refused, retries with the next available one and
+   * keeps it for all the following calls (same fallback as the VsCode extension).
+   */
+  private async runJiraCall<T>(call: (client: Version2Client) => Promise<T>): Promise<T> {
+    for (;;) {
+      const client = await this.getJiraClient();
+      if (!client) {
+        throw new SfError("No JIRA credential left to try");
+      }
+      try {
+        const result = await call(client as Version2Client);
+        this.authValidated = true;
+        return result;
+      } catch (e) {
+        // Only a 401 means the credential itself is refused: a 403 or a 404 is about permissions
+        // or a missing ticket, and another credential would not do better. The exception is the
+        // Atlassian API gateway, which answers 404 when the OAuth2 app cannot see the site.
+        const status = (e as any)?.response?.status;
+        const isAuthError = status === 401
+          || (e as Error).message?.includes("status code 401")
+          || (status === 404 && this.activeAuth?.notFoundMeansRefused === true);
+        if (this.authValidated || !isAuthError || this.nextAuths.length === 0) {
+          throw e;
+        }
+        uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderAuthFallback', {
+          next: this.nextAuths[0].label,
+          message: (e as Error).message,
+        })));
+        this.jiraClient = null; // Next loop turn activates the next credential
+      }
     }
   }
 
@@ -110,36 +198,12 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   private async getJiraClient(): Promise<Version2Client | Version3Client | null> {
-    if (this.jiraClient) {
-      return this.jiraClient;
-    }
     if (!this.isActive) {
       return null;
     }
-    // Client Credentials OAuth2 flow (Jira Cloud only)
-    if (this.clientCredentialsEnabled && !this.clientCredentialsInitialized) {
-      try {
-        const accessToken = await this.getOAuthToken();
-        const cloudId = await this.getCloudId(accessToken);
-
-        if (cloudId) {
-          // Client Credentials always target Jira Cloud via the Atlassian API gateway
-          this.jiraClient = new Version3Client({
-            host: `https://api.atlassian.com/ex/jira/${cloudId}`,
-            authentication: {
-              oauth2: {
-                accessToken: accessToken,
-              },
-            },
-          });
-        } else {
-          uxLog("error", this, c.yellow("[JiraProvider] Could not resolve Cloud ID for JIRA_HOST from accessible resources."));
-        }
-      } catch (e: any) {
-        uxLog("error", this, c.yellow(`[JiraProvider] Error initializing OAuth2 client: ${e.message}`));
-      } finally {
-        this.clientCredentialsInitialized = true;
-      }
+    // Take the credentials one after the other until one of them gives a client
+    while (!this.jiraClient && this.nextAuths.length > 0) {
+      await this.useNextAuth();
     }
     return this.jiraClient;
   }
@@ -223,10 +287,16 @@ export class JiraProvider extends TicketProviderRoot {
 
   public async collectTicketsInfo(tickets: Ticket[]) {
     const activeClient = await this.getJiraClient();
+    const jiraTicketsNumber = tickets.filter((ticket) => ticket.provider === "JIRA").length;
     if (!activeClient) {
+      // No credential could even build a client: say it, else the tickets would just come back
+      // without title nor status and nothing would tell why.
+      if (jiraTicketsNumber > 0) {
+        uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderNoUsableCredential')));
+        recordTicketCollectionIssue(`No usable JIRA credential: details could not be retrieved for ${jiraTicketsNumber} JIRA ticket(s). Check the JIRA authentication of the CI job.`);
+      }
       return tickets;
     }
-    const jiraTicketsNumber = tickets.filter((ticket) => ticket.provider === "JIRA").length;
     if (jiraTicketsNumber > 0) {
       uxLog(
         "action",
@@ -241,9 +311,7 @@ export class JiraProvider extends TicketProviderRoot {
         let ticketInfo: any = null;
         let errorCaught = false;
         try {
-          // Cast needed: Version2Client and Version3Client share the same method signature,
-          // but TypeScript cannot resolve the union of their overloaded signatures.
-          ticketInfo = await (activeClient as Version2Client).issues.getIssue({ issueIdOrKey: ticket.id });
+          ticketInfo = await this.runJiraCall((client) => client.issues.getIssue({ issueIdOrKey: ticket.id }));
         } catch (e) {
           // A single aggregated warning is displayed after the loop: per-ticket failures usually
           // share the same cause (expired token, missing permission) and would flood the log.
@@ -360,10 +428,8 @@ export class JiraProvider extends TicketProviderRoot {
             prAuthor,
           );
         // Post comment
-        // Cast needed: Version2Client and Version3Client share the same method signature,
-        // but TypeScript cannot resolve the union of their overloaded signatures.
         try {
-          const commentPostRes = await (activeClient as Version2Client).issueComments.addComment({ issueIdOrKey: ticket.id, comment: jiraComment });
+          const commentPostRes = await this.runJiraCall((client) => client.issueComments.addComment({ issueIdOrKey: ticket.id, comment: jiraComment }));
           if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
             throw new SfError(genericHtmlResponseError);
           }
@@ -374,12 +440,12 @@ export class JiraProvider extends TicketProviderRoot {
 
         // Add deployment label to JIRA ticket
         try {
-          await (activeClient as Version2Client).issues.editIssue({
+          await this.runJiraCall((client) => client.issues.editIssue({
             issueIdOrKey: ticket.id,
             update: {
               labels: [{ add: tag }],
             },
-          });
+          }));
           taggedTickets.push(ticket);
         } catch (e6) {
           if ((e6 as any).message != null && (e6 as any).message.includes("<!doctype html>")) {
