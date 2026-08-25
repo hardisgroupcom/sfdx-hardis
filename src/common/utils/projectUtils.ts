@@ -18,6 +18,12 @@ export const GLOB_IGNORE_PATTERNS = [
   '**/.vscode/**',
 ];
 
+// Use when a glob is scoped to a package directory (force-app and friends), not to the repository root.
+// node_modules, .git, logs & co live at the repository root, so ignoring them there is useless: glob tests
+// every ignore pattern against every walked path, which makes a pattern that never matches pure overhead.
+// Only node_modules is kept, for the projects that hold a JS bundle inside a package directory.
+export const PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS = ['**/node_modules/**'];
+
 export const METADATA_DOC_GLOB_IGNORE_PATTERNS = [
   ...GLOB_IGNORE_PATTERNS,
   '**/staticresources/**',
