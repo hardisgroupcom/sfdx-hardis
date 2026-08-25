@@ -2075,6 +2075,8 @@
   "monitoringBackupSkipMetadataTypesFound": "環境変数 MONITORING_BACKUP_SKIP_METADATA_TYPES が見つかりました。{{types}} メタデータタイプをスキップして {{packageXmlFullFile}} の内容を削減します",
   "monitoringCommandDescAgentTests": "org内のすべてのAgentforce agent tests（AiEvaluationDefinition）を実行し、各テストケースの合格 / 不合格の結果を報告します。",
   "monitoringCommandTitleAgentTests": "Agent tests",
+  "monitoringFrequencyGatingActive": "実行頻度フィルターが有効です: 本日は {{date}} です。本日に一致しない頻度のコマンドはスキップされます。",
+  "monitoringFrequencyGatingForced": "{{source}} により実行頻度フィルターが無効になっています: 設定された頻度に関係なく、すべての監視コマンドが本日 ({{date}}) 実行されます。",
   "monitoringHealthScoreComputed": "組織のヘルススコア: {{score}}/100",
   "monitoringNotifReadError": "監視通知ファイル {{file}} の読み取りに失敗しました: {{message}}",
   "monitoringNotifWriteError": "監視通知ファイルの書き込みに失敗しました: {{message}}",

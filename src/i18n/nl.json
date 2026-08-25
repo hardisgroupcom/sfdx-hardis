@@ -2077,6 +2077,8 @@
   "monitoringBackupSkipMetadataTypesFound": "MONITORING_BACKUP_SKIP_METADATA_TYPES omgevingsvariabele gevonden, ook de inhoud van {{packageXmlFullFile}} verminderen door {{types}} metadatatypes over te slaan",
   "monitoringCommandDescAgentTests": "Voert alle Agentforce agent tests (AiEvaluationDefinition) in de org uit en rapporteert geslaagd/mislukt-resultaten voor elk testgeval.",
   "monitoringCommandTitleAgentTests": "Agent tests",
+  "monitoringFrequencyGatingActive": "Frequentiefilter actief: vandaag is het {{date}}. Commando's waarvan de frequentie niet overeenkomt met vandaag worden overgeslagen.",
+  "monitoringFrequencyGatingForced": "Frequentiefilter uitgeschakeld door {{source}}: alle monitoringcommando's worden vandaag ({{date}}) uitgevoerd, ongeacht hun geconfigureerde frequentie.",
   "monitoringHealthScoreComputed": "Org-gezondheidsscore: {{score}}/100",
   "monitoringNotifReadError": "Monitoringmeldingsbestand {{file}} kon niet worden gelezen: {{message}}",
   "monitoringNotifWriteError": "Monitoringmeldingsbestand kon niet worden geschreven: {{message}}",

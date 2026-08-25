@@ -2081,6 +2081,8 @@
   "monitoringBackupSkipMetadataTypesFound": "MONITORING_BACKUP_SKIP_METADATA_TYPES env var found, also reducing the content of {{packageXmlFullFile}} by skipping {{types}} metadata types",
   "monitoringCommandDescAgentTests": "Run all Agentforce agent tests (AiEvaluationDefinition) in the org and report pass / fail results for each test case.",
   "monitoringCommandTitleAgentTests": "Agent tests",
+  "monitoringFrequencyGatingActive": "Frequency gating active: today is {{date}}. Commands whose frequency does not match today are skipped.",
+  "monitoringFrequencyGatingForced": "Frequency gating disabled by {{source}}: every monitoring command runs today ({{date}}), whatever its configured frequency.",
   "monitoringHealthScoreComputed": "Org health score: {{score}}/100",
   "monitoringNotifReadError": "Failed to read monitoring notification file {{file}}: {{message}}",
   "monitoringNotifWriteError": "Failed to write monitoring notification file: {{message}}",

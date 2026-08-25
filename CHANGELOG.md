@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/) now states whether frequency gating is active or forced, and lists skipped commands with their frequency in the run summary.
+
 ## [8.2.0] 2026-08-25
 
 - Personal data is now anonymized in all reports, notifications, and monitoring output when running in CI - see [Security & Privacy](https://sfdx-hardis.cloudity.com/salesforce-security-privacy/#data-anonymization) for details.
