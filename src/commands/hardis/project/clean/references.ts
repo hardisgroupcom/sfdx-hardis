@@ -26,6 +26,26 @@ import CleanSystemDebug from './systemdebug.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 
+// Every cleaning type that can be requested with --type, on top of "all". Holds one entry per entry of
+// allCleaningTypes below, which carries the label and the command class of each: a test checks both lists
+// stay in sync, as several cleaning types used to be missing here and were not selectable at all
+const CLEANING_TYPES = [
+  'caseentitlement',
+  'checkPermissions',
+  'dashboards',
+  'datadotcom',
+  'destructivechanges',
+  'entitlement',
+  'flowPositions',
+  'listViewsMine',
+  'localfields',
+  'minimizeProfiles',
+  'productrequest',
+  'sensitiveMetadatas',
+  'systemDebug',
+  'v60',
+];
+
 // A cleaning sub-command, called in the current process. Only its static run() is needed here, and the
 // union of the concrete command classes is not assignable to a single one of them, hence this narrow type
 type CleaningCommandClass = { run: (argv: string[], config: any) => Promise<any> };
@@ -99,19 +119,7 @@ The command's technical implementation involves several steps:
     type: Flags.string({
       char: 't',
       description: 'Cleaning type',
-      options: [
-        'all',
-        'caseentitlement',
-        'dashboards',
-        'datadotcom',
-        'destructivechanges',
-        'localfields',
-        'productrequest',
-        'entitlement',
-        'flowPositions',
-        'sensitiveMetadatas',
-        'minimizeProfiles'
-      ],
+      options: ['all', ...CLEANING_TYPES],
     }),
     config: Flags.string({
       char: 'c',

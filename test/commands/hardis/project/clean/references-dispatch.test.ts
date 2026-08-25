@@ -48,6 +48,14 @@ function buildAutoLayoutFlow(label: string): string {
 `;
 }
 
+const APEX_WITH_DEBUG = [
+  'public with sharing class DispatchSample {',
+  '  public static void hello() {',
+  "    System.debug('hello');",
+  '  }',
+  '}',
+].join('\n');
+
 const FLOW_NAMES = ['Dispatch_Flow_One', 'Dispatch_Flow_Two'];
 const UNCLEANED_POSITIONS = ['<locationX>176</locationX>', '<locationY>323</locationY>'];
 const CLEANED_POSITIONS = ['<locationX>0</locationX>', '<locationY>0</locationY>'];
@@ -60,6 +68,7 @@ describe('hardis:project:clean:references in-process cleaning dispatch', () => {
   const flowPath = (flowName: string) =>
     path.join(tmpDir, 'force-app', 'main', 'default', 'flows', `${flowName}.flow-meta.xml`);
   const certPath = () => path.join(tmpDir, 'force-app', 'main', 'default', 'certs', 'MyCert.crt');
+  const apexPath = () => path.join(tmpDir, 'force-app', 'main', 'default', 'classes', 'DispatchSample.cls');
 
   async function positionsOf(flowName: string): Promise<string[]> {
     const flowXml = await fs.readFile(flowPath(flowName), 'utf8');
@@ -73,6 +82,7 @@ describe('hardis:project:clean:references in-process cleaning dispatch', () => {
     tmpDir = path.join(tmpRoot, `hardis-dispatch-${process.pid}-${Math.random().toString(36).slice(2, 8)}`);
     await fs.ensureDir(path.join(tmpDir, 'force-app', 'main', 'default', 'flows'));
     await fs.ensureDir(path.join(tmpDir, 'force-app', 'main', 'default', 'certs'));
+    await fs.ensureDir(path.join(tmpDir, 'force-app', 'main', 'default', 'classes'));
     await fs.writeJson(path.join(tmpDir, 'sfdx-project.json'), {
       packageDirectories: [{ path: 'force-app', default: true }],
       namespace: '',
@@ -83,6 +93,7 @@ describe('hardis:project:clean:references in-process cleaning dispatch', () => {
       await fs.writeFile(flowPath(flowName), buildAutoLayoutFlow(flowName));
     }
     await fs.writeFile(certPath(), ['-----BEGIN CERTIFICATE-----', 'SECRET', '-----END CERTIFICATE-----'].join('\n'));
+    await fs.writeFile(apexPath(), APEX_WITH_DEBUG);
     previousCwd = process.cwd();
     process.chdir(tmpDir);
   });
@@ -111,6 +122,17 @@ describe('hardis:project:clean:references in-process cleaning dispatch', () => {
     expect(leftOvers.map((cleaningType: any) => cleaningType.value)).to.deep.equal([]);
   });
 
+  // checkPermissions, listViewsMine, systemDebug and v60 used to be missing from the --type options, so
+  // they could not be requested at all even though they are valid cleaning types
+  it('accepts every cleaning type in --type', () => {
+    const cleaningTypes = (new (CleanReferences as any)([], {}) as any).allCleaningTypes;
+    const typeOptions: string[] = (CleanReferences as any).flags.type.options;
+    expect(typeOptions).to.include('all');
+    expect(typeOptions.filter((option) => option !== 'all').sort()).to.deep.equal(
+      cleaningTypes.map((cleaningType: any) => cleaningType.value).sort()
+    );
+  });
+
   it('runs the Flow positions cleaning on every Flow when no scope is given', async () => {
     await CleanReferences.run(['--type', 'flowPositions', '--agent']);
     for (const flowName of FLOW_NAMES) {
@@ -135,5 +157,11 @@ describe('hardis:project:clean:references in-process cleaning dispatch', () => {
     await CleanReferences.run(['--type', 'sensitiveMetadatas', '--agent']);
     const certContent = await fs.readFile(certPath(), 'utf8');
     expect(certContent).to.not.include('SECRET');
+  });
+
+  it('dispatches a cleaning type that was not selectable before', async () => {
+    await CleanReferences.run(['--type', 'systemDebug', '--agent']);
+    const apexContent = await fs.readFile(apexPath(), 'utf8');
+    expect(apexContent).to.include("// System.debug('hello');");
   });
 });
