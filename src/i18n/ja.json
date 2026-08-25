@@ -3282,7 +3282,6 @@
   "toKnowMoreAboutMonitoring": "監視の詳細については、ドキュメントを参照してください",
   "toPerformImplementationWillYourProjectUse": "実装にスクラッチ組織またはソース追跡対応 Sandbox のみを使用しますか？",
   "tomlFileSplitIntoCsvFiles": "TOML ファイルを CSV ファイルに分割しました",
-  "tooManyFlowsToScopeCleaning": "変更されたフローが {{number}} 件あり、コマンドラインに渡すには多すぎます。すべてのフローをクリーニングします",
   "tooManyResultsIncreaseLimit": "結果が多すぎます。上限の引き上げを検討してください",
   "toolingApiCompositeChunk": "コンポジット削除リクエスト {{current}}/{{total}}（{{count}} 件のレコード）...",
   "toolingApiCompositeFallback": "コンポジット削除リクエストが失敗しました（{{error}}）。個別のレコード削除にフォールバックします（時間はかかりますが動作するはずです）。",

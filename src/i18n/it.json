@@ -3285,7 +3285,6 @@
   "toKnowMoreAboutMonitoring": "Per saperne di più sul monitoraggio, consulta la documentazione",
   "toPerformImplementationWillYourProjectUse": "Per eseguire l'implementazione, il tuo progetto utilizzerà scratch org o solo sandbox con source tracking ?",
   "tomlFileSplitIntoCsvFiles": "File TOML diviso con successo in file CSV",
-  "tooManyFlowsToScopeCleaning": "{{number}} Flow modificati: troppi per la riga di comando, verranno puliti tutti i Flow",
   "tooManyResultsIncreaseLimit": "Troppi risultati, considera di aumentare il limite",
   "toolingApiCompositeChunk": "Richiesta di eliminazione composita {{current}}/{{total}} ({{count}} record)...",
   "toolingApiCompositeFallback": "La richiesta di eliminazione composita è fallita ({{error}}). Passaggio all'eliminazione dei record uno per uno (più lento ma dovrebbe funzionare).",

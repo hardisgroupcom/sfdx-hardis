@@ -4,6 +4,7 @@
 
 - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/) now states whether frequency gating is active or forced, and lists skipped commands with their frequency in the run summary.
 - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) now cleans Flow positions only on the Flows of the git delta, instead of scanning all Flows of the repository.
+- [hardis:project:clean:references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/) now runs its cleanings without starting a new Salesforce CLI process for each one, saving several seconds per cleaning.
 
 ## [8.2.0] 2026-08-25
 

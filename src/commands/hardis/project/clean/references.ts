@@ -6,7 +6,7 @@ import c from 'chalk';
 import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
 import { glob } from 'glob';
-import { createTempDir, execCommand, isCI, removeObjectPropertyLists, uxLog } from '../../../../common/utils/index.js';
+import { createTempDir, isCI, removeObjectPropertyLists, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import {
   parsePackageXmlFile,
@@ -17,14 +17,29 @@ import {
 import { getConfig, setConfig } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { FilterXmlContent } from './filter-xml-content.js';
+import LintAccess from '../../lint/access.js';
+import CleanFlowPositions from './flowpositions.js';
+import CleanListViews from './listviews.js';
+import CleanMinimizeProfiles from './minimizeprofiles.js';
+import CleanSensitiveMetadatas from './sensitive-metadatas.js';
+import CleanSystemDebug from './systemdebug.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 
+// A cleaning sub-command, called in the current process. Only its static run() is needed here, and the
+// union of the concrete command classes is not assignable to a single one of them, hence this narrow type
+type CleaningCommandClass = { run: (argv: string[], config: any) => Promise<any> };
+
+type CleaningType = {
+  value: string;
+  title: string;
+  commandClass?: CleaningCommandClass;
+  // Set when the sub-command accepts --flows, so the cleaning can be restricted to a subset of Flows
+  scopedByFlows?: boolean;
+};
+
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
-
-// Safe upper bound for a sub-command line, below the 8191 characters limit of the Windows shell
-const MAX_COMMAND_LENGTH = 6000;
 
 export default class CleanReferences extends SfCommand<any> {
   public static title = 'Clean references in dx sources';
@@ -128,11 +143,11 @@ The command's technical implementation involves several steps:
 
   protected debugMode = false;
   protected cleaningTypes: any[] = [];
-  protected allCleaningTypes = [
+  protected allCleaningTypes: CleaningType[] = [
     {
       value: 'checkPermissions',
       title: t('cleaningTypeCheckPermissions'),
-      command: 'sf hardis:lint:access',
+      commandClass: LintAccess,
     },
     {
       value: 'dashboards',
@@ -145,24 +160,23 @@ The command's technical implementation involves several steps:
     {
       value: 'flowPositions',
       title: t('cleaningTypeFlowPositions'),
-      command: 'sf hardis:project:clean:flowpositions',
-      // The command accepts --flows, so it can be restricted to the Flows of the current User Story
+      commandClass: CleanFlowPositions,
       scopedByFlows: true,
     },
     {
       value: 'sensitiveMetadatas',
       title: t('cleaningTypeSensitiveMetadatas'),
-      command: 'sf hardis:project:clean:sensitive-metadatas',
+      commandClass: CleanSensitiveMetadatas,
     },
     {
       value: 'listViewsMine',
       title: t('cleaningTypeListViewsMine'),
-      command: 'sf hardis:project:clean:listviews',
+      commandClass: CleanListViews,
     },
     {
       value: 'minimizeProfiles',
       title: t('cleaningTypeMinimizeProfiles'),
-      command: 'sf hardis:project:clean:minimizeprofiles',
+      commandClass: CleanMinimizeProfiles,
     },
     {
       value: 'caseentitlement',
@@ -187,7 +201,7 @@ The command's technical implementation involves several steps:
     {
       value: 'systemDebug',
       title: t('cleaningTypeSystemDebug'),
-      command: 'sf hardis:project:clean:systemdebug',
+      commandClass: CleanSystemDebug,
     },
     {
       value: 'v60',
@@ -255,10 +269,12 @@ The command's technical implementation involves several steps:
       const cleaningTypeObj = this.allCleaningTypes.filter(
         (cleaningTypeObj) => cleaningTypeObj.value === cleaningType
       )[0];
-      if (cleaningTypeObj?.command) {
-        let command = cleaningTypeObj?.command;
+      if (cleaningTypeObj?.commandClass) {
+        // Command based cleaning. The command is called in the current process, not as a `sf` child
+        // process: booting the Salesforce CLI again costs seconds, the cleaning itself milliseconds
+        const commandArgs: string[] = [];
         if (this.argv.indexOf('--websocket') > -1) {
-          command += ` --websocket ${this.argv[this.argv.indexOf('--websocket') + 1]}`;
+          commandArgs.push('--websocket', this.argv[this.argv.indexOf('--websocket') + 1]);
         }
         // Restrict the cleaning to the Flows of the current User Story when the sub-command supports it
         if (this.flowNames !== null && cleaningTypeObj.scopedByFlows) {
@@ -266,21 +282,10 @@ The command's technical implementation involves several steps:
             uxLog("log", this, c.grey(t('skipCleaningNoChangedFlow', { cleaningType: c.bold(cleaningType) })));
             continue;
           }
-          const flowsArg = ` --flows "${this.flowNames.join(',')}"`;
-          // Keep the command line under the Windows 8191 characters limit: clean everything if too long
-          if (command.length + flowsArg.length > MAX_COMMAND_LENGTH) {
-            uxLog("warning", this, c.yellow(t('tooManyFlowsToScopeCleaning', { number: this.flowNames.length })));
-          } else {
-            command += flowsArg;
-          }
+          commandArgs.push('--flows', this.flowNames.join(','));
         }
         uxLog("action", this, c.cyan(t('runCleaningCommand', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));
-        // Command based cleaning
-        await execCommand(command, this, {
-          fail: true,
-          output: true,
-          debug: this.debugMode,
-        });
+        await cleaningTypeObj.commandClass.run(commandArgs, this.config);
       } else {
         // Template based cleaning
         uxLog("action", this, c.cyan(t('applyCleaningOfReferencesTo', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));

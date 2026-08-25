@@ -3289,7 +3289,6 @@
   "toKnowMoreAboutMonitoring": "To know more about monitoring, check the documentation",
   "toPerformImplementationWillYourProjectUse": "To perform implementation, will your project use scratch org or source tracked sandboxes only ?",
   "tomlFileSplitIntoCsvFiles": "TOML file successfully split into CSV files",
-  "tooManyFlowsToScopeCleaning": "{{number}} Flows changed: too many to pass on the command line, all Flows will be cleaned",
   "tooManyResultsIncreaseLimit": "Too many results, consider increasing the limit",
   "toolingApiCompositeChunk": "Composite delete request {{current}}/{{total}} ({{count}} record(s))...",
   "toolingApiCompositeFallback": "Composite deletion request failed ({{error}}). Falling back to unitary record deletion (longer but should work).",

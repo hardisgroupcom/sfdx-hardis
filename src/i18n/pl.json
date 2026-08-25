@@ -3285,7 +3285,6 @@
   "toKnowMoreAboutMonitoring": "Aby dowiedzieć się więcej o monitorowaniu, sprawdź dokumentację",
   "toPerformImplementationWillYourProjectUse": "Czy do implementacji projekt będzie korzystał wyłącznie z Scratch Org lub sandbox ze śledzeniem źródeł ?",
   "tomlFileSplitIntoCsvFiles": "Plik TOML pomyślnie podzielono na pliki CSV",
-  "tooManyFlowsToScopeCleaning": "Zmieniono {{number}} Flow: zbyt wiele dla wiersza poleceń, czyszczone zostaną wszystkie Flow",
   "tooManyResultsIncreaseLimit": "Zbyt wiele wyników, rozważ zwiększenie limitu",
   "toolingApiCompositeChunk": "Złożone żądanie usunięcia {{current}}/{{total}} ({{count}} rekord(ów))...",
   "toolingApiCompositeFallback": "Złożone żądanie usunięcia nie powiodło się ({{error}}). Przechodzenie do usuwania rekordów pojedynczo (wolniejsze, ale powinno działać).",

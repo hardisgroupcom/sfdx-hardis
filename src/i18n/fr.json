@@ -3285,7 +3285,6 @@
   "toKnowMoreAboutMonitoring": "Pour en savoir plus sur la surveillance, consultez la documentation",
   "toPerformImplementationWillYourProjectUse": "Pour réaliser l'implémentation, votre projet utilisera-t-il des scratch orgs ou des sandboxes avec Source Tracking uniquement ?",
   "tomlFileSplitIntoCsvFiles": "Le fichier TOML a été divisé avec succès en fichiers CSV",
-  "tooManyFlowsToScopeCleaning": "{{number}} Flux modifiés : trop nombreux pour la ligne de commande, tous les Flux seront nettoyés",
   "tooManyResultsIncreaseLimit": "Trop de résultats, envisagez d'augmenter la limite",
   "toolingApiCompositeChunk": "Requête de suppression composite {{current}}/{{total}} ({{count}} enregistrement(s))...",
   "toolingApiCompositeFallback": "La requête de suppression composite a échoué ({{error}}). Retour à la suppression unitaire des enregistrements (plus long mais devrait fonctionner).",

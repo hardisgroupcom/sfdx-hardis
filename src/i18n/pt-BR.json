@@ -3253,7 +3253,6 @@
   "toolingApiCompositeChunk": "Solicitação de exclusão composta {{current}}/{{total}} ({{count}} registro(s))...",
   "toolingApiCompositeFallback": "A solicitação de exclusão composta falhou ({{error}}). Voltando para a exclusão unitária de registros (mais lenta, mas deve funcionar).",
   "toolingApiDeletingRecords": "Excluindo {{count}} registro(s) em {{objectName}}: {{ids}}",
-  "tooManyFlowsToScopeCleaning": "{{number}} Fluxos alterados: muitos para a linha de comando, todos os Fluxos serão limpos",
   "tooManyResultsIncreaseLimit": "Muitos resultados, considere aumentar o limite",
   "toPerformImplementationWillYourProjectUse": "Para realizar a implementação, seu projeto usará somente scratch orgs ou sandboxes com rastreamento de origem?",
   "totalKeptEntries": "{{successNb}} entradas mantidas de {{totalNb}} totais",

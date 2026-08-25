@@ -3284,7 +3284,6 @@
   "toKnowMoreAboutMonitoring": "Weitere Informationen zum Monitoring finden Sie in der Dokumentation",
   "toPerformImplementationWillYourProjectUse": "Für die Implementierung: Wird Ihr Projekt scratch orgs oder nur source-tracked Sandboxes verwenden?",
   "tomlFileSplitIntoCsvFiles": "TOML-Datei wurde erfolgreich in CSV-Dateien aufgeteilt",
-  "tooManyFlowsToScopeCleaning": "{{number}} geänderte Flows: zu viele für die Befehlszeile, alle Flows werden bereinigt",
   "tooManyResultsIncreaseLimit": "Zu viele Ergebnisse. Erwägen Sie, das Limit zu erhöhen",
   "toolingApiCompositeChunk": "Composite-Löschanfrage {{current}}/{{total}} ({{count}} Datensatz/Datensätze)...",
   "toolingApiCompositeFallback": "Composite-Löschanfrage fehlgeschlagen ({{error}}). Rückgriff auf die Löschung einzelner Datensätze (dauert länger, sollte aber funktionieren).",
