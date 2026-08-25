@@ -454,37 +454,65 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
   }
 
   public static async findMetaFileFromTypeAndName(packageXmlType: string, packageXmlName: string, packageDirectories: any[] = []) {
+    const metaFiles = await this.findMetaFilesFromTypeAndNames(packageXmlType, [packageXmlName], packageDirectories);
+    return metaFiles.get(packageXmlName) ?? null;
+  }
+
+  // Locates the source file of several metadatas of the same type in a single pass.
+  // Prefer it over findMetaFileFromTypeAndName in a loop: each package directory is walked once for
+  // the whole list, instead of once per metadata name.
+  // Returns a Map of packageXmlName -> source file path, with null when no source file was found.
+  public static async findMetaFilesFromTypeAndNames(packageXmlType: string, packageXmlNames: string[], packageDirectories: any[] = []): Promise<Map<string, string | null>> {
+    const metaFiles = new Map<string, string | null>(packageXmlNames.map(packageXmlName => [packageXmlName, null]));
+    if (metaFiles.size === 0) {
+      return metaFiles;
+    }
     // Handle package directories declared in sfdx-project.json if not provided as input
     if (packageDirectories.length === 0) {
       packageDirectories = await getSfdxProjectPackageDirectories();
     }
-    // Find metadata type from packageXmlName
+    // Find metadata type from packageXmlType
     const metadataList = listMetadataTypes();
     const metadataTypes = metadataList.filter(metadata => metadata.xmlName === packageXmlType);
     if (metadataTypes.length === 0) {
       // Strange, we shouldn't get here, or it means listMetadataTypes content is not up to date
-      return null;
+      return metaFiles;
     }
     const metadataType = metadataTypes[0];
 
-    // Look for matching file in sources
-    const globExpressions = [
-      `**/${metadataType.directoryName}/**/${packageXmlName}.${metadataType.suffix || ""}`, // Works for not-xml files
-      `**/${metadataType.directoryName}/**/${packageXmlName}.${metadataType.suffix || ""}-meta.xml` // Works for all XML files
-    ]
+    // Look for matching files in sources: glob once per package directory, then match file names
+    const fileSuffixes = [
+      `.${metadataType.suffix || ""}`, // Works for not-xml files
+      `.${metadataType.suffix || ""}-meta.xml` // Works for all XML files
+    ];
+    let remainingNamesNb = metaFiles.size;
     for (const packageDirectory of packageDirectories) {
-      for (const globExpression of globExpressions) {
-        const sourceFiles = await glob(globExpression, {
-          cwd: packageDirectory.fullPath,
-          ignore: GLOB_IGNORE_PATTERNS
-        });
-        if (sourceFiles.length > 0) {
-          const metaFile = path.join(packageDirectory.path, sourceFiles[0]);
-          return metaFile.replace(/\\/g, "/");
+      const sourceFiles = await glob(`**/${metadataType.directoryName}/**/*`, {
+        cwd: packageDirectory.fullPath,
+        ignore: GLOB_IGNORE_PATTERNS,
+        nodir: true
+      });
+      // Keep the same priority as a single lookup: not-xml file first, then -meta.xml file
+      for (const fileSuffix of fileSuffixes) {
+        for (const sourceFile of sourceFiles) {
+          const fileName = path.basename(sourceFile);
+          if (!fileName.endsWith(fileSuffix)) {
+            continue;
+          }
+          const packageXmlName = fileName.slice(0, -fileSuffix.length);
+          // Only the first matching file of the first matching package directory is kept
+          if (metaFiles.get(packageXmlName) !== null) {
+            continue;
+          }
+          metaFiles.set(packageXmlName, path.join(packageDirectory.path, sourceFile).replace(/\\/g, "/"));
+          remainingNamesNb--;
+        }
+        if (remainingNamesNb === 0) {
+          return metaFiles;
         }
       }
     }
-    return null;
+    return metaFiles;
   }
 
   public static async promptFlow() {

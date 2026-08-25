@@ -152,9 +152,9 @@ In agent mode, all interactive prompts are skipped and default values are used.
         uxLog("warning", this, c.yellow(t('flowFileNotFoundSkipped', { flowFile })));
       }
     }
-    // Flow API names sent by the caller: locate their source file in the package directories
-    for (const flowName of splitCommaSeparated(flowNames)) {
-      const flowFile = await MetadataUtils.findMetaFileFromTypeAndName('Flow', flowName);
+    // Flow API names sent by the caller: locate their source files in a single pass on the package directories
+    const flowFilesByName = await MetadataUtils.findMetaFilesFromTypeAndNames('Flow', splitCommaSeparated(flowNames));
+    for (const [flowName, flowFile] of flowFilesByName) {
       if (flowFile) {
         selectedFlows.push(flowFile);
       } else {
