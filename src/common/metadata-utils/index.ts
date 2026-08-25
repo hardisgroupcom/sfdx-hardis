@@ -24,9 +24,14 @@ import { GLOB_IGNORE_PATTERNS, METADATA_DOC_GLOB_IGNORE_PATTERNS, getSfdxProject
 import { prompts } from '../utils/prompts.js';
 import { parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { listMetadataTypes } from './metadataList.js';
+import { chunkArray } from './crudMetadataApi.js';
 import { FileStatusResult } from 'simple-git';
-import { glob } from 'glob';
+import { glob, escape as globEscape } from 'glob';
 import { t } from '../utils/i18n.js';
+
+// Maximum number of metadata names matched by a single glob expression, to keep the alternation
+// pattern (and the regular expression built from it) at a reasonable size
+const MAX_GLOB_ALTERNATION_SIZE = 500;
 
 class MetadataUtils {
   // Describe packageXml <=> metadata folder correspondance
@@ -480,32 +485,37 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     }
     const metadataType = metadataTypes[0];
 
-    // Look for matching files in sources: glob once per package directory, then match file names
+    // Look for matching files in sources. The names are matched by the glob expression itself, using an
+    // extglob alternation: much faster than globbing all the files of the type then filtering them in JS,
+    // as glob discards the non matching files without building their path.
     const fileSuffixes = [
       `.${metadataType.suffix || ""}`, // Works for not-xml files
       `.${metadataType.suffix || ""}-meta.xml` // Works for all XML files
     ];
+    // The names are escaped, so a name containing glob special characters is matched literally.
+    // glob's escape() does not handle braces, hence the nobrace option below.
+    const nameAlternations = chunkArray([...metaFiles.keys()], MAX_GLOB_ALTERNATION_SIZE)
+      .map(namesChunk => `@(${namesChunk.map(packageXmlName => globEscape(packageXmlName)).join("|")})`);
     let remainingNamesNb = metaFiles.size;
     for (const packageDirectory of packageDirectories) {
-      const sourceFiles = await glob(`**/${metadataType.directoryName}/**/*`, {
-        cwd: packageDirectory.fullPath,
-        ignore: GLOB_IGNORE_PATTERNS,
-        nodir: true
-      });
       // Keep the same priority as a single lookup: not-xml file first, then -meta.xml file
       for (const fileSuffix of fileSuffixes) {
-        for (const sourceFile of sourceFiles) {
-          const fileName = path.basename(sourceFile);
-          if (!fileName.endsWith(fileSuffix)) {
-            continue;
+        for (const nameAlternation of nameAlternations) {
+          const sourceFiles = await glob(`**/${metadataType.directoryName}/**/${nameAlternation}${fileSuffix}`, {
+            cwd: packageDirectory.fullPath,
+            ignore: GLOB_IGNORE_PATTERNS,
+            nodir: true,
+            nobrace: true
+          });
+          for (const sourceFile of sourceFiles) {
+            const packageXmlName = path.basename(sourceFile).slice(0, -fileSuffix.length);
+            // Only the first matching file of the first matching package directory is kept
+            if (metaFiles.get(packageXmlName) !== null) {
+              continue;
+            }
+            metaFiles.set(packageXmlName, path.join(packageDirectory.path, sourceFile).replace(/\\/g, "/"));
+            remainingNamesNb--;
           }
-          const packageXmlName = fileName.slice(0, -fileSuffix.length);
-          // Only the first matching file of the first matching package directory is kept
-          if (metaFiles.get(packageXmlName) !== null) {
-            continue;
-          }
-          metaFiles.set(packageXmlName, path.join(packageDirectory.path, sourceFile).replace(/\\/g, "/"));
-          remainingNamesNb--;
         }
         if (remainingNamesNb === 0) {
           return metaFiles;
