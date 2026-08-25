@@ -24,6 +24,13 @@ export const GLOB_IGNORE_PATTERNS = [
 // Only node_modules is kept, for the projects that hold a JS bundle inside a package directory.
 export const PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS = ['**/node_modules/**'];
 
+// Same as PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS, plus staticresources: that one does sit inside a
+// package directory, and its bundles can hold thousands of files that no documentation needs
+export const PACKAGE_DIRECTORY_DOC_GLOB_IGNORE_PATTERNS = [
+  ...PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
+  '**/staticresources/**',
+];
+
 export const METADATA_DOC_GLOB_IGNORE_PATTERNS = [
   ...GLOB_IGNORE_PATTERNS,
   '**/staticresources/**',
@@ -73,7 +80,7 @@ export async function listFlowFiles(packageDirs) {
   const flowFiles: any[] = [];
   const skippedFlows: string[] = [];
   for (const packageDir of packageDirs || []) {
-    const flowMetadatas = await glob("**/*.flow-meta.xml", { cwd: packageDir.path, ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
+    const flowMetadatas = await glob("**/*.flow-meta.xml", { cwd: packageDir.path, ignore: PACKAGE_DIRECTORY_DOC_GLOB_IGNORE_PATTERNS });
     for (const flowMetadata of flowMetadatas) {
       const flowFile = path.join(packageDir.path, flowMetadata).replace(/\\/g, '/');
       if (await isManagedFlow(flowFile)) {
@@ -129,7 +136,7 @@ export async function listApexFiles(packageDirs) {
   const apexFiles: any[] = [];
   const skippedApex: string[] = [];
   for (const packageDir of packageDirs || []) {
-    const apexMetadatas = await glob("**/*.{cls,trigger}", { cwd: packageDir.path, ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
+    const apexMetadatas = await glob("**/*.{cls,trigger}", { cwd: packageDir.path, ignore: PACKAGE_DIRECTORY_DOC_GLOB_IGNORE_PATTERNS });
     for (const apexMetadata of apexMetadatas) {
       const apexFile = path.join(packageDir.path, apexMetadata).replace(/\\/g, '/');
       if (apexFile.includes('__')) {
@@ -153,7 +160,7 @@ export async function listPageFiles(packageDirs) {
   const pageFiles: any[] = [];
   const skippedPages: string[] = [];
   for (const packageDir of packageDirs || []) {
-    const pageMetadatas = await glob("**/*.flexipage-meta.xml", { cwd: packageDir.path, ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
+    const pageMetadatas = await glob("**/*.flexipage-meta.xml", { cwd: packageDir.path, ignore: PACKAGE_DIRECTORY_DOC_GLOB_IGNORE_PATTERNS });
     for (const pageMetadata of pageMetadatas) {
       const pageFile = path.join(packageDir.path, pageMetadata).replace(/\\/g, '/');
       if (pageFile.includes('__')) {

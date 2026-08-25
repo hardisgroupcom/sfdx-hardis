@@ -7,7 +7,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import fs from '../../../../common/utils/fsUtils.js';
-import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -103,7 +103,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     // backslashes, and brace expansion turns them into escapes, so the pattern matched nothing
     const matchingFiles = await glob(`**/*.{cls,trigger}`, {
       cwd: rootFolder,
-      ignore: GLOB_IGNORE_PATTERNS,
+      ignore: PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
       absolute: true,
     });
     let countFiles = 0;

@@ -11,7 +11,7 @@ import { execCommand, isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { glob } from 'glob';
-import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
+import { PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { applyAllReplacementsDefinitions } from '../../../common/utils/xmlUtils.js';
 import { t } from '../../../common/utils/i18n.js';
 
@@ -99,7 +99,8 @@ In agent mode:
   public static requiresProject = true;
 
   /* jscpd:ignore-end */
-  private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
+  // The only glob using it is scoped to a package directory, where the repository root folders never sit
+  private ignorePatterns: string[] = PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS;
   protected referenceStrings: string[] = [];
   protected referenceStringsLabel: string;
   protected allMatchingSourceFiles: string[] = [];

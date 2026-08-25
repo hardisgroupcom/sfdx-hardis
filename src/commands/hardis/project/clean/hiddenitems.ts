@@ -7,7 +7,7 @@ import fs from '../../../../common/utils/fsUtils.js';
 import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
-import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -126,7 +126,11 @@ In agent mode, all interactive prompts are skipped and default values are used.
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = `**/*.{${HIDDEN_SOURCE_FILE_EXTENSIONS}}`;
-    const matchingCustomFiles = await glob(findManagedPattern, { cwd: rootFolder, ignore: GLOB_IGNORE_PATTERNS, nodir: true });
+    const matchingCustomFiles = await glob(findManagedPattern, {
+      cwd: rootFolder,
+      ignore: PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
+      nodir: true,
+    });
     let counter = 0;
     for (const matchingCustomFile of matchingCustomFiles) {
       const matchingCustomFilePath = path.join(rootFolder, matchingCustomFile);

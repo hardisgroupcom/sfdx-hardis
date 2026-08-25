@@ -113,7 +113,7 @@ The command's technical implementation involves:
   private async extractLabelsFromLwc(lwcName: string, debugMode: boolean): Promise<string[]> {
     uxLog("log", this, c.grey(t('lookingForLwcJsFiles', { lwcName })));
 
-    const lwcFiles = await glob(`**/lwc/${lwcName}/**/*.js`);
+    const lwcFiles = await glob(`**/lwc/${lwcName}/**/*.js`, { ignore: GLOB_IGNORE_PATTERNS });
 
     if (lwcFiles.length === 0) {
       throw new Error(`No JS files found for LWC '${lwcName}'`);
@@ -236,7 +236,7 @@ The command's technical implementation involves:
       const outputDir = path.join('extracted-translations', `${this.outputDirPrefix}-${timestamp}`);
       await fs.ensureDir(outputDir);
 
-      const translationFiles = await glob('**/translations/*.translation-meta.xml');
+      const translationFiles = await glob('**/translations/*.translation-meta.xml', { ignore: GLOB_IGNORE_PATTERNS });
 
       if (translationFiles.length === 0) {
         uxLog("warning", this, c.yellow(t('noTranslationFilesFoundInFolder')));
@@ -414,7 +414,7 @@ The command's technical implementation involves:
 
   public static async promptLwcComponent() {
     try {
-      const lwcMetaFiles = await glob('**/lwc/*/*.js-meta.xml');
+      const lwcMetaFiles = await glob('**/lwc/*/*.js-meta.xml', { ignore: GLOB_IGNORE_PATTERNS });
 
       if (lwcMetaFiles.length === 0) {
         throw new Error('No Lightning Web Components found in the project');
