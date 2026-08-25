@@ -495,33 +495,56 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     // Both suffixes are in the same glob expression, so each package directory is walked only once.
     // The suffix priority is applied afterwards, on the few files that matched.
     const suffixAlternation = `@(${fileSuffixes.join("|")})`;
-    // The names are escaped, so a name containing glob special characters is matched literally.
-    // glob's escape() does not handle braces, hence the nobrace option below.
-    const nameAlternations = chunkArray([...metaFiles.keys()], MAX_GLOB_ALTERNATION_SIZE)
-      .map(namesChunk => `@(${namesChunk.map(packageXmlName => globEscape(packageXmlName)).join("|")})`);
+    // The names of the folder-scoped types (Report, Dashboard, Document, EmailTemplate) carry their
+    // folder, like "MyFolder/MyReport". A slash can not go inside an extglob alternation, as the pattern
+    // is split on slashes before being parsed, so the names are grouped by folder and the folder joins
+    // the path part of the expression. The types without folders form a single group with no folder.
+    const leafNamesByFolder = new Map<string, Map<string, string>>();
+    for (const packageXmlName of metaFiles.keys()) {
+      const nameParts = packageXmlName.split("/");
+      const leafName = nameParts.pop() as string;
+      const folder = nameParts.join("/");
+      if (!leafNamesByFolder.has(folder)) {
+        leafNamesByFolder.set(folder, new Map<string, string>());
+      }
+      (leafNamesByFolder.get(folder) as Map<string, string>).set(leafName, packageXmlName);
+    }
     let remainingNamesNb = metaFiles.size;
     for (const packageDirectory of packageDirectories) {
-      const sourceFiles: string[] = [];
-      for (const nameAlternation of nameAlternations) {
-        sourceFiles.push(...await glob(`**/${metadataType.directoryName}/**/${nameAlternation}${suffixAlternation}`, {
-          cwd: packageDirectory.fullPath,
-          // Only the folders that can be found inside a package directory are worth ignoring: every
-          // additional pattern is tested against each walked path, so a useless one only costs time
-          ignore: PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
-          nodir: true,
-          nobrace: true
-        }));
+      // Files found in this package directory, each with the names of the group that matched it
+      const sourceFiles: { sourceFile: string; leafNames: Map<string, string> }[] = [];
+      for (const [folder, leafNames] of leafNamesByFolder) {
+        // The names are escaped, so a name containing glob special characters is matched literally.
+        // glob's escape() does not handle braces, hence the nobrace option below.
+        const folderPattern = folder === "" ? "" : folder.split("/").map(segment => globEscape(segment)).join("/") + "/";
+        for (const leafNamesChunk of chunkArray([...leafNames.keys()], MAX_GLOB_ALTERNATION_SIZE)) {
+          const nameAlternation = `@(${leafNamesChunk.map(leafName => globEscape(leafName)).join("|")})`;
+          const foundFiles = await glob(
+            `**/${metadataType.directoryName}/**/${folderPattern}${nameAlternation}${suffixAlternation}`,
+            {
+              cwd: packageDirectory.fullPath,
+              // Only the folders that can be found inside a package directory are worth ignoring: every
+              // additional pattern is tested against each walked path, so a useless one only costs time
+              ignore: PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
+              nodir: true,
+              nobrace: true
+            }
+          );
+          for (const sourceFile of foundFiles) {
+            sourceFiles.push({ sourceFile, leafNames });
+          }
+        }
       }
       // Keep the same priority as a single lookup: not-xml file first, then -meta.xml file
       for (const fileSuffix of fileSuffixes) {
-        for (const sourceFile of sourceFiles) {
+        for (const { sourceFile, leafNames } of sourceFiles) {
           const fileName = path.basename(sourceFile);
           if (!fileName.endsWith(fileSuffix)) {
             continue;
           }
-          const packageXmlName = fileName.slice(0, -fileSuffix.length);
+          const packageXmlName = leafNames.get(fileName.slice(0, -fileSuffix.length));
           // Only the first matching file of the first matching package directory is kept
-          if (metaFiles.get(packageXmlName) !== null) {
+          if (packageXmlName === undefined || metaFiles.get(packageXmlName) !== null) {
             continue;
           }
           metaFiles.set(packageXmlName, path.join(packageDirectory.path, sourceFile).replace(/\\/g, "/"));

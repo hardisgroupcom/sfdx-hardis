@@ -32,6 +32,7 @@ const FIXTURE_FILES = [
   // Decoys: must never show up in any bucket
   'node_modules/some-package/flows/Decoy.flow-meta.xml',
   'force-app/main/default/elsewhere/Stray.flow-meta.xml',
+  '.claude/skills/flows/examples/Decoy.flow-meta.xml',
 ];
 
 describe('hardis:lint:metadatastatus file listing', () => {
@@ -75,12 +76,31 @@ describe('hardis:lint:metadatastatus file listing', () => {
     const filesByType = await listMetadataStatusFiles(GLOB_IGNORE_PATTERNS);
     const allFiles = [...filesByType.values()].flat();
     expect(allFiles.filter((file) => file.includes('node_modules'))).to.deep.equal([]);
+    expect(allFiles.filter((file) => file.includes('.claude'))).to.deep.equal([]);
   });
 
   it('does not attribute a file sitting outside the folder of its type', async () => {
     const filesByType = await listMetadataStatusFiles(GLOB_IGNORE_PATTERNS);
     const allFiles = [...filesByType.values()].flat();
     expect(allFiles.filter((file) => file.includes('Stray'))).to.deep.equal([]);
+  });
+
+  // glob matches without case on Windows and macOS, so a folder named Flows is returned by the pattern.
+  // It must be bucketed like flows rather than silently dropped.
+  it('attributes a file whose folder does not have the expected case', async () => {
+    // The folder is created under main/extra, where no lowercase "workflows" sibling exists: on a
+    // case-insensitive filesystem a "Workflows" folder next to "workflows" would be the same folder
+    const oddCaseFile = path.join(tmpDir, 'force-app', 'main', 'extra', 'Workflows', 'Odd_Case.workflow-meta.xml');
+    await fs.ensureDir(path.dirname(oddCaseFile));
+    await fs.writeFile(oddCaseFile, '<?xml version="1.0" encoding="UTF-8"?>');
+    const expected = await glob('**/workflows/**/*.workflow-meta.xml', { ignore: GLOB_IGNORE_PATTERNS });
+    const filesByType = await listMetadataStatusFiles(GLOB_IGNORE_PATTERNS);
+    // Whatever the case handling of the platform, the listing must agree with the per-type glob
+    expect((filesByType.get('workflow') ?? []).slice().sort()).to.deep.equal(expected.slice().sort());
+    // On a case-insensitive glob, that means the odd-cased folder is attributed rather than dropped
+    if (expected.some((file) => file.includes('Odd_Case'))) {
+      expect((filesByType.get('workflow') ?? []).some((file) => file.includes('Odd_Case'))).to.be.true;
+    }
   });
 
   it('gives every metadata type a distinct file suffix, so a file lands in a single bucket', () => {

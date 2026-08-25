@@ -84,13 +84,18 @@ export async function listMetadataStatusFiles(ignorePatterns: string[]): Promise
     { ignore: ignorePatterns }
   );
   for (const file of allFiles) {
-    const pathSegments = file.split(/[\\/]/);
+    // glob matches without case on Windows and macOS, so the attribution ignores the case too: a folder
+    // named Flows instead of flows must land in the same bucket, not be silently dropped
+    const pathSegments = file.toLowerCase().split(/[\\/]/);
     const fileName = pathSegments[pathSegments.length - 1];
     const fileType = METADATA_STATUS_FILE_TYPES.find(
-      (candidate) => fileName.endsWith(candidate.suffix) && pathSegments.includes(candidate.directory)
+      (candidate) =>
+        fileName.endsWith(candidate.suffix.toLowerCase()) && pathSegments.includes(candidate.directory.toLowerCase())
     );
     if (fileType) {
       (filesByType.get(fileType.key) as string[]).push(file);
+    } else {
+      uxLog("other", this, `[metadatastatus] ${file} matched a pattern but no metadata type, skipped`);
     }
   }
   return filesByType;

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EmailTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
+    <name>Lookup Mail</name>
+    <encodingKey>UTF-8</encodingKey>
+</EmailTemplate>

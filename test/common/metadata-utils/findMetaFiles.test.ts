@@ -205,6 +205,67 @@ describe('MetadataUtils.findMetaFilesFromTypeAndNames()', () => {
     }
   });
 
+  // Report, Dashboard, Document and EmailTemplate are stored in folders, and their package.xml members
+  // carry that folder. A slash can not go inside the extglob alternation the names are matched with, so
+  // these names need their folder in the path part of the glob expression
+  describe('folder-scoped metadata types', () => {
+    it('resolves a name holding its folder', async () => {
+      const metaFiles = await MetadataUtils.findMetaFilesFromTypeAndNames(
+        'Report',
+        ['Lookup_Folder/Lookup_Report'],
+        packageDirectories
+      );
+      expect([...metaFiles.entries()]).to.deep.equal([
+        ['Lookup_Folder/Lookup_Report', 'force-app/main/default/reports/Lookup_Folder/Lookup_Report.report-meta.xml'],
+      ]);
+    });
+
+    it('keeps the folder of each name, for two names sharing the same leaf name', async () => {
+      const metaFiles = await MetadataUtils.findMetaFilesFromTypeAndNames(
+        'Report',
+        ['Lookup_Folder/Lookup_Report', 'Lookup_Other_Folder/Lookup_Report'],
+        packageDirectories
+      );
+      expect([...metaFiles.entries()]).to.deep.equal([
+        ['Lookup_Folder/Lookup_Report', 'force-app/main/default/reports/Lookup_Folder/Lookup_Report.report-meta.xml'],
+        [
+          'Lookup_Other_Folder/Lookup_Report',
+          'second-app/main/default/reports/Lookup_Other_Folder/Lookup_Report.report-meta.xml',
+        ],
+      ]);
+    });
+
+    it('returns null for a name whose folder does not hold it', async () => {
+      const metaFiles = await MetadataUtils.findMetaFilesFromTypeAndNames(
+        'Report',
+        ['Lookup_Other_Folder/Lookup_Unknown'],
+        packageDirectories
+      );
+      expect(metaFiles.get('Lookup_Other_Folder/Lookup_Unknown')).to.be.null;
+    });
+
+    it('prefers the source file over the -meta.xml file for a folder-scoped name', async () => {
+      const metaFile = await MetadataUtils.findMetaFileFromTypeAndName(
+        'EmailTemplate',
+        'Lookup_Templates/Lookup_Mail',
+        packageDirectories
+      );
+      expect(metaFile).to.equal('force-app/main/default/email/Lookup_Templates/Lookup_Mail.email');
+    });
+
+    it('mixes folder-scoped and plain names in a single call', async () => {
+      const metaFiles = await MetadataUtils.findMetaFilesFromTypeAndNames(
+        'Report',
+        ['Lookup_Folder/Lookup_Report', 'Lookup_Unknown'],
+        packageDirectories
+      );
+      expect([...metaFiles.entries()]).to.deep.equal([
+        ['Lookup_Folder/Lookup_Report', 'force-app/main/default/reports/Lookup_Folder/Lookup_Report.report-meta.xml'],
+        ['Lookup_Unknown', null],
+      ]);
+    });
+  });
+
   it('resolves a list longer than the glob alternation chunk size', async () => {
     // 1200 names to cross the 500 names per glob expression limit, with real Flows spread over the chunks
     const names = Array.from({ length: 1200 }, (_, index) => `Lookup_Filler_${index}`);

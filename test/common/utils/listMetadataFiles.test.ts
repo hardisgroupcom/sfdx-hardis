@@ -23,6 +23,8 @@ const FIXTURE_FILES = [
   'main/default/staticresources/bundle/vendor.cls',
   'main/default/staticresources/bundle/Bundled.flexipage-meta.xml',
   'node_modules/some-package/classes/Decoy.cls',
+  // Left out: a coding agent skill can carry metadata examples that are not project sources
+  '.claude/skills/apex/examples/DecoyExample.cls',
 ];
 
 describe('package directory metadata listings', () => {
@@ -47,7 +49,7 @@ describe('package directory metadata listings', () => {
     return files.map((file) => path.relative(packageDir, file).split(path.sep).join('/')).sort();
   }
 
-  it('lists the Apex sources of the package directory, skipping node_modules and staticresources', async () => {
+  it('lists the Apex sources of the package directory, skipping node_modules, .claude and staticresources', async () => {
     const apexFiles = await listApexFiles([{ path: packageDir, fullPath: packageDir }]);
     expect(relative(apexFiles)).to.deep.equal([
       'main/default/classes/ListingSample.cls',

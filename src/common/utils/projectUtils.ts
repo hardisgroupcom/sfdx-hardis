@@ -16,13 +16,25 @@ export const GLOB_IGNORE_PATTERNS = [
   '**/.sfdx/**',
   '**/.sf/**',
   '**/.vscode/**',
+  // Coding agent configuration: its skills and instructions can hold metadata examples, which are
+  // documentation and not sources of the project
+  '**/.claude/**',
 ];
 
 // Use when a glob is scoped to a package directory (force-app and friends), not to the repository root.
-// node_modules, .git, logs & co live at the repository root, so ignoring them there is useless: glob tests
-// every ignore pattern against every walked path, which makes a pattern that never matches pure overhead.
-// Only node_modules is kept, for the projects that hold a JS bundle inside a package directory.
-export const PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS = ['**/node_modules/**'];
+// glob tests every ignore pattern against every walked path, so a pattern that never matches only costs
+// time, and most of the repository root folders never show up inside a package directory.
+// The ones kept here would be walked whenever the glob root turns out to be a project root after all:
+// a project declaring "." as a package directory, a --folder pointing at the repository, or the blank
+// project the backpromote conflict detection retrieves into. Walking .git alone can mean tens of
+// thousands of loose objects, which costs far more than testing a handful of patterns.
+export const PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS = [
+  '**/node_modules/**',
+  '**/.git/**',
+  '**/.sfdx/**',
+  '**/.sf/**',
+  '**/.claude/**',
+];
 
 // Same as PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS, plus staticresources: that one does sit inside a
 // package directory, and its bundles can hold thousands of files that no documentation needs
