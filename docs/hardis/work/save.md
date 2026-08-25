@@ -22,6 +22,7 @@ Key functionalities include:
 - **Automated Source Cleaning:** Applies predefined cleaning operations to your local Salesforce sources, such as removing unwanted references, minimizing profiles, or cleaning XML files based on configurations in your `.sfdx-hardis.yml`.
   - `autoCleanTypes`: A list of automated source cleanings, configurable via [hardis:project:clean:references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/).
   - `autoRemoveUserPermissions`: A list of user permissions to automatically remove from profile metadata.
+  - The `flowPositions` cleaning is restricted to the Flows of the git delta `package.xml`, so it is not run at all when the User Story contains no Flow.
 - **Deployment Plan Generation:** Builds an automated deployment plan based on the updated `package.xml` and configured deployment splits.
 - **Commit and Push:** Guides the user to commit the changes and push them to the remote Git repository, optionally handling force pushes if a branch reset occurred.
 - **Merge Request Guidance:** Provides information and links to facilitate the creation of a merge request after the changes are pushed.

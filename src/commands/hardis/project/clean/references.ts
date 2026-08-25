@@ -23,6 +23,9 @@ import { t } from '../../../../common/utils/i18n.js';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
+// Safe upper bound for a sub-command line, below the 8191 characters limit of the Windows shell
+const MAX_COMMAND_LENGTH = 6000;
+
 export default class CleanReferences extends SfCommand<any> {
   public static title = 'Clean references in dx sources';
 
@@ -99,6 +102,9 @@ The command's technical implementation involves several steps:
       char: 'c',
       description: 'Path to a JSON config file or a destructiveChanges.xml file',
     }),
+    flows: Flags.string({
+      description: 'Comma-separated list of Flow API names, to restrict Flow cleanings to those Flows',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -140,6 +146,8 @@ The command's technical implementation involves several steps:
       value: 'flowPositions',
       title: t('cleaningTypeFlowPositions'),
       command: 'sf hardis:project:clean:flowpositions',
+      // The command accepts --flows, so it can be restricted to the Flows of the current User Story
+      scopedByFlows: true,
     },
     {
       value: 'sensitiveMetadatas',
@@ -188,6 +196,8 @@ The command's technical implementation involves several steps:
   ];
 
   protected configFile: string | null;
+  // List of Flow API names to restrict Flow cleanings to. null when the caller did not send any scope
+  protected flowNames: string[] | null = null;
   protected deleteItems: any = {};
 
   public async run(): Promise<AnyJson> {
@@ -196,6 +206,7 @@ The command's technical implementation involves several steps:
     this.debugMode = flags.debug || false;
     this.cleaningTypes = flags.type ? [flags.type] : [];
     this.configFile = flags.config || null;
+    this.flowNames = flags.flows === undefined ? null : flags.flows.split(',').map((flowName: string) => flowName.trim()).filter((flowName: string) => flowName !== '');
     const config = await getConfig('project');
 
     // Config file sent by user
@@ -248,6 +259,20 @@ The command's technical implementation involves several steps:
         let command = cleaningTypeObj?.command;
         if (this.argv.indexOf('--websocket') > -1) {
           command += ` --websocket ${this.argv[this.argv.indexOf('--websocket') + 1]}`;
+        }
+        // Restrict the cleaning to the Flows of the current User Story when the sub-command supports it
+        if (this.flowNames !== null && cleaningTypeObj.scopedByFlows) {
+          if (this.flowNames.length === 0) {
+            uxLog("log", this, c.grey(t('skipCleaningNoChangedFlow', { cleaningType: c.bold(cleaningType) })));
+            continue;
+          }
+          const flowsArg = ` --flows "${this.flowNames.join(',')}"`;
+          // Keep the command line under the Windows 8191 characters limit: clean everything if too long
+          if (command.length + flowsArg.length > MAX_COMMAND_LENGTH) {
+            uxLog("warning", this, c.yellow(t('tooManyFlowsToScopeCleaning', { number: this.flowNames.length })));
+          } else {
+            command += flowsArg;
+          }
         }
         uxLog("action", this, c.cyan(t('runCleaningCommand', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));
         // Command based cleaning
