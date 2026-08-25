@@ -8,7 +8,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from '../../../../common/utils/poolUtils.js';
 import { getConfig } from '../../../../config/index.js';
-import { execCommand, stripAnsi, uxLog } from '../../../../common/utils/index.js';
+import { applySfPerformanceEnv, execCommand, stripAnsi, uxLog } from '../../../../common/utils/index.js';
 import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { authenticateWithSfdxUrlStore } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
@@ -179,7 +179,9 @@ In agent mode, all interactive prompts are skipped and default values are used.
         // Run scratch:create command asynchronously
         const commandArgs = ['hardis:scratch:create', '--pool', '--json'];
         const sfdxPath = await which('sf');
-        const child = spawn(sfdxPath || 'sf', commandArgs, { cwd: process.cwd(), env: process.env });
+        const childEnv = Object.assign({}, process.env);
+        applySfPerformanceEnv('sf ' + commandArgs.join(' '), childEnv);
+        const child = spawn(sfdxPath || 'sf', commandArgs, { cwd: process.cwd(), env: childEnv });
         uxLog("log", this, '[pool] ' + c.grey(t('hardisScratchCreateStarted', { val: i })));
         // handle errors
         child.on('error', (err) => {
