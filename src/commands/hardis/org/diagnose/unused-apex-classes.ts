@@ -251,6 +251,10 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
     const classDtlRes = await soqlQueryTooling(`SELECT Id, Name, CreatedDate, CreatedBy.Name FROM ApexClass WHERE Id IN ('${classIds.join("','")}')`, conn);
     const classDtlResRecords: any[] = classDtlRes.records || [];
     const isRepo = isGitRepo();
+    // Locate every class source file in a single pass on the package directories
+    const classFileByName = isRepo
+      ? await MetadataUtils.findMetaFilesFromTypeAndNames("ApexClass", this.asyncClassList.map(apexClass => apexClass.Name))
+      : new Map<string, string | null>();
     this.asyncClassList = await Promise.all(this.asyncClassList.map(async (cls) => {
       const matchingClass = classDtlResRecords.filter(classDtl => classDtl.Id === cls.Id)[0];
       // Use date & user found in org by default
@@ -259,7 +263,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
       // If file found in git, and if git date is lower than org date, use git date and user
       if (isRepo) {
         const gitInstance = git({ output: false, displayCommand: false });
-        const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("ApexClass", cls.Name);
+        const fileMetadata = classFileByName.get(cls.Name) ?? null;
         if (fileMetadata) {
           const log = await gitInstance.log({
             file: fileMetadata,

@@ -549,11 +549,19 @@ export async function detectOrgConflicts(
   // Walk through retrieved metadata and compare with local
   for (const metadataType of Object.keys(deltaContent)) {
     const members = deltaContent[metadataType];
+    // Locate the local and the retrieved source files of all the members in a single pass each,
+    // instead of walking the package directories once per member
+    const localFileByMember = await MetadataUtils.findMetaFilesFromTypeAndNames(metadataType, members);
+    const retrievedFileByMember = await MetadataUtils.findMetaFilesFromTypeAndNames(
+      metadataType,
+      members,
+      retrievePackageDir
+    );
     for (const member of members) {
       // Find the local file using existing utility
-      const localFile = await MetadataUtils.findMetaFileFromTypeAndName(metadataType, member);
+      const localFile = localFileByMember.get(member) ?? null;
       // Find the retrieved (org) file in the temp directory
-      const retrievedFile = await MetadataUtils.findMetaFileFromTypeAndName(metadataType, member, retrievePackageDir);
+      const retrievedFile = retrievedFileByMember.get(member) ?? null;
 
       if (!retrievedFile || !fs.existsSync(retrievedFile)) {
         continue; // Metadata not in org, nothing to compare

@@ -718,10 +718,15 @@ In agent mode:
       }
     } else {
       if (validationRuleRecords?.records) {
+        // Locate every source file in a single pass on the package directories
+        const filePathByName = await MetadataUtils.findMetaFilesFromTypeAndNames(
+          "ValidationRule",
+          validationRuleRecords.records.map((record: any) => record.ValidationName)
+        );
         for (const record of validationRuleRecords.records) {
           const sObject = record.EntityDefinition.QualifiedApiName;
           const name = record.ValidationName;
-          const filePath = await MetadataUtils.findMetaFileFromTypeAndName("ValidationRule", name);
+          const filePath = filePathByName.get(name) ?? null;
           if (filePath === null) {
             this.reports.implementation.push({
               sObject,
@@ -862,9 +867,14 @@ In agent mode:
       }
     } else {
       if (filteredTriggersResults) {
+        // Locate every source file in a single pass on the package directories
+        const filePathByName = await MetadataUtils.findMetaFilesFromTypeAndNames(
+          "ApexTrigger",
+          filteredTriggersResults.map((record: any) => record.Name)
+        );
         for (const record of filteredTriggersResults) {
           const name = record.Name;
-          const filePath = await MetadataUtils.findMetaFileFromTypeAndName("ApexTrigger", name);
+          const filePath = filePathByName.get(name) ?? null;
           if (filePath === null) {
             this.reports.implementation.push({
               sObject: null,
@@ -1080,9 +1090,14 @@ In agent mode:
       }
     } else {
       if (filteredFlowResults) {
+        // Locate every source file in a single pass on the package directories
+        const filePathByName = await MetadataUtils.findMetaFilesFromTypeAndNames(
+          "Flow",
+          filteredFlowResults.map((record: any) => record.ApiName)
+        );
         for (const record of filteredFlowResults) {
           const name = record.ApiName;
-          const filePath = await MetadataUtils.findMetaFileFromTypeAndName("Flow", name);
+          const filePath = filePathByName.get(name) ?? null;
           if (filePath === null) {
             this.reports.implementation.push({
               sObject: null,

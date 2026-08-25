@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import * as path from 'path';
+import fs from '../../../src/common/utils/fsUtils.js';
 import { MetadataUtils } from '../../../src/common/metadata-utils/index.js';
 import { getSfdxProjectPackageDirectories } from '../../../src/common/utils/projectUtils.js';
 
@@ -22,6 +23,17 @@ import { getSfdxProjectPackageDirectories } from '../../../src/common/utils/proj
  * do not depend on the current working directory.
  */
 const FIXTURE_PROJECT = path.join(process.cwd(), 'test', 'fixtures', 'metadata-lookup-project');
+
+// Plain recursive listing, used to build the expected result without going through glob
+async function listFilesRecursively(directory: string): Promise<string[]> {
+  const entries = await fs.readdir(directory, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const entryPath = path.join(directory, entry.name);
+    files.push(...(entry.isDirectory() ? await listFilesRecursively(entryPath) : [entryPath]));
+  }
+  return files;
+}
 
 let packageDirectories: { path: string; fullPath: string }[];
 
@@ -150,6 +162,47 @@ describe('MetadataUtils.findMetaFilesFromTypeAndNames()', () => {
   it('does not let a glob wildcard in a name match other files', async () => {
     const metaFiles = await MetadataUtils.findMetaFilesFromTypeAndNames('Flow', ['Lookup_*'], packageDirectories);
     expect(metaFiles.get('Lookup_*')).to.be.null;
+  });
+
+  // Every caller that used to look names up one by one now goes through this method, so its result is
+  // compared with a listing built by walking the fixture with fs, without any glob involved
+  it('returns the same files as a plain recursive listing of the fixture', async () => {
+    for (const [packageXmlType, directoryName, fileSuffix] of [
+      ['Flow', 'flows', '.flow-meta.xml'],
+      ['ApexClass', 'classes', '.cls'],
+    ] as [string, string, string][]) {
+      const expected = new Map<string, string>();
+      // Walk the package directories in order, first one wins, like the method under test
+      for (const packageDirectory of packageDirectories) {
+        for (const filePath of await listFilesRecursively(packageDirectory.fullPath)) {
+          const relativePath = path.relative(packageDirectory.fullPath, filePath).split(path.sep);
+          const fileName = relativePath[relativePath.length - 1];
+          if (!relativePath.includes(directoryName) || !fileName.endsWith(fileSuffix)) {
+            continue;
+          }
+          const packageXmlName = fileName.slice(0, -fileSuffix.length);
+          if (!expected.has(packageXmlName)) {
+            expected.set(packageXmlName, [packageDirectory.path, ...relativePath].join('/'));
+          }
+        }
+      }
+      expect(expected.size, `${packageXmlType} found in the fixture`).to.be.greaterThan(0);
+      const metaFiles = await MetadataUtils.findMetaFilesFromTypeAndNames(
+        packageXmlType,
+        [...expected.keys()],
+        packageDirectories
+      );
+      expect([...metaFiles.entries()].sort(), packageXmlType).to.deep.equal([...expected.entries()].sort());
+    }
+  });
+
+  it('returns for a single name what the batched call returns for it', async () => {
+    const names = ['Lookup_Alpha', 'Lookup_Gamma', 'Lookup_Nested', 'Lookup_Unknown'];
+    const batched = await MetadataUtils.findMetaFilesFromTypeAndNames('Flow', names, packageDirectories);
+    for (const name of names) {
+      const single = await MetadataUtils.findMetaFileFromTypeAndName('Flow', name, packageDirectories);
+      expect(single, name).to.equal(batched.get(name) ?? null);
+    }
   });
 
   it('resolves a list longer than the glob alternation chunk size', async () => {
