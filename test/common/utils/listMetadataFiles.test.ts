@@ -17,7 +17,7 @@ const FIXTURE_FILES = [
   'main/default/triggers/ListingTrigger.trigger',
   'main/extra/classes/ListingNested.cls',
   'main/default/flexipages/Listing_Page.flexipage-meta.xml',
-  // Left out: managed metadata is recognised by the namespace separator in the name
+  // Left out: managed metadata is recognized by the namespace separator in the name
   'main/default/classes/mypkg__Managed.cls',
   // Left out: folders that do sit inside a package directory but hold no source to document
   'main/default/staticresources/bundle/vendor.cls',
