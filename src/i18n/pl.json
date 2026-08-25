@@ -2077,6 +2077,8 @@
   "monitoringBackupSkipMetadataTypesFound": "Znaleziono zmienną środowiskową MONITORING_BACKUP_SKIP_METADATA_TYPES, zmniejszenie zawartości {{packageXmlFullFile}} przez pominięcie {{types}} typów metadanych",
   "monitoringCommandDescAgentTests": "Uruchamia wszystkie agent tests Agentforce (AiEvaluationDefinition) w org i raportuje wyniki zaliczenia/niezaliczenia dla każdego przypadku testowego.",
   "monitoringCommandTitleAgentTests": "Agent tests",
+  "monitoringFrequencyGatingActive": "Filtrowanie według częstotliwości jest aktywne: dzisiaj jest {{date}}. Polecenia, których częstotliwość nie odpowiada dzisiejszemu dniu, są pomijane.",
+  "monitoringFrequencyGatingForced": "Filtrowanie według częstotliwości zostało wyłączone przez {{source}}: wszystkie polecenia monitoringu zostaną uruchomione dzisiaj ({{date}}), niezależnie od skonfigurowanej częstotliwości.",
   "monitoringHealthScoreComputed": "Wskaźnik kondycji org: {{score}}/100",
   "monitoringNotifReadError": "Nie udało się odczytać pliku powiadomienia monitorowania {{file}}: {{message}}",
   "monitoringNotifWriteError": "Nie udało się zapisać pliku powiadomienia monitorowania: {{message}}",

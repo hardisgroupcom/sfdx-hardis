@@ -2077,6 +2077,8 @@
   "monitoringBackupSkipMetadataTypesFound": "Variabile d'ambiente MONITORING_BACKUP_SKIP_METADATA_TYPES trovata, riduzione anche del contenuto di {{packageXmlFullFile}} saltando i tipi di metadati {{types}}",
   "monitoringCommandDescAgentTests": "Esegue tutti gli agent test Agentforce (AiEvaluationDefinition) nell'org e segnala i risultati pass / fail per ogni test case.",
   "monitoringCommandTitleAgentTests": "Agent test",
+  "monitoringFrequencyGatingActive": "Filtro per frequenza attivo: oggi è {{date}}. I comandi la cui frequenza non corrisponde a oggi vengono ignorati.",
+  "monitoringFrequencyGatingForced": "Filtro per frequenza disattivato da {{source}}: tutti i comandi di monitoraggio vengono eseguiti oggi ({{date}}), qualunque sia la loro frequenza configurata.",
   "monitoringHealthScoreComputed": "Punteggio di salute dell'org: {{score}}/100",
   "monitoringNotifReadError": "Impossibile leggere il file di notifica di monitoraggio {{file}}: {{message}}",
   "monitoringNotifWriteError": "Impossibile scrivere il file di notifica di monitoraggio: {{message}}",
