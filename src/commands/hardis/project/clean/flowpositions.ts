@@ -7,6 +7,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import fs from '../../../../common/utils/fsUtils.js';
 import { uxLog } from '../../../../common/utils/index.js';
+import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 
@@ -44,6 +45,15 @@ autoCleanTypes:
   - flowPositions
 \`\`\`
 
+By default, all Flows of the **--folder** are scanned. Use **--flows** or **--files** to restrict the cleaning to a subset:
+
+\`\`\`sh
+sf hardis:project:clean:flowpositions --flows Opportunity_Won,Account_Before_Save
+sf hardis:project:clean:flowpositions --files force-app/main/default/flows/Opportunity_Won.flow-meta.xml
+\`\`\`
+
+**hardis:work:save** uses **--flows** with the Flow members of the package.xml built by sfdx-git-delta, so repositories with hundreds of Flows are not scanned entirely.
+
 ### Agent Mode
 
 Supports non-interactive execution with \`--agent\`:
@@ -57,6 +67,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 `;
 
   public static examples = ['$ sf hardis:project:clean:flowpositions',
+    '$ sf hardis:project:clean:flowpositions --flows Opportunity_Won,Account_Before_Save',
     '$ sf hardis:project:clean:flowpositions --agent',];
 
   public static flags: any = {
@@ -64,6 +75,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
       char: 'f',
       default: 'force-app',
       description: 'Root folder',
+    }),
+    flows: Flags.string({
+      description: 'Comma-separated list of Flow API names to clean, instead of all Flows',
+    }),
+    files: Flags.string({
+      description: 'Comma-separated list of Flow metadata files to clean, instead of all Flows',
     }),
     agent: Flags.boolean({
       default: false,
@@ -96,9 +113,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     // Delete standard files when necessary
     uxLog("action", this, c.cyan(t('settingFlowsAutoLayoutAndRemovePositions')));
     /* jscpd:ignore-end */
-    const rootFolder = path.resolve(this.folder);
-    const findManagedPattern = rootFolder + `/**/*.flow-meta.xml`;
-    const matchingFlows = await glob(findManagedPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
+    const matchingFlows = await this.listFlowsToClean(flags.flows, flags.files);
     let counter = 0;
     for (const flowMetadataFile of matchingFlows) {
       const flowXml = await fs.readFile(flowMetadataFile, 'utf8');
@@ -119,4 +134,43 @@ In agent mode, all interactive prompts are skipped and default values are used.
     // Return an object to be displayed with --json
     return { outputString: msg };
   }
+
+  // Returns the Flow metadata files to process: the ones matching --flows / --files when one of them is
+  // set (usually the Flows of the current User Story), or all the Flows of the root folder otherwise
+  private async listFlowsToClean(flowNames: string | undefined, flowFiles: string | undefined): Promise<string[]> {
+    if (flowNames === undefined && flowFiles === undefined) {
+      const rootFolder = path.resolve(this.folder);
+      const findManagedPattern = rootFolder + `/**/*.flow-meta.xml`;
+      return await glob(findManagedPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
+    }
+    const selectedFlows: string[] = [];
+    // Flow metadata files sent by the caller
+    for (const flowFile of splitCommaSeparated(flowFiles)) {
+      if (await fs.pathExists(flowFile)) {
+        selectedFlows.push(flowFile);
+      } else {
+        uxLog("warning", this, c.yellow(t('flowFileNotFoundSkipped', { flowFile })));
+      }
+    }
+    // Flow API names sent by the caller: locate their source files in a single pass on the package directories
+    const flowFilesByName = await MetadataUtils.findMetaFilesFromTypeAndNames('Flow', splitCommaSeparated(flowNames));
+    for (const [flowName, flowFile] of flowFilesByName) {
+      if (flowFile) {
+        selectedFlows.push(flowFile);
+      } else {
+        uxLog("warning", this, c.yellow(t('flowSourceFileNotFoundSkipped', { flowName })));
+      }
+    }
+    const uniqueFlows = [...new Set(selectedFlows)];
+    uxLog("log", this, c.grey(t('cleaningPositionsOfSelectedFlowsOnly', { number: uniqueFlows.length })));
+    return uniqueFlows;
+  }
+}
+
+// Splits a comma-separated flag value into a list of trimmed, non-empty entries
+function splitCommaSeparated(flagValue: string | undefined): string[] {
+  return (flagValue || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry !== '');
 }

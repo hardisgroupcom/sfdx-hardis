@@ -31,6 +31,15 @@ autoCleanTypes:
   - flowPositions
 ```
 
+By default, all Flows of the **--folder** are scanned. Use **--flows** or **--files** to restrict the cleaning to a subset:
+
+```sh
+sf hardis:project:clean:flowpositions --flows Opportunity_Won,Account_Before_Save
+sf hardis:project:clean:flowpositions --files force-app/main/default/flows/Opportunity_Won.flow-meta.xml
+```
+
+**hardis:work:save** uses **--flows** with the Flow members of the package.xml built by sfdx-git-delta, so repositories with hundreds of Flows are not scanned entirely.
+
 ### Agent Mode
 
 Supports non-interactive execution with `--agent`:
@@ -45,20 +54,26 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-| Name          |  Type   | Description                                                   |  Default  | Required | Options |
-|:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
-| agent         | boolean | Run in non-interactive mode for agents and automation         |           |          |         |
-| debug<br/>-d  | boolean | Activate debug mode (more logs)                               |           |          |         |
-| flags-dir     | option  | undefined                                                     |           |          |         |
-| folder<br/>-f | option  | Root folder                                                   | force-app |          |         |
-| json          | boolean | Format output as json.                                        |           |          |         |
-| skipauth      | boolean | Skip authentication check when a default username is required |           |          |         |
-| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |           |          |         |
+| Name          |  Type   | Description                                                                |  Default  | Required | Options |
+|:--------------|:-------:|:---------------------------------------------------------------------------|:---------:|:--------:|:-------:|
+| agent         | boolean | Run in non-interactive mode for agents and automation                      |           |          |         |
+| debug<br/>-d  | boolean | Activate debug mode (more logs)                                            |           |          |         |
+| files         | option  | Comma-separated list of Flow metadata files to clean, instead of all Flows |           |          |         |
+| flags-dir     | option  | undefined                                                                  |           |          |         |
+| flows         | option  | Comma-separated list of Flow API names to clean, instead of all Flows      |           |          |         |
+| folder<br/>-f | option  | Root folder                                                                | force-app |          |         |
+| json          | boolean | Format output as json.                                                     |           |          |         |
+| skipauth      | boolean | Skip authentication check when a default username is required              |           |          |         |
+| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration                  |           |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:project:clean:flowpositions
+```
+
+```shell
+$ sf hardis:project:clean:flowpositions --flows Opportunity_Won,Account_Before_Save
 ```
 
 ```shell

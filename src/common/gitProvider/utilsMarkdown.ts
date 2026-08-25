@@ -108,9 +108,11 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
   const supportsSvgAttachments = await GitProvider.supportsSvgAttachments();
   const flowDiffMarkdownList: any = [];
   let flowDiffFilesSummary = "## Flow changes\n\n";
+  // Locate every Flow source file in a single pass on the package directories
+  const fileMetadataByFlowName = await MetadataUtils.findMetaFilesFromTypeAndNames("Flow", flowNames);
   for (const flowName of flowNames) {
     flowDiffFilesSummary += `- [${flowName}](#${flowName})\n`;
-    const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
+    const fileMetadata = fileMetadataByFlowName.get(flowName) ?? null;
     if (fileMetadata == null) {
       uxLog("warning", this, c.yellow('[FlowGitDiff] ' + t('flowGitDiffFlowFileNotFound', { flowName })));
       continue;

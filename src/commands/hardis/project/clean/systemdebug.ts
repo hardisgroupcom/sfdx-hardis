@@ -7,7 +7,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import fs from '../../../../common/utils/fsUtils.js';
-import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -99,8 +99,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
     uxLog("action", this, c.cyan(t('commentOrDeleteSystemDebugLine')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
-    const findManagedPattern = rootFolder + `/**/*.{cls,trigger}`;
-    const matchingFiles = await glob(findManagedPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
+    // The root folder is passed as cwd, not glued in front of the pattern: on Windows it holds
+    // backslashes, and brace expansion turns them into escapes, so the pattern matched nothing
+    const matchingFiles = await glob(`**/*.{cls,trigger}`, {
+      cwd: rootFolder,
+      ignore: PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
+      absolute: true,
+    });
     let countFiles = 0;
     for (const apexFile of matchingFiles) {
       const fileText = await fs.readFile(apexFile, 'utf8');

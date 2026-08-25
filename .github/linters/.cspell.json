@@ -1599,6 +1599,10 @@
     "trufflehog",
     "OIDC",
     "tokenless",
-    "cooldown"
+    "cooldown",
+    "Alph",
+    "extglob",
+    "mypkg",
+    "nobrace"
   ]
 }
