@@ -82,6 +82,17 @@ The former **NOTIF_API_ANONYMIZE** env var is deprecated but still honored (`tru
 
 Note: anonymization only applies to new entries. Entries sent before enabling it keep their original values until your log retention expires (you can use the Loki delete API to purge them earlier).
 
+### Configuration from Visual Studio Code
+
+You do not have to edit the YAML by hand: the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) offers the same configuration in two places.
+
+- **Pipeline Settings**, tab **Security & Privacy**, for a CI/CD repository.
+- **Monitoring Config Workbench**, card **Data anonymization**, for a monitoring repository.
+
+Both open the same editor: pick the global level, decide whether local runs follow it, and raise the level of a single channel when one destination needs to be stricter than the others.
+
+![Anonymization configuration in the VS Code extension](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-anonymization-config.jpg)
+
 ## Credentials
 
 - Authentication between sfdx-hardis and Salesforce orgs is performed using the official Salesforce CLI mechanisms. In CI/CD, an External Client App (the type Salesforce now recommends, replacing Connected Apps) is created during configuration: each connection requires 2 secured environment variables, one with the External Client App Consumer Key, and one used to decrypt "on the fly" an encrypted self-signed certificate stored in the repository.
