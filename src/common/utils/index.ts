@@ -11,6 +11,7 @@ import { which } from './whichUtils.js';
 const exec = util.promisify(child.exec);
 import { Connection, SfError } from '@salesforce/core';
 import { createSpinner } from './spinner.js';
+import { tryRunSfCommandInProcess } from './sfCoreCommands.js';
 import { simpleGit, FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS, getApiVersion, getApiVersionNumber, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
@@ -859,6 +860,36 @@ export interface ExecCommandRetryOptions {
   retryDelay?: number;
 }
 
+// Environment variables that skip sf CLI startup work sfdx-hardis does not need when it spawns sf under the hood:
+// telemetry upload process, pino log file worker thread, new version check, autoupdate check.
+// Measured gain: 400 to 750 ms per sf call (10 to 17 percent). Disabled with SFDX_HARDIS_ENHANCE_PERFORMANCE=false.
+// User-defined values are never overridden.
+const SF_PERFORMANCE_ENV: Record<string, string> = {
+  SF_DISABLE_TELEMETRY: 'true',
+  SF_DISABLE_LOG_FILE: 'true',
+  SF_SKIP_NEW_VERSION_CHECK: 'true',
+  SF_DISABLE_AUTOUPDATE: 'true',
+  SF_AUTOUPDATE_DISABLE: 'true',
+};
+
+export function isSfPerformanceEnhanced(): boolean {
+  return process.env.SFDX_HARDIS_ENHANCE_PERFORMANCE !== 'false';
+}
+
+export function applySfPerformanceEnv(command: string, env: Record<string, any>): void {
+  if (!isSfPerformanceEnhanced()) {
+    return;
+  }
+  if (!(command.startsWith('sf ') || command.startsWith('sfdx ') || /(^|[\s"'])sf(\.cmd)?\s/.test(command))) {
+    return;
+  }
+  for (const [key, value] of Object.entries(SF_PERFORMANCE_ENV)) {
+    if (env[key] === undefined || env[key] === '') {
+      env[key] = value;
+    }
+  }
+}
+
 // Options accepted by execCommand and execSfdxJson.
 export interface ExecCommandOptions {
   // Throw on non-zero command exit (or on --json status > 0). Default false.
@@ -889,6 +920,11 @@ export async function execSfdxJson(
 ): Promise<any> {
   if (!command.includes('--json')) {
     command += ' --json';
+  }
+  // Read-only org display / config get / config set are run in-process when possible (saves 2 to 4 seconds each)
+  const inProcessResult = await tryRunSfCommandInProcess(command, commandThis);
+  if (inProcessResult != null) {
+    return inProcessResult;
   }
   return await execCommand(command, commandThis, options);
 }
@@ -929,6 +965,7 @@ export async function execCommand(
   if (command.startsWith('sf hardis')) {
     execOptions.env.NO_NEW_COMMAND_TAB = 'true';
   }
+  applySfPerformanceEnv(command, execOptions.env);
   if (options.env && typeof options.env === 'object') {
     Object.assign(execOptions.env, options.env);
   }
