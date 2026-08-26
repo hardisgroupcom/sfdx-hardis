@@ -544,6 +544,7 @@ Everyone is welcome to contribute to sfdx-hardis (even juniors: we will help you
   - Run `yarn` to install dependencies
   - Run `sf plugins link` to link the local sfdx-hardis to the Salesforce CLI
   - Run `tsc --watch` to transpile TypeScript into JavaScript every time you update a TS file
+  - Optional, recommended on Windows: export `NODE_OPTIONS="--import file:///<path-to-your-clone>/scripts/disable-auto-transpile.mjs"` in your shell profile or VS Code terminal environment. A linked plugin is normally re-transpiled from TypeScript at every command (about 3 extra seconds per run): since `tsc --watch` already keeps `lib/` fresh, this preload makes commands start from the compiled sources instead, as fast as an installed plugin. Remove the variable to run live TypeScript again.
 - Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand --someparameter somevalue` (you can also debug commands with the VS Code SFDX Hardis extension debug setting)
 
 Note: To test a feature from CI, you can add the following code in your workflow before running sfdx-hardis commands:

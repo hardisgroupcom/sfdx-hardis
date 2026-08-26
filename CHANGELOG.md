@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- The org authentication check that ran before every command is now disabled outside of CI (as if `--skipauth` was always sent), saving time on each command and removing the repeated "You are already connected as..." lines. CI/CD and monitoring pipelines keep the check, so the org they target is still set as default org for the sf commands started next. Set [SFDX_HARDIS_AUTH_CHECK](https://sfdx-hardis.cloudity.com/all-env-variables/)=`true` to also run it locally. The DevHub authentication check of scratch org commands is kept. When the check is skipped, the project configuration is no longer loaded either, saving about 1 more second per command.
 - Fixed Azure Pipelines check and deployment jobs failing on the publish artifact step when there is nothing to deploy (missing hardis-report folder).
 - Fix GitLab validation jobs scanning thousands of historical Merge Requests during the Deployment Actions phase, making pipelines exceed their timeout
 - New [disableDeploymentActions](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/#disable-deployment-actions) config property (or SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS env var) to fully disable the deployment actions feature.
@@ -10,6 +11,7 @@
 - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) now cleans Flow positions only on the Flows of the git delta, instead of scanning all Flows of the repository.
 - [hardis:project:clean:references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/) now runs its cleanings without starting a new Salesforce CLI process for each one, saving several seconds per cleaning.
 - Salesforce CLI commands started by sfdx-hardis skip telemetry, log file, version and autoupdate checks, and `sf org display` / `sf config get` / `sf config set` run in-process: several seconds saved per call. Set [SFDX_HARDIS_ENHANCE_PERFORMANCE](https://sfdx-hardis.cloudity.com/all-env-variables/) to `false` to disable.
+- When run from VS Code, a command now loads its implementation while waiting for the extension's go-ahead instead of after it: with extension versions that answer late (or never), the first prompt shows up to 3 seconds earlier. The matching extension fix removes the remaining 10-second wait.
 - The VS Code Command Runner panel switches from "Starting" to "Running" several seconds earlier: commands like [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) and [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) announced themselves to the extension only after loading their whole implementation (measured: 5.1 s and 3.8 s from launch, now 0.7 s for both).
 
 ## [8.2.0] 2026-08-25
