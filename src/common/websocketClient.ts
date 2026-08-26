@@ -80,6 +80,12 @@ export class WebSocketClient {
   // connection dies), so callers do not have to poll on a timer
   private initializedPromise: Promise<boolean> | null = null;
   private initializedResolve: ((value: boolean) => void) | null = null;
+  // Resolved right after the initClient message is sent on the freshly opened
+  // connection. Lets the init hook defer CPU-heavy work (warming the command
+  // module import) until the extension got its instant feedback: starting it
+  // earlier starves the event loop and delays the WebSocket handshake itself.
+  private initClientSentPromise: Promise<void> | null = null;
+  private initClientSentResolve: (() => void) | null = null;
   private userInput: string | null = null;
   private extensionVersionResponse: string | null = null;
 
@@ -97,6 +103,9 @@ export class WebSocketClient {
     this.wsContext = context;
     this.initializedPromise = new Promise((resolve) => {
       this.initializedResolve = resolve;
+    });
+    this.initClientSentPromise = new Promise((resolve) => {
+      this.initClientSentResolve = resolve;
     });
     const wsHostPort = context.websocketHostPort ? `ws://${context.websocketHostPort}` : `ws://localhost:${PORT}`;
     try {
@@ -122,6 +131,16 @@ export class WebSocketClient {
     }
   }
 
+
+  /**
+   * Resolves once the initClient message has been sent on the open connection.
+   * Returns null when there is no active instance (or an instance from another
+   * module copy that predates the promise). May never resolve when the
+   * connection dies before opening: only chain best-effort work on it.
+   */
+  static waitForInitClientSent(): Promise<void> | null {
+    return WebSocketClient.activeInstance?.initClientSentPromise ?? null;
+  }
 
   static async isInitialized(): Promise<boolean> {
     const instance = WebSocketClient.activeInstance;
@@ -421,6 +440,10 @@ static sendMessage(data: any) {
         message.commandLogFile = logFilePath;
       }
       this.ws.send(JSON.stringify(message));
+      if (this.initClientSentResolve) {
+        this.initClientSentResolve();
+        this.initClientSentResolve = null;
+      }
       // uxLog("other", this, c.grey('Initialized WebSocket connection with VS Code SFDX Hardis.'));
     });
 

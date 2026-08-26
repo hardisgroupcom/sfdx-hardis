@@ -95,6 +95,22 @@ const hook: Hook<'init'> = async (options) => {
       // Silently ignore - disableWebsocket check is best-effort
     }
   }
+  // Warm the command-module import while waiting for the extension's answer:
+  // oclif awaits the exact same import right after the init hooks and the ESM
+  // loader deduplicates it. When the extension never answers (older extension
+  // versions), the import runs during the 10s safety timeout instead of after
+  // it. The warm-up only starts once initClient has been sent: the import
+  // starves the event loop, and starting it earlier delays the WebSocket
+  // handshake (and the instant feedback in VS Code) by several seconds.
+  // Third-party plugin commands were already loaded above for the
+  // disableWebsocket check.
+  if (!pluginName || pluginName === 'sfdx-hardis') {
+    WebSocketClient.waitForInitClientSent()
+      ?.then(() => cmd?.load())
+      ?.catch(() => {
+        // Best-effort warm-up: oclif surfaces the real error on its own load
+      });
+  }
   await WebSocketClient.isInitialized();
 };
 
