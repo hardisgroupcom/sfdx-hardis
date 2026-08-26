@@ -63,12 +63,14 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   if (commands.length === 0) {
     uxLog("action", this, c.cyan(`[DeploymentActions] No ${actionLabel} defined in branch config or pull requests`));
     uxLog("log", this, c.grey(t('noFoundToRun', { property })));
-    // Even with no action to run, a manual action checkbox may have been ticked in a Pull Request
-    // comment (ex: the action definition was removed after its checklist was posted):
-    // still scan the comments so the tick is recorded and propagated.
+    // Even with no action to run, a manual action checkbox may have been ticked in a comment of
+    // the current Pull Request (ex: the action definition was removed after its checklist was
+    // posted): still scan its comments so the tick is recorded and propagated. Only the current
+    // Pull Request is scanned here: with no action in the whole scope, the other Pull Requests
+    // cannot carry a checklist worth an API call each.
     if ((await GitProvider.getInstance()) !== null) {
       const prInfoForSync = await GitProvider.getPullRequestInfo({ useCache: true });
-      const allPrsForSync = await buildPrNumbersToScan([prInfoForSync?.idNumber || 0]);
+      const allPrsForSync = await buildPrNumbersToScan([prInfoForSync?.idNumber || 0], false);
       if (allPrsForSync.length > 0) {
         try {
           await loadDeploymentActionsState(allPrsForSync);
@@ -125,7 +127,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     // State must be loaded for every scanned Pull Request, not only those owning actions:
     // otherwise a still-ticked checkbox of a scope-only Pull Request would be re-recorded as
     // newly done on every job, overwriting its original completion date and job link.
-    const allPrNumbers = await buildPrNumbersToScan(sourcePrNumbers);
+    const allPrNumbers = await buildPrNumbersToScan(sourcePrNumbers, commands.length > 0);
     await loadDeploymentActionsState(allPrNumbers);
     try {
       await syncManualActionCheckboxes(allPrNumbers);
@@ -437,17 +439,20 @@ async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy
 
 /**
  * Pull Requests whose comments are scanned for deployment actions state and manual action
- * checkboxes: the given Pull Requests (current one + those owning actions), plus the batch Pull
- * Requests of the scope (major-branch or retrofit merges), because their deployment comments
- * list the manual action checklists of the other Pull Requests and a user can tick a box there.
+ * checkboxes: the given Pull Requests (current one + those owning actions), plus - only when the
+ * scope carries at least one deployment action - the batch Pull Requests of the scope
+ * (major-branch or retrofit merges), because their deployment comments list the actions state
+ * and manual action checklists of the other Pull Requests, and a user can tick a box there.
+ * With no action in the whole scope, no comment can carry anything to record.
  *
- * Scope-only feature Pull Requests are left out on purpose: their comments only carry their own
- * checklists (they define no action here), and scanning each Pull Request of the scope costs one
- * or more git provider API calls - on a repository with a large promotion window, scanning
- * thousands of them made CI jobs exceed their timeout (issue #2115).
+ * Scope-only feature Pull Requests are left out on purpose: a feature / fix Pull Request without
+ * a scripts/actions/.sfdx-hardis.<PR>.yml file (or a YAML block in its description) has no
+ * action associated, so its comments only carry its own content, and scanning each Pull Request
+ * of the scope costs one or more git provider API calls - on a repository with a large promotion
+ * window, scanning thousands of them made CI jobs exceed their timeout (issue #2115).
  */
-async function buildPrNumbersToScan(basePrNumbers: number[]): Promise<number[]> {
-  const scopePrs = getPullRequestScopeInfo()?.pullRequests || [];
+async function buildPrNumbersToScan(basePrNumbers: number[], scopeHasActions: boolean): Promise<number[]> {
+  const scopePrs = scopeHasActions ? (getPullRequestScopeInfo()?.pullRequests || []) : [];
   let batchPrNumbers: number[] = [];
   if (scopePrs.length > 0) {
     const majorBranchNames = (await listMajorOrgs()).map((majorOrg: any) => majorOrg.branchName);

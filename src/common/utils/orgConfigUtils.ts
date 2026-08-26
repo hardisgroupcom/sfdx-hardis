@@ -154,8 +154,21 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   return { success, failed, unnecessary };
 }
 
+// listMajorOrgs globs the whole repository for branch config files and parses them all, and its
+// callers invoke it repeatedly in the same process (scope computation, branch filters, comment
+// scans): the result is computed once and reused. setInConfigFile clears the cache when it
+// writes a branch config file. A deep copy is returned so callers cannot alter the cached orgs.
+let listMajorOrgsCache: any[] | null = null;
+
+export function clearListMajorOrgsCache() {
+  listMajorOrgsCache = null;
+}
+
 // List all yml files in config/branches and build list of major orgs from them
-export async function listMajorOrgs() {
+export async function listMajorOrgs(): Promise<any[]> {
+  if (listMajorOrgsCache) {
+    return structuredClone(listMajorOrgsCache);
+  }
   const majorOrgs: any[] = [];
   const branchConfigPattern = '**/config/branches/.sfdx-hardis.*.yml';
   const configFiles = await glob(branchConfigPattern, { ignore: GLOB_IGNORE_PATTERNS });
@@ -220,7 +233,8 @@ export async function listMajorOrgs() {
     majorOrg.mergeTargets = guessMatchingMergeTargets(majorOrg.branchName, majorOrgs);
     return majorOrg;
   });
-  return completedMajorOrgs;
+  listMajorOrgsCache = completedMajorOrgs;
+  return structuredClone(completedMajorOrgs);
 }
 
 function guessMatchingMergeTargets(branchName: string, majorOrgs: any[]): string[] {
