@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-- Fix GitLab validation jobs scanning thousands of historical Merge Requests during the Deployment Actions phase, making pipelines exceed their timeout: the Pull Request scope of a never-merged branch (retrofit, first promotion) is now bounded by the target branch, merged MR listings stop at the window's oldest commit, and only the Pull Requests owning actions or carrying batch checklists have their comments scanned.
+- Fix GitLab validation jobs scanning thousands of historical Merge Requests during the Deployment Actions phase, making pipelines exceed their timeout
 - New [disableDeploymentActions](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/#disable-deployment-actions) config property (or SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS env var) to fully disable the deployment actions feature.
 - The major orgs list (config/branches files) is now read once per command instead of being re-globbed and re-parsed at every call.
 - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/) now states whether frequency gating is active or forced, and lists skipped commands with their frequency in the run summary.

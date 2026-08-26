@@ -537,5 +537,6 @@ When disabled:
 
 - `commandsPreDeploy` and `commandsPostDeploy` are not run, whether they are defined in the project / branch config or attached to Pull Requests,
 - the Pull Request scope is not computed, so no Merge Request history is fetched from the git provider,
+- test classes attached to Pull Requests (`enableDeploymentApexTestClasses`) are not collected, since they would need the Pull Request scope,
 - the Deployment Actions comments and manual action checkboxes are neither read nor updated,
 - internal actions requested by Pull Request custom behaviors (like `purgeFlowVersions` or `destructiveChangesAfterDeployment`) are skipped too, with a warning in the job logs.

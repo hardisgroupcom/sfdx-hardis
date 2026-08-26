@@ -36,6 +36,7 @@ import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
+import { isDeploymentActionsDisabled } from '../../../../common/utils/prePostCommandUtils.js';
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
 import { t } from '../../../../common/utils/i18n.js';
 
@@ -862,7 +863,14 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       if (selectedTestClassesForAllPrs.length > 0) {
         uxLog("log", this, c.grey('[SmartDeploy] ' + t('smartDeployTestClassesFromConfig', { classes: selectedTestClassesForAllPrs.join(" ") })));
       }
-      const pullRequests = await listAllPullRequestsForCurrentScope(this.checkOnly);
+      // The deployment actions kill switch also disables the Pull Request scope computation:
+      // no Merge Request history must be fetched from the git provider when it is set.
+      let pullRequests: Awaited<ReturnType<typeof listAllPullRequestsForCurrentScope>> = [];
+      if (isDeploymentActionsDisabled(this.configInfo)) {
+        uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('deploymentActionsDisabledPrTestClassesSkipped')));
+      } else {
+        pullRequests = await listAllPullRequestsForCurrentScope(this.checkOnly);
+      }
       const selectedTestClassesFromPrs = await selectTestClassesFromPullRequests(pullRequests, this.testClasses !== '' ? this.testClasses.split(" ") : []);
       const allSelectedTestClasses: string[] = [...selectedTestClassesForAllPrs, ...selectedTestClassesFromPrs];
       if (allSelectedTestClasses.length > 0) {

@@ -3,22 +3,15 @@ import c from "chalk";
 import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
+import { GitProviderRoot, PullRequestCommentRef, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
 import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
 
-// Oldest commit date of a window, minus one day of margin, used to bound the merged MRs
-// listing: an MR is always updated when it is merged, so its updated_at cannot be older than
-// the commits its merge brought. Returns null when no commit carries a date.
+// Oldest commit date of a window, used to bound the merged MRs listing (see
+// getOldestCommitDateWithMargin in gitProviderRoot.ts).
 function getOldestCommitDate(commits: any[]): string | null {
-  const timestamps = commits
-    .map((commit) => Date.parse(commit?.created_at || commit?.createdAt || ''))
-    .filter((time) => !isNaN(time));
-  if (timestamps.length === 0) {
-    return null;
-  }
-  return new Date(Math.min(...timestamps) - 24 * 60 * 60 * 1000).toISOString();
+  return getOldestCommitDateWithMargin(commits, (commit) => commit?.created_at || commit?.createdAt);
 }
 
 export class GitlabProvider extends GitProviderRoot {
@@ -534,7 +527,10 @@ ${getBannerMarkdownAndLink()}
       // Step 3-6: Match merged MRs targeting branchName and child branches against those commits
       /* jscpd:ignore-start */
       const allBranches = [branchName, ...childBranchesNames];
-      return await this.collectMergedPrsForCommits(projectId, allBranches, commitSHAs, getOldestCommitDate(goLiveCommits));
+      // The merge commit's own date bounds the listing when the comparison brings no dated
+      // commit, so the merged MR scan can never fall back to the whole repository history.
+      const updatedAfter = getOldestCommitDate(goLiveCommits) || getOldestCommitDate([mergeCommit]);
+      return await this.collectMergedPrsForCommits(projectId, allBranches, commitSHAs, updatedAfter);
     } catch (err) {
       uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })));
       return [];
@@ -560,6 +556,10 @@ ${getBannerMarkdownAndLink()}
           targetBranch: branchName,
           state: "merged",
           perPage: 100,
+          // Safety cap mirroring the Bitbucket provider (fetchAllPages, 50 pages): without it,
+          // gitbeaker pages through the whole merged MR history when updatedAfter is null or
+          // the window reaches far back.
+          maxPages: 50,
           ...(updatedAfter ? { updatedAfter } : {}),
         });
         uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabFetchingMergedMrs', { branchName })));
@@ -626,10 +626,16 @@ ${getBannerMarkdownAndLink()}
     projectId: string | number,
   ): Promise<any[]> {
     try {
-      // Previous merge found: list the branch commits since its date (also works with squash
-      // and fast-forward promotions, whose merge commits are not ancestors of the source branch)
+      // Previous merge found with a merge or squash commit: list the branch commits since its
+      // date (also works with squash promotions, whose squash commit is not an ancestor of the
+      // source branch). Not for fast-forward promotions: they leave no merge commit, and the
+      // branch can then receive fast-forwarded feature merges whose commits keep committer
+      // dates older than the promotion, which the date window would silently miss.
       const lastMergeDate = lastMerge ? (lastMerge.mergedAt || lastMerge.merged_at) : null;
-      if (lastMergeDate) {
+      const lastMergeSha = lastMerge
+        ? (lastMerge.mergeCommitSha || lastMerge.merge_commit_sha || lastMerge.squashCommitSha || lastMerge.squash_commit_sha)
+        : null;
+      if (lastMergeDate && lastMergeSha) {
         const commits = await this.gitlabApi!.Commits.all(projectId, {
           refName: branchName,
           since: lastMergeDate,
@@ -637,9 +643,10 @@ ${getBannerMarkdownAndLink()}
         });
         return commits || [];
       }
-      // Never merged into the target before (retrofit branch, first promotion): the branch
-      // history is the whole repository history, so keep only the commits the merge would
-      // actually bring into the target branch, like the GitHub / Azure / Bitbucket providers do.
+      // Never merged into the target before (retrofit branch, first promotion), or fast-forward
+      // promotions: the branch history is not usable as a window, so keep only the commits the
+      // merge would actually bring into the target branch, like the GitHub / Azure / Bitbucket
+      // providers do.
       uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabComparingCommits', { base: targetBranchName, head: branchName })));
       const comparison: any = await this.gitlabApi!.Repositories.compare(projectId, targetBranchName, branchName);
       return comparison?.commits || [];

@@ -1,4 +1,4 @@
-import { GitProviderRoot, PullRequestCommentRef } from './gitProviderRoot.js';
+import { GitProviderRoot, PullRequestCommentRef, getOldestCommitDateWithMargin } from './gitProviderRoot.js';
 import c from 'chalk';
 import fs from '../utils/fsUtils.js';
 import * as path from "path";
@@ -11,17 +11,10 @@ import { httpPost } from '../utils/httpUtils.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./jenkinsUtils.js";
 const { Bitbucket } = bbPkg;
 
-// Oldest commit date of a window, minus one day of margin, used to bound the merged PRs
-// listing: a PR is always updated when it is merged, so its updated_on cannot be older than
-// the commits its merge brought. Returns null when no commit carries a date.
+// Oldest commit date of a window, used to bound the merged PRs listing (see
+// getOldestCommitDateWithMargin in gitProviderRoot.ts).
 function getOldestBitbucketCommitDate(commits: any[]): string | null {
-  const timestamps = commits
-    .map((commit) => Date.parse(commit?.date || ''))
-    .filter((time) => !isNaN(time));
-  if (timestamps.length === 0) {
-    return null;
-  }
-  return new Date(Math.min(...timestamps) - 24 * 60 * 60 * 1000).toISOString();
+  return getOldestCommitDateWithMargin(commits, (commit) => commit?.date);
 }
 
 export class BitbucketProvider extends GitProviderRoot {

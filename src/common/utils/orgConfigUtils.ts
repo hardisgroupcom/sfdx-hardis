@@ -156,8 +156,9 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
 
 // listMajorOrgs globs the whole repository for branch config files and parses them all, and its
 // callers invoke it repeatedly in the same process (scope computation, branch filters, comment
-// scans): the result is computed once and reused. setInConfigFile clears the cache when it
-// writes a branch config file. A deep copy is returned so callers cannot alter the cached orgs.
+// scans): the result is computed once and reused. Every branch config file writer clears the
+// cache (setInConfigFile in src/config/index.ts, writeActions / writeTestClasses in
+// actionUtils.ts). A deep copy is returned so callers cannot alter the cached orgs.
 let listMajorOrgsCache: any[] | null = null;
 
 export function clearListMajorOrgsCache() {
