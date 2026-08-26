@@ -391,24 +391,27 @@ static sendMessage(data: any) {
         else if (HIDDEN_PANEL_COMMANDS.has(this.wsContext.command)) {
           message.uiConfig = { hide: true };
         }
-        else if (!this.wsContext.command.startsWith('hardis:')) {
-          try {
-            const commandParts = this.wsContext.command.split(':');
-            // Plugin root provided by the init hook (third-party plugins).
-            const pluginRoot = (this.wsContext as any).commandPluginRoot as string | undefined;
-            const commandsBase = pluginRoot
-              ? path.resolve(pluginRoot, 'lib/commands')
-              : path.resolve(__dirname, '../../lib/commands');
-            const commandPath = path.resolve(commandsBase, ...commandParts) + '.js';
-            const fileUrl = 'file://' + commandPath.replace(/\\/g, '/');
-            const imported = await import(fileUrl);
-            const CommandClass = imported.default;
-            if (CommandClass && CommandClass.uiConfig) {
-              message.uiConfig = CommandClass.uiConfig;
+        else {
+          // Plugin root provided by the init hook. A command of another plugin
+          // (even one contributed under the hardis topic) still loads its class
+          // to read uiConfig; sfdx-hardis's own commands never do.
+          const pluginRoot = (this.wsContext as any).commandPluginRoot as string | undefined;
+          const ownRoot = path.resolve(__dirname, '../..');
+          if (pluginRoot && path.resolve(pluginRoot) !== ownRoot) {
+            try {
+              const commandParts = this.wsContext.command.split(':');
+              const commandsBase = path.resolve(pluginRoot, 'lib/commands');
+              const commandPath = path.resolve(commandsBase, ...commandParts) + '.js';
+              const fileUrl = 'file://' + commandPath.replace(/\\/g, '/');
+              const imported = await import(fileUrl);
+              const CommandClass = imported.default;
+              if (CommandClass && CommandClass.uiConfig) {
+                message.uiConfig = CommandClass.uiConfig;
+              }
+            } catch {
+              // External plugins are not expected to expose a command class
+              // file at the resolved path: uiConfig is best-effort for them.
             }
-          } catch {
-            // External plugins are not expected to expose a command class
-            // file at the resolved path: uiConfig is best-effort for them.
           }
         }
       }

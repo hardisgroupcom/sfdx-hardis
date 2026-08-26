@@ -26,7 +26,8 @@ describe('websocketClient HIDDEN_PANEL_COMMANDS', () => {
     const hiddenFromSources = new Set<string>();
     for (const file of listCommandFiles(commandsDir)) {
       const source = fs.readFileSync(file, 'utf8');
-      const uiConfigMatch = source.match(/static\s+uiConfig\s*=\s*(\{[^}]*\})/);
+      // Anchored to the line start so a commented-out declaration never matches
+      const uiConfigMatch = source.match(/^[ \t]*(?:public\s+)?static\s+uiConfig\s*=\s*(\{[^}]*\})/m);
       if (uiConfigMatch && /hide\s*:\s*true/.test(uiConfigMatch[1])) {
         const commandId = path
           .relative(commandsDir, file)
