@@ -61,8 +61,19 @@ const hook: Hook<'prerun'> = async (options) => {
     }
     await authOrg(devHubAlias, options);
   }
-  // Manage authentication if org is required but current user is disconnected
+  // Manage authentication if org is required but current user is disconnected.
+  // OFF by default since v8.3, as if --skipauth was always sent: the check cost
+  // about 1 second on every command, official CI/CD and monitoring pipelines
+  // authenticate explicitly with hardis:auth:login, and a command run without
+  // any default org still fails with a clear Salesforce CLI error. Restore the
+  // previous behavior with skipAuthCheck: false in .sfdx-hardis.yml or
+  // SFDX_HARDIS_AUTH_CHECK=true (the DevHub check above is kept as it guards
+  // scratch org commands, exactly like --skipauth always did).
+  const authCheckEnforced =
+    configInfo.skipAuthCheck === false ||
+    process.env.SFDX_HARDIS_AUTH_CHECK === 'true';
   if (
+    authCheckEnforced &&
     (((options?.Command?.flags as any)['target-org']?.required === true && !options?.argv?.includes('--skipauth')) ||
       (options as any)?.checkAuth === true) &&
     !((options as any)?.devHub === true)

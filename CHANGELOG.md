@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- The org authentication check that ran before every command is now disabled by default (as if `--skipauth` was always sent), saving time on each command and removing the repeated "You are already connected as..." lines. CI/CD and monitoring pipelines are not impacted: they authenticate explicitly with [hardis:auth:login](https://sfdx-hardis.cloudity.com/hardis/auth/login/). Set `skipAuthCheck: false` in `.sfdx-hardis.yml` or [SFDX_HARDIS_AUTH_CHECK](https://sfdx-hardis.cloudity.com/all-env-variables/)=`true` to restore the check. The DevHub authentication check of scratch org commands is kept.
+
 - Fixed Azure Pipelines check and deployment jobs failing on the publish artifact step when there is nothing to deploy (missing hardis-report folder).
 - Fix GitLab validation jobs scanning thousands of historical Merge Requests during the Deployment Actions phase, making pipelines exceed their timeout
 - New [disableDeploymentActions](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/#disable-deployment-actions) config property (or SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS env var) to fully disable the deployment actions feature.
