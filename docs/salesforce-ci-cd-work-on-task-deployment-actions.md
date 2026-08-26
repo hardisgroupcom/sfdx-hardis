@@ -520,3 +520,22 @@ When someone ticks one of these checkboxes (in any of the three comments), the n
 This requires the same git provider token as `runOnlyOnceByOrg` state tracking.
 
 </details>
+
+### Disable deployment actions
+
+On some projects you may want to turn the whole feature off: for example when the repository has a very long Pull Request history and the git provider API takes too long to process it, or when your pipelines must not call the git provider at all.
+
+Set the `disableDeploymentActions` property in `config/.sfdx-hardis.yml` (or in a branch-scoped config file to disable it only for some target branches):
+
+```yaml
+disableDeploymentActions: true
+```
+
+You can also set the env variable `SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS=true` on a CI job to get the same result without committing a config change (setting it to `false` re-enables the feature even if the config property is `true`).
+
+When disabled:
+
+- `commandsPreDeploy` and `commandsPostDeploy` are not run, whether they are defined in the project / branch config or attached to Pull Requests,
+- the Pull Request scope is not computed, so no Merge Request history is fetched from the git provider,
+- the Deployment Actions comments and manual action checkboxes are neither read nor updated,
+- internal actions requested by Pull Request custom behaviors (like `purgeFlowVersions` or `destructiveChangesAfterDeployment`) are skipped too, with a warning in the job logs.

@@ -1867,6 +1867,17 @@
       "title": "Dev Hub Username",
       "type": "string"
     },
+    "disableDeploymentActions": {
+      "$id": "#/properties/disableDeploymentActions",
+      "default": false,
+      "description": "Disable the deployment actions feature: commandsPreDeploy and commandsPostDeploy from the branch config and from Pull Requests are not collected nor run, and no Pull Request scope is computed. Use it when the git provider API cannot handle the Pull Request history processing (very large repositories). Can also be set with the SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS env variable.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/#disable-deployment-actions",
+      "examples": [
+        true
+      ],
+      "title": "Disable deployment actions",
+      "type": "boolean"
+    },
     "docDeployToCloudflare": {
       "$id": "#/properties/docDeployToCloudflare",
       "default": false,

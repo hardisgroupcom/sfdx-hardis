@@ -3,7 +3,7 @@ import c from 'chalk';
 import fs from './fsUtils.js';
 
 import * as path from 'path';
-import { getConfig } from '../../config/index.js';
+import { getConfig, getEnvVar } from '../../config/index.js';
 import { getCurrentGitBranch, uxLog } from './index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { loadDeploymentActionsState, checkActionInState, upsertActionInState, persistDeploymentActionsState, getJobInfoWithUrl, syncManualActionCheckboxes, buildManualActionCheckboxMarker } from './deploymentActionsStateUtils.js';
@@ -16,12 +16,38 @@ import { t } from './i18n.js';
 import { ActionWhen, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getPrIdFromUserConfig } from './actionUtils.js';
 import { recordExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 
+/**
+ * Full kill switch of the deployment actions feature, for projects whose git provider cannot
+ * handle the Pull Request scope processing (ex: thousands of historical Merge Requests, see
+ * issue #2115). The env var wins over the config property so a single CI job can be unblocked
+ * without committing a config change.
+ */
+export function isDeploymentActionsDisabled(branchConfig: any): boolean {
+  const envVarValue = (getEnvVar('SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS') || '').toLowerCase();
+  if (['true', '1'].includes(envVarValue)) {
+    return true;
+  }
+  if (['false', '0'].includes(envVarValue)) {
+    return false;
+  }
+  return branchConfig?.disableDeploymentActions === true;
+}
+
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, extraCommands?: any[] }) {
   const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
-  uxLog("action", this, c.cyan(`[DeploymentActions] Listing ${actionLabel}...`));
   const branchConfig = await getConfig('branch');
   const deployWhen: ActionWhen = property === 'commandsPreDeploy' ? 'pre-deploy' : 'post-deploy';
   const extraCommands = (options.extraCommands || []).filter(cmd => cmd.preOrPost === property);
+  if (isDeploymentActionsDisabled(branchConfig)) {
+    uxLog("action", this, c.cyan(`[DeploymentActions] ${t('deploymentActionsDisabledSkipping', { actionLabel })}`));
+    // Internal actions added from Pull Request custom behaviors are skipped too: say it, so a
+    // requested purge or post-deployment destructive change does not silently not happen.
+    if (extraCommands.length > 0) {
+      uxLog("warning", this, c.yellow(`[DeploymentActions] ${t('deploymentActionsDisabledExtraCommandsSkipped', { labels: extraCommands.map((cmd) => cmd.label).join(', ') })}`));
+    }
+    return;
+  }
+  uxLog("action", this, c.cyan(`[DeploymentActions] Listing ${actionLabel}...`));
   const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(extraCommands || [])];
   try {
     await completeWithCommandsFromPullRequests(property, commands, options.checkOnly, options.success);
@@ -38,12 +64,11 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     uxLog("action", this, c.cyan(`[DeploymentActions] No ${actionLabel} defined in branch config or pull requests`));
     uxLog("log", this, c.grey(t('noFoundToRun', { property })));
     // Even with no action to run, a manual action checkbox may have been ticked in a Pull Request
-    // comment of the scope (ex: the action definition was removed after its checklist was posted):
+    // comment (ex: the action definition was removed after its checklist was posted):
     // still scan the comments so the tick is recorded and propagated.
     if ((await GitProvider.getInstance()) !== null) {
       const prInfoForSync = await GitProvider.getPullRequestInfo({ useCache: true });
-      const scopePrsForSync = (getPullRequestScopeInfo()?.pullRequests || []).map((pr) => pr.idNumber);
-      const allPrsForSync = [...new Set([prInfoForSync?.idNumber || 0, ...scopePrsForSync])].filter((prNumber) => prNumber > 0);
+      const allPrsForSync = await buildPrNumbersToScan([prInfoForSync?.idNumber || 0]);
       if (allPrsForSync.length > 0) {
         try {
           await loadDeploymentActionsState(allPrsForSync);
@@ -97,17 +122,10 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   const hasGitProvider = (await GitProvider.getInstance()) !== null;
   if (hasGitProvider) {
     const sourcePrNumbers = collectSourcePrNumbers(commands, currentPrNumber);
-    // Manual action checkboxes ticked by users in Pull Request comments count as performed actions.
-    // The scan covers every Pull Request of the scope, not only those owning actions: a checkbox
-    // can be ticked on the deployment comment of a batch Pull Request (retrofit or major-branch
-    // merge) that defines no action itself but lists the manual actions of the other ones.
-    const scopePrNumbers = (getPullRequestScopeInfo()?.pullRequests || [])
-      .map((pr) => pr.idNumber)
-      .filter((prNumber) => prNumber > 0);
     // State must be loaded for every scanned Pull Request, not only those owning actions:
     // otherwise a still-ticked checkbox of a scope-only Pull Request would be re-recorded as
     // newly done on every job, overwriting its original completion date and job link.
-    const allPrNumbers = [...new Set([...sourcePrNumbers, ...scopePrNumbers])];
+    const allPrNumbers = await buildPrNumbersToScan(sourcePrNumbers);
     await loadDeploymentActionsState(allPrNumbers);
     try {
       await syncManualActionCheckboxes(allPrNumbers);
@@ -415,6 +433,29 @@ async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy
       }
     }
   }
+}
+
+/**
+ * Pull Requests whose comments are scanned for deployment actions state and manual action
+ * checkboxes: the given Pull Requests (current one + those owning actions), plus the batch Pull
+ * Requests of the scope (major-branch or retrofit merges), because their deployment comments
+ * list the manual action checklists of the other Pull Requests and a user can tick a box there.
+ *
+ * Scope-only feature Pull Requests are left out on purpose: their comments only carry their own
+ * checklists (they define no action here), and scanning each Pull Request of the scope costs one
+ * or more git provider API calls - on a repository with a large promotion window, scanning
+ * thousands of them made CI jobs exceed their timeout (issue #2115).
+ */
+async function buildPrNumbersToScan(basePrNumbers: number[]): Promise<number[]> {
+  const scopePrs = getPullRequestScopeInfo()?.pullRequests || [];
+  let batchPrNumbers: number[] = [];
+  if (scopePrs.length > 0) {
+    const majorBranchNames = (await listMajorOrgs()).map((majorOrg: any) => majorOrg.branchName);
+    batchPrNumbers = scopePrs
+      .filter((pr) => !isSinglePullRequestScope(pr.sourceBranch, majorBranchNames))
+      .map((pr) => pr.idNumber);
+  }
+  return [...new Set([...basePrNumbers, ...batchPrNumbers])].filter((prNumber) => prNumber > 0);
 }
 
 /**
