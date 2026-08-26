@@ -35,8 +35,8 @@ const hook: Hook<'prerun'> = async (options) => {
   // below) and restoreLocalSfdxInfo is a CI-only no-op, so nothing further is
   // needed - in particular not the getConfig('user') read, which cost about 1
   // second (up to 3 with a linked plugin) on every command just to look up
-  // skipAuthCheck. DevHub commands keep the full flow, and
-  // SFDX_HARDIS_AUTH_CHECK=true restores the check.
+  // skipAuthCheck. CI keeps the full flow, so do DevHub commands, and
+  // SFDX_HARDIS_AUTH_CHECK=true restores the check anywhere.
   const needsDevHub =
     (options.Command && (options?.Command?.flags as any)['target-dev-hub']?.required === true) ||
     (options as any)?.devHub === true;
@@ -72,16 +72,20 @@ const hook: Hook<'prerun'> = async (options) => {
     await authOrg(devHubAlias, options);
   }
   // Manage authentication if org is required but current user is disconnected.
-  // OFF by default since v8.3, as if --skipauth was always sent: the check cost
-  // about 1 second on every command, official CI/CD and monitoring pipelines
-  // authenticate explicitly with hardis:auth:login, and a command run without
-  // any default org still fails with a clear Salesforce CLI error. Restore the
-  // previous behavior with SFDX_HARDIS_AUTH_CHECK=true (any context), or
-  // skipAuthCheck: false in .sfdx-hardis.yml (CI and DevHub commands only:
-  // interactive non-DevHub commands return on the fast path above without
-  // reading the config). The DevHub check above is kept as it guards scratch
-  // org commands, exactly like --skipauth always did.
+  // Outside CI this is OFF by default since v8.3, as if --skipauth was always
+  // sent: the check cost about 1 second on every command, and a command run
+  // without any default org still fails with a clear Salesforce CLI error.
+  // In CI it stays ON: besides authenticating, it aligns the Salesforce CLI
+  // default org with the org of the command, which the sf processes started
+  // afterwards rely on (deployment actions, sfdmu, sfdx-git-delta...), as many
+  // of them are run without an explicit --target-org.
+  // Set SFDX_HARDIS_AUTH_CHECK=true to also run it outside CI (interactive
+  // non-DevHub commands return on the fast path above without even reading the
+  // config, so skipAuthCheck: false only has an effect in CI and on DevHub
+  // commands). The DevHub check above is kept as it guards scratch org
+  // commands, exactly like --skipauth always did.
   const authCheckEnforced =
+    isCI ||
     configInfo.skipAuthCheck === false ||
     process.env.SFDX_HARDIS_AUTH_CHECK === 'true';
   if (
