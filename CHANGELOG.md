@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- New expert mode for [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): use `--expert`, or set [SFDX_HARDIS_EXPERT_MODE](https://sfdx-hardis.cloudity.com/all-env-variables/) to `true`, to skip the confirmation questions and open the Merge Request page at the end.
+
 ## [8.3.0] 2026-08-26
 
 - The org authentication check that ran before every command is now disabled outside of CI (as if `--skipauth` was always sent), saving time on each command and removing the repeated "You are already connected as..." lines. CI/CD and monitoring pipelines keep the check, so the org they target is still set as default org for the sf commands started next. Set [SFDX_HARDIS_AUTH_CHECK](https://sfdx-hardis.cloudity.com/all-env-variables/)=`true` to also run it locally. The DevHub authentication check of scratch org commands is kept. When the check is skipped, the project configuration is no longer loaded either, saving about 1 more second per command.
