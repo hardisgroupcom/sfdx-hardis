@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- Fixed Azure Pipelines check and deployment jobs failing on the publish artifact step when there is nothing to deploy (missing hardis-report folder).
 - Fix GitLab validation jobs scanning thousands of historical Merge Requests during the Deployment Actions phase, making pipelines exceed their timeout
 - New [disableDeploymentActions](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/#disable-deployment-actions) config property (or SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS env var) to fully disable the deployment actions feature.
 - The major orgs list (config/branches files) is now read once per command instead of being re-globbed and re-parsed at every call.
