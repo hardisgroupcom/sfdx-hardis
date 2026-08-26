@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.3.0] 2026-08-26
+
 - The org authentication check that ran before every command is now disabled outside of CI (as if `--skipauth` was always sent), saving time on each command and removing the repeated "You are already connected as..." lines. CI/CD and monitoring pipelines keep the check, so the org they target is still set as default org for the sf commands started next. Set [SFDX_HARDIS_AUTH_CHECK](https://sfdx-hardis.cloudity.com/all-env-variables/)=`true` to also run it locally. The DevHub authentication check of scratch org commands is kept. When the check is skipped, the project configuration is no longer loaded either, saving about 1 more second per command.
 - Fixed Azure Pipelines check and deployment jobs failing on the publish artifact step when there is nothing to deploy (missing hardis-report folder).
 - Fix GitLab validation jobs scanning thousands of historical Merge Requests during the Deployment Actions phase, making pipelines exceed their timeout
