@@ -6,6 +6,7 @@
 - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) now cleans Flow positions only on the Flows of the git delta, instead of scanning all Flows of the repository.
 - [hardis:project:clean:references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/) now runs its cleanings without starting a new Salesforce CLI process for each one, saving several seconds per cleaning.
 - Salesforce CLI commands started by sfdx-hardis skip telemetry, log file, version and autoupdate checks, and `sf org display` / `sf config get` / `sf config set` run in-process: several seconds saved per call. Set [SFDX_HARDIS_ENHANCE_PERFORMANCE](https://sfdx-hardis.cloudity.com/all-env-variables/) to `false` to disable.
+- The VS Code Command Runner panel switches from "Starting" to "Running" several seconds earlier: commands like [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) and [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) announced themselves to the extension only after loading their whole implementation (measured: 5.1 s and 3.8 s from launch, now 0.7 s for both).
 
 ## [8.2.0] 2026-08-25
 

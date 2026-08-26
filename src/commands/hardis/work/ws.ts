@@ -35,6 +35,7 @@ The command's technical implementation involves:
 </details>
 `;
 
+  // Keep in sync with HIDDEN_PANEL_COMMANDS in common/websocketClient.ts (enforced by a unit test)
   public static uiConfig = { hide: true };
 
   public static examples = ['$ sf hardis:work:ws --event refreshStatus'];

@@ -47,6 +47,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
   public static examples = ['$ sf hardis:cache:clear',
     '$ sf hardis:cache:clear --agent',];
 
+  // Keep in sync with HIDDEN_PANEL_COMMANDS in common/websocketClient.ts (enforced by a unit test)
   public static uiConfig = { hide: true };
   public static disableWebsocket = true;
 

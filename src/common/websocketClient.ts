@@ -23,6 +23,15 @@ const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
 // Max wait for the extension to answer the initClient message
 const INIT_TIMEOUT_MS = 10000;
 
+// sfdx-hardis commands whose class declares `public static uiConfig = { hide: true }`.
+// Keep in sync with those classes (a unit test enforces it). Listing them here
+// lets initClient be sent without importing any command class: importing a
+// heavy one used to delay the VS Code "Running" status by several seconds.
+export const HIDDEN_PANEL_COMMANDS = new Set([
+  'hardis:cache:clear',
+  'hardis:work:ws',
+]);
+
 // Define allowed log types and type alias outside the class
 export const LOG_TYPES = ['log', 'action', 'warning', 'error', 'success', 'table', "other"] as const;
 export type LogType = typeof LOG_TYPES[number];
@@ -113,13 +122,6 @@ export class WebSocketClient {
     }
   }
 
-  // Logs through uxLog without statically importing the heavy utils barrel
-  // (see the PERF note at the top of this file). Falls back to console.log.
-  private uxLogDeferred(logType: string, text: string): void {
-    void import('./utils/index.js')
-      .then(({ uxLog }) => uxLog(logType as any, this, text))
-      .catch(() => console.log(text));
-  }
 
   static async isInitialized(): Promise<boolean> {
     const instance = WebSocketClient.activeInstance;
@@ -375,31 +377,41 @@ static sendMessage(data: any) {
       if (commandDocUrl) {
         message.commandDocUrl = commandDocUrl;
       }
-      // Dynamically import command class and send static uiConfig if present
+      // Attach the command's static uiConfig when it has one.
+      // PERF: never import an sfdx-hardis command class here. The initClient
+      // message is what flips the VS Code panel from "Starting" to "Running",
+      // and importing a heavy command class (hardis:work:new pulls the whole
+      // utils tree) used to delay it by several seconds. sfdx-hardis's own
+      // uiConfig values are known statically (HIDDEN_PANEL_COMMANDS below);
+      // only third-party plugin commands still load their class to read it.
       if (this.wsContext?.command) {
-        try {
-          const commandParts = this.wsContext.command.split(':');
-          // Use the plugin root provided by the init hook when available (works for
-          // third-party plugins), otherwise fall back to sfdx-hardis's own lib/commands.
+        if (process.env.NO_NEW_COMMAND_TAB === "true") {
+          message.uiConfig = { hide: true };
+        }
+        else if (HIDDEN_PANEL_COMMANDS.has(this.wsContext.command)) {
+          message.uiConfig = { hide: true };
+        }
+        else {
+          // Plugin root provided by the init hook. A command of another plugin
+          // (even one contributed under the hardis topic) still loads its class
+          // to read uiConfig; sfdx-hardis's own commands never do.
           const pluginRoot = (this.wsContext as any).commandPluginRoot as string | undefined;
-          const commandsBase = pluginRoot
-            ? path.resolve(pluginRoot, 'lib/commands')
-            : path.resolve(__dirname, '../../lib/commands');
-          const commandPath = path.resolve(commandsBase, ...commandParts) + '.js';
-          const fileUrl = 'file://' + commandPath.replace(/\\/g, '/');
-          const imported = await import(fileUrl);
-          const CommandClass = imported.default;
-          if (process.env.NO_NEW_COMMAND_TAB === "true") {
-            message.uiConfig = { hide: true };
-          }
-          else if (CommandClass && CommandClass.uiConfig) {
-            message.uiConfig = CommandClass.uiConfig;
-          }
-        } catch (e) {
-          // Only warn for sfdx-hardis own commands – external plugins are not
-          // expected to expose a command class file at the resolved path.
-          if (this.wsContext.command.startsWith('hardis:')) {
-            this.uxLogDeferred("warning", c.yellow(t('unableToImportCommandClassFor', { wsContext: this.wsContext.command, instanceof: e instanceof Error ? e.message : String(e) })));
+          const ownRoot = path.resolve(__dirname, '../..');
+          if (pluginRoot && path.resolve(pluginRoot) !== ownRoot) {
+            try {
+              const commandParts = this.wsContext.command.split(':');
+              const commandsBase = path.resolve(pluginRoot, 'lib/commands');
+              const commandPath = path.resolve(commandsBase, ...commandParts) + '.js';
+              const fileUrl = 'file://' + commandPath.replace(/\\/g, '/');
+              const imported = await import(fileUrl);
+              const CommandClass = imported.default;
+              if (CommandClass && CommandClass.uiConfig) {
+                message.uiConfig = CommandClass.uiConfig;
+              }
+            } catch {
+              // External plugins are not expected to expose a command class
+              // file at the resolved path: uiConfig is best-effort for them.
+            }
           }
         }
       }
