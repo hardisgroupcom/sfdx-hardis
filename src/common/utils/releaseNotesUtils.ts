@@ -15,6 +15,8 @@ import {
   loadDeploymentActionsState,
 } from "./deploymentActionsStateUtils.js";
 import { readActions } from "./actionUtils.js";
+import { isDeploymentActionsDisabled } from "./prePostCommandUtils.js";
+import { getConfig } from "../../config/index.js";
 import { ActionWhen } from "../actionsProvider/actionsProvider.js";
 import { AiProvider } from "../aiProvider/index.js";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
@@ -905,26 +907,34 @@ export async function collectDeploymentActions(
     }
   }
 
-  // Try loading from PR comments first
+  // Try loading from PR comments first. Not when the deployment actions kill switch is set:
+  // Pull Request comments must then not be read from the git provider, so only the local
+  // scripts/actions files fallback below is used.
+  const deploymentActionsDisabled = isDeploymentActionsDisabled(await getConfig('branch'));
+  if (deploymentActionsDisabled) {
+    uxLog("log", commandRef, c.grey(t('deploymentActionsDisabledReleaseNotes')));
+  }
   try {
-    await loadDeploymentActionsState(prNumbers);
-    const state = (globalThis as any)._deploymentActionsMultiPrState;
-    if (state?.entriesByPr) {
-      const allEntries: DeploymentActionStateEntry[] = [];
-      for (const [prNum, entries] of state.entriesByPr.entries()) {
-        const pr = prLookup.get(prNum);
-        for (const entry of entries) {
-          allEntries.push({
-            ...entry,
-            prNumber: prNum,
-            prUrl: pr?.webUrl || "",
-          });
+    if (!deploymentActionsDisabled) {
+      await loadDeploymentActionsState(prNumbers);
+      const state = (globalThis as any)._deploymentActionsMultiPrState;
+      if (state?.entriesByPr) {
+        const allEntries: DeploymentActionStateEntry[] = [];
+        for (const [prNum, entries] of state.entriesByPr.entries()) {
+          const pr = prLookup.get(prNum);
+          for (const entry of entries) {
+            allEntries.push({
+              ...entry,
+              prNumber: prNum,
+              prUrl: pr?.webUrl || "",
+            });
+          }
         }
-      }
-      if (allEntries.length > 0) {
-        // State exists for these PRs: return the processed actions (skipped excluded, deduped),
-        // even if that leaves the list empty - do not fall back to re-listing action definitions.
-        return filterAndDedupeDeploymentActions(allEntries);
+        if (allEntries.length > 0) {
+          // State exists for these PRs: return the processed actions (skipped excluded, deduped),
+          // even if that leaves the list empty - do not fall back to re-listing action definitions.
+          return filterAndDedupeDeploymentActions(allEntries);
+        }
       }
     }
   } catch (e: any) {

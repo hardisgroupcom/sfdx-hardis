@@ -2,7 +2,7 @@
 import { expect } from 'chai';
 import type { ActionResult, PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { buildActionOutput } from '../../../src/common/actionsProvider/actionsProvider.js';
-import { buildActionsResultMarkdown, buildDeploymentScopeSubjects, getReportedActionStatus } from '../../../src/common/utils/prePostCommandUtils.js';
+import { buildActionsResultMarkdown, buildDeploymentScopeSubjects, getReportedActionStatus, isDeploymentActionsDisabled } from '../../../src/common/utils/prePostCommandUtils.js';
 
 function action(overrides: Partial<PrePostCommand>): PrePostCommand {
   return {
@@ -289,5 +289,58 @@ describe('buildActionsResultMarkdown()', () => {
     const markdown = buildActionsResultMarkdown('commandsPostDeploy', commands, false);
 
     expect(markdown).to.contain('distinct actions');
+  });
+});
+
+describe('isDeploymentActionsDisabled()', () => {
+  const ENV_VAR = 'SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS';
+  const previousValue = process.env[ENV_VAR];
+
+  afterEach(() => {
+    if (previousValue === undefined) {
+      delete process.env[ENV_VAR];
+    } else {
+      process.env[ENV_VAR] = previousValue;
+    }
+  });
+
+  it('is enabled by default', () => {
+    delete process.env[ENV_VAR];
+    expect(isDeploymentActionsDisabled({})).to.equal(false);
+    expect(isDeploymentActionsDisabled(null)).to.equal(false);
+    expect(isDeploymentActionsDisabled({ disableDeploymentActions: false })).to.equal(false);
+  });
+
+  it('is disabled by the disableDeploymentActions config property', () => {
+    delete process.env[ENV_VAR];
+    expect(isDeploymentActionsDisabled({ disableDeploymentActions: true })).to.equal(true);
+  });
+
+  // A string value coming from a hand-written YAML file must not disable the feature silently
+  it('only accepts a boolean true from the config', () => {
+    delete process.env[ENV_VAR];
+    expect(isDeploymentActionsDisabled({ disableDeploymentActions: 'true' })).to.equal(false);
+  });
+
+  it('is disabled by the env var, without any config property', () => {
+    process.env[ENV_VAR] = 'true';
+    expect(isDeploymentActionsDisabled({})).to.equal(true);
+    process.env[ENV_VAR] = '1';
+    expect(isDeploymentActionsDisabled({})).to.equal(true);
+  });
+
+  // The env var wins over the config property in both directions, so a single CI job can
+  // disable or re-enable the feature without a config commit
+  it('lets the env var override the config property', () => {
+    process.env[ENV_VAR] = 'false';
+    expect(isDeploymentActionsDisabled({ disableDeploymentActions: true })).to.equal(false);
+    process.env[ENV_VAR] = '0';
+    expect(isDeploymentActionsDisabled({ disableDeploymentActions: true })).to.equal(false);
+  });
+
+  it('ignores an unrecognized env var value', () => {
+    process.env[ENV_VAR] = 'maybe';
+    expect(isDeploymentActionsDisabled({ disableDeploymentActions: true })).to.equal(true);
+    expect(isDeploymentActionsDisabled({})).to.equal(false);
   });
 });

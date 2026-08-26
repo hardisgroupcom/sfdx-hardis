@@ -1,4 +1,4 @@
-import { GitProviderRoot, PullRequestCommentRef } from './gitProviderRoot.js';
+import { GitProviderRoot, PullRequestCommentRef, getOldestCommitDateWithMargin } from './gitProviderRoot.js';
 import c from 'chalk';
 import fs from '../utils/fsUtils.js';
 import * as path from "path";
@@ -10,6 +10,12 @@ import { t } from '../utils/i18n.js';
 import { httpPost } from '../utils/httpUtils.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./jenkinsUtils.js";
 const { Bitbucket } = bbPkg;
+
+// Oldest commit date of a window, used to bound the merged PRs listing (see
+// getOldestCommitDateWithMargin in gitProviderRoot.ts).
+function getOldestBitbucketCommitDate(commits: any[]): string | null {
+  return getOldestCommitDateWithMargin(commits, (commit) => commit?.date);
+}
 
 export class BitbucketProvider extends GitProviderRoot {
   private bitbucket: InstanceType<typeof Bitbucket>;
@@ -541,7 +547,7 @@ export class BitbucketProvider extends GitProviderRoot {
 
       // Step 3-6: Match merged PRs targeting currentBranch and child branches against those commits
       const allBranches = [currentBranchName, ...childBranchesNames];
-      return await this.collectMergedPrsForCommits(workspace, repoSlug, allBranches, commitHashes);
+      return await this.collectMergedPrsForCommits(workspace, repoSlug, allBranches, commitHashes, getOldestBitbucketCommitDate(commits));
     } catch (err) {
       uxLog("warning", this, c.yellow(t('errorInListpullrequestsinbranchsincelastmerge', { String: String(err) })));
       return [];
@@ -602,7 +608,7 @@ export class BitbucketProvider extends GitProviderRoot {
 
       // Step 3-6: same matching as listPullRequestsInBranchSinceLastMerge
       const allBranches = [branchName, ...childBranchesNames];
-      return await this.collectMergedPrsForCommits(workspace, repoSlug, allBranches, commitHashes);
+      return await this.collectMergedPrsForCommits(workspace, repoSlug, allBranches, commitHashes, getOldestBitbucketCommitDate(commits));
     } catch (err) {
       uxLog("warning", this, c.yellow(t('errorInListpullrequestsinbranchsincelastmerge', { String: String(err) })));
       return [];
@@ -614,16 +620,21 @@ export class BitbucketProvider extends GitProviderRoot {
   // commitHashes, dedupe by PR id and convert to the common shape. Bitbucket's
   // commits.list returns FULL 40-char hashes while pullrequests.list returns
   // merge_commit.hash ABBREVIATED to 12 chars, so we compare with prefix awareness.
+  // updatedAfter bounds the pagination: a PR merged before the oldest commit of the window
+  // cannot have its merge commit in it, so fetching the whole merged PR history of each branch
+  // (thousands of PRs on an old repository) is useless and slow.
   private async collectMergedPrsForCommits(
     workspace: string,
     repoSlug: string,
     allBranches: string[],
     commitHashes: string[],
+    updatedAfter: string | null = null,
   ): Promise<CommonPullRequestInfo[]> {
     uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFetchingMergedPrs', { branches: allBranches.join(', ') })));
     const prPromises = allBranches.map(async (branchName) => {
       try {
-        const branchQuery = `destination.branch.name = "${branchName}" AND state = "MERGED"`;
+        const branchQuery = `destination.branch.name = "${branchName}" AND state = "MERGED"`
+          + (updatedAfter ? ` AND updated_on >= "${updatedAfter}"` : '');
         // Paginated: a branch can have more merged PRs than fit on one page
         const values = await this.fetchAllPages(
           (params) => this.bitbucket.pullrequests.list(params),

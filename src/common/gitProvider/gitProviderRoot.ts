@@ -6,6 +6,20 @@ import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkd
 import { getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 
+// Oldest commit date of a window, minus one day of margin, used to bound merged PR listings:
+// a PR is always updated when it is merged, so its update date cannot be older than the commits
+// its merge brought. Each provider passes its own commit date accessor (created_at on GitLab,
+// date on Bitbucket). Returns null when no commit carries a parseable date.
+export function getOldestCommitDateWithMargin(commits: any[], getCommitDate: (commit: any) => string | undefined): string | null {
+  const timestamps = (commits || [])
+    .map((commit) => Date.parse(getCommitDate(commit) || ''))
+    .filter((time) => !isNaN(time));
+  if (timestamps.length === 0) {
+    return null;
+  }
+  return new Date(Math.min(...timestamps) - 24 * 60 * 60 * 1000).toISOString();
+}
+
 // Interview deletion is irreversible, so a passing mention in prose must not authorize it: only a
 // standalone directive, an affirmative assignment, a bullet or a checked Markdown checkbox count.
 // Non-semantic Markdown regions do not count either: a documentation example in a fenced or

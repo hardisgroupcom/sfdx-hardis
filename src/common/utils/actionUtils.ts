@@ -8,6 +8,7 @@ import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.j
 import { findDataWorkspaceByName } from './dataUtils.js';
 import { getConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
+import { clearListMajorOrgsCache } from './orgConfigUtils.js';
 import { t } from './i18n.js';
 
 export type ActionScope = 'project' | 'branch' | 'pr';
@@ -79,6 +80,10 @@ export async function writeActions(scope: ActionScope, when: ActionWhen, actions
   doc[configKey] = actions;
   await fs.ensureDir(path.dirname(configFile));
   await fs.writeFile(configFile, yaml.dump(doc));
+  // A created or updated branch config file changes the major orgs list: drop its cache.
+  if (scope === 'branch') {
+    clearListMajorOrgsCache();
+  }
   return configFile;
 }
 
@@ -492,5 +497,9 @@ export async function writeTestClasses(scope: ActionScope, classes: string[], br
   doc['deploymentApexTestClasses'] = classes;
   await fs.ensureDir(path.dirname(configFile));
   await fs.writeFile(configFile, yaml.dump(doc));
+  // A created or updated branch config file changes the major orgs list: drop its cache.
+  if (scope === 'branch') {
+    clearListMajorOrgsCache();
+  }
   return configFile;
 }

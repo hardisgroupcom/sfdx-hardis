@@ -3,10 +3,16 @@ import c from "chalk";
 import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
+import { GitProviderRoot, PullRequestCommentRef, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
 import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
+
+// Oldest commit date of a window, used to bound the merged MRs listing (see
+// getOldestCommitDateWithMargin in gitProviderRoot.ts).
+function getOldestCommitDate(commits: any[]): string | null {
+  return getOldestCommitDateWithMargin(commits, (commit) => commit?.created_at || commit?.createdAt);
+}
 
 export class GitlabProvider extends GitProviderRoot {
   private gitlabApi: InstanceType<typeof Gitlab>;
@@ -463,8 +469,11 @@ ${getBannerMarkdownAndLink()}
       uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabFindingLastMergedMr', { sourceBranch: currentBranchName, targetBranch: targetBranchName })));
       const lastMergeToTarget = await this.findLastMergedMR(currentBranchName, targetBranchName, projectId);
 
-      // Step 2: Get all commits in currentBranch since that merge (or all if no previous merge)
-      const commitsSinceLastMerge = await this.getCommitsSinceLastMerge(currentBranchName, lastMergeToTarget, projectId);
+      // Step 2: Get the commits in currentBranch since that merge. When the branches were never
+      // merged before (retrofit branch, first promotion), the window is bounded by the target
+      // branch instead: such a branch carries the whole repository history, and listing it made
+      // the MR scope cover thousands of historical MRs (issue #2115).
+      const commitsSinceLastMerge = await this.getCommitsSinceLastMerge(currentBranchName, targetBranchName, lastMergeToTarget, projectId);
 
       if (commitsSinceLastMerge.length === 0) {
         return [];
@@ -476,7 +485,7 @@ ${getBannerMarkdownAndLink()}
       // Step 3-6: Match merged MRs targeting currentBranch and child branches against those commits
       /* jscpd:ignore-start */
       const allBranches = [currentBranchName, ...childBranchesNames];
-      return await this.collectMergedPrsForCommits(projectId, allBranches, commitSHAs);
+      return await this.collectMergedPrsForCommits(projectId, allBranches, commitSHAs, getOldestCommitDate(commitsSinceLastMerge));
     } catch (err) {
       uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })));
       return [];
@@ -511,13 +520,17 @@ ${getBannerMarkdownAndLink()}
 
       // Step 2: Commits introduced by the go live (firstParent..mergeCommit)
       const comparison: any = await this.gitlabApi.Repositories.compare(projectId, firstParent, mergeCommitId, { straight: true });
-      const commitSHAs = new Set<string>((comparison?.commits || []).map((c: any) => c.id));
+      const goLiveCommits: any[] = comparison?.commits || [];
+      const commitSHAs = new Set<string>(goLiveCommits.map((c: any) => c.id));
       commitSHAs.add(mergeCommitId);
 
       // Step 3-6: Match merged MRs targeting branchName and child branches against those commits
       /* jscpd:ignore-start */
       const allBranches = [branchName, ...childBranchesNames];
-      return await this.collectMergedPrsForCommits(projectId, allBranches, commitSHAs);
+      // The merge commit's own date bounds the listing when the comparison brings no dated
+      // commit, so the merged MR scan can never fall back to the whole repository history.
+      const updatedAfter = getOldestCommitDate(goLiveCommits) || getOldestCommitDate([mergeCommit]);
+      return await this.collectMergedPrsForCommits(projectId, allBranches, commitSHAs, updatedAfter);
     } catch (err) {
       uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })));
       return [];
@@ -527,10 +540,14 @@ ${getBannerMarkdownAndLink()}
 
   // Shared tail: fetch merged MRs targeting each branch, keep those whose merge commit
   // is part of commitSHAs, dedupe by MR iid and convert to the common shape.
+  // updatedAfter bounds the pagination: an MR merged before the oldest commit of the window
+  // cannot have its merge commit in it, so fetching the whole merged MR history of each branch
+  // (thousands of MRs on an old repository) is useless and slow.
   private async collectMergedPrsForCommits(
     projectId: string | number,
     allBranches: string[],
     commitSHAs: Set<string>,
+    updatedAfter: string | null = null,
   ): Promise<CommonPullRequestInfo[]> {
     const mrPromises = allBranches.map(async (branchName) => {
       try {
@@ -539,6 +556,11 @@ ${getBannerMarkdownAndLink()}
           targetBranch: branchName,
           state: "merged",
           perPage: 100,
+          // Safety cap mirroring the Bitbucket provider (fetchAllPages, 50 pages): without it,
+          // gitbeaker pages through the whole merged MR history when updatedAfter is null or
+          // the window reaches far back.
+          maxPages: 50,
+          ...(updatedAfter ? { updatedAfter } : {}),
         });
         uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabFetchingMergedMrs', { branchName })));
         return mergedMRs;
@@ -599,26 +621,35 @@ ${getBannerMarkdownAndLink()}
 
   private async getCommitsSinceLastMerge(
     branchName: string,
+    targetBranchName: string,
     lastMerge: any | null,
     projectId: string | number,
   ): Promise<any[]> {
     try {
-      const options: any = {
-        refName: branchName,
-        perPage: 100,
-      };
-
-      // If there was a previous merge, get commits since that merge commit
-      if (lastMerge) {
-        const mergeCommitSha = lastMerge.mergeCommitSha || lastMerge.merge_commit_sha;
-        if (mergeCommitSha) {
-          // Get commits since the merge commit
-          options.since = lastMerge.mergedAt || lastMerge.merged_at;
-        }
+      // Previous merge found with a merge or squash commit: list the branch commits since its
+      // date (also works with squash promotions, whose squash commit is not an ancestor of the
+      // source branch). Not for fast-forward promotions: they leave no merge commit, and the
+      // branch can then receive fast-forwarded feature merges whose commits keep committer
+      // dates older than the promotion, which the date window would silently miss.
+      const lastMergeDate = lastMerge ? (lastMerge.mergedAt || lastMerge.merged_at) : null;
+      const lastMergeSha = lastMerge
+        ? (lastMerge.mergeCommitSha || lastMerge.merge_commit_sha || lastMerge.squashCommitSha || lastMerge.squash_commit_sha)
+        : null;
+      if (lastMergeDate && lastMergeSha) {
+        const commits = await this.gitlabApi!.Commits.all(projectId, {
+          refName: branchName,
+          since: lastMergeDate,
+          perPage: 100,
+        });
+        return commits || [];
       }
-
-      const commits = await this.gitlabApi!.Commits.all(projectId, options);
-      return commits || [];
+      // Never merged into the target before (retrofit branch, first promotion), or fast-forward
+      // promotions: the branch history is not usable as a window, so keep only the commits the
+      // merge would actually bring into the target branch, like the GitHub / Azure / Bitbucket
+      // providers do.
+      uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabComparingCommits', { base: targetBranchName, head: branchName })));
+      const comparison: any = await this.gitlabApi!.Repositories.compare(projectId, targetBranchName, branchName);
+      return comparison?.commits || [];
     } catch (err) {
       uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorFetchingCommits', { branchName, message: String(err) })));
       return [];

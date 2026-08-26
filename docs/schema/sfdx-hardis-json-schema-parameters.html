@@ -7827,6 +7827,44 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </div>
     </div>
 </div>
+<div class="accordion" id="accordiondisableDeploymentActions">
+    <div class="card">
+        <div class="card-header" id="headingdisableDeploymentActions">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#disableDeploymentActions"
+                        aria-expanded="" aria-controls="disableDeploymentActions" onclick="setAnchor('#disableDeploymentActions')"><span class="property-name">disableDeploymentActions</span></button>
+            </h2>
+        </div>
+
+        <div id="disableDeploymentActions"
+             class="collapse property-definition-div" aria-labelledby="headingdisableDeploymentActions"
+             data-parent="#accordiondisableDeploymentActions">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#disableDeploymentActions" onclick="anchorLink('disableDeploymentActions')">disableDeploymentActions</a></div><h4>Disable deployment actions</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Disable the deployment actions feature: commandsPreDeploy and commandsPostDeploy from the branch config and from Pull Requests are not collected nor run, and no Pull Request scope is computed. Use it when the git provider API cannot handle the Pull Request history processing (very large repositories). Can also be set with the SFDX<em>HARDIS</em>DISABLE<em>DEPLOYMENT</em>ACTIONS env variable.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="disableDeploymentActions_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">true</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordiondocDeployToCloudflare">
     <div class="card">
         <div class="card-header" id="headingdocDeployToCloudflare">

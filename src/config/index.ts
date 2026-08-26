@@ -205,6 +205,12 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
   if (explorer) {
     explorer.clearCaches();
   }
+  // A created or updated branch config file changes the major orgs list: drop its cache.
+  // Dynamic import: orgConfigUtils depends on modules that depend on this config module.
+  if (configFile.replace(/\\/g, '/').includes('config/branches/')) {
+    const { clearListMajorOrgsCache } = await import('../common/utils/orgConfigUtils.js');
+    clearListMajorOrgsCache();
+  }
   if (!isCI) {
     uxLog(
       "other",
