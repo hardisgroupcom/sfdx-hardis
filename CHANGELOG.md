@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-- New expert mode for [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): use `--expert`, or set [SFDX_HARDIS_EXPERT_MODE](https://sfdx-hardis.cloudity.com/all-env-variables/) to `true`, to skip the confirmation questions and open the Merge Request page at the end.
+- New expert mode: set [SFDX_HARDIS_EXPERT_MODE](https://sfdx-hardis.cloudity.com/all-env-variables/) to `true` and [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) skips its confirmation questions and opens the Merge Request page at the end.
 
 ## [8.3.0] 2026-08-26
 

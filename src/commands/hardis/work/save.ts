@@ -66,7 +66,7 @@ Key functionalities include:
 - **Commit and Push:** Guides the user to commit the changes and push them to the remote Git repository, optionally handling force pushes if a branch reset occurred.
 - **Merge Request Guidance:** Provides information and links to facilitate the creation of a merge request after the changes are pushed.
 - **Agent Mode (\`--agent\`):** Enables a fully non-interactive execution path for AI agents and automation. In this mode, prompts are disabled and decisions are derived from flags and configuration.
-- **Expert Mode (\`--expert\`):** Skips the confirmation questions for experienced users, while keeping the prompts that ask for a real choice, like the target branch when it can not be guessed.
+- **Expert Mode (\`SFDX_HARDIS_EXPERT_MODE\`):** Skips the confirmation questions for experienced users, while keeping the prompts that ask for a real choice, like the target branch when it can not be guessed.
 
 ### Agent Mode Invocation
 
@@ -86,11 +86,9 @@ If target branch cannot be resolved, the command fails fast with a validation er
 
 ### Expert Mode
 
-Use \`--expert\` to skip the confirmation questions:
+Set the environment variable \`SFDX_HARDIS_EXPERT_MODE=true\` to skip the confirmation questions.
 
-\`sf hardis:work:save --expert\`
-
-In \`--expert\` mode:
+In expert mode:
 
 - the "have you already committed the updated metadata" question is skipped: your commits are assumed to be ready
 - the data export questions are skipped
@@ -99,8 +97,6 @@ In \`--expert\` mode:
 - the Merge Request page is opened in your browser at the end of the command
 
 Prompts that ask for a real choice are kept, like the target branch selection when it can not be guessed.
-
-Expert mode can also be activated for all commands with the environment variable \`SFDX_HARDIS_EXPERT_MODE=true\`.
 
 VS Code users can activate it permanently with the setting **VsCode SFDX Hardis > User Mode Expert**, which sends \`SFDX_HARDIS_EXPERT_MODE=true\` to every sfdx-hardis command.
 
@@ -147,7 +143,6 @@ The command's technical implementation involves a series of orchestrated steps:
   public static examples = [
     '$ sf hardis:work:task:save',
     '$ sf hardis:work:task:save --nopull --nogit --noclean',
-    '$ sf hardis:work:save --expert',
     '$ sf hardis:work:save --agent --targetbranch integration',
   ];
 
@@ -157,11 +152,6 @@ The command's technical implementation involves a series of orchestrated steps:
     agent: Flags.boolean({
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
-    }),
-    expert: Flags.boolean({
-      default: false,
-      description:
-        'Skip the confirmation questions (commit readiness, data export, cleaning selection, push) and open the Merge Request page at the end. Can also be activated with SFDX_HARDIS_EXPERT_MODE=true',
     }),
     nopull: Flags.boolean({
       char: 'n',
@@ -223,7 +213,7 @@ The command's technical implementation involves a series of orchestrated steps:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(SaveTask);
     this.agentMode = flags.agent === true;
-    this.expertMode = flags.expert === true || isExpertMode();
+    this.expertMode = isExpertMode();
     const localBranch = (await getCurrentGitBranch()) || '';
     this.agentInputs = this.agentMode ? await this.validateAgentInputs(flags, localBranch) : null;
 
