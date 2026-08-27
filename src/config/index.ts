@@ -283,6 +283,13 @@ export function getEnvVar(envVarName: string): string | null {
   return varValue;
 }
 
+// Expert mode skips the confirmation questions of interactive commands, for users who already know the answers.
+// It is activated with the --expert flag of a command, or globally with SFDX_HARDIS_EXPERT_MODE=true
+// (sent by the VS Code Extension when the setting vsCodeSfdxHardis.userModeExpert is checked)
+export function isExpertMode(): boolean {
+  return (getEnvVar('SFDX_HARDIS_EXPERT_MODE') || '').toLowerCase() === 'true';
+}
+
 export function getCurrentI18nLocale(): string {
   return (process.env.SFDX_HARDIS_LANG || process.env.SFDX_HARDIS_LOCALE || 'en')
     .substring(0, 5)

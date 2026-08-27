@@ -30,7 +30,7 @@ import {
   writeXmlFile,
 } from '../../../common/utils/xmlUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { CONSTANTS, getApiVersion, getConfig, setConfig } from '../../../config/index.js';
+import { CONSTANTS, getApiVersion, getConfig, isExpertMode, setConfig } from '../../../config/index.js';
 import CleanReferences from '../project/clean/references.js';
 import CleanXml from '../project/clean/xml.js';
 import { GitProvider } from '../../../common/gitProvider/index.js';
@@ -66,6 +66,7 @@ Key functionalities include:
 - **Commit and Push:** Guides the user to commit the changes and push them to the remote Git repository, optionally handling force pushes if a branch reset occurred.
 - **Merge Request Guidance:** Provides information and links to facilitate the creation of a merge request after the changes are pushed.
 - **Agent Mode (\`--agent\`):** Enables a fully non-interactive execution path for AI agents and automation. In this mode, prompts are disabled and decisions are derived from flags and configuration.
+- **Expert Mode (\`SFDX_HARDIS_EXPERT_MODE\`):** Skips the confirmation questions for experienced users, while keeping the prompts that ask for a real choice, like the target branch when it can not be guessed.
 
 ### Agent Mode Invocation
 
@@ -82,6 +83,22 @@ In \`--agent\` mode:
 - push is always attempted at the end of the command (unless \`--nogit\` is set)
 
 If target branch cannot be resolved, the command fails fast with a validation error listing available options.
+
+### Expert Mode
+
+Set the environment variable \`SFDX_HARDIS_EXPERT_MODE=true\` to skip the confirmation questions.
+
+In expert mode:
+
+- the "have you already committed the updated metadata" question is skipped: your commits are assumed to be ready
+- the data export questions are skipped
+- the cleaning types selection is skipped: only the cleanings listed in \`autoCleanTypes\` are applied, none if the property is not set
+- the branch is always pushed to the remote, without confirmation
+- the Merge Request page is opened in your browser at the end of the command
+
+Prompts that ask for a real choice are kept, like the target branch selection when it can not be guessed.
+
+VS Code users can activate it permanently with the setting **VsCode SFDX Hardis > User Mode Expert**, which sends \`SFDX_HARDIS_EXPERT_MODE=true\` to every sfdx-hardis command.
 
 Example \`.sfdx-hardis.yml\` configuration:
 
@@ -184,6 +201,7 @@ The command's technical implementation involves a series of orchestrated steps:
   protected deltaFlowNames: string[] | null = null;
   protected auto = false;
   protected agentMode = false;
+  protected expertMode = false;
   protected agentInputs: {
     targetBranch: string;
   } | null = null;
@@ -195,6 +213,7 @@ The command's technical implementation involves a series of orchestrated steps:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(SaveTask);
     this.agentMode = flags.agent === true;
+    this.expertMode = isExpertMode();
     const localBranch = (await getCurrentGitBranch()) || '';
     this.agentInputs = this.agentMode ? await this.validateAgentInputs(flags, localBranch) : null;
 
@@ -306,6 +325,11 @@ The command's technical implementation involves a series of orchestrated steps:
         uxLog("log", this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(mergeRequestDoc)}`));
       }
       WebSocketClient.sendReportFileMessage(mergeRequestDoc, t('viewMergeRequestDocumentation', { mergeRequestName: GitProvider.getMergeRequestName(this.gitUrl) }), 'docUrl');
+      // Expert mode: directly open the Merge Request page instead of waiting for a click on the link
+      if (this.expertMode && !this.noGit) {
+        uxLog("action", this, c.cyan(t('expertModeOpeningMergeRequest', { mergeRequestName: GitProvider.getMergeRequestName(this.gitUrl) })));
+        await open(mergeRequestUrl);
+      }
     }
     // Return an object to be displayed with --json
     return { outputString: 'Saved the User Story' };
@@ -350,6 +374,12 @@ The command's technical implementation involves a series of orchestrated steps:
   private async ensureCommitIsReady(flags) {
     if (this.agentMode) {
       uxLog("action", this, c.cyan(t('skippedSfProjectRetrieveStart')));
+      return;
+    }
+
+    // Expert mode: the user knows their updates are already committed, do not ask again
+    if (this.expertMode) {
+      uxLog("action", this, c.cyan(t('expertModeSkippedCommitReadyQuestion')));
       return;
     }
 
@@ -556,6 +586,11 @@ The command's technical implementation involves a series of orchestrated steps:
       uxLog("other", this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
       // References cleaning: Flow cleanings are restricted to the Flows of the delta when it is known
       const cleanReferencesArgs = ['--type', 'all'];
+      if (this.expertMode) {
+        // Do not ask which cleanings to apply: use the ones listed in autoCleanTypes, none if not set
+        uxLog("action", this, c.cyan(t('expertModeSkippedCleaningSelection')));
+        cleanReferencesArgs.push('--agent');
+      }
       if (this.deltaFlowNames !== null) {
         uxLog("log", this, c.grey(t('cleaningWillBeRestrictedToChangedFlows', { number: this.deltaFlowNames.length })));
         cleanReferencesArgs.push('--flows', this.deltaFlowNames.join(','));
@@ -749,13 +784,20 @@ The command's technical implementation involves a series of orchestrated steps:
       gitStatusAfterDeployPlan?.ahead > 0 ||
       gitStatusAfterDeployPlan.tracking == null;
 
-    if (!hasUpdatesToPush || this.noGit) {
+    if (this.noGit) {
       return;
     }
 
     let shouldPush = false;
-    if (this.agentMode) {
+    if (this.agentMode || this.expertMode) {
+      // Always push, even when git sees nothing new to send: it costs an up-to-date
+      // message at worst, and it makes sure the branch exists on the remote and tracks it
+      if (this.expertMode) {
+        uxLog("action", this, c.cyan(t('expertModeSkippedPushConfirmation')));
+      }
       shouldPush = true;
+    } else if (!hasUpdatesToPush) {
+      return;
     } else if (!this.auto) {
       const pushResponse = await prompts({
         type: 'confirm',

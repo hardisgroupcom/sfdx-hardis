@@ -27,6 +27,7 @@ Key functionalities include:
 - **Commit and Push:** Guides the user to commit the changes and push them to the remote Git repository, optionally handling force pushes if a branch reset occurred.
 - **Merge Request Guidance:** Provides information and links to facilitate the creation of a merge request after the changes are pushed.
 - **Agent Mode (`--agent`):** Enables a fully non-interactive execution path for AI agents and automation. In this mode, prompts are disabled and decisions are derived from flags and configuration.
+- **Expert Mode (`SFDX_HARDIS_EXPERT_MODE`):** Skips the confirmation questions for experienced users, while keeping the prompts that ask for a real choice, like the target branch when it can not be guessed.
 
 ### Agent Mode Invocation
 
@@ -43,6 +44,22 @@ In `--agent` mode:
 - push is always attempted at the end of the command (unless `--nogit` is set)
 
 If target branch cannot be resolved, the command fails fast with a validation error listing available options.
+
+### Expert Mode
+
+Set the environment variable `SFDX_HARDIS_EXPERT_MODE=true` to skip the confirmation questions.
+
+In expert mode:
+
+- the "have you already committed the updated metadata" question is skipped: your commits are assumed to be ready
+- the data export questions are skipped
+- the cleaning types selection is skipped: only the cleanings listed in `autoCleanTypes` are applied, none if the property is not set
+- the branch is always pushed to the remote, without confirmation
+- the Merge Request page is opened in your browser at the end of the command
+
+Prompts that ask for a real choice are kept, like the target branch selection when it can not be guessed.
+
+VS Code users can activate it permanently with the setting **VsCode SFDX Hardis > User Mode Expert**, which sends `SFDX_HARDIS_EXPERT_MODE=true` to every sfdx-hardis command.
 
 Example `.sfdx-hardis.yml` configuration:
 
