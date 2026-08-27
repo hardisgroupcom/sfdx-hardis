@@ -29,9 +29,9 @@ function isWsl(): boolean {
 export function buildLauncher(target: string, platform: NodeJS.Platform = process.platform, wsl: boolean = isWsl()): Launcher {
   if (platform === 'win32') {
     // "start" is a cmd.exe builtin: the first quoted argument is the window title.
-    // Ampersands must be escaped or cmd.exe treats them as command separators.
-    const escaped = target.replace(/&/g, '^&');
-    return { command: 'cmd.exe', args: ['/d', '/s', '/c', `start "" "${escaped}"`] };
+    // The target is passed inside double quotes, where cmd.exe already treats & as a
+    // literal: escaping it as ^& would put the caret itself in the opened URL.
+    return { command: 'cmd.exe', args: ['/d', '/s', '/c', `start "" "${target}"`] };
   }
   if (platform === 'darwin') {
     return { command: 'open', args: [target] };

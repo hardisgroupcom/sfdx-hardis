@@ -2,11 +2,11 @@ import { expect } from 'chai';
 import { buildLauncher } from '../../../src/common/utils/openUtils.js';
 
 describe('openUtils.buildLauncher', () => {
-  it('uses cmd.exe start on Windows and escapes ampersands', () => {
+  it('uses cmd.exe start on Windows and keeps ampersands untouched inside the quotes', () => {
     const launcher = buildLauncher('https://example.com/a?b=1&c=2', 'win32', false);
     expect(launcher.command).to.equal('cmd.exe');
     expect(launcher.args.slice(0, 3)).to.deep.equal(['/d', '/s', '/c']);
-    expect(launcher.args[3]).to.equal('start "" "https://example.com/a?b=1^&c=2"');
+    expect(launcher.args[3]).to.equal('start "" "https://example.com/a?b=1&c=2"');
   });
 
   it('uses open on macOS', () => {
