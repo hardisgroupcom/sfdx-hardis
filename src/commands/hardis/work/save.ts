@@ -93,7 +93,7 @@ In expert mode:
 - the "have you already committed the updated metadata" question is skipped: your commits are assumed to be ready
 - the data export questions are skipped
 - the cleaning types selection is skipped: only the cleanings listed in \`autoCleanTypes\` are applied, none if the property is not set
-- commits are pushed to the remote branch without confirmation
+- the branch is always pushed to the remote, without confirmation
 - the Merge Request page is opened in your browser at the end of the command
 
 Prompts that ask for a real choice are kept, like the target branch selection when it can not be guessed.
@@ -784,16 +784,20 @@ The command's technical implementation involves a series of orchestrated steps:
       gitStatusAfterDeployPlan?.ahead > 0 ||
       gitStatusAfterDeployPlan.tracking == null;
 
-    if (!hasUpdatesToPush || this.noGit) {
+    if (this.noGit) {
       return;
     }
 
     let shouldPush = false;
-    if (this.agentMode) {
+    if (this.agentMode || this.expertMode) {
+      // Always push, even when git sees nothing new to send: it costs an up-to-date
+      // message at worst, and it makes sure the branch exists on the remote and tracks it
+      if (this.expertMode) {
+        uxLog("action", this, c.cyan(t('expertModeSkippedPushConfirmation')));
+      }
       shouldPush = true;
-    } else if (this.expertMode) {
-      uxLog("action", this, c.cyan(t('expertModeSkippedPushConfirmation')));
-      shouldPush = true;
+    } else if (!hasUpdatesToPush) {
+      return;
     } else if (!this.auto) {
       const pushResponse = await prompts({
         type: 'confirm',

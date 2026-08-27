@@ -54,7 +54,7 @@ In expert mode:
 - the "have you already committed the updated metadata" question is skipped: your commits are assumed to be ready
 - the data export questions are skipped
 - the cleaning types selection is skipped: only the cleanings listed in `autoCleanTypes` are applied, none if the property is not set
-- commits are pushed to the remote branch without confirmation
+- the branch is always pushed to the remote, without confirmation
 - the Merge Request page is opened in your browser at the end of the command
 
 Prompts that ask for a real choice are kept, like the target branch selection when it can not be guessed.
