@@ -20,7 +20,7 @@
     "@openai/codex-sdk": "0.145.0",
     "@salesforce/core": "8.29.0",
     "@salesforce/sf-plugins-core": "11.3.12",
-    "@salesforce/source-deploy-retrieve": "12.31.5",
+    "@salesforce/source-deploy-retrieve": "12.37.2",
     "@slack/web-api": "7.19.0",
     "@supercharge/promise-pool": "3.2.0",
     "@xmldom/xmldom": "0.9.10",
