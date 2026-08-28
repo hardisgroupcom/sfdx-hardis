@@ -77,7 +77,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@oclif/plugin-command-snapshot": "5.3.35",
-    "@salesforce/cli-plugins-testkit": "5.3.64",
+    "@salesforce/cli-plugins-testkit": "5.3.66",
     "@salesforce/dev-config": "4.3.3",
     "@salesforce/dev-scripts": "10.2.12",
     "@slack/types": "2.22.0",
