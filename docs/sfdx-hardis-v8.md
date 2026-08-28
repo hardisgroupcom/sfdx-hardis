@@ -275,6 +275,8 @@ Widely used but replaceable packages were replaced by capabilities already built
 
 A guardrail keeps it that way: the plugin test suite fails when a dependency is declared but never imported, or when the lock file grows past a ceiling.
 
+**"No change in behavior" is verified, not assumed.** Every Pull Request now **replays real commands against a real Salesforce org**, on top of the unit tests. sfdx-hardis creates a scratch org with its own [hardis:scratch:create](hardis/scratch/create.md), then runs [hardis:project:deploy:smart](hardis/project/deploy/smart.md), the [data import and export](hardis/org/data/export.md) commands and the monitoring diagnostics against it, and checks what the org really holds afterwards. Close to 50 scenarios, replayed on every Pull Request and every night. A regression that only appears against a live org is caught before the release instead of by you.
+
 ---
 
 ## Personal data no longer leaves your org in clear text
