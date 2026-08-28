@@ -1,4 +1,5 @@
 import { Version2Client, Version3Client, Version3Models } from "jira.js";
+import type { Config } from "jira.js";
 import { recordTicketCollectionIssue, TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from '../utils/sortArray.js';
@@ -179,11 +180,19 @@ export class JiraProvider extends TicketProviderRoot {
     authConfig: { oauth2: { accessToken: string } } | { basic: { email: string; apiToken: string } },
   ): Version2Client | Version3Client {
     const host = (this.jiraHost || "").replace(/\/$/, "");
+    // jira.js types Config as a union discriminated on the authentication method, so an object
+    // whose "authentication" property is itself a union matches no variant: build one variant at a
+    // time. Passing only an accessToken keeps the plain "Authorization: Bearer" behavior, without
+    // the automatic cloudId resolution that a refreshToken or a cloudId would turn on.
+    const clientConfig: Config =
+      "oauth2" in authConfig
+        ? { host, authentication: { oauth2: authConfig.oauth2 } }
+        : { host, authentication: { basic: authConfig.basic } };
     if (this.isJiraCloud()) {
-      return new Version3Client({ host, authentication: authConfig });
+      return new Version3Client(clientConfig);
     }
     // Jira Server / Data Center only supports REST API v2
-    return new Version2Client({ host, authentication: authConfig });
+    return new Version2Client(clientConfig);
   }
 
   public static isAvailable(config: any): boolean {
