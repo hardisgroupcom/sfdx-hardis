@@ -73,13 +73,13 @@ Every panel now shares the same header, the same cards and buttons, the **offici
 
 Waiting was the most common complaint about the extension. v8 attacks it from both sides.
 
-| What you do                                                         | v7.23              | v8                  |
-|---------------------------------------------------------------------|--------------------|---------------------|
-| Click **Save / Publish my User Story**, wait for the first question | **16 s**           | **5 s**             |
-| See the command switch from **Starting** to **Running**             | up to 5 s          | **about 1 s**       |
-| Save a User Story with three automatic cleanings                    | 30 s of cleaning   | **a few seconds**   |
-| Open a panel showing org information                                | 3 to 4 s each time | **instant**         |
-| Open the Data or Files workbench on a project with large exports    | VS Code frozen     | **opens right away**|
+| What you do                                                         | v7.23              | v8                   |
+|---------------------------------------------------------------------|--------------------|----------------------|
+| Click **Save / Publish my User Story**, wait for the first question | **16 s**           | **5 s**              |
+| See the command switch from **Starting** to **Running**             | up to 5 s          | **about 1 s**        |
+| Save a User Story with three automatic cleanings                    | 30 s of cleaning   | **a few seconds**    |
+| Open a panel showing org information                                | 3 to 4 s each time | **instant**          |
+| Open the Data or Files workbench on a project with large exports    | VS Code frozen     | **opens right away** |
 
 ### Clicking a command no longer means waiting
 
@@ -90,10 +90,10 @@ The rest follows: the command panel says **Running** about a second after your c
 <details markdown="1">
 <summary>Where the 16 seconds went</summary>
 
-Measured end to end on `hardis:work:save`, with a bench harness spawning the real CLI against a mock extension and timestamping every WebSocket event.
+Measured end to end on `hardis:work:save`, with a bench harness spawning the real CLI against a mock extension and recording the time of every WebSocket event.
 
-| Phase between the click and the first question | v7.23      | v8         |
-|------------------------------------------------|------------|------------|
+| Phase between the click and the first question  | v7.23      | v8         |
+|-------------------------------------------------|------------|------------|
 | Node and oclif boot, WebSocket connect          | 0.8 s      | 0.8 s      |
 | Waiting for the extension's go-ahead            | **10.0 s** | **0 s**    |
 | Loading the command and its dependency tree     | 2.7 s      | overlapped |
@@ -106,17 +106,17 @@ The 10 seconds were a missed signal. The command waited for the extension to con
 The command also announces itself before loading its whole implementation, which is what moves the panel to **Running**:
 
 | Process launch to the "Running" announcement | v7.23   | v8         |
-|-----------------------------------------------|---------|------------|
-| `sf hardis:work:new`                          | 5074 ms | **749 ms** |
-| `sf hardis:work:save`                         | 3844 ms | **754 ms** |
+|----------------------------------------------|---------|------------|
+| `sf hardis:work:new`                         | 5074 ms | **749 ms** |
+| `sf hardis:work:save`                        | 3844 ms | **754 ms** |
 
 And the extension starts the process differently: directly instead of through Git Bash and the npm `sf` launcher script, reusing the compiled code of the CLI from one command to the next.
 
 | Launch strategy (spawn to first prompt of `hardis:work:new`, median) | Time        |
-|-----------------------------------------------------------------------|-------------|
-| Git Bash and npm launcher script (v7.23)                              | 1985 ms     |
-| Direct Node launch                                                    | 1664 ms     |
-| Direct Node launch and compile cache (v8)                             | **1315 ms** |
+|----------------------------------------------------------------------|-------------|
+| Git Bash and npm launcher script (v7.23)                             | 1985 ms     |
+| Direct Node launch                                                   | 1664 ms     |
+| Direct Node launch and compile cache (v8)                            | **1315 ms** |
 
 </details>
 
@@ -153,10 +153,10 @@ The automatic cleanings applied when you save used to start their own Salesforce
 
 | Operation                                                                                     | Before    | After      |
 |-----------------------------------------------------------------------------------------------|-----------|------------|
-| One cleaning of [hardis:project:clean:references](hardis/project/clean/references.md)          | 11 248 ms | **34 ms**  |
+| One cleaning of [hardis:project:clean:references](hardis/project/clean/references.md)         | 11 248 ms | **34 ms**  |
 | Resolving 500 metadata files by name                                                          | 2237 ms   | **26 ms**  |
-| [hardis:lint:metadatastatus](hardis/lint/metadatastatus.md) source scan                        | 1708 ms   | **216 ms** |
-| [hardis:misc:custom-label-translations](hardis/misc/custom-label-translations.md) source scan  | 1579 ms   | **606 ms** |
+| [hardis:lint:metadatastatus](hardis/lint/metadatastatus.md) source scan                       | 1708 ms   | **216 ms** |
+| [hardis:misc:custom-label-translations](hardis/misc/custom-label-translations.md) source scan | 1579 ms   | **606 ms** |
 | `purge-references` source scan                                                                | 342 ms    | **192 ms** |
 
 The cleanings now run inside the current process instead of spawning a CLI each, the Flow positions cleaning is restricted to the Flows of your git delta and skipped entirely when there is none, and a full pass over the 88 places the plugin walks your sources removed the walks that were scanning `node_modules` or repeating themselves once per metadata type.
@@ -385,7 +385,7 @@ A few behaviors changed on purpose. Check these if they apply to your project.
 | **`packageXmlToDeploy`, `packageXmlToDelete` and `packageXmlToDeletePreDeploy` are no longer ignored.** A bug made the default `manifest/` and `config/` paths always win, so a custom destructive manifest could delete nothing and still exit with success. | If you set one of these properties, review what your next deployment will actually deploy and delete.                                                         |
 | **A Flow in destructive changes is deleted outside the deployment transaction.**                                                                                                                                                                              | A failed deployment leaves the Flow deactivated or deleted instead of rolling it back. Every step is re-runnable, so retrying the pipeline converges.         |
 | **`--check` no longer validates Flow destructive members against the org.**                                                                                                                                                                                   | A Flow missing from the target org is reported as `FLOW_DELETE_NOOP` and passes, because the same destructive changes are replayed along the promotion chain. |
-| **Reports, notifications and CI logs produced in CI are anonymized** at the `standard` level by default.                                                                                                                                                       | If a downstream tool of yours reads real usernames or emails out of them, set `SFDX_HARDIS_ANONYMIZE=off`, or lower the level of that single channel.          |
+| **Reports, notifications and CI logs produced in CI are anonymized** at the `standard` level by default.                                                                                                                                                      | If a downstream tool of yours reads real usernames or emails out of them, set `SFDX_HARDIS_ANONYMIZE=off`, or lower the level of that single channel.         |
 | **Connected Apps can no longer be restored after a sandbox refresh.**                                                                                                                                                                                         | Convert them to External Client Apps before your next refresh.                                                                                                |
 | **The plugin requires Node.js 22 or more**, like the Salesforce CLI.                                                                                                                                                                                          | Upgrade Node.js on machines and CI runners that still use Node.js 20.                                                                                         |
 
