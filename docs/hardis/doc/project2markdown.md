@@ -108,18 +108,18 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build -v || 
 | excel                    | boolean | Also generate an Excel file with all metadata in separate tabs                                                  |         |          |         |
 | flags-dir                | option  | undefined                                                                                                       |         |          |         |
 | generate-apex-doc        | boolean | Generate Apex documentation                                                                                     |         |          |         |
+| generate-aura-doc        | boolean | Generate Aura components documentation                                                                          |         |          |         |
 | generate-automations-doc | boolean | Generate Automations documentation (Approval Processes, Assignment Rules, AutoResponse Rules, Escalation Rules) |         |          |         |
 | generate-flow-doc        | boolean | Generate Flows, Process Builders and Workflow Rules documentation                                               |         |          |         |
 | generate-lwc-doc         | boolean | Generate Lightning Web Components documentation                                                                 |         |          |         |
-| generate-visualforce-doc | boolean | Generate Visualforce pages and components documentation                                                         |         |          |         |
-| generate-aura-doc        | boolean | Generate Aura components documentation                                                                          |         |          |         |
 | generate-objects-doc     | boolean | Generate Objects documentation                                                                                  |         |          |         |
 | generate-packages-doc    | boolean | Generate Installed Packages documentation                                                                       |         |          |         |
 | generate-pages-doc       | boolean | Generate Lightning Pages documentation                                                                          |         |          |         |
 | generate-profiles-doc    | boolean | Generate Profiles, Permission Sets, Permission Set Groups and Roles documentation                               |         |          |         |
+| generate-visualforce-doc | boolean | Generate Visualforce pages and components documentation                                                         |         |          |         |
 | hide-apex-code           | boolean | Hide Apex code in the generated documentation for Apex classes.                                                 |         |          |         |
+| hide-aura-code           | boolean | Hide source code in the generated documentation for Aura components.                                            |         |          |         |
 | hide-visualforce-code    | boolean | Hide Visualforce markup in the generated documentation for Visualforce pages and components.                    |         |          |         |
-| hide-aura-code           | boolean | Hide source code in the generated documentation for Aura components.                                          |         |          |         |
 | json                     | boolean | Format output as json.                                                                                          |         |          |         |
 | pdf                      | boolean | Also generate the documentation in PDF format                                                                   |         |          |         |
 | skipauth                 | boolean | Skip authentication check when a default username is required                                                   |         |          |         |

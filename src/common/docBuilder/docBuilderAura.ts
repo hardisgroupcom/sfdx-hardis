@@ -39,6 +39,9 @@ const AURA_CODE_LANGUAGES: Record<string, string> = {
 // Files never sent to AI: styling brings no behavior, and the SVG only holds the palette icon
 const AI_EXCLUDED_EXTENSIONS = [".css", ".svg"];
 
+// One readdir per bundle folder, shared by the sources, the source section and the file list
+const BUNDLE_FILES_CACHE: Map<string, string[]> = new Map();
+
 export class DocBuilderAura extends DocBuilderComponentRoot {
 
   public docType = "Aura";
@@ -58,7 +61,8 @@ export class DocBuilderAura extends DocBuilderComponentRoot {
   public static async readBundleSources(auraPath: string): Promise<string> {
     let bundleCode = "";
     for (const file of await DocBuilderAura.listBundleFiles(auraPath)) {
-      if (AI_EXCLUDED_EXTENSIONS.includes(path.extname(file))) {
+      // The -meta.xml is passed separately as AURA_META, no need to send it twice
+      if (AI_EXCLUDED_EXTENSIONS.includes(path.extname(file)) || file.endsWith("-meta.xml")) {
         continue;
       }
       const fileContent = await fs.readFile(path.join(auraPath, file), "utf-8");
@@ -71,6 +75,10 @@ export class DocBuilderAura extends DocBuilderComponentRoot {
     if (!auraPath || !fs.existsSync(auraPath)) {
       return [];
     }
+    const cached = BUNDLE_FILES_CACHE.get(auraPath);
+    if (cached) {
+      return cached;
+    }
     const files: string[] = [];
     for (const file of await fs.readdir(auraPath)) {
       const stats = await fs.stat(path.join(auraPath, file));
@@ -78,7 +86,9 @@ export class DocBuilderAura extends DocBuilderComponentRoot {
         files.push(file);
       }
     }
-    return files.sort();
+    files.sort();
+    BUNDLE_FILES_CACHE.set(auraPath, files);
+    return files;
   }
 
   public static buildIndexTable(prefix: string, auraDescriptions: any[], filterObject: string | null = null) {

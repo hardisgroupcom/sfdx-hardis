@@ -6,14 +6,13 @@ description: Prompt template for PROMPT_DESCRIBE_AURA_BUNDLE
 # PROMPT_DESCRIBE_AURA_BUNDLE
 
 ## Variables
-
-| Name                      | Description                                                                                                    | Example                                                       |
-|:--------------------------|:---------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------|
-| **AURA_NAME**             | The name of the Aura bundle to describe.                                                                       | `accountSummary`                                              |
-| **AURA_TYPE**             | The kind of Aura metadata: Component, Application, Event, Interface or Tokens.                                  | `Component`                                                   |
-| **AURA_SOURCES**          | The concatenated source files of the Aura bundle (markup, controller, helper, renderer, design, documentation). | `// File: accountSummary.cmp\n<aura:component>...`            |
-| **AURA_META**             | The metadata file of the Aura bundle.                                                                          | `<AuraDefinitionBundle>...</AuraDefinitionBundle>`            |
-| **AURA_APEX_CONTROLLERS** | The names of the Apex controllers called by the bundle.                                                        | `AccountSummaryController`                                    |
+| Name                      | Description                                                                                                     | Example                                                               |
+|:--------------------------|:----------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------|
+| **AURA_NAME**             | The name of the Aura bundle to describe.                                                                        | `accountSummary`                                                      |
+| **AURA_TYPE**             | The kind of Aura metadata: Component, Application, Event, Interface or Tokens.                                  | `Component`                                                           |
+| **AURA_SOURCES**          | The concatenated source files of the Aura bundle (markup, controller, helper, renderer, design, documentation). | `// File: accountSummary.cmp<br><aura:component>...</aura:component>` |
+| **AURA_META**             | The metadata file of the Aura bundle.                                                                           | `<AuraDefinitionBundle>...</AuraDefinitionBundle>`                    |
+| **AURA_APEX_CONTROLLERS** | The names of the Apex controllers called by the bundle, or "none".                                              | `AccountSummaryController`                                            |
 
 ## Prompt
 

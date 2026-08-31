@@ -6,13 +6,12 @@ description: Prompt template for PROMPT_DESCRIBE_VISUALFORCE_COMPONENT
 # PROMPT_DESCRIBE_VISUALFORCE_COMPONENT
 
 ## Variables
-
-| Name                             | Description                                                                | Example                                     |
-|:---------------------------------|:---------------------------------------------------------------------------|:--------------------------------------------|
-| **VISUALFORCE_NAME**             | The name of the Visualforce component to describe.                         | `AccountAddressBlock`                       |
-| **VISUALFORCE_MARKUP**           | The Visualforce markup of the component.                                   | `<apex:component>...</apex:component>`      |
-| **VISUALFORCE_META**             | The metadata file of the Visualforce component.                            | `<ApexComponent>...</ApexComponent>`        |
-| **VISUALFORCE_APEX_CONTROLLERS** | The names of the Apex controller and extensions declared by the component. | `AccountAddressBlockController`             |
+| Name                             | Description                                                                           | Example                                |
+|:---------------------------------|:--------------------------------------------------------------------------------------|:---------------------------------------|
+| **VISUALFORCE_NAME**             | The name of the Visualforce component to describe.                                    | `AccountAddressBlock`                  |
+| **VISUALFORCE_MARKUP**           | The Visualforce markup of the component.                                              | `<apex:component>...</apex:component>` |
+| **VISUALFORCE_META**             | The metadata file of the Visualforce component.                                       | `<ApexComponent>...</ApexComponent>`   |
+| **VISUALFORCE_APEX_CONTROLLERS** | The names of the Apex controller and extensions declared by the component, or "none". | `AccountAddressBlockController`        |
 
 ## Prompt
 

@@ -427,7 +427,11 @@ ${this.htmlInstructions}
       }
     }
     if (this.allObjectsNames.length === 0) {
+      // The convert can also succeed while returning nothing, for example when every object is force-ignored
       this.allObjectsNames = await this.listObjectNamesFromSource();
+      if (this.allObjectsNames.length > 0) {
+        uxLog("warning", this, c.yellow(t('customObjectConvertFailedFallingBack')));
+      }
     }
 
     // Generate packages documentation

@@ -32,6 +32,12 @@ export interface MetadataReference {
   detail: string;
   /** Path of the holder documentation relative to the docs root, when a doc section is known for that type */
   docLink?: string;
+  /**
+   * Set on the Profile and Permission Set page accesses. They are summarized instead of being listed
+   * one by one: a page granted to every profile of the org would bury the tab, layout or button that
+   * actually points at it.
+   */
+  accessKind?: 'enabled' | 'disabled';
 }
 
 /** Where-used index: component name to the list of metadata referencing it */
@@ -56,6 +62,8 @@ const REFERENCE_SCAN_PATTERNS = [
   '**/*.page',
   '**/*.component',
   '**/*.email',
+  '**/*.cls',
+  '**/*.trigger',
   '**/aura/*/*.{cmp,app,evt,intf,tokens,design,auradoc,js}',
   '**/lwc/**/*.{js,html}',
   '**/*.tab-meta.xml',
@@ -66,6 +74,7 @@ const REFERENCE_SCAN_PATTERNS = [
   '**/*.object-meta.xml',
   '**/*.quickAction-meta.xml',
   '**/*.flexipage-meta.xml',
+  '**/*.flow-meta.xml',
   '**/*.app-meta.xml',
   '**/*.homePageComponent-meta.xml',
   '**/*.site-meta.xml',
@@ -113,6 +122,7 @@ const XML_HOLDER_TYPES: { suffix: string; metadataType: string; docSection?: str
   { suffix: '.object-meta.xml', metadataType: 'CustomObject', docSection: 'objects' },
   { suffix: '.quickAction-meta.xml', metadataType: 'QuickAction' },
   { suffix: '.flexipage-meta.xml', metadataType: 'FlexiPage', docSection: 'pages' },
+  { suffix: '.flow-meta.xml', metadataType: 'Flow', docSection: 'flows' },
   { suffix: '.app-meta.xml', metadataType: 'CustomApplication' },
   { suffix: '.homePageComponent-meta.xml', metadataType: 'HomePageComponent' },
   { suffix: '.site-meta.xml', metadataType: 'CustomSite' },
@@ -243,6 +253,19 @@ function getHolderContext(file: string): HolderContext | null {
     };
   }
 
+  // Apex classes and triggers share the same documentation section
+  for (const apexSuffix of ['.cls', '.trigger']) {
+    if (baseName.endsWith(apexSuffix)) {
+      const apexName = baseName.slice(0, -apexSuffix.length);
+      return {
+        metadataType: apexSuffix === '.cls' ? 'ApexClass' : 'ApexTrigger',
+        name: apexName,
+        docLink: expectedDocLink('apex', `${apexName}.md`),
+        bareNamespaceMeaning: 'auraOrLwc',
+      };
+    }
+  }
+
   if (baseName.endsWith('.email')) {
     return {
       metadataType: 'EmailTemplate',
@@ -292,7 +315,12 @@ class ReferenceCollector {
     this.holder = holder;
   }
 
-  public add(kind: ReferenceTargetKind, rawName: string, detail: string): void {
+  public add(
+    kind: ReferenceTargetKind,
+    rawName: string,
+    detail: string,
+    accessKind?: MetadataReference['accessKind']
+  ): void {
     const candidate = stripDefaultNamespace(rawName);
     if (!candidate) {
       return;
@@ -316,6 +344,7 @@ class ReferenceCollector {
       name: this.holder.name,
       detail,
       ...(this.holder.docLink ? { docLink: this.holder.docLink } : {}),
+      ...(accessKind ? { accessKind } : {}),
     });
   }
 
@@ -381,10 +410,9 @@ function collectPageAccessReferences(root: any, collector: ReferenceCollector): 
     if (!isScalar(pageAccess?.apexPage)) {
       continue;
     }
-    const detail = isTruthyXmlValue(pageAccess.enabled)
-      ? t('docMdRefPageAccessEnabled')
-      : t('docMdRefPageAccessDisabled');
-    collector.add('apexPages', String(pageAccess.apexPage), detail);
+    const isEnabled = isTruthyXmlValue(pageAccess.enabled);
+    const detail = isEnabled ? t('docMdRefPageAccessEnabled') : t('docMdRefPageAccessDisabled');
+    collector.add('apexPages', String(pageAccess.apexPage), detail, isEnabled ? 'enabled' : 'disabled');
   }
 }
 
@@ -400,6 +428,22 @@ function collectFlexiPageReferences(root: any, collector: ReferenceCollector): v
     } else if (componentName.startsWith('c:') || componentName.startsWith('c__')) {
       collector.addAuraOrLwc(componentName, t('docMdRefFlexiPageComponent'));
     }
+  }
+}
+
+/** A Flow screen embeds an Aura component or a LWC through the extensionName of its screen fields */
+function collectFlowReferences(root: any, collector: ReferenceCollector): void {
+  for (const extensionName of collectFieldValues(root, 'extensionName')) {
+    if (extensionName.startsWith('c:') || extensionName.startsWith('c__')) {
+      collector.addAuraOrLwc(extensionName, t('docMdRefFlowScreenComponent'));
+    }
+  }
+}
+
+/** Apex names a Visualforce page with the Page global variable, for example Page.MyVfPage */
+function collectApexReferences(content: string, collector: ReferenceCollector): void {
+  for (const match of content.matchAll(/\bPage\.([A-Za-z_][A-Za-z0-9_]*)/g)) {
+    collector.add('apexPages', match[1], t('docMdRefCodeReference'));
   }
 }
 
@@ -466,6 +510,10 @@ function collectXmlMetadataReferences(content: string, collector: ReferenceColle
 
   if (parsed.FlexiPage) {
     collectFlexiPageReferences(parsed.FlexiPage, collector);
+  }
+
+  if (parsed.Flow) {
+    collectFlowReferences(parsed.Flow, collector);
   }
 
   if (parsed.HomePageComponent) {
@@ -566,6 +614,8 @@ export async function buildComponentReferenceIndex(
       // Tier A first: its details are more precise, and the deduplication keeps the first one found
       if (file.endsWith('.page') || file.endsWith('.component') || file.endsWith('.email')) {
         collectVisualforceMarkupReferences(content, collector);
+      } else if (file.endsWith('.cls') || file.endsWith('.trigger')) {
+        collectApexReferences(content, collector);
       } else if (isAuraBundleFile(file)) {
         collectAuraMarkupReferences(content, collector);
       } else if (file.endsWith('.xml')) {
@@ -590,26 +640,40 @@ export function getComponentReferences(
   );
 }
 
+// Above this many Profile or Permission Set access rows, they are summarized instead of listed: a page
+// granted to every profile of an org would push the tab, the layout or the button pointing at it out of sight.
+const MAX_ACCESS_ROWS = 10;
+
 /**
  * Builds the "Where Used" markdown section. `prefix` is prepended to the documentation links, so that
  * they resolve from the folder holding the generated file (for example "../" from docs/visualforce).
- * Profile and Permission Set rows with access disabled are omitted; a summary line keeps the count.
+ * Profile and Permission Set access rows are summarized instead of listed when they would flood the table,
+ * and the ones only disabling access are always summarized; a note keeps their count.
  */
 export function buildReferencesTable(references: MetadataReference[], prefix: string): string[] {
   const lines: string[] = [`## ${t('docMdWhereUsed')}`, ''];
-  if (!references || references.length === 0) {
-    lines.push(...[t('docMdWhereUsedNone'), '']);
-    return lines;
-  }
+  const allReferences = references || [];
 
-  const accessDisabledDetail = t('docMdRefPageAccessDisabled');
-  const visibleReferences = references.filter((reference) => reference.detail !== accessDisabledDetail);
-  const accessDisabledCount = references.length - visibleReferences.length;
+  // Structural references first: they say how the component is reached, where an access row only says who may reach it
+  const structuralReferences = allReferences.filter((reference) => !reference.accessKind);
+  const accessGrantedReferences = allReferences.filter((reference) => reference.accessKind === 'enabled');
+  const accessDisabledCount = allReferences.filter((reference) => reference.accessKind === 'disabled').length;
+  const listedAccessReferences = accessGrantedReferences.length > MAX_ACCESS_ROWS ? [] : accessGrantedReferences;
+  const accessGrantedOmittedCount = accessGrantedReferences.length - listedAccessReferences.length;
+  const visibleReferences = [...structuralReferences, ...listedAccessReferences];
+
+  const notes: string[] = [];
+  if (accessGrantedOmittedCount > 0) {
+    notes.push(t('docMdWhereUsedAccessEnabledOmitted', { count: accessGrantedOmittedCount }));
+  }
+  if (accessDisabledCount > 0) {
+    notes.push(t('docMdWhereUsedAccessDisabledOmitted', { count: accessDisabledCount }));
+  }
 
   if (visibleReferences.length === 0) {
     lines.push(...[t('docMdWhereUsedNone'), '']);
-    if (accessDisabledCount > 0) {
-      lines.push(...[t('docMdWhereUsedAccessDisabledOmitted', { count: accessDisabledCount }), '']);
+    for (const note of notes) {
+      lines.push(...[note, '']);
     }
     return lines;
   }
@@ -623,8 +687,8 @@ export function buildReferencesTable(references: MetadataReference[], prefix: st
     lines.push(`| ${reference.metadataType} | ${nameCell} | ${reference.detail || ''} |`);
   }
   lines.push('');
-  if (accessDisabledCount > 0) {
-    lines.push(...[t('docMdWhereUsedAccessDisabledOmitted', { count: accessDisabledCount }), '']);
+  for (const note of notes) {
+    lines.push(...[note, '']);
   }
   return lines;
 }

@@ -21,59 +21,61 @@ function summarize(references: any[]) {
     name: reference.name,
     detail: reference.detail,
     docLink: reference.docLink,
+    accessKind: reference.accessKind,
   }));
 }
 
-async function writeProjectFile(relativePath: string, content: string) {
-  await fs.ensureDir(path.dirname(relativePath));
-  await fs.writeFile(relativePath, content);
+async function writeProjectFile(root: string, relativePath: string, content: string) {
+  const file = path.join(root, relativePath);
+  await fs.ensureDir(path.dirname(file));
+  await fs.writeFile(file, content);
 }
 
-async function buildFixture() {
+async function buildFixture(root: string) {
   // Visualforce page embedding a custom component, pointing at another page, and at itself
-  await writeProjectFile(`${METADATA_ROOT}/pages/MyVfPage.page`, `<apex:page standardController="Account" extensions="MyVfPageExtension">
+  await writeProjectFile(root, `${METADATA_ROOT}/pages/MyVfPage.page`, `<apex:page standardController="Account" extensions="MyVfPageExtension">
   <c:MyVfComponent recordId="{!Account.Id}" />
   <apex:outputLink value="{!$Page.OtherPage}">Other</apex:outputLink>
   <apex:outputLink value="{!$Page.MyVfPage}">Myself</apex:outputLink>
 </apex:page>`);
-  await writeProjectFile(`${METADATA_ROOT}/pages/MyVfPage.page-meta.xml`, `<ApexPage><label>My VF Page</label></ApexPage>`);
-  await writeProjectFile(`${METADATA_ROOT}/pages/OtherPage.page`, `<apex:page>Other</apex:page>`);
-  await writeProjectFile(`${METADATA_ROOT}/pages/OtherPage.page-meta.xml`, `<ApexPage><label>Other Page</label></ApexPage>`);
+  await writeProjectFile(root, `${METADATA_ROOT}/pages/MyVfPage.page-meta.xml`, `<ApexPage><label>My VF Page</label></ApexPage>`);
+  await writeProjectFile(root, `${METADATA_ROOT}/pages/OtherPage.page`, `<apex:page>Other</apex:page>`);
+  await writeProjectFile(root, `${METADATA_ROOT}/pages/OtherPage.page-meta.xml`, `<ApexPage><label>Other Page</label></ApexPage>`);
 
-  await writeProjectFile(`${METADATA_ROOT}/components/MyVfComponent.component`, `<apex:component>
+  await writeProjectFile(root, `${METADATA_ROOT}/components/MyVfComponent.component`, `<apex:component>
   <apex:attribute name="recordId" type="Id" required="true" description="Record" />
 </apex:component>`);
-  await writeProjectFile(`${METADATA_ROOT}/components/MyVfComponent.component-meta.xml`, `<ApexComponent><label>My VF Component</label></ApexComponent>`);
+  await writeProjectFile(root, `${METADATA_ROOT}/components/MyVfComponent.component-meta.xml`, `<ApexComponent><label>My VF Component</label></ApexComponent>`);
 
   // Aura bundle extending another one and opening a Visualforce page
-  await writeProjectFile(`${METADATA_ROOT}/aura/myAuraCmp/myAuraCmp.cmp`, `<aura:component extends="c:baseAuraCmp" implements="flexipage:availableForRecordHome,c:baseAuraCmp" controller="MyAuraController">
+  await writeProjectFile(root, `${METADATA_ROOT}/aura/myAuraCmp/myAuraCmp.cmp`, `<aura:component extends="c:baseAuraCmp" implements="flexipage:availableForRecordHome,c:baseAuraCmp" controller="MyAuraController">
   <aura:dependency resource="markup://c:baseAuraCmp" />
 </aura:component>`);
-  await writeProjectFile(`${METADATA_ROOT}/aura/myAuraCmp/myAuraCmp.cmp-meta.xml`, `<AuraDefinitionBundle><description>My Aura Component</description></AuraDefinitionBundle>`);
-  await writeProjectFile(`${METADATA_ROOT}/aura/myAuraCmp/myAuraCmpController.js`, `({
+  await writeProjectFile(root, `${METADATA_ROOT}/aura/myAuraCmp/myAuraCmp.cmp-meta.xml`, `<AuraDefinitionBundle><description>My Aura Component</description></AuraDefinitionBundle>`);
+  await writeProjectFile(root, `${METADATA_ROOT}/aura/myAuraCmp/myAuraCmpController.js`, `({
   openPage: function (component) {
     window.open('/apex/MyVfPage');
   }
 })`);
-  await writeProjectFile(`${METADATA_ROOT}/aura/baseAuraCmp/baseAuraCmp.cmp`, `<aura:component abstract="true" />`);
-  await writeProjectFile(`${METADATA_ROOT}/aura/baseAuraCmp/baseAuraCmp.cmp-meta.xml`, `<AuraDefinitionBundle><description>Base</description></AuraDefinitionBundle>`);
+  await writeProjectFile(root, `${METADATA_ROOT}/aura/baseAuraCmp/baseAuraCmp.cmp`, `<aura:component abstract="true" />`);
+  await writeProjectFile(root, `${METADATA_ROOT}/aura/baseAuraCmp/baseAuraCmp.cmp-meta.xml`, `<AuraDefinitionBundle><description>Base</description></AuraDefinitionBundle>`);
 
   // Lightning Web Component opening the same Visualforce page
-  await writeProjectFile(`${METADATA_ROOT}/lwc/myLwc/myLwc.js`, `import { LightningElement } from 'lwc';
+  await writeProjectFile(root, `${METADATA_ROOT}/lwc/myLwc/myLwc.js`, `import { LightningElement } from 'lwc';
 export default class MyLwc extends LightningElement {
   url = '/apex/MyVfPage';
 }`);
-  await writeProjectFile(`${METADATA_ROOT}/lwc/myLwc/myLwc.js-meta.xml`, `<LightningComponentBundle><isExposed>true</isExposed></LightningComponentBundle>`);
+  await writeProjectFile(root, `${METADATA_ROOT}/lwc/myLwc/myLwc.js-meta.xml`, `<LightningComponentBundle><isExposed>true</isExposed></LightningComponentBundle>`);
 
   // Tab pointing at both a Visualforce page and an Aura component
-  await writeProjectFile(`${METADATA_ROOT}/tabs/My_Tab.tab-meta.xml`, `<CustomTab>
+  await writeProjectFile(root, `${METADATA_ROOT}/tabs/My_Tab.tab-meta.xml`, `<CustomTab>
   <label>My Tab</label>
   <page>MyVfPage</page>
   <auraComponent>c:myAuraCmp</auraComponent>
 </CustomTab>`);
 
   // Layout embedding the page twice, to check the deduplication
-  await writeProjectFile(`${METADATA_ROOT}/layouts/Account-MyLayout.layout-meta.xml`, `<Layout>
+  await writeProjectFile(root, `${METADATA_ROOT}/layouts/Account-MyLayout.layout-meta.xml`, `<Layout>
   <layoutSections>
     <layoutColumns><layoutItems><page>MyVfPage</page></layoutItems></layoutColumns>
     <layoutColumns><layoutItems><page>MyVfPage</page></layoutItems></layoutColumns>
@@ -81,26 +83,52 @@ export default class MyLwc extends LightningElement {
 </Layout>`);
 
   // Page access granted on one profile, revoked on another
-  await writeProjectFile(`${METADATA_ROOT}/profiles/Admin.profile-meta.xml`, `<Profile>
+  await writeProjectFile(root, `${METADATA_ROOT}/profiles/Admin.profile-meta.xml`, `<Profile>
   <pageAccesses><apexPage>MyVfPage</apexPage><enabled>true</enabled></pageAccesses>
 </Profile>`);
-  await writeProjectFile(`${METADATA_ROOT}/profiles/Standard.profile-meta.xml`, `<Profile>
+  await writeProjectFile(root, `${METADATA_ROOT}/profiles/Standard.profile-meta.xml`, `<Profile>
   <pageAccesses><apexPage>MyVfPage</apexPage><enabled>false</enabled></pageAccesses>
 </Profile>`);
 
   // Action overrides of an object, one Visualforce and one Lightning component
-  await writeProjectFile(`${METADATA_ROOT}/objects/Account/Account.object-meta.xml`, `<CustomObject>
+  await writeProjectFile(root, `${METADATA_ROOT}/objects/Account/Account.object-meta.xml`, `<CustomObject>
   <actionOverrides><actionName>View</actionName><type>Visualforce</type><content>MyVfPage</content></actionOverrides>
   <actionOverrides><actionName>Edit</actionName><type>LightningComponent</type><content>c__myAuraCmp</content></actionOverrides>
 </CustomObject>`);
 
-  await writeProjectFile(`${METADATA_ROOT}/quickActions/Account.Log_Call.quickAction-meta.xml`, `<QuickAction>
+  await writeProjectFile(root, `${METADATA_ROOT}/quickActions/Account.Log_Call.quickAction-meta.xml`, `<QuickAction>
   <type>VisualforcePage</type>
   <page>MyVfPage</page>
 </QuickAction>`);
 
+  // Apex class opening the Visualforce page, and a trigger that references nothing
+  await writeProjectFile(root, `${METADATA_ROOT}/classes/MyVfPageExtension.cls`, `public with sharing class MyVfPageExtension {
+  public PageReference open() {
+    return Page.MyVfPage;
+  }
+}`);
+  await writeProjectFile(root, `${METADATA_ROOT}/triggers/AccountTrigger.trigger`, `trigger AccountTrigger on Account (before insert) {
+  System.debug('nothing to see here');
+}`);
+
+  // Flow screen embedding the Lightning Web Component
+  await writeProjectFile(root, `${METADATA_ROOT}/flows/My_Screen_Flow.flow-meta.xml`, `<Flow>
+  <screens>
+    <fields>
+      <name>myLwcField</name>
+      <extensionName>c:myLwc</extensionName>
+      <fieldType>ComponentInstance</fieldType>
+    </fields>
+    <fields>
+      <name>standardField</name>
+      <extensionName>flowruntime:image</extensionName>
+      <fieldType>ComponentInstance</fieldType>
+    </fields>
+  </screens>
+</Flow>`);
+
   // Lightning page embedding the Visualforce page, the Aura component and the LWC
-  await writeProjectFile(`${METADATA_ROOT}/flexipages/Account_Record_Page.flexipage-meta.xml`, `<FlexiPage>
+  await writeProjectFile(root, `${METADATA_ROOT}/flexipages/Account_Record_Page.flexipage-meta.xml`, `<FlexiPage>
   <flexiPageRegions>
     <itemInstances>
       <componentInstance>
@@ -121,18 +149,13 @@ export default class MyLwc extends LightningElement {
 describe('metadataReferenceUtils', () => {
   describe('buildComponentReferenceIndex()', () => {
     let tmpDir: string;
-    let previousCwd: string;
     let index: ComponentReferenceIndex;
 
     before(async () => {
-      previousCwd = process.cwd();
       tmpDir = path.join(os.tmpdir(), `sfdx-hardis-metadata-references-${Date.now()}`);
       await fs.ensureDir(tmpDir);
-      process.chdir(tmpDir);
-      await buildFixture();
-      // Optimistic links: docs for Visualforce/Aura/profiles may be written later in the same run
-      await writeProjectFile('docs/objects/Account.md', '# Account');
-      index = await buildComponentReferenceIndex([{ path: PACKAGE_DIR }], {
+      await buildFixture(tmpDir);
+      index = await buildComponentReferenceIndex([{ path: path.join(tmpDir, PACKAGE_DIR) }], {
         apexPages: ['MyVfPage', 'OtherPage'],
         apexComponents: ['MyVfComponent'],
         auraBundles: ['myAuraCmp', 'baseAuraCmp'],
@@ -141,53 +164,54 @@ describe('metadataReferenceUtils', () => {
     });
 
     after(async () => {
-      process.chdir(previousCwd);
       await fs.remove(tmpDir);
     });
 
     it('collects every holder of a Visualforce page, deduplicated and without self-reference', () => {
       expect(summarize(getComponentReferences(index, 'apexPages', 'MyVfPage'))).to.deep.equal([
-        { metadataType: 'AuraDefinitionBundle', name: 'myAuraCmp', detail: 'Visualforce URL reference', docLink: 'aura/myAuraCmp.md' },
-        { metadataType: 'CustomObject', name: 'Account', detail: 'Action override: View', docLink: 'objects/Account.md' },
-        { metadataType: 'CustomTab', name: 'My_Tab', detail: 'Tab target', docLink: undefined },
-        { metadataType: 'FlexiPage', name: 'Account_Record_Page', detail: 'Page component', docLink: 'pages/Account_Record_Page.md' },
-        { metadataType: 'Layout', name: 'Account-MyLayout', detail: 'Layout item', docLink: undefined },
-        { metadataType: 'LightningComponentBundle', name: 'myLwc', detail: 'Visualforce URL reference', docLink: 'lwc/myLwc.md' },
-        { metadataType: 'Profile', name: 'Admin', detail: 'Access enabled', docLink: 'profiles/Admin.md' },
-        { metadataType: 'Profile', name: 'Standard', detail: 'Access disabled', docLink: 'profiles/Standard.md' },
-        { metadataType: 'QuickAction', name: 'Account.Log_Call', detail: 'Quick Action target', docLink: undefined },
+        { metadataType: 'ApexClass', name: 'MyVfPageExtension', detail: 'Code reference', docLink: 'apex/MyVfPageExtension.md', accessKind: undefined },
+        { metadataType: 'AuraDefinitionBundle', name: 'myAuraCmp', detail: 'Visualforce URL reference', docLink: 'aura/myAuraCmp.md', accessKind: undefined },
+        { metadataType: 'CustomObject', name: 'Account', detail: 'Action override: View', docLink: 'objects/Account.md', accessKind: undefined },
+        { metadataType: 'CustomTab', name: 'My_Tab', detail: 'Tab target', docLink: undefined, accessKind: undefined },
+        { metadataType: 'FlexiPage', name: 'Account_Record_Page', detail: 'Page component', docLink: 'pages/Account_Record_Page.md', accessKind: undefined },
+        { metadataType: 'Layout', name: 'Account-MyLayout', detail: 'Layout item', docLink: undefined, accessKind: undefined },
+        { metadataType: 'LightningComponentBundle', name: 'myLwc', detail: 'Visualforce URL reference', docLink: 'lwc/myLwc.md', accessKind: undefined },
+        { metadataType: 'Profile', name: 'Admin', detail: 'Access enabled', docLink: 'profiles/Admin.md', accessKind: 'enabled' },
+        { metadataType: 'Profile', name: 'Standard', detail: 'Access disabled', docLink: 'profiles/Standard.md', accessKind: 'disabled' },
+        { metadataType: 'QuickAction', name: 'Account.Log_Call', detail: 'Quick Action target', docLink: undefined, accessKind: undefined },
       ]);
     });
 
     it('collects the page embedding a Visualforce component', () => {
       expect(summarize(getComponentReferences(index, 'apexComponents', 'MyVfComponent'))).to.deep.equal([
-        { metadataType: 'ApexPage', name: 'MyVfPage', detail: 'Markup reference', docLink: 'visualforce/MyVfPage.md' },
+        { metadataType: 'ApexPage', name: 'MyVfPage', detail: 'Markup reference', docLink: 'visualforce/MyVfPage.md', accessKind: undefined },
       ]);
     });
 
     it('collects the page referenced from another page markup', () => {
       expect(summarize(getComponentReferences(index, 'apexPages', 'OtherPage'))).to.deep.equal([
-        { metadataType: 'ApexPage', name: 'MyVfPage', detail: 'Code reference', docLink: 'visualforce/MyVfPage.md' },
+        { metadataType: 'ApexPage', name: 'MyVfPage', detail: 'Code reference', docLink: 'visualforce/MyVfPage.md', accessKind: undefined },
       ]);
     });
 
     it('resolves a c: reference to an Aura bundle when a bundle of that name exists', () => {
       expect(summarize(getComponentReferences(index, 'auraBundles', 'myAuraCmp'))).to.deep.equal([
-        { metadataType: 'CustomObject', name: 'Account', detail: 'Action override: Edit', docLink: 'objects/Account.md' },
-        { metadataType: 'CustomTab', name: 'My_Tab', detail: 'Tab target', docLink: undefined },
-        { metadataType: 'FlexiPage', name: 'Account_Record_Page', detail: 'Page component', docLink: 'pages/Account_Record_Page.md' },
+        { metadataType: 'CustomObject', name: 'Account', detail: 'Action override: Edit', docLink: 'objects/Account.md', accessKind: undefined },
+        { metadataType: 'CustomTab', name: 'My_Tab', detail: 'Tab target', docLink: undefined, accessKind: undefined },
+        { metadataType: 'FlexiPage', name: 'Account_Record_Page', detail: 'Page component', docLink: 'pages/Account_Record_Page.md', accessKind: undefined },
       ]);
     });
 
     it('resolves a c: reference to a Lightning Web Component when no Aura bundle matches', () => {
       expect(summarize(getComponentReferences(index, 'lwcBundles', 'myLwc'))).to.deep.equal([
-        { metadataType: 'FlexiPage', name: 'Account_Record_Page', detail: 'Page component', docLink: 'pages/Account_Record_Page.md' },
+        { metadataType: 'FlexiPage', name: 'Account_Record_Page', detail: 'Page component', docLink: 'pages/Account_Record_Page.md', accessKind: undefined },
+        { metadataType: 'Flow', name: 'My_Screen_Flow', detail: 'Flow screen component', docLink: 'flows/My_Screen_Flow.md', accessKind: undefined },
       ]);
     });
 
     it('reports the Aura bundle extending another one', () => {
       expect(summarize(getComponentReferences(index, 'auraBundles', 'baseAuraCmp'))).to.deep.equal([
-        { metadataType: 'AuraDefinitionBundle', name: 'myAuraCmp', detail: 'Extended by', docLink: 'aura/myAuraCmp.md' },
+        { metadataType: 'AuraDefinitionBundle', name: 'myAuraCmp', detail: 'Extended by', docLink: 'aura/myAuraCmp.md', accessKind: undefined },
       ]);
     });
 
@@ -238,15 +262,47 @@ describe('metadataReferenceUtils', () => {
     it('omits access-disabled profile rows and keeps a count note', () => {
       const lines = buildReferencesTable(
         [
-          { metadataType: 'Profile', name: 'Admin', detail: 'Access enabled', docLink: 'profiles/Admin.md' },
-          { metadataType: 'Profile', name: 'Standard', detail: 'Access disabled', docLink: 'profiles/Standard.md' },
-          { metadataType: 'Profile', name: 'ReadOnly', detail: 'Access disabled', docLink: 'profiles/ReadOnly.md' },
+          { metadataType: 'Profile', name: 'Admin', detail: 'Access enabled', docLink: 'profiles/Admin.md', accessKind: 'enabled' },
+          { metadataType: 'Profile', name: 'Standard', detail: 'Access disabled', docLink: 'profiles/Standard.md', accessKind: 'disabled' },
+          { metadataType: 'Profile', name: 'ReadOnly', detail: 'Access disabled', docLink: 'profiles/ReadOnly.md', accessKind: 'disabled' },
         ],
         '../'
       );
       expect(lines.join('\n')).to.include('| Profile | [Admin](../profiles/Admin.md) | Access enabled |');
       expect(lines.join('\n')).to.not.include('Standard');
       expect(lines.join('\n')).to.include('2 profile or permission set entries with access disabled are not listed.');
+    });
+
+    it('summarizes the granted access rows when they would flood the table, keeping the structural ones', () => {
+      const grantedAccesses = Array.from({ length: 11 }, (unused, position) => ({
+        metadataType: 'Profile',
+        name: `Profile_${position}`,
+        detail: 'Access enabled',
+        docLink: `profiles/Profile_${position}.md`,
+        accessKind: 'enabled' as const,
+      }));
+      const lines = buildReferencesTable(
+        [{ metadataType: 'CustomTab', name: 'My_Tab', detail: 'Tab target' }, ...grantedAccesses],
+        '../'
+      );
+      expect(lines.join('\n')).to.include('| CustomTab | My_Tab | Tab target |');
+      expect(lines.join('\n')).to.not.include('Profile_0');
+      expect(lines.join('\n')).to.include('11 profile or permission set entries with access enabled are not listed.');
+    });
+
+    it('keeps the granted access rows below the structural ones while they stay readable', () => {
+      const lines = buildReferencesTable(
+        [
+          { metadataType: 'Profile', name: 'Admin', detail: 'Access enabled', docLink: 'profiles/Admin.md', accessKind: 'enabled' },
+          { metadataType: 'CustomTab', name: 'My_Tab', detail: 'Tab target' },
+        ],
+        '../'
+      );
+      const rows = lines.filter(line => line.startsWith('| ') && !line.startsWith('| :') && !line.startsWith('| Metadata'));
+      expect(rows).to.deep.equal([
+        '| CustomTab | My_Tab | Tab target |',
+        '| Profile | [Admin](../profiles/Admin.md) | Access enabled |',
+      ]);
     });
   });
 

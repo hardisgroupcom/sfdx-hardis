@@ -6,13 +6,12 @@ description: Prompt template for PROMPT_DESCRIBE_VISUALFORCE_PAGE
 # PROMPT_DESCRIBE_VISUALFORCE_PAGE
 
 ## Variables
-
-| Name                             | Description                                                                | Example                                              |
-|:---------------------------------|:---------------------------------------------------------------------------|:-----------------------------------------------------|
-| **VISUALFORCE_NAME**             | The name of the Visualforce page to describe.                              | `AccountSummaryPage`                                 |
-| **VISUALFORCE_MARKUP**           | The Visualforce markup of the page.                                        | `<apex:page standardController="Account">...`        |
-| **VISUALFORCE_META**             | The metadata file of the Visualforce page.                                 | `<ApexPage>...</ApexPage>`                           |
-| **VISUALFORCE_APEX_CONTROLLERS** | The names of the Apex controller and extensions declared by the page.      | `AccountSummaryController, AccountSummaryExtension`  |
+| Name                             | Description                                                                      | Example                                                   |
+|:---------------------------------|:---------------------------------------------------------------------------------|:----------------------------------------------------------|
+| **VISUALFORCE_NAME**             | The name of the Visualforce page to describe.                                    | `AccountSummaryPage`                                      |
+| **VISUALFORCE_MARKUP**           | The Visualforce markup of the page.                                              | `<apex:page standardController="Account">...</apex:page>` |
+| **VISUALFORCE_META**             | The metadata file of the Visualforce page.                                       | `<ApexPage>...</ApexPage>`                                |
+| **VISUALFORCE_APEX_CONTROLLERS** | The names of the Apex controller and extensions declared by the page, or "none". | `AccountSummaryController, AccountSummaryExtension`       |
 
 ## Prompt
 

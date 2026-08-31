@@ -10,7 +10,8 @@ const template: PromptTemplateDefinition = {
     {
       name: "VISUALFORCE_MARKUP",
       description: "The Visualforce markup of the component.",
-      example: "<apex:component>...</apex:component>"
+      example: "<apex:component>...</apex:component>",
+      truncateAfter: 100000
     },
     {
       name: "VISUALFORCE_META",

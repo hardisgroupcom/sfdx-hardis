@@ -23,8 +23,6 @@ export abstract class DocBuilderVisualforce extends DocBuilderComponentRoot {
 
   /** "Page" or "Component" */
   public abstract visualforceType: string;
-  /** Root tag of the markup file, used to read its attributes */
-  public abstract markupRootTag: string;
 
   public static getTypeLabel(visualforceType: string): string {
     return visualforceType === "Component" ? t('docMdVisualforceTypeComponent') : t('docMdVisualforceTypePage');
@@ -165,12 +163,10 @@ export class DocBuilderVisualforcePage extends DocBuilderVisualforce {
   public promptKey: PromptTemplate = "PROMPT_DESCRIBE_VISUALFORCE_PAGE";
   public xmlRootKey = "ApexPage";
   public visualforceType = "Page";
-  public markupRootTag = "apex:page";
 }
 
 export class DocBuilderVisualforceComponent extends DocBuilderVisualforce {
   public promptKey: PromptTemplate = "PROMPT_DESCRIBE_VISUALFORCE_COMPONENT";
   public xmlRootKey = "ApexComponent";
   public visualforceType = "Component";
-  public markupRootTag = "apex:component";
 }

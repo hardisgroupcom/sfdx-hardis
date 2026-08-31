@@ -10,7 +10,8 @@ const template: PromptTemplateDefinition = {
     {
       name: "VISUALFORCE_MARKUP",
       description: "The Visualforce markup of the page.",
-      example: "<apex:page standardController=\"Account\">...</apex:page>"
+      example: "<apex:page standardController=\"Account\">...</apex:page>",
+      truncateAfter: 100000
     },
     {
       name: "VISUALFORCE_META",
