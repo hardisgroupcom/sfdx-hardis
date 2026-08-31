@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - Fixed URLs opened in the browser from Windows getting a `^` inserted before every `&`, which broke the pre-filled Merge Request creation pages.
+- Fixed `EBUSY: resource busy or locked` failing [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/) on Windows while deleting its temporary folder.
 - New expert mode: set [SFDX_HARDIS_EXPERT_MODE](https://sfdx-hardis.cloudity.com/all-env-variables/) to `true` and [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) skips its confirmation questions and opens the Merge Request page at the end.
 
 ## [8.3.0] 2026-08-26

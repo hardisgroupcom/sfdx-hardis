@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as os from 'os';
 import * as path from 'path';
 import fs, { copy, emptyDir, ensureDir, move, pathExists, readJson, readJsonSync, remove, writeJson, writeJsonSync } from '../../../src/common/utils/fsUtils.js';
+import { removeTempDir } from '../../../src/common/utils/index.js';
 
 describe('fsUtils (fs-extra replacement)', () => {
   let tmpDir: string;
@@ -35,6 +36,17 @@ describe('fsUtils (fs-extra replacement)', () => {
     expect(fs.statSync(nested).isDirectory()).to.equal(true);
     fs.ensureDirSync(path.join(tmpDir, 'x', 'y'));
     expect(fs.existsSync(path.join(tmpDir, 'x', 'y'))).to.equal(true);
+  });
+
+  it('removeTempDir never throws when the folder can not be deleted', async () => {
+    // A path holding a NUL character makes the underlying removal reject, the same way a temp
+    // folder still locked by a child command does on Windows: it must never break the caller
+    await removeTempDir('\u0000-cannot-be-removed');
+    // A regular temp folder is still deleted
+    const dir = path.join(tmpDir, 'to-delete');
+    await ensureDir(dir);
+    await removeTempDir(dir);
+    expect(await pathExists(dir)).to.equal(false);
   });
 
   it('remove deletes files and directories and ignores missing paths', async () => {
