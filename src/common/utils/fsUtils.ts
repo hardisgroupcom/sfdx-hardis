@@ -52,17 +52,23 @@ export async function ensureFile(file: string): Promise<void> {
 }
 
 // Windows keeps a lock on a directory that is (or has just been) the working directory of a
-// process, or that a scanner still has open, so a removal right after a child command can fail
-// with EBUSY / EPERM / ENOTEMPTY. Node's recursive removal retries those codes, but only when
-// maxRetries is set: without it there is zero tolerance for a transient lock.
-const REMOVE_RETRY_OPTIONS = { recursive: true, force: true, maxRetries: 5, retryDelay: 100 };
+// process, so a removal right after a child command can fail with EBUSY / EPERM. Node retries
+// those codes only when maxRetries is set: without it there is zero tolerance for a transient
+// lock. Its backoff grows with each attempt and compounds over the recursion, so the budget is
+// kept low. Measured on Windows against a blank sfdx project held as the working directory:
+// a lock released after 250ms is ridden out in 316ms with 3 retries and 315ms with 5, while a
+// permanent lock costs 3.1s before giving up with 3 retries against 10.8s with 5.
+const REMOVE_RETRY_OPTIONS = { recursive: true, force: true, maxRetries: 3, retryDelay: 100 };
 
 export async function remove(target: string): Promise<void> {
   await fsp.rm(target, REMOVE_RETRY_OPTIONS);
 }
 
+// No retry budget here: rmSync implements its delay with a blocking sleep, and it does not even
+// engage on the locked-directory errors above (measured: same immediate EPERM with and without
+// it). Callers needing to survive a transient lock must use the async remove.
 export function removeSync(target: string): void {
-  nodeFs.rmSync(target, REMOVE_RETRY_OPTIONS);
+  nodeFs.rmSync(target, { recursive: true, force: true });
 }
 
 export async function emptyDir(dir: string): Promise<void> {
