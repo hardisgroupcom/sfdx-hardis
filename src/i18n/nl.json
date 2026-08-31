@@ -3317,6 +3317,7 @@
   "unableToComputeFieldSums": "Kan veldsommen voor {{sObjectName}} niet berekenen: {{message}}",
   "unableToComputeGitSummary": "Kan de git-samenvatting niet berekenen:\n",
   "unableToConnectToTechnicalOrgNthat": "Kan geen verbinding maken met technische org: {{value}}\nGeeft niet, we gebruiken de standaard org 😊",
+  "unableToDeleteTempDir": "Kan tijdelijke map {{tmpDir}} niet verwijderen: {{error}}",
   "unableToDescribeObject": "Kan object {{sObjectName}} niet beschrijven, wordt overgeslagen.",
   "unableToFetchSfdxAuthUrlForScratch": "Kan sfdxAuthUrl niet ophalen voor {{username}}. Alleen Scratch Orgs aangemaakt vanuit DevHub geauthenticeerd via sf org login sfdx-url of sf org login web hebben een toegangstoken en zijn ingeschakeld voor autoLogin.\nMogelijk moet je SFDX_AUTH_URL_DEV_HUB of SFDX_AUTH_URL_devHubAlias definiëren in je CI-job die sf hardis:scratch:pool:refresh uitvoert",
   "unableToFetchTargetBranch": "Kan de laatste versie van doelbranch {{branch}} niet ophalen: {{message}}",

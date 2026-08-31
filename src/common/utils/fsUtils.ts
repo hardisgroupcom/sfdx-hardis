@@ -51,12 +51,18 @@ export async function ensureFile(file: string): Promise<void> {
   await fsp.writeFile(file, '');
 }
 
+// Windows keeps a lock on a directory that is (or has just been) the working directory of a
+// process, or that a scanner still has open, so a removal right after a child command can fail
+// with EBUSY / EPERM / ENOTEMPTY. Node's recursive removal retries those codes, but only when
+// maxRetries is set: without it there is zero tolerance for a transient lock.
+const REMOVE_RETRY_OPTIONS = { recursive: true, force: true, maxRetries: 5, retryDelay: 100 };
+
 export async function remove(target: string): Promise<void> {
-  await fsp.rm(target, { recursive: true, force: true });
+  await fsp.rm(target, REMOVE_RETRY_OPTIONS);
 }
 
 export function removeSync(target: string): void {
-  nodeFs.rmSync(target, { recursive: true, force: true });
+  nodeFs.rmSync(target, REMOVE_RETRY_OPTIONS);
 }
 
 export async function emptyDir(dir: string): Promise<void> {

@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from '../../../../common/utils/fsUtils.js';
 import * as path from "path";
-import { createTempDir, execCommand, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { createTempDir, execCommand, removeTempDir, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
@@ -172,7 +172,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     }));
 
     uxLog("log", this, c.grey(`Analysis complete. Deleting temporary project files...`));
-    await fs.rm(tmpDirForSfdxProject, { recursive: true });
+    await removeTempDir(tmpDirForSfdxProject);
 
     this.connectedAppResults = sortArray(this.connectedAppResults,
       {

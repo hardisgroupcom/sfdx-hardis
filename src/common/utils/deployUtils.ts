@@ -16,6 +16,7 @@ import {
   gitHasLocalUpdates,
   isCI,
   killBoringExitHandlers,
+  removeTempDir,
   replaceJsonInString,
   sortCrossPlatform,
   uxLog,
@@ -1549,22 +1550,26 @@ export async function buildOrgManifest(
     );
   } else {
     const tmpDirSfdxProject = await createTempDir();
-    await createBlankSfdxProject(tmpDirSfdxProject);
-    // Use sfdx manifest build in dummy project
-    await execCommand(
-      `sf project generate manifest` +
-      ` --name ${manifestName}` +
-      ` --output-dir "${path.resolve(manifestDir)}"` +
-      includePackagesFlag +
-      ` --from-org ${targetOrgUsernameAlias}`,
-      this,
-      {
-        fail: true,
-        cwd: path.join(tmpDirSfdxProject, 'sfdx-hardis-blank-project'),
-        debug: Boolean(process.env.DEBUG),
-        output: true,
-      }
-    );
+    try {
+      await createBlankSfdxProject(tmpDirSfdxProject);
+      // Use sfdx manifest build in dummy project
+      await execCommand(
+        `sf project generate manifest` +
+        ` --name ${manifestName}` +
+        ` --output-dir "${path.resolve(manifestDir)}"` +
+        includePackagesFlag +
+        ` --from-org ${targetOrgUsernameAlias}`,
+        this,
+        {
+          fail: true,
+          cwd: path.join(tmpDirSfdxProject, 'sfdx-hardis-blank-project'),
+          debug: Boolean(process.env.DEBUG),
+          output: true,
+        }
+      );
+    } finally {
+      await removeTempDir(tmpDirSfdxProject);
+    }
   }
   const packageXmlFull = packageXmlOutputFile;
   if (!fs.existsSync(packageXmlFull)) {

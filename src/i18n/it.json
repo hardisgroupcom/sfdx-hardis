@@ -3317,6 +3317,7 @@
   "unableToComputeFieldSums": "Impossibile calcolare le somme dei campi per {{sObjectName}}: {{message}}",
   "unableToComputeGitSummary": "Impossibile calcolare il riepilogo git:\n",
   "unableToConnectToTechnicalOrgNthat": "Impossibile connettersi all'org tecnica: {{value}}\nVa bene, utilizzeremo l'org predefinita 😊",
+  "unableToDeleteTempDir": "Impossibile eliminare la cartella temporanea {{tmpDir}}: {{error}}",
   "unableToDescribeObject": "Impossibile descrivere l'oggetto {{sObjectName}}, verrà saltato.",
   "unableToFetchSfdxAuthUrlForScratch": "Impossibile recuperare sfdxAuthUrl per {{username}}. Solo le Scratch Orgs create da DevHub autenticato tramite sf org login sfdx-url o sf org login web avranno il token di accesso e saranno abilitate per l'autoLogin.\nPotresti dover definire SFDX_AUTH_URL_DEV_HUB o SFDX_AUTH_URL_devHubAlias nel tuo job CI che esegue sf hardis:scratch:pool:refresh",
   "unableToFetchTargetBranch": "Impossibile recuperare l'ultima versione del branch di destinazione {{branch}}: {{message}}",
