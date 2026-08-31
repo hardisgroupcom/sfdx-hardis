@@ -19,7 +19,7 @@
 
 /* light mode alternating table bg colors */
 .md-typeset__table tr:nth-child(2n) {
-  background-color: #FAF7FF;
+  background-color: #F3F3F3;
 }
 
 /* dark mode alternating table bg colors */
@@ -27,12 +27,25 @@
   background-color: #0A162E;
 }
 
-/* Cloudity brand palette (cloudity.com): blue #0053FF, navy #001135, purple #6A00FF */
+/* The header is navy in both schemes, so the search trigger keeps its light-on-dark
+   treatment in both. Without this it is coloured from the default foreground tokens and
+   turns near-black on the navy bar in light mode. */
+.md-header .md-search__button {
+  color: #FFFFFF;
+  background-color: rgb(255 255 255 / 12%);
+}
+
+.md-header .md-search__button:hover,
+.md-header .md-search__button:focus-visible {
+  background-color: rgb(255 255 255 / 22%);
+}
+
+/* Cloudity brand palette (cloudity.com): blue #0053FF, navy #001135, purple #660FF2 */
 :root {
   --md-primary-fg-color: #0053FF;
-  --md-accent-fg-color: #6A00FF;
+  --md-accent-fg-color: #660FF2;
   --md-typeset-a-color: #0053FF;
-  --md-code-bg-color: #FAF7FF;
+  --md-code-bg-color: #F3F3F3;
   --md-footer-bg-color: #001135;
   --md-header-bg-color: #001135;
 }

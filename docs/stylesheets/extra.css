@@ -4,16 +4,16 @@
  * Cloudity brand palette, sampled from cloudity.com.
  *   blue        #0053FF  primary / links
  *   navy        #001135  header, footer, headings
- *   purple      #6A00FF  accent
- *   purple tint #FAF7FF  surfaces, nav background
+ *   purple      #660FF2  accent, used on cloudity.com only in the hero gradient
+ *   surface     #F3F3F3  alternating section bands on cloudity.com
  *   grey        #646E73  muted text
  * Dark mode lifts blue and purple so they keep contrast on navy.
  */
 :root {
   --cloudity-blue: #0053FF;
   --cloudity-navy: #001135;
-  --cloudity-purple: #6A00FF;
-  --cloudity-tint: #FAF7FF;
+  --cloudity-purple: #660FF2;
+  --cloudity-surface: #F3F3F3;
   --cloudity-grey: #646E73;
 
   --md-primary-fg-color: var(--cloudity-blue);
@@ -23,7 +23,7 @@
   --md-primary-bg-color--light: rgb(255 255 255 / 70%);
 
   --md-accent-fg-color: var(--cloudity-purple);
-  --md-accent-fg-color--transparent: rgb(106 0 255 / 10%);
+  --md-accent-fg-color--transparent: rgb(102 15 242 / 10%);
   --md-accent-bg-color: #FFFFFF;
 
   --md-default-bg-color: #FFFFFF;
@@ -33,8 +33,8 @@
   --md-default-fg-color--lightest: rgb(0 17 53 / 7%);
 
   --md-typeset-a-color: var(--cloudity-blue);
-  --md-typeset-mark-color: rgb(106 0 255 / 18%);
-  --md-code-bg-color: var(--cloudity-tint);
+  --md-typeset-mark-color: rgb(102 15 242 / 18%);
+  --md-code-bg-color: var(--cloudity-surface);
 
   --md-footer-bg-color: var(--cloudity-navy);
   --md-footer-bg-color--dark: #000A22;
@@ -82,14 +82,21 @@
   background-color: var(--cloudity-navy);
 }
 
-/* Side navigation sits on the light purple tint in light mode */
-.md-sidebar {
-  background-color: var(--cloudity-tint);
+/* The header stays navy in both schemes, so the search trigger keeps its light-on-dark
+   treatment in both. Zensical colours it from the default foreground tokens, which resolve
+   to near-black in the light scheme and disappear against the navy bar. */
+.md-header .md-search__button {
+  color: #FFFFFF;
+  background-color: rgb(255 255 255 / 12%);
 }
 
-[data-md-color-scheme="slate"] .md-sidebar {
-  background-color: #0A162E;
+.md-header .md-search__button:hover,
+.md-header .md-search__button:focus-visible {
+  background-color: rgb(255 255 255 / 22%);
 }
+
+/* Deliberately no background on .md-sidebar: the element is only as tall as its sticky
+   wrapper (44px), so painting it draws a stray band instead of a full column. */
 
 /* Force all sidebar/menu links in dark mode to be white for consistency */
 [data-md-color-scheme="slate"] .md-nav__link,
@@ -122,7 +129,7 @@
 
 /* light mode alternating table bg colors */
 .md-typeset__table tr:nth-child(2n) {
-  background-color: var(--cloudity-tint);
+  background-color: var(--cloudity-surface);
 }
 
 /* dark mode alternating table bg colors */
