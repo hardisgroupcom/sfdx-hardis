@@ -10,7 +10,7 @@ _Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessi
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/total](https://img.shields.io/npm/dt/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
-[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-201.1k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
+[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-209.7k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
 [![GitHub stars](https://img.shields.io/github/stars/hardisgroupcom/sfdx-hardis)](https://GitHub.com/hardisgroupcom/sfdx-hardis/stargazers/)
 [![GitHub contributors](https://img.shields.io/github/contributors/hardisgroupcom/sfdx-hardis.svg)](https://gitHub.com/hardisgroupcom/sfdx-hardis/graphs/contributors/)
 [![MegaLinter](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml/badge.svg?branch=main)](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml?query=branch%3Amain)
