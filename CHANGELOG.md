@@ -2,6 +2,9 @@
 
 ## [beta] (main)
 
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - Visualforce pages, Visualforce components and Aura components are now documented, each with an AI summary, its attributes, its source and a "Where Used" table listing the tabs, layouts, profiles, permission sets, quick actions, Lightning pages, applications, sites, buttons and components that point at it. Use `--no-generate-visualforce-doc`, `--no-generate-aura-doc`, `--hide-visualforce-code` or `--hide-aura-code` to adjust the output.
+  - Visualforce and Aura pages now also list what they use (embedded components, included pages, static resources, custom labels), link controllers and related docs even when those sections are generated later in the same run, and omit profile/permission set rows that only disable access.
 - Fixed URLs opened in the browser from Windows getting a `^` inserted before every `&`, which broke the pre-filled Merge Request creation pages.
 - Fixed `EBUSY: resource busy or locked` failing [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/) on Windows while deleting its temporary folder.
 - New expert mode: set [SFDX_HARDIS_EXPERT_MODE](https://sfdx-hardis.cloudity.com/all-env-variables/) to `true` and [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) skips its confirmation questions and opens the Merge Request page at the end.

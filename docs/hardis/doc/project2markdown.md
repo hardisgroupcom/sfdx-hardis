@@ -19,6 +19,8 @@ Generates Markdown documentation from a SFDX project
 - Code
   - Apex
   - Lightning Web Components
+  - Visualforce (pages and components)
+  - Aura Components
 - Lightning Pages
 - Packages
 - SFDX-Hardis Config
@@ -109,11 +111,15 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build -v || 
 | generate-automations-doc | boolean | Generate Automations documentation (Approval Processes, Assignment Rules, AutoResponse Rules, Escalation Rules) |         |          |         |
 | generate-flow-doc        | boolean | Generate Flows, Process Builders and Workflow Rules documentation                                               |         |          |         |
 | generate-lwc-doc         | boolean | Generate Lightning Web Components documentation                                                                 |         |          |         |
+| generate-visualforce-doc | boolean | Generate Visualforce pages and components documentation                                                         |         |          |         |
+| generate-aura-doc        | boolean | Generate Aura components documentation                                                                          |         |          |         |
 | generate-objects-doc     | boolean | Generate Objects documentation                                                                                  |         |          |         |
 | generate-packages-doc    | boolean | Generate Installed Packages documentation                                                                       |         |          |         |
 | generate-pages-doc       | boolean | Generate Lightning Pages documentation                                                                          |         |          |         |
 | generate-profiles-doc    | boolean | Generate Profiles, Permission Sets, Permission Set Groups and Roles documentation                               |         |          |         |
 | hide-apex-code           | boolean | Hide Apex code in the generated documentation for Apex classes.                                                 |         |          |         |
+| hide-visualforce-code    | boolean | Hide Visualforce markup in the generated documentation for Visualforce pages and components.                    |         |          |         |
+| hide-aura-code           | boolean | Hide source code in the generated documentation for Aura components.                                          |         |          |         |
 | json                     | boolean | Format output as json.                                                                                          |         |          |         |
 | pdf                      | boolean | Also generate the documentation in PDF format                                                                   |         |          |         |
 | skipauth                 | boolean | Skip authentication check when a default username is required                                                   |         |          |         |
@@ -149,6 +155,10 @@ $ sf hardis:doc:project2markdown --excel
 
 ```shell
 $ sf hardis:doc:project2markdown --no-generate-apex-doc --no-generate-lwc-doc
+```
+
+```shell
+$ sf hardis:doc:project2markdown --no-generate-visualforce-doc --no-generate-aura-doc
 ```
 
 ```shell
