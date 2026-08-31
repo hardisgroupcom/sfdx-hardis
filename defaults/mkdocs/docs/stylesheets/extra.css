@@ -9,27 +9,48 @@
 
 /* light mode table header bgcolor */
 .md-typeset__table th {
-  background-color: #E8EDF5;
+  background-color: #E8EEFF;
 }
 
 /* dark mode table header bgcolor */
 [data-md-color-scheme="slate"] .md-typeset__table th {
-  background-color: #1A1A2E;
+  background-color: #0A162E;
 }
 
 /* light mode alternating table bg colors */
 .md-typeset__table tr:nth-child(2n) {
-  background-color: #f8f8f8;
+  background-color: #FAF7FF;
 }
 
 /* dark mode alternating table bg colors */
 [data-md-color-scheme="slate"] .md-typeset__table tr:nth-child(2n) {
-  background-color: #1A1A2E;
+  background-color: #0A162E;
 }
 
-:root>* {
-  --md-primary-fg-color: #001135;
+/* Cloudity brand palette (cloudity.com): blue #0053FF, navy #001135, purple #6A00FF */
+:root {
+  --md-primary-fg-color: #0053FF;
+  --md-accent-fg-color: #6A00FF;
+  --md-typeset-a-color: #0053FF;
+  --md-code-bg-color: #FAF7FF;
   --md-footer-bg-color: #001135;
+  --md-header-bg-color: #001135;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #4D8BFF;
+  --md-accent-fg-color: #9B6BFF;
+  --md-typeset-a-color: #4D8BFF;
+  --md-default-bg-color: #050B1F;
+  --md-code-bg-color: #0A162E;
+  --md-footer-bg-color: #001135;
+  --md-header-bg-color: #001135;
+}
+
+.md-header,
+.md-tabs,
+.md-footer {
+  background-color: #001135;
 }
 
 /* Wider content area for large screens (1920px and above)*/

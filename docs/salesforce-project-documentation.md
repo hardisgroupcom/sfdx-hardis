@@ -84,7 +84,7 @@ For sfdx-hardis CI/CD projects, a branches and orgs strategy diagram is also gen
 
 ## Publish anywhere
 
-The output is plain Markdown powered by [MkDocs Material](https://squidfunk.github.io/mkdocs-material/), so you can:
+The output is plain Markdown powered by [Zensical](https://zensical.org/), so you can:
 
 - **Self-host** as a static website (GitHub Pages, GitLab Pages, Azure Static Web Apps, Cloudflare Pages...).
 - **Push to Confluence** with [`hardis:doc:mkdocs-to-confluence`](hardis/doc/mkdocs-to-confluence.md).

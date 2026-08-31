@@ -20,8 +20,8 @@ Here is a click-by-click tutorial to generate your documentation locally (once y
 ## Run Locally
 
 - Run command **Documentation Generation > Run local HTML Doc Pages** (Note: you need [Python](https://www.python.org/downloads/) on your computer)
-  - Corresponding command lines: `pip install mkdocs-material mdx_truly_sane_lists`, then `mkdocs serve -v`
-  - Alternative 1: `python -m pip install mkdocs-material mdx_truly_sane_lists`, then `python -m mkdocs serve -v`
-  - Alternative 2: `py -m pip install mkdocs-material mdx_truly_sane_lists`, then `py -m mkdocs serve -v`
+  - Corresponding command lines: `pip install zensical mdx_truly_sane_lists`, then `zensical serve`
+  - Alternative 1: `python -m pip install zensical mdx_truly_sane_lists`, then `python -m zensical serve`
+  - Alternative 2: `py -m pip install zensical mdx_truly_sane_lists`, then `py -m zensical serve`
 
 - Open <http://127.0.0.1:8000/> in your web browser

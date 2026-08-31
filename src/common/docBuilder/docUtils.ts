@@ -40,16 +40,36 @@ export function buildAllKnownNavLabels(): Set<string> {
   return labels;
 }
 
+// Zensical reads the same mkdocs.yml file, but resolves emoji helpers from its own
+// namespace. Older configs written for materialx or material for MkDocs are upgraded
+// on read, so an existing repository picks up the new namespace on its next doc build.
+const EMOJI_TWEMOJI_TAG = '!!python/name:zensical.extensions.emoji.twemoji';
+const EMOJI_TO_SVG_TAG = '!!python/name:zensical.extensions.emoji.to_svg';
+const FENCE_CODE_FORMAT_TAG = '!!python/name:pymdownx.superfences.fence_code_format';
+
+const LEGACY_EMOJI_TWEMOJI_TAGS = [
+  '!!python/name:materialx.emoji.twemoji',
+  '!!python/name:material.extensions.emoji.twemoji',
+];
+const LEGACY_EMOJI_TO_SVG_TAGS = [
+  '!!python/name:materialx.emoji.to_svg',
+  '!!python/name:material.extensions.emoji.to_svg',
+];
+
+// js-yaml cannot parse unquoted "!!python/name:" tags, so they are quoted before load
+// and unquoted again on dump, which keeps the file readable by Zensical.
 export function readMkDocsFile(mkdocsYmlFile: string): any {
-  const mkdocsYml: any = yaml.load(
-    fs
-      .readFileSync(mkdocsYmlFile, 'utf-8')
-      .replace('!!python/name:materialx.emoji.twemoji', "!!python/name:material.extensions.emoji.twemoji")
-      .replace('!!python/name:materialx.emoji.to_svg', "!!python/name:material.extensions.emoji.to_svg")
-      .replace('!!python/name:material.extensions.emoji.twemoji', "'!!python/name:material.extensions.emoji.twemoji'")
-      .replace('!!python/name:material.extensions.emoji.to_svg', "'!!python/name:material.extensions.emoji.to_svg'")
-      .replace('!!python/name:pymdownx.superfences.fence_code_format', "'!!python/name:pymdownx.superfences.fence_code_format'")
-  );
+  let mkdocsYmlStr = fs.readFileSync(mkdocsYmlFile, 'utf-8');
+  for (const legacyTag of LEGACY_EMOJI_TWEMOJI_TAGS) {
+    mkdocsYmlStr = mkdocsYmlStr.replaceAll(legacyTag, EMOJI_TWEMOJI_TAG);
+  }
+  for (const legacyTag of LEGACY_EMOJI_TO_SVG_TAGS) {
+    mkdocsYmlStr = mkdocsYmlStr.replaceAll(legacyTag, EMOJI_TO_SVG_TAG);
+  }
+  for (const tag of [EMOJI_TWEMOJI_TAG, EMOJI_TO_SVG_TAG, FENCE_CODE_FORMAT_TAG]) {
+    mkdocsYmlStr = mkdocsYmlStr.replaceAll(tag, `'${tag}'`);
+  }
+  const mkdocsYml: any = yaml.load(mkdocsYmlStr);
   if (!mkdocsYml.nav) {
     mkdocsYml.nav = {}
   }
@@ -57,15 +77,12 @@ export function readMkDocsFile(mkdocsYmlFile: string): any {
 }
 
 export async function writeMkDocsFile(mkdocsYmlFile: string, mkdocsYml: any) {
-  const mkdocsYmlStr = yaml
-    .dump(mkdocsYml, { lineWidth: -1 })
-    .replace("!!python/name:materialx.emoji.twemoji", '!!python/name:material.extensions.emoji.twemoji')
-    .replace("!!python/name:materialx.emoji.to_svg", '!!python/name:material.extensions.emoji.to_svg')
-    .replace("'!!python/name:material.extensions.emoji.twemoji'", '!!python/name:material.extensions.emoji.twemoji')
-    .replace("'!!python/name:material.extensions.emoji.to_svg'", '!!python/name:material.extensions.emoji.to_svg')
-    .replace("'!!python/name:pymdownx.superfences.fence_code_format'", '!!python/name:pymdownx.superfences.fence_code_format');
+  let mkdocsYmlStr = yaml.dump(mkdocsYml, { lineWidth: -1 });
+  for (const tag of [EMOJI_TWEMOJI_TAG, EMOJI_TO_SVG_TAG, FENCE_CODE_FORMAT_TAG]) {
+    mkdocsYmlStr = mkdocsYmlStr.replaceAll(`'${tag}'`, tag);
+  }
   await fs.writeFile(mkdocsYmlFile, mkdocsYmlStr);
-  uxLog("action", this, c.cyan(t('updatedMkdocsMaterialConfigFileAt', { mkdocsYmlFile: c.green(mkdocsYmlFile) })));
+  uxLog("action", this, c.cyan(t('updatedZensicalConfigFileAt', { mkdocsYmlFile: c.green(mkdocsYmlFile) })));
 }
 
 const alreadySaid: string[] = [];
@@ -208,40 +225,61 @@ export async function replaceInFile(filePath: string, stringToReplace: string, r
   await fs.writeFile(filePath, newContent);
 }
 
+// Python packages needed to build the site with Zensical.
+// Zensical reads mkdocs.yml directly, so no config conversion is required.
+const ZENSICAL_PIP_PACKAGES = "zensical mdx_truly_sane_lists";
+const ZENSICAL_DOCKER_IMAGE = "zensical/zensical";
+
 export async function generateMkDocsHTML() {
-  const mkdocsLocalOk = await installMkDocs();
-  if (mkdocsLocalOk) {
-    // Generate MkDocs HTML pages with local MkDocs
-    uxLog("action", this, c.cyan(t('generatingHtmlPagesWithMkdocs')));
-    const mkdocsBuildRes = await execCommand("mkdocs build -v || python -m mkdocs build -v || py -m mkdocs build -v", this, { fail: false, output: true, debug: false });
-    if (mkdocsBuildRes.status !== 0) {
-      throw new SfError('MkDocs build failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
+  const zensicalLocalOk = await installMkDocs();
+  if (zensicalLocalOk) {
+    // Generate HTML pages with local Zensical
+    uxLog("action", this, c.cyan(t('generatingHtmlPagesWithZensical')));
+    const buildCommands = ["zensical build", "python -m zensical build", "py -m zensical build"];
+    const zensicalBuildRes = await execCommand(buildCommands.join(" || "), this, { fail: false, output: true, debug: false });
+    if (zensicalBuildRes.status !== 0) {
+      throw new SfError('Zensical build failed:\n' + zensicalBuildRes.stderr + "\n" + zensicalBuildRes.stdout);
     }
   }
   else {
-    // Generate MkDocs HTML pages with Docker
+    // Generate HTML pages with Docker
     uxLog("action", this, c.cyan(t('generatingHtmlPagesWithDocker')));
-    const mkdocsBuildRes = await execCommand("docker run --rm -v $(pwd):/docs squidfunk/mkdocs-material build -v", this, { fail: false, output: true, debug: false });
-    if (mkdocsBuildRes.status !== 0) {
-      throw new SfError('MkDocs build with docker failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
+    const zensicalBuildRes = await execCommand(`docker run --rm -v $(pwd):/docs ${ZENSICAL_DOCKER_IMAGE} build`, this, { fail: false, output: true, debug: false });
+    if (zensicalBuildRes.status !== 0) {
+      throw new SfError('Zensical build with docker failed:\n' + zensicalBuildRes.stderr + "\n" + zensicalBuildRes.stdout);
     }
   }
 }
 
 export async function installMkDocs() {
-  uxLog("action", this, c.cyan(t('managingMkdocsMaterialLocalInstallation')));
-  let mkdocsLocalOk = false;
-  const installMkDocsRes = await execCommand("pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python3 -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py3 -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists", this, { fail: false, output: true, debug: false });
-  if (installMkDocsRes.status === 0) {
-    mkdocsLocalOk = true;
+  uxLog("action", this, c.cyan(t('managingZensicalLocalInstallation')));
+  let zensicalLocalOk = false;
+  const pipCommands = ["pip", "python -m pip", "py -m pip", "python3 -m pip", "py3 -m pip"]
+    .map((pipCmd) => `${pipCmd} install ${ZENSICAL_PIP_PACKAGES}`);
+  const installZensicalRes = await execCommand(pipCommands.join(" || "), this, { fail: false, output: true, debug: false });
+  if (installZensicalRes.status === 0) {
+    zensicalLocalOk = true;
   }
-  return mkdocsLocalOk;
+  return zensicalLocalOk;
 }
 
 export function getMetaHideLines(): string {
   return `---
 hide:
   - path
+---
+
+`;
+}
+
+// Zensical has no glob-based search exclusion (the mkdocs-exclude-search plugin has no
+// equivalent yet), so noisy generated pages opt out one by one with page front matter.
+export function getMetaHideAndSearchExcludeLines(): string {
+  return `---
+hide:
+  - path
+search:
+  exclude: true
 ---
 
 `;

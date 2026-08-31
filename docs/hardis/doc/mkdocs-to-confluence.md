@@ -11,7 +11,7 @@ This command automates the deployment of your project's MkDocs documentation to 
 
 Key operations performed:
 
-- **MkDocs Navigation Parsing:** Reads the `mkdocs.yml` file to extract the navigation structure (`nav` key), which defines the page hierarchy.
+- **Navigation Parsing:** Reads the `mkdocs.yml` file to extract the navigation structure (`nav` key), which defines the page hierarchy.
 - **Markdown to Confluence Conversion:** Converts each Markdown file into Confluence Storage Format (XHTML), handling:
   - **Internal links:** Rewrites `[text](page.md)` links into Confluence page links using `<ac:link>` macros.
   - **Images:** Uploads images as attachments to the corresponding Confluence page and replaces Markdown image references with `<ac:image>` macros.
@@ -52,7 +52,7 @@ More information can be found in the [Documentation section](https://sfdx-hardis
 
 The command orchestrates interactions with MkDocs configuration, Markdown conversion, and the Confluence REST API:
 
-- **MkDocs Navigation Parsing:** Uses `readMkDocsFile()` to load and parse `mkdocs.yml`, then recursively traverses the `nav` structure to build a flat list of pages with their hierarchy (parent-child relationships).
+- **Navigation Parsing:** Uses `readMkDocsFile()` to load and parse `mkdocs.yml`, then recursively traverses the `nav` structure to build a flat list of pages with their hierarchy (parent-child relationships).
 - **Markdown to Confluence Storage Format:** Each Markdown file is read from the `docs/` folder and converted to Confluence Storage Format (a subset of XHTML). The conversion handles:
   - Fenced code blocks (```) → `<ac:structured-macro ac:name="code">` with language parameter.
   - Internal page links `[text](file.md)` → `<ac:link><ri:page ri:content-title="..." /><ac:plain-text-link-body><![CDATA[text]]></ac:plain-text-link-body></ac:link>`.
