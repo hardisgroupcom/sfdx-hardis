@@ -257,14 +257,14 @@ describe('metadataReferenceUtils', () => {
   <c:PersonalRecord />
   <apex:include pageName="OtherPage" />
   <apex:outputLink value="{!$Page.OtherPage}" />
-  <apex:stylesheet value="{!$Resource.mentoresd}" />
+  <apex:stylesheet value="{!$Resource.SiteStyles}" />
   <apex:outputText value="{!$Label.site.register}" />
   <apex:outputLink value="{!$Page.MySelf}" />
 </apex:page>`;
       expect(extractVisualforceDependencies(markup, 'MySelf')).to.deep.equal([
         { kind: 'apexComponents', name: 'PersonalRecord', docLink: 'visualforce/PersonalRecord-component.md' },
         { kind: 'apexPages', name: 'OtherPage', docLink: 'visualforce/OtherPage.md' },
-        { kind: 'staticResources', name: 'mentoresd' },
+        { kind: 'staticResources', name: 'SiteStyles' },
         { kind: 'customLabels', name: 'site.register' },
       ]);
     });
@@ -275,7 +275,7 @@ describe('metadataReferenceUtils', () => {
       const lines = buildUsesTable(
         [
           { kind: 'apexComponents', name: 'PersonalRecord', docLink: 'visualforce/PersonalRecord-component.md' },
-          { kind: 'staticResources', name: 'mentoresd' },
+          { kind: 'staticResources', name: 'SiteStyles' },
         ],
         '../'
       );
@@ -285,7 +285,7 @@ describe('metadataReferenceUtils', () => {
         '| Type | Name |',
         '| :--: | :---- |',
         '| Visualforce Component | [PersonalRecord](../visualforce/PersonalRecord-component.md) |',
-        '| Static Resource | mentoresd |',
+        '| Static Resource | SiteStyles |',
         '',
       ]);
     });
