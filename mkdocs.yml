@@ -13,7 +13,7 @@ theme:
     - content.code.copy
     - navigation.instant
     - navigation.footer
-  logo: assets/images/cloudity-text-logo.svg
+  logo: assets/images/cloudity-text-logo-white.svg
   favicon: assets/images/cloudity-logo.svg
   palette:
     - scheme: default
@@ -28,7 +28,7 @@ theme:
         primary: '#0053FF'
         accent: '#660FF2'
         link: '#0053FF'
-        header: '#FFFFFF'
+        header: '#0053FF'
         nav: '#FFFFFF'
     - scheme: slate
       primary: custom

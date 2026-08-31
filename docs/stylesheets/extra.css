@@ -75,8 +75,8 @@
   --md-footer-bg-color: var(--cloudity-navy);
   --md-footer-bg-color--dark: #000A22;
   --md-footer-fg-color: #FFFFFF;
-  --md-header-bg-color: #FFFFFF;
-  --md-header-fg-color: var(--cloudity-navy);
+  --md-header-bg-color: var(--cloudity-blue);
+  --md-header-fg-color: #FFFFFF;
 }
 
 [data-md-color-scheme="slate"] {
@@ -107,59 +107,36 @@
   --md-header-fg-color: #FFFFFF;
 }
 
-/* cloudity.com uses a white header with navy text; the footer stays navy in both schemes */
+/* Cloudity blue header in the light scheme, navy in the dark one so the bar stays comfortable
+   against a dark page. White on #0053FF measures 5.7:1, above the 4.5:1 the WCAG AA text rule
+   asks for. Both grounds are dark enough for white text, so the white wordmark serves both and
+   the footer keeps its navy. */
 .md-header,
 .md-tabs {
-  background-color: #FFFFFF;
-  color: var(--cloudity-navy);
-  border-bottom: 1px solid rgb(0 17 53 / 8%);
+  background-color: var(--cloudity-blue);
+  color: #FFFFFF;
 }
 
 [data-md-color-scheme="slate"] .md-header,
 [data-md-color-scheme="slate"] .md-tabs {
   background-color: var(--cloudity-navy);
-  color: #FFFFFF;
-  border-bottom-color: rgb(255 255 255 / 10%);
 }
 
 .md-footer {
   background-color: var(--cloudity-navy);
 }
 
-/* The wordmark ships in two variants: the colored one reads on white, the white one on navy.
-   theme.logo can only name one file, so the dark scheme swaps it through a background image. */
-[data-md-color-scheme="slate"] .md-header__button.md-logo img {
-  visibility: hidden;
-}
-
-[data-md-color-scheme="slate"] .md-header__button.md-logo {
-  background-image: url("../assets/images/cloudity-text-logo-white.svg");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-}
-
-/* The search trigger has to follow the header, which is white in the light scheme and navy in
-   the dark one. Zensical colors it from the default foreground tokens, so it needs an explicit
-   value on both sides or it disappears against one of the two grounds. */
+/* The header is dark in both schemes, so the search trigger keeps one light-on-dark treatment.
+   Zensical colors it from the default foreground tokens, which resolve to near-black in the
+   light scheme and would vanish against the blue bar. */
 .md-header .md-search__button {
-  color: var(--cloudity-navy);
-  background-color: rgb(0 17 53 / 6%);
+  color: #FFFFFF;
+  background-color: rgb(255 255 255 / 14%);
 }
 
 .md-header .md-search__button:hover,
 .md-header .md-search__button:focus-visible {
-  background-color: rgb(0 17 53 / 12%);
-}
-
-[data-md-color-scheme="slate"] .md-header .md-search__button {
-  color: #FFFFFF;
-  background-color: rgb(255 255 255 / 12%);
-}
-
-[data-md-color-scheme="slate"] .md-header .md-search__button:hover,
-[data-md-color-scheme="slate"] .md-header .md-search__button:focus-visible {
-  background-color: rgb(255 255 255 / 22%);
+  background-color: rgb(255 255 255 / 24%);
 }
 
 /* Deliberately no background on .md-sidebar: the element is only as tall as its sticky
