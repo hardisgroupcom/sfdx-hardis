@@ -296,11 +296,16 @@ class SfdxHardisBuilder {
         "| :------|:-------------|:---------|",
         ...prompt.variables.map(
           v => {
-            // Escape pipe characters in example to avoid breaking the markdown table
-            let example = String(v.example ?? "");
-            // Replace | with \| and newlines with <br> for markdown table safety
-            example = example.replace(/\|/g, "\\|").replace(/\n/g, "<br>");
-            return `| **${v.name}** | ${v.description} | \`${example}\` |`;
+            // A multi-line example needs one code span per line: a <br> placed inside a single
+            // code span is rendered literally instead of breaking the line. Pipes are escaped so
+            // they do not split the markdown table.
+            const exampleCell = String(v.example ?? "")
+              .split("\n")
+              .map(line => line.replace(/\|/g, "\\|"))
+              .filter(line => line.length > 0)
+              .map(line => `\`${line}\``)
+              .join("<br>");
+            return `| **${v.name}** | ${v.description} | ${exampleCell} |`;
           }
         ),
         '',
