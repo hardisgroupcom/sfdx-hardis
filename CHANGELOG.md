@@ -4,10 +4,9 @@
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Document Visualforce pages, Visualforce components and Aura components, with their "Uses" and "Where Used" tables.
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): A failing CustomObject source convert no longer aborts the whole run: object names fall back to the project source folders and the other sections are still generated.
-- Documentation sites are now built with [Zensical](https://zensical.org/) instead of mkdocs-material, using the same `mkdocs.yml` config file.
-- Documentation sites now follow the current Cloudity brand colors.
-- Documentation sites now use a Cloudity blue header and the Cloudity body font, self-hosted so no request is made to Google Fonts.
-- Documentation pages now have a comments section, backed by GitHub Discussions with giscus.
+- Documentation sites now build with [Zensical](https://zensical.org/) instead of mkdocs-material. It is installed for you, and your existing `mkdocs.yml` keeps working.
+- Documentation sites get a refreshed Cloudity look: blue header, updated brand colors, and the same font as cloudity.com, shipped with the site instead of fetched from Google Fonts.
+- You can now comment on any page of the [sfdx-hardis documentation](https://sfdx-hardis.cloudity.com/) with your GitHub account.
 - Fixed URLs opened in the browser from Windows getting a `^` inserted before every `&`, which broke the pre-filled Merge Request creation pages.
 - Fixed `EBUSY: resource busy or locked` failing [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/) on Windows while deleting its temporary folder.
 - New expert mode: set [SFDX_HARDIS_EXPERT_MODE](https://sfdx-hardis.cloudity.com/all-env-variables/) to `true` and [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) skips its confirmation questions and opens the Merge Request page at the end.
