@@ -18,7 +18,7 @@
     "@langchain/openai": "1.5.3",
     "@oclif/core": "4.13.3",
     "@openai/codex-sdk": "0.149.1",
-    "@salesforce/core": "8.29.0",
+    "@salesforce/core": "8.32.6",
     "@salesforce/sf-plugins-core": "11.3.12",
     "@salesforce/source-deploy-retrieve": "12.37.2",
     "@slack/web-api": "7.19.0",
