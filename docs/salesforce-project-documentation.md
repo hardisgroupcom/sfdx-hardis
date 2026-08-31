@@ -49,6 +49,8 @@ Turn your Salesforce project into a **beautiful, searchable documentation websit
 
 - Apex classes and triggers
 - Lightning Web Components
+- Visualforce pages and components, with the metadata that uses them
+- Aura components, with the metadata that uses them
 
 **Configuration**
 

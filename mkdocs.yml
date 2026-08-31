@@ -220,6 +220,7 @@ nav:
               - Describe Apex: prompt-templates/PROMPT_DESCRIBE_APEX.md
               - Describe Approval Process: prompt-templates/PROMPT_DESCRIBE_APPROVAL_PROCESS.md
               - Describe Assignment Rules: prompt-templates/PROMPT_DESCRIBE_ASSIGNMENT_RULES.md
+              - Describe Aura Bundle: prompt-templates/PROMPT_DESCRIBE_AURA_BUNDLE.md
               - Describe AutoResponse Rules: prompt-templates/PROMPT_DESCRIBE_AUTORESPONSE_RULES.md
               - Describe Escalation Rules: prompt-templates/PROMPT_DESCRIBE_ESCALATION_RULES.md
               - Describe Flow: prompt-templates/PROMPT_DESCRIBE_FLOW.md
@@ -232,6 +233,8 @@ nav:
               - Describe Permission Set Group: prompt-templates/PROMPT_DESCRIBE_PERMISSION_SET_GROUP.md
               - Describe Profile: prompt-templates/PROMPT_DESCRIBE_PROFILE.md
               - Describe Roles: prompt-templates/PROMPT_DESCRIBE_ROLES.md
+              - Describe Visualforce Component: prompt-templates/PROMPT_DESCRIBE_VISUALFORCE_COMPONENT.md
+              - Describe Visualforce Page: prompt-templates/PROMPT_DESCRIBE_VISUALFORCE_PAGE.md
               - Describe Workflow Rule: prompt-templates/PROMPT_DESCRIBE_WORKFLOW_RULE.md
               - Monitoring PPTX Report: prompt-templates/PROMPT_MONITORING_PPTX_REPORT.md
               - Monitoring Summary: prompt-templates/PROMPT_MONITORING_SUMMARY.md

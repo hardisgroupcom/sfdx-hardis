@@ -192,6 +192,46 @@ export async function listPageFiles(packageDirs) {
   return pageFiles.sort();
 }
 
+// Lists the documentation source files matching a glob in every package directory, dropping the ones
+// coming from an installed package (their API name holds a namespace separator).
+async function listDocMetadataFiles(packageDirs, globPattern: string, skippedMessageKey: string) {
+  const metadataFiles: string[] = [];
+  const skippedFiles: string[] = [];
+  for (const packageDir of packageDirs || []) {
+    const matchingFiles = await glob(globPattern, { cwd: packageDir.path, ignore: PACKAGE_DIRECTORY_DOC_GLOB_IGNORE_PATTERNS });
+    for (const matchingFile of matchingFiles) {
+      const metadataFile = path.join(packageDir.path, matchingFile).replace(/\\/g, '/');
+      // The name to check is the file name, or the bundle folder name for a bundled metadata like Aura
+      const isManaged = path.basename(metadataFile).includes('__') || path.basename(path.dirname(metadataFile)).includes('__');
+      if (isManaged) {
+        skippedFiles.push(metadataFile);
+      }
+      else {
+        metadataFiles.push(metadataFile);
+      }
+    }
+  }
+  if (skippedFiles.length > 0) {
+    uxLog("warning", this, c.yellow(t(skippedMessageKey, { skipped: skippedFiles.length })));
+    for (const skippedFile of sortCrossPlatform(skippedFiles)) {
+      uxLog("warning", this, c.yellow(`  ${skippedFile}`));
+    }
+  }
+  return sortCrossPlatform(metadataFiles);
+}
+
+export async function listVisualforcePageFiles(packageDirs) {
+  return listDocMetadataFiles(packageDirs, "**/pages/*.page-meta.xml", 'skippedManagedVisualforcePages');
+}
+
+export async function listVisualforceComponentFiles(packageDirs) {
+  return listDocMetadataFiles(packageDirs, "**/components/*.component-meta.xml", 'skippedManagedVisualforceComponents');
+}
+
+export async function listAuraBundleFiles(packageDirs) {
+  return listDocMetadataFiles(packageDirs, "**/aura/*/*.{cmp,app,evt,intf,tokens}-meta.xml", 'skippedManagedAuraComponents');
+}
+
 // npmjs.com/package/@apexdevtools/apex-parser may give more robust result, but if use it, better to start from project2markdown.ts
 export function stripApexLeadingComments(code: string): string {
   let s = code.trimStart();

@@ -16,7 +16,8 @@ import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { linkifyWorksheetUrls } from '../../../common/utils/filesUtils.js';
 import { glob } from 'glob';
-import { GLOB_IGNORE_PATTERNS, METADATA_DOC_GLOB_IGNORE_PATTERNS, listApexFiles, listFlowFiles, listPageFiles, returnApexType } from '../../../common/utils/projectUtils.js';
+import { GLOB_IGNORE_PATTERNS, METADATA_DOC_GLOB_IGNORE_PATTERNS, PACKAGE_DIRECTORY_DOC_GLOB_IGNORE_PATTERNS, listApexFiles, listAuraBundleFiles, listFlowFiles, listPageFiles, listVisualforceComponentFiles, listVisualforcePageFiles, returnApexType } from '../../../common/utils/projectUtils.js';
+import { buildComponentReferenceIndex, ComponentReferenceIndex, getComponentReferences } from '../../../common/utils/metadataReferenceUtils.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
@@ -30,6 +31,8 @@ import { DocBuilderObject } from '../../../common/docBuilder/docBuilderObject.js
 import { DocBuilderApex } from '../../../common/docBuilder/docBuilderApex.js';
 import { DocBuilderFlow } from '../../../common/docBuilder/docBuilderFlow.js';
 import { DocBuilderLwc } from '../../../common/docBuilder/docBuilderLwc.js';
+import { DocBuilderAura } from '../../../common/docBuilder/docBuilderAura.js';
+import { DocBuilderVisualforce, DocBuilderVisualforceComponent, DocBuilderVisualforcePage } from '../../../common/docBuilder/docBuilderVisualforce.js';
 import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPackageXml.js';
 import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
@@ -82,6 +85,8 @@ To just generate HTML pages that you can host anywhere, run \`mkdocs build -v ||
 - Code
   - Apex
   - Lightning Web Components
+  - Visualforce (pages and components)
+  - Aura Components
 - Lightning Pages
 - Packages
 - SFDX-Hardis Config
@@ -157,6 +162,7 @@ ${this.htmlInstructions}
     '$ sf hardis:doc:project2markdown --hide-apex-code',
     '$ sf hardis:doc:project2markdown --excel',
     '$ sf hardis:doc:project2markdown --no-generate-apex-doc --no-generate-lwc-doc',
+    '$ sf hardis:doc:project2markdown --no-generate-visualforce-doc --no-generate-aura-doc',
     '$ sf hardis:doc:project2markdown --no-generate-automations-doc'
   ];
 
@@ -182,6 +188,14 @@ ${this.htmlInstructions}
     "hide-apex-code": Flags.boolean({
       default: false,
       description: "Hide Apex code in the generated documentation for Apex classes.",
+    }),
+    "hide-visualforce-code": Flags.boolean({
+      default: false,
+      description: "Hide Visualforce markup in the generated documentation for Visualforce pages and components.",
+    }),
+    "hide-aura-code": Flags.boolean({
+      default: false,
+      description: "Hide source code in the generated documentation for Aura components.",
     }),
     "generate-packages-doc": Flags.boolean({
       default: true,
@@ -223,6 +237,16 @@ ${this.htmlInstructions}
       description: "Generate Lightning Web Components documentation",
       allowNo: true
     }),
+    "generate-visualforce-doc": Flags.boolean({
+      default: true,
+      description: "Generate Visualforce pages and components documentation",
+      allowNo: true
+    }),
+    "generate-aura-doc": Flags.boolean({
+      default: true,
+      description: "Generate Aura components documentation",
+      allowNo: true
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -252,6 +276,8 @@ ${this.htmlInstructions}
   protected withPdf = false;
   protected withExcel = false;
   protected hideApexCode = false;
+  protected hideVisualforceCode = false;
+  protected hideAuraCode = false;
   protected debugMode = false;
   protected generatePackagesDoc = true;
   protected generateApexDoc = true;
@@ -261,10 +287,14 @@ ${this.htmlInstructions}
   protected generateObjectsDoc = true;
   protected generateAutomationsDoc = true;
   protected generateLwcDoc = true;
+  protected generateVisualforceDoc = true;
+  protected generateAuraDoc = true;
   protected footer: string;
   protected apexDescriptions: any[] = [];
   protected flowDescriptions: any[] = [];
   protected lwcDescriptions: any[] = [];
+  protected visualforceDescriptions: any[] = [];
+  protected auraDescriptions: any[] = [];
   protected packageDescriptions: any[] = [];
   protected pageDescriptions: any[] = [];
   protected profileDescriptions: any[] = [];
@@ -282,6 +312,7 @@ ${this.htmlInstructions}
   protected allObjectsNames: string[];
   protected tempDir: string;
   protected pdfQueue: Set<string> = new Set();
+  protected componentReferenceIndexPromise: Promise<ComponentReferenceIndex> | null = null;
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
@@ -291,6 +322,8 @@ ${this.htmlInstructions}
     this.withPdf = flags.pdf === true ? true : false;
     this.withExcel = flags.excel === true ? true : false;
     this.hideApexCode = flags["hide-apex-code"] === true || process?.env?.HIDE_APEX_CODE === 'true' ? true : false;
+    this.hideVisualforceCode = flags["hide-visualforce-code"] === true || process?.env?.HIDE_VISUALFORCE_CODE === 'true' ? true : false;
+    this.hideAuraCode = flags["hide-aura-code"] === true || process?.env?.HIDE_AURA_CODE === 'true' ? true : false;
     this.debugMode = flags.debug || false;
     this.generatePackagesDoc = flags["generate-packages-doc"] !== false && process?.env?.GENERATE_PACKAGES_DOC !== 'false';
     this.generateApexDoc = flags["generate-apex-doc"] !== false && process?.env?.GENERATE_APEX_DOC !== 'false';
@@ -300,6 +333,8 @@ ${this.htmlInstructions}
     this.generateObjectsDoc = flags["generate-objects-doc"] !== false && process?.env?.GENERATE_OBJECTS_DOC !== 'false';
     this.generateAutomationsDoc = flags["generate-automations-doc"] !== false && process?.env?.GENERATE_AUTOMATIONS_DOC !== 'false';
     this.generateLwcDoc = flags["generate-lwc-doc"] !== false && process?.env?.GENERATE_LWC_DOC !== 'false';
+    this.generateVisualforceDoc = flags["generate-visualforce-doc"] !== false && process?.env?.GENERATE_VISUALFORCE_DOC !== 'false';
+    this.generateAuraDoc = flags["generate-aura-doc"] !== false && process?.env?.GENERATE_AURA_DOC !== 'false';
     await setConnectionVariables(flags['target-org']?.getConnection(), true);// Required for some notifications providers like Email, or for Agentforce
 
     await fs.ensureDir(this.outputMarkdownRoot);
@@ -327,6 +362,8 @@ ${this.htmlInstructions}
       `- ${t('docNavCode')}`,
       "  - [Apex](apex/index.md)",
       `  - [${t('docNavLightningWebComponents')}](lwc/index.md)`,
+      `  - [${t('docNavVisualforce')}](visualforce/index.md)`,
+      `  - [${t('docNavAura')}](aura/index.md)`,
       `- [${t('docNavLightningPages')}](pages/index.md)`,
       `- [${t('docNavPackages')}](packages/index.md)`,
       `- [${t('docNavRoles')}](roles.md)`,
@@ -372,10 +409,30 @@ ${this.htmlInstructions}
     this.tempDir = await createTempDir()
     // Convert source to metadata API format to build prompts
     uxLog("action", this, c.cyan(t('convertingSourceToMetadataApiFormatTo')));
-    await execCommand(`sf project convert source --metadata CustomObject --output-dir "${this.tempDir}"`, this, { fail: true, output: true, debug: this.debugMode });
-    this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS }));
-    sortCrossPlatform(this.objectFiles);
-    this.allObjectsNames = this.objectFiles.map(object => path.basename(object, ".object"));
+    // Do not abort the whole documentation run when the project has a broken CustomObject
+    // (case mismatch, forceignore split, etc.): Visualforce, Aura, Apex and other sections
+    // can still be generated, and object names fall back to the source folders.
+    try {
+      await execCommand(`sf project convert source --metadata CustomObject --output-dir "${this.tempDir}"`, this, { fail: true, output: true, debug: this.debugMode });
+      this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS }));
+      sortCrossPlatform(this.objectFiles);
+      this.allObjectsNames = this.objectFiles.map(object => path.basename(object, ".object"));
+    } catch (e) {
+      uxLog("warning", this, c.yellow(t('customObjectConvertFailedFallingBack')));
+      uxLog("warning", this, c.yellow((e as Error).message));
+      this.objectFiles = [];
+      this.allObjectsNames = await this.listObjectNamesFromSource();
+      if (this.generateObjectsDoc) {
+        uxLog("warning", this, c.yellow(t('objectsDocumentationMayBeIncompleteAfterConvertFailure')));
+      }
+    }
+    if (this.allObjectsNames.length === 0) {
+      // The convert can also succeed while returning nothing, for example when every object is force-ignored
+      this.allObjectsNames = await this.listObjectNamesFromSource();
+      if (this.allObjectsNames.length > 0) {
+        uxLog("warning", this, c.yellow(t('customObjectConvertFailedFallingBack')));
+      }
+    }
 
     // Generate packages documentation
     if (this.generatePackagesDoc) {
@@ -397,6 +454,16 @@ ${this.htmlInstructions}
     // List pages & generate doc
     if (this.generatePagesDoc) {
       await this.generatePagesDocumentation();
+    }
+
+    // Visualforce and Aura must run before Objects: the object documentation embeds their cross-link
+    // tables, which are built from the descriptions collected here.
+    if (this.generateVisualforceDoc) {
+      await this.generateVisualforceDocumentation();
+    }
+
+    if (this.generateAuraDoc) {
+      await this.generateAuraDocumentation();
     }
 
     // List profiles & generate doc
@@ -1376,7 +1443,7 @@ ${this.htmlInstructions}
     const rootSections = [
       { menu: t('docMdMenuAutomations'), subMenus: [t('docMdMenuApprovalProcesses'), t('docMdMenuAssignmentRules'), t('docMdMenuAutoResponseRules'), t('docMdMenuEscalationRules'), t('docMdMenuFlows'), t('docMdMenuProcessBuilders'), t('docMdMenuWorkflowRules')] },
       { menu: t('docMdMenuAuthorizations'), subMenus: [t('docMdMenuProfiles'), t('docMdMenuPermissionSetGroups'), t('docMdMenuPermissionSets')] },
-      { menu: t('docMdMenuCode'), subMenus: [t('docMdMenuApex'), t('docMdMenuLightningWebComponents')] },
+      { menu: t('docMdMenuCode'), subMenus: [t('docMdMenuApex'), t('docMdMenuLightningWebComponents'), t('docMdMenuVisualforce'), t('docMdMenuAura')] },
     ];
     for (const rootSection of rootSections) {
       const navSubmenus: any[] = [];
@@ -1507,6 +1574,12 @@ ${this.htmlInstructions}
         // Apex Table
         const relatedApexTable = DocBuilderApex.buildIndexTable('../apex/', this.apexDescriptions, item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Apex table -->', relatedApexTable.join("\n"));
+        // Visualforce table
+        const relatedVisualforceTable = DocBuilderVisualforce.buildIndexTable('../visualforce/', this.visualforceDescriptions, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- Visualforce table -->', relatedVisualforceTable.join("\n"));
+        // Aura components table
+        const relatedAuraTable = DocBuilderAura.buildIndexTable('../aura/', this.auraDescriptions, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- Aura table -->', relatedAuraTable.join("\n"));
         // Lightning Pages table
         const relatedPages = DocBuilderPage.buildIndexTable('../pages/', this.pageDescriptions, item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Pages table -->', relatedPages.join("\n"));
@@ -1974,6 +2047,223 @@ ${this.htmlInstructions}
     uxLog("success", this, c.green(t('successfullyGeneratedDocumentationForLightningWebComponents', { lwcIndexFile })));
   }
 
+  // When CustomObject convert fails, recover object API names from the source folders so
+  // impactedObjects filters and cross-links still work for the other documentation sections.
+  private async listObjectNamesFromSource(): Promise<string[]> {
+    const packageDirs = this.project?.getPackageDirectories() || [];
+    const objectNames = new Set<string>();
+    for (const packageDir of packageDirs) {
+      const objectDirs = await glob("**/objects/*", {
+        cwd: packageDir.path,
+        ignore: PACKAGE_DIRECTORY_DOC_GLOB_IGNORE_PATTERNS,
+      });
+      for (const objectDir of objectDirs) {
+        const fullPath = path.join(packageDir.path, objectDir);
+        if (fs.existsSync(fullPath) && (await fs.stat(fullPath)).isDirectory()) {
+          objectNames.add(path.basename(objectDir));
+        }
+      }
+    }
+    return sortCrossPlatform([...objectNames]);
+  }
+
+  // The where-used index is built from a full scan of the package directories, so it is computed once
+  // and shared by the Visualforce and the Aura documentation.
+  private async getComponentReferenceIndex(): Promise<ComponentReferenceIndex> {
+    if (!this.componentReferenceIndexPromise) {
+      this.componentReferenceIndexPromise = (async () => {
+        uxLog("action", this, c.cyan(t('collectingMetadataReferences')));
+        const packageDirs = this.project?.getPackageDirectories() || [];
+        const lwcMetaFiles = await glob(`**/lwc/*/*.js-meta.xml`, {
+          cwd: process.cwd(),
+          ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
+        });
+        const knownNames = {
+          apexPages: (await listVisualforcePageFiles(packageDirs)).map(file => path.basename(file, ".page-meta.xml")),
+          apexComponents: (await listVisualforceComponentFiles(packageDirs)).map(file => path.basename(file, ".component-meta.xml")),
+          auraBundles: (await listAuraBundleFiles(packageDirs)).map(file => path.basename(path.dirname(file))),
+          lwcBundles: lwcMetaFiles.map(file => path.basename(path.dirname(file))),
+        };
+        return buildComponentReferenceIndex(packageDirs, knownNames);
+      })();
+    }
+    return this.componentReferenceIndexPromise;
+  }
+
+  private async generateVisualforceDocumentation() {
+    uxLog("action", this, c.cyan(t('preparingGenerationOfVisualforceDocumentation')));
+    uxLog("log", this, t('ifYouDontWantVisualforceDoc'));
+
+    const packageDirs = this.project?.getPackageDirectories() || [];
+    const pageMetaFiles = await listVisualforcePageFiles(packageDirs);
+    const componentMetaFiles = await listVisualforceComponentFiles(packageDirs);
+    if (pageMetaFiles.length === 0 && componentMetaFiles.length === 0) {
+      uxLog("log", this, c.yellow(t('noVisualforceFoundInTheProject')));
+      return;
+    }
+
+    const visualforceForMenu: any = { [t('docMdAllVisualforce')]: "visualforce/index.md" };
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "visualforce"));
+    const referenceIndex = await this.getComponentReferenceIndex();
+
+    // Phase 1: Collect data and prepare work items
+    type VisualforceWorkItem = { name: string; isPage: boolean; mdFile: string; markup: string; metaXml: string; markupAttributes: any; apexControllers: string[]; references: any[] };
+    const workItems: VisualforceWorkItem[] = [];
+    const candidates = [
+      ...pageMetaFiles.map(metaFile => ({ metaFile, isPage: true })),
+      ...componentMetaFiles.map(metaFile => ({ metaFile, isPage: false })),
+    ];
+    for (const candidate of candidates) {
+      const metaSuffix = candidate.isPage ? ".page-meta.xml" : ".component-meta.xml";
+      const name = path.basename(candidate.metaFile, metaSuffix);
+      const markupFile = candidate.metaFile.slice(0, -"-meta.xml".length);
+      const markup = fs.existsSync(markupFile) ? await fs.readFile(markupFile, "utf8") : "";
+      const metaXml = await fs.readFile(candidate.metaFile, "utf8");
+      const markupRootTag = candidate.isPage ? "apex:page" : "apex:component";
+      const markupAttributes = DocBuilderVisualforce.parseMarkupAttributes(markup, markupRootTag);
+      const apexControllers = DocBuilderVisualforce.listApexControllers(markupAttributes);
+      const docFileName = candidate.isPage ? `${name}.md` : `${name}-component.md`;
+      const mdFile = path.join(this.outputMarkdownRoot, "visualforce", docFileName);
+      const metaXmlParsed = getLargeXmlParser().parse(metaXml);
+      const rootKey = candidate.isPage ? "ApexPage" : "ApexComponent";
+      const references = getComponentReferences(referenceIndex, candidate.isPage ? 'apexPages' : 'apexComponents', name);
+      // Pages and components can share an API name; keep distinct nav keys
+      const menuLabel = candidate.isPage ? name : `${name} (${t('docMdColComponent')})`;
+      visualforceForMenu[menuLabel] = "visualforce/" + docFileName;
+      this.visualforceDescriptions.push({
+        name: name,
+        type: DocBuilderVisualforce.getTypeLabel(candidate.isPage ? "Page" : "Component"),
+        label: metaXmlParsed?.[rootKey]?.label || "",
+        apexControllers: apexControllers,
+        docPath: docFileName,
+        impactedObjects: this.allObjectsNames.filter(objectName => markup.includes(`${objectName}`) || metaXml.includes(`${objectName}`))
+      });
+      workItems.push({ name, isPage: candidate.isPage, mdFile, markup, metaXml, markupAttributes, apexControllers, references });
+    }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage(t('generatingVisualforceDocumentation'), workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        const additionalVariables = {
+          VISUALFORCE_NAME: item.name,
+          VISUALFORCE_MARKUP: item.markup || "none",
+          VISUALFORCE_META: item.metaXml,
+          VISUALFORCE_APEX_CONTROLLERS: item.apexControllers.join(", ") || "none",
+          MARKUP_ATTRIBUTES: item.markupAttributes,
+          REFERENCES: item.references,
+          HIDE_CODE: this.hideVisualforceCode
+        };
+        const docBuilder = item.isPage
+          ? new DocBuilderVisualforcePage(item.name, item.metaXml, item.mdFile, additionalVariables)
+          : new DocBuilderVisualforceComponent(item.name, item.metaXml, item.mdFile, additionalVariables);
+        await docBuilder.generateMarkdownFileFromXml();
+        this.queuePdfGeneration(item.mdFile);
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
+    WebSocketClient.sendProgressEndMessage();
+
+    if (Object.keys(visualforceForMenu).length > 1) {
+      this.addNavNode(t('docMdMenuVisualforce'), visualforceForMenu);
+    }
+
+    // Write index file for visualforce folder
+    const visualforceIndexFile = path.join(this.outputMarkdownRoot, "visualforce", "index.md");
+    await fs.writeFile(
+      visualforceIndexFile,
+      getMetaHideLines() +
+      DocBuilderVisualforce.buildIndexTable('', this.visualforceDescriptions).join("\n") +
+      `\n\n${this.footer}\n`
+    );
+
+    uxLog("success", this, c.green(t('successfullyGeneratedDocumentationForVisualforce', { visualforceIndexFile })));
+  }
+
+  private async generateAuraDocumentation() {
+    uxLog("action", this, c.cyan(t('preparingGenerationOfAuraDocumentation')));
+    uxLog("log", this, t('ifYouDontWantAuraDoc'));
+
+    const packageDirs = this.project?.getPackageDirectories() || [];
+    const auraMetaFiles = await listAuraBundleFiles(packageDirs);
+    if (auraMetaFiles.length === 0) {
+      uxLog("log", this, c.yellow(t('noAuraComponentFoundInTheProject')));
+      return;
+    }
+
+    const auraForMenu: any = { [t('docMdAllAura')]: "aura/index.md" };
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "aura"));
+    const referenceIndex = await this.getComponentReferenceIndex();
+
+    // Phase 1: Collect data and prepare work items
+    type AuraWorkItem = { name: string; mdFile: string; auraPath: string; metaXml: string; auraType: string; sources: string; apexControllers: string[]; references: any[] };
+    const workItems: AuraWorkItem[] = [];
+    for (const auraMetaFile of auraMetaFiles) {
+      const auraPath = path.dirname(auraMetaFile);
+      const name = path.basename(auraPath);
+      const mdFile = path.join(this.outputMarkdownRoot, "aura", name + ".md");
+      const metaXml = await fs.readFile(auraMetaFile, "utf8");
+      const metaXmlParsed = getLargeXmlParser().parse(metaXml);
+      const sources = await DocBuilderAura.readBundleSources(auraPath);
+      // An Aura bundle declares its Apex controller with the controller attribute of its root tag
+      const apexControllers = [...new Set(
+        [...sources.matchAll(/\bcontroller\s*=\s*"([A-Za-z_][A-Za-z0-9_]*)"/g)].map(match => match[1])
+      )];
+      const references = getComponentReferences(referenceIndex, 'auraBundles', name);
+      auraForMenu[name] = "aura/" + name + ".md";
+      this.auraDescriptions.push({
+        name: name,
+        type: DocBuilderAura.getTypeLabel(auraMetaFile),
+        description: metaXmlParsed?.AuraDefinitionBundle?.description || metaXmlParsed?.AuraDefinitionBundle?.masterLabel || "",
+        apexControllers: apexControllers,
+        docPath: `${name}.md`,
+        impactedObjects: this.allObjectsNames.filter(objectName => sources.includes(`${objectName}`) || metaXml.includes(`${objectName}`))
+      });
+      workItems.push({ name, mdFile, auraPath, metaXml, auraType: DocBuilderAura.getTypeLabel(auraMetaFile), sources, apexControllers, references });
+    }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage(t('generatingAuraDocumentation'), workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        await new DocBuilderAura(item.name, item.metaXml, item.mdFile, {
+          AURA_PATH: item.auraPath,
+          AURA_NAME: item.name,
+          AURA_TYPE: item.auraType,
+          AURA_SOURCES: item.sources || "none",
+          AURA_META: item.metaXml,
+          AURA_APEX_CONTROLLERS: item.apexControllers.join(", ") || "none",
+          REFERENCES: item.references,
+          HIDE_CODE: this.hideAuraCode
+        }).generateMarkdownFileFromXml();
+        this.queuePdfGeneration(item.mdFile);
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
+    WebSocketClient.sendProgressEndMessage();
+
+    if (Object.keys(auraForMenu).length > 1) {
+      this.addNavNode(t('docMdMenuAura'), auraForMenu);
+    }
+
+    // Write index file for aura folder
+    const auraIndexFile = path.join(this.outputMarkdownRoot, "aura", "index.md");
+    await fs.writeFile(
+      auraIndexFile,
+      getMetaHideLines() +
+      DocBuilderAura.buildIndexTable('', this.auraDescriptions).join("\n") +
+      `\n\n${this.footer}\n`
+    );
+
+    uxLog("success", this, c.green(t('successfullyGeneratedDocumentationForAura', { auraIndexFile })));
+  }
+
   private async generateExcelFile() {
     uxLog("action", this, c.cyan(t('generatingExcelFileWithAllMetadata')));
 
@@ -2000,7 +2290,9 @@ ${this.htmlInstructions}
       { type: 'Roles', count: this.roleDescriptions.length },
       { type: 'Lightning Pages', count: this.pageDescriptions.length },
       { type: 'Packages', count: this.packageDescriptions.length },
-      { type: 'Lightning Web Components', count: this.lwcDescriptions.length }
+      { type: 'Lightning Web Components', count: this.lwcDescriptions.length },
+      { type: 'Visualforce', count: this.visualforceDescriptions.length },
+      { type: 'Aura Components', count: this.auraDescriptions.length }
     ];
 
     // Create summary worksheet
@@ -2144,6 +2436,14 @@ ${this.htmlInstructions}
 
     if (this.lwcDescriptions.length > 0) {
       addWorksheet('LWC', this.lwcDescriptions, ['name', 'description', 'targets', 'isExposed']);
+    }
+
+    if (this.visualforceDescriptions.length > 0) {
+      addWorksheet('Visualforce', this.visualforceDescriptions, ['name', 'type', 'label', 'apexControllers']);
+    }
+
+    if (this.auraDescriptions.length > 0) {
+      addWorksheet('Aura', this.auraDescriptions, ['name', 'type', 'description', 'apexControllers']);
     }
 
     // Save the workbook

@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import fs from '../../../src/common/utils/fsUtils.js';
 import * as os from 'os';
 import * as path from 'path';
-import { getSfdxProjectPackageDirectories, listApexFiles, listFlowFiles, listPageFiles } from '../../../src/common/utils/projectUtils.js';
+import { getSfdxProjectPackageDirectories, listApexFiles, listAuraBundleFiles, listFlowFiles, listPageFiles, listVisualforceComponentFiles, listVisualforcePageFiles } from '../../../src/common/utils/projectUtils.js';
 
 describe('projectUtils', () => {
   let tmpDir: string;
@@ -110,6 +110,66 @@ describe('projectUtils', () => {
       const pageFiles = await listPageFiles([{ path: packageDir }]);
 
       expect(pageFiles).to.deep.equal([pageFile.replace(/\\/g, '/')]);
+    });
+  });
+
+  describe('listVisualforcePageFiles()', () => {
+    it('lists Visualforce page metadata, ignoring static resources and managed pages', async () => {
+      const packageDir = path.join(tmpDir, 'force-app');
+      const pageMetaFile = path.join(packageDir, 'main/default/pages/Real_Page.page-meta.xml');
+      const managedPageMetaFile = path.join(packageDir, 'main/default/pages/pkg__Managed_Page.page-meta.xml');
+      const staticResourcePageMetaFile = path.join(packageDir, 'main/default/staticresources/datapack/pages/Embedded.page-meta.xml');
+
+      for (const file of [pageMetaFile, managedPageMetaFile, staticResourcePageMetaFile]) {
+        await fs.ensureDir(path.dirname(file));
+        await fs.writeFile(file, '<ApexPage xmlns="http://soap.sforce.com/2006/04/metadata" />');
+      }
+
+      const visualforcePageFiles = await listVisualforcePageFiles([{ path: packageDir }]);
+
+      expect(visualforcePageFiles).to.deep.equal([pageMetaFile.replace(/\\/g, '/')]);
+    });
+  });
+
+  describe('listVisualforceComponentFiles()', () => {
+    it('lists Visualforce component metadata, ignoring static resources and managed components', async () => {
+      const packageDir = path.join(tmpDir, 'force-app');
+      const componentMetaFile = path.join(packageDir, 'main/default/components/Real_Component.component-meta.xml');
+      const managedComponentMetaFile = path.join(packageDir, 'main/default/components/pkg__Managed.component-meta.xml');
+      const staticResourceComponentMetaFile = path.join(packageDir, 'main/default/staticresources/datapack/components/Embedded.component-meta.xml');
+
+      for (const file of [componentMetaFile, managedComponentMetaFile, staticResourceComponentMetaFile]) {
+        await fs.ensureDir(path.dirname(file));
+        await fs.writeFile(file, '<ApexComponent xmlns="http://soap.sforce.com/2006/04/metadata" />');
+      }
+
+      const visualforceComponentFiles = await listVisualforceComponentFiles([{ path: packageDir }]);
+
+      expect(visualforceComponentFiles).to.deep.equal([componentMetaFile.replace(/\\/g, '/')]);
+    });
+  });
+
+  describe('listAuraBundleFiles()', () => {
+    it('lists every Aura bundle definition type, ignoring static resources and managed bundles', async () => {
+      const packageDir = path.join(tmpDir, 'force-app');
+      const componentMetaFile = path.join(packageDir, 'main/default/aura/realCmp/realCmp.cmp-meta.xml');
+      const appMetaFile = path.join(packageDir, 'main/default/aura/realApp/realApp.app-meta.xml');
+      const eventMetaFile = path.join(packageDir, 'main/default/aura/realEvent/realEvent.evt-meta.xml');
+      const managedMetaFile = path.join(packageDir, 'main/default/aura/pkg__managedCmp/pkg__managedCmp.cmp-meta.xml');
+      const staticResourceMetaFile = path.join(packageDir, 'main/default/staticresources/datapack/aura/embedded/embedded.cmp-meta.xml');
+
+      for (const file of [componentMetaFile, appMetaFile, eventMetaFile, managedMetaFile, staticResourceMetaFile]) {
+        await fs.ensureDir(path.dirname(file));
+        await fs.writeFile(file, '<AuraDefinitionBundle xmlns="http://soap.sforce.com/2006/04/metadata" />');
+      }
+
+      const auraBundleFiles = await listAuraBundleFiles([{ path: packageDir }]);
+
+      expect(auraBundleFiles).to.deep.equal([
+        appMetaFile.replace(/\\/g, '/'),
+        componentMetaFile.replace(/\\/g, '/'),
+        eventMetaFile.replace(/\\/g, '/'),
+      ]);
     });
   });
 });
