@@ -32,8 +32,8 @@ Describe Salesforce Approval Process "{{APPROVALPROCESS_NAME}}".
 
 2. **Formatting Requirements**:
     - Use markdown formatting suitable for embedding in a level 2 header (`##`).
-    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
-    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Add new lines before starting bullet lists so Zensical renders them correctly, including nested lists.
+    - Add new lines after a header title so Zensical can display the content correctly.
     - Some other formatting requirements...
 
 ### Reference Data:

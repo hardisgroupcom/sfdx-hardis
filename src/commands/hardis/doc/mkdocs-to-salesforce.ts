@@ -27,7 +27,7 @@ This command provides a convenient way to host your project's documentation dire
 
 Key operations performed:
 
-- **MkDocs HTML Generation:** Builds the MkDocs project into static HTML pages. It can use a locally installed \`mkdocs-material\` or a \`mkdocs\` Docker image.
+- **HTML Generation:** Builds the documentation project into static HTML pages with Zensical. It can use a locally installed \`zensical\` or the \`zensical/zensical\` Docker image.
 - **Salesforce Metadata Creation:** Creates the necessary Salesforce metadata components:
   - A **Static Resource** to store the generated HTML, CSS, and JavaScript files.
   - A **Visualforce Page** that embeds the static resource, allowing it to be displayed within Salesforce.
@@ -51,9 +51,9 @@ More information can be found in the [Documentation section](https://sfdx-hardis
 
 The command orchestrates interactions with MkDocs, Salesforce CLI, and file system operations:
 
-- **MkDocs Integration:** It first modifies the \`mkdocs.yml\` file to ensure compatibility with Salesforce static resources (e.g., setting \`use_directory_urls\` to \`false\`). Then, it calls \`generateMkDocsHTML()\` to build the static HTML content.
+- **Zensical Integration:** It first modifies the \`mkdocs.yml\` file to ensure compatibility with Salesforce static resources (e.g., setting \`use_directory_urls\` to \`false\`). Then, it calls \`generateMkDocsHTML()\` to build the static HTML content with Zensical.
 - **Temporary SFDX Project:** It creates a temporary SFDX project using \`createTempDir\` and \`createBlankSfdxProject\` to stage the generated Salesforce metadata before deployment.
-- **Metadata Generation:** It dynamically creates the XML metadata files for the Static Resource, Visualforce Page, Custom Tab, and Permission Set. The HTML content from the MkDocs build is moved into the static resource folder.
+- **Metadata Generation:** It dynamically creates the XML metadata files for the Static Resource, Visualforce Page, Custom Tab, and Permission Set. The HTML content from the Zensical build is moved into the static resource folder.
 - **Salesforce CLI Deployment:** It constructs and executes a \`sf project deploy start\` command to deploy the generated metadata to the target Salesforce org. It intelligently adds \`--test-level RunLocalTests\` for production orgs and \`--test-level NoTestRun\` for sandboxes.
 - **Permission Set Assignment:** After successful deployment, it calls \`initPermissionSetAssignments\` to assign the newly created permission set to the current user.
 - **Browser Launch:** For non-CI environments, it uses \`execCommand\` to open the deployed Custom Tab in the user's default browser.

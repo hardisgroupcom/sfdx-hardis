@@ -9,7 +9,7 @@ import sortArray from '../../../common/utils/sortArray.js';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, getMetaHideAndSearchExcludeLines, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { getLargeXmlParser, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/index.js';
@@ -62,11 +62,11 @@ export default class Project2Markdown extends SfCommand<any> {
 To read the documentation as HTML pages, run the following code (you need [**Python**](https://www.python.org/downloads/) on your computer)
 
 \`\`\`python
-pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists
-mkdocs serve -v || python -m mkdocs serve -v || py -m mkdocs serve -v
+pip install zensical mdx_truly_sane_lists || python -m pip install zensical mdx_truly_sane_lists || py -m pip install zensical mdx_truly_sane_lists
+zensical serve || python -m zensical serve || py -m zensical serve
 \`\`\`
 
-To just generate HTML pages that you can host anywhere, run \`mkdocs build -v || python -m mkdocs build -v || py -m mkdocs build -v\`
+To just generate HTML pages that you can host anywhere, run \`zensical build || python -m zensical build || py -m zensical build\`
 `
 
   public static description = `Generates Markdown documentation from a SFDX project
@@ -97,7 +97,7 @@ Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
 
 Generated markdown files will be written in the **docs** folder (except README.md, where a link to the doc index is added).
 
-- You can customize the pages following [mkdocs-material setup documentation](https://squidfunk.github.io/mkdocs-material/setup/)
+- You can customize the pages following the [Zensical configuration documentation](https://zensical.org/docs/)
 - You can manually add new markdown files in the "docs" folder to extend this documentation and add references to them in "mkdocs.yml"
 - You can also add images in folder "docs/assets" and embed them in markdown files.
 
@@ -498,7 +498,7 @@ ${this.htmlInstructions}
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
     if (process.env.DO_NOT_OVERWRITE_INDEX_MD !== 'true' || !fs.existsSync(this.outputMarkdownIndexFile)) {
-      await fs.writeFile(this.outputMarkdownIndexFile, getMetaHideLines() + this.mdLines.join("\n") + `\n\n${this.footer}\n`);
+      await fs.writeFile(this.outputMarkdownIndexFile, getMetaHideAndSearchExcludeLines() + this.mdLines.join("\n") + `\n\n${this.footer}\n`);
       uxLog("success", this, c.green(t('successfullyGeneratedDocIndexAt', { outputMarkdownIndexFile: this.outputMarkdownIndexFile })));
     }
 
@@ -1418,21 +1418,17 @@ ${this.htmlInstructions}
     }
     mkdocsYml.extra_css = extraCss;
 
-    // Add missing plugin config if necessary
+    // Add missing plugin config if necessary.
+    // Zensical ships its own search engine; noisy generated pages opt out of the index
+    // with "search: exclude: true" front matter instead of the mkdocs-exclude-search plugin.
     if (!mkdocsYml.plugins) {
-      mkdocsYml.plugins = [
-        'search',
-        {
-          'exclude-search': {
-            'exclude': [
-              "index.md",
-              "cache-ai-results/*.md",
-              "*package.xml.md",
-              "package-*items.xml.md"
-            ]
-          }
-        }
-      ]
+      mkdocsYml.plugins = ['search'];
+    }
+    // Drop the mkdocs-exclude-search entry left over from configs generated before Zensical
+    if (Array.isArray(mkdocsYml.plugins)) {
+      mkdocsYml.plugins = mkdocsYml.plugins.filter(
+        (plugin: any) => !(typeof plugin === 'object' && plugin !== null && 'exclude-search' in plugin)
+      );
     }
 
     // Remove deprecated items if found

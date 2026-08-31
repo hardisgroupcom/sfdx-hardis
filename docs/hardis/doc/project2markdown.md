@@ -31,7 +31,7 @@ Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
 
 Generated markdown files will be written in the **docs** folder (except README.md, where a link to the doc index is added).
 
-- You can customize the pages following [mkdocs-material setup documentation](https://squidfunk.github.io/mkdocs-material/setup/)
+- You can customize the pages following the [Zensical configuration documentation](https://zensical.org/docs/)
 - You can manually add new markdown files in the "docs" folder to extend this documentation and add references to them in "mkdocs.yml"
 - You can also add images in folder "docs/assets" and embed them in markdown files.
 
@@ -90,11 +90,11 @@ In agent mode, all interactive prompts are skipped. All flags remain available a
 To read the documentation as HTML pages, run the following code (you need [**Python**](https://www.python.org/downloads/) on your computer)
 
 ```python
-pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists
-mkdocs serve -v || python -m mkdocs serve -v || py -m mkdocs serve -v
+pip install zensical mdx_truly_sane_lists || python -m pip install zensical mdx_truly_sane_lists || py -m pip install zensical mdx_truly_sane_lists
+zensical serve || python -m zensical serve || py -m zensical serve
 ```
 
-To just generate HTML pages that you can host anywhere, run `mkdocs build -v || python -m mkdocs build -v || py -m mkdocs build -v`
+To just generate HTML pages that you can host anywhere, run `zensical build || python -m zensical build || py -m zensical build`
 
 
 

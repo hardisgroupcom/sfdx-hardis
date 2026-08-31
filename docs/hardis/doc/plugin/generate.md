@@ -8,20 +8,20 @@
 
 **Generates Markdown documentation for an SF CLI plugin, ready for conversion into HTML with MkDocs.**
 
-This command automates the creation of comprehensive documentation for your Salesforce CLI plugin. It processes your plugin's commands and their flags to generate structured Markdown files, which can then be used with MkDocs to produce a professional-looking website.
+This command automates the creation of comprehensive documentation for your Salesforce CLI plugin. It processes your plugin's commands and their flags to generate structured Markdown files, which can then be used with Zensical to produce a professional-looking website.
 
 Key functionalities:
 
 - **Command Documentation:** Generates a dedicated Markdown file for each command, including its description, parameters (flags), and examples.
 - **Index and Commands Pages:** Creates an `index.md` and `commands.md` file that list all available commands, providing an overview and easy navigation.
-- **MkDocs Integration:** Sets up the basic MkDocs project structure and updates the `mkdocs.yml` navigation to include the generated command documentation.
-- **Default File Copying:** Copies essential MkDocs configuration files and GitHub Actions workflows to your project, streamlining the setup for continuous documentation deployment.
+- **Zensical Integration:** Sets up the basic documentation project structure and updates the `mkdocs.yml` navigation to include the generated command documentation.
+- **Default File Copying:** Copies the documentation configuration files and GitHub Actions workflows to your project, so continuous documentation deployment works out of the box.
 
 **Post-Generation Steps:**
 
 After the initial run, you will need to manually update:
 
-- `mkdocs.yml`: Customize the project title, theme, and other MkDocs settings.
+- `mkdocs.yml`: Customize the project title, theme, and other site settings. Zensical reads this file directly.
 - `.github/workflows/build-deploy-docs.yml`: Configure the GitHub Actions workflow for automatic documentation deployment.
 - `docs/javascripts/gtag.js`: If desired, set up Google Analytics tracking.
 
@@ -41,7 +41,7 @@ The command's technical implementation involves:
   - Code blocks for each example provided in the command's `examples` property.
 - **Navigation Structure:** It builds a nested JavaScript object (`commandsNav`) that mirrors the command hierarchy, which is then converted to YAML and inserted into `mkdocs.yml` to create the navigation menu.
 - **Index and Commands Page Generation:** It reads the project's `README.md` and extracts relevant sections to create the `index.md` file. It also generates a separate `commands.md` file listing all commands.
-- **File System Operations:** It uses `fs-extra` to create directories, copy default MkDocs files (`defaults/mkdocs`), and write the generated Markdown and YAML files.
+- **File System Operations:** It uses `fs-extra` to create directories, copy the default site files (`defaults/mkdocs`), and write the generated Markdown and YAML files.
 - **YAML Serialization:** It uses `js-yaml` to serialize the navigation object into YAML format for `mkdocs.yml`.
 </details>
 

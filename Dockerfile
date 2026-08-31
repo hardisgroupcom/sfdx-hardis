@@ -6,7 +6,7 @@
 # "unsettled top-level await" error (see https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
 # The follow-up fix (PR #64004) landed one patch later, in Node 24.18.0, which Alpine's repo
 # does not serve yet. So we copy a fixed Node 24 build from the official node:24-alpine image
-# (currently 24.18.0), while keeping the official python base so pip/MkDocs keeps working
+# (currently 24.18.0), while keeping the official python base so pip/Zensical keeps working
 # (no PEP-668 issues).
 ARG NODE_IMAGE=node:24-alpine
 FROM ${NODE_IMAGE} AS node

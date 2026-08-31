@@ -20,9 +20,14 @@ jobs:
       - run: npm i @salesforce/cli -g
       - run: echo y|sf plugins install sfdx-hardis
       - run: sf hardis:doc:plugin:generate
-      # Deploy docs with mkdocs-material
+      # Deploy docs with Zensical (successor of mkdocs-material, reads the same mkdocs.yml)
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
-      - run: pip install mkdocs-material mdx_truly_sane_lists json-schema-for-humans
-      - run: mkdocs gh-deploy --force
+      - run: pip install zensical mdx_truly_sane_lists json-schema-for-humans ghp-import
+      - run: zensical build
+      # Zensical has no gh-deploy command: ghp-import is the same tool mkdocs used under the hood
+      - run: |
+          git config --global user.name github-actions[bot]
+          git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
+          ghp-import --no-jekyll --push --force --message "Deployed ${GITHUB_SHA} with Zensical" site

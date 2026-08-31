@@ -11,7 +11,7 @@ This command automates the deployment of your project's documentation (built wit
 
 Key operations performed:
 
-- **MkDocs HTML Generation:** Builds the MkDocs project into static HTML pages. It can use a locally installed `mkdocs-material` or a `mkdocs` Docker image.
+- **HTML Generation:** Builds the documentation project into static HTML pages with Zensical. It can use a locally installed `zensical` or the `zensical/zensical` Docker image.
 - **Cloudflare Pages Project Creation/Update:** Creates a new Cloudflare Pages project if one doesn't exist for your documentation, or updates an existing one.
 - **Cloudflare Access Policy Assignment:** Assigns a policy to restrict access to the deployed application, ensuring only authorized users can view your documentation.
 - **Cloudflare Access Application Setup:** Configures a Cloudflare Access application for the deployed site, integrating it with your Zero Trust policies.
@@ -41,7 +41,7 @@ More information can be found in the [Documentation section](https://sfdx-hardis
 
 The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
 
-- **MkDocs Integration:** It calls `generateMkDocsHTML()` to execute the MkDocs build process, which converts Markdown files into static HTML. It checks for the presence of `mkdocs.yml` to ensure it's a valid MkDocs project.
+- **Zensical Integration:** It calls `generateMkDocsHTML()` to run the Zensical build, which converts Markdown files into static HTML. It checks for the presence of `mkdocs.yml` to ensure it's a valid documentation project.
 - **Cloudflare API Interaction:** It uses the `cloudflare` npm package to interact with the Cloudflare API. This involves:
   - **Authentication:** Initializes the Cloudflare client using `CLOUDFLARE_EMAIL`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID` environment variables.
   - **Pages Project Management:** Calls `client.pages.projects.get()` to check for an existing project and `client.pages.projects.create()` to create a new one if needed.

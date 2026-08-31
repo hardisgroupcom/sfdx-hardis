@@ -825,7 +825,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
   // Set all the results in a single tabbed markdown
   uxLog("log", this, c.grey(t('aggregatingResultsInSummaryTabbedFile', { diffMdFile })));
   let finalMd = `# ${flowLabel} history\n\n`;
-  finalMd += "<!-- This page has been generated to be viewed with mkdocs-material, you can not view it just as markdown . Activate tab plugin following the doc at https://squidfunk.github.io/mkdocs-material/reference/content-tabs/ -->\n\n"
+  finalMd += "<!-- This page has been generated to be viewed with Zensical, you can not view it just as markdown . Activate content tabs following the doc at https://zensical.org/docs/ -->\n\n"
   for (const diffMdFile of diffMdFiles) {
     finalMd += `=== "${dateHelper(diffMdFile.commitAfter.date).format("ll")}` + (diffMdFile.initialVersion ? " (Initial)" : "") + `"\n\n`;
     finalMd += `    _${dateHelper(diffMdFile.commitAfter.date).format("ll")}, by ${diffMdFile.commitAfter.author_name} in commit ${diffMdFile.commitAfter.message}_\n\n`;
