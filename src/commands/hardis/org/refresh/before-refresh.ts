@@ -7,7 +7,7 @@ import { open } from '../../../../common/utils/openUtils.js';
 import { httpGet } from '../../../../common/utils/httpUtils.js';
 import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
-import { createTempDir, execCommand, execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
+import { createTempDir, execCommand, execSfdxJson, isCI, removeTempDir, uxLog } from '../../../../common/utils/index.js';
 import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js';
 import { generateCsvFile, generateReportPath, uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
@@ -337,7 +337,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     } catch (e: any) {
       uxLog("warning", this, c.yellow(t('unableToCheckMigratableConnectedApps', { error: e.message || e })));
     } finally {
-      await fs.remove(tmpDir);
+      // Cleanup of a throwaway probe folder must never break the backup
+      await removeTempDir(tmpDir);
     }
     return unmigratableLower;
   }

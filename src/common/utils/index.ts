@@ -84,6 +84,18 @@ export async function createTempDir() {
   return tmpDir;
 }
 
+// Delete a temporary directory without ever failing the command that used it.
+// On Windows a directory used as the working directory of a child command can stay locked
+// (EBUSY / EPERM) for a while after the command returns, and a leftover temp folder is never
+// worth interrupting the work that produced it.
+export async function removeTempDir(tmpDir: string): Promise<void> {
+  try {
+    await fs.remove(tmpDir);
+  } catch (e: any) {
+    uxLog("warning", this, c.yellow(t('unableToDeleteTempDir', { tmpDir: tmpDir, error: e.message || e })));
+  }
+}
+
 let isGitRepoCache: boolean | null = null;
 export function isGitRepo() {
   if (isGitRepoCache !== null) {

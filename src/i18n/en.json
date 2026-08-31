@@ -3321,6 +3321,7 @@
   "unableToComputeFieldSums": "Unable to compute field sums for {{sObjectName}}: {{message}}",
   "unableToComputeGitSummary": "Unable to compute git summary:\n",
   "unableToConnectToTechnicalOrgNthat": "Unable to connect to technical org: {{value}}\nThat's ok, we'll use default org 😊",
+  "unableToDeleteTempDir": "Unable to delete temporary folder {{tmpDir}}: {{error}}",
   "unableToDescribeObject": "Unable to describe object {{sObjectName}}, skipping it.",
   "unableToFetchSfdxAuthUrlForScratch": "Unable to fetch sfdxAuthUrl for {{username}}. Only Scratch Orgs created from DevHub authenticated using sf org login sfdx-url or sf org login web will have access token and be enabled for autoLogin.\nYou may need to define SFDX_AUTH_URL_DEV_HUB or SFDX_AUTH_URL_devHubAlias in your CI job running sf hardis:scratch:pool:refresh",
   "unableToFetchTargetBranch": "Unable to fetch the latest version of target branch {{branch}}: {{message}}",

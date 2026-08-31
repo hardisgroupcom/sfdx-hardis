@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from '../../../../common/utils/fsUtils.js';
 import * as path from "path";
-import { createTempDir, execCommand, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { createTempDir, execCommand, removeTempDir, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
@@ -151,28 +151,31 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
     // Collect all Connected Apps metadata in a blank project
     const tmpDirForSfdxProject = await createTempDir();
-    this.tmpSfdxProjectPath = await createBlankSfdxProject(tmpDirForSfdxProject);
-    uxLog("action", this, c.cyan(t('retrieveConnectedappMetadatasFrom', { conn: conn.instanceUrl })));
-    await execCommand(
-      `sf project retrieve start -m ConnectedApp --target-org ${conn.username}`,
-      this,
-      { cwd: this.tmpSfdxProjectPath, fail: true, output: true });
+    try {
+      this.tmpSfdxProjectPath = await createBlankSfdxProject(tmpDirForSfdxProject);
+      uxLog("action", this, c.cyan(t('retrieveConnectedappMetadatasFrom', { conn: conn.instanceUrl })));
+      await execCommand(
+        `sf project retrieve start -m ConnectedApp --target-org ${conn.username}`,
+        this,
+        { cwd: this.tmpSfdxProjectPath, fail: true, output: true });
 
-    // Collect all Connected Apps used in LoginHistory table
-    uxLog("action", this, c.cyan(t('extractingAllApplicationsFoundInLoginhistoryObject', { conn: conn.instanceUrl })));
-    const allAppsInLoginHistoryQuery =
-      `SELECT Application FROM LoginHistory GROUP BY Application ORDER BY Application`;
-    const allAppsInLoginHistoryQueryRes = await soqlQuery(allAppsInLoginHistoryQuery, conn);
-    const allAppsInLoginHistoryNames = allAppsInLoginHistoryQueryRes.records.map(loginHistory => loginHistory.Application);
+      // Collect all Connected Apps used in LoginHistory table
+      uxLog("action", this, c.cyan(t('extractingAllApplicationsFoundInLoginhistoryObject', { conn: conn.instanceUrl })));
+      const allAppsInLoginHistoryQuery =
+        `SELECT Application FROM LoginHistory GROUP BY Application ORDER BY Application`;
+      const allAppsInLoginHistoryQueryRes = await soqlQuery(allAppsInLoginHistoryQuery, conn);
+      const allAppsInLoginHistoryNames = allAppsInLoginHistoryQueryRes.records.map(loginHistory => loginHistory.Application);
 
-    // Perform analysis
-    uxLog("action", this, c.cyan(`Starting analysis...`));
-    this.connectedAppResults = await Promise.all(allConnectedApps.map(async (connectedApp) => {
-      return await this.analyzeConnectedApp(allAppsInLoginHistoryNames, connectedApp, conn);
-    }));
-
-    uxLog("log", this, c.grey(`Analysis complete. Deleting temporary project files...`));
-    await fs.rm(tmpDirForSfdxProject, { recursive: true });
+      // Perform analysis
+      uxLog("action", this, c.cyan(`Starting analysis...`));
+      this.connectedAppResults = await Promise.all(allConnectedApps.map(async (connectedApp) => {
+        return await this.analyzeConnectedApp(allAppsInLoginHistoryNames, connectedApp, conn);
+      }));
+    } finally {
+      // A failing analysis must not leave the retrieved ConnectedApp metadata tree behind
+      uxLog("log", this, c.grey(`Deleting temporary project files...`));
+      await removeTempDir(tmpDirForSfdxProject);
+    }
 
     this.connectedAppResults = sortArray(this.connectedAppResults,
       {
