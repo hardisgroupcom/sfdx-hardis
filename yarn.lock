@@ -1491,10 +1491,10 @@
     wrap-ansi "^7.0.0"
     wsl-utils "^0.4.0"
 
-"@oclif/plugin-command-snapshot@5.3.35":
-  version "5.3.35"
-  resolved "https://registry.yarnpkg.com/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.3.35.tgz#0bb1f3627a4d3209c5bd41089dbfffefbf94a60e"
-  integrity sha512-IIj6zISG1muLLSpPI560n6Q2F4njN+OFTP/PXp+sdGxrB0pT/NtuRQ6DXwo0fvOX2AA6aG7HMLNYRO5h5feGJg==
+"@oclif/plugin-command-snapshot@5.4.0":
+  version "5.4.0"
+  resolved "https://registry.yarnpkg.com/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.4.0.tgz#a5f4a8c52c35a27b00fa2a1f2b9e7056e8c5f55f"
+  integrity sha512-ZU+PTQZZcHw96ntsUCPAYmbVft+raaYCVdHRTCDnCx0lzZCc3CST6vWqjKh0/hoKRS7D0x3c9F4M1ckbDKbMZw==
   dependencies:
     "@oclif/core" "^4"
     ansis "^3.17.0"
