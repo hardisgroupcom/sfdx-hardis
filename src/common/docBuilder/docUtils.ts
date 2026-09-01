@@ -16,7 +16,7 @@ import { SUPPORTED_LOCALES, t } from '../utils/i18n.js';
  * across all supported locales. Used to detect and remove stale nav entries in mkdocs.yml
  * when the documentation language changes between runs.
  */
-export function buildAllKnownNavLabels(): Set<string> {
+export function buildAllKnownNavLabels(keyPrefixes: string[] = ['docMdMenu', 'docMdAll']): Set<string> {
   const labels = new Set<string>();
   /* jscpd:ignore-start */
   const __filename = fileURLToPath(import.meta.url);
@@ -28,7 +28,7 @@ export function buildAllKnownNavLabels(): Set<string> {
       try {
         const translations: Record<string, string> = JSON.parse(fs.readFileSync(localeFile, 'utf-8'));
         for (const [key, value] of Object.entries(translations)) {
-          if (key.startsWith('docMdMenu') || key.startsWith('docMdAll')) {
+          if (keyPrefixes.some(keyPrefix => key.startsWith(keyPrefix))) {
             labels.add(value);
           }
         }
@@ -107,6 +107,48 @@ export function normalizeMkDocsNav(nav: any): any[] {
     }
   }
   return items;
+}
+
+// Menu entries are collected while metadata files are walked, so their order follows the
+// file system and is neither stable between runs nor alphabetical (packages and Lightning
+// Web Components came out reversed, for instance). A generated menu is therefore sorted by
+// label, case-insensitively, before it is written. The "All <type>" index page of a menu
+// keeps its place at the top, and nested sub-menus are sorted the same way.
+let allKnownNavIndexLabels: Set<string> | null = null;
+
+function getMkDocsNavItemLabel(item: any): string {
+  if (item && typeof item === 'object' && !Array.isArray(item)) {
+    return Object.keys(item)[0] ?? '';
+  }
+  return String(item ?? '');
+}
+
+export function sortMkDocsNavItems(target: any): any {
+  if (!Array.isArray(target)) {
+    // Page path, or anything else that has no children to sort
+    return target;
+  }
+  if (allKnownNavIndexLabels === null) {
+    allKnownNavIndexLabels = buildAllKnownNavLabels(['docMdAll']);
+  }
+  const indexItems: any[] = [];
+  const otherItems: any[] = [];
+  for (const item of target) {
+    const label = getMkDocsNavItemLabel(item);
+    if (item && typeof item === 'object' && !Array.isArray(item)) {
+      item[label] = sortMkDocsNavItems(item[label]);
+    }
+    if (allKnownNavIndexLabels.has(label)) {
+      indexItems.push(item);
+    }
+    else {
+      otherItems.push(item);
+    }
+  }
+  otherItems.sort((a, b) =>
+    getMkDocsNavItemLabel(a).toLowerCase().localeCompare(getMkDocsNavItemLabel(b).toLowerCase(), 'en', { sensitivity: 'base' })
+  );
+  return [...indexItems, ...otherItems];
 }
 
 // js-yaml cannot parse unquoted "!!python/name:" tags, so they are quoted before load
