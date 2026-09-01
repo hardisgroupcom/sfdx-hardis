@@ -29,6 +29,7 @@ import { CONSTANTS, getConfig, setConfig } from '../../../config/index.js';
 import SandboxCreate from '../org/create.js';
 import ScratchCreate from '../scratch/create.js';
 import { t } from '../../../common/utils/i18n.js';
+import { runAuthHook } from '../../../common/utils/authUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -637,7 +638,7 @@ The command's logic orchestrates various underlying processes:
         scratchOrgUsername: null,
       });
       // Check if DevHub is connected
-      await this.config.runHook('auth', {
+      await runAuthHook(this, {
         Command: this,
         devHub: true,
         scratch: false,

@@ -21,6 +21,7 @@ import {
   getSharedNutOrgSession,
   git,
   NutOrgContext,
+  purgeNutApexClasses,
   queryTooling,
   readDeployResultReport,
   runHardis,
@@ -384,6 +385,13 @@ describe('hardis:project:deploy:smart against a real org', () => {
       await addApexClassToManifest(ctx.projectDir, impactClass);
       git(ctx.projectDir, 'add -A');
       git(ctx.projectDir, `commit -m "test: add deployment impact class" --no-verify`);
+    });
+
+    after(() => {
+      // This class is really deployed, and the org is reused by the scenarios that follow and by
+      // the next run. Left there, it is Apex no test covers, and it would drag the org-wide
+      // coverage under the 75% gate every deployment then checks.
+      purgeNutApexClasses(ctx);
     });
 
     let firstDeployReport: any;

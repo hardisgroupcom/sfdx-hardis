@@ -5,7 +5,6 @@ import { exec as childExec, spawn as childSpawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
   createTempDir,
-  execCommand,
   execSfdxJson,
   getCurrentGitBranch,
   isAgentMode,
@@ -64,6 +63,23 @@ export function extractTargetOrgFromArgv(argv: string[] | undefined): string | n
     }
   }
   return null;
+}
+
+/* Run the sfdx-hardis "auth" hook and make sure an authentication failure is not silently ignored.
+
+   oclif Config.runHook() collects the errors thrown by hooks in its result instead of throwing them,
+   unless the error carries an oclif exit code (which SfError does not). Without this wrapper, a failed
+   web login would let the calling command carry on and display a success message.
+*/
+export async function runAuthHook(commandThis: any, options: AuthOrgOptions): Promise<any> {
+  // Reset the org set by a previous authentication, so callers can detect that this one did not connect anything
+  globalThis.justConnectedOrg = null;
+  const hookResult: any = await commandThis.config.runHook('auth', options);
+  const failure = (hookResult?.failures || [])[0];
+  if (failure) {
+    throw failure.error instanceof Error ? failure.error : new SfError(String(failure.error));
+  }
+  return hookResult;
 }
 
 // Authorize an org with sfdxAuthUrl, manually or with JWT
@@ -188,8 +204,13 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
           `sf org login sfdx-url -f "${authFile}"` +
           (isDevHub ? ` --set-default-dev-hub` : (setDefaultOrg ? ` --set-default` : '')) +
           (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
-        await execCommand(authCommand, this, { fail: true, output: false });
+        const authUrlRes = await execSfdxJson(authCommand, this, { fail: true, output: false });
         uxLog("action", this, c.cyan(t('successfullyLoggedUsingSfdxauthurl')));
+        // Publish the connected org, like the JWT and web login branches do, so callers of
+        // runAuthHook() can tell an authentication that connected nothing from this one
+        if (authUrlRes?.result?.username) {
+          globalThis.justConnectedOrg = sanitizeOrg(authUrlRes.result);
+        }
         return true;
       } finally {
         await fs.remove(authTmpDir);
