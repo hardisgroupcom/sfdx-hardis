@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- New [Deployment assistant](https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-error-list/) tip for "Must specify a non-empty label for the CustomObject", telling how to fix a custom object committed without its attributes.
+
 ## [8.4.0] 2026-08-31
 
 - New expert mode: set [SFDX_HARDIS_EXPERT_MODE](https://sfdx-hardis.cloudity.com/all-env-variables/) to `true` and [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) skips its confirmation questions and opens the Merge Request page at the end.
