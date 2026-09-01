@@ -803,6 +803,7 @@
   "deployResultJsonReportTitle": "JSON van implementatieresultaat",
   "deployResultSummaryArtifactsDocHint": "Als je CI-workflow de map hardis-report nog niet publiceert als job-artefact, zie dan {{url}} om de ontbrekende stap toe te voegen",
   "deployResultSummaryChanges": "Wijzigingen: {{created}} aangemaakt, {{updated}} bijgewerkt, {{deleted}} verwijderd, {{unchanged}} ongewijzigd",
+  "deployResultSummaryChangesCheck": "Wijzigingen bij implementatie: {{created}} aangemaakt, {{updated}} bijgewerkt, {{deleted}} verwijderd, {{unchanged}} ongewijzigd",
   "deployResultSummaryComponents": "Componenten: {{deployed}} geïmplementeerd, {{failed}} mislukt ({{total}} totaal)",
   "deployResultSummaryCoverage": "Org-brede Apex-codedekking: {{coverage}}%",
   "deployResultSummaryDeploymentId": "Implementatie-ID: {{deploymentId}}",

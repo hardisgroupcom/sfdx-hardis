@@ -801,6 +801,7 @@
   "deployResultJsonReportTitle": "デプロイ結果 JSON",
   "deployResultSummaryArtifactsDocHint": "CI ワークフローが hardis-report フォルダをジョブの成果物としてまだ公開していない場合は、{{url}} を参照して不足しているステップを追加してください",
   "deployResultSummaryChanges": "変更: {{created}} 件作成、{{updated}} 件更新、{{deleted}} 件削除、{{unchanged}} 件変更なし",
+  "deployResultSummaryChangesCheck": "デプロイした場合の変更: {{created}} 件作成、{{updated}} 件更新、{{deleted}} 件削除、{{unchanged}} 件変更なし",
   "deployResultSummaryComponents": "コンポーネント: {{deployed}} 件デプロイ、{{failed}} 件失敗 (合計 {{total}} 件)",
   "deployResultSummaryCoverage": "組織全体の Apex コードカバー率: {{coverage}}%",
   "deployResultSummaryDeploymentId": "デプロイ ID: {{deploymentId}}",

@@ -807,6 +807,7 @@
   "deployResultJsonReportTitle": "Deployment Result JSON",
   "deployResultSummaryArtifactsDocHint": "If your CI workflow does not publish the hardis-report folder as a job artifact yet, see {{url}} to add the missing step",
   "deployResultSummaryChanges": "Changes: {{created}} created, {{updated}} updated, {{deleted}} deleted, {{unchanged}} unchanged",
+  "deployResultSummaryChangesCheck": "Changes if deployed: {{created}} created, {{updated}} updated, {{deleted}} deleted, {{unchanged}} unchanged",
   "deployResultSummaryComponents": "Components: {{deployed}} deployed, {{failed}} failed ({{total}} total)",
   "deployResultSummaryCoverage": "Org-wide Apex coverage: {{coverage}}%",
   "deployResultSummaryDeploymentId": "Deployment ID: {{deploymentId}}",

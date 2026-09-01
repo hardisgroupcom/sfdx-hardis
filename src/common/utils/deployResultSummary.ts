@@ -45,6 +45,34 @@ function isTrue(value: any): boolean {
   return value === true || value === 'true';
 }
 
+/** Manifests Salesforce reports as if they were deployed components, with no component type */
+const MANIFEST_ROW_NAMES = new Set([
+  'package.xml',
+  'destructiveChanges.xml',
+  'destructiveChangesPre.xml',
+  'destructiveChangesPost.xml',
+]);
+
+/**
+ * True for the rows Salesforce adds for the manifests themselves.
+ *
+ * They are not deployed components, so counting them would put one entry per manifest in
+ * `unchanged` and break the "counters add up to numberComponentsDeployed" invariant on every
+ * deployment carrying destructive changes.
+ */
+function isManifestRow(item: any): boolean {
+  const fullName = `${item?.fullName || ''}`;
+  return MANIFEST_ROW_NAMES.has(fullName) || (fullName.endsWith('.xml') && !item?.componentType);
+}
+
+/** The `files[].state` values that describe a component that really reached the org */
+const FILE_STATE_FLAGS: Record<string, ComponentChangeFlags> = {
+  Created: { created: true, updated: false, deleted: false },
+  Changed: { created: false, updated: true, deleted: false },
+  Deleted: { created: false, updated: false, deleted: true },
+  Unchanged: { created: false, updated: false, deleted: false },
+};
+
 const EMPTY_COMPONENT_CHANGES: DeployComponentChanges = {
   created: 0,
   updated: 0,
@@ -87,8 +115,7 @@ function mergeComponentChangeFlags(
 function collectFlagsFromComponentSuccesses(componentSuccesses: any[]): Map<string, ComponentChangeFlags> {
   const flagsByComponent = new Map<string, ComponentChangeFlags>();
   for (const item of componentSuccesses) {
-    // Salesforce adds a row for the manifest itself, which is not a deployed component
-    if (item?.fullName === 'package.xml') {
+    if (isManifestRow(item)) {
       continue;
     }
     const key = `${item?.componentType || ''}:${item?.fullName || ''}`;
@@ -101,17 +128,24 @@ function collectFlagsFromComponentSuccesses(componentSuccesses: any[]): Map<stri
   return flagsByComponent;
 }
 
-/** Collect the per-component flags from `files[]`, the source-tracking deploy result shape */
+/**
+ * Collect the per-component flags from `files[]`, the source-tracking deploy result shape.
+ *
+ * Only the four states describing a component that reached the org are kept. `state: 'Failed'` is
+ * the fifth value of the enum, and mapping it through the created/changed/deleted tests would land
+ * it in `unchanged`: a deployment where nothing succeeded would then report every failure as an
+ * untouched component. Failed rows also often carry no fullName, so they would collapse into a
+ * single entry per metadata type.
+ */
 function collectFlagsFromFiles(files: any[]): Map<string, ComponentChangeFlags> {
   const flagsByComponent = new Map<string, ComponentChangeFlags>();
   for (const item of files) {
-    const state = `${item?.state || ''}`;
+    const flags = FILE_STATE_FLAGS[`${item?.state || ''}`];
+    if (!flags) {
+      continue;
+    }
     const key = `${item?.type || ''}:${item?.fullName || item?.filePath || ''}`;
-    mergeComponentChangeFlags(flagsByComponent, key, {
-      created: state === 'Created',
-      updated: state === 'Changed',
-      deleted: state === 'Deleted',
-    });
+    mergeComponentChangeFlags(flagsByComponent, key, flags);
   }
   return flagsByComponent;
 }
@@ -126,15 +160,19 @@ function collectFlagsFromFiles(files: any[]): Map<string, ComponentChangeFlags> 
 export function countDeployComponentChanges(deployResultJson: any): DeployComponentChanges {
   const componentSuccesses = deployResultJson?.details?.componentSuccesses;
   const files = deployResultJson?.files;
-  let flagsByComponent: Map<string, ComponentChangeFlags>;
-  if (Array.isArray(componentSuccesses) && componentSuccesses.length > 0) {
+  let flagsByComponent = new Map<string, ComponentChangeFlags>();
+  if (Array.isArray(componentSuccesses)) {
     flagsByComponent = collectFlagsFromComponentSuccesses(componentSuccesses);
-  } else if (Array.isArray(files) && files.length > 0) {
+  }
+  // Also when componentSuccesses held nothing usable (only manifest rows): files[] may still
+  // describe the components, and an empty map would report "no detail" while the data is there
+  if (flagsByComponent.size === 0 && Array.isArray(files)) {
     flagsByComponent = collectFlagsFromFiles(files);
-  } else {
+  }
+  if (flagsByComponent.size === 0) {
     return { ...EMPTY_COMPONENT_CHANGES };
   }
-  const changes: DeployComponentChanges = { ...EMPTY_COMPONENT_CHANGES, detailed: flagsByComponent.size > 0 };
+  const changes: DeployComponentChanges = { ...EMPTY_COMPONENT_CHANGES, detailed: true };
   for (const flags of flagsByComponent.values()) {
     // A created component is often flagged both created and changed: the most specific wins, so
     // each component is counted exactly once and the counters sum to the number of components.
@@ -200,11 +238,15 @@ export function buildDeployResultSummaryLines(resultJson: any, options: DeployRe
     })
   );
 
-  // Real impact on the org: on a FULL deployment the line above only says how big package.xml is
-  const changes = countDeployComponentChanges(result);
+  // Real impact on the org: on a FULL deployment the line above only says how big package.xml is.
+  // Skipped on a failure: componentSuccesses lists what got deployed before the error, which
+  // rollbackOnError then reverted, so reporting it would describe changes the org never kept.
+  const changes = result.success === true ? countDeployComponentChanges(result) : { ...EMPTY_COMPONENT_CHANGES };
   if (changes.detailed) {
+    // A validation deployed nothing: its detail rows say what a real deployment would do
+    const changesKey = options.check === true ? 'deployResultSummaryChangesCheck' : 'deployResultSummaryChanges';
     lines.push(
-      t('deployResultSummaryChanges', {
+      t(changesKey, {
         created: changes.created,
         updated: changes.updated,
         deleted: changes.deleted,
@@ -250,6 +292,26 @@ export function buildDeployResultSummaryLines(resultJson: any, options: DeployRe
   }
 
   return lines;
+}
+
+/**
+ * True when the per-component detail covered every component of the deployment.
+ *
+ * A deployment plan can hold several package.xml files, and only some of their results may carry
+ * detail rows (a QuickDeploy without details among regular deployments). The counters would then
+ * describe a subset while the deployed total describes everything, and a reader adding up the
+ * split would not land on the total. Reporting nothing beats reporting a partial picture.
+ */
+export function isComponentChangeDetailComplete(
+  metrics:
+    | { componentsChangeDetail?: boolean; componentsChangeTotal?: number; componentsDeployed?: number }
+    | null
+    | undefined
+): boolean {
+  return (
+    metrics?.componentsChangeDetail === true &&
+    (metrics?.componentsChangeTotal ?? 0) === (metrics?.componentsDeployed ?? 0)
+  );
 }
 
 /** Display the deployment summary, then the complete JSON if NO_TRUNCATE_LOGS=true */

@@ -803,6 +803,7 @@
   "deployResultJsonReportTitle": "JSON du résultat de déploiement",
   "deployResultSummaryArtifactsDocHint": "Si votre workflow CI ne publie pas encore le dossier hardis-report en tant qu'artefact de job, consultez {{url}} pour ajouter l'étape manquante",
   "deployResultSummaryChanges": "Modifications : {{created}} créés, {{updated}} mis à jour, {{deleted}} supprimés, {{unchanged}} inchangés",
+  "deployResultSummaryChangesCheck": "Modifications en cas de déploiement : {{created}} créés, {{updated}} mis à jour, {{deleted}} supprimés, {{unchanged}} inchangés",
   "deployResultSummaryComponents": "Composants : {{deployed}} déployés, {{failed}} en erreur ({{total}} au total)",
   "deployResultSummaryCoverage": "Couverture de code Apex (org) : {{coverage}}%",
   "deployResultSummaryDeploymentId": "ID de déploiement : {{deploymentId}}",

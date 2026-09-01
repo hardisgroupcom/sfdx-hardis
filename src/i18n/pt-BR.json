@@ -814,6 +814,7 @@
   "deployResultJsonReportTitle": "JSON do resultado do deploy",
   "deployResultSummaryArtifactsDocHint": "Se o seu workflow de CI ainda não publica a pasta hardis-report como artefato do job, consulte {{url}} para adicionar a etapa que falta",
   "deployResultSummaryChanges": "Alterações: {{created}} criados, {{updated}} atualizados, {{deleted}} excluídos, {{unchanged}} sem alterações",
+  "deployResultSummaryChangesCheck": "Alterações em caso de implantação: {{created}} criados, {{updated}} atualizados, {{deleted}} excluídos, {{unchanged}} sem alterações",
   "deployResultSummaryComponents": "Componentes: {{deployed}} implantados, {{failed}} com falha ({{total}} no total)",
   "deployResultSummaryCoverage": "Cobertura de código Apex da org: {{coverage}}%",
   "deployResultSummaryDeploymentId": "ID do deploy: {{deploymentId}}",

@@ -803,6 +803,7 @@
   "deployResultJsonReportTitle": "JSON wyniku wdrożenia",
   "deployResultSummaryArtifactsDocHint": "Jeśli workflow CI nie publikuje jeszcze katalogu hardis-report jako artefaktu zadania, zobacz {{url}}, aby dodać brakujący krok",
   "deployResultSummaryChanges": "Zmiany: {{created}} utworzonych, {{updated}} zaktualizowanych, {{deleted}} usuniętych, {{unchanged}} bez zmian",
+  "deployResultSummaryChangesCheck": "Zmiany po wdrożeniu: {{created}} utworzonych, {{updated}} zaktualizowanych, {{deleted}} usuniętych, {{unchanged}} bez zmian",
   "deployResultSummaryComponents": "Komponenty: {{deployed}} wdrożonych, {{failed}} z błędami ({{total}} łącznie)",
   "deployResultSummaryCoverage": "Pokrycie kodu Apex w całej org: {{coverage}}%",
   "deployResultSummaryDeploymentId": "ID wdrożenia: {{deploymentId}}",

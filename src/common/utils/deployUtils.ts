@@ -41,7 +41,7 @@ import { executePrePostCommands } from './prePostCommandUtils.js';
 import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import { t } from './i18n.js';
 import { autoFixDeployErrors } from './deployErrorAutoFix.js';
-import { countDeployComponentChanges, logDeployResultSummary, summarizeDeployErrorMessage, writeDeployResultReportFile } from './deployResultSummary.js';
+import { countDeployComponentChanges, isComponentChangeDetailComplete, logDeployResultSummary, summarizeDeployErrorMessage, writeDeployResultReportFile } from './deployResultSummary.js';
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -273,6 +273,9 @@ export interface DeploymentMetrics {
   componentsUpdated: number;
   // Components sent to the org that were already identical to what was deployed
   componentsUnchanged: number;
+  // Components the four counters above were built from. Compared with componentsDeployed to know
+  // whether the detail covered the whole deployment or only some of its package.xml files.
+  componentsChangeTotal: number;
   // False when no deployment gave us per-component detail: the four counters above are then
   // meaningless and must not be reported.
   componentsChangeDetail: boolean;
@@ -293,14 +296,15 @@ export interface DeploymentMetrics {
  *
  * A FULL deployment sends the whole package.xml, so the number of deployed components is the size
  * of the project, not the size of the release: the split says how many components the org actually
- * gained, lost or saw rewritten. Returns an empty string when no deploy result carried
- * per-component detail, so the comment keeps no line rather than an all-zeros one.
+ * gained, lost or saw rewritten. Returns an empty string when the deploy results did not carry
+ * per-component detail for every deployed component, so the comment keeps no line rather than an
+ * all-zeros or partial one.
  *
  * Kept on a single line, like the notification row: the split is four small numbers, and a bullet
  * list for them costs five lines in a comment that already stacks a dozen sections.
  */
 export function buildDeployedComponentsMarkdown(deploymentMetrics: DeploymentMetrics, check: boolean): string {
-  if (deploymentMetrics.componentsChangeDetail !== true) {
+  if (!isComponentChangeDetailComplete(deploymentMetrics)) {
     return '';
   }
   const changed =
@@ -327,6 +331,7 @@ function accumulateComponentChanges(deploymentMetrics: DeploymentMetrics, deploy
   deploymentMetrics.componentsUpdated += changes.updated;
   deploymentMetrics.componentsDeleted += changes.deleted;
   deploymentMetrics.componentsUnchanged += changes.unchanged;
+  deploymentMetrics.componentsChangeTotal += changes.total;
 }
 
 function buildEmptyDeploymentMetrics(options: { quickDeploy: boolean; delta: boolean; startTime: number }): DeploymentMetrics {
@@ -336,6 +341,7 @@ function buildEmptyDeploymentMetrics(options: { quickDeploy: boolean; delta: boo
     componentsCreated: 0,
     componentsUpdated: 0,
     componentsUnchanged: 0,
+    componentsChangeTotal: 0,
     componentsChangeDetail: false,
     componentsTotal: 0,
     componentsFailed: 0,

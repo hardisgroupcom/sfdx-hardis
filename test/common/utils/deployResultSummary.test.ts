@@ -3,6 +3,7 @@ import { buildDeployedComponentsMarkdown } from '../../../src/common/utils/deplo
 import {
   buildDeployResultSummaryLines,
   countDeployComponentChanges,
+  isComponentChangeDetailComplete,
   summarizeDeployErrorMessage,
 } from '../../../src/common/utils/deployResultSummary.js';
 
@@ -227,6 +228,22 @@ describe('countDeployComponentChanges()', () => {
     expect(changes.updated).to.equal(1);
   });
 
+  it('ignores the destructive changes manifest rows too', () => {
+    // Counting them would put one phantom entry per manifest in `unchanged`, and the split would
+    // stop matching numberComponentsDeployed on every deployment with destructive changes
+    const changes = countDeployComponentChanges({
+      details: {
+        componentSuccesses: [
+          { componentType: '', fullName: 'package.xml', created: false, changed: false, deleted: false },
+          { componentType: '', fullName: 'destructiveChangesPre.xml', created: false, changed: false, deleted: false },
+          { componentType: '', fullName: 'destructiveChangesPost.xml', created: false, changed: false, deleted: false },
+          { componentType: 'Layout', fullName: 'Gone', created: false, changed: false, deleted: true },
+        ],
+      },
+    });
+    expect(changes).to.deep.equal({ created: 0, updated: 0, deleted: 1, unchanged: 0, total: 1, detailed: true });
+  });
+
   it('counts a component reported on several rows only once, keeping its strongest outcome', () => {
     // A real deployment result returned the same Flow three times: twice unchanged, once changed
     const changes = countDeployComponentChanges({
@@ -264,6 +281,36 @@ describe('countDeployComponentChanges()', () => {
     expect(changes).to.deep.equal({ created: 1, updated: 1, deleted: 1, unchanged: 1, total: 4, detailed: true });
   });
 
+  it('never counts a failed file row as an unchanged component', () => {
+    // `Failed` is the fifth ComponentStatus value: mapped through the created/changed/deleted
+    // tests it would land in `unchanged`, reporting failures as untouched components
+    const changes = countDeployComponentChanges({
+      files: [
+        { type: 'ApexClass', fullName: 'Ok', state: 'Changed' },
+        { type: 'ApexClass', fullName: 'Broken', state: 'Failed' },
+        { type: 'ApexClass', state: 'Failed' },
+      ],
+    });
+    expect(changes).to.deep.equal({ created: 0, updated: 1, deleted: 0, unchanged: 0, total: 1, detailed: true });
+  });
+
+  it('reports no detail when a failed deployment only carries failed file rows', () => {
+    const changes = countDeployComponentChanges({
+      details: { componentSuccesses: [] },
+      files: [{ type: 'ApexClass', fullName: 'Broken', state: 'Failed' }],
+    });
+    expect(changes.detailed).to.equal(false);
+  });
+
+  it('falls back on files[] when componentSuccesses held only manifest rows', () => {
+    const changes = countDeployComponentChanges({
+      details: { componentSuccesses: [{ componentType: '', fullName: 'package.xml', changed: true }] },
+      files: [{ type: 'ApexClass', fullName: 'Touched', state: 'Changed' }],
+    });
+    expect(changes.detailed).to.equal(true);
+    expect(changes.updated).to.equal(1);
+  });
+
   it('reports no detail rather than all-zeros when the result carries none', () => {
     // The synthetic destructive-changes-only result has an empty componentSuccesses array
     expect(countDeployComponentChanges({ details: { componentSuccesses: [] } }).detailed).to.equal(false);
@@ -281,6 +328,7 @@ describe('buildDeployedComponentsMarkdown()', () => {
         componentsCreated: 45,
         componentsUpdated: 83,
         componentsUnchanged: 2897,
+        componentsChangeTotal: 3027,
         componentsChangeDetail: true,
         componentsTotal: 3027,
         componentsFailed: 0,
@@ -311,5 +359,77 @@ describe('buildDeployedComponentsMarkdown()', () => {
 
   it('returns nothing when no deploy result carried per-component detail', () => {
     expect(buildDeployedComponentsMarkdown(metrics({ componentsChangeDetail: false }), false)).to.equal('');
+  });
+
+  it('returns nothing when the detail covered only part of the deployment', () => {
+    expect(buildDeployedComponentsMarkdown(metrics({ componentsChangeTotal: 100 }), false)).to.equal('');
+  });
+});
+
+describe('Deploy result summary changes line', () => {
+  const CHANGED_ROWS = {
+    componentSuccesses: [
+      { componentType: 'ApexClass', fullName: 'New', created: true, changed: true, deleted: false },
+      { componentType: 'ApexClass', fullName: 'Touched', created: false, changed: true, deleted: false },
+    ],
+  };
+
+  it('reports the split of a successful deployment', () => {
+    const lines = buildDeployResultSummaryLines(buildResultJson({ success: true, details: CHANGED_ROWS }), {
+      check: false,
+    });
+    expect(lines.join('\n')).to.include('Changes: 1 created, 1 updated, 0 deleted, 0 unchanged');
+  });
+
+  it('stays conditional on a validation, which deployed nothing', () => {
+    const lines = buildDeployResultSummaryLines(buildResultJson({ success: true, details: CHANGED_ROWS }), {
+      check: true,
+    });
+    expect(lines.join('\n')).to.include('Changes if deployed: 1 created, 1 updated');
+  });
+
+  it('reports no split for a failed deployment, whose successes were rolled back', () => {
+    // componentSuccesses lists what got deployed before the error, which rollbackOnError reverted:
+    // reporting it would describe changes the org never kept
+    const lines = buildDeployResultSummaryLines(
+      buildResultJson({ success: false, status: 'Failed', details: CHANGED_ROWS }),
+      { check: false }
+    );
+    expect(lines.join('\n')).to.not.include('Changes');
+  });
+});
+
+describe('isComponentChangeDetailComplete()', () => {
+  it('accepts detail covering every deployed component', () => {
+    expect(
+      isComponentChangeDetailComplete({
+        componentsChangeDetail: true,
+        componentsChangeTotal: 3027,
+        componentsDeployed: 3027,
+      })
+    ).to.equal(true);
+  });
+
+  it('rejects detail covering only part of a multi-package deployment', () => {
+    // One package.xml of the plan reported detail, another did not: adding up the split would
+    // not land on the deployed total
+    expect(
+      isComponentChangeDetailComplete({
+        componentsChangeDetail: true,
+        componentsChangeTotal: 100,
+        componentsDeployed: 150,
+      })
+    ).to.equal(false);
+  });
+
+  it('rejects a deployment with no detail at all', () => {
+    expect(
+      isComponentChangeDetailComplete({
+        componentsChangeDetail: false,
+        componentsChangeTotal: 0,
+        componentsDeployed: 150,
+      })
+    ).to.equal(false);
+    expect(isComponentChangeDetailComplete(null)).to.equal(false);
   });
 });
