@@ -6,6 +6,7 @@
 - Deployment notifications, Pull Request comments, job logs and [Grafana dashboards](https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/) now tell how many items a deployment created, updated, deleted or left unchanged, so a full deployment no longer reports only the size of package.xml.
 - Fixed a failed authentication being reported as a command success: errors raised by the auth hook were swallowed, so [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/) could display "Org () connected" after a web login that never completed.
 - The list of authenticated orgs is now announced with a log line, so the VS Code UI no longer looks stuck while it is built.
+- Fixed the org integration tests leaving their Apex class in the scratch org they reuse between runs, which dragged its org-wide coverage under 75% and made every deployment scenario fail on the coverage gate.
 
 ## [8.4.0] 2026-08-31
 

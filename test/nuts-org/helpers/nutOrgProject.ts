@@ -483,7 +483,42 @@ export async function getSharedNutOrgSession(): Promise<NutOrgContext> {
     return sharedSession;
   }
   sharedSession = await createNutOrgSession('shared');
+  if (sharedSession.reused) {
+    purgeNutApexClasses(sharedSession);
+  }
   return sharedSession;
+}
+
+/**
+ * Apex classes that the scenarios really deploy, as SOQL LIKE patterns.
+ *
+ * Listed in one place so a scenario that starts deploying a class is declared here at the same
+ * time, instead of being hunted down the day the coverage gate starts failing.
+ */
+const NUT_DEPLOYED_APEX_PATTERNS = ['HardisNutImpact%'];
+
+/**
+ * Remove from a reused org the Apex classes a previous run deployed into it.
+ *
+ * With NUT_REUSE_ORG_ENV the scratch org is handed over to the next run, so a class a scenario
+ * really deployed stays there. No test covers those classes, so every run drags the org-wide
+ * coverage down, and once it falls under 75% every deployment scenario fails on the coverage
+ * gate instead of on what it was testing.
+ */
+export function purgeNutApexClasses(ctx: NutOrgContext): void {
+  for (const pattern of NUT_DEPLOYED_APEX_PATTERNS) {
+    const records = queryTooling(ctx, `SELECT Id, Name FROM ApexClass WHERE Name LIKE '${pattern}'`);
+    for (const record of records) {
+      const res = runSf(
+        `data delete record --sobject ApexClass --record-id ${record.Id} --use-tooling-api --json --target-org ${ctx.orgAlias}`,
+        { cwd: ctx.projectDir, devHubUsername: ctx.devHubUsername, tolerateFailure: true }
+      );
+      // eslint-disable-next-line no-console
+      console.log(
+        `[nuts-org] ${res.status === 0 ? 'Deleted' : 'Could not delete'} the Apex class ${record.Name} left in the org`
+      );
+    }
+  }
 }
 
 /** Delete the scratch org created by hardis:scratch:create, then clean the test session */
