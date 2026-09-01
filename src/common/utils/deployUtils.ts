@@ -41,7 +41,7 @@ import { executePrePostCommands } from './prePostCommandUtils.js';
 import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import { t } from './i18n.js';
 import { autoFixDeployErrors } from './deployErrorAutoFix.js';
-import { logDeployResultSummary, summarizeDeployErrorMessage, writeDeployResultReportFile } from './deployResultSummary.js';
+import { countDeployComponentChanges, logDeployResultSummary, summarizeDeployErrorMessage, writeDeployResultReportFile } from './deployResultSummary.js';
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -267,6 +267,15 @@ export interface DeploymentMetrics {
   componentsDeployed: number;
   // Subset of componentsDeployed that were deletions (destructive changes).
   componentsDeleted: number;
+  // Subsets of componentsDeployed telling what the deployment really altered in the org: a FULL
+  // deployment sends the whole package.xml, so componentsDeployed alone says nothing about impact.
+  componentsCreated: number;
+  componentsUpdated: number;
+  // Components sent to the org that were already identical to what was deployed
+  componentsUnchanged: number;
+  // False when no deployment gave us per-component detail: the four counters above are then
+  // meaningless and must not be reported.
+  componentsChangeDetail: boolean;
   componentsTotal: number;
   componentsFailed: number;
   testsRun: number;
@@ -280,31 +289,54 @@ export interface DeploymentMetrics {
 }
 
 /**
- * Count how many components of a deploy result were deletions.
+ * "Deployed components" line of the Pull Request comment.
  *
- * numberComponentsDeployed lumps deletions in with creations and updates, so the split has to come
- * from the per-component details: `details.componentSuccesses[].deleted` when present, falling back
- * to the source-tracking style `files[].state`. The package.xml manifest entry that Salesforce adds
- * to componentSuccesses is excluded.
+ * A FULL deployment sends the whole package.xml, so the number of deployed components is the size
+ * of the project, not the size of the release: the split says how many components the org actually
+ * gained, lost or saw rewritten. Returns an empty string when no deploy result carried
+ * per-component detail, so the comment keeps no line rather than an all-zeros one.
+ *
+ * Kept on a single line, like the notification row: the split is four small numbers, and a bullet
+ * list for them costs five lines in a comment that already stacks a dozen sections.
  */
-function countDeletedComponents(deployResultJson: any): number {
-  const componentSuccesses = deployResultJson?.details?.componentSuccesses;
-  if (Array.isArray(componentSuccesses) && componentSuccesses.length > 0) {
-    return componentSuccesses.filter(
-      (item: any) => item?.deleted === true && item?.fullName !== 'package.xml'
-    ).length;
+export function buildDeployedComponentsMarkdown(deploymentMetrics: DeploymentMetrics, check: boolean): string {
+  if (deploymentMetrics.componentsChangeDetail !== true) {
+    return '';
   }
-  const files = deployResultJson?.files;
-  if (Array.isArray(files)) {
-    return files.filter((item: any) => item?.state === 'Deleted').length;
+  const changed =
+    deploymentMetrics.componentsCreated + deploymentMetrics.componentsUpdated + deploymentMetrics.componentsDeleted;
+  const verb = check === true ? 'would change' : 'changed';
+  return (
+    `**Deployed components:** ${deploymentMetrics.componentsDeployed} sent to the org, ${changed} ${verb}` +
+    ` (${deploymentMetrics.componentsCreated} created, ${deploymentMetrics.componentsUpdated} updated,` +
+    ` ${deploymentMetrics.componentsDeleted} deleted, ${deploymentMetrics.componentsUnchanged} unchanged)`
+  );
+}
+
+/**
+ * Add the created / updated / deleted / unchanged split of one deploy result to the accumulated
+ * metrics, so a deployment made of several package.xml files reports consolidated figures.
+ */
+function accumulateComponentChanges(deploymentMetrics: DeploymentMetrics, deployResultJson: any): void {
+  const changes = countDeployComponentChanges(deployResultJson);
+  if (!changes.detailed) {
+    return;
   }
-  return 0;
+  deploymentMetrics.componentsChangeDetail = true;
+  deploymentMetrics.componentsCreated += changes.created;
+  deploymentMetrics.componentsUpdated += changes.updated;
+  deploymentMetrics.componentsDeleted += changes.deleted;
+  deploymentMetrics.componentsUnchanged += changes.unchanged;
 }
 
 function buildEmptyDeploymentMetrics(options: { quickDeploy: boolean; delta: boolean; startTime: number }): DeploymentMetrics {
   return {
     componentsDeployed: 0,
     componentsDeleted: 0,
+    componentsCreated: 0,
+    componentsUpdated: 0,
+    componentsUnchanged: 0,
+    componentsChangeDetail: false,
     componentsTotal: 0,
     componentsFailed: 0,
     testsRun: 0,
@@ -536,7 +568,7 @@ export async function smartDeploy(
             const quickDeployResultJson = quickDeployRes.result;
             if (quickDeployResultJson) {
               deploymentMetrics.componentsDeployed += Number(quickDeployResultJson.numberComponentsDeployed || 0);
-              deploymentMetrics.componentsDeleted += countDeletedComponents(quickDeployResultJson);
+              accumulateComponentChanges(deploymentMetrics, quickDeployResultJson);
               deploymentMetrics.componentsTotal += Number(quickDeployResultJson.numberComponentsTotal || 0);
               deploymentMetrics.componentsFailed += Number(quickDeployResultJson.numberComponentErrors || 0);
               deploymentMetrics.testsRun += Number(quickDeployResultJson.numberTestsCompleted || 0);
@@ -658,7 +690,7 @@ export async function smartDeploy(
         const deployResultJson = deployRes.result ?? JSON.parse(deployRes.stdout || '{}')?.result;
         if (deployResultJson) {
           deploymentMetrics.componentsDeployed += Number(deployResultJson.numberComponentsDeployed || 0);
-          deploymentMetrics.componentsDeleted += countDeletedComponents(deployResultJson);
+          accumulateComponentChanges(deploymentMetrics, deployResultJson);
           deploymentMetrics.componentsTotal += Number(deployResultJson.numberComponentsTotal || 0);
           deploymentMetrics.componentsFailed += Number(deployResultJson.numberComponentErrors || 0);
           deploymentMetrics.testsRun += Number(deployResultJson.numberTestsCompleted || 0);
@@ -781,6 +813,11 @@ export async function smartDeploy(
       check,
       "No metadata to deploy: every item of the deployment package was filtered out before the deployment (package-no-overwrite.xml, packageDeployOnChange.xml or a remove-packagexml-items action), so nothing was sent to the target org."
     );
+  }
+  // Tell the Pull Request comment how much of the package really moved in the org
+  const componentsMarkdown = buildDeployedComponentsMarkdown(deploymentMetrics, check);
+  if (componentsMarkdown) {
+    setPullRequestData({ deploymentComponentsMarkdownBody: componentsMarkdown });
   }
   // Post pull request comment if available
   if (options.deferSuccessPullRequestComment !== true) {

@@ -1,6 +1,8 @@
 import { expect } from 'chai';
+import { buildDeployedComponentsMarkdown } from '../../../src/common/utils/deployUtils.js';
 import {
   buildDeployResultSummaryLines,
+  countDeployComponentChanges,
   summarizeDeployErrorMessage,
 } from '../../../src/common/utils/deployResultSummary.js';
 
@@ -194,5 +196,120 @@ describe('Deploy error message summarization', () => {
     process.env.NO_TRUNCATE_LOGS = 'true';
     const raw = JSON.stringify({ status: 1, result: { errorMessage: 'Boom' } });
     expect(summarizeDeployErrorMessage(raw)).to.equal(raw);
+  });
+});
+
+describe('countDeployComponentChanges()', () => {
+  it('splits the Metadata API detail rows by outcome', () => {
+    const changes = countDeployComponentChanges({
+      details: {
+        componentSuccesses: [
+          { componentType: 'ApexClass', fullName: 'New', created: true, changed: true, deleted: false },
+          { componentType: 'ApexClass', fullName: 'Touched', created: false, changed: true, deleted: false },
+          { componentType: 'Flow', fullName: 'Same', created: false, changed: false, deleted: false },
+          { componentType: 'Layout', fullName: 'Gone', created: false, changed: false, deleted: true },
+        ],
+      },
+    });
+    expect(changes).to.deep.equal({ created: 1, updated: 1, deleted: 1, unchanged: 1, total: 4, detailed: true });
+  });
+
+  it('ignores the package.xml manifest row Salesforce adds to the successes', () => {
+    const changes = countDeployComponentChanges({
+      details: {
+        componentSuccesses: [
+          { componentType: '', fullName: 'package.xml', created: false, changed: true, deleted: false },
+          { componentType: 'ApexClass', fullName: 'Touched', created: false, changed: true, deleted: false },
+        ],
+      },
+    });
+    expect(changes.total).to.equal(1);
+    expect(changes.updated).to.equal(1);
+  });
+
+  it('counts a component reported on several rows only once, keeping its strongest outcome', () => {
+    // A real deployment result returned the same Flow three times: twice unchanged, once changed
+    const changes = countDeployComponentChanges({
+      details: {
+        componentSuccesses: [
+          { componentType: 'Flow', fullName: 'Dup', created: false, changed: false, deleted: false },
+          { componentType: 'Flow', fullName: 'Dup', created: false, changed: false, deleted: false },
+          { componentType: 'Flow', fullName: 'Dup', created: false, changed: true, deleted: false },
+        ],
+      },
+    });
+    expect(changes).to.deep.equal({ created: 0, updated: 1, deleted: 0, unchanged: 0, total: 1, detailed: true });
+  });
+
+  it('accepts the string booleans returned by raw XML clients', () => {
+    const changes = countDeployComponentChanges({
+      details: {
+        componentSuccesses: [
+          { componentType: 'ApexClass', fullName: 'Touched', created: 'false', changed: 'true', deleted: 'false' },
+        ],
+      },
+    });
+    expect(changes.updated).to.equal(1);
+  });
+
+  it('falls back on the source-tracking files[] shape', () => {
+    const changes = countDeployComponentChanges({
+      files: [
+        { type: 'ApexClass', fullName: 'New', state: 'Created' },
+        { type: 'ApexClass', fullName: 'Touched', state: 'Changed' },
+        { type: 'Flow', fullName: 'Same', state: 'Unchanged' },
+        { type: 'Layout', fullName: 'Gone', state: 'Deleted' },
+      ],
+    });
+    expect(changes).to.deep.equal({ created: 1, updated: 1, deleted: 1, unchanged: 1, total: 4, detailed: true });
+  });
+
+  it('reports no detail rather than all-zeros when the result carries none', () => {
+    // The synthetic destructive-changes-only result has an empty componentSuccesses array
+    expect(countDeployComponentChanges({ details: { componentSuccesses: [] } }).detailed).to.equal(false);
+    expect(countDeployComponentChanges({}).detailed).to.equal(false);
+    expect(countDeployComponentChanges(null).detailed).to.equal(false);
+  });
+});
+
+describe('buildDeployedComponentsMarkdown()', () => {
+  function metrics(overrides: any = {}) {
+    return Object.assign(
+      {
+        componentsDeployed: 3027,
+        componentsDeleted: 2,
+        componentsCreated: 45,
+        componentsUpdated: 83,
+        componentsUnchanged: 2897,
+        componentsChangeDetail: true,
+        componentsTotal: 3027,
+        componentsFailed: 0,
+        testsRun: 0,
+        testsFailed: 0,
+        testsTotal: 0,
+        codeCoveragePercent: null,
+        quickDeploy: false,
+        delta: false,
+        success: true,
+        durationSeconds: 12,
+      },
+      overrides
+    );
+  }
+
+  it('keeps the whole split on a single line', () => {
+    const markdown = buildDeployedComponentsMarkdown(metrics(), false);
+    expect(markdown).to.equal(
+      '**Deployed components:** 3027 sent to the org, 130 changed (45 created, 83 updated, 2 deleted, 2897 unchanged)'
+    );
+    expect(markdown.split('\n').length).to.equal(1);
+  });
+
+  it('uses the conditional wording on a validation, which changed nothing yet', () => {
+    expect(buildDeployedComponentsMarkdown(metrics(), true)).to.contain('130 would change');
+  });
+
+  it('returns nothing when no deploy result carried per-component detail', () => {
+    expect(buildDeployedComponentsMarkdown(metrics({ componentsChangeDetail: false }), false)).to.equal('');
   });
 });

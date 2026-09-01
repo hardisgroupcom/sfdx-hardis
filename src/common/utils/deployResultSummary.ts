@@ -19,6 +19,139 @@ export interface DeployResultSummaryOptions {
   reportFile?: string | null;
 }
 
+/**
+ * How many components a deployment actually altered in the target org, split by outcome.
+ *
+ * numberComponentsDeployed counts everything that was sent, whether or not the org already had the
+ * exact same version: on a FULL deployment it is the size of package.xml, which says nothing about
+ * what really moved. The per-component detail rows do carry that information.
+ */
+export interface DeployComponentChanges {
+  created: number;
+  updated: number;
+  deleted: number;
+  // Components sent to the org that were already identical to what was deployed
+  unchanged: number;
+  // Number of distinct components the counters above are built from
+  total: number;
+  // False when the deploy result carried no usable per-component detail (a QuickDeploy result
+  // without details, the synthetic destructive-changes-only result): every counter is then 0 and
+  // must not be displayed, otherwise "0 changed" would claim a no-op deployment.
+  detailed: boolean;
+}
+
+/** Metadata API booleans reach us as real booleans through the CLI, but as "true"/"false" through some raw XML clients */
+function isTrue(value: any): boolean {
+  return value === true || value === 'true';
+}
+
+const EMPTY_COMPONENT_CHANGES: DeployComponentChanges = {
+  created: 0,
+  updated: 0,
+  deleted: 0,
+  unchanged: 0,
+  total: 0,
+  detailed: false,
+};
+
+/** Flags of one component, merged from every detail row mentioning it */
+interface ComponentChangeFlags {
+  created: boolean;
+  updated: boolean;
+  deleted: boolean;
+}
+
+/**
+ * Merge one detail row into the per-component map.
+ *
+ * Salesforce can return several rows for the same component (a Flow came back three times in a
+ * real deployment result, two rows saying "unchanged" and one saying "changed"), so the flags are
+ * OR-ed: a component is "changed" as soon as one row says so.
+ */
+function mergeComponentChangeFlags(
+  flagsByComponent: Map<string, ComponentChangeFlags>,
+  key: string,
+  flags: ComponentChangeFlags
+): void {
+  const existing = flagsByComponent.get(key);
+  if (!existing) {
+    flagsByComponent.set(key, { ...flags });
+    return;
+  }
+  existing.created = existing.created || flags.created;
+  existing.updated = existing.updated || flags.updated;
+  existing.deleted = existing.deleted || flags.deleted;
+}
+
+/** Collect the per-component flags from `details.componentSuccesses`, the Metadata API deploy result shape */
+function collectFlagsFromComponentSuccesses(componentSuccesses: any[]): Map<string, ComponentChangeFlags> {
+  const flagsByComponent = new Map<string, ComponentChangeFlags>();
+  for (const item of componentSuccesses) {
+    // Salesforce adds a row for the manifest itself, which is not a deployed component
+    if (item?.fullName === 'package.xml') {
+      continue;
+    }
+    const key = `${item?.componentType || ''}:${item?.fullName || ''}`;
+    mergeComponentChangeFlags(flagsByComponent, key, {
+      created: isTrue(item?.created),
+      updated: isTrue(item?.changed),
+      deleted: isTrue(item?.deleted),
+    });
+  }
+  return flagsByComponent;
+}
+
+/** Collect the per-component flags from `files[]`, the source-tracking deploy result shape */
+function collectFlagsFromFiles(files: any[]): Map<string, ComponentChangeFlags> {
+  const flagsByComponent = new Map<string, ComponentChangeFlags>();
+  for (const item of files) {
+    const state = `${item?.state || ''}`;
+    const key = `${item?.type || ''}:${item?.fullName || item?.filePath || ''}`;
+    mergeComponentChangeFlags(flagsByComponent, key, {
+      created: state === 'Created',
+      updated: state === 'Changed',
+      deleted: state === 'Deleted',
+    });
+  }
+  return flagsByComponent;
+}
+
+/**
+ * Count how many components a deploy result created, updated, deleted, or left untouched.
+ *
+ * Deduplicated on componentType + fullName so the counters add up to numberComponentsDeployed:
+ * on a real deployment result, 38 detail rows collapsed to exactly the 34 components Salesforce
+ * reported as deployed, once the package.xml row and the duplicates were removed.
+ */
+export function countDeployComponentChanges(deployResultJson: any): DeployComponentChanges {
+  const componentSuccesses = deployResultJson?.details?.componentSuccesses;
+  const files = deployResultJson?.files;
+  let flagsByComponent: Map<string, ComponentChangeFlags>;
+  if (Array.isArray(componentSuccesses) && componentSuccesses.length > 0) {
+    flagsByComponent = collectFlagsFromComponentSuccesses(componentSuccesses);
+  } else if (Array.isArray(files) && files.length > 0) {
+    flagsByComponent = collectFlagsFromFiles(files);
+  } else {
+    return { ...EMPTY_COMPONENT_CHANGES };
+  }
+  const changes: DeployComponentChanges = { ...EMPTY_COMPONENT_CHANGES, detailed: flagsByComponent.size > 0 };
+  for (const flags of flagsByComponent.values()) {
+    // A created component is often flagged both created and changed: the most specific wins, so
+    // each component is counted exactly once and the counters sum to the number of components.
+    if (flags.deleted) {
+      changes.deleted++;
+    } else if (flags.created) {
+      changes.created++;
+    } else if (flags.updated) {
+      changes.updated++;
+    } else {
+      changes.unchanged++;
+    }
+    changes.total++;
+  }
+  return changes;
+}
+
 /** True when the user asked to keep the complete deployment JSON in the console logs */
 export function isFullDeployJsonLogRequested(): boolean {
   return getEnvVar('NO_TRUNCATE_LOGS') === 'true';
@@ -66,6 +199,19 @@ export function buildDeployResultSummaryLines(resultJson: any, options: DeployRe
       total: Number(result.numberComponentsTotal || 0),
     })
   );
+
+  // Real impact on the org: on a FULL deployment the line above only says how big package.xml is
+  const changes = countDeployComponentChanges(result);
+  if (changes.detailed) {
+    lines.push(
+      t('deployResultSummaryChanges', {
+        created: changes.created,
+        updated: changes.updated,
+        deleted: changes.deleted,
+        unchanged: changes.unchanged,
+      })
+    );
+  }
 
   // Apex tests
   const testsTotal = Number(result.numberTestsTotal || 0);

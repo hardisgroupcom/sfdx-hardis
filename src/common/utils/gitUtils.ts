@@ -537,11 +537,12 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
   const translateNotif = await isDeploymentNotifTranslationEnabled();
   const deploymentActionsText = buildDeploymentActionsAttachmentText(translateNotif, {
     deployExecuted: (deploymentMetrics?.componentsDeployed ?? 0) > 0 || (deploymentMetrics?.componentsTotal ?? 0) > 0,
-    componentsDeployed: Math.max(
-      0,
-      (deploymentMetrics?.componentsDeployed ?? 0) - (deploymentMetrics?.componentsDeleted ?? 0)
-    ),
+    componentsDeployed: deploymentMetrics?.componentsDeployed ?? 0,
     componentsDeleted: deploymentMetrics?.componentsDeleted ?? 0,
+    componentsChangeDetail: deploymentMetrics?.componentsChangeDetail === true,
+    componentsCreated: deploymentMetrics?.componentsCreated ?? 0,
+    componentsUpdated: deploymentMetrics?.componentsUpdated ?? 0,
+    componentsUnchanged: deploymentMetrics?.componentsUnchanged ?? 0,
   });
   // Collected separately from the deployment actions so the section order below is guaranteed even
   // when computing the commits summary fails.
@@ -615,6 +616,19 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
     metrics: {
       DeployedItems: deploymentMetrics?.componentsDeployed ?? 0,
       DeploymentComponentsDeleted: deploymentMetrics?.componentsDeleted ?? 0,
+      // Only sent when the deploy result carried per-component detail: an absent metric means
+      // "not measured", while a 0 would claim the deployment changed nothing in the org.
+      ...(deploymentMetrics?.componentsChangeDetail === true
+        ? {
+          DeploymentComponentsCreated: deploymentMetrics?.componentsCreated ?? 0,
+          DeploymentComponentsUpdated: deploymentMetrics?.componentsUpdated ?? 0,
+          DeploymentComponentsChanged:
+            (deploymentMetrics?.componentsCreated ?? 0) +
+            (deploymentMetrics?.componentsUpdated ?? 0) +
+            (deploymentMetrics?.componentsDeleted ?? 0),
+          DeploymentComponentsUnchanged: deploymentMetrics?.componentsUnchanged ?? 0,
+        }
+        : {}),
       DeploymentComponentsTotal: deploymentMetrics?.componentsTotal ?? 0,
       DeploymentComponentsFailed: deploymentMetrics?.componentsFailed ?? 0,
       DeploymentTestsRun: deploymentMetrics?.testsRun ?? 0,

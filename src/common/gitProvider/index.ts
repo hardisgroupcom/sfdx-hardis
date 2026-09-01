@@ -159,6 +159,9 @@ export abstract class GitProvider {
       if (prData?.autoFixPullRequestUrl) {
         markdownBody += `\n\n---\n🤖 **A coding agent created a fix pull request:** [View fix PR](${prData.autoFixPullRequestUrl})`;
       }
+      if (prData.deploymentComponentsMarkdownBody) {
+        markdownBody += "\n\n" + prData.deploymentComponentsMarkdownBody;
+      }
       if (prData.codeCoverageMarkdownBody) {
         markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
       }
@@ -679,6 +682,8 @@ export declare type PullRequestData = {
   messageKey: string;
   title: string;
   deployErrorsMarkdownBody?: string;
+  // What the deployment really altered in the org: created / updated / deleted / unchanged split
+  deploymentComponentsMarkdownBody?: string;
   codeCoverageMarkdownBody?: string;
   flowDeletionMarkdownBody?: string;
   // Explains which Pull Requests the deployment actions and Apex test classes were collected from

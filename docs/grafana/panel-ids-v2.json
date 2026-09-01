@@ -110,7 +110,11 @@
     "stat::MTTR (median hours)": 97,
     "stat::Rework rate": 98,
     "row::Latest deployment details": 103,
-    "table::Recent deployments": 99
+    "table::Recent deployments": 99,
+    "row::Deployment impact (how much of the package really moved)": 189,
+    "stat::Changed items": 190,
+    "stat::Unchanged items": 191,
+    "timeseries::Deployment impact over time": 192
   },
   "sfdx-hardis-v2-org-security": {
     "row::Security scores (click a number for details)": 116,

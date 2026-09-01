@@ -9,6 +9,7 @@
 import { expect } from 'chai';
 import fs from '../../src/common/utils/fsUtils.js';
 import * as path from 'path';
+import { countDeployComponentChanges } from '../../src/common/utils/deployResultSummary.js';
 import {
   addApexClassToManifest,
   addBrokenApexClass,
@@ -338,6 +339,95 @@ describe('hardis:project:deploy:smart against a real org', () => {
 
       expectOutputIncludes(output, 'Deployment summary');
       expectOutputExcludes(output, 'Successfully processed QuickDeploy');
+    });
+  });
+
+  /**
+   * The created / updated / deleted / unchanged split reported for a deployment.
+   *
+   * This is the one part of the feature that cannot be proven by a unit test: it asserts what
+   * Salesforce itself puts in `details.componentSuccesses[]` for a component that was deployed
+   * without changing anything in the org, which only a real deployment can produce.
+   */
+  describe('deployment impact reporting', () => {
+    // Unique per run: with SFDX_HARDIS_NUT_REUSE_ORG the org survives between runs, so a fixed
+    // class name would already be there and come back as updated instead of created.
+    const impactClass = `HardisNutImpact${Date.now()}`;
+    const deployCommand = () =>
+      runHardis(ctx, `hardis:project:deploy:smart --testlevel NoTestRun --target-org ${ctx.orgAlias}`, {
+        ensureExitCode: 0,
+      });
+
+    /** The detail row Salesforce returned for the class added by this scenario */
+    function impactClassRow(report: any): any {
+      const rows = (report?.result?.details?.componentSuccesses || []).filter(
+        (row: any) => row?.fullName === impactClass
+      );
+      expect(rows.length, `deploy result should carry a detail row for ${impactClass}`).to.be.greaterThan(0);
+      return rows[0];
+    }
+
+    before(async () => {
+      const classesDir = path.join(ctx.projectDir, 'force-app', 'main', 'default', 'classes');
+      await fs.writeFile(
+        path.join(classesDir, `${impactClass}.cls`),
+        `public with sharing class ${impactClass} {\n  public static Integer answer() {\n    return 42;\n  }\n}\n`,
+        'utf8'
+      );
+      await fs.writeFile(
+        path.join(classesDir, `${impactClass}.cls-meta.xml`),
+        '<?xml version="1.0" encoding="UTF-8"?>\n<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata">\n    <apiVersion>65.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n',
+        'utf8'
+      );
+      // sfdx-hardis filters the deployment against the project manifest, so a class missing from
+      // it would never reach the org
+      await addApexClassToManifest(ctx.projectDir, impactClass);
+      git(ctx.projectDir, 'add -A');
+      git(ctx.projectDir, `commit -m "test: add deployment impact class" --no-verify`);
+    });
+
+    let firstDeployReport: any;
+
+    it('reports a brand new class as created', async () => {
+      const result = deployCommand();
+      const output = result.shellOutput.stdout + result.shellOutput.stderr;
+      firstDeployReport = await readDeployResultReport(ctx.projectDir);
+
+      expect(impactClassRow(firstDeployReport).created, `${impactClass} should be reported as created`).to.equal(true);
+
+      const changes = countDeployComponentChanges(firstDeployReport.result);
+      expect(changes.detailed, 'a real deployment must carry per-component detail').to.equal(true);
+      expect(changes.created).to.be.greaterThan(0);
+      // The console summary must show the same figures that were parsed out of the report
+      expectOutputIncludes(output, 'Changes:');
+      expectOutputIncludes(output, `${changes.created} created`);
+      expectOutputIncludes(output, `${changes.unchanged} unchanged`);
+    });
+
+    it('adds the split up to the number of components Salesforce reports as deployed', () => {
+      const changes = countDeployComponentChanges(firstDeployReport.result);
+      // Salesforce repeats some components across several detail rows and adds a package.xml
+      // pseudo-row: without the deduplication, the split would not match its own count
+      expect(changes.created + changes.updated + changes.deleted + changes.unchanged).to.equal(
+        Number(firstDeployReport.result.numberComponentsDeployed)
+      );
+      expect(changes.total).to.equal(Number(firstDeployReport.result.numberComponentsDeployed));
+    });
+
+    it('reports the very same class as unchanged when it is deployed again', async () => {
+      const result = deployCommand();
+      const output = result.shellOutput.stdout + result.shellOutput.stderr;
+      const report = await readDeployResultReport(ctx.projectDir);
+
+      // Nothing changed in the sources between the two deployments, so the org already holds this
+      // exact class: this is what makes a full deployment report far fewer changes than items
+      const row = impactClassRow(report);
+      expect(row.created, `${impactClass} should not be created twice`).to.not.equal(true);
+      expect(row.changed, `${impactClass} should be reported as unchanged`).to.not.equal(true);
+
+      const changes = countDeployComponentChanges(report.result);
+      expect(changes.unchanged, 'a re-deployment of untouched sources must report unchanged items').to.be.greaterThan(0);
+      expectOutputIncludes(output, `${changes.unchanged} unchanged`);
     });
   });
 

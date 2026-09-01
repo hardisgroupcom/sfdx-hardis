@@ -21,7 +21,17 @@ function action(overrides: Partial<PrePostCommand>): PrePostCommand {
 }
 
 const NO_DEPLOY = { deployExecuted: false, componentsDeployed: 0, componentsDeleted: 0 };
-const WITH_DEPLOY = { deployExecuted: true, componentsDeployed: 42, componentsDeleted: 3 };
+// componentsDeployed is the raw Salesforce figure, deletions included: the row says "42 deployed"
+const WITH_DEPLOY = { deployExecuted: true, componentsDeployed: 45, componentsDeleted: 3 };
+const WITH_DEPLOY_DETAIL = {
+  deployExecuted: true,
+  componentsDeployed: 3027,
+  componentsDeleted: 2,
+  componentsChangeDetail: true,
+  componentsCreated: 45,
+  componentsUpdated: 83,
+  componentsUnchanged: 2897,
+};
 
 describe('buildDeploymentActionsAttachmentText()', () => {
   beforeEach(() => {
@@ -40,6 +50,20 @@ describe('buildDeploymentActionsAttachmentText()', () => {
     expect(text.split('\n').filter((line) => line.startsWith('✅')).length).to.equal(1);
     expect(text).to.not.contain('_pre-deploy_');
     expect(text).to.not.contain('_post-deploy_');
+  });
+
+  it('reports what the deployment really changed when the result carried per-component detail', () => {
+    const text = buildDeploymentActionsAttachmentText(false, WITH_DEPLOY_DETAIL) || '';
+    expect(text).to.contain(
+      'Metadata deployment (3027 deployed: 45 created, 83 updated, 2 deleted, 2897 unchanged)'
+    );
+  });
+
+  it('falls back to the deployed/deleted wording when no per-component detail is available', () => {
+    // "0 changed" would claim a no-op deployment, when the truth is that nothing was measured
+    const text = buildDeploymentActionsAttachmentText(false, WITH_DEPLOY) || '';
+    expect(text).to.contain('Metadata deployment (42 deployed, 3 deleted)');
+    expect(text).to.not.contain('unchanged');
   });
 
   it('renders no markdown table, which chat renderers would fence as ragged monospace', () => {

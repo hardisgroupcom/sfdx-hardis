@@ -144,6 +144,7 @@ Single-org overview, the hub for one org.
 
 - Deployment counts, success rates, average duration, validation success rate
 - Deployments per week and per-deployment duration trends
+- **Deployment impact**: how many components each deployment created, updated, deleted, or left untouched (a full deployment sends the whole package.xml, so the number of deployed items is the size of the project, not the size of the release)
 - **DORA metrics** (deployment frequency, lead time, change failure rate, MTTR, rework rate): requires scheduling [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/)
 - Recent deployments list
 
