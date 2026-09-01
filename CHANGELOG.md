@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - New [Deployment assistant](https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-error-list/) tip for "Must specify a non-empty label for the CustomObject", telling how to fix a custom object committed without its attributes.
+- Deployment notifications, Pull Request comments, job logs and [Grafana dashboards](https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/) now tell how many items a deployment created, updated, deleted or left unchanged, so a full deployment no longer reports only the size of package.xml.
 
 ## [8.4.0] 2026-08-31
 

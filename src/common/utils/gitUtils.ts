@@ -32,6 +32,7 @@ import { countPackageXmlItems } from './xmlUtils.js';
 import type { DeploymentMetrics } from './deployUtils.js';
 import { t, tMaybe } from './i18n.js';
 import { buildDeploymentActionsAttachmentText } from './deploymentActionsRegistry.js';
+import { isComponentChangeDetailComplete } from './deployResultSummary.js';
 import { getEnvVar } from '../../config/index.js';
 
 // Builds a commit message following the Conventional Commits v1.0.0 specification
@@ -535,13 +536,16 @@ export async function isDeploymentNotifTranslationEnabled(): Promise<boolean> {
 export async function handlePostDeploymentNotifications(flags, targetUsername: any, quickDeploy: any, delta: boolean, debugMode: boolean, additionalMessage = "", deploymentMetrics: DeploymentMetrics | null = null) {
   const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
   const translateNotif = await isDeploymentNotifTranslationEnabled();
+  // Only report the split when it accounts for every deployed component (see the predicate)
+  const changeDetailComplete = isComponentChangeDetailComplete(deploymentMetrics);
   const deploymentActionsText = buildDeploymentActionsAttachmentText(translateNotif, {
     deployExecuted: (deploymentMetrics?.componentsDeployed ?? 0) > 0 || (deploymentMetrics?.componentsTotal ?? 0) > 0,
-    componentsDeployed: Math.max(
-      0,
-      (deploymentMetrics?.componentsDeployed ?? 0) - (deploymentMetrics?.componentsDeleted ?? 0)
-    ),
+    componentsDeployed: deploymentMetrics?.componentsDeployed ?? 0,
     componentsDeleted: deploymentMetrics?.componentsDeleted ?? 0,
+    componentsChangeDetail: changeDetailComplete,
+    componentsCreated: deploymentMetrics?.componentsCreated ?? 0,
+    componentsUpdated: deploymentMetrics?.componentsUpdated ?? 0,
+    componentsUnchanged: deploymentMetrics?.componentsUnchanged ?? 0,
   });
   // Collected separately from the deployment actions so the section order below is guaranteed even
   // when computing the commits summary fails.
@@ -614,7 +618,22 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
     data: { metric: deploymentMetrics?.componentsDeployed ?? 0 },
     metrics: {
       DeployedItems: deploymentMetrics?.componentsDeployed ?? 0,
-      DeploymentComponentsDeleted: deploymentMetrics?.componentsDeleted ?? 0,
+      // The five impact counters travel together, and only when the deploy results carried
+      // per-component detail for every deployed component: an absent metric means "not measured",
+      // while a 0 would claim the deployment changed nothing in the org. Emitting the deleted
+      // count alone would also leave the dashboard's stacked chart with a single zeroed series.
+      ...(changeDetailComplete
+        ? {
+          DeploymentComponentsCreated: deploymentMetrics?.componentsCreated ?? 0,
+          DeploymentComponentsUpdated: deploymentMetrics?.componentsUpdated ?? 0,
+          DeploymentComponentsDeleted: deploymentMetrics?.componentsDeleted ?? 0,
+          DeploymentComponentsChanged:
+            (deploymentMetrics?.componentsCreated ?? 0) +
+            (deploymentMetrics?.componentsUpdated ?? 0) +
+            (deploymentMetrics?.componentsDeleted ?? 0),
+          DeploymentComponentsUnchanged: deploymentMetrics?.componentsUnchanged ?? 0,
+        }
+        : {}),
       DeploymentComponentsTotal: deploymentMetrics?.componentsTotal ?? 0,
       DeploymentComponentsFailed: deploymentMetrics?.componentsFailed ?? 0,
       DeploymentTestsRun: deploymentMetrics?.testsRun ?? 0,

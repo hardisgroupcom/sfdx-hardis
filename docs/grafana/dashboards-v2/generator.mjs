@@ -1245,6 +1245,44 @@ const devopsDashboard = dashboard({
       ],
     },
     {
+      row: 'Deployment impact (how much of the package really moved)',
+      panels: [
+        statPanel('Changed items', {
+          gridPos: { w: 6, h: 7 },
+          description:
+            'Components the latest deployment created, updated or deleted in the org. A FULL deployment sends the whole package.xml, so the number of deployed items is the size of the project, not the size of the release. ' +
+            RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('DeploymentComponentsChanged_metric', 'orgIdentifier="$org"', '7d'))],
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Requires a recent sfdx-hardis version',
+          links: indicatorLink('DEPLOYMENT'),
+        }),
+        statPanel('Unchanged items', {
+          gridPos: { w: 6, h: 7 },
+          description:
+            'Components the latest deployment sent to the org that were already identical to what was deployed. ' +
+            RECENT_CLI_NOTE,
+          targets: [promTarget(promLast('DeploymentComponentsUnchanged_metric', 'orgIdentifier="$org"', '7d'))],
+          thresholds: THRESHOLDS_NONE,
+          noValue: 'Requires a recent sfdx-hardis version',
+          links: indicatorLink('DEPLOYMENT'),
+        }),
+        timeseriesPanel('Deployment impact over time', {
+          gridPos: { w: 12, h: 7 },
+          bars: true,
+          stacked: true,
+          description: 'Created, updated, deleted and unchanged components per deployment. ' + RECENT_CLI_NOTE,
+          targets: [
+            promTarget(promLast('DeploymentComponentsCreated_metric', 'orgIdentifier="$org"', '1d'), { legendFormat: 'Created', refId: 'A' }),
+            promTarget(promLast('DeploymentComponentsUpdated_metric', 'orgIdentifier="$org"', '1d'), { legendFormat: 'Updated', refId: 'B' }),
+            promTarget(promLast('DeploymentComponentsDeleted_metric', 'orgIdentifier="$org"', '1d'), { legendFormat: 'Deleted', refId: 'C' }),
+            promTarget(promLast('DeploymentComponentsUnchanged_metric', 'orgIdentifier="$org"', '1d'), { legendFormat: 'Unchanged', refId: 'D' }),
+          ],
+          links: indicatorLink('DEPLOYMENT'),
+        }),
+      ],
+    },
+    {
       row: 'DORA metrics (requires scheduling hardis:doc:dora-report)',
       panels: [
         statPanel('Deployment frequency (per day)', {

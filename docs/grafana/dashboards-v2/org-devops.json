@@ -495,6 +495,257 @@
       }
     },
     {
+      "id": 189,
+      "type": "row",
+      "title": "Deployment impact (how much of the package really moved)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "panels": []
+    },
+    {
+      "id": 190,
+      "type": "stat",
+      "title": "Changed items",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 17
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(DeploymentComponentsChanged_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[7d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Components the latest deployment created, updated or deleted in the org. A FULL deployment sends the whole package.xml, so the number of deployed items is the size of the project, not the size of the release. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          },
+          "noValue": "Requires a recent sfdx-hardis version",
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=DEPLOYMENT&var-metric=DeploymentComponentsChanged_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 191,
+      "type": "stat",
+      "title": "Unchanged items",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 6,
+        "y": 17
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(DeploymentComponentsUnchanged_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[7d]))",
+          "refId": "A"
+        }
+      ],
+      "description": "Components the latest deployment sent to the org that were already identical to what was deployed. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          },
+          "noValue": "Requires a recent sfdx-hardis version",
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=DEPLOYMENT&var-metric=DeploymentComponentsUnchanged_metric"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 192,
+      "type": "timeseries",
+      "title": "Deployment impact over time",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(DeploymentComponentsCreated_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
+          "refId": "A",
+          "legendFormat": "Created"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(DeploymentComponentsUpdated_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
+          "refId": "B",
+          "legendFormat": "Updated"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(DeploymentComponentsDeleted_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
+          "refId": "C",
+          "legendFormat": "Deleted"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "max by (orgIdentifier) (last_over_time(DeploymentComponentsUnchanged_metric{source=\"sfdx-hardis\", orgIdentifier=\"$org\"}[1d]))",
+          "refId": "D",
+          "legendFormat": "Unchanged"
+        }
+      ],
+      "description": "Created, updated, deleted and unchanged components per deployment. Requires a recent sfdx-hardis version on the monitoring pipeline (empty until then).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open indicator detail",
+              "url": "/d/sfdx-hardis-v2-dtl-indicator/?var-org=$org&${ds_prom:queryparam}&${ds_loki:queryparam}&${__url_time_range}&var-type=DEPLOYMENT"
+            }
+          ],
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "drawStyle": "bars",
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
       "id": 102,
       "type": "row",
       "title": "DORA metrics (requires scheduling hardis:doc:dora-report)",
@@ -503,7 +754,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 24
       },
       "panels": []
     },
@@ -519,7 +770,7 @@
         "h": 5,
         "w": 4,
         "x": 0,
-        "y": 17
+        "y": 25
       },
       "targets": [
         {
@@ -582,7 +833,7 @@
         "h": 5,
         "w": 4,
         "x": 4,
-        "y": 17
+        "y": 25
       },
       "targets": [
         {
@@ -653,7 +904,7 @@
         "h": 5,
         "w": 4,
         "x": 8,
-        "y": 17
+        "y": 25
       },
       "targets": [
         {
@@ -725,7 +976,7 @@
         "h": 5,
         "w": 4,
         "x": 12,
-        "y": 17
+        "y": 25
       },
       "targets": [
         {
@@ -796,7 +1047,7 @@
         "h": 5,
         "w": 4,
         "x": 16,
-        "y": 17
+        "y": 25
       },
       "targets": [
         {
@@ -865,7 +1116,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 30
       },
       "panels": []
     },
@@ -881,7 +1132,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 31
       },
       "targets": [
         {
