@@ -4,6 +4,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 
 import * as yaml from 'js-yaml';
+import { glob } from 'glob';
 import { SfError } from "@salesforce/core";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
@@ -16,7 +17,7 @@ import { SUPPORTED_LOCALES, t } from '../utils/i18n.js';
  * across all supported locales. Used to detect and remove stale nav entries in mkdocs.yml
  * when the documentation language changes between runs.
  */
-export function buildAllKnownNavLabels(): Set<string> {
+export function buildAllKnownNavLabels(keyPrefixes: string[] = ['docMdMenu', 'docMdAll']): Set<string> {
   const labels = new Set<string>();
   /* jscpd:ignore-start */
   const __filename = fileURLToPath(import.meta.url);
@@ -28,7 +29,7 @@ export function buildAllKnownNavLabels(): Set<string> {
       try {
         const translations: Record<string, string> = JSON.parse(fs.readFileSync(localeFile, 'utf-8'));
         for (const [key, value] of Object.entries(translations)) {
-          if (key.startsWith('docMdMenu') || key.startsWith('docMdAll')) {
+          if (keyPrefixes.some(keyPrefix => key.startsWith(keyPrefix))) {
             labels.add(value);
           }
         }
@@ -56,6 +57,195 @@ const LEGACY_EMOJI_TO_SVG_TAGS = [
   '!!python/name:material.extensions.emoji.to_svg',
 ];
 
+// MkDocs documents a nav sub-section as a LIST of single-key mappings. Historic
+// versions of this command wrote sub-menus as one flat mapping instead, which
+// MkDocs tolerated but Zensical rejects with
+// "TypeError: Unknown nav item value type: <class 'dict'>".
+// Nav is normalized on read, so an existing project is upgraded in place on its
+// next doc command: every entry keeps its label, its target and its position,
+// including sub-menus a user added by hand after the documentation was generated.
+//
+// A nav has two kinds of node, and they are NOT interchangeable:
+//  - an item, an element of a nav list, written { Label: target }
+//  - a target, the value of an item: a page path, or a sub-menu of items
+// A one-child sub-menu is indistinguishable from an item by shape alone, so the
+// two roles are normalized by two functions rather than guessed from the keys.
+
+// Normalize the value side of a nav item: a page path, or a sub-menu.
+export function normalizeMkDocsNavTarget(target: any): any {
+  if (Array.isArray(target)) {
+    return normalizeMkDocsNav(target);
+  }
+  if (target && typeof target === 'object') {
+    // Sub-menu written the legacy way: every key of the mapping is an item
+    return Object.entries(target).map(([label, child]) => ({ [label]: normalizeMkDocsNavTarget(child) }));
+  }
+  // Page path, or anything else we do not have to touch
+  return target;
+}
+
+// Normalize a nav list: every element is an item.
+export function normalizeMkDocsNav(nav: any): any[] {
+  if (nav === null || nav === undefined) {
+    return [];
+  }
+  if (!Array.isArray(nav)) {
+    // Whole nav written as a mapping: each of its keys is a root item
+    return normalizeMkDocsNavTarget(nav);
+  }
+  const items: any[] = [];
+  for (const item of nav) {
+    if (item && typeof item === 'object' && !Array.isArray(item)) {
+      // A well-formed item holds one key; a multi-key mapping found in item
+      // position is expanded into one item per key so nothing is dropped.
+      for (const [label, target] of Object.entries(item)) {
+        items.push({ [label]: normalizeMkDocsNavTarget(target) });
+      }
+    }
+    else {
+      // Bare page path used as an item
+      items.push(item);
+    }
+  }
+  return items;
+}
+
+// Menu entries are collected while metadata files are walked, so their order follows the
+// file system and is neither stable between runs nor alphabetical (packages and Lightning
+// Web Components came out reversed, for instance). A generated menu is therefore sorted by
+// label, case-insensitively, before it is written. The "All <type>" index page of a menu
+// keeps its place at the top, and nested sub-menus are sorted the same way.
+let allKnownNavIndexLabels: Set<string> | null = null;
+
+function getMkDocsNavItemLabel(item: any): string {
+  if (item && typeof item === 'object' && !Array.isArray(item)) {
+    return Object.keys(item)[0] ?? '';
+  }
+  return String(item ?? '');
+}
+
+export function sortMkDocsNavItems(target: any): any {
+  if (!Array.isArray(target)) {
+    // Page path, or anything else that has no children to sort
+    return target;
+  }
+  if (allKnownNavIndexLabels === null) {
+    allKnownNavIndexLabels = buildAllKnownNavLabels(['docMdAll']);
+  }
+  const indexItems: any[] = [];
+  const otherItems: any[] = [];
+  for (const item of target) {
+    const label = getMkDocsNavItemLabel(item);
+    if (item && typeof item === 'object' && !Array.isArray(item)) {
+      item[label] = sortMkDocsNavItems(item[label]);
+    }
+    if (allKnownNavIndexLabels.has(label)) {
+      indexItems.push(item);
+    }
+    else {
+      otherItems.push(item);
+    }
+  }
+  otherItems.sort((a, b) =>
+    getMkDocsNavItemLabel(a).toLowerCase().localeCompare(getMkDocsNavItemLabel(b).toLowerCase(), 'en', { sensitivity: 'base' })
+  );
+  return [...indexItems, ...otherItems];
+}
+
+// Folders of the documentation that project2markdown writes itself. Pages a user added by
+// hand outside of them are never rewritten by the dead link cleanup below.
+export const GENERATED_DOC_FOLDERS = [
+  'apex',
+  'approvalProcesses',
+  'assignmentRules',
+  'aura',
+  'autoResponseRules',
+  'escalationRules',
+  'flows',
+  'lwc',
+  'objects',
+  'packages',
+  'pages',
+  'permissionsetgroups',
+  'permissionsets',
+  'processBuilders',
+  'profiles',
+  'visualforce',
+  'workflowRules',
+];
+
+// [label](target.md) or [label](target.md#anchor), the only link shape the generated pages use
+const MARKDOWN_PAGE_LINK_REGEX = /\[([^\]\n]*)\]\(([^)\s#]+\.md)(#[^)\s]*)?\)/g;
+
+// A page whose name holds a space is linked as profiles/Chatter%20Free%20User.md
+function decodeMarkdownLinkPath(linkPath: string): string {
+  try {
+    return decodeURIComponent(linkPath);
+  } catch {
+    // Percent sign that is not an escape sequence: the path is already the one to look for
+    return linkPath;
+  }
+}
+
+function encodeMarkdownLinkPath(linkPath: string): string {
+  return linkPath.replaceAll(' ', '%20');
+}
+
+// A generated page regularly links to a page that was never generated: a permission set the
+// org owns but the project does not, an Apex class ApexDocGen skipped, a component another
+// one references but that is absent from the repository. Zensical reports each of them as
+// "page does not exist" and the reader gets a link leading nowhere, so all the links are
+// checked once the whole documentation is written. A target that exists under another case
+// is repaired (a Visualforce page declares standardController="account", the page is
+// objects/Account.md), a target that does not exist at all loses its link and keeps its
+// label. Case matters even on Windows: the site generator resolves page paths itself, and
+// a link the local file system happily opens still breaks once the site is built.
+export async function removeDeadDocumentationLinks(docsRoot: string): Promise<number> {
+  if (!fs.existsSync(docsRoot)) {
+    return 0;
+  }
+  const allPages = (await glob('**/*.md', { cwd: docsRoot, nodir: true })).map(page => page.replace(/\\/g, '/'));
+  const pagesByLowerCase = new Map<string, string>();
+  for (const page of allPages) {
+    pagesByLowerCase.set(page.toLowerCase(), page);
+  }
+  const existingPages = new Set(allPages);
+  let fixedLinksNb = 0;
+  for (const page of allPages) {
+    if (!GENERATED_DOC_FOLDERS.includes(page.split('/')[0])) {
+      continue;
+    }
+    const pageFile = path.join(docsRoot, page);
+    const pageContent = await fs.readFile(pageFile, 'utf8');
+    const pageDir = path.posix.dirname(page);
+    let pageFixedLinksNb = 0;
+    const updatedContent = pageContent.replace(MARKDOWN_PAGE_LINK_REGEX, (link, label, target, anchor) => {
+      if (target.includes('://') || target.startsWith('/')) {
+        // External link, or a link the site generator resolves from its own root
+        return link;
+      }
+      const targetPage = path.posix.normalize(
+        path.posix.join(pageDir, decodeMarkdownLinkPath(target.replace(/\\/g, '/')))
+      );
+      if (existingPages.has(targetPage)) {
+        return link;
+      }
+      pageFixedLinksNb++;
+      const targetPageOtherCase = pagesByLowerCase.get(targetPage.toLowerCase());
+      if (targetPageOtherCase) {
+        return `[${label}](${encodeMarkdownLinkPath(path.posix.relative(pageDir, targetPageOtherCase))}${anchor || ''})`;
+      }
+      // Nothing to link to: keep the label, unless it is only an icon that would be left alone
+      return /[\p{L}\p{N}]/u.test(label) ? label : '';
+    });
+    if (pageFixedLinksNb > 0) {
+      await fs.writeFile(pageFile, updatedContent);
+      fixedLinksNb += pageFixedLinksNb;
+    }
+  }
+  return fixedLinksNb;
+}
+
 // js-yaml cannot parse unquoted "!!python/name:" tags, so they are quoted before load
 // and unquoted again on dump, which keeps the file readable by Zensical.
 export function readMkDocsFile(mkdocsYmlFile: string): any {
@@ -70,9 +260,7 @@ export function readMkDocsFile(mkdocsYmlFile: string): any {
     mkdocsYmlStr = mkdocsYmlStr.replaceAll(tag, `'${tag}'`);
   }
   const mkdocsYml: any = yaml.load(mkdocsYmlStr);
-  if (!mkdocsYml.nav) {
-    mkdocsYml.nav = {}
-  }
+  mkdocsYml.nav = normalizeMkDocsNav(mkdocsYml.nav);
   return mkdocsYml;
 }
 

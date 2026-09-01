@@ -1582,6 +1582,7 @@
   "finalResultsBuiltWithRecords": "Resultados finales generados con {{results}} registros.",
   "findingAllRepositoryApexTestsIn": "Buscando todos los tests de Apex del repositorio en {{pathToBrowser}}",
   "finishedMergingConflicts": "Conflictos de merge resueltos",
+  "fixedLinksToPagesThatDoNotExist": "Se han corregido {{fixedLinksNb}} enlaces a páginas que no existen",
   "flowDeletionAlreadyInactive": "ya inactivo",
   "flowDeletionBlockedAfterDeactivation": "FLOW_DELETE_BLOCKED: el Flow {{flow}} está desactivado, pero sus versiones no se pueden eliminar porque {{count}} Flow Interview(s) siguen ejecutándose en ellas. Ya no puede iniciarse ningún Flow Interview nuevo, así que reintentar la pipeline cuando los actuales terminen completará la eliminación. Define {{envVar}} (o {{configKey}} en .sfdx-hardis.yml) para eliminarlos automáticamente.\n⚠️ Atención: eliminar Flow Interviews es irreversible y destruye el estado de los procesos en curso.",
   "flowDeletionBlockedByInterviews": "El Flow {{flow}} no se puede eliminar: {{count}} Flow Interview(s) siguen ejecutándose en sus versiones. Resuélvelos, o define {{envVar}} (o {{configKey}} en .sfdx-hardis.yml) para que sfdx-hardis los elimine.\n⚠️ Atención: eliminar Flow Interviews es irreversible y destruye el estado de los procesos en curso.",
