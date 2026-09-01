@@ -9,7 +9,7 @@ import sortArray from '../../../common/utils/sortArray.js';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, getMetaHideAndSearchExcludeLines, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, getMetaHideAndSearchExcludeLines, getMetaHideLines, normalizeMkDocsNavTarget, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { getLargeXmlParser, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/index.js';
@@ -1883,13 +1883,16 @@ ${this.htmlInstructions}
   }
 
   private addNavNode(nodeName, nodeValue) {
+    // Sub-menus are collected as flat mappings for convenience, but MkDocs (and,
+    // unlike MkDocs, strictly so Zensical) expects a list of single-key mappings.
+    const navValue = normalizeMkDocsNavTarget(nodeValue);
     const nodeIndex = this.mkDocsNavNodes.findIndex(navNode => Object.keys(navNode)[0] === nodeName);
     if (nodeIndex > -1) {
-      this.mkDocsNavNodes[nodeIndex][nodeName] = nodeValue;
+      this.mkDocsNavNodes[nodeIndex][nodeName] = navValue;
     }
     else {
       const nodeMenu = {};
-      nodeMenu[nodeName] = nodeValue;
+      nodeMenu[nodeName] = navValue;
       this.mkDocsNavNodes.push(nodeMenu);
     }
   }

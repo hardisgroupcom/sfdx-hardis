@@ -56,6 +56,59 @@ const LEGACY_EMOJI_TO_SVG_TAGS = [
   '!!python/name:material.extensions.emoji.to_svg',
 ];
 
+// MkDocs documents a nav sub-section as a LIST of single-key mappings. Historic
+// versions of this command wrote sub-menus as one flat mapping instead, which
+// MkDocs tolerated but Zensical rejects with
+// "TypeError: Unknown nav item value type: <class 'dict'>".
+// Nav is normalized on read, so an existing project is upgraded in place on its
+// next doc command: every entry keeps its label, its target and its position,
+// including sub-menus a user added by hand after the documentation was generated.
+//
+// A nav has two kinds of node, and they are NOT interchangeable:
+//  - an item, an element of a nav list, written { Label: target }
+//  - a target, the value of an item: a page path, or a sub-menu of items
+// A one-child sub-menu is indistinguishable from an item by shape alone, so the
+// two roles are normalized by two functions rather than guessed from the keys.
+
+// Normalize the value side of a nav item: a page path, or a sub-menu.
+export function normalizeMkDocsNavTarget(target: any): any {
+  if (Array.isArray(target)) {
+    return normalizeMkDocsNav(target);
+  }
+  if (target && typeof target === 'object') {
+    // Sub-menu written the legacy way: every key of the mapping is an item
+    return Object.entries(target).map(([label, child]) => ({ [label]: normalizeMkDocsNavTarget(child) }));
+  }
+  // Page path, or anything else we do not have to touch
+  return target;
+}
+
+// Normalize a nav list: every element is an item.
+export function normalizeMkDocsNav(nav: any): any[] {
+  if (nav === null || nav === undefined) {
+    return [];
+  }
+  if (!Array.isArray(nav)) {
+    // Whole nav written as a mapping: each of its keys is a root item
+    return normalizeMkDocsNavTarget(nav);
+  }
+  const items: any[] = [];
+  for (const item of nav) {
+    if (item && typeof item === 'object' && !Array.isArray(item)) {
+      // A well-formed item holds one key; a multi-key mapping found in item
+      // position is expanded into one item per key so nothing is dropped.
+      for (const [label, target] of Object.entries(item)) {
+        items.push({ [label]: normalizeMkDocsNavTarget(target) });
+      }
+    }
+    else {
+      // Bare page path used as an item
+      items.push(item);
+    }
+  }
+  return items;
+}
+
 // js-yaml cannot parse unquoted "!!python/name:" tags, so they are quoted before load
 // and unquoted again on dump, which keeps the file readable by Zensical.
 export function readMkDocsFile(mkdocsYmlFile: string): any {
@@ -70,9 +123,7 @@ export function readMkDocsFile(mkdocsYmlFile: string): any {
     mkdocsYmlStr = mkdocsYmlStr.replaceAll(tag, `'${tag}'`);
   }
   const mkdocsYml: any = yaml.load(mkdocsYmlStr);
-  if (!mkdocsYml.nav) {
-    mkdocsYml.nav = {}
-  }
+  mkdocsYml.nav = normalizeMkDocsNav(mkdocsYml.nav);
   return mkdocsYml;
 }
 
