@@ -1582,6 +1582,7 @@
   "finalResultsBuiltWithRecords": "Résultats finaux construits avec {{results}} enregistrements.",
   "findingAllRepositoryApexTestsIn": "Recherche de tous les tests APEX du dépôt dans {{pathToBrowser}}",
   "finishedMergingConflicts": "Conflits de fusion résolus",
+  "fixedLinksToPagesThatDoNotExist": "{{fixedLinksNb}} liens vers des pages inexistantes ont été corrigés",
   "flowDeletionAlreadyInactive": "déjà inactif",
   "flowDeletionBlockedAfterDeactivation": "FLOW_DELETE_BLOCKED : le Flux {{flow}} est désactivé, mais ses versions ne peuvent pas être supprimées car {{count}} entretien(s) de Flux sont encore en cours dessus. Aucun nouvel entretien de Flux ne peut démarrer maintenant : relancer la pipeline une fois les entretiens existants terminés achèvera la suppression. Définissez {{envVar}} (ou {{configKey}} dans .sfdx-hardis.yml) pour les supprimer automatiquement.\n⚠️ Attention : la suppression des entretiens de Flux est irréversible et détruit l'état des processus en cours.",
   "flowDeletionBlockedByInterviews": "Le Flux {{flow}} ne peut pas être supprimé : {{count}} entretien(s) de Flux sont encore en cours sur ses versions. Terminez-les, ou définissez {{envVar}} (ou {{configKey}} dans .sfdx-hardis.yml) pour que sfdx-hardis les supprime.\n⚠️ Attention : la suppression des entretiens de Flux est irréversible et détruit l'état des processus en cours.",

@@ -10,6 +10,17 @@ export class DocBuilderApex extends DocBuilderRoot {
   public promptKey: PromptTemplate = "PROMPT_DESCRIBE_APEX";
   public placeholder = "<!-- Apex description -->";
 
+  // ApexDocGen writes one folder per @group ApexDoc tag and links a class of another group as
+  // ../<group>/<Class>.md (with backslashes on Windows). Every class page is flattened into the
+  // single apex folder of the documentation, and the SObject pages live in the objects folder,
+  // so both shapes of link are rewritten to where the pages actually are.
+  public static flattenApexDocLinks(apexDocContent: string): string {
+    return apexDocContent
+      .replaceAll("..\\custom-objects\\", "../objects/")
+      .replaceAll("../custom-objects/", "../objects/")
+      .replace(/\]\(\.\.[\\/](?!objects[\\/])[^)\\/]+[\\/]([^)\\/]+\.md)\)/g, "]($1)");
+  }
+
   public static buildIndexTable(prefix: string, apexDescriptions: any[], filterObject: string | null = null): string[] {
     const filteredApex = filterObject ? apexDescriptions.filter(apex => apex.impactedObjects.includes(filterObject)) : apexDescriptions;
     if (filteredApex.length === 0) {

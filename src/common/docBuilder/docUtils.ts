@@ -4,6 +4,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 
 import * as yaml from 'js-yaml';
+import { glob } from 'glob';
 import { SfError } from "@salesforce/core";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
@@ -149,6 +150,100 @@ export function sortMkDocsNavItems(target: any): any {
     getMkDocsNavItemLabel(a).toLowerCase().localeCompare(getMkDocsNavItemLabel(b).toLowerCase(), 'en', { sensitivity: 'base' })
   );
   return [...indexItems, ...otherItems];
+}
+
+// Folders of the documentation that project2markdown writes itself. Pages a user added by
+// hand outside of them are never rewritten by the dead link cleanup below.
+export const GENERATED_DOC_FOLDERS = [
+  'apex',
+  'approvalProcesses',
+  'assignmentRules',
+  'aura',
+  'autoResponseRules',
+  'escalationRules',
+  'flows',
+  'lwc',
+  'objects',
+  'packages',
+  'pages',
+  'permissionsetgroups',
+  'permissionsets',
+  'processBuilders',
+  'profiles',
+  'visualforce',
+  'workflowRules',
+];
+
+// [label](target.md) or [label](target.md#anchor), the only link shape the generated pages use
+const MARKDOWN_PAGE_LINK_REGEX = /\[([^\]\n]*)\]\(([^)\s#]+\.md)(#[^)\s]*)?\)/g;
+
+// A page whose name holds a space is linked as profiles/Chatter%20Free%20User.md
+function decodeMarkdownLinkPath(linkPath: string): string {
+  try {
+    return decodeURIComponent(linkPath);
+  } catch {
+    // Percent sign that is not an escape sequence: the path is already the one to look for
+    return linkPath;
+  }
+}
+
+function encodeMarkdownLinkPath(linkPath: string): string {
+  return linkPath.replaceAll(' ', '%20');
+}
+
+// A generated page regularly links to a page that was never generated: a permission set the
+// org owns but the project does not, an Apex class ApexDocGen skipped, a component another
+// one references but that is absent from the repository. Zensical reports each of them as
+// "page does not exist" and the reader gets a link leading nowhere, so all the links are
+// checked once the whole documentation is written. A target that exists under another case
+// is repaired (a Visualforce page declares standardController="account", the page is
+// objects/Account.md), a target that does not exist at all loses its link and keeps its
+// label. Case matters even on Windows: the site generator resolves page paths itself, and
+// a link the local file system happily opens still breaks once the site is built.
+export async function removeDeadDocumentationLinks(docsRoot: string): Promise<number> {
+  if (!fs.existsSync(docsRoot)) {
+    return 0;
+  }
+  const allPages = (await glob('**/*.md', { cwd: docsRoot, nodir: true })).map(page => page.replace(/\\/g, '/'));
+  const pagesByLowerCase = new Map<string, string>();
+  for (const page of allPages) {
+    pagesByLowerCase.set(page.toLowerCase(), page);
+  }
+  const existingPages = new Set(allPages);
+  let fixedLinksNb = 0;
+  for (const page of allPages) {
+    if (!GENERATED_DOC_FOLDERS.includes(page.split('/')[0])) {
+      continue;
+    }
+    const pageFile = path.join(docsRoot, page);
+    const pageContent = await fs.readFile(pageFile, 'utf8');
+    const pageDir = path.posix.dirname(page);
+    let pageFixedLinksNb = 0;
+    const updatedContent = pageContent.replace(MARKDOWN_PAGE_LINK_REGEX, (link, label, target, anchor) => {
+      if (target.includes('://') || target.startsWith('/')) {
+        // External link, or a link the site generator resolves from its own root
+        return link;
+      }
+      const targetPage = path.posix.normalize(
+        path.posix.join(pageDir, decodeMarkdownLinkPath(target.replace(/\\/g, '/')))
+      );
+      if (existingPages.has(targetPage)) {
+        return link;
+      }
+      pageFixedLinksNb++;
+      const targetPageOtherCase = pagesByLowerCase.get(targetPage.toLowerCase());
+      if (targetPageOtherCase) {
+        return `[${label}](${encodeMarkdownLinkPath(path.posix.relative(pageDir, targetPageOtherCase))}${anchor || ''})`;
+      }
+      // Nothing to link to: keep the label, unless it is only an icon that would be left alone
+      return /[\p{L}\p{N}]/u.test(label) ? label : '';
+    });
+    if (pageFixedLinksNb > 0) {
+      await fs.writeFile(pageFile, updatedContent);
+      fixedLinksNb += pageFixedLinksNb;
+    }
+  }
+  return fixedLinksNb;
 }
 
 // js-yaml cannot parse unquoted "!!python/name:" tags, so they are quoted before load

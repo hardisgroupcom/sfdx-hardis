@@ -1580,6 +1580,7 @@
   "finalResultsBuiltWithRecords": "{{results}}件のレコードで最終結果を構築しました。",
   "findingAllRepositoryApexTestsIn": "{{pathToBrowser}}ですべてのリポジトリAPEXテストを検索しています",
   "finishedMergingConflicts": "mergeコンフリクトの解決が完了しました",
+  "fixedLinksToPagesThatDoNotExist": "存在しないページへのリンクを {{fixedLinksNb}} 件修正しました",
   "flowDeletionAlreadyInactive": "既に無効",
   "flowDeletionBlockedAfterDeactivation": "FLOW_DELETE_BLOCKED: フロー {{flow}} は無効化されましたが、{{count}}件のフローインタビューが実行中のためバージョンを削除できません。新しいフローインタビューは開始できなくなったため、既存のものが終了した後にパイプラインを再実行すれば削除が完了します。自動的に削除するには {{envVar}}（または .sfdx-hardis.yml の {{configKey}}）を設定してください。\n⚠️ 注意: フローインタビューの削除は元に戻せず、進行中のプロセスの状態を破棄します。",
   "flowDeletionBlockedByInterviews": "フロー {{flow}} を削除できません: {{count}}件のフローインタビューがそのバージョン上で実行中です。それらを終了させるか、{{envVar}}（または .sfdx-hardis.yml の {{configKey}}）を設定して sfdx-hardis に削除させてください。\n⚠️ 注意: フローインタビューの削除は元に戻せず、進行中のプロセスの状態を破棄します。",
