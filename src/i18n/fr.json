@@ -3395,6 +3395,7 @@
   "unableToCloseWebsocketclientJs": "Impossible de fermer websocketClient.js. ",
   "unableToComputeFieldSums": "Impossible de calculer les sommes de champs pour {{sObjectName}} : {{message}}",
   "unableToComputeGitSummary": "Impossible de calculer le résumé git :\n",
+  "unableToConnectToOrg": "Impossible de se connecter à l'org {{org}} (statut : {{org1}}). Veuillez vous authentifier à nouveau.",
   "unableToConnectToTechnicalOrgNthat": "Impossible de se connecter à l'org technique : {{value}}\nPas de problème, nous utiliserons l'org par défaut 😊",
   "unableToDeleteTempDir": "Impossible de supprimer le dossier temporaire {{tmpDir}} : {{error}}",
   "unableToDescribeObject": "Impossible de décrire l'objet {{sObjectName}}, il sera ignoré.",

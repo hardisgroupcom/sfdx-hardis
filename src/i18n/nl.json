@@ -3395,6 +3395,7 @@
   "unableToCloseWebsocketclientJs": "Kan websocketClient.js niet sluiten. ",
   "unableToComputeFieldSums": "Kan veldsommen voor {{sObjectName}} niet berekenen: {{message}}",
   "unableToComputeGitSummary": "Kan de git-samenvatting niet berekenen:\n",
+  "unableToConnectToOrg": "Kan geen verbinding maken met org {{org}} (status: {{org1}}). Authenticeer opnieuw.",
   "unableToConnectToTechnicalOrgNthat": "Kan geen verbinding maken met technische org: {{value}}\nGeeft niet, we gebruiken de standaard org 😊",
   "unableToDeleteTempDir": "Kan tijdelijke map {{tmpDir}} niet verwijderen: {{error}}",
   "unableToDescribeObject": "Kan object {{sObjectName}} niet beschrijven, wordt overgeslagen.",

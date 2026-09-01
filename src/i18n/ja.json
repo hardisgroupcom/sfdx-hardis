@@ -3392,6 +3392,7 @@
   "unableToCloseWebsocketclientJs": "websocketClient.js を閉じることができません。",
   "unableToComputeFieldSums": "{{sObjectName}} の項目の合計を計算できません: {{message}}",
   "unableToComputeGitSummary": "git の概要を計算できません:\n",
+  "unableToConnectToOrg": "組織 {{org}} に接続できません (ステータス: {{org1}})。もう一度認証してください。",
   "unableToConnectToTechnicalOrgNthat": "テクニカル組織に接続できません: {{value}}\nデフォルトの組織を使用します 😊",
   "unableToDeleteTempDir": "一時フォルダー {{tmpDir}} を削除できません: {{error}}",
   "unableToDescribeObject": "オブジェクト {{sObjectName}} を記述できません。スキップします。",

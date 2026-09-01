@@ -5,7 +5,6 @@ import { exec as childExec, spawn as childSpawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
   createTempDir,
-  execCommand,
   execSfdxJson,
   getCurrentGitBranch,
   isAgentMode,
@@ -205,8 +204,13 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
           `sf org login sfdx-url -f "${authFile}"` +
           (isDevHub ? ` --set-default-dev-hub` : (setDefaultOrg ? ` --set-default` : '')) +
           (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
-        await execCommand(authCommand, this, { fail: true, output: false });
+        const authUrlRes = await execSfdxJson(authCommand, this, { fail: true, output: false });
         uxLog("action", this, c.cyan(t('successfullyLoggedUsingSfdxauthurl')));
+        // Publish the connected org, like the JWT and web login branches do, so callers of
+        // runAuthHook() can tell an authentication that connected nothing from this one
+        if (authUrlRes?.result?.username) {
+          globalThis.justConnectedOrg = sanitizeOrg(authUrlRes.result);
+        }
         return true;
       } finally {
         await fs.remove(authTmpDir);

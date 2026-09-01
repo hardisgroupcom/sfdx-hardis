@@ -174,7 +174,13 @@ The command's technical implementation involves:
       }
       // Pass org object to avoid a duplicate sf org display call inside makeSureOrgIsConnected
       uxLog("action", this, c.cyan(t('checkingThatUserIsConnectedToOrg', { org: org.username, org1: org.instanceUrl })));
-      await makeSureOrgIsConnected(org);
+      // Use the returned org: makeSureOrgIsConnected can have re-authenticated it, and it returns
+      // nothing when it could not confirm the connection
+      const connectedOrg = await makeSureOrgIsConnected(org);
+      if (!connectedOrg?.username) {
+        throw new SfError(t('unableToConnectToOrg', { org: org.username, org1: org.connectedStatus || 'unknown' }));
+      }
+      org = connectedOrg;
       // Set default org with the correct config key for devhub vs target-org
       if (setDefault) {
         const configKey = devHub ? 'target-dev-hub' : 'target-org';

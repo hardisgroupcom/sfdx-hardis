@@ -364,8 +364,8 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
     instanceUrl = displayResult?.result?.instanceUrl || "error";
     orgResult = displayResult.result
   }
-  // Org is connected
-  if (connectedStatus === "Connected") {
+  // Org is connected ("Unknown" is the status reported for scratch orgs)
+  if (connectedStatus === "Connected" || connectedStatus === "Unknown") {
     return orgResult;
   }
   // Authentication is necessary

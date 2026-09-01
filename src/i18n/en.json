@@ -3399,6 +3399,7 @@
   "unableToCloseWebsocketclientJs": "Unable to close websocketClient.js. ",
   "unableToComputeFieldSums": "Unable to compute field sums for {{sObjectName}}: {{message}}",
   "unableToComputeGitSummary": "Unable to compute git summary:\n",
+  "unableToConnectToOrg": "Unable to connect to org {{org}} (status: {{org1}}). Please authenticate again.",
   "unableToConnectToTechnicalOrgNthat": "Unable to connect to technical org: {{value}}\nThat's ok, we'll use default org 😊",
   "unableToDeleteTempDir": "Unable to delete temporary folder {{tmpDir}}: {{error}}",
   "unableToDescribeObject": "Unable to describe object {{sObjectName}}, skipping it.",

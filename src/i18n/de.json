@@ -3394,6 +3394,7 @@
   "unableToCloseWebsocketclientJs": "websocketClient.js konnte nicht geschlossen werden. ",
   "unableToComputeFieldSums": "Feldsummen für {{sObjectName}} können nicht berechnet werden: {{message}}",
   "unableToComputeGitSummary": "Git-Zusammenfassung konnte nicht berechnet werden:\n",
+  "unableToConnectToOrg": "Verbindung zur Org {{org}} nicht möglich (Status: {{org1}}). Bitte authentifizieren Sie sich erneut.",
   "unableToConnectToTechnicalOrgNthat": "Verbindung zur technischen Org nicht möglich: {{value}}\nKein Problem, die Standard-Org wird verwendet ���",
   "unableToDeleteTempDir": "Temporärer Ordner {{tmpDir}} konnte nicht gelöscht werden: {{error}}",
   "unableToDescribeObject": "Objekt {{sObjectName}} kann nicht beschrieben werden, wird übersprungen.",
