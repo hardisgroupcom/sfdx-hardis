@@ -66,6 +66,23 @@ export function extractTargetOrgFromArgv(argv: string[] | undefined): string | n
   return null;
 }
 
+/* Run the sfdx-hardis "auth" hook and make sure an authentication failure is not silently ignored.
+
+   oclif Config.runHook() collects the errors thrown by hooks in its result instead of throwing them,
+   unless the error carries an oclif exit code (which SfError does not). Without this wrapper, a failed
+   web login would let the calling command carry on and display a success message.
+*/
+export async function runAuthHook(commandThis: any, options: AuthOrgOptions): Promise<any> {
+  // Reset the org set by a previous authentication, so callers can detect that this one did not connect anything
+  globalThis.justConnectedOrg = null;
+  const hookResult: any = await commandThis.config.runHook('auth', options);
+  const failure = (hookResult?.failures || [])[0];
+  if (failure) {
+    throw failure.error instanceof Error ? failure.error : new SfError(String(failure.error));
+  }
+  return hookResult;
+}
+
 // Authorize an org with sfdxAuthUrl, manually or with JWT
 export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promise<boolean> {
   const isDevHub = orgAlias.includes('DevHub');

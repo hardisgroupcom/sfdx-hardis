@@ -13,6 +13,7 @@ import { WebSocketClient } from '../../../common/websocketClient.js';
 import { isSfdxProject } from '../../../common/utils/projectUtils.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
 import { t } from '../../../common/utils/i18n.js';
+import { runAuthHook } from '../../../common/utils/authUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -141,7 +142,7 @@ Optional flag:
     }
     if (['scratch', 'sandboxAndScratch'].includes(orgType)) {
       // Connect to DevHub
-      await this.config.runHook('auth', {
+      await runAuthHook(this, {
         checkAuth: true,
         Command: this,
         devHub: true,

@@ -4,7 +4,7 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from '../../../common/utils/fsUtils.js';
-import { authOrg } from '../../../common/utils/authUtils.js';
+import { authOrg, runAuthHook } from '../../../common/utils/authUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
 import { t } from '../../../common/utils/i18n.js';
 import { CONSTANTS, getEnvVar } from '../../../config/index.js';
@@ -170,7 +170,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
       encryptedCertContent = (await fs.readFile(flags['encrypted-cert-file'], 'utf8')).trim();
       uxLog("action", this, c.cyan(t('usingEncryptedCertFromFile', { file: c.bold(flags['encrypted-cert-file']) })));
     }
-    await this.config.runHook('auth', {
+    await runAuthHook(this, {
       checkAuth: !devHub,
       Command: this,
       devHub,

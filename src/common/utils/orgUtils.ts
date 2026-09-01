@@ -18,6 +18,7 @@ import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { clearCache } from '../cache/index.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { t } from './i18n.js';
+import { runAuthHook } from './authUtils.js';
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -156,6 +157,7 @@ export async function promptOrg(
   // List all local orgs and request to user
   // Access flags via commandThis, fallback to options if not present
   const defaultOrgUsername = options.defaultOrgUsername || ''
+  uxLog("action", commandThis, c.cyan(t('listingAuthenticatedOrgs')));
   const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? 'sandbox' : 'any', { quickOrgList: options.quickOrgList, useCache: options.useCache });
   let orgList = [
     {
@@ -225,17 +227,17 @@ export async function promptOrg(
 
   // Connect to new org
   if (org.otherOrg === true) {
-    await commandThis.config.runHook('auth', {
+    await runAuthHook(commandThis, {
       checkAuth: true,
       Command: commandThis,
       devHub: options.devHub === true,
       setDefault: options.setDefault !== false,
     });
     const justConnectedOrg = globalThis.justConnectedOrg;
-    if (justConnectedOrg) {
-      return justConnectedOrg;
+    if (!justConnectedOrg?.username) {
+      throw new SfError(t('authenticationDidNotConnectAnyOrg'));
     }
-    return {};
+    return justConnectedOrg;
   }
 
   // Reset cache and try again
@@ -250,6 +252,9 @@ export async function promptOrg(
     const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}`;
     const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
     org = loginResult.result;
+    if (!org?.username) {
+      throw new SfError(t('authenticationDidNotConnectAnyOrg'));
+    }
   }
 
   uxLog("action", commandThis, c.cyan(t('selectedOrg', { org: c.green(org.username), org1: c.green(org.instanceUrl) })));
@@ -293,7 +298,8 @@ export async function promptOrg(
     }
   }
   // uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
-  return orgResponse.org;
+  // Return org and not orgResponse.org, as org can have been refreshed by a new authentication
+  return org;
 }
 
 export async function promptOrgList(options: { promptMessage?: string } = {}) {
@@ -363,12 +369,15 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
     return orgResult;
   }
   // Authentication is necessary
-  if (connectedStatus?.includes("expired")) {
+  if (connectedStatus?.includes("expired") || connectedStatus === "RefreshTokenAuthError") {
     uxLog("action", this, c.yellow(t('yourAuthTokenHasExpiredYouNeed')));
     await deleteRottenAuthFile(targetOrg);
     // Authenticate again
     const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
     const loginRes = await execSfdxJson(loginCommand, this, { fail: true, output: false });
+    if (!loginRes?.result?.username) {
+      throw new SfError(t('authenticationDidNotConnectAnyOrg'));
+    }
     return loginRes.result;
   }
   // We shouldn't be here 😊

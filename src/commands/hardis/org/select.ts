@@ -1,9 +1,10 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from "chalk";
 import { deleteRottenAuthFile, makeSureOrgIsConnected, promptOrg } from '../../../common/utils/orgUtils.js';
+import { runAuthHook } from '../../../common/utils/authUtils.js';
 import { execSfdxJson, isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
@@ -42,7 +43,8 @@ The command's technical implementation involves:
 - **Default Org Configuration:** The \`promptOrg\` utility (internally) handles setting the selected org as the default using Salesforce CLI's configuration mechanisms.
 - **Connection Check:** It calls \`makeSureOrgIsConnected\` to verify the connection status of the selected org and guides the user to re-authenticate if the org is not connected.
 - **Forced Reconnection:** When \`--reconnect\` is used, the command skips the connection check and directly triggers \`sf org login web\` with \`--set-default\`, combining re-authentication and default-setting into a single CLI call.
-- **Salesforce CLI Integration:** It leverages Salesforce CLI's underlying commands for org listing and authentication.
+- **Salesforce CLI Integration:** It relies on Salesforce CLI's underlying commands for org listing and authentication.
+- **Authentication Failure Detection:** Errors raised while authenticating are re-thrown instead of being swallowed by the oclif hook mechanism, and the command fails if it ends without a connected org.
 </details>
 `;
 
@@ -149,7 +151,7 @@ The command's technical implementation involves:
       if (username) {
         await deleteRottenAuthFile(username);
       }
-      await this.config.runHook('auth', {
+      await runAuthHook(this, {
         checkAuth: true,
         Command: this,
         devHub,
@@ -167,6 +169,9 @@ The command's technical implementation involves:
         output: false,
       });
       org = displayResult?.result;
+      if (!org?.username) {
+        throw new SfError(t('unableToGetInfoAboutOrg', { username: username }));
+      }
       // Pass org object to avoid a duplicate sf org display call inside makeSureOrgIsConnected
       uxLog("action", this, c.cyan(t('checkingThatUserIsConnectedToOrg', { org: org.username, org1: org.instanceUrl })));
       await makeSureOrgIsConnected(org);
@@ -180,6 +185,11 @@ The command's technical implementation involves:
       // Prompt user to select an org
       // promptOrg handles connection verification and default-setting
       org = await promptOrg(this, { devHub, setDefault, scratch, useCache: false });
+    }
+
+    // Never report a success if we did not end up with a connected org
+    if (!org?.username) {
+      throw new SfError(t('authenticationDidNotConnectAnyOrg'));
     }
 
     if (setDefault) {

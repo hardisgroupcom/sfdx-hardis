@@ -30,7 +30,8 @@ The command's technical implementation involves:
 - **Default Org Configuration:** The `promptOrg` utility (internally) handles setting the selected org as the default using Salesforce CLI's configuration mechanisms.
 - **Connection Check:** It calls `makeSureOrgIsConnected` to verify the connection status of the selected org and guides the user to re-authenticate if the org is not connected.
 - **Forced Reconnection:** When `--reconnect` is used, the command skips the connection check and directly triggers `sf org login web` with `--set-default`, combining re-authentication and default-setting into a single CLI call.
-- **Salesforce CLI Integration:** It leverages Salesforce CLI's underlying commands for org listing and authentication.
+- **Salesforce CLI Integration:** It relies on Salesforce CLI's underlying commands for org listing and authentication.
+- **Authentication Failure Detection:** Errors raised while authenticating are re-thrown instead of being swallowed by the oclif hook mechanism, and the command fails if it ends without a connected org.
 </details>
 
 

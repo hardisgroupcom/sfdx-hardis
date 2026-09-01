@@ -4,6 +4,8 @@
 
 - New [Deployment assistant](https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-error-list/) tip for "Must specify a non-empty label for the CustomObject", telling how to fix a custom object committed without its attributes.
 - Deployment notifications, Pull Request comments, job logs and [Grafana dashboards](https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/) now tell how many items a deployment created, updated, deleted or left unchanged, so a full deployment no longer reports only the size of package.xml.
+- Fixed a failed authentication being reported as a command success: errors raised by the auth hook were swallowed, so [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/) could display "Org () connected" after a web login that never completed.
+- The list of authenticated orgs is now announced with a log line, so the VS Code UI no longer looks stuck while it is built.
 
 ## [8.4.0] 2026-08-31
 
