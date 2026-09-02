@@ -75,7 +75,7 @@ If [AI integration](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/) is co
 
 If you have a complex strategy, you might need to input property **mergeTargets** in branch-scoped sfdx-hardis.yml file to have a correct diagram.
 
-Define DO_NOT_OVERWRITE_INDEX_MD=true to avoid overwriting the index.md file in docs folder, useful if you want to keep your own index.md file.
+Define DO_NOT_OVERWRITE_INDEX_MD=true to avoid overwriting the index.md file in docs folder, useful if you want to keep your own index.md file. As long as index.md is still exactly what a previous run wrote, it is refreshed anyway, so a project that sets the variable without customizing the page still gets the latest home page. The first edit you make to index.md keeps it yours for good.
 
 ### Agent Mode
 

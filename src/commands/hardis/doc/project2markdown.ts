@@ -9,7 +9,7 @@ import sortArray from '../../../common/utils/sortArray.js';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, getSearchExcludeLines, indexPageListsPages, normalizeMkDocsNavTarget, promoteSectionIndexTitle, readMkDocsFile, removeDeadDocumentationLinks, replaceInFile, sortDescriptionsByName, sortMkDocsNavItems, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, getSearchExcludeLines, indexPageListsPages, isUntouchedGeneratedHomePage, normalizeMkDocsNavTarget, promoteSectionIndexTitle, readMkDocsFile, removeDeadDocumentationLinks, removeEmptySectionIndexPages, replaceInFile, sortDescriptionsByName, sortMkDocsNavItems, stampGeneratedHomePage, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { getLargeXmlParser, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/index.js';
@@ -164,7 +164,7 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
 
 If you have a complex strategy, you might need to input property **mergeTargets** in branch-scoped sfdx-hardis.yml file to have a correct diagram.
 
-Define DO_NOT_OVERWRITE_INDEX_MD=true to avoid overwriting the index.md file in docs folder, useful if you want to keep your own index.md file.
+Define DO_NOT_OVERWRITE_INDEX_MD=true to avoid overwriting the index.md file in docs folder, useful if you want to keep your own index.md file. As long as index.md is still exactly what a previous run wrote, it is refreshed anyway, so a project that sets the variable without customizing the page still gets the latest home page. The first edit you make to index.md keeps it yours for good.
 
 ### Agent Mode
 
@@ -493,11 +493,20 @@ ${this.htmlInstructions}
       await this.generateObjectsDocumentation();
     }
 
+    // Sections that documented nothing, and sections whose metadata is gone since the last run,
+    // leave an index page listing nothing behind. They are removed before the home page and the
+    // navigation are written, so neither points at a page that has no content.
+    const removedSections = await removeEmptySectionIndexPages(this.outputMarkdownRoot);
+    if (removedSections.length > 0) {
+      uxLog("log", this, c.grey(t('removedEmptySectionIndexPages', { removedSections: removedSections.join(", ") })));
+    }
+
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
-    if (process.env.DO_NOT_OVERWRITE_INDEX_MD !== 'true' || !fs.existsSync(this.outputMarkdownIndexFile)) {
+    if (await this.canWriteHomePage()) {
       const homeLines = this.buildHomeLines();
-      await fs.writeFile(this.outputMarkdownIndexFile, getSearchExcludeLines() + homeLines.join("\n") + `\n\n${this.footer}\n`);
+      const homePage = getSearchExcludeLines() + homeLines.join("\n") + `\n\n${this.footer}\n`;
+      await fs.writeFile(this.outputMarkdownIndexFile, stampGeneratedHomePage(homePage));
       uxLog("success", this, c.green(t('successfullyGeneratedDocIndexAt', { outputMarkdownIndexFile: this.outputMarkdownIndexFile })));
     }
 
@@ -1938,6 +1947,24 @@ ${this.htmlInstructions}
    * A section is only drawn when the project has one: a project without Lightning Pages, escalation
    * rules or installed packages used to get links to pages that were never written.
    */
+  /**
+   * DO_NOT_OVERWRITE_INDEX_MD exists so a project can write its own home page. Setting it used to
+   * freeze the page for good: a project that set the variable and never touched index.md kept the
+   * home page of the sfdx-hardis version that generated it, and no later improvement ever reached
+   * it. A page that is still, to the character, what a previous run wrote is therefore refreshed.
+   * The first edit to it, however small, hands the page over to the project for good.
+   */
+  private async canWriteHomePage(): Promise<boolean> {
+    if (process.env.DO_NOT_OVERWRITE_INDEX_MD !== 'true' || !fs.existsSync(this.outputMarkdownIndexFile)) {
+      return true;
+    }
+    if (isUntouchedGeneratedHomePage(await fs.readFile(this.outputMarkdownIndexFile, "utf8"))) {
+      return true;
+    }
+    uxLog("log", this, c.grey(t('keptCustomizedDocIndex', { outputMarkdownIndexFile: this.outputMarkdownIndexFile })));
+    return false;
+  }
+
   private buildHomeLines(): string[] {
     type HomeLink = { label: string; page: string; count?: number };
     type HomeSection = { label: string; description: string; page?: string; count?: number; children?: HomeLink[] };

@@ -5,6 +5,8 @@
 ### [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)
 
 - The **home page** is now a grid of cards, one per section, saying in plain language what the section holds and how many pages are behind it. Only the sections your project actually has are listed, instead of links to pages that were never generated.
+- `DO_NOT_OVERWRITE_INDEX_MD=true` no longer freezes your home page on the version that first generated it: as long as `docs/index.md` is still exactly what a previous run wrote, it is refreshed with the latest home page. The first edit you make to it keeps the page yours for good.
+- A section that documents nothing, and a section whose metadata is gone since the last run, no longer leave behind an index page listing nothing, absent from the menu but still built into the site.
 - An **object page** now lists the assignment rules, auto-response rules, escalation rules, approval processes, workflow rules and Lightning Web Components that touch it: building those tables raised an error the documentation swallowed, which silently dropped the sections from every object page.
 - Fixed the **validation rules table** of an object breaking apart when a rule description or a formula spans several lines, and formulas no longer lose the `||` of their OR conditions.
 - **Wide tables** now fit the page instead of hiding their last column behind a horizontal scrollbar, and a table longer than **15 rows** gets a **filter box**, so a 500 field object can be searched instead of scrolled.
