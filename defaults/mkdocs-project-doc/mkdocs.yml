@@ -68,6 +68,8 @@ markdown_extensions:
       restrict_base_path: false
   - mdx_truly_sane_lists
   - attr_list
+  # The home page section cards are markdown written inside div elements
+  - md_in_html
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid

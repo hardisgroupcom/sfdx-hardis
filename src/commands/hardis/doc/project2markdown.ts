@@ -293,7 +293,6 @@ ${this.htmlInstructions}
   protected packageXmlCandidates: any[];
   protected outputMarkdownRoot = "docs"
   protected outputMarkdownIndexFile = path.join(this.outputMarkdownRoot, "index.md")
-  protected mdLines: string[] = [];
   protected sfdxHardisConfig: any = {};
   protected outputPackageXmlMarkdownFiles: any[] = [];
   protected mkDocsNavNodes: any[] = [{ "Home": "index.md" }];
@@ -365,15 +364,6 @@ ${this.htmlInstructions}
     await fs.ensureDir(this.outputMarkdownRoot);
     const currentBranch = await getCurrentGitBranch()
     this.footer = t('documentationGeneratedFromBranch', { currentBranch, docUrl: CONSTANTS.DOC_URL_ROOT, websiteUrl: CONSTANTS.WEBSITE_URL }) + "\n\n" + getBannerMarkdownAndLink();
-
-    this.mdLines.push(...[
-      `# ${t('docMdHomeTitle')}`,
-      "",
-      t('welcomeToDocumentation'),
-      "",
-      "![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner-doc.png)",
-      ""
-    ]);
 
     let sfdxHardisParamsLines = [t('availableOnlyInSfdxHardisCiCdProject')];
     let branchesAndOrgsLines = [t('availableOnlyInSfdxHardisCiCdProject')];
@@ -480,11 +470,6 @@ ${this.htmlInstructions}
       await this.generateRolesDocumentation();
     }
 
-    // List objects & generate doc
-    if (this.generateObjectsDoc) {
-      await this.generateObjectsDocumentation();
-    }
-
     if (this.generateAutomationsDoc) {
       // List approval processes & generate doc
       await this.generateApprovalProcessDocumentation();
@@ -501,10 +486,17 @@ ${this.htmlInstructions}
       await this.generateLwcDocumentation();
     }
 
+    // Objects come last of the sections they cross-link: an object page embeds the rules, the code
+    // and the components that touch it, and those tables are built from the descriptions the
+    // sections above collect. Menu order is decided later, in buildMkDocsYml.
+    if (this.generateObjectsDoc) {
+      await this.generateObjectsDocumentation();
+    }
+
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
     if (process.env.DO_NOT_OVERWRITE_INDEX_MD !== 'true' || !fs.existsSync(this.outputMarkdownIndexFile)) {
-      const homeLines = [...this.mdLines, ...this.buildHomeSectionLines()];
+      const homeLines = this.buildHomeLines();
       await fs.writeFile(this.outputMarkdownIndexFile, getSearchExcludeLines() + homeLines.join("\n") + `\n\n${this.footer}\n`);
       uxLog("success", this, c.green(t('successfullyGeneratedDocIndexAt', { outputMarkdownIndexFile: this.outputMarkdownIndexFile })));
     }
@@ -1057,6 +1049,10 @@ ${this.htmlInstructions}
         this.assignmentRulesDescriptions.push({
           name: currentRuleName,
           active: rule.active,
+          // The file is named after the object the rules belong to. Without this the object
+          // page could not filter them, and asking it to did not fail loudly: it threw inside
+          // the pool, which swallowed it and left the rest of the page unwritten.
+          impactedObjects: [assignmentRulesName],
         });
         const ruleXml = builder.build({ assignmentRule: rule });
         workItems.push({ currentRuleName, mdFile, ruleXml });
@@ -1174,6 +1170,10 @@ ${this.htmlInstructions}
         this.autoResponseRulesDescriptions.push({
           name: currentRuleName,
           active: rule.active,
+          // The file is named after the object the rules belong to. Without this the object
+          // page could not filter them, and asking it to did not fail loudly: it threw inside
+          // the pool, which swallowed it and left the rest of the page unwritten.
+          impactedObjects: [autoResponseRulesName],
         });
         const ruleXml = builder.build({ autoResponseRule: rule });
         workItems.push({ currentRuleName, mdFile, ruleXml });
@@ -1237,6 +1237,10 @@ ${this.htmlInstructions}
         this.escalationRulesDescriptions.push({
           name: currentRuleName,
           active: rule.active,
+          // The file is named after the object the rules belong to. Without this the object
+          // page could not filter them, and asking it to did not fail loudly: it threw inside
+          // the pool, which swallowed it and left the rest of the page unwritten.
+          impactedObjects: [escalationRulesName],
         });
         const ruleXml = builder.build({ escalationRule: rule });
         workItems.push({ currentRuleName, mdFile, ruleXml });
@@ -1487,6 +1491,20 @@ ${this.htmlInstructions}
     }
     mkdocsYml.theme.features = themeFeatures;
 
+    // The home page draws its section cards as markdown inside div elements, which the markdown
+    // parser only looks into when this extension is on. Without it the cards come out as raw
+    // markdown between two empty boxes, so it is added to a config written before they existed.
+    const markdownExtensions = mkdocsYml.markdown_extensions || [];
+    const declaredExtensions = markdownExtensions.map(
+      (extension: any) => typeof extension === "string" ? extension : Object.keys(extension || {})[0]
+    );
+    for (const markdownExtension of ["attr_list", "md_in_html"]) {
+      if (!declaredExtensions.includes(markdownExtension)) {
+        markdownExtensions.push(markdownExtension);
+      }
+    }
+    mkdocsYml.markdown_extensions = markdownExtensions;
+
     // Repair the sfdx-hardis repository URL that earlier versions wrote with a typo: it made
     // every page request a GitHub API that answers 404, and the header link led nowhere.
     if (mkdocsYml.repo_url === "https://github.com/hardisgroupco/sfdx-hardis") {
@@ -1608,7 +1626,7 @@ ${this.htmlInstructions}
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
     WebSocketClient.sendProgressStartMessage(t('generatingObjectsDocumentation'), workItems.length);
     let counter = 0;
-    await PromisePool.withConcurrency(parallelism)
+    const { errors } = await PromisePool.withConcurrency(parallelism)
       .for(workItems)
       .process(async (item) => {
         if (item.skip) {
@@ -1645,6 +1663,9 @@ ${this.htmlInstructions}
         // Apex Table
         const relatedApexTable = DocBuilderApex.buildIndexTable('../apex/', sortDescriptionsByName(this.apexDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Apex table -->', relatedApexTable.join("\n"));
+        // Lightning Web Components table
+        const relatedLwcTable = DocBuilderLwc.buildIndexTable('../lwc/', sortDescriptionsByName(this.lwcDescriptions), item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- Lwc table -->', relatedLwcTable.join("\n"));
         // Visualforce table
         const relatedVisualforceTable = DocBuilderVisualforce.buildIndexTable('../visualforce/', sortDescriptionsByName(this.visualforceDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Visualforce table -->', relatedVisualforceTable.join("\n"));
@@ -1681,6 +1702,15 @@ ${this.htmlInstructions}
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
     WebSocketClient.sendProgressEndMessage();
+    // The pool collects what a page throws instead of raising it. An object that failed halfway
+    // keeps the placeholders of every section below the failure, and those sections simply vanish
+    // from the page, so what went wrong is named here rather than left for a reader to notice.
+    for (const error of errors) {
+      uxLog("warning", this, c.yellow(t('errorGeneratingObjectDocumentation', {
+        objectName: (error as any)?.item?.objectName || '',
+        message: error.message,
+      })));
+    }
     if (Object.keys(objectsForMenu).length > 1) {
       this.addNavNode(t('docMdMenuObjects'), objectsForMenu);
     }
@@ -1876,67 +1906,111 @@ ${this.htmlInstructions}
     return flows.map(flow => path.basename(flow, ".flow-meta.xml")).join(", ");
   }
 
-  // The home page used to list every section the command knows how to produce, whether or not
-  // the project has one: a project without Lightning Pages, Escalation Rules or installed
-  // packages ended up with links to pages that were never written, right on its first page.
-  // Only the sections that actually hold pages are listed now.
-  private buildHomeSectionLines(): string[] {
-    type HomeSection = { label: string; page?: string; children?: { label: string; page: string }[] };
+  /**
+   * The home page is the first thing a reader lands on, and for most of them it is the only map of
+   * the org they will ever get. It used to be a bare bullet list under a full-width banner, naming
+   * sections without saying what any of them held. It is now a grid of cards: one per section, with
+   * a sentence of plain language and the number of pages behind it, so someone who does not know
+   * Salesforce can still tell where to click.
+   *
+   * A section is only drawn when the project has one: a project without Lightning Pages, escalation
+   * rules or installed packages used to get links to pages that were never written.
+   */
+  private buildHomeLines(): string[] {
+    type HomeLink = { label: string; page: string; count?: number };
+    type HomeSection = { label: string; description: string; page?: string; count?: number; children?: HomeLink[] };
+    const flows = this.flowDescriptions.filter(flow => flow.processType !== "Workflow");
+    const processBuilders = this.flowDescriptions.filter(flow => flow.processType === "Workflow");
     const homeSections: HomeSection[] = [
-      { label: t('docNavObjects'), page: "objects/index.md" },
       {
-        label: t('docNavAutomations'), children: [
-          { label: t('docNavApprovalProcesses'), page: "approvalProcesses/index.md" },
-          { label: t('docNavAssignmentRules'), page: "assignmentRules/index.md" },
-          { label: t('docNavAutoResponseRules'), page: "autoResponseRules/index.md" },
-          { label: t('docNavEscalationRules'), page: "escalationRules/index.md" },
-          { label: t('docNavFlows'), page: "flows/index.md" },
-          { label: t('docNavProcessBuilders'), page: "processBuilders/index.md" },
-          { label: t('docNavWorkflowRules'), page: "workflowRules/index.md" },
+        label: t('docNavObjects'), description: t('docHomeObjectsDesc'),
+        page: "objects/index.md", count: this.objectDescriptions.length
+      },
+      {
+        label: t('docNavAutomations'), description: t('docHomeAutomationsDesc'), children: [
+          { label: t('docNavApprovalProcesses'), page: "approvalProcesses/index.md", count: this.approvalProcessesDescriptions.length },
+          { label: t('docNavAssignmentRules'), page: "assignmentRules/index.md", count: this.assignmentRulesDescriptions.length },
+          { label: t('docNavAutoResponseRules'), page: "autoResponseRules/index.md", count: this.autoResponseRulesDescriptions.length },
+          { label: t('docNavEscalationRules'), page: "escalationRules/index.md", count: this.escalationRulesDescriptions.length },
+          { label: t('docNavFlows'), page: "flows/index.md", count: flows.length },
+          { label: t('docNavProcessBuilders'), page: "processBuilders/index.md", count: processBuilders.length },
+          { label: t('docNavWorkflowRules'), page: "workflowRules/index.md", count: this.workflowRulesDescriptions.length },
         ]
       },
       {
-        label: t('docNavAuthorizations'), children: [
-          { label: t('docNavProfiles'), page: "profiles/index.md" },
-          { label: t('docNavPermissionSetGroups'), page: "permissionsetgroups/index.md" },
-          { label: t('docNavPermissionSets'), page: "permissionsets/index.md" },
+        label: t('docNavAuthorizations'), description: t('docHomeAuthorizationsDesc'), children: [
+          { label: t('docNavProfiles'), page: "profiles/index.md", count: this.profileDescriptions.length },
+          { label: t('docNavPermissionSetGroups'), page: "permissionsetgroups/index.md", count: this.permissionSetGroupsDescriptions.length },
+          { label: t('docNavPermissionSets'), page: "permissionsets/index.md", count: this.permissionSetsDescriptions.length },
         ]
       },
       {
-        label: t('docNavCode'), children: [
-          { label: "Apex", page: "apex/index.md" },
-          { label: t('docNavLightningWebComponents'), page: "lwc/index.md" },
-          { label: t('docNavVisualforce'), page: "visualforce/index.md" },
-          { label: t('docNavAura'), page: "aura/index.md" },
+        label: t('docNavCode'), description: t('docHomeCodeDesc'), children: [
+          { label: "Apex", page: "apex/index.md", count: this.apexDescriptions.length },
+          { label: t('docNavLightningWebComponents'), page: "lwc/index.md", count: this.lwcDescriptions.length },
+          { label: t('docNavVisualforce'), page: "visualforce/index.md", count: this.visualforceDescriptions.length },
+          { label: t('docNavAura'), page: "aura/index.md", count: this.auraDescriptions.length },
         ]
       },
-      { label: t('docNavLightningPages'), page: "pages/index.md" },
-      { label: t('docNavPackages'), page: "packages/index.md" },
-      { label: t('docNavRoles'), page: "roles.md" },
-      { label: t('docMdMenuSfdxHardisConfig'), page: "sfdx-hardis-params.md" },
-      { label: t('docNavBranchesAndOrgs'), page: "sfdx-hardis-branches-and-orgs.md" },
-      { label: t('docNavManifests'), page: "manifests.md" },
+      {
+        label: t('docNavLightningPages'), description: t('docHomePagesDesc'),
+        page: "pages/index.md", count: this.pageDescriptions.length
+      },
+      {
+        label: t('docNavPackages'), description: t('docHomePackagesDesc'),
+        page: "packages/index.md", count: this.packageDescriptions.length
+      },
+      {
+        label: t('docNavRoles'), description: t('docHomeRolesDesc'),
+        page: "roles.md", count: this.roleDescriptions.length
+      },
+      { label: t('docMdMenuSfdxHardisConfig'), description: t('docHomeConfigDesc'), page: "sfdx-hardis-params.md" },
+      { label: t('docNavBranchesAndOrgs'), description: t('docHomeBranchesAndOrgsDesc'), page: "sfdx-hardis-branches-and-orgs.md" },
+      { label: t('docNavManifests'), description: t('docHomeManifestsDesc'), page: "manifests.md" },
     ];
-    const lines: string[] = [];
+
+    // A project carrying its own name puts it at the top: the page is about their org, not about
+    // the tool that wrote it.
+    const lines: string[] = [
+      `# ${this.sfdxHardisConfig?.projectName || t('docMdHomeTitle')}`,
+      "",
+      t('welcomeToDocumentation'),
+      "",
+      '<div class="sfdx-hardis-home-cards" markdown>',
+      "",
+    ];
     for (const section of homeSections) {
       const children = (section.children || []).filter(child => this.isDocumentedSection(child.page));
-      if (section.page) {
-        if (!this.isDocumentedSection(section.page)) {
-          continue;
-        }
-        lines.push(`- [${section.label}](${section.page})`);
-      }
-      else if (children.length === 0) {
+      if (section.page ? !this.isDocumentedSection(section.page) : children.length === 0) {
         continue;
       }
-      else {
-        lines.push(`- ${section.label}`);
+      // attr_list only decorates an element, so a section without an index page of its own gets a
+      // span to hang the class on instead of leaving "{ .class }" printed on the card.
+      const title = section.page
+        ? `[${section.label}](${section.page}){ .sfdx-hardis-home-card__title }`
+        : `<span class="sfdx-hardis-home-card__title">${section.label}</span>`;
+      const count = section.count ? ` <span class="sfdx-hardis-home-card__count">${section.count}</span>` : "";
+      lines.push(...[
+        '<div class="sfdx-hardis-home-card" markdown>',
+        "",
+        `${title}${count}`,
+        "",
+        section.description,
+        "",
+      ]);
+      if (children.length > 0) {
+        lines.push(...[
+          '<div class="sfdx-hardis-home-card__links" markdown>',
+          "",
+          children.map(child => `[${child.label}${child.count ? ` (${child.count})` : ""}](${child.page})`).join(" "),
+          "",
+          "</div>",
+          "",
+        ]);
       }
-      for (const child of children) {
-        lines.push(`  - [${child.label}](${child.page})`);
-      }
+      lines.push(...["</div>", ""]);
     }
-    lines.push("");
+    lines.push(...["</div>", ""]);
     return lines;
   }
 

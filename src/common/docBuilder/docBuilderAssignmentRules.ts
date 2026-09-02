@@ -11,7 +11,7 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
   public xmlRootKey = "assignmentRule";
 
   public static buildIndexTable(prefix: string, assignmentRulesDescriptions: any, filterObject: string | null = null) {
-    const filteredAssignmentRules = filterObject ? assignmentRulesDescriptions.filter(assignmentRule => assignmentRule.impactedObjects.includes(filterObject)) : assignmentRulesDescriptions;
+    const filteredAssignmentRules = filterObject ? assignmentRulesDescriptions.filter(assignmentRule => (assignmentRule.impactedObjects || []).includes(filterObject)) : assignmentRulesDescriptions;
     if (filteredAssignmentRules.length === 0) {
       return [];
     }

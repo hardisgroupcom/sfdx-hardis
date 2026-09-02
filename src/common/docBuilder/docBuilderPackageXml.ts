@@ -8,6 +8,7 @@ import { getSearchExcludeLines, SalesforceSetupUrlBuilder } from './docUtils.js'
 import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { prettifyFieldName } from '../utils/flowVisualiser/nodeFormatUtils.js';
 import { t } from '../utils/i18n.js';
+import { mdTableCellHtml } from "../gitProvider/utilsMarkdown.js";
 
 export class DocBuilderPackageXML {
 
@@ -25,7 +26,7 @@ export class DocBuilderPackageXML {
       const metadataNb = await countPackageXmlItems(outputPackageXmlDef.path);
       const packageMdFile = path.basename(outputPackageXmlDef.path) + ".md";
       const label = outputPackageXmlDef.name ? t('docMdPackageFolder', { name: outputPackageXmlDef.name }) : path.basename(outputPackageXmlDef.path);
-      const packageTableLine = `| [${label}](${packageMdFile}) (${metadataNb}) | ${outputPackageXmlDef.description} |`;
+      const packageTableLine = `| [${label}](${packageMdFile}) (${metadataNb}) | ${mdTableCellHtml(outputPackageXmlDef.description)} |`;
       packageLines.push(packageTableLine);
       packagesForMenu[label] = packageMdFile;
     }

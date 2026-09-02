@@ -2,6 +2,7 @@ import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
 import { t } from '../utils/i18n.js';
+import { mdTableCellHtml } from "../gitProvider/utilsMarkdown.js";
 
 export class DocBuilderPermissionSetGroup extends DocBuilderRoot {
 
@@ -26,7 +27,7 @@ export class DocBuilderPermissionSetGroup extends DocBuilderRoot {
     for (const pSetGroup of filteredPsetGroups) {
       const pSetGroupNameCell = `[${pSetGroup.name}](${prefix}${encodeURIComponent(pSetGroup.name)}.md)`;
       lines.push(...[
-        `| ${pSetGroupNameCell} | ${pSetGroup.description || t('docMdNone')} |`
+        `| ${pSetGroupNameCell} | ${pSetGroup.description ? mdTableCellHtml(pSetGroup.description) : t('docMdNone')} |`
       ]);
     }
     lines.push("");

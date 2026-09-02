@@ -89,3 +89,116 @@
   font-size: 0.65rem;
   color: var(--md-default-fg-color--light);
 }
+
+/*
+ * Home page. The list of sections used to be a bullet list of bare links under a full-width
+ * banner; it is now a grid of cards, each naming what its section holds and how many pages are
+ * behind it. The grid reflows down to one column on a phone.
+ */
+.sfdx-hardis-home-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.7rem;
+  /* Each card is only as tall as what it holds, instead of stretching to the tallest of its row */
+  align-items: start;
+  margin: 1.2em 0;
+}
+
+.sfdx-hardis-home-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0.8rem 0.9rem;
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+  border-radius: 0.3rem;
+  transition: border-color 125ms, box-shadow 125ms;
+}
+
+.sfdx-hardis-home-card:hover {
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 0.1rem 0.4rem rgb(0 0 0 / 8%);
+}
+
+.md-typeset .sfdx-hardis-home-card p {
+  margin: 0 0 0.5em;
+  font-size: 0.7rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset .sfdx-hardis-home-card p:last-child {
+  margin-bottom: 0;
+}
+
+.md-typeset .sfdx-hardis-home-card__title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--md-default-fg-color);
+  text-decoration: none;
+}
+
+.md-typeset .sfdx-hardis-home-card__title:hover {
+  color: var(--md-accent-fg-color);
+}
+
+.sfdx-hardis-home-card__count {
+  padding: 0.05rem 0.35rem;
+  margin-left: 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--md-default-fg-color--light);
+  vertical-align: 0.1rem;
+  background-color: var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+}
+
+/* Sections that group several pages list them as chips at the bottom of their card */
+.sfdx-hardis-home-card__links {
+  margin-top: auto;
+}
+
+.md-typeset .sfdx-hardis-home-card__links p {
+  margin: 0;
+  line-height: 1.9;
+}
+
+.md-typeset .sfdx-hardis-home-card__links a {
+  padding: 0.1rem 0.4rem;
+  text-decoration: none;
+  font-size: 0.65rem;
+  color: var(--md-default-fg-color);
+  white-space: nowrap;
+  background-color: var(--md-default-fg-color--lightest);
+  border-radius: 0.2rem;
+}
+
+.md-typeset .sfdx-hardis-home-card__links a:hover {
+  color: var(--md-primary-bg-color);
+  background-color: var(--md-accent-fg-color);
+}
+
+/*
+ * Generated tables are full of long unbreakable names: an API name, a rule name, a class name.
+ * Kept whole they pushed the table past the width of the page, and the last column of the
+ * validation rules of Account was cut off with only a hidden scrollbar to reach it. Cells may
+ * now break a name anywhere, which is what lets the table fit.
+ */
+.md-typeset table td,
+.md-typeset table th {
+  overflow-wrap: anywhere;
+}
+
+/* The first column names the thing the row is about, so it keeps enough room to stay readable */
+.md-typeset table td:first-child,
+.md-typeset table th:first-child {
+  min-width: 8rem;
+}
+
+/*
+ * A validation rule formula is shown as code, and is the exception: allowed to break anywhere its
+ * column collapsed to a few characters and every rule became a tower of two-word lines. It wraps
+ * at the spaces the formula already holds, and only splits a call that is too long to fit.
+ */
+.md-typeset table code {
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
