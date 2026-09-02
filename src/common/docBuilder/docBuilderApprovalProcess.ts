@@ -40,7 +40,7 @@ export class DocBuilderApprovalProcess extends DocBuilderRoot {
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
     return [
-      `## ${this.metadataName}`,
+      `# ${this.metadataName}`,
       '',
       buildGenericMarkdownTable(this.parsedXmlObject, [
         "label",

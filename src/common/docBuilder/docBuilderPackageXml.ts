@@ -4,7 +4,7 @@ import fs from '../utils/fsUtils.js';
 import { SfError } from '@salesforce/core';
 import { sortCrossPlatform, uxLog } from '../utils/index.js';
 import { countPackageXmlItems, parsePackageXmlFile } from '../utils/xmlUtils.js';
-import { getMetaHideAndSearchExcludeLines, SalesforceSetupUrlBuilder } from './docUtils.js';
+import { getSearchExcludeLines, SalesforceSetupUrlBuilder } from './docUtils.js';
 import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { prettifyFieldName } from '../utils/flowVisualiser/nodeFormatUtils.js';
 import { t } from '../utils/i18n.js';
@@ -113,7 +113,7 @@ export class DocBuilderPackageXML {
 
     // Write output file. package.xml pages are large metadata dumps, so they opt out of
     // the search index with front matter (Zensical has no glob-based search exclusion).
-    await fs.writeFile(outputFile, getMetaHideAndSearchExcludeLines() + mdLines.join("\n") + "\n");
+    await fs.writeFile(outputFile, getSearchExcludeLines() + mdLines.join("\n") + "\n");
     uxLog("success", this, c.green(t('successfullyGeneratedDocumentationInto', { path: path.basename(inputFile), outputFile })));
 
     const jsonTree = await this.generateJsonTree(metadataTypes, packageXmlContent);

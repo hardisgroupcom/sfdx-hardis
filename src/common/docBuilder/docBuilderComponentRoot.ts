@@ -28,7 +28,7 @@ export abstract class DocBuilderComponentRoot extends DocBuilderRoot {
 
   protected buildComponentHeaderLines(): string[] {
     return [
-      `## ${this.metadataName}`,
+      `# ${this.metadataName}`,
       '',
       this.buildAttributesTable(),
       '',

@@ -44,7 +44,7 @@ export class DocBuilderLwc extends DocBuilderRoot {
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
     return [
-      `## ${this.metadataName}`,
+      `# ${this.metadataName}`,
       '',
       '<!-- LWC description -->',
       '',

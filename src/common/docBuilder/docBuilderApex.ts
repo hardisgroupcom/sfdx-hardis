@@ -63,7 +63,8 @@ export class DocBuilderApex extends DocBuilderRoot {
     lines.push("graph TD");
     lines.push(`  ${className}["${className}"]:::mainApexClass`);
     if (fs.existsSync(`docs/apex/${className}.md`)) {
-      lines.push(`  click ${className} "/objects/${className}/"`);
+      // The main node of the diagram used to link to /objects/, where no Apex class page lives
+      lines.push(`  click ${className} "/apex/${className}/"`);
     }
 
     // Declare all classes related to the className

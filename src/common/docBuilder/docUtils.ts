@@ -451,21 +451,46 @@ export async function installMkDocs() {
   return zensicalLocalOk;
 }
 
-export function getMetaHideLines(): string {
-  return `---
-hide:
-  - path
----
+// Index tables used to be rendered in the order the metadata files happened to be walked in:
+// the Lightning Web Components table came out reversed, and an object page listed its related
+// components in an order that matched neither the menu nor the section index. Sorted in place,
+// so the arrays that feed several tables are only ever sorted once.
+export function sortDescriptionsByName(descriptions: any[]): any[] {
+  return descriptions.sort((a, b) =>
+    String(a?.name ?? "").localeCompare(String(b?.name ?? ""), 'en', { sensitivity: 'base' })
+  );
+}
 
-`;
+// [Label](Something.md) or [Label](../flows/Something.md), never an http(s) link of the page footer.
+// A page name can hold a space ("Case.Case creation Auto-Response.md"), so only the closing
+// parenthesis and the end of the line stop the target.
+const MARKDOWN_PAGE_LINK_IN_INDEX_REGEX = /\]\((?!\w+:)[^)\n]+\.md[)#]/;
+
+// A section index page is written even when its section stayed empty, so its existence says
+// nothing. It counts as documented once it lists at least one page. Counting the files of its
+// folder would not do: Process Builders have an index of their own, but their pages are written
+// among the Flows.
+export function indexPageListsPages(indexContent: string): boolean {
+  return MARKDOWN_PAGE_LINK_IN_INDEX_REGEX.test(indexContent);
+}
+
+// A page takes its title from its first level 1 heading, and falls back to the file name when
+// it has none. Every generated index.md was therefore called "Index": in the browser tab, in
+// the search results and as the heading at the top of the page. The table that opens a section
+// index already carries the section name as a level 2 heading, so it is promoted to level 1.
+export function promoteSectionIndexTitle(indexLines: string[]): string[] {
+  const promoted = [...indexLines];
+  const titleIndex = promoted.findIndex(line => line.startsWith("## "));
+  if (titleIndex > -1) {
+    promoted[titleIndex] = promoted[titleIndex].slice(1);
+  }
+  return promoted;
 }
 
 // Zensical has no glob-based search exclusion (the mkdocs-exclude-search plugin has no
 // equivalent yet), so noisy generated pages opt out one by one with page front matter.
-export function getMetaHideAndSearchExcludeLines(): string {
+export function getSearchExcludeLines(): string {
   return `---
-hide:
-  - path
 search:
   exclude: true
 ---

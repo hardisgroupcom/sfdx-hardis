@@ -41,7 +41,7 @@ export class DocBuilderAutoResponseRules extends DocBuilderRoot {
     const autoResponseRuleTableLines: string[] = [...ruleBuilderUtil.globalRuleTableLines];
 
     return [
-      `## ${this.metadataName}`,
+      `# ${this.metadataName}`,
       '',
       '<!-- AutoResponse Rules description -->',
       `## ${t('docMdAutoResponseRulesList')}`,

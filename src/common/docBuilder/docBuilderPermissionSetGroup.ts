@@ -51,7 +51,7 @@ export class DocBuilderPermissionSetGroup extends DocBuilderRoot {
     }
 
     return [
-      `## ${this.metadataName}`,
+      `# ${this.metadataName}`,
       '',
       buildGenericMarkdownTable(this.parsedXmlObject, ["label", "description", "status"], `## ${t('docMdPermissionSetGroupAttributes')}`, []),
       '',

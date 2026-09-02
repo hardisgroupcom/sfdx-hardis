@@ -43,6 +43,8 @@ export class DocBuilderEscalationRules extends DocBuilderRoot {
     const escalationRuleTableLines: string[] = [...ruleBuilderUtil.globalRuleTableLines];
 
     return [
+      `# ${this.metadataName}`,
+      '',
       '<!-- Escalation Rule description -->',
       `## ${t('docMdEscalationRulesList')}`,
       ...escalationRuleTableLines,

@@ -43,6 +43,8 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
     const assignmentRuleTableLines: string[] = [...ruleBuilderUtil.globalRuleTableLines];
 
     return [
+      `# ${this.metadataName}`,
+      '',
       '<!-- Assignment Rule description -->',
       `## ${t('docMdAssignmentRulesList')}`,
       ...assignmentRuleTableLines,

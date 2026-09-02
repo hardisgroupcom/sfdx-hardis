@@ -46,7 +46,9 @@ export class DocBuilderObject extends DocBuilderRoot {
     ]);
     for (const field of fields) {
       lines.push(...[
-        `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(String(field.description))} |`
+        // A field without a description used to be stringified into the literal "undefined":
+        // 389 of them on a single Account page. mdTableCell already renders an empty cell.
+        `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(field.description)} |`
       ]);
     }
     lines.push("");
@@ -79,6 +81,7 @@ export class DocBuilderObject extends DocBuilderRoot {
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
     return [
+      `# ${this.metadataName}`,
       '',
       '<!-- Mermaid schema -->',
       '',

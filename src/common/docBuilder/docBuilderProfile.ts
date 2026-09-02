@@ -37,7 +37,7 @@ export class DocBuilderProfile extends DocBuilderRoot {
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
     return [
-      `## ${this.metadataName}`,
+      `# ${this.metadataName}`,
       '',
       '<div id="jstree-container"></div>',
       '',

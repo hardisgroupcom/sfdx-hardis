@@ -1,0 +1,91 @@
+/* stylelint-disable SelectorFormat */
+
+/*
+ * Styling owned by sfdx-hardis. Unlike stylesheets/extra.css, which is copied once and then
+ * belongs to the project, this file is rewritten on every documentation generation, so fixes
+ * reach projects that were documented with an older version. Put project customisations in
+ * stylesheets/extra.css instead: it is loaded first, and this file only overrides what it names.
+ */
+
+/*
+ * The header and the footer are painted navy, but the theme styles them as light strips and
+ * leaves their text on the default near-black foreground. The site title, the repository link,
+ * the version and star counters, the previous/next navigation and the copyright line all came
+ * out at a contrast ratio of 1.13:1, where readable text needs 4.5:1. Background and foreground
+ * are set together here so the two can no longer drift apart.
+ */
+.md-header,
+.md-footer {
+  --md-default-fg-color: rgb(255 255 255 / 90%);
+  --md-default-fg-color--light: rgb(255 255 255 / 70%);
+  --md-default-fg-color--lighter: rgb(255 255 255 / 50%);
+  --md-default-fg-color--lightest: rgb(255 255 255 / 10%);
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: rgb(255 255 255 / 70%);
+  --md-footer-fg-color: #ffffff;
+  --md-footer-fg-color--light: rgb(255 255 255 / 70%);
+  --md-footer-fg-color--lighter: rgb(255 255 255 / 50%);
+  --md-typeset-a-color: #ffffff;
+
+  color: rgb(255 255 255 / 90%);
+  background-color: #001135;
+}
+
+.md-header a,
+.md-header button,
+.md-footer a,
+.md-footer button {
+  color: inherit;
+}
+
+/*
+ * An object page carries a relationship diagram that mermaid lays out as wide as it needs to.
+ * Left alone it either overflows the page or is squeezed to an unreadable size, so it scrolls
+ * inside its own box.
+ */
+.md-typeset .mermaid {
+  overflow-x: auto;
+}
+
+/*
+ * The permission tree of a profile or a permission set gets a search field, created without any
+ * styling: on a white page it was an invisible box with only its placeholder showing. It is given
+ * the same treatment as the table filter below.
+ */
+#jstree-search,
+.sfdx-hardis-filter__input {
+  max-width: 22rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.7rem;
+  color: var(--md-default-fg-color);
+  background-color: var(--md-default-bg-color);
+  border: 0.05rem solid var(--md-default-fg-color--lighter);
+  border-radius: 0.2rem;
+}
+
+#jstree-search {
+  width: 100%;
+}
+
+#jstree-search:focus,
+.sfdx-hardis-filter__input:focus {
+  border-color: var(--md-accent-fg-color);
+  outline: none;
+}
+
+/* Filter box that javascripts/sfdx-hardis-doc.js puts above every long table */
+.sfdx-hardis-filter {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  margin: 0.8em 0 0.4em;
+}
+
+.sfdx-hardis-filter__input {
+  flex: 1 1 auto;
+}
+
+.sfdx-hardis-filter__count {
+  font-size: 0.65rem;
+  color: var(--md-default-fg-color--light);
+}

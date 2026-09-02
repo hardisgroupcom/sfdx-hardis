@@ -15,14 +15,23 @@ export class DocBuilderFlow extends DocBuilderRoot {
   public placeholder = "<!-- Flow description -->";
   public xmlRootKey = "Flow";
 
-  public static buildIndexTable(prefix: string, flowDescriptions: any[], outputMarkdownRoot: string, filterObject: string | null = null): string[] {
+  // Process Builders are Flows under the hood, so they are listed by this same table. Their
+  // section is named apart: their index page used to be titled "Flows", and an object page
+  // displayed "Related Flows" twice, once for each of the two tables.
+  public static buildIndexTable(
+    prefix: string,
+    flowDescriptions: any[],
+    outputMarkdownRoot: string,
+    filterObject: string | null = null,
+    sectionTitle: { all: string, related: string } = { all: t('docMdFlows'), related: t('docMdRelatedFlows') }
+  ): string[] {
     const filteredFlows = filterObject ? flowDescriptions.filter(flow => flow.object === filterObject || flow.impactedObjects.includes(filterObject)) : flowDescriptions;
     if (filteredFlows.length === 0) {
       return [];
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? `## ${t('docMdRelatedFlows')}` : `## ${t('docMdFlows')}`,
+      filterObject ? `## ${sectionTitle.related}` : `## ${sectionTitle.all}`,
       "",
       `| ${t('docMdColObject')} | ${t('docMdColName')} | ${t('docMdColType')} | ${t('docMdColDescription')} | ${t('docMdColStatus')} |`,
       "| :----  | :-------- | :--: | :---------- | :----- |"

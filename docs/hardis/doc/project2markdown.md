@@ -35,6 +35,8 @@ Generated markdown files will be written in the **docs** folder (except README.m
 - You can manually add new markdown files in the "docs" folder to extend this documentation and add references to them in "mkdocs.yml"
 - You can also add images in folder "docs/assets" and embed them in markdown files.
 
+Put your own styling in **docs/stylesheets/extra.css** and your own scripts in **docs/javascripts/tables.js**: those two files are created once and never overwritten. The files **docs/stylesheets/sfdx-hardis-doc.css** and **docs/javascripts/sfdx-hardis-doc.js** belong to sfdx-hardis and are rewritten on every run, so styling fixes reach a documentation generated with an older version. They are loaded after yours, so a rule you write in extra.css only needs to be more specific to win.
+
 To read flow documentation, if your markdown reader doesn't handle MermaidJS syntax this command may require @mermaid-js/mermaid-cli.
 
 - Run `npm install @mermaid-js/mermaid-cli --global` if puppeteer works in your environment
