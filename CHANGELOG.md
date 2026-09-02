@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.4.2] 2026-09-02
+
 ### [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)
 
 - The **home page** is now a grid of cards, one per section, saying in plain language what the section holds and how many pages are behind it. Only the sections your project actually has are listed, instead of links to pages that were never generated.
