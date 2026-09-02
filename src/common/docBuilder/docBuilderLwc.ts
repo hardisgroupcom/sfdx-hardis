@@ -4,6 +4,7 @@ import { renderJsdocMarkdown } from "../utils/jsdocMarkdown.js";
 import fs from '../utils/fsUtils.js';
 import path from "path";
 import { t } from '../utils/i18n.js';
+import { mdTableCellHtml } from "../gitProvider/utilsMarkdown.js";
 
 export class DocBuilderLwc extends DocBuilderRoot {
 
@@ -34,7 +35,7 @@ export class DocBuilderLwc extends DocBuilderRoot {
       const lwcNameCell = `[${lwc.name}](${prefix}${lwc.name}.md)`;
       const exposedCell = lwc.isExposed ? "✅" : "❌";
       lines.push(...[
-        `| ${lwcNameCell} | ${lwc.description || ""} | ${exposedCell} | ${lwc.targets || ""} |`
+        `| ${lwcNameCell} | ${mdTableCellHtml(lwc.description)} | ${exposedCell} | ${lwc.targets || ""} |`
       ]);
     }
     lines.push("");
@@ -44,7 +45,7 @@ export class DocBuilderLwc extends DocBuilderRoot {
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
     return [
-      `## ${this.metadataName}`,
+      `# ${this.metadataName}`,
       '',
       '<!-- LWC description -->',
       '',

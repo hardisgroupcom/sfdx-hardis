@@ -63,7 +63,10 @@ export class DocBuilderApex extends DocBuilderRoot {
     lines.push("graph TD");
     lines.push(`  ${className}["${className}"]:::mainApexClass`);
     if (fs.existsSync(`docs/apex/${className}.md`)) {
-      lines.push(`  click ${className} "/objects/${className}/"`);
+      // The main node of the diagram used to link to /objects/, where no Apex class page lives.
+      // The target is relative to the page holding the diagram, so it survives a site that is not
+      // served from the root of its domain: a static resource, or a GitHub Pages project site.
+      lines.push(`  click ${className} "../${className}/"`);
     }
 
     // Declare all classes related to the className
@@ -76,7 +79,7 @@ export class DocBuilderApex extends DocBuilderRoot {
         lines.push(`  ${relatedClassName}["${relatedClassName}"]:::apexClass`);
       }
       if (fs.existsSync(`docs/apex/${relatedClassName}.md`)) {
-        lines.push(`  click ${relatedClassName} "/apex/${relatedClassName}/"`);
+        lines.push(`  click ${relatedClassName} "../${relatedClassName}/"`);
       }
     }
     lines.push("");

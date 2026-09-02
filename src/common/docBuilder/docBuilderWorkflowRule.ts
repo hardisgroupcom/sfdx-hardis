@@ -37,7 +37,7 @@ export class DocBuilderWorkflowRule extends DocBuilderRoot {
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
     return [
-      `## ${this.metadataName}`,
+      `# ${this.metadataName}`,
       "",
       buildGenericMarkdownTable(this.parsedXmlObject, ["allFields"], `## ${t('docMdWorkflowRuleAttributes')}`, []),
       "",

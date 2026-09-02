@@ -383,8 +383,14 @@ export function stringifyValue(valueIn: any, field: string, allProperties: strin
   return valueStringified;
 }
 
+// Splits an API name written in camelCase into words: recordTypeId -> Record Type Id.
+// A value that already holds a space is prose, not an API name, and is returned untouched:
+// user licenses go through here, and "B2BMA Integration User" came out "B2 B M A  Integration  User".
 export function prettifyFieldName(field: string): string {
-  return field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase()).replace("( P M)", "(PM)").replace("S Object", "SObject");
+  if (!field || field.includes(" ")) {
+    return field;
+  }
+  return field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase()).replace("( P M)", "(PM)").replace("S Object", "SObject").trim();
 }
 
 export function mdEndSection(sectionString: string) {

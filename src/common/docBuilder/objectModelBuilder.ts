@@ -46,7 +46,9 @@ export class ObjectModelBuilder {
               "customObject";
       mermaidSchema += `${object.name}["${object.label}"]:::${objectClass}\n`;
       if (fs.existsSync(`docs/objects/${object.name}.md`)) {
-        mermaidSchema += `click ${object.name} "/objects/${object.name}/"\n`;
+        // Relative to the object page holding the diagram, so the link still works on a site that
+        // is not served from the root of its domain
+        mermaidSchema += `click ${object.name} "../${object.name}/"\n`;
       }
     }
     mermaidSchema += `\n`;

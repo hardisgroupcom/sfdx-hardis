@@ -2,6 +2,7 @@ import c from 'chalk';
 import fs from '../utils/fsUtils.js';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import { createHash } from 'crypto';
 
 import * as yaml from 'js-yaml';
 import { glob } from 'glob';
@@ -451,21 +452,103 @@ export async function installMkDocs() {
   return zensicalLocalOk;
 }
 
-export function getMetaHideLines(): string {
-  return `---
-hide:
-  - path
----
+// Index tables used to be rendered in the order the metadata files happened to be walked in:
+// the Lightning Web Components table came out reversed, and an object page listed its related
+// components in an order that matched neither the menu nor the section index. Sorted in place,
+// so the arrays that feed several tables are only ever sorted once.
+export function sortDescriptionsByName(descriptions: any[]): any[] {
+  return descriptions.sort((a, b) =>
+    String(a?.name ?? "").localeCompare(String(b?.name ?? ""), 'en', { sensitivity: 'base' })
+  );
+}
 
-`;
+// [Label](Something.md) or [Label](../flows/Something.md), never an http(s) link of the page footer.
+// A page name can hold a space ("Case.Case creation Auto-Response.md"), so only the closing
+// parenthesis and the end of the line stop the target.
+const MARKDOWN_PAGE_LINK_IN_INDEX_REGEX = /\]\((?!\w+:)[^)\n]+\.md[)#]/;
+
+// A section index page is written even when its section stayed empty, so its existence says
+// nothing. It counts as documented once it lists at least one page. Counting the files of its
+// folder would not do: Process Builders have an index of their own, but their pages are written
+// among the Flows.
+export function indexPageListsPages(indexContent: string): boolean {
+  return MARKDOWN_PAGE_LINK_IN_INDEX_REGEX.test(indexContent);
+}
+
+// A section that documents nothing still kept an index.md carrying a title and a footer and not a
+// single link: a page missing from the navigation and from the home page, that the site generator
+// still built and that a search engine could still send a reader to. Sections whose metadata is
+// gone since the last run leave the same page behind. Both are removed here, along with the folder
+// once nothing is left in it. Only the folders sfdx-hardis writes itself are looked at, so a page
+// someone added by hand is never touched.
+export async function removeEmptySectionIndexPages(docsRoot: string): Promise<string[]> {
+  const removedSections: string[] = [];
+  for (const folder of GENERATED_DOC_FOLDERS) {
+    const sectionFolder = path.join(docsRoot, folder);
+    if (!fs.existsSync(sectionFolder)) {
+      continue;
+    }
+    const indexFile = path.join(sectionFolder, 'index.md');
+    if (fs.existsSync(indexFile) && !indexPageListsPages(await fs.readFile(indexFile, 'utf8'))) {
+      await fs.remove(indexFile);
+      removedSections.push(folder);
+    }
+    // A section that documents nothing is still given its folder before it gives up, and an empty
+    // folder left in the documentation is one more thing to wonder about when reading the diff.
+    if ((await fs.readdir(sectionFolder)).length === 0) {
+      await fs.remove(sectionFolder);
+    }
+  }
+  return removedSections;
+}
+
+// Checksum of the home page a run wrote, so a later run can tell a page nobody touched from a page
+// the project made its own. Git can check the page out with CRLF line endings, and an editor can
+// leave a blank line at the end, so neither counts as a change.
+const HOME_PAGE_STAMP_REGEX = /^<!-- sfdx-hardis-home-page: ([0-9a-f]{64}) -->\r?$/m;
+
+// Link of the footer every generated page ends with, the only mark a home page written before the
+// stamp existed carries.
+const GENERATED_PAGE_FOOTER_MARK = 'hardis/doc/project2markdown/';
+
+function homePageChecksum(homePageContent: string): string {
+  return createHash('sha256').update(homePageContent.replace(/\r\n/g, '\n').trimEnd()).digest('hex');
+}
+
+export function stampGeneratedHomePage(homePageContent: string): string {
+  return `${homePageContent.trimEnd()}\n\n<!-- sfdx-hardis-home-page: ${homePageChecksum(homePageContent)} -->\n`;
+}
+
+// DO_NOT_OVERWRITE_INDEX_MD keeps the home page a project wrote for itself. A project that set the
+// variable and then never touched the page used to stay forever on the home page of the sfdx-hardis
+// version that generated it: the page is refreshed as long as it is still, to the character, what a
+// previous run wrote. Editing it, even by a word, hands it over to the project for good.
+export function isUntouchedGeneratedHomePage(homePageContent: string): boolean {
+  const stamp = HOME_PAGE_STAMP_REGEX.exec(homePageContent);
+  if (stamp) {
+    return homePageChecksum(homePageContent.replace(HOME_PAGE_STAMP_REGEX, '')) === stamp[1];
+  }
+  // Written before the stamp existed: the sfdx-hardis footer is all there is to go on
+  return homePageContent.includes(GENERATED_PAGE_FOOTER_MARK);
+}
+
+// A page takes its title from its first level 1 heading, and falls back to the file name when
+// it has none. Every generated index.md was therefore called "Index": in the browser tab, in
+// the search results and as the heading at the top of the page. The table that opens a section
+// index already carries the section name as a level 2 heading, so it is promoted to level 1.
+export function promoteSectionIndexTitle(indexLines: string[]): string[] {
+  const promoted = [...indexLines];
+  const titleIndex = promoted.findIndex(line => line.startsWith("## "));
+  if (titleIndex > -1) {
+    promoted[titleIndex] = promoted[titleIndex].slice(1);
+  }
+  return promoted;
 }
 
 // Zensical has no glob-based search exclusion (the mkdocs-exclude-search plugin has no
 // equivalent yet), so noisy generated pages opt out one by one with page front matter.
-export function getMetaHideAndSearchExcludeLines(): string {
+export function getSearchExcludeLines(): string {
   return `---
-hide:
-  - path
 search:
   exclude: true
 ---

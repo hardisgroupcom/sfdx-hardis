@@ -6,7 +6,7 @@ import { AiProvider } from '../aiProvider/index.js';
 import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import fs from '../utils/fsUtils.js';
 import path from 'path';
-import { getMetaHideLines, includeFromFile } from './docUtils.js';
+import { includeFromFile } from './docUtils.js';
 import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
 
@@ -71,7 +71,7 @@ export abstract class DocBuilderRoot {
       }
     }
     if (overwriteDoc) {
-      await fs.writeFile(this.outputFile, getMetaHideLines() + this.markdownDoc);
+      await fs.writeFile(this.outputFile, this.markdownDoc);
       uxLog("success", this, c.green(t('successfullyGeneratedDocumentationInto2', { metadataName: this.metadataName, outputFile: this.outputFile })));
     }
 

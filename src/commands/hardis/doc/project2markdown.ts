@@ -9,7 +9,7 @@ import sortArray from '../../../common/utils/sortArray.js';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, getMetaHideAndSearchExcludeLines, getMetaHideLines, normalizeMkDocsNavTarget, readMkDocsFile, removeDeadDocumentationLinks, replaceInFile, sortMkDocsNavItems, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, getSearchExcludeLines, indexPageListsPages, isUntouchedGeneratedHomePage, normalizeMkDocsNavTarget, promoteSectionIndexTitle, readMkDocsFile, removeDeadDocumentationLinks, removeEmptySectionIndexPages, replaceInFile, sortDescriptionsByName, sortMkDocsNavItems, stampGeneratedHomePage, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { getLargeXmlParser, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/index.js';
@@ -53,6 +53,29 @@ import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+// Assets owned by sfdx-hardis, rewritten on every run so styling and behavior fixes reach a
+// project that was documented with an older version. Everything else under defaults is copied
+// once and then belongs to the project, so project customizations go to stylesheets/extra.css
+// and javascripts/tables.js, which are never overwritten.
+const SFDX_HARDIS_DOC_CSS = "stylesheets/sfdx-hardis-doc.css";
+const SFDX_HARDIS_DOC_JS = "javascripts/sfdx-hardis-doc.js";
+const SFDX_HARDIS_OWNED_DOC_ASSETS = [SFDX_HARDIS_DOC_CSS, SFDX_HARDIS_DOC_JS];
+
+// The pages are static, so the few labels the documentation draws in the browser cannot call t()
+// at display time. They are written next to the script, in the language the documentation was
+// generated with, and it reads them from there.
+const SFDX_HARDIS_DOC_LABELS_JS = "javascripts/sfdx-hardis-doc-labels.js";
+
+// Marker the Apex pages get when their class diagram and code section are inserted
+const APEX_DESCRIPTION_PLACEHOLDER = "<!-- Apex description -->";
+
+// Process Builders are listed by the Flow table builder, but they are a section of their own:
+// resolved at call time so the labels follow the locale the command runs with.
+const PROCESS_BUILDER_SECTION_TITLE = () => ({
+  all: t('docMdProcessBuilders'),
+  related: t('docMdRelatedProcessBuilders'),
+});
 
 export default class Project2Markdown extends SfCommand<any> {
   public static title = 'SFDX Project to Markdown';
@@ -101,6 +124,8 @@ Generated markdown files will be written in the **docs** folder (except README.m
 - You can manually add new markdown files in the "docs" folder to extend this documentation and add references to them in "mkdocs.yml"
 - You can also add images in folder "docs/assets" and embed them in markdown files.
 
+Put your own styling in **docs/stylesheets/extra.css** and your own scripts in **docs/javascripts/tables.js**: those two files are created once and never overwritten. The files **docs/stylesheets/sfdx-hardis-doc.css** and **docs/javascripts/sfdx-hardis-doc.js** belong to sfdx-hardis and are rewritten on every run, so styling fixes reach a documentation generated with an older version. They are loaded after yours, so a rule you write in extra.css only needs to be more specific to win.
+
 To read flow documentation, if your markdown reader doesn't handle MermaidJS syntax this command may require @mermaid-js/mermaid-cli.
 
 - Run \`npm install @mermaid-js/mermaid-cli --global\` if puppeteer works in your environment
@@ -139,7 +164,7 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
 
 If you have a complex strategy, you might need to input property **mergeTargets** in branch-scoped sfdx-hardis.yml file to have a correct diagram.
 
-Define DO_NOT_OVERWRITE_INDEX_MD=true to avoid overwriting the index.md file in docs folder, useful if you want to keep your own index.md file.
+Define DO_NOT_OVERWRITE_INDEX_MD=true to avoid overwriting the index.md file in docs folder, useful if you want to keep your own index.md file. As long as index.md is still exactly what a previous run wrote, it is refreshed anyway, so a project that sets the variable without customizing the page still gets the latest home page. The first edit you make to index.md keeps it yours for good.
 
 ### Agent Mode
 
@@ -268,7 +293,6 @@ ${this.htmlInstructions}
   protected packageXmlCandidates: any[];
   protected outputMarkdownRoot = "docs"
   protected outputMarkdownIndexFile = path.join(this.outputMarkdownRoot, "index.md")
-  protected mdLines: string[] = [];
   protected sfdxHardisConfig: any = {};
   protected outputPackageXmlMarkdownFiles: any[] = [];
   protected mkDocsNavNodes: any[] = [{ "Home": "index.md" }];
@@ -341,38 +365,6 @@ ${this.htmlInstructions}
     const currentBranch = await getCurrentGitBranch()
     this.footer = t('documentationGeneratedFromBranch', { currentBranch, docUrl: CONSTANTS.DOC_URL_ROOT, websiteUrl: CONSTANTS.WEBSITE_URL }) + "\n\n" + getBannerMarkdownAndLink();
 
-    this.mdLines.push(...[
-      t('welcomeToDocumentation'),
-      "",
-      "![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner-doc.png)",
-      "",
-      `- [${t('docNavObjects')}](objects/index.md)`,
-      `- ${t('docNavAutomations')}`,
-      `  - [${t('docNavApprovalProcesses')}](approvalProcesses/index.md)`,
-      `  - [${t('docNavAssignmentRules')}](assignmentRules/index.md)`,
-      `  - [${t('docNavAutoResponseRules')}](autoResponseRules/index.md)`,
-      `  - [${t('docNavEscalationRules')}](escalationRules/index.md)`,
-      `  - [${t('docNavFlows')}](flows/index.md)`,
-      `  - [${t('docNavProcessBuilders')}](processBuilders/index.md)`,
-      `  - [${t('docNavWorkflowRules')}](workflowRules/index.md)`,
-      `- ${t('docNavAuthorizations')}`,
-      `  - [${t('docNavProfiles')}](profiles/index.md)`,
-      `  - [${t('docNavPermissionSetGroups')}](permissionsetgroups/index.md)`,
-      `  - [${t('docNavPermissionSets')}](permissionsets/index.md)`,
-      `- ${t('docNavCode')}`,
-      "  - [Apex](apex/index.md)",
-      `  - [${t('docNavLightningWebComponents')}](lwc/index.md)`,
-      `  - [${t('docNavVisualforce')}](visualforce/index.md)`,
-      `  - [${t('docNavAura')}](aura/index.md)`,
-      `- [${t('docNavLightningPages')}](pages/index.md)`,
-      `- [${t('docNavPackages')}](packages/index.md)`,
-      `- [${t('docNavRoles')}](roles.md)`,
-      "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
-      `- [${t('docNavBranchesAndOrgs')}](sfdx-hardis-branches-and-orgs.md)`,
-      `- [${t('docNavManifests')}](manifests.md)`,
-      ""
-    ]);
-
     let sfdxHardisParamsLines = [t('availableOnlyInSfdxHardisCiCdProject')];
     let branchesAndOrgsLines = [t('availableOnlyInSfdxHardisCiCdProject')];
     if (fs.existsSync("config/.sfdx-hardis.yml")) {
@@ -382,16 +374,20 @@ ${this.htmlInstructions}
       // Branches & orgs
       branchesAndOrgsLines = await this.buildMajorBranchesAndOrgs();
     }
-    await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-params.md"), getMetaHideLines() + sfdxHardisParamsLines.join("\n") + `\n${this.footer}\n`);
+    // Both pages open with their menu label as level 1 heading, so they are named after it
+    // everywhere instead of after their file name ("Sfdx hardis params").
+    const sfdxHardisParamsPage = [`# ${t('docMdMenuSfdxHardisConfig')}`, "", ...sfdxHardisParamsLines];
+    const branchesAndOrgsPage = [`# ${t('docMdMenuBranchesAndOrgs')}`, "", ...branchesAndOrgsLines];
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-params.md"), sfdxHardisParamsPage.join("\n") + `\n${this.footer}\n`);
     this.addNavNode(t('docMdMenuSfdxHardisConfig'), "sfdx-hardis-params.md");
-    await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-branches-and-orgs.md"), getMetaHideLines() + branchesAndOrgsLines.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-branches-and-orgs.md"), branchesAndOrgsPage.join("\n") + `\n${this.footer}\n`);
     this.addNavNode(t('docMdMenuBranchesAndOrgs'), "sfdx-hardis-branches-and-orgs.md");
 
     // Object model Mermaid schema
     /* Disabled: too messy to read
     let mermaidSchema = await new ObjectModelBuilder().buildObjectsMermaidSchema();
     mermaidSchema = "```mermaid\n" + mermaidSchema + "\n```";
-    await fs.writeFile(path.join(this.outputMarkdownRoot, "object-model.md"), getMetaHideLines() + mermaidSchema + `\n${this.footer}\n`);
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "object-model.md"), mermaidSchema + `\n${this.footer}\n`);
     this.addNavNode(t('docMdMenuObjectModel'), "object-model.md");
     */
 
@@ -404,7 +400,7 @@ ${this.htmlInstructions}
     if (Object.keys(packagesForMenu).length > 0) {
       this.addNavNode(t('docMdMenuManifests'), packagesForMenu);
     }
-    await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), getMetaHideLines() + packageLines.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), promoteSectionIndexTitle(packageLines).join("\n") + `\n${this.footer}\n`);
 
     this.tempDir = await createTempDir()
     // Convert source to metadata API format to build prompts
@@ -474,11 +470,6 @@ ${this.htmlInstructions}
       await this.generateRolesDocumentation();
     }
 
-    // List objects & generate doc
-    if (this.generateObjectsDoc) {
-      await this.generateObjectsDocumentation();
-    }
-
     if (this.generateAutomationsDoc) {
       // List approval processes & generate doc
       await this.generateApprovalProcessDocumentation();
@@ -495,10 +486,27 @@ ${this.htmlInstructions}
       await this.generateLwcDocumentation();
     }
 
+    // Objects come last of the sections they cross-link: an object page embeds the rules, the code
+    // and the components that touch it, and those tables are built from the descriptions the
+    // sections above collect. Menu order is decided later, in buildMkDocsYml.
+    if (this.generateObjectsDoc) {
+      await this.generateObjectsDocumentation();
+    }
+
+    // Sections that documented nothing, and sections whose metadata is gone since the last run,
+    // leave an index page listing nothing behind. They are removed before the home page and the
+    // navigation are written, so neither points at a page that has no content.
+    const removedSections = await removeEmptySectionIndexPages(this.outputMarkdownRoot);
+    if (removedSections.length > 0) {
+      uxLog("log", this, c.grey(t('removedEmptySectionIndexPages', { removedSections: removedSections.join(", ") })));
+    }
+
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
-    if (process.env.DO_NOT_OVERWRITE_INDEX_MD !== 'true' || !fs.existsSync(this.outputMarkdownIndexFile)) {
-      await fs.writeFile(this.outputMarkdownIndexFile, getMetaHideAndSearchExcludeLines() + this.mdLines.join("\n") + `\n\n${this.footer}\n`);
+    if (await this.canWriteHomePage()) {
+      const homeLines = this.buildHomeLines();
+      const homePage = getSearchExcludeLines() + homeLines.join("\n") + `\n\n${this.footer}\n`;
+      await fs.writeFile(this.outputMarkdownIndexFile, stampGeneratedHomePage(homePage));
       uxLog("success", this, c.green(t('successfullyGeneratedDocIndexAt', { outputMarkdownIndexFile: this.outputMarkdownIndexFile })));
     }
 
@@ -636,10 +644,11 @@ ${this.htmlInstructions}
         apexMdContent = apexMdContent.replaceAll("..\\custom-objects\\", "../objects/").replaceAll("../custom-objects/", "../objects/")
         // Add text before the first ##
         if (!["MetadataService"].includes(apexName) &&
-          // Do not mess with existing apex doc if generation has crashed
-          !apexMdContent.includes(getMetaHideLines())) {
+          // Do not mess with existing apex doc if generation has crashed: the placeholder is
+          // only ever written by the insertion below, so finding it means the page is already done
+          !apexMdContent.includes(APEX_DESCRIPTION_PLACEHOLDER)) {
           const mermaidClassDiagram = DocBuilderApex.buildMermaidClassDiagram(apexName, this.apexDescriptions);
-          let insertion = `${mermaidClassDiagram}\n\n<!-- Apex description -->\n\n`;
+          let insertion = `${mermaidClassDiagram}\n\n${APEX_DESCRIPTION_PLACEHOLDER}\n\n`;
           if (!this.hideApexCode) {
             insertion += `## ${t('docMdApexCode')}\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`;
           }
@@ -658,7 +667,7 @@ ${this.htmlInstructions}
         if (mermaidClassDiagram) {
           apexMdContent += `${mermaidClassDiagram}\n\n`;
         }
-        apexMdContent += `<!-- Apex description -->\n\n`;
+        apexMdContent += `${APEX_DESCRIPTION_PLACEHOLDER}\n\n`;
         if (!this.hideApexCode) {
           apexMdContent += `## ${t('docMdApexCode')}\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`;
         }
@@ -680,7 +689,7 @@ ${this.htmlInstructions}
           });
           apexDocBuilder.markdownDoc = item.apexMdContent;
           const updatedContent = await apexDocBuilder.completeDocWithAiDescription();
-          await fs.writeFile(item.mdFile, getMetaHideLines() + updatedContent);
+          await fs.writeFile(item.mdFile, updatedContent);
         }
         uxLog("log", this, c.grey(t('generatedMarkdownForApexClass', { item: item.apexName })));
         this.queuePdfGeneration(item.mdFile);
@@ -695,7 +704,7 @@ ${this.htmlInstructions}
     // Write index file for apex folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "apex"));
     const apexIndexFile = path.join(this.outputMarkdownRoot, "apex", "index.md");
-    await fs.writeFile(apexIndexFile, getMetaHideLines() + DocBuilderApex.buildIndexTable('', this.apexDescriptions).join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(apexIndexFile, promoteSectionIndexTitle(DocBuilderApex.buildIndexTable('', sortDescriptionsByName(this.apexDescriptions))).join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async generatePackagesDocumentation() {
@@ -781,7 +790,7 @@ ${this.htmlInstructions}
     // Write index file for packages folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "packages"));
     const packagesIndexFile = path.join(this.outputMarkdownRoot, "packages", "index.md");
-    await fs.writeFile(packagesIndexFile, getMetaHideLines() + DocBuilderPackage.buildIndexTable('', this.packageDescriptions).join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(packagesIndexFile, promoteSectionIndexTitle(DocBuilderPackage.buildIndexTable('', sortDescriptionsByName(this.packageDescriptions))).join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async generatePagesDocumentation() {
@@ -831,7 +840,7 @@ ${this.htmlInstructions}
     // Write index file for pages folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "pages"));
     const pagesIndexFile = path.join(this.outputMarkdownRoot, "pages", "index.md");
-    await fs.writeFile(pagesIndexFile, getMetaHideLines() + DocBuilderPage.buildIndexTable('', this.pageDescriptions).join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(pagesIndexFile, promoteSectionIndexTitle(DocBuilderPage.buildIndexTable('', sortDescriptionsByName(this.pageDescriptions))).join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async generateProfilesDocumentation() {
@@ -880,7 +889,7 @@ ${this.htmlInstructions}
     // Write index file for profiles folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "profiles"));
     const profilesIndexFile = path.join(this.outputMarkdownRoot, "profiles", "index.md");
-    await fs.writeFile(profilesIndexFile, getMetaHideLines() + DocBuilderProfile.buildIndexTable('', this.profileDescriptions).join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(profilesIndexFile, promoteSectionIndexTitle(DocBuilderProfile.buildIndexTable('', sortDescriptionsByName(this.profileDescriptions))).join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async generatePermissionSetsDocumentation() {
@@ -919,7 +928,7 @@ ${this.htmlInstructions}
       .process(async (item) => {
         await new DocBuilderPermissionSet(item.psName, item.psXml, item.mdFile).generateMarkdownFileFromXml();
         // Permission Set Groups Table
-        const relatedPsg = DocBuilderPermissionSetGroup.buildIndexTable('../permissionsetgroups/', this.permissionSetGroupsDescriptions, item.psName);
+        const relatedPsg = DocBuilderPermissionSetGroup.buildIndexTable('../permissionsetgroups/', sortDescriptionsByName(this.permissionSetGroupsDescriptions), item.psName);
         await replaceInFile(item.mdFile, '<!-- Permission Set Groups table -->', relatedPsg.join("\n"));
         this.queuePdfGeneration(item.mdFile);
         counter++;
@@ -932,7 +941,7 @@ ${this.htmlInstructions}
     // Write index file for permission sets folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "permissionsets"));
     const psIndexFile = path.join(this.outputMarkdownRoot, "permissionsets", "index.md");
-    await fs.writeFile(psIndexFile, getMetaHideLines() + DocBuilderPermissionSet.buildIndexTable('', this.permissionSetsDescriptions).join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(psIndexFile, promoteSectionIndexTitle(DocBuilderPermissionSet.buildIndexTable('', sortDescriptionsByName(this.permissionSetsDescriptions))).join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async generatePermissionSetGroupsDocumentation() {
@@ -985,7 +994,7 @@ ${this.htmlInstructions}
     // Write index file for permission set groups folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "permissionsetgroups"));
     const psgIndexFile = path.join(this.outputMarkdownRoot, "permissionsetgroups", "index.md");
-    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderPermissionSetGroup.buildIndexTable('', this.permissionSetGroupsDescriptions).join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(psgIndexFile, promoteSectionIndexTitle(DocBuilderPermissionSetGroup.buildIndexTable('', sortDescriptionsByName(this.permissionSetGroupsDescriptions))).join("\n") + `\n${this.footer}\n`);
   }
 
   private async generateRolesDocumentation() {
@@ -1049,6 +1058,10 @@ ${this.htmlInstructions}
         this.assignmentRulesDescriptions.push({
           name: currentRuleName,
           active: rule.active,
+          // The file is named after the object the rules belong to. Without this the object
+          // page could not filter them, and asking it to did not fail loudly: it threw inside
+          // the pool, which swallowed it and left the rest of the page unwritten.
+          impactedObjects: [assignmentRulesName],
         });
         const ruleXml = builder.build({ assignmentRule: rule });
         workItems.push({ currentRuleName, mdFile, ruleXml });
@@ -1080,7 +1093,7 @@ ${this.htmlInstructions}
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "assignmentRules"));
     const psgIndexFile = path.join(this.outputMarkdownRoot, "assignmentRules", "index.md");
-    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderAssignmentRules.buildIndexTable('', this.assignmentRulesDescriptions).join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(psgIndexFile, promoteSectionIndexTitle(DocBuilderAssignmentRules.buildIndexTable('', sortDescriptionsByName(this.assignmentRulesDescriptions))).join("\n") + `\n${this.footer}\n`);
   }
 
   private async generateApprovalProcessDocumentation() {
@@ -1134,7 +1147,7 @@ ${this.htmlInstructions}
     }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "approvalProcesses"));
     const approvalProcessesIndexFile = path.join(this.outputMarkdownRoot, "approvalProcesses", "index.md");
-    await fs.writeFile(approvalProcessesIndexFile, getMetaHideLines() + DocBuilderApprovalProcess.buildIndexTable('', this.approvalProcessesDescriptions).join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(approvalProcessesIndexFile, promoteSectionIndexTitle(DocBuilderApprovalProcess.buildIndexTable('', sortDescriptionsByName(this.approvalProcessesDescriptions))).join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async generateAutoResponseRulesDocumentation() {
@@ -1166,6 +1179,10 @@ ${this.htmlInstructions}
         this.autoResponseRulesDescriptions.push({
           name: currentRuleName,
           active: rule.active,
+          // The file is named after the object the rules belong to. Without this the object
+          // page could not filter them, and asking it to did not fail loudly: it threw inside
+          // the pool, which swallowed it and left the rest of the page unwritten.
+          impactedObjects: [autoResponseRulesName],
         });
         const ruleXml = builder.build({ autoResponseRule: rule });
         workItems.push({ currentRuleName, mdFile, ruleXml });
@@ -1197,7 +1214,7 @@ ${this.htmlInstructions}
     // Write index file for permission set groups folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "autoResponseRules"));
     const psgIndexFile = path.join(this.outputMarkdownRoot, "autoResponseRules", "index.md");
-    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderAutoResponseRules.buildIndexTable('', this.autoResponseRulesDescriptions).join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(psgIndexFile, promoteSectionIndexTitle(DocBuilderAutoResponseRules.buildIndexTable('', sortDescriptionsByName(this.autoResponseRulesDescriptions))).join("\n") + `\n${this.footer}\n`);
   }
 
   private async generateEscalationRulesDocumentation() {
@@ -1229,6 +1246,10 @@ ${this.htmlInstructions}
         this.escalationRulesDescriptions.push({
           name: currentRuleName,
           active: rule.active,
+          // The file is named after the object the rules belong to. Without this the object
+          // page could not filter them, and asking it to did not fail loudly: it threw inside
+          // the pool, which swallowed it and left the rest of the page unwritten.
+          impactedObjects: [escalationRulesName],
         });
         const ruleXml = builder.build({ escalationRule: rule });
         workItems.push({ currentRuleName, mdFile, ruleXml });
@@ -1260,7 +1281,7 @@ ${this.htmlInstructions}
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "escalationRules"));
     const psgIndexFile = path.join(this.outputMarkdownRoot, "escalationRules", "index.md");
-    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderEscalationRules.buildIndexTable('', this.escalationRulesDescriptions).join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(psgIndexFile, promoteSectionIndexTitle(DocBuilderEscalationRules.buildIndexTable('', sortDescriptionsByName(this.escalationRulesDescriptions))).join("\n") + `\n${this.footer}\n`);
   }
 
   private async generateWorkflowRulesDocumentation() {
@@ -1334,7 +1355,7 @@ ${this.htmlInstructions}
     const workflowRulesIndexFile = path.join(this.outputMarkdownRoot, "workflowRules", "index.md");
     await fs.writeFile(
       workflowRulesIndexFile,
-      getMetaHideLines() + DocBuilderWorkflowRule.buildIndexTable('', this.workflowRulesDescriptions).join("\n") + `\n${this.footer}\n`
+      promoteSectionIndexTitle(DocBuilderWorkflowRule.buildIndexTable('', sortDescriptionsByName(this.workflowRulesDescriptions))).join("\n") + `\n${this.footer}\n`
     );
   }
 
@@ -1352,9 +1373,9 @@ ${this.htmlInstructions}
     }
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "processBuilders"));
-    const indexLines = DocBuilderFlow.buildIndexTable('../flows/', processBuilders, this.outputMarkdownRoot);
+    const indexLines = DocBuilderFlow.buildIndexTable('../flows/', processBuilders, this.outputMarkdownRoot, null, PROCESS_BUILDER_SECTION_TITLE());
     const processBuildersIndexFile = path.join(this.outputMarkdownRoot, "processBuilders", "index.md");
-    await fs.writeFile(processBuildersIndexFile, getMetaHideLines() + indexLines.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(processBuildersIndexFile, promoteSectionIndexTitle(indexLines).join("\n") + `\n${this.footer}\n`);
     this.queuePdfGeneration(processBuildersIndexFile);
   }
 
@@ -1363,6 +1384,38 @@ ${this.htmlInstructions}
     const mkdocsYmlFile = path.join(process.cwd(), 'mkdocs.yml');
     const mkdocsYmlFileExists = fs.existsSync(mkdocsYmlFile);
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/mkdocs-project-doc', '.'), process.cwd(), { overwrite: false });
+    // Everything above is copied once and then belongs to the project, so a documentation
+    // generated with an older version never received a styling or behavior fix. These assets
+    // are owned by sfdx-hardis and refreshed on every run.
+    for (const ownedAsset of SFDX_HARDIS_OWNED_DOC_ASSETS) {
+      await fs.copy(
+        path.join(PACKAGE_ROOT_DIR, 'defaults/mkdocs-project-doc/docs', ownedAsset),
+        path.join(process.cwd(), 'docs', ownedAsset),
+        { overwrite: true }
+      );
+    }
+    // gtag.js carries the measurement id of the project, so it is not an owned asset: rewriting
+    // it would throw away an id someone configured. A project that never set one still calls
+    // googletagmanager.com on every page load with the placeholder, which the current default now
+    // guards against, so that file is refreshed only while it still declares the placeholder.
+    const projectGtagFile = path.join(process.cwd(), "docs", "javascripts", "gtag.js");
+    if (fs.existsSync(projectGtagFile) && /gtag_id\s*=\s*"G-XXXXXXXXXX"/.test(await fs.readFile(projectGtagFile, "utf8"))) {
+      await fs.copy(
+        path.join(PACKAGE_ROOT_DIR, "defaults/mkdocs-project-doc/docs/javascripts/gtag.js"),
+        projectGtagFile,
+        { overwrite: true }
+      );
+    }
+    const docLabels = {
+      filterTableRows: t('docJsFilterTableRows'),
+      filterRowsPlaceholder: t('docJsFilterRowsPlaceholder'),
+      filterMatchCount: t('docJsFilterMatchCount'),
+    };
+    await fs.writeFile(
+      path.join(process.cwd(), 'docs', SFDX_HARDIS_DOC_LABELS_JS),
+      `// Generated by sfdx-hardis: labels the documentation draws in the browser.\n` +
+      `window.SFDX_HARDIS_DOC_LABELS = ${JSON.stringify(docLabels, null, 2)};\n`
+    );
     if (!mkdocsYmlFileExists) {
       uxLog("log", this, c.grey(t('baseMkdocsFilesCopiedInYourSalesforce')));
       uxLog(
@@ -1406,7 +1459,10 @@ ${this.htmlInstructions}
       "https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js",
       "javascripts/tables.js",
       "javascripts/gtag.js",
-      "javascripts/jstree-handler.js"
+      "javascripts/jstree-handler.js",
+      // Labels first: the script below reads them
+      SFDX_HARDIS_DOC_LABELS_JS,
+      SFDX_HARDIS_DOC_JS
     ];
     const extraJavascript = mkdocsYml.extra_javascript || [];
     for (const jsItem of allJavascripts) {
@@ -1421,15 +1477,70 @@ ${this.htmlInstructions}
       "https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css",
       "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
       "stylesheets/extra.css",
-      "stylesheets/jstree-custom.css"
+      "stylesheets/jstree-custom.css",
     ];
-    const extraCss = mkdocsYml.extra_css || [];
+    const extraCss = (mkdocsYml.extra_css || []).filter((cssItem: string) => cssItem !== SFDX_HARDIS_DOC_CSS);
     for (const cssItem of allCss) {
       if (!extraCss.includes(cssItem)) {
         extraCss.push(cssItem);
       }
     }
+    // The owned stylesheet only overrides the project one if the browser reads it last, and the
+    // loop above appends whatever a config was missing, which used to land behind it. It is put
+    // back at the end whatever order the config had it in.
+    extraCss.push(SFDX_HARDIS_DOC_CSS);
     mkdocsYml.extra_css = extraCss;
+
+    // The theme block is written once, when the project has no mkdocs.yml yet, so a project
+    // documented before these features existed never received them. The ones the generated
+    // pages rely on are added to whatever theme config the project already has.
+    const allThemeFeatures = [
+      "navigation.instant",
+      "navigation.footer",
+      "navigation.prune",
+      "navigation.path",
+      "navigation.top",
+      "navigation.tracking",
+      "toc.follow",
+      "search.highlight",
+      "content.code.copy",
+    ];
+    // mkdocs also accepts the shorthand "theme: material", a string with nowhere to hang the
+    // features on: assigning to it throws, and it would throw at the very end of a generation that
+    // can take an hour. It is normalized to the mapping form first.
+    if (typeof mkdocsYml.theme === "string") {
+      mkdocsYml.theme = { name: mkdocsYml.theme };
+    }
+    else if (typeof mkdocsYml.theme !== "object" || mkdocsYml.theme === null) {
+      mkdocsYml.theme = { name: "material" };
+    }
+    const themeFeatures = mkdocsYml.theme.features || [];
+    for (const themeFeature of allThemeFeatures) {
+      if (!themeFeatures.includes(themeFeature)) {
+        themeFeatures.push(themeFeature);
+      }
+    }
+    mkdocsYml.theme.features = themeFeatures;
+
+    // The home page draws its section cards as markdown inside div elements, which the markdown
+    // parser only looks into when this extension is on. Without it the cards come out as raw
+    // markdown between two empty boxes, so it is added to a config written before they existed.
+    const markdownExtensions = mkdocsYml.markdown_extensions || [];
+    const declaredExtensions = markdownExtensions.map(
+      (extension: any) => typeof extension === "string" ? extension : Object.keys(extension || {})[0]
+    );
+    for (const markdownExtension of ["attr_list", "md_in_html"]) {
+      if (!declaredExtensions.includes(markdownExtension)) {
+        markdownExtensions.push(markdownExtension);
+      }
+    }
+    mkdocsYml.markdown_extensions = markdownExtensions;
+
+    // Repair the sfdx-hardis repository URL that earlier versions wrote with a typo: it made
+    // every page request a GitHub API that answers 404, and the header link led nowhere.
+    if (mkdocsYml.repo_url === "https://github.com/hardisgroupco/sfdx-hardis") {
+      mkdocsYml.repo_url = "https://github.com/hardisgroupcom/sfdx-hardis";
+    }
 
     // Add missing plugin config if necessary.
     // Zensical ships its own search engine; noisy generated pages opt out of the index
@@ -1546,7 +1657,7 @@ ${this.htmlInstructions}
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
     WebSocketClient.sendProgressStartMessage(t('generatingObjectsDocumentation'), workItems.length);
     let counter = 0;
-    await PromisePool.withConcurrency(parallelism)
+    const { errors } = await PromisePool.withConcurrency(parallelism)
       .for(workItems)
       .process(async (item) => {
         if (item.skip) {
@@ -1578,40 +1689,43 @@ ${this.htmlInstructions}
         await replaceInFile(item.objectMdFile, '<!-- Flows table -->', relatedObjectFlowsTable.join("\n"));
         // Process Builders Table
         const processBuilderFlows = this.flowDescriptions.filter(flow => flow.processType === "Workflow");
-        const relatedProcessBuildersTable = DocBuilderFlow.buildIndexTable('../flows/', processBuilderFlows, this.outputMarkdownRoot, item.objectName);
+        const relatedProcessBuildersTable = DocBuilderFlow.buildIndexTable('../flows/', processBuilderFlows, this.outputMarkdownRoot, item.objectName, PROCESS_BUILDER_SECTION_TITLE());
         await replaceInFile(item.objectMdFile, '<!-- Process Builders table -->', relatedProcessBuildersTable.join("\n"));
         // Apex Table
-        const relatedApexTable = DocBuilderApex.buildIndexTable('../apex/', this.apexDescriptions, item.objectName);
+        const relatedApexTable = DocBuilderApex.buildIndexTable('../apex/', sortDescriptionsByName(this.apexDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Apex table -->', relatedApexTable.join("\n"));
+        // Lightning Web Components table
+        const relatedLwcTable = DocBuilderLwc.buildIndexTable('../lwc/', sortDescriptionsByName(this.lwcDescriptions), item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- Lwc table -->', relatedLwcTable.join("\n"));
         // Visualforce table
-        const relatedVisualforceTable = DocBuilderVisualforce.buildIndexTable('../visualforce/', this.visualforceDescriptions, item.objectName);
+        const relatedVisualforceTable = DocBuilderVisualforce.buildIndexTable('../visualforce/', sortDescriptionsByName(this.visualforceDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Visualforce table -->', relatedVisualforceTable.join("\n"));
         // Aura components table
-        const relatedAuraTable = DocBuilderAura.buildIndexTable('../aura/', this.auraDescriptions, item.objectName);
+        const relatedAuraTable = DocBuilderAura.buildIndexTable('../aura/', sortDescriptionsByName(this.auraDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Aura table -->', relatedAuraTable.join("\n"));
         // Lightning Pages table
-        const relatedPages = DocBuilderPage.buildIndexTable('../pages/', this.pageDescriptions, item.objectName);
+        const relatedPages = DocBuilderPage.buildIndexTable('../pages/', sortDescriptionsByName(this.pageDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Pages table -->', relatedPages.join("\n"));
         // Add Profiles table
-        const relatedProfilesTable = DocBuilderProfile.buildIndexTable('../profiles/', this.profileDescriptions, item.objectName);
+        const relatedProfilesTable = DocBuilderProfile.buildIndexTable('../profiles/', sortDescriptionsByName(this.profileDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Profiles table -->', relatedProfilesTable.join("\n"));
         // Add Permission Sets table
-        const relatedPermissionSetsTable = DocBuilderPermissionSet.buildIndexTable('../permissionsets/', this.permissionSetsDescriptions, item.objectName);
+        const relatedPermissionSetsTable = DocBuilderPermissionSet.buildIndexTable('../permissionsets/', sortDescriptionsByName(this.permissionSetsDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- PermissionSets table -->', relatedPermissionSetsTable.join("\n"));
         // Add Approval Processes table
-        const relatedApprovalProcessTable = DocBuilderApprovalProcess.buildIndexTable('../approvalProcesses/', this.approvalProcessesDescriptions, item.objectName);
+        const relatedApprovalProcessTable = DocBuilderApprovalProcess.buildIndexTable('../approvalProcesses/', sortDescriptionsByName(this.approvalProcessesDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- ApprovalProcess table -->', relatedApprovalProcessTable.join("\n"));
         // Assignment Rules table
-        const relatedAssignmentRulesTable = DocBuilderAssignmentRules.buildIndexTable('../assignmentRules/', this.assignmentRulesDescriptions, item.objectName);
+        const relatedAssignmentRulesTable = DocBuilderAssignmentRules.buildIndexTable('../assignmentRules/', sortDescriptionsByName(this.assignmentRulesDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- AssignmentRules table -->', relatedAssignmentRulesTable.join("\n"));
         // AutoResponse Rules table
-        const relatedAutoResponseRulesTable = DocBuilderAutoResponseRules.buildIndexTable('../autoResponseRules/', this.autoResponseRulesDescriptions, item.objectName);
+        const relatedAutoResponseRulesTable = DocBuilderAutoResponseRules.buildIndexTable('../autoResponseRules/', sortDescriptionsByName(this.autoResponseRulesDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- AutoResponseRules table -->', relatedAutoResponseRulesTable.join("\n"));
         // Escalation Rules table
-        const relatedEscalationRulesTable = DocBuilderEscalationRules.buildIndexTable('../escalationRules/', this.escalationRulesDescriptions, item.objectName);
+        const relatedEscalationRulesTable = DocBuilderEscalationRules.buildIndexTable('../escalationRules/', sortDescriptionsByName(this.escalationRulesDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- EscalationRules table -->', relatedEscalationRulesTable.join("\n"));
         // Workflow Rules table
-        const relatedWorkflowRulesTable = DocBuilderWorkflowRule.buildIndexTable('../workflowRules/', this.workflowRulesDescriptions, item.objectName);
+        const relatedWorkflowRulesTable = DocBuilderWorkflowRule.buildIndexTable('../workflowRules/', sortDescriptionsByName(this.workflowRulesDescriptions), item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Workflow Rules table -->', relatedWorkflowRulesTable.join("\n"));
 
         this.queuePdfGeneration(item.objectMdFile);
@@ -1619,15 +1733,24 @@ ${this.htmlInstructions}
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
     WebSocketClient.sendProgressEndMessage();
+    // The pool collects what a page throws instead of raising it. An object that failed halfway
+    // keeps the placeholders of every section below the failure, and those sections simply vanish
+    // from the page, so what went wrong is named here rather than left for a reader to notice.
+    for (const error of errors) {
+      uxLog("warning", this, c.yellow(t('errorGeneratingObjectDocumentation', {
+        objectName: (error as any)?.item?.objectName || '',
+        message: error.message,
+      })));
+    }
     if (Object.keys(objectsForMenu).length > 1) {
       this.addNavNode(t('docMdMenuObjects'), objectsForMenu);
     }
 
     // Write index file for objects folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
-    const objectsTableLinesForIndex = DocBuilderObject.buildIndexTable('', this.objectDescriptions);
+    const objectsTableLinesForIndex = DocBuilderObject.buildIndexTable('', sortDescriptionsByName(this.objectDescriptions));
     const objectsIndexFile = path.join(this.outputMarkdownRoot, "objects", "index.md");
-    await fs.writeFile(objectsIndexFile, getMetaHideLines() + objectsTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(objectsIndexFile, promoteSectionIndexTitle(objectsTableLinesForIndex).join("\n") + `\n${this.footer}\n`);
   }
 
   private async buildAttributesTables(objectName: string, objectXmlParsed: any, objectMdFile: string) {
@@ -1804,7 +1927,7 @@ ${this.htmlInstructions}
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const flowTableLinesForIndex = DocBuilderFlow.buildIndexTable('', nonProcessBuilderFlowsSorted, this.outputMarkdownRoot);
     const flowIndexFile = path.join(this.outputMarkdownRoot, "flows", "index.md");
-    await fs.writeFile(flowIndexFile, getMetaHideLines() + flowTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(flowIndexFile, promoteSectionIndexTitle(flowTableLinesForIndex).join("\n") + `\n${this.footer}\n`);
 
     this.addNavNode(t('docMdMenuFlows'), flowsForMenu);
     uxLog("success", this, c.green(t('successfullyGeneratedDocIndexForFlowsAt', { flowIndexFile })));
@@ -1812,6 +1935,143 @@ ${this.htmlInstructions}
 
   private humanDisplay(flows) {
     return flows.map(flow => path.basename(flow, ".flow-meta.xml")).join(", ");
+  }
+
+  /**
+   * The home page is the first thing a reader lands on, and for most of them it is the only map of
+   * the org they will ever get. It used to be a bare bullet list under a full-width banner, naming
+   * sections without saying what any of them held. It is now a grid of cards: one per section, with
+   * a sentence of plain language and the number of pages behind it, so someone who does not know
+   * Salesforce can still tell where to click.
+   *
+   * A section is only drawn when the project has one: a project without Lightning Pages, escalation
+   * rules or installed packages used to get links to pages that were never written.
+   */
+  /**
+   * DO_NOT_OVERWRITE_INDEX_MD exists so a project can write its own home page. Setting it used to
+   * freeze the page for good: a project that set the variable and never touched index.md kept the
+   * home page of the sfdx-hardis version that generated it, and no later improvement ever reached
+   * it. A page that is still, to the character, what a previous run wrote is therefore refreshed.
+   * The first edit to it, however small, hands the page over to the project for good.
+   */
+  private async canWriteHomePage(): Promise<boolean> {
+    if (process.env.DO_NOT_OVERWRITE_INDEX_MD !== 'true' || !fs.existsSync(this.outputMarkdownIndexFile)) {
+      return true;
+    }
+    if (isUntouchedGeneratedHomePage(await fs.readFile(this.outputMarkdownIndexFile, "utf8"))) {
+      return true;
+    }
+    uxLog("log", this, c.grey(t('keptCustomizedDocIndex', { outputMarkdownIndexFile: this.outputMarkdownIndexFile })));
+    return false;
+  }
+
+  private buildHomeLines(): string[] {
+    type HomeLink = { label: string; page: string; count?: number };
+    type HomeSection = { label: string; description: string; page?: string; count?: number; children?: HomeLink[] };
+    const flows = this.flowDescriptions.filter(flow => flow.processType !== "Workflow");
+    const processBuilders = this.flowDescriptions.filter(flow => flow.processType === "Workflow");
+    const homeSections: HomeSection[] = [
+      {
+        label: t('docNavObjects'), description: t('docHomeObjectsDesc'),
+        page: "objects/index.md", count: this.objectDescriptions.length
+      },
+      {
+        label: t('docNavAutomations'), description: t('docHomeAutomationsDesc'), children: [
+          { label: t('docNavApprovalProcesses'), page: "approvalProcesses/index.md", count: this.approvalProcessesDescriptions.length },
+          { label: t('docNavAssignmentRules'), page: "assignmentRules/index.md", count: this.assignmentRulesDescriptions.length },
+          { label: t('docNavAutoResponseRules'), page: "autoResponseRules/index.md", count: this.autoResponseRulesDescriptions.length },
+          { label: t('docNavEscalationRules'), page: "escalationRules/index.md", count: this.escalationRulesDescriptions.length },
+          { label: t('docNavFlows'), page: "flows/index.md", count: flows.length },
+          { label: t('docNavProcessBuilders'), page: "processBuilders/index.md", count: processBuilders.length },
+          { label: t('docNavWorkflowRules'), page: "workflowRules/index.md", count: this.workflowRulesDescriptions.length },
+        ]
+      },
+      {
+        label: t('docNavAuthorizations'), description: t('docHomeAuthorizationsDesc'), children: [
+          { label: t('docNavProfiles'), page: "profiles/index.md", count: this.profileDescriptions.length },
+          { label: t('docNavPermissionSetGroups'), page: "permissionsetgroups/index.md", count: this.permissionSetGroupsDescriptions.length },
+          { label: t('docNavPermissionSets'), page: "permissionsets/index.md", count: this.permissionSetsDescriptions.length },
+        ]
+      },
+      {
+        label: t('docNavCode'), description: t('docHomeCodeDesc'), children: [
+          { label: "Apex", page: "apex/index.md", count: this.apexDescriptions.length },
+          { label: t('docNavLightningWebComponents'), page: "lwc/index.md", count: this.lwcDescriptions.length },
+          { label: t('docNavVisualforce'), page: "visualforce/index.md", count: this.visualforceDescriptions.length },
+          { label: t('docNavAura'), page: "aura/index.md", count: this.auraDescriptions.length },
+        ]
+      },
+      {
+        label: t('docNavLightningPages'), description: t('docHomePagesDesc'),
+        page: "pages/index.md", count: this.pageDescriptions.length
+      },
+      {
+        label: t('docNavPackages'), description: t('docHomePackagesDesc'),
+        page: "packages/index.md", count: this.packageDescriptions.length
+      },
+      {
+        label: t('docNavRoles'), description: t('docHomeRolesDesc'),
+        page: "roles.md", count: this.roleDescriptions.length
+      },
+      { label: t('docMdMenuSfdxHardisConfig'), description: t('docHomeConfigDesc'), page: "sfdx-hardis-params.md" },
+      { label: t('docNavBranchesAndOrgs'), description: t('docHomeBranchesAndOrgsDesc'), page: "sfdx-hardis-branches-and-orgs.md" },
+      { label: t('docNavManifests'), description: t('docHomeManifestsDesc'), page: "manifests.md" },
+    ];
+
+    // A project carrying its own name puts it at the top: the page is about their org, not about
+    // the tool that wrote it.
+    const lines: string[] = [
+      `# ${this.sfdxHardisConfig?.projectName || t('docMdHomeTitle')}`,
+      "",
+      t('welcomeToDocumentation'),
+      "",
+      '<div class="sfdx-hardis-home-cards" markdown>',
+      "",
+    ];
+    for (const section of homeSections) {
+      const children = (section.children || []).filter(child => this.isDocumentedSection(child.page));
+      if (section.page ? !this.isDocumentedSection(section.page) : children.length === 0) {
+        continue;
+      }
+      // attr_list only decorates an element, so a section without an index page of its own gets a
+      // span to hang the class on instead of leaving "{ .class }" printed on the card.
+      const title = section.page
+        ? `[${section.label}](${section.page}){ .sfdx-hardis-home-card__title }`
+        : `<span class="sfdx-hardis-home-card__title">${section.label}</span>`;
+      const count = section.count ? ` <span class="sfdx-hardis-home-card__count">${section.count}</span>` : "";
+      lines.push(...[
+        '<div class="sfdx-hardis-home-card" markdown>',
+        "",
+        `${title}${count}`,
+        "",
+        section.description,
+        "",
+      ]);
+      if (children.length > 0) {
+        lines.push(...[
+          '<div class="sfdx-hardis-home-card__links" markdown>',
+          "",
+          children.map(child => `[${child.label}${child.count ? ` (${child.count})` : ""}](${child.page})`).join(" "),
+          "",
+          "</div>",
+          "",
+        ]);
+      }
+      lines.push(...["</div>", ""]);
+    }
+    lines.push(...["</div>", ""]);
+    return lines;
+  }
+
+  private isDocumentedSection(sectionPage: string): boolean {
+    const pageFile = path.join(this.outputMarkdownRoot, sectionPage);
+    if (!fs.existsSync(pageFile)) {
+      return false;
+    }
+    if (path.basename(sectionPage) !== "index.md") {
+      return true;
+    }
+    return indexPageListsPages(fs.readFileSync(pageFile, "utf8"));
   }
 
   private buildSfdxHardisParams(): string[] {
@@ -2052,8 +2312,7 @@ ${this.htmlInstructions}
     const lwcIndexFile = path.join(this.outputMarkdownRoot, "lwc", "index.md");
     await fs.writeFile(
       lwcIndexFile,
-      getMetaHideLines() +
-      DocBuilderLwc.buildIndexTable('', this.lwcDescriptions).join("\n") +
+            promoteSectionIndexTitle(DocBuilderLwc.buildIndexTable('', sortDescriptionsByName(this.lwcDescriptions))).join("\n") +
       `\n\n${this.footer}\n`
     );
 
@@ -2188,8 +2447,7 @@ ${this.htmlInstructions}
     const visualforceIndexFile = path.join(this.outputMarkdownRoot, "visualforce", "index.md");
     await fs.writeFile(
       visualforceIndexFile,
-      getMetaHideLines() +
-      DocBuilderVisualforce.buildIndexTable('', this.visualforceDescriptions).join("\n") +
+            promoteSectionIndexTitle(DocBuilderVisualforce.buildIndexTable('', sortDescriptionsByName(this.visualforceDescriptions))).join("\n") +
       `\n\n${this.footer}\n`
     );
 
@@ -2269,8 +2527,7 @@ ${this.htmlInstructions}
     const auraIndexFile = path.join(this.outputMarkdownRoot, "aura", "index.md");
     await fs.writeFile(
       auraIndexFile,
-      getMetaHideLines() +
-      DocBuilderAura.buildIndexTable('', this.auraDescriptions).join("\n") +
+            promoteSectionIndexTitle(DocBuilderAura.buildIndexTable('', sortDescriptionsByName(this.auraDescriptions))).join("\n") +
       `\n\n${this.footer}\n`
     );
 

@@ -11,7 +11,7 @@ export class DocBuilderEscalationRules extends DocBuilderRoot {
   public xmlRootKey = "escalationRule";
 
   public static buildIndexTable(prefix: string, escalationRulesDescriptions: any, filterObject: string | null = null) {
-    const filteredEscalationRules = filterObject ? escalationRulesDescriptions.filter(escalationRule => escalationRule.impactedObjects.includes(filterObject)) : escalationRulesDescriptions;
+    const filteredEscalationRules = filterObject ? escalationRulesDescriptions.filter(escalationRule => (escalationRule.impactedObjects || []).includes(filterObject)) : escalationRulesDescriptions;
     if (filteredEscalationRules.length === 0) {
       return [];
     }
@@ -43,6 +43,8 @@ export class DocBuilderEscalationRules extends DocBuilderRoot {
     const escalationRuleTableLines: string[] = [...ruleBuilderUtil.globalRuleTableLines];
 
     return [
+      `# ${this.metadataName}`,
+      '',
       '<!-- Escalation Rule description -->',
       `## ${t('docMdEscalationRulesList')}`,
       ...escalationRuleTableLines,

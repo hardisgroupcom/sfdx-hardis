@@ -4,10 +4,11 @@ import fs from '../utils/fsUtils.js';
 import { SfError } from '@salesforce/core';
 import { sortCrossPlatform, uxLog } from '../utils/index.js';
 import { countPackageXmlItems, parsePackageXmlFile } from '../utils/xmlUtils.js';
-import { getMetaHideAndSearchExcludeLines, SalesforceSetupUrlBuilder } from './docUtils.js';
+import { getSearchExcludeLines, SalesforceSetupUrlBuilder } from './docUtils.js';
 import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { prettifyFieldName } from '../utils/flowVisualiser/nodeFormatUtils.js';
 import { t } from '../utils/i18n.js';
+import { mdTableCellHtml } from "../gitProvider/utilsMarkdown.js";
 
 export class DocBuilderPackageXML {
 
@@ -25,7 +26,7 @@ export class DocBuilderPackageXML {
       const metadataNb = await countPackageXmlItems(outputPackageXmlDef.path);
       const packageMdFile = path.basename(outputPackageXmlDef.path) + ".md";
       const label = outputPackageXmlDef.name ? t('docMdPackageFolder', { name: outputPackageXmlDef.name }) : path.basename(outputPackageXmlDef.path);
-      const packageTableLine = `| [${label}](${packageMdFile}) (${metadataNb}) | ${outputPackageXmlDef.description} |`;
+      const packageTableLine = `| [${label}](${packageMdFile}) (${metadataNb}) | ${mdTableCellHtml(outputPackageXmlDef.description)} |`;
       packageLines.push(packageTableLine);
       packagesForMenu[label] = packageMdFile;
     }
@@ -63,7 +64,7 @@ export class DocBuilderPackageXML {
     if (packageXmlDefinition && packageXmlDefinition.description) {
       // Header
       mdLines.push(...[
-        `## ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
+        `# ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
         '',
         packageXmlDefinition.description,
         '',
@@ -76,7 +77,7 @@ export class DocBuilderPackageXML {
     else {
       // Header
       mdLines.push(...[
-        `## ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
+        `# ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
         '',
         '<div id="jstree-container"></div>',
         '',
@@ -113,7 +114,7 @@ export class DocBuilderPackageXML {
 
     // Write output file. package.xml pages are large metadata dumps, so they opt out of
     // the search index with front matter (Zensical has no glob-based search exclusion).
-    await fs.writeFile(outputFile, getMetaHideAndSearchExcludeLines() + mdLines.join("\n") + "\n");
+    await fs.writeFile(outputFile, getSearchExcludeLines() + mdLines.join("\n") + "\n");
     uxLog("success", this, c.green(t('successfullyGeneratedDocumentationInto', { path: path.basename(inputFile), outputFile })));
 
     const jsonTree = await this.generateJsonTree(metadataTypes, packageXmlContent);

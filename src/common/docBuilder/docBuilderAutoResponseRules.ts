@@ -11,7 +11,7 @@ export class DocBuilderAutoResponseRules extends DocBuilderRoot {
   public xmlRootKey = "autoResponseRule";
 
   public static buildIndexTable(prefix: string, autoResponseRulesDescriptions: any, filterObject: string | null = null) {
-    const filteredAutoResponseRules = filterObject ? autoResponseRulesDescriptions.filter(autoResponseRule => autoResponseRule.impactedObjects.includes(filterObject)) : autoResponseRulesDescriptions;
+    const filteredAutoResponseRules = filterObject ? autoResponseRulesDescriptions.filter(autoResponseRule => (autoResponseRule.impactedObjects || []).includes(filterObject)) : autoResponseRulesDescriptions;
     if (filteredAutoResponseRules.length === 0) {
       return [];
     }
@@ -41,7 +41,7 @@ export class DocBuilderAutoResponseRules extends DocBuilderRoot {
     const autoResponseRuleTableLines: string[] = [...ruleBuilderUtil.globalRuleTableLines];
 
     return [
-      `## ${this.metadataName}`,
+      `# ${this.metadataName}`,
       '',
       '<!-- AutoResponse Rules description -->',
       `## ${t('docMdAutoResponseRulesList')}`,

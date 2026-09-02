@@ -2,7 +2,7 @@ import { XMLBuilder } from "fast-xml-parser";
 import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
-import { mdTableCell } from "../gitProvider/utilsMarkdown.js";
+import { mdTableCell, mdTableCellHtml } from "../gitProvider/utilsMarkdown.js";
 import { t } from '../utils/i18n.js';
 
 export class DocBuilderObject extends DocBuilderRoot {
@@ -46,7 +46,9 @@ export class DocBuilderObject extends DocBuilderRoot {
     ]);
     for (const field of fields) {
       lines.push(...[
-        `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(String(field.description))} |`
+        // A field without a description used to be stringified into the literal "undefined":
+        // 389 of them on a single Account page. mdTableCell already renders an empty cell.
+        `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(field.description)} |`
       ]);
     }
     lines.push("");
@@ -68,9 +70,13 @@ export class DocBuilderObject extends DocBuilderRoot {
       "| :-------- | :---- | :---------- | :------ |"
     ]);
     for (const rule of validationRules) {
-      const escapedFormula = (rule.errorConditionFormula || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      // A rule description is free text an admin typed in Salesforce, and it regularly holds line
+      // breaks: written straight into the row they closed the table, and everything below it came
+      // out as a paragraph of pipes. Both columns now go through the same escaping.
+      const descriptionCell = mdTableCellHtml(rule.description);
+      const formulaCell = mdTableCellHtml(rule.errorConditionFormula);
       lines.push(...[
-        `| ${rule.fullName} | ${rule.active ? t('docMdYes') : t('docMdNo')} | ${rule.description || ""} | ${mdTableCell(escapedFormula)} |`
+        `| ${rule.fullName} | ${rule.active ? t('docMdYes') : t('docMdNo')} | ${descriptionCell} | ${rule.errorConditionFormula ? `<code>${formulaCell}</code>` : formulaCell} |`
       ]);
     }
     lines.push("");
@@ -79,6 +85,7 @@ export class DocBuilderObject extends DocBuilderRoot {
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
     return [
+      `# ${this.metadataName}`,
       '',
       '<!-- Mermaid schema -->',
       '',
@@ -86,11 +93,27 @@ export class DocBuilderObject extends DocBuilderRoot {
       '',
       '<!-- Attributes tables -->',
       '',
+      // What runs on the object
       '<!-- Flows table -->',
       '',
       '<!-- Process Builders table -->',
       '',
+      '<!-- Workflow Rules table -->',
+      '',
+      // These four were filled in by the object documentation, but the page never declared them,
+      // so the rules that act on an object were nowhere to be seen on its page.
+      '<!-- ApprovalProcess table -->',
+      '',
+      '<!-- AssignmentRules table -->',
+      '',
+      '<!-- AutoResponseRules table -->',
+      '',
+      '<!-- EscalationRules table -->',
+      '',
+      // What is built on top of the object
       '<!-- Apex table -->',
+      '',
+      '<!-- Lwc table -->',
       '',
       '<!-- Visualforce table -->',
       '',
@@ -98,11 +121,10 @@ export class DocBuilderObject extends DocBuilderRoot {
       '',
       '<!-- Pages table -->',
       '',
+      // Who can reach the object
       '<!-- Profiles table -->',
       '',
       '<!-- PermissionSets table -->',
-      '',
-      '<!-- Workflow Rules table -->',
     ];
   }
 

@@ -97,7 +97,17 @@ export function mdTableCell(str: string) {
   if (typeof str !== "string") {
     str = String(str);
   }
-  return str.replace(/\n/gm, "<br/>").replace(/\|/gm, "");
+  // A pipe used to be deleted, which quietly rewrote what the cell said: every "||" of a
+  // Salesforce formula disappeared. Escaped instead, it renders as a pipe and the table holds.
+  return str.replace(/\n/gm, "<br/>").replace(/\|/gm, "\\|");
+}
+
+// Renders free text a Salesforce admin typed (a description, a validation rule formula) as a
+// table cell: the markup characters it may hold become entities, then mdTableCell neutralizes the
+// line breaks and pipes that would otherwise break the row apart.
+export function mdTableCellHtml(value: any): string {
+  const escaped = String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return mdTableCell(escaped);
 }
 
 export async function flowDiffToMarkdownForPullRequest(flowNames: string[], fromCommit: string, toCommit: string, truncatedNb: number = 0): Promise<any> {
