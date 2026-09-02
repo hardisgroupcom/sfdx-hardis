@@ -1660,6 +1660,21 @@
     "STRY",
     "tâche",
     "wireframes",
-    "étape"
+    "étape",
+    "ISBLANK",
+    "laquo",
+    "middot",
+    "raquo",
+    "ndash",
+    "lsquo",
+    "rsquo",
+    "ldquo",
+    "rdquo",
+    "hellip",
+    "larr",
+    "uarr",
+    "rarr",
+    "darr",
+    "harr"
   ]
 }
