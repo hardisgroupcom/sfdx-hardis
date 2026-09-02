@@ -54,9 +54,9 @@ import { t } from '../../../common/utils/i18n.js';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Assets owned by sfdx-hardis, rewritten on every run so styling and behaviour fixes reach a
+// Assets owned by sfdx-hardis, rewritten on every run so styling and behavior fixes reach a
 // project that was documented with an older version. Everything else under defaults is copied
-// once and then belongs to the project, so project customisations go to stylesheets/extra.css
+// once and then belongs to the project, so project customizations go to stylesheets/extra.css
 // and javascripts/tables.js, which are never overwritten.
 const SFDX_HARDIS_DOC_CSS = "stylesheets/sfdx-hardis-doc.css";
 const SFDX_HARDIS_DOC_JS = "javascripts/sfdx-hardis-doc.js";
@@ -1372,7 +1372,7 @@ ${this.htmlInstructions}
     const mkdocsYmlFileExists = fs.existsSync(mkdocsYmlFile);
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/mkdocs-project-doc', '.'), process.cwd(), { overwrite: false });
     // Everything above is copied once and then belongs to the project, so a documentation
-    // generated with an older version never received a styling or behaviour fix. These assets
+    // generated with an older version never received a styling or behavior fix. These assets
     // are owned by sfdx-hardis and refreshed on every run.
     for (const ownedAsset of SFDX_HARDIS_OWNED_DOC_ASSETS) {
       await fs.copy(

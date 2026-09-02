@@ -9,7 +9,7 @@
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): The home page now lists only the sections your project actually has, instead of linking to pages that were never generated.
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fields without a description no longer display the text "undefined", and user licenses are no longer mangled into "B2 B M A Integration User".
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Process Builders now have their own section title instead of appearing as a second "Flows" list, and every index table is sorted by name.
-- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Documentation styling and behaviour moved to `docs/stylesheets/sfdx-hardis-doc.css` and `docs/javascripts/sfdx-hardis-doc.js`, rewritten on every run, so an existing documentation receives the fixes. Your own customisations stay in `extra.css` and `tables.js`.
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Documentation styling and behavior moved to `docs/stylesheets/sfdx-hardis-doc.css` and `docs/javascripts/sfdx-hardis-doc.js`, rewritten on every run, so an existing documentation receives the fixes. Your own customizations stay in `extra.css` and `tables.js`.
 
 ## [8.4.1] 2026-09-02
 

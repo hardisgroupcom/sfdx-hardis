@@ -3,7 +3,7 @@
 /*
  * Styling owned by sfdx-hardis. Unlike stylesheets/extra.css, which is copied once and then
  * belongs to the project, this file is rewritten on every documentation generation, so fixes
- * reach projects that were documented with an older version. Put project customisations in
+ * reach projects that were documented with an older version. Put project customizations in
  * stylesheets/extra.css instead: it is loaded first, and this file only overrides what it names.
  */
 
@@ -11,7 +11,7 @@
  * The header and the footer are painted navy, but the theme styles them as light strips and
  * leaves their text on the default near-black foreground. The site title, the repository link,
  * the version and star counters, the previous/next navigation and the copyright line all came
- * out at a contrast ratio of 1.13:1, where readable text needs 4.5:1. Background and foreground
+ * out at a contrast ratio of 1.12:1, where readable text needs 4.5:1. Background and foreground
  * are set together here so the two can no longer drift apart.
  */
 .md-header,

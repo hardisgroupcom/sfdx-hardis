@@ -82,7 +82,7 @@ extra_javascript:
   - javascripts/tables.js
   - javascripts/gtag.js
   - javascripts/jstree-handler.js
-  # Rewritten by sfdx-hardis on every run: put project behaviour in javascripts/tables.js
+  # Rewritten by sfdx-hardis on every run: put project behavior in javascripts/tables.js
   - javascripts/sfdx-hardis-doc-labels.js
   - javascripts/sfdx-hardis-doc.js
 extra_css:

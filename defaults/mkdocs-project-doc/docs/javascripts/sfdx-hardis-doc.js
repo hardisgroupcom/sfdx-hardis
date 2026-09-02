@@ -1,5 +1,5 @@
 /*
- * Behaviour owned by sfdx-hardis. Unlike javascripts/tables.js, which is copied once and then
+ * Behavior owned by sfdx-hardis. Unlike javascripts/tables.js, which is copied once and then
  * belongs to the project, this file is rewritten on every documentation generation, so fixes
  * reach projects that were documented with an older version.
  */
@@ -79,7 +79,7 @@ function sfdxHardisAddTableFilter(table) {
 }
 
 // Attribute tables (object, profile, permission set, flow node) are written with an empty header
-// row, because their two columns need no title. The theme still paints it, leaving a coloured
+// row, because their two columns need no title. The theme still paints it, leaving a colored
 // band above the table, so a header row whose cells are all empty is dropped.
 function sfdxHardisHideEmptyTableHeader(table) {
   var head = table.tHead;
