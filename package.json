@@ -40,7 +40,7 @@
     "marked": "14.1.4",
     "papaparse": "5.7.0",
     "pptxgenjs": "^4.0.1",
-    "puppeteer-core": "25.8.0",
+    "puppeteer-core": "25.9.0",
     "sanitize-html": "^2.17.7",
     "semver": "7.8.5",
     "simple-git": "3.36.0",
