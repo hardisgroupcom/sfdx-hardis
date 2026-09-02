@@ -90,6 +90,8 @@ extra_javascript:
 extra_css:
   - stylesheets/extra.css
   - https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css
+  - https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css
+  - stylesheets/jstree-custom.css
   # Loaded last so it overrides the project stylesheet: sfdx-hardis rewrites it on every run
   - stylesheets/sfdx-hardis-doc.css
 extra:

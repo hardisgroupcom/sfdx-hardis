@@ -64,7 +64,7 @@ export class DocBuilderPackageXML {
     if (packageXmlDefinition && packageXmlDefinition.description) {
       // Header
       mdLines.push(...[
-        `## ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
+        `# ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
         '',
         packageXmlDefinition.description,
         '',
@@ -77,7 +77,7 @@ export class DocBuilderPackageXML {
     else {
       // Header
       mdLines.push(...[
-        `## ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
+        `# ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
         '',
         '<div id="jstree-container"></div>',
         '',

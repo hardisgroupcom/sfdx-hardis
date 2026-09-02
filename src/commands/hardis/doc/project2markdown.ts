@@ -400,7 +400,7 @@ ${this.htmlInstructions}
     if (Object.keys(packagesForMenu).length > 0) {
       this.addNavNode(t('docMdMenuManifests'), packagesForMenu);
     }
-    await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), packageLines.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), promoteSectionIndexTitle(packageLines).join("\n") + `\n${this.footer}\n`);
 
     this.tempDir = await createTempDir()
     // Convert source to metadata API format to build prompts
@@ -1385,6 +1385,18 @@ ${this.htmlInstructions}
         { overwrite: true }
       );
     }
+    // gtag.js carries the measurement id of the project, so it is not an owned asset: rewriting
+    // it would throw away an id someone configured. A project that never set one still calls
+    // googletagmanager.com on every page load with the placeholder, which the current default now
+    // guards against, so that file is refreshed only while it still declares the placeholder.
+    const projectGtagFile = path.join(process.cwd(), "docs", "javascripts", "gtag.js");
+    if (fs.existsSync(projectGtagFile) && /gtag_id\s*=\s*"G-XXXXXXXXXX"/.test(await fs.readFile(projectGtagFile, "utf8"))) {
+      await fs.copy(
+        path.join(PACKAGE_ROOT_DIR, "defaults/mkdocs-project-doc/docs/javascripts/gtag.js"),
+        projectGtagFile,
+        { overwrite: true }
+      );
+    }
     const docLabels = {
       filterTableRows: t('docJsFilterTableRows'),
       filterRowsPlaceholder: t('docJsFilterRowsPlaceholder'),
@@ -1457,15 +1469,17 @@ ${this.htmlInstructions}
       "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
       "stylesheets/extra.css",
       "stylesheets/jstree-custom.css",
-      // Last, so it overrides the project stylesheet: see the header of the file itself
-      SFDX_HARDIS_DOC_CSS
     ];
-    const extraCss = mkdocsYml.extra_css || [];
+    const extraCss = (mkdocsYml.extra_css || []).filter((cssItem: string) => cssItem !== SFDX_HARDIS_DOC_CSS);
     for (const cssItem of allCss) {
       if (!extraCss.includes(cssItem)) {
         extraCss.push(cssItem);
       }
     }
+    // The owned stylesheet only overrides the project one if the browser reads it last, and the
+    // loop above appends whatever a config was missing, which used to land behind it. It is put
+    // back at the end whatever order the config had it in.
+    extraCss.push(SFDX_HARDIS_DOC_CSS);
     mkdocsYml.extra_css = extraCss;
 
     // The theme block is written once, when the project has no mkdocs.yml yet, so a project
@@ -1482,7 +1496,15 @@ ${this.htmlInstructions}
       "search.highlight",
       "content.code.copy",
     ];
-    mkdocsYml.theme = mkdocsYml.theme || { name: "material" };
+    // mkdocs also accepts the shorthand "theme: material", a string with nowhere to hang the
+    // features on: assigning to it throws, and it would throw at the very end of a generation that
+    // can take an hour. It is normalized to the mapping form first.
+    if (typeof mkdocsYml.theme === "string") {
+      mkdocsYml.theme = { name: mkdocsYml.theme };
+    }
+    else if (typeof mkdocsYml.theme !== "object" || mkdocsYml.theme === null) {
+      mkdocsYml.theme = { name: "material" };
+    }
     const themeFeatures = mkdocsYml.theme.features || [];
     for (const themeFeature of allThemeFeatures) {
       if (!themeFeatures.includes(themeFeature)) {
