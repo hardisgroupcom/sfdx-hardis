@@ -48,7 +48,7 @@ The ticketing system is deduced from the shape of the identifier, so \`--provide
 The command reuses the ticketing variables sfdx-hardis already documents, read from CI/CD variables or from a local **.env** file:
 
 - **JIRA:** \`JIRA_HOST\` + (\`JIRA_EMAIL\` + \`JIRA_TOKEN\`) or \`JIRA_PAT\` or (\`JIRA_CLIENT_ID\` + \`JIRA_CLIENT_SECRET\`)
-- **Azure Boards:** a token only — \`CI_SFDX_HARDIS_AZURE_TOKEN\`, \`SYSTEM_ACCESSTOKEN\` or \`AZURE_DEVOPS_EXT_PAT\`. The organization and the project are read from the git remote of the current repository; set \`SYSTEM_COLLECTIONURI\` and \`SYSTEM_TEAMPROJECT\` only to override that (on a CI agent, Azure Pipelines already provides them).
+- **Azure Boards:** a token only - \`CI_SFDX_HARDIS_AZURE_TOKEN\`, \`SYSTEM_ACCESSTOKEN\` or \`AZURE_DEVOPS_EXT_PAT\`. The organization and the project are read from the git remote of the current repository; set \`SYSTEM_COLLECTIONURI\` and \`SYSTEM_TEAMPROJECT\` only to override that (on a CI agent, Azure Pipelines already provides them).
 - **ServiceNow:** \`SERVICENOW_URL\` + \`SERVICENOW_USERNAME\` + \`SERVICENOW_PASSWORD\`
 
 <details markdown="1">
