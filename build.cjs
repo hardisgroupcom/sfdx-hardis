@@ -179,6 +179,19 @@ class SfdxHardisBuilder {
     return `'${escapedValue}'`;
   }
 
+  // A YAML double-quoted scalar only accepts a fixed set of escape sequences, so a raw backslash
+  // coming from a regex (\(, \), \.) or a raw double quote coming from a label or an error message
+  // makes the front matter unparseable and breaks the documentation build.
+  toYamlDoubleQuotedString(value) {
+    const escapedValue = String(value)
+      .replace(/\\/g, "\\\\")
+      .replace(/"/g, '\\"')
+      .replace(/\r/g, "\\r")
+      .replace(/\n/g, "\\n")
+      .replace(/\t/g, "\\t");
+    return `"${escapedValue}"`;
+  }
+
   async buildDeployTipsDoc() {
     console.log("Building salesforce-deployment-agent-error-list.md doc...");
     const deployTipsDocFile = "./docs/salesforce-deployment-agent-error-list.md";
@@ -240,11 +253,11 @@ class SfdxHardisBuilder {
   buildIndividualMarkdownPageForTip(tip, tipFile) {
     const errorDescription = tip?.examples?.length > 0 ? tip.examples[0] :
       tip?.expressionString?.length > 0 ? tip?.expressionString[0] :
-        tip.expressionRegex[0].toString().replace("/Error", "Error").replace("/gm", "").replace(/\"/gm, '\\\"');
+        tip.expressionRegex[0].toString().replace("/Error", "Error").replace("/gm", "");
     const tipFileMd = [
       "---",
-      `title: "${tip.label} (Deployment assistant)"`,
-      `description: "How to solve Salesforce deployment error \\\"${errorDescription}\\\""`,
+      `title: ${this.toYamlDoubleQuotedString(`${tip.label} (Deployment assistant)`)}`,
+      `description: ${this.toYamlDoubleQuotedString(`How to solve Salesforce deployment error "${errorDescription}"`)}`,
       "---",
       "<!-- markdownlint-disable MD013 -->"
     ];

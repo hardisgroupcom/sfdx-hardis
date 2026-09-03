@@ -2,36 +2,35 @@
 
 ## [beta] (main)
 
-### [hardis:ticket:get](https://sfdx-hardis.cloudity.com/hardis/ticket/get/)
-
-- **New command** that reads a **single ticket in full** from JIRA, Azure Boards or ServiceNow and returns it as structured JSON, or as a markdown extract with `--output-file`. Where the Pull Request flows collect a one-line summary of every referenced ticket, this one gives you the whole requirement: description, acceptance criteria, all comments, subtasks, linked items and attachments, without opening the ticketing system.
-- The ticketing system is **deduced from the identifier**: `ACME-4567` is JIRA, `1234` / `AB-4567` is Azure Boards, `INC0012345` is ServiceNow. `--provider` forces one when you need to.
-- **Attachments are downloaded** next to the extract, so screenshots and wireframes can be looked at and PDF or Office documents opened. Text attachments come back inline in the JSON.
-- The extract highlights the lines of the ticket that mention an operation deployable metadata will not carry (permission set assignment, org setting, scheduled job, data load), so they can be registered as [deployment actions](https://sfdx-hardis.cloudity.com/hardis/project/action/create/) rather than discovered at promotion time.
-- Reuses the ticketing variables you already configure (`JIRA_HOST` / `JIRA_TOKEN`..., `SERVICENOW_URL`...), from CI/CD variables or a local `.env`, and works outside of a Salesforce project.
-- **Azure Boards needs a token and nothing else.** The organization and the project are read from the git remote of the repository you are standing in, so `SYSTEM_COLLECTIONURI` and `SYSTEM_TEAMPROJECT` are only needed to override that. `AZURE_DEVOPS_EXT_PAT` - the variable the Azure CLI uses, so one you probably already have - is accepted alongside `CI_SFDX_HARDIS_AZURE_TOKEN` and `SYSTEM_ACCESSTOKEN`.
-- **New ServiceNow ticketing connector**, using the same `SERVICENOW_URL` / `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD` variables as `hardis:misc:servicenow-report`. It is only used by this command: the content of your Pull Request comments and release notes is unchanged. When `sys_journal_field` is ACL-restricted (ServiceNow answers a denied read with an empty result rather than an error, so a ticket full of comments would otherwise look like a ticket with none), the comments are read from the record's own `comments` / `work_notes` / `close_notes` fields instead, and the log says so.
+- Fixed the [deployment assistant error pages](https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-error-list/) whose error message contains a quote or a regular expression: their page metadata was invalid, so they were missing from the site and their links were dead.
+- [hardis:ticket:get](https://sfdx-hardis.cloudity.com/hardis/ticket/get/):
+  - **New command** that reads a **single ticket in full** from JIRA, Azure Boards or ServiceNow and returns it as structured JSON, or as a markdown extract with `--output-file`. Where the Pull Request flows collect a one-line summary of every referenced ticket, this one gives you the whole requirement: description, acceptance criteria, all comments, subtasks, linked items and attachments, without opening the ticketing system.
+  - The ticketing system is **deduced from the identifier**: `ACME-4567` is JIRA, `1234` / `AB-4567` is Azure Boards, `INC0012345` is ServiceNow. `--provider` forces one when you need to.
+  - **Attachments are downloaded** next to the extract, so screenshots and wireframes can be looked at and PDF or Office documents opened. Text attachments come back inline in the JSON.
+  - The extract highlights the lines of the ticket that mention an operation deployable metadata will not carry (permission set assignment, org setting, scheduled job, data load), so they can be registered as [deployment actions](https://sfdx-hardis.cloudity.com/hardis/project/action/create/) rather than discovered at promotion time.
+  - Reuses the ticketing variables you already configure (`JIRA_HOST` / `JIRA_TOKEN`..., `SERVICENOW_URL`...), from CI/CD variables or a local `.env`, and works outside of a Salesforce project.
+  - **Azure Boards needs a token and nothing else.** The organization and the project are read from the git remote of the repository you are standing in, so `SYSTEM_COLLECTIONURI` and `SYSTEM_TEAMPROJECT` are only needed to override that. `AZURE_DEVOPS_EXT_PAT` - the variable the Azure CLI uses, so one you probably already have - is accepted alongside `CI_SFDX_HARDIS_AZURE_TOKEN` and `SYSTEM_ACCESSTOKEN`.
+  - **New ServiceNow ticketing connector**, using the same `SERVICENOW_URL` / `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD` variables as `hardis:misc:servicenow-report`. It is only used by this command: the content of your Pull Request comments and release notes is unchanged. When `sys_journal_field` is ACL-restricted (ServiceNow answers a denied read with an empty result rather than an error, so a ticket full of comments would otherwise look like a ticket with none), the comments are read from the record's own `comments` / `work_notes` / `close_notes` fields instead, and the log says so.
 
 ## [8.4.2] 2026-09-02
 
-### [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)
-
-- The **home page** is now a grid of cards, one per section, saying in plain language what the section holds and how many pages are behind it. Only the sections your project actually has are listed, instead of links to pages that were never generated.
-- `DO_NOT_OVERWRITE_INDEX_MD=true` no longer freezes your home page on the version that first generated it: as long as `docs/index.md` is still exactly what a previous run wrote, it is refreshed with the latest home page. The first edit you make to it keeps the page yours for good.
-- A section that documents nothing, and a section whose metadata is gone since the last run, no longer leave behind an index page listing nothing, absent from the menu but still built into the site.
-- An **object page** now lists the assignment rules, auto-response rules, escalation rules, approval processes, workflow rules and Lightning Web Components that touch it: building those tables raised an error the documentation swallowed, which silently dropped the sections from every object page.
-- Fixed the **validation rules table** of an object breaking apart when a rule description or a formula spans several lines, and formulas no longer lose the `||` of their OR conditions.
-- **Wide tables** now fit the page instead of hiding their last column behind a horizontal scrollbar, and a table longer than **15 rows** gets a **filter box**, so a 500 field object can be searched instead of scrolled.
-- Every page now carries its **own title**, so section pages are no longer all called "Index" in the browser tab and in search results.
-- Documentation pages ship about **30 times less navigation markup**, which is what made a large project's site slow to open.
-- Fixed the site title, the repository link and the whole **footer** being written in near-black on the navy bar, and added **breadcrumbs** and a **back to top** button.
-- Fields without a description no longer display the text **"undefined"**, and user licenses are no longer mangled into "B2 B M A Integration User".
-- **Process Builders** now have their own section title instead of appearing as a second "Flows" list, and every index table is **sorted by name**.
-- An object whose page **fails to generate** is now reported, instead of leaving the page short of a few sections with nothing said about it.
-- The **manifest pages** now carry a title too, instead of being called "Package.Xml" and "Destructivechanges.Xml" after their file name.
-- The links inside a **mermaid diagram** are now relative, so they still work on a site that is not served from the root of a domain, such as a Salesforce static resource or a GitHub Pages project site.
-- `docs/javascripts/gtag.js` is refreshed while it still holds the placeholder measurement id, so an existing documentation stops calling googletagmanager on every page load. A **real id you configured is never touched**.
-- Documentation styling and behavior moved to **`docs/stylesheets/sfdx-hardis-doc.css`** and **`docs/javascripts/sfdx-hardis-doc.js`**, rewritten on every run, so an existing documentation receives the fixes. Your own customizations stay in `extra.css` and `tables.js`.
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - The **home page** is now a grid of cards, one per section, saying in plain language what the section holds and how many pages are behind it. Only the sections your project actually has are listed, instead of links to pages that were never generated.
+  - `DO_NOT_OVERWRITE_INDEX_MD=true` no longer freezes your home page on the version that first generated it: as long as `docs/index.md` is still exactly what a previous run wrote, it is refreshed with the latest home page. The first edit you make to it keeps the page yours for good.
+  - A section that documents nothing, and a section whose metadata is gone since the last run, no longer leave behind an index page listing nothing, absent from the menu but still built into the site.
+  - An **object page** now lists the assignment rules, auto-response rules, escalation rules, approval processes, workflow rules and Lightning Web Components that touch it: building those tables raised an error the documentation swallowed, which silently dropped the sections from every object page.
+  - Fixed the **validation rules table** of an object breaking apart when a rule description or a formula spans several lines, and formulas no longer lose the `||` of their OR conditions.
+  - **Wide tables** now fit the page instead of hiding their last column behind a horizontal scrollbar, and a table longer than **15 rows** gets a **filter box**, so a 500 field object can be searched instead of scrolled.
+  - Every page now carries its **own title**, so section pages are no longer all called "Index" in the browser tab and in search results.
+  - Documentation pages ship about **30 times less navigation markup**, which is what made a large project's site slow to open.
+  - Fixed the site title, the repository link and the whole **footer** being written in near-black on the navy bar, and added **breadcrumbs** and a **back to top** button.
+  - Fields without a description no longer display the text **"undefined"**, and user licenses are no longer mangled into "B2 B M A Integration User".
+  - **Process Builders** now have their own section title instead of appearing as a second "Flows" list, and every index table is **sorted by name**.
+  - An object whose page **fails to generate** is now reported, instead of leaving the page short of a few sections with nothing said about it.
+  - The **manifest pages** now carry a title too, instead of being called "Package.Xml" and "Destructivechanges.Xml" after their file name.
+  - The links inside a **mermaid diagram** are now relative, so they still work on a site that is not served from the root of a domain, such as a Salesforce static resource or a GitHub Pages project site.
+  - `docs/javascripts/gtag.js` is refreshed while it still holds the placeholder measurement id, so an existing documentation stops calling googletagmanager on every page load. A **real id you configured is never touched**.
+  - Documentation styling and behavior moved to **`docs/stylesheets/sfdx-hardis-doc.css`** and **`docs/javascripts/sfdx-hardis-doc.js`**, rewritten on every run, so an existing documentation receives the fixes. Your own customizations stay in `extra.css` and `tables.js`.
 
 ## [8.4.1] 2026-09-02
 
