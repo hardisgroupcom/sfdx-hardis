@@ -11,15 +11,13 @@
   - Reuses the ticketing variables you already configure (`JIRA_HOST` / `JIRA_TOKEN`..., `SERVICENOW_URL`...), from CI/CD variables or a local `.env`, and works outside of a Salesforce project.
   - **Azure Boards needs a token and nothing else.** The organization and the project are read from the git remote of the repository you are standing in, so `SYSTEM_COLLECTIONURI` and `SYSTEM_TEAMPROJECT` are only needed to override that. `AZURE_DEVOPS_EXT_PAT` - the variable the Azure CLI uses, so one you probably already have - is accepted alongside `CI_SFDX_HARDIS_AZURE_TOKEN` and `SYSTEM_ACCESSTOKEN`.
   - **New ServiceNow ticketing connector**, using the same `SERVICENOW_URL` / `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD` variables as `hardis:misc:servicenow-report`. It is only used by this command: the content of your Pull Request comments and release notes is unchanged. When `sys_journal_field` is ACL-restricted (ServiceNow answers a denied read with an empty result rather than an error, so a ticket full of comments would otherwise look like a ticket with none), the comments are read from the record's own `comments` / `work_notes` / `close_notes` fields instead, and the log says so.
-
-### [hardis:doc:mkdocs-to-confluence](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-confluence/)
-
-- Pages that Confluence used to refuse now publish. Confluence reads the storage format as strict XHTML and rejects a whole page on the first malformed tag, which cost you the **home page** (its section cards are laid out with `<div>` containers Confluence knows nothing about), any **object page** whose validation rule formula holds a `||`, and the pages carrying **generic Apex code** such as `Map<Id,List<Opportunity>>`.
-- **Collapsible sections** (`<details>` / `<summary>`, used by the manifest pages) now become the Confluence **expand** macro, instead of being printed to the reader as raw markup. A section left unclosed no longer costs the page.
-- Fixed **`&nbsp;`** and the other named entities being sent as they are, which Confluence answers with "the entity was referenced, but not declared". They are now written as the character they stand for.
-- The **banner** at the bottom of every page is an image inside a link, and its markup used to be printed as text on every single page. It is now an image.
-- Fixed emphasis running from one **table cell** into the next: the `*` of a formula multiplication was read as italic, and a row holding an unpaired `**` turned the rest of the table bold.
-- The colors a **Flow diagram** table uses are kept, and the CSS classes the website styles itself with no longer reach the reader as `{ .some-class }`.
+- [hardis:doc:mkdocs-to-confluence](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-confluence/):
+  - Pages that Confluence used to refuse now publish. Confluence reads the storage format as strict XHTML and rejects a whole page on the first malformed tag, which cost you the **home page** (its section cards are laid out with `<div>` containers Confluence knows nothing about), any **object page** whose validation rule formula holds a `||`, and the pages carrying **generic Apex code** such as `Map<Id,List<Opportunity>>`.
+  - **Collapsible sections** (`<details>` / `<summary>`, used by the manifest pages) now become the Confluence **expand** macro, instead of being printed to the reader as raw markup. A section left unclosed no longer costs the page.
+  - Fixed **`&nbsp;`** and the other named entities being sent as they are, which Confluence answers with "the entity was referenced, but not declared". They are now written as the character they stand for.
+  - The **banner** at the bottom of every page is an image inside a link, and its markup used to be printed as text on every single page. It is now an image.
+  - Fixed emphasis running from one **table cell** into the next: the `*` of a formula multiplication was read as italic, and a row holding an unpaired `**` turned the rest of the table bold.
+  - The colors a **Flow diagram** table uses are kept, and the CSS classes the website styles itself with no longer reach the reader as `{ .some-class }`.
 
 ## [8.4.2] 2026-09-02
 
