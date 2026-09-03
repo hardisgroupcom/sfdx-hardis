@@ -144,6 +144,7 @@
   "availableConnectedAppsInThe": "{{context}} で利用可能な接続アプリケーション:",
   "availableOnlyInSfdxHardisCiCdProject": "[sfdx-hardis CI/CD プロジェクト](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/) でのみ利用可能です",
   "availablePredefinedQueries": "利用可能な定義済みクエリ",
+  "azureBoardsAutoDetectedFromRemote": "git remote から組織とプロジェクトを読み取りました: {{collectionUri}} / {{teamProject}}",
   "azureBoardsProviderAddedTag": "{{count}} 件の作業項目にタグ {{tag}} を追加しました: {{tickets}}",
   "azureBoardsProviderCollectedWorkItem": "作業項目 {{ticketId}} のデータを収集しました",
   "azureBoardsProviderCollectingTickets": "Azure Boards Server {{serverUrl}} から {{azureTicketsNumber}} 件のチケット情報を収集しています...",
