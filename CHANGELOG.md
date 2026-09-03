@@ -2,6 +2,15 @@
 
 ## [beta] (main)
 
+### [hardis:ticket:get](https://sfdx-hardis.cloudity.com/hardis/ticket/get/)
+
+- **New command** that reads a **single ticket in full** from JIRA, Azure Boards or ServiceNow and returns it as structured JSON, or as a markdown extract with `--output-file`. Where the Pull Request flows collect a one-line summary of every referenced ticket, this one gives you the whole requirement — description, acceptance criteria, all comments, subtasks, linked items and attachments — without opening the ticketing system.
+- The ticketing system is **deduced from the identifier**: `ACME-4567` is JIRA, `1234` / `AB-4567` is Azure Boards, `INC0012345` is ServiceNow. `--provider` forces one when you need to.
+- **Attachments are downloaded** next to the extract, so screenshots and wireframes can be looked at and PDF or Office documents opened. Text attachments come back inline in the JSON.
+- The extract highlights the lines of the ticket that mention an operation deployable metadata will not carry (permission set assignment, org setting, scheduled job, data load), so they can be registered as [deployment actions](https://sfdx-hardis.cloudity.com/hardis/project/action/create/) rather than discovered at promotion time.
+- Reuses the ticketing variables you already configure (`JIRA_HOST` / `JIRA_TOKEN`..., `SYSTEM_COLLECTIONURI`..., `SERVICENOW_URL`...), from CI/CD variables or a local `.env`, and works outside of a Salesforce project.
+- **New ServiceNow ticketing connector**, using the same `SERVICENOW_URL` / `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD` variables as `hardis:misc:servicenow-report`. It is only used by this command: the content of your Pull Request comments and release notes is unchanged.
+
 ## [8.4.2] 2026-09-02
 
 ### [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)

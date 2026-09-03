@@ -441,6 +441,8 @@ nav:
           - deploy: hardis/source/deploy.md
           - push: hardis/source/push.md
           - retrieve: hardis/source/retrieve.md
+      - hardis:ticket:
+          - get: hardis/ticket/get.md
       - hardis:work:
           - new: hardis/work/new.md
           - refresh: hardis/work/refresh.md
