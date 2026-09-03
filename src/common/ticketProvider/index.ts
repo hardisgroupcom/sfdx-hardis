@@ -23,10 +23,17 @@ export const allTicketProviders = [JiraProvider, GenericTicketingProvider, Azure
  * behavior of projects that already use the bulk flows.
  */
 export const ticketDetailsProviders = [
-  { key: "jira", label: "JIRA", providerClass: JiraProvider },
-  { key: "azure", label: "Azure Boards", providerClass: AzureBoardsProvider },
-  { key: "servicenow", label: "ServiceNow", providerClass: ServiceNowProvider },
-];
+  { key: "jira", label: "JIRA", providerClass: JiraProvider, prepare: undefined },
+  {
+    key: "azure",
+    label: "Azure Boards",
+    providerClass: AzureBoardsProvider,
+    // Reads the organization and the project from the git remote, so a local run only needs a token.
+    // Runs before isAvailable(), which is synchronous and cannot look at the remote itself.
+    prepare: () => AzureBoardsProvider.autoDetectFromGitRemote(),
+  },
+  { key: "servicenow", label: "ServiceNow", providerClass: ServiceNowProvider, prepare: undefined },
+] as { key: string; label: string; providerClass: any; prepare?: () => Promise<void> }[];
 
 export type TicketDetailsProviderKey = "jira" | "azure" | "servicenow";
 
@@ -87,6 +94,14 @@ export abstract class TicketProvider {
     );
     if (shapeMatches.length === 0) {
       throw new SfError(t('ticketDetailsUnknownIdShape', { ticketId: trimmedId }));
+    }
+    // A provider may be able to complete its own configuration (Azure Boards reads the organization
+    // and the project from the git remote). Only the candidates matching the identifier are prepared,
+    // so a JIRA key never triggers a git call.
+    for (const descriptor of shapeMatches) {
+      if (descriptor.prepare) {
+        await descriptor.prepare();
+      }
     }
     const available = shapeMatches.filter((descriptor) => descriptor.providerClass.isAvailable(config));
     if (available.length === 0) {

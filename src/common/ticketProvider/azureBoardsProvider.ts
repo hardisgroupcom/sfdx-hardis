@@ -7,7 +7,8 @@ import sortArray from '../utils/sortArray.js';
 import type { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
-import { extractRegexMatches, uxLog } from "../utils/index.js";
+import { extractRegexMatches, getGitRepoUrl, isGitRepo, uxLog } from "../utils/index.js";
+import { parseAzureRepoUrl } from "../gitProvider/azureRepoUrl.js";
 import { SfError } from "@salesforce/core";
 import { getConfig, getEnvVar } from "../../config/index.js";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces.js";
@@ -37,8 +38,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     super();
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
     this.serverUrl = getEnvVar("SYSTEM_COLLECTIONURI");
-    // a Personal Access Token must be defined (CI_SFDX_HARDIS_AZURE_TOKEN takes priority, then SYSTEM_ACCESSTOKEN)
-    this.token = getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN") || getEnvVar("SYSTEM_ACCESSTOKEN");
+    // a Personal Access Token must be defined. AZURE_DEVOPS_EXT_PAT comes last: it is the variable
+    // the Azure CLI uses, so a developer machine usually already has it.
+    this.token = getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN") || getEnvVar("SYSTEM_ACCESSTOKEN") || getEnvVar("AZURE_DEVOPS_EXT_PAT");
     this.teamProject = getEnvVar("SYSTEM_TEAMPROJECT");
     if (this.serverUrl && this.token && this.teamProject) {
       this.isActive = true;
@@ -49,12 +51,51 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     }
   }
 
+  /**
+   * Fills SYSTEM_COLLECTIONURI and SYSTEM_TEAMPROJECT from the git remote of the current repository.
+   *
+   * On a CI agent Azure Pipelines sets both for free, but a developer running the command locally
+   * would otherwise have to declare the organization and the project by hand - while the clone they
+   * are standing in already names both. So only the token really has to be configured; the rest is
+   * read from `origin`. Values already set (a CI agent, or an explicit override) always win.
+   *
+   * Sets process.env rather than returning, so the synchronous isAvailable() sees the result. This
+   * is the same approach AzureDevopsProvider uses for the git side.
+   */
+  public static async autoDetectFromGitRemote(): Promise<void> {
+    if (getEnvVar("SYSTEM_COLLECTIONURI") && getEnvVar("SYSTEM_TEAMPROJECT")) {
+      return;
+    }
+    if (!isGitRepo()) {
+      return;
+    }
+    const remoteUrl = (await getGitRepoUrl()) || "";
+    if (!remoteUrl) {
+      return;
+    }
+    const parsed = parseAzureRepoUrl(remoteUrl);
+    if (!parsed) {
+      // Another provider's remote: not an error, the identifier simply does not belong to this repo
+      return;
+    }
+    if (!getEnvVar("SYSTEM_COLLECTIONURI")) {
+      process.env.SYSTEM_COLLECTIONURI = parsed.collectionUri;
+    }
+    if (!getEnvVar("SYSTEM_TEAMPROJECT")) {
+      process.env.SYSTEM_TEAMPROJECT = parsed.teamProject;
+    }
+    uxLog("log", AzureBoardsProvider, c.grey('[AzureBoardsProvider] ' + t('azureBoardsAutoDetectedFromRemote', {
+      collectionUri: process.env.SYSTEM_COLLECTIONURI || "",
+      teamProject: process.env.SYSTEM_TEAMPROJECT || "",
+    })));
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public static isAvailable(_config: any): boolean {
     if (
       // Basic auth
       getEnvVar("SYSTEM_COLLECTIONURI") &&
-      (getEnvVar("SYSTEM_ACCESSTOKEN") || getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN")) &&
+      (getEnvVar("SYSTEM_ACCESSTOKEN") || getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN") || getEnvVar("AZURE_DEVOPS_EXT_PAT")) &&
       getEnvVar("SYSTEM_TEAMPROJECT")
     ) {
       return true;

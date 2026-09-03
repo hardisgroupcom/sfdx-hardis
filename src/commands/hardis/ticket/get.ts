@@ -48,13 +48,13 @@ The ticketing system is deduced from the shape of the identifier, so \`--provide
 The command reuses the ticketing variables sfdx-hardis already documents, read from CI/CD variables or from a local **.env** file:
 
 - **JIRA:** \`JIRA_HOST\` + (\`JIRA_EMAIL\` + \`JIRA_TOKEN\`) or \`JIRA_PAT\` or (\`JIRA_CLIENT_ID\` + \`JIRA_CLIENT_SECRET\`)
-- **Azure Boards:** \`SYSTEM_COLLECTIONURI\` + \`SYSTEM_TEAMPROJECT\` + (\`CI_SFDX_HARDIS_AZURE_TOKEN\` or \`SYSTEM_ACCESSTOKEN\`)
+- **Azure Boards:** a token only — \`CI_SFDX_HARDIS_AZURE_TOKEN\`, \`SYSTEM_ACCESSTOKEN\` or \`AZURE_DEVOPS_EXT_PAT\`. The organization and the project are read from the git remote of the current repository; set \`SYSTEM_COLLECTIONURI\` and \`SYSTEM_TEAMPROJECT\` only to override that (on a CI agent, Azure Pipelines already provides them).
 - **ServiceNow:** \`SERVICENOW_URL\` + \`SERVICENOW_USERNAME\` + \`SERVICENOW_PASSWORD\`
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- **Provider abstraction:** \`TicketProvider.getTicketDetails()\` picks the connector whose identifier pattern matches and whose credentials are configured, then delegates to that provider's \`getTicketDetails()\`. An identifier that matches nothing, or that matches a provider with no credentials, raises an explicit error naming the missing configuration rather than returning an empty result.
+- **Provider abstraction:** \`TicketProvider.getTicketDetails()\` picks the connector whose identifier pattern matches and whose credentials are configured, then delegates to that provider's \`getTicketDetails()\`. A matching connector may first complete its own configuration: Azure Boards parses \`origin\` with \`parseAzureRepoUrl()\` and fills the organization and project it finds there, so only a token has to be supplied locally. Values already set always win, and the git remote is only read when the identifier could belong to Azure Boards. An identifier that matches nothing, or that matches a provider with no credentials, raises an explicit error naming the missing configuration rather than returning an empty result.
 - **Text conversion:** provider HTML (JIRA \`renderedFields\`, Azure Boards fields, ServiceNow journals) is converted to plain text with \`sanitize-html\`, and JIRA's Atlassian Document Format is walked as a fallback.
 - **Attachment safety:** the download URL of an attachment comes from the ticket payload, which is user-controlled data. Before any credential is sent, the URL is checked to resolve to the same host as the ticketing instance the command authenticated against. The response is read through a size cap (\`--max-attachment-size\`, 20 MB by default), the file name is sanitized and the resolved path is verified to stay inside the target directory.
 - **No sub-process:** downloaded content is never handed to an external converter. Text attachments are decoded in-process; images, PDFs and Office documents are saved as-is and reported through \`localPath\`, for the caller to open with its own tooling.

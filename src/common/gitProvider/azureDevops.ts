@@ -3,6 +3,7 @@ import * as azdev from "azure-devops-node-api";
 import c from "chalk";
 import fs from '../utils/fsUtils.js';
 import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../utils/index.js";
+import { AzureRepoUrlParts, parseAzureRepoUrl } from "./azureRepoUrl.js";
 import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
@@ -870,55 +871,13 @@ ${getBannerMarkdownAndLink()}
     return prResult;
   }
 
-  public static parseAzureRepoUrl(remoteUrl: string): {
-    collectionUri: string;
-    teamProject: string;
-    repositoryId: string;
-  } | null {
-    let collectionUri: string;
-    let repositoryId: string;
-    let teamProject: string;
-
-    if (remoteUrl.startsWith("https://")) {
-      // Handle modern dev.azure.com URLs with or without username
-      const devAzureRegex = /https:\/\/(?:[^@]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)/;
-      const devAzureMatch = remoteUrl.match(devAzureRegex);
-      if (devAzureMatch) {
-        const organization = devAzureMatch[1];
-        teamProject = decodeURIComponent(devAzureMatch[2]); // Decode URL-encoded project name
-        repositoryId = decodeURIComponent(devAzureMatch[3]); // Decode URL-encoded repository name
-        collectionUri = `https://dev.azure.com/${organization}/`;
-        return { collectionUri, teamProject, repositoryId };
-      }
-
-      // Handle legacy visualstudio.com URLs
-      // Format: https://organization.visualstudio.com/ProjectName/_git/RepoName
-      const vsRegex = /https:\/\/(?:[^@]+@)?([^.]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/?]+)/;
-      const vsMatch = remoteUrl.match(vsRegex);
-      if (vsMatch) {
-        const organization = vsMatch[1];
-        teamProject = decodeURIComponent(vsMatch[2]); // Decode URL-encoded project name
-        repositoryId = decodeURIComponent(vsMatch[3]); // Decode URL-encoded repository name
-        collectionUri = `https://${organization}.visualstudio.com/`;
-        return { collectionUri, teamProject, repositoryId };
-      }
-    } else if (remoteUrl.startsWith("git@")) {
-      /* jscpd:ignore-start */
-      // Handle SSH URLs
-      const sshRegex = /git@ssh\.dev\.azure\.com:v3\/([^/]+)\/([^/]+)\/([^/]+)/;
-      const match = remoteUrl.match(sshRegex);
-      if (match) {
-        const organization = match[1];
-        teamProject = decodeURIComponent(match[2]); // Decode URL-encoded project name
-        repositoryId = decodeURIComponent(match[3]); // Decode URL-encoded repository name
-        collectionUri = `https://dev.azure.com/${organization}/`;
-        return { collectionUri, teamProject, repositoryId };
-      }
-      /* jscpd:ignore-end */
-    }
-
-    // Return null if the URL doesn't match expected patterns
-    return null;
+  /**
+   * Kept as a static method for the callers that already use it; the implementation lives in
+   * azureRepoUrl.ts, a leaf module the Azure Boards ticket connector can import without closing a
+   * cycle through utils/index.
+   */
+  public static parseAzureRepoUrl(remoteUrl: string): AzureRepoUrlParts | null {
+    return parseAzureRepoUrl(remoteUrl);
   }
 
   public async uploadImage(localImagePath: string): Promise<string | null> {
