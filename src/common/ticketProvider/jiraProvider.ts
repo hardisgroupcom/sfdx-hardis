@@ -4,7 +4,7 @@ import { recordTicketCollectionIssue, TicketProviderRoot } from "./ticketProvide
 import c from "chalk";
 import sortArray from '../utils/sortArray.js';
 // Type-only: a value import here would close a runtime cycle index -> provider -> index
-import type { Ticket } from "./index.js";
+import type { Ticket, TicketsFromStringOptions } from "./index.js";
 import { extractRegexMatches, getCurrentGitBranch, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
 import { CONSTANTS, getConfig, getEnvVar } from "../../config/index.js";
@@ -35,6 +35,10 @@ type JiraAuth = {
 };
 
 export class JiraProvider extends TicketProviderRoot {
+  public static readonly providerKey = "jira" as const;
+  public static readonly providerLabel = "JIRA";
+  public static readonly supportsTicketDetails = true;
+
   // Version3Client for Jira Cloud, Version2Client for Jira Server / Data Center
   private jiraClient: Version2Client | Version3Client | null = null;
   private jiraHost: string | null = null;
@@ -296,7 +300,7 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public static async getTicketsFromString(text: string, options = {}): Promise<Ticket[]> {
+  public static async getTicketsFromString(text: string, options: TicketsFromStringOptions = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
     // Extract JIRA tickets using URL references
     const jiraUrlRegex = /(https:\/\/.*(jira|atlassian\.net).*\/[A-Z0-9]+-\d+\b)/g;
@@ -316,7 +320,7 @@ export class JiraProvider extends TicketProviderRoot {
       }
     }
     // Extract JIRA tickets using Identifiers
-    const config = await getConfig("project");
+    const config = options.config || (await getConfig("project"));
     const jiraBaseUrl = getEnvVar("JIRA_HOST") || config.jiraHost || "https://define.JIRA_HOST.in.cicd.variables/";
     const sanitizedBaseUrl = jiraBaseUrl.startsWith("http") ? jiraBaseUrl : `https://${jiraBaseUrl}`;
     const jiraRegex = getEnvVar("JIRA_TICKET_REGEX") || config.jiraTicketRegex || "(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\\d{1,6})(?=[^a-zA-Z0-9_-]|$)";
@@ -447,7 +451,8 @@ export class JiraProvider extends TicketProviderRoot {
    * AB- / GH- / GL- are excluded: those prefixes belong to Azure Boards, GitHub and GitLab issues,
    * and they would otherwise match this pattern too.
    */
-  public static matchesTicketId(ticketId: string): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static matchesTicketId(ticketId: string, _config: any = {}): boolean {
     const trimmed = (ticketId || "").trim();
     if (/^(AB|GH|GL)-[0-9]+$/i.test(trimmed)) {
       return false;

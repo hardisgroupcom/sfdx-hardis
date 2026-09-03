@@ -4,7 +4,7 @@ import { TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from '../utils/sortArray.js';
 // Type-only: a value import here would close a runtime cycle index -> provider -> index
-import type { Ticket } from "./index.js";
+import type { Ticket, TicketsFromStringOptions } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
 import { extractRegexMatches, git, isGitRepo, uxLog } from "../utils/index.js";
@@ -29,6 +29,10 @@ import {
 /* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {
+  public static readonly providerKey = "azure" as const;
+  public static readonly providerLabel = "Azure Boards";
+  public static readonly supportsTicketDetails = true;
+
   protected serverUrl: string | null;
   protected azureApi: InstanceType<typeof azdev.WebApi>;
   protected teamProject: string | null;
@@ -116,7 +120,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     return "sfdx-hardis Azure Boards connector";
   }
 
-  public static async getTicketsFromString(text: string, prInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
+  public static async getTicketsFromString(text: string, options: TicketsFromStringOptions = {}): Promise<Ticket[]> {
+    const prInfo = options.pullRequestInfo || null;
     const tickets: Ticket[] = [];
     // Extract Azure Boards Work Items
     const azureBoardsUrlRegex = /(https:\/\/.*\/_workitems\/edit\/[0-9]+)/g;
@@ -134,10 +139,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
         }
       }
     }
-    const ticketsSorted: Ticket[] = sortArray(tickets, { by: ["id"], order: ["asc"] });
-    const config = await getConfig("project");
+    const config = options.config || (await getConfig("project"));
     if (!this.isAvailable(config)) {
-      return ticketsSorted;
+      return sortArray(tickets, { by: ["id"], order: ["asc"] }) as Ticket[];
     }
     // Get tickets from Azure commits
     if (prInfo?.providerInfo?.commits) {
@@ -177,7 +181,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       }
     }
 
-    return ticketsSorted;
+    return sortArray(tickets, { by: ["id"], order: ["asc"] }) as Ticket[];
   }
 
   // Call Azure Work Items apis to gather more information from the ticket identifiers
@@ -238,7 +242,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   }
 
   /** True when the identifier is a work item id, bare or in the AB-1234 form used by the skills */
-  public static matchesTicketId(ticketId: string): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static matchesTicketId(ticketId: string, _config: any = {}): boolean {
     return /^(AB-)?[0-9]{1,10}$/i.test((ticketId || "").trim());
   }
 

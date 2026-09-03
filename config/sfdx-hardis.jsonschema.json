@@ -3234,17 +3234,89 @@
       "title": "Test level for deployments",
       "type": "string"
     },
+    "serviceNowAddDeploymentTag": {
+      "$id": "#/properties/serviceNowAddDeploymentTag",
+      "default": false,
+      "description": "Add a tag on ServiceNow records when they are deployed in a major org. A ServiceNow tag is a record of the global label table, created on first use: keep it disabled unless the CI user is allowed to write there.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "title": "ServiceNow Add Deployment Tag",
+      "type": "boolean",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "SERVICENOW"
+        }
+      ]
+    },
+    "serviceNowCommentField": {
+      "$id": "#/properties/serviceNowCommentField",
+      "default": "work_notes",
+      "description": "Journal field the deployment comment is written into. work_notes is the internal journal, comments is read by the person who opened the record.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "examples": [
+        "work_notes",
+        "comments"
+      ],
+      "title": "ServiceNow Comment Field",
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "SERVICENOW"
+        }
+      ]
+    },
+    "serviceNowTablePrefixes": {
+      "$id": "#/properties/serviceNowTablePrefixes",
+      "description": "Additional record number prefixes, and the ServiceNow table each one belongs to, as PREFIX:table,PREFIX:table. Use it to reach the tables of a scoped application.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "examples": [
+        "STRY:x_acme_story",
+        "STRY:x_acme_story,DEFECT:x_acme_defect"
+      ],
+      "title": "ServiceNow Table Prefixes",
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "SERVICENOW"
+        }
+      ]
+    },
+    "serviceNowTicketRegex": {
+      "$id": "#/properties/serviceNowTicketRegex",
+      "description": "Regular expression to identify ServiceNow record numbers in commits, branch names and Pull Request descriptions. Example: (INC[0-9]{7})",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "examples": [
+        "(INC[0-9]{7})",
+        "(INC|CHG|RITM)([0-9]{4,})"
+      ],
+      "title": "ServiceNow Ticket Regex",
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "SERVICENOW"
+        }
+      ]
+    },
     "ticketingProvider": {
       "$id": "#/properties/ticketingProvider",
       "description": "Ticketing provider used on the project",
       "enum": [
         "JIRA",
         "AZURE",
+        "SERVICENOW",
         "GENERIC"
       ],
       "enumNames": [
         "Jira",
         "Azure Boards",
+        "ServiceNow",
         "Generic"
       ],
       "examples": [

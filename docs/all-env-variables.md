@@ -40,6 +40,7 @@ This list was initially generated with GitHub Copilot, so if you spot an inconsi
   - [OpenAI (direct) variables](#openai-direct-variables)
   - [Email Notifications](#email-notifications)
   - [Browser Automation](#browser-automation)
+  - [ServiceNow Integration](#servicenow-integration)
   - [Generic Ticketing](#generic-ticketing)
   - [Generic CI/CD](#generic-cicd)
 - [Summary](#summary)
@@ -295,6 +296,18 @@ Project-wide defaults (e.g., preferred model) can be stored directly at the root
 |-------------------------------|--------------------------------------------------|---------------|-----------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | **CHROMIUM_PATH**             | Path to Chromium executable for Puppeteer        | `undefined`   | Valid file system paths (e.g., `'/usr/bin/chromium'`, `'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'`) | Found in deployment documentation                                                                                                  |
 | **PUPPETEER_EXECUTABLE_PATH** | Path to Chrome/Chromium executable for Puppeteer | Auto-detected | Valid file system paths (e.g., `'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'`)                      | [`src/common/utils/orgConfigUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/orgConfigUtils.ts) |
+
+### ServiceNow Integration
+
+| Variable Name                        | Description                                                                              | Default Value | Possible Values                                                                        | Usage Location |
+|--------------------------------------|------------------------------------------------------------------------------------------|---------------|----------------------------------------------------------------------------------------|----------------|
+| **SERVICENOW_URL**                   | ServiceNow instance URL, with or without the scheme                                      | `undefined`   | `'https://acme.service-now.com'`, `'acme.service-now.com'`                             | [`src/common/ticketProvider/serviceNowProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/serviceNowProvider.ts) |
+| **SERVICENOW_USERNAME**              | User name of the ServiceNow integration user                                             | `undefined`   | Any valid ServiceNow user name (e.g., `'sfdx.hardis.integration'`)                     | [`src/common/ticketProvider/serviceNowProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/serviceNowProvider.ts) |
+| **SERVICENOW_PASSWORD**              | Password of the ServiceNow integration user                                              | `undefined`   | Any valid password                                                                     | [`src/common/ticketProvider/serviceNowProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/serviceNowProvider.ts) |
+| **SERVICENOW_TICKET_REGEX**          | Regular expression for ServiceNow record numbers in commits, branches and Pull Requests  | All known record number prefixes followed by 4+ digits | Valid regular expressions (e.g., `'(INC[0-9]{7})'`)               | [`src/common/ticketProvider/serviceNowProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/serviceNowProvider.ts) |
+| **SERVICENOW_TABLE_PREFIXES**        | Additional record number prefixes and their table, as `PREFIX:table,PREFIX:table`        | `undefined`   | `'STRY:x_acme_story'`, `'STRY:x_acme_story,DEFECT:x_acme_defect'`                      | [`src/common/ticketProvider/serviceNowProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/serviceNowProvider.ts) |
+| **SERVICENOW_COMMENT_FIELD**         | Journal field the deployment comment is written into                                     | `"work_notes"` | `'work_notes'`, `'comments'`, any journal field of the table                           | [`src/common/ticketProvider/serviceNowProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/serviceNowProvider.ts) |
+| **SERVICENOW_ADD_DEPLOYMENT_TAG**    | Tag the deployed records with the deployment tag                                         | `"false"`     | `'true'`, `'false'`                                                                    | [`src/common/ticketProvider/serviceNowProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/serviceNowProvider.ts) |
 
 ### Generic Ticketing
 

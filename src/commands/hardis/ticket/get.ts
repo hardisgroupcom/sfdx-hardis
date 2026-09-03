@@ -7,7 +7,7 @@ import * as path from 'path';
 import fs from '../../../common/utils/fsUtils.js';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
-import { TicketProvider, TicketDetailsProviderKey } from '../../../common/ticketProvider/index.js';
+import { TicketProvider, TicketProviderKey, ticketDetailsProviderKeys } from '../../../common/ticketProvider/index.js';
 import { TicketDetails, renderTicketDetailsMarkdown } from '../../../common/ticketProvider/ticketDetails.js';
 import { t } from '../../../common/utils/i18n.js';
 
@@ -54,7 +54,7 @@ The command reuses the ticketing variables sfdx-hardis already documents, read f
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- **Provider abstraction:** \`TicketProvider.getTicketDetails()\` picks the connector whose identifier pattern matches and whose credentials are configured, then delegates to that provider's \`getTicketDetails()\`. A matching connector may first complete its own configuration: Azure Boards parses \`origin\` with \`parseAzureRepoUrl()\` and fills the organization and project it finds there, so only a token has to be supplied locally. Values already set always win, and the git remote is only read when the identifier could belong to Azure Boards. An identifier that matches nothing, or that matches a provider with no credentials, raises an explicit error naming the missing configuration rather than returning an empty result.
+- **Provider abstraction:** every connector is declared in the same \`allTicketProviders\` list, with the same static surface (\`providerKey\`, \`providerLabel\`, \`isAvailable\`, \`matchesTicketId\`, \`getTicketsFromString\`, \`supportsTicketDetails\`). \`TicketProvider.getTicketDetails()\` picks the connector that supports a deep fetch, whose identifier pattern matches, and whose credentials are configured, then delegates to that provider's \`getTicketDetails()\`. A matching connector may first complete its own configuration: Azure Boards parses \`origin\` with \`parseAzureRepoUrl()\` and fills the organization and project it finds there, so only a token has to be supplied locally. Values already set always win, and the git remote is only read when the identifier could belong to Azure Boards. An identifier that matches nothing, or that matches a provider with no credentials, raises an explicit error naming the missing configuration rather than returning an empty result.
 - **Text conversion:** provider HTML (JIRA \`renderedFields\`, Azure Boards fields, ServiceNow journals) is converted to plain text with \`sanitize-html\`, and JIRA's Atlassian Document Format is walked as a fallback.
 - **Attachment safety:** the download URL of an attachment comes from the ticket payload, which is user-controlled data. Before any credential is sent, the URL is checked to resolve to the same host as the ticketing instance the command authenticated against. The response is read through a size cap (\`--max-attachment-size\`, 20 MB by default), the file name is sanitized and the resolved path is verified to stay inside the target directory.
 - **No sub-process:** downloaded content is never handed to an external converter. Text attachments are decoded in-process; images, PDFs and Office documents are saved as-is and reported through \`localPath\`, for the caller to open with its own tooling.
@@ -92,7 +92,7 @@ sf hardis ticket get --id ACME-4567 --agent --json
     }),
     provider: Flags.string({
       char: 'p',
-      options: ['jira', 'azure', 'servicenow'],
+      options: ticketDetailsProviderKeys(),
       description: 'Force the ticketing system instead of deducing it from the identifier',
     }),
     'output-file': Flags.string({
@@ -136,7 +136,7 @@ sf hardis ticket get --id ACME-4567 --agent --json
     const attachmentsDir = flags['attachments-dir'] || (outputFile ? path.join(path.dirname(outputFile), 'attachments') : undefined);
 
     const details = await TicketProvider.getTicketDetails(ticketId, {
-      providerKey: flags.provider as TicketDetailsProviderKey | undefined,
+      providerKey: flags.provider as TicketProviderKey | undefined,
       downloadAttachments: flags['skip-attachments'] !== true,
       attachmentsDir,
       maxAttachmentBytes: flags['max-attachment-size'] * 1024 * 1024,
@@ -186,7 +186,7 @@ sf hardis ticket get --id ACME-4567 --agent --json
 
   /** Short console recap: the full payload is in --json, the log only needs to say what was found */
   private logSummary(details: TicketDetails): void {
-    uxLog('action', this, c.cyan(`[TicketGet] ${details.id} — ${details.subject}`));
+    uxLog('action', this, c.cyan(`[TicketGet] ${details.id} - ${details.subject}`));
     uxLog(
       'log',
       this,
