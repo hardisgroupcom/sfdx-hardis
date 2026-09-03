@@ -11,6 +11,11 @@ import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/i
 import { generateApexCoverageOutputFile } from '../../../../common/utils/deployUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import { buildSfCommandLine, parseSfCliArgs } from '../../../../common/utils/sfCliArgs.js';
+import type { SfCliArgs } from '../../../../common/utils/sfCliArgs.js';
+
+// Short forms of the "sf apex run test" flags that sfdx-hardis sets by default, to override them instead of duplicating them
+const SF_APEX_TEST_ALIASES = { '-c': '--code-coverage', '-r': '--result-format', '-w': '--wait' };
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -25,7 +30,9 @@ If following configuration is defined, it will fail if apex coverage target is n
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 
-You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 120 minutes.
+Use \`--wait\` (in minutes, default 60) if the test run of your org takes longer than the default timeout. You can also define the default value with env var \`SFDX_TEST_WAIT_MINUTES\`.
+
+Any flag that is not a sfdx-hardis flag is sent to the underlying \`sf apex run test\` command, and overrides the value used by default by sfdx-hardis. For example \`--detailed-coverage\`, \`--synchronous\`, or \`--tests MyClassTest\`.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-apex-tests/) and can output Grafana, Slack and MsTeams Notifications.
 
@@ -42,6 +49,9 @@ In agent mode, all interactive prompts are skipped and default values are used.
 `;
 
   public static examples = ['$ sf hardis:org:test:apex',
+    '$ sf hardis:org:test:apex --wait 120',
+    '$ sf hardis:org:test:apex --detailed-coverage',
+    '$ sf hardis:org:test:apex --testlevel RunSpecifiedTests --tests MyClassTest --tests MyOtherClassTest',
     '$ sf hardis:org:test:apex --agent',];
 
   public static flags: any = {
@@ -69,6 +79,10 @@ In agent mode, all interactive prompts are skipped and default values are used.
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
+  // Unknown flags are not errors: they are forwarded to the underlying sf apex run test command
+  public static readonly strict = false;
+  public static readonly ['--'] = false;
+
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   // protected static requiresProject = true;
 
@@ -88,7 +102,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
   /* jscpd:ignore-start */
   public async run(): Promise<AnyJson> {
-    const { flags } = await this.parse(OrgTestApex);
+    const { flags, argv } = await this.parse(OrgTestApex);
     const testlevel = flags.testlevel || 'RunLocalTests';
     const debugMode = flags.debug || false;
 
@@ -98,7 +112,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
     this.notifButtons = await getNotificationButtons();
     /* jscpd:ignore-end */
     uxLog("action", this, c.cyan(t('runningApexTestsInOrgWithTest', { orgInstanceUrl, testlevel })));
-    await this.runApexTests(testlevel, debugMode, flags['target-org']?.getUsername());
+    const sfCliOverrides = parseSfCliArgs(argv, SF_APEX_TEST_ALIASES);
+    await this.runApexTests(testlevel, debugMode, flags['target-org']?.getUsername(), sfCliOverrides);
     uxLog("action", this, c.cyan(t('apexTestsCompletedWithOutcome', { testRunOutcome: this.testRunOutcome })));
     // No Apex
     if (this.testRunOutcome === 'NoApex') {
@@ -153,18 +168,23 @@ In agent mode, all interactive prompts are skipped and default values are used.
     return { orgId: flags['target-org'].getOrgId(), outputString: this.statusMessage, statusCode: process.exitCode };
   }
 
-  private async runApexTests(testlevel: any, debugMode: any, orgUsername: string | null) {
+  private async runApexTests(testlevel: any, debugMode: any, orgUsername: string | null, sfCliOverrides: SfCliArgs) {
     // Run tests with SFDX commands
     const reportDir = await getReportDirectory();
-    const testCommand =
-      'sf apex run test' +
-      ' --code-coverage' +
-      ' --result-format human' +
-      ` --output-dir "${reportDir}"` +
-      ` --wait ${getEnvVar("SFDX_TEST_WAIT_MINUTES") || '60'}` +
-      ` --test-level ${testlevel}` +
-      (orgUsername ? ` --target-org ${orgUsername}` : '') +
-      (debugMode ? ' --verbose' : '');
+    const defaultArgs: SfCliArgs = {
+      '--code-coverage': true,
+      '--result-format': 'human',
+      '--output-dir': reportDir,
+      '--test-level': testlevel,
+      '--wait': getEnvVar('SFDX_TEST_WAIT_MINUTES') || '60',
+    };
+    if (orgUsername) {
+      defaultArgs['--target-org'] = orgUsername;
+    }
+    if (debugMode) {
+      defaultArgs['--verbose'] = true;
+    }
+    const testCommand = buildSfCommandLine('sf apex run test', defaultArgs, sfCliOverrides);
     try {
       const execCommandRes = await execCommand(testCommand, this, {
         output: true,

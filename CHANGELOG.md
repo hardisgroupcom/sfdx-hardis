@@ -2,6 +2,11 @@
 
 ## [beta] (main)
 
+### [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/)
+
+- Any flag the command does not know is now sent to the underlying `sf apex run test`, and overrides the value sfdx-hardis uses by default. `--wait 120` no longer fails with "Nonexistent flag", and `--tests`, `--detailed-coverage`, `--synchronous`, `--result-format` and the others work the same way.
+- The wait time still defaults to 60 minutes, or to the value of env var `SFDX_TEST_WAIT_MINUTES`.
+
 ## [8.4.2] 2026-09-02
 
 ### [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)
