@@ -1,7 +1,13 @@
 import { expect } from 'chai';
-import { parseAzureRepoUrl } from '../../../src/common/gitProvider/utilsAzure.js';
+// Load the barrel first: gitProvider modules take part in a pre-existing import cycle
+// (azureDevops -> utils/index -> gitUtils -> ticketProvider/index -> jiraProvider, which extends
+// TicketProviderRoot), and entering through a leaf module of it throws.
+import '../../../src/common/gitProvider/index.js';
+import { AzureDevopsProvider } from '../../../src/common/gitProvider/azureDevops.js';
 
-describe('parseAzureRepoUrl', () => {
+const parseAzureRepoUrl = (url: string) => AzureDevopsProvider.parseAzureRepoUrl(url);
+
+describe('AzureDevopsProvider.parseAzureRepoUrl', () => {
   it('parses a modern dev.azure.com remote', () => {
     expect(parseAzureRepoUrl('https://dev.azure.com/acme/Salesforce/_git/sfdx-project')).to.deep.equal({
       collectionUri: 'https://dev.azure.com/acme/',

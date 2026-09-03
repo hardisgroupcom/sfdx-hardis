@@ -8,7 +8,7 @@ import type { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
 import { extractRegexMatches, getGitRepoUrl, isGitRepo, uxLog } from "../utils/index.js";
-import { parseAzureRepoUrl } from "../gitProvider/utilsAzure.js";
+import { AzureDevopsProvider } from "../gitProvider/azureDevops.js";
 import { SfError } from "@salesforce/core";
 import { getConfig, getEnvVar } from "../../config/index.js";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces.js";
@@ -73,7 +73,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     if (!remoteUrl) {
       return;
     }
-    const parsed = parseAzureRepoUrl(remoteUrl);
+    const parsed = AzureDevopsProvider.parseAzureRepoUrl(remoteUrl);
     if (!parsed) {
       // Another provider's remote: not an error, the identifier simply does not belong to this repo
       return;
