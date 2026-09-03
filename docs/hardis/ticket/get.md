@@ -23,11 +23,11 @@ It returns:
 
 The ticketing system is deduced from the shape of the identifier, so `--provider` is only needed to disambiguate:
 
-| Identifier | Provider | Example |
-|------------|----------|---------|
-| `PROJECT-123` | JIRA | `--id ACME-4567` |
-| `1234` or `AB-1234` | Azure Boards | `--id AB-4567` |
-| `INC0012345`, `CHG...`, `RITM...`, `DMND...` | ServiceNow | `--id INC0012345` |
+| Identifier                                   | Provider     | Example           |
+|----------------------------------------------|--------------|-------------------|
+| `PROJECT-123`                                | JIRA         | `--id ACME-4567`  |
+| `1234` or `AB-1234`                          | Azure Boards | `--id AB-4567`    |
+| `INC0012345`, `CHG...`, `RITM...`, `DMND...` | ServiceNow   | `--id INC0012345` |
 
 ### Configuration
 
@@ -61,20 +61,20 @@ sf hardis ticket get --id ACME-4567 --agent --json
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|attachments-dir|option|Folder the attachments are downloaded into. Defaults to a temporary folder, or to <output-file folder>/attachments when --output-file is set||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|id<br/>-i|option|Ticket identifier: JIRA key (ACME-123), Azure Boards work item (1234 or AB-1234) or ServiceNow number (INC0012345)||||
-|json|boolean|Format output as json.||||
-|max-attachment-size|option|Maximum size in MB read from a single attachment. Bigger files are truncated|20|||
-|output-file<br/>-f|option|Write a markdown extract of the ticket at this path (parent folders are created)||||
-|provider<br/>-p|option|Force the ticketing system instead of deducing it from the identifier|||jira<br/>azure<br/>servicenow|
-|skip-attachments|boolean|List the attachments without downloading them||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                |  Type   | Description                                                                                                                                  | Default | Required |            Options            |
+|:--------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-----------------------------:|
+| agent               | boolean | Run in non-interactive mode for agents and automation                                                                                        |         |          |                               |
+| attachments-dir     | option  | Folder the attachments are downloaded into. Defaults to a temporary folder, or to <output-file folder>/attachments when --output-file is set |         |          |                               |
+| debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                                                              |         |          |                               |
+| flags-dir           | option  | undefined                                                                                                                                    |         |          |                               |
+| id<br/>-i           | option  | Ticket identifier: JIRA key (ACME-123), Azure Boards work item (1234 or AB-1234) or ServiceNow number (INC0012345)                           |         |          |                               |
+| json                | boolean | Format output as json.                                                                                                                       |         |          |                               |
+| max-attachment-size | option  | Maximum size in MB read from a single attachment. Bigger files are truncated                                                                 |   20    |          |                               |
+| output-file<br/>-f  | option  | Write a markdown extract of the ticket at this path (parent folders are created)                                                             |         |          |                               |
+| provider<br/>-p     | option  | Force the ticketing system instead of deducing it from the identifier                                                                        |         |          | jira<br/>azure<br/>servicenow |
+| skip-attachments    | boolean | List the attachments without downloading them                                                                                                |         |          |                               |
+| skipauth            | boolean | Skip authentication check when a default username is required                                                                                |         |          |                               |
+| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                    |         |          |                               |
 
 ## Examples
 
