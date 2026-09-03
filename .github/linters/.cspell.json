@@ -1002,6 +1002,7 @@
     "messagetext",
     "messagetimestamp",
     "messagetype",
+    "metacharacter",
     "metadatastatus",
     "metadatatype",
     "metas",
