@@ -412,7 +412,7 @@ export async function downloadTicketAttachment(input: DownloadAttachmentInput): 
     await fs.ensureDir(targetDir);
     const safeName = sanitizeAttachmentFileName(attachment.filename, `attachment-${index}`);
     const localPath = path.resolve(targetDir, `${index}-${safeName}`);
-    // Defence in depth: even a sanitized name must not escape the target directory
+    // Defense in depth: even a sanitized name must not escape the target directory
     if (!localPath.startsWith(path.resolve(targetDir) + path.sep)) {
       attachment.error = 'Refused: attachment file name resolves outside the target directory';
       return attachment;
