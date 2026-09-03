@@ -1,8 +1,9 @@
-// Parsing of an Azure DevOps git remote URL into the organization, project and repository it names.
+// Azure DevOps helpers shared by the git provider and the Azure Boards ticket connector.
+// Currently: parsing a git remote URL into the organization, project and repository it names.
 //
-// A leaf module on purpose: pure string work, zero imports. Both the git provider and the Azure
-// Boards ticket connector need it, and putting it in either of them would close an import cycle
-// through utils/index -> gitUtils -> ticketProvider/index.
+// A leaf module on purpose - pure logic, zero imports. Both callers need this, and putting it in
+// either of them would close an import cycle through utils/index -> gitUtils -> ticketProvider/index.
+// Keep it that way: anything added here must stay free of sfdx-hardis imports.
 
 export interface AzureRepoUrlParts {
   /** Organization URL, with the trailing slash Azure Pipelines' System.CollectionUri also carries */

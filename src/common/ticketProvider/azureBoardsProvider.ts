@@ -8,7 +8,7 @@ import type { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
 import { extractRegexMatches, getGitRepoUrl, isGitRepo, uxLog } from "../utils/index.js";
-import { parseAzureRepoUrl } from "../gitProvider/azureRepoUrl.js";
+import { parseAzureRepoUrl } from "../gitProvider/utilsAzure.js";
 import { SfError } from "@salesforce/core";
 import { getConfig, getEnvVar } from "../../config/index.js";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces.js";

@@ -3,7 +3,7 @@ import * as azdev from "azure-devops-node-api";
 import c from "chalk";
 import fs from '../utils/fsUtils.js';
 import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../utils/index.js";
-import { AzureRepoUrlParts, parseAzureRepoUrl } from "./azureRepoUrl.js";
+import { AzureRepoUrlParts, parseAzureRepoUrl } from "./utilsAzure.js";
 import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
@@ -873,7 +873,7 @@ ${getBannerMarkdownAndLink()}
 
   /**
    * Kept as a static method for the callers that already use it; the implementation lives in
-   * azureRepoUrl.ts, a leaf module the Azure Boards ticket connector can import without closing a
+   * utilsAzure.ts, a leaf module the Azure Boards ticket connector can import without closing a
    * cycle through utils/index.
    */
   public static parseAzureRepoUrl(remoteUrl: string): AzureRepoUrlParts | null {

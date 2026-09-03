@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { parseAzureRepoUrl } from '../../../src/common/gitProvider/azureRepoUrl.js';
+import { parseAzureRepoUrl } from '../../../src/common/gitProvider/utilsAzure.js';
 
 describe('parseAzureRepoUrl', () => {
   it('parses a modern dev.azure.com remote', () => {
