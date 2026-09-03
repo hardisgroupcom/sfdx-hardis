@@ -56,11 +56,11 @@ Tagging the records is also possible, and is disabled by default: see [Deploymen
 
 Define the following CI/CD variables. They are the same three variables as [hardis:misc:servicenow-report](hardis/misc/servicenow-report.md), so a project that already reports on ServiceNow has nothing more to configure.
 
-| Variable                 | Description                                                                                    |
-|--------------------------|------------------------------------------------------------------------------------------------|
-| **SERVICENOW_URL**       | Instance URL, with or without the scheme (`https://acme.service-now.com`, `acme.service-now.com`) |
-| **SERVICENOW_USERNAME**  | User name of the integration user                                                              |
-| **SERVICENOW_PASSWORD**  | Password of the integration user                                                               |
+| Variable                | Description                                                                                       |
+|-------------------------|---------------------------------------------------------------------------------------------------|
+| **SERVICENOW_URL**      | Instance URL, with or without the scheme (`https://acme.service-now.com`, `acme.service-now.com`) |
+| **SERVICENOW_USERNAME** | User name of the integration user                                                                 |
+| **SERVICENOW_PASSWORD** | Password of the integration user                                                                  |
 
 ### Identify ServiceNow records
 
@@ -76,14 +76,14 @@ Define a regular expression to narrow that down to the records your project actu
 
 A ServiceNow record number carries its table, so the number alone is enough to know where to read it. These prefixes are recognized out of the box:
 
-| Prefix   | Table            | Prefix  | Table             |
-|----------|------------------|---------|-------------------|
-| `INC`    | `incident`       | `DMND`  | `dmn_demand`      |
-| `PRB`    | `problem`        | `STRY`  | `rm_story`        |
-| `CHG`    | `change_request` | `STORY` | `rm_story`        |
-| `RITM`   | `sc_req_item`    | `ENHC`  | `rm_enhancement`  |
-| `REQ`    | `sc_request`     | `TASK`  | `task`            |
-| `SCTASK` | `sc_task`        | `KB`    | `kb_knowledge`    |
+| Prefix   | Table            | Prefix  | Table            |
+|----------|------------------|---------|------------------|
+| `INC`    | `incident`       | `DMND`  | `dmn_demand`     |
+| `PRB`    | `problem`        | `STRY`  | `rm_story`       |
+| `CHG`    | `change_request` | `STORY` | `rm_story`       |
+| `RITM`   | `sc_req_item`    | `ENHC`  | `rm_enhancement` |
+| `REQ`    | `sc_request`     | `TASK`  | `task`           |
+| `SCTASK` | `sc_task`        | `KB`    | `kb_knowledge`   |
 
 To reach the tables of a **scoped application**, add your own prefixes:
 
