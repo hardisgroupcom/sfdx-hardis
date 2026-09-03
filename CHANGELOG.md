@@ -9,7 +9,7 @@
 - **Attachments are downloaded** next to the extract, so screenshots and wireframes can be looked at and PDF or Office documents opened. Text attachments come back inline in the JSON.
 - The extract highlights the lines of the ticket that mention an operation deployable metadata will not carry (permission set assignment, org setting, scheduled job, data load), so they can be registered as [deployment actions](https://sfdx-hardis.cloudity.com/hardis/project/action/create/) rather than discovered at promotion time.
 - Reuses the ticketing variables you already configure (`JIRA_HOST` / `JIRA_TOKEN`..., `SYSTEM_COLLECTIONURI`..., `SERVICENOW_URL`...), from CI/CD variables or a local `.env`, and works outside of a Salesforce project.
-- **New ServiceNow ticketing connector**, using the same `SERVICENOW_URL` / `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD` variables as `hardis:misc:servicenow-report`. It is only used by this command: the content of your Pull Request comments and release notes is unchanged.
+- **New ServiceNow ticketing connector**, using the same `SERVICENOW_URL` / `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD` variables as `hardis:misc:servicenow-report`. It is only used by this command: the content of your Pull Request comments and release notes is unchanged. When `sys_journal_field` is ACL-restricted — ServiceNow answers a denied read with an empty result rather than an error, so a ticket full of comments would otherwise look like a ticket with none — the comments are read from the record's own `comments` / `work_notes` / `close_notes` fields instead, and the log says so.
 
 ## [8.4.2] 2026-09-02
 

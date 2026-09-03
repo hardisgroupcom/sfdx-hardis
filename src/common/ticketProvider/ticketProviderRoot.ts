@@ -1,6 +1,7 @@
 import { SfError } from "@salesforce/core";
 import c from "chalk";
-import { Ticket } from "./index.js";
+// Type-only: a value import here would close a runtime cycle index -> provider -> index
+import type { Ticket } from "./index.js";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import * as os from "os";
 import * as path from "path";

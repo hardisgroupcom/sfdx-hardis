@@ -3,7 +3,8 @@ import * as azdev from "azure-devops-node-api";
 import { TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from '../utils/sortArray.js';
-import { Ticket } from "./index.js";
+// Type-only: a value import here would close a runtime cycle index -> provider -> index
+import type { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
 import { extractRegexMatches, uxLog } from "../utils/index.js";

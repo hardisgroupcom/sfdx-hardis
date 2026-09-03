@@ -1,5 +1,6 @@
 import c from 'chalk';
-import { Ticket } from './index.js';
+// Type-only: a value import here would close a runtime cycle index -> provider -> index
+import type { Ticket } from './index.js';
 import { TicketProviderRoot } from './ticketProviderRoot.js';
 import { uxLog } from '../utils/index.js';
 import { getEnvVar } from '../../config/index.js';
@@ -132,6 +133,28 @@ export class ServiceNowProvider extends TicketProviderRoot {
     return String(field);
   }
 
+  // Journal fields that some instances expose on the record itself. Read only as a fallback: they
+  // carry no author nor date, where sys_journal_field carries one entry per comment.
+  private static readonly RECORD_JOURNAL_FIELDS = ['comments', 'work_notes', 'close_notes', 'resolution_notes'];
+
+  /**
+   * Comments and work notes read from the record itself.
+   *
+   * Used when sys_journal_field yields nothing: that table is ACL-restricted on many instances, and
+   * ServiceNow answers a denied read with an empty result rather than a 403 - so without this
+   * fallback a ticket full of comments comes back looking like a ticket with none.
+   */
+  private static journalsFromRecord(record: any): { author: string; date: string; body: string }[] {
+    const entries: { author: string; date: string; body: string }[] = [];
+    for (const fieldName of ServiceNowProvider.RECORD_JOURNAL_FIELDS) {
+      const value = normalizeText(ServiceNowProvider.fieldValue(record, fieldName));
+      if (value) {
+        entries.push({ author: '', date: '', body: `[${fieldName}] ${value}` });
+      }
+    }
+    return entries;
+  }
+
   /** Work notes / comments live in the sys_journal_field table, not on the record itself */
   private async fetchJournals(table: string, sysId: string): Promise<{ author: string; date: string; body: string }[]> {
     try {
@@ -222,7 +245,14 @@ export class ServiceNowProvider extends TicketProviderRoot {
       }
     }
 
-    details.comments = (await this.fetchJournals(table, sysId)).map((journal) => ({
+    let journals = await this.fetchJournals(table, sysId);
+    if (journals.length === 0) {
+      journals = ServiceNowProvider.journalsFromRecord(record);
+      // Say it either way: an empty sys_journal_field is indistinguishable from a denied read, and a
+      // ticket that silently comes back with no comments is worse than one that says it might have some.
+      uxLog('log', this, c.grey('[ServiceNowProvider] ' + t('serviceNowNoJournalEntries', { count: journals.length })));
+    }
+    details.comments = journals.map((journal) => ({
       author: journal.author,
       date: journal.date,
       body: capText(journal.body),

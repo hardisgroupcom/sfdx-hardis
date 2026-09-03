@@ -3691,5 +3691,6 @@
   "ticketGetPromptId": "What is the identifier of the ticket you want to read?",
   "ticketGetPromptIdDescription": "JIRA key (ACME-4567), Azure Boards work item (1234 or AB-4567) or ServiceNow number (INC0012345)",
   "ticketGetSummary": "Status {{status}} | Type {{type}} | {{comments}} comment(s) | {{attachments}} attachment(s) | {{links}} linked item(s)",
-  "ticketGetManualActionsFound": "{{count}} line(s) of the ticket mention an operation that deployable metadata will not carry. Consider registering each one as an sfdx-hardis deployment action."
+  "ticketGetManualActionsFound": "{{count}} line(s) of the ticket mention an operation that deployable metadata will not carry. Consider registering each one as an sfdx-hardis deployment action.",
+  "serviceNowNoJournalEntries": "sys_journal_field returned no entry (the table is ACL-restricted on many instances, and a denied read comes back empty). Fell back to the journal fields carried by the record: {{count}} entry(ies) found."
 }

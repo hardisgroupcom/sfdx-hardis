@@ -3,7 +3,8 @@ import type { Config } from "jira.js";
 import { recordTicketCollectionIssue, TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from '../utils/sortArray.js';
-import { Ticket } from "./index.js";
+// Type-only: a value import here would close a runtime cycle index -> provider -> index
+import type { Ticket } from "./index.js";
 import { extractRegexMatches, getCurrentGitBranch, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
 import { CONSTANTS, getConfig, getEnvVar } from "../../config/index.js";
