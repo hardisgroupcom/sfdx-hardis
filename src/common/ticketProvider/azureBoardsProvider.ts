@@ -62,7 +62,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   }
 
   public getLabel(): string {
-    return "sfdx-hardis JIRA connector";
+    return "sfdx-hardis Azure Boards connector";
   }
 
   public static async getTicketsFromString(text: string, prInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
