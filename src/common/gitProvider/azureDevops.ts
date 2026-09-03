@@ -24,8 +24,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
     super();
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
     this.serverUrl = process.env.SYSTEM_COLLECTIONURI || "";
-    // a Personal Access Token must be defined
-    this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || "";
+    // a Personal Access Token must be defined. AZURE_DEVOPS_EXT_PAT comes last: it is the variable
+    // the Azure CLI uses, so a developer machine usually already has it.
+    this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || process.env.AZURE_DEVOPS_EXT_PAT || "";
     const authHandler = azdev.getHandlerFromToken(this.token);
     this.azureApi = new azdev.WebApi(this.serverUrl, authHandler);
   }
@@ -37,9 +38,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
         uxLog("log", AzureDevopsProvider, c.grey("[Azure DevOps] " + t("autoDetectProviderNoGitRemote", { provider: "Azure DevOps" })));
         return;
       }
-      // Map CI_SFDX_HARDIS_AZURE_TOKEN to SYSTEM_ACCESSTOKEN if needed
-      if (!process.env.SYSTEM_ACCESSTOKEN && process.env.CI_SFDX_HARDIS_AZURE_TOKEN) {
-        process.env.SYSTEM_ACCESSTOKEN = process.env.CI_SFDX_HARDIS_AZURE_TOKEN;
+      // Map CI_SFDX_HARDIS_AZURE_TOKEN or AZURE_DEVOPS_EXT_PAT to SYSTEM_ACCESSTOKEN if needed
+      if (!process.env.SYSTEM_ACCESSTOKEN && (process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.AZURE_DEVOPS_EXT_PAT)) {
+        process.env.SYSTEM_ACCESSTOKEN = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.AZURE_DEVOPS_EXT_PAT;
       }
       // Parse git remote URL to extract collection URI, team project, and repository ID
       if (!process.env.SYSTEM_COLLECTIONURI) {

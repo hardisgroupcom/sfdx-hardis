@@ -7,7 +7,7 @@ import sortArray from '../utils/sortArray.js';
 import type { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
-import { extractRegexMatches, getGitRepoUrl, isGitRepo, uxLog } from "../utils/index.js";
+import { extractRegexMatches, git, isGitRepo, uxLog } from "../utils/index.js";
 import { AzureDevopsProvider } from "../gitProvider/azureDevops.js";
 import { SfError } from "@salesforce/core";
 import { getConfig, getEnvVar } from "../../config/index.js";
@@ -60,7 +60,11 @@ export class AzureBoardsProvider extends TicketProviderRoot {
    * read from `origin`. Values already set (a CI agent, or an explicit override) always win.
    *
    * Sets process.env rather than returning, so the synchronous isAvailable() sees the result. This
-   * is the same approach AzureDevopsProvider uses for the git side.
+   * is the same approach AzureDevopsProvider uses for the git side, and the detection itself is
+   * delegated to it: it reads the raw remote, so SSH clones are handled too.
+   *
+   * Never throws: a git failure here must end as the regular "provider not configured" error of the
+   * caller, not as a stack trace.
    */
   public static async autoDetectFromGitRemote(): Promise<void> {
     if (getEnvVar("SYSTEM_COLLECTIONURI") && getEnvVar("SYSTEM_TEAMPROJECT")) {
@@ -69,25 +73,30 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     if (!isGitRepo()) {
       return;
     }
-    const remoteUrl = (await getGitRepoUrl()) || "";
-    if (!remoteUrl) {
-      return;
+    try {
+      await AzureDevopsProvider.autoDetectSettings();
+      // autoDetectSettings only parses the remote when SYSTEM_COLLECTIONURI is unset, so a developer
+      // who declared the organization but not the project still has to get the project filled here
+      if (getEnvVar("SYSTEM_COLLECTIONURI") && !getEnvVar("SYSTEM_TEAMPROJECT")) {
+        const remoteUrl = (await git().getConfig("remote.origin.url"))?.value || "";
+        const parsed = remoteUrl ? AzureDevopsProvider.parseAzureRepoUrl(remoteUrl) : null;
+        if (parsed) {
+          process.env.SYSTEM_TEAMPROJECT = parsed.teamProject;
+        }
+      }
+      // Both set while at least one was missing on entry: the remote did answer
+      if (getEnvVar("SYSTEM_COLLECTIONURI") && getEnvVar("SYSTEM_TEAMPROJECT")) {
+        uxLog("log", AzureBoardsProvider, c.grey('[AzureBoardsProvider] ' + t('azureBoardsAutoDetectedFromRemote', {
+          collectionUri: process.env.SYSTEM_COLLECTIONURI || "",
+          teamProject: process.env.SYSTEM_TEAMPROJECT || "",
+        })));
+      }
+    } catch (e) {
+      uxLog("warning", AzureBoardsProvider, c.yellow('[AzureBoardsProvider] ' + t('autoDetectProviderFailed', {
+        provider: "Azure Boards",
+        message: (e as Error).message,
+      })));
     }
-    const parsed = AzureDevopsProvider.parseAzureRepoUrl(remoteUrl);
-    if (!parsed) {
-      // Another provider's remote: not an error, the identifier simply does not belong to this repo
-      return;
-    }
-    if (!getEnvVar("SYSTEM_COLLECTIONURI")) {
-      process.env.SYSTEM_COLLECTIONURI = parsed.collectionUri;
-    }
-    if (!getEnvVar("SYSTEM_TEAMPROJECT")) {
-      process.env.SYSTEM_TEAMPROJECT = parsed.teamProject;
-    }
-    uxLog("log", AzureBoardsProvider, c.grey('[AzureBoardsProvider] ' + t('azureBoardsAutoDetectedFromRemote', {
-      collectionUri: process.env.SYSTEM_COLLECTIONURI || "",
-      teamProject: process.env.SYSTEM_TEAMPROJECT || "",
-    })));
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
