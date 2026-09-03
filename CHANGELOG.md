@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.5.0] 2026-09-03
+
 - Fixed the [deployment assistant error pages](https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-error-list/) whose error message contains a quote or a regular expression: their page metadata was invalid, so they were missing from the site and their links were dead.
 - [hardis:ticket:get](https://sfdx-hardis.cloudity.com/hardis/ticket/get/):
   - **New command** that reads a **single ticket in full** from JIRA, Azure Boards or ServiceNow and returns it as structured JSON, or as a markdown extract with `--output-file`. Where the Pull Request flows collect a one-line summary of every referenced ticket, this one gives you the whole requirement: description, acceptance criteria, all comments, subtasks, linked items and attachments, without opening the ticketing system.
