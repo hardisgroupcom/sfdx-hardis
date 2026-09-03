@@ -1,4 +1,5 @@
-import { Ticket } from "./index.js";
+// Type-only: a value import here would close a runtime cycle index -> provider -> index
+import type { Ticket } from "./index.js";
 import sortArray from '../utils/sortArray.js';
 import { extractRegexMatches } from "../utils/index.js";
 import { TicketProviderRoot } from "./ticketProviderRoot.js";

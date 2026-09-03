@@ -3,7 +3,8 @@ import * as azdev from "azure-devops-node-api";
 import { TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from '../utils/sortArray.js';
-import { Ticket } from "./index.js";
+// Type-only: a value import here would close a runtime cycle index -> provider -> index
+import type { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
 import { extractRegexMatches, uxLog } from "../utils/index.js";
@@ -14,6 +15,16 @@ import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSIn
 import { CommonPullRequestInfo } from "../gitProvider/index.js";
 import { WebSocketClient } from "../websocketClient.js";
 import { t } from '../utils/i18n.js';
+import { WorkItemExpand } from "azure-devops-node-api/interfaces/WorkItemTrackingInterfaces.js";
+import {
+  TicketDetails,
+  TicketDetailsOptions,
+  capText,
+  classifyAttachment,
+  detectManualActions,
+  htmlToPlainText,
+  newTicketDetails,
+} from "./ticketDetails.js";
 /* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {
@@ -52,7 +63,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   }
 
   public getLabel(): string {
-    return "sfdx-hardis JIRA connector";
+    return "sfdx-hardis Azure Boards connector";
   }
 
   public static async getTicketsFromString(text: string, prInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
@@ -174,6 +185,134 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       }
     }
     return tickets;
+  }
+
+  /** True when the identifier is a work item id, bare or in the AB-1234 form used by the skills */
+  public static matchesTicketId(ticketId: string): boolean {
+    return /^(AB-)?[0-9]{1,10}$/i.test((ticketId || "").trim());
+  }
+
+  /** Accepts 1234, AB-1234, or a _workitems/edit/1234 URL */
+  private static workItemIdOf(ticketId: string): number | null {
+    const trimmed = (ticketId || "").trim();
+    const match = trimmed.match(/(?:_workitems\/edit\/|^AB-|^)([0-9]{1,10})$/i);
+    return match ? Number(match[1]) : null;
+  }
+
+  /** Azure identities come back either as an object or as a "Display Name <mail>" string */
+  private static identityName(identity: any): string {
+    if (!identity) {
+      return "";
+    }
+    if (typeof identity === "string") {
+      return identity.replace(/\s*<[^>]*>$/, "");
+    }
+    return identity.displayName || identity.uniqueName || "";
+  }
+
+  public async getTicketDetails(ticketId: string, options: TicketDetailsOptions = {}): Promise<TicketDetails | null> {
+    if (!this.isActive) {
+      uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderNotConfigured')));
+      return null;
+    }
+    const workItemId = AzureBoardsProvider.workItemIdOf(ticketId);
+    if (workItemId === null) {
+      return null;
+    }
+    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
+    // Relations carry both the linked work items and the attached files
+    const workItem: any = await azureWorkItemApi.getWorkItem(workItemId, undefined, undefined, WorkItemExpand.All);
+    if (!workItem?.fields) {
+      return null;
+    }
+    const fields = workItem.fields;
+    const details = newTicketDetails("AZURE", `AB-${workItemId}`);
+    details.url = workItem?._links?.html?.href || `${this.serverUrl}/${this.teamProject}/_workitems/edit/${workItemId}`;
+    details.subject = fields["System.Title"] || "";
+    details.type = fields["System.WorkItemType"] || "";
+    details.status = fields["System.State"] || "";
+    details.priority = String(fields["Microsoft.VSTS.Common.Priority"] ?? "");
+    details.assignee = AzureBoardsProvider.identityName(fields["System.AssignedTo"]);
+    details.reporter = AzureBoardsProvider.identityName(fields["System.CreatedBy"]);
+    details.created = fields["System.CreatedDate"] || "";
+    details.updated = fields["System.ChangedDate"] || "";
+    details.storyPoints = String(fields["Microsoft.VSTS.Scheduling.StoryPoints"] ?? "");
+    details.sprint = fields["System.IterationPath"] || "";
+    details.labels = String(fields["System.Tags"] || "").split(";").map((tag) => tag.trim()).filter(Boolean);
+    details.description = capText(htmlToPlainText(fields["System.Description"]));
+    details.acceptanceCriteria = capText(htmlToPlainText(fields["Microsoft.VSTS.Common.AcceptanceCriteria"]));
+    details.extra.areaPath = fields["System.AreaPath"] || "";
+    details.extra.reason = fields["System.Reason"] || "";
+    details.extra.project = this.teamProject || "";
+
+    try {
+      const commentList: any = await azureWorkItemApi.getComments(this.teamProject || "", workItemId);
+      details.comments = (commentList?.comments || []).map((comment: any) => ({
+        author: AzureBoardsProvider.identityName(comment?.createdBy),
+        date: comment?.createdDate ? String(comment.createdDate) : "",
+        body: capText(htmlToPlainText(comment?.text)),
+      }));
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderCommentsError', { ticketId: String(workItemId), message: e.message })));
+    }
+
+    for (const relation of workItem?.relations || []) {
+      const relationType = relation?.rel || "";
+      if (relationType === "AttachedFile") {
+        const attributes = relation?.attributes || {};
+        const filename = attributes.name || "attachment";
+        details.attachments.push({
+          filename,
+          contentType: "",
+          size: Number(attributes.resourceSize || 0),
+          created: attributes.resourceCreatedDate ? String(attributes.resourceCreatedDate) : "",
+          author: "",
+          url: relation?.url || "",
+          kind: classifyAttachment("", filename),
+          localPath: null,
+          textContent: null,
+          truncated: false,
+          error: null,
+        });
+        continue;
+      }
+      // Hierarchy / related / duplicate links all point at another work item
+      const linkedId = String(relation?.url || "").match(/workItems\/([0-9]+)$/)?.[1];
+      if (!linkedId) {
+        continue;
+      }
+      const item = {
+        relation: relationType.replace("System.LinkTypes.", "").replace("Microsoft.VSTS.Common.", ""),
+        id: `AB-${linkedId}`,
+        title: relation?.attributes?.name || "",
+        status: "",
+        url: `${this.serverUrl}/${this.teamProject}/_workitems/edit/${linkedId}`,
+      };
+      if (relationType === "System.LinkTypes.Hierarchy-Forward") {
+        details.subtasks.push({ ...item, relation: "child" });
+      } else {
+        if (relationType === "System.LinkTypes.Hierarchy-Reverse") {
+          item.relation = "parent";
+          details.parent = item.id;
+        }
+        details.links.push(item);
+      }
+    }
+
+    await this.downloadDetailsAttachments(details, this.serverUrl || "", this.attachmentHeaders(), options);
+
+    details.manualActions = detectManualActions([
+      details.description,
+      details.acceptanceCriteria,
+      ...details.comments.map((comment) => comment.body),
+      ...details.attachments.map((attachment) => attachment.textContent),
+    ]);
+    return details;
+  }
+
+  /** Azure PATs authenticate as Basic with an empty user name */
+  private attachmentHeaders(): Record<string, string> {
+    return { Authorization: "Basic " + Buffer.from(`:${this.token || ""}`).toString("base64") };
   }
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {

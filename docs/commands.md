@@ -250,6 +250,12 @@
 | [**hardis:source:push**](hardis/source/push.md)         |       |
 | [**hardis:source:retrieve**](hardis/source/retrieve.md) |       |
 
+## hardis:ticket
+
+| Command                                       | Title |
+|:----------------------------------------------|:------|
+| [**hardis:ticket:get**](hardis/ticket/get.md) |       |
+
 ## hardis:work
 
 | Command                                                         | Title |

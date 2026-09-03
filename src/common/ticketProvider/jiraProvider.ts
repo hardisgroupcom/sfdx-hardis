@@ -3,7 +3,8 @@ import type { Config } from "jira.js";
 import { recordTicketCollectionIssue, TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from '../utils/sortArray.js';
-import { Ticket } from "./index.js";
+// Type-only: a value import here would close a runtime cycle index -> provider -> index
+import type { Ticket } from "./index.js";
 import { extractRegexMatches, getCurrentGitBranch, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
 import { CONSTANTS, getConfig, getEnvVar } from "../../config/index.js";
@@ -11,6 +12,16 @@ import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
 import { t } from '../utils/i18n.js';
 import { httpGet, httpPost } from "../utils/httpUtils.js";
 import { WebSocketClient } from "../websocketClient.js";
+import {
+  TicketDetails,
+  TicketDetailsOptions,
+  capText,
+  classifyAttachment,
+  detectManualActions,
+  htmlToPlainText,
+  newTicketDetails,
+  normalizeText,
+} from "./ticketDetails.js";
 
 // One way of authenticating to JIRA. The client is built lazily, so that a refused credential can
 // be replaced by the next one without paying for the ones that are never used.
@@ -18,6 +29,9 @@ type JiraAuth = {
   logMessage: string;
   label: string;
   buildClient: () => Promise<Version2Client | Version3Client | null>;
+  // Same credential expressed as a raw header, for the calls jira.js does not cover (binary
+  // attachment download). Absent when the header can only be known after the client is built.
+  headers?: () => Record<string, string>;
 };
 
 export class JiraProvider extends TicketProviderRoot {
@@ -36,6 +50,9 @@ export class JiraProvider extends TicketProviderRoot {
   private nextAuths: JiraAuth[] = [];
   // Set as soon as a call answers: the current credential is the right one, stop switching
   private authValidated = false;
+  // Raw header form of the credential currently in use, for the binary attachment downloads that
+  // jira.js does not expose. Null when the active credential cannot be replayed as a header.
+  private activeAuthHeaders: Record<string, string> | null = null;
 
   constructor(config: any) {
     super();
@@ -56,6 +73,9 @@ export class JiraProvider extends TicketProviderRoot {
         logMessage: t('jiraProviderAuthEmailToken'),
         label: "JIRA_EMAIL + JIRA_TOKEN",
         buildClient: async () => this.createJiraClient({ basic: { email: getEnvVar("JIRA_EMAIL") || "", apiToken: getEnvVar("JIRA_TOKEN") || "" } }),
+        headers: () => ({
+          Authorization: "Basic " + Buffer.from(`${getEnvVar("JIRA_EMAIL") || ""}:${getEnvVar("JIRA_TOKEN") || ""}`).toString("base64"),
+        }),
       }
       : null;
     // Personal access token, sent as a Bearer header
@@ -64,6 +84,7 @@ export class JiraProvider extends TicketProviderRoot {
         logMessage: t('jiraProviderAuthPat'),
         label: "JIRA_PAT",
         buildClient: async () => this.createJiraClient({ oauth2: { accessToken: getEnvVar("JIRA_PAT") || "" } }),
+        headers: () => ({ Authorization: `Bearer ${getEnvVar("JIRA_PAT") || ""}` }),
       }
       : null;
     // Every credential found in the variables is kept, so that a refused one can be replaced by the
@@ -86,6 +107,7 @@ export class JiraProvider extends TicketProviderRoot {
       return;
     }
     uxLog("log", this, c.grey('[JiraProvider] ' + auth.logMessage));
+    this.activeAuthHeaders = auth.headers ? auth.headers() : null;
     try {
       this.jiraClient = await auth.buildClient();
     } catch (e: any) {
@@ -418,6 +440,178 @@ export class JiraProvider extends TicketProviderRoot {
       recordTicketCollectionIssue(`Details could not be retrieved for ${failedTicketsNumber} of ${jiraTicketsNumber} JIRA ticket(s) (first error: ${firstErrorMessage}). Check the JIRA authentication and permissions of the CI job.`);
     }
     return tickets;
+  }
+
+  /**
+   * True when the identifier has the shape of a JIRA key (PROJECT-123).
+   * AB- / GH- / GL- are excluded: those prefixes belong to Azure Boards, GitHub and GitLab issues,
+   * and they would otherwise match this pattern too.
+   */
+  public static matchesTicketId(ticketId: string): boolean {
+    const trimmed = (ticketId || "").trim();
+    if (/^(AB|GH|GL)-[0-9]+$/i.test(trimmed)) {
+      return false;
+    }
+    return /^[A-Za-z][A-Za-z0-9]{1,9}-[0-9]{1,6}$/.test(trimmed);
+  }
+
+  /** Sprint and story points live in a custom field whose id differs per instance: try the usual ones */
+  private static firstFieldValue(fields: any, candidateNames: string[]): string {
+    for (const name of candidateNames) {
+      const value = fields?.[name];
+      if (value === undefined || value === null || value === "") {
+        continue;
+      }
+      if (Array.isArray(value)) {
+        const last = value[value.length - 1];
+        if (typeof last === "string") {
+          // Server/DC returns the sprint as a serialized bean: "...,name=Sprint 12,..."
+          const nameMatch = last.match(/name=([^,]+)/);
+          return nameMatch ? nameMatch[1] : last;
+        }
+        if (last && typeof last === "object") {
+          return String(last.name ?? last.value ?? "");
+        }
+        continue;
+      }
+      if (typeof value === "object") {
+        return String(value.name ?? value.value ?? "");
+      }
+      return String(value);
+    }
+    return "";
+  }
+
+  private async fetchAllComments(issueKey: string): Promise<{ comments: any[]; truncated: boolean }> {
+    const pageSize = 100;
+    const maxTotal = 2000;
+    const all: any[] = [];
+    let startAt = 0;
+    let truncated = false;
+    for (;;) {
+      const page: any = await this.runJiraCall((client) =>
+        client.issueComments.getComments({ issueIdOrKey: issueKey, startAt, maxResults: pageSize, expand: "renderedBody" })
+      );
+      const comments = page?.comments || [];
+      all.push(...comments);
+      const total = page?.total ?? all.length;
+      if (all.length >= maxTotal) {
+        truncated = true;
+        break;
+      }
+      if (comments.length === 0 || all.length >= total) {
+        break;
+      }
+      startAt += comments.length;
+    }
+    return { comments: all, truncated };
+  }
+
+  public async getTicketDetails(ticketId: string, options: TicketDetailsOptions = {}): Promise<TicketDetails | null> {
+    const issueKey = (ticketId || "").trim().toUpperCase();
+    const client = await this.getJiraClient();
+    if (!client) {
+      uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderNoUsableCredential')));
+      return null;
+    }
+    const issue: any = await this.runJiraCall((jiraClient) =>
+      jiraClient.issues.getIssue({ issueIdOrKey: issueKey, expand: "renderedFields" })
+    );
+    if (!issue?.fields) {
+      return null;
+    }
+    const fields = issue.fields;
+    const rendered = issue.renderedFields || {};
+    const details = newTicketDetails("JIRA", issue.key || issueKey);
+    details.url = `${this.jiraHost}/browse/${details.id}`;
+    details.subject = fields.summary || "";
+    details.type = fields.issuetype?.name || "";
+    details.status = fields.status?.name || "";
+    details.priority = fields.priority?.name || "";
+    details.assignee = fields.assignee?.displayName || "";
+    details.reporter = fields.reporter?.displayName || "";
+    details.created = fields.created || "";
+    details.updated = fields.updated || "";
+    details.resolved = fields.resolutiondate || "";
+    details.labels = fields.labels || [];
+    details.components = (fields.components || []).map((component: any) => component?.name).filter(Boolean);
+    details.fixVersions = (fields.fixVersions || []).map((version: any) => version?.name).filter(Boolean);
+    details.parent = fields.parent?.key || "";
+    details.epic = JiraProvider.firstFieldValue(fields, ["epic", "customfield_10014", "customfield_10008"]);
+    details.sprint = JiraProvider.firstFieldValue(fields, ["sprint", "customfield_10020", "customfield_10010"]);
+    details.storyPoints = JiraProvider.firstFieldValue(fields, ["story_points", "customfield_10016", "customfield_10028", "customfield_10026"]);
+    // renderedFields gives HTML on both Cloud and Server; the ADF/plain fallback covers the rest
+    details.description = capText(
+      rendered.description ? htmlToPlainText(rendered.description) : normalizeText(this.getPlainTextFromDescription(fields.description))
+    );
+
+    const { comments, truncated } = await this.fetchAllComments(details.id);
+    details.commentsTruncated = truncated;
+    details.comments = comments.map((comment: any) => ({
+      author: comment?.author?.displayName || "",
+      date: comment?.created || "",
+      body: capText(comment?.renderedBody ? htmlToPlainText(comment.renderedBody) : normalizeText(this.getPlainTextFromDescription(comment?.body))),
+    }));
+
+    details.subtasks = (fields.subtasks || []).map((subtask: any) => ({
+      relation: "subtask",
+      id: subtask?.key || "",
+      title: subtask?.fields?.summary || "",
+      status: subtask?.fields?.status?.name || "",
+      url: `${this.jiraHost}/browse/${subtask?.key || ""}`,
+    }));
+
+    for (const link of fields.issuelinks || []) {
+      const target = link?.outwardIssue || link?.inwardIssue;
+      if (!target) {
+        continue;
+      }
+      details.links.push({
+        relation: (link?.outwardIssue ? link?.type?.outward : link?.type?.inward) || "linked",
+        id: target.key || "",
+        title: target?.fields?.summary || "",
+        status: target?.fields?.status?.name || "",
+        url: `${this.jiraHost}/browse/${target.key || ""}`,
+      });
+    }
+    if (details.parent) {
+      details.links.push({
+        relation: "parent",
+        id: details.parent,
+        title: fields.parent?.fields?.summary || "",
+        status: fields.parent?.fields?.status?.name || "",
+        url: `${this.jiraHost}/browse/${details.parent}`,
+      });
+    }
+
+    details.attachments = (fields.attachment || []).map((attachment: any) => ({
+      filename: attachment?.filename || "attachment",
+      contentType: attachment?.mimeType || "",
+      size: Number(attachment?.size || 0),
+      created: attachment?.created || "",
+      author: attachment?.author?.displayName || "",
+      url: attachment?.content || "",
+      kind: classifyAttachment(attachment?.mimeType || "", attachment?.filename || ""),
+      localPath: null,
+      textContent: null,
+      truncated: false,
+      error: null,
+    }));
+    if (this.activeAuthHeaders) {
+      await this.downloadDetailsAttachments(details, this.jiraHost || "", this.activeAuthHeaders, options);
+    } else if (details.attachments.length > 0 && options.downloadAttachments !== false) {
+      // Client Credentials resolves its token inside the client: it cannot be replayed as a header here
+      for (const attachment of details.attachments) {
+        attachment.error = "Attachment download is not supported with the JIRA_CLIENT_ID / JIRA_CLIENT_SECRET authentication";
+      }
+    }
+
+    details.manualActions = detectManualActions([
+      details.description,
+      ...details.comments.map((comment) => comment.body),
+      ...details.attachments.map((attachment) => attachment.textContent),
+    ]);
+    return details;
   }
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
