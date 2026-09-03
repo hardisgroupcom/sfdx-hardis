@@ -24,8 +24,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
     super();
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
     this.serverUrl = process.env.SYSTEM_COLLECTIONURI || "";
-    // a Personal Access Token must be defined
-    this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || "";
+    // a Personal Access Token must be defined. AZURE_DEVOPS_EXT_PAT comes last: it is the variable
+    // the Azure CLI uses, so a developer machine usually already has it.
+    this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || process.env.AZURE_DEVOPS_EXT_PAT || "";
     const authHandler = azdev.getHandlerFromToken(this.token);
     this.azureApi = new azdev.WebApi(this.serverUrl, authHandler);
   }
@@ -37,9 +38,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
         uxLog("log", AzureDevopsProvider, c.grey("[Azure DevOps] " + t("autoDetectProviderNoGitRemote", { provider: "Azure DevOps" })));
         return;
       }
-      // Map CI_SFDX_HARDIS_AZURE_TOKEN to SYSTEM_ACCESSTOKEN if needed
-      if (!process.env.SYSTEM_ACCESSTOKEN && process.env.CI_SFDX_HARDIS_AZURE_TOKEN) {
-        process.env.SYSTEM_ACCESSTOKEN = process.env.CI_SFDX_HARDIS_AZURE_TOKEN;
+      // Map CI_SFDX_HARDIS_AZURE_TOKEN or AZURE_DEVOPS_EXT_PAT to SYSTEM_ACCESSTOKEN if needed
+      if (!process.env.SYSTEM_ACCESSTOKEN && (process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.AZURE_DEVOPS_EXT_PAT)) {
+        process.env.SYSTEM_ACCESSTOKEN = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.AZURE_DEVOPS_EXT_PAT;
       }
       // Parse git remote URL to extract collection URI, team project, and repository ID
       if (!process.env.SYSTEM_COLLECTIONURI) {
@@ -870,54 +871,51 @@ ${getBannerMarkdownAndLink()}
     return prResult;
   }
 
+  /**
+   * Extracts the organization, project and repository from an Azure DevOps remote URL.
+   *
+   * Handles the three shapes a clone can produce - modern `dev.azure.com` (with or without the
+   * `user@` prefix), legacy `*.visualstudio.com`, and SSH - and URL-decodes the project and
+   * repository names, which are percent-encoded whenever they contain a space.
+   *
+   * Returns null when the URL belongs to another provider.
+   */
   public static parseAzureRepoUrl(remoteUrl: string): {
     collectionUri: string;
     teamProject: string;
     repositoryId: string;
   } | null {
-    let collectionUri: string;
-    let repositoryId: string;
-    let teamProject: string;
-
     if (remoteUrl.startsWith("https://")) {
-      // Handle modern dev.azure.com URLs with or without username
-      const devAzureRegex = /https:\/\/(?:[^@]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)/;
-      const devAzureMatch = remoteUrl.match(devAzureRegex);
+      // https://dev.azure.com/{org}/{project}/_git/{repo}, optionally prefixed with {user}@
+      const devAzureMatch = remoteUrl.match(/https:\/\/(?:[^@]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/?]+)/);
       if (devAzureMatch) {
-        const organization = devAzureMatch[1];
-        teamProject = decodeURIComponent(devAzureMatch[2]); // Decode URL-encoded project name
-        repositoryId = decodeURIComponent(devAzureMatch[3]); // Decode URL-encoded repository name
-        collectionUri = `https://dev.azure.com/${organization}/`;
-        return { collectionUri, teamProject, repositoryId };
+        return {
+          collectionUri: `https://dev.azure.com/${devAzureMatch[1]}/`,
+          teamProject: decodeURIComponent(devAzureMatch[2]),
+          repositoryId: decodeURIComponent(devAzureMatch[3]),
+        };
       }
 
-      // Handle legacy visualstudio.com URLs
-      // Format: https://organization.visualstudio.com/ProjectName/_git/RepoName
-      const vsRegex = /https:\/\/(?:[^@]+@)?([^.]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/?]+)/;
-      const vsMatch = remoteUrl.match(vsRegex);
+      // https://{org}.visualstudio.com/{project}/_git/{repo}
+      const vsMatch = remoteUrl.match(/https:\/\/(?:[^@]+@)?([^.]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/?]+)/);
       if (vsMatch) {
-        const organization = vsMatch[1];
-        teamProject = decodeURIComponent(vsMatch[2]); // Decode URL-encoded project name
-        repositoryId = decodeURIComponent(vsMatch[3]); // Decode URL-encoded repository name
-        collectionUri = `https://${organization}.visualstudio.com/`;
-        return { collectionUri, teamProject, repositoryId };
+        return {
+          collectionUri: `https://${vsMatch[1]}.visualstudio.com/`,
+          teamProject: decodeURIComponent(vsMatch[2]),
+          repositoryId: decodeURIComponent(vsMatch[3]),
+        };
       }
     } else if (remoteUrl.startsWith("git@")) {
-      /* jscpd:ignore-start */
-      // Handle SSH URLs
-      const sshRegex = /git@ssh\.dev\.azure\.com:v3\/([^/]+)\/([^/]+)\/([^/]+)/;
-      const match = remoteUrl.match(sshRegex);
-      if (match) {
-        const organization = match[1];
-        teamProject = decodeURIComponent(match[2]); // Decode URL-encoded project name
-        repositoryId = decodeURIComponent(match[3]); // Decode URL-encoded repository name
-        collectionUri = `https://dev.azure.com/${organization}/`;
-        return { collectionUri, teamProject, repositoryId };
+      // git@ssh.dev.azure.com:v3/{org}/{project}/{repo}
+      const sshMatch = remoteUrl.match(/git@ssh\.dev\.azure\.com:v3\/([^/]+)\/([^/]+)\/([^/]+)/);
+      if (sshMatch) {
+        return {
+          collectionUri: `https://dev.azure.com/${sshMatch[1]}/`,
+          teamProject: decodeURIComponent(sshMatch[2]),
+          repositoryId: decodeURIComponent(sshMatch[3]),
+        };
       }
-      /* jscpd:ignore-end */
     }
-
-    // Return null if the URL doesn't match expected patterns
     return null;
   }
 

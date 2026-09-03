@@ -144,6 +144,7 @@
   "availableConnectedAppsInThe": "Connected Apps disponibles en {{context}}:",
   "availableOnlyInSfdxHardisCiCdProject": "Disponible solo en un [proyecto sfdx-hardis CI/CD](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)",
   "availablePredefinedQueries": "Consultas predefinidas disponibles",
+  "azureBoardsAutoDetectedFromRemote": "Organización y proyecto leídos desde el git remote: {{collectionUri}} / {{teamProject}}",
   "azureBoardsProviderAddedTag": "Etiqueta {{tag}} añadida a {{count}} elemento(s) de trabajo: {{tickets}}",
   "azureBoardsProviderCollectedWorkItem": "Datos recopilados para el Work Item {{ticketId}}",
   "azureBoardsProviderCollectingTickets": "Intentando recopilar información de {{azureTicketsNumber}} tickets del servidor Azure Boards {{serverUrl}} ...",

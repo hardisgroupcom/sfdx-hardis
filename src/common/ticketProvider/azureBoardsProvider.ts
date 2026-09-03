@@ -7,7 +7,8 @@ import sortArray from '../utils/sortArray.js';
 import type { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
-import { extractRegexMatches, uxLog } from "../utils/index.js";
+import { extractRegexMatches, git, isGitRepo, uxLog } from "../utils/index.js";
+import { AzureDevopsProvider } from "../gitProvider/azureDevops.js";
 import { SfError } from "@salesforce/core";
 import { getConfig, getEnvVar } from "../../config/index.js";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces.js";
@@ -37,8 +38,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     super();
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
     this.serverUrl = getEnvVar("SYSTEM_COLLECTIONURI");
-    // a Personal Access Token must be defined (CI_SFDX_HARDIS_AZURE_TOKEN takes priority, then SYSTEM_ACCESSTOKEN)
-    this.token = getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN") || getEnvVar("SYSTEM_ACCESSTOKEN");
+    // a Personal Access Token must be defined. AZURE_DEVOPS_EXT_PAT comes last: it is the variable
+    // the Azure CLI uses, so a developer machine usually already has it.
+    this.token = getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN") || getEnvVar("SYSTEM_ACCESSTOKEN") || getEnvVar("AZURE_DEVOPS_EXT_PAT");
     this.teamProject = getEnvVar("SYSTEM_TEAMPROJECT");
     if (this.serverUrl && this.token && this.teamProject) {
       this.isActive = true;
@@ -49,12 +51,60 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     }
   }
 
+  /**
+   * Fills SYSTEM_COLLECTIONURI and SYSTEM_TEAMPROJECT from the git remote of the current repository.
+   *
+   * On a CI agent Azure Pipelines sets both for free, but a developer running the command locally
+   * would otherwise have to declare the organization and the project by hand - while the clone they
+   * are standing in already names both. So only the token really has to be configured; the rest is
+   * read from `origin`. Values already set (a CI agent, or an explicit override) always win.
+   *
+   * Sets process.env rather than returning, so the synchronous isAvailable() sees the result. This
+   * is the same approach AzureDevopsProvider uses for the git side, and the detection itself is
+   * delegated to it: it reads the raw remote, so SSH clones are handled too.
+   *
+   * Never throws: a git failure here must end as the regular "provider not configured" error of the
+   * caller, not as a stack trace.
+   */
+  public static async autoDetectFromGitRemote(): Promise<void> {
+    if (getEnvVar("SYSTEM_COLLECTIONURI") && getEnvVar("SYSTEM_TEAMPROJECT")) {
+      return;
+    }
+    if (!isGitRepo()) {
+      return;
+    }
+    try {
+      await AzureDevopsProvider.autoDetectSettings();
+      // autoDetectSettings only parses the remote when SYSTEM_COLLECTIONURI is unset, so a developer
+      // who declared the organization but not the project still has to get the project filled here
+      if (getEnvVar("SYSTEM_COLLECTIONURI") && !getEnvVar("SYSTEM_TEAMPROJECT")) {
+        const remoteUrl = (await git().getConfig("remote.origin.url"))?.value || "";
+        const parsed = remoteUrl ? AzureDevopsProvider.parseAzureRepoUrl(remoteUrl) : null;
+        if (parsed) {
+          process.env.SYSTEM_TEAMPROJECT = parsed.teamProject;
+        }
+      }
+      // Both set while at least one was missing on entry: the remote did answer
+      if (getEnvVar("SYSTEM_COLLECTIONURI") && getEnvVar("SYSTEM_TEAMPROJECT")) {
+        uxLog("log", AzureBoardsProvider, c.grey('[AzureBoardsProvider] ' + t('azureBoardsAutoDetectedFromRemote', {
+          collectionUri: process.env.SYSTEM_COLLECTIONURI || "",
+          teamProject: process.env.SYSTEM_TEAMPROJECT || "",
+        })));
+      }
+    } catch (e) {
+      uxLog("warning", AzureBoardsProvider, c.yellow('[AzureBoardsProvider] ' + t('autoDetectProviderFailed', {
+        provider: "Azure Boards",
+        message: (e as Error).message,
+      })));
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public static isAvailable(_config: any): boolean {
     if (
       // Basic auth
       getEnvVar("SYSTEM_COLLECTIONURI") &&
-      (getEnvVar("SYSTEM_ACCESSTOKEN") || getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN")) &&
+      (getEnvVar("SYSTEM_ACCESSTOKEN") || getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN") || getEnvVar("AZURE_DEVOPS_EXT_PAT")) &&
       getEnvVar("SYSTEM_TEAMPROJECT")
     ) {
       return true;

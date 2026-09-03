@@ -30,22 +30,22 @@ const debug = debuglog("sfdxhardis");
 export abstract class GitProvider {
   static async getInstance(prompt = false): Promise<GitProviderRoot | null> {
     try {
-      // Azure - detect from SYSTEM_ACCESSTOKEN or CI_SFDX_HARDIS_AZURE_TOKEN
-      if (process.env.SYSTEM_ACCESSTOKEN || process.env.CI_SFDX_HARDIS_AZURE_TOKEN) {
+      // Azure - detect from SYSTEM_ACCESSTOKEN, CI_SFDX_HARDIS_AZURE_TOKEN or AZURE_DEVOPS_EXT_PAT
+      if (process.env.SYSTEM_ACCESSTOKEN || process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.AZURE_DEVOPS_EXT_PAT) {
         // Auto-detect missing CI variables from git remote URL when only a token is available
         if (!process.env.SYSTEM_COLLECTIONURI || !process.env.SYSTEM_ACCESSTOKEN) {
           await AzureDevopsProvider.autoDetectSettings();
         }
         const serverUrl = process.env.SYSTEM_COLLECTIONURI || null;
         // a Personal Access Token must be defined
-        const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || null;
+        const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || process.env.AZURE_DEVOPS_EXT_PAT || null;
         if (serverUrl == null || token == null) {
           uxLog(
             "warning",
             this,
             c.yellow(`To benefit from Azure Pipelines advanced integration, you need to define the following variables as ENV vars:
 - SYSTEM_COLLECTIONURI
-- SYSTEM_ACCESSTOKEN or CI_SFDX_HARDIS_AZURE_TOKEN`),
+- SYSTEM_ACCESSTOKEN, CI_SFDX_HARDIS_AZURE_TOKEN or AZURE_DEVOPS_EXT_PAT`),
           );
           return null;
         }

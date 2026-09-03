@@ -81,6 +81,37 @@ describe('ticket providers', () => {
     });
   });
 
+  describe('AzureBoardsProvider configuration', () => {
+    it('accepts AZURE_DEVOPS_EXT_PAT as a token, so the Azure CLI variable is enough', withEnv(
+      { SYSTEM_COLLECTIONURI: 'https://dev.azure.com/acme/', SYSTEM_TEAMPROJECT: 'Salesforce', AZURE_DEVOPS_EXT_PAT: 'token' },
+      async () => {
+        delete process.env.SYSTEM_ACCESSTOKEN;
+        delete process.env.CI_SFDX_HARDIS_AZURE_TOKEN;
+        expect(AzureBoardsProvider.isAvailable({})).to.equal(true);
+      }
+    ));
+
+    it('is unavailable without any token', withEnv(
+      { SYSTEM_COLLECTIONURI: 'https://dev.azure.com/acme/', SYSTEM_TEAMPROJECT: 'Salesforce' },
+      async () => {
+        for (const name of ['SYSTEM_ACCESSTOKEN', 'CI_SFDX_HARDIS_AZURE_TOKEN', 'AZURE_DEVOPS_EXT_PAT']) {
+          delete process.env[name];
+        }
+        expect(AzureBoardsProvider.isAvailable({})).to.equal(false);
+      }
+    ));
+
+    it('leaves an explicit organization and project untouched', withEnv(
+      { SYSTEM_COLLECTIONURI: 'https://dev.azure.com/explicit/', SYSTEM_TEAMPROJECT: 'Explicit Project' },
+      async () => {
+        // Both already set: the git remote must not be consulted, nor override a CI agent's values
+        await AzureBoardsProvider.autoDetectFromGitRemote();
+        expect(process.env.SYSTEM_COLLECTIONURI).to.equal('https://dev.azure.com/explicit/');
+        expect(process.env.SYSTEM_TEAMPROJECT).to.equal('Explicit Project');
+      }
+    ));
+  });
+
   describe('AzureBoardsProvider.getTicketDetails', () => {
     // The Azure Boards mapping cannot be exercised against a live org in CI, so the work item
     // payload is fed in directly through a stubbed WorkItemTracking API.
