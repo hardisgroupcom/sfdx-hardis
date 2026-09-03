@@ -14766,7 +14766,7 @@ If active, contributors will never be asked to refresh their sandbox metadata, t
             />
         </svg>
     <a href="#serviceNowTicketRegex" onclick="anchorLink('serviceNowTicketRegex')">serviceNowTicketRegex</a></div><h4>ServiceNow Ticket Regex</h4><span class="badge badge-dark value-type">Type: string</span><br/>
-<span class="description"><p>Regular expression to identify ServiceNow record numbers in commits, branch names and Pull Request descriptions. Example: (INC[0-9]{7})</p>
+<span class="description"><p>Regular expression to identify ServiceNow record numbers in commits, branch names and Pull Request descriptions. The first capturing group must be the whole record number. Example: (INC[0-9]{7})</p>
 </span>
         
 
@@ -14777,7 +14777,7 @@ If active, contributors will never be asked to refresh their sandbox metadata, t
 <div class="badge badge-secondary">Examples:</div>
 <br/><div id="serviceNowTicketRegex_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;(INC[0-9]{7})&quot;</span>
 </pre></div>
-</div><div id="serviceNowTicketRegex_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;(INC|CHG|RITM)([0-9]{4,})&quot;</span>
+</div><div id="serviceNowTicketRegex_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;((?:INC|CHG|RITM)[0-9]{4,})&quot;</span>
 </pre></div>
 </div>
             </div>
