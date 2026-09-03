@@ -38,7 +38,19 @@ const SERVICENOW_TABLE_BY_PREFIX: Record<string, string> = {
   KB: 'kb_knowledge',
 };
 
-const SERVICENOW_DEFAULT_PREFIXES = Object.keys(SERVICENOW_TABLE_BY_PREFIX);
+/**
+ * Prefixes scanned by default in commit messages, branch names and Pull Request bodies.
+ *
+ * Deliberately narrower than the table mapping above: TASK, REQ, STORY and KB are ordinary words
+ * followed by digits, and a false positive here does not merely add a line to a Pull Request
+ * comment - it writes a work note on a real, unrelated ServiceNow record at the next deployment.
+ * A project working in those tables declares them in SERVICENOW_TABLE_PREFIXES, or writes its own
+ * SERVICENOW_TICKET_REGEX; either one is an explicit decision.
+ *
+ * `sf hardis ticket get --id TASK0001234` still works: routing an identifier the user typed reads
+ * the full mapping, where only the automatic scanning is restricted.
+ */
+const SERVICENOW_DEFAULT_SCAN_PREFIXES = ['INC', 'PRB', 'CHG', 'RITM', 'SCTASK', 'DMND', 'STRY', 'ENHC'];
 
 // Journal field a deployment note is written into. work_notes is the internal one: a deployment is
 // an implementation detail the requester of an incident has no use for.
@@ -98,33 +110,68 @@ export class ServiceNowProvider extends TicketProviderRoot {
    * a code change. A prefix declared there overrides the built-in mapping of the same name.
    */
   private static prefixTableMap(config: any = {}): Record<string, string> {
-    const map = { ...SERVICENOW_TABLE_BY_PREFIX };
+    return { ...SERVICENOW_TABLE_BY_PREFIX, ...ServiceNowProvider.declaredPrefixTables(config) };
+  }
+
+  /** Only what the project itself declared, which is also what it opts into scanning */
+  private static declaredPrefixTables(config: any = {}): Record<string, string> {
+    const declared: Record<string, string> = {};
     const raw = getEnvVar('SERVICENOW_TABLE_PREFIXES') || config?.serviceNowTablePrefixes || '';
     for (const entry of String(raw).split(',')) {
       const [prefix, table] = entry.split(':').map((part) => (part || '').trim());
       if (prefix && table) {
-        map[prefix.toUpperCase()] = table;
+        declared[prefix.toUpperCase()] = table;
       }
     }
-    return map;
+    return declared;
   }
 
   /**
-   * Regex matching every known prefix, built from the mapping so a custom table is detected too.
+   * The prefixes scanned automatically: the safe defaults, plus every prefix the project declared.
+   *
+   * A prefix is included because it was declared, not because it is unknown: `TASK:task` is a
+   * project saying it works in that table, and that is exactly the opt-in the default list is
+   * missing.
+   */
+  private static scanPrefixes(config: any = {}): string[] {
+    const declared = Object.keys(ServiceNowProvider.declaredPrefixTables(config));
+    return [...new Set([...SERVICENOW_DEFAULT_SCAN_PREFIXES, ...declared])];
+  }
+
+  /** A prefix comes from user configuration, so it cannot be dropped into a regex as it is */
+  private static escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  /**
+   * Regex matching the given prefixes, built from the mapping so a custom table is detected too.
    *
    * The whole record number is capture group 1, and the prefix alternation is a non-capturing
    * group: extractRegexMatches() only keeps group 1, and that is also the convention a project
    * writing its own SERVICENOW_TICKET_REGEX has to follow.
    */
-  private static numberRegexSource(config: any = {}): string {
+  private static numberRegexSource(prefixes: string[]): string {
     // Longest first, so SCTASK is not consumed as the shorter TASK
-    const prefixes = Object.keys(ServiceNowProvider.prefixTableMap(config)).sort((a, b) => b.length - a.length);
-    return `\\b((?:${prefixes.join('|')})[0-9]{4,})\\b`;
+    const sorted = [...prefixes].sort((a, b) => b.length - a.length).map((prefix) => ServiceNowProvider.escapeRegex(prefix));
+    return `\\b((?:${sorted.join('|')})[0-9]{4,})\\b`;
   }
 
-  /** True when the identifier looks like a ServiceNow record number (prefix + digits) */
+  /**
+   * True when the identifier looks like a ServiceNow record number (prefix + digits).
+   *
+   * Reads the full mapping, not the narrower scan list: this routes an identifier a user typed,
+   * where getTicketsFromString() decides what to pick up on its own.
+   *
+   * Never throws: a prefix holding a regex metacharacter would otherwise break the routing of
+   * every connector, since TicketProvider.getTicketDetails() filters them all through this call.
+   */
   public static matchesTicketId(ticketId: string, config: any = {}): boolean {
-    return new RegExp(`^(?:${ServiceNowProvider.numberRegexSource(config)})$`, 'i').test((ticketId || '').trim());
+    try {
+      const prefixes = Object.keys(ServiceNowProvider.prefixTableMap(config));
+      return new RegExp(`^(?:${ServiceNowProvider.numberRegexSource(prefixes)})$`, 'i').test((ticketId || '').trim());
+    } catch {
+      return false;
+    }
   }
 
   public static tableOfTicketId(ticketId: string, config: any = {}): string | null {
@@ -139,10 +186,11 @@ export class ServiceNowProvider extends TicketProviderRoot {
    * Collects the ServiceNow record numbers of a commit message, a branch name or a Pull Request
    * body.
    *
-   * Unlike JIRA, nothing is returned when the connector is not configured: several ServiceNow
-   * prefixes are ordinary words followed by digits (`TASK1234`, `REQ1234`), so a project that does
-   * not use ServiceNow must never see them turn into tickets. `INC0012345` inside a ServiceNow URL
-   * is matched by the same pass, and duplicates are collapsed on the record number.
+   * Nothing is returned when the connector is not configured, and only the prefixes of
+   * SERVICENOW_DEFAULT_SCAN_PREFIXES are looked for: what is collected here ends up commented on
+   * at the next deployment, so a match has to be a deliberate reference, not a coincidence.
+   * `INC0012345` inside a ServiceNow URL is matched by the same pass, and duplicates are collapsed
+   * on the record number.
    */
   public static async getTicketsFromString(text: string, options: TicketsFromStringOptions = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
@@ -152,7 +200,14 @@ export class ServiceNowProvider extends TicketProviderRoot {
     }
     const instanceUrl = ServiceNowProvider.getInstanceUrl();
     const customRegex = getEnvVar('SERVICENOW_TICKET_REGEX') || config?.serviceNowTicketRegex;
-    const numberRegex = new RegExp(customRegex || ServiceNowProvider.numberRegexSource(config), 'gim');
+    let numberRegex: RegExp;
+    try {
+      numberRegex = new RegExp(customRegex || ServiceNowProvider.numberRegexSource(ServiceNowProvider.scanPrefixes(config)), 'gim');
+    } catch (e: any) {
+      // A malformed project regex must cost its own tickets, not the whole Pull Request comment
+      uxLog('warning', this, c.yellow('[ServiceNowProvider] ' + t('serviceNowInvalidTicketRegex', { regex: String(customRegex), message: e.message })));
+      return tickets;
+    }
     const matches = await extractRegexMatches(numberRegex, text);
     for (const match of matches) {
       const ticketId = match.trim().toUpperCase();
@@ -405,7 +460,7 @@ export class ServiceNowProvider extends TicketProviderRoot {
     if (!record) {
       return null;
     }
-    const sysId = ServiceNowProvider.fieldValue(record, 'sys_id');
+    const sysId = ServiceNowProvider.rawFieldValue(record, 'sys_id');
     const details = newTicketDetails('SERVICENOW', number);
     details.url = ServiceNowProvider.recordUrlBySysId(this.instanceUrl, table, sysId);
     details.subject = ServiceNowProvider.fieldValue(record, 'short_description');
@@ -491,7 +546,9 @@ export class ServiceNowProvider extends TicketProviderRoot {
     uxLog('action', this, c.cyan('[ServiceNowProvider] ' + t('serviceNowProviderPostingComments', { count: serviceNowTickets.length })));
     const config = await getConfig('project');
     const commentField = getEnvVar('SERVICENOW_COMMENT_FIELD') || config?.serviceNowCommentField || SERVICENOW_DEFAULT_COMMENT_FIELD;
-    const addTag = (getEnvVar('SERVICENOW_ADD_DEPLOYMENT_TAG') || '') === 'true' || config?.serviceNowAddDeploymentTag === true;
+    // Env var wins in both directions: a pipeline must be able to turn off what .sfdx-hardis.yml turned on
+    const addTagEnv = getEnvVar('SERVICENOW_ADD_DEPLOYMENT_TAG');
+    const addTag = addTagEnv ? addTagEnv === 'true' : config?.serviceNowAddDeploymentTag === true;
     // Only resolved when tagging is on: computing it reads the git branch and the Pull Request
     const tag = addTag ? await this.getDeploymentTag() : '';
     const commentText = await this.buildDeploymentComment(org, pullRequestInfo);
@@ -602,6 +659,3 @@ export class ServiceNowProvider extends TicketProviderRoot {
     );
   }
 }
-
-// Exported for the documentation and the tests: the prefixes recognized without extra configuration
-export { SERVICENOW_DEFAULT_PREFIXES };

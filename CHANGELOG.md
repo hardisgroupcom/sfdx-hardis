@@ -3,10 +3,9 @@
 ## [beta] (main)
 
 - [ServiceNow ticketing integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/):
-  - ServiceNow record numbers found in your commits, branch names and Pull Request descriptions are now listed in Pull Request comments and deployment notifications, with their short description and their state, like Jira issues and Azure Boards work items already were.
-  - A work note naming the target org, the branch and the Pull Request is posted on each record when it is deployed in a major org. Use `SERVICENOW_COMMENT_FIELD` to write in `comments` instead.
-  - Records can also be tagged on deployment with `SERVICENOW_ADD_DEPLOYMENT_TAG=true`, off by default because a ServiceNow tag is created in the instance-wide label table.
-  - `SERVICENOW_TABLE_PREFIXES` maps your own record number prefixes to the tables of a scoped application, and `SERVICENOW_TICKET_REGEX` narrows the detection down to the records your project uses.
+  - ServiceNow records referenced in your commits, branches and Pull Requests are now shown in Pull Request comments and deployment notifications, with their description and state, like Jira issues already were.
+  - A work note naming the org, the branch and the Pull Request is posted on each record deployed in a major org.
+- Azure Boards: work items linked to the commits of a Pull Request are collected again, and a failure to read them no longer costs the whole Pull Request comment.
 
 ## [8.5.0] 2026-09-03
 

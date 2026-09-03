@@ -26,7 +26,7 @@ sfdx-hardis analyzes **commit messages, branch names and Pull Request titles and
 
 `INC0012345` is detected on its own, and so is a full ServiceNow URL containing the number, for example `https://acme.service-now.com/incident.do?sysparm_query=number=INC0012345`.
 
-> Record numbers are only collected when the ServiceNow credentials are configured. Several ServiceNow prefixes are ordinary words followed by digits (`TASK1234`, `REQ1234`), so a project that does not use ServiceNow never sees them turn into tickets.
+> Record numbers are only collected when the ServiceNow credentials are configured, and only for the prefixes listed as **scanned by default** below. What is collected here is written to at the next deployment, so a match has to be a deliberate reference rather than a coincidence.
 
 ### For git providers
 
@@ -76,23 +76,33 @@ Define a regular expression to narrow that down to the records your project actu
 
 A ServiceNow record number carries its table, so the number alone is enough to know where to read it. These prefixes are recognized out of the box:
 
-| Prefix   | Table            | Prefix  | Table            |
-|----------|------------------|---------|------------------|
-| `INC`    | `incident`       | `DMND`  | `dmn_demand`     |
-| `PRB`    | `problem`        | `STRY`  | `rm_story`       |
-| `CHG`    | `change_request` | `STORY` | `rm_story`       |
-| `RITM`   | `sc_req_item`    | `ENHC`  | `rm_enhancement` |
-| `REQ`    | `sc_request`     | `TASK`  | `task`           |
-| `SCTASK` | `sc_task`        | `KB`    | `kb_knowledge`   |
+| Prefix   | Table            | Scanned by default |
+|----------|------------------|--------------------|
+| `INC`    | `incident`       | yes                |
+| `PRB`    | `problem`        | yes                |
+| `CHG`    | `change_request` | yes                |
+| `RITM`   | `sc_req_item`    | yes                |
+| `SCTASK` | `sc_task`        | yes                |
+| `DMND`   | `dmn_demand`     | yes                |
+| `STRY`   | `rm_story`       | yes                |
+| `ENHC`   | `rm_enhancement` | yes                |
+| `REQ`    | `sc_request`     | no                 |
+| `TASK`   | `task`           | no                 |
+| `STORY`  | `rm_story`       | no                 |
+| `KB`     | `kb_knowledge`   | no                 |
 
-To reach the tables of a **scoped application**, add your own prefixes:
+`REQ`, `TASK`, `STORY` and `KB` are ordinary words followed by digits, and a false positive does not merely add a line to a Pull Request comment: it writes a work note on a real, unrelated record at the next deployment. They are therefore not scanned unless you ask for them, by declaring them in `SERVICENOW_TABLE_PREFIXES` (below) or by writing your own `SERVICENOW_TICKET_REGEX`.
+
+They stay routable by hand either way: `sf hardis:ticket:get --id TASK0001234` works without any extra configuration.
+
+To reach the tables of a **scoped application**, or to scan one of the prefixes above that is off by default, declare your own prefixes:
 
 - .sfdx-hardis.yml property: **serviceNowTablePrefixes** or ENV variable **SERVICENOW_TABLE_PREFIXES**
 
-The value is a comma-separated list of `PREFIX:table` pairs. A prefix declared there overrides the built-in mapping of the same name.
+The value is a comma-separated list of `PREFIX:table` pairs. A prefix declared there overrides the built-in mapping of the same name, and is always scanned.
 
 ```yaml
-serviceNowTablePrefixes: 'STRY:x_acme_story,DEFECT:x_acme_defect'
+serviceNowTablePrefixes: 'DEFECT:x_acme_defect,TASK:task'
 ```
 
 ### Where the deployment comment is written

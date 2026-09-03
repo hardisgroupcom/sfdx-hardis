@@ -334,10 +334,42 @@ describe('ServiceNowProvider.getTicketsFromString', () => {
     for (const name of ['SERVICENOW_URL', 'SERVICENOW_USERNAME', 'SERVICENOW_PASSWORD']) {
       delete process.env[name];
     }
-    // TASK1234 / REQ1234 are ordinary words followed by digits: a project that does not use
-    // ServiceNow must never see them turn into tickets
-    expect(await ServiceNowProvider.getTicketsFromString('TASK1234 and REQ4567 done', { config: {} })).to.deep.equal([]);
+    expect(await ServiceNowProvider.getTicketsFromString('INC0012345 done', { config: {} })).to.deep.equal([]);
   }));
+
+  it('leaves the prefixes that are ordinary words alone', withEnv(SERVICENOW_ENV, async () => {
+    // What is collected here is written to at the next deployment, so TASK / REQ / STORY / KB are
+    // not scanned by default: a coincidence must never turn into a work note on a real record
+    const tickets = await ServiceNowProvider.getTicketsFromString('TASK1234 REQ0004567 STORY0001234 KB0001234', { config: {} });
+    expect(tickets).to.deep.equal([]);
+    // The full mapping still routes them when the user types one explicitly
+    expect(ServiceNowProvider.matchesTicketId('TASK0001234')).to.equal(true);
+    expect(ServiceNowProvider.tableOfTicketId('TASK0001234')).to.equal('task');
+  }));
+
+  it('scans a prefix the project declared, ordinary word or not', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_TABLE_PREFIXES: 'TASK:task' },
+    async () => {
+      const tickets = await ServiceNowProvider.getTicketsFromString('TASK0001234 done', { config: {} });
+      expect(tickets.map((ticket) => ticket.id)).to.deep.equal(['TASK0001234']);
+    }
+  ));
+
+  it('collects nothing, and does not throw, on a malformed project regex', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_TICKET_REGEX: '([' },
+    async () => {
+      expect(await ServiceNowProvider.getTicketsFromString('INC0012345', { config: {} })).to.deep.equal([]);
+    }
+  ));
+
+  it('survives a prefix holding a regex metacharacter', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_TABLE_PREFIXES: 'A(B:x_acme_table' },
+    async () => {
+      // Routing runs this for every connector: a throw here would break JIRA and Azure Boards too
+      expect(ServiceNowProvider.matchesTicketId('INC0012345')).to.equal(true);
+      expect(await ServiceNowProvider.getTicketsFromString('INC0012345', { config: {} })).to.have.lengthOf(1);
+    }
+  ));
 
   it('collects the record numbers of a commit, a branch and a URL, without duplicates', withEnv(SERVICENOW_ENV, async () => {
     const tickets = await ServiceNowProvider.getTicketsFromString(text, { config: {} });
@@ -346,6 +378,24 @@ describe('ServiceNowProvider.getTicketsFromString', () => {
     expect(tickets[2].url).to.equal('https://acme.service-now.com/incident.do?sysparm_query=number=INC0012345');
     expect(tickets[0].url).to.equal('https://acme.service-now.com/change_request.do?sysparm_query=number=CHG0030307');
   }));
+
+  it('turns off tagging from the pipeline even when the config file turns it on', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_ADD_DEPLOYMENT_TAG: 'false' },
+    async () => {
+      const calls: any[] = [];
+      setFetchForTests(async (url: string, init: any) => {
+        calls.push({ url, method: init?.method || 'GET' });
+        return { ok: true, status: 200, headers: new Map(), text: async () => JSON.stringify({ result: [] }) } as any;
+      });
+      try {
+        const tickets: Ticket[] = [{ provider: 'SERVICENOW', id: 'INC0012345', url: '', foundOnServer: true, providerRecordId: 'abc123' }];
+        await new ServiceNowProvider({}).postDeploymentComments(tickets, 'https://acme.my.salesforce.com', null);
+        expect(calls.some((call) => call.url.includes('/api/now/table/label'))).to.equal(false);
+      } finally {
+        setFetchForTests(null);
+      }
+    }
+  ));
 
   it('narrows the detection down to the project regex', withEnv(
     { ...SERVICENOW_ENV, SERVICENOW_TICKET_REGEX: '(INC[0-9]{7})' },

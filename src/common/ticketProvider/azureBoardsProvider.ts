@@ -143,28 +143,40 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     if (!this.isAvailable(config)) {
       return sortArray(tickets, { by: ["id"], order: ["asc"] }) as Ticket[];
     }
-    // Get tickets from Azure commits
-    if (prInfo?.providerInfo?.commits) {
-      const azureBoardsProvider = new AzureBoardsProvider(config);
-      const azureApi = azureBoardsProvider.azureApi;
-      const azureGitApi = await azureApi.getGitApi();
-      const repositoryId = getEnvVar("BUILD_REPOSITORY_ID") || "";
-      const commitIds = prInfo?.providerInfo?.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
-      const azureCommits: GitCommitRef[] = [];
-      for (const commitId of commitIds) {
-        const commitRefs = await azureGitApi.getCommits(repositoryId, { fromCommitId: commitId, toCommitId: commitId, includeWorkItems: true });
-        azureCommits.push(...commitRefs);
-      }
-      for (const commit of azureCommits) {
-        for (const workItem of commit?.workItems || []) {
-          if (!tickets.some((ticket) => ticket.id === workItem.id)) {
-            tickets.push({
-              provider: "AZURE",
-              url: workItem.url || "",
-              id: workItem.id || "",
-            });
+    // Get tickets from Azure commits.
+    // BUILD_REPOSITORY_ID only exists on an Azure Pipelines agent: Azure Boards is also used with
+    // GitHub or GitLab repositories, and asking the Azure git API for the commits of an empty
+    // repository id would fail on every one of them. The work items linked to the Pull Request
+    // itself are collected below, and do not need the git API.
+    const repositoryId = getEnvVar("BUILD_REPOSITORY_ID") || "";
+    if (prInfo?.providerInfo?.commits && repositoryId) {
+      // Never lets a failure here escape: the caller turns any throw into "unable to compute git
+      // summary" and drops the whole Pull Request comment, work items and commits alike
+      try {
+        const azureBoardsProvider = new AzureBoardsProvider(config);
+        const azureApi = azureBoardsProvider.azureApi;
+        const azureGitApi = await azureApi.getGitApi();
+        const commitIds = prInfo?.providerInfo?.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
+        const azureCommits: GitCommitRef[] = [];
+        for (const commitId of commitIds) {
+          const commitRefs = await azureGitApi.getCommits(repositoryId, { fromCommitId: commitId, toCommitId: commitId, includeWorkItems: true });
+          azureCommits.push(...commitRefs);
+        }
+        for (const commit of azureCommits) {
+          for (const workItem of commit?.workItems || []) {
+            if (!tickets.some((ticket) => ticket.id === workItem.id)) {
+              tickets.push({
+                provider: "AZURE",
+                url: workItem.url || "",
+                id: workItem.id || "",
+              });
+            }
           }
         }
+      } catch (e) {
+        uxLog("warning", AzureBoardsProvider, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsCommitWorkItemsError', {
+          message: (e as Error).message,
+        })));
       }
     }
 
@@ -379,7 +391,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     const taggedTickets: Ticket[] = [];
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
     for (const ticket of tickets) {
-      if (ticket.foundOnServer) {
+      // The list holds the tickets of every connector: without this filter a configured Azure
+      // Boards would call getWorkItem(NaN) on a JIRA key or a ServiceNow record number
+      if (ticket.provider === "AZURE" && ticket.foundOnServer) {
         let commentMd = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
         if (pullRequestInfo) {
           const prUrl = pullRequestInfo.webUrl || "";

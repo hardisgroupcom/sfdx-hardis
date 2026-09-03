@@ -642,7 +642,9 @@ export class JiraProvider extends TicketProviderRoot {
     const commentedTickets: Ticket[] = [];
     const taggedTickets: Ticket[] = [];
     for (const ticket of tickets) {
-      if (ticket.foundOnServer) {
+      // The list holds the tickets of every connector: without this filter a configured JIRA would
+      // try to comment on an Azure work item or a ServiceNow record number
+      if (ticket.provider === "JIRA" && ticket.foundOnServer) {
         // Build comment
         let prTitle = "";
         let prUrl = "";

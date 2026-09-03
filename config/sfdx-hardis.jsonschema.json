@@ -3288,11 +3288,11 @@
     },
     "serviceNowTicketRegex": {
       "$id": "#/properties/serviceNowTicketRegex",
-      "description": "Regular expression to identify ServiceNow record numbers in commits, branch names and Pull Request descriptions. Example: (INC[0-9]{7})",
+      "description": "Regular expression to identify ServiceNow record numbers in commits, branch names and Pull Request descriptions. The first capturing group must be the whole record number. Example: (INC[0-9]{7})",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
       "examples": [
         "(INC[0-9]{7})",
-        "(INC|CHG|RITM)([0-9]{4,})"
+        "((?:INC|CHG|RITM)[0-9]{4,})"
       ],
       "title": "ServiceNow Ticket Regex",
       "type": "string",
