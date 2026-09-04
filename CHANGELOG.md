@@ -2,6 +2,17 @@
 
 ## [beta] (main)
 
+### [hardis:project:test-cases:render](https://sfdx-hardis.cloudity.com/hardis/project/test-cases/render/)
+
+- **New command** that turns a test notebook into the deliverable a tester works in: a formatted **Excel workbook**, or a CSV Excel opens cleanly on a double click.
+- The result columns are left empty for the tester to fill in, the status column is restricted to a value list so a campaign can be counted rather than read, and a summary sheet gives the counts per module and priority.
+- The workbook it writes is read back by the same parser, so a filled-in campaign can be re-read without anything being retyped.
+
+### [hardis:project:test-cases:template](https://sfdx-hardis.cloudity.com/hardis/project/test-cases/template/)
+
+- **New command** that generates an **empty test notebook** with the expected columns and identifiers already numbered, as a workbook, a CSV or a markdown table, so a tester can start writing straight away.
+- Asks for what it needs when you do not pass it, proposing the ticket number of your current branch.
+
 ### [hardis:ticket:get](https://sfdx-hardis.cloudity.com/hardis/ticket/get/)
 
 - **New command** that reads a **single ticket in full** from JIRA, Azure Boards or ServiceNow and returns it as structured JSON, or as a markdown extract with `--output-file`. Where the Pull Request flows collect a one-line summary of every referenced ticket, this one gives you the whole requirement: description, acceptance criteria, all comments, subtasks, linked items and attachments, without opening the ticketing system.

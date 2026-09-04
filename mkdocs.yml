@@ -423,6 +423,8 @@ nav:
           - metadata activate-decomposed: hardis/project/metadata/activate-decomposed.md
           - metadata findduplicates: hardis/project/metadata/findduplicates.md
           - skills import: hardis/project/skills/import.md
+          - test-cases render: hardis/project/test-cases/render.md
+          - test-cases template: hardis/project/test-cases/template.md
       - hardis:deploy:
           - quick: hardis/deploy/quick.md
           - start: hardis/deploy/start.md

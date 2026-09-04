@@ -133,6 +133,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:work:save**](hardis/work/save.md)                                           | Clean metadata, update `package.xml` / `destructiveChanges.xml`, commit, and push. Optional: `--targetbranch`, `--noclean`, `--nogit`                               |
 | [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                           | Generate release notes with tickets, Pull Requests, metadata changes, deployment actions, and AI summary using `--agent --mode post --target-branch main`           |
 | [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                               | Generate a DORA metrics report (Deployment Frequency, Lead Time, Change Failure Rate, MTTR, Rework Rate) with `--agent --target-org`                                |
+| [**hardis:project:test-cases:template**](hardis/project/test-cases/template.md) | Generate an empty test notebook with the expected columns. Required in agent mode: `--kind`, `--ticket-number`; optional: `--modules`, `--rows`, `--format` |
 
 ### Monitoring
 
