@@ -2944,6 +2944,7 @@
   "resolvingProfileApiNames": "Ustalanie nazw API Profile...",
   "responseBody": "Treść odpowiedzi: ",
   "responseBody2": "Treść odpowiedzi: \n",
+  "restDeploymentActivated": "Wdrożenia będą używać Metadata REST API zamiast domyślnego SOAP Metadata API.",
   "restartModeClearingOutputFolder": "Tryb ponownego uruchomienia: czyszczenie folderu wyjściowego {{exportedFilesFolder}}.",
   "restartModeSelectedOutputFolderWillBe": "Wybrano tryb ponownego uruchomienia: folder wyjściowy zostanie wyczyszczony",
   "restoreCancelledWrongBackupFolder": "Przywracanie anulowane: wybrany folder kopii zapasowej nie odpowiada docelowemu org.",

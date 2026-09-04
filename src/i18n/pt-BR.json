@@ -2911,6 +2911,7 @@
   "resolvingProfileApiNames": "Resolvendo os nomes de API dos perfis...",
   "responseBody": "Corpo da resposta: ",
   "responseBody2": "Corpo da resposta: \n",
+  "restDeploymentActivated": "Os deploys usarão a Metadata REST API em vez da SOAP Metadata API padrão.",
   "restartModeClearingOutputFolder": "Modo de reinicialização: limpando pasta de saída {{exportedFilesFolder}}.",
   "restartModeSelectedOutputFolderWillBe": "Modo de reinicialização selecionado: a pasta de saída será limpa",
   "restoreCancelledWrongBackupFolder": "Restauração cancelada: a pasta de backup selecionada não corresponde ao org de destino.",
