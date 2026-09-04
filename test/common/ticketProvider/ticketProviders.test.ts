@@ -4,8 +4,9 @@ import { expect } from 'chai';
 // extends TicketProviderRoot). Entering through the barrel resolves it in the order the app proves
 // to work; entering through a provider module would throw "Cannot access 'TicketProviderRoot'
 // before initialization".
-import '../../../src/common/ticketProvider/index.js';
+import { allTicketProviders, ticketDetailsProviderKeys, Ticket } from '../../../src/common/ticketProvider/index.js';
 import { AzureBoardsProvider } from '../../../src/common/ticketProvider/azureBoardsProvider.js';
+import { GenericTicketingProvider } from '../../../src/common/ticketProvider/genericProvider.js';
 import { JiraProvider } from '../../../src/common/ticketProvider/jiraProvider.js';
 import { ServiceNowProvider } from '../../../src/common/ticketProvider/serviceNowProvider.js';
 import { setFetchForTests } from '../../../src/common/utils/httpUtils.js';
@@ -289,4 +290,273 @@ describe('ticket providers', () => {
       expect(details).to.equal(null);
     }));
   });
+
+describe('unified provider surface', () => {
+  it('declares every connector the same way', () => {
+    expect(allTicketProviders.length).to.be.greaterThan(0);
+    for (const provider of allTicketProviders) {
+      const label = provider.providerLabel;
+      expect(provider.providerKey, `${label} providerKey`).to.be.a('string').and.to.have.length.greaterThan(0);
+      expect(provider.providerLabel, `${label} providerLabel`).to.be.a('string').and.to.have.length.greaterThan(0);
+      expect(provider.supportsTicketDetails, `${label} supportsTicketDetails`).to.be.a('boolean');
+      for (const staticMethod of ['isAvailable', 'matchesTicketId', 'getTicketsFromString']) {
+        expect((provider as any)[staticMethod], `${label}.${staticMethod}`).to.be.a('function');
+      }
+    }
+    // Two connectors sharing a key would make --provider ambiguous
+    const keys = allTicketProviders.map((provider) => provider.providerKey);
+    expect(keys).to.have.lengthOf(new Set(keys).size);
+  });
+
+  it('exposes as deep-fetch capable only the connectors that have an API', () => {
+    expect(ticketDetailsProviderKeys()).to.deep.equal(['jira', 'azure', 'servicenow']);
+    expect(GenericTicketingProvider.supportsTicketDetails).to.equal(false);
+  });
+
+  it('matches an identifier against the project regex of the generic connector', () => {
+    expect(GenericTicketingProvider.matchesTicketId('R123-456', { genericTicketingProviderRegex: '([R|I][0-9]+-[0-9]+)' })).to.equal(true);
+    expect(GenericTicketingProvider.matchesTicketId('ACME-123', { genericTicketingProviderRegex: '([R|I][0-9]+-[0-9]+)' })).to.equal(false);
+    // No regex configured, and a malformed one, must never claim an identifier
+    expect(GenericTicketingProvider.matchesTicketId('R123-456', {})).to.equal(false);
+    expect(GenericTicketingProvider.matchesTicketId('R123-456', { genericTicketingProviderRegex: '([' })).to.equal(false);
+  });
+});
+
+describe('ServiceNowProvider.getTicketsFromString', () => {
+  const text = [
+    'INC0012345 fix the account merge',
+    'branch feature/CHG0030307-owner-reset',
+    'see https://acme.service-now.com/incident.do?sysparm_query=number=INC0012345',
+    'and DMND0001231',
+  ].join('\n');
+
+  it('collects nothing when the connector is not configured', withEnv(SERVICENOW_ENV, async () => {
+    for (const name of ['SERVICENOW_URL', 'SERVICENOW_USERNAME', 'SERVICENOW_PASSWORD']) {
+      delete process.env[name];
+    }
+    expect(await ServiceNowProvider.getTicketsFromString('INC0012345 done', { config: {} })).to.deep.equal([]);
+  }));
+
+  it('leaves the prefixes that are ordinary words alone', withEnv(SERVICENOW_ENV, async () => {
+    // What is collected here is written to at the next deployment, so TASK / REQ / STORY / KB are
+    // not scanned by default: a coincidence must never turn into a work note on a real record
+    const tickets = await ServiceNowProvider.getTicketsFromString('TASK1234 REQ0004567 STORY0001234 KB0001234', { config: {} });
+    expect(tickets).to.deep.equal([]);
+    // The full mapping still routes them when the user types one explicitly
+    expect(ServiceNowProvider.matchesTicketId('TASK0001234')).to.equal(true);
+    expect(ServiceNowProvider.tableOfTicketId('TASK0001234')).to.equal('task');
+  }));
+
+  it('scans a prefix the project declared, ordinary word or not', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_TABLE_PREFIXES: 'TASK:task' },
+    async () => {
+      const tickets = await ServiceNowProvider.getTicketsFromString('TASK0001234 done', { config: {} });
+      expect(tickets.map((ticket) => ticket.id)).to.deep.equal(['TASK0001234']);
+    }
+  ));
+
+  it('collects nothing, and does not throw, on a malformed project regex', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_TICKET_REGEX: '([' },
+    async () => {
+      expect(await ServiceNowProvider.getTicketsFromString('INC0012345', { config: {} })).to.deep.equal([]);
+    }
+  ));
+
+  it('survives a prefix holding a regex metacharacter', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_TABLE_PREFIXES: 'A(B:x_acme_table' },
+    async () => {
+      // Routing runs this for every connector: a throw here would break JIRA and Azure Boards too
+      expect(ServiceNowProvider.matchesTicketId('INC0012345')).to.equal(true);
+      expect(await ServiceNowProvider.getTicketsFromString('INC0012345', { config: {} })).to.have.lengthOf(1);
+    }
+  ));
+
+  it('collects the record numbers of a commit, a branch and a URL, without duplicates', withEnv(SERVICENOW_ENV, async () => {
+    const tickets = await ServiceNowProvider.getTicketsFromString(text, { config: {} });
+    expect(tickets.map((ticket) => ticket.id)).to.deep.equal(['CHG0030307', 'DMND0001231', 'INC0012345']);
+    expect(tickets.every((ticket) => ticket.provider === 'SERVICENOW')).to.equal(true);
+    expect(tickets[2].url).to.equal('https://acme.service-now.com/incident.do?sysparm_query=number=INC0012345');
+    expect(tickets[0].url).to.equal('https://acme.service-now.com/change_request.do?sysparm_query=number=CHG0030307');
+  }));
+
+  it('turns off tagging from the pipeline even when the config file turns it on', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_ADD_DEPLOYMENT_TAG: 'false' },
+    async () => {
+      const calls: any[] = [];
+      setFetchForTests(async (url: string, init: any) => {
+        calls.push({ url, method: init?.method || 'GET' });
+        return { ok: true, status: 200, headers: new Map(), text: async () => JSON.stringify({ result: [] }) } as any;
+      });
+      try {
+        const tickets: Ticket[] = [{ provider: 'SERVICENOW', id: 'INC0012345', url: '', foundOnServer: true, providerRecordId: 'abc123' }];
+        await new ServiceNowProvider({}).postDeploymentComments(tickets, 'https://acme.my.salesforce.com', null);
+        expect(calls.some((call) => call.url.includes('/api/now/table/label'))).to.equal(false);
+      } finally {
+        setFetchForTests(null);
+      }
+    }
+  ));
+
+  it('narrows the detection down to the project regex', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_TICKET_REGEX: '(INC[0-9]{7})' },
+    async () => {
+      const tickets = await ServiceNowProvider.getTicketsFromString(text, { config: {} });
+      expect(tickets.map((ticket) => ticket.id)).to.deep.equal(['INC0012345']);
+    }
+  ));
+
+  it('reads the tables of a scoped application from the prefix mapping', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_TABLE_PREFIXES: 'DEFECT:x_acme_defect' },
+    async () => {
+      const tickets = await ServiceNowProvider.getTicketsFromString('DEFECT0000042 regression', { config: {} });
+      expect(tickets.map((ticket) => ticket.id)).to.deep.equal(['DEFECT0000042']);
+      expect(tickets[0].url).to.equal('https://acme.service-now.com/x_acme_defect.do?sysparm_query=number=DEFECT0000042');
+      expect(ServiceNowProvider.matchesTicketId('DEFECT0000042')).to.equal(true);
+    }
+  ));
+
+  it('skips a number whose prefix maps to no table', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_TICKET_REGEX: '\\b([A-Z]+[0-9]{4,})\\b' },
+    async () => {
+      const tickets = await ServiceNowProvider.getTicketsFromString('ZZZ0001234 and INC0012345', { config: {} });
+      expect(tickets.map((ticket) => ticket.id)).to.deep.equal(['INC0012345']);
+    }
+  ));
+});
+
+describe('ServiceNowProvider deployment comments', () => {
+  afterEach(() => setFetchForTests(null));
+
+  type RecordedCall = { url: string; method: string; body: any };
+
+  /** Records every call, and answers the reads the provider makes along the way */
+  function recordServiceNow(record: any | null, existingLabelSysId = ''): RecordedCall[] {
+    const calls: RecordedCall[] = [];
+    setFetchForTests(async (url: string, init: any) => {
+      const method = init?.method || 'GET';
+      calls.push({ url, method, body: init?.body ? JSON.parse(init.body) : null });
+      let body: any = { result: [] };
+      if (url.includes('/api/now/table/label_entry')) {
+        body = method === 'GET' ? { result: [] } : { result: { sys_id: 'entry1' } };
+      } else if (url.includes('/api/now/table/label')) {
+        body = method === 'GET'
+          ? { result: existingLabelSysId ? [{ sys_id: existingLabelSysId }] : [] }
+          : { result: { sys_id: 'label1' } };
+      } else if (method === 'PATCH') {
+        body = { result: record };
+      } else if (url.includes('/api/now/table/')) {
+        body = { result: record ? [record] : [] };
+      }
+      return {
+        ok: true,
+        status: 200,
+        headers: new Map(),
+        text: async () => JSON.stringify(body),
+      } as any;
+    });
+    return calls;
+  }
+
+  const record = {
+    sys_id: { value: 'abc123', display_value: 'abc123' },
+    short_description: { display_value: 'Account merge loses the owner' },
+    state: { value: '2', display_value: 'In Progress' },
+    assigned_to: { value: 'user1', display_value: 'Alice Martin' },
+    opened_by: { value: 'user2', display_value: 'Bob Durand' },
+  };
+
+  const pullRequestInfo: any = {
+    webUrl: 'https://github.com/acme/sfdx-project/pull/812',
+    title: 'Block a past close date',
+    authorName: 'Alice Martin',
+  };
+
+  it('fills the subject, the state and the sys_id of every collected ticket', withEnv(SERVICENOW_ENV, async () => {
+    recordServiceNow(record);
+    const tickets: Ticket[] = [{ provider: 'SERVICENOW', id: 'INC0012345', url: '' }];
+    await new ServiceNowProvider({}).collectTicketsInfo(tickets);
+    expect(tickets[0].foundOnServer).to.equal(true);
+    expect(tickets[0].subject).to.equal('Account merge loses the owner');
+    expect(tickets[0].status).to.equal('2');
+    expect(tickets[0].statusLabel).to.equal('In Progress');
+    expect(tickets[0].assigneeLabel).to.equal('Alice Martin');
+    expect(tickets[0].reporterLabel).to.equal('Bob Durand');
+    // The sys_id is kept, so posting the deployment note needs no second lookup
+    expect(tickets[0].providerRecordId).to.equal('abc123');
+    expect(tickets[0].url).to.equal('https://acme.service-now.com/nav_to.do?uri=/incident.do?sys_id=abc123');
+  }));
+
+  it('leaves a ticket no record answers for untouched', withEnv(SERVICENOW_ENV, async () => {
+    recordServiceNow(null);
+    const tickets: Ticket[] = [{ provider: 'SERVICENOW', id: 'INC0099999', url: 'kept' }];
+    await new ServiceNowProvider({}).collectTicketsInfo(tickets);
+    expect(tickets[0].foundOnServer).to.equal(undefined);
+    expect(tickets[0].url).to.equal('kept');
+  }));
+
+  it('writes the deployment note in the work notes of the record', withEnv(SERVICENOW_ENV, async () => {
+    const calls = recordServiceNow(record);
+    const tickets: Ticket[] = [
+      { provider: 'SERVICENOW', id: 'INC0012345', url: '', foundOnServer: true, providerRecordId: 'abc123' },
+      // Another provider's ticket, and a ServiceNow one that was never found: neither is written to
+      { provider: 'JIRA', id: 'ACME-1', url: '', foundOnServer: true },
+      { provider: 'SERVICENOW', id: 'INC0099999', url: '' },
+    ];
+    await new ServiceNowProvider({}).postDeploymentComments(tickets, 'https://acme--uat.sandbox.my.salesforce.com', pullRequestInfo);
+    const writes = calls.filter((call) => call.method === 'PATCH');
+    expect(writes).to.have.lengthOf(1);
+    expect(writes[0].url).to.equal('https://acme.service-now.com/api/now/table/incident/abc123');
+    expect(Object.keys(writes[0].body)).to.deep.equal(['work_notes']);
+    expect(writes[0].body.work_notes).to.contain('Deployed by sfdx-hardis in Salesforce org acme--uat.sandbox');
+    expect(writes[0].body.work_notes).to.contain('Pull Request: Block a past close date (https://github.com/acme/sfdx-project/pull/812) by Alice Martin');
+    // Tagging is opt-in: nothing was written to the label tables
+    expect(calls.some((call) => call.url.includes('/api/now/table/label'))).to.equal(false);
+  }));
+
+  it('resolves the sys_id itself when the ticket was not collected first', withEnv(SERVICENOW_ENV, async () => {
+    const calls = recordServiceNow(record);
+    const tickets: Ticket[] = [{ provider: 'SERVICENOW', id: 'INC0012345', url: '', foundOnServer: true }];
+    await new ServiceNowProvider({}).postDeploymentComments(tickets, 'https://acme.my.salesforce.com', null);
+    expect(calls.filter((call) => call.method === 'PATCH')[0].url).to.contain('/incident/abc123');
+  }));
+
+  it('writes in the journal field the project asked for', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_COMMENT_FIELD: 'comments' },
+    async () => {
+      const calls = recordServiceNow(record);
+      const tickets: Ticket[] = [{ provider: 'SERVICENOW', id: 'INC0012345', url: '', foundOnServer: true, providerRecordId: 'abc123' }];
+      await new ServiceNowProvider({}).postDeploymentComments(tickets, 'https://acme.my.salesforce.com', null);
+      expect(Object.keys(calls.filter((call) => call.method === 'PATCH')[0].body)).to.deep.equal(['comments']);
+    }
+  ));
+
+  it('creates the label and tags the record when tagging is enabled', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_ADD_DEPLOYMENT_TAG: 'true', DEPLOYED_TAG_TEMPLATE: 'DEPLOYED_TO_{BRANCH}' },
+    async () => {
+      const calls = recordServiceNow(record);
+      const tickets: Ticket[] = [{ provider: 'SERVICENOW', id: 'INC0012345', url: '', foundOnServer: true, providerRecordId: 'abc123' }];
+      await new ServiceNowProvider({}).postDeploymentComments(tickets, 'https://acme.my.salesforce.com', null);
+      const labelCreation = calls.find((call) => call.method === 'POST' && call.url.endsWith('/api/now/table/label'));
+      expect(labelCreation, 'the label is created on first use').to.not.equal(undefined);
+      expect(labelCreation!.body.name).to.contain('DEPLOYED_TO_');
+      const entry = calls.find((call) => call.method === 'POST' && call.url.endsWith('/api/now/table/label_entry'));
+      expect(entry, 'the record is linked to the label').to.not.equal(undefined);
+      expect(entry!.body.label).to.equal('label1');
+      expect(entry!.body.table).to.equal('incident');
+      expect(entry!.body.table_key).to.equal('abc123');
+    }
+  ));
+
+  it('reuses an existing label rather than creating a second one', withEnv(
+    { ...SERVICENOW_ENV, SERVICENOW_ADD_DEPLOYMENT_TAG: 'true' },
+    async () => {
+      const calls = recordServiceNow(record, 'existingLabel');
+      const tickets: Ticket[] = [{ provider: 'SERVICENOW', id: 'INC0012345', url: '', foundOnServer: true, providerRecordId: 'abc123' }];
+      await new ServiceNowProvider({}).postDeploymentComments(tickets, 'https://acme.my.salesforce.com', null);
+      expect(calls.some((call) => call.method === 'POST' && call.url.endsWith('/api/now/table/label'))).to.equal(false);
+      const entry = calls.find((call) => call.method === 'POST' && call.url.endsWith('/api/now/table/label_entry'));
+      expect(entry!.body.label).to.equal('existingLabel');
+    }
+  ));
+});
 });

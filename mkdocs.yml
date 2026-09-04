@@ -267,6 +267,7 @@ nav:
       - Ticketing:
           - Jira: salesforce-ci-cd-setup-integration-jira.md
           - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
+          - ServiceNow: salesforce-ci-cd-setup-integration-servicenow.md
           - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
       - Monitoring Backends:
           - Grafana Dashboards: salesforce-monitoring-grafana-v2.md

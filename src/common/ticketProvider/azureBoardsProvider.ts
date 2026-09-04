@@ -4,7 +4,7 @@ import { TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from '../utils/sortArray.js';
 // Type-only: a value import here would close a runtime cycle index -> provider -> index
-import type { Ticket } from "./index.js";
+import type { Ticket, TicketsFromStringOptions } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
 import { extractRegexMatches, git, isGitRepo, uxLog } from "../utils/index.js";
@@ -29,6 +29,10 @@ import {
 /* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {
+  public static readonly providerKey = "azure" as const;
+  public static readonly providerLabel = "Azure Boards";
+  public static readonly supportsTicketDetails = true;
+
   protected serverUrl: string | null;
   protected azureApi: InstanceType<typeof azdev.WebApi>;
   protected teamProject: string | null;
@@ -116,7 +120,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     return "sfdx-hardis Azure Boards connector";
   }
 
-  public static async getTicketsFromString(text: string, prInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
+  public static async getTicketsFromString(text: string, options: TicketsFromStringOptions = {}): Promise<Ticket[]> {
+    const prInfo = options.pullRequestInfo || null;
     const tickets: Ticket[] = [];
     // Extract Azure Boards Work Items
     const azureBoardsUrlRegex = /(https:\/\/.*\/_workitems\/edit\/[0-9]+)/g;
@@ -134,33 +139,44 @@ export class AzureBoardsProvider extends TicketProviderRoot {
         }
       }
     }
-    const ticketsSorted: Ticket[] = sortArray(tickets, { by: ["id"], order: ["asc"] });
-    const config = await getConfig("project");
+    const config = options.config || (await getConfig("project"));
     if (!this.isAvailable(config)) {
-      return ticketsSorted;
+      return sortArray(tickets, { by: ["id"], order: ["asc"] }) as Ticket[];
     }
-    // Get tickets from Azure commits
-    if (prInfo?.providerInfo?.commits) {
-      const azureBoardsProvider = new AzureBoardsProvider(config);
-      const azureApi = azureBoardsProvider.azureApi;
-      const azureGitApi = await azureApi.getGitApi();
-      const repositoryId = getEnvVar("BUILD_REPOSITORY_ID") || "";
-      const commitIds = prInfo?.providerInfo?.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
-      const azureCommits: GitCommitRef[] = [];
-      for (const commitId of commitIds) {
-        const commitRefs = await azureGitApi.getCommits(repositoryId, { fromCommitId: commitId, toCommitId: commitId, includeWorkItems: true });
-        azureCommits.push(...commitRefs);
-      }
-      for (const commit of azureCommits) {
-        for (const workItem of commit?.workItems || []) {
-          if (!tickets.some((ticket) => ticket.id === workItem.id)) {
-            tickets.push({
-              provider: "AZURE",
-              url: workItem.url || "",
-              id: workItem.id || "",
-            });
+    // Get tickets from Azure commits.
+    // BUILD_REPOSITORY_ID only exists on an Azure Pipelines agent: Azure Boards is also used with
+    // GitHub or GitLab repositories, and asking the Azure git API for the commits of an empty
+    // repository id would fail on every one of them. The work items linked to the Pull Request
+    // itself are collected below, and do not need the git API.
+    const repositoryId = getEnvVar("BUILD_REPOSITORY_ID") || "";
+    if (prInfo?.providerInfo?.commits && repositoryId) {
+      // Never lets a failure here escape: the caller turns any throw into "unable to compute git
+      // summary" and drops the whole Pull Request comment, work items and commits alike
+      try {
+        const azureBoardsProvider = new AzureBoardsProvider(config);
+        const azureApi = azureBoardsProvider.azureApi;
+        const azureGitApi = await azureApi.getGitApi();
+        const commitIds = prInfo?.providerInfo?.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
+        const azureCommits: GitCommitRef[] = [];
+        for (const commitId of commitIds) {
+          const commitRefs = await azureGitApi.getCommits(repositoryId, { fromCommitId: commitId, toCommitId: commitId, includeWorkItems: true });
+          azureCommits.push(...commitRefs);
+        }
+        for (const commit of azureCommits) {
+          for (const workItem of commit?.workItems || []) {
+            if (!tickets.some((ticket) => ticket.id === workItem.id)) {
+              tickets.push({
+                provider: "AZURE",
+                url: workItem.url || "",
+                id: workItem.id || "",
+              });
+            }
           }
         }
+      } catch (e) {
+        uxLog("warning", AzureBoardsProvider, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsCommitWorkItemsError', {
+          message: (e as Error).message,
+        })));
       }
     }
 
@@ -177,7 +193,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       }
     }
 
-    return ticketsSorted;
+    return sortArray(tickets, { by: ["id"], order: ["asc"] }) as Ticket[];
   }
 
   // Call Azure Work Items apis to gather more information from the ticket identifiers
@@ -238,7 +254,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   }
 
   /** True when the identifier is a work item id, bare or in the AB-1234 form used by the skills */
-  public static matchesTicketId(ticketId: string): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static matchesTicketId(ticketId: string, _config: any = {}): boolean {
     return /^(AB-)?[0-9]{1,10}$/i.test((ticketId || "").trim());
   }
 
@@ -374,7 +391,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     const taggedTickets: Ticket[] = [];
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
     for (const ticket of tickets) {
-      if (ticket.foundOnServer) {
+      // The list holds the tickets of every connector: without this filter a configured Azure
+      // Boards would call getWorkItem(NaN) on a JIRA key or a ServiceNow record number
+      if (ticket.provider === "AZURE" && ticket.foundOnServer) {
         let commentMd = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
         if (pullRequestInfo) {
           const prUrl = pullRequestInfo.webUrl || "";

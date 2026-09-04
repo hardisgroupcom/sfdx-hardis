@@ -2,6 +2,11 @@
 
 ## [beta] (main)
 
+- [ServiceNow ticketing integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/):
+  - ServiceNow records referenced in your commits, branches and Pull Requests are now shown in Pull Request comments and deployment notifications, with their description and state, like Jira issues already were.
+  - A work note naming the org, the branch and the Pull Request is posted on each record deployed in a major org.
+- Azure Boards: work items linked to the commits of a Pull Request are collected again, and a failure to read them no longer costs the whole Pull Request comment.
+
 ## [8.5.0] 2026-09-03
 
 - Fixed the [deployment assistant error pages](https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-error-list/) whose error message contains a quote or a regular expression: their page metadata was invalid, so they were missing from the site and their links were dead.

@@ -101,6 +101,11 @@ On Azure DevOps, the description of a completed Pull Request can no longer be ed
   - Enrich notifications with work item references and links
   - Post a comment and a tag on Azure work items when they are deployed in a major org
 
+- [ServiceNow](salesforce-ci-cd-setup-integration-servicenow.md)
+  - Enrich Pull Request comments with record references and links
+  - Enrich notifications with record references and links
+  - Post a work note (and optionally a tag) on ServiceNow records when they are deployed in a major org
+
 - [Generic ticketing](salesforce-ci-cd-setup-integration-generic-ticketing.md)
   - Enrich Pull Request comments with ticket references and links
   - Enrich notifications with ticket references and links
