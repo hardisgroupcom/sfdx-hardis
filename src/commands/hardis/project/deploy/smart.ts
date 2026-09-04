@@ -26,7 +26,7 @@ import {
   uxLog,
   uxLogTable,
 } from '../../../../common/utils/index.js';
-import { CONSTANTS, getConfig } from '../../../../config/index.js';
+import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
 import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
 import { extendPackageFileWithDependencies, appendPackageModifications } from '../../../../common/utils/deltaUtils.js';
 import { isProductionOrg, promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
@@ -65,6 +65,12 @@ If you do not want to use QuickDeploy, define variable \`SFDX_HARDIS_QUICK_DEPLO
 - [GitHub Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-github/)
 - [Gitlab Merge requests notes config](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-gitlab/)
 - [Azure Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-azure/)
+
+### Metadata REST API
+
+The Salesforce CLI deploys with the SOAP Metadata API by default. To deploy with the Metadata REST API instead, define property \`useRestDeploy: true\` in \`config/.sfdx-hardis.yml\`, or set env variable \`SFDX_HARDIS_USE_REST_DEPLOY=true\`.
+
+This is the equivalent of \`sf config set org-metadata-rest-deploy=true\`, applied only to the deployments started by this command: your sf configuration is left untouched.
 
 ### Delta deployments
 
@@ -505,6 +511,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
 
     this.configInfo = await getConfig('branch');
+    this.applyRestDeploymentOption();
     // In agent mode, force simulation/check mode - no actual deployment allowed
     this.checkOnly = agentMode ? true : (flags.check || false);
     if (agentMode && !flags.check) {
@@ -639,6 +646,20 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         }
       }
     }
+  }
+
+  // The Salesforce CLI deploys through the SOAP Metadata API unless org-metadata-rest-deploy is set.
+  // Opting in sets the matching env variable, inherited by the sf deploy commands started next,
+  // so the user sf configuration is not modified.
+  private applyRestDeploymentOption() {
+    const restDeployEnvVar = getEnvVar('SFDX_HARDIS_USE_REST_DEPLOY');
+    const useRestDeploy =
+      restDeployEnvVar !== null ? restDeployEnvVar === 'true' : this.configInfo.useRestDeploy === true;
+    if (useRestDeploy !== true) {
+      return;
+    }
+    process.env.SF_ORG_METADATA_REST_DEPLOY = 'true';
+    uxLog("action", this, c.cyan('[RestDeployment] ' + t('restDeploymentActivated')));
   }
 
   private async handleDeltaDeployment(deltaFromArgs: any, targetUsername: string, currentGitBranch: string | null) {

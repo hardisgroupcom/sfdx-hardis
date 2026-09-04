@@ -553,6 +553,7 @@ The PR comment includes:
 |:--------------------------------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `useDeltaDeployment`                        | boolean  | Enable [delta deployments](salesforce-ci-cd-config-delta-deployment.md) between minor and major branches                                                       |
 | `enableDeltaDeploymentBetweenMajorBranches` | boolean  | Force [delta](salesforce-ci-cd-config-delta-deployment.md) even between major branches (not recommended)                                                       |
+| `useRestDeploy`                             | boolean  | Deploy with the [Metadata REST API](hardis/project/deploy/smart.md#metadata-rest-api) instead of the default SOAP Metadata API                                 |
 | `useSmartDeploymentTests`                   | boolean  | Skip tests if only [non-impacting metadata types](#delta-processing) in delta                                                                                  |
 | `testLevel`                                 | string   | Default [test level](#test-level-test-class-resolution)                                                                                                        |
 | `enableDeploymentApexTestClasses`           | boolean  | Enable custom [test class list](#test-level-test-class-resolution) from config/PRs                                                                             |
@@ -577,6 +578,7 @@ See also the [full environment variables reference](all-env-variables.md).
 | `USE_DELTA_DEPLOYMENT_AFTER_MERGE`     | Allow [delta](salesforce-ci-cd-config-delta-deployment.md) for merge jobs (not just checks)     |
 | `USE_SMART_DEPLOYMENT_TESTS`           | Enable [smart test skipping](#delta-processing)                                                 |
 | `NOT_IMPACTING_METADATA_TYPES`         | Override the list of [non-impacting types](#delta-processing) (comma-separated)                 |
+| `SFDX_HARDIS_USE_REST_DEPLOY`          | Deploy with the [Metadata REST API](hardis/project/deploy/smart.md#metadata-rest-api) instead of SOAP |
 | `SFDX_HARDIS_QUICK_DEPLOY`             | Set to `false` to disable [Quick Deploy](#quick-deploy)                                         |
 | `SFDX_HARDIS_DEPLOY_CHECK_ID`          | Force the [Quick Deploy](#quick-deploy) job id instead of reading it from Pull Request comments |
 | `SFDX_DEPLOY_WAIT_MINUTES`             | Deployment wait timeout (default: 120)                                                          |

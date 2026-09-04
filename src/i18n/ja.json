@@ -2942,6 +2942,7 @@
   "resolvingProfileApiNames": "プロファイルの API 参照名を解決しています...",
   "responseBody": "レスポンスボディ：",
   "responseBody2": "レスポンスボディ：\n",
+  "restDeploymentActivated": "デプロイは既定の SOAP Metadata API ではなく Metadata REST API を使用します。",
   "restartModeClearingOutputFolder": "再開モード：出力フォルダ {{exportedFilesFolder}} をクリアしています。",
   "restartModeSelectedOutputFolderWillBe": "再開モードが選択されました：出力フォルダがクリアされます",
   "restoreCancelledWrongBackupFolder": "復元がキャンセルされました。選択されたバックアップフォルダが対象のorgと一致しません。",

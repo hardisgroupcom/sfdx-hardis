@@ -2944,6 +2944,7 @@
   "resolvingProfileApiNames": "Résolution des noms d'API des profils...",
   "responseBody": "Corps de la réponse : ",
   "responseBody2": "Corps de la réponse : \n",
+  "restDeploymentActivated": "Les déploiements utiliseront la Metadata REST API au lieu de la SOAP Metadata API utilisée par défaut.",
   "restartModeClearingOutputFolder": "Mode redémarrage : vidage du dossier de sortie {{exportedFilesFolder}}.",
   "restartModeSelectedOutputFolderWillBe": "Mode redémarrage sélectionné : le dossier de sortie sera vidé",
   "restoreCancelledWrongBackupFolder": "Restauration annulée : le dossier de sauvegarde sélectionné ne correspond pas à l'org cible.",

@@ -3349,6 +3349,14 @@
       "title": "Use Delta Deployment with dependencies (beta)",
       "type": "boolean"
     },
+    "useRestDeploy": {
+      "$id": "#/properties/useRestDeploy",
+      "default": false,
+      "description": "Deploy with the Metadata REST API instead of the SOAP Metadata API used by default by the Salesforce CLI.\nEquivalent of \"sf config set org-metadata-rest-deploy=true\", but applied only to the deployments started by sfdx-hardis, without modifying your sf configuration.\nCan also be activated with env variable SFDX_HARDIS_USE_REST_DEPLOY=true.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#metadata-rest-api",
+      "title": "Deploy with Metadata REST API",
+      "type": "boolean"
+    },
     "useSmartDeploymentTests": {
       "$id": "#/properties/useSmartDeploymentTests",
       "default": false,

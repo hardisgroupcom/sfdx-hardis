@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- New `useRestDeploy` config property (or SFDX_HARDIS_USE_REST_DEPLOY env var) to make [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) deploy with the Metadata REST API instead of the SOAP Metadata API the Salesforce CLI uses by default. Your sf configuration is not modified.
+
 ## [8.6.0] 2026-09-04
 
 - [ServiceNow ticketing integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/):
