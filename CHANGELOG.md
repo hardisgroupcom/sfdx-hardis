@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.6.0] 2026-09-04
+
 - [ServiceNow ticketing integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/):
   - ServiceNow records referenced in your commits, branches and Pull Requests are now shown in Pull Request comments and deployment notifications, with their description and state, like Jira issues already were.
   - A work note naming the org, the branch and the Pull Request is posted on each record deployed in a major org.
