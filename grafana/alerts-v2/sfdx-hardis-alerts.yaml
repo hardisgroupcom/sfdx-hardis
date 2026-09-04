@@ -1,0 +1,392 @@
+# Grafana alert rules for "Org Monitoring by sfdx-hardis" (v2)
+#
+# All rules ship PAUSED (isPaused: true) so importing them costs nothing on
+# Grafana Cloud free tier. Enable the ones you want from Alerting > Alert rules,
+# and configure your own contact points / notification policies.
+#
+# Before importing, replace the datasource placeholders with your datasource UIDs:
+#   ${DS_PROMETHEUS} -> your Prometheus/Mimir datasource uid (e.g. grafanacloud-prom)
+#   ${DS_LOKI}       -> your Loki datasource uid (e.g. grafanacloud-logs)
+# Find the UIDs in Grafana: Connections > Data sources > (datasource) > the uid is in the URL.
+#
+# Import: place this file in your Grafana provisioning/alerting folder (self-hosted),
+# or POST it through the Grafana HTTP API / import it with Grafana Terraform provider.
+# See https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: sfdx-hardis-org-monitoring
+    folder: Org Monitoring by sfdx-hardis
+    interval: 6h
+    rules:
+      # ----------------------------------------------------------------------
+      # 1. Any org limit above 90%
+      # ----------------------------------------------------------------------
+      - uid: sfdx-hardis-v2-limit-above-90
+        title: Salesforce org limit above 90%
+        condition: C
+        isPaused: true
+        for: 0s
+        noDataState: OK
+        execErrState: OK
+        labels:
+          source: sfdx-hardis
+        annotations:
+          summary: 'Org {{ $labels.orgIdentifier }}: limit {{ $labels.limit }} is above 90% usage'
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 259200
+              to: 0
+            datasourceUid: ${DS_PROMETHEUS}
+            model:
+              refId: A
+              instant: true
+              range: false
+              # The "limit" label carries the limit name so the alert says which limit fired
+              expr: 'max by (orgIdentifier, limit) (label_replace(last_over_time({__name__=~".+_percent", source="sfdx-hardis"}[2d]), "limit", "$1", "__name__", "(.+)_percent"))'
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [90]
+                    type: gt
+      # ----------------------------------------------------------------------
+      # 2. Storage projected full within 14 days (30d linear trend)
+      # ----------------------------------------------------------------------
+      - uid: sfdx-hardis-v2-storage-forecast
+        title: Salesforce storage projected full within 14 days
+        condition: C
+        isPaused: true
+        for: 0s
+        noDataState: OK
+        execErrState: OK
+        labels:
+          source: sfdx-hardis
+        annotations:
+          summary: 'Org {{ $labels.orgIdentifier }}: data or file storage is trending toward 100% in less than 14 days'
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 2678400
+              to: 0
+            datasourceUid: ${DS_PROMETHEUS}
+            model:
+              refId: A
+              instant: true
+              range: false
+              # A returns the worst days-until-full value per org (unfiltered), and C fires
+              # on "lt 14": an org already at or above 100% yields 0 or a negative value and
+              # still fires. Shrinking storage is clamped to a tiny positive growth, which
+              # yields a huge days value and never fires. The "storage" label prevents the
+              # data/file series from shadowing each other in the "or" union.
+              expr: >-
+                min by (orgIdentifier) (
+                label_replace((100 - last_over_time(DataStorageMB_percent{source="sfdx-hardis"}[2d]))
+                / clamp_min(deriv(DataStorageMB_percent{source="sfdx-hardis"}[30d]) * 86400, 0.000001), "storage", "data", "", "")
+                or
+                label_replace((100 - last_over_time(FileStorageMB_percent{source="sfdx-hardis"}[2d]))
+                / clamp_min(deriv(FileStorageMB_percent{source="sfdx-hardis"}[30d]) * 86400, 0.000001), "storage", "file", "", "")
+                )
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [14]
+                    type: lt
+      # ----------------------------------------------------------------------
+      # 3. Apex + Flow error spike (more than 2x the 7-day average + 5)
+      # ----------------------------------------------------------------------
+      - uid: sfdx-hardis-v2-error-spike
+        title: Salesforce Apex/Flow error spike
+        condition: C
+        isPaused: true
+        for: 0s
+        noDataState: OK
+        execErrState: OK
+        labels:
+          source: sfdx-hardis
+        annotations:
+          summary: 'Org {{ $labels.orgIdentifier }}: Apex + Flow errors exceed twice their 7-day average'
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 691200
+              to: 0
+            datasourceUid: ${DS_PROMETHEUS}
+            model:
+              refId: A
+              instant: true
+              range: false
+              # Single multi-metric selector summed per org: an org missing one of the two
+              # series (e.g. Flow errors never sent) is still covered by the other, unlike a
+              # vector addition which silently drops it. [2d] lookback tolerates cron drift.
+              expr: >-
+                sum by (orgIdentifier) (last_over_time({__name__=~"(ApexErrors|FlowErrors)_metric", source="sfdx-hardis"}[2d]))
+                >
+                ((2 * sum by (orgIdentifier) (avg_over_time({__name__=~"(ApexErrors|FlowErrors)_metric", source="sfdx-hardis"}[7d]))) + 5)
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+      # ----------------------------------------------------------------------
+      # 4. Metadata backup failed in the last 26 hours
+      # ----------------------------------------------------------------------
+      - uid: sfdx-hardis-v2-backup-failed
+        title: Salesforce metadata backup failed
+        condition: C
+        isPaused: true
+        for: 0s
+        noDataState: OK
+        execErrState: OK
+        labels:
+          source: sfdx-hardis
+        annotations:
+          summary: 'Org {{ $labels.orgIdentifier }}: metadata backup reported an error in the last 26 hours'
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 93600
+              to: 0
+            datasourceUid: ${DS_LOKI}
+            model:
+              refId: A
+              queryType: instant
+              expr: 'sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP", severity=~"error|critical"}[26h]))'
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+      # ----------------------------------------------------------------------
+      # 5. Silent org: seen in the last 7 days but nothing for 36 hours
+      # ----------------------------------------------------------------------
+      - uid: sfdx-hardis-v2-silent-org
+        title: Salesforce org monitoring is silent
+        condition: C
+        isPaused: true
+        for: 0s
+        noDataState: OK
+        execErrState: OK
+        labels:
+          source: sfdx-hardis
+        annotations:
+          summary: 'Org {{ $labels.orgIdentifier }} sent no monitoring notification for 36 hours: the monitoring job probably failed'
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 604800
+              to: 0
+            datasourceUid: ${DS_LOKI}
+            model:
+              refId: A
+              queryType: instant
+              expr: >-
+                (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis"}[7d])) > 0)
+                unless
+                (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis"}[36h])) > 0)
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+      # ----------------------------------------------------------------------
+      # 6. Health score low (< 60) or dropped by more than 20 points
+      # ----------------------------------------------------------------------
+      - uid: sfdx-hardis-v2-health-score
+        title: Salesforce org health score degraded
+        condition: C
+        isPaused: true
+        for: 0s
+        noDataState: OK
+        execErrState: OK
+        labels:
+          source: sfdx-hardis
+        annotations:
+          summary: 'Org {{ $labels.orgIdentifier }}: health score below 60 or dropped by more than 20 points'
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 1382400
+              to: 0
+            datasourceUid: ${DS_PROMETHEUS}
+            model:
+              refId: A
+              instant: true
+              range: false
+              # Each branch emits a 1 marker per firing org (the "* 0 + 1" turns the filtered
+              # value into a constant), so a score of exactly 0 still fires the "< 60" branch.
+              # The drop branch compares the latest weekly sample with the previous week's
+              # sample ([8d] offset 7d), not two windows containing the same sample.
+              expr: >-
+                ((max by (orgIdentifier) (last_over_time(HealthScore_metric{source="sfdx-hardis"}[8d])) < 60) * 0 + 1)
+                or
+                (((max by (orgIdentifier) (last_over_time(HealthScore_metric{source="sfdx-hardis"}[8d] offset 7d))
+                - max by (orgIdentifier) (last_over_time(HealthScore_metric{source="sfdx-hardis"}[8d]))) > 20) * 0 + 1)
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+      # ----------------------------------------------------------------------
+      # 7. Usage-based entitlement over, or projected to exceed, its allowance
+      # ----------------------------------------------------------------------
+      - uid: sfdx-hardis-v2-usage-entitlement-overage
+        title: Salesforce usage-based entitlement over or projected over allowance
+        condition: C
+        isPaused: true
+        for: 0s
+        noDataState: OK
+        execErrState: OK
+        labels:
+          source: sfdx-hardis
+        annotations:
+          summary: 'Org {{ $labels.orgIdentifier }}: a usage-based entitlement is already over its allowance, or on track to exceed it before the period ends'
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 172800
+              to: 0
+            datasourceUid: ${DS_PROMETHEUS}
+            model:
+              refId: A
+              instant: true
+              range: false
+              # Two branches: an allowance already fully consumed (overage is being billed
+              # now), or a projection heading past 150% of the allowance before the period
+              # ends. Aggregated per org so one alert fires per org, not one per resource.
+              expr: >-
+                (max by (orgIdentifier) (last_over_time(UsageEntitlementsOverAllowance_metric{source="sfdx-hardis"}[2d])) > 0)
+                or
+                (max by (orgIdentifier) (last_over_time(UsageEntitlementsWorstProjected_metric{source="sfdx-hardis"}[2d])) > 150)
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+      # ----------------------------------------------------------------------
+      # 8. Consumption card approaching its full allowance
+      # ----------------------------------------------------------------------
+      - uid: sfdx-hardis-v2-consumption-alert-critical
+        title: Salesforce consumption card near its full allowance
+        condition: C
+        isPaused: true
+        for: 0s
+        noDataState: OK
+        execErrState: OK
+        labels:
+          source: sfdx-hardis
+        annotations:
+          summary: 'Org {{ $labels.orgIdentifier }}: a consumption card has passed 90% of its allowance'
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 172800
+              to: 0
+            datasourceUid: ${DS_PROMETHEUS}
+            model:
+              refId: A
+              instant: true
+              range: false
+              expr: >-
+                max by (orgIdentifier) (last_over_time(ConsumptionAlertsMaxThreshold_metric{source="sfdx-hardis"}[2d])) >= 90
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
