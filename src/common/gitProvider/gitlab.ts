@@ -448,6 +448,20 @@ ${getBannerMarkdownAndLink()}
     }
   }
 
+  public async getPullRequestById(mrIid: number): Promise<CommonPullRequestInfo | null> {
+    const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
+    if (!this.gitlabApi || !projectId) {
+      return null;
+    }
+    try {
+      const mergeRequest = await this.gitlabApi.MergeRequests.show(projectId, mrIid);
+      return mergeRequest ? this.completePullRequestInfo(mergeRequest) : null;
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitProviderPrByIdNotFound', { id: mrIid, message: String(err) })));
+      return null;
+    }
+  }
+
   public async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,

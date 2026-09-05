@@ -124,6 +124,17 @@ export abstract class GitProviderRoot {
     return [];
   }
 
+  /**
+   * Fetch a single Pull Request by its provider-native number (GitHub number, GitLab iid, Azure id,
+   * Bitbucket id). Used to resolve the stories declared by a promotion Pull Request, whose
+   * cherry-picked commits cannot be matched by merge commit SHA. Returns null when not found.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getPullRequestById(_prNumber: number): Promise<CommonPullRequestInfo | null> {
+    uxLog("other", this, `Method getPullRequestById is not implemented yet on ${this.getLabel()}`);
+    return null;
+  }
+
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     uxLog("warning", this, c.yellow(t('methodPostpullrequestmessageIsNotYetImplementedOn') + this.getLabel() + " to post " + JSON.stringify(prMessage)));
     return { posted: false, providerResult: { error: "Not implemented in sfdx-hardis" } };

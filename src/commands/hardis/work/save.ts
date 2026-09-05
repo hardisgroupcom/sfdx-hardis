@@ -35,6 +35,7 @@ import CleanReferences from '../project/clean/references.js';
 import CleanXml from '../project/clean/xml.js';
 import { GitProvider } from '../../../common/gitProvider/index.js';
 import { t } from '../../../common/utils/i18n.js';
+import { getPromotionBranchConfig, isPromotionBranchName } from '../../../common/utils/promotionBranchUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -227,6 +228,12 @@ The command's technical implementation involves a series of orchestrated steps:
     // Define current and target branches
     this.gitUrl = await getGitRepoUrl() || '';
     this.currentBranch = (await getCurrentGitBranch()) || '';
+    // A promotion branch is assembled by cherry-picking merged User Stories: the cleaning and
+    // manifest updates of work:save are not meant for it. Warn, do not refuse.
+    const promotionConfig = getPromotionBranchConfig(await getConfig('branch'));
+    if (promotionConfig.enabled && isPromotionBranchName(this.currentBranch, promotionConfig.prefix)) {
+      uxLog("warning", this, c.yellow(t('workSaveOnPromotionBranch', { branch: this.currentBranch })));
+    }
     if (this.targetBranch == null) {
       const userConfig = await getConfig('user');
       if (userConfig?.localStorageBranchTargets && userConfig?.localStorageBranchTargets[localBranch]) {

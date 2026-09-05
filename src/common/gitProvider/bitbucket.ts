@@ -479,6 +479,25 @@ export class BitbucketProvider extends GitProviderRoot {
     return all;
   }
 
+  public async getPullRequestById(pullRequestId: number): Promise<CommonPullRequestInfo | null> {
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    if (!this.bitbucket || !workspace || !repoSlug) {
+      return null;
+    }
+    try {
+      const pullRequest = await this.bitbucket.repositories.getPullRequest({
+        pull_request_id: pullRequestId,
+        repo_slug: repoSlug,
+        workspace: workspace,
+      });
+      return pullRequest?.data?.destination ? this.completePullRequestInfo(pullRequest.data) : null;
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('gitProviderPrByIdNotFound', { id: pullRequestId, message: String(err) })));
+      return null;
+    }
+  }
+
   public async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,

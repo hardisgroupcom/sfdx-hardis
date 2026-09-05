@@ -587,6 +587,19 @@ ${getBannerMarkdownAndLink()}
     }
   }
 
+  public async getPullRequestById(prNumber: number): Promise<CommonPullRequestInfo | null> {
+    if (!this.api || !this.repoOwner || !this.repoName) {
+      return null;
+    }
+    try {
+      const { data } = await this.api.get<any>(`${this.repoPath()}/pulls/${prNumber}`);
+      return data ? this.completePullRequestInfo(data) : null;
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('gitProviderPrByIdNotFound', { id: prNumber, message: String(err) })));
+      return null;
+    }
+  }
+
   // Shared tail: fetch merged PRs targeting each branch, keep those whose merge commit
   // is part of commitSHAs, dedupe by PR number and convert to the common shape.
   private async collectMergedPrsForCommits(

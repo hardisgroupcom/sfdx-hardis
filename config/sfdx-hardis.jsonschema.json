@@ -1919,6 +1919,30 @@
       "title": "Enable delta deployments between major branches (NOT RECOMMENDED)",
       "type": "boolean"
     },
+    "enablePromotionBranches": {
+      "$id": "#/properties/enablePromotionBranches",
+      "description": "Enable promotion branches: a branch named <promotionBranchPrefix>/<name> (default promotion/) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.",
+      "default": false,
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/",
+      "examples": [
+        true,
+        false
+      ],
+      "title": "Enable promotion branches",
+      "type": "boolean"
+    },
+    "promotionBranchPrefix": {
+      "$id": "#/properties/promotionBranchPrefix",
+      "description": "Prefix of the promotion branches (promotion by default, for branches named promotion/<name>). Only used when enablePromotionBranches is true.",
+      "default": "promotion",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/",
+      "examples": [
+        "promotion",
+        "release"
+      ],
+      "title": "Promotion branch prefix",
+      "type": "string"
+    },
     "enableDeploymentApexTestClasses": {
       "$id": "#/properties/enableDeploymentApexTestClasses",
       "description": "Enable the use of custom Apex Test Classes list during deployments. Requires enableDeltaDeploymentBetweenMajorBranches to be set to true. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.",

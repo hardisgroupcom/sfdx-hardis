@@ -499,6 +499,20 @@ ${this.getPipelineVariablesConfig()}
     return latest;
   }
 
+  public async getPullRequestById(pullRequestId: number): Promise<CommonPullRequestInfo | null> {
+    try {
+      const azureGitApi = await this.azureApi.getGitApi();
+      const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
+      if (!pullRequest || !pullRequest.targetRefName) {
+        return null;
+      }
+      return this.completePullRequestInfo(pullRequest);
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPrByIdNotFound', { id: pullRequestId, message: String(err) })));
+      return null;
+    }
+  }
+
   public async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,

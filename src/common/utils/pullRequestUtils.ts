@@ -7,6 +7,19 @@ import yaml from "js-yaml";
 import { isRetrofit, listMajorOrgs } from "./orgConfigUtils.js";
 import { SfError } from "@salesforce/core";
 import { t } from "./i18n.js";
+import { getConfig } from "../../config/index.js";
+import {
+  expandPromotionPullRequests,
+  filterDeclaredPullRequests,
+  findPromotionsCarrying,
+  getPromotionBranchConfig,
+  InheritedCustomBehavior,
+  isPromotionPullRequest,
+  mergeInheritedCustomBehaviors,
+  parsePromotionPullRequestIds,
+  PromotionBranchConfig,
+  warnAboutPromotionPullRequestMisuse,
+} from "./promotionBranchUtils.js";
 
 let _cachedPullRequests: CommonPullRequestInfo[] | null = null;
 
@@ -16,10 +29,21 @@ let _cachedPullRequests: CommonPullRequestInfo[] | null = null;
  * - batch: merge from a major or retrofit branch, the scope is the promotion window of the target branch
  * - go-live: merge into the topmost branch, the scope is the batch carried by the merge itself
  * - check: Pull Request validation job, the scope is the content of the checked Pull Request
+ * - promotion / promotion-check: deployment / validation of a promotion branch, the scope is the
+ *   Pull Requests declared in its description (see promotionBranchUtils.ts)
  */
-export type PullRequestScopeKind = 'single-pr' | 'batch' | 'go-live' | 'check';
+export type PullRequestScopeKind = 'single-pr' | 'batch' | 'go-live' | 'check' | 'promotion' | 'promotion-check';
 
 let _scopeKind: PullRequestScopeKind | null = null;
+
+/**
+ * Stories of a promotion window that were already deployed through a promotion branch, with the
+ * promotion Pull Requests that carried them. Informational only: they stay in the scope.
+ */
+let _alreadyPromoted: Array<{ story: CommonPullRequestInfo; promotions: CommonPullRequestInfo[] }> = [];
+
+// Custom behaviors the promotion Pull Request inherited from the stories it declares
+let _inheritedBehaviors: InheritedCustomBehavior[] = [];
 
 /**
  * Returns the resolved Pull Request scope with the way it was determined,
@@ -32,6 +56,129 @@ export function getPullRequestScopeInfo(): { kind: PullRequestScopeKind; pullReq
     return null;
   }
   return { kind: _scopeKind, pullRequests: _cachedPullRequests };
+}
+
+/**
+ * Promotion branch details of the resolved scope, for the Pull Request comment.
+ */
+export function getPromotionScopeDetails(): {
+  alreadyPromoted: Array<{ story: CommonPullRequestInfo; promotions: CommonPullRequestInfo[] }>;
+  inheritedBehaviors: InheritedCustomBehavior[];
+} {
+  return { alreadyPromoted: _alreadyPromoted, inheritedBehaviors: _inheritedBehaviors };
+}
+
+async function getPromotionBranchConfigFromProject(): Promise<PromotionBranchConfig> {
+  return getPromotionBranchConfig(await getConfig('branch'));
+}
+
+/**
+ * Stories declared by a promotion Pull Request, fetched by number: their cherry-picked commits
+ * cannot be matched by merge commit SHA like the other scopes do.
+ */
+async function fetchDeclaredPullRequests(gitProvider: any, promotionPr: CommonPullRequestInfo): Promise<CommonPullRequestInfo[]> {
+  const declaredIds = parsePromotionPullRequestIds(promotionPr.description) || [];
+  uxLog("log", null, c.grey(`[PromotionBranch] ${t('promotionScopeDeclared', {
+    pr: promotionPr.idStr,
+    branch: promotionPr.sourceBranch,
+    count: declaredIds.length,
+    prList: declaredIds.map((id) => `#${id}`).join(', ') || '-',
+  })}`));
+  const fetched = new Map<number, CommonPullRequestInfo | null>();
+  for (const id of declaredIds) {
+    fetched.set(id, await gitProvider.getPullRequestById(id));
+  }
+  return filterDeclaredPullRequests(declaredIds, fetched, promotionPr);
+}
+
+/**
+ * Promotion Pull Requests merged into a branch or any branch downstream of it (following
+ * mergeTargets). Used to tell which stories of a window were already shipped through one.
+ */
+async function listDownstreamPromotionPullRequests(
+  gitProvider: any,
+  fromBranch: string,
+  majorOrgs: any[],
+  promotionConfig: PromotionBranchConfig,
+): Promise<CommonPullRequestInfo[]> {
+  const branches: string[] = [];
+  let current: string | null = fromBranch;
+  while (current && !branches.includes(current)) {
+    branches.push(current);
+    const org = majorOrgs.find((o) => o.branchName === current);
+    current = org?.mergeTargets?.[0] || null;
+  }
+  const promotions: CommonPullRequestInfo[] = [];
+  for (const branch of branches) {
+    try {
+      const merged = (await gitProvider.listPullRequests({ status: 'merged', targetBranch: branch })) || [];
+      promotions.push(...merged.filter((pr: CommonPullRequestInfo) => isPromotionPullRequest(pr, promotionConfig)));
+    } catch (e) {
+      uxLog("warning", null, c.yellow(`[PromotionBranch] ${t('promotionUnableToListPromotions', { branch, message: (e as Error).message })}`));
+    }
+  }
+  return promotions;
+}
+
+/**
+ * Complete a promotion window (batch or go-live) when promotion branches are enabled: expand the
+ * promotion Pull Requests it contains with the stories they declare, and remember which stories
+ * of the window already reached the target through a promotion branch.
+ */
+async function completeWindowWithPromotions(
+  gitProvider: any,
+  pullRequests: CommonPullRequestInfo[],
+  windowTargetBranch: string,
+  majorOrgs: any[],
+  promotionConfig: PromotionBranchConfig,
+): Promise<CommonPullRequestInfo[]> {
+  if (!promotionConfig.enabled) {
+    return pullRequests;
+  }
+  const expanded = await expandPromotionPullRequests(pullRequests, promotionConfig, (id) => gitProvider.getPullRequestById(id));
+  const downstreamPromotions = await listDownstreamPromotionPullRequests(gitProvider, windowTargetBranch, majorOrgs, promotionConfig);
+  _alreadyPromoted = expanded
+    .map((story) => ({ story, promotions: findPromotionsCarrying(story.idNumber, downstreamPromotions, promotionConfig) }))
+    .filter((entry) => entry.promotions.length > 0);
+  for (const entry of _alreadyPromoted) {
+    uxLog("log", null, c.grey(`[PromotionBranch] ${t('promotionStoryAlreadyPromoted', {
+      pr: entry.story.idStr,
+      promotions: entry.promotions.map((promotion) => `${promotion.sourceBranch} (#${promotion.idStr})`).join(', '),
+    })}`));
+  }
+  return expanded;
+}
+
+/**
+ * On a promotion Pull Request, inherit the custom behaviors (NO_DELTA, PURGE_FLOW_VERSIONS,
+ * DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT, FLOW_DELETE_INTERVIEWS) of the stories it declares.
+ * Must run before the delta decision, which is why smart deploy calls it right after loading its
+ * config rather than waiting for the deployment actions to resolve the scope.
+ * No effect (and no provider call) unless enablePromotionBranches is set and the Pull Request
+ * is a promotion one.
+ */
+export async function applyPromotionInheritedBehaviors(checkOnly: boolean): Promise<InheritedCustomBehavior[]> {
+  const promotionConfig = await getPromotionBranchConfigFromProject();
+  if (!promotionConfig.enabled) {
+    return [];
+  }
+  const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+  if (!isPromotionPullRequest(prInfo, promotionConfig)) {
+    return [];
+  }
+  const scope = await listAllPullRequestsForCurrentScope(checkOnly);
+  _inheritedBehaviors = mergeInheritedCustomBehaviors(prInfo!, scope);
+  if (_inheritedBehaviors.length > 0) {
+    // Re-applied by GitProvider.getPullRequestInfo on every fresh fetch of the Pull Request
+    GitProvider.inheritedCustomBehaviors = Object.fromEntries(_inheritedBehaviors.map((item) => [item.behavior, true]));
+    for (const item of _inheritedBehaviors) {
+      uxLog("action", null, c.cyan(`[PromotionBranch] ${t('promotionInheritedBehavior', {
+        keyword: item.keyword,
+        prList: item.fromPullRequests.map((idStr) => `#${idStr}`).join(', '),
+      })}`));
+    }
+  }
+  return _inheritedBehaviors;
 }
 
 /**
@@ -177,6 +324,19 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
   // List all major orgs and branches whose authentication has been configured with sfdx-hardis
   const majorOrgs = await listMajorOrgs();
 
+  // Promotion branch (enablePromotionBranches): the stories are declared in the Pull Request
+  // description, because their cherry-picked commits cannot be matched by merge commit SHA.
+  // Same rule on the validation and on the deployment job.
+  const promotionConfig = await getPromotionBranchConfigFromProject();
+  warnAboutPromotionPullRequestMisuse(pullRequestInfo, promotionConfig);
+  if (isPromotionPullRequest(pullRequestInfo, promotionConfig)) {
+    const declaredPullRequests = await fetchDeclaredPullRequests(gitProvider, pullRequestInfo);
+    _cachedPullRequests = [...declaredPullRequests, pullRequestInfo];
+    _scopeKind = checkOnly ? 'promotion-check' : 'promotion';
+    logResolvedScope(_cachedPullRequests);
+    return _cachedPullRequests;
+  }
+
   // Source & target are not the same if we are in checkOnly mode or deployment mode
   let sourceBranchToUse = '';
   let targetBranchToUse = '';
@@ -250,6 +410,7 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
       if (!goLivePullRequests.some(pr => pr.idStr === pullRequestInfo.idStr)) {
         goLivePullRequests.push(pullRequestInfo);
       }
+      goLivePullRequests = await completeWindowWithPromotions(gitProvider, goLivePullRequests, pullRequestInfo.targetBranch, majorOrgs, promotionConfig);
       _cachedPullRequests = goLivePullRequests;
       _scopeKind = 'go-live';
       logResolvedScope(_cachedPullRequests);
@@ -272,7 +433,7 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
   // Ex: if targetBranchToUse is uat and sourceBranchToUse is integration, this returns
   // [uat, preprod, main] - integration is left out because the provider prepends it itself.
   const searchBranches = buildPrSearchBranches(targetBranchToUse, majorOrgs, sourceBranchToUse);
-  const pullRequests = await gitProvider.listPullRequestsInBranchSinceLastMerge(
+  let pullRequests = await gitProvider.listPullRequestsInBranchSinceLastMerge(
     sourceBranchToUse,
     targetBranchToUse,
     searchBranches
@@ -282,6 +443,7 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
   if (!pullRequests.some(pr => pr.idStr === pullRequestInfo.idStr)) {
     pullRequests.push(pullRequestInfo);
   }
+  pullRequests = await completeWindowWithPromotions(gitProvider, pullRequests, targetBranchToUse, majorOrgs, promotionConfig);
   _cachedPullRequests = pullRequests;
   _scopeKind = checkOnly ? 'check' : 'batch';
   logResolvedScope(_cachedPullRequests);

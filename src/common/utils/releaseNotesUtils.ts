@@ -16,6 +16,7 @@ import {
 } from "./deploymentActionsStateUtils.js";
 import { readActions } from "./actionUtils.js";
 import { isDeploymentActionsDisabled } from "./prePostCommandUtils.js";
+import { expandPromotionPullRequests, getPromotionBranchConfig } from "./promotionBranchUtils.js";
 import { getConfig } from "../../config/index.js";
 import { ActionWhen } from "../actionsProvider/actionsProvider.js";
 import { AiProvider } from "../aiProvider/index.js";
@@ -573,6 +574,11 @@ export async function collectPullRequests(
     }
     return !(majorBranchNames.has(pr.sourceBranch) && majorBranchNames.has(pr.targetBranch));
   });
+
+  // Promotion branches: a promotion Pull Request of the release carries stories whose
+  // cherry-picked commits never match by SHA, list the stories it declares as well
+  const promotionConfig = getPromotionBranchConfig(await getConfig("branch"));
+  pullRequests = await expandPromotionPullRequests(pullRequests, promotionConfig, (id) => gitProvider.getPullRequestById(id));
 
   return pullRequests;
 }
