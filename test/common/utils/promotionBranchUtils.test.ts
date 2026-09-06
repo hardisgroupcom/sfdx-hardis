@@ -77,6 +77,14 @@ describe('promotion branch naming', () => {
     expect(isPromotionBranchName(PROMOTION_BRANCH)).to.equal(true);
   });
 
+  it('cannot express a branch name holding a slash, which is why the command refuses one', () => {
+    // hardis:project:promotion:create stops before touching git when a major branch name has a
+    // "/": the name it would build has five segments and would never be recognized here
+    const built = buildPromotionBranchName('release/uat', 'preprod', 1, new Date('2026-09-06T10:00:00Z'));
+    expect(built).to.equal('promotion/release/uat/preprod/2026-09-06-1');
+    expect(isPromotionBranchName(built)).to.equal(false);
+  });
+
   it('tells a hand-named promotion/ branch from a valid one', () => {
     expect(hasPromotionPrefixOnly('promotion/2026-09')).to.equal(true);
     expect(hasPromotionPrefixOnly(PROMOTION_BRANCH)).to.equal(false);
