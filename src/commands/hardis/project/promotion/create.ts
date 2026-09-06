@@ -175,7 +175,9 @@ In agent mode:
     }
 
     uxLog('action', this, c.cyan(t('promotionCreateListingCandidates', { source: c.green(sourceBranch), target: c.green(targetBranch) })));
-    const candidates = await listPromotionCandidates(sourceBranch, targetBranch, this);
+    // The promotions about to be superseded do not make their stories "already promoted": the
+    // whole point of superseding is to assemble them again
+    const candidates = await listPromotionCandidates(sourceBranch, targetBranch, this, openPromotions);
     if (candidates.length === 0) {
       uxLog('warning', this, c.yellow(t('promotionCreateNoCandidate', { source: sourceBranch, target: targetBranch })));
       return { sourceBranch, targetBranch, created: false, outputString: 'Nothing to promote' };

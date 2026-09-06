@@ -283,6 +283,7 @@ export async function listPromotionCandidates(
   sourceBranch: string,
   targetBranch: string,
   commandThis: any,
+  supersededPromotions: CommonPullRequestInfo[] = [],
 ): Promise<PromotionCandidate[]> {
   await gitFetch(['origin', sourceBranch, targetBranch]);
   const mergeBase = (
@@ -302,7 +303,7 @@ export async function listPromotionCandidates(
   const minDate = oldestCandidateDate(candidates);
   return markAlreadyPromotedCandidates(
     candidates,
-    await listAlreadyPromotedPullRequests(sourceBranch, targetBranch, minDate, commandThis),
+    await listAlreadyPromotedPullRequests(sourceBranch, targetBranch, minDate, commandThis, supersededPromotions),
   );
 }
 
@@ -323,13 +324,55 @@ export function oldestCandidateDate(candidates: PromotionCandidate[]): Date | nu
  * Pull Request numbers already carried to the target branch by another promotion branch of the
  * same source, through a promotion Pull Request that is merged or still open.
  */
+/**
+ * The identity of a Pull Request as the already-promoted check compares it: providers fill idStr
+ * and idNumber differently, so both are accepted.
+ */
+export function pullRequestKeys(pullRequest: { idStr?: string; idNumber?: number }): string[] {
+  const keys: string[] = [];
+  if (pullRequest.idStr) {
+    keys.push(String(pullRequest.idStr));
+  }
+  if (pullRequest.idNumber) {
+    keys.push(String(pullRequest.idNumber));
+  }
+  return keys;
+}
+
+/**
+ * Whether a Pull Request is evidence that the stories it declares are already on their way to the
+ * target branch: it must be a promotion of this very step (a promotion retargeted or named for
+ * other branches proves nothing), and it must not be one this run is about to supersede.
+ */
+export function countsAsAlreadyPromoted(
+  pullRequest: CommonPullRequestInfo,
+  sourceBranch: string,
+  targetBranch: string,
+  supersededKeys: Set<string>
+): boolean {
+  const parts = parsePromotionBranchName(pullRequest.sourceBranch);
+  if (
+    !parts ||
+    parts.sourceBranch.toLowerCase() !== sourceBranch.toLowerCase() ||
+    parts.targetBranch.toLowerCase() !== targetBranch.toLowerCase()
+  ) {
+    return false;
+  }
+  return !pullRequestKeys(pullRequest).some((key) => supersededKeys.has(key));
+}
+
 export async function listAlreadyPromotedPullRequests(
   sourceBranch: string,
   targetBranch: string,
   minDate: Date | null = null,
   commandThis: any = null,
+  supersededPromotions: CommonPullRequestInfo[] = [],
 ): Promise<Map<number, AlreadyPromotedBy>> {
   const alreadyPromoted = new Map<number, AlreadyPromotedBy>();
+  // The promotions this run replaces are on their way out: what they carry is not promoted, it is
+  // what the new promotion is being assembled from. Counting them would refuse every story of the
+  // promotion the user just agreed to supersede.
+  const supersededKeys = new Set(supersededPromotions.flatMap((pullRequest) => pullRequestKeys(pullRequest)));
   // Never prompt for a provider here: this runs inside a listing step, and getInstance(true) would
   // block an --agent run on an interactive question
   const gitProvider = await GitProvider.getInstance();
@@ -348,8 +391,7 @@ export async function listAlreadyPromotedPullRequests(
       continue;
     }
     for (const pullRequest of pullRequests) {
-      const parts = parsePromotionBranchName(pullRequest.sourceBranch);
-      if (!parts || parts.sourceBranch.toLowerCase() !== sourceBranch.toLowerCase() || parts.targetBranch.toLowerCase() !== targetBranch.toLowerCase()) {
+      if (!countsAsAlreadyPromoted(pullRequest, sourceBranch, targetBranch, supersededKeys)) {
         continue;
       }
       for (const id of parsePromotionPullRequestIds(pullRequest.description) || []) {

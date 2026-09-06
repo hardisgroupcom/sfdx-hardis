@@ -83,6 +83,9 @@ Break one of these and the feature is wrong, whatever the tests say.
     deployment actions) before anything is offered, declared or cherry-picked.
 11. **A branch merged twice is listed once.** `shouldAddVirtualPullRequest` refuses the number-less
     entry when a real Pull Request of the same branch is already in the group.
+12. **Superseding gives the stories back.** A promotion this run is about to close is not evidence
+    that its stories are already promoted (`countsAsAlreadyPromoted`): otherwise agreeing to
+    supersede it would leave nothing to assemble.
 
 ## sfdx-hardis (CLI)
 

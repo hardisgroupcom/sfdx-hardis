@@ -8,6 +8,7 @@ import {
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
   computePromotionCounter,
+  countsAsAlreadyPromoted,
   declaredPullRequestNumbers,
   dropVehiclePullRequests,
   filterOpenPromotionPullRequests,
@@ -16,6 +17,7 @@ import {
   markAlreadyPromotedCandidates,
   oldestCandidateDate,
   parsePullRequestNumbersFlag,
+  pullRequestKeys,
   selectCandidatesByPullRequestNumbers,
   toCandidate,
   toStories,
@@ -424,5 +426,61 @@ describe('shouldAddVirtualPullRequest()', () => {
 
   it('branch names are matched whatever their case', () => {
     expect(shouldAddVirtualPullRequest([{ sourceBranch: 'Feature/Activate-Promotions' }], new Set([491]), 'feature/activate-promotions')).to.equal(false);
+  });
+});
+
+
+describe('countsAsAlreadyPromoted()', () => {
+  function promotion(idNumber: number, sourceBranch: string) {
+    return {
+      idNumber,
+      idStr: String(idNumber),
+      sourceBranch,
+      targetBranch: 'uat',
+      title: `Promotion ${idNumber}`,
+      description: '',
+      authorName: 'dev',
+      webUrl: `https://git.example.com/pr/${idNumber}`,
+      customBehaviors: {},
+      providerInfo: {},
+    };
+  }
+
+  it('a promotion of this very step proves its stories are on their way', () => {
+    expect(countsAsAlreadyPromoted(promotion(493, 'promotion/integration/uat/2026-09-06-1'), 'integration', 'uat', new Set())).to.equal(true);
+  });
+
+  it('the promotion this run supersedes proves nothing: its stories are what is being reassembled', () => {
+    // Real case: confirming that #493 would be closed still left #454 and #491 marked as already
+    // promoted, so the command refused to carry the very Pull Requests that were asked for
+    const superseded = new Set(['493']);
+    expect(countsAsAlreadyPromoted(promotion(493, 'promotion/integration/uat/2026-09-06-1'), 'integration', 'uat', superseded)).to.equal(false);
+    // another promotion of the same step, not superseded, still counts
+    expect(countsAsAlreadyPromoted(promotion(480, 'promotion/integration/uat/2026-09-05-1'), 'integration', 'uat', superseded)).to.equal(true);
+  });
+
+  it('a promotion of another step, or an ordinary branch, proves nothing', () => {
+    expect(countsAsAlreadyPromoted(promotion(1, 'promotion/uat/preprod/2026-09-06-1'), 'integration', 'uat', new Set())).to.equal(false);
+    expect(countsAsAlreadyPromoted(promotion(2, 'feature/PROJ-1'), 'integration', 'uat', new Set())).to.equal(false);
+    expect(countsAsAlreadyPromoted(promotion(3, 'promotion/hand-made-by-a-human'), 'integration', 'uat', new Set())).to.equal(false);
+  });
+
+  it('branch names are matched whatever their case', () => {
+    expect(countsAsAlreadyPromoted(promotion(4, 'promotion/Integration/UAT/2026-09-06-1'), 'integration', 'uat', new Set())).to.equal(true);
+  });
+
+  it('a provider that numbers its Pull Requests only in idStr is still recognized', () => {
+    const pullRequest = { ...promotion(0, 'promotion/integration/uat/2026-09-06-1'), idNumber: 0, idStr: 'gid://493' };
+    expect(countsAsAlreadyPromoted(pullRequest, 'integration', 'uat', new Set(['gid://493']))).to.equal(false);
+    expect(countsAsAlreadyPromoted(pullRequest, 'integration', 'uat', new Set())).to.equal(true);
+  });
+});
+
+describe('pullRequestKeys()', () => {
+  it('accepts both identities a provider may fill', () => {
+    expect(pullRequestKeys({ idStr: '493', idNumber: 493 })).to.deep.equal(['493', '493']);
+    expect(pullRequestKeys({ idNumber: 493 })).to.deep.equal(['493']);
+    expect(pullRequestKeys({ idStr: 'gid://493' })).to.deep.equal(['gid://493']);
+    expect(pullRequestKeys({})).to.deep.equal([]);
   });
 });

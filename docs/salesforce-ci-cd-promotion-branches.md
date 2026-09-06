@@ -120,6 +120,8 @@ A pipeline step holds a single promotion in flight, so the DevOps Pipeline can d
 
 When a promotion from `uat` to `preprod` is already open and you assemble a new one, the command lists it and asks you to confirm; with `--agent` (and in CI) it closes it without asking. The old Pull Request is closed only once the new one has been created, so the step is never left without a promotion. If your git platform refuses to close it, the command says which one to close by hand.
 
+The stories the superseded promotion carried come back to the candidate list: they are not "already promoted" any more, since the promotion that carried them is on its way out. That is the point of superseding it, and it is why you do not need `--include-already-promoted` to reassemble them.
+
 Agents and automation call the same command without prompts:
 
 ```bash
