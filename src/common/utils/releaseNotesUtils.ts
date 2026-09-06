@@ -574,9 +574,13 @@ export async function collectPullRequests(
     )) || [];
   }
 
-  // Filter out inter-major-branch PRs, but always keep the release go-live merge PR
+  // A merge between two major branches moves the User Stories from one branch to the next, it is
+  // not work of its own: it is left out whether or not the project uses promotion branches, and
+  // --include-promotions brings it back next to the stories. The go-live merge of the release is
+  // always kept, since it is what the notes are about. Branches that carry their own change
+  // (feature, fix, retrofit and the rest) are never touched by this rule.
   pullRequests = pullRequests.filter((pr) => {
-    if (releaseCommitPrIds.has(pr.idStr)) {
+    if (releaseCommitPrIds.has(pr.idStr) || options.includePromotions === true) {
       return true;
     }
     return !(majorBranchNames.has(pr.sourceBranch) && majorBranchNames.has(pr.targetBranch));
@@ -592,11 +596,14 @@ export async function collectPullRequests(
 }
 
 /**
- * A promotion Pull Request is plumbing: what the release delivers are the User Stories it
- * carries, which the expansion above just added. Listing it as well would put the same work in
- * the notes twice, attach the stories' tickets to it, and inflate the Pull Request and
- * contributor counts. It is only kept when none of the Pull Requests it declares could be
- * resolved, so the release notes never end up hiding a change.
+ * A promotion Pull Request moves other Pull Requests, like a merge between two major branches
+ * does: what the release delivers are the User Stories it carries, which the expansion above just
+ * added. Listing it as well would put the same work in the notes twice, attach the stories'
+ * tickets to it, and inflate the Pull Request and contributor counts. It is only kept when none of
+ * the Pull Requests it declares could be resolved, so the notes never end up hiding a change.
+ *
+ * Unlike the merge rule above, this one needs the feature switch: without it a promotion/ branch
+ * is an ordinary branch, exactly as the deployment jobs treat it.
  */
 export function dropResolvedPromotionPullRequests(
   pullRequests: CommonPullRequestInfo[],

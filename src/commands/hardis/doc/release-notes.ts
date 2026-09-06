@@ -144,7 +144,7 @@ In agent mode:
     }),
     "include-promotions": Flags.boolean({
       default: false,
-      description: "With promotion branches (beta) enabled, also list the promotion Pull Requests next to the User Stories they carry (left out by default, the stories are what the release delivers)",
+      description: "Also list the Pull Requests that move other Pull Requests: merges between two major branches, and promotion branches when they are enabled. Left out by default, since what the release delivers are the User Stories they carry",
     }),
     pdf: Flags.boolean({
       default: true,
