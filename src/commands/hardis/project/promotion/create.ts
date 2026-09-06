@@ -13,6 +13,9 @@ import {
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
   checkGitCleanForPromotion,
+  closeSupersededPromotionPullRequests,
+  confirmSupersedeOpenPromotions,
+  listOpenPromotionPullRequests,
   cherryPickCandidates,
   collectStoryTicketIds,
   createPromotionBranch,
@@ -160,6 +163,17 @@ In agent mode:
       flags['target-branch'] || null,
       agentMode,
     );
+    // A pipeline step holds a single promotion in flight: the DevOps Pipeline draws it between the
+    // two branch nodes. Ask before superseding the ones already open, and stop before touching git
+    // if the user would rather keep them.
+    const openPromotions = flags['skip-pull-request'] === true
+      ? []
+      : await listOpenPromotionPullRequests(sourceBranch, targetBranch, this);
+    if (!(await confirmSupersedeOpenPromotions(openPromotions, sourceBranch, targetBranch, agentMode, this))) {
+      uxLog('warning', this, c.yellow(t('promotionCreateOpenPromotionKept', { source: sourceBranch, target: targetBranch })));
+      return { sourceBranch, targetBranch, created: false, outputString: 'Kept the promotion already open' };
+    }
+
     uxLog('action', this, c.cyan(t('promotionCreateListingCandidates', { source: c.green(sourceBranch), target: c.green(targetBranch) })));
     const candidates = await listPromotionCandidates(sourceBranch, targetBranch, this);
     if (candidates.length === 0) {
@@ -299,10 +313,16 @@ In agent mode:
         commandThis: this,
       });
     }
+    // Closed only now: a failure while cherry-picking must never leave the pipeline step without
+    // an open promotion Pull Request
+    const closedPullRequests = result.pullRequestUrl
+      ? await closeSupersededPromotionPullRequests(openPromotions, result.pullRequestUrl, this)
+      : [];
     if (result.pullRequestUrl && WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(result.pullRequestUrl, title, 'actionUrl');
+      WebSocketClient.sendReportFileMessage(result.pullRequestUrl, t('promotionCreateOpenPullRequestButton'), 'actionUrl');
     }
     return {
+      closedPullRequests,
       sourceBranch,
       targetBranch,
       branchName,

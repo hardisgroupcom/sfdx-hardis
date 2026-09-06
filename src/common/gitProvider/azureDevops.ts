@@ -319,6 +319,22 @@ ${this.getPipelineVariablesConfig()}
     return null;
   }
 
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const teamProject = process.env.SYSTEM_TEAMPROJECT || null;
+    if (!repositoryId || !teamProject) {
+      return false;
+    }
+    try {
+      const azureGitApi = await this.azureApi.getGitApi();
+      await azureGitApi.updatePullRequest({ status: PullRequestStatus.Abandoned }, repositoryId, pullRequestNumber, teamProject);
+      return true;
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: e?.message || e })));
+      return false;
+    }
+  }
+
   public async listPullRequests(filters: {
     status?: string,
     pullRequestStatus?: "open" | "merged" | "abandoned",

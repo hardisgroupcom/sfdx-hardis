@@ -990,6 +990,108 @@ export async function collectStoryTicketIds(stories: PromotionStory[]): Promise<
  * available, through the gh CLI on GitHub otherwise, and as a last resort the description is
  * saved to a file with instructions, since the branch itself is already assembled and pushed.
  */
+/**
+ * Only one promotion can be in flight between two major branches: the DevOps Pipeline draws it on
+ * the edge between the two branch nodes, and two open promotions from uat to preprod would mean
+ * two answers to "what is being promoted right now". Lists the ones already open, so the command
+ * can close them when it creates a new one.
+ *
+ * Returns an empty list when the provider cannot answer: not knowing is not a reason to stop
+ * assembling a promotion.
+ */
+export async function listOpenPromotionPullRequests(
+  sourceBranch: string,
+  targetBranch: string,
+  commandThis: any
+): Promise<CommonPullRequestInfo[]> {
+  const openPullRequests = await GitProvider.listOpenPullRequests(targetBranch);
+  if (openPullRequests == null) {
+    uxLog('log', commandThis, c.grey(t('promotionCreateOpenPromotionsUnknown', { source: sourceBranch, target: targetBranch })));
+    return [];
+  }
+  return filterOpenPromotionPullRequests(openPullRequests, sourceBranch, targetBranch);
+}
+
+/**
+ * Among open Pull Requests, the promotions of this very pipeline step: named for this source and
+ * this target, and actually targeting that branch. A promotion retargeted by hand is left alone,
+ * exactly as the deployment jobs leave it alone.
+ */
+export function filterOpenPromotionPullRequests(
+  pullRequests: CommonPullRequestInfo[],
+  sourceBranch: string,
+  targetBranch: string
+): CommonPullRequestInfo[] {
+  return (pullRequests || []).filter((pullRequest) => {
+    const parts = parsePromotionBranchName(pullRequest.sourceBranch || '');
+    return (
+      parts != null &&
+      parts.sourceBranch.toLowerCase() === sourceBranch.toLowerCase() &&
+      parts.targetBranch.toLowerCase() === targetBranch.toLowerCase() &&
+      (pullRequest.targetBranch || '').toLowerCase() === targetBranch.toLowerCase()
+    );
+  });
+}
+
+/**
+ * Asks a human before superseding the promotions already open between the two branches. An agent
+ * or a CI job is not asked: it closes them, which is the point of the flag. Returns false when the
+ * user chose to keep them, and the command must stop before touching git.
+ */
+export async function confirmSupersedeOpenPromotions(
+  openPromotions: CommonPullRequestInfo[],
+  sourceBranch: string,
+  targetBranch: string,
+  agentMode: boolean,
+  commandThis: any
+): Promise<boolean> {
+  if (openPromotions.length === 0) {
+    return true;
+  }
+  const list = openPromotions.map((pullRequest) => `#${pullRequest.idNumber} ${pullRequest.title}`).join('\n');
+  uxLog('warning', commandThis, c.yellow(t('promotionCreateOpenPromotionExists', {
+    source: c.bold(sourceBranch),
+    target: c.bold(targetBranch),
+    pullRequests: c.yellow(list),
+  })));
+  if (agentMode) {
+    return true;
+  }
+  const promptRes = await prompts({
+    type: 'confirm',
+    name: 'value',
+    message: c.cyanBright(t('promotionCreateOpenPromotionCloseQuestion', { count: openPromotions.length })),
+    description: t('promotionCreateOpenPromotionCloseQuestionDesc'),
+    initial: true,
+  });
+  return promptRes.value === true;
+}
+
+/**
+ * Closes the promotions that the freshly created one supersedes. Done after the new Pull Request
+ * exists, so a failure while assembling never leaves the pipeline step without an open promotion.
+ */
+export async function closeSupersededPromotionPullRequests(
+  openPromotions: CommonPullRequestInfo[],
+  newPullRequestUrl: string | null,
+  commandThis: any
+): Promise<number[]> {
+  const closed: number[] = [];
+  for (const pullRequest of openPromotions) {
+    if (newPullRequestUrl && pullRequest.webUrl && pullRequest.webUrl === newPullRequestUrl) {
+      continue;
+    }
+    const ok = await GitProvider.closePullRequest(pullRequest.idNumber);
+    if (ok) {
+      closed.push(pullRequest.idNumber);
+      uxLog('log', commandThis, c.grey(t('promotionCreateOpenPromotionClosed', { number: pullRequest.idNumber, url: pullRequest.webUrl })));
+    } else {
+      uxLog('warning', commandThis, c.yellow(t('promotionCreateOpenPromotionCloseManually', { number: pullRequest.idNumber, url: pullRequest.webUrl })));
+    }
+  }
+  return closed;
+}
+
 export async function pushAndCreatePromotionPullRequest(options: {
   branchName: string;
   targetBranch: string;

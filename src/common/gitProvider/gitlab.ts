@@ -410,6 +410,20 @@ ${getBannerMarkdownAndLink()}
     }
   }
 
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
+    if (!this.gitlabApi || !projectId) {
+      return false;
+    }
+    try {
+      await this.gitlabApi.MergeRequests.edit(projectId, pullRequestNumber, { stateEvent: 'close' });
+      return true;
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: e?.message || e })));
+      return false;
+    }
+  }
+
   public async listPullRequests(
     filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
   ): Promise<CommonPullRequestInfo[] | null> {

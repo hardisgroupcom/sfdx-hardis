@@ -45,6 +45,10 @@ End to end test runbook: the `promotion-branches-e2e` skill.
 - **Single place** = a Pull Request number appears in exactly one branch of the DevOps Pipeline, the
   branch it actually reached. A story a promotion carried away is listed in the target branch, not
   in the one it was merged into.
+- **One promotion in flight per step** = at most one open promotion Pull Request between two given
+  major branches. `promotion:create` closes the ones it supersedes (after asking a human, silently
+  in agent mode), and the DevOps Pipeline draws the open one on the arrow between the two branch
+  nodes instead of giving it a branch node of its own.
 
 ## Invariants
 
@@ -68,6 +72,11 @@ Break one of these and the feature is wrong, whatever the tests say.
    promotion, which carries stories. Both levels must resolve.
 7. **Conflict markers never reach an org.** `assertNoPromotionConflictMarkers` greps every tracked
    file, not only the package directories.
+8. **A promotion is never closed before its replacement exists.** `promotion:create` closes the
+   superseded Pull Requests only after the new one has been created, so a failure while
+   cherry-picking cannot leave a pipeline step with no promotion open.
+9. **Not knowing is not a reason to act.** When the git provider cannot list the open Pull
+   Requests, nothing is closed and the command says so.
 
 ## sfdx-hardis (CLI)
 
@@ -77,6 +86,7 @@ Break one of these and the feature is wrong, whatever the tests say.
 | `src/common/utils/promotionCreateUtils.ts` | Everything `promotion:create` needs: candidate listing, already-promoted detection, cherry-picking, conflict handling, Pull Request body. |
 | `src/commands/hardis/project/promotion/create.ts` | The command. Flags: `--source-branch`, `--target-branch`, `--pull-requests`, `--skip-pull-request`, `--include-already-promoted`, `--on-conflict`, `--agent`. |
 | `src/common/utils/pullRequestUtils.ts` | Resolves the declared Pull Requests from the git provider, walks the downstream promotions. |
+| `src/common/gitProvider/gitProviderRoot.ts` + the four providers | `closePullRequest()` (close on GitHub/GitLab, abandon on Azure DevOps, decline on Bitbucket), used to supersede the promotion already open. |
 | `src/commands/hardis/project/deploy/smart.ts` | Applies the inherited custom behaviors and the conflict-marker gate. |
 | `src/common/utils/prePostCommandUtils.ts` | Deployment actions of the carried stories, promotion scope wording. |
 | `src/common/utils/releaseNotesUtils.ts` | Leaves the vehicles out, `--include-promotions` brings them back. |
@@ -109,7 +119,7 @@ not leak in.
 | `src/utils/pipeline/promotionBranchUtils.ts` | Mirror of the CLI pure logic, plus the pipeline rules: `isVehiclePullRequest`, `userStoryPullRequests`, `visiblePullRequests`, `annotateAlreadyPromoted`, `enforceSinglePlacePerPullRequest`. |
 | `src/commands/showPipeline.ts` | Fetches the declared Pull Requests (in parallel), builds the windows. |
 | `src/pipeline-data-provider.ts` | Feeds the mermaid builder. |
-| `src/utils/pipeline/branchStrategyMermaidBuilder.ts` | Node counters (`data-count`, `data-count-all`). |
+| `src/utils/pipeline/branchStrategyMermaidBuilder.ts` | Node counters (`data-count`, `data-count-all`), and the open promotion drawn on the major-to-major edge (`isPromotionOfStep`). |
 | `src/webviews/lwc-ui/modules/s/pipeline/pipeline.js` | Branch window modal: filtering, the two toggles, the per-Pull-Request checkboxes and the **Create promotion** button. |
 | `src/utils/pipeline/sfdxHardisConfigHelper.ts` | `enablePromotionBranches` sits in the **Danger Zone** of Pipeline Settings, scope `["global"]`. |
 | `src/hardis-commands-provider.ts` | Command palette entry for `hardis:project:promotion:create`. |

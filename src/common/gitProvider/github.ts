@@ -445,6 +445,19 @@ ${getBannerMarkdownAndLink()}
     }
   }
 
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    if (!this.repoOwner || !this.repoName) {
+      return false;
+    }
+    try {
+      await this.api.patch<any>(`${this.repoPath()}/pulls/${pullRequestNumber}`, { state: 'closed' });
+      return true;
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: e?.message || e })));
+      return false;
+    }
+  }
+
   public async listPullRequests(
     filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
   ): Promise<CommonPullRequestInfo[] | null> {

@@ -554,6 +554,37 @@ export abstract class GitProvider {
     }
   }
 
+  /**
+   * Lists the open Pull Requests targeting a branch. Returns null when the provider cannot answer,
+   * which callers must not read as "there is none".
+   */
+  static async listOpenPullRequests(targetBranch: string): Promise<CommonPullRequestInfo[] | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    try {
+      return await gitProvider.listPullRequests({ status: 'open', targetBranch: targetBranch });
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderClosePullRequestFailed', { number: 0, message: (e as Error).message })));
+      return null;
+    }
+  }
+
+  /** Closes an open Pull Request without merging it. Returns false when the provider refused. */
+  static async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return false;
+    }
+    try {
+      return await gitProvider.closePullRequest(pullRequestNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: (e as Error).message })));
+      return false;
+    }
+  }
+
   static async logAutoFixRemediation(step: "push" | "pr-create"): Promise<void> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider) {

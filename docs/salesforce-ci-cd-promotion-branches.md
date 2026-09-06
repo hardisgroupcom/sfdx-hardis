@@ -112,6 +112,12 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
     Promotion branch names have exactly four segments, so the source and target branch names must not contain a `/`. The command stops before touching git if one of them does.
 5. Review the Pull Request like any other, and do **not** squash it when merging: the `-x` trailers of the cherry-picks must survive in `preprod`.
 
+### One promotion at a time between two branches
+
+A pipeline step holds a single promotion in flight, so the DevOps Pipeline can draw it on the arrow between the two branch nodes and there is one answer to "what is being promoted to `preprod` right now".
+
+When a promotion from `uat` to `preprod` is already open and you assemble a new one, the command lists it and asks you to confirm; with `--agent` (and in CI) it closes it without asking. The old Pull Request is closed only once the new one has been created, so the step is never left without a promotion. If your git platform refuses to close it, the command says which one to close by hand.
+
 Agents and automation call the same command without prompts:
 
 ```bash

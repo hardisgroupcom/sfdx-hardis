@@ -169,6 +169,17 @@ export abstract class GitProviderRoot {
     return { created: false, pullRequestUrl: null, providerResult: { error: "Not implemented in sfdx-hardis" } };
   }
 
+  /**
+   * Closes an open Pull Request without merging it (abandon on Azure DevOps, decline on Bitbucket).
+   * Used to keep a single open promotion Pull Request between two major branches, so the DevOps
+   * Pipeline shows one promotion in flight per pipeline step.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    uxLog("warning", this, c.yellow(`[GitProvider] closePullRequest is not yet implemented on ${this.getLabel()}`));
+    return false;
+  }
+
   public logAutoFixRemediation(step: "push" | "pr-create"): void {
     const stepLabel = step === "push" ? "git push" : "pull request creation";
     uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide`);

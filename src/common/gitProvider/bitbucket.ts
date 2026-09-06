@@ -405,6 +405,25 @@ export class BitbucketProvider extends GitProviderRoot {
     return isNaN(time) ? 0 : time;
   }
 
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    if (!workspace || !repoSlug) {
+      return false;
+    }
+    try {
+      await this.bitbucket.repositories.declinePullRequest({
+        workspace,
+        repo_slug: repoSlug,
+        pull_request_id: pullRequestNumber,
+      } as any);
+      return true;
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: e?.message || e })));
+      return false;
+    }
+  }
+
   public async listPullRequests(
     filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
   ): Promise<CommonPullRequestInfo[] | null> {

@@ -9,8 +9,9 @@ import {
   buildPromotionPullRequestTitle,
   computePromotionCounter,
   declaredPullRequestNumbers,
-  listUnrequestedPullRequestNumbers,
+  filterOpenPromotionPullRequests,
   gitPathSpec,
+  listUnrequestedPullRequestNumbers,
   markAlreadyPromotedCandidates,
   oldestCandidateDate,
   parsePullRequestNumbersFlag,
@@ -277,8 +278,8 @@ describe('dirty working tree before assembling a promotion', () => {
   });
 
   it('a report folder is not confused with a folder whose name starts the same way', () => {
-    const neighbours = [{ path: 'hardis-report-archive/old.md', working_dir: '?' }];
-    expect(userChangesOutsideReports(neighbours, 'hardis-report').map((f) => f.path)).to.deep.equal([
+    const neighbors = [{ path: 'hardis-report-archive/old.md', working_dir: '?' }];
+    expect(userChangesOutsideReports(neighbors, 'hardis-report').map((f) => f.path)).to.deep.equal([
       'hardis-report-archive/old.md',
     ]);
   });
@@ -292,5 +293,49 @@ describe('dirty working tree before assembling a promotion', () => {
   it('nothing to offer when only the reports changed', () => {
     const onlyReports = [{ path: 'hardis-report/x.md', working_dir: '?' }];
     expect(userChangesOutsideReports(onlyReports, 'hardis-report')).to.have.length(0);
+  });
+});
+
+
+describe('a single promotion in flight between two branches', () => {
+  function openPr(idNumber: number, sourceBranch: string, targetBranch: string) {
+    return {
+      idNumber,
+      idStr: String(idNumber),
+      sourceBranch,
+      targetBranch,
+      title: `Promotion ${idNumber}`,
+      description: '',
+      authorName: 'dev',
+      webUrl: `https://git.example.com/pr/${idNumber}`,
+      customBehaviors: {},
+      providerInfo: {},
+    };
+  }
+
+  it('keeps only the promotions of this very pipeline step', () => {
+    const open = [
+      openPr(10, 'promotion/uat/preprod/2026-09-06-1', 'preprod'),
+      openPr(11, 'promotion/uat/preprod/2026-09-05-2', 'preprod'),
+      openPr(12, 'promotion/integration/uat/2026-09-06-1', 'uat'), // another step
+      openPr(13, 'feature/PROJ-1', 'preprod'), // a User Story, never closed
+      openPr(14, 'uat', 'preprod'), // the plain major to major merge, never closed
+    ];
+    expect(filterOpenPromotionPullRequests(open, 'uat', 'preprod').map((pr) => pr.idNumber)).to.deep.equal([10, 11]);
+  });
+
+  it('a promotion retargeted by hand belongs to nobody', () => {
+    const open = [openPr(20, 'promotion/uat/preprod/2026-09-06-1', 'main')];
+    expect(filterOpenPromotionPullRequests(open, 'uat', 'preprod')).to.have.length(0);
+    expect(filterOpenPromotionPullRequests(open, 'uat', 'main')).to.have.length(0);
+  });
+
+  it('branch names are matched whatever their case', () => {
+    const open = [openPr(30, 'promotion/UAT/PreProd/2026-09-06-1', 'PreProd')];
+    expect(filterOpenPromotionPullRequests(open, 'uat', 'preprod').map((pr) => pr.idNumber)).to.deep.equal([30]);
+  });
+
+  it('nothing open means nothing to close', () => {
+    expect(filterOpenPromotionPullRequests([], 'uat', 'preprod')).to.deep.equal([]);
   });
 });
