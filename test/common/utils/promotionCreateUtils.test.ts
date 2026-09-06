@@ -8,6 +8,7 @@ import {
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
   computePromotionCounter,
+  markAlreadyPromotedCandidates,
   parsePullRequestNumbersFlag,
   selectCandidatesByPullRequestNumbers,
   toCandidate,
@@ -70,6 +71,22 @@ describe('selectCandidatesByPullRequestNumbers()', () => {
     const noPr = toCandidate(group('ddd4444', [], 'chore: direct commit on uat'));
     expect(noPr.pullRequestNumbers).to.deep.equal([]);
     expect(noPr.label).to.equal('chore: direct commit on uat (dev) [ddd4444]');
+  });
+});
+
+describe('markAlreadyPromotedCandidates()', () => {
+  it('flags the candidates another promotion branch already carries, and leaves the others alone', () => {
+    const candidates = [
+      toCandidate(group('aaa1111', [{ id: 482, title: 'Story A' }])),
+      toCandidate(group('bbb2222', [{ id: 487, title: 'Story B' }])),
+    ];
+    const alreadyPromoted = new Map([
+      [487, { idStr: '900', sourceBranch: 'promotion/uat/preprod/2026-09-05-1', webUrl: 'https://git.example.com/pr/900', merged: true }],
+    ]);
+    markAlreadyPromotedCandidates(candidates, alreadyPromoted);
+    expect(candidates[0].alreadyPromotedBy).to.equal(undefined);
+    expect(candidates[1].alreadyPromotedBy?.sourceBranch).to.equal('promotion/uat/preprod/2026-09-05-1');
+    expect(candidates[1].alreadyPromotedBy?.merged).to.equal(true);
   });
 });
 

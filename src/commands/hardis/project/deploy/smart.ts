@@ -37,6 +37,7 @@ import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, hand
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { applyPromotionInheritedBehaviors, listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
 import { isDeploymentActionsDisabled } from '../../../../common/utils/prePostCommandUtils.js';
+import { assertNoPromotionConflictMarkers } from '../../../../common/utils/promotionCreateUtils.js';
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
 import { t } from '../../../../common/utils/i18n.js';
 
@@ -535,6 +536,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     if (!isDeploymentActionsDisabled(this.configInfo)) {
       await applyPromotionInheritedBehaviors(this.checkOnly);
     }
+    // A promotion branch may carry conflicts committed on purpose (--on-conflict
+    // commit-with-markers): stop here while the markers are still in the sources
+    await assertNoPromotionConflictMarkers(this, this.configInfo);
 
     await this.initTestLevelAndTestClasses(flags.testlevel, flags.runtests);
 

@@ -90,6 +90,8 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
 
     It lists the Pull Requests merged into `uat` and not yet promoted to `preprod`, and asks which ones to carry. The target branch is the merge target of `uat` (`preprod`), unless you pass `--target-branch`.
 
+    A story carried by an earlier promotion branch to the same target is left out of the list: cherry-picked commits keep new SHAs, so it would otherwise be offered again after its promotion was merged. Pass `--include-already-promoted` to promote it a second time anyway.
+
 3. The command then:
 
     - creates `promotion/uat/preprod/<today>-<counter>` from `origin/preprod`;
@@ -98,7 +100,7 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
 
 4. If a cherry-pick conflicts, the story depends on another one that is not part of the promotion. The command asks what to do (or takes it from `--on-conflict`):
     - **skip**: leave that story out, it is listed as such in the Pull Request description;
-    - **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description warns about it and lists the files to fix; the validation job fails until they are fixed;
+    - **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description warns about it, lists the files to fix and embeds a ready-to-paste prompt for a coding agent, also saved in `hardis-report/promotion-conflicts-prompt-*.md`. The validation job stops with an error naming the files while a marker is still in the sources;
     - **abort**: stop, the branch is deleted and nothing is pushed.
 
     The [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) plugin solves many XML conflicts by itself.

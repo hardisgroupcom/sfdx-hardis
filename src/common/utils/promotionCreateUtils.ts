@@ -7,12 +7,21 @@ import { prompts } from './prompts.js';
 import { t } from './i18n.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { BackpromotePrGroup, listMergedPrsWithCommits } from './backpromoteUtils.js';
-import { GitProvider } from '../gitProvider/index.js';
+import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { TicketProvider } from '../ticketProvider/index.js';
 import { which } from './whichUtils.js';
 import { generateReportPath } from './filesUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
-import { buildPromotionBranchName, PROMOTION_BRANCH_PREFIX, PROMOTION_PULL_REQUESTS_KEY } from './promotionBranchUtils.js';
+import { getSfdxProjectPackageDirectories } from './projectUtils.js';
+import {
+  buildPromotionBranchName,
+  getPromotionBranchConfig,
+  isPromotionPullRequest,
+  parsePromotionBranchName,
+  parsePromotionPullRequestIds,
+  PROMOTION_BRANCH_PREFIX,
+  PROMOTION_PULL_REQUESTS_KEY,
+} from './promotionBranchUtils.js';
 
 /**
  * Helpers of `sf hardis:project:promotion:create`, the only supported way to assemble a
@@ -29,7 +38,7 @@ import { buildPromotionBranchName, PROMOTION_BRANCH_PREFIX, PROMOTION_PULL_REQUE
 async function runCommandSafe(
   command: string,
   commandThis: any,
-  options: { fail?: boolean; output: boolean },
+  options: { output: boolean },
 ): Promise<{ status: number; stdout: string; stderr: string }> {
   try {
     const res = await execCommand(command, commandThis, { fail: false, output: options.output });
@@ -44,6 +53,16 @@ export interface PromotionCandidate {
   // Provider-native numbers of the Pull Requests merged by this commit (0 = unknown)
   pullRequestNumbers: number[];
   label: string;
+  // Set when another promotion branch already carries this story to the same target branch:
+  // cherry-picking it a second time would replay the same change
+  alreadyPromotedBy?: AlreadyPromotedBy;
+}
+
+export interface AlreadyPromotedBy {
+  idStr: string;
+  sourceBranch: string;
+  webUrl: string;
+  merged: boolean;
 }
 
 export interface PromotionStory {
@@ -119,6 +138,16 @@ export async function resolvePromotionSourceAndTarget(
   if (sourceBranch === targetBranch) {
     throw new SfError(t('promotionCreateSameBranches', { branch: sourceBranch }));
   }
+  // Promoting outside of the declared pipeline is allowed (a hotfix may need it), but it is
+  // unusual enough to be said out loud
+  const declaredMergeTargets: string[] = sourceOrg.mergeTargets || [];
+  if (!declaredMergeTargets.map((branch) => branch.toLowerCase()).includes(targetBranch.toLowerCase())) {
+    uxLog('warning', commandThis, c.yellow(t('promotionCreateTargetNotMergeTarget', {
+      source: sourceBranch,
+      target: targetBranch,
+      mergeTargets: declaredMergeTargets.join(', ') || '-',
+    })));
+  }
   return { sourceBranch, targetBranch };
 }
 
@@ -138,9 +167,65 @@ export async function listPromotionCandidates(
     await execCommand(`git merge-base origin/${targetBranch} origin/${sourceBranch}`, commandThis, { fail: true, output: false })
   ).stdout.trim();
   const groups = await listMergedPrsWithCommits(`origin/${sourceBranch}`, sourceBranch, mergeBase, commandThis);
-  return groups
+  const candidates = groups
     .filter((group) => group.commit.hash !== mergeBase)
     .map((group) => toCandidate(group));
+  // A promotion carries cherry-picked commits: merging it into the target branch does not move
+  // the merge base, so its stories keep showing up here. Say which ones are already on their way.
+  return markAlreadyPromotedCandidates(candidates, await listAlreadyPromotedPullRequests(sourceBranch, targetBranch));
+}
+
+/**
+ * Pull Request numbers already carried to the target branch by another promotion branch of the
+ * same source, through a promotion Pull Request that is merged or still open.
+ */
+export async function listAlreadyPromotedPullRequests(
+  sourceBranch: string,
+  targetBranch: string,
+): Promise<Map<number, AlreadyPromotedBy>> {
+  const alreadyPromoted = new Map<number, AlreadyPromotedBy>();
+  const gitProvider = await GitProvider.getInstance(true);
+  if (!gitProvider) {
+    return alreadyPromoted;
+  }
+  for (const status of ['merged', 'open']) {
+    let pullRequests: CommonPullRequestInfo[] = [];
+    try {
+      pullRequests = (await gitProvider.listPullRequests({ status, targetBranch })) || [];
+    } catch {
+      continue; // No token, or the provider does not list Pull Requests: nothing can be checked
+    }
+    for (const pullRequest of pullRequests) {
+      const parts = parsePromotionBranchName(pullRequest.sourceBranch);
+      if (!parts || parts.sourceBranch.toLowerCase() !== sourceBranch.toLowerCase() || parts.targetBranch.toLowerCase() !== targetBranch.toLowerCase()) {
+        continue;
+      }
+      for (const id of parsePromotionPullRequestIds(pullRequest.description) || []) {
+        if (!alreadyPromoted.has(id)) {
+          alreadyPromoted.set(id, {
+            idStr: pullRequest.idStr,
+            sourceBranch: pullRequest.sourceBranch,
+            webUrl: pullRequest.webUrl,
+            merged: !!pullRequest.mergedDate,
+          });
+        }
+      }
+    }
+  }
+  return alreadyPromoted;
+}
+
+export function markAlreadyPromotedCandidates(
+  candidates: PromotionCandidate[],
+  alreadyPromoted: Map<number, AlreadyPromotedBy>,
+): PromotionCandidate[] {
+  for (const candidate of candidates) {
+    const number = candidate.pullRequestNumbers.find((id) => alreadyPromoted.has(id));
+    if (number !== undefined) {
+      candidate.alreadyPromotedBy = alreadyPromoted.get(number);
+    }
+  }
+  return candidates;
 }
 
 export function toCandidate(group: BackpromotePrGroup): PromotionCandidate {
@@ -250,7 +335,7 @@ export function computePromotionCounter(existingBranchNames: string[], sourceBra
 export async function listExistingPromotionBranchNames(sourceBranch: string, targetBranch: string, commandThis: any): Promise<string[]> {
   const names: string[] = [];
   try {
-    const remote = await runCommandSafe(`git ls-remote --heads origin "${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/*"`, commandThis, { fail: false, output: false });
+    const remote = await runCommandSafe(`git ls-remote --heads origin "${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/*"`, commandThis, { output: false });
     for (const line of (remote.stdout || '').split('\n')) {
       const ref = line.split(/\s+/)[1];
       if (ref) {
@@ -314,7 +399,7 @@ export async function cherryPickCandidates(
     const hash = candidate.group.commit.hash;
     const mergeOption = (await isMergeCommit(hash)) ? ' -m 1' : '';
     uxLog('action', commandThis, c.cyan(t('promotionCreateCherryPicking', { label: candidate.label })));
-    const res = await runCommandSafe(`git cherry-pick -x${mergeOption} ${hash}`, commandThis, { fail: false, output: true });
+    const res = await runCommandSafe(`git cherry-pick -x${mergeOption} ${hash}`, commandThis, { output: true });
     if (res.status === 0) {
       outcome.picked.push(candidate);
       continue;
@@ -323,7 +408,7 @@ export async function cherryPickCandidates(
     uxLog('warning', commandThis, c.yellow(t('promotionCreateConflict', { label: candidate.label, files: conflictFiles.join('\n') || '-' })));
     const choice = onConflict || (agentMode ? 'abort' : await promptConflictChoice(candidate, commandThis));
     if (choice === 'skip') {
-      await runCommandSafe('git cherry-pick --abort', commandThis, { fail: false, output: false });
+      await runCommandSafe('git cherry-pick --abort', commandThis, { output: false });
       uxLog('log', commandThis, c.grey(t('promotionCreateConflictSkipped', { label: candidate.label })));
       outcome.skipped.push(candidate);
       continue;
@@ -336,7 +421,8 @@ export async function cherryPickCandidates(
       continue;
     }
     await abortPromotion(branchName, previousBranch, commandThis);
-    if (agentMode && !onConflict) {
+    if (agentMode) {
+      // An agent cannot see the interactive log: name the story and the files in the error itself
       throw new SfError(t('promotionCreateConflictAgent', { label: candidate.label, files: conflictFiles.join(', ') || '-' }));
     }
     throw new SfError(t('promotionCreateAborted'));
@@ -366,7 +452,7 @@ async function promptConflictChoice(candidate: PromotionCandidate, commandThis: 
  */
 async function commitWithConflictMarkers(commandThis: any): Promise<void> {
   await execCommand('git add -A', commandThis, { fail: true, output: false });
-  const res = await runCommandSafe('git -c core.editor=true cherry-pick --continue', commandThis, { fail: false, output: false });
+  const res = await runCommandSafe('git -c core.editor=true cherry-pick --continue', commandThis, { output: false });
   if (res.status !== 0) {
     // Nothing left to commit for this cherry-pick (ex: only deletions already applied): commit directly
     await execCommand('git -c core.editor=true commit --no-edit --allow-empty', commandThis, { fail: true, output: false });
@@ -383,12 +469,59 @@ async function listConflictFiles(): Promise<string[]> {
 }
 
 /**
+ * Sources still holding git conflict markers. `--on-conflict commit-with-markers` commits them on
+ * purpose, so they have to be solved on the branch before the merge: this is what makes the
+ * validation job fail while they are there, with a message naming the files.
+ */
+export async function listFilesWithConflictMarkers(commandThis: any): Promise<string[]> {
+  const packageDirectories = await getSfdxProjectPackageDirectories();
+  const searchPaths = [...new Set([...packageDirectories.map((directory) => directory.path), 'manifest'])]
+    .filter((directory) => fs.existsSync(directory))
+    .map((directory) => `"${directory}"`);
+  if (searchPaths.length === 0) {
+    return [];
+  }
+  // Only the opening and closing markers: a line of "=======" is legitimate in markdown
+  const res = await runCommandSafe(`git grep -l -E "^(<<<<<<< |>>>>>>> )" -- ${searchPaths.join(' ')}`, commandThis, { output: false });
+  if (res.status !== 0) {
+    return []; // 1 = nothing found, anything else = nothing that can be checked here
+  }
+  return (res.stdout || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '');
+}
+
+/**
+ * Fail the job when the checked (or merged) Pull Request is a promotion Pull Request whose
+ * committed conflict markers are still there. No provider call and no git call unless
+ * enablePromotionBranches is set and the Pull Request is a promotion one.
+ */
+export async function assertNoPromotionConflictMarkers(commandThis: any, config: any): Promise<void> {
+  if (getPromotionBranchConfig(config).enabled !== true) {
+    return;
+  }
+  const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+  if (!isPromotionPullRequest(prInfo, getPromotionBranchConfig(config))) {
+    return;
+  }
+  const files = await listFilesWithConflictMarkers(commandThis);
+  if (files.length > 0) {
+    throw new SfError(t('promotionConflictMarkersFound', {
+      branch: prInfo!.sourceBranch,
+      count: files.length,
+      files: files.join(', '),
+    }));
+  }
+}
+
+/**
  * Undo everything: stop the cherry-pick in progress, go back to the previous branch, delete the
  * promotion branch. Nothing was pushed yet.
  */
 export async function abortPromotion(branchName: string, previousBranch: string, commandThis: any): Promise<void> {
   uxLog('action', commandThis, c.cyan(t('promotionCreateUndoing', { branch: branchName })));
-  await runCommandSafe('git cherry-pick --abort', commandThis, { fail: false, output: false });
+  await runCommandSafe('git cherry-pick --abort', commandThis, { output: false });
   try {
     await git().checkout(previousBranch || '-');
     await git().deleteLocalBranch(branchName, true);
@@ -610,7 +743,7 @@ export async function pushAndCreatePromotionPullRequest(options: {
   skipPullRequest: boolean;
 }): Promise<{ pushed: boolean; pullRequestUrl: string | null; descriptionFile: string | null }> {
   uxLog('action', options.commandThis, c.cyan(t('promotionCreatePushing', { branch: c.green(options.branchName) })));
-  const pushRes = await runCommandSafe(`git push -u origin ${options.branchName}`, options.commandThis, { fail: false, output: true });
+  const pushRes = await runCommandSafe(`git push -u origin ${options.branchName}`, options.commandThis, { output: true });
   if (pushRes.status !== 0) {
     throw new SfError(t('promotionCreatePushFailed', { branch: options.branchName, message: (pushRes.stderr || pushRes.stdout || '').trim() }));
   }
@@ -654,8 +787,10 @@ async function createPullRequestWithGhCli(
   const res = await runCommandSafe(
     `gh pr create --base ${options.targetBranch} --head ${options.branchName} --title "${options.title.replace(/"/g, '\\"')}" --body-file "${bodyFile}"`,
     options.commandThis,
-    { fail: false, output: false },
+    { output: false },
   );
+  // The body file is a temporary copy of the description report, it has no reason to survive
+  await fs.remove(bodyFile).catch(() => null);
   if (res.status !== 0) {
     uxLog('log', options.commandThis, c.grey(`[PromotionCreate] gh pr create failed: ${(res.stderr || res.stdout || '').trim()}`));
     return null;

@@ -40,7 +40,7 @@ export default class PromotionCreate extends SfCommand<any> {
 This is the only supported way to create a [promotion branch](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/). The command:
 
 - checks that \`enablePromotionBranches: true\` is set in the sfdx-hardis configuration;
-- lists the Pull Requests merged into the source branch and not yet promoted to the target branch, and lets you select the ones to carry (or takes them from \`--pull-requests\`);
+- lists the Pull Requests merged into the source branch and not yet promoted to the target branch, and lets you select the ones to carry (or takes them from \`--pull-requests\`). A Pull Request another promotion branch already carries to the same target is left out, unless \`--include-already-promoted\` is passed;
 - creates the branch from the target branch, named \`promotion/<source>/<target>/<YYYY-MM-DD>-<counter>\` (ex: \`promotion/uat/preprod/2026-09-06-1\`), the counter separating several promotions assembled the same day;
 - cherry-picks the merge commit of each selected Pull Request, oldest first, with \`-x\` so each commit keeps a pointer to its origin;
 - pushes the branch and creates the Pull Request to the target branch, with a description declaring the carried Pull Requests (\`${PROMOTION_PULL_REQUESTS_KEY}\`), their titles, authors, source branches and tickets.
@@ -103,6 +103,10 @@ In agent mode:
       default: false,
       description: 'Push the promotion branch without creating its Pull Request (the description is saved in hardis-report/).',
     }),
+    'include-already-promoted': Flags.boolean({
+      default: false,
+      description: 'Also offer the Pull Requests another promotion branch already carries to the same target branch (left out by default).',
+    }),
     'on-conflict': Flags.string({
       options: PROMOTION_CONFLICT_CHOICES,
       description: 'What to do when a cherry-pick conflicts: skip (leave the story out), commit-with-markers (commit it with its conflict markers, to solve later), abort (undo the whole promotion). Prompted if not provided, abort in agent mode.',
@@ -160,11 +164,30 @@ In agent mode:
         Author: candidate.group.associatedPrs[0]?.author || candidate.group.commit.author,
         Commit: candidate.group.commit.hash.substring(0, 7),
         Date: candidate.group.commit.date,
+        'Already promoted by': candidate.alreadyPromotedBy?.sourceBranch || '',
       })),
-      ['Pull Requests', 'Title', 'Author', 'Commit', 'Date'],
+      ['Pull Requests', 'Title', 'Author', 'Commit', 'Date', 'Already promoted by'],
     );
 
-    const selected = await selectPromotionCandidates(candidates, flags['pull-requests'] || null, agentMode, this);
+    // Cherry-picked commits keep new SHAs, so a story carried by another promotion branch is still
+    // listed above: leave it out unless the user asks for it again
+    const alreadyPromoted = candidates.filter((candidate) => candidate.alreadyPromotedBy);
+    let promotableCandidates = candidates;
+    if (alreadyPromoted.length > 0 && flags['include-already-promoted'] !== true) {
+      uxLog('warning', this, c.yellow(t('promotionCreateSkippingAlreadyPromoted', {
+        count: alreadyPromoted.length,
+        details: alreadyPromoted
+          .map((candidate) => `${candidate.pullRequestNumbers.map((number) => `#${number}`).join(', ') || candidate.group.commit.hash.substring(0, 7)} -> ${candidate.alreadyPromotedBy?.sourceBranch}`)
+          .join('; '),
+      })));
+      promotableCandidates = candidates.filter((candidate) => !candidate.alreadyPromotedBy);
+      if (promotableCandidates.length === 0) {
+        uxLog('warning', this, c.yellow(t('promotionCreateNoCandidate', { source: sourceBranch, target: targetBranch })));
+        return { sourceBranch, targetBranch, created: false, outputString: 'Nothing to promote' };
+      }
+    }
+
+    const selected = await selectPromotionCandidates(promotableCandidates, flags['pull-requests'] || null, agentMode, this);
 
     const branchName = await nextPromotionBranchName(sourceBranch, targetBranch, this);
     await createPromotionBranch(branchName, targetBranch, this);
