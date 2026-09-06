@@ -83,7 +83,7 @@ ___
 
 Promotion branches are **always created with the command** [`sf hardis:project:promotion:create`](hardis/project/promotion/create.md), from the VS Code SFDX Hardis extension (**Create promotion** button of a major branch in the DevOps Pipeline) or from a terminal. Do not assemble them by hand: the command is what guarantees the naming, the cherry-pick options and the Pull Request declaration the deployment jobs rely on.
 
-1. Make sure the stories are merged into `uat` and validated there, and that your local repository has no uncommitted change.
+1. Make sure the stories are merged into `uat` and validated there.
 2. Run the command:
 
     ```bash
@@ -121,6 +121,12 @@ sf hardis:project:promotion:create --agent --source-branch uat --pull-requests 4
 The Pull Request is created through the git provider API when a token is configured, or with the `gh` CLI on GitHub. Without either, the branch is pushed and the description is saved under `hardis-report/` so you can create the Pull Request yourself.
 
 The `scripts/actions/.sfdx-hardis.<PR>.yml` files of the stories travel with their commits, so their deployment actions are in the branch too.
+
+### If your working copy is not clean
+
+Assembling a promotion checks out another branch and cherry-picks commits, so it needs a clean working tree. When you have local changes, the command does not just refuse: it lists them and offers to **stash** them (`git stash`, restore later with `git stash pop`) or to **commit** them on the branch you are on, with the message of your choice. Only the files you changed are stashed or committed: the reports sfdx-hardis writes under `hardis-report/` are left alone, so getting your work back does not fight with them.
+
+In `--agent` mode and in CI nothing is touched: the command stops and names the files to deal with.
 
 ___
 
@@ -164,6 +170,6 @@ ___
 
 ## Limits
 
-- One level only: a promotion branch built from another promotion branch is not supported.
+- A promotion is always assembled **from a major branch**: you cannot pass a promotion branch as `--source-branch`. A promotion carrying another promotion is fine, and the deployment jobs follow the declarations down as many levels as there are.
 - Custom behaviors are inherited on the promotion Pull Request only. On the next `preprod -> main` promotion, keywords are read from that Pull Request's description, like for any promotion.
 - `sf hardis:work:save` warns when run on a promotion branch: its cleaning and manifest updates are meant for User Story branches.

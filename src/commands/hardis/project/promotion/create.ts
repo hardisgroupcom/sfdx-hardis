@@ -149,8 +149,9 @@ In agent mode:
     }
 
     // Not checkGitClean: the reports sfdx-hardis writes inside the repository are not changes the
-    // user has to commit, and this command writes one of them itself before the cherry-picks
-    await checkGitCleanForPromotion(this);
+    // user has to commit, and this command writes one of them itself before the cherry-picks.
+    // A human gets offered a stash or a commit; an agent or a CI job stops.
+    await checkGitCleanForPromotion(this, agentMode);
     const previousBranch = (await getCurrentGitBranch()) || '';
 
     const { sourceBranch, targetBranch } = await resolvePromotionSourceAndTarget(

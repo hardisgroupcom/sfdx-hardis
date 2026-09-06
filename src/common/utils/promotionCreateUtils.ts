@@ -54,25 +54,108 @@ async function runCommandSafe(
  * sfdx-hardis writes its own reports inside the repository (hardis-report/), and this very
  * command writes the candidates report before the cherry-picks: on a project that did not add
  * that folder to its .gitignore, those files are not changes the user has to commit, and
- * refusing to run because of them would make the command unusable. Everything else still stops
- * the command, with the same message checkGitClean uses.
+ * refusing to run because of them would make the command unusable.
+ *
+ * Everything else stops the command, but a human is offered a way out first: stash the changes
+ * or commit them. Only the files the user actually changed are stashed or committed, never the
+ * reports, so getting the work back afterwards does not fight with what sfdx-hardis wrote. In
+ * agent mode and in CI nothing is touched: the run stops with the same message as before.
  */
-export async function checkGitCleanForPromotion(commandThis: any): Promise<void> {
-  const status = await git({ output: true }).status();
-  const reportDirectory = path.basename(await getReportDirectory()).replace(/\\/g, '/');
-  const userChanges = (status.files || []).filter((fileStatus) => {
-    const filePath = fileStatus.path.replace(/\\/g, '/');
-    return !filePath.startsWith(`${reportDirectory}/`) && filePath !== reportDirectory;
+export interface GitStatusFile {
+  path: string;
+  working_dir?: string;
+}
+
+/**
+ * The files of a git status the user actually has to deal with: everything but the report
+ * directory sfdx-hardis writes inside the repository.
+ */
+export function userChangesOutsideReports<T extends GitStatusFile>(files: T[], reportDirectory: string): T[] {
+  const reportRoot = reportDirectory.replace(/\\/g, '/').replace(/\/+$/, '');
+  return (files || []).filter((fileStatus) => {
+    const filePath = (fileStatus.path || '').replace(/\\/g, '/');
+    return !filePath.startsWith(`${reportRoot}/`) && filePath !== reportRoot;
   });
+}
+
+/**
+ * Pathspec limiting a stash or a commit to those files: the reports must stay where they are, so
+ * getting the stashed work back later does not fight with what sfdx-hardis wrote meanwhile.
+ */
+export function gitPathSpec(files: GitStatusFile[]): string {
+  return files.map((fileStatus) => `"${fileStatus.path}"`).join(' ');
+}
+
+export async function checkGitCleanForPromotion(commandThis: any, agentMode = false): Promise<void> {
+  const status = await git({ output: true }).status();
+  const reportDirectory = path.basename(await getReportDirectory());
+  const userChanges = userChangesOutsideReports(status.files || [], reportDirectory);
   if (userChanges.length === 0) {
     return;
   }
+  const currentBranch = status.current || '';
   const localUpdates = userChanges.map((fileStatus) => `(${fileStatus.working_dir}) ${fileStatus.path}`).join('\n');
   const warningMessage = t('branchIsNotCleanCommitOrResetLocalUpdates', {
-    branch: c.bold(status.current || ''),
+    branch: c.bold(currentBranch),
     localUpdates: c.yellow(localUpdates),
   });
   uxLog('warning', commandThis, c.yellow(warningMessage));
+  if (agentMode) {
+    throw new SfError(`[sfdx-hardis] ${warningMessage}`);
+  }
+  const pathSpec = gitPathSpec(userChanges);
+  const promptRes = await prompts({
+    type: 'select',
+    name: 'value',
+    message: c.cyanBright(t('promotionCreateDirtyTreeQuestion')),
+    description: t('promotionCreateDirtyTreeQuestionDesc'),
+    choices: [
+      { title: t('promotionCreateDirtyTreeStash'), value: 'stash' },
+      { title: t('promotionCreateDirtyTreeCommit', { branch: currentBranch }), value: 'commit' },
+      { title: t('promotionCreateDirtyTreeCancel'), value: 'cancel' },
+    ],
+  });
+  if (promptRes.value === 'stash') {
+    const stashLabel = `sfdx-hardis promotion ${new Date().toISOString()}`;
+    const stashRes = await runCommandSafe(
+      `git stash push --include-untracked --message "${stashLabel}" -- ${pathSpec}`,
+      commandThis,
+      { output: true }
+    );
+    if (stashRes.status !== 0) {
+      throw new SfError(t('promotionCreateDirtyTreeStashFailed', { error: stashRes.stderr || stashRes.stdout }));
+    }
+    uxLog('action', commandThis, c.cyan(t('promotionCreateDirtyTreeStashed', { branch: currentBranch })));
+    return;
+  }
+  if (promptRes.value === 'commit') {
+    const messageRes = await prompts({
+      type: 'text',
+      name: 'value',
+      message: c.cyanBright(t('promotionCreateDirtyTreeCommitMessage')),
+      description: t('promotionCreateDirtyTreeCommitMessageDesc'),
+      initial: 'chore: save local changes before assembling a promotion branch',
+    });
+    const commitMessage = (messageRes.value || '').trim() || 'chore: save local changes before assembling a promotion branch';
+    const addRes = await runCommandSafe(`git add -- ${pathSpec}`, commandThis, { output: true });
+    if (addRes.status !== 0) {
+      throw new SfError(t('promotionCreateDirtyTreeCommitFailed', { error: addRes.stderr || addRes.stdout }));
+    }
+    const commitRes = await runCommandSafe(
+      `git commit -m "${commitMessage.replace(/"/g, "'")}" -- ${pathSpec}`,
+      commandThis,
+      { output: true }
+    );
+    if (commitRes.status !== 0) {
+      throw new SfError(t('promotionCreateDirtyTreeCommitFailed', { error: commitRes.stderr || commitRes.stdout }));
+    }
+    uxLog(
+      'action',
+      commandThis,
+      c.cyan(t('promotionCreateDirtyTreeCommitted', { count: userChanges.length, branch: currentBranch }))
+    );
+    return;
+  }
   throw new SfError(`[sfdx-hardis] ${warningMessage}`);
 }
 

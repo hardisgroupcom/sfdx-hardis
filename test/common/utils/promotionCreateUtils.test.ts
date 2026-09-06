@@ -10,12 +10,14 @@ import {
   computePromotionCounter,
   declaredPullRequestNumbers,
   listUnrequestedPullRequestNumbers,
+  gitPathSpec,
   markAlreadyPromotedCandidates,
   oldestCandidateDate,
   parsePullRequestNumbersFlag,
   selectCandidatesByPullRequestNumbers,
   toCandidate,
   toStories,
+  userChangesOutsideReports,
 } from '../../../src/common/utils/promotionCreateUtils.js';
 
 function group(hash: string, prs: Array<{ id: number; title: string }>, message = 'Merge pull request'): BackpromotePrGroup {
@@ -246,5 +248,49 @@ describe('promotion Pull Request title and body', () => {
     });
     expect(body).to.not.contain('Tickets:');
     expect(body).to.not.contain('Left out');
+  });
+});
+
+
+describe('dirty working tree before assembling a promotion', () => {
+  const files = [
+    { path: '.vscode/settings.json', working_dir: 'M' },
+    { path: 'hardis-report/promotion-candidates.md', working_dir: '?' },
+    { path: 'hardis-report', working_dir: '?' },
+    { path: 'force-app/main/default/classes/Foo.cls', working_dir: 'M' },
+  ];
+
+  it('the reports sfdx-hardis writes in the repository are not the user work', () => {
+    const userChanges = userChangesOutsideReports(files, 'hardis-report');
+    expect(userChanges.map((f) => f.path)).to.deep.equal([
+      '.vscode/settings.json',
+      'force-app/main/default/classes/Foo.cls',
+    ]);
+  });
+
+  it('windows separators and a trailing slash do not smuggle a report file back in', () => {
+    const windowsFiles = [
+      { path: 'hardis-report\\promotion-candidates.md', working_dir: '?' },
+      { path: 'NOTES.md', working_dir: 'M' },
+    ];
+    expect(userChangesOutsideReports(windowsFiles, 'hardis-report/').map((f) => f.path)).to.deep.equal(['NOTES.md']);
+  });
+
+  it('a report folder is not confused with a folder whose name starts the same way', () => {
+    const neighbours = [{ path: 'hardis-report-archive/old.md', working_dir: '?' }];
+    expect(userChangesOutsideReports(neighbours, 'hardis-report').map((f) => f.path)).to.deep.equal([
+      'hardis-report-archive/old.md',
+    ]);
+  });
+
+  it('the stash and commit pathspec quotes every path and leaves the reports out', () => {
+    const pathSpec = gitPathSpec(userChangesOutsideReports(files, 'hardis-report'));
+    expect(pathSpec).to.equal('".vscode/settings.json" "force-app/main/default/classes/Foo.cls"');
+    expect(pathSpec).to.not.contain('hardis-report');
+  });
+
+  it('nothing to offer when only the reports changed', () => {
+    const onlyReports = [{ path: 'hardis-report/x.md', working_dir: '?' }];
+    expect(userChangesOutsideReports(onlyReports, 'hardis-report')).to.have.length(0);
   });
 });
