@@ -305,8 +305,12 @@ export async function selectPromotionCandidates(
   commandThis: any,
 ): Promise<PromotionCandidate[]> {
   const numbers = parsePullRequestNumbersFlag(pullRequestsFlag);
-  if (numbers.length > 0) {
-    return selectCandidatesByPullRequestNumbers(candidates, numbers);
+  // Agent mode takes the flag as the selection. Interactive mode uses it to preselect the
+  // prompt: the VS Code extension passes the stories ticked in the DevOps Pipeline, and the
+  // user confirms or adjusts before anything is cherry-picked.
+  const preselected = numbers.length > 0 ? selectCandidatesByPullRequestNumbers(candidates, numbers) : [];
+  if (numbers.length > 0 && agentMode) {
+    return preselected;
   }
   if (agentMode) {
     throw new SfError(t('promotionCreateAgentRequiresPullRequests', {
@@ -325,6 +329,7 @@ export async function selectPromotionCandidates(
     message: c.cyanBright(t('promotionCreateSelectPullRequests')),
     description: t('promotionCreateSelectPullRequests'),
     choices,
+    initial: preselected.map((candidate) => candidate.group.commit.hash),
   });
   const hashes: string[] = res.value || [];
   const selected = candidates.filter((candidate) => hashes.includes(candidate.group.commit.hash));

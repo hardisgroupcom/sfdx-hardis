@@ -45,6 +45,11 @@ describe('dropResolvedPromotionPullRequests()', () => {
     expect(kept.map((entry) => entry.idNumber)).to.deep.equal([900, 12]);
   });
 
+  it('keeps the promotions next to their stories with --include-promotions', () => {
+    const kept = dropResolvedPromotionPullRequests([promotion, pr({ idNumber: 482 })], ENABLED, { includePromotions: true });
+    expect(kept.map((entry) => entry.idNumber)).to.deep.equal([900, 482]);
+  });
+
   it('changes nothing when the feature is off', () => {
     const all = [promotion, pr({ idNumber: 482 })];
     expect(dropResolvedPromotionPullRequests(all, DISABLED)).to.deep.equal(all);

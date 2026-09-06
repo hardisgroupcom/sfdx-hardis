@@ -142,6 +142,10 @@ In agent mode:
       char: "f",
       description: messages.getMessage("outputFile"),
     }),
+    "include-promotions": Flags.boolean({
+      default: false,
+      description: "With promotion branches enabled, also list the promotion Pull Requests next to the User Stories they carry (left out by default, the stories are what the release delivers)",
+    }),
     pdf: Flags.boolean({
       default: true,
       allowNo: true,
@@ -197,7 +201,7 @@ In agent mode:
 
     // 2. Collect pull requests
     uxLog("action", this, c.cyan(t("releaseNotesCollectingPrs")));
-    const pullRequests = await collectPullRequests(scope, this);
+    const pullRequests = await collectPullRequests(scope, this, { includePromotions: flags["include-promotions"] === true });
     uxLog("action", this, c.cyan(t("releaseNotesPrsCollected", { count: String(pullRequests.length) })));
     // Note: PR table with ticket cross-references is displayed after ticket collection
 

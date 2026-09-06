@@ -488,6 +488,7 @@ export async function getReleaseDate(scope: ReleaseNotesScope): Promise<string> 
 export async function collectPullRequests(
   scope: ReleaseNotesScope,
   commandRef: any,
+  options: { includePromotions?: boolean } = {},
 ): Promise<CommonPullRequestInfo[]> {
   const gitProvider = await GitProvider.getInstance();
   if (!gitProvider) {
@@ -585,7 +586,7 @@ export async function collectPullRequests(
   // cherry-picked commits never match by SHA, list the stories it declares as well
   const promotionConfig = getPromotionBranchConfig(await getConfig("branch"));
   pullRequests = await expandPromotionPullRequests(pullRequests, promotionConfig, (id) => gitProvider.getPullRequestById(id));
-  pullRequests = dropResolvedPromotionPullRequests(pullRequests, promotionConfig);
+  pullRequests = dropResolvedPromotionPullRequests(pullRequests, promotionConfig, options);
 
   return pullRequests;
 }
@@ -600,8 +601,10 @@ export async function collectPullRequests(
 export function dropResolvedPromotionPullRequests(
   pullRequests: CommonPullRequestInfo[],
   config: PromotionBranchConfig,
+  options: { includePromotions?: boolean } = {},
 ): CommonPullRequestInfo[] {
-  if (!config.enabled) {
+  // --include-promotions: the reader wants the vehicles listed next to the stories
+  if (!config.enabled || options.includePromotions === true) {
     return pullRequests;
   }
   const present = new Set(pullRequests.map((pr) => pr.idNumber));

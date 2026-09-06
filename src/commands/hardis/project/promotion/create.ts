@@ -73,7 +73,7 @@ sf hardis:project:promotion:create --agent --source-branch uat --pull-requests 4
 
 In agent mode:
 
-- \`--source-branch\` and \`--pull-requests\` are required; \`--target-branch\` defaults to the first merge target of the source branch.
+- \`--source-branch\` and \`--pull-requests\` are required; \`--target-branch\` defaults to the first merge target of the source branch. Outside agent mode, \`--pull-requests\` only preselects the stories in the prompt (this is how the VS Code extension passes the stories ticked in the DevOps Pipeline), and the user confirms the selection.
 - Every number of \`--pull-requests\` must match a Pull Request merged into the source branch and not yet promoted, otherwise the command fails before touching git.
 - A cherry-pick conflict undoes the whole promotion (branch deleted, nothing pushed) and fails the command naming the conflicting Pull Request, unless \`--on-conflict skip\` or \`--on-conflict commit-with-markers\` is passed.
 `;
@@ -98,7 +98,7 @@ In agent mode:
     }),
     'pull-requests': Flags.string({
       char: 'p',
-      description: 'Comma-separated numbers of the Pull Requests to carry (ex: 482,487). Prompted if not provided, required in agent mode.',
+      description: 'Comma-separated numbers of the Pull Requests to carry (ex: 482,487). Preselected in the prompt when provided, taken as is in agent mode where the flag is required.',
     }),
     'skip-pull-request': Flags.boolean({
       default: false,

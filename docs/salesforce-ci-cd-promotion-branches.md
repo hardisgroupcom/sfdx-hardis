@@ -143,6 +143,8 @@ ___
 - **Retrofit right away.** Once `preprod` (or production) contains the promotion branch, retrofit it into `integration` with a `retrofit/` branch as for a [hotfix](salesforce-ci-cd-hotfixes.md#3-retrofit-in-the-build-stream). The cherry-picked commits then meet their originals at the next `integration -> uat` promotion instead of at the next go-live.
 - **Freeze `uat -> preprod` while a promotion branch sits in `preprod`** and has not reached production yet, otherwise unapproved stories ride along. This is the RUN/BUILD rule of the hotfix process.
 - In the DevOps Pipeline of the VS Code extension, a promoted story leaves the window of the branch it came from and is listed in the branch it reached, so **a Pull Request number appears in a single place in the diagram** (both in the counter on the node and in the list opened by clicking it). The "Show already promoted Pull Requests" toggle brings the other places back when you want to see where a story has been.
+- The lists and counters of the DevOps Pipeline show **User Stories only**: promotion Pull Requests and merges between two major branches are the vehicles that move them, so they are hidden until the "Show promotion Pull Requests" toggle at the top of the branch window is on.
+- In the window of a branch, tick the User Stories to carry and use the **Create promotion** button: `sf hardis:project:promotion:create` opens with them preselected, and you confirm the selection in the terminal. A story brought into the branch by a promotion is promoted through that promotion and cannot be ticked.
 - The deployment jobs still see the stories in the `uat` promotion window: their original merge commits have not reached `preprod`, so their metadata is redeployed as a no-op and their already performed actions are skipped. That is a deployment concern, not a listing one.
 
 A `uat` window that stays full of already-shipped stories is the sign that `uat` is used as the approval gate `preprod` was designed to be. Consider adding an intermediate major branch rather than assembling every version by hand.
@@ -151,7 +153,7 @@ ___
 
 ## Release notes
 
-`sf hardis:doc:release-notes` lists the User Stories a promotion Pull Request carries, not the promotion Pull Request itself: the tickets, the metadata changes, the deployment actions and the contributor counts are those of the stories. A promotion whose declared Pull Requests could not be resolved is kept in the notes, so a change never disappears from them.
+`sf hardis:doc:release-notes` lists the User Stories a promotion Pull Request carries, not the promotion Pull Request itself: the tickets, the metadata changes, the deployment actions and the contributor counts are those of the stories. A promotion whose declared Pull Requests could not be resolved is kept in the notes, so a change never disappears from them. Pass `--include-promotions` to list the promotion Pull Requests next to their stories.
 
 ___
 

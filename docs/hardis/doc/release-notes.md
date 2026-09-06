@@ -1,4 +1,5 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+
 # hardis:doc:release-notes
 
 ## Description
@@ -22,6 +23,8 @@ Supports two modes:
 
 Output includes a **Markdown report** (optionally converted to PDF), a **multi-tab XLSX** with detailed data, and an optional **notification** (Slack, Teams, etc.) for production releases in post mode.
 
+In the XLSX file, the **Metadata Changes** tab lists for each metadata item the Pull Requests (number, title, author) and the commits (title, author, date) that touched it.
+
 The command can determine the release scope from git tags (semver), branch names, commit ranges, or date ranges.
 
 This command is part of [sfdx-hardis Documentation](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/).
@@ -38,9 +41,12 @@ The command resolves the release scope using one of several strategies:
 
 Metadata changes are computed via `sfdx-git-delta` (`sf sgd:source:delta`), which generates `package.xml` (additions) and `destructiveChanges.xml` (deletions).
 
+Per-item Pull Request and commit attribution is computed with `git log --name-only` over the release commit range: each changed file is resolved to its metadata component with `@salesforce/source-deploy-retrieve` over a virtual file tree (so deleted files resolve too), and each commit is mapped to its Pull Request via `git rev-list` on the PR merge commit.
+
 Deployment actions are loaded from PR comments (via the `<!-- sfdx-hardis deployment-actions-state -->` marker) or from `scripts/actions/.sfdx-hardis.{PR_ID}.yml` files.
 
 Inter-major-branch PRs (e.g., integration to preprod) are excluded since they represent promotions, not user stories.
+
 </details>
 
 ### Agent Mode
@@ -59,15 +65,15 @@ In agent mode:
 - When `--mode post` and `--target-branch` are provided without `--merge-commit`, the latest merge commit on the target branch is used automatically.
 - When `--mode prepare` and `--source-branch` is provided without `--target-branch`, the target branch is inferred from the source branch mergeTargets configuration.
 
-
 ## Parameters
 
 | Name                 |  Type   | Description                                                                                                                                                                  | Default | Required |     Options      |
-|:---------------------|:-------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:----------------:|
+| :------------------- | :-----: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-----: | :------: | :--------------: |
 | agent                | boolean | Run in non-interactive mode for agents and automation                                                                                                                        |         |          |                  |
 | debug<br/>-d         | boolean | Activate debug mode (more logs)                                                                                                                                              |         |          |                  |
 | flags-dir            | option  | undefined                                                                                                                                                                    |         |          |                  |
 | from-date            | option  | Start date for the release scope (YYYY-MM-DD). Mutually exclusive with tag flags.                                                                                            |         |          |                  |
+| include-promotions   | boolean | With promotion branches enabled, also list the promotion Pull Requests next to the User Stories they carry (left out by default, the stories are what the release delivers)  |         |          |                  |
 | json                 | boolean | Format output as json.                                                                                                                                                       |         |          |                  |
 | merge-commit         | option  | Specific merge commit SHA to use as the end of the release scope                                                                                                             |         |          |                  |
 | mode<br/>-m          | option  | Release notes mode: prepare (preview upcoming release) or post (document completed release)                                                                                  |         |          | prepare<br/>post |
@@ -117,5 +123,3 @@ $ sf hardis:doc:release-notes --mode post --from-date 2026-01-01 --to-date 2026-
 ```shell
 $ sf hardis:doc:release-notes --agent --mode post --target-branch main
 ```
-
-
