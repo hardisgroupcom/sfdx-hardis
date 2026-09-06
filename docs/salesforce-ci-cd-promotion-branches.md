@@ -1,10 +1,12 @@
 ---
-title: Promotion branches with Salesforce CI/CD
+title: Promotion branches (beta) with Salesforce CI/CD
 description: Ship a subset of approved User Stories from uat to preprod and production with sfdx-hardis promotion branches, without losing their deployment actions, test classes and tickets
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Promotion branches
+## Promotion branches (beta)
+
+> **Beta feature.** Promotion branches are new in sfdx-hardis. They are switched off by default (`enablePromotionBranches: false`), nothing changes for a project that does not enable them, and their behavior may still evolve from feedback. Please report anything unexpected in [sfdx-hardis issues](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 - [When to use them](#when-to-use-them)
 - [How it works](#how-it-works)

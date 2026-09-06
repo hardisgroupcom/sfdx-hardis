@@ -19,7 +19,7 @@ DevOps practices work best when one or two team members take the role of **relea
 - [**Review and merge Pull Requests**](salesforce-ci-cd-validate-merge-request.md): check the validation jobs, solve conflicts, merge into the major branches.
 - [**Deploy to major orgs**](salesforce-ci-cd-deploy-major-branches.md): promote the changes from `integration` to `uat`, `preprod` and production with Pull Requests between major branches.
 - [**Handle hotfixes and retrofits**](salesforce-ci-cd-hotfixes.md): run the RUN stream in parallel with the BUILD stream without regressions.
-- [**Assemble a promotion branch**](salesforce-ci-cd-promotion-branches.md): when only some of the User Stories of `uat` are approved, ship them alone without losing their deployment actions.
+- [**Assemble a promotion branch** (beta)](salesforce-ci-cd-promotion-branches.md): when only some of the User Stories of `uat` are approved, ship them alone without losing their deployment actions.
 - [**Generate Release Notes**](hardis/doc/salesforce-ci-cd-release-notes.md): document the tickets, Pull Requests, metadata changes, deployment actions and contributors of a release.
 - [**Follow DORA Metrics**](hardis/doc/salesforce-ci-cd-dora-report.md): measure deployment frequency, lead time, change failure rate and time to restore.
 - [**Configure the project**](salesforce-ci-cd-config-home.md): package.xml, overwrite management, delta deployments, automated cleaning and the other `.sfdx-hardis.yml` settings.

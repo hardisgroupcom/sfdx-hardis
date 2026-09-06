@@ -83,4 +83,4 @@ ___
 
 ## Ship only some of the uat stories
 
-When the fix is already in `uat` with other stories that are not approved yet, do not hotfix it a second time: assemble a [promotion branch](salesforce-ci-cd-promotion-branches.md) from the approved stories.
+When the fix is already in `uat` with other stories that are not approved yet, do not hotfix it a second time: assemble a [promotion branch (beta)](salesforce-ci-cd-promotion-branches.md) from the approved stories.

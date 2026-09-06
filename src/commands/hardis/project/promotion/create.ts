@@ -31,14 +31,16 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class PromotionCreate extends SfCommand<any> {
-  public static title = 'Create a promotion branch';
+  public static title = 'Create a promotion branch (beta)';
 
   public static description = `
 ## Command Behavior
 
+**Beta feature.** Promotion branches are new and switched off by default; their behavior may still evolve from feedback.
+
 **Assembles a promotion branch: a branch carrying only the approved User Stories of a major branch (ex: uat), so they reach the next major branch (ex: preprod) before the rest of the promotion window.**
 
-This is the only supported way to create a [promotion branch](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/). The command:
+This is the only supported way to create a [promotion branch (beta)](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/). The command:
 
 - checks that \`enablePromotionBranches: true\` is set in the sfdx-hardis configuration;
 - lists the Pull Requests merged into the source branch and not yet promoted to the target branch, and lets you select the ones to carry (or takes them from \`--pull-requests\`). A Pull Request another promotion branch already carries to the same target is left out, unless \`--include-already-promoted\` is passed;
