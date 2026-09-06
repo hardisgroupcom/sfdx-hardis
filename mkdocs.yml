@@ -424,6 +424,7 @@ nav:
           - lint: hardis/project/lint.md
           - metadata activate-decomposed: hardis/project/metadata/activate-decomposed.md
           - metadata findduplicates: hardis/project/metadata/findduplicates.md
+          - promotion create: hardis/project/promotion/create.md
           - skills import: hardis/project/skills/import.md
       - hardis:deploy:
           - quick: hardis/deploy/quick.md

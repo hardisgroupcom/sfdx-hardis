@@ -2,7 +2,7 @@ import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import * as path from 'path';
 import fs from './fsUtils.js';
-import { execCommand, git, gitFetch, uxLog } from './index.js';
+import { createWorkBranchFromTarget, execCommand, git, gitFetch, uxLog } from './index.js';
 import { prompts } from './prompts.js';
 import { t } from './i18n.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
@@ -177,10 +177,11 @@ export async function resolvePromotionSourceAndTarget(
     }
   }
   // Promoting outside of the declared pipeline is allowed (a hotfix may need it), but it is
-  // unusual enough to be said out loud
+  // unusual enough to be said out loud. Logged as an action, not a warning: this is the first
+  // output after the branch prompts, and the VS Code UI hides everything but an action there.
   const declaredMergeTargets: string[] = sourceOrg.mergeTargets || [];
   if (!declaredMergeTargets.map((branch) => branch.toLowerCase()).includes(targetBranch.toLowerCase())) {
-    uxLog('warning', commandThis, c.yellow(t('promotionCreateTargetNotMergeTarget', {
+    uxLog('action', commandThis, c.yellow(t('promotionCreateTargetNotMergeTarget', {
       source: sourceBranch,
       target: targetBranch,
       mergeTargets: declaredMergeTargets.join(', ') || '-',
@@ -462,8 +463,10 @@ export async function nextPromotionBranchName(sourceBranch: string, targetBranch
 
 export async function createPromotionBranch(branchName: string, targetBranch: string, commandThis: any): Promise<void> {
   uxLog('action', commandThis, c.cyan(t('promotionCreateCreatingBranch', { branch: c.green(branchName), target: c.green(targetBranch) })));
-  await gitFetch(['origin', targetBranch]);
-  await git({ output: true }).checkoutBranch(branchName, `origin/${targetBranch}`);
+  // The shared helper of hardis:work:new: it refuses a branch already checked out in another
+  // worktree, resumes an existing local or remote branch, and falls back to a local ref when the
+  // remote-tracking one is missing. Re-implementing the checkout lost all three.
+  await createWorkBranchFromTarget(branchName, targetBranch);
 }
 
 async function isMergeCommit(hash: string): Promise<boolean> {

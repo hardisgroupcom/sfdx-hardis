@@ -11,7 +11,7 @@ import { loadDeploymentActionsState, checkActionInState, upsertActionInState, pe
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { getPromotionScopeDetails, getPullRequestScopedSfdxHardisConfig, getPullRequestScopeInfo, isSinglePullRequestScope, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
-import { buildAlreadyPromotedMarkdown, buildInheritedBehaviorsMarkdown, getCarriedBy } from './promotionBranchUtils.js';
+import { buildAlreadyPromotedMarkdown, buildInheritedBehaviorsMarkdown, getCarriedBy, getPromotionBranchConfig, isPromotionPullRequest } from './promotionBranchUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { t } from './i18n.js';
 import { ActionWhen, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getPrIdFromUserConfig } from './actionUtils.js';
@@ -495,8 +495,16 @@ async function buildPrNumbersToScan(basePrNumbers: number[]): Promise<number[]> 
   let batchPrNumbers: number[] = [];
   if (scopePrs.length > 0) {
     const majorBranchNames = (await listMajorOrgs()).map((majorOrg: any) => majorOrg.branchName);
+    const promotionConfig = getPromotionBranchConfig(await getConfig('branch'));
     batchPrNumbers = scopePrs
-      .filter((pr) => !isSinglePullRequestScope(pr.sourceBranch, majorBranchNames))
+      .filter(
+        (pr) =>
+          !isSinglePullRequestScope(pr.sourceBranch, majorBranchNames) ||
+          // A promotion Pull Request carries a whole batch like a major-to-major merge does, but
+          // its branch is not a major one, so the rule above would leave it out and the manual
+          // actions ticked on its own comment would never be read back in a later window.
+          isPromotionPullRequest(pr, promotionConfig),
+      )
       .map((pr) => pr.idNumber);
   }
   return [...new Set([...basePrNumbers, ...batchPrNumbers])].filter((prNumber) => prNumber > 0);

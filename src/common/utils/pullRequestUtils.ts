@@ -120,12 +120,22 @@ async function listDownstreamPromotionPullRequests(
   promotionConfig: PromotionBranchConfig,
   minDate: Date | null,
 ): Promise<CommonPullRequestInfo[]> {
+  // Every branch downstream of this one, following all the merge targets of each: a pipeline may
+  // fan out (uat -> preprod and uat -> hotfix-preprod), and a promotion merged into any of them
+  // still shipped the story. Branch names are compared without case, like the other classifiers,
+  // because they come from the config/branches file names.
   const branches: string[] = [];
-  let current: string | null = fromBranch;
-  while (current && !branches.includes(current)) {
+  const queue: string[] = [fromBranch];
+  while (queue.length > 0) {
+    const current = queue.shift() as string;
+    if (!current || branches.some((branch) => branch.toLowerCase() === current.toLowerCase())) {
+      continue;
+    }
     branches.push(current);
-    const org = majorOrgs.find((o) => o.branchName === current);
-    current = org?.mergeTargets?.[0] || null;
+    const org = majorOrgs.find((o) => (o.branchName || '').toLowerCase() === current.toLowerCase());
+    for (const mergeTarget of org?.mergeTargets || []) {
+      queue.push(mergeTarget);
+    }
   }
   const promotions: CommonPullRequestInfo[] = [];
   for (const branch of branches) {
@@ -212,6 +222,7 @@ export async function applyPromotionInheritedBehaviors(checkOnly: boolean): Prom
   if (_inheritedBehaviors.length > 0) {
     // Re-applied by GitProvider.getPullRequestInfo on every fresh fetch of the Pull Request
     GitProvider.inheritedCustomBehaviors = Object.fromEntries(_inheritedBehaviors.map((item) => [item.behavior, true]));
+    GitProvider.inheritedCustomBehaviorsPrId = prInfo!.idNumber;
     for (const item of _inheritedBehaviors) {
       uxLog("action", null, c.cyan(`[PromotionBranch] ${t('promotionInheritedBehavior', {
         keyword: item.keyword,

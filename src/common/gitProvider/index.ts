@@ -493,6 +493,9 @@ export abstract class GitProvider {
   // Custom behaviors inherited by a promotion Pull Request from the stories it declares
   // (see promotionBranchUtils.mergeInheritedCustomBehaviors). Null when nothing was inherited.
   static inheritedCustomBehaviors: Partial<CommonPullRequestInfo['customBehaviors']> | null = null;
+  // The Pull Request the inheritance above was computed for. A process handling more than one
+  // (tests, a long-lived server) must not carry a NO_DELTA from one Pull Request to the next.
+  static inheritedCustomBehaviorsPrId: number | null = null;
 
   static async getPullRequestInfo(options: { useCache: boolean } = { useCache: false }): Promise<CommonPullRequestInfo | null> {
     // Return cached result if available and caching is enabled
@@ -511,7 +514,7 @@ export abstract class GitProvider {
       prInfo = await gitProvider.getPullRequestInfo();
       // A promotion Pull Request inherits the custom behaviors of the stories it carries. They are
       // re-applied on every fresh fetch, so a caller refreshing the cache cannot lose them.
-      if (prInfo && GitProvider.inheritedCustomBehaviors) {
+      if (prInfo && GitProvider.inheritedCustomBehaviors && GitProvider.inheritedCustomBehaviorsPrId === prInfo.idNumber) {
         prInfo.customBehaviors = Object.assign(prInfo.customBehaviors || {}, GitProvider.inheritedCustomBehaviors);
       }
       debug("[GitProvider][PR Info] " + JSON.stringify(prInfo, null, 2));
