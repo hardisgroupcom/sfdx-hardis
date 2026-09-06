@@ -80,19 +80,19 @@ Break one of these and the feature is wrong, whatever the tests say.
 
 ## sfdx-hardis (CLI)
 
-| File | Role |
-|---|---|
-| `src/common/utils/promotionBranchUtils.ts` | Pure logic: naming, parsing the declaration, classification, expansion, inherited behaviors, promotion index. No I/O. |
-| `src/common/utils/promotionCreateUtils.ts` | Everything `promotion:create` needs: candidate listing, already-promoted detection, cherry-picking, conflict handling, Pull Request body. |
-| `src/commands/hardis/project/promotion/create.ts` | The command. Flags: `--source-branch`, `--target-branch`, `--pull-requests`, `--skip-pull-request`, `--include-already-promoted`, `--on-conflict`, `--agent`. |
-| `src/common/utils/pullRequestUtils.ts` | Resolves the declared Pull Requests from the git provider, walks the downstream promotions. |
-| `src/common/gitProvider/gitProviderRoot.ts` + the four providers | `closePullRequest()` (close on GitHub/GitLab, abandon on Azure DevOps, decline on Bitbucket), used to supersede the promotion already open. |
-| `src/commands/hardis/project/deploy/smart.ts` | Applies the inherited custom behaviors and the conflict-marker gate. |
-| `src/common/utils/prePostCommandUtils.ts` | Deployment actions of the carried stories, promotion scope wording. |
-| `src/common/utils/releaseNotesUtils.ts` | Leaves the vehicles out, `--include-promotions` brings them back. |
-| `src/common/gitProvider/index.ts` | `inheritedCustomBehaviors` + the `inheritedCustomBehaviorsPrId` guard. |
-| `config/sfdx-hardis.jsonschema.json` | `enablePromotionBranches` property (required for any new config key). |
-| `test/common/utils/promotionBranchUtils.test.ts`, `promotionCreateUtils.test.ts`, `releaseNotesPromotion.test.ts` | Unit tests. |
+| File                                                                                                              | Role                                                                                                                                                          |
+|-------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `src/common/utils/promotionBranchUtils.ts`                                                                        | Pure logic: naming, parsing the declaration, classification, expansion, inherited behaviors, promotion index. No I/O.                                         |
+| `src/common/utils/promotionCreateUtils.ts`                                                                        | Everything `promotion:create` needs: candidate listing, already-promoted detection, cherry-picking, conflict handling, Pull Request body.                     |
+| `src/commands/hardis/project/promotion/create.ts`                                                                 | The command. Flags: `--source-branch`, `--target-branch`, `--pull-requests`, `--skip-pull-request`, `--include-already-promoted`, `--on-conflict`, `--agent`. |
+| `src/common/utils/pullRequestUtils.ts`                                                                            | Resolves the declared Pull Requests from the git provider, walks the downstream promotions.                                                                   |
+| `src/common/gitProvider/gitProviderRoot.ts` + the four providers                                                  | `closePullRequest()` (close on GitHub/GitLab, abandon on Azure DevOps, decline on Bitbucket), used to supersede the promotion already open.                   |
+| `src/commands/hardis/project/deploy/smart.ts`                                                                     | Applies the inherited custom behaviors and the conflict-marker gate.                                                                                          |
+| `src/common/utils/prePostCommandUtils.ts`                                                                         | Deployment actions of the carried stories, promotion scope wording.                                                                                           |
+| `src/common/utils/releaseNotesUtils.ts`                                                                           | Leaves the vehicles out, `--include-promotions` brings them back.                                                                                             |
+| `src/common/gitProvider/index.ts`                                                                                 | `inheritedCustomBehaviors` + the `inheritedCustomBehaviorsPrId` guard.                                                                                        |
+| `config/sfdx-hardis.jsonschema.json`                                                                              | `enablePromotionBranches` property (required for any new config key).                                                                                         |
+| `test/common/utils/promotionBranchUtils.test.ts`, `promotionCreateUtils.test.ts`, `releaseNotesPromotion.test.ts` | Unit tests.                                                                                                                                                   |
 
 Reading the flag: `getConfig('branch')` (project config merged with the running branch's config),
 via `getPromotionBranchConfig(config)`. It is a **project level** setting: the extension exposes it
@@ -114,26 +114,26 @@ not leak in.
 
 ## vscode-sfdx-hardis (extension)
 
-| File | Role |
-|---|---|
-| `src/utils/pipeline/promotionBranchUtils.ts` | Mirror of the CLI pure logic, plus the pipeline rules: `isVehiclePullRequest`, `userStoryPullRequests`, `visiblePullRequests`, `annotateAlreadyPromoted`, `enforceSinglePlacePerPullRequest`. |
-| `src/commands/showPipeline.ts` | Fetches the declared Pull Requests (in parallel), builds the windows. |
-| `src/pipeline-data-provider.ts` | Feeds the mermaid builder. |
-| `src/utils/pipeline/branchStrategyMermaidBuilder.ts` | Node counters (`data-count`, `data-count-all`), and the open promotion drawn on the major-to-major edge (`isPromotionOfStep`). |
-| `src/webviews/lwc-ui/modules/s/pipeline/pipeline.js` | Branch window modal: filtering, the two toggles, the per-Pull-Request checkboxes and the **Create promotion** button. |
-| `src/utils/pipeline/sfdxHardisConfigHelper.ts` | `enablePromotionBranches` sits in the **Danger Zone** of Pipeline Settings, scope `["global"]`. |
-| `src/hardis-commands-provider.ts` | Command palette entry for `hardis:project:promotion:create`. |
-| `package.json` | `pipelineShowAlreadyPromotedPullRequests` setting. |
+| File                                                 | Role                                                                                                                                                                                          |
+|------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `src/utils/pipeline/promotionBranchUtils.ts`         | Mirror of the CLI pure logic, plus the pipeline rules: `isVehiclePullRequest`, `userStoryPullRequests`, `visiblePullRequests`, `annotateAlreadyPromoted`, `enforceSinglePlacePerPullRequest`. |
+| `src/commands/showPipeline.ts`                       | Fetches the declared Pull Requests (in parallel), builds the windows.                                                                                                                         |
+| `src/pipeline-data-provider.ts`                      | Feeds the mermaid builder.                                                                                                                                                                    |
+| `src/utils/pipeline/branchStrategyMermaidBuilder.ts` | Node counters (`data-count`, `data-count-all`), and the open promotion drawn on the major-to-major edge (`isPromotionOfStep`).                                                                |
+| `src/webviews/lwc-ui/modules/s/pipeline/pipeline.js` | Branch window modal: filtering, the two toggles, the per-Pull-Request checkboxes and the **Create promotion** button.                                                                         |
+| `src/utils/pipeline/sfdxHardisConfigHelper.ts`       | `enablePromotionBranches` sits in the **Danger Zone** of Pipeline Settings, scope `["global"]`.                                                                                               |
+| `src/hardis-commands-provider.ts`                    | Command palette entry for `hardis:project:promotion:create`.                                                                                                                                  |
+| `package.json`                                       | `pipelineShowAlreadyPromotedPullRequests` setting.                                                                                                                                            |
 
 ## Filtering: what moves the Pull Requests
 
 The rule the lists and counters follow, in the diagram, the modal and the release notes:
 
-| Pull Request | promotions OFF | promotions ON |
-|---|---|---|
-| `feature/`, `fix/`, `retrofit/`, `hotfix/`, anything else | listed | listed |
-| `uat -> preprod` (major to major) | **hidden** | **hidden** |
-| `promotion/uat/preprod/...` | listed | **hidden** |
+| Pull Request                                              | promotions OFF | promotions ON |
+|-----------------------------------------------------------|----------------|---------------|
+| `feature/`, `fix/`, `retrofit/`, `hotfix/`, anything else | listed         | listed        |
+| `uat -> preprod` (major to major)                         | **hidden**     | **hidden**    |
+| `promotion/uat/preprod/...`                               | listed         | **hidden**    |
 
 Major-to-major merges are filtered for **every** project: such a merge is plumbing in any pipeline.
 A `promotion/` branch is only a vehicle when the feature is enabled, because otherwise it really is

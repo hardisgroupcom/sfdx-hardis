@@ -18,13 +18,13 @@ not already, so you know what each assertion is protecting.
 
 ## What this skill contains
 
-| File | Use |
-|---|---|
-| `reference/runbook.md` | The full procedure: repository layout, the six User Stories, the run order, what to assert in each log, the edge cases, the traps. **Read it before starting.** |
-| `scripts/e2e-lib.sh` | The job simulators: `e2e_check`, `e2e_deploy`, `e2e_promote`, `e2e_release_notes`, `e2e_grep`. Source it. |
-| `scripts/check-diagram.cjs` | Feeds the extension's compiled helpers with the real Pull Requests and asserts the "single place in the diagram" rule. |
-| `scripts/ab-run.sh` | Runs the same CI jobs with a given CLI checkout and stores the logs. |
-| `scripts/ab-diff.py` | Normalises two log folders and diffs them: the flag-off regression proof. |
+| File                        | Use                                                                                                                                                             |
+|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `reference/runbook.md`      | The full procedure: repository layout, the six User Stories, the run order, what to assert in each log, the edge cases, the traps. **Read it before starting.** |
+| `scripts/e2e-lib.sh`        | The job simulators: `e2e_check`, `e2e_deploy`, `e2e_promote`, `e2e_release_notes`, `e2e_grep`. Source it.                                                       |
+| `scripts/check-diagram.cjs` | Feeds the extension's compiled helpers with the real Pull Requests and asserts the "single place in the diagram" rule.                                          |
+| `scripts/ab-run.sh`         | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                            |
+| `scripts/ab-diff.py`        | Normalises two log folders and diffs them: the flag-off regression proof.                                                                                       |
 
 ## Before starting
 
