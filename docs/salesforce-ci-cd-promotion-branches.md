@@ -50,20 +50,29 @@ In `config/.sfdx-hardis.yml` (or in a branch config file like `config/branches/.
 
 ```yaml
 enablePromotionBranches: true
-# Optional, "promotion" by default: promotion branches are named promotion/<name>
-promotionBranchPrefix: promotion
 ```
+
+### Naming
+
+Promotion branches follow one naming convention, which is not configurable:
+
+```text
+promotion/<source branch>/<target branch>/<YYYY-MM-DD>-<counter>
+```
+
+For example `promotion/uat/preprod/2026-09-06-1` is the first promotion assembled on September 6th, 2026, from `uat` to `preprod`. The name alone says where the stories come from and where they go, and the counter separates two promotions assembled the same day between the same branches (`-1`, `-2`...). If the Pull Request targets another branch than the one in the name, the job warns about it.
 
 A Pull Request is a promotion Pull Request when **all** of the following are true:
 
 - `enablePromotionBranches` is `true`;
-- its source branch is named `<promotionBranchPrefix>/<name>` (ex: `promotion/2026-09-release`);
+- its source branch follows the naming convention above;
 - its description contains a `promotionPullRequests` YAML block.
 
 Anything else is unchanged:
 
-- when `enablePromotionBranches` is not set, the prefix and the YAML key are ignored (an info line in the job log says so);
-- a `promotion/` branch without the YAML key is an ordinary feature branch (a warning says so);
+- when `enablePromotionBranches` is not set, the naming and the YAML key are ignored (an info line in the job log says so);
+- a branch starting with `promotion/` that does not follow the convention (ex: `promotion/2026-09`) is an ordinary feature branch, even with the YAML key (a warning says so);
+- a well-named promotion branch without the YAML key is an ordinary feature branch (a warning says so);
 - a `promotionPullRequests` key on a `feature/` branch is ignored (a warning says so).
 
 ___
@@ -75,7 +84,7 @@ ___
 
     ```bash
     git fetch origin
-    git checkout -b promotion/2026-09-release origin/preprod
+    git checkout -b promotion/uat/preprod/2026-09-06-1 origin/preprod
     ```
 
 3. Cherry-pick the **merge commit** of each approved story, oldest first, keeping the origin in the message:
@@ -112,8 +121,8 @@ ___
 
 | Job                                    | Behavior                                                                                                                                                                                                                                                                                                                 |
 |----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Validation of `promotion/x -> preprod` | Delta deployment of the cherry-picked changes. The scope is the declared Pull Requests: their deployment actions are listed, their pending manual actions appear as checkboxes, their Apex test classes are collected when `enableDeploymentApexTestClasses` is active.                                                  |
-| Deployment of `promotion/x -> preprod` | Same scope. Actions run in `preprod` and each one is recorded on its own story Pull Request, in the "Deployment Actions" comment (`preprod` column).                                                                                                                                                                     |
+| Validation of `promotion/uat/preprod/2026-09-06-1 -> preprod` | Delta deployment of the cherry-picked changes. The scope is the declared Pull Requests: their deployment actions are listed, their pending manual actions appear as checkboxes, their Apex test classes are collected when `enableDeploymentApexTestClasses` is active.                                                  |
+| Deployment of `promotion/uat/preprod/2026-09-06-1 -> preprod` | Same scope. Actions run in `preprod` and each one is recorded on its own story Pull Request, in the "Deployment Actions" comment (`preprod` column).                                                                                                                                                                     |
 | Promotion `preprod -> main`            | The promotion Pull Request is part of the go-live like any other merge. sfdx-hardis expands it with the stories it declares, so their actions run in production and the release notes list them.                                                                                                                         |
 | Later promotion `uat -> preprod`       | The stories are still in the `uat` promotion window: their original merge commits have not reached `preprod`. Their metadata is redeployed as a no-op, and their actions are skipped where already performed (`runOnlyOnceByOrg`). The Pull Request comment lists them as already deployed through the promotion branch. |
 

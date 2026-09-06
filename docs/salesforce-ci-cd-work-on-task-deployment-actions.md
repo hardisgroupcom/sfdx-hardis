@@ -143,7 +143,7 @@ The actions collected for a deployment depend on the branch the merged Pull Requ
 | From a feature branch (ex: `feature/my-story` to `integration`)                                                                                 | Only the Pull Request that has just been merged                      |
 | Between major branches (ex: `integration` to `uat`)                                                                                             | Every Pull Request merged since the previous merge                   |
 | From a retrofit branch (ex: `retrofit/from-main` to `integration`)                                                                              | Every Pull Request merged since the previous merge                   |
-| From a [promotion branch](salesforce-ci-cd-promotion-branches.md) (ex: `promotion/2026-09` to `preprod`), when `enablePromotionBranches` is set | The Pull Requests declared in the promotion Pull Request description |
+| From a [promotion branch](salesforce-ci-cd-promotion-branches.md) (ex: `promotion/uat/preprod/2026-09-06-1` to `preprod`), when `enablePromotionBranches` is set | The Pull Requests declared in the promotion Pull Request description |
 
 - Between major branches, the batch is every Pull Request merged into the source major branch since its last promotion.
 - Into the production branch (which has no promotion target), the batch is every Pull Request carried by the go-live merge itself.

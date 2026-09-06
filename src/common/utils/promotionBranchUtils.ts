@@ -21,11 +21,19 @@ import { t } from './i18n.js';
  */
 
 export const PROMOTION_PULL_REQUESTS_KEY = 'promotionPullRequests';
-export const DEFAULT_PROMOTION_BRANCH_PREFIX = 'promotion';
+export const PROMOTION_BRANCH_PREFIX = 'promotion';
+// promotion/<source major branch>/<target major branch>/<YYYY-MM-DD>-<counter>
+export const PROMOTION_BRANCH_NAME_EXAMPLE = 'promotion/uat/preprod/2026-09-06-1';
 
 export interface PromotionBranchConfig {
   enabled: boolean;
-  prefix: string;
+}
+
+export interface PromotionBranchNameParts {
+  sourceBranch: string;
+  targetBranch: string;
+  date: string;
+  counter: number;
 }
 
 /**
@@ -51,23 +59,58 @@ const CUSTOM_BEHAVIOR_KEYWORDS: Record<keyof CommonPullRequestInfo['customBehavi
 };
 
 export function getPromotionBranchConfig(config: any): PromotionBranchConfig {
-  const rawPrefix = String(config?.promotionBranchPrefix ?? DEFAULT_PROMOTION_BRANCH_PREFIX).trim();
-  // The slash is implied by the convention: "promotion/" and "promotion" both mean promotion/<name>
-  const prefix = rawPrefix.replace(/\/+$/, '') || DEFAULT_PROMOTION_BRANCH_PREFIX;
   return {
     enabled: config?.enablePromotionBranches === true,
-    prefix,
   };
 }
 
 /**
- * Matches the <prefix>/<name> convention only, like isRetrofit(): a branch named
- * promotion-notes or promotional/banner is not a promotion branch.
+ * Split a promotion branch name into its parts. The convention is not configurable:
+ * promotion/<source major branch>/<target major branch>/<YYYY-MM-DD>-<counter>, so the name
+ * alone says where the stories come from and where they go, and two promotions assembled the
+ * same day do not collide. Returns null for anything else, including a bare "promotion/xxx".
  */
-export function isPromotionBranchName(branchName: string, prefix: string = DEFAULT_PROMOTION_BRANCH_PREFIX): boolean {
-  const name = (branchName || '').toLowerCase();
-  const normalizedPrefix = (prefix || DEFAULT_PROMOTION_BRANCH_PREFIX).toLowerCase();
-  return name.startsWith(normalizedPrefix + '/') && name.length > normalizedPrefix.length + 1;
+export function parsePromotionBranchName(branchName: string): PromotionBranchNameParts | null {
+  const segments = (branchName || '').trim().split('/');
+  if (segments.length !== 4 || segments[0].toLowerCase() !== PROMOTION_BRANCH_PREFIX) {
+    return null;
+  }
+  const [, sourceBranch, targetBranch, suffix] = segments;
+  const suffixMatch = suffix.match(/^(\d{4}-\d{2}-\d{2})-(\d+)$/);
+  if (!sourceBranch || !targetBranch || !suffixMatch) {
+    return null;
+  }
+  return {
+    sourceBranch,
+    targetBranch,
+    date: suffixMatch[1],
+    counter: parseInt(suffixMatch[2], 10),
+  };
+}
+
+/**
+ * True for a branch following the promotion/<source>/<target>/<YYYY-MM-DD>-<counter> convention.
+ */
+export function isPromotionBranchName(branchName: string): boolean {
+  return parsePromotionBranchName(branchName) !== null;
+}
+
+/**
+ * True for a branch that starts with promotion/ but does not follow the convention: named
+ * like a promotion branch by hand, it is treated as an ordinary feature branch with a warning.
+ */
+export function hasPromotionPrefixOnly(branchName: string): boolean {
+  const name = (branchName || '').trim().toLowerCase();
+  return name.startsWith(PROMOTION_BRANCH_PREFIX + '/') && !isPromotionBranchName(branchName);
+}
+
+/**
+ * Build a promotion branch name, with today's date unless given. The counter separates the
+ * promotions assembled the same day between the same branches (1, 2, 3...).
+ */
+export function buildPromotionBranchName(sourceBranch: string, targetBranch: string, counter: number, date: Date = new Date()): string {
+  const day = date.toISOString().substring(0, 10);
+  return `${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/${day}-${Math.max(1, Math.floor(counter))}`;
 }
 
 /**
@@ -135,12 +178,12 @@ export function classifyPromotionPullRequest(
   if (!config.enabled || !pr) {
     return 'none';
   }
-  const hasPrefix = isPromotionBranchName(pr.sourceBranch, config.prefix);
+  const hasValidName = isPromotionBranchName(pr.sourceBranch);
   const declaredIds = parsePromotionPullRequestIds(pr.description);
-  if (hasPrefix && declaredIds !== null) {
+  if (hasValidName && declaredIds !== null) {
     return 'promotion';
   }
-  if (hasPrefix) {
+  if (hasValidName || hasPromotionPrefixOnly(pr.sourceBranch)) {
     return 'prefix-without-key';
   }
   if (declaredIds !== null) {
@@ -165,16 +208,25 @@ export function warnAboutPromotionPullRequestMisuse(pr: CommonPullRequestInfo | 
     return;
   }
   if (!config.enabled) {
-    if (isPromotionBranchName(pr.sourceBranch, config.prefix) || parsePromotionPullRequestIds(pr.description) !== null) {
+    if (hasPromotionPrefixOnly(pr.sourceBranch) || isPromotionBranchName(pr.sourceBranch) || parsePromotionPullRequestIds(pr.description) !== null) {
       uxLog('log', null, c.grey('[PromotionBranch] ' + t('promotionBranchFeatureDisabled', { pr: pr.idStr })));
     }
     return;
   }
   const kind = classifyPromotionPullRequest(pr, config);
-  if (kind === 'prefix-without-key') {
+  if (kind === 'prefix-without-key' && hasPromotionPrefixOnly(pr.sourceBranch)) {
+    // Named by hand without the convention: the declared list, if any, is ignored too
+    uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionBranchNameInvalid', { branch: pr.sourceBranch, example: PROMOTION_BRANCH_NAME_EXAMPLE })));
+  } else if (kind === 'prefix-without-key') {
     uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionBranchWithoutDeclaredScope', { branch: pr.sourceBranch, key: PROMOTION_PULL_REQUESTS_KEY })));
   } else if (kind === 'key-without-prefix') {
-    uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionKeyOnNonPromotionBranch', { branch: pr.sourceBranch, key: PROMOTION_PULL_REQUESTS_KEY, prefix: config.prefix })));
+    uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionKeyOnNonPromotionBranch', { branch: pr.sourceBranch, key: PROMOTION_PULL_REQUESTS_KEY, example: PROMOTION_BRANCH_NAME_EXAMPLE })));
+  } else if (kind === 'promotion') {
+    // The name announces the target: say so when the Pull Request goes somewhere else
+    const parts = parsePromotionBranchName(pr.sourceBranch)!;
+    if (pr.targetBranch && parts.targetBranch.toLowerCase() !== pr.targetBranch.toLowerCase()) {
+      uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionBranchTargetMismatch', { branch: pr.sourceBranch, expected: parts.targetBranch, actual: pr.targetBranch })));
+    }
   }
 }
 

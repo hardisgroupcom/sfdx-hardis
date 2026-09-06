@@ -1921,7 +1921,7 @@
     },
     "enablePromotionBranches": {
       "$id": "#/properties/enablePromotionBranches",
-      "description": "Enable promotion branches: a branch named <promotionBranchPrefix>/<name> (default promotion/) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.",
+      "description": "Enable promotion branches: a branch named promotion/<source branch>/<target branch>/<YYYY-MM-DD>-<counter> (ex: promotion/uat/preprod/2026-09-06-1) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.",
       "default": false,
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/",
       "examples": [
@@ -1930,18 +1930,6 @@
       ],
       "title": "Enable promotion branches",
       "type": "boolean"
-    },
-    "promotionBranchPrefix": {
-      "$id": "#/properties/promotionBranchPrefix",
-      "description": "Prefix of the promotion branches (promotion by default, for branches named promotion/<name>). Only used when enablePromotionBranches is true.",
-      "default": "promotion",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/",
-      "examples": [
-        "promotion",
-        "release"
-      ],
-      "title": "Promotion branch prefix",
-      "type": "string"
     },
     "enableDeploymentApexTestClasses": {
       "$id": "#/properties/enableDeploymentApexTestClasses",

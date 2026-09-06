@@ -8041,7 +8041,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
             />
         </svg>
     <a href="#enablePromotionBranches" onclick="anchorLink('enablePromotionBranches')">enablePromotionBranches</a></div><h4>Enable promotion branches</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
-<span class="description"><p>Enable promotion branches: a branch named &lt;promotionBranchPrefix&gt;/&lt;name&gt; (default promotion/) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.</p>
+<span class="description"><p>Enable promotion branches: a branch named promotion/&lt;source branch>/&lt;target branch>/&lt;YYYY-MM-DD&gt;-&lt;counter&gt; (ex: promotion/uat/preprod/2026-09-06-1) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.</p>
 </span>
         
 
@@ -8053,46 +8053,6 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
 <br/><div id="enablePromotionBranches_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">true</span>
 </pre></div>
 </div><div id="enablePromotionBranches_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">false</span>
-</pre></div>
-</div>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="accordion" id="accordionpromotionBranchPrefix">
-    <div class="card">
-        <div class="card-header" id="headingpromotionBranchPrefix">
-            <h2 class="mb-0">
-                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#promotionBranchPrefix"
-                        aria-expanded="" aria-controls="promotionBranchPrefix" onclick="setAnchor('#promotionBranchPrefix')"><span class="property-name">promotionBranchPrefix</span></button>
-            </h2>
-        </div>
-
-        <div id="promotionBranchPrefix"
-             class="collapse property-definition-div" aria-labelledby="headingpromotionBranchPrefix"
-             data-parent="#accordionpromotionBranchPrefix">
-            <div class="card-body pl-5">
-
-    <div class="breadcrumbs">root
-        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-            <path
-                fill-rule="evenodd"
-                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
-            />
-        </svg>
-    <a href="#promotionBranchPrefix" onclick="anchorLink('promotionBranchPrefix')">promotionBranchPrefix</a></div><h4>Promotion branch prefix</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: "promotion"</span><br/>
-<span class="description"><p>Prefix of the promotion branches (promotion by default, for branches named promotion/&lt;name&gt;). Only used when enablePromotionBranches is true.</p>
-</span>
-        
-
-        
-        
-
-        <br/>
-<div class="badge badge-secondary">Examples:</div>
-<br/><div id="promotionBranchPrefix_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;promotion&quot;</span>
-</pre></div>
-</div><div id="promotionBranchPrefix_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;release&quot;</span>
 </pre></div>
 </div>
             </div>

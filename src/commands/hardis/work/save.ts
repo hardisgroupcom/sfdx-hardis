@@ -231,7 +231,7 @@ The command's technical implementation involves a series of orchestrated steps:
     // A promotion branch is assembled by cherry-picking merged User Stories: the cleaning and
     // manifest updates of work:save are not meant for it. Warn, do not refuse.
     const promotionConfig = getPromotionBranchConfig(await getConfig('branch'));
-    if (promotionConfig.enabled && isPromotionBranchName(this.currentBranch, promotionConfig.prefix)) {
+    if (promotionConfig.enabled && isPromotionBranchName(this.currentBranch)) {
       uxLog("warning", this, c.yellow(t('workSaveOnPromotionBranch', { branch: this.currentBranch })));
     }
     if (this.targetBranch == null) {
