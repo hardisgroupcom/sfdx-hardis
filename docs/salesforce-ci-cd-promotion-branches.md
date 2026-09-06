@@ -79,39 +79,38 @@ ___
 
 ## Assemble a promotion branch
 
-1. Make sure the stories are merged into `uat` and validated there.
-2. Create the branch from the **target** branch, not from `uat`:
+Promotion branches are **always created with the command** [`sf hardis:project:promotion:create`](hardis/project/promotion/create.md), from the VS Code SFDX Hardis extension (**Create promotion** button of a major branch in the DevOps Pipeline) or from a terminal. Do not assemble them by hand: the command is what guarantees the naming, the cherry-pick options and the Pull Request declaration the deployment jobs rely on.
+
+1. Make sure the stories are merged into `uat` and validated there, and that your local repository has no uncommitted change.
+2. Run the command:
 
     ```bash
-    git fetch origin
-    git checkout -b promotion/uat/preprod/2026-09-06-1 origin/preprod
+    sf hardis:project:promotion:create --source-branch uat
     ```
 
-3. Cherry-pick the **merge commit** of each approved story, oldest first, keeping the origin in the message:
+    It lists the Pull Requests merged into `uat` and not yet promoted to `preprod`, and asks which ones to carry. The target branch is the merge target of `uat` (`preprod`), unless you pass `--target-branch`.
 
-    ```bash
-    git cherry-pick -m 1 -x <merge commit of PR 482>
-    git cherry-pick -m 1 -x <merge commit of PR 487>
-    git cherry-pick -m 1 -x <merge commit of PR 491>
-    ```
+3. The command then:
 
-    On a repository using squash merges, cherry-pick the squash commit of each story instead (no `-m 1`).
+    - creates `promotion/uat/preprod/<today>-<counter>` from `origin/preprod`;
+    - cherry-picks the merge commit of each selected story, oldest first, with `-x` so each commit keeps a pointer to its origin (`-m 1` on merge commits, plain on squash commits);
+    - pushes the branch and **creates the Pull Request** to `preprod`, with a description that declares the carried Pull Requests (`promotionPullRequests`), lists their titles, authors, source branches and tickets.
 
-    If a cherry-pick conflicts, the story depends on another one that is not approved yet: solve the conflict knowingly, or leave the story out. The [sf-git-merge-driver](https://github.com/jayree/sf-git-merge-driver) plugin solves many XML conflicts by itself.
+4. If a cherry-pick conflicts, the story depends on another one that is not part of the promotion. The command asks what to do (or takes it from `--on-conflict`):
+    - **skip**: leave that story out, it is listed as such in the Pull Request description;
+    - **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description warns about it and lists the files to fix; the validation job fails until they are fixed;
+    - **abort**: stop, the branch is deleted and nothing is pushed.
 
-4. Push the branch and create the Pull Request to `preprod`. In its description, declare the stories and list their tickets:
+    The [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) plugin solves many XML conflicts by itself.
+5. Review the Pull Request like any other, and do **not** squash it when merging: the `-x` trailers of the cherry-picks must survive in `preprod`.
 
-    ````markdown
-    Promotion of the approved stories of September.
+Agents and automation call the same command without prompts:
 
-    ```yaml
-    promotionPullRequests: [482, 487, 491]
-    ```
+```bash
+sf hardis:project:promotion:create --agent --source-branch uat --pull-requests 482,487,491
+```
 
-    Tickets: PROJ-1201, PROJ-1207, PROJ-1215
-    ````
-
-5. Do **not** squash the promotion Pull Request when merging it: the `-x` trailers of the cherry-picks must survive in `preprod`.
+The Pull Request is created through the git provider API when a token is configured, or with the `gh` CLI on GitHub. Without either, the branch is pushed and the description is saved under `hardis-report/` so you can create the Pull Request yourself.
 
 The `scripts/actions/.sfdx-hardis.<PR>.yml` files of the stories travel with their commits, so their deployment actions are in the branch too.
 

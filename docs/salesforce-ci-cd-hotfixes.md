@@ -68,7 +68,7 @@ _Note: in this example, the hotfix is merged directly into **preprod**. More adv
 
 ### 3. Retrofit in the BUILD stream
 
-Activate the [sf-git-merge-driver](https://github.com/jayree/sf-git-merge-driver) plugin before the retrofit: it automatically solves many XML conflicts.
+Activate the [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) plugin before the retrofit: it automatically solves many XML conflicts.
 
 ![Activate the merge driver from the VS Code SFDX Hardis extension](assets/images/activate-merge-driver-in-sfdx-hardis.gif)
 
