@@ -88,7 +88,12 @@ async function fetchDeclaredPullRequests(gitProvider: any, promotionPr: CommonPu
   for (const id of declaredIds) {
     fetched.set(id, await gitProvider.getPullRequestById(id));
   }
-  return filterDeclaredPullRequests(declaredIds, fetched, promotionPr);
+  const declared = filterDeclaredPullRequests(declaredIds, fetched, promotionPr);
+  // A promotion assembled from a branch that itself received a promotion (ex: preprod -> main
+  // carrying the uat -> preprod promotion) declares that promotion Pull Request: bring its own
+  // stories in, otherwise their actions and test classes would be lost on the way up.
+  const promotionConfig = await getPromotionBranchConfigFromProject();
+  return expandPromotionPullRequests(declared, promotionConfig, (id) => gitProvider.getPullRequestById(id));
 }
 
 /**
