@@ -205,11 +205,13 @@ describe('expandPromotionPullRequests()', () => {
     expect(getCarriedBy(expanded[1])).to.equal(null);
   });
 
-  it('expands one level only', async () => {
+  it('follows a promotion that carries another promotion, down to the User Stories', async () => {
+    // The shape a four level pipeline produces: preprod -> main carries the uat -> preprod
+    // promotion, whose own declaration holds the stories
     const nestedPromotion = pr({ idNumber: 950, sourceBranch: 'promotion/uat/preprod/2026-09-05-1', description: '```yaml\npromotionPullRequests: [487]\n```' });
     const window = [pr({ idNumber: 900, sourceBranch: PROMOTION_BRANCH, description: '```yaml\npromotionPullRequests: [950]\n```' })];
     const expanded = await expandPromotionPullRequests(window, ENABLED, async (id) => (id === 950 ? nestedPromotion : stories.get(id) || null));
-    expect(expanded.map((entry) => entry.idNumber)).to.deep.equal([900, 950]);
+    expect(expanded.map((entry) => entry.idNumber)).to.deep.equal([900, 950, 487]);
   });
 
   it('returns the window untouched when the feature is disabled', async () => {
@@ -256,6 +258,27 @@ describe('mergeInheritedCustomBehaviors()', () => {
     );
     expect(markdown).to.contain('`PURGE_FLOW_VERSIONS` inherited from [#482](https://git.example.com/pr/482), #999');
     expect(buildInheritedBehaviorsMarkdown([], stories)).to.equal('');
+  });
+});
+
+describe('expandPromotionPullRequests() with nested promotions', () => {
+  it('follows a promotion that carries another promotion down to the User Stories', async () => {
+    // The shape a four level pipeline produces: preprod -> main carries the uat -> preprod
+    // promotion, which carries the stories
+    const inner = pr({ idNumber: 900, sourceBranch: PROMOTION_BRANCH, targetBranch: 'preprod', description: DECLARATION });
+    const outer = pr({
+      idNumber: 901,
+      sourceBranch: 'promotion/preprod/main/2026-09-10-1',
+      targetBranch: 'main',
+      description: '```yaml\npromotionPullRequests: [900]\n```',
+    });
+    const byId: Record<number, CommonPullRequestInfo> = {
+      900: inner,
+      482: pr({ idNumber: 482 }),
+      487: pr({ idNumber: 487 }),
+    };
+    const expanded = await expandPromotionPullRequests([outer], ENABLED, async (id) => byId[id] || null);
+    expect(expanded.map((entry) => entry.idNumber)).to.deep.equal([901, 900, 482, 487]);
   });
 });
 

@@ -2727,6 +2727,7 @@
   "promotionBranchWithoutDeclaredScope": "Branch {{branch}} heeft de naam van een promotion branch, maar de beschrijving van zijn Pull Request declareert geen {{key}}: hij wordt behandeld als een gewone feature branch",
   "promotionConflictMarkersFound": "Promotion branch {{branch}} bevat nog git-conflictmarkeringen in {{count}} bestand(en): {{files}}. Los ze op in de branch (handmatig of met de door hardis:project:promotion:create opgeslagen prompt voor een coding agent), commit en push voordat deze Pull Request kan worden geïmplementeerd",
   "promotionCreateAborted": "Promotion gestopt: de promotion branch is verwijderd en er is niets gepusht",
+  "promotionCreateAddedReportsToGitIgnore": "\"{{entry}}\" toegevoegd aan {{file}}: sfdx-hardis schrijft zijn rapporten in de repository en het samenstellen van een promotion branch vereist een schone git-tree. Commit die regel bij je volgende wijziging",
   "promotionCreateAgentRequiresPullRequests": "--pull-requests is verplicht in agentmodus. Pull Requests die op promotion wachten: {{available}}",
   "promotionCreateAgentRequiresSourceBranch": "--source-branch is verplicht in agentmodus. Promoteerbare branches: {{branches}}",
   "promotionCreateAllAlreadyInTarget": "Alle geselecteerde User Stories ({{prList}}) zitten al in {{target}}: er valt niets te promoten en er is geen branch gemaakt",

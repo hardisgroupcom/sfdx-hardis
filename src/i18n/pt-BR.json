@@ -2689,6 +2689,7 @@
   "promotionBranchWithoutDeclaredScope": "A branch {{branch}} tem nome de promotion branch, mas a descrição da sua Pull Request não declara {{key}}: ela é tratada como uma feature branch comum",
   "promotionConflictMarkersFound": "O branch de promoção {{branch}} ainda contém marcadores de conflito do git em {{count}} arquivo(s): {{files}}. Resolva-os no branch (manualmente ou com o prompt para agente de código salvo por hardis:project:promotion:create), faça commit e push antes que este Pull Request possa ser implantado",
   "promotionCreateAborted": "Promoção interrompida: a promotion branch foi excluída e nada foi enviado",
+  "promotionCreateAddedReportsToGitIgnore": "\"{{entry}}\" foi adicionado a {{file}}: o sfdx-hardis grava seus relatórios dentro do repositório, e montar um branch de promoção exige uma árvore git limpa. Faça commit dessa linha com sua próxima alteração",
   "promotionCreateAgentRequiresPullRequests": "--pull-requests é obrigatório no modo agente. Pull Requests aguardando promoção: {{available}}",
   "promotionCreateAgentRequiresSourceBranch": "--source-branch é obrigatório no modo agente. Branches promovíveis: {{branches}}",
   "promotionCreateAllAlreadyInTarget": "Todas as User Stories selecionadas ({{prList}}) já estão em {{target}}: não há nada para promover e nenhum branch foi criado",

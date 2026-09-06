@@ -11,6 +11,7 @@ import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { TicketProvider } from '../ticketProvider/index.js';
 import { which } from './whichUtils.js';
 import { generateReportPath } from './filesUtils.js';
+import { getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import {
   buildPromotionBranchName,
@@ -46,6 +47,33 @@ async function runCommandSafe(
   } catch (e: any) {
     return { status: typeof e?.code === 'number' ? e.code : 1, stdout: e?.stdout || '', stderr: e?.stderr || e?.message || '' };
   }
+}
+
+/**
+ * Assembling a promotion checks out a branch and cherry-picks, which needs a clean tree. But
+ * sfdx-hardis writes its own reports inside the repository (hardis-report/), and this very
+ * command writes the candidates report before the cherry-picks: on a project that did not add
+ * that folder to its .gitignore, those files are not changes the user has to commit, and
+ * refusing to run because of them would make the command unusable. Everything else still stops
+ * the command, with the same message checkGitClean uses.
+ */
+export async function checkGitCleanForPromotion(commandThis: any): Promise<void> {
+  const status = await git({ output: true }).status();
+  const reportDirectory = path.basename(await getReportDirectory()).replace(/\\/g, '/');
+  const userChanges = (status.files || []).filter((fileStatus) => {
+    const filePath = fileStatus.path.replace(/\\/g, '/');
+    return !filePath.startsWith(`${reportDirectory}/`) && filePath !== reportDirectory;
+  });
+  if (userChanges.length === 0) {
+    return;
+  }
+  const localUpdates = userChanges.map((fileStatus) => `(${fileStatus.working_dir}) ${fileStatus.path}`).join('\n');
+  const warningMessage = t('branchIsNotCleanCommitOrResetLocalUpdates', {
+    branch: c.bold(status.current || ''),
+    localUpdates: c.yellow(localUpdates),
+  });
+  uxLog('warning', commandThis, c.yellow(warningMessage));
+  throw new SfError(`[sfdx-hardis] ${warningMessage}`);
 }
 
 export interface PromotionCandidate {

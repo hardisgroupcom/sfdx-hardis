@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { checkGitClean, getCurrentGitBranch, isCI, uxLog } from '../../../../common/utils/index.js';
+import { getCurrentGitBranch, isCI, uxLog } from '../../../../common/utils/index.js';
 import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { t } from '../../../../common/utils/i18n.js';
@@ -12,6 +12,7 @@ import {
   abortPromotion,
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
+  checkGitCleanForPromotion,
   cherryPickCandidates,
   collectStoryTicketIds,
   createPromotionBranch,
@@ -147,7 +148,9 @@ In agent mode:
       throw new SfError(t('promotionCreateFeatureDisabled', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/` }));
     }
 
-    await checkGitClean({ allowStash: false });
+    // Not checkGitClean: the reports sfdx-hardis writes inside the repository are not changes the
+    // user has to commit, and this command writes one of them itself before the cherry-picks
+    await checkGitCleanForPromotion(this);
     const previousBranch = (await getCurrentGitBranch()) || '';
 
     const { sourceBranch, targetBranch } = await resolvePromotionSourceAndTarget(

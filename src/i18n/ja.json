@@ -2725,6 +2725,7 @@
   "promotionBranchWithoutDeclaredScope": "ブランチ {{branch}} はプロモーションブランチの命名規則に一致しますが、Pull Request の説明に {{key}} が宣言されていないため、通常の feature branch として扱います",
   "promotionConflictMarkersFound": "プロモーションブランチ {{branch}} には、まだ {{count}} 個のファイルに git の競合マーカーが残っています: {{files}}。この Pull Request をデプロイする前に、ブランチ上で解決し (手動または hardis:project:promotion:create が保存したコーディングエージェント用プロンプトを使用)、commit して push してください",
   "promotionCreateAborted": "プロモーションを中止しました: プロモーションブランチは削除され、何も push されていません",
+  "promotionCreateAddedReportsToGitIgnore": "{{file}} に \"{{entry}}\" を追加しました: sfdx-hardis はレポートをリポジトリ内に書き込みますが、プロモーションブランチの作成にはクリーンな git ツリーが必要です。次の変更と一緒にこの行をコミットしてください",
   "promotionCreateAgentRequiresPullRequests": "エージェントモードでは --pull-requests が必須です。プロモーション待ちの Pull Request: {{available}}",
   "promotionCreateAgentRequiresSourceBranch": "エージェントモードでは --source-branch が必須です。プロモーション可能なブランチ: {{branches}}",
   "promotionCreateAllAlreadyInTarget": "選択されたすべての User Story ({{prList}}) はすでに {{target}} にあります: プロモーションするものはなく、ブランチも作成されていません",

@@ -310,11 +310,14 @@ export function getCarriedBy(pr: CommonPullRequestInfo): { idStr: string; idNumb
 }
 
 /**
- * One-level expansion of a promotion window: every promotion Pull Request found in it brings the
- * stories it declares, so a later `preprod -> main` merge replays their actions and test classes
- * in production even though their cherry-picked commits never matched by SHA.
- * Deliberately one level only: a promotion branch built from another promotion branch is not a
- * supported layout, and recursion would make the scope depend on the whole history.
+ * Expansion of a promotion window: every promotion Pull Request found in it brings the stories it
+ * declares, so a later `preprod -> main` merge replays their actions and test classes in production
+ * even though their cherry-picked commits never matched by SHA.
+ *
+ * The expansion follows the promotions it finds on the way: a `preprod -> main` promotion declares
+ * the `uat -> preprod` promotion it carried, whose own declaration holds the User Stories. That is
+ * the normal shape of a four level pipeline, and `known` makes it terminate: a Pull Request is
+ * expanded once, whatever the number of levels above it.
  */
 export async function expandPromotionPullRequests(
   pullRequests: CommonPullRequestInfo[],
@@ -326,7 +329,9 @@ export async function expandPromotionPullRequests(
   }
   const result: CommonPullRequestInfo[] = [...pullRequests];
   const known = new Set(pullRequests.map((pr) => pr.idNumber));
-  for (const pr of pullRequests) {
+  // Iterate over `result`, which grows as declared Pull Requests are added
+  for (let index = 0; index < result.length; index++) {
+    const pr = result[index];
     if (!isPromotionPullRequest(pr, config)) {
       continue;
     }
