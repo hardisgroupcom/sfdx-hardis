@@ -8,10 +8,12 @@ import {
   buildAlreadyPromotedMarkdown,
   buildInheritedBehaviorsMarkdown,
   buildPromotionBranchName,
+  buildPromotionIndex,
   classifyPromotionPullRequest,
   expandPromotionPullRequests,
   filterDeclaredPullRequests,
   findPromotionsCarrying,
+  findPromotionsCarryingIndexed,
   getCarriedBy,
   getPromotionBranchConfig,
   hasPromotionPrefixOnly,
@@ -243,6 +245,14 @@ describe('findPromotionsCarrying() / buildAlreadyPromotedMarkdown()', () => {
     expect(findPromotionsCarrying(482, [merged, open, notPromotion], ENABLED).map((entry) => entry.idNumber)).to.deep.equal([900]);
     expect(findPromotionsCarrying(555, [merged], ENABLED)).to.deep.equal([]);
     expect(findPromotionsCarrying(482, [merged], DISABLED)).to.deep.equal([]);
+  });
+
+  it('parses each promotion description once, whatever the number of stories', () => {
+    const index = buildPromotionIndex([merged, open, notPromotion], ENABLED);
+    expect(findPromotionsCarryingIndexed(482, index).map((entry) => entry.idNumber)).to.deep.equal([900]);
+    expect(findPromotionsCarryingIndexed(487, index).map((entry) => entry.idNumber)).to.deep.equal([900]);
+    expect(findPromotionsCarryingIndexed(555, index)).to.deep.equal([]);
+    expect(buildPromotionIndex([merged], DISABLED).size).to.equal(0);
   });
 
   it('renders one line per already promoted story, nothing when there is none', () => {

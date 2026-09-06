@@ -379,15 +379,40 @@ export function findPromotionsCarrying(
   promotionPullRequests: CommonPullRequestInfo[],
   config: PromotionBranchConfig,
 ): CommonPullRequestInfo[] {
+  return findPromotionsCarryingIndexed(storyIdNumber, buildPromotionIndex(promotionPullRequests, config));
+}
+
+/**
+ * The declarations of every merged promotion Pull Request, parsed once. A pipeline with a
+ * thousand Pull Requests would otherwise parse the same YAML blocks once per story.
+ */
+export type PromotionIndex = Map<number, CommonPullRequestInfo[]>;
+
+export function buildPromotionIndex(
+  promotionPullRequests: CommonPullRequestInfo[],
+  config: PromotionBranchConfig,
+): PromotionIndex {
+  const index: PromotionIndex = new Map();
   if (!config.enabled) {
-    return [];
+    return index;
   }
-  return promotionPullRequests.filter((pr) => {
+  for (const pr of promotionPullRequests) {
     if (!isPromotionPullRequest(pr, config) || !pr.mergedDate) {
-      return false;
+      continue;
     }
-    return (parsePromotionPullRequestIds(pr.description) || []).includes(storyIdNumber);
-  });
+    for (const storyIdNumber of parsePromotionPullRequestIds(pr.description) || []) {
+      const carriers = index.get(storyIdNumber) || [];
+      if (!carriers.some((carrier) => carrier.idNumber === pr.idNumber)) {
+        carriers.push(pr);
+      }
+      index.set(storyIdNumber, carriers);
+    }
+  }
+  return index;
+}
+
+export function findPromotionsCarryingIndexed(storyIdNumber: number, index: PromotionIndex): CommonPullRequestInfo[] {
+  return index.get(storyIdNumber) || [];
 }
 
 /**

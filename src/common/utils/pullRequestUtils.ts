@@ -9,9 +9,10 @@ import { SfError } from "@salesforce/core";
 import { t } from "./i18n.js";
 import { getConfig } from "../../config/index.js";
 import {
+  buildPromotionIndex,
   expandPromotionPullRequests,
   filterDeclaredPullRequests,
-  findPromotionsCarrying,
+  findPromotionsCarryingIndexed,
   getPromotionBranchConfig,
   InheritedCustomBehavior,
   isPromotionPullRequest,
@@ -152,8 +153,10 @@ async function completeWindowWithPromotions(
     promotionConfig,
     oldestPullRequestDate(expanded),
   );
+  // One pass over the promotion descriptions, then a Map read per story
+  const promotionIndex = buildPromotionIndex(downstreamPromotions, promotionConfig);
   _alreadyPromoted = expanded
-    .map((story) => ({ story, promotions: findPromotionsCarrying(story.idNumber, downstreamPromotions, promotionConfig) }))
+    .map((story) => ({ story, promotions: findPromotionsCarryingIndexed(story.idNumber, promotionIndex) }))
     .filter((entry) => entry.promotions.length > 0);
   for (const entry of _alreadyPromoted) {
     uxLog("log", null, c.grey(`[PromotionBranch] ${t('promotionStoryAlreadyPromoted', {

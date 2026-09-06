@@ -16,7 +16,13 @@ import {
 } from "./deploymentActionsStateUtils.js";
 import { readActions } from "./actionUtils.js";
 import { isDeploymentActionsDisabled } from "./prePostCommandUtils.js";
-import { expandPromotionPullRequests, getPromotionBranchConfig } from "./promotionBranchUtils.js";
+import {
+  expandPromotionPullRequests,
+  getPromotionBranchConfig,
+  isPromotionPullRequest,
+  parsePromotionPullRequestIds,
+  PromotionBranchConfig,
+} from "./promotionBranchUtils.js";
 import { getConfig } from "../../config/index.js";
 import { ActionWhen } from "../actionsProvider/actionsProvider.js";
 import { AiProvider } from "../aiProvider/index.js";
@@ -579,8 +585,34 @@ export async function collectPullRequests(
   // cherry-picked commits never match by SHA, list the stories it declares as well
   const promotionConfig = getPromotionBranchConfig(await getConfig("branch"));
   pullRequests = await expandPromotionPullRequests(pullRequests, promotionConfig, (id) => gitProvider.getPullRequestById(id));
+  pullRequests = dropResolvedPromotionPullRequests(pullRequests, promotionConfig);
 
   return pullRequests;
+}
+
+/**
+ * A promotion Pull Request is plumbing: what the release delivers are the User Stories it
+ * carries, which the expansion above just added. Listing it as well would put the same work in
+ * the notes twice, attach the stories' tickets to it, and inflate the Pull Request and
+ * contributor counts. It is only kept when none of the Pull Requests it declares could be
+ * resolved, so the release notes never end up hiding a change.
+ */
+export function dropResolvedPromotionPullRequests(
+  pullRequests: CommonPullRequestInfo[],
+  config: PromotionBranchConfig,
+): CommonPullRequestInfo[] {
+  if (!config.enabled) {
+    return pullRequests;
+  }
+  const present = new Set(pullRequests.map((pr) => pr.idNumber));
+  return pullRequests.filter((pr) => {
+    if (!isPromotionPullRequest(pr, config)) {
+      return true;
+    }
+    const declared = parsePromotionPullRequestIds(pr.description) || [];
+    const resolved = declared.filter((id) => id !== pr.idNumber && present.has(id));
+    return resolved.length === 0;
+  });
 }
 
 function recursiveGetChildBranches(
