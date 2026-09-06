@@ -77,6 +77,12 @@ Break one of these and the feature is wrong, whatever the tests say.
    cherry-picking cannot leave a pipeline step with no promotion open.
 9. **Not knowing is not a reason to act.** When the git provider cannot list the open Pull
    Requests, nothing is closed and the command says so.
+10. **A vehicle is never carried.** The candidate list of `promotion:create` associates a commit
+    with the Pull Requests of the commits it brought in, and a sync merge from a major branch
+    matches that major branch's own Pull Request. `dropVehiclePullRequests` removes them (and their
+    deployment actions) before anything is offered, declared or cherry-picked.
+11. **A branch merged twice is listed once.** `shouldAddVirtualPullRequest` refuses the number-less
+    entry when a real Pull Request of the same branch is already in the group.
 
 ## sfdx-hardis (CLI)
 

@@ -295,7 +295,9 @@ In agent mode:
     uxLog('success', this, c.green(t('promotionCreateDone', {
       branch: c.bold(branchName),
       count: stories.length,
-      prList: stories.filter((story) => story.number > 0).map((story) => `#${story.number}`).join(', ') || '-',
+      // A commit merged without a Pull Request has no number: name it by its hash rather than
+      // dropping it, so the count and the list always agree
+      prList: stories.map((story) => (story.number > 0 ? `#${story.number}` : `[${story.commitHash.substring(0, 7)}]`)).join(', ') || '-',
     })));
     let conflictPromptFile: string | null = null;
     if (conflicted.length > 0) {

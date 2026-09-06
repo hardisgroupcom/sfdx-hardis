@@ -289,7 +289,9 @@ export async function listPromotionCandidates(
     await execCommand(`git merge-base origin/${targetBranch} origin/${sourceBranch}`, commandThis, { fail: true, output: false })
   ).stdout.trim();
   const groups = await listMergedPrsWithCommits(`origin/${sourceBranch}`, sourceBranch, mergeBase, commandThis);
-  const candidates = groups
+  const majorOrgs = await listMajorOrgs();
+  const majorBranchNames = (majorOrgs || []).map((org: any) => org.branchName).filter((branch: string) => branch);
+  const candidates = dropVehiclePullRequests(groups, majorBranchNames)
     .filter((group) => group.commit.hash !== mergeBase)
     .map((group) => toCandidate(group));
   // A promotion carries cherry-picked commits: merging it into the target branch does not move
@@ -384,6 +386,42 @@ export function markAlreadyPromotedCandidates(
     }
   }
   return candidates;
+}
+
+/**
+ * A commit is associated with a Pull Request by walking the commits it brought in, and a merge
+ * commit from a major branch (a back-merge, a sync, the previous major-to-major merge) matches the
+ * Pull Request of that major branch. Such a Pull Request moves other work, it is not work of its
+ * own: listing it as carried would declare it in the promotion, run its deployment actions and
+ * show it in the Pull Request body as a User Story. Promotion Pull Requests are dropped for the
+ * same reason.
+ *
+ * Same rule as the DevOps Pipeline lists and the release notes: only what carries its own change
+ * is a User Story, whatever its branch is named (feature, fix, retrofit, hotfix...).
+ */
+export function dropVehiclePullRequests(
+  groups: BackpromotePrGroup[],
+  majorBranchNames: string[]
+): BackpromotePrGroup[] {
+  const majorBranches = new Set((majorBranchNames || []).map((branch) => (branch || '').toLowerCase()));
+  return groups.map((group) => {
+    const kept = (group.associatedPrs || []).filter((pr) => {
+      const prSourceBranch = (pr.sourceBranch || '').toLowerCase();
+      if (prSourceBranch === '') {
+        return true;
+      }
+      return !majorBranches.has(prSourceBranch) && parsePromotionBranchName(prSourceBranch) === null;
+    });
+    if (kept.length === group.associatedPrs.length) {
+      return group;
+    }
+    const keptIds = new Set(kept.map((pr) => pr.id));
+    return {
+      ...group,
+      associatedPrs: kept,
+      prConfigs: (group.prConfigs || []).filter((prConfig) => keptIds.has(prConfig.prId)),
+    };
+  });
 }
 
 export function toCandidate(group: BackpromotePrGroup): PromotionCandidate {

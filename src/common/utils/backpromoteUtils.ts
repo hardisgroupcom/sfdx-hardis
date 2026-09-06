@@ -129,6 +129,24 @@ export async function resolveParentBranch(
 
 // ---- List first-parent commits with associated PRs ----
 
+/**
+ * A merge commit that resolves to no Pull Request number is represented by a "virtual" Pull
+ * Request built from its source branch, so the work still shows up. It must be added at most once
+ * per group, and never when a real Pull Request of that same branch is already in the group: a
+ * branch merged twice (a re-merge, a fix pushed after the first merge) would otherwise be listed
+ * once with its number and once as an unusable "-" row.
+ */
+export function shouldAddVirtualPullRequest(
+  associatedPrs: Array<{ sourceBranch?: string }>,
+  seenPrIds: Set<number>,
+  sourceBranch: string
+): boolean {
+  if (!sourceBranch || seenPrIds.has(0)) {
+    return false;
+  }
+  return !associatedPrs.some((pr) => (pr.sourceBranch || '').toLowerCase() === sourceBranch.toLowerCase());
+}
+
 export async function listMergedPrsWithCommits(
   parentBranch: string,
   currentBranch: string,
@@ -238,10 +256,11 @@ export async function listMergedPrsWithCommits(
         });
         const prConfig = await loadPrConfig(prNum);
         if (prConfig) prConfigs.push({ config: prConfig, prId: prNum, prTitle });
-      } else if (sourceBranch && !seenPrIds.has(0)) {
+      } else if (sourceBranch && shouldAddVirtualPullRequest(associatedPrs, seenPrIds, sourceBranch)) {
         // Virtual PR from source branch name
         const titleMatch = childCommit.message.match(/^(.+?)\s*Merge branch/);
         const title = titleMatch ? titleMatch[1].trim() : sourceBranch;
+        seenPrIds.add(0);
         associatedPrs.push({
           id: 0,
           title: title || sourceBranch,

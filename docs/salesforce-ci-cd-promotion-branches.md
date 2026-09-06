@@ -109,6 +109,8 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
 
     A story whose change is already in the target branch (brought by a hotfix, a retrofit or an earlier promotion) has nothing to cherry-pick: it is left out and listed apart in the Pull Request description, without asking anything.
 
+    Only the Pull Requests that carry their own change are listed. A merge between two major branches, and a promotion Pull Request, move other work: they are never offered as candidates, never declared and never have their deployment actions run, even when they appear in the history of a selected commit (a sync of `integration` into a feature branch, for instance).
+
     Promotion branch names have exactly four segments, so the source and target branch names must not contain a `/`. The command stops before touching git if one of them does.
 5. Review the Pull Request like any other, and do **not** squash it when merging: the `-x` trailers of the cherry-picks must survive in `preprod`.
 

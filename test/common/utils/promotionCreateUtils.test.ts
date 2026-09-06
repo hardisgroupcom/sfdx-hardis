@@ -2,13 +2,14 @@
 import { expect } from 'chai';
 // Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
 import '../../../src/common/gitProvider/index.js';
-import type { BackpromotePrGroup } from '../../../src/common/utils/backpromoteUtils.js';
+import { shouldAddVirtualPullRequest, type BackpromotePrGroup } from '../../../src/common/utils/backpromoteUtils.js';
 import {
   buildConflictResolutionPrompt,
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
   computePromotionCounter,
   declaredPullRequestNumbers,
+  dropVehiclePullRequests,
   filterOpenPromotionPullRequests,
   gitPathSpec,
   listUnrequestedPullRequestNumbers,
@@ -337,5 +338,91 @@ describe('a single promotion in flight between two branches', () => {
 
   it('nothing open means nothing to close', () => {
     expect(filterOpenPromotionPullRequests([], 'uat', 'preprod')).to.deep.equal([]);
+  });
+});
+
+
+describe('dropVehiclePullRequests()', () => {
+  const MAJOR = ['integration', 'uat', 'preprod', 'main'];
+
+  function groupWith(hash: string, prs: Array<{ id: number; title: string; sourceBranch: string }>): BackpromotePrGroup {
+    return {
+      commit: { hash, message: 'Merge pull request', author: 'dev', date: '2026-09-06T18:00:00Z' },
+      associatedPrs: prs.map((pr) => ({ ...pr, author: 'dev', webUrl: `https://git.example.com/pr/${pr.id}` })),
+      prConfigs: prs.map((pr) => ({ config: { deploymentApexTestClasses: ['X'] } as any, prId: pr.id, prTitle: pr.title })),
+    };
+  }
+
+  it('a merge of a major branch into another is not a User Story the promotion carries', () => {
+    // Real case: the commit of #454 also matched #235 "MAJOR: deploy integration to uat",
+    // whose source branch is the major branch integration
+    const groups = [
+      groupWith('1111537', [
+        { id: 454, title: 'Resolve PROJ-159', sourceBranch: 'feature/PROJ-159-training-ABE' },
+        { id: 235, title: 'MAJOR: deploy integration to uat', sourceBranch: 'integration' },
+      ]),
+    ];
+    const kept = dropVehiclePullRequests(groups, MAJOR);
+    expect(kept[0].associatedPrs.map((pr) => pr.id)).to.deep.equal([454]);
+    // and its deployment actions must not travel either
+    expect(kept[0].prConfigs.map((prConfig) => prConfig.prId)).to.deep.equal([454]);
+  });
+
+  it('a promotion Pull Request is a vehicle too', () => {
+    const groups = [
+      groupWith('aaa1111', [
+        { id: 480, title: 'Promotion integration to uat', sourceBranch: 'promotion/integration/uat/2026-09-06-1' },
+        { id: 481, title: 'Story', sourceBranch: 'feature/PROJ-1' },
+      ]),
+    ];
+    expect(dropVehiclePullRequests(groups, MAJOR)[0].associatedPrs.map((pr) => pr.id)).to.deep.equal([481]);
+  });
+
+  it('branches that carry their own change are kept, whatever they are named', () => {
+    const groups = [
+      groupWith('bbb2222', [
+        { id: 1, title: 'A', sourceBranch: 'feature/A' },
+        { id: 2, title: 'B', sourceBranch: 'fix/B' },
+        { id: 3, title: 'C', sourceBranch: 'retrofit/from-main' },
+        { id: 4, title: 'D', sourceBranch: 'hotfix/D' },
+      ]),
+    ];
+    expect(dropVehiclePullRequests(groups, MAJOR)[0].associatedPrs.map((pr) => pr.id)).to.deep.equal([1, 2, 3, 4]);
+  });
+
+  it('major branch names are matched whatever their case, and the group object is reused when nothing changes', () => {
+    const groups = [groupWith('ccc3333', [{ id: 5, title: 'E', sourceBranch: 'UAT' }])];
+    expect(dropVehiclePullRequests(groups, MAJOR)[0].associatedPrs).to.have.length(0);
+    const untouched = [groupWith('ddd4444', [{ id: 6, title: 'F', sourceBranch: 'feature/F' }])];
+    expect(dropVehiclePullRequests(untouched, MAJOR)[0]).to.equal(untouched[0]);
+  });
+
+  it('a commit merged without any Pull Request is left alone', () => {
+    const groups = [groupWith('eee5555', [{ id: 0, title: 'direct commit', sourceBranch: '' }])];
+    expect(dropVehiclePullRequests(groups, MAJOR)[0].associatedPrs).to.have.length(1);
+  });
+});
+
+
+describe('shouldAddVirtualPullRequest()', () => {
+  it('a branch merged twice is listed once, not once with its number and once without', () => {
+    // Real case: feature/activate-promotions was merged twice into integration; the first merge
+    // commit resolved to #491, the second resolved to nothing
+    const associatedPrs = [{ sourceBranch: 'feature/activate-promotions' }];
+    expect(shouldAddVirtualPullRequest(associatedPrs, new Set([491]), 'feature/activate-promotions')).to.equal(false);
+  });
+
+  it('a commit with no Pull Request of its own still gets its virtual entry', () => {
+    expect(shouldAddVirtualPullRequest([{ sourceBranch: 'feature/other' }], new Set([491]), 'feature/orphan')).to.equal(true);
+    expect(shouldAddVirtualPullRequest([], new Set(), 'feature/orphan')).to.equal(true);
+  });
+
+  it('at most one virtual entry per group, and none without a source branch', () => {
+    expect(shouldAddVirtualPullRequest([], new Set([0]), 'feature/orphan')).to.equal(false);
+    expect(shouldAddVirtualPullRequest([], new Set(), '')).to.equal(false);
+  });
+
+  it('branch names are matched whatever their case', () => {
+    expect(shouldAddVirtualPullRequest([{ sourceBranch: 'Feature/Activate-Promotions' }], new Set([491]), 'feature/activate-promotions')).to.equal(false);
   });
 });
