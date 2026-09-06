@@ -44,13 +44,13 @@ source .claude/skills/promotion-branches-e2e/scripts/e2e-lib.sh
 
 It defines:
 
-| Function | What it reproduces |
-|---|---|
-| `e2e_check <pr> <target> <label>` | The validation job: checks out `refs/pull/<pr>/merge` and runs `deploy:smart --check` |
-| `e2e_deploy <target> <label>` | The deployment job: checks out the target branch and runs `deploy:smart` |
-| `e2e_promote <source> <prs> <label> [extra flags]` | `promotion:create --agent` from the source branch |
-| `e2e_release_notes <label> [extra flags]` | `doc:release-notes --mode post` on the last merge of `main` |
-| `e2e_grep <logfile>` | The lines worth reading in a job log |
+| Function                                           | What it reproduces                                                                    |
+|----------------------------------------------------|---------------------------------------------------------------------------------------|
+| `e2e_check <pr> <target> <label>`                  | The validation job: checks out `refs/pull/<pr>/merge` and runs `deploy:smart --check` |
+| `e2e_deploy <target> <label>`                      | The deployment job: checks out the target branch and runs `deploy:smart`              |
+| `e2e_promote <source> <prs> <label> [extra flags]` | `promotion:create --agent` from the source branch                                     |
+| `e2e_release_notes <label> [extra flags]`          | `doc:release-notes --mode post` on the last merge of `main`                           |
+| `e2e_grep <logfile>`                               | The lines worth reading in a job log                                                  |
 
 Each writes `$LOGS/<label>.log` and echoes the exit code.
 
@@ -125,14 +125,14 @@ Each story adds **its own static resource** (never a shared file, so unrelated s
 conflict), plus a `scripts/actions/.sfdx-hardis.<PR>.yml` holding its deployment actions. That file
 travels with the cherry-picked commit, which is one of the things being tested.
 
-| Story | Branch | Target | Actions | Test classes | Custom behavior |
-|---|---|---|---|---|---|
-| S1 | `feature/E2E-101-alpha` | integration | pre command + post manual | `PromoE2EAlphaTest` | - |
-| S2 | `feature/E2E-102-beta` | integration | post command | - | `NO_DELTA` |
-| S3 | `feature/E2E-103-gamma` | integration | pre command | `PromoE2EBetaTest` | `PURGE_FLOW_VERSIONS` |
-| S4 | `feature/E2E-201-delta` | uat | pre command + post manual | `PromoE2EAlphaTest` | - |
-| S5 | `feature/E2E-202-epsilon` | uat | post command | - | - |
-| S6 | `feature/E2E-301-hotfix` | preprod | pre command + post manual | `PromoE2EBetaTest` | `FLOW_DELETE_INTERVIEWS` |
+| Story | Branch                    | Target      | Actions                   | Test classes        | Custom behavior          |
+|-------|---------------------------|-------------|---------------------------|---------------------|--------------------------|
+| S1    | `feature/E2E-101-alpha`   | integration | pre command + post manual | `PromoE2EAlphaTest` | -                        |
+| S2    | `feature/E2E-102-beta`    | integration | post command              | -                   | `NO_DELTA`               |
+| S3    | `feature/E2E-103-gamma`   | integration | pre command               | `PromoE2EBetaTest`  | `PURGE_FLOW_VERSIONS`    |
+| S4    | `feature/E2E-201-delta`   | uat         | pre command + post manual | `PromoE2EAlphaTest` | -                        |
+| S5    | `feature/E2E-202-epsilon` | uat         | post command              | -                   | -                        |
+| S6    | `feature/E2E-301-hotfix`  | preprod     | pre command + post manual | `PromoE2EBetaTest`  | `FLOW_DELETE_INTERVIEWS` |
 
 Give **S1 two separate `yaml` blocks** in its description (the test classes, then a second block
 added later): both must be read.
@@ -216,19 +216,19 @@ e2e_deploy integration "deploy-integration-retrofit"
 
 ## 5. What to assert in each log
 
-| Job | Assertion |
-|---|---|
-| feature branch validation / deployment | `Pull Request scope: 1 Pull Request(s) (#N)` and nothing else |
-| a Pull Request declaring `NO_DELTA` | `Delta deployment has been disabled for this Pull Request`, `Deployment mode: FULL` |
-| a Pull Request declaring `PURGE_FLOW_VERSIONS` | an extra pre-deploy action `Purge Flow Versions (added from PR config)` |
-| any validation job | manual actions are `Skipping ...: deployment-only action`, command actions run |
-| promotion validation / deployment | `Promotion branch <name> (Pull Request N): X Pull Request(s) declared in its description`, then `Pull Request scope` = declared + the promotion itself |
-| promotion carrying a story with a keyword | `Inherited <KEYWORD> from carried Pull Request(s) #N`, and **no** keyword of a story that was left behind |
-| promotion carrying test classes | `Test classes selected from PRs:` lists the union of the carried Pull Requests, `Final test level: RunSpecifiedTests` |
-| promotion deployment | the "Deployment Actions" comment of each **story** Pull Request gains a column for the target org branch, not the promotion Pull Request |
-| promotion carrying a promotion | the story of the inner promotion is in the scope with its actions and test classes: `Promotion Pull Request N adds X carried Pull Request(s)` appears once per level |
-| retrofit validation / deployment | the go-live promotion is expanded, then `Pull Request N was already deployed through promotion branch(es) ...` for each story already shipped |
-| release notes of the go-live | `hardis-report/release-notes/main-<date>/release-notes-main-<date>.md` lists the **User Stories**, not the promotion Pull Requests: the Pull Request count, the contributor counts and the ticket rows must name the stories only. With `--include-promotions`, the vehicles are listed next to them |
+| Job                                            | Assertion                                                                                                                                                                                                                                                                                            |
+|------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| feature branch validation / deployment         | `Pull Request scope: 1 Pull Request(s) (#N)` and nothing else                                                                                                                                                                                                                                        |
+| a Pull Request declaring `NO_DELTA`            | `Delta deployment has been disabled for this Pull Request`, `Deployment mode: FULL`                                                                                                                                                                                                                  |
+| a Pull Request declaring `PURGE_FLOW_VERSIONS` | an extra pre-deploy action `Purge Flow Versions (added from PR config)`                                                                                                                                                                                                                              |
+| any validation job                             | manual actions are `Skipping ...: deployment-only action`, command actions run                                                                                                                                                                                                                       |
+| promotion validation / deployment              | `Promotion branch <name> (Pull Request N): X Pull Request(s) declared in its description`, then `Pull Request scope` = declared + the promotion itself                                                                                                                                               |
+| promotion carrying a story with a keyword      | `Inherited <KEYWORD> from carried Pull Request(s) #N`, and **no** keyword of a story that was left behind                                                                                                                                                                                            |
+| promotion carrying test classes                | `Test classes selected from PRs:` lists the union of the carried Pull Requests, `Final test level: RunSpecifiedTests`                                                                                                                                                                                |
+| promotion deployment                           | the "Deployment Actions" comment of each **story** Pull Request gains a column for the target org branch, not the promotion Pull Request                                                                                                                                                             |
+| promotion carrying a promotion                 | the story of the inner promotion is in the scope with its actions and test classes: `Promotion Pull Request N adds X carried Pull Request(s)` appears once per level                                                                                                                                 |
+| retrofit validation / deployment               | the go-live promotion is expanded, then `Pull Request N was already deployed through promotion branch(es) ...` for each story already shipped                                                                                                                                                        |
+| release notes of the go-live                   | `hardis-report/release-notes/main-<date>/release-notes-main-<date>.md` lists the **User Stories**, not the promotion Pull Requests: the Pull Request count, the contributor counts and the ticket rows must name the stories only. With `--include-promotions`, the vehicles are listed next to them |
 
 Check the deployment action state from the git provider too:
 
@@ -241,24 +241,24 @@ pending manual checkbox per org branch.
 
 ## 6. Edge cases to run at the end
 
-| Case | How | Expected |
-|---|---|---|
-| Already promoted | `e2e_promote uat 4 ...` after the `uat -> preprod` promotion is merged | the candidate table shows `Already promoted by promotion/uat/preprod/...`, a warning names `--include-already-promoted`, no branch created |
-| Empty cherry-pick | same with `--include-already-promoted` | `Nothing to cherry-pick ...: this change is already in the target branch`, branch undone, tree clean, **exit 0**. Not a conflict |
-| Empty cherry-pick, dirty report folder | the same while `hardis-report/` is untracked | identical result: the cleanliness check and the emptiness test must both ignore the report directory |
-| Conflict, agent default | two stories on the shared `CustomLabels` file merged into integration, promote only the second | `Cherry-pick conflict on #N (...): the promotion has been undone`, no leftover branch |
-| Conflict, kept | same with `--on-conflict commit-with-markers` | Pull Request created, `hardis-report/promotion-conflicts-prompt-*.md` written, prompt embedded in the description |
-| Marker guard | validate that Pull Request | job fails: `still contains git conflict markers in N file(s): ...` |
-| Marker guard, solved | solve as the prompt says, push, validate again | job passes |
-| Conflict outside force-app | make two stories diverge on `NOTES.md` (both sides must hold the file with different content, otherwise git leaves no marker) | the marker gate still catches it and names `NOTES.md` |
-| Feature off | set `enablePromotionBranches: false` in the checked-out tree and validate a promotion Pull Request | one informational line, scope = the Pull Request alone, everything else unchanged |
-| Hand-named branch | branch `promotion/hand-made-by-a-human` with a `promotionPullRequests` block in its description | warning `starts with promotion/ but does not follow the promotion branch naming ...`, treated as a feature branch, declaration ignored |
-| Retargeted promotion | open a `promotion/uat/preprod/...` branch against `main` | treated as an ordinary branch, scope is the Pull Request alone, with a warning naming the mismatch. **The declared stories must not run their actions against production** |
-| Grouped merge commit | promote a candidate whose label lists several numbers (`#7, #6, #4 ...`) | the command names the numbers nobody asked for **before** cherry-picking, and declares them all |
-| Unreadable declaration | declare a Pull Request number that does not exist | warning and skip, not a failure |
-| Sync merge inside a story | merge the major branch into a feature branch, then merge that feature branch | the candidate lists the story only: the major branch's own Pull Request must not be offered, declared or have its actions run |
-| Branch merged twice | merge a feature branch, push a fix on it, merge it again, then promote | the candidate lists the Pull Request once, never once with its number and once as a "-" row |
-| Single place in the diagram | section 7bis | each promoted number appears in one branch only |
+| Case                                   | How                                                                                                                           | Expected                                                                                                                                                                   |
+|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Already promoted                       | `e2e_promote uat 4 ...` after the `uat -> preprod` promotion is merged                                                        | the candidate table shows `Already promoted by promotion/uat/preprod/...`, a warning names `--include-already-promoted`, no branch created                                 |
+| Empty cherry-pick                      | same with `--include-already-promoted`                                                                                        | `Nothing to cherry-pick ...: this change is already in the target branch`, branch undone, tree clean, **exit 0**. Not a conflict                                           |
+| Empty cherry-pick, dirty report folder | the same while `hardis-report/` is untracked                                                                                  | identical result: the cleanliness check and the emptiness test must both ignore the report directory                                                                       |
+| Conflict, agent default                | two stories on the shared `CustomLabels` file merged into integration, promote only the second                                | `Cherry-pick conflict on #N (...): the promotion has been undone`, no leftover branch                                                                                      |
+| Conflict, kept                         | same with `--on-conflict commit-with-markers`                                                                                 | Pull Request created, `hardis-report/promotion-conflicts-prompt-*.md` written, prompt embedded in the description                                                          |
+| Marker guard                           | validate that Pull Request                                                                                                    | job fails: `still contains git conflict markers in N file(s): ...`                                                                                                         |
+| Marker guard, solved                   | solve as the prompt says, push, validate again                                                                                | job passes                                                                                                                                                                 |
+| Conflict outside force-app             | make two stories diverge on `NOTES.md` (both sides must hold the file with different content, otherwise git leaves no marker) | the marker gate still catches it and names `NOTES.md`                                                                                                                      |
+| Feature off                            | set `enablePromotionBranches: false` in the checked-out tree and validate a promotion Pull Request                            | one informational line, scope = the Pull Request alone, everything else unchanged                                                                                          |
+| Hand-named branch                      | branch `promotion/hand-made-by-a-human` with a `promotionPullRequests` block in its description                               | warning `starts with promotion/ but does not follow the promotion branch naming ...`, treated as a feature branch, declaration ignored                                     |
+| Retargeted promotion                   | open a `promotion/uat/preprod/...` branch against `main`                                                                      | treated as an ordinary branch, scope is the Pull Request alone, with a warning naming the mismatch. **The declared stories must not run their actions against production** |
+| Grouped merge commit                   | promote a candidate whose label lists several numbers (`#7, #6, #4 ...`)                                                      | the command names the numbers nobody asked for **before** cherry-picking, and declares them all                                                                            |
+| Unreadable declaration                 | declare a Pull Request number that does not exist                                                                             | warning and skip, not a failure                                                                                                                                            |
+| Sync merge inside a story              | merge the major branch into a feature branch, then merge that feature branch                                                  | the candidate lists the story only: the major branch's own Pull Request must not be offered, declared or have its actions run                                              |
+| Branch merged twice                    | merge a feature branch, push a fix on it, merge it again, then promote                                                        | the candidate lists the Pull Request once, never once with its number and once as a "-" row                                                                                |
+| Single place in the diagram            | section 7bis                                                                                                                  | each promoted number appears in one branch only                                                                                                                            |
 
 ## 7. Traps met while writing this
 
