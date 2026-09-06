@@ -531,11 +531,13 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     // Promotion branch: inherit the custom behaviors (NO_DELTA, PURGE_FLOW_VERSIONS...) of the
     // Pull Requests it declares, before the delta decision reads them. No-op unless
-    // enablePromotionBranches is set, and skipped with the deployment actions kill switch, which
-    // also disables the Pull Request scope computation.
-    if (!isDeploymentActionsDisabled(this.configInfo)) {
-      await applyPromotionInheritedBehaviors(this.checkOnly);
-    }
+    // enablePromotionBranches is set and the Pull Request is a promotion one.
+    // Deliberately NOT behind the deployment actions kill switch: that switch is about running
+    // pre/post deployment commands, while these keywords decide how the metadata itself is
+    // deployed. Suppressing them would ship a delta where a story asked for a full deployment.
+    // A promotion Pull Request resolves its scope by fetching the declared Pull Requests by id,
+    // so this does not run the branch history scan the kill switch is meant to avoid.
+    await applyPromotionInheritedBehaviors(this.checkOnly);
     // A promotion branch may carry conflicts committed on purpose (--on-conflict
     // commit-with-markers): stop here while the markers are still in the sources
     await assertNoPromotionConflictMarkers(this, this.configInfo);

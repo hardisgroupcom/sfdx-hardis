@@ -506,6 +506,19 @@ ${this.getPipelineVariablesConfig()}
       if (!pullRequest || !pullRequest.targetRefName) {
         return null;
       }
+      // Azure Pull Request ids are unique per organization, not per repository: without this check
+      // a number copied from another repository of the same organization would resolve, and its
+      // deployment actions and Apex test classes would be run against this project's org.
+      const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+      if (repositoryId && pullRequest.repository?.id && pullRequest.repository.id !== repositoryId) {
+        uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPrOtherRepository', { id: pullRequestId })));
+        return null;
+      }
+      // status 3 is "completed" (merged). An abandoned Pull Request also carries a closedDate, and
+      // completePullRequestInfo derives mergedDate from it, so it would look merged to the callers.
+      if (pullRequest.status !== undefined && pullRequest.status !== 3) {
+        return this.completePullRequestInfo({ ...pullRequest, closedDate: undefined });
+      }
       return this.completePullRequestInfo(pullRequest);
     } catch (err) {
       uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPrByIdNotFound', { id: pullRequestId, message: String(err) })));

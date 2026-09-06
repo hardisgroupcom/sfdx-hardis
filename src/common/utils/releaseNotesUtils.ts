@@ -612,9 +612,12 @@ export function dropResolvedPromotionPullRequests(
     if (!isPromotionPullRequest(pr, config)) {
       return true;
     }
-    const declared = parsePromotionPullRequestIds(pr.description) || [];
-    const resolved = declared.filter((id) => id !== pr.idNumber && present.has(id));
-    return resolved.length === 0;
+    const declared = (parsePromotionPullRequestIds(pr.description) || []).filter((id) => id !== pr.idNumber);
+    const resolved = declared.filter((id) => present.has(id));
+    // Keep the vehicle unless every story it carries is listed on its own. As soon as one could
+    // not be resolved, the promotion is the only thing naming that change: keeping it is what makes
+    // the documented promise true.
+    return !(declared.length > 0 && resolved.length === declared.length);
   });
 }
 

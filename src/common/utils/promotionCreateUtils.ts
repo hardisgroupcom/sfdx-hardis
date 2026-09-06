@@ -12,7 +12,6 @@ import { TicketProvider } from '../ticketProvider/index.js';
 import { which } from './whichUtils.js';
 import { generateReportPath } from './filesUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
-import { getSfdxProjectPackageDirectories } from './projectUtils.js';
 import {
   buildPromotionBranchName,
   getPromotionBranchConfig,
@@ -57,6 +56,9 @@ export interface PromotionCandidate {
   // Set when another promotion branch already carries this story to the same target branch:
   // cherry-picking it a second time would replay the same change
   alreadyPromotedBy?: AlreadyPromotedBy;
+  // Set when only PART of the Pull Requests of this commit were already promoted: the commit still
+  // has to travel, but the overlap has to be said out loud
+  partiallyPromoted?: { numbers: number[]; by: AlreadyPromotedBy };
 }
 
 export interface AlreadyPromotedBy {
@@ -180,22 +182,27 @@ export async function listPromotionCandidates(
     .map((group) => toCandidate(group));
   // A promotion carries cherry-picked commits: merging it into the target branch does not move
   // the merge base, so its stories keep showing up here. Say which ones are already on their way.
-  // Nothing older than the merge base can carry one of them, which bounds the provider calls.
-  const minDate = await getCommitDate(mergeBase);
-  return markAlreadyPromotedCandidates(candidates, await listAlreadyPromotedPullRequests(sourceBranch, targetBranch, minDate));
+  // A promotion carrying one of these candidates cannot predate the oldest of them, which bounds
+  // the provider calls. The merge base is not usable for that: any back-merge from the target
+  // branch moves it forward and would hide older promotions.
+  const minDate = oldestCandidateDate(candidates);
+  return markAlreadyPromotedCandidates(
+    candidates,
+    await listAlreadyPromotedPullRequests(sourceBranch, targetBranch, minDate, commandThis),
+  );
 }
 
 /**
- * Author date of a commit, as a Date, to bound the Pull Request queries. Null when unknown.
+ * Date of the oldest candidate, to bound the Pull Request queries: a promotion carrying one of
+ * them was necessarily created after it was merged. Null when no date can be read, in which case
+ * the queries stay unbounded rather than silently miss a promotion.
  */
-export async function getCommitDate(commitHash: string): Promise<Date | null> {
-  try {
-    const raw = (await git().raw(['show', '-s', '--format=%cI', commitHash])).trim();
-    const date = new Date(raw);
-    return isNaN(date.getTime()) ? null : date;
-  } catch {
-    return null;
-  }
+export function oldestCandidateDate(candidates: PromotionCandidate[]): Date | null {
+  const times = candidates
+    .map((candidate) => new Date(candidate.group.commit.date))
+    .filter((date) => !isNaN(date.getTime()))
+    .map((date) => date.getTime());
+  return times.length > 0 ? new Date(Math.min(...times)) : null;
 }
 
 /**
@@ -206,18 +213,25 @@ export async function listAlreadyPromotedPullRequests(
   sourceBranch: string,
   targetBranch: string,
   minDate: Date | null = null,
+  commandThis: any = null,
 ): Promise<Map<number, AlreadyPromotedBy>> {
   const alreadyPromoted = new Map<number, AlreadyPromotedBy>();
-  const gitProvider = await GitProvider.getInstance(true);
+  // Never prompt for a provider here: this runs inside a listing step, and getInstance(true) would
+  // block an --agent run on an interactive question
+  const gitProvider = await GitProvider.getInstance();
   if (!gitProvider) {
+    // This map is the only duplicate protection of the command: an empty one must not look like a
+    // clean pipeline
+    uxLog('warning', commandThis, c.yellow(t('promotionCreateAlreadyPromotedCheckImpossible')));
     return alreadyPromoted;
   }
   for (const status of ['merged', 'open']) {
     let pullRequests: CommonPullRequestInfo[] = [];
     try {
       pullRequests = (await gitProvider.listPullRequests({ status, targetBranch, ...(minDate ? { minDate } : {}) })) || [];
-    } catch {
-      continue; // No token, or the provider does not list Pull Requests: nothing can be checked
+    } catch (e) {
+      uxLog('warning', commandThis, c.yellow(t('promotionCreateAlreadyPromotedCheckFailed', { status, message: (e as Error).message })));
+      continue;
     }
     for (const pullRequest of pullRequests) {
       const parts = parsePromotionBranchName(pullRequest.sourceBranch);
@@ -244,9 +258,17 @@ export function markAlreadyPromotedCandidates(
   alreadyPromoted: Map<number, AlreadyPromotedBy>,
 ): PromotionCandidate[] {
   for (const candidate of candidates) {
-    const number = candidate.pullRequestNumbers.find((id) => alreadyPromoted.has(id));
-    if (number !== undefined) {
-      candidate.alreadyPromotedBy = alreadyPromoted.get(number);
+    // The cherry-pick unit is the commit, so it is only redundant when every Pull Request it
+    // carries has already been promoted. When only some were, the commit still has to travel and
+    // the candidate stays selectable, with the partial overlap reported to the user.
+    const promotedNumbers = candidate.pullRequestNumbers.filter((id) => alreadyPromoted.has(id));
+    if (promotedNumbers.length > 0 && promotedNumbers.length === candidate.pullRequestNumbers.length) {
+      candidate.alreadyPromotedBy = alreadyPromoted.get(promotedNumbers[0]);
+    } else if (promotedNumbers.length > 0) {
+      candidate.partiallyPromoted = {
+        numbers: promotedNumbers,
+        by: alreadyPromoted.get(promotedNumbers[0])!,
+      };
     }
   }
   return candidates;
@@ -287,6 +309,25 @@ export function selectCandidatesByPullRequestNumbers(candidates: PromotionCandid
   }
   // Chronological order, whatever the order of the flag
   return candidates.filter((candidate) => selected.includes(candidate));
+}
+
+/**
+ * A candidate is a first-parent merge commit, which may have brought several Pull Requests in at
+ * once (a major-to-major merge typically brings a whole window). Cherry-picking it carries all of
+ * them, so the numbers the caller did not ask for are reported: the promotion is not the subset
+ * the user typed.
+ */
+export function listUnrequestedPullRequestNumbers(
+  selected: PromotionCandidate[],
+  requestedNumbers: number[],
+): Array<{ candidate: PromotionCandidate; numbers: number[] }> {
+  const requested = new Set(requestedNumbers);
+  return selected
+    .map((candidate) => ({
+      candidate,
+      numbers: candidate.pullRequestNumbers.filter((number) => !requested.has(number)),
+    }))
+    .filter((entry) => entry.numbers.length > 0);
 }
 
 export function parsePullRequestNumbersFlag(flagValue: string | undefined | null): number[] {
@@ -443,7 +484,7 @@ export async function cherryPickCandidates(
     // git cherry-pick also exits non-zero when the change is already in the target branch. That is
     // not a conflict: asking the user (or aborting the whole promotion in agent mode) over a
     // change that is already delivered would be wrong.
-    if (conflictFiles.length === 0 && (await isEmptyCherryPick())) {
+    if (conflictFiles.length === 0 && (await isEmptyCherryPick(commandThis))) {
       await runCommandSafe('git cherry-pick --skip', commandThis, { output: false });
       uxLog('warning', commandThis, c.yellow(t('promotionCreateCherryPickEmpty', { label: candidate.label })));
       outcome.alreadyThere.push(candidate);
@@ -458,7 +499,15 @@ export async function cherryPickCandidates(
       continue;
     }
     if (choice === 'commit-with-markers') {
-      await commitWithConflictMarkers(commandThis);
+      const committed = await commitWithConflictMarkers(commandThis);
+      if (!committed) {
+        // Staging the conflict left nothing over HEAD: there is no story to carry and no marker to
+        // solve, so declaring it with a coding-agent prompt would send the agent on a hunt for
+        // markers that do not exist
+        uxLog('warning', commandThis, c.yellow(t('promotionCreateCherryPickEmpty', { label: candidate.label })));
+        outcome.alreadyThere.push(candidate);
+        continue;
+      }
       uxLog('warning', commandThis, c.yellow(t('promotionCreateConflictCommitted', { label: candidate.label, files: conflictFiles.join(', ') || '-' })));
       outcome.picked.push(candidate);
       outcome.conflicted.push({ candidate, files: conflictFiles });
@@ -494,27 +543,41 @@ async function promptConflictChoice(candidate: PromotionCandidate, commandThis: 
  * Finish the cherry-pick with the conflict markers left in the files: they are staged as they
  * are and the cherry-pick commit is created with its original message (and -x trailer).
  */
-async function commitWithConflictMarkers(commandThis: any): Promise<void> {
+async function commitWithConflictMarkers(commandThis: any): Promise<boolean> {
   await execCommand('git add -A', commandThis, { fail: true, output: false });
   const res = await runCommandSafe('git -c core.editor=true cherry-pick --continue', commandThis, { output: false });
-  if (res.status !== 0) {
-    // Nothing left to commit for this cherry-pick (ex: only deletions already applied): commit directly
-    await execCommand('git -c core.editor=true commit --no-edit --allow-empty', commandThis, { fail: true, output: false });
+  if (res.status === 0) {
+    return true;
   }
+  // --continue refused. Either the staged content matches HEAD (nothing to carry), or something
+  // else went wrong: the index is what tells the two apart.
+  const staged = await runCommandSafe('git diff --cached --quiet HEAD', commandThis, { output: false });
+  if (staged.status === 0) {
+    await runCommandSafe('git cherry-pick --skip', commandThis, { output: false });
+    return false;
+  }
+  await execCommand('git -c core.editor=true commit --no-edit', commandThis, { fail: true, output: false });
+  return true;
 }
 
 /**
  * True when a cherry-pick stopped because it had nothing to apply: CHERRY_PICK_HEAD is there, no
  * file conflicts, and the index holds no change over HEAD.
  */
-async function isEmptyCherryPick(): Promise<boolean> {
+async function isEmptyCherryPick(commandThis: any): Promise<boolean> {
   try {
     const inProgress = await git().raw(['rev-parse', '-q', '--verify', 'CHERRY_PICK_HEAD']).catch(() => '');
     if (!String(inProgress).trim()) {
       return false;
     }
     const status = await git().status();
-    return (status.files || []).length === 0;
+    if ((status.conflicted || []).length > 0) {
+      return false;
+    }
+    // Only the index says whether this cherry-pick has anything to apply. status.files is the whole
+    // worktree, untracked files included, and the command itself writes a report before this point.
+    const staged = await runCommandSafe('git diff --cached --quiet HEAD', commandThis, { output: false });
+    return staged.status === 0;
   } catch {
     return false;
   }
@@ -535,15 +598,12 @@ async function listConflictFiles(): Promise<string[]> {
  * validation job fail while they are there, with a message naming the files.
  */
 export async function listFilesWithConflictMarkers(commandThis: any): Promise<string[]> {
-  const packageDirectories = await getSfdxProjectPackageDirectories();
-  const searchPaths = [...new Set([...packageDirectories.map((directory) => directory.path), 'manifest'])]
-    .filter((directory) => fs.existsSync(directory))
-    .map((directory) => `"${directory}"`);
-  if (searchPaths.length === 0) {
-    return [];
-  }
+  // Every tracked file, not only the package directories: a cherry-pick conflicts wherever the
+  // stories touched the repository (config/, scripts/actions/, data/...), commitWithConflictMarkers
+  // stages all of it with git add -A, and the Pull Request body lists all of it as to be fixed.
+  // git grep only searches tracked files, so the report folder and node_modules stay out.
   // Only the opening and closing markers: a line of "=======" is legitimate in markdown
-  const res = await runCommandSafe(`git grep -l -E "^(<<<<<<< |>>>>>>> )" -- ${searchPaths.join(' ')}`, commandThis, { output: false });
+  const res = await runCommandSafe('git grep -l -E "^(<<<<<<< |>>>>>>> )"', commandThis, { output: false });
   if (res.status !== 0) {
     return []; // 1 = nothing found, anything else = nothing that can be checked here
   }
@@ -632,6 +692,16 @@ export function buildPromotionPullRequestTitle(sourceBranch: string, targetBranc
 }
 
 /**
+ * Every Pull Request the promotion is responsible for in the target org: the ones it cherry-picked
+ * AND the ones whose metadata was already there (an earlier hotfix delivered the same change).
+ * The second kind still needs its deployment actions and Apex test classes in that org, so it must
+ * be declared, otherwise the deployment job never puts it in scope.
+ */
+export function declaredPullRequestNumbers(stories: PromotionStory[], alreadyThere: PromotionStory[] = []): number[] {
+  return [...new Set([...stories, ...alreadyThere].map((story) => story.number).filter((number) => number > 0))];
+}
+
+/**
  * Description of the promotion Pull Request. The YAML block is what the deployment jobs read
  * (see promotionBranchUtils.ts); the rest is for the reviewers.
  */
@@ -644,7 +714,7 @@ export function buildPromotionPullRequestBody(options: {
   ticketIds: string[];
   alreadyThere?: PromotionStory[];
 }): string {
-  const declared = [...new Set(options.stories.map((story) => story.number).filter((number) => number > 0))];
+  const declared = declaredPullRequestNumbers(options.stories, options.alreadyThere || []);
   const conflicted = options.stories.filter((story) => (story.conflictFiles || []).length > 0);
   const lines: string[] = [];
   lines.push(`Promotion branch \`${options.branchName}\` carrying ${options.stories.length} User Stor${options.stories.length === 1 ? 'y' : 'ies'} approved in \`${options.sourceBranch}\`, cherry-picked for \`${options.targetBranch}\`.`);
@@ -706,7 +776,7 @@ export function buildPromotionPullRequestBody(options: {
     lines.push('');
     lines.push(`## Already in \`${options.targetBranch}\``);
     lines.push('');
-    lines.push('Nothing to cherry-pick for those User Stories, their change is already in the target branch:');
+    lines.push('Nothing to cherry-pick for those User Stories, their change is already in the target branch. They stay declared above, so their deployment actions and Apex test classes still run in the target org:');
     lines.push('');
     for (const story of options.alreadyThere || []) {
       lines.push(`- ${story.number > 0 ? `#${story.number} ` : ''}${sanitizeCell(story.title)}`);

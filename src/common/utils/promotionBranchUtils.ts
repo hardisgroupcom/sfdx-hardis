@@ -137,7 +137,15 @@ export function parsePromotionPullRequestIds(description: string | null | undefi
     const items = Array.isArray(rawList) ? rawList : rawList == null ? [] : [rawList];
     for (const item of items) {
       const id = normalizePullRequestId(item);
-      if (id !== null && !ids.includes(id)) {
+      if (id === null) {
+        // Never drop a declaration in silence: the scope of a deployment depends on this list
+        uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionDeclarationNotUnderstood', {
+          value: typeof item === 'string' ? item : JSON.stringify(item),
+          key: PROMOTION_PULL_REQUESTS_KEY,
+        })));
+        continue;
+      }
+      if (!ids.includes(id)) {
         ids.push(id);
       }
     }
@@ -150,7 +158,10 @@ function normalizePullRequestId(item: any): number | null {
     return Number.isInteger(item) && item > 0 ? item : null;
   }
   if (typeof item === 'string') {
-    const match = item.trim().match(/(\d+)\s*$/);
+    // A whole reference and nothing else: "482", "#482", "!482", "PR 482". Anything holding more
+    // than one number ("482, 487", written without brackets) is rejected rather than silently
+    // reduced to its last one.
+    const match = item.trim().match(/^(?:PR\s*)?[#!]?(\d+)$/i);
     if (match) {
       const id = parseInt(match[1], 10);
       return id > 0 ? id : null;
@@ -200,6 +211,24 @@ export function isPromotionPullRequest(
 }
 
 /**
+ * The promotion rules only apply when the Pull Request actually goes where its name announces.
+ * A promotion branch retargeted by hand (ex: promotion/uat/preprod opened against main) would
+ * otherwise run the carried stories' deployment actions and Apex test classes in the wrong org,
+ * so it is treated as an ordinary branch instead, with the mismatch warned about.
+ */
+export function isPromotionPullRequestForItsTarget(
+  pr: Pick<CommonPullRequestInfo, 'sourceBranch' | 'description' | 'targetBranch'> | null | undefined,
+  config: PromotionBranchConfig,
+): boolean {
+  if (!isPromotionPullRequest(pr, config)) {
+    return false;
+  }
+  const parts = parsePromotionBranchName(pr!.sourceBranch)!;
+  const actualTarget = (pr!.targetBranch || '').toLowerCase();
+  return actualTarget === '' || parts.targetBranch.toLowerCase() === actualTarget;
+}
+
+/**
  * Log the cases where the feature is nearly, but not, applicable. Silent when nothing looks like
  * a promotion branch, so ordinary jobs keep their exact output.
  */
@@ -225,6 +254,7 @@ export function warnAboutPromotionPullRequestMisuse(pr: CommonPullRequestInfo | 
     // The name announces the target: say so when the Pull Request goes somewhere else
     const parts = parsePromotionBranchName(pr.sourceBranch)!;
     if (pr.targetBranch && parts.targetBranch.toLowerCase() !== pr.targetBranch.toLowerCase()) {
+      // Treated as an ordinary branch from here on (see isPromotionPullRequestForItsTarget)
       uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionBranchTargetMismatch', { branch: pr.sourceBranch, expected: parts.targetBranch, actual: pr.targetBranch })));
     }
   }
@@ -401,6 +431,9 @@ export function buildPromotionIndex(
       continue;
     }
     for (const storyIdNumber of parsePromotionPullRequestIds(pr.description) || []) {
+      if (storyIdNumber === pr.idNumber) {
+        continue; // a promotion never carries itself
+      }
       const carriers = index.get(storyIdNumber) || [];
       if (!carriers.some((carrier) => carrier.idNumber === pr.idNumber)) {
         carriers.push(pr);

@@ -8,7 +8,10 @@ import {
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
   computePromotionCounter,
+  declaredPullRequestNumbers,
+  listUnrequestedPullRequestNumbers,
   markAlreadyPromotedCandidates,
+  oldestCandidateDate,
   parsePullRequestNumbersFlag,
   selectCandidatesByPullRequestNumbers,
   toCandidate,
@@ -87,6 +90,56 @@ describe('markAlreadyPromotedCandidates()', () => {
     expect(candidates[0].alreadyPromotedBy).to.equal(undefined);
     expect(candidates[1].alreadyPromotedBy?.sourceBranch).to.equal('promotion/uat/preprod/2026-09-05-1');
     expect(candidates[1].alreadyPromotedBy?.merged).to.equal(true);
+  });
+});
+
+describe('merge commit granularity', () => {
+  // A candidate is a first-parent merge commit: it may have brought several Pull Requests in at
+  // once, and cherry-picking it carries all of them
+  const grouped = toCandidate(group('eee5555', [{ id: 500, title: 'Story E' }, { id: 501, title: 'Story F' }]));
+  const single = toCandidate(group('fff6666', [{ id: 502, title: 'Story G' }]));
+
+  it('reports the Pull Requests nobody asked for', () => {
+    expect(listUnrequestedPullRequestNumbers([grouped, single], [500, 502])).to.deep.equal([
+      { candidate: grouped, numbers: [501] },
+    ]);
+    expect(listUnrequestedPullRequestNumbers([single], [502])).to.deep.equal([]);
+    // No explicit request (interactive selection): everything the commit carries is unrequested
+    expect(listUnrequestedPullRequestNumbers([single], [])).to.deep.equal([{ candidate: single, numbers: [502] }]);
+  });
+
+  it('only calls a commit already promoted when every story it carries was', () => {
+    const candidates = [
+      toCandidate(group('aaa1111', [{ id: 482, title: 'Story A' }, { id: 483, title: 'Story A2' }])),
+      toCandidate(group('bbb2222', [{ id: 487, title: 'Story B' }])),
+    ];
+    const by = { idStr: '900', sourceBranch: 'promotion/uat/preprod/2026-09-05-1', webUrl: 'https://git.example.com/pr/900', merged: true };
+    markAlreadyPromotedCandidates(candidates, new Map([[482, by], [487, by]]));
+    // Only half of the first commit was promoted: it still has to travel, and the overlap is kept
+    expect(candidates[0].alreadyPromotedBy).to.equal(undefined);
+    expect(candidates[0].partiallyPromoted?.numbers).to.deep.equal([482]);
+    expect(candidates[1].alreadyPromotedBy?.idStr).to.equal('900');
+    expect(candidates[1].partiallyPromoted).to.equal(undefined);
+  });
+});
+
+describe('oldestCandidateDate()', () => {
+  it('bounds the provider queries on the oldest candidate, not on the merge base', () => {
+    const older = toCandidate(group('aaa1111', [{ id: 1, title: 'A' }]));
+    older.group.commit.date = '2026-09-01T08:00:00Z';
+    const newer = toCandidate(group('bbb2222', [{ id: 2, title: 'B' }]));
+    newer.group.commit.date = '2026-09-06T08:00:00Z';
+    expect(oldestCandidateDate([newer, older])?.toISOString()).to.equal('2026-09-01T08:00:00.000Z');
+    expect(oldestCandidateDate([])).to.equal(null);
+  });
+});
+
+describe('declaredPullRequestNumbers()', () => {
+  it('declares the stories already in the target branch too, so their actions still run there', () => {
+    const carried = toStories([toCandidate(group('aaa1111', [{ id: 482, title: 'A' }]))]);
+    const alreadyThere = toStories([toCandidate(group('bbb2222', [{ id: 487, title: 'B' }]))]);
+    expect(declaredPullRequestNumbers(carried, alreadyThere)).to.deep.equal([482, 487]);
+    expect(declaredPullRequestNumbers(carried)).to.deep.equal([482]);
   });
 });
 
@@ -177,8 +230,9 @@ describe('promotion Pull Request title and body', () => {
     });
     expect(body).to.contain('## Already in `preprod`');
     expect(body).to.contain('- #495 Story D');
-    // Only the cherry-picked stories are declared as the deployment scope
-    expect(body).to.contain('promotionPullRequests: [482, 487]');
+    // Declared as well: their metadata is already in the target branch, but their deployment
+    // actions and Apex test classes still have to run in the target org
+    expect(body).to.contain('promotionPullRequests: [482, 487, 495]');
   });
 
   it('omits the tickets and skipped sections when empty', () => {

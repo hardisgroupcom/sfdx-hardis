@@ -19,6 +19,7 @@ import {
   hasPromotionPrefixOnly,
   isPromotionBranchName,
   isPromotionPullRequest,
+  isPromotionPullRequestForItsTarget,
   mergeInheritedCustomBehaviors,
   parsePromotionBranchName,
   parsePromotionPullRequestIds,
@@ -113,6 +114,13 @@ describe('parsePromotionPullRequestIds()', () => {
     expect(parsePromotionPullRequestIds(description)).to.deep.equal([482, 487, 491, 500]);
   });
 
+  it('refuses a value holding more than one reference instead of keeping its last number', () => {
+    // Written without brackets, yaml gives a single string: silently reading 487 would drop 482
+    // from the scope of the deployment
+    expect(parsePromotionPullRequestIds('```yaml\npromotionPullRequests: "482, 487"\n```')).to.deep.equal([]);
+    expect(parsePromotionPullRequestIds('```yaml\npromotionPullRequests:\n  - "PR 482 (draft)"\n```')).to.deep.equal([]);
+  });
+
   it('reads the key from any yaml block of the description, not only the first one', () => {
     const description = '```yaml\ndeploymentApexTestClasses: [A]\n```\nSome text\n```yml\npromotionPullRequests: [12]\n```';
     expect(parsePromotionPullRequestIds(description)).to.deep.equal([12]);
@@ -138,6 +146,21 @@ describe('classifyPromotionPullRequest()', () => {
     expect(classifyPromotionPullRequest(pr({ sourceBranch: PROMOTION_BRANCH, description: DECLARATION }), DISABLED)).to.equal('none');
     expect(isPromotionPullRequest(pr({ sourceBranch: PROMOTION_BRANCH, description: DECLARATION }), DISABLED)).to.equal(false);
     expect(classifyPromotionPullRequest(null, ENABLED)).to.equal('none');
+  });
+});
+
+describe('isPromotionPullRequestForItsTarget()', () => {
+  it('refuses a promotion branch retargeted somewhere else', () => {
+    const asNamed = pr({ sourceBranch: PROMOTION_BRANCH, targetBranch: 'preprod', description: DECLARATION });
+    expect(isPromotionPullRequestForItsTarget(asNamed, ENABLED)).to.equal(true);
+    // Opened against main instead of the preprod its name announces: the carried stories would run
+    // their deployment actions in production
+    const retargeted = pr({ sourceBranch: PROMOTION_BRANCH, targetBranch: 'main', description: DECLARATION });
+    expect(isPromotionPullRequest(retargeted, ENABLED)).to.equal(true);
+    expect(isPromotionPullRequestForItsTarget(retargeted, ENABLED)).to.equal(false);
+    // Case is not significant, and an unknown target is not a mismatch
+    expect(isPromotionPullRequestForItsTarget(pr({ sourceBranch: PROMOTION_BRANCH, targetBranch: 'PREPROD', description: DECLARATION }), ENABLED)).to.equal(true);
+    expect(isPromotionPullRequestForItsTarget(pr({ sourceBranch: PROMOTION_BRANCH, targetBranch: '', description: DECLARATION }), ENABLED)).to.equal(true);
   });
 });
 

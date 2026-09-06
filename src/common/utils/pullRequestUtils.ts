@@ -16,6 +16,7 @@ import {
   getPromotionBranchConfig,
   InheritedCustomBehavior,
   isPromotionPullRequest,
+  isPromotionPullRequestForItsTarget,
   mergeInheritedCustomBehaviors,
   parsePromotionPullRequestIds,
   PromotionBranchConfig,
@@ -86,8 +87,19 @@ async function fetchDeclaredPullRequests(gitProvider: any, promotionPr: CommonPu
     prList: declaredIds.map((id) => `#${id}`).join(', ') || '-',
   })}`));
   const fetched = new Map<number, CommonPullRequestInfo | null>();
+  const unreadable: string[] = [];
   for (const id of declaredIds) {
-    fetched.set(id, await gitProvider.getPullRequestById(id));
+    try {
+      fetched.set(id, await gitProvider.getPullRequestById(id));
+    } catch (e) {
+      // A 403, a rate limit or an expired token must not shrink the scope of a deployment the way
+      // a genuinely deleted Pull Request does
+      unreadable.push(`#${id} (${(e as Error).message})`);
+      fetched.set(id, null);
+    }
+  }
+  if (unreadable.length > 0) {
+    throw new SfError(t('promotionDeclaredPrUnreadable', { pr: promotionPr.idStr, details: unreadable.join(', ') }));
   }
   const declared = filterDeclaredPullRequests(declaredIds, fetched, promotionPr);
   // A promotion assembled from a branch that itself received a promotion (ex: preprod -> main
@@ -192,7 +204,7 @@ export async function applyPromotionInheritedBehaviors(checkOnly: boolean): Prom
     return [];
   }
   const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
-  if (!isPromotionPullRequest(prInfo, promotionConfig)) {
+  if (!isPromotionPullRequestForItsTarget(prInfo, promotionConfig)) {
     return [];
   }
   const scope = await listAllPullRequestsForCurrentScope(checkOnly);
@@ -253,19 +265,25 @@ export async function getPullRequestScopedSfdxHardisConfig(pr: CommonPullRequest
 }
 
 function getYamlFromPrDescription(pr: CommonPullRequestInfo): object | null {
-  const yamlStart = pr.description.indexOf("```yaml");
-  const yamlEnd = pr.description.indexOf("```", yamlStart + 1);
-  if (yamlStart !== -1 && yamlEnd !== -1) {
-    const yamlContent = pr.description.substring(yamlStart + 7, yamlEnd).trim();
+  // Every ```yaml block, not only the first: a promotion Pull Request description opens with the
+  // promotionPullRequests block, and anything the release manager adds after it (deployment
+  // actions, Apex test classes) would otherwise be read by nobody.
+  const regex = /```ya?ml\s*\r?\n([\s\S]*?)```/gi;
+  let merged: any = null;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(pr.description || "")) !== null) {
+    let parsedYaml: any;
     try {
-      const parsedYaml = yaml.load(yamlContent) as any;
-      return parsedYaml;
+      parsedYaml = yaml.load(match[1]) as any;
     }
     catch (err) {
       throw new SfError(`[PullRequestUtils] Error parsing YAML from PR description for PR ${pr.idStr} ${pr.webUrl}: ${err}`);
     }
+    if (parsedYaml && typeof parsedYaml === "object") {
+      merged = Object.assign(merged || {}, parsedYaml);
+    }
   }
-  return null;
+  return merged;
 }
 
 /**
@@ -358,7 +376,7 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
   // Same rule on the validation and on the deployment job.
   const promotionConfig = await getPromotionBranchConfigFromProject();
   warnAboutPromotionPullRequestMisuse(pullRequestInfo, promotionConfig);
-  if (isPromotionPullRequest(pullRequestInfo, promotionConfig)) {
+  if (isPromotionPullRequestForItsTarget(pullRequestInfo, promotionConfig)) {
     const declaredPullRequests = await fetchDeclaredPullRequests(gitProvider, pullRequestInfo);
     _cachedPullRequests = [...declaredPullRequests, pullRequestInfo];
     _scopeKind = checkOnly ? 'promotion-check' : 'promotion';

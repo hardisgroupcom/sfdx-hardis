@@ -16,7 +16,10 @@ import {
   collectStoryTicketIds,
   createPromotionBranch,
   listPromotionCandidates,
+  listUnrequestedPullRequestNumbers,
   nextPromotionBranchName,
+  parsePullRequestNumbersFlag,
+  PromotionCandidate,
   PROMOTION_CONFLICT_CHOICES,
   PromotionConflictChoice,
   pushAndCreatePromotionPullRequest,
@@ -196,15 +199,54 @@ In agent mode:
       }
     }
 
+    // Part of the stories of a commit already promoted: the commit still has to travel, but the
+    // overlap has to be visible before anything is cherry-picked
+    for (const candidate of promotableCandidates.filter((entry) => entry.partiallyPromoted)) {
+      uxLog('warning', this, c.yellow(t('promotionCreatePartiallyPromoted', {
+        label: candidate.label,
+        numbers: candidate.partiallyPromoted!.numbers.map((number) => `#${number}`).join(', '),
+        branch: candidate.partiallyPromoted!.by.sourceBranch,
+      })));
+    }
+
     const selected = await selectPromotionCandidates(promotableCandidates, flags['pull-requests'] || null, agentMode, this);
+
+    // A candidate is a merge commit, and cherry-picking it carries every Pull Request that came in
+    // with it. Name the ones nobody asked for rather than let them reach the target branch quietly.
+    const unrequested = listUnrequestedPullRequestNumbers(selected, parsePullRequestNumbersFlag(flags['pull-requests'] || null));
+    for (const entry of unrequested) {
+      uxLog('warning', this, c.yellow(t('promotionCreateGroupCarriesMore', {
+        label: entry.candidate.label,
+        numbers: entry.numbers.map((number) => `#${number}`).join(', '),
+      })));
+    }
 
     const branchName = await nextPromotionBranchName(sourceBranch, targetBranch, this);
     await createPromotionBranch(branchName, targetBranch, this);
     const onConflict = (flags['on-conflict'] as PromotionConflictChoice | undefined) || null;
-    const { picked, skipped, alreadyThere, conflicted } = await cherryPickCandidates(selected, branchName, previousBranch, onConflict, agentMode, this);
-    if (picked.length === 0) {
-      // Every selected story was left out: an empty promotion branch has no reason to exist
+    let picked: PromotionCandidate[] = [];
+    let skipped: PromotionCandidate[] = [];
+    let alreadyThere: PromotionCandidate[] = [];
+    let conflicted: Array<{ candidate: PromotionCandidate; files: string[] }> = [];
+    try {
+      ({ picked, skipped, alreadyThere, conflicted } = await cherryPickCandidates(selected, branchName, previousBranch, onConflict, agentMode, this));
+    } catch (e) {
+      // cherryPickCandidates undoes what it started for the outcomes it knows about, but an
+      // unexpected error (or the "exit this script" choice of the prompt) would otherwise leave the
+      // repository on the promotion branch with a cherry-pick in progress
       await abortPromotion(branchName, previousBranch, this);
+      throw e;
+    }
+    if (picked.length === 0) {
+      await abortPromotion(branchName, previousBranch, this);
+      if (skipped.length === 0 && alreadyThere.length > 0) {
+        // Every selected story was already in the target branch: a no-op, not a failure
+        uxLog('warning', this, c.yellow(t('promotionCreateAllAlreadyInTarget', {
+          target: targetBranch,
+          prList: alreadyThere.flatMap((candidate) => candidate.pullRequestNumbers).map((number) => `#${number}`).join(', ') || '-',
+        })));
+        return { sourceBranch, targetBranch, created: false, alreadyInTarget: true, outputString: 'Nothing to promote' };
+      }
       throw new SfError(t('promotionCreateNothingPicked'));
     }
 
