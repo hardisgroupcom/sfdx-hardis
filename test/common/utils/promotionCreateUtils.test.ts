@@ -165,6 +165,22 @@ describe('promotion Pull Request title and body', () => {
     expect(body).to.contain('````markdown\nYou are working in a Salesforce DX git repository');
   });
 
+  it('lists apart the stories whose change was already in the target branch', () => {
+    const body = buildPromotionPullRequestBody({
+      sourceBranch: 'uat',
+      targetBranch: 'preprod',
+      branchName: 'promotion/uat/preprod/2026-09-06-1',
+      stories,
+      skipped: [],
+      ticketIds: [],
+      alreadyThere: toStories([toCandidate(group('ddd4444', [{ id: 495, title: 'Story D' }]))]),
+    });
+    expect(body).to.contain('## Already in `preprod`');
+    expect(body).to.contain('- #495 Story D');
+    // Only the cherry-picked stories are declared as the deployment scope
+    expect(body).to.contain('promotionPullRequests: [482, 487]');
+  });
+
   it('omits the tickets and skipped sections when empty', () => {
     const body = buildPromotionPullRequestBody({
       sourceBranch: 'uat',

@@ -3,7 +3,8 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { checkGitClean, getCurrentGitBranch, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { checkGitClean, getCurrentGitBranch, isCI, uxLog } from '../../../../common/utils/index.js';
+import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { getPromotionBranchConfig, PROMOTION_PULL_REQUESTS_KEY } from '../../../../common/utils/promotionBranchUtils.js';
@@ -156,7 +157,9 @@ In agent mode:
       uxLog('warning', this, c.yellow(t('promotionCreateNoCandidate', { source: sourceBranch, target: targetBranch })));
       return { sourceBranch, targetBranch, created: false, outputString: 'Nothing to promote' };
     }
-    uxLogTable(
+    // The row count follows the number of pending User Stories, and the VS Code UI stops at 20
+    // rows: the full list has to be available as a report file
+    await uxLogTableWithReport(
       this,
       candidates.map((candidate) => ({
         'Pull Requests': candidate.pullRequestNumbers.map((number) => `#${number}`).join(', ') || '-',
@@ -167,6 +170,10 @@ In agent mode:
         'Already promoted by': candidate.alreadyPromotedBy?.sourceBranch || '',
       })),
       ['Pull Requests', 'Title', 'Author', 'Commit', 'Date', 'Already promoted by'],
+      {
+        fileNamePrefix: 'promotion-candidates',
+        fileTitle: t('promotionCreateCandidatesReportTitle', { source: sourceBranch, target: targetBranch }),
+      },
     );
 
     // Cherry-picked commits keep new SHAs, so a story carried by another promotion branch is still
@@ -192,7 +199,7 @@ In agent mode:
     const branchName = await nextPromotionBranchName(sourceBranch, targetBranch, this);
     await createPromotionBranch(branchName, targetBranch, this);
     const onConflict = (flags['on-conflict'] as PromotionConflictChoice | undefined) || null;
-    const { picked, skipped, conflicted } = await cherryPickCandidates(selected, branchName, previousBranch, onConflict, agentMode, this);
+    const { picked, skipped, alreadyThere, conflicted } = await cherryPickCandidates(selected, branchName, previousBranch, onConflict, agentMode, this);
     if (picked.length === 0) {
       // Every selected story was left out: an empty promotion branch has no reason to exist
       await abortPromotion(branchName, previousBranch, this);
@@ -201,9 +208,18 @@ In agent mode:
 
     const stories = toStories(picked, conflicted);
     const skippedStories = toStories(skipped);
+    const alreadyThereStories = toStories(alreadyThere);
     const ticketIds = await collectStoryTicketIds(stories);
     const title = buildPromotionPullRequestTitle(sourceBranch, targetBranch, branchName);
-    const body = buildPromotionPullRequestBody({ sourceBranch, targetBranch, branchName, stories, skipped: skippedStories, ticketIds });
+    const body = buildPromotionPullRequestBody({
+      sourceBranch,
+      targetBranch,
+      branchName,
+      stories,
+      skipped: skippedStories,
+      ticketIds,
+      alreadyThere: alreadyThereStories,
+    });
 
     const result = await pushAndCreatePromotionPullRequest({
       branchName,
@@ -244,6 +260,7 @@ In agent mode:
       branchName,
       pullRequests: stories.map((story) => story.number).filter((number) => number > 0),
       skippedPullRequests: skippedStories.map((story) => story.number).filter((number) => number > 0),
+      alreadyInTargetPullRequests: alreadyThereStories.map((story) => story.number).filter((number) => number > 0),
       conflictedPullRequests: conflicted.map((entry) => ({
         pullRequests: entry.candidate.pullRequestNumbers,
         files: entry.files,

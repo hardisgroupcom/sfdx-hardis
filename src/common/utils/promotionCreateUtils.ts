@@ -16,6 +16,7 @@ import { getSfdxProjectPackageDirectories } from './projectUtils.js';
 import {
   buildPromotionBranchName,
   getPromotionBranchConfig,
+  PROMOTION_BRANCH_NAME_EXAMPLE,
   isPromotionPullRequest,
   parsePromotionBranchName,
   parsePromotionPullRequestIds,
@@ -138,6 +139,13 @@ export async function resolvePromotionSourceAndTarget(
   if (sourceBranch === targetBranch) {
     throw new SfError(t('promotionCreateSameBranches', { branch: sourceBranch }));
   }
+  // The naming convention has exactly four segments, so a branch name holding a "/" would produce
+  // a branch the deployment jobs cannot recognize as a promotion
+  for (const branch of [sourceBranch, targetBranch]) {
+    if (branch.includes('/')) {
+      throw new SfError(t('promotionCreateBranchNameWithSlash', { branch, example: PROMOTION_BRANCH_NAME_EXAMPLE }));
+    }
+  }
   // Promoting outside of the declared pipeline is allowed (a hotfix may need it), but it is
   // unusual enough to be said out loud
   const declaredMergeTargets: string[] = sourceOrg.mergeTargets || [];
@@ -172,7 +180,22 @@ export async function listPromotionCandidates(
     .map((group) => toCandidate(group));
   // A promotion carries cherry-picked commits: merging it into the target branch does not move
   // the merge base, so its stories keep showing up here. Say which ones are already on their way.
-  return markAlreadyPromotedCandidates(candidates, await listAlreadyPromotedPullRequests(sourceBranch, targetBranch));
+  // Nothing older than the merge base can carry one of them, which bounds the provider calls.
+  const minDate = await getCommitDate(mergeBase);
+  return markAlreadyPromotedCandidates(candidates, await listAlreadyPromotedPullRequests(sourceBranch, targetBranch, minDate));
+}
+
+/**
+ * Author date of a commit, as a Date, to bound the Pull Request queries. Null when unknown.
+ */
+export async function getCommitDate(commitHash: string): Promise<Date | null> {
+  try {
+    const raw = (await git().raw(['show', '-s', '--format=%cI', commitHash])).trim();
+    const date = new Date(raw);
+    return isNaN(date.getTime()) ? null : date;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -182,6 +205,7 @@ export async function listPromotionCandidates(
 export async function listAlreadyPromotedPullRequests(
   sourceBranch: string,
   targetBranch: string,
+  minDate: Date | null = null,
 ): Promise<Map<number, AlreadyPromotedBy>> {
   const alreadyPromoted = new Map<number, AlreadyPromotedBy>();
   const gitProvider = await GitProvider.getInstance(true);
@@ -191,7 +215,7 @@ export async function listAlreadyPromotedPullRequests(
   for (const status of ['merged', 'open']) {
     let pullRequests: CommonPullRequestInfo[] = [];
     try {
-      pullRequests = (await gitProvider.listPullRequests({ status, targetBranch })) || [];
+      pullRequests = (await gitProvider.listPullRequests({ status, targetBranch, ...(minDate ? { minDate } : {}) })) || [];
     } catch {
       continue; // No token, or the provider does not list Pull Requests: nothing can be checked
     }
@@ -334,16 +358,19 @@ export function computePromotionCounter(existingBranchNames: string[], sourceBra
 
 export async function listExistingPromotionBranchNames(sourceBranch: string, targetBranch: string, commandThis: any): Promise<string[]> {
   const names: string[] = [];
-  try {
-    const remote = await runCommandSafe(`git ls-remote --heads origin "${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/*"`, commandThis, { output: false });
-    for (const line of (remote.stdout || '').split('\n')) {
-      const ref = line.split(/\s+/)[1];
-      if (ref) {
-        names.push(ref);
-      }
+  const remote = await runCommandSafe(`git ls-remote --heads origin "${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/*"`, commandThis, { output: false });
+  if (remote.status !== 0) {
+    // Without the remote branches the counter can reuse a name that already exists on origin, and
+    // the push would only fail once every cherry-pick is done: say it now
+    uxLog('warning', commandThis, c.yellow(t('promotionCreateRemoteBranchesUnavailable', {
+      message: (remote.stderr || remote.stdout || '').trim() || '-',
+    })));
+  }
+  for (const line of (remote.stdout || '').split('\n')) {
+    const ref = line.split(/\s+/)[1];
+    if (ref) {
+      names.push(ref);
     }
-  } catch {
-    // Offline: local branches only
   }
   const local = await git().branchLocal();
   names.push(...local.all);
@@ -376,6 +403,9 @@ export const PROMOTION_CONFLICT_CHOICES: PromotionConflictChoice[] = ['skip', 'c
 export interface CherryPickOutcome {
   picked: PromotionCandidate[];
   skipped: PromotionCandidate[];
+  // Nothing to cherry-pick: the change is already in the target branch (hotfix, retrofit, or an
+  // earlier promotion). Not a conflict, and not something to leave in the branch either.
+  alreadyThere: PromotionCandidate[];
   // Committed with their conflict markers, to be solved on the branch before the merge
   conflicted: Array<{ candidate: PromotionCandidate; files: string[] }>;
 }
@@ -394,7 +424,7 @@ export async function cherryPickCandidates(
   agentMode: boolean,
   commandThis: any,
 ): Promise<CherryPickOutcome> {
-  const outcome: CherryPickOutcome = { picked: [], skipped: [], conflicted: [] };
+  const outcome: CherryPickOutcome = { picked: [], skipped: [], alreadyThere: [], conflicted: [] };
   for (const candidate of candidates) {
     const hash = candidate.group.commit.hash;
     const mergeOption = (await isMergeCommit(hash)) ? ' -m 1' : '';
@@ -405,6 +435,15 @@ export async function cherryPickCandidates(
       continue;
     }
     const conflictFiles = await listConflictFiles();
+    // git cherry-pick also exits non-zero when the change is already in the target branch. That is
+    // not a conflict: asking the user (or aborting the whole promotion in agent mode) over a
+    // change that is already delivered would be wrong.
+    if (conflictFiles.length === 0 && (await isEmptyCherryPick())) {
+      await runCommandSafe('git cherry-pick --skip', commandThis, { output: false });
+      uxLog('warning', commandThis, c.yellow(t('promotionCreateCherryPickEmpty', { label: candidate.label })));
+      outcome.alreadyThere.push(candidate);
+      continue;
+    }
     uxLog('warning', commandThis, c.yellow(t('promotionCreateConflict', { label: candidate.label, files: conflictFiles.join('\n') || '-' })));
     const choice = onConflict || (agentMode ? 'abort' : await promptConflictChoice(candidate, commandThis));
     if (choice === 'skip') {
@@ -456,6 +495,23 @@ async function commitWithConflictMarkers(commandThis: any): Promise<void> {
   if (res.status !== 0) {
     // Nothing left to commit for this cherry-pick (ex: only deletions already applied): commit directly
     await execCommand('git -c core.editor=true commit --no-edit --allow-empty', commandThis, { fail: true, output: false });
+  }
+}
+
+/**
+ * True when a cherry-pick stopped because it had nothing to apply: CHERRY_PICK_HEAD is there, no
+ * file conflicts, and the index holds no change over HEAD.
+ */
+async function isEmptyCherryPick(): Promise<boolean> {
+  try {
+    const inProgress = await git().raw(['rev-parse', '-q', '--verify', 'CHERRY_PICK_HEAD']).catch(() => '');
+    if (!String(inProgress).trim()) {
+      return false;
+    }
+    const status = await git().status();
+    return (status.files || []).length === 0;
+  } catch {
+    return false;
   }
 }
 
@@ -581,6 +637,7 @@ export function buildPromotionPullRequestBody(options: {
   stories: PromotionStory[];
   skipped: PromotionStory[];
   ticketIds: string[];
+  alreadyThere?: PromotionStory[];
 }): string {
   const declared = [...new Set(options.stories.map((story) => story.number).filter((number) => number > 0))];
   const conflicted = options.stories.filter((story) => (story.conflictFiles || []).length > 0);
@@ -637,6 +694,16 @@ export function buildPromotionPullRequestBody(options: {
     lines.push('## Left out because of cherry-pick conflicts');
     lines.push('');
     for (const story of options.skipped) {
+      lines.push(`- ${story.number > 0 ? `#${story.number} ` : ''}${sanitizeCell(story.title)}`);
+    }
+  }
+  if ((options.alreadyThere || []).length > 0) {
+    lines.push('');
+    lines.push(`## Already in \`${options.targetBranch}\``);
+    lines.push('');
+    lines.push('Nothing to cherry-pick for those User Stories, their change is already in the target branch:');
+    lines.push('');
+    for (const story of options.alreadyThere || []) {
       lines.push(`- ${story.number > 0 ? `#${story.number} ` : ''}${sanitizeCell(story.title)}`);
     }
   }

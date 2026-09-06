@@ -105,6 +105,7 @@ async function listDownstreamPromotionPullRequests(
   fromBranch: string,
   majorOrgs: any[],
   promotionConfig: PromotionBranchConfig,
+  minDate: Date | null,
 ): Promise<CommonPullRequestInfo[]> {
   const branches: string[] = [];
   let current: string | null = fromBranch;
@@ -116,7 +117,7 @@ async function listDownstreamPromotionPullRequests(
   const promotions: CommonPullRequestInfo[] = [];
   for (const branch of branches) {
     try {
-      const merged = (await gitProvider.listPullRequests({ status: 'merged', targetBranch: branch })) || [];
+      const merged = (await gitProvider.listPullRequests({ status: 'merged', targetBranch: branch, ...(minDate ? { minDate } : {}) })) || [];
       promotions.push(...merged.filter((pr: CommonPullRequestInfo) => isPromotionPullRequest(pr, promotionConfig)));
     } catch (e) {
       uxLog("warning", null, c.yellow(`[PromotionBranch] ${t('promotionUnableToListPromotions', { branch, message: (e as Error).message })}`));
@@ -141,7 +142,16 @@ async function completeWindowWithPromotions(
     return pullRequests;
   }
   const expanded = await expandPromotionPullRequests(pullRequests, promotionConfig, (id) => gitProvider.getPullRequestById(id));
-  const downstreamPromotions = await listDownstreamPromotionPullRequests(gitProvider, windowTargetBranch, majorOrgs, promotionConfig);
+  // A promotion carrying a story of this window cannot be older than the oldest story of the
+  // window: without that bound, every job would page through the whole history of every
+  // downstream branch (and, on Azure DevOps, fetch the threads of each Pull Request).
+  const downstreamPromotions = await listDownstreamPromotionPullRequests(
+    gitProvider,
+    windowTargetBranch,
+    majorOrgs,
+    promotionConfig,
+    oldestPullRequestDate(expanded),
+  );
   _alreadyPromoted = expanded
     .map((story) => ({ story, promotions: findPromotionsCarrying(story.idNumber, downstreamPromotions, promotionConfig) }))
     .filter((entry) => entry.promotions.length > 0);
@@ -152,6 +162,17 @@ async function completeWindowWithPromotions(
     })}`));
   }
   return expanded;
+}
+
+/**
+ * Oldest creation date of a set of Pull Requests, used to bound provider queries.
+ */
+function oldestPullRequestDate(pullRequests: CommonPullRequestInfo[]): Date | null {
+  const times = pullRequests
+    .map((pr) => new Date(pr.createdDate || pr.mergedDate || ''))
+    .filter((date) => !isNaN(date.getTime()))
+    .map((date) => date.getTime());
+  return times.length > 0 ? new Date(Math.min(...times)) : null;
 }
 
 /**
