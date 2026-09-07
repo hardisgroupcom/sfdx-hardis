@@ -54,6 +54,44 @@ In `config/.sfdx-hardis.yml` (or in a branch config file like `config/branches/.
 enablePromotionBranches: true
 ```
 
+Optionally, restrict the steps a release manager can promote on with `allowedPromotionSteps` (see
+below).
+
+### Which promotions the release manager can create
+
+By default, a promotion can be assembled between any major branch and any of its merge targets. To
+allow a subset of them, list the steps in `config/.sfdx-hardis.yml`:
+
+```yaml
+enablePromotionBranches: true
+allowedPromotionSteps:
+  - source: uat
+    target: preprod
+```
+
+With that list, `uat -> preprod` is the only promotion a release manager can create:
+
+- the **Create promotion** button of the DevOps Pipeline shows up on `uat` only, and passes
+  `preprod` to the command, so nothing is asked;
+- `sf hardis:project:promotion:create` offers `uat` and `preprod` alone, and refuses
+  `--source-branch integration` or `--target-branch main` with the list of what is allowed;
+- a promotion branch assembled outside the list all the same (by hand, or before the list was
+  written) still deploys, and the job logs a warning naming the step and the allowed ones.
+
+Leave `target` out to allow every merge target of a source branch:
+
+```yaml
+allowedPromotionSteps:
+  - source: uat            # uat to any of its merge targets
+  - source: preprod
+    target: main
+```
+
+The setting sits next to `enablePromotionBranches` in the **Danger Zone** of the Pipeline Settings
+panel of the VS Code extension. It is read from the project config only, since
+`hardis:project:promotion:create` runs from any branch: a list written in a branch config file
+would be invisible to it.
+
 ### Naming
 
 Promotion branches follow one naming convention, which is not configurable:

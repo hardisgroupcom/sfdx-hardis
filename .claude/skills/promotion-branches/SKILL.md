@@ -117,12 +117,23 @@ Break one of these and the feature is wrong, whatever the tests say.
 | `src/common/utils/prePostCommandUtils.ts`                                                                                                                                  | Deployment actions of the carried stories, promotion scope wording.                                                                                           |
 | `src/common/utils/releaseNotesUtils.ts`                                                                                                                                    | Leaves the vehicles out, `--include-promotions` brings them back.                                                                                             |
 | `src/common/gitProvider/index.ts`                                                                                                                                          | `inheritedCustomBehaviors` + the `inheritedCustomBehaviorsPrId` guard.                                                                                        |
-| `config/sfdx-hardis.jsonschema.json`                                                                                                                                       | `enablePromotionBranches` property (required for any new config key).                                                                                         |
+| `config/sfdx-hardis.jsonschema.json`                                                                                                                                       | `enablePromotionBranches` and `allowedPromotionSteps` properties (required for any new config key).                                                                                         |
 | `test/common/utils/promotionBranchUtils.test.ts`, `promotionCreateUtils.test.ts`, `releaseNotesPromotion.test.ts`, `backpromoteUtils.test.ts`, `prDescriptionYaml.test.ts` | Unit tests.                                                                                                                                                   |
 
 Reading the flag: `getConfig('branch')` (project config merged with the running branch's config),
-via `getPromotionBranchConfig(config)`. It is a **project level** setting: the extension exposes it
-at project scope only.
+via `getPromotionBranchConfig(config)`, which also parses `allowedPromotionSteps` into
+`config.allowedSteps`. Both are **project level** settings: the extension exposes them at project
+scope only, because `promotion:create` runs from any branch and would not see a branch file.
+
+### Allowed steps
+
+`parsePromotionSteps` reads the list (objects, or a `"uat > preprod"` string for a hand-edited
+config; no target means any target of that source). `isPromotionStepAllowed`,
+`allowedPromotionSourceBranches`, `allowedPromotionTargetBranches` and `formatPromotionSteps` are
+what the callers use. `resolvePromotionSourceAndTarget` filters both prompts and refuses a flag
+naming a step outside the list; `warnAboutPromotionPullRequestMisuse` warns in the deployment job;
+the extension mirrors the same functions and hides the **Create promotion** button on a branch that
+is not an allowed source, passing `--target-branch` when a single target is allowed.
 
 ### Pull Request scope kinds
 
@@ -147,7 +158,7 @@ not leak in.
 | `src/pipeline-data-provider.ts`                      | Feeds the mermaid builder.                                                                                                                                                                    |
 | `src/utils/pipeline/branchStrategyMermaidBuilder.ts` | Node counters (`data-count`, `data-count-all`), and the open promotion drawn on the major-to-major edge (`isPromotionOfStep`).                                                                |
 | `src/webviews/lwc-ui/modules/s/pipeline/pipeline.js` | Branch window modal: filtering, the two toggles, the per-Pull-Request checkboxes and the **Create promotion** button.                                                                         |
-| `src/utils/pipeline/sfdxHardisConfigHelper.ts`       | `enablePromotionBranches` sits in the **Danger Zone** of Pipeline Settings, scope `["global"]`.                                                                                               |
+| `src/utils/pipeline/sfdxHardisConfigHelper.ts`       | `enablePromotionBranches` and `allowedPromotionSteps` sit in the **Danger Zone** of Pipeline Settings, scope `["global"]`.                                                                                               |
 | `src/hardis-commands-provider.ts`                    | Command palette entry for `hardis:project:promotion:create`.                                                                                                                                  |
 | `package.json`                                       | `pipelineShowAlreadyPromotedPullRequests` setting.                                                                                                                                            |
 

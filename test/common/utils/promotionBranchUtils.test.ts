@@ -14,9 +14,14 @@ import {
   filterDeclaredPullRequests,
   findPromotionsCarrying,
   findPromotionsCarryingIndexed,
+  allowedPromotionSourceBranches,
+  allowedPromotionTargetBranches,
+  formatPromotionSteps,
   getCarriedBy,
   getPromotionBranchConfig,
   hasPromotionPrefixOnly,
+  isPromotionStepAllowed,
+  parsePromotionSteps,
   isPromotionBranchName,
   isPromotionPullRequest,
   isPromotionPullRequestForItsTarget,
@@ -25,8 +30,8 @@ import {
   parsePromotionPullRequestIds,
 } from '../../../src/common/utils/promotionBranchUtils.js';
 
-const ENABLED = { enabled: true };
-const DISABLED = { enabled: false };
+const ENABLED = { enabled: true, allowedSteps: [] };
+const DISABLED = { enabled: false, allowedSteps: [] };
 const PROMOTION_BRANCH = 'promotion/uat/preprod/2026-09-06-1';
 
 function pr(overrides: Partial<CommonPullRequestInfo>): CommonPullRequestInfo {
@@ -51,13 +56,70 @@ const DECLARATION = 'Promotion of September\n\n```yaml\npromotionPullRequests: [
 
 describe('getPromotionBranchConfig()', () => {
   it('is disabled when nothing is configured', () => {
-    expect(getPromotionBranchConfig({})).to.deep.equal({ enabled: false });
-    expect(getPromotionBranchConfig(null)).to.deep.equal({ enabled: false });
+    expect(getPromotionBranchConfig({})).to.deep.equal({ enabled: false, allowedSteps: [] });
+    expect(getPromotionBranchConfig(null)).to.deep.equal({ enabled: false, allowedSteps: [] });
   });
 
   it('only enables on an explicit true', () => {
     expect(getPromotionBranchConfig({ enablePromotionBranches: true }).enabled).to.equal(true);
     expect(getPromotionBranchConfig({ enablePromotionBranches: 'true' }).enabled).to.equal(false);
+  });
+});
+
+describe('allowedPromotionSteps', () => {
+  it('is read from the project config, next to the feature switch', () => {
+    const config = getPromotionBranchConfig({
+      enablePromotionBranches: true,
+      allowedPromotionSteps: [{ source: 'uat', target: 'preprod' }],
+    });
+    expect(config.enabled).to.equal(true);
+    expect(config.allowedSteps).to.deep.equal([{ source: 'uat', target: 'preprod' }]);
+  });
+
+  it('accepts the "uat > preprod" shorthand of a hand-edited config', () => {
+    expect(parsePromotionSteps(['uat > preprod', 'preprod -> main'])).to.deep.equal([
+      { source: 'uat', target: 'preprod' },
+      { source: 'preprod', target: 'main' },
+    ]);
+  });
+
+  it('leaves out what it cannot read, and the duplicates', () => {
+    expect(parsePromotionSteps([{ target: 'preprod' }, null, 42, '', { source: '  ' }])).to.deep.equal([]);
+    expect(parsePromotionSteps([{ source: 'uat', target: 'preprod' }, 'uat > preprod'])).to.have.length(1);
+    expect(parsePromotionSteps('uat > preprod')).to.deep.equal([]);
+  });
+
+  it('an entry without a target allows every target of that branch', () => {
+    const steps = parsePromotionSteps([{ source: 'uat' }]);
+    expect(steps).to.deep.equal([{ source: 'uat', target: '' }]);
+    expect(isPromotionStepAllowed(steps, 'uat', 'preprod')).to.equal(true);
+    expect(isPromotionStepAllowed(steps, 'uat', 'main')).to.equal(true);
+    expect(isPromotionStepAllowed(steps, 'integration', 'uat')).to.equal(false);
+  });
+
+  it('an empty list allows every step: the restriction is opt-in', () => {
+    expect(isPromotionStepAllowed([], 'integration', 'uat')).to.equal(true);
+    expect(allowedPromotionSourceBranches([], ['integration', 'uat'])).to.deep.equal(['integration', 'uat']);
+    expect(allowedPromotionTargetBranches([], 'uat', ['preprod', 'main'])).to.deep.equal(['preprod', 'main']);
+  });
+
+  it('matches branch names whatever their case', () => {
+    const steps = parsePromotionSteps([{ source: 'UAT', target: 'PreProd' }]);
+    expect(isPromotionStepAllowed(steps, 'uat', 'preprod')).to.equal(true);
+    expect(isPromotionStepAllowed(steps, 'uat', 'main')).to.equal(false);
+  });
+
+  it('filters the branches offered as source and as target', () => {
+    const steps = parsePromotionSteps([{ source: 'uat', target: 'preprod' }]);
+    expect(allowedPromotionSourceBranches(steps, ['integration', 'uat', 'preprod'])).to.deep.equal(['uat']);
+    expect(allowedPromotionTargetBranches(steps, 'uat', ['preprod', 'main'])).to.deep.equal(['preprod']);
+    expect(allowedPromotionTargetBranches(steps, 'preprod', ['main'])).to.deep.equal([]);
+  });
+
+  it('says the allowed steps in one line', () => {
+    expect(formatPromotionSteps([])).to.equal('-');
+    expect(formatPromotionSteps(parsePromotionSteps([{ source: 'uat', target: 'preprod' }, { source: 'preprod' }])))
+      .to.equal('uat -> preprod, preprod -> *');
   });
 });
 

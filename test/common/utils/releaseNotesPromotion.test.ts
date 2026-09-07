@@ -5,8 +5,8 @@ import '../../../src/common/gitProvider/index.js';
 import type { CommonPullRequestInfo } from '../../../src/common/gitProvider/index.js';
 import { dropResolvedPromotionPullRequests } from '../../../src/common/utils/releaseNotesUtils.js';
 
-const ENABLED = { enabled: true };
-const DISABLED = { enabled: false };
+const ENABLED = { enabled: true, allowedSteps: [] };
+const DISABLED = { enabled: false, allowedSteps: [] };
 const DECLARATION = '```yaml\npromotionPullRequests: [482, 487]\n```';
 
 function pr(overrides: Partial<CommonPullRequestInfo>): CommonPullRequestInfo {

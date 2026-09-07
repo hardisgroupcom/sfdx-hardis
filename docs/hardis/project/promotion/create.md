@@ -13,6 +13,7 @@
 This is the only supported way to create a [promotion branch (experimental)](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/). The command:
 
 - checks that `enablePromotionBranches: true` is set in the sfdx-hardis configuration;
+- keeps to the steps the project authorizes: when `allowedPromotionSteps` is set in `config/.sfdx-hardis.yml` (ex: `- source: uat` / `target: preprod`), only those source and target branches are offered, and naming another one fails. Without it, every major branch with a merge target can be promoted;
 - lists the Pull Requests merged into the source branch and not yet promoted to the target branch, and lets you select the ones to carry (or takes them from `--pull-requests`). A Pull Request another promotion branch already carries to the same target is left out, unless `--include-already-promoted` is passed;
 - creates the branch from the target branch, named `promotion/<source>/<target>/<YYYY-MM-DD>-<counter>` (ex: `promotion/uat/preprod/2026-09-06-1`), the counter separating several promotions assembled the same day;
 - cherry-picks the merge commit of each selected Pull Request, oldest first, with `-x` so each commit keeps a pointer to its origin;

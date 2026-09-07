@@ -7,7 +7,7 @@ import { getCurrentGitBranch, isCI, uxLog } from '../../../../common/utils/index
 import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { getPromotionBranchConfig, PROMOTION_PULL_REQUESTS_KEY } from '../../../../common/utils/promotionBranchUtils.js';
+import { formatPromotionSteps, getPromotionBranchConfig, PROMOTION_PULL_REQUESTS_KEY } from '../../../../common/utils/promotionBranchUtils.js';
 import {
   abortPromotion,
   buildPromotionPullRequestBody,
@@ -50,6 +50,7 @@ export default class PromotionCreate extends SfCommand<any> {
 This is the only supported way to create a [promotion branch (experimental)](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/). The command:
 
 - checks that \`enablePromotionBranches: true\` is set in the sfdx-hardis configuration;
+- keeps to the steps the project authorizes: when \`allowedPromotionSteps\` is set in \`config/.sfdx-hardis.yml\` (ex: \`- source: uat\` / \`target: preprod\`), only those source and target branches are offered, and naming another one fails. Without it, every major branch with a merge target can be promoted;
 - lists the Pull Requests merged into the source branch and not yet promoted to the target branch, and lets you select the ones to carry (or takes them from \`--pull-requests\`). A Pull Request another promotion branch already carries to the same target is left out, unless \`--include-already-promoted\` is passed;
 - creates the branch from the target branch, named \`promotion/<source>/<target>/<YYYY-MM-DD>-<counter>\` (ex: \`promotion/uat/preprod/2026-09-06-1\`), the counter separating several promotions assembled the same day;
 - cherry-picks the merge commit of each selected Pull Request, oldest first, with \`-x\` so each commit keeps a pointer to its origin;
@@ -147,8 +148,18 @@ In agent mode:
 
     // The feature switch: a promotion branch is meaningless for a project that did not opt in
     const config = await getConfig('branch');
-    if (!getPromotionBranchConfig(config).enabled) {
+    const promotionConfig = getPromotionBranchConfig(config);
+    if (!promotionConfig.enabled) {
       throw new SfError(t('promotionCreateFeatureDisabled', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/` }));
+    }
+    // A list nobody can read would silently allow every step, which is the opposite of what the
+    // project asked for: stop instead
+    const configuredSteps = Array.isArray(config?.allowedPromotionSteps) ? config.allowedPromotionSteps : [];
+    if (configuredSteps.length > 0 && promotionConfig.allowedSteps.length === 0) {
+      throw new SfError(t('promotionCreateAllowedStepsInvalid'));
+    }
+    if (promotionConfig.allowedSteps.length > 0) {
+      uxLog('log', this, c.grey(t('promotionCreateAllowedStepsInfo', { steps: formatPromotionSteps(promotionConfig.allowedSteps) })));
     }
 
     // Not checkGitClean: the reports sfdx-hardis writes inside the repository are not changes the
@@ -162,6 +173,7 @@ In agent mode:
       flags['source-branch'] || null,
       flags['target-branch'] || null,
       agentMode,
+      promotionConfig.allowedSteps,
     );
     // A pipeline step holds a single promotion in flight: the DevOps Pipeline draws it between the
     // two branch nodes. Ask before superseding the ones already open, and stop before touching git

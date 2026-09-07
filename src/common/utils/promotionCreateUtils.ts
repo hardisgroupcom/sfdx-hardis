@@ -14,9 +14,14 @@ import { generateReportPath } from './filesUtils.js';
 import { getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import {
+  allowedPromotionSourceBranches,
+  allowedPromotionTargetBranches,
   buildPromotionBranchName,
+  formatPromotionSteps,
   getPromotionBranchConfig,
+  isPromotionStepAllowed,
   PROMOTION_BRANCH_NAME_EXAMPLE,
+  PromotionStep,
   isPromotionPullRequest,
   parsePromotionBranchName,
   parsePromotionPullRequestIds,
@@ -197,24 +202,35 @@ export async function resolvePromotionSourceAndTarget(
   sourceFlag: string | null,
   targetFlag: string | null,
   agentMode: boolean,
+  allowedSteps: PromotionStep[] = [],
 ): Promise<{ sourceBranch: string; targetBranch: string }> {
   const majorOrgs = await listMajorOrgs();
   const promotable = majorOrgs.filter((org: any) => org.branchName && (org.mergeTargets || []).length > 0);
   if (promotable.length === 0) {
     throw new SfError(t('promotionCreateNoPromotableBranch'));
   }
+  // allowedPromotionSteps restricts which steps a release manager may assemble: the branches left
+  // out are never offered, and naming one in --source-branch is refused before anything is listed
+  const allowedSourceNames = allowedPromotionSourceBranches(allowedSteps, promotable.map((org: any) => org.branchName));
+  const allowedPromotable = promotable.filter((org: any) => allowedSourceNames.includes(org.branchName));
+  if (allowedPromotable.length === 0) {
+    throw new SfError(t('promotionCreateNoAllowedStep', {
+      steps: formatPromotionSteps(allowedSteps),
+      branches: promotable.map((org: any) => org.branchName).join(', '),
+    }));
+  }
   let sourceBranch = sourceFlag || '';
   if (!sourceBranch) {
     if (agentMode) {
-      throw new SfError(t('promotionCreateAgentRequiresSourceBranch', { branches: promotable.map((org: any) => org.branchName).join(', ') }));
+      throw new SfError(t('promotionCreateAgentRequiresSourceBranch', { branches: allowedPromotable.map((org: any) => org.branchName).join(', ') }));
     }
     const res = await prompts({
       type: 'select',
       name: 'value',
       message: c.cyanBright(t('promotionCreateSelectSourceBranch')),
       description: t('promotionCreateSelectSourceBranch'),
-      choices: promotable.map((org: any) => ({
-        title: `${org.branchName} -> ${(org.mergeTargets || []).join(', ')}`,
+      choices: allowedPromotable.map((org: any) => ({
+        title: `${org.branchName} -> ${allowedPromotionTargetBranches(allowedSteps, org.branchName, org.mergeTargets || []).join(', ')}`,
         value: org.branchName,
       })),
     });
@@ -225,21 +241,32 @@ export async function resolvePromotionSourceAndTarget(
     throw new SfError(t('promotionCreateSourceNotMajor', { branch: sourceBranch, branches: majorOrgs.map((org: any) => org.branchName).join(', ') }));
   }
   sourceBranch = sourceOrg.branchName;
+  if (allowedPromotionSourceBranches(allowedSteps, [sourceBranch]).length === 0) {
+    throw new SfError(t('promotionCreateSourceNotAllowed', { branch: sourceBranch, steps: formatPromotionSteps(allowedSteps) }));
+  }
   let targetBranch = targetFlag || '';
   if (!targetBranch) {
     const mergeTargets: string[] = sourceOrg.mergeTargets || [];
     if (mergeTargets.length === 0) {
       throw new SfError(t('promotionCreateSourceHasNoMergeTarget', { branch: sourceBranch }));
     }
-    if (mergeTargets.length === 1 || agentMode) {
-      targetBranch = mergeTargets[0];
+    const allowedTargets = allowedPromotionTargetBranches(allowedSteps, sourceBranch, mergeTargets);
+    if (allowedTargets.length === 0) {
+      throw new SfError(t('promotionCreateNoAllowedTarget', {
+        source: sourceBranch,
+        mergeTargets: mergeTargets.join(', '),
+        steps: formatPromotionSteps(allowedSteps),
+      }));
+    }
+    if (allowedTargets.length === 1 || agentMode) {
+      targetBranch = allowedTargets[0];
     } else {
       const res = await prompts({
         type: 'select',
         name: 'value',
         message: c.cyanBright(t('promotionCreateSelectTargetBranch', { source: sourceBranch })),
         description: t('promotionCreateSelectTargetBranch', { source: sourceBranch }),
-        choices: mergeTargets.map((branch) => ({ title: branch, value: branch })),
+        choices: allowedTargets.map((branch) => ({ title: branch, value: branch })),
       });
       targetBranch = res.value;
     }
@@ -251,6 +278,14 @@ export async function resolvePromotionSourceAndTarget(
   targetBranch = targetOrg.branchName;
   if (sourceBranch === targetBranch) {
     throw new SfError(t('promotionCreateSameBranches', { branch: sourceBranch }));
+  }
+  // --target-branch skips the prompt entirely: the step is checked here whichever way it was chosen
+  if (!isPromotionStepAllowed(allowedSteps, sourceBranch, targetBranch)) {
+    throw new SfError(t('promotionCreateStepNotAllowed', {
+      source: sourceBranch,
+      target: targetBranch,
+      steps: formatPromotionSteps(allowedSteps),
+    }));
   }
   // The naming convention has exactly four segments, so a branch name holding a "/" would produce
   // a branch the deployment jobs cannot recognize as a promotion

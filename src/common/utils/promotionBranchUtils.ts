@@ -27,6 +27,19 @@ export const PROMOTION_BRANCH_NAME_EXAMPLE = 'promotion/uat/preprod/2026-09-06-1
 
 export interface PromotionBranchConfig {
   enabled: boolean;
+  /**
+   * Steps a promotion may be assembled on (allowedPromotionSteps). Empty means every step is
+   * allowed, which is what a project gets until it declares the list.
+   */
+  allowedSteps: PromotionStep[];
+}
+
+/**
+ * One authorized promotion step. An empty target means "any target of that source branch".
+ */
+export interface PromotionStep {
+  source: string;
+  target: string;
 }
 
 export interface PromotionBranchNameParts {
@@ -61,7 +74,91 @@ const CUSTOM_BEHAVIOR_KEYWORDS: Record<keyof CommonPullRequestInfo['customBehavi
 export function getPromotionBranchConfig(config: any): PromotionBranchConfig {
   return {
     enabled: config?.enablePromotionBranches === true,
+    allowedSteps: parsePromotionSteps(config?.allowedPromotionSteps),
   };
+}
+
+/**
+ * Read allowedPromotionSteps: the source and target branches a release manager may assemble a
+ * promotion between. Entries are objects ({ source: uat, target: preprod }); a "uat > preprod"
+ * string is accepted too, since the config file is often edited by hand. An entry without a
+ * target allows every target of that source branch.
+ *
+ * Anything unusable is left out, so the caller can compare the count with the configured one and
+ * tell "no restriction" from "a restriction nobody can read".
+ */
+export function parsePromotionSteps(raw: any): PromotionStep[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const steps: PromotionStep[] = [];
+  for (const entry of raw) {
+    let source = '';
+    let target = '';
+    if (typeof entry === 'string') {
+      const parts = entry.split(/\s*(?:->|→|>)\s*/).map((part) => part.trim());
+      source = parts[0] || '';
+      target = parts.length > 1 ? parts[1] || '' : '';
+    } else if (entry && typeof entry === 'object') {
+      source = typeof entry.source === 'string' ? entry.source.trim() : '';
+      target = typeof entry.target === 'string' ? entry.target.trim() : '';
+    }
+    if (!source) {
+      continue;
+    }
+    const alreadyThere = steps.some(
+      (step) => step.source.toLowerCase() === source.toLowerCase() && step.target.toLowerCase() === target.toLowerCase(),
+    );
+    if (!alreadyThere) {
+      steps.push({ source, target });
+    }
+  }
+  return steps;
+}
+
+/**
+ * True when a promotion from source to target is authorized. An empty list authorizes everything:
+ * the restriction is opt-in, so a pipeline that never declared it keeps working as before.
+ */
+export function isPromotionStepAllowed(steps: PromotionStep[], sourceBranch: string, targetBranch: string): boolean {
+  if (!steps || steps.length === 0) {
+    return true;
+  }
+  const source = (sourceBranch || '').toLowerCase();
+  const target = (targetBranch || '').toLowerCase();
+  return steps.some((step) => step.source.toLowerCase() === source && (step.target === '' || step.target.toLowerCase() === target));
+}
+
+/**
+ * The branches of `sourceBranches` a promotion may start from.
+ */
+export function allowedPromotionSourceBranches(steps: PromotionStep[], sourceBranches: string[]): string[] {
+  if (!steps || steps.length === 0) {
+    return [...sourceBranches];
+  }
+  const sources = steps.map((step) => step.source.toLowerCase());
+  return sourceBranches.filter((branch) => sources.includes((branch || '').toLowerCase()));
+}
+
+/**
+ * The branches of `targetBranches` a promotion from `sourceBranch` may go to.
+ */
+export function allowedPromotionTargetBranches(steps: PromotionStep[], sourceBranch: string, targetBranches: string[]): string[] {
+  if (!steps || steps.length === 0) {
+    return [...targetBranches];
+  }
+  return targetBranches.filter((branch) => isPromotionStepAllowed(steps, sourceBranch, branch));
+}
+
+/**
+ * The allowed steps as a single line, for a prompt, a log or an error message.
+ * Ex: "uat -> preprod, preprod -> main".
+ */
+export function formatPromotionSteps(steps: PromotionStep[]): string {
+  if (!steps || steps.length === 0) {
+    return '-';
+  }
+  return steps.map((step) => `${step.source} -> ${step.target || '*'}`).join(', ');
 }
 
 /**
@@ -256,6 +353,15 @@ export function warnAboutPromotionPullRequestMisuse(pr: CommonPullRequestInfo | 
     if (pr.targetBranch && parts.targetBranch.toLowerCase() !== pr.targetBranch.toLowerCase()) {
       // Treated as an ordinary branch from here on (see isPromotionPullRequestForItsTarget)
       uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionBranchTargetMismatch', { branch: pr.sourceBranch, expected: parts.targetBranch, actual: pr.targetBranch })));
+    } else if (!isPromotionStepAllowed(config.allowedSteps, parts.sourceBranch, parts.targetBranch)) {
+      // Assembled outside the steps the project authorizes: deployed all the same, since refusing
+      // it here would block a branch that is already merged, but never in silence
+      uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionBranchStepNotAllowed', {
+        branch: pr.sourceBranch,
+        source: parts.sourceBranch,
+        target: parts.targetBranch,
+        steps: formatPromotionSteps(config.allowedSteps),
+      })));
     }
   }
 }
