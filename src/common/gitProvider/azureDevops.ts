@@ -6,7 +6,7 @@ import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../ut
 import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
-import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
+import { getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
@@ -762,7 +762,7 @@ ${this.getPipelineVariablesConfig()}
 
 <br/>
 
-_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](${azureBuildUri})_
+${this.buildPoweredByFooter(azureJobName, azureBuildUri)}
 
 ${getBannerMarkdownAndLink()}
 

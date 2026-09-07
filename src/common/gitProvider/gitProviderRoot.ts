@@ -3,7 +3,7 @@ import c from "chalk";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils/index.js";
 import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
-import { getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
+import { CONSTANTS, getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 
 // Oldest commit date of a window, minus one day of margin, used to bound merged PR listings:
@@ -161,6 +161,26 @@ export abstract class GitProviderRoot {
     const bannerMarkdown = getPrCommentBannerMarkdown(prMessage.bannerKey, titleLine);
     const headingMarkdown = bannerMarkdown === '' ? `## ${titleLine}\n\n` : '';
     return `${prMessage.navBlock || ''}${bannerMarkdown}${headingMarkdown}${titleRest ? `${titleRest}\n\n` : ''}`;
+  }
+
+  /**
+   * The "Powered by sfdx-hardis" footer of a Pull Request comment, with the link to the CI job that
+   * wrote it.
+   *
+   * The job name and its URL come from CI variables that only exist inside the CI system: a run
+   * from a developer machine, or from a CI system other than the git provider's own, has neither.
+   * Interpolating them anyway printed `from job [null](null)` on GitHub and
+   * `from job [undefined](undefined)` on GitLab in EVERY comment, which is a dead link in the face
+   * of every reviewer. When there is no job to point at, the footer simply does not mention one.
+   */
+  protected buildPoweredByFooter(jobName: string | null | undefined, jobUrl: string | null | undefined): string {
+    const poweredBy = `_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})`;
+    const name = (jobName ?? '').toString().trim();
+    const url = (jobUrl ?? '').toString().trim();
+    if (name === '' || name === 'null' || name === 'undefined' || url === '' || url === 'null' || url === 'undefined') {
+      return `${poweredBy}_`;
+    }
+    return `${poweredBy} from job [${name}](${url})_`;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -5,7 +5,7 @@ import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { getCurrentGitBranch, git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
-import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
+import { getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
 import { httpPost } from '../utils/httpUtils.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./jenkinsUtils.js";
@@ -766,7 +766,7 @@ export class BitbucketProvider extends GitProviderRoot {
     const messageKey = `${prMessage.messageKey}-${pullRequestId}`;
     let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
-_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${bitbucketBuildNumber}](${bitbucketJobUrl})_
+${this.buildPoweredByFooter(bitbucketBuildNumber, bitbucketJobUrl)}
 
 ${getBannerMarkdownAndLink()}
 
