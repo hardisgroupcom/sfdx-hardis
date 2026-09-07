@@ -227,8 +227,6 @@
 | [**hardis:project:metadata:activate-decomposed**](hardis/project/metadata/activate-decomposed.md) |       |
 | [**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)           |       |
 | [**hardis:project:skills:import**](hardis/project/skills/import.md)                               |       |
-| [**hardis:project:test-cases:render**](hardis/project/test-cases/render.md)                       |       |
-| [**hardis:project:test-cases:template**](hardis/project/test-cases/template.md)                   |       |
 
 ## hardis:scratch
 
@@ -257,6 +255,8 @@
 | Command                                       | Title |
 |:----------------------------------------------|:------|
 | [**hardis:ticket:get**](hardis/ticket/get.md) |       |
+| [**hardis:ticket:test-cases:init**](hardis/ticket/test-cases/init.md) |       |
+| [**hardis:ticket:test-cases:upsert**](hardis/ticket/test-cases/upsert.md) |       |
 
 ## hardis:work
 

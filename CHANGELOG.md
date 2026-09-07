@@ -2,16 +2,20 @@
 
 ## [beta] (main)
 
-### [hardis:project:test-cases:render](https://sfdx-hardis.cloudity.com/hardis/project/test-cases/render/)
+### [hardis:ticket:test-cases:init](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/init/)
 
-- **New command** that turns a test notebook into the deliverable a tester works in: a formatted **Excel workbook**, or a CSV Excel opens cleanly on a double click.
+- **New command** that takes the test cases drafted for a ticket and writes them into a notebook a human can review and correct: a formatted **Excel workbook**, a CSV, or a markdown table. The test cases come in as structured data, so whatever produced them (an AI agent that read the specification and the code, or a script) never has to format a table.
 - The result columns are left empty for the tester to fill in, the status column is restricted to a value list so a campaign can be counted rather than read, and a summary sheet gives the counts per module and priority.
-- The workbook it writes is read back by the same parser, so a filled-in campaign can be re-read without anything being retyped.
+- Without test cases to write, it falls back to a blank notebook with its identifiers already numbered, for the case where nobody has drafted anything yet.
 
-### [hardis:project:test-cases:template](https://sfdx-hardis.cloudity.com/hardis/project/test-cases/template/)
+### [hardis:ticket:test-cases:upsert](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/)
 
-- **New command** that generates an **empty test notebook** with the expected columns and identifiers already numbered, as a workbook, a CSV or a markdown table, so a tester can start writing straight away.
-- Asks for what it needs when you do not pass it, proposing the ticket number of your current branch.
+- **New command** that sends the test cases of a notebook to **Azure DevOps, ServiceNow Test Management or Xray Cloud**, creating what does not exist yet and updating what does. It reads back the workbook a human corrected, so the corrections reach the tracker.
+- **Safe to run twice.** Every case carries an idempotency key, so a second run updates what it already created instead of duplicating it. A notebook committed next to the code plus a CI job keeps the tracker in sync at every merge, with no AI involved.
+- **An unfinished notebook is refused whole**, listing every case that still holds a completion marker or an unsubstituted template token, rather than sending half of it and leaving you to clean up the tracker.
+- One case failing does not abandon the others, and one tool being unreachable does not block the rest: the command returns 0 when everything went through, 2 when some cases failed, 1 when nothing could be attempted. `--dry-run` validates everything and writes nothing.
+- On Azure DevOps, a created test case **inherits the area path, iteration and assignee of the user story it tests**, which is what keeps Azure DevOps from rejecting it outright. An unassigned story leaves the cases unassigned rather than inventing a recipient.
+- Reuses the variables you already configure (`SYSTEM_COLLECTIONURI`..., `SERVICENOW_URL`..., `XRAY_CLIENT_ID` + `JIRA_HOST`...), from CI/CD variables or a local `.env`, and works outside of a Salesforce project. When nothing is configured, it names the variables to set instead of reporting an empty result.
 
 ### [hardis:ticket:get](https://sfdx-hardis.cloudity.com/hardis/ticket/get/)
 
