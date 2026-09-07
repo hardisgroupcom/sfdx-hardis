@@ -7,7 +7,7 @@ import { attributeCommitsToFirstParents, parseCommitParents } from '../../../src
 
 describe('parseCommitParents()', () => {
   it('reads the parents of each commit of a git rev-list --parents output', () => {
-    const parents = parseCommitParents('aaa bbb ccc\nbbb ddd\nddd\n\n');
+    const parents = parseCommitParents(['aaa bbb ccc', 'bbb ddd', 'ddd', '', ''].join('\n'));
     expect(parents.get('aaa')).to.deep.equal(['bbb', 'ccc']);
     expect(parents.get('bbb')).to.deep.equal(['ddd']);
     expect(parents.get('ddd')).to.deep.equal([]);

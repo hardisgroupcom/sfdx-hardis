@@ -62,9 +62,9 @@ gl_mr_sha() {
 # is not one. So the ref is fetched again until it holds the head of the source branch.
 # Usage: gl_fetch_merge_ref <iid>
 gl_fetch_merge_ref() {
-  local mr="$1" sha attempt
+  local mr="$1" sha
   sha=$(gl_mr_sha "$mr")
-  for attempt in $(seq 1 20); do
+  for _ in $(seq 1 20); do
     curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" \
       "$GL_HOST/api/v4/projects/$PROJECT_ID/merge_requests/$mr/merge_ref" >/dev/null
     if git fetch -q origin "+refs/merge-requests/$mr/merge:refs/heads/mrmerge-$mr" 2>/dev/null &&
