@@ -313,7 +313,7 @@ ${this.getPipelineVariablesConfig()}
       if (!pullRequest.workItemRefs) {
         pullRequest.workItemRefs = pullRequestWorkItemRefs;
       }
-      return this.completePullRequestInfo(latestMergedPullRequestOnBranch[0]);
+      return this.completePullRequestInfo(await this.completeTruncatedDescription(azureGitApi, pullRequest));
     }
     uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationUnableToFindPrInfo')));
     return null;
@@ -385,7 +385,7 @@ ${this.getPipelineVariablesConfig()}
     // Complete results with PR comments (stored in providerInfo)
     const results: CommonPullRequestInfo[] = [];
     for (const pullRequest of pullRequests) {
-      const pr: GitPullRequest & { threads?: any[] } = Object.assign({}, pullRequest);
+      const pr: GitPullRequest & { threads?: any[] } = Object.assign({}, await this.completeTruncatedDescription(azureGitApi, pullRequest));
       uxLog("log", this, c.grey(t('gettingThreadsForPr', { pullRequest: pullRequest.pullRequestId })));
       const existingThreads = await azureGitApi.getThreads(pullRequest.repository?.id || "", pullRequest.pullRequestId || 0, teamProject);
       pr.threads = existingThreads.filter(thread => !thread.isDeleted);
@@ -724,7 +724,11 @@ ${this.getPipelineVariablesConfig()}
         uniquePRsMap.set(pr.pullRequestId, pr);
       }
     }
-    return Array.from(uniquePRsMap.values()).map((pr) => this.completePullRequestInfo(pr));
+    const completed: CommonPullRequestInfo[] = [];
+    for (const pr of uniquePRsMap.values()) {
+      completed.push(this.completePullRequestInfo(await this.completeTruncatedDescription(gitApi, pr)));
+    }
+    return completed;
   }
 
   // Posts a note on the merge request
@@ -857,6 +861,30 @@ ${getBannerMarkdownAndLink()}
     return `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(
       process.env.SYSTEM_TEAMPROJECT || "",
     )}/_git/${encodeURIComponent(repositoryName)}/pullrequest/${pullRequestId}`;
+  }
+
+  // Azure DevOps truncates the description of a Pull Request returned by the list API, with no
+  // marker saying so. Everything sfdx-hardis reads from a description is then silently lost: the
+  // promotionPullRequests declaration of a promotion branch, the deploymentApexTestClasses blocks,
+  // the custom behavior keywords. The single Pull Request API returns the whole description, so it
+  // is read again for every listed Pull Request whose description is long enough to have been cut.
+  private static readonly LIST_DESCRIPTION_TRUNCATION_LENGTH = 400;
+
+  private async completeTruncatedDescription(azureGitApi: any, pullRequest: GitPullRequest): Promise<GitPullRequest> {
+    const listedDescription = pullRequest.description || "";
+    if (listedDescription.length < AzureDevopsProvider.LIST_DESCRIPTION_TRUNCATION_LENGTH) {
+      return pullRequest;
+    }
+    try {
+      const fullPullRequest = await azureGitApi.getPullRequestById(pullRequest.pullRequestId);
+      const fullDescription = fullPullRequest?.description || "";
+      if (fullDescription.length > listedDescription.length) {
+        return Object.assign({}, pullRequest, { description: fullDescription });
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[Azure Integration] Unable to read the full description of Pull Request ${pullRequest.pullRequestId}: ${(e as Error).message}`));
+    }
+    return pullRequest;
   }
 
   private completePullRequestInfo(prData: GitPullRequest): CommonPullRequestInfo {
