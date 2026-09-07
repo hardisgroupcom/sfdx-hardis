@@ -57,6 +57,11 @@ On GitLab, source `scripts/e2e-lib-gitlab.sh` instead: `gl_check`, `gl_deploy`, 
 needs `PROJECT_ID`, `PROJECT_PATH`, `GL_HOST` and `GL_TOKEN` where the GitHub library needs `REPO`.
 Section 8 holds what is different on GitLab.
 
+On Azure DevOps, source `scripts/e2e-lib-azure.sh`: `az_check`, `az_deploy`, `az_promote`,
+`az_release_notes`, plus `az_pr_create` and `az_pr_merge`, and the merge-ref wait. It needs
+`AZ_ORG`, `AZ_PROJECT`, `AZ_REPO_ID`, `AZ_REPO_NAME` and `AZ_TOKEN`. Section 8bis holds what is
+different on Azure DevOps.
+
 Each writes `$LOGS/<label>.log` and echoes the exit code.
 
 ## 2. Build the repository
@@ -305,8 +310,10 @@ pending manual checkbox per org branch.
   only moves the failure to the modified `.gitignore`.
 - **The A/B scripts cannot be run from inside the sfdx-hardis working copy.** Section 7ter checks
   out `origin/main`, which takes `.claude/skills/` away with it, and the second half of each pair
-  silently runs nothing. Copy `ab-run.sh`, `ab-run-gitlab.sh`, `ab-diff.py` and
-  `e2e-lib-gitlab.sh` somewhere else first, and call them by absolute path.
+  silently runs nothing. Copy `ab-run.sh`, `ab-run-gitlab.sh`, `ab-run-azure.sh`, `ab-diff.py`
+  and the matching `e2e-lib-*.sh` somewhere else first, and call them by absolute path.
+  `ab-run-azure.sh` sources the library sitting next to it, because `bash script.sh` is a
+  child process and does not inherit the functions the caller sourced.
 - **A promotion Pull Request number is not a candidate.** Promotions are vehicles, so `promote
   <promotion number>` is refused. Select one of the stories it carried.
 
@@ -333,6 +340,12 @@ and exits non-zero if a number appears twice. It also prints the counts the two 
 which must be higher.
 
 The extension must be compiled first (`cd $EXT && yarn dev`), on the branch under test.
+
+On Azure DevOps, `check-diagram-azure.cjs` does the same from the Azure DevOps API:
+
+```bash
+EXT=C:/git/vscode-sfdx-hardis AZ_ORG="$AZ_ORG" AZ_PROJECT="$AZ_PROJECT" AZ_TOKEN="$AZ_TOKEN"   node .claude/skills/promotion-branches-e2e/scripts/check-diagram-azure.cjs   "$AZ_REPO_NAME" integration,uat,preprod,main
+```
 
 On GitLab, `check-diagram-gitlab.cjs` does the same from the GitLab API:
 
@@ -416,6 +429,64 @@ Traps that only bite on GitLab:
   `PRIVATE-TOKEN`, or export `GITLAB_HOST`.
 - Merge request iids do not have to start at 1. Nothing in the feature assumes they do, and a run
   that starts at !2 is a slightly better test than one that starts at !1.
+
+## 8bis. What is different on Azure DevOps
+
+Run the whole thing again against a throwaway repository of an Azure DevOps team project: the
+provider code paths that create, find, close and read a promotion Pull Request are not shared with
+GitHub or GitLab.
+
+```bash
+export ORG="your.user@example.com"
+export AZ_ORG="yourorg"                    # https://dev.azure.com/<AZ_ORG>/
+export AZ_PROJECT="tests-sfdx-hardis"      # the team project holding the repository
+export AZ_REPO_NAME="sfdx-hardis-promo-e2e-az-1"
+export AZ_REPO_ID="..."                    # the GUID the creation API answers with
+export AZ_TOKEN="..."                      # PAT: Code read/write, Pull Request threads read/write
+export WORK="/c/tmp/promo-e2e-az" LOGS="/c/tmp/promo-e2e-az-logs"
+export DEV="C:/git/sfdx-hardis/bin/dev.js"
+source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-azure.sh
+```
+
+Create the repository, and read back its GUID, with the REST API:
+
+```bash
+curl -sS -u ":$AZ_TOKEN" -H "Content-Type: application/json" -d '{"name":"'"$AZ_REPO_NAME"'"}'   "https://dev.azure.com/$AZ_ORG/$AZ_PROJECT/_apis/git/repositories?api-version=7.1"
+```
+
+Push with the token in the remote URL: `https://azure:$AZ_TOKEN@dev.azure.com/$AZ_ORG/$AZ_PROJECT/_git/$AZ_REPO_NAME`.
+Then follow sections 3 to 7 with `az_check` / `az_deploy` / `az_promote` / `az_release_notes`.
+
+Traps that only bite on Azure DevOps:
+
+- **The Pull Request list API truncates every description at 400 characters**, with no marker
+  saying so. A promotion branch declares its stories in a `promotionPullRequests` yaml block that
+  sits below the navigation block and the introduction, so it is cut off, and every consumer that
+  reads a description from a list sees nothing. This was a real defect, found by this run and fixed
+  in `AzureDevopsProvider.completeTruncatedDescription`. `check-diagram-azure.cjs` re-reads the
+  full Pull Request the same way. Anything new that reads a description out of `listPullRequests`
+  has to go through that helper.
+- **A Pull Request description is capped at 4000 characters.** A promotion with an embedded
+  conflict prompt gets close: the one this run produced was 3690.
+- **Pull Request ids are unique per organization, not per repository**, so a fresh repository does
+  not start at 1 (this run started at 6). Nothing in the feature assumes it does, and it is a
+  slightly better test than a run starting at 1.
+- **`refs/pull/<id>/merge` is recomputed asynchronously.** As on GitLab, a validation job run
+  seconds after a push can validate the previous merge. `az_check` waits until the merge ref holds
+  the head of the source branch.
+- **Completing a Pull Request is asynchronous too.** The API accepts the completion and answers
+  before the merge commit exists; `az_pr_merge` waits for `status=completed` and
+  `mergeStatus=succeeded`. It always completes with `mergeStrategy: noFastForward` so the `-x`
+  trailers of the cherry-picks survive.
+- **The description of a completed Pull Request cannot be edited** (Azure answers TF401181), which
+  is why `isPrDescriptionEditableAfterMerge()` returns false and the deployment comment is created
+  as a placeholder by the validation job.
+- **Python on Windows does not resolve the git bash `/tmp` path.** Keep the Pull Request body files
+  under a real Windows path (`C:/tmp/...`), or the description is posted empty and the creation
+  fails with "Both a source and target reference is required".
+- `az repos` (the Azure CLI) is not used anywhere: it needs its own login, prints its own
+  decorations, and cannot set the completion options the merge needs. Everything goes through
+  `curl` with the PAT.
 
 ## 9. Cleaning up
 

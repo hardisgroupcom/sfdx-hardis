@@ -1,6 +1,6 @@
 ---
 name: promotion-branches-e2e
-description: Run the hardcore end to end test of the promotion branches feature against a real Salesforce org and a throwaway private GitHub or GitLab repository, then write the report. Use when promotion branches (enablePromotionBranches, hardis:project:promotion:create) changed and must be proven again, or when the user asks for the promotion branches end to end / hardcore test.
+description: Run the hardcore end to end test of the promotion branches feature against a real Salesforce org and a throwaway private GitHub, GitLab or Azure DevOps repository, then write the report. Use when promotion branches (enablePromotionBranches, hardis:project:promotion:create) changed and must be proven again, or when the user asks for the promotion branches end to end / hardcore test.
 argument-hint: "[org username] [repo slug] [what to focus on]"
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write, AskUserQuestion
 user-invocable: true
@@ -29,6 +29,7 @@ not already, so you know what each assertion is protecting.
 | `scripts/check-diagram-gitlab.cjs` | The same, reading merge requests from the GitLab API.                                                                                                           |
 | `scripts/ab-run.sh`                | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                            |
 | `scripts/ab-run-gitlab.sh`         | The same on GitLab.                                                                                                                                             |
+| `scripts/ab-run-azure.sh`          | The same on Azure DevOps.                                                                                                                                       |
 | `scripts/ab-diff.py`               | Normalises two log folders and diffs them: the flag-off regression proof.                                                                                       |
 
 ## Before starting
@@ -38,12 +39,13 @@ Ask the user only for what you cannot find yourself:
 - the **Salesforce org** to deploy to (an authenticated org alias or username);
 - the **repository slug** to create, if they care about the name. Otherwise pick
   `<gh login>/sfdx-hardis-promo-e2e-<n>`, incrementing `<n>` past the ones that already exist;
-  on GitLab, `<user>/sfdx-hardis-promo-e2e-gl-<n>`;
-- which **providers** to run, when they have not said. GitHub alone is the quick pass; GitHub and
-  GitLab is the full one, and it is the only way the GitLab provider code gets exercised.
+  on GitLab, `<user>/sfdx-hardis-promo-e2e-gl-<n>`; on Azure DevOps,
+  `sfdx-hardis-promo-e2e-az-<n>` inside an existing team project;
+- which **providers** to run, when they have not said. GitHub alone is the quick pass; each of
+  GitLab and Azure DevOps is the only way its own provider code gets exercised.
 
-Check yourself: `gh auth status`, `glab auth status`, `sf org list`, the sfdx-hardis branch under
-test, and whether the vscode-sfdx-hardis working copy is on the matching branch and compiled
+Check yourself: `gh auth status`, `glab auth status`, the Azure DevOps PAT in `.env`
+(`AZURE_PERSONAL_ACCESS_TOKEN`), `sf org list`, the sfdx-hardis branch under test, and whether the vscode-sfdx-hardis working copy is on the matching branch and compiled
 (`yarn dev`), which the diagram check needs.
 
 **Never reuse a previous test repository.** Each run starts from a fresh private repository, so a
@@ -66,11 +68,13 @@ failure cannot be an artefact of the previous run's state.
 4. **Run the pipeline** (runbook section 4), asserting each log as you go with `e2e_grep`. Do not
    batch the assertions to the end: a wrong scope early makes every later log meaningless.
 5. **Run the edge cases** (runbook section 6). These are where the defects have been.
-6. **Check the diagram rule**: `node scripts/check-diagram.cjs <owner>/<repo> integration,uat,preprod,main`.
+6. **Check the diagram rule**: `node scripts/check-diagram.cjs <owner>/<repo> integration,uat,preprod,main`
+   (`check-diagram-gitlab.cjs` / `check-diagram-azure.cjs` for the other two providers).
 7. **Run the flag-off A/B regression check** (runbook section 7ter). `TOTAL DIFFERING LINES: 0`,
    or 1 when a merged branch is named `promotion/...`.
 8. **Write the report** at the repository root, one per provider:
-   `promotion-branches-e2e-report-github.md` and `promotion-branches-e2e-report-gitlab.md`.
+   `promotion-branches-e2e-report-github.md`, `promotion-branches-e2e-report-gitlab.md` and
+   `promotion-branches-e2e-report-azure.md`.
    Pipeline under test, the stories, the promotions performed, a table per test group with expected
    versus result, what the run found, what it did not cover, and the suite counts. Overwrite the
    previous reports.
@@ -89,8 +93,8 @@ failure cannot be an artefact of the previous run's state.
 
 State them again in the report unless you close them:
 
-- Azure DevOps and Bitbucket have never been exercised live: they are covered by code reading and
-  unit tests. GitHub and GitLab were both run live on 2026-09-07.
+- Bitbucket has never been exercised live: it is covered by code reading and unit tests. GitHub,
+  GitLab and Azure DevOps were all run live on 2026-09-07.
 - The four pipeline levels share one Salesforce org, so deployment action state is keyed by org
   **branch**, not by distinct orgs.
 - The pipeline webview is exercised through its compiled helpers and its unit tests, not by
