@@ -52,15 +52,25 @@ It defines:
 | `e2e_release_notes <label> [extra flags]`          | `doc:release-notes --mode post` on the last merge of `main`                           |
 | `e2e_grep <logfile>`                               | The lines worth reading in a job log                                                  |
 
+On GitLab, source `scripts/e2e-lib-gitlab.sh` instead: `gl_check`, `gl_deploy`, `gl_promote`,
+`gl_release_notes`, plus `gl_mr_create` and `gl_mr_merge` to open and merge a merge request. It
+needs `PROJECT_ID`, `PROJECT_PATH`, `GL_HOST` and `GL_TOKEN` where the GitHub library needs `REPO`.
+Section 9 holds what is different on GitLab.
+
 Each writes `$LOGS/<label>.log` and echoes the exit code.
 
 ## 2. Build the repository
 
 Four major branches, all deployed to the same org.
 
+`scripts/build-repo.sh` writes all of it:
+
 ```bash
-mkdir -p "$WORK" && cd "$WORK" && git init -q -b main
+WORK="$WORK" API=67.0 bash .claude/skills/promotion-branches-e2e/scripts/build-repo.sh
 ```
+
+It refuses to run on an existing `$WORK`, on purpose: a rerun on a previous tree is exactly the
+artefact this test must not have. What it writes, and why:
 
 `sfdx-project.json` with a single `force-app` package directory, then:
 
@@ -134,8 +144,13 @@ travels with the cherry-picked commit, which is one of the things being tested.
 | S5    | `feature/E2E-202-epsilon` | uat         | post command              | -                   | -                        |
 | S6    | `feature/E2E-301-hotfix`  | preprod     | pre command + post manual | `PromoE2EBetaTest`  | `FLOW_DELETE_INTERVIEWS` |
 
-Give **S1 two separate `yaml` blocks** in its description (the test classes, then a second block
-added later): both must be read.
+`scripts/stories.sh` creates the branches and the action files: `story_branch <branch> <target>
+<resource>` then, once the Pull Request exists, `story_actions <branch> <number> <kind>`. Opening
+the Pull Request is provider specific and stays with the caller.
+
+Give **S1 two separate `yaml` blocks** in its description, both naming `deploymentApexTestClasses`
+with a different class: the union of the two must be selected. A second block repeating a key used
+to replace the first one, which silently dropped the classes declared above it.
 
 The Pull Request description carries the test classes and the keyword:
 
@@ -184,8 +199,11 @@ e2e_check <P2> preprod "check-promotion-preprod"
 gh pr merge <P2> --repo "$REPO" --merge --delete-branch=false
 e2e_deploy preprod "deploy-preprod-promotion"
 
-# P3: uat -> preprod carrying the MERGE COMMIT of P1, so P1 and the stories under it
-e2e_promote uat <P1> "promotion-uat-preprod-nested"
+# P3: uat -> preprod carrying the MERGE COMMIT of P1, so the stories under it.
+# Not <P1>: a promotion Pull Request is a vehicle, it is no longer a candidate, and passing its
+# number is answered with "not among the Pull Requests waiting for promotion". Pass one of the
+# stories it carried: the candidate is the group labelled "#3, #1" and selecting either takes both.
+e2e_promote uat 3 "promotion-uat-preprod-nested"
 
 # RUN stream: hotfix straight into preprod
 e2e_check 6 preprod "check-pr6-hotfix"
@@ -241,25 +259,28 @@ pending manual checkbox per org branch.
 
 ## 6. Edge cases to run at the end
 
-| Case                                   | How                                                                                                                           | Expected                                                                                                                                                                         |
-|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Already promoted                       | `e2e_promote uat 4 ...` after the `uat -> preprod` promotion is merged                                                        | the candidate table shows `Already promoted by promotion/uat/preprod/...`, a warning names `--include-already-promoted`, no branch created                                       |
-| Empty cherry-pick                      | same with `--include-already-promoted`                                                                                        | `Nothing to cherry-pick ...: this change is already in the target branch`, branch undone, tree clean, **exit 0**. Not a conflict                                                 |
-| Empty cherry-pick, dirty report folder | the same while `hardis-report/` is untracked                                                                                  | identical result: the cleanliness check and the emptiness test must both ignore the report directory                                                                             |
-| Conflict, agent default                | two stories on the shared `CustomLabels` file merged into integration, promote only the second                                | `Cherry-pick conflict on #N (...): the promotion has been undone`, no leftover branch                                                                                            |
-| Conflict, kept                         | same with `--on-conflict commit-with-markers`                                                                                 | Pull Request created, `hardis-report/promotion-conflicts-prompt-*.md` written, prompt embedded in the description                                                                |
-| Marker guard                           | validate that Pull Request                                                                                                    | job fails: `still contains git conflict markers in N file(s): ...`                                                                                                               |
-| Marker guard, solved                   | solve as the prompt says, push, validate again                                                                                | job passes                                                                                                                                                                       |
-| Conflict outside force-app             | make two stories diverge on `NOTES.md` (both sides must hold the file with different content, otherwise git leaves no marker) | the marker gate still catches it and names `NOTES.md`                                                                                                                            |
-| Feature off                            | set `enablePromotionBranches: false` in the checked-out tree and validate a promotion Pull Request                            | one informational line, scope = the Pull Request alone, everything else unchanged                                                                                                |
-| Hand-named branch                      | branch `promotion/hand-made-by-a-human` with a `promotionPullRequests` block in its description                               | warning `starts with promotion/ but does not follow the promotion branch naming ...`, treated as a feature branch, declaration ignored                                           |
-| Retargeted promotion                   | open a `promotion/uat/preprod/...` branch against `main`                                                                      | treated as an ordinary branch, scope is the Pull Request alone, with a warning naming the mismatch. **The declared stories must not run their actions against production**       |
-| Grouped merge commit                   | promote a candidate whose label lists several numbers (`#7, #6, #4 ...`)                                                      | the command names the numbers nobody asked for **before** cherry-picking, and declares them all                                                                                  |
-| Unreadable declaration                 | declare a Pull Request number that does not exist                                                                             | warning and skip, not a failure                                                                                                                                                  |
-| Sync merge inside a story              | merge the major branch into a feature branch, then merge that feature branch                                                  | the candidate lists the story only: the major branch's own Pull Request must not be offered, declared or have its actions run                                                    |
-| Supersede a promotion                  | assemble a promotion, then assemble another one from the same source with the same stories                                    | the confirmation names the open promotion, then the candidate list offers those stories again with no "Already promoted by" mark, and `--include-already-promoted` is not needed |
-| Branch merged twice                    | merge a feature branch, push a fix on it, merge it again, then promote                                                        | the candidate lists the Pull Request once, never once with its number and once as a "-" row                                                                                      |
-| Single place in the diagram            | section 7bis                                                                                                                  | each promoted number appears in one branch only                                                                                                                                  |
+| Case                                   | How                                                                                                                           | Expected                                                                                                                                                                                                                                                   |
+|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Already promoted                       | `e2e_promote uat 4 ...` after the `uat -> preprod` promotion is merged                                                        | the candidate table shows `Already promoted by promotion/uat/preprod/...`, a warning names `--include-already-promoted`, no branch created                                                                                                                 |
+| Empty cherry-pick                      | same with `--include-already-promoted`                                                                                        | `Nothing to cherry-pick ...: this change is already in the target branch`, branch undone, tree clean, **exit 0**. Not a conflict                                                                                                                           |
+| Empty cherry-pick, dirty report folder | the same while `hardis-report/` is untracked                                                                                  | identical result: the cleanliness check and the emptiness test must both ignore the report directory                                                                                                                                                       |
+| Conflict, agent default                | two stories on the shared `CustomLabels` file merged into integration, promote only the second                                | `Cherry-pick conflict on #N (...): the promotion has been undone`, no leftover branch                                                                                                                                                                      |
+| Conflict, kept                         | same with `--on-conflict commit-with-markers`                                                                                 | Pull Request created, `hardis-report/promotion-conflicts-prompt-*.md` written, prompt embedded in the description                                                                                                                                          |
+| Marker guard                           | validate that Pull Request                                                                                                    | job fails: `still contains git conflict markers in N file(s): ...`                                                                                                                                                                                         |
+| Marker guard, solved                   | solve as the prompt says, push, validate again                                                                                | job passes                                                                                                                                                                                                                                                 |
+| Conflict outside force-app             | make two stories diverge on `NOTES.md` (both sides must hold the file with different content, otherwise git leaves no marker) | the marker gate still catches it and names `NOTES.md`                                                                                                                                                                                                      |
+| Feature off                            | set `enablePromotionBranches: false` in the checked-out tree and validate a promotion Pull Request                            | one informational line, scope = the Pull Request alone, everything else unchanged                                                                                                                                                                          |
+| Hand-named branch                      | branch `promotion/hand-made-by-a-human` with a `promotionPullRequests` block in its description                               | warning `starts with promotion/ but does not follow the promotion branch naming ...`, treated as a feature branch, declaration ignored                                                                                                                     |
+| Retargeted promotion                   | open a `promotion/uat/preprod/...` branch against `main`                                                                      | treated as an ordinary branch, scope is the Pull Request alone, with a warning naming the mismatch. **The declared stories must not run their actions against production**                                                                                 |
+| Grouped merge commit                   | promote a candidate whose label lists several numbers (`#7, #6, #4 ...`)                                                      | the command names the numbers nobody asked for **before** cherry-picking, and declares them all                                                                                                                                                            |
+| Unreadable declaration                 | declare a Pull Request number that does not exist                                                                             | warning and skip, not a failure                                                                                                                                                                                                                            |
+| Sync merge inside a story              | merge the major branch into a feature branch, then merge that feature branch                                                  | the candidate lists the story only: the major branch's own Pull Request must not be offered, declared or have its actions run                                                                                                                              |
+| Supersede a promotion                  | assemble a promotion, then assemble another one from the same source with the same stories                                    | the confirmation names the open promotion, then the candidate list offers those stories again with no "Already promoted by" mark, and `--include-already-promoted` is not needed                                                                           |
+| Branch merged twice                    | merge a feature branch, push a fix on it, merge it again, then promote                                                        | the candidate lists the Pull Request once, never once with its number and once as a "-" row                                                                                                                                                                |
+| Full merge after a partial promotion   | promote some stories of a branch, then open an ordinary merge of the whole branch into the same target                        | the stories already promoted are named `already deployed through promotion branch(es)` and their actions skipped, the ones never promoted arrive for the first time and run theirs. Afterwards nothing is left waiting for promotion: the merge base moved |
+| Two yaml blocks with the same key      | a description declaring `deploymentApexTestClasses` in two separate blocks                                                    | the union of both is selected, the second block does not replace the first                                                                                                                                                                                 |
+| A committed conflict prompt report     | commit `hardis-report/promotion-conflicts-prompt-*.md` on the promotion branch                                                | the marker gate stays silent: it matches `<<<<<<< ` at the start of a line, and the report only mentions the markers inline                                                                                                                                |
+| Single place in the diagram            | section 7bis                                                                                                                  | each promoted number appears in one branch only                                                                                                                                                                                                            |
 
 ## 7. Traps met while writing this
 
@@ -280,6 +301,12 @@ pending manual checkbox per org branch.
   something you just fixed. Fetch again a few seconds later before believing the failure.
 - **Writing into the user's `.gitignore`** to work around the dirty-tree check is not a fix: it
   only moves the failure to the modified `.gitignore`.
+- **The A/B scripts cannot be run from inside the sfdx-hardis working copy.** Section 7ter checks
+  out `origin/main`, which takes `.claude/skills/` away with it, and the second half of each pair
+  silently runs nothing. Copy `ab-run.sh`, `ab-run-gitlab.sh`, `ab-diff.py` and
+  `e2e-lib-gitlab.sh` somewhere else first, and call them by absolute path.
+- **A promotion Pull Request number is not a candidate.** Promotions are vehicles, so `promote
+  <promotion number>` is refused. Select one of the stories it carried.
 
 ## 7bis. Checking the "one place in the diagram" rule
 
@@ -304,6 +331,19 @@ and exits non-zero if a number appears twice. It also prints the counts the two 
 which must be higher.
 
 The extension must be compiled first (`cd $EXT && yarn dev`), on the branch under test.
+
+On GitLab, `check-diagram-gitlab.cjs` does the same from the GitLab API:
+
+```bash
+EXT=C:/git/vscode-sfdx-hardis GL_HOST="$GL_HOST" GL_TOKEN="$GL_TOKEN" \
+  node .claude/skills/promotion-branches-e2e/scripts/check-diagram-gitlab.cjs \
+  "$PROJECT_ID" integration,uat,preprod,main
+```
+
+Both scripts build a branch window from "every merged Pull Request whose target is this branch",
+which is a superset of the real window and makes the duplicate check stricter. It also means a
+story that reached a branch through an ordinary major-to-major merge stays listed under the branch
+it was merged into: that is the script, not the extension.
 
 ## 7ter. Regression check against `main`, feature off
 
@@ -331,6 +371,49 @@ Expected: `TOTAL DIFFERING LINES: 0`, or 1 when a merged branch is named `promot
 informational line saying it is treated as an ordinary feature branch). Anything else is a
 regression. Switching the CLI checkout in place is safe as long as `package.json` and `yarn.lock`
 are identical on both refs (`bin/dev.js` runs the TypeScript sources through ts-node).
+
+## 9. What is different on GitLab
+
+Run the whole thing a second time against a throwaway private GitLab project: the provider code
+paths that create, find and close a promotion Pull Request are not shared with GitHub.
+
+```bash
+export ORG="your.user@example.com"
+export PROJECT_ID=4431                                    # numeric id of the new project
+export PROJECT_PATH="you/sfdx-hardis-promo-e2e-gl-1"
+export GL_HOST="https://gitlab.example.com"
+export GL_TOKEN="..."                                     # personal access token, api scope
+export WORK="/c/tmp/promo-e2e-gl" LOGS="/c/tmp/promo-e2e-gl-logs"
+export DEV="C:/git/sfdx-hardis/bin/dev.js"
+source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-gitlab.sh
+```
+
+Set the project to merge commits and never squash, otherwise the `-x` trailers are lost:
+
+```bash
+curl -X PUT -H "PRIVATE-TOKEN: $GL_TOKEN" "$GL_HOST/api/v4/projects/$PROJECT_ID" \
+  -d merge_method=merge -d squash_option=never -d only_allow_merge_if_pipeline_succeeds=false
+```
+
+Then follow sections 3 to 7 with `gl_check` / `gl_deploy` / `gl_promote` / `gl_release_notes`.
+
+Traps that only bite on GitLab:
+
+- **`refs/merge-requests/<iid>/merge` is written lazily.** After a push to the source branch it
+  still points at the previous merge, and `GET /merge_requests/:iid/merge_ref` hands back the stale
+  `commit_id` while the new one is computed. A validation job then runs against a tree missing the
+  commit you just pushed, and the result looks like a product bug: deployment actions "not found",
+  conflict markers "still there" after you solved them. `gl_check` waits until the merge ref
+  actually contains the head of the source branch. Never trust a GitLab validation result you got
+  within seconds of a push without that wait.
+- **Python's `urllib` refuses a corporate CA** that `curl` and node accept. Every API call of the
+  GitLab library goes through `curl`; python is only used to build and read JSON.
+- **Python on Windows does not resolve the git bash `/tmp` path.** Keep the merge request body
+  files under a real Windows path, or the description is silently posted empty.
+- **`glab` defaults to gitlab.com** and prints its own decorations. Use `curl` with
+  `PRIVATE-TOKEN`, or export `GITLAB_HOST`.
+- Merge request iids do not have to start at 1. Nothing in the feature assumes they do, and a run
+  that starts at !2 is a slightly better test than one that starts at !1.
 
 ## 8. Cleaning up
 

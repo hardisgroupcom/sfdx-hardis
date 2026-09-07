@@ -1,6 +1,6 @@
 ---
 name: promotion-branches-e2e
-description: Run the hardcore end to end test of the promotion branches feature against a real Salesforce org and a throwaway private GitHub repository, then write the report. Use when promotion branches (enablePromotionBranches, hardis:project:promotion:create) changed and must be proven again, or when the user asks for the promotion branches end to end / hardcore test.
+description: Run the hardcore end to end test of the promotion branches feature against a real Salesforce org and a throwaway private GitHub or GitLab repository, then write the report. Use when promotion branches (enablePromotionBranches, hardis:project:promotion:create) changed and must be proven again, or when the user asks for the promotion branches end to end / hardcore test.
 argument-hint: "[org username] [repo slug] [what to focus on]"
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write, AskUserQuestion
 user-invocable: true
@@ -18,13 +18,18 @@ not already, so you know what each assertion is protecting.
 
 ## What this skill contains
 
-| File                        | Use                                                                                                                                                             |
-|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `reference/runbook.md`      | The full procedure: repository layout, the six User Stories, the run order, what to assert in each log, the edge cases, the traps. **Read it before starting.** |
-| `scripts/e2e-lib.sh`        | The job simulators: `e2e_check`, `e2e_deploy`, `e2e_promote`, `e2e_release_notes`, `e2e_grep`. Source it.                                                       |
-| `scripts/check-diagram.cjs` | Feeds the extension's compiled helpers with the real Pull Requests and asserts the "single place in the diagram" rule.                                          |
-| `scripts/ab-run.sh`         | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                            |
-| `scripts/ab-diff.py`        | Normalises two log folders and diffs them: the flag-off regression proof.                                                                                       |
+| File                               | Use                                                                                                                                                             |
+|------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `reference/runbook.md`             | The full procedure: repository layout, the six User Stories, the run order, what to assert in each log, the edge cases, the traps. **Read it before starting.** |
+| `scripts/build-repo.sh`            | Writes the base project, the four major branches and the config. Provider agnostic.                                                                             |
+| `scripts/stories.sh`               | `story_branch` and `story_actions`: the six User Stories and the action files that travel with them. Provider agnostic.                                         |
+| `scripts/e2e-lib.sh`               | GitHub job simulators: `e2e_check`, `e2e_deploy`, `e2e_promote`, `e2e_release_notes`, `e2e_grep`. Source it.                                                    |
+| `scripts/e2e-lib-gitlab.sh`        | The same for GitLab, plus `gl_mr_create`, `gl_mr_merge` and the merge-ref wait GitLab needs.                                                                    |
+| `scripts/check-diagram.cjs`        | Feeds the extension's compiled helpers with the real Pull Requests and asserts the "single place in the diagram" rule.                                          |
+| `scripts/check-diagram-gitlab.cjs` | The same, reading merge requests from the GitLab API.                                                                                                           |
+| `scripts/ab-run.sh`                | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                            |
+| `scripts/ab-run-gitlab.sh`         | The same on GitLab.                                                                                                                                             |
+| `scripts/ab-diff.py`               | Normalises two log folders and diffs them: the flag-off regression proof.                                                                                       |
 
 ## Before starting
 
@@ -32,11 +37,14 @@ Ask the user only for what you cannot find yourself:
 
 - the **Salesforce org** to deploy to (an authenticated org alias or username);
 - the **repository slug** to create, if they care about the name. Otherwise pick
-  `<gh login>/sfdx-hardis-promo-e2e-<n>`, incrementing `<n>` past the ones that already exist.
+  `<gh login>/sfdx-hardis-promo-e2e-<n>`, incrementing `<n>` past the ones that already exist;
+  on GitLab, `<user>/sfdx-hardis-promo-e2e-gl-<n>`;
+- which **providers** to run, when they have not said. GitHub alone is the quick pass; GitHub and
+  GitLab is the full one, and it is the only way the GitLab provider code gets exercised.
 
-Check yourself: `gh auth status`, `sf org list`, the sfdx-hardis branch under test, and whether the
-vscode-sfdx-hardis working copy is on the matching branch and compiled (`yarn dev`), which
-`check-diagram.cjs` needs.
+Check yourself: `gh auth status`, `glab auth status`, `sf org list`, the sfdx-hardis branch under
+test, and whether the vscode-sfdx-hardis working copy is on the matching branch and compiled
+(`yarn dev`), which the diagram check needs.
 
 **Never reuse a previous test repository.** Each run starts from a fresh private repository, so a
 failure cannot be an artefact of the previous run's state.
@@ -61,9 +69,11 @@ failure cannot be an artefact of the previous run's state.
 6. **Check the diagram rule**: `node scripts/check-diagram.cjs <owner>/<repo> integration,uat,preprod,main`.
 7. **Run the flag-off A/B regression check** (runbook section 7ter). `TOTAL DIFFERING LINES: 0`,
    or 1 when a merged branch is named `promotion/...`.
-8. **Write the report** at the repository root as `promotion-branches-e2e-report.md`: pipeline under
-   test, the stories, the promotions performed, a table per test group with expected versus result,
-   what the run found, what it did not cover, and the suite counts. Overwrite the previous report.
+8. **Write the report** at the repository root, one per provider:
+   `promotion-branches-e2e-report-github.md` and `promotion-branches-e2e-report-gitlab.md`.
+   Pipeline under test, the stories, the promotions performed, a table per test group with expected
+   versus result, what the run found, what it did not cover, and the suite counts. Overwrite the
+   previous reports.
 
 ## Rules for the run
 
@@ -79,8 +89,8 @@ failure cannot be an artefact of the previous run's state.
 
 State them again in the report unless you close them:
 
-- Only GitHub has been exercised live. The Azure DevOps, GitLab and Bitbucket paths are covered by
-  code reading and unit tests.
+- Azure DevOps and Bitbucket have never been exercised live: they are covered by code reading and
+  unit tests. GitHub and GitLab were both run live on 2026-09-07.
 - The four pipeline levels share one Salesforce org, so deployment action state is keyed by org
   **branch**, not by distinct orgs.
 - The pipeline webview is exercised through its compiled helpers and its unit tests, not by
