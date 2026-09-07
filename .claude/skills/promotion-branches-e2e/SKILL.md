@@ -73,9 +73,9 @@ failure cannot be an artefact of the previous run's state.
    (`check-diagram-gitlab.cjs` / `check-diagram-azure.cjs` for the other two providers).
 7. **Run the flag-off A/B regression check** (runbook section 7ter). `TOTAL DIFFERING LINES: 0`,
    or 1 when a merged branch is named `promotion/...`.
-8. **Write the report** at the repository root, one per provider:
-   `promotion-branches-e2e-report-github.md`, `promotion-branches-e2e-report-gitlab.md` and
-   `promotion-branches-e2e-report-azure.md`.
+8. **Write the report** in this skill's `reports/` folder, one per provider:
+   `.claude/skills/promotion-branches-e2e/reports/promotion-branches-e2e-report-github.md`,
+   `…-gitlab.md` and `…-azure.md`. Never write them at the repository root.
    Pipeline under test, the stories, the promotions performed, a table per test group with expected
    versus result, what the run found, what it did not cover, and the suite counts. Overwrite the
    previous reports.
