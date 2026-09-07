@@ -30,6 +30,7 @@ not already, so you know what each assertion is protecting.
 | `scripts/ab-run.sh`                | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                            |
 | `scripts/ab-run-gitlab.sh`         | The same on GitLab.                                                                                                                                             |
 | `scripts/ab-run-azure.sh`          | The same on Azure DevOps.                                                                                                                                       |
+| `scripts/ab-run-bitbucket.sh`      | The same on Bitbucket Cloud. Never run end to end.                                                                                                              |
 | `scripts/ab-diff.py`               | Normalises two log folders and diffs them: the flag-off regression proof.                                                                                       |
 
 ## Before starting
@@ -93,8 +94,10 @@ failure cannot be an artefact of the previous run's state.
 
 State them again in the report unless you close them:
 
-- Bitbucket has never been exercised live: it is covered by code reading and unit tests. GitHub,
-  GitLab and Azure DevOps were all run live on 2026-09-07.
+- Bitbucket has never been exercised live: it is covered by code reading and unit tests. Its
+  harness exists and its credentials are proven, but the `test-sfdx-hardis-2` workspace is over its
+  user limit, so every push answers HTTP 402. GitHub, GitLab and Azure DevOps were all run live on
+  2026-09-07.
 - The four pipeline levels share one Salesforce org, so deployment action state is keyed by org
   **branch**, not by distinct orgs.
 - The pipeline webview is exercised through its compiled helpers and its unit tests, not by

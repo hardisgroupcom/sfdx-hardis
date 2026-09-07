@@ -312,8 +312,8 @@ pending manual checkbox per org branch.
   out `origin/main`, which takes `.claude/skills/` away with it, and the second half of each pair
   silently runs nothing. Copy `ab-run.sh`, `ab-run-gitlab.sh`, `ab-run-azure.sh`, `ab-diff.py`
   and the matching `e2e-lib-*.sh` somewhere else first, and call them by absolute path.
-  `ab-run-azure.sh` sources the library sitting next to it, because `bash script.sh` is a
-  child process and does not inherit the functions the caller sourced.
+  `ab-run-azure.sh` and `ab-run-bitbucket.sh` source the library sitting next to them, because
+  `bash script.sh` is a child process and does not inherit the functions the caller sourced.
 - **A promotion Pull Request number is not a candidate.** Promotions are vehicles, so `promote
   <promotion number>` is refused. Select one of the stories it carried.
 
@@ -487,6 +487,50 @@ Traps that only bite on Azure DevOps:
 - `az repos` (the Azure CLI) is not used anywhere: it needs its own login, prints its own
   decorations, and cannot set the completion options the merge needs. Everything goes through
   `curl` with the PAT.
+
+## 8ter. What is different on Bitbucket Cloud
+
+**Not yet exercised live.** The harness below is written and its credentials are proven, but the
+run itself has never happened: the `test-sfdx-hardis-2` workspace is over its user limit, so every
+repository in it is read-only and `git push` answers HTTP 402. Whoever restores write access can
+run sections 3 to 7 with it and finish this section.
+
+```bash
+export ORG="your.user@example.com"
+export BB_WORKSPACE="test-sfdx-hardis-2"
+export BB_REPO="sfdx-hardis-promo-e2e-bb-1"
+export BB_EMAIL="you@example.com"          # empty for a workspace/repository Access Token
+export BB_TOKEN="..."
+export WORK="/c/tmp/promo-e2e-bb" LOGS="/c/tmp/promo-e2e-bb-logs"
+export DEV="C:/git/sfdx-hardis/bin/dev.js"
+source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-bitbucket.sh
+```
+
+Create the repository with the REST API (a project key is required in a workspace that has one):
+
+```bash
+curl -sS -u "$BB_EMAIL:$BB_TOKEN" -X POST -H "Content-Type: application/json"   -d '{"scm":"git","is_private":true,"project":{"key":"TES"}}'   "https://api.bitbucket.org/2.0/repositories/$BB_WORKSPACE/$BB_REPO"
+```
+
+Then follow sections 3 to 7 with `bb_check` / `bb_deploy` / `bb_promote` / `bb_release_notes`.
+
+Traps already met on Bitbucket:
+
+- **A classic Atlassian API token does not work.** It authenticates but answers
+  `API Token provided has no Bitbucket scopes`. Create an API token **with scopes** covering
+  Bitbucket (`read`/`write`/`admin:repository:bitbucket`, `read`/`write:pullrequest:bitbucket`), or
+  a workspace Access Token. sfdx-hardis reads `CI_SFDX_HARDIS_BITBUCKET_TOKEN`, plus
+  `CI_SFDX_HARDIS_BITBUCKET_EMAIL` when the token is an Atlassian API token (Basic auth); without
+  the email it authenticates as a Bearer token, which is what an Access Token needs.
+- **The REST API and `git push` do not take the same username.** The API wants the Atlassian
+  account email; `git push` refuses it (and the `@` also has to be percent-encoded to survive the
+  URL). Use `https://x-token-auth:<token>@bitbucket.org/<workspace>/<repo>.git`.
+- **A workspace over its user limit is read-only**, with a plain HTTP 402 on push. Nothing in the
+  API says so beforehand; the repository can still be created.
+- Merge with `merge_strategy: merge_commit` and `close_source_branch: false`, never squash, or the
+  `-x` trailers of the cherry-picks are lost.
+- The `refs/pull-requests/<id>/merge` ref is recomputed after a push, so `bb_check` waits until it
+  holds the head of the source branch, like the other two providers.
 
 ## 9. Cleaning up
 
