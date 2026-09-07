@@ -305,9 +305,11 @@ describe('AzureDevopsTestProvider - api calls through the injected factory', () 
     expect(query).to.contain("CONTAINS 'TESTKIT:PROJ-123:F01'");
   });
 
-  // WIQL offers no exact match on tags, only CONTAINS, which is an unterminated substring
-  // match: the key of case F1 is a prefix of the key of F10. Taking the first hit therefore
-  // updated the wrong work item and then created the right one as a duplicate.
+  // A live Azure DevOps instance answers a tag CONTAINS with whole-tag matches, so it would
+  // not hand us a prefix hit in the first place. These stubs return one anyway: the point is
+  // to pin the provider's own behaviour when a hit is not an exact tag, since that whole-tag
+  // semantic is undocumented and belongs to the Tags field alone. Accepting such a hit would
+  // update the wrong work item and then create the right case as a duplicate.
   describe('tag matching beyond the CONTAINS query', () => {
     function stubWithTags(tagsById: Record<number, string>): { api: any; calls: Recorded[] } {
       const ids = Object.keys(tagsById).map(Number);

@@ -204,10 +204,15 @@ export class AzureDevopsTestProvider extends TestManagementProviderRoot {
     const api = await this.api();
     const result = await api.queryByWiql(wiql, { project: this.teamProject } as any);
     const hits = result?.workItems ?? [];
-    // WIQL only offers CONTAINS on tags, which is an unterminated substring match: the key
-    // `TESTKIT:T:F1` matches the tag of case `F10` too. So every hit is re-checked against the
-    // exact tag before being accepted, otherwise a run would update the wrong work item and
-    // then create the right one as a duplicate.
+    // `CONTAINS` on `System.Tags` matches whole tags, not substrings. Measured against a live
+    // instance: a strict prefix of an existing tag returns nothing, so the query alone is
+    // already exact and `TESTKIT:T:F1` does NOT match the tag of case `F10`.
+    //
+    // Each hit is still re-checked against its own `System.Tags` before being accepted. That
+    // whole-tag behaviour is specific to the Tags field and differs from `CONTAINS` on a text
+    // field, it is not something the WIQL reference states, and accepting the wrong work item
+    // here would update it and then create the right case as a duplicate. The check is free:
+    // the work item has to be read anyway to build the reference.
     for (const hit of hits) {
       if (!hit.id) {
         continue;
