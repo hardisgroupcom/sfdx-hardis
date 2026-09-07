@@ -144,8 +144,14 @@ config; no target means any target of that source). `isPromotionStepAllowed`,
 `allowedPromotionSourceBranches`, `allowedPromotionTargetBranches` and `formatPromotionSteps` are
 what the callers use. `resolvePromotionSourceAndTarget` filters both prompts and refuses a flag
 naming a step outside the list; `warnAboutPromotionPullRequestMisuse` warns in the deployment job;
-the extension mirrors the same functions and hides the **Create promotion** button on a branch that
-is not an allowed source, passing `--target-branch` when a single target is allowed.
+the extension mirrors the same functions in `pipeline.js` (it cannot import them: an LWC module of
+the webview only resolves other `s/` modules). `_isPromotionSourceAllowed` asks for a step naming
+the branch **and** a target it can reach, a merge target read from `pipelineData.links`, so a step
+pointing somewhere the pipeline does not go opens nothing. `showCreatePromotionButton` ends with it
+and `modalHideCheckboxColumn` is its negation, so the button and the per-story checkboxes appear
+and disappear together. An empty list keeps them, on purpose: the command then answers with
+`promotionCreateAllowedStepsRequired`, which names the setting, where a missing button would say
+nothing.
 
 ### Pull Request scope kinds
 

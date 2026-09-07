@@ -71,8 +71,9 @@ allowedPromotionSteps:
 
 With that list, `uat -> preprod` is the only promotion a release manager can create:
 
-- the **Create promotion** button of the DevOps Pipeline shows up on `uat` only, and passes
-  `preprod` to the command, so nothing is asked;
+- in the DevOps Pipeline, the **Create promotion** button and the checkboxes that tick the
+  stories to carry show up in the `uat` window only. The other branches show their Pull Requests
+  read-only, and `preprod` is passed to the command, so nothing is asked;
 - `sf hardis:project:promotion:create` offers `uat` and `preprod` alone, and refuses
   `--source-branch integration` or `--target-branch main` with the list of what is allowed;
 - a promotion branch assembled outside the list all the same (by hand, or before the list was
@@ -86,6 +87,10 @@ allowedPromotionSteps:
   - source: preprod
     target: main
 ```
+
+A step whose target is not a merge target of its source (`mergeTargets` of the branch config)
+opens nothing in the DevOps Pipeline: the command could not resolve that target from the pipeline
+either, and would stop.
 
 To allow everything, name every step: there is no wildcard, on purpose, so the list always reads
 as a decision somebody made.
