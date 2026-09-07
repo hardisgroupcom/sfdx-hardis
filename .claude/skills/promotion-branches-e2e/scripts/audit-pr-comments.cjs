@@ -166,6 +166,48 @@ for (const pr of dump.prs) {
         );
       }
     }
+    // Which actions are manual, read from the details fold: a manual action is the only kind a
+    // human has to complete, and the only kind whose state can be left unreachable
+    const manualActionIds = new Set();
+    for (const block of body.split('<!-- actionId:').slice(1)) {
+      const actionId = (block.match(/^(\S+) order:/) || [])[1];
+      if (actionId && /\| Type \| manual \|/.test(block)) {
+        manualActionIds.add(actionId);
+      }
+    }
+
+    // Every org branch still waiting for a manual action must offer a checkbox to tick, and every
+    // checkbox must correspond to a branch that is really waiting. And a manual action must never
+    // end up "skipped" in a branch it reached: a skip drops it from the pending list, so nobody can
+    // ever mark it done, and the branch displays a skip for a step nobody performed.
+    const statusRows = body.split('\n').filter((line) => /^\| <!-- actionId:/.test(line));
+    for (const row of statusRows) {
+      const actionId = (row.match(/actionId:(\S+) order:/) || [])[1];
+      const cells = row.split('|').slice(3, 3 + columns.length).map((cell) => cell.trim());
+      cells.forEach((cell, index) => {
+        const branch = columns[index];
+        if (!branch) return;
+        const waiting = cell.includes('\u{1F44B}');
+        const skipped = cell.includes('\u26AA');
+        const hasCheckbox = body.includes(`<!-- sfdx-hardis-manual-action id:${actionId} org:${branch} pr:${pr.number} when:`);
+        check(
+          !waiting || hasCheckbox,
+          pr.number,
+          `${actionId} is waiting for manual execution in ${branch} but offers no checkbox to tick`,
+        );
+        check(
+          !hasCheckbox || waiting,
+          pr.number,
+          `${actionId} offers a checkbox for ${branch} though its status there is not "waiting" (${cell})`,
+        );
+        check(
+          !(skipped && manualActionIds.has(actionId)),
+          pr.number,
+          `manual action ${actionId} is marked skipped in ${branch}: it left the pending list and can no longer be ticked`,
+        );
+      });
+    }
+
     // An action must appear once per row, not once per job that ran it
     const actionRows = [...body.matchAll(/<!-- actionId:([^\s]+) order:\d+ -->/g)].map((m) => m[1]);
     const seen = new Map();
