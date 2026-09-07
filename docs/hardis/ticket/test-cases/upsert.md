@@ -66,6 +66,7 @@ The same skip applies in CI, where `isCI` is true.
 - **Azure DevOps cases are created isolated:** they are linked to their carrier user story, but attached to no Test Plan and no Test Suite. Adding them to a plan stays a human action.
 - **ServiceNow idempotency rests on the title.** Test Management 2.0 exposes no portable correlation field on `sn_test_management_test`, so idempotency relies on the `[TESTKIT:<TICKET>:<ID>]` prefix of `short_description`. Renaming a test case in ServiceNow breaks the match, and the next run creates a duplicate instead of updating it. Keep the prefix in the title.
 - **ServiceNow updates do not touch the steps** of an existing test version: replacing them would delete rows a tester may already have executed against.
+- **Xray updates do not touch the steps** either: the steps live on the Xray side and the mutation that writes them is `createTest`, with no update counterpart, so a corrected step list needs the test to be recreated. The summary, description, priority and labels are updated.
 - **No ADF conversion on the Jira description:** it is sent as a plain string, so it renders without formatting.
 - **Return codes:** 0 when every case went through, 2 when some failed, 1 when nothing could be attempted.
 

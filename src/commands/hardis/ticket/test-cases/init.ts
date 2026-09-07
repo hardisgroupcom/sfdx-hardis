@@ -145,8 +145,18 @@ The same applies in CI, where \`isCI\` is true.
   /** The main path: the cases already exist, they need a shape a human can correct. */
   private async writeSuppliedCases(flags: any): Promise<AnyJson> {
     const cases: NormalizedTestCase[] = await resolveNotebookInput(flags);
-    // Every case of one notebook shares its kind, so the first one decides unless forced.
-    const kind: TestCaseKind = (flags.kind as TestCaseKind) || cases[0]?.kind || 'functional';
+    if (cases.length === 0) {
+      throw new SfError(t('testCasesNoneFound'));
+    }
+    // One notebook holds one kind, because the kind decides the column set. Mixing them would
+    // silently drop a column: a technical case in a functional payload loses its
+    // "Classe / Méthode", and nothing in the produced file would say so. `--kind` forces the
+    // column set when that is genuinely what the caller wants.
+    const kinds = [...new Set(cases.map((testCase) => testCase.kind))];
+    if (!flags.kind && kinds.length > 1) {
+      throw new SfError(t('testCasesMixedKinds', { kinds: kinds.join(', ') }));
+    }
+    const kind: TestCaseKind = (flags.kind as TestCaseKind) || cases[0].kind;
 
     uxLog('action', this, c.cyan(t('testCasesWriting', { count: cases.length, kind })));
 
