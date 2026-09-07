@@ -2733,6 +2733,7 @@
   "promotionCreateAllAlreadyInTarget": "選択されたすべての User Story ({{prList}}) はすでに {{target}} にあります: プロモーションするものはなく、ブランチも作成されていません",
   "promotionCreateAllowedStepsInfo": "allowedPromotionSteps で許可されたプロモーションのステップ: {{steps}}",
   "promotionCreateAllowedStepsInvalid": "sfdx-hardis の設定に allowedPromotionSteps がありますが、有効なエントリを読み取れませんでした。source と target のブランチのリストを使用してください。例: allowedPromotionSteps: [{ source: uat, target: preprod }]",
+  "promotionCreateAllowedStepsRequired": "プロモーションブランチには許可されたステップの定義が必要です。config/.sfdx-hardis.yml に allowedPromotionSteps を設定してください。例: allowedPromotionSteps: [{ source: uat, target: preprod }]。詳細は {{url}}",
   "promotionCreateAlreadyPromotedCheckFailed": "ターゲットブランチの {{status}} な Pull Request を一覧できませんでした ({{message}}): 他のプロモーションブランチがすでに運んでいる User Story が再度提示される可能性があります",
   "promotionCreateAlreadyPromotedCheckImpossible": "git プロバイダーに接続できません: 他のプロモーションブランチがすでに運んでいる Pull Request を確認できないため、以下の一覧にはすでに移送中の User Story が含まれる可能性があります。この確認を有効にするには git プロバイダーのトークンを設定してください",
   "promotionCreateBranchNameWithSlash": "ブランチ {{branch}} には \"/\" が含まれており、プロモーションブランチの命名規則 ({{example}}) に適合しません。プロモーションブランチは名前に \"/\" を含まないブランチ間でのみ作成できます",

@@ -2697,6 +2697,7 @@
   "promotionCreateAllAlreadyInTarget": "Todas as User Stories selecionadas ({{prList}}) já estão em {{target}}: não há nada para promover e nenhum branch foi criado",
   "promotionCreateAllowedStepsInfo": "Passos de promoção permitidos por allowedPromotionSteps: {{steps}}",
   "promotionCreateAllowedStepsInvalid": "allowedPromotionSteps está definido na configuração do sfdx-hardis, mas nenhuma entrada pôde ser lida. Use uma lista de branch de origem e de destino, ex.: allowedPromotionSteps: [{ source: uat, target: preprod }]",
+  "promotionCreateAllowedStepsRequired": "As promotion branches precisam dos passos em que podem ser criadas: defina allowedPromotionSteps em config/.sfdx-hardis.yml, ex.: allowedPromotionSteps: [{ source: uat, target: preprod }]. Veja {{url}}",
   "promotionCreateAlreadyPromotedCheckFailed": "Não foi possível listar as Pull Requests {{status}} do branch de destino ({{message}}): as histórias que outro branch de promoção já leva podem ser oferecidas novamente",
   "promotionCreateAlreadyPromotedCheckImpossible": "Não foi possível contactar o provedor git: as Pull Requests que outro branch de promoção já leva não podem ser verificadas, portanto a lista abaixo pode oferecer histórias que já estão a caminho. Configure um token do provedor git para recuperar essa verificação",
   "promotionCreateBranchNameWithSlash": "O branch {{branch}} contém uma \"/\", o que não se encaixa na convenção de nomes dos branches de promoção ({{example}}). Branches de promoção só podem ser montados entre branches cujo nome não contém \"/\"",

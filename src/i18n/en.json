@@ -2739,6 +2739,7 @@
   "promotionCreateAllAlreadyInTarget": "Every selected User Story ({{prList}}) is already in {{target}}: there is nothing to promote and no branch was created",
   "promotionCreateAllowedStepsInfo": "Promotion steps allowed by allowedPromotionSteps: {{steps}}",
   "promotionCreateAllowedStepsInvalid": "allowedPromotionSteps is set in the sfdx-hardis configuration but no entry could be read. Use a list of source and target branches, ex: allowedPromotionSteps: [{ source: uat, target: preprod }]",
+  "promotionCreateAllowedStepsRequired": "Promotion branches need the steps they are allowed to run on: set allowedPromotionSteps in config/.sfdx-hardis.yml, ex: allowedPromotionSteps: [{ source: uat, target: preprod }]. See {{url}}",
   "promotionCreateAlreadyPromotedCheckFailed": "Unable to list the {{status}} Pull Requests of the target branch ({{message}}): the stories another promotion branch already carries may be offered again",
   "promotionCreateAlreadyPromotedCheckImpossible": "Unable to reach the git provider: the Pull Requests another promotion branch already carries cannot be checked, so the list below may offer stories that are already on their way. Configure a git provider token to get that check back",
   "promotionCreateBranchNameWithSlash": "Branch {{branch}} contains a \"/\", which does not fit the promotion branch naming convention ({{example}}). Promotion branches can only be assembled between branches whose name has no \"/\"",

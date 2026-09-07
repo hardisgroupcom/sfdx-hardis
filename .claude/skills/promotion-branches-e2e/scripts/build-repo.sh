@@ -41,6 +41,13 @@ developmentBranch: integration
 useDeltaDeployment: true
 testLevel: NoTestRun
 enablePromotionBranches: true
+allowedPromotionSteps:
+  - source: integration
+    target: uat
+  - source: uat
+    target: preprod
+  - source: preprod
+    target: main
 enableDeploymentApexTestClasses: true
 enableDeltaDeploymentBetweenMajorBranches: true
 YAML

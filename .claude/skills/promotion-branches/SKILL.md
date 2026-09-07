@@ -12,6 +12,9 @@ merging `uat` into `preprod` and shipping everything, you assemble a branch hold
 approved stories.
 
 Feature switch: **`enablePromotionBranches`** in `config/.sfdx-hardis.yml`, default `false`.
+Required with it: **`allowedPromotionSteps`**, the source and target branches a release manager
+may assemble a promotion between (`- source: uat` / `target: preprod`). `promotion:create`
+refuses to run while the list is missing.
 Everything below is inert while it is off, with one exception noted in [Filtering](#filtering-what-moves-the-pull-requests).
 The feature is **experimental** and must be labelled as such in docs and UIs.
 
@@ -102,6 +105,15 @@ Break one of these and the feature is wrong, whatever the tests say.
     concatenates list values across blocks (without duplicates) and keeps the last value for
     anything else, so appending a block to name one more Apex test class does not drop the ones
     declared above it.
+16. **Nobody promotes on a step the project never declared.** `allowedPromotionSteps` is required as
+    soon as `enablePromotionBranches` is on: `promotion:create` stops with
+    `promotionCreateAllowedStepsRequired` while the list is missing, and with
+    `promotionCreateAllowedStepsInvalid` when it is there but unreadable. Guessing "every major
+    branch to every merge target" would be a decision the command has no business making. The pure
+    helpers still treat an empty list as no restriction, which is what keeps the deployment jobs and
+    the pipeline diagram working on a project that is mid-configuration. The rule gates
+    **creation**, never deployment: a promotion assembled outside the list is deployed with a
+    warning, since refusing it would block a branch that is already merged.
 
 ## sfdx-hardis (CLI)
 

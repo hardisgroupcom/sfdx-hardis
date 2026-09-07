@@ -97,7 +97,10 @@ describe('allowedPromotionSteps', () => {
     expect(isPromotionStepAllowed(steps, 'integration', 'uat')).to.equal(false);
   });
 
-  it('an empty list allows every step: the restriction is opt-in', () => {
+  // The command requires the list (promotionCreateAllowedStepsRequired). The pure helpers still
+  // answer "no restriction" for an empty one, which is what the deployment jobs and the pipeline
+  // diagram of a project being configured rely on.
+  it('an empty list is no restriction for the helpers', () => {
     expect(isPromotionStepAllowed([], 'integration', 'uat')).to.equal(true);
     expect(allowedPromotionSourceBranches([], ['integration', 'uat'])).to.deep.equal(['integration', 'uat']);
     expect(allowedPromotionTargetBranches([], 'uat', ['preprod', 'main'])).to.deep.equal(['preprod', 'main']);

@@ -54,13 +54,13 @@ In `config/.sfdx-hardis.yml` (or in a branch config file like `config/branches/.
 enablePromotionBranches: true
 ```
 
-Optionally, restrict the steps a release manager can promote on with `allowedPromotionSteps` (see
-below).
+`allowedPromotionSteps` is required with it: see below.
 
 ### Which promotions the release manager can create
 
-By default, a promotion can be assembled between any major branch and any of its merge targets. To
-allow a subset of them, list the steps in `config/.sfdx-hardis.yml`:
+A project says which promotions its release managers may create, and that list is **required**:
+`sf hardis:project:promotion:create` stops while it is missing, rather than assume that every major
+branch can be promoted to every merge target. Declare the steps in `config/.sfdx-hardis.yml`:
 
 ```yaml
 enablePromotionBranches: true
@@ -86,6 +86,9 @@ allowedPromotionSteps:
   - source: preprod
     target: main
 ```
+
+To allow everything, name every step: there is no wildcard, on purpose, so the list always reads
+as a decision somebody made.
 
 The setting sits next to `enablePromotionBranches` in the **Danger Zone** of the Pipeline Settings
 panel of the VS Code extension. It is read from the project config only, since
