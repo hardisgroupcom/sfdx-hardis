@@ -86,22 +86,39 @@ Break one of these and the feature is wrong, whatever the tests say.
 12. **Superseding gives the stories back.** A promotion this run is about to close is not evidence
     that its stories are already promoted (`countsAsAlreadyPromoted`): otherwise agreeing to
     supersede it would leave nothing to assemble.
+13. **A vehicle is expanded before it is dropped.** A promotion merged into the source branch
+    arrives in the next branch as one cherry-picked merge commit that names the promotion, not the
+    stories under it: the `-x` trailers only survive one level. `expandPromotionsInGroups` replaces
+    it with what its `promotionPullRequests` block declares, recursively, before invariant 10
+    removes it. Without that, a candidate two levels down carries no number, cannot be selected,
+    and its stories are stranded one branch short of production.
+14. **Which commits a merge brought in is a question about the graph, never about the dates.** A
+    cherry-picked commit keeps the author date it had on the branch it came from, so it is older
+    than the merge before it. `attributeCommitsToFirstParents` walks
+    `git rev-list --parents`, stopping at the other first-parent commits, oldest merge first.
+    Attributing by date puts the stories of a promotion under the wrong merge, and a promotion
+    assembled from that grouping declares stories whose metadata it does not carry.
+15. **Every yaml block of a description counts, and a list adds up.** `mergePrDescriptionYamlBlocks`
+    concatenates list values across blocks (without duplicates) and keeps the last value for
+    anything else, so appending a block to name one more Apex test class does not drop the ones
+    declared above it.
 
 ## sfdx-hardis (CLI)
 
-| File                                                                                                              | Role                                                                                                                                                          |
-|-------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `src/common/utils/promotionBranchUtils.ts`                                                                        | Pure logic: naming, parsing the declaration, classification, expansion, inherited behaviors, promotion index. No I/O.                                         |
-| `src/common/utils/promotionCreateUtils.ts`                                                                        | Everything `promotion:create` needs: candidate listing, already-promoted detection, cherry-picking, conflict handling, Pull Request body.                     |
-| `src/commands/hardis/project/promotion/create.ts`                                                                 | The command. Flags: `--source-branch`, `--target-branch`, `--pull-requests`, `--skip-pull-request`, `--include-already-promoted`, `--on-conflict`, `--agent`. |
-| `src/common/utils/pullRequestUtils.ts`                                                                            | Resolves the declared Pull Requests from the git provider, walks the downstream promotions.                                                                   |
-| `src/common/gitProvider/gitProviderRoot.ts` + the four providers                                                  | `closePullRequest()` (close on GitHub/GitLab, abandon on Azure DevOps, decline on Bitbucket), used to supersede the promotion already open.                   |
-| `src/commands/hardis/project/deploy/smart.ts`                                                                     | Applies the inherited custom behaviors and the conflict-marker gate.                                                                                          |
-| `src/common/utils/prePostCommandUtils.ts`                                                                         | Deployment actions of the carried stories, promotion scope wording.                                                                                           |
-| `src/common/utils/releaseNotesUtils.ts`                                                                           | Leaves the vehicles out, `--include-promotions` brings them back.                                                                                             |
-| `src/common/gitProvider/index.ts`                                                                                 | `inheritedCustomBehaviors` + the `inheritedCustomBehaviorsPrId` guard.                                                                                        |
-| `config/sfdx-hardis.jsonschema.json`                                                                              | `enablePromotionBranches` property (required for any new config key).                                                                                         |
-| `test/common/utils/promotionBranchUtils.test.ts`, `promotionCreateUtils.test.ts`, `releaseNotesPromotion.test.ts` | Unit tests.                                                                                                                                                   |
+| File                                                                                                                                                                       | Role                                                                                                                                                          |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `src/common/utils/promotionBranchUtils.ts`                                                                                                                                 | Pure logic: naming, parsing the declaration, classification, expansion, inherited behaviors, promotion index. No I/O.                                         |
+| `src/common/utils/promotionCreateUtils.ts`                                                                                                                                 | Everything `promotion:create` needs: candidate listing, already-promoted detection, cherry-picking, conflict handling, Pull Request body.                     |
+| `src/commands/hardis/project/promotion/create.ts`                                                                                                                          | The command. Flags: `--source-branch`, `--target-branch`, `--pull-requests`, `--skip-pull-request`, `--include-already-promoted`, `--on-conflict`, `--agent`. |
+| `src/common/utils/pullRequestUtils.ts`                                                                                                                                     | Resolves the declared Pull Requests from the git provider, walks the downstream promotions, merges the yaml blocks of a description.                          |
+| `src/common/utils/backpromoteUtils.ts`                                                                                                                                     | `listMergedPrsWithCommits`, which the candidate list is built from: `attributeCommitsToFirstParents` decides which commits a merge brought in.                |
+| `src/common/gitProvider/gitProviderRoot.ts` + the four providers                                                                                                           | `closePullRequest()` (close on GitHub/GitLab, abandon on Azure DevOps, decline on Bitbucket), used to supersede the promotion already open.                   |
+| `src/commands/hardis/project/deploy/smart.ts`                                                                                                                              | Applies the inherited custom behaviors and the conflict-marker gate.                                                                                          |
+| `src/common/utils/prePostCommandUtils.ts`                                                                                                                                  | Deployment actions of the carried stories, promotion scope wording.                                                                                           |
+| `src/common/utils/releaseNotesUtils.ts`                                                                                                                                    | Leaves the vehicles out, `--include-promotions` brings them back.                                                                                             |
+| `src/common/gitProvider/index.ts`                                                                                                                                          | `inheritedCustomBehaviors` + the `inheritedCustomBehaviorsPrId` guard.                                                                                        |
+| `config/sfdx-hardis.jsonschema.json`                                                                                                                                       | `enablePromotionBranches` property (required for any new config key).                                                                                         |
+| `test/common/utils/promotionBranchUtils.test.ts`, `promotionCreateUtils.test.ts`, `releaseNotesPromotion.test.ts`, `backpromoteUtils.test.ts`, `prDescriptionYaml.test.ts` | Unit tests.                                                                                                                                                   |
 
 Reading the flag: `getConfig('branch')` (project config merged with the running branch's config),
 via `getPromotionBranchConfig(config)`. It is a **project level** setting: the extension exposes it
