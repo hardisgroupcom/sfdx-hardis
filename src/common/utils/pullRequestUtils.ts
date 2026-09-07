@@ -275,6 +275,32 @@ export async function getPullRequestScopedSfdxHardisConfig(pr: CommonPullRequest
   return mergedConfig;
 }
 
+/**
+ * Merge one more YAML block of a Pull Request description into what the previous blocks gave.
+ *
+ * A list is added to the list already there, without duplicates: someone appending a block to name
+ * one more Apex test class or one more deployment action is adding it, not replacing everything
+ * declared above. Anything else is a value, and the last block wins.
+ */
+export function mergePrDescriptionYamlBlocks(merged: any, parsedYaml: any): any {
+  const result: any = Object.assign({}, merged || {});
+  for (const [key, value] of Object.entries(parsedYaml || {})) {
+    if (Array.isArray(value) && Array.isArray(result[key])) {
+      const kept = [...result[key]];
+      for (const item of value) {
+        const isDuplicate = kept.some((existing) => JSON.stringify(existing) === JSON.stringify(item));
+        if (!isDuplicate) {
+          kept.push(item);
+        }
+      }
+      result[key] = kept;
+      continue;
+    }
+    result[key] = value;
+  }
+  return result;
+}
+
 function getYamlFromPrDescription(pr: CommonPullRequestInfo): object | null {
   // Every ```yaml block, not only the first: a promotion Pull Request description opens with the
   // promotionPullRequests block, and anything the release manager adds after it (deployment
@@ -291,7 +317,7 @@ function getYamlFromPrDescription(pr: CommonPullRequestInfo): object | null {
       throw new SfError(`[PullRequestUtils] Error parsing YAML from PR description for PR ${pr.idStr} ${pr.webUrl}: ${err}`);
     }
     if (parsedYaml && typeof parsedYaml === "object") {
-      merged = Object.assign(merged || {}, parsedYaml);
+      merged = mergePrDescriptionYamlBlocks(merged, parsedYaml);
     }
   }
   return merged;

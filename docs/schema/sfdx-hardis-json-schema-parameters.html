@@ -8040,9 +8040,9 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#enablePromotionBranches" onclick="anchorLink('enablePromotionBranches')">enablePromotionBranches</a></div><h4>Enable promotion branches (beta)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+    <a href="#enablePromotionBranches" onclick="anchorLink('enablePromotionBranches')">enablePromotionBranches</a></div><h4>Enable promotion branches (experimental)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <div class="description collapse" id="collapseDescription_enablePromotionBranches">
-            <p>Beta feature. Enable promotion branches: a branch named promotion/&lt;source branch>/&lt;target branch>/&lt;YYYY-MM-DD&gt;-&lt;counter&gt; (ex: promotion/uat/preprod/2026-09-06-1) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.</p>
+            <p>Experimental feature. Enable promotion branches: a branch named promotion/&lt;source branch>/&lt;target branch>/&lt;YYYY-MM-DD&gt;-&lt;counter&gt; (ex: promotion/uat/preprod/2026-09-06-1) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.</p>
 
         </div>
         <div>

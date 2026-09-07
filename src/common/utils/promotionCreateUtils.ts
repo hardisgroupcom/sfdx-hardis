@@ -292,7 +292,11 @@ export async function listPromotionCandidates(
   const groups = await listMergedPrsWithCommits(`origin/${sourceBranch}`, sourceBranch, mergeBase, commandThis);
   const majorOrgs = await listMajorOrgs();
   const majorBranchNames = (majorOrgs || []).map((org: any) => org.branchName).filter((branch: string) => branch);
-  const candidates = dropVehiclePullRequests(groups, majorBranchNames)
+  const gitProviderForExpansion = await GitProvider.getInstance();
+  const expandedGroups = gitProviderForExpansion
+    ? await expandPromotionsInGroups(groups, (id) => gitProviderForExpansion.getPullRequestById(id), commandThis)
+    : groups;
+  const candidates = dropVehiclePullRequests(expandedGroups, majorBranchNames)
     .filter((group) => group.commit.hash !== mergeBase)
     .map((group) => toCandidate(group));
   // A promotion carries cherry-picked commits: merging it into the target branch does not move
@@ -428,6 +432,74 @@ export function markAlreadyPromotedCandidates(
     }
   }
   return candidates;
+}
+
+/**
+ * Replace the promotion Pull Requests of each group by the User Stories they declare.
+ *
+ * A promotion merged into the source branch arrives in the next branch as a single cherry-picked
+ * merge commit, and that commit names the promotion, not the stories under it: the -x trailers of
+ * the individual stories only survive one level. Two levels down, the group would hold nothing but
+ * a promotion, dropVehiclePullRequests would empty it, and the candidate would be an unselectable
+ * row with no number, stranding its stories one branch short of production.
+ *
+ * So a promotion is expanded before the vehicles are dropped, from the promotionPullRequests block
+ * of its description, the same declaration the deployment jobs read. A promotion carrying another
+ * promotion is expanded in turn, since the list being walked grows as it goes.
+ */
+export async function expandPromotionsInGroups(
+  groups: BackpromotePrGroup[],
+  fetchPullRequest: (id: number) => Promise<CommonPullRequestInfo | null>,
+  commandThis: any = null,
+): Promise<BackpromotePrGroup[]> {
+  const fetched = new Map<number, CommonPullRequestInfo | null>();
+  const load = async (id: number): Promise<CommonPullRequestInfo | null> => {
+    if (!fetched.has(id)) {
+      try {
+        fetched.set(id, await fetchPullRequest(id));
+      } catch (e) {
+        uxLog('warning', commandThis, c.yellow(t('promotionCreateCarriedPrUnreadable', { pr: `#${id}`, message: (e as Error).message })));
+        fetched.set(id, null);
+      }
+    }
+    return fetched.get(id) || null;
+  };
+  const result: BackpromotePrGroup[] = [];
+  for (const group of groups) {
+    const associatedPrs = [...(group.associatedPrs || [])];
+    const initialCount = associatedPrs.length;
+    const known = new Set(associatedPrs.map((pr) => pr.id));
+    for (let index = 0; index < associatedPrs.length; index++) {
+      const associatedPr = associatedPrs[index];
+      if (!associatedPr.id || parsePromotionBranchName(associatedPr.sourceBranch || '') === null) {
+        continue;
+      }
+      const promotionPullRequest = await load(associatedPr.id);
+      for (const declaredId of parsePromotionPullRequestIds(promotionPullRequest?.description) || []) {
+        if (known.has(declaredId)) {
+          continue;
+        }
+        const story = await load(declaredId);
+        if (!story) {
+          uxLog('warning', commandThis, c.yellow(t('promotionCreateCarriedPrNotFound', {
+            pr: `#${declaredId}`,
+            promotionPr: `#${associatedPr.id}`,
+          })));
+          continue;
+        }
+        known.add(declaredId);
+        associatedPrs.push({
+          id: story.idNumber,
+          title: story.title,
+          author: story.authorName,
+          webUrl: story.webUrl,
+          sourceBranch: story.sourceBranch,
+        });
+      }
+    }
+    result.push(associatedPrs.length === initialCount ? group : { ...group, associatedPrs });
+  }
+  return result;
 }
 
 /**

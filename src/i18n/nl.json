@@ -2736,6 +2736,8 @@
   "promotionCreateAlreadyPromotedCheckImpossible": "Kan de git-provider niet bereiken: welke Pull Requests al door een andere promotion branch worden meegenomen kan niet worden gecontroleerd, dus de lijst hieronder kan User Stories tonen die al onderweg zijn. Configureer een git-providertoken om die controle terug te krijgen",
   "promotionCreateBranchNameWithSlash": "Branch {{branch}} bevat een \"/\", wat niet past in de naamgevingsconventie van promotion branches ({{example}}). Promotion branches kunnen alleen worden samengesteld tussen branches zonder \"/\" in de naam",
   "promotionCreateCandidatesReportTitle": "Pull Requests die wachten op promotie van {{source}} naar {{target}}",
+  "promotionCreateCarriedPrNotFound": "Pull Request {{pr}}, gedeclareerd door promotie {{promotionPr}}, kon niet worden geladen: hij valt buiten de kandidaat",
+  "promotionCreateCarriedPrUnreadable": "Kan Pull Request {{pr}} niet lezen bij de Git-provider ({{message}}): de User Stories die een promotie meeneemt kunnen ontbreken in de lijst hieronder",
   "promotionCreateCherryPickEmpty": "Niets te cherry-picken voor {{label}}: deze wijziging zit al in de target branch. De User Story wordt uit de promotion branch gelaten",
   "promotionCreateCherryPicking": "Cherry-pick van {{label}}...",
   "promotionCreateConflict": "De cherry-pick van {{label}} geeft conflicten. Deze User Story hangt waarschijnlijk af van een andere die geen deel uitmaakt van de promotion. Conflicterende bestanden:\n{{files}}",

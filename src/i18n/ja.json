@@ -2734,6 +2734,8 @@
   "promotionCreateAlreadyPromotedCheckImpossible": "git プロバイダーに接続できません: 他のプロモーションブランチがすでに運んでいる Pull Request を確認できないため、以下の一覧にはすでに移送中の User Story が含まれる可能性があります。この確認を有効にするには git プロバイダーのトークンを設定してください",
   "promotionCreateBranchNameWithSlash": "ブランチ {{branch}} には \"/\" が含まれており、プロモーションブランチの命名規則 ({{example}}) に適合しません。プロモーションブランチは名前に \"/\" を含まないブランチ間でのみ作成できます",
   "promotionCreateCandidatesReportTitle": "{{source}} から {{target}} へのプロモーション待ちの Pull Request",
+  "promotionCreateCarriedPrNotFound": "プロモーション {{promotionPr}} が宣言した Pull Request {{pr}} を読み込めませんでした。候補から除外されます",
+  "promotionCreateCarriedPrUnreadable": "Git プロバイダーから Pull Request {{pr}} を読み取れません ({{message}})。プロモーションが運ぶ User Story が下の一覧に表示されない場合があります",
   "promotionCreateCherryPickEmpty": "{{label}} には cherry-pick する変更がありません: この変更はすでにターゲットブランチに含まれています。この User Story はプロモーションブランチから除外されます",
   "promotionCreateCherryPicking": "{{label}} を cherry-pick しています...",
   "promotionCreateConflict": "{{label}} の cherry-pick で競合が発生しました。このユーザーストーリーは、プロモーションに含まれない別のストーリーに依存している可能性があります。競合ファイル:\n{{files}}",

@@ -2735,6 +2735,8 @@
   "promotionCreateAlreadyPromotedCheckImpossible": "Der Git-Provider ist nicht erreichbar: Es kann nicht geprüft werden, welche Pull Requests bereits von einem anderen Promotion-Branch getragen werden, daher kann die folgende Liste bereits unterwegs befindliche User Stories enthalten. Konfigurieren Sie ein Git-Provider-Token, um diese Prüfung zurückzubekommen",
   "promotionCreateBranchNameWithSlash": "Branch {{branch}} enthält ein \"/\", was nicht zur Namenskonvention der Promotion-Branches passt ({{example}}). Promotion-Branches können nur zwischen Branches ohne \"/\" im Namen erstellt werden",
   "promotionCreateCandidatesReportTitle": "Pull Requests, die auf die Promotion von {{source}} nach {{target}} warten",
+  "promotionCreateCarriedPrNotFound": "Pull Request {{pr}}, deklariert von Promotion {{promotionPr}}, konnte nicht geladen werden: Er wird aus dem Kandidaten ausgeschlossen",
+  "promotionCreateCarriedPrUnreadable": "Pull Request {{pr}} konnte nicht vom Git-Provider gelesen werden ({{message}}): Die von einer Promotion transportierten User Stories fehlen moeglicherweise in der Liste unten",
   "promotionCreateCherryPickEmpty": "Nichts zu cherry-picken für {{label}}: Diese Änderung ist bereits im Ziel-Branch. Die User Story wird aus dem Promotion-Branch herausgenommen",
   "promotionCreateCherryPicking": "Cherry-Pick von {{label}}...",
   "promotionCreateConflict": "Der Cherry-Pick von {{label}} verursacht Konflikte. Diese User Story hängt wahrscheinlich von einer anderen ab, die nicht Teil der Promotion ist. Dateien mit Konflikten:\n{{files}}",

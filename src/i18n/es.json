@@ -2736,6 +2736,8 @@
   "promotionCreateAlreadyPromotedCheckImpossible": "No se puede contactar con el proveedor git: no se pueden comprobar las Pull Requests que otra rama de promoción ya lleva, por lo que la lista siguiente puede ofrecer historias que ya están en camino. Configura un token del proveedor git para recuperar esa comprobación",
   "promotionCreateBranchNameWithSlash": "La rama {{branch}} contiene una \"/\", lo que no encaja con la convención de nombres de las ramas de promoción ({{example}}). Las ramas de promoción solo se pueden crear entre ramas cuyo nombre no contenga \"/\"",
   "promotionCreateCandidatesReportTitle": "Pull Requests a la espera de promoción de {{source}} a {{target}}",
+  "promotionCreateCarriedPrNotFound": "La Pull Request {{pr}}, declarada por la promoción {{promotionPr}}, no se ha podido cargar: queda fuera del candidato",
+  "promotionCreateCarriedPrUnreadable": "No se ha podido leer la Pull Request {{pr}} desde el proveedor Git ({{message}}): puede que falten en la lista de abajo las User Stories que transporta una promoción",
   "promotionCreateCherryPickEmpty": "Nada que aplicar con cherry-pick para {{label}}: este cambio ya está en la rama destino. La User Story se deja fuera de la rama de promoción",
   "promotionCreateCherryPicking": "Haciendo cherry-pick de {{label}}...",
   "promotionCreateConflict": "El cherry-pick de {{label}} tiene conflictos. Esta User Story probablemente depende de otra que no forma parte de la promoción. Archivos en conflicto:\n{{files}}",

@@ -147,6 +147,75 @@ export function shouldAddVirtualPullRequest(
   return !associatedPrs.some((pr) => (pr.sourceBranch || '').toLowerCase() === sourceBranch.toLowerCase());
 }
 
+/**
+ * `<child> <parent> <parent>...` lines of `git rev-list --parents`, as a map.
+ */
+export function parseCommitParents(revListOutput: string): Map<string, string[]> {
+  const parents = new Map<string, string[]>();
+  for (const line of (revListOutput || '').split('\n')) {
+    const hashes = line.trim().split(/\s+/).filter((hash) => hash.length > 0);
+    if (hashes.length > 0) {
+      parents.set(hashes[0], hashes.slice(1));
+    }
+  }
+  return parents;
+}
+
+/**
+ * The commits each first-parent commit of a branch brought in.
+ *
+ * Walking the graph, not comparing dates: a cherry-picked commit keeps the author date it had on
+ * the branch it came from, so it lands out of order. Attributing it by date gives it to whichever
+ * merge happens to bracket that date, which for a promotion branch is the wrong one: the stories
+ * of a promotion end up counted under the merge before it, and the merge that really carried them
+ * ends up empty. Promotion branches are made of nothing but cherry-picks, so this is the normal
+ * case, not an edge case.
+ *
+ * A commit shared by two merges belongs to the older one, which is why the first-parent commits
+ * are walked oldest first.
+ */
+export function attributeCommitsToFirstParents<T extends { hash: string }>(
+  firstParentCommits: T[],
+  allCommits: T[],
+  parentsByHash: Map<string, string[]>,
+): Map<string, T[]> {
+  const commitByHash = new Map(allCommits.map((commit) => [commit.hash, commit]));
+  const positionByHash = new Map(allCommits.map((commit, index) => [commit.hash, index]));
+  const firstParentShas = new Set(firstParentCommits.map((commit) => commit.hash));
+  const assigned = new Set<string>();
+  const result = new Map<string, T[]>();
+  for (const mergeCommit of firstParentCommits) {
+    const collected: T[] = [];
+    const queue: string[] = [mergeCommit.hash];
+    const visited = new Set<string>();
+    while (queue.length > 0) {
+      const hash = queue.shift() as string;
+      if (visited.has(hash)) {
+        continue;
+      }
+      visited.add(hash);
+      // Another first-parent commit owns its own side of the history, and a commit already
+      // attributed belongs to the older merge that brought it in
+      if ((hash !== mergeCommit.hash && firstParentShas.has(hash)) || assigned.has(hash)) {
+        continue;
+      }
+      const commit = commitByHash.get(hash);
+      if (!commit) {
+        continue; // outside the window being listed
+      }
+      collected.push(commit);
+      assigned.add(hash);
+      for (const parentHash of parentsByHash.get(hash) || []) {
+        queue.push(parentHash);
+      }
+    }
+    // Back to the order of `git log`, which the Pull Request matching below relies on
+    collected.sort((a, b) => (positionByHash.get(a.hash) ?? 0) - (positionByHash.get(b.hash) ?? 0));
+    result.set(mergeCommit.hash, collected);
+  }
+  return result;
+}
+
 export async function listMergedPrsWithCommits(
   parentBranch: string,
   currentBranch: string,
@@ -177,6 +246,18 @@ export async function listMergedPrsWithCommits(
     ? await git().log([`${sinceCommit}..${parentBranch}`]).catch(() => null)
     : await git().log(['-n', '500', parentBranch]).catch(() => null);
   const allCommits = [...(allCommitsLog?.all || [])];
+
+  // The parent of every commit of the window, in one call: which merge brought a commit in is a
+  // question about the graph, and answering it from the dates is wrong for cherry-picks.
+  const revListArgs = sinceCommit
+    ? ['rev-list', '--parents', `${sinceCommit}..${parentBranch}`]
+    : ['rev-list', '--parents', '-n', '500', parentBranch];
+  const parentsByHash = parseCommitParents(await git().raw(revListArgs).catch(() => ''));
+  const childCommitsByMerge = attributeCommitsToFirstParents(
+    [...firstParentLog.all].reverse(),
+    allCommits,
+    parentsByHash,
+  );
 
   // Discover PRs from all commits using the three strategies
   const prNumbersFromCommits = extractPrNumbersFromCommits(allCommits);
@@ -213,22 +294,12 @@ export async function listMergedPrsWithCommits(
 
   // Build groups: one per first-parent commit, with associated PRs as details
   const firstParentCommits = [...firstParentLog.all].reverse(); // Chronological order
-  const firstParentShas = new Set(firstParentCommits.map((c) => c.hash));
   const prGroups: BackpromotePrGroup[] = [];
 
-  for (let i = 0; i < firstParentCommits.length; i++) {
-    const commit = firstParentCommits[i];
+  for (const commit of firstParentCommits) {
 
-    // Find all child commits reachable from this commit but not from the previous first-parent commit
-    // These are the commits that were "brought in" by this merge
-    const childCommits = allCommits.filter((c) => {
-      if (firstParentShas.has(c.hash) && c.hash !== commit.hash) return false;
-      // Check if this commit's date is between the previous and current first-parent commits
-      const commitDate = new Date(c.date).getTime();
-      const currentDate = new Date(commit.date).getTime();
-      const prevDate = i > 0 ? new Date(firstParentCommits[i - 1].date).getTime() : 0;
-      return commitDate > prevDate && commitDate <= currentDate;
-    });
+    // The commits this merge brought in, read from the graph (see attributeCommitsToFirstParents)
+    const childCommits = childCommitsByMerge.get(commit.hash) || [commit];
 
     // Discover associated PRs from child commits
     const associatedPrs: BackpromotePrGroup['associatedPrs'] = [];

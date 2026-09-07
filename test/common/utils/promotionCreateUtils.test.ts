@@ -11,6 +11,7 @@ import {
   countsAsAlreadyPromoted,
   declaredPullRequestNumbers,
   dropVehiclePullRequests,
+  expandPromotionsInGroups,
   filterOpenPromotionPullRequests,
   gitPathSpec,
   listUnrequestedPullRequestNumbers,
@@ -482,5 +483,77 @@ describe('pullRequestKeys()', () => {
     expect(pullRequestKeys({ idNumber: 493 })).to.deep.equal(['493']);
     expect(pullRequestKeys({ idStr: 'gid://493' })).to.deep.equal(['gid://493']);
     expect(pullRequestKeys({})).to.deep.equal([]);
+  });
+});
+
+describe('expandPromotionsInGroups()', () => {
+  function promotionGroup(hash: string, promotionId: number, promotionBranch: string): BackpromotePrGroup {
+    return {
+      commit: { hash, message: `Merge pull request #${promotionId}`, author: 'dev', date: '2026-09-06T18:00:00Z' },
+      associatedPrs: [
+        { id: promotionId, title: 'Promotion', author: 'dev', webUrl: '', sourceBranch: promotionBranch },
+      ],
+      prConfigs: [],
+    };
+  }
+
+  function pullRequest(idNumber: number, description: string, sourceBranch: string) {
+    return {
+      idNumber,
+      idStr: String(idNumber),
+      title: `PR ${idNumber}`,
+      description,
+      sourceBranch,
+      targetBranch: 'uat',
+      authorName: 'dev',
+      webUrl: `https://git.example.com/pr/${idNumber}`,
+    } as any;
+  }
+
+  it('a promotion is replaced by the User Stories it declares', async () => {
+    // Two pipeline levels down, the merge of a promotion is a single cherry-picked commit that
+    // names the promotion and nothing else: without this the candidate would carry no number
+    const known: Record<number, any> = {
+      9: pullRequest(9, 'carrying\n\n```yaml\npromotionPullRequests: [3, 1]\n```\n', 'promotion/uat/preprod/2026-09-06-2'),
+      3: pullRequest(3, 'S3', 'feature/E2E-103-gamma'),
+      1: pullRequest(1, 'S1', 'feature/E2E-101-alpha'),
+    };
+    const expanded = await expandPromotionsInGroups(
+      [promotionGroup('baea47b', 9, 'promotion/uat/preprod/2026-09-06-2')],
+      async (id) => known[id] || null,
+    );
+    expect(expanded[0].associatedPrs.map((pr) => pr.id)).to.deep.equal([9, 3, 1]);
+    // The promotion itself is then dropped as a vehicle, leaving the stories
+    const kept = dropVehiclePullRequests(expanded, ['integration', 'uat', 'preprod', 'main']);
+    expect(kept[0].associatedPrs.map((pr) => pr.id)).to.deep.equal([3, 1]);
+  });
+
+  it('a promotion carrying a promotion is expanded in turn', async () => {
+    const known: Record<number, any> = {
+      9: pullRequest(9, '```yaml\npromotionPullRequests: [7]\n```', 'promotion/uat/preprod/2026-09-06-2'),
+      7: pullRequest(7, '```yaml\npromotionPullRequests: [1, 3]\n```', 'promotion/integration/uat/2026-09-06-1'),
+      1: pullRequest(1, 'S1', 'feature/E2E-101-alpha'),
+      3: pullRequest(3, 'S3', 'feature/E2E-103-gamma'),
+    };
+    const expanded = await expandPromotionsInGroups(
+      [promotionGroup('baea47b', 9, 'promotion/uat/preprod/2026-09-06-2')],
+      async (id) => known[id] || null,
+    );
+    expect(expanded[0].associatedPrs.map((pr) => pr.id)).to.deep.equal([9, 7, 1, 3]);
+  });
+
+  it('a group with no promotion is returned untouched, and a declared Pull Request that cannot be loaded is skipped', async () => {
+    const plain = group('abc1234', [{ id: 42, title: 'S42' }]);
+    const untouched = await expandPromotionsInGroups([plain], async () => null);
+    expect(untouched[0]).to.equal(plain);
+
+    const withMissing = await expandPromotionsInGroups(
+      [promotionGroup('baea47b', 9, 'promotion/uat/preprod/2026-09-06-2')],
+      async (id) =>
+        id === 9
+          ? ({ idNumber: 9, idStr: '9', description: '```yaml\npromotionPullRequests: [404]\n```', sourceBranch: 'promotion/uat/preprod/2026-09-06-2', title: 'p', authorName: 'dev', webUrl: '', targetBranch: 'preprod' } as any)
+          : null,
+    );
+    expect(withMissing[0].associatedPrs.map((pr) => pr.id)).to.deep.equal([9]);
   });
 });
