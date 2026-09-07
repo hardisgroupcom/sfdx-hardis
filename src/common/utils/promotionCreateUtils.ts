@@ -942,6 +942,15 @@ export async function cherryPickCandidates(
       outcome.alreadyThere.push(candidate);
       continue;
     }
+    // git can also refuse the cherry-pick before starting it, and then there is nothing to solve:
+    // no CHERRY_PICK_HEAD, no conflicted path, and offering the conflict choices would be
+    // meaningless. The commonest cause is untracked files in the way, the sfdx-hardis reports
+    // first among them, so the reason git gave is what the user needs to read.
+    if (conflictFiles.length === 0 && !(await isCherryPickInProgress())) {
+      const reason = [res.stderr, res.stdout].map((part) => (part || '').trim()).filter((part) => part).join('\n');
+      await abortPromotion(branchName, previousBranch, commandThis);
+      throw new SfError(t('promotionCreateCherryPickRefused', { label: candidate.label, reason: reason || '-' }));
+    }
     uxLog('warning', commandThis, c.yellow(t('promotionCreateConflict', { label: candidate.label, files: conflictFiles.join('\n') || '-' })));
     const choice = onConflict || (agentMode ? 'abort' : await promptConflictChoice(candidate, commandThis));
     if (choice === 'skip') {
@@ -1030,6 +1039,20 @@ async function isEmptyCherryPick(commandThis: any): Promise<boolean> {
     // worktree, untracked files included, and the command itself writes a report before this point.
     const staged = await runCommandSafe('git diff --cached --quiet HEAD', commandThis, { output: false });
     return staged.status === 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Whether git actually started the cherry-pick. It refuses some of them outright - untracked
+ * working tree files it would have to overwrite, for instance - and then leaves no CHERRY_PICK_HEAD
+ * and no conflicted path behind, which is not the same situation as a content conflict at all.
+ */
+async function isCherryPickInProgress(): Promise<boolean> {
+  try {
+    const head = await git().raw(['rev-parse', '-q', '--verify', 'CHERRY_PICK_HEAD']).catch(() => '');
+    return String(head).trim().length > 0;
   } catch {
     return false;
   }

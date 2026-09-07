@@ -2742,6 +2742,7 @@
   "promotionCreateCarriedPrNotFound": "Pull Request {{pr}}, deklariert von Promotion {{promotionPr}}, konnte nicht geladen werden: Er wird aus dem Kandidaten ausgeschlossen",
   "promotionCreateCarriedPrUnreadable": "Pull Request {{pr}} konnte nicht vom Git-Provider gelesen werden ({{message}}): Die von einer Promotion transportierten User Stories fehlen moeglicherweise in der Liste unten",
   "promotionCreateCherryPickEmpty": "Nichts zu cherry-picken für {{label}}: Diese Änderung ist bereits im Ziel-Branch. Die User Story wird aus dem Promotion-Branch herausgenommen",
+  "promotionCreateCherryPickRefused": "git hat den Cherry-pick von {{label}} abgelehnt, daher gibt es auf dem Branch nichts zu loesen und die Promotion wurde rueckgaengig gemacht. git meldet:\n{{reason}}",
   "promotionCreateCherryPicking": "Cherry-Pick von {{label}}...",
   "promotionCreateConflict": "Der Cherry-Pick von {{label}} verursacht Konflikte. Diese User Story hängt wahrscheinlich von einer anderen ab, die nicht Teil der Promotion ist. Dateien mit Konflikten:\n{{files}}",
   "promotionCreateConflictAbort": "Abbrechen und den Promotion-Branch rückgängig machen",

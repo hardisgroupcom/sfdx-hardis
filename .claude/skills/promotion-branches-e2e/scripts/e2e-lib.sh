@@ -114,3 +114,33 @@ e2e_release_notes() {
 e2e_grep() {
   grep -aE "PromotionBranch|Pull Request scope|Test classes selected|^ - Promo|Final test level|Delta deployment has been|Found [0-9]+ (Pre|Post)-deployment|Running action|Skipping .*action|Manual action|Successfully (checked|deployed)|Deployment mode|Error \(SfError\)|carries|already" "$1"
 }
+
+# Dump the Pull Requests and their comments in the provider agnostic shape audit-pr-comments.cjs
+# reads. Usage: dump_pr_comments <out.json> [pr number ...]  (all Pull Requests when none is given)
+dump_pr_comments() {
+  local out="$1"
+  shift
+  REPO="$REPO" python -c "
+import json, os, subprocess, sys
+
+REPO = os.environ['REPO']
+
+def gh(path):
+    return json.loads(subprocess.check_output(['gh', 'api', path, '--paginate'], encoding='utf-8'))
+
+wanted = set(int(a) for a in sys.argv[2:])
+prs = []
+for raw in gh('repos/%s/pulls?state=all&per_page=100' % REPO):
+    if wanted and raw['number'] not in wanted:
+        continue
+    comments = [{'id': str(c['id']), 'body': c.get('body') or '', 'url': c.get('html_url') or ''}
+                for c in gh('repos/%s/issues/%s/comments?per_page=100' % (REPO, raw['number']))]
+    prs.append({'number': raw['number'], 'title': raw.get('title') or '',
+                'sourceBranch': raw['head']['ref'], 'targetBranch': raw['base']['ref'],
+                'state': 'merged' if raw.get('merged_at') else raw.get('state'),
+                'description': raw.get('body') or '',
+                'comments': comments})
+json.dump({'provider': 'github', 'prs': prs}, open(sys.argv[1], 'w', encoding='utf-8'), indent=1)
+print('dumped %d Pull Requests to %s' % (len(prs), sys.argv[1]))
+" "$out" "$@"
+}

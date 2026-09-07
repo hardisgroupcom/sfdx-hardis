@@ -69,26 +69,32 @@ bb_pr_field() {
     python -c "import json,sys; d=json.load(sys.stdin); print($2)"
 }
 
-# Check out refs/pull-requests/<id>/merge as a Bitbucket Pipelines PR job would.
+# Build the tree a Bitbucket Pipelines pull request job runs on.
 #
-# Bitbucket recomputes that ref after a push to the source branch, so asking for it too early hands
-# back the previous merge and the job validates a tree without the commit that was just pushed.
-# The ref is fetched again until it holds the real head of the source branch.
-# Usage: bb_fetch_merge_ref <id>
-bb_fetch_merge_ref() {
-  local pr="$1" source sha
+# Unlike GitHub, GitLab and Azure DevOps, Bitbucket Cloud publishes NO merge ref: neither
+# refs/pull-requests/<id>/merge nor .../from is fetchable, and `git ls-remote` advertises none of
+# them. What a `pull-requests:` pipeline actually does is check out the SOURCE branch and merge the
+# destination branch into it before running the steps, so that is what this reproduces. The upside
+# is that there is no lazily written ref to wait for; the downside is that a merge conflict shows
+# up here rather than as a stale tree.
+# Usage: bb_checkout_pr_merge <id>
+bb_checkout_pr_merge() {
+  local pr="$1" source target
   source=$(bb_pr_field "$pr" "d['source']['branch']['name']")
-  for _ in $(seq 1 20); do
-    sha=$(git ls-remote origin "refs/heads/$source" | cut -f1)
-    if [ -n "$sha" ] &&
-      git fetch -q origin "+refs/pull-requests/$pr/merge:refs/heads/prmerge-$pr" 2>/dev/null &&
-      git merge-base --is-ancestor "$sha" "prmerge-$pr" 2>/dev/null; then
-      return 0
-    fi
-    sleep 3
-  done
-  echo "merge ref of PR $pr never caught up with $source ($sha)" >&2
-  return 1
+  target=$(bb_pr_field "$pr" "d['destination']['branch']['name']")
+  if [ -z "$source" ] || [ -z "$target" ]; then
+    echo "cannot read the branches of PR $pr" >&2
+    return 1
+  fi
+  git fetch -q origin "$source" "$target" || return 1
+  git checkout -q -f --detach "origin/$source" || return 1
+  # Bitbucket Pipelines fails the pull request build when this merge conflicts, and so does this
+  if ! git -c user.email=e2e@example.com -c user.name=e2e merge -q --no-edit "origin/$target"; then
+    git merge --abort 2>/dev/null
+    echo "merging $target into $source for PR $pr conflicts" >&2
+    return 1
+  fi
+  return 0
 }
 
 # Validation job: Bitbucket Pipelines checks out the merge of the Pull Request
@@ -97,8 +103,7 @@ bb_check() {
   local pr="$1" target="$2" label="$3" code
   cd "$WORK" || return 1
   git checkout -q -f --detach HEAD
-  bb_fetch_merge_ref "$pr" || return 1
-  git checkout -q -f "prmerge-$pr" || return 1
+  bb_checkout_pr_merge "$pr" || return 1
   bb_ci_env \
     BITBUCKET_PR_ID="$pr" \
     BITBUCKET_BRANCH="pull-requests/$pr/merge" \
@@ -214,3 +219,48 @@ if ! declare -f e2e_grep >/dev/null 2>&1; then
     grep -aE "PromotionBranch|Pull Request scope|Test classes selected|^ - Promo|Final test level|Delta deployment has been|Found [0-9]+ (Pre|Post)-deployment|Running action|Skipping .*action|Manual action|Successfully (checked|deployed)|Deployment mode|Error \(SfError\)|carries|already" "$1"
   }
 fi
+
+# Dump the Pull Requests and their comments in the provider agnostic shape audit-pr-comments.cjs
+# reads. Usage: dump_pr_comments <out.json> [pr id ...]   (all Pull Requests when none is given)
+dump_pr_comments() {
+  local out="$1"
+  shift
+  BB_API="$BB_API" BB_TOKEN="$BB_TOKEN" BB_EMAIL="$BB_EMAIL" python -c "
+import json, os, subprocess, sys
+
+API, TOKEN, EMAIL = os.environ['BB_API'], os.environ['BB_TOKEN'], os.environ['BB_EMAIL']
+AUTH = ['-u', EMAIL + ':' + TOKEN] if EMAIL else ['-H', 'Authorization: Bearer ' + TOKEN]
+
+def get(url):
+    return json.loads(subprocess.check_output(['curl', '-sS'] + AUTH + [url]))
+
+def paged(url):
+    values = []
+    while url:
+        page = get(url)
+        values.extend(page.get('values') or [])
+        url = page.get('next')
+    return values
+
+wanted = set(int(a) for a in sys.argv[2:])
+prs = []
+for raw in paged(API + '/pullrequests?state=MERGED&state=OPEN&state=DECLINED&state=SUPERSEDED&pagelen=50'):
+    if wanted and raw['id'] not in wanted:
+        continue
+    comments = []
+    for c in paged(API + '/pullrequests/%s/comments?pagelen=50' % raw['id']):
+        if c.get('deleted'):
+            continue
+        comments.append({'id': str(c.get('id')),
+                         'body': ((c.get('content') or {}).get('raw') or ''),
+                         'url': (((c.get('links') or {}).get('html') or {}).get('href') or '')})
+    prs.append({'number': raw['id'], 'title': raw.get('title') or '',
+                'sourceBranch': (((raw.get('source') or {}).get('branch') or {}).get('name') or ''),
+                'targetBranch': (((raw.get('destination') or {}).get('branch') or {}).get('name') or ''),
+                'state': (raw.get('state') or '').lower(),
+                'description': raw.get('description') or '',
+                'comments': comments})
+json.dump({'provider': 'bitbucket', 'prs': prs}, open(sys.argv[1], 'w', encoding='utf-8'), indent=1)
+print('dumped %d Pull Requests to %s' % (len(prs), sys.argv[1]))
+" "$out" "$@"
+}

@@ -239,3 +239,47 @@ if ! declare -f e2e_grep >/dev/null 2>&1; then
     grep -aE "PromotionBranch|Pull Request scope|Test classes selected|^ - Promo|Final test level|Delta deployment has been|Found [0-9]+ (Pre|Post)-deployment|Running action|Skipping .*action|Manual action|Successfully (checked|deployed)|Deployment mode|Error \(SfError\)|carries|already" "$1"
   }
 fi
+
+# Dump the Pull Requests and their comment threads in the provider agnostic shape
+# audit-pr-comments.cjs reads.
+# Usage: dump_pr_comments <out.json> [pr id ...]   (all Pull Requests when none is given)
+dump_pr_comments() {
+  local out="$1"
+  shift
+  AZ_REPO_API="$AZ_REPO_API" AZ_TOKEN="$AZ_TOKEN" python -c "
+import json, os, subprocess, sys
+
+API, TOKEN = os.environ['AZ_REPO_API'], os.environ['AZ_TOKEN']
+
+def get(url):
+    return json.loads(subprocess.check_output(['curl', '-sS', '-u', ':' + TOKEN, url]))
+
+wanted = set(int(a) for a in sys.argv[2:])
+prs = []
+listed = get(API + '/pullrequests?searchCriteria.status=all&' + chr(36) + 'top=500&api-version=7.1')['value']
+for raw in listed:
+    pr_id = raw['pullRequestId']
+    if wanted and pr_id not in wanted:
+        continue
+    # the list API truncates the description at 400 characters: read the full Pull Request
+    full = get('%s/pullrequests/%s?api-version=7.1' % (API, pr_id))
+    comments = []
+    for thread in get('%s/pullrequests/%s/threads?api-version=7.1' % (API, pr_id))['value']:
+        if thread.get('isDeleted'):
+            continue
+        for c in thread.get('comments') or []:
+            if c.get('isDeleted'):
+                continue
+            comments.append({'id': '%s-%s' % (thread.get('id'), c.get('id')),
+                             'body': c.get('content') or '',
+                             'url': ''})
+    prs.append({'number': pr_id, 'title': raw.get('title') or '',
+                'sourceBranch': (raw.get('sourceRefName') or '').replace('refs/heads/', ''),
+                'targetBranch': (raw.get('targetRefName') or '').replace('refs/heads/', ''),
+                'state': raw.get('status') or '',
+                'description': full.get('description') or '',
+                'comments': comments})
+json.dump({'provider': 'azure', 'prs': prs}, open(sys.argv[1], 'w', encoding='utf-8'), indent=1)
+print('dumped %d Pull Requests to %s' % (len(prs), sys.argv[1]))
+" "$out" "$@"
+}

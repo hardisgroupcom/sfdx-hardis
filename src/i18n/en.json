@@ -2747,6 +2747,7 @@
   "promotionCreateCarriedPrNotFound": "Pull Request {{pr}}, declared by promotion {{promotionPr}}, could not be loaded: it is left out of the candidate",
   "promotionCreateCarriedPrUnreadable": "Unable to read Pull Request {{pr}} from the git provider ({{message}}): the User Stories a promotion carries may be missing from the list below",
   "promotionCreateCherryPickEmpty": "Nothing to cherry-pick for {{label}}: this change is already in the target branch. The User Story is left out of the promotion branch",
+  "promotionCreateCherryPickRefused": "git refused to cherry-pick {{label}}, so there is nothing to solve on the branch and the promotion has been undone. git says:\n{{reason}}",
   "promotionCreateCherryPicking": "Cherry-picking {{label}}...",
   "promotionCreateConflict": "Cherry-pick of {{label}} conflicts. This User Story probably depends on another one that is not part of the promotion. Conflicting files:\n{{files}}",
   "promotionCreateConflictAbort": "Stop and undo the promotion branch",

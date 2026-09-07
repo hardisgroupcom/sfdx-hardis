@@ -2743,6 +2743,7 @@
   "promotionCreateCarriedPrNotFound": "Pull Request {{pr}}, gedeclareerd door promotie {{promotionPr}}, kon niet worden geladen: hij valt buiten de kandidaat",
   "promotionCreateCarriedPrUnreadable": "Kan Pull Request {{pr}} niet lezen bij de Git-provider ({{message}}): de User Stories die een promotie meeneemt kunnen ontbreken in de lijst hieronder",
   "promotionCreateCherryPickEmpty": "Niets te cherry-picken voor {{label}}: deze wijziging zit al in de target branch. De User Story wordt uit de promotion branch gelaten",
+  "promotionCreateCherryPickRefused": "git heeft de cherry-pick van {{label}} geweigerd, er valt dus niets op te lossen op de branch en de promotie is ongedaan gemaakt. git meldt:\n{{reason}}",
   "promotionCreateCherryPicking": "Cherry-pick van {{label}}...",
   "promotionCreateConflict": "De cherry-pick van {{label}} geeft conflicten. Deze User Story hangt waarschijnlijk af van een andere die geen deel uitmaakt van de promotion. Conflicterende bestanden:\n{{files}}",
   "promotionCreateConflictAbort": "Stoppen en de promotion branch ongedaan maken",

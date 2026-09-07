@@ -41,8 +41,7 @@ restore_flag() { git checkout -q -- config/.sfdx-hardis.yml; }
 run_check() {
   local pr="$1" target="$2" name="$3" code
   git checkout -q -f --detach HEAD
-  bb_fetch_merge_ref "$pr" || return 1
-  git checkout -q -f "prmerge-$pr"
+  bb_checkout_pr_merge "$pr" || return 1
   set_flag
   bb_ci_env BITBUCKET_PR_ID="$pr" BITBUCKET_BRANCH="pull-requests/$pr/merge" \
     CI_COMMIT_REF_NAME="pull-requests/$pr/merge" FORCE_TARGET_BRANCH="$target" CONFIG_BRANCH="$target" \

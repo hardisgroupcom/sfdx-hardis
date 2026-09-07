@@ -2741,6 +2741,7 @@
   "promotionCreateCarriedPrNotFound": "プロモーション {{promotionPr}} が宣言した Pull Request {{pr}} を読み込めませんでした。候補から除外されます",
   "promotionCreateCarriedPrUnreadable": "Git プロバイダーから Pull Request {{pr}} を読み取れません ({{message}})。プロモーションが運ぶ User Story が下の一覧に表示されない場合があります",
   "promotionCreateCherryPickEmpty": "{{label}} には cherry-pick する変更がありません: この変更はすでにターゲットブランチに含まれています。この User Story はプロモーションブランチから除外されます",
+  "promotionCreateCherryPickRefused": "git が {{label}} の cherry-pick を拒否したため、branch 上で解決すべきことはなく、プロモーションは取り消されました。git のメッセージ:\n{{reason}}",
   "promotionCreateCherryPicking": "{{label}} を cherry-pick しています...",
   "promotionCreateConflict": "{{label}} の cherry-pick で競合が発生しました。このユーザーストーリーは、プロモーションに含まれない別のストーリーに依存している可能性があります。競合ファイル:\n{{files}}",
   "promotionCreateConflictAbort": "中止してプロモーションブランチを取り消す",

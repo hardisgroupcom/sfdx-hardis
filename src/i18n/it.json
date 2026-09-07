@@ -2743,6 +2743,7 @@
   "promotionCreateCarriedPrNotFound": "La Pull Request {{pr}}, dichiarata dalla promozione {{promotionPr}}, non è stata caricata: viene esclusa dal candidato",
   "promotionCreateCarriedPrUnreadable": "Impossibile leggere la Pull Request {{pr}} dal provider Git ({{message}}): le User Story trasportate da una promozione potrebbero mancare nell'elenco sottostante",
   "promotionCreateCherryPickEmpty": "Niente da applicare con cherry-pick per {{label}}: questa modifica è già nel branch di destinazione. La User Story viene esclusa dal branch di promozione",
+  "promotionCreateCherryPickRefused": "git ha rifiutato il cherry-pick di {{label}}, quindi non c'e nulla da risolvere sul branch e la promozione e stata annullata. git segnala:\n{{reason}}",
   "promotionCreateCherryPicking": "Cherry-pick di {{label}}...",
   "promotionCreateConflict": "Il cherry-pick di {{label}} è in conflitto. Questa User Story dipende probabilmente da un'altra che non fa parte della promozione. File in conflitto:\n{{files}}",
   "promotionCreateConflictAbort": "Fermarsi e annullare il promotion branch",

@@ -2743,6 +2743,7 @@
   "promotionCreateCarriedPrNotFound": "Nie mozna wczytac Pull Request {{pr}} zadeklarowanego przez promocje {{promotionPr}}: zostaje pominiety w kandydacie",
   "promotionCreateCarriedPrUnreadable": "Nie mozna odczytac Pull Request {{pr}} od dostawcy Git ({{message}}): User Stories przenoszone przez promocje moga nie pojawic sie na ponizszej liscie",
   "promotionCreateCherryPickEmpty": "Brak zmian do cherry-pick dla {{label}}: ta zmiana jest już w branchu docelowym. User Story zostaje pominięta w branchu promocyjnym",
+  "promotionCreateCherryPickRefused": "git odrzucil cherry-pick {{label}}, wiec nie ma nic do rozwiazania na branch, a promocja zostala cofnieta. git zglasza:\n{{reason}}",
   "promotionCreateCherryPicking": "Cherry-pick {{label}}...",
   "promotionCreateConflict": "Cherry-pick {{label}} powoduje konflikty. Ta User Story prawdopodobnie zależy od innej, która nie jest częścią promocji. Pliki w konflikcie:\n{{files}}",
   "promotionCreateConflictAbort": "Zatrzymać i cofnąć promotion branch",

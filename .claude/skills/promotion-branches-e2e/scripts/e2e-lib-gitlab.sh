@@ -191,3 +191,46 @@ else:
     print('MERGE FAILED', json.dumps(answer)[:300]); sys.exit(1)
 "
 }
+
+# Dump the merge requests and their notes in the provider agnostic shape audit-pr-comments.cjs
+# reads. Usage: dump_pr_comments <out.json> [mr iid ...]   (all merge requests when none is given)
+dump_pr_comments() {
+  local out="$1"
+  shift
+  GL_HOST="$GL_HOST" GL_TOKEN="$GL_TOKEN" PROJECT_ID="$PROJECT_ID" python -c "
+import json, os, subprocess, sys
+
+HOST, TOKEN, PROJECT = os.environ['GL_HOST'], os.environ['GL_TOKEN'], os.environ['PROJECT_ID']
+
+def get(path):
+    values, page = [], 1
+    while True:
+        sep = '&' if '?' in path else '?'
+        url = '%s/api/v4/%s%sper_page=100&page=%d' % (HOST, path, sep, page)
+        chunk = json.loads(subprocess.check_output(['curl', '-sS', '-H', 'PRIVATE-TOKEN: ' + TOKEN, url]))
+        if not chunk:
+            break
+        values.extend(chunk)
+        if len(chunk) < 100:
+            break
+        page += 1
+    return values
+
+wanted = set(int(a) for a in sys.argv[2:])
+prs = []
+for raw in get('projects/%s/merge_requests?state=all&scope=all' % PROJECT):
+    if wanted and raw['iid'] not in wanted:
+        continue
+    comments = [{'id': str(n['id']), 'body': n.get('body') or '',
+                 'url': '%s#note_%s' % (raw.get('web_url', ''), n['id'])}
+                for n in get('projects/%s/merge_requests/%s/notes' % (PROJECT, raw['iid']))
+                if not n.get('system')]
+    prs.append({'number': raw['iid'], 'title': raw.get('title') or '',
+                'sourceBranch': raw.get('source_branch') or '', 'targetBranch': raw.get('target_branch') or '',
+                'state': raw.get('state') or '',
+                'description': raw.get('description') or '',
+                'comments': comments})
+json.dump({'provider': 'gitlab', 'prs': prs}, open(sys.argv[1], 'w', encoding='utf-8'), indent=1)
+print('dumped %d merge requests to %s' % (len(prs), sys.argv[1]))
+" "$out" "$@"
+}
