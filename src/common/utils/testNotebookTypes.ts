@@ -63,6 +63,21 @@ export function deriveTicketAndKind(id: string): { ticket: string; kind: TestCas
   return { ticket, kind };
 }
 
+/** Fixed, non configurable idempotency key prefix. */
+const KEY_PREFIX = 'TESTKIT';
+
+/**
+ * `TESTKIT:<TICKET>:<SHORT ID>` - the short id being the identifier with its ticket prefix
+ * stripped, exactly as the skill has always produced it. Cases already pushed carry this
+ * string, so any change here re-creates every one of them as a duplicate.
+ */
+export function idempotencyKey(id: string, ticketOverride?: string): string {
+  const ticket = ticketOverride ?? deriveTicketAndKind(id).ticket;
+  const prefix = `${ticket}-`;
+  const shortId = String(id).startsWith(prefix) ? String(id).slice(prefix.length) : String(id);
+  return `${KEY_PREFIX}:${ticket}:${shortId}`;
+}
+
 /** `P1` / `1` / `1` -> 1. Anything unreadable defaults to 2. */
 export function normalizePriority(value: unknown): 1 | 2 | 3 {
   const match = /([123])/.exec(String(value ?? ''));

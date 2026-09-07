@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
-import { deriveTicketAndKind, normalizePriority } from '../../../src/common/utils/testNotebookTypes.js';
+import { deriveTicketAndKind, idempotencyKey, normalizePriority } from '../../../src/common/utils/testNotebookTypes.js';
 
 describe('testNotebookTypes', () => {
   describe('deriveTicketAndKind', () => {
@@ -25,6 +25,18 @@ describe('testNotebookTypes', () => {
       expect(() => deriveTicketAndKind('nonsense')).to.throw(/nonsense/);
       expect(() => deriveTicketAndKind('PROJ-123-X01')).to.throw(/PROJ-123-X01/);
       expect(() => deriveTicketAndKind('')).to.throw();
+    });
+  });
+
+  describe('idempotencyKey', () => {
+    // Non-regression guard: cases already pushed by the skill carry this exact string.
+    // Changing it would re-create every one of them as a duplicate.
+    it('uses the short id, not the full id', () => {
+      expect(idempotencyKey('PROJ-123-F01')).to.equal('TESTKIT:PROJ-123:F01');
+    });
+
+    it('keeps the id whole when it does not start with the ticket prefix', () => {
+      expect(idempotencyKey('F01', 'PROJ-123')).to.equal('TESTKIT:PROJ-123:F01');
     });
   });
 

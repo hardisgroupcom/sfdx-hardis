@@ -131,19 +131,19 @@ export function parseSteps(raw: unknown): TestCaseStep[] {
  *
  * `separator` decides what the cell can be read back from, and each caller has a different
  * constraint:
- *  - `' | '` (default) for a markdown table cell, which must stay on a single line;
- *  - `'\n'` for an xlsx cell, where a real line break is what a tester wants to see and what
- *    `parseSteps` reads back;
- *  - `STEP_SEPARATOR` (`<br>`) for a CSV field, which must stay on one physical line because
- *    the CSV reader splits on newlines before it looks at quotes.
+ *  - `STEP_SEPARATOR` (`<br>`, the default) for a CSV field or a markdown table cell. Both must
+ *    stay on one physical line: the CSV reader splits on newlines before it looks at quotes,
+ *    and a markdown row ends at its newline;
+ *  - `'\n'` for an xlsx cell, where a real line break is what a tester wants to see.
  *
- * The last two are the ones that make the round trip work: a workbook produced by `:render`
- * has to be readable by `:push` after a tester has filled in the result columns.
+ * Both forms are read back by `parseSteps`, which is what makes the round trip work: the
+ * notebook `init` writes has to be readable by `upsert` after a human has corrected it. A form
+ * joined with ` | ` would not, and is deliberately not offered: in a markdown table the pipe is
+ * the column separator, so it would shred the row into extra columns.
  *
- * A literal pipe becomes `/`: a cosmetic loss, needed only for the markdown form, harmless in
- * the other two.
+ * A literal pipe in the content becomes `/`, a cosmetic loss for the same reason.
  */
-export function renderStepsFlat(steps: TestCaseStep[], separator: string = ' | '): string {
+export function renderStepsFlat(steps: TestCaseStep[], separator: string = STEP_SEPARATOR): string {
   if (!Array.isArray(steps) || steps.length === 0) {
     return '';
   }

@@ -263,6 +263,34 @@ export async function writeNotebookCsv(
   return outputPath;
 }
 
+/**
+ * Write the notebook as a markdown table.
+ *
+ * Steps are separated by `<br>` and never by ` | `: the pipe is the column separator of a
+ * markdown table, so a step list joined with it would silently shred the row into extra
+ * columns. `<br>` renders as a line break and is what `parseSteps` reads back, so a markdown
+ * notebook round-trips like the other two formats.
+ *
+ * Useful when the notebook is committed next to the code: a markdown table shows up in a diff,
+ * where a workbook shows up as an unreadable binary change.
+ */
+export async function writeNotebookMarkdown(
+  outputPath: string,
+  kind: TestCaseKind,
+  cases: NormalizedTestCase[]
+): Promise<string> {
+  const columns = COLUMNS[kind];
+  const headers = columns.map((column) => column.header);
+  const lines = [`| ${headers.join(' | ')} |`, `|${headers.map(() => '---').join('|')}|`];
+  for (const testCase of cases) {
+    const cells = columns.map((column) => _valueFor(column.key, testCase, STEP_SEPARATOR).replace(/\|/g, '/'));
+    lines.push(`| ${cells.join(' | ')} |`);
+  }
+  await fs.ensureDir(path.dirname(path.resolve(outputPath)));
+  await fs.writeFile(outputPath, lines.join('\n') + '\n', 'utf8');
+  return outputPath;
+}
+
 export interface TemplateOptions {
   kind: TestCaseKind;
   ticket: string;

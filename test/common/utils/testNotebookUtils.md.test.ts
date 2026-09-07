@@ -75,7 +75,17 @@ describe('testNotebookUtils - markdown', () => {
   describe('renderStepsFlat', () => {
     it('renders a numbered one-line cell and substitutes a literal pipe', () => {
       const flat = renderStepsFlat([{ action: 'A|B', expected: 'C' }, { action: 'D', expected: 'E' }]);
-      expect(flat).to.equal('1. A/B → C | 2. D → E');
+      expect(flat).to.equal('1. A/B → C<br>2. D → E');
+    });
+
+    // The default separator has to be one parseSteps reads back, otherwise a rendered cell
+    // is a dead end. ` | ` was that dead end and is no longer offered.
+    it('renders a default form that parseSteps reads back', () => {
+      const steps = [
+        { action: 'Ouvrir', expected: 'La page apparait' },
+        { action: 'Valider', expected: 'Le devis est cree' },
+      ];
+      expect(parseSteps(renderStepsFlat(steps))).to.deep.equal(steps);
     });
 
     it('renders an empty array as an empty string', () => {
