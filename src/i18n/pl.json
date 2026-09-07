@@ -2814,6 +2814,8 @@
   "promotionDeclaredPrUnreadable": "Pull Request promocji {{pr}}: nie udało się odczytać dostawcy git dla {{details}}. Wdrożenie zostaje zatrzymane zamiast uruchomienia z niepełnym zakresem, poniewaz historia mogłaby utracić swoje akcje wdrożeniowe, klasy testowe Apex lub zachowania niestandardowe. Nalezy ponowić job, gdy dostawca git znów odpowie",
   "promotionInheritedBehavior": "Odziedziczono {{keyword}} z przenoszonych Pull Requestów {{prList}}",
   "promotionKeyOnNonPromotionBranch": "Opis Pull Request dla branch {{branch}} deklaruje {{key}}, które jest uwzględniane tylko na promotion branchach o nazwie takiej jak {{example}}: zignorowano",
+  "promotionListCandidatesFound": "{{count}} Pull Request można promować z {{source}} do {{target}}: {{prList}}",
+  "promotionListCandidatesOpenPromotion": "Promocja z {{source}} do {{target}} jest już otwarta ({{pullRequests}}). User Stories, które przenosi, są wymienione jako już promowane: złożenie nowej promocji poleceniem hardis:project:promotion:create zamyka ją i udostępnia je ponownie",
   "promotionScopeDeclared": "Promotion branch {{branch}} (Pull Request {{pr}}): {{count}} Pull Requestów zadeklarowanych w opisie: {{prList}}",
   "promotionStoryAlreadyPromoted": "Pull Request {{pr}} został już wdrożony przez promotion branch(e) {{promotions}}: jego metadane są wdrażane ponownie bez zmian, a już wykonane akcje są pomijane",
   "promotionUnableToListPromotions": "Nie można wylistować promotion Pull Requestów zmergowanych do {{branch}}: {{message}}",

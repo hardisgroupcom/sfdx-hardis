@@ -2776,6 +2776,8 @@
   "promotionDeclaredPrUnreadable": "Pull Request de promoção {{pr}}: não foi possível ler o provedor git para {{details}}. A implantação é interrompida em vez de executada com um escopo incompleto, pois uma história poderia perder suas ações de implantação, suas classes de teste Apex ou seus comportamentos personalizados. Execute o job novamente quando o provedor git responder",
   "promotionInheritedBehavior": "{{keyword}} herdado da(s) Pull Request(s) transportada(s) {{prList}}",
   "promotionKeyOnNonPromotionBranch": "A descrição da Pull Request da branch {{branch}} declara {{key}}, que só é considerado em promotion branches com um nome como {{example}}: ignorado",
+  "promotionListCandidatesFound": "{{count}} Pull Request(s) podem ser promovidas de {{source}} para {{target}}: {{prList}}",
+  "promotionListCandidatesOpenPromotion": "Já existe uma promoção aberta de {{source}} para {{target}} ({{pullRequests}}). As User Stories que ela leva aparecem como já promovidas: montar uma nova promoção com hardis:project:promotion:create a fecha e as oferece novamente",
   "promotionScopeDeclared": "Promotion branch {{branch}} (Pull Request {{pr}}): {{count}} Pull Request(s) declarada(s) na descrição: {{prList}}",
   "promotionStoryAlreadyPromoted": "A Pull Request {{pr}} já foi implantada pela(s) promotion branch(es) {{promotions}}: seus metadados são reimplantados sem efeito e suas ações já realizadas são ignoradas",
   "promotionUnableToListPromotions": "Não foi possível listar as Pull Requests de promoção mergeadas em {{branch}}: {{message}}",

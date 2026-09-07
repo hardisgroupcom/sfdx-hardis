@@ -11,6 +11,7 @@ import {
   countsAsAlreadyPromoted,
   declaredPullRequestNumbers,
   dropVehiclePullRequests,
+  excludeAlreadyPromotedCandidates,
   expandPromotionsInGroups,
   filterOpenPromotionPullRequests,
   gitPathSpec,
@@ -18,9 +19,12 @@ import {
   markAlreadyPromotedCandidates,
   oldestCandidateDate,
   parsePullRequestNumbersFlag,
+  promotionCandidateRows,
   pullRequestKeys,
   selectCandidatesByPullRequestNumbers,
   toCandidate,
+  toCandidateSummary,
+  type PromotionCandidate,
   toStories,
   userChangesOutsideReports,
 } from '../../../src/common/utils/promotionCreateUtils.js';
@@ -97,6 +101,72 @@ describe('markAlreadyPromotedCandidates()', () => {
     expect(candidates[0].alreadyPromotedBy).to.equal(undefined);
     expect(candidates[1].alreadyPromotedBy?.sourceBranch).to.equal('promotion/uat/preprod/2026-09-05-1');
     expect(candidates[1].alreadyPromotedBy?.merged).to.equal(true);
+  });
+});
+
+describe('candidates shared by promotion:list-candidates and promotion:create', () => {
+  // uxLog writes to the console without one
+  const silent = { ux: { log: () => null } };
+
+  function promoted(candidates: PromotionCandidate[], numbers: number[]): PromotionCandidate[] {
+    const by = { idStr: '900', sourceBranch: 'promotion/uat/preprod/2026-09-05-1', webUrl: 'https://git.example.com/pr/900', merged: false };
+    markAlreadyPromotedCandidates(candidates, new Map(numbers.map((number) => [number, by])));
+    return candidates;
+  }
+
+  it('leaves out what another promotion already carries, unless it is asked for again', () => {
+    const candidates = promoted(
+      [
+        toCandidate(group('aaa1111', [{ id: 482, title: 'Story A' }])),
+        toCandidate(group('bbb2222', [{ id: 487, title: 'Story B' }])),
+      ],
+      [487]
+    );
+    const excluded = excludeAlreadyPromotedCandidates(candidates, false, silent);
+    expect(excluded.promotable.map((candidate) => candidate.pullRequestNumbers)).to.deep.equal([[482]]);
+    expect(excluded.alreadyPromoted.map((candidate) => candidate.pullRequestNumbers)).to.deep.equal([[487]]);
+    // --include-already-promoted keeps them as candidates, and they are still reported apart
+    const included = excludeAlreadyPromotedCandidates(candidates, true, silent);
+    expect(included.promotable.map((candidate) => candidate.pullRequestNumbers)).to.deep.equal([[482], [487]]);
+    expect(included.alreadyPromoted.map((candidate) => candidate.pullRequestNumbers)).to.deep.equal([[487]]);
+  });
+
+  it('says nothing is promotable rather than dropping a story in silence', () => {
+    const candidates = promoted([toCandidate(group('aaa1111', [{ id: 482, title: 'Story A' }]))], [482]);
+    const excluded = excludeAlreadyPromotedCandidates(candidates, false, silent);
+    expect(excluded.promotable).to.deep.equal([]);
+    expect(excluded.alreadyPromoted.length).to.equal(1);
+  });
+
+  it('summarizes a candidate with what a caller needs to select it', () => {
+    const candidates = promoted(
+      [toCandidate(group('aaa1111', [{ id: 482, title: 'Story A' }, { id: 483, title: 'Story A2' }]))],
+      [482]
+    );
+    const summary = toCandidateSummary(candidates[0]);
+    expect(summary.pullRequests).to.deep.equal([482, 483]);
+    expect(summary.title).to.equal('Story A');
+    expect(summary.author).to.equal('dev');
+    expect(summary.sourceBranch).to.equal('feature/PROJ-482');
+    expect(summary.commit).to.equal('aaa1111');
+    // Half of the commit is already on its way: cherry-picking it carries both stories again
+    expect(summary.alreadyPromotedBy).to.equal(undefined);
+    expect(summary.partiallyPromoted).to.deep.equal({ pullRequests: [482], branch: 'promotion/uat/preprod/2026-09-05-1' });
+    const fullyPromoted = toCandidateSummary(promoted([toCandidate(group('bbb2222', [{ id: 487, title: 'Story B' }]))], [487])[0]);
+    expect(fullyPromoted.alreadyPromotedBy).to.deep.equal({
+      pullRequest: '900',
+      branch: 'promotion/uat/preprod/2026-09-05-1',
+      url: 'https://git.example.com/pr/900',
+      merged: false,
+    });
+  });
+
+  it('names a commit merged without a Pull Request by its subject and its hash', () => {
+    const rows = promotionCandidateRows([toCandidate(group('ccc3333', [], 'fix: a direct commit\n\nbody'))]);
+    expect(rows[0]['Pull Requests']).to.equal('-');
+    expect(rows[0].Title).to.equal('fix: a direct commit');
+    expect(rows[0].Commit).to.equal('ccc3333');
+    expect(rows[0]['Already promoted by']).to.equal('');
   });
 });
 

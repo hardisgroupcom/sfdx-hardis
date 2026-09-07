@@ -2814,6 +2814,8 @@
   "promotionDeclaredPrUnreadable": "Pull Request de promotion {{pr}} : le fournisseur git n'a pas pu être lu pour {{details}}. Le déploiement est arrêté plutôt que lancé avec un périmètre incomplet, car une User Story pourrait perdre ses actions de déploiement, ses classes de test Apex ou ses comportements personnalisés. Relancez le job quand le fournisseur git répond à nouveau",
   "promotionInheritedBehavior": "{{keyword}} hérité de la ou des Pull Requests transportées {{prList}}",
   "promotionKeyOnNonPromotionBranch": "La description de la Pull Request de la branche {{branch}} déclare {{key}}, qui n'est pris en compte que sur les branches de promotion nommées comme {{example}} : ignoré",
+  "promotionListCandidatesFound": "{{count}} Pull Request(s) peuvent être promues de {{source}} vers {{target}} : {{prList}}",
+  "promotionListCandidatesOpenPromotion": "Une promotion de {{source}} vers {{target}} est déjà ouverte ({{pullRequests}}). Les User Stories qu'elle porte sont listées comme déjà promues : assembler une nouvelle promotion avec hardis:project:promotion:create la ferme et les propose à nouveau",
   "promotionScopeDeclared": "Branche de promotion {{branch}} (Pull Request {{pr}}) : {{count}} Pull Request(s) déclarée(s) dans sa description : {{prList}}",
   "promotionStoryAlreadyPromoted": "La Pull Request {{pr}} a déjà été déployée via la ou les branches de promotion {{promotions}} : ses métadonnées sont redéployées sans effet et ses actions déjà réalisées sont ignorées",
   "promotionUnableToListPromotions": "Impossible de lister les Pull Requests de promotion mergées dans {{branch}} : {{message}}",

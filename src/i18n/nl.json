@@ -2814,6 +2814,8 @@
   "promotionDeclaredPrUnreadable": "Promotion Pull Request {{pr}}: de git-provider kon niet worden gelezen voor {{details}}. De implementatie wordt gestopt in plaats van met een onvolledige scope uitgevoerd, omdat een story zijn deployment actions, Apex-testklassen of custom behaviors zou kunnen missen. Voer de job opnieuw uit zodra de git-provider weer antwoordt",
   "promotionInheritedBehavior": "{{keyword}} overgenomen van meegenomen Pull Request(s) {{prList}}",
   "promotionKeyOnNonPromotionBranch": "De beschrijving van de Pull Request van branch {{branch}} declareert {{key}}, wat alleen wordt toegepast op promotion branches met een naam als {{example}}: genegeerd",
+  "promotionListCandidatesFound": "{{count}} Pull Request(s) kunnen van {{source}} naar {{target}} worden gepromoot: {{prList}}",
+  "promotionListCandidatesOpenPromotion": "Er staat al een promotion van {{source}} naar {{target}} open ({{pullRequests}}). De User Stories die daarin zitten staan als al gepromoot in de lijst: als je met hardis:project:promotion:create een nieuwe promotion samenstelt, wordt die gesloten en worden ze opnieuw aangeboden",
   "promotionScopeDeclared": "Promotion branch {{branch}} (Pull Request {{pr}}): {{count}} Pull Request(s) gedeclareerd in de beschrijving: {{prList}}",
   "promotionStoryAlreadyPromoted": "Pull Request {{pr}} is al geïmplementeerd via promotion branch(es) {{promotions}}: de metadata wordt zonder effect opnieuw geïmplementeerd en de al uitgevoerde acties worden overgeslagen",
   "promotionUnableToListPromotions": "Kan de promotion Pull Requests die in {{branch}} zijn gemerged niet ophalen: {{message}}",

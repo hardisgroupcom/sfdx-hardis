@@ -2812,6 +2812,8 @@
   "promotionDeclaredPrUnreadable": "プロモーション Pull Request {{pr}}: {{details}} について git プロバイダーを読み取れませんでした。User Story のデプロイアクション、Apex テストクラス、カスタム動作が欠落する可能性があるため、不完全なスコープで実行せずにデプロイを停止します。git プロバイダーが再び応答したらジョブを再実行してください",
   "promotionInheritedBehavior": "運ばれる Pull Request {{prList}} から {{keyword}} を継承しました",
   "promotionKeyOnNonPromotionBranch": "ブランチ {{branch}} の Pull Request の説明に {{key}} が宣言されていますが、これは {{example}} のような名前のプロモーションブランチでのみ有効です: 無視します",
+  "promotionListCandidatesFound": "{{source}} から {{target}} へプロモーションできる Pull Request は {{count}} 件です: {{prList}}",
+  "promotionListCandidatesOpenPromotion": "{{source}} から {{target}} へのプロモーションが既に開いています（{{pullRequests}}）。そのプロモーションが運んでいるユーザーストーリーはプロモーション済みとして表示されます。hardis:project:promotion:create で新しいプロモーションを組み立てると、既存のプロモーションはクローズされ、それらのユーザーストーリーが再び候補になります",
   "promotionScopeDeclared": "プロモーションブランチ {{branch}}（Pull Request {{pr}}）: 説明に宣言された Pull Request {{count}} 件: {{prList}}",
   "promotionStoryAlreadyPromoted": "Pull Request {{pr}} はプロモーションブランチ {{promotions}} を通じてすでにデプロイされています: そのメタデータは変更なしで再デプロイされ、すでに実行済みのアクションはスキップされます",
   "promotionUnableToListPromotions": "{{branch}} に merge されたプロモーション Pull Request を一覧できません: {{message}}",

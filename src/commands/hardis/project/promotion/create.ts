@@ -4,18 +4,21 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { getCurrentGitBranch, isCI, uxLog } from '../../../../common/utils/index.js';
-import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
-import { CONSTANTS, getConfig } from '../../../../config/index.js';
+import { CONSTANTS } from '../../../../config/index.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { formatPromotionSteps, getPromotionBranchConfig, PROMOTION_PULL_REQUESTS_KEY } from '../../../../common/utils/promotionBranchUtils.js';
+import { PROMOTION_PULL_REQUESTS_KEY } from '../../../../common/utils/promotionBranchUtils.js';
 import {
   abortPromotion,
+  assertPromotionBranchesEnabled,
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
   checkGitCleanForPromotion,
   closeSupersededPromotionPullRequests,
   confirmSupersedeOpenPromotions,
+  excludeAlreadyPromotedCandidates,
   listOpenPromotionPullRequests,
+  logPartiallyPromotedCandidates,
+  logPromotionCandidatesTable,
   cherryPickCandidates,
   collectStoryTicketIds,
   createPromotionBranch,
@@ -146,22 +149,9 @@ In agent mode:
     const { flags } = await this.parse(PromotionCreate);
     const agentMode = flags.agent === true || isCI;
 
-    // The feature switch: a promotion branch is meaningless for a project that did not opt in
-    const config = await getConfig('branch');
-    const promotionConfig = getPromotionBranchConfig(config);
-    if (!promotionConfig.enabled) {
-      throw new SfError(t('promotionCreateFeatureDisabled', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/` }));
-    }
-    // The steps a promotion may run on are part of enabling the feature: without them, nobody
-    // decided what a release manager is allowed to promote, and the command will not decide for them
-    const configuredSteps = Array.isArray(config?.allowedPromotionSteps) ? config.allowedPromotionSteps : [];
-    if (configuredSteps.length > 0 && promotionConfig.allowedSteps.length === 0) {
-      throw new SfError(t('promotionCreateAllowedStepsInvalid'));
-    }
-    if (promotionConfig.allowedSteps.length === 0) {
-      throw new SfError(t('promotionCreateAllowedStepsRequired', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/` }));
-    }
-    uxLog('log', this, c.grey(t('promotionCreateAllowedStepsInfo', { steps: formatPromotionSteps(promotionConfig.allowedSteps) })));
+    // The feature switch and the steps a promotion may run on: a promotion branch is meaningless
+    // for a project that did not opt in and did not say what may be promoted
+    const promotionConfig = await assertPromotionBranchesEnabled(this);
 
     // Not checkGitClean: the reports sfdx-hardis writes inside the repository are not changes the
     // user has to commit, and this command writes one of them itself before the cherry-picks.
@@ -195,52 +185,18 @@ In agent mode:
       uxLog('warning', this, c.yellow(t('promotionCreateNoCandidate', { source: sourceBranch, target: targetBranch })));
       return { sourceBranch, targetBranch, created: false, outputString: 'Nothing to promote' };
     }
-    // The row count follows the number of pending User Stories, and the VS Code UI stops at 20
-    // rows: the full list has to be available as a report file
-    await uxLogTableWithReport(
+    await logPromotionCandidatesTable(this, candidates, sourceBranch, targetBranch);
+
+    const { promotable: promotableCandidates } = excludeAlreadyPromotedCandidates(
+      candidates,
+      flags['include-already-promoted'] === true,
       this,
-      candidates.map((candidate) => ({
-        'Pull Requests': candidate.pullRequestNumbers.map((number) => `#${number}`).join(', ') || '-',
-        Title: candidate.group.associatedPrs[0]?.title || candidate.group.commit.message.split('\n')[0],
-        Author: candidate.group.associatedPrs[0]?.author || candidate.group.commit.author,
-        Commit: candidate.group.commit.hash.substring(0, 7),
-        Date: candidate.group.commit.date,
-        'Already promoted by': candidate.alreadyPromotedBy?.sourceBranch || '',
-      })),
-      ['Pull Requests', 'Title', 'Author', 'Commit', 'Date', 'Already promoted by'],
-      {
-        fileNamePrefix: 'promotion-candidates',
-        fileTitle: t('promotionCreateCandidatesReportTitle', { source: sourceBranch, target: targetBranch }),
-      },
     );
-
-    // Cherry-picked commits keep new SHAs, so a story carried by another promotion branch is still
-    // listed above: leave it out unless the user asks for it again
-    const alreadyPromoted = candidates.filter((candidate) => candidate.alreadyPromotedBy);
-    let promotableCandidates = candidates;
-    if (alreadyPromoted.length > 0 && flags['include-already-promoted'] !== true) {
-      uxLog('warning', this, c.yellow(t('promotionCreateSkippingAlreadyPromoted', {
-        count: alreadyPromoted.length,
-        details: alreadyPromoted
-          .map((candidate) => `${candidate.pullRequestNumbers.map((number) => `#${number}`).join(', ') || candidate.group.commit.hash.substring(0, 7)} -> ${candidate.alreadyPromotedBy?.sourceBranch}`)
-          .join('; '),
-      })));
-      promotableCandidates = candidates.filter((candidate) => !candidate.alreadyPromotedBy);
-      if (promotableCandidates.length === 0) {
-        uxLog('warning', this, c.yellow(t('promotionCreateNoCandidate', { source: sourceBranch, target: targetBranch })));
-        return { sourceBranch, targetBranch, created: false, outputString: 'Nothing to promote' };
-      }
+    if (promotableCandidates.length === 0) {
+      uxLog('warning', this, c.yellow(t('promotionCreateNoCandidate', { source: sourceBranch, target: targetBranch })));
+      return { sourceBranch, targetBranch, created: false, outputString: 'Nothing to promote' };
     }
-
-    // Part of the stories of a commit already promoted: the commit still has to travel, but the
-    // overlap has to be visible before anything is cherry-picked
-    for (const candidate of promotableCandidates.filter((entry) => entry.partiallyPromoted)) {
-      uxLog('warning', this, c.yellow(t('promotionCreatePartiallyPromoted', {
-        label: candidate.label,
-        numbers: candidate.partiallyPromoted!.numbers.map((number) => `#${number}`).join(', '),
-        branch: candidate.partiallyPromoted!.by.sourceBranch,
-      })));
-    }
+    logPartiallyPromotedCandidates(promotableCandidates, this);
 
     const selected = await selectPromotionCandidates(promotableCandidates, flags['pull-requests'] || null, agentMode, this);
 

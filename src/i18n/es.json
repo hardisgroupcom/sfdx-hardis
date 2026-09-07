@@ -2814,6 +2814,8 @@
   "promotionDeclaredPrUnreadable": "Pull Request de promoción {{pr}}: no se ha podido leer el proveedor git para {{details}}. El despliegue se detiene en lugar de ejecutarse con un alcance incompleto, ya que una historia podría perder sus acciones de despliegue, sus clases de test Apex o sus comportamientos personalizados. Vuelve a lanzar el job cuando el proveedor git responda de nuevo",
   "promotionInheritedBehavior": "{{keyword}} heredado de la(s) Pull Request(s) transportada(s) {{prList}}",
   "promotionKeyOnNonPromotionBranch": "La descripción de la Pull Request de la branch {{branch}} declara {{key}}, que solo se tiene en cuenta en promotion branches con un nombre como {{example}}: ignorado",
+  "promotionListCandidatesFound": "{{count}} Pull Request(s) pueden promocionarse de {{source}} a {{target}}: {{prList}}",
+  "promotionListCandidatesOpenPromotion": "Ya hay una promoción abierta de {{source}} a {{target}} ({{pullRequests}}). Las User Stories que lleva aparecen como ya promocionadas: montar una nueva promoción con hardis:project:promotion:create la cierra y vuelve a ofrecerlas",
   "promotionScopeDeclared": "Promotion branch {{branch}} (Pull Request {{pr}}): {{count}} Pull Request(s) declaradas en su descripción: {{prList}}",
   "promotionStoryAlreadyPromoted": "La Pull Request {{pr}} ya se desplegó mediante la(s) promotion branch(es) {{promotions}}: sus metadatos se vuelven a desplegar sin cambios y sus acciones ya realizadas se omiten",
   "promotionUnableToListPromotions": "No se han podido listar las Pull Requests de promoción mergeadas en {{branch}}: {{message}}",

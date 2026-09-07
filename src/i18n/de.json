@@ -2813,6 +2813,8 @@
   "promotionDeclaredPrUnreadable": "Promotion-Pull-Request {{pr}}: Der Git-Provider konnte für {{details}} nicht gelesen werden. Das Deployment wird gestoppt, statt mit unvollständigem Scope zu laufen, da einer User Story ihre Deployment-Aktionen, Apex-Testklassen oder Custom Behaviors fehlen könnten. Führen Sie den Job erneut aus, sobald der Git-Provider wieder antwortet",
   "promotionInheritedBehavior": "{{keyword}} von mitgeführten Pull Request(s) {{prList}} übernommen",
   "promotionKeyOnNonPromotionBranch": "Die Pull-Request-Beschreibung des Branches {{branch}} deklariert {{key}}, was nur auf Promotion-Branches mit einem Namen wie {{example}} berücksichtigt wird: ignoriert",
+  "promotionListCandidatesFound": "{{count}} Pull Request(s) können von {{source}} nach {{target}} promotet werden: {{prList}}",
+  "promotionListCandidatesOpenPromotion": "Eine Promotion von {{source}} nach {{target}} ist bereits offen ({{pullRequests}}). Die User Stories, die sie trägt, werden als bereits promotet aufgeführt: Wenn Sie mit hardis:project:promotion:create eine neue Promotion zusammenstellen, wird sie geschlossen und die User Stories werden erneut angeboten",
   "promotionScopeDeclared": "Promotion-Branch {{branch}} (Pull Request {{pr}}): {{count}} in der Beschreibung deklarierte Pull Request(s): {{prList}}",
   "promotionStoryAlreadyPromoted": "Pull Request {{pr}} wurde bereits über Promotion-Branch(es) {{promotions}} bereitgestellt: seine Metadaten werden ohne Änderung erneut bereitgestellt und seine bereits ausgeführten Aktionen werden übersprungen",
   "promotionUnableToListPromotions": "Die in {{branch}} gemergten Promotion-Pull-Requests konnten nicht aufgelistet werden: {{message}}",

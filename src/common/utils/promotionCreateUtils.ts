@@ -10,8 +10,8 @@ import { BackpromotePrGroup, listMergedPrsWithCommits } from './backpromoteUtils
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { TicketProvider } from '../ticketProvider/index.js';
 import { which } from './whichUtils.js';
-import { generateReportPath } from './filesUtils.js';
-import { getReportDirectory } from '../../config/index.js';
+import { generateReportPath, uxLogTableWithReport } from './filesUtils.js';
+import { CONSTANTS, getConfig, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import {
   allowedPromotionSourceBranches,
@@ -21,6 +21,7 @@ import {
   getPromotionBranchConfig,
   isPromotionStepAllowed,
   PROMOTION_BRANCH_NAME_EXAMPLE,
+  PromotionBranchConfig,
   PromotionStep,
   isPromotionPullRequest,
   parsePromotionBranchName,
@@ -193,6 +194,32 @@ export interface PromotionStory {
   commitHash: string;
   // Files committed with conflict markers for this story, when the user chose to keep it anyway
   conflictFiles?: string[];
+}
+
+// ---- Configuration ----
+
+/**
+ * The configuration gate every promotion command goes through: the feature switch, then the steps
+ * a promotion may be assembled on. Shared so that listing the candidates and assembling the branch
+ * stop for the same reasons, with the same messages.
+ */
+export async function assertPromotionBranchesEnabled(commandThis: any): Promise<PromotionBranchConfig> {
+  const config = await getConfig('branch');
+  const promotionConfig = getPromotionBranchConfig(config);
+  if (!promotionConfig.enabled) {
+    throw new SfError(t('promotionCreateFeatureDisabled', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/` }));
+  }
+  // The steps a promotion may run on are part of enabling the feature: without them, nobody
+  // decided what a release manager is allowed to promote, and the commands will not decide for them
+  const configuredSteps = Array.isArray(config?.allowedPromotionSteps) ? config.allowedPromotionSteps : [];
+  if (configuredSteps.length > 0 && promotionConfig.allowedSteps.length === 0) {
+    throw new SfError(t('promotionCreateAllowedStepsInvalid'));
+  }
+  if (promotionConfig.allowedSteps.length === 0) {
+    throw new SfError(t('promotionCreateAllowedStepsRequired', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/` }));
+  }
+  uxLog('log', commandThis, c.grey(t('promotionCreateAllowedStepsInfo', { steps: formatPromotionSteps(promotionConfig.allowedSteps) })));
+  return promotionConfig;
 }
 
 // ---- Branch resolution ----
@@ -583,6 +610,130 @@ export function toCandidate(group: BackpromotePrGroup): PromotionCandidate {
     pullRequestNumbers,
     label: `${prLabel}${title} (${firstPr?.author || group.commit.author}) [${group.commit.hash.substring(0, 7)}]`,
   };
+}
+
+// ---- Candidate presentation ----
+
+export const PROMOTION_CANDIDATE_COLUMNS = ['Pull Requests', 'Title', 'Author', 'Commit', 'Date', 'Already promoted by'];
+
+export function formatPullRequestNumbers(numbers: number[]): string {
+  return (numbers || []).map((number) => `#${number}`).join(', ') || '-';
+}
+
+/** Title of a candidate: the one of its first Pull Request, else the subject of its commit */
+export function candidateTitle(candidate: PromotionCandidate): string {
+  return candidate.group.associatedPrs[0]?.title || candidate.group.commit.message.split('\n')[0];
+}
+
+export function candidateAuthor(candidate: PromotionCandidate): string {
+  return candidate.group.associatedPrs[0]?.author || candidate.group.commit.author;
+}
+
+/** One table row per candidate, the same in promotion:list-candidates and promotion:create */
+export function promotionCandidateRows(candidates: PromotionCandidate[]): any[] {
+  return candidates.map((candidate) => ({
+    'Pull Requests': formatPullRequestNumbers(candidate.pullRequestNumbers),
+    Title: candidateTitle(candidate),
+    Author: candidateAuthor(candidate),
+    Commit: candidate.group.commit.hash.substring(0, 7),
+    Date: candidate.group.commit.date,
+    'Already promoted by': candidate.alreadyPromotedBy?.sourceBranch || '',
+  }));
+}
+
+export async function logPromotionCandidatesTable(
+  commandThis: any,
+  candidates: PromotionCandidate[],
+  sourceBranch: string,
+  targetBranch: string
+): Promise<any> {
+  // The row count follows the number of pending User Stories, and the VS Code UI stops at 20
+  // rows: the full list has to be available as a report file
+  return await uxLogTableWithReport(commandThis, promotionCandidateRows(candidates), PROMOTION_CANDIDATE_COLUMNS, {
+    fileNamePrefix: 'promotion-candidates',
+    fileTitle: t('promotionCreateCandidatesReportTitle', { source: sourceBranch, target: targetBranch }),
+  });
+}
+
+/**
+ * Cherry-picked commits keep new SHAs, so a story another promotion branch already carries to the
+ * same target branch is still listed as a candidate. It is left out unless the caller asks for it
+ * again, and never in silence.
+ */
+export function excludeAlreadyPromotedCandidates(
+  candidates: PromotionCandidate[],
+  includeAlreadyPromoted: boolean,
+  commandThis: any
+): { promotable: PromotionCandidate[]; alreadyPromoted: PromotionCandidate[] } {
+  const alreadyPromoted = candidates.filter((candidate) => candidate.alreadyPromotedBy);
+  if (alreadyPromoted.length === 0 || includeAlreadyPromoted) {
+    return { promotable: candidates, alreadyPromoted };
+  }
+  uxLog('warning', commandThis, c.yellow(t('promotionCreateSkippingAlreadyPromoted', {
+    count: alreadyPromoted.length,
+    details: alreadyPromoted
+      .map((candidate) => `${candidate.pullRequestNumbers.map((number) => `#${number}`).join(', ') || candidate.group.commit.hash.substring(0, 7)} -> ${candidate.alreadyPromotedBy?.sourceBranch}`)
+      .join('; '),
+  })));
+  return { promotable: candidates.filter((candidate) => !candidate.alreadyPromotedBy), alreadyPromoted };
+}
+
+/**
+ * Part of the stories of a commit already promoted: the commit still has to travel, but the
+ * overlap has to be visible before anything is cherry-picked.
+ */
+export function logPartiallyPromotedCandidates(candidates: PromotionCandidate[], commandThis: any): void {
+  for (const candidate of candidates.filter((entry) => entry.partiallyPromoted)) {
+    uxLog('warning', commandThis, c.yellow(t('promotionCreatePartiallyPromoted', {
+      label: candidate.label,
+      numbers: formatPullRequestNumbers(candidate.partiallyPromoted!.numbers),
+      branch: candidate.partiallyPromoted!.by.sourceBranch,
+    })));
+  }
+}
+
+export interface PromotionCandidateSummary {
+  // The summaries are returned as is in the JSON output of the command, which is typed AnyJson
+  [key: string]: any;
+  pullRequests: number[];
+  title: string;
+  author: string;
+  sourceBranch: string;
+  commit: string;
+  date: string;
+  alreadyPromotedBy?: { pullRequest: string; branch: string; url: string; merged: boolean };
+  partiallyPromoted?: { pullRequests: number[]; branch: string };
+}
+
+/**
+ * What a candidate looks like in the JSON output of promotion:list-candidates: what a caller needs
+ * to choose the numbers it will pass to promotion:create --pull-requests, without the git plumbing
+ * underneath.
+ */
+export function toCandidateSummary(candidate: PromotionCandidate): PromotionCandidateSummary {
+  const summary: PromotionCandidateSummary = {
+    pullRequests: candidate.pullRequestNumbers,
+    title: candidateTitle(candidate),
+    author: candidateAuthor(candidate),
+    sourceBranch: candidate.group.associatedPrs[0]?.sourceBranch || '',
+    commit: candidate.group.commit.hash,
+    date: candidate.group.commit.date,
+  };
+  if (candidate.alreadyPromotedBy) {
+    summary.alreadyPromotedBy = {
+      pullRequest: candidate.alreadyPromotedBy.idStr,
+      branch: candidate.alreadyPromotedBy.sourceBranch,
+      url: candidate.alreadyPromotedBy.webUrl,
+      merged: candidate.alreadyPromotedBy.merged,
+    };
+  }
+  if (candidate.partiallyPromoted) {
+    summary.partiallyPromoted = {
+      pullRequests: candidate.partiallyPromoted.numbers,
+      branch: candidate.partiallyPromoted.by.sourceBranch,
+    };
+  }
+  return summary;
 }
 
 /**

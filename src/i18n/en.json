@@ -2818,6 +2818,8 @@
   "promotionDeclaredPrUnreadable": "Promotion Pull Request {{pr}}: the git provider could not be read for {{details}}. The deployment is stopped rather than run with an incomplete scope, since a story could be missing its deployment actions, its Apex test classes or its custom behaviors. Re-run the job once the git provider answers again",
   "promotionInheritedBehavior": "Inherited {{keyword}} from carried Pull Request(s) {{prList}}",
   "promotionKeyOnNonPromotionBranch": "The Pull Request description of branch {{branch}} declares {{key}}, which is only honored on promotion branches named like {{example}}: ignored",
+  "promotionListCandidatesFound": "{{count}} Pull Request(s) can be promoted from {{source}} to {{target}}: {{prList}}",
+  "promotionListCandidatesOpenPromotion": "A promotion from {{source}} to {{target}} is already open ({{pullRequests}}). The User Stories it carries are listed as already promoted: assembling a new promotion with hardis:project:promotion:create closes it and offers them again",
   "promotionScopeDeclared": "Promotion branch {{branch}} (Pull Request {{pr}}): {{count}} Pull Request(s) declared in its description: {{prList}}",
   "promotionStoryAlreadyPromoted": "Pull Request {{pr}} was already deployed through promotion branch(es) {{promotions}}: its metadata is redeployed as a no-op and its already performed actions are skipped",
   "promotionUnableToListPromotions": "Unable to list the promotion Pull Requests merged into {{branch}}: {{message}}",

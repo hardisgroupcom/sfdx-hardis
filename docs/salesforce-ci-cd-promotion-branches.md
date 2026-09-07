@@ -160,6 +160,18 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
     Promotion branch names have exactly four segments, so the source and target branch names must not contain a `/`. The command stops before touching git if one of them does.
 5. Review the Pull Request like any other, and do **not** squash it when merging: the `-x` trailers of the cherry-picks must survive in `preprod`.
 
+### List what can be promoted, without creating anything
+
+`hardis:project:promotion:create` lists the candidates before asking which ones to carry, but a coding agent (or anyone who only wants to know) needs that list on its own:
+
+```bash
+sf hardis:project:promotion:list-candidates --source-branch uat --json
+```
+
+[`sf hardis:project:promotion:list-candidates`](hardis/project/promotion/list-candidates.md) reads and reports, nothing else: same configuration checks, same allowed steps, same candidates, same rules about what another promotion already carries. Its JSON result holds `candidates` (Pull Request numbers, title, author, source branch, commit, date), `alreadyPromoted` and `openPromotions`, so an agent can pick the numbers and pass them to `hardis:project:promotion:create --pull-requests`.
+
+The promotion already open between the two branches is named but left alone: only `promotion:create` closes it, once its replacement exists. The stories it carries are reported as already promoted, and they come back as candidates when it is superseded.
+
 ### One promotion at a time between two branches
 
 A pipeline step holds a single promotion in flight, so the DevOps Pipeline can draw it on the arrow between the two branch nodes and there is one answer to "what is being promoted to `preprod` right now".
