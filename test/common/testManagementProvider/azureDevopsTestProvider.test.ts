@@ -222,12 +222,21 @@ describe('AzureDevopsTestProvider - api calls through the injected factory', () 
     expect(ref.id).to.equal('4242');
   });
 
-  it('updates with replace operations on the existing work item id', async () => {
+  // This test used to require `replace`, which is what the provider sent and what Azure DevOps
+  // rejects on a field the work item does not carry yet. `add` behaves as an upsert on a work
+  // item field, so it covers both the field that exists and the one being set for the first time.
+  it('updates the existing work item id with add operations, which upsert each field', async () => {
     const { api, calls } = stubApi();
     await providerWith(api).update({ id: '77', url: 'https://dev.azure.com/acme/_workitems/edit/77' }, makeCase());
     const updated = calls.find((entry) => entry.call === 'updateWorkItem');
     expect(updated?.args[2]).to.equal(77);
-    expect((updated?.args[1] as any[]).every((op) => op.op === 'replace')).to.be.true;
+    const patch = updated?.args[1] as any[];
+    expect(patch.every((op) => op.op === 'add')).to.be.true;
+    expect(patch.some((op) => op.op === 'replace')).to.be.false;
+    // The whole payload is still sent, not just the title.
+    expect(patch.find((op) => op.path === '/fields/System.Title')).to.not.be.undefined;
+    expect(patch.find((op) => op.path === '/fields/System.Tags')).to.not.be.undefined;
+    expect(patch.find((op) => op.path === '/fields/Microsoft.VSTS.TCM.Steps')).to.not.be.undefined;
   });
 
   it('links the created case to its story through the TestedBy-Reverse relation', async () => {
@@ -294,5 +303,38 @@ describe('AzureDevopsTestProvider - api calls through the injected factory', () 
     const query = (calls.find((entry) => entry.call === 'queryByWiql')?.args[0] as any).query;
     expect(query).to.contain("[System.WorkItemType] = 'Test Case'");
     expect(query).to.contain("CONTAINS 'TESTKIT:PROJ-123:F01'");
+  });
+
+  // WIQL offers no exact match on tags, only CONTAINS, which is an unterminated substring
+  // match: the key of case F1 is a prefix of the key of F10. Taking the first hit therefore
+  // updated the wrong work item and then created the right one as a duplicate.
+  describe('tag matching beyond the CONTAINS query', () => {
+    function stubWithTags(tagsById: Record<number, string>): { api: any; calls: Recorded[] } {
+      const ids = Object.keys(tagsById).map(Number);
+      return stubApi({
+        queryByWiql: async () => ({ workItems: ids.map((id) => ({ id })) }),
+        getWorkItem: async (id: number) => ({
+          id,
+          fields: { 'System.Tags': tagsById[id] },
+          _links: { html: { href: `https://dev.azure.com/acme/_workitems/edit/${id}` } },
+        }),
+      });
+    }
+
+    it('skips a work item whose tag merely starts with the key', async () => {
+      const { api } = stubWithTags({ 10: 'TESTKIT:PROJ-123:F10; Devis', 1: 'TESTKIT:PROJ-123:F1; Devis' });
+      const found = await providerWith(api).findByKey('TESTKIT:PROJ-123:F1');
+      expect(found?.id).to.equal('1');
+    });
+
+    it('returns null when every hit only contains the key as a substring', async () => {
+      const { api } = stubWithTags({ 10: 'TESTKIT:PROJ-123:F10', 11: 'TESTKIT:PROJ-123:F11' });
+      expect(await providerWith(api).findByKey('TESTKIT:PROJ-123:F1')).to.equal(null);
+    });
+
+    it('matches the key whatever its position among the other tags', async () => {
+      const { api } = stubWithTags({ 7: 'Devis; TESTKIT:PROJ-123:F01; Regression' });
+      expect((await providerWith(api).findByKey('TESTKIT:PROJ-123:F01'))?.id).to.equal('7');
+    });
   });
 });

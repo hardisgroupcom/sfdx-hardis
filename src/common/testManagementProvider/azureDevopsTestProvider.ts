@@ -204,11 +204,23 @@ export class AzureDevopsTestProvider extends TestManagementProviderRoot {
     const api = await this.api();
     const result = await api.queryByWiql(wiql, { project: this.teamProject } as any);
     const hits = result?.workItems ?? [];
-    if (hits.length === 0 || !hits[0].id) {
-      return null;
+    // WIQL only offers CONTAINS on tags, which is an unterminated substring match: the key
+    // `TESTKIT:T:F1` matches the tag of case `F10` too. So every hit is re-checked against the
+    // exact tag before being accepted, otherwise a run would update the wrong work item and
+    // then create the right one as a duplicate.
+    for (const hit of hits) {
+      if (!hit.id) {
+        continue;
+      }
+      const workItem = await api.getWorkItem(Number(hit.id), ['System.Tags']);
+      const tags = String(workItem?.fields?.['System.Tags'] ?? '')
+        .split(';')
+        .map((tag) => tag.trim());
+      if (tags.includes(key)) {
+        return { id: String(workItem.id), url: this.htmlUrlOf(workItem) };
+      }
     }
-    const workItem = await api.getWorkItem(Number(hits[0].id));
-    return { id: String(workItem.id), url: this.htmlUrlOf(workItem) };
+    return null;
   }
 
   public async create(testCase: NormalizedTestCase): Promise<ProviderRef> {
@@ -226,7 +238,11 @@ export class AzureDevopsTestProvider extends TestManagementProviderRoot {
 
   public async update(ref: ProviderRef, testCase: NormalizedTestCase): Promise<ProviderRef> {
     const carrier = await this.fetchCarrier(_requireStoryId(testCase.ticket));
-    const patch = AzureDevopsTestProvider.buildPatch(testCase, carrier).map((op) => ({ ...op, op: 'replace' }));
+    // Kept as `add` and not rewritten to `replace`: on a work item field, Azure DevOps treats
+    // `add` as an upsert, whereas `replace` on a field the item never carried is rejected. That
+    // happens whenever the carrier was unassigned at create time and has an assignee now, and
+    // it would fail the same case on every run.
+    const patch = AzureDevopsTestProvider.buildPatch(testCase, carrier);
     const api = await this.api();
     const workItem = await api.updateWorkItem(
       {},
