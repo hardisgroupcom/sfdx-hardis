@@ -2944,6 +2944,7 @@
   "resolvingProfileApiNames": "Risoluzione dei nomi API dei Profile...",
   "responseBody": "Corpo della risposta: ",
   "responseBody2": "Corpo della risposta: \n",
+  "restDeploymentActivated": "Le distribuzioni useranno la Metadata REST API invece della SOAP Metadata API predefinita.",
   "restartModeClearingOutputFolder": "Modalità riavvio: pulizia della cartella di output {{exportedFilesFolder}}.",
   "restartModeSelectedOutputFolderWillBe": "Modalità riavvio selezionata: la cartella di output verrà svuotata",
   "restoreCancelledWrongBackupFolder": "Ripristino annullato: la cartella di backup selezionata non corrisponde all'org di destinazione.",

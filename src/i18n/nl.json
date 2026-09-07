@@ -2944,6 +2944,7 @@
   "resolvingProfileApiNames": "API-namen van Profiles bepalen...",
   "responseBody": "Antwoordtekst: ",
   "responseBody2": "Antwoordtekst: \n",
+  "restDeploymentActivated": "Implementaties gebruiken de Metadata REST API in plaats van de standaard SOAP Metadata API.",
   "restartModeClearingOutputFolder": "Herstartmodus: uitvoermap {{exportedFilesFolder}} leegmaken.",
   "restartModeSelectedOutputFolderWillBe": "Herstartmodus geselecteerd: uitvoermap wordt geleegd",
   "restoreCancelledWrongBackupFolder": "Herstel geannuleerd: de geselecteerde backup-map komt niet overeen met de doel-org.",

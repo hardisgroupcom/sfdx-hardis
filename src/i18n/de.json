@@ -2943,6 +2943,7 @@
   "resolvingProfileApiNames": "API-Namen der Profile werden ermittelt...",
   "responseBody": "Antworttext: ",
   "responseBody2": "Antworttext: \n",
+  "restDeploymentActivated": "Bereitstellungen verwenden die Metadata REST API anstelle der standardmäßigen SOAP Metadata API.",
   "restartModeClearingOutputFolder": "Neustart-Modus: Ausgabeordner {{exportedFilesFolder}} wird geleert.",
   "restartModeSelectedOutputFolderWillBe": "Neustart-Modus gewählt: Ausgabeordner wird geleert",
   "restoreCancelledWrongBackupFolder": "Wiederherstellung abgebrochen: Der ausgewählte Backup-Ordner stimmt nicht mit der Ziel-Org überein.",

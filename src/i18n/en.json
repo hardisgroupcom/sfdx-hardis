@@ -2948,6 +2948,7 @@
   "resolvingProfileApiNames": "Resolving Profile API names...",
   "responseBody": "Response body: ",
   "responseBody2": "Response body: \n",
+  "restDeploymentActivated": "Deployments will use the Metadata REST API instead of the default SOAP Metadata API.",
   "restartModeClearingOutputFolder": "Restart mode: clearing output folder {{exportedFilesFolder}}.",
   "restartModeSelectedOutputFolderWillBe": "Restart mode selected: output folder will be cleared",
   "restoreCancelledWrongBackupFolder": "Restore cancelled: the selected backup folder does not match the target org.",
