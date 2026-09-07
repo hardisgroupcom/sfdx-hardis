@@ -175,4 +175,36 @@ describe('XrayTestProvider', () => {
     const found = await new XrayTestProvider().findByKey('TESTKIT:PROJ-123:F01');
     expect(found).to.deep.equal({ id: 'PROJ-9', url: 'https://acme.atlassian.net/browse/PROJ-9' });
   });
+
+  // The authenticate endpoint answers with a quoted JSON string. Served as application/json it
+  // is parsed and the token arrives bare; served as text/plain it arrives as the literal
+  // `"eyJ..."`, quotes included. The quote strip used to sit on the object branch, where
+  // neither shape ever goes, so a text/plain instance sent a Bearer with quotes in it.
+  it('strips the quotes of a JWT served as text/plain, so the Bearer carries the bare token', async () => {
+    setAllEnv();
+    mockFetch(
+      new Response('"the-jwt"', { status: 200, headers: { 'Content-Type': 'text/plain' } }),
+      jsonResponse({ data: { createTest: { test: { issueId: '1', jira: { key: 'PROJ-9' } } } } })
+    );
+    await new XrayTestProvider().create(makeCase());
+    expect(requests[1].init.headers.Authorization).to.equal('Bearer the-jwt');
+  });
+
+  // An update used to send only the summary and the labels, so a description or a priority
+  // corrected in the notebook was silently dropped while the case was reported as updated.
+  it('updates every Jira field it owns, not just the summary', async () => {
+    setAllEnv();
+    mockFetch(jsonResponse('the-jwt'), jsonResponse({}));
+    await new XrayTestProvider().update(
+      { id: 'PROJ-9', url: 'https://acme.atlassian.net/browse/PROJ-9' },
+      makeCase({ priority: 2, expected: 'Le devis est enregistre' })
+    );
+    const call = requests.find((entry) => entry.url.includes('/rest/api/3/issue/PROJ-9'));
+    expect(call?.init.method).to.equal('PUT');
+    const fields = JSON.parse(call?.init.body).fields;
+    expect(fields.summary).to.equal('Créer un devis');
+    expect(fields.description).to.contain('Le devis est enregistre');
+    expect(fields.priority).to.deep.equal({ name: 'High' });
+    expect(fields.labels).to.include('TESTKIT:PROJ-123:F01');
+  });
 });

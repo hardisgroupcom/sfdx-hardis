@@ -163,11 +163,30 @@ export class XrayTestProvider extends TestManagementProviderRoot {
     return { id: String(key ?? test.issueId), url: `${this.jiraBase()}/browse/${key}` };
   }
 
+  /**
+   * Updates the Jira fields of an existing test.
+   *
+   * Sends everything Jira owns: summary, description, priority and labels. An earlier version
+   * sent only the summary and the labels, which silently discarded a corrected description or
+   * priority while still reporting the case as updated.
+   *
+   * **The steps are not updated**, and cannot be from here: they live on the Xray side, and
+   * the GraphQL mutation that writes them is `createTest`, not an update. A corrected step
+   * list therefore needs the test to be recreated. This is documented as a known limitation
+   * of the command rather than hidden behind a success message.
+   */
   public async update(ref: ProviderRef, testCase: NormalizedTestCase): Promise<ProviderRef> {
-    const variables = XrayTestProvider.buildVariables(testCase, String(this.projectKey));
+    const fields = XrayTestProvider.buildVariables(testCase, String(this.projectKey)).jira.fields;
     await httpPut(
       `${this.jiraBase()}/rest/api/3/issue/${ref.id}`,
-      { fields: { summary: testCase.title, labels: variables.jira.fields.labels } },
+      {
+        fields: {
+          summary: fields.summary,
+          description: fields.description,
+          priority: fields.priority,
+          labels: fields.labels,
+        },
+      },
       { headers: this.jiraHeaders() }
     );
     return { id: ref.id, url: `${this.jiraBase()}/browse/${ref.id}` };
@@ -205,8 +224,12 @@ export class XrayTestProvider extends TestManagementProviderRoot {
         { client_id: this.clientId, client_secret: this.clientSecret },
         { headers: { 'Content-Type': 'application/json' } }
       );
-      // The endpoint returns the raw JWT, as a quoted JSON string.
-      return typeof response.data === 'string' ? response.data : String(response.data ?? '').replace(/^"|"$/g, '');
+      // The endpoint returns the raw JWT as a quoted JSON string. Two shapes reach us: a
+      // `application/json` response is parsed and yields the bare token, while a `text/plain`
+      // one arrives as the literal `"eyJ..."`, quotes included. Stripping them on the string
+      // branch covers both, where stripping on the object branch covered neither.
+      const raw = typeof response.data === 'string' ? response.data : String(response.data ?? '');
+      return raw.trim().replace(/^"|"$/g, '');
     } catch (e) {
       throw new SfError(
         `Xray: authentication failed (${(e as Error).message}). Check XRAY_CLIENT_ID and XRAY_CLIENT_SECRET.`
