@@ -1,10 +1,11 @@
 /**
  * Public contract of the test notebook commands.
  *
- * `hardis:project:test-cases:push` and `:render` both accept a pre-normalized
- * `NormalizedTestCase[]` JSON file through `--testsjsonfile`, so this shape is a
- * versioned public contract, not an internal convenience type: a pipeline may produce it
- * without ever going through the parser.
+ * `hardis:ticket:test-cases:init` and `:upsert` both accept a pre-normalized
+ * `NormalizedTestCase[]` JSON file through `--testsjsonfile`, and for `init` that is the main
+ * input rather than an escape hatch: it is the seam between whatever drafted the test cases,
+ * an AI agent or a script, and the deterministic code that renders and sends them. So this
+ * shape is a versioned public contract, not an internal convenience type.
  */
 
 export interface TestCaseStep {
