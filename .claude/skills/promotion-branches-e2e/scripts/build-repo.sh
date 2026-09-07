@@ -22,7 +22,7 @@ cd "$WORK"
 git init -q -b main
 
 # ------------------------------------------------------------------ base project
-cat > sfdx-project.json <<JSON
+cat >sfdx-project.json <<JSON
 {
   "packageDirectories": [{ "path": "force-app", "default": true }],
   "name": "sfdx-hardis-promo-e2e",
@@ -33,9 +33,9 @@ cat > sfdx-project.json <<JSON
 JSON
 
 mkdir -p config/branches manifest force-app/main/default/classes \
-         force-app/main/default/labels force-app/main/default/staticresources scripts/actions
+  force-app/main/default/labels force-app/main/default/staticresources scripts/actions
 
-cat > config/.sfdx-hardis.yml <<'YAML'
+cat >config/.sfdx-hardis.yml <<'YAML'
 projectName: sfdx-hardis-promo-e2e
 developmentBranch: integration
 useDeltaDeployment: true
@@ -56,7 +56,7 @@ write_branch_config() {
       echo "mergeTargets:"
       echo "  - $targets"
     fi
-  } > "config/branches/.sfdx-hardis.$branch.yml"
+  } >"config/branches/.sfdx-hardis.$branch.yml"
 }
 write_branch_config integration 10 uat
 write_branch_config uat 20 preprod
@@ -65,7 +65,7 @@ write_branch_config main 100 -
 
 # config/user holds the local user config sfdx-hardis writes; a dirty tree makes promotion:create
 # refuse to run. hardis-report/ is deliberately NOT ignored, see the runbook.
-cat > .gitignore <<'IGN'
+cat >.gitignore <<'IGN'
 config/user/
 .sf/
 .sfdx/
@@ -74,7 +74,7 @@ IGN
 
 apex_class() {
   local name="$1"
-  cat > "force-app/main/default/classes/$name.cls" <<CLS
+  cat >"force-app/main/default/classes/$name.cls" <<CLS
 @isTest
 private class $name {
   @isTest
@@ -83,7 +83,7 @@ private class $name {
   }
 }
 CLS
-  cat > "force-app/main/default/classes/$name.cls-meta.xml" <<META
+  cat >"force-app/main/default/classes/$name.cls-meta.xml" <<META
 <?xml version="1.0" encoding="UTF-8"?>
 <ApexClass xmlns="http://soap.sforce.com/2006/04/metadata">
     <apiVersion>$API</apiVersion>
@@ -95,7 +95,7 @@ apex_class PromoE2EAlphaTest
 apex_class PromoE2EBetaTest
 
 # The shared file: two stories editing it is how a real cherry-pick conflict is produced.
-cat > force-app/main/default/labels/CustomLabels.labels-meta.xml <<XML
+cat >force-app/main/default/labels/CustomLabels.labels-meta.xml <<XML
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
     <labels>
@@ -109,13 +109,13 @@ cat > force-app/main/default/labels/CustomLabels.labels-meta.xml <<XML
 XML
 
 # A file outside force-app and manifest: the conflict the marker gate must still catch.
-cat > NOTES.md <<'MD'
+cat >NOTES.md <<'MD'
 # Promotion branches end to end test
 
 Shared notes, base version.
 MD
 
-cat > manifest/package.xml <<XML
+cat >manifest/package.xml <<XML
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>

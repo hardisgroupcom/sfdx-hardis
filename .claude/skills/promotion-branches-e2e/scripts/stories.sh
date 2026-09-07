@@ -21,8 +21,8 @@ story_branch() {
   git checkout -q -b "$branch"
   mkdir -p force-app/main/default/staticresources
   printf 'promotion branches end to end test: %s\n' "$resource" \
-    > "force-app/main/default/staticresources/$resource.resource"
-  cat > "force-app/main/default/staticresources/$resource.resource-meta.xml" <<META
+    >"force-app/main/default/staticresources/$resource.resource"
+  cat >"force-app/main/default/staticresources/$resource.resource-meta.xml" <<META
 <?xml version="1.0" encoding="UTF-8"?>
 <StaticResource xmlns="http://soap.sforce.com/2006/04/metadata">
     <cacheControl>Public</cacheControl>
@@ -46,8 +46,8 @@ story_actions() {
   mkdir -p scripts/actions
   local file="scripts/actions/.sfdx-hardis.$pr.yml"
   case "$kind" in
-    pre-command+post-manual)
-      cat > "$file" <<YAML
+  pre-command+post-manual)
+    cat >"$file" <<YAML
 commandsPreDeploy:
   - id: e2e-pre-$pr
     label: E2E pre-deploy of PR $pr
@@ -65,9 +65,9 @@ commandsPostDeploy:
         Nothing to change: tick this box once you have read it.
     context: process-deployment-only
 YAML
-      ;;
-    post-command)
-      cat > "$file" <<YAML
+    ;;
+  post-command)
+    cat >"$file" <<YAML
 commandsPostDeploy:
   - id: e2e-post-$pr
     label: E2E post-deploy of PR $pr
@@ -75,9 +75,9 @@ commandsPostDeploy:
     command: echo "E2E post-deploy of PR $pr"
     context: all
 YAML
-      ;;
-    pre-command)
-      cat > "$file" <<YAML
+    ;;
+  pre-command)
+    cat >"$file" <<YAML
 commandsPreDeploy:
   - id: e2e-pre-$pr
     label: E2E pre-deploy of PR $pr
@@ -85,11 +85,11 @@ commandsPreDeploy:
     command: echo "E2E pre-deploy of PR $pr"
     context: all
 YAML
-      ;;
-    *)
-      echo "unknown action kind: $kind" >&2
-      return 1
-      ;;
+    ;;
+  *)
+    echo "unknown action kind: $kind" >&2
+    return 1
+    ;;
   esac
   git add -A
   git commit -qm "chore: deployment actions of PR $pr"

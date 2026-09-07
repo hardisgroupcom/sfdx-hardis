@@ -68,7 +68,7 @@ gl_fetch_merge_ref() {
     curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" \
       "$GL_HOST/api/v4/projects/$PROJECT_ID/merge_requests/$mr/merge_ref" >/dev/null
     if git fetch -q origin "+refs/merge-requests/$mr/merge:refs/heads/mrmerge-$mr" 2>/dev/null &&
-       git merge-base --is-ancestor "$sha" "mrmerge-$mr" 2>/dev/null; then
+      git merge-base --is-ancestor "$sha" "mrmerge-$mr" 2>/dev/null; then
       return 0
     fi
     sleep 3
@@ -176,8 +176,8 @@ gl_mr_merge() {
     status=$(curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" "$url" |
       python -c "import json,sys; d=json.load(sys.stdin); print(d.get('detailed_merge_status') or d.get('merge_status'))")
     case "$status" in
-      checking|unchecked|preparing) sleep 2 ;;
-      *) break ;;
+    checking | unchecked | preparing) sleep 2 ;;
+    *) break ;;
     esac
   done
   curl -sS -X PUT -H "PRIVATE-TOKEN: $GL_TOKEN" -H "Content-Type: application/json" \
