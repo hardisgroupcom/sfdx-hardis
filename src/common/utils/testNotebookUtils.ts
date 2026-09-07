@@ -147,9 +147,15 @@ export function renderStepsFlat(steps: TestCaseStep[], separator: string = STEP_
   if (!Array.isArray(steps) || steps.length === 0) {
     return '';
   }
+  // The arrow is escaped back to `->` on the way out, exactly as `parseSteps` un-escapes it
+  // on the way in. Without this the round trip is unstable: an action legitimately containing
+  // an arrow would be re-split at that arrow on the next read, moving half the action into
+  // the expected result.
   const clean = (value: unknown): string =>
     String(value ?? '')
       .replace(/\|/g, '/')
+      .split(PAIR_SEPARATOR.trim())
+      .join(LITERAL_ARROW)
       .replace(/\s*[\r\n]+\s*/g, ' ')
       .trim();
   return steps
@@ -231,7 +237,7 @@ function _findTestCaseTable(lines: string[]): { headers: string[]; rows: string[
   }
   throw new Error(
     'No test case table found in the markdown notebook. Expected a table holding at least an ' +
-      '"ID" column (aliases: ID). Run "sf hardis:project:test-cases:template" to get a valid one.'
+      '"ID" column (aliases: ID). Run "sf hardis:ticket:test-cases:init" without test cases to get a valid one.'
   );
 }
 

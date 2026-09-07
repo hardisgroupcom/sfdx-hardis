@@ -10,9 +10,14 @@ import {
   STATUS_VALUES,
   synthesisRows,
   writeNotebookCsv,
+  writeNotebookMarkdown,
   writeNotebookXlsx,
 } from '../../../src/common/utils/testNotebookRender.js';
-import { parseNotebookXlsx, parseNotebookCsv } from '../../../src/common/utils/testNotebookUtils.js';
+import {
+  parseNotebookXlsx,
+  parseNotebookCsv,
+  parseNotebookMarkdown,
+} from '../../../src/common/utils/testNotebookUtils.js';
 import { NormalizedTestCase } from '../../../src/common/utils/testNotebookTypes.js';
 
 function makeCase(overrides: Partial<NormalizedTestCase> = {}): NormalizedTestCase {
@@ -201,12 +206,109 @@ describe('testNotebookRender', () => {
       expect(reread.soql).to.equal('SELECT Id FROM Account LIMIT 1');
     });
 
+
     it('reads back a csv it just wrote, stopping at the footer', async () => {
       const file = path.join(tmpDir, 'cahier.csv');
       await writeNotebookCsv(file, 'functional', [makeCase(), makeCase({ id: 'PROJ-123-F02' })]);
       const cases = parseNotebookCsv(await fs.readFile(file, 'utf8'));
       expect(cases).to.have.lengthOf(2);
       expect(cases[0].steps).to.have.lengthOf(2);
+    });
+  });
+
+  // A field holding a line break used to be written as-is, so one case spread over as many
+  // physical rows as it had lines. The row ends at the newline in a CSV and in a markdown
+  // table alike, so the file became unreadable back: the second line was read as a case with
+  // an unusable id. Only the steps column was folded before.
+  describe('multi-line fields', () => {
+    const multiLine = () =>
+      makeCase({
+        preconditions: 'Un compte actif\nUn contact rattache',
+        expected: 'Le devis existe\n  Son total vaut 100  \r\nIl est visible',
+      });
+
+    it('keeps a case on a single csv row, whatever line breaks its fields hold', async () => {
+      const folded = path.join(tmpDir, 'multi.csv');
+      const flat = path.join(tmpDir, 'flat.csv');
+      await writeNotebookCsv(folded, 'functional', [multiLine()]);
+      await writeNotebookCsv(flat, 'functional', [makeCase()]);
+      const lineCount = (content: string) => content.split('\r\n').filter(Boolean).length;
+      // Compared against the same notebook without line breaks rather than a hardcoded count,
+      // so the assertion still means something if the footer ever gains a row.
+      expect(lineCount(await fs.readFile(folded, 'utf8'))).to.equal(lineCount(await fs.readFile(flat, 'utf8')));
+    });
+
+    it('reads that csv back as one case, with the line breaks folded onto the separator', async () => {
+      const file = path.join(tmpDir, 'multi.csv');
+      await writeNotebookCsv(file, 'functional', [multiLine()]);
+      const cases = parseNotebookCsv(await fs.readFile(file, 'utf8'));
+      expect(cases).to.have.lengthOf(1);
+      expect(cases[0].id).to.equal('PROJ-123-F01');
+      expect(cases[0].expected).to.equal('Le devis existe<br>Son total vaut 100<br>Il est visible');
+      expect(cases[0].preconditions).to.equal('Un compte actif<br>Un contact rattache');
+    });
+
+    it('keeps a case on a single markdown row too', async () => {
+      const file = path.join(tmpDir, 'multi.md');
+      await writeNotebookMarkdown(file, 'functional', [multiLine()]);
+      const cases = parseNotebookMarkdown(await fs.readFile(file, 'utf8'));
+      expect(cases).to.have.lengthOf(1);
+      expect(cases[0].expected).to.contain('Son total vaut 100');
+    });
+
+    // The xlsx keeps real line breaks, so this one is about normalization rather than folding:
+    // the CRLF becomes an LF and each line is trimmed. Without that, ExcelJS still produced a
+    // readable file, which is why the assertion targets the exact cell content and not just
+    // the row count.
+    it('normalizes the line breaks it keeps in the xlsx, where a cell can hold them', async () => {
+      const file = path.join(tmpDir, 'multi.xlsx');
+      await writeNotebookXlsx(file, 'functional', [multiLine()]);
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(file);
+      const sheet = workbook.getWorksheet(SHEET_NAMES.functional);
+      // Column located by its key, not by its header label, so a wording change cannot make
+      // this test read the wrong cell and pass for the wrong reason.
+      const column = COLUMNS.functional.findIndex((entry) => entry.key === 'expected') + 1;
+      const cell = String(sheet?.getRow(2).getCell(column).value ?? '');
+      expect(cell).to.equal('Le devis existe\nSon total vaut 100\nIl est visible');
+      // And it still reads back as one case, not three.
+      expect(await parseNotebookXlsx(file)).to.have.lengthOf(1);
+    });
+  });
+
+  // The literal arrow escape `->` was un-escaped into a real arrow when reading, but never
+  // re-escaped when writing. So an action legitimately containing an arrow was re-split at
+  // that arrow on the next read, and half of it silently moved into the expected result.
+  describe('arrow round trip', () => {
+    const withArrow = () =>
+      makeCase({
+        steps: [{ action: 'Cliquer sur Devis → Nouveau', expected: 'Le panneau apparait' }],
+      });
+
+    // Compared against the ORIGINAL steps, not against the previous cycle: the defect reached a
+    // fixed point after a single read, so both renders came out byte-identical while the arrow
+    // had already moved half of the action into the expected result. Byte stability proves
+    // nothing here, only fidelity to the input does.
+    it('survives two full write-read cycles without drifting from the input', async () => {
+      const original = withArrow();
+      const first = path.join(tmpDir, 'arrow-1.csv');
+      const second = path.join(tmpDir, 'arrow-2.csv');
+      await writeNotebookCsv(first, 'functional', [original]);
+      const cycle1 = parseNotebookCsv(await fs.readFile(first, 'utf8'));
+      await writeNotebookCsv(second, 'functional', cycle1);
+      const cycle2 = parseNotebookCsv(await fs.readFile(second, 'utf8'));
+      expect(cycle1[0].steps).to.deep.equal(original.steps);
+      expect(cycle2[0].steps).to.deep.equal(original.steps);
+      expect(await fs.readFile(second, 'utf8')).to.equal(await fs.readFile(first, 'utf8'));
+    });
+
+    it('keeps the arrow inside the action instead of splitting the step at it', async () => {
+      const file = path.join(tmpDir, 'arrow.csv');
+      await writeNotebookCsv(file, 'functional', [withArrow()]);
+      const cases = parseNotebookCsv(await fs.readFile(file, 'utf8'));
+      expect(cases[0].steps).to.have.lengthOf(1);
+      expect(cases[0].steps[0].action).to.equal('Cliquer sur Devis → Nouveau');
+      expect(cases[0].steps[0].expected).to.equal('Le panneau apparait');
     });
   });
 });

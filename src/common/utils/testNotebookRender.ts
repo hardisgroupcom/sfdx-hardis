@@ -77,6 +77,23 @@ export const SHEET_NAMES: Record<TestCaseKind, string> = {
 };
 
 /**
+ * Fold a value onto one physical line, using the separator its destination understands.
+ *
+ * Every text field needs this, not just the steps: a CSV row ends at its newline, and so does
+ * a markdown table row, so a multi-line `expected` or `preconditions` would split one case
+ * across several rows and make the file unreadable back. The xlsx passes `\n` and keeps real
+ * line breaks, which is what a reader wants in a cell.
+ */
+function _oneLine(value: unknown, separator: string): string {
+  return String(value ?? '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(separator);
+}
+
+/**
  * Value of one cell. `Résultat obtenu`, `Commentaire` and `Statut` are written empty on
  * purpose: they are the tester's columns, and pre-filling them would be answering for them.
  */
@@ -91,9 +108,9 @@ function _valueFor(key: string, testCase: NormalizedTestCase, stepSeparator: str
     case 'status':
       return '';
     case 'target':
-      return sanitizeCell(testCase.target || '');
+      return sanitizeCell(_oneLine(testCase.target, stepSeparator));
     default:
-      return sanitizeCell((testCase as any)[key] === undefined ? '' : String((testCase as any)[key]));
+      return sanitizeCell(_oneLine((testCase as any)[key], stepSeparator));
   }
 }
 
