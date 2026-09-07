@@ -55,7 +55,7 @@ It defines:
 On GitLab, source `scripts/e2e-lib-gitlab.sh` instead: `gl_check`, `gl_deploy`, `gl_promote`,
 `gl_release_notes`, plus `gl_mr_create` and `gl_mr_merge` to open and merge a merge request. It
 needs `PROJECT_ID`, `PROJECT_PATH`, `GL_HOST` and `GL_TOKEN` where the GitHub library needs `REPO`.
-Section 9 holds what is different on GitLab.
+Section 8 holds what is different on GitLab.
 
 Each writes `$LOGS/<label>.log` and echoes the exit code.
 
@@ -372,14 +372,14 @@ informational line saying it is treated as an ordinary feature branch). Anything
 regression. Switching the CLI checkout in place is safe as long as `package.json` and `yarn.lock`
 are identical on both refs (`bin/dev.js` runs the TypeScript sources through ts-node).
 
-## 9. What is different on GitLab
+## 8. What is different on GitLab
 
 Run the whole thing a second time against a throwaway private GitLab project: the provider code
 paths that create, find and close a promotion Pull Request are not shared with GitHub.
 
 ```bash
 export ORG="your.user@example.com"
-export PROJECT_ID=4431                                    # numeric id of the new project
+export PROJECT_ID=1234                                    # numeric id of the new project
 export PROJECT_PATH="you/sfdx-hardis-promo-e2e-gl-1"
 export GL_HOST="https://gitlab.example.com"
 export GL_TOKEN="..."                                     # personal access token, api scope
@@ -415,7 +415,7 @@ Traps that only bite on GitLab:
 - Merge request iids do not have to start at 1. Nothing in the feature assumes they do, and a run
   that starts at !2 is a slightly better test than one that starts at !1.
 
-## 8. Cleaning up
+## 9. Cleaning up
 
 The repository is disposable. `gh repo delete "$REPO" --yes` needs the `delete_repo` scope
 (`gh auth refresh -h github.com -s delete_repo`). The static resources, labels and Apex classes
