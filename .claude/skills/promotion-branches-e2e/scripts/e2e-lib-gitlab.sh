@@ -170,9 +170,9 @@ print(json.dumps({'source_branch': sys.argv[1], 'target_branch': sys.argv[2], 't
 # GitLab computes mergeability asynchronously and refuses the merge while it is still checking.
 # Usage: gl_mr_merge <iid>
 gl_mr_merge() {
-  local mr="$1" attempt status
+  local mr="$1" status
   local url="$GL_HOST/api/v4/projects/$PROJECT_ID/merge_requests/$mr"
-  for attempt in $(seq 1 30); do
+  for _ in $(seq 1 30); do
     status=$(curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" "$url" |
       python -c "import json,sys; d=json.load(sys.stdin); print(d.get('detailed_merge_status') or d.get('merge_status'))")
     case "$status" in
