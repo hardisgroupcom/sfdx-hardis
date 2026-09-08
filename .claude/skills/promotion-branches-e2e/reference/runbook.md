@@ -16,7 +16,7 @@ ___
 - `gh` authenticated on an account that can create private repositories.
 - A local sfdx-hardis working copy on the branch to test. Every command below calls `bin/dev.js`
   from it, so no `sf plugins install` is needed.
-- A local vscode-sfdx-hardis working copy on the matching branch, compiled (`yarn dev`), for the
+- A local vscode-sfdx-hardis working copy on the matching branch, compiled (`yarn compile`), for the
   diagram check of section 7bis.
 - Git bash. On Windows, clear `NODE_OPTIONS` for every CLI call (VS Code sets an inspector
   bootloader that keeps node alive after the command ends). The library does it for you.
@@ -51,6 +51,10 @@ It defines:
 | `e2e_promote <source> <prs> <label> [extra flags]` | `promotion:create --agent` from the source branch                                     |
 | `e2e_release_notes <label> [extra flags]`          | `doc:release-notes --mode post` on the last merge of `main`                           |
 | `e2e_grep <logfile>`                               | The lines worth reading in a job log                                                  |
+| `pipeline_check <label> [expectations]`            | What the vscode-sfdx-hardis DevOps Pipeline shows at this point of the run             |
+
+`pipeline_check` is provided by all four libraries and always calls the same
+`scripts/check-pipeline.cjs`: see section 4bis.
 
 On GitLab, source `scripts/e2e-lib-gitlab.sh` instead: `gl_check`, `gl_deploy`, `gl_promote`,
 `gl_release_notes`, plus `gl_mr_create` and `gl_mr_merge` to open and merge a merge request. It
@@ -187,11 +191,23 @@ for pr in 1 2 3; do e2e_check $pr integration "check-pr$pr"; done
 for pr in 1 2 3; do gh pr merge $pr --repo "$REPO" --merge --delete-branch=false
                     e2e_deploy integration "deploy-integration-pr$pr"; done
 
+# The pipeline before anything is promoted: the three stories wait in integration, uat is empty,
+# and no promotion is drawn on the integration -> uat arrow (section 4bis)
+pipeline_check "pipeline-before-p1" "$EXPECT/before-p1.json"
+
 # P1: integration -> uat carrying S1 and S3 only
 e2e_promote integration 1,3 "promotion-integration-uat"   # creates Pull Request P1
+
+# The promotion exists but is not merged: it is drawn ON the integration -> uat arrow, it has no
+# branch node of its own, and the three stories are still listed in integration
+pipeline_check "pipeline-p1-open" "$EXPECT/p1-open.json"
 e2e_check <P1> uat "check-promotion-uat"
 gh pr merge <P1> --repo "$REPO" --merge --delete-branch=false
 e2e_deploy uat "deploy-uat-promotion"
+
+# After the merge: S1 and S3 are listed in uat, the branch they reached, and gone from integration,
+# which keeps S2 alone. The arrow is empty again
+pipeline_check "pipeline-after-p1" "$EXPECT/after-p1.json"
 
 # Stories validated directly in uat
 for pr in 4 5; do e2e_check $pr uat "check-pr$pr"; done
@@ -210,6 +226,7 @@ e2e_deploy preprod "deploy-preprod-promotion"
 # carries S3 alone and leaves S1 waiting in uat.
 # Not <P1>: a promotion Pull Request is a vehicle, it is never a candidate, and passing its number
 # is answered with "not among the Pull Requests waiting for promotion".
+pipeline_check "pipeline-before-p3" "$EXPECT/before-p3.json"
 e2e_promote uat 3 "promotion-uat-preprod-nested"
 # Assert here, before going on: the candidate table has a row "#1" and a row "#3", the branch
 # cherry-picks one commit, and the summary declares #3 only.
@@ -228,6 +245,9 @@ e2e_check <P4> main "check-promotion-main"
 gh pr merge <P4> --repo "$REPO" --merge --delete-branch=false
 e2e_deploy main "deploy-main-promotion"
 
+# The go-live: every story that was promoted is listed in main, none of them twice
+pipeline_check "pipeline-after-golive" "$EXPECT/after-golive.json"
+
 # Release notes of the go-live, then the same with the vehicles
 e2e_release_notes "release-notes"
 e2e_release_notes "release-notes-all" --include-promotions
@@ -243,6 +263,64 @@ e2e_check <R> integration "check-retrofit"
 gh pr merge <R> --repo "$REPO" --merge --delete-branch=false
 e2e_deploy integration "deploy-integration-retrofit"
 ```
+
+## 4bis. What the DevOps Pipeline must show along the way
+
+A promotion is only half done when the job log is right: the release manager reads the result in
+the **DevOps Pipeline** of vscode-sfdx-hardis, and that view has its own way of being wrong. A
+story can be carried out of a branch and listed in neither, a counter bubble can disagree with the
+list under it, a promotion can be drawn as a feature branch of its own instead of on the arrow of
+its step. None of that shows up in a log.
+
+`scripts/check-pipeline.cjs` drives the extension's own `PipelineDataProvider`, so
+`listPullRequestsInBranchSinceLastMerge`, the promotion expansion, the single-place invariant and
+the mermaid builder all run exactly as they do in the webview, against the real repository. It then
+reads the counter bubbles and the merge edges back out of the mermaid it produced, so what it
+asserts is the diagram itself.
+
+```bash
+export EXT=C:/git/vscode-sfdx-hardis
+export EXPECT=/c/tmp/promo-e2e-expect          # one small JSON per checkpoint
+(cd "$EXT" && yarn compile)                    # tsc layout, so the script can require the modules
+pipeline_check "pipeline-before-p1" "$EXPECT/before-p1.json"
+```
+
+An expectations file names only what that point of the run pins down:
+
+```json
+{
+  "label": "before the integration -> uat promotion",
+  "windows": { "integration": [1, 2, 3], "uat": [], "preprod": [], "main": [] },
+  "arrows": { "integration>uat": null },
+  "noFeatureNodeFor": []
+}
+```
+
+`windows` is the User Stories a branch node lists, order free. `arrows` is the number of the open
+Pull Request drawn on a merge edge, `null` for "nothing drawn there". `counters` pins a counter
+bubble when it must be checked against something other than the list. `noFeatureNodeFor` names a
+branch that must not get a node of its own.
+
+Three things are asserted at every checkpoint, expectations or not: a Pull Request number is listed
+in one branch and one only, every counter bubble equals the length of the list under it, and the
+diagram parses.
+
+| Checkpoint            | When                                                | What it proves                                                                                                                                     |
+|-----------------------|-----------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `pipeline-before-p1`  | after the BUILD stream is merged, before P1          | the stories wait in the branch they were merged into, the downstream branches are empty, and no promotion is drawn on any arrow                       |
+| `pipeline-p1-open`    | after `promotion:create`, before the merge           | the open promotion is drawn **on the `integration -> uat` arrow**, gets no branch node of its own, and takes nothing out of `integration` yet: a promotion only moves a story once it is merged |
+| `pipeline-after-p1`   | after the merge and the deployment                   | S1 and S3 are listed in `uat`, gone from `integration`, which keeps S2 alone, and the arrow is empty again                                            |
+| `pipeline-before-p3`  | before promoting a story that arrived through P1     | a story a promotion carried is offered by the branch it reached, so what the pipeline lists and what `promotion:create` offers are the same set       |
+| `pipeline-after-golive` | after the `preprod -> main` promotion is merged    | every promoted story is listed in `main`, none of them twice, and the counters of the branches it left went down                                      |
+
+The extension needs its provider token, which it reads from a secret named after the remote host:
+dots replaced by underscores, uppercased, plus `_TOKEN`. On `gitlab.hardis-group.com` that is
+`GITLAB_HARDIS-GROUP_COM_TOKEN`, a name a shell cannot export, so the script takes the token in
+`PROVIDER_TOKEN` and files it under the right name itself. `pipeline_check` passes the token the
+rest of the library is already using.
+
+> The check builds a **cold** cache on every call (an in-memory `Memento`), because a stale answer
+> here would look exactly like the defect being hunted. Do not add a persistent store to it.
 
 ## 5. What to assert in each log
 
@@ -340,6 +418,8 @@ pending manual checkbox per org branch.
 | Two yaml blocks with the same key      | a description declaring `deploymentApexTestClasses` in two separate blocks                                                             | the union of both is selected, the second block does not replace the first                                                                                                                                                                                 |
 | A committed conflict prompt report     | commit `hardis-report/promotion-conflicts-prompt-*.md` on the promotion branch                                                         | the marker gate stays silent: it matches `<<<<<<< ` at the start of a line, and the report only mentions the markers inline                                                                                                                                |
 | Single place in the diagram            | section 7bis                                                                                                                           | each promoted number appears in one branch only                                                                                                                                                                                                            |
+| Pipeline before and after a promotion  | section 4bis, `pipeline_check` around every promotion operation                                                                         | the open promotion is drawn on the arrow of its step and takes nothing out of the source branch until it is merged; afterwards the stories are listed in the branch they reached, the counter bubbles follow, and no story is listed in two branches or in none |
+| Counter bubble against its own list    | every `pipeline_check`, no expectations needed                                                                                         | the number on a branch node equals the number of User Stories the modal lists under it                                                                                                                                                                       |
 
 ## 7. Traps met while writing this
 
@@ -376,6 +456,13 @@ pending manual checkbox per org branch.
 
 ## 7bis. Checking the "one place in the diagram" rule
 
+Two scripts look at the pipeline, and they answer different questions. `check-pipeline.cjs`
+(section 4bis) drives the extension's own data path against the real repository and says what the
+user sees at a point of the run. `check-diagram*.cjs`, below, fetches the Pull Requests itself and
+feeds the pure helpers with a **superset** of every window, which makes the duplicate check
+stricter than the real one. Run both: the first proves the extension, the second proves the rules.
+
+
 The DevOps Pipeline lists a promoted Pull Request in the branch it reached, not in the one it came
 from, so a number appears once in the whole diagram, and it lists User Stories only: promotion and
 major-to-major Pull Requests are hidden until the **Show merge and promotion Pull Requests** toggle
@@ -396,7 +483,7 @@ The script fetches every Pull Request with `gh`, normalises the state like
 and exits non-zero if a number appears twice. It also prints the counts the two toggles produce,
 which must be higher.
 
-The extension must be compiled first (`cd $EXT && yarn dev`), on the branch under test.
+The extension must be compiled first (`cd $EXT && yarn compile`), on the branch under test.
 
 On Azure DevOps, `check-diagram-azure.cjs` does the same from the Azure DevOps API:
 

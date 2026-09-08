@@ -283,3 +283,19 @@ json.dump({'provider': 'azure', 'prs': prs}, open(sys.argv[1], 'w', encoding='ut
 print('dumped %d Pull Requests to %s' % (len(prs), sys.argv[1]))
 " "$out" "$@"
 }
+
+# Where this library sits, so the pipeline check can find its script next to it
+E2E_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# What the vscode-sfdx-hardis DevOps Pipeline shows right now: the User Stories of each branch
+# node, its counter bubble, and the open promotion drawn on a merge arrow. Run it before and after
+# every promotion operation, with the expectations of that point of the run.
+# Usage: pipeline_check <log label> [expectations file]
+pipeline_check() {
+  local label="$1" expect="${2:-}" code
+  env -u NODE_OPTIONS     EXT="${EXT:-C:/git/vscode-sfdx-hardis}"     WORK="$WORK"     PROVIDER_TOKEN="$AZ_TOKEN"     node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"}     >"$LOGS/$label.log" 2>&1
+  code=$?
+  cat "$LOGS/$label.log"
+  echo "$label exit=$code log=$LOGS/$label.log"
+  return $code
+}

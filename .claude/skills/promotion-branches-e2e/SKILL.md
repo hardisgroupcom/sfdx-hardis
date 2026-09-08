@@ -25,6 +25,7 @@ not already, so you know what each assertion is protecting.
 | `scripts/stories.sh`               | `story_branch` and `story_actions`: the six User Stories and the action files that travel with them. Provider agnostic.                                         |
 | `scripts/e2e-lib.sh`               | GitHub job simulators: `e2e_check`, `e2e_deploy`, `e2e_promote`, `e2e_release_notes`, `e2e_grep`. Source it.                                                    |
 | `scripts/e2e-lib-gitlab.sh`        | The same for GitLab, plus `gl_mr_create`, `gl_mr_merge` and the merge-ref wait GitLab needs.                                                                    |
+| `scripts/check-pipeline.cjs`       | Drives the extension's own PipelineDataProvider against the test repository and asserts what the DevOps Pipeline shows at a point of the run.                    |
 | `scripts/check-diagram.cjs`        | Feeds the extension's compiled helpers with the real Pull Requests and asserts the "single place in the diagram" rule.                                          |
 | `scripts/check-diagram-gitlab.cjs` | The same, reading merge requests from the GitLab API.                                                                                                           |
 | `scripts/ab-run.sh`                | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                            |
@@ -48,7 +49,7 @@ Ask the user only for what you cannot find yourself:
 
 Check yourself: `gh auth status`, `glab auth status`, the Azure DevOps PAT in `.env`
 (`AZURE_PERSONAL_ACCESS_TOKEN`), `sf org list`, the sfdx-hardis branch under test, and whether the vscode-sfdx-hardis working copy is on the matching branch and compiled
-(`yarn dev`), which the diagram check needs.
+(`yarn compile`), which the diagram check needs.
 
 **Never reuse a previous test repository.** Each run starts from a fresh private repository, so a
 failure cannot be an artefact of the previous run's state.
@@ -73,6 +74,9 @@ failure cannot be an artefact of the previous run's state.
 5bis. **Audit the Pull Request comments** (runbook section 5bis). The job logs say what the command
    decided; the audit says what the reviewer reads. Four of the defects of 2026-09-08 came from it,
    and none of them was visible in a job log.
+5ter. **Check the DevOps Pipeline before and after every promotion operation**
+   (runbook section 4bis): `pipeline_check <label> <expectations.json>`. The job logs and the Pull
+   Request comments say nothing about the view the release manager actually reads.
 6. **Check the diagram rule**: `node scripts/check-diagram.cjs <owner>/<repo> integration,uat,preprod,main`
    (`check-diagram-gitlab.cjs` / `check-diagram-azure.cjs` for the other two providers).
 7. **Run the flag-off A/B regression check** (runbook section 7ter). `TOTAL DIFFERING LINES: 0`,
@@ -103,7 +107,7 @@ State them again in the report unless you close them:
   see runbook section 8ter for the two artefacts that follow.
 - The four pipeline levels share one Salesforce org, so deployment action state is keyed by org
   **branch**, not by distinct orgs.
-- The pipeline webview is exercised through its compiled helpers and its unit tests, not by
-  clicking.
+- The pipeline webview is exercised through its own data provider (section 4bis), its compiled
+  helpers and its unit tests, not by clicking: the mermaid is asserted as text, never rendered.
 
 $ARGUMENTS
