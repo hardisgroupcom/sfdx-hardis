@@ -197,6 +197,31 @@ ___
 - **One org for four branches.**
 - **`FLOW_DELETE_INTERVIEWS` end to end.**
 
+## The counterpart in vscode-sfdx-hardis
+
+Asked whether any of the CLI fixes had a counterpart in the extension, the answer turned out to be
+**yes for this one**, and it was live.
+
+`GitProviderAzure.collectMergedPRsForCommits` and `listOpenPullRequests` both list Pull Requests
+through `gitApi.getPullRequests`, the same truncating endpoint, and `convertToPullRequest` copies
+`pr.description` straight into the `PullRequest` objects that `orgConfigUtils` feeds to
+`expandPullRequestsWithPromotions` and `buildPromotionIndex`. Those helpers parse
+`promotionPullRequests` out of the description, so on Azure DevOps the DevOps Pipeline expanded no
+promotion, marked no story as already promoted, and displayed wrong branch counters, for exactly
+the same reason as the CLI.
+
+The end to end harness had hidden it: `check-diagram-azure.cjs` re-reads full descriptions itself
+before calling the extension helpers, so it exercised the helpers with data the extension would
+never have had.
+
+Fixed in vscode-sfdx-hardis `648a1bf5` with the same approach, and covered by 7 tests
+(`src/test/suite/azureListDescription.test.ts`); the extension suite is at **350 passing**.
+
+The other nine fixes have no counterpart: the extension posts and reads no Pull Request comment,
+writes no deployment action state, cherry-picks nothing and parses no coverage. Its Bitbucket
+provider was already paginating and already putting `state` inside the `q` expression, which is
+what the CLI had to be taught.
+
 ## Suite counts
 
 - sfdx-hardis: **1837 unit tests passing**, lint clean.

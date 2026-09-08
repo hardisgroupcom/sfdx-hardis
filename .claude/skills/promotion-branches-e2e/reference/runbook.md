@@ -388,6 +388,15 @@ EXT=C:/git/vscode-sfdx-hardis GL_HOST="$GL_HOST" GL_TOKEN="$GL_TOKEN" \
   "$PROJECT_ID" integration,uat,preprod,main
 ```
 
+> **The diagram scripts can hide a provider defect.** `check-diagram-azure.cjs` and
+> `check-diagram-bitbucket.cjs` fetch the Pull Requests themselves and hand them to the extension's
+> pure helpers, so they prove the RULES, never the extension's own fetching. Azure DevOps made that
+> concrete: the CLI and the extension both lost the `promotionPullRequests` declaration to the 400
+> character truncation of the list API, and the harness did not see it because
+> `check-diagram-azure.cjs` re-reads full descriptions of its own accord. Whenever a fix lands in a
+> sfdx-hardis git provider, read the matching `src/utils/gitProviders/gitProvider*.ts` of
+> vscode-sfdx-hardis and ask whether the same call is made there.
+
 Both scripts build a branch window from "every merged Pull Request whose target is this branch",
 which is a superset of the real window and makes the duplicate check stricter. It also means a
 story that reached a branch through an ordinary major-to-major merge stays listed under the branch
