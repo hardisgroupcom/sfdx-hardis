@@ -5,6 +5,7 @@ import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResul
 import { GithubApiClient, getGithubActionsContext } from "./githubApiClient.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
 
 export class GithubProvider extends GitProviderRoot {
@@ -416,9 +417,16 @@ ${getBannerMarkdownAndLink()}
     // Check for existing note from a previous run
     uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubListingPrCommentsAll')));
     const existingComments = await this.listIssueComments(this.prNumber, this.repoOwner || "", this.repoName);
+    // A comment of the same kind (validation or deployment) matches even when its message key
+    // carries another workflow name: the key holds it, so renaming the workflow - or running once
+    // inside GitHub Actions and once outside it - would otherwise leave the old comment in place
+    // and add a second one next to it. Same rule as the Azure DevOps provider.
+    const currentCommentKind = getPrCommentKindFromMessageKey(prMessage.messageKey);
     let existingCommentId: number | null = null;
     for (const existingComment of existingComments) {
-      if (existingComment?.body?.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
+      const commentBody = existingComment?.body || "";
+      if (commentBody.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`) ||
+        (currentCommentKind !== null && getPrCommentKind(commentBody) === currentCommentKind)) {
         existingCommentId = existingComment.id;
       }
     }

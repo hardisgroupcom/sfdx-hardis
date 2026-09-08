@@ -6,6 +6,7 @@ import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot, PullRequestCommentRef, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
 
 // Oldest commit date of a window, used to bound the merged MRs listing (see
@@ -381,9 +382,16 @@ ${getBannerMarkdownAndLink()}
     // Check for existing note from a previous run
     uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabListingMrNotes')));
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
+    // A comment of the same kind (validation or deployment) matches even when its message key
+    // carries another job name: the key holds the CI job name, so renaming the job - or running
+    // once inside CI and once outside it - would otherwise leave the old comment in place and add
+    // a second one next to it. Same rule as the Azure DevOps provider.
+    const currentCommentKind = getPrCommentKindFromMessageKey(prMessage.messageKey);
     let existingNoteId: number | null = null;
     for (const existingNote of existingNotes) {
-      if (existingNote.body.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
+      const noteBody = existingNote.body || "";
+      if (noteBody.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`) ||
+        (currentCommentKind !== null && getPrCommentKind(noteBody) === currentCommentKind)) {
         existingNoteId = existingNote.id;
       }
     }
