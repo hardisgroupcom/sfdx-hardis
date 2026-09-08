@@ -73,8 +73,12 @@ Break one of these and the feature is wrong, whatever the tests say.
    skipped in silence; a promotion whose stories could not be resolved stays in the release notes.
 6. **Expansion is multi level.** A `preprod -> main` promotion can carry a `uat -> preprod`
    promotion, which carries stories. Both levels must resolve.
-7. **Conflict markers never reach an org.** `assertNoPromotionConflictMarkers` greps every tracked
-   file, not only the package directories.
+7. **Conflict markers never reach an org, and the reviewer is told why.**
+   `assertNoPromotionConflictMarkers` greps every tracked file, not only the package directories.
+   It stops the job before anything is deployed, so no other code would ever post a Pull Request
+   comment: it sets `deployErrorsMarkdownBody` / `status: 'invalid'` on the Pull Request data and
+   calls `GitProvider.managePostPullRequestComment(checkOnly)` **before** throwing. A red job with
+   no comment on the very Pull Request that has to be fixed is not an acceptable outcome.
 8. **A promotion is never closed before its replacement exists.** `promotion:create` closes the
    superseded Pull Requests only after the new one has been created, so a failure while
    cherry-picking cannot leave a pipeline step with no promotion open.

@@ -6,6 +6,7 @@
 - A configuration file left unreadable while a command runs (git conflict markers in `config/.sfdx-hardis.yml`) no longer crashes it: the configuration read earlier during the command is used, with a warning naming the file to fix.
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a cherry-pick conflict can now be answered once for the whole promotion, and the coding agent prompt asks for a commit message explaining how each conflict was solved.
 - When a Pull Request cannot be created automatically, sfdx-hardis now says what the git provider answered and gives a link to the provider's own creation form, with the branches, the title and the description already filled in.
+- A promotion Pull Request stopped because its branch still holds git conflict markers now says so in its validation comment, instead of failing the job with no comment at all.
 
 ## [8.7.0] 2026-09-08
 

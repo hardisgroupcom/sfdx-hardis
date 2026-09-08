@@ -2739,6 +2739,8 @@
   "promotionBranchTargetMismatch": "Promotion branch {{branch}} is named for target {{expected}} but its Pull Request targets {{actual}}: check the Pull Request target before merging",
   "promotionBranchWithoutDeclaredScope": "Branch {{branch}} is named like a promotion branch, but its Pull Request description declares no {{key}}: it is treated as an ordinary feature branch",
   "promotionConflictMarkersFound": "Promotion branch {{branch}} still contains git conflict markers in {{count}} file(s): {{files}}. Solve them on the branch (by hand or with the coding agent prompt saved by hardis:project:promotion:create), commit and push before this Pull Request can be deployed",
+  "promotionConflictMarkersPrComment": "Nothing was deployed: the promotion branch `{{branch}}` still contains git conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) in {{count}} file(s). Solve them on the branch, by hand or with the prompt for a coding agent embedded in this Pull Request description (also saved in `hardis-report/`), then commit and push: the job runs again from there.",
+  "promotionConflictMarkersPrTitle": "Git conflict markers in the promotion branch",
   "promotionCreateAborted": "Promotion stopped: the promotion branch has been deleted and nothing was pushed",
   "promotionCreateAddedReportsToGitIgnore": "Added \"{{entry}}\" to {{file}}: sfdx-hardis writes its reports inside the repository, and assembling a promotion branch needs a clean git tree. Commit that line with your next change",
   "promotionCreateAgentRequiresPullRequests": "--pull-requests is required in agent mode. Pull Requests waiting for promotion: {{available}}",

@@ -11,6 +11,7 @@ import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { TicketProvider } from '../ticketProvider/index.js';
 import { which } from './whichUtils.js';
 import { generateReportPath, uxLogTableWithReport } from './filesUtils.js';
+import { getPullRequestData, setPullRequestData } from './gitUtils.js';
 import { CONSTANTS, getConfig, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import {
@@ -1121,7 +1122,7 @@ export async function listFilesWithConflictMarkers(commandThis: any): Promise<st
  * committed conflict markers are still there. No provider call and no git call unless
  * enablePromotionBranches is set and the Pull Request is a promotion one.
  */
-export async function assertNoPromotionConflictMarkers(commandThis: any, config: any): Promise<void> {
+export async function assertNoPromotionConflictMarkers(commandThis: any, config: any, checkOnly = true): Promise<void> {
   if (getPromotionBranchConfig(config).enabled !== true) {
     return;
   }
@@ -1130,13 +1131,32 @@ export async function assertNoPromotionConflictMarkers(commandThis: any, config:
     return;
   }
   const files = await listFilesWithConflictMarkers(commandThis);
-  if (files.length > 0) {
-    throw new SfError(t('promotionConflictMarkersFound', {
-      branch: prInfo!.sourceBranch,
-      count: files.length,
-      files: files.join(', '),
-    }));
+  if (files.length === 0) {
+    return;
   }
+  const branch = prInfo!.sourceBranch;
+  // The job stops before deploying anything, so nothing else would ever post a comment: the
+  // reviewer would see a red job and no reason for it, on the very Pull Request that has to be
+  // fixed. Say it where they are looking.
+  const markdownBody = [
+    t('promotionConflictMarkersPrComment', { branch, count: files.length }),
+    '',
+    ...files.map((file) => `- \`${file}\``),
+  ].join('\n');
+  const prData = Object.assign(getPullRequestData(), {
+    title: t('promotionConflictMarkersPrTitle'),
+    messageKey: checkOnly === true ? 'deployment-check' : 'deployment',
+    deployErrorsMarkdownBody: markdownBody,
+    deployStatus: 'invalid',
+    status: 'invalid',
+  });
+  setPullRequestData(prData);
+  await GitProvider.managePostPullRequestComment(checkOnly);
+  throw new SfError(t('promotionConflictMarkersFound', {
+    branch,
+    count: files.length,
+    files: files.join(', '),
+  }));
 }
 
 /**

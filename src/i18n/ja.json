@@ -2733,6 +2733,8 @@
   "promotionBranchTargetMismatch": "プロモーションブランチ {{branch}} の名前はターゲット {{expected}} を示していますが、その Pull Request は {{actual}} を対象としています: merge する前に Pull Request のターゲットを確認してください",
   "promotionBranchWithoutDeclaredScope": "ブランチ {{branch}} はプロモーションブランチの命名規則に一致しますが、Pull Request の説明に {{key}} が宣言されていないため、通常の feature branch として扱います",
   "promotionConflictMarkersFound": "プロモーションブランチ {{branch}} には、まだ {{count}} 個のファイルに git の競合マーカーが残っています: {{files}}。この Pull Request をデプロイする前に、ブランチ上で解決し (手動または hardis:project:promotion:create が保存したコーディングエージェント用プロンプトを使用)、commit して push してください",
+  "promotionConflictMarkersPrComment": "何もデプロイされていません: プロモーションブランチ `{{branch}}` にはまだ {{count}} 個のファイルに git の競合マーカー（`<<<<<<<`、`=======`、`>>>>>>>`）が残っています。この Pull Request の説明に埋め込まれたコーディングエージェント用のプロンプト（`hardis-report/` にも保存されています）を使うか手動でブランチ上で解決し、commit して push してください。ジョブはそこから再実行されます。",
+  "promotionConflictMarkersPrTitle": "プロモーションブランチに git の競合マーカーが残っています",
   "promotionCreateAborted": "プロモーションを中止しました: プロモーションブランチは削除され、何も push されていません",
   "promotionCreateAddedReportsToGitIgnore": "{{file}} に \"{{entry}}\" を追加しました: sfdx-hardis はレポートをリポジトリ内に書き込みますが、プロモーションブランチの作成にはクリーンな git ツリーが必要です。次の変更と一緒にこの行をコミットしてください",
   "promotionCreateAgentRequiresPullRequests": "エージェントモードでは --pull-requests が必須です。プロモーション待ちの Pull Request: {{available}}",

@@ -2643,6 +2643,8 @@
   "prNotFoundCannotLink": "Não foi possível encontrar um pull request para a branch atual. Forneça um valor explícito para --pr-id.",
   "prNotFoundEnterIdOrEmpty": "Não foi possível detectar um PR para esta branch. Insira um ID de PR manualmente ou deixe em branco para usar o rascunho",
   "prNotFoundForCurrentBranch": "Não foi possível encontrar um pull request para a branch atual",
+  "promotionConflictMarkersPrComment": "Nada foi implantado: a branch de promoção `{{branch}}` ainda contém marcadores de conflito git (`<<<<<<<`, `=======`, `>>>>>>>`) em {{count}} arquivo(s). Resolva-os na branch, manualmente ou com o prompt para um agente de código incluído na descrição desta Pull Request (também salvo em `hardis-report/`), depois faça commit e push: o job roda novamente a partir daí.",
+  "promotionConflictMarkersPrTitle": "Marcadores de conflito git na branch de promoção",
   "promotionCreateConflictCommitAll": "Fazer commit desta User Story e de todos os conflitos seguintes com os marcadores de conflito, sem perguntar novamente",
   "promotionCreateConflictRemembered": "Aplicando o tratamento do conflito escolhido antes: {{choice}}",
   "promotionCreatePullRequestCreateLinkNoBody": "Crie-a aqui, as branches e o título já estão preenchidos: {{url}} - a descrição é longa demais para um link, cole-a de {{file}} (o bloco promotionPullRequests é obrigatório)",

@@ -539,8 +539,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // so this does not run the branch history scan the kill switch is meant to avoid.
     await applyPromotionInheritedBehaviors(this.checkOnly);
     // A promotion branch may carry conflicts committed on purpose (--on-conflict
-    // commit-with-markers): stop here while the markers are still in the sources
-    await assertNoPromotionConflictMarkers(this, this.configInfo);
+    // commit-with-markers): stop here while the markers are still in the sources, after saying so
+    // in a Pull Request comment (nothing is deployed, so no other comment would ever be posted)
+    await assertNoPromotionConflictMarkers(this, this.configInfo, this.checkOnly);
 
     await this.initTestLevelAndTestClasses(flags.testlevel, flags.runtests);
 

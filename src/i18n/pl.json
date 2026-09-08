@@ -2735,6 +2735,8 @@
   "promotionBranchTargetMismatch": "Promotion branch {{branch}} ma w nazwie cel {{expected}}, ale jego Pull Request kieruje do {{actual}}: przed merge należy sprawdzić cel Pull Request",
   "promotionBranchWithoutDeclaredScope": "Branch {{branch}} ma nazwę promotion branch, ale opis jego Pull Request nie deklaruje {{key}}: jest traktowany jak zwykły feature branch",
   "promotionConflictMarkersFound": "Branch promocyjny {{branch}} nadal zawiera znaczniki konfliktu git w {{count}} plikach: {{files}}. Należy je rozwiązać na branchu (ręcznie lub przy użyciu promptu dla agenta kodującego zapisanego przez hardis:project:promotion:create), wykonać commit i push, zanim ten Pull Request będzie mógł zostać wdrożony",
+  "promotionConflictMarkersPrComment": "Nic nie zostało wdrożone: branch promocji `{{branch}}` nadal zawiera znaczniki konfliktu git (`<<<<<<<`, `=======`, `>>>>>>>`) w {{count}} pliku/plikach. Należy rozwiązać je na branchu, ręcznie lub przy pomocy promptu dla agenta kodującego zawartego w opisie tego Pull Request (zapisanego również w `hardis-report/`), a następnie zacommitować i wypchnąć: zadanie zostanie uruchomione ponownie.",
+  "promotionConflictMarkersPrTitle": "Znaczniki konfliktu git w branchu promocji",
   "promotionCreateAborted": "Promocja zatrzymana: promotion branch został usunięty i nic nie zostało wypchnięte",
   "promotionCreateAddedReportsToGitIgnore": "Dodano \"{{entry}}\" do {{file}}: sfdx-hardis zapisuje raporty wewnątrz repozytorium, a utworzenie branchu promocyjnego wymaga czystego drzewa git. Nalezy zacommitowac tę linię wraz z następną zmianą",
   "promotionCreateAgentRequiresPullRequests": "--pull-requests jest wymagane w trybie agenta. Pull Requesty oczekujące na promocję: {{available}}",
