@@ -183,6 +183,20 @@ export abstract class GitProviderRoot {
     return `${poweredBy} from job [${name}](${url})_`;
   }
 
+  /**
+   * The job part of the message key that identifies an sfdx-hardis comment, so a re-run updates the
+   * comment it wrote instead of adding a second one.
+   *
+   * The key is written into the comment, so an absent job name used to bake the literal `null` or
+   * `undefined` into it. That is not only ugly to read in the page source: a project whose jobs
+   * sometimes carry a job name and sometimes do not would produce two different keys for the same
+   * comment. A stable placeholder keeps the key comparable in both cases.
+   */
+  protected jobMessageKeySegment(jobName: string | null | undefined): string {
+    const name = (jobName ?? '').toString().trim();
+    return name === '' || name === 'null' || name === 'undefined' ? 'job' : name;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
     uxLog("warning", this, c.yellow(`[GitProvider] createPullRequest is not yet implemented on ${this.getLabel()}`));

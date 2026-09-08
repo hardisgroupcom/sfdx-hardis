@@ -51,3 +51,28 @@ describe('GitProviderRoot.buildPoweredByFooter', () => {
     expect(provider.footer(7 as any, 'https://bitbucket.org/x/y/pipelines/results/7')).to.include('from job [7](');
   });
 });
+
+// The same absent job name used to be baked into the message key that identifies the comment, so a
+// project whose jobs sometimes carry a name and sometimes do not produced two different keys for
+// what is the same comment.
+describe('GitProviderRoot.jobMessageKeySegment', () => {
+  class TestProvider extends GitProviderRoot {
+    public getLabel(): string {
+      return 'test';
+    }
+    public segment(name: any): string {
+      return (this as any).jobMessageKeySegment(name);
+    }
+  }
+  const provider = new TestProvider();
+
+  it('keeps a real job name', () => {
+    expect(provider.segment('deploy-uat')).to.equal('deploy-uat');
+  });
+
+  it('falls back to a stable placeholder when there is no job name', () => {
+    for (const value of [null, undefined, '', '   ', 'null', 'undefined']) {
+      expect(provider.segment(value), `segment for ${JSON.stringify(value)}`).to.equal('job');
+    }
+  });
+});

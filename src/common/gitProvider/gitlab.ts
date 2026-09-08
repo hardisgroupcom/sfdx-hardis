@@ -365,7 +365,7 @@ export class GitlabProvider extends GitProviderRoot {
     const gitlabCiJobName = process.env.CI_JOB_NAME;
     const gitlabCIJobUrl = process.env.CI_JOB_URL;
     // Build note message
-    const messageKey = prMessage.messageKey + "-" + gitlabCiJobName + "-" + mergeRequestId;
+    const messageKey = prMessage.messageKey + "-" + this.jobMessageKeySegment(gitlabCiJobName) + "-" + mergeRequestId;
     let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
 ${this.buildPoweredByFooter(gitlabCiJobName, gitlabCIJobUrl)}
