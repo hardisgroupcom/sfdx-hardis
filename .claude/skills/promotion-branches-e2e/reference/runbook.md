@@ -449,6 +449,23 @@ pending manual checkbox per org branch.
 - **A promotion Pull Request number is not a candidate.** Promotions are vehicles, so `promote
   <promotion number>` is refused. Select one of the stories it carried: since the vehicle merge is
   opened up into the commits it brought in, each of those stories is a candidate row of its own.
+- **`yarn compile`, not `yarn dev`.** The diagram and pipeline scripts require the compiled modules
+  one by one (`out/utils/pipeline/promotionBranchUtils.js`, `out/pipeline-data-provider.js`), which
+  is the tsc layout. A webpack build leaves bundles they cannot require.
+- **Both release-notes runs write the same file.** `doc:release-notes` overwrites
+  `hardis-report/release-notes/main-<date>/release-notes-main-<date>.md`, so the plain run has to be
+  copied aside before the `--include-promotions` one runs, or the comparison reads the same file
+  twice and the vehicles look like a leak.
+- **An ad-hoc `git add -A` after any CLI run commits `hardis-report/`.** From then on the tree is
+  dirty on every branch that has it, and `promotion:create` refuses to run. Add only the files the
+  case is about, or `git rm -r --cached hardis-report` to undo it.
+- **`gh pr edit --body-file` can fail** on the classic-projects GraphQL deprecation, silently
+  leaving the description unchanged. Use `gh api -X PATCH "repos/$REPO/pulls/<N>" --input <file>`.
+- **On GitHub, `gh pr create` is a real second path.** When the provider refuses to open the Pull
+  Request, sfdx-hardis falls back to the GitHub CLI, which reads the local remote and not
+  `GITHUB_REPOSITORY`. To reach the "creation refused" case, take the GitHub CLI off `PATH` as well.
+- **Git will not make an octopus merge out of sides it can fast-forward.** `git merge A B` where A
+  is a descendant of HEAD produces a two-parent merge. The three-parent guard stays a unit test.
 - **A candidate row is a User Story, not a promotion window.** Runs written before the vehicle
   merges were opened up expected one row labelled `#3, #1` for a whole `integration -> uat` sync,
   and read "selecting either takes both" as correct. It is not: promoting one story must carry that
