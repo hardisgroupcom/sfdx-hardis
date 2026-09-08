@@ -365,9 +365,11 @@ export async function listPromotionCandidates(
   const expandedGroups = gitProviderForExpansion
     ? await expandPromotionsInGroups(groups, (id) => gitProviderForExpansion.getPullRequestById(id), commandThis)
     : groups;
-  const candidates = dropVehiclePullRequests(expandedGroups, majorBranchNames)
-    .filter((group) => group.commit.hash !== mergeBase)
-    .map((group) => toCandidate(group));
+  const candidates = dropOfferedTwice(
+    dropVehiclePullRequests(expandedGroups, majorBranchNames)
+      .filter((group) => group.commit.hash !== mergeBase)
+      .map((group) => toCandidate(group)),
+  );
   // A promotion carries cherry-picked commits: merging it into the target branch does not move
   // the merge base, so its stories keep showing up here. Say which ones are already on their way.
   // A promotion carrying one of these candidates cannot predate the oldest of them, which bounds
@@ -378,6 +380,32 @@ export async function listPromotionCandidates(
     candidates,
     await listAlreadyPromotedPullRequests(sourceBranch, targetBranch, minDate, commandThis, supersededPromotions),
   );
+}
+
+/**
+ * A User Story reaches a branch twice when a promotion carried it and an ordinary sync merge of
+ * the source branch delivered the original commit afterwards: the cherry-pick and the merge are
+ * two commits inside the same window, so the same Pull Request is offered on two rows. Only the
+ * first is kept, which is also the one the command already cherry-picks, so nothing changes but
+ * the table a release manager reads.
+ *
+ * Only an exact repeat of the same set of numbers is dropped. A row that groups several Pull
+ * Requests (a back-merge, an octopus merge) is never allowed to hide the finer rows of the stories
+ * it holds, and a row with no number at all is a commit of its own and always stays.
+ */
+export function dropOfferedTwice(candidates: PromotionCandidate[]): PromotionCandidate[] {
+  const seen = new Set<string>();
+  return candidates.filter((candidate) => {
+    if (candidate.pullRequestNumbers.length === 0) {
+      return true;
+    }
+    const key = [...candidate.pullRequestNumbers].sort((a, b) => a - b).join(',');
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
 
 /**
@@ -1627,7 +1655,9 @@ async function createPullRequestWithGhCli(
   descriptionFile: string,
 ): Promise<string | null> {
   const remoteUrl = (await git().remote(['get-url', 'origin'])) || '';
-  if (!String(remoteUrl).includes('github.com') || !(await which('gh'))) {
+  // nothrow: which() rejects when the binary is missing, and this is a fallback, not a
+  // requirement: a machine with no GitHub CLI must still reach the manual creation link
+  if (!String(remoteUrl).includes('github.com') || !(await which('gh', { nothrow: true }))) {
     return null;
   }
   const bodyFile = descriptionFile.replace(/\.md$/, '.body.md');

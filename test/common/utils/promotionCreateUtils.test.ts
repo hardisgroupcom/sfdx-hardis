@@ -11,6 +11,7 @@ import {
   computePromotionCounter,
   countsAsAlreadyPromoted,
   declaredPullRequestNumbers,
+  dropOfferedTwice,
   dropVehiclePullRequests,
   excludeAlreadyPromotedCandidates,
   expandPromotionsInGroups,
@@ -86,6 +87,42 @@ describe('selectCandidatesByPullRequestNumbers()', () => {
     const noPr = toCandidate(group('ddd4444', [], 'chore: direct commit on uat'));
     expect(noPr.pullRequestNumbers).to.deep.equal([]);
     expect(noPr.label).to.equal('chore: direct commit on uat (dev) [ddd4444]');
+  });
+});
+
+describe('dropOfferedTwice()', () => {
+  it('offers a User Story once when a promotion and a sync merge both brought it in', () => {
+    // #482 reached uat through a promotion (the cherry-pick), then again through the ordinary
+    // merge of integration, which delivered the original commit: two rows for one story
+    const candidates = [
+      toCandidate(group('aaa1111', [{ id: 482, title: 'Story A' }])),
+      toCandidate(group('bbb2222', [{ id: 487, title: 'Story B' }])),
+      toCandidate(group('ccc3333', [{ id: 482, title: 'Story A' }])),
+    ];
+    const kept = dropOfferedTwice(candidates);
+    expect(kept.map((candidate) => candidate.group.commit.hash)).to.deep.equal(['aaa1111', 'bbb2222']);
+  });
+
+  it('keeps a row that groups several Pull Requests next to the rows of those stories', () => {
+    const candidates = [
+      toCandidate(group('aaa1111', [{ id: 482, title: 'Story A' }])),
+      toCandidate(group('bbb2222', [
+        { id: 482, title: 'Story A' },
+        { id: 487, title: 'Story B' },
+      ])),
+    ];
+    expect(dropOfferedTwice(candidates).map((candidate) => candidate.group.commit.hash)).to.deep.equal([
+      'aaa1111',
+      'bbb2222',
+    ]);
+  });
+
+  it('keeps every commit that carries no Pull Request number', () => {
+    const candidates = [
+      toCandidate(group('aaa1111', [], 'chore: one direct commit')),
+      toCandidate(group('bbb2222', [], 'chore: another direct commit')),
+    ];
+    expect(dropOfferedTwice(candidates)).to.have.length(2);
   });
 });
 
