@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.7.0] 2026-09-08
+
 - [Promotion branches (experimental)](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/): ship a subset of the approved User Stories of a major branch with a `promotion/<source>/<target>/<date>-<counter>` branch created by [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) that declares the Pull Requests it carries (`enablePromotionBranches`), so their deployment actions, Apex test classes, custom behaviors and release notes follow them.
   - [hardis:project:promotion:list-candidates](https://sfdx-hardis.cloudity.com/hardis/project/promotion/list-candidates/): **new command** listing the User Stories waiting for promotion from a major branch to the next one, without creating anything, so agents and automation can choose what a promotion will carry.
   - Promotion branches: `allowedPromotionSteps` declares the source and target branches a release manager can create a promotion between (ex: only from uat to preprod). It is required to use the feature, and is applied by [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) and by the DevOps Pipeline.
