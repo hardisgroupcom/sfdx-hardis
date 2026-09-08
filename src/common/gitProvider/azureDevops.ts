@@ -12,6 +12,7 @@ import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
+import { getCachedPullRequestDescription, repositoryKeyFromRemoteUrl, setCachedPullRequestDescription } from "../cache/pullRequestDescriptionCache.js";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -875,16 +876,48 @@ ${getBannerMarkdownAndLink()}
     if (listedDescription.length < AzureDevopsProvider.LIST_DESCRIPTION_TRUNCATION_LENGTH) {
       return pullRequest;
     }
+    // One API call per Pull Request whose description was cut adds up fast on a repository with a
+    // long history, and the description of a merged or abandoned Pull Request no longer moves. The
+    // cache is keyed on the state seen right now, so a reopened Pull Request is read again.
+    const repositoryKey = await this.pullRequestCacheRepositoryKey();
+    const cached = await getCachedPullRequestDescription(
+      "azure",
+      repositoryKey,
+      pullRequest.pullRequestId || 0,
+      pullRequest.status,
+    );
+    if (cached !== null) {
+      return Object.assign({}, pullRequest, { description: cached });
+    }
     try {
       const fullPullRequest = await azureGitApi.getPullRequestById(pullRequest.pullRequestId);
       const fullDescription = fullPullRequest?.description || "";
       if (fullDescription.length > listedDescription.length) {
+        await setCachedPullRequestDescription(
+          "azure",
+          repositoryKey,
+          pullRequest.pullRequestId || 0,
+          pullRequest.status,
+          fullDescription,
+        );
         return Object.assign({}, pullRequest, { description: fullDescription });
       }
     } catch (e) {
       uxLog("warning", this, c.yellow(`[Azure Integration] Unable to read the full description of Pull Request ${pullRequest.pullRequestId}: ${(e as Error).message}`));
     }
     return pullRequest;
+  }
+
+  // Identifies the repository the cached descriptions belong to, from the git remote of the working
+  // copy: that is the identifier vscode-sfdx-hardis agrees on, so the two share one cache. Read
+  // once per process, since it costs a git call.
+  private cachedRepositoryKey: string | null = null;
+
+  private async pullRequestCacheRepositoryKey(): Promise<string> {
+    if (this.cachedRepositoryKey === null) {
+      this.cachedRepositoryKey = repositoryKeyFromRemoteUrl((await getGitRepoUrl()) || "");
+    }
+    return this.cachedRepositoryKey;
   }
 
   private completePullRequestInfo(prData: GitPullRequest): CommonPullRequestInfo {

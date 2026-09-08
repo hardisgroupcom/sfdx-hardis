@@ -241,3 +241,32 @@ ___
 - A promotion is always assembled **from a major branch**: you cannot pass a promotion branch as `--source-branch`. A promotion carrying another promotion is fine, and the deployment jobs follow the declarations down as many levels as there are.
 - Custom behaviors are inherited on the promotion Pull Request only. On the next `preprod -> main` promotion, keywords are read from that Pull Request's description, like for any promotion.
 - `sf hardis:work:save` warns when run on a promotion branch: its cleaning and manifest updates are meant for User Story branches.
+
+___
+
+## Pull Request description cache
+
+Azure DevOps truncates the description of a Pull Request returned by its **list** API at 400 characters, with no marker saying so. The `promotionPullRequests` declaration of a promotion branch sits below the navigation block and the introduction, so on a promotion carrying more than a story or two it falls past that cut: sfdx-hardis and the VS Code extension both have to read each such Pull Request again through the single Pull Request API, which returns the whole description.
+
+That is one extra API call per Pull Request with a long description, on every job and every refresh of the DevOps Pipeline. On a repository with a long history it dominates the run.
+
+The description of a Pull Request that is **merged or abandoned** no longer moves, so it is cached locally:
+
+| | |
+|---|---|
+| Where | `~/.sfdx/sfdx-hardis-pr-cache/<provider>__<repository>.json`, outside the repository so it is never committed |
+| Key | the normalised git remote URL of the working copy, which is what the CLI and the extension agree on |
+| What | the full description, the terminal state it was in, and when it was cached |
+| Shared | a cache warmed by a CI job or a local command is read by the VS Code extension, and the other way round |
+
+The rules that keep it honest:
+
+- **An open Pull Request is never cached**, in either direction: its description is exactly what people are still editing.
+- An entry is used only when the Pull Request is **still in the state it was cached in**. Bitbucket reopens a declined Pull Request and Azure DevOps reactivates an abandoned one, so the state seen right now always wins.
+- An entry **expires after 90 days**, because a merged description can still be edited by hand.
+- A repository keeps at most **5000 entries**, the oldest going first.
+- The file is merged and rewritten atomically, so a CI job and the extension writing at the same time cannot lose each other's entries.
+
+Set `NO_CACHE=true` or `SFDX_HARDIS_NO_PR_CACHE=true` to bypass it entirely, and delete `~/.sfdx/sfdx-hardis-pr-cache/` to start again.
+
+> Measured on a four level pipeline of 23 Pull Requests: `sf hardis:project:promotion:list-candidates` went from **74.6 s** to **40.6 s** on the second run, with identical output. The gain grows with the number of Pull Requests that carry a long description.
