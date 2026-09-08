@@ -252,12 +252,12 @@ That is one extra API call per Pull Request with a long description, on every jo
 
 The description of a Pull Request that is **merged or abandoned** no longer moves, so it is cached locally:
 
-| | |
-|---|---|
-| Where | `~/.sfdx/sfdx-hardis-pr-cache/<provider>__<repository>.json`, outside the repository so it is never committed |
-| Key | the normalized git remote URL of the working copy, which is what the CLI and the extension agree on |
-| What | the full description, the terminal state it was in, and when it was cached |
-| Shared | a cache warmed by a CI job or a local command is read by the VS Code extension, and the other way round |
+|        |                                                                                                               |
+|--------|---------------------------------------------------------------------------------------------------------------|
+| Where  | `~/.sfdx/sfdx-hardis-pr-cache/<provider>__<repository>.json`, outside the repository so it is never committed |
+| Key    | the normalized git remote URL of the working copy, which is what the CLI and the extension agree on           |
+| What   | the full description, the terminal state it was in, and when it was cached                                    |
+| Shared | a cache warmed by a CI job or a local command is read by the VS Code extension, and the other way round       |
 
 The rules that keep it honest:
 

@@ -26,14 +26,14 @@ ___
 
 ## The promotions
 
-| Promotion | Merge request | Branch                                   | Carries         | Outcome                                                  |
-|-----------|---------------|------------------------------------------|-----------------|-----------------------------------------------------------|
-| P1        | !7            | `promotion/integration/uat/2026-09-07-1`  | !1, !3         | merged, deployed to uat                                    |
-| P2        | !8            | `promotion/uat/preprod/2026-09-07-1`      | !4             | merged, deployed to preprod                                |
-| P3        | !9            | `promotion/uat/preprod/2026-09-07-2`      | !3, !1         | the merge commit of P1, one level of nesting               |
-| P4        | !10           | `promotion/preprod/main/2026-09-07-1`     | !4, !3, !1, !6 | merged, deployed to main, two levels of nesting            |
-| P5        | !14           | `promotion/integration/uat/2026-09-07-2`  | !13            | assembled with conflict markers on purpose, then closed    |
-| P6        | !17           | `promotion/integration/uat/2026-09-07-3`  | !13            | superseded !14 and closed it                               |
+| Promotion | Merge request | Branch                                   | Carries        | Outcome                                                 |
+|-----------|---------------|------------------------------------------|----------------|---------------------------------------------------------|
+| P1        | !7            | `promotion/integration/uat/2026-09-07-1` | !1, !3         | merged, deployed to uat                                 |
+| P2        | !8            | `promotion/uat/preprod/2026-09-07-1`     | !4             | merged, deployed to preprod                             |
+| P3        | !9            | `promotion/uat/preprod/2026-09-07-2`     | !3, !1         | the merge commit of P1, one level of nesting            |
+| P4        | !10           | `promotion/preprod/main/2026-09-07-1`    | !4, !3, !1, !6 | merged, deployed to main, two levels of nesting         |
+| P5        | !14           | `promotion/integration/uat/2026-09-07-2` | !13            | assembled with conflict markers on purpose, then closed |
+| P6        | !17           | `promotion/integration/uat/2026-09-07-3` | !13            | superseded !14 and closed it                            |
 
 ___
 
@@ -121,47 +121,47 @@ ___
 
 ## Test groups
 
-| Group                                     | Expected                                                                       | Result                                                                                        |
-|-------------------------------------------|--------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| Provider detection                        | GitLab picked from `CI_SFDX_HARDIS_GITLAB_TOKEN`, project from `CI_PROJECT_ID`  | OK on every job                                                                                     |
-| Feature branch validation and deployment  | `Pull Request scope: 1 Pull Request(s) (#N)` and nothing else                   | OK for !1..!6                                                                                       |
-| Two yaml blocks in a description          | both are read                                                                   | OK on !1: `PromoE2EAlphaTest` and `PromoE2EBetaTest`                                                |
-| `NO_DELTA`                                | `Delta deployment has been disabled`, `Deployment mode: FULL`                   | OK on !2                                                                                            |
-| `PURGE_FLOW_VERSIONS`                     | extra pre-deploy action, skipped in validation, run in deployment               | OK on !3                                                                                            |
-| Manual actions in a validation job        | `Skipping ...: deployment-only action`                                          | OK everywhere                                                                                       |
-| Promotion merge request creation          | branch pushed, merge request opened with the declaration and the carried table   | OK: !7, !8, !9, !10, !14, !17                                                                       |
-| Promotion validation and deployment       | scope = declared + the promotion itself                                         | OK: !7 (`#1, #3, #7`), !8 (`#4, #8`), !9 (`#3, #1, #9`), !10 (`#4, #3, #1, #6, #10`)                 |
-| Keyword inheritance                       | only the keywords of the carried stories                                        | OK: !7 inherits `PURGE_FLOW_VERSIONS` and not `NO_DELTA`; !10 inherits both                          |
-| Test classes of a promotion               | union of the carried merge requests, `RunSpecifiedTests`                        | OK                                                                                                  |
-| Go-live branch content                    | the four static resources and the four action files                             | OK on !10                                                                                           |
-| Deployment action state                   | the note lands on the **story** merge request, one column per org branch        | OK                                                                                                  |
-| Promotion carrying a promotion            | the stories of the inner promotion are in the scope                             | OK on !9 and !10                                                                                    |
-| Grouped merge commit                      | the numbers nobody asked for are named **before** cherry-picking, and declared  | OK on !9 and !10                                                                                    |
-| Retrofit `main` -> `integration`          | the promotion is expanded, then every already shipped story is named            | OK on !11: `Promotion Pull Request 10 adds 4 carried Pull Request(s)`, then four `already deployed`  |
-| Release notes of the go-live              | the User Stories, not the vehicles                                              | OK: 4 merge requests (!1, !3, !4, !6); 5 with `--include-promotions`, !10 added                      |
-| Already promoted                          | marked in the table, `--include-already-promoted` named, no branch created      | OK                                                                                                  |
-| Empty cherry-pick                         | `Nothing to cherry-pick`, no branch, exit 0                                     | OK                                                                                                  |
-| Empty cherry-pick, dirty report folder    | same result with `hardis-report/` untracked                                     | OK                                                                                                  |
-| Conflict, agent default                   | promotion undone, both files named                                              | OK on !13: `NOTES.md, force-app/main/default/labels/CustomLabels.labels-meta.xml`                    |
-| Conflict outside `force-app`              | the gate still catches it                                                       | OK, `NOTES.md` named                                                                                |
-| Conflict, kept                            | merge request created, prompt file written and embedded                         | OK: !14                                                                                             |
-| Marker guard                              | the job fails naming the files                                                  | OK: `still contains git conflict markers in 2 file(s)`                                              |
-| Marker guard, solved                      | the job passes                                                                  | OK, scope `#13, #14`, and the merge-ref wait did its job on the first attempt                       |
-| Committed conflict prompt report          | the gate ignores it                                                             | OK                                                                                                  |
-| Feature off                               | one informational line, scope = the merge request alone                         | OK on !14                                                                                           |
-| Hand-named branch                         | warning, treated as a feature branch, declaration ignored                       | OK on !15                                                                                           |
-| Retargeted promotion                      | warning naming the mismatch, scope = the merge request alone                    | OK on !16                                                                                           |
-| Unreadable declaration                    | warning and skip, not a failure                                                 | OK on !17: `Pull Request #9999 ... was not found: skipped`                                          |
-| Sync merge inside a story                 | the candidate lists the story only                                              | OK: !18 alone, !19 on its own row                                                                   |
-| Branch merged twice                       | listed once, never with a `-` row                                               | OK: !19 and !20, one row each                                                                       |
-| Supersede an open promotion               | the open one is closed, its stories offered again with no mark                  | OK: !17 closed !14, state `closed`                                                                  |
-| Restricted `allowedPromotionSteps`        | a forbidden source and a forbidden target are both refused                      | OK, both name the allowed steps                                                                     |
-| `allowedPromotionSteps` not declared      | the command stops, asking for the list and linking to the doc                   | OK                                                                                                  |
-| Full merge after a partial promotion      | already promoted stories skipped, the never promoted one arrives                | OK on !21, see below                                                                                |
-| `promotion:list-candidates`               | the candidate table without assembling anything                                 | OK from `uat`                                                                                       |
-| Pull Request comment audit                | consistent comments, navigation and action state                                | **found three defects**, all fixed, see above                                                       |
-| Single place in the diagram               | each number in one branch only                                                  | OK, see below                                                                                       |
-| Flag-off regression                       | `TOTAL DIFFERING LINES: 0`                                                      | OK                                                                                                  |
+| Group                                    | Expected                                                                       | Result                                                                                              |
+|------------------------------------------|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| Provider detection                       | GitLab picked from `CI_SFDX_HARDIS_GITLAB_TOKEN`, project from `CI_PROJECT_ID` | OK on every job                                                                                     |
+| Feature branch validation and deployment | `Pull Request scope: 1 Pull Request(s) (#N)` and nothing else                  | OK for !1..!6                                                                                       |
+| Two yaml blocks in a description         | both are read                                                                  | OK on !1: `PromoE2EAlphaTest` and `PromoE2EBetaTest`                                                |
+| `NO_DELTA`                               | `Delta deployment has been disabled`, `Deployment mode: FULL`                  | OK on !2                                                                                            |
+| `PURGE_FLOW_VERSIONS`                    | extra pre-deploy action, skipped in validation, run in deployment              | OK on !3                                                                                            |
+| Manual actions in a validation job       | `Skipping ...: deployment-only action`                                         | OK everywhere                                                                                       |
+| Promotion merge request creation         | branch pushed, merge request opened with the declaration and the carried table | OK: !7, !8, !9, !10, !14, !17                                                                       |
+| Promotion validation and deployment      | scope = declared + the promotion itself                                        | OK: !7 (`#1, #3, #7`), !8 (`#4, #8`), !9 (`#3, #1, #9`), !10 (`#4, #3, #1, #6, #10`)                |
+| Keyword inheritance                      | only the keywords of the carried stories                                       | OK: !7 inherits `PURGE_FLOW_VERSIONS` and not `NO_DELTA`; !10 inherits both                         |
+| Test classes of a promotion              | union of the carried merge requests, `RunSpecifiedTests`                       | OK                                                                                                  |
+| Go-live branch content                   | the four static resources and the four action files                            | OK on !10                                                                                           |
+| Deployment action state                  | the note lands on the **story** merge request, one column per org branch       | OK                                                                                                  |
+| Promotion carrying a promotion           | the stories of the inner promotion are in the scope                            | OK on !9 and !10                                                                                    |
+| Grouped merge commit                     | the numbers nobody asked for are named **before** cherry-picking, and declared | OK on !9 and !10                                                                                    |
+| Retrofit `main` -> `integration`         | the promotion is expanded, then every already shipped story is named           | OK on !11: `Promotion Pull Request 10 adds 4 carried Pull Request(s)`, then four `already deployed` |
+| Release notes of the go-live             | the User Stories, not the vehicles                                             | OK: 4 merge requests (!1, !3, !4, !6); 5 with `--include-promotions`, !10 added                     |
+| Already promoted                         | marked in the table, `--include-already-promoted` named, no branch created     | OK                                                                                                  |
+| Empty cherry-pick                        | `Nothing to cherry-pick`, no branch, exit 0                                    | OK                                                                                                  |
+| Empty cherry-pick, dirty report folder   | same result with `hardis-report/` untracked                                    | OK                                                                                                  |
+| Conflict, agent default                  | promotion undone, both files named                                             | OK on !13: `NOTES.md, force-app/main/default/labels/CustomLabels.labels-meta.xml`                   |
+| Conflict outside `force-app`             | the gate still catches it                                                      | OK, `NOTES.md` named                                                                                |
+| Conflict, kept                           | merge request created, prompt file written and embedded                        | OK: !14                                                                                             |
+| Marker guard                             | the job fails naming the files                                                 | OK: `still contains git conflict markers in 2 file(s)`                                              |
+| Marker guard, solved                     | the job passes                                                                 | OK, scope `#13, #14`, and the merge-ref wait did its job on the first attempt                       |
+| Committed conflict prompt report         | the gate ignores it                                                            | OK                                                                                                  |
+| Feature off                              | one informational line, scope = the merge request alone                        | OK on !14                                                                                           |
+| Hand-named branch                        | warning, treated as a feature branch, declaration ignored                      | OK on !15                                                                                           |
+| Retargeted promotion                     | warning naming the mismatch, scope = the merge request alone                   | OK on !16                                                                                           |
+| Unreadable declaration                   | warning and skip, not a failure                                                | OK on !17: `Pull Request #9999 ... was not found: skipped`                                          |
+| Sync merge inside a story                | the candidate lists the story only                                             | OK: !18 alone, !19 on its own row                                                                   |
+| Branch merged twice                      | listed once, never with a `-` row                                              | OK: !19 and !20, one row each                                                                       |
+| Supersede an open promotion              | the open one is closed, its stories offered again with no mark                 | OK: !17 closed !14, state `closed`                                                                  |
+| Restricted `allowedPromotionSteps`       | a forbidden source and a forbidden target are both refused                     | OK, both name the allowed steps                                                                     |
+| `allowedPromotionSteps` not declared     | the command stops, asking for the list and linking to the doc                  | OK                                                                                                  |
+| Full merge after a partial promotion     | already promoted stories skipped, the never promoted one arrives               | OK on !21, see below                                                                                |
+| `promotion:list-candidates`              | the candidate table without assembling anything                                | OK from `uat`                                                                                       |
+| Pull Request comment audit               | consistent comments, navigation and action state                               | **found three defects**, all fixed, see above                                                       |
+| Single place in the diagram              | each number in one branch only                                                 | OK, see below                                                                                       |
+| Flag-off regression                      | `TOTAL DIFFERING LINES: 0`                                                     | OK                                                                                                  |
 
 ### A full major-to-major merge after a partial promotion
 

@@ -31,7 +31,7 @@ not already, so you know what each assertion is protecting.
 | `scripts/ab-run-gitlab.sh`         | The same on GitLab.                                                                                                                                             |
 | `scripts/ab-run-azure.sh`          | The same on Azure DevOps.                                                                                                                                       |
 | `scripts/ab-run-bitbucket.sh`      | The same on Bitbucket Cloud.                                                                                                                                    |
-| `scripts/audit-pr-comments.cjs`    | The Pull Request comment audit, shared by the four providers. Fed by the `dump_pr_comments` of each library.                                                     |
+| `scripts/audit-pr-comments.cjs`    | The Pull Request comment audit, shared by the four providers. Fed by the `dump_pr_comments` of each library.                                                    |
 | `scripts/ab-diff.py`               | Normalises two log folders and diffs them: the flag-off regression proof.                                                                                       |
 
 ## Before starting
