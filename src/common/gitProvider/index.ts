@@ -490,6 +490,12 @@ export abstract class GitProvider {
   }
 
   static prInfoCache: any = null;
+  // Custom behaviors inherited by a promotion Pull Request from the stories it declares
+  // (see promotionBranchUtils.mergeInheritedCustomBehaviors). Null when nothing was inherited.
+  static inheritedCustomBehaviors: Partial<CommonPullRequestInfo['customBehaviors']> | null = null;
+  // The Pull Request the inheritance above was computed for. A process handling more than one
+  // (tests, a long-lived server) must not carry a NO_DELTA from one Pull Request to the next.
+  static inheritedCustomBehaviorsPrId: number | null = null;
 
   static async getPullRequestInfo(options: { useCache: boolean } = { useCache: false }): Promise<CommonPullRequestInfo | null> {
     // Return cached result if available and caching is enabled
@@ -506,6 +512,11 @@ export abstract class GitProvider {
     let prInfo: CommonPullRequestInfo | null = null;
     try {
       prInfo = await gitProvider.getPullRequestInfo();
+      // A promotion Pull Request inherits the custom behaviors of the stories it carries. They are
+      // re-applied on every fresh fetch, so a caller refreshing the cache cannot lose them.
+      if (prInfo && GitProvider.inheritedCustomBehaviors && GitProvider.inheritedCustomBehaviorsPrId === prInfo.idNumber) {
+        prInfo.customBehaviors = Object.assign(prInfo.customBehaviors || {}, GitProvider.inheritedCustomBehaviors);
+      }
       debug("[GitProvider][PR Info] " + JSON.stringify(prInfo, null, 2));
       GitProvider.prInfoCache = prInfo;
     } catch (e) {
@@ -540,6 +551,37 @@ export abstract class GitProvider {
     } catch (e) {
       uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationError', { message: (e as Error).message })));
       return null;
+    }
+  }
+
+  /**
+   * Lists the open Pull Requests targeting a branch. Returns null when the provider cannot answer,
+   * which callers must not read as "there is none".
+   */
+  static async listOpenPullRequests(targetBranch: string): Promise<CommonPullRequestInfo[] | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    try {
+      return await gitProvider.listPullRequests({ status: 'open', targetBranch: targetBranch });
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderClosePullRequestFailed', { number: 0, message: (e as Error).message })));
+      return null;
+    }
+  }
+
+  /** Closes an open Pull Request without merging it. Returns false when the provider refused. */
+  static async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return false;
+    }
+    try {
+      return await gitProvider.closePullRequest(pullRequestNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: (e as Error).message })));
+      return false;
     }
   }
 

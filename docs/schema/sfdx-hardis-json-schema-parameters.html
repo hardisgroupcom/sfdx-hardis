@@ -8019,6 +8019,244 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionallowedPromotionSteps">
+    <div class="card">
+        <div class="card-header" id="headingallowedPromotionSteps">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#allowedPromotionSteps"
+                        aria-expanded="" aria-controls="allowedPromotionSteps" onclick="setAnchor('#allowedPromotionSteps')"><span class="property-name">allowedPromotionSteps</span></button>
+            </h2>
+        </div>
+
+        <div id="allowedPromotionSteps"
+             class="collapse property-definition-div" aria-labelledby="headingallowedPromotionSteps"
+             data-parent="#accordionallowedPromotionSteps">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps" onclick="anchorLink('allowedPromotionSteps')">allowedPromotionSteps</a></div><h4>Allowed promotion steps (experimental)</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
+<div class="description collapse" id="collapseDescription_allowedPromotionSteps">
+            <p>Experimental feature. Required as soon as enablePromotionBranches is true.<br />
+Source and target branches a release manager is allowed to assemble a promotion between (ex: only from uat to preprod).<br />
+Every other step is left out of the prompts of sf hardis:project:promotion:create and of the DevOps Pipeline, and naming one anyway fails the command.<br />
+Leave an entry without a target to allow every merge target of that source branch.<br />
+While the list is missing, sf hardis:project:promotion:create stops and asks for it: no promotion can be assembled before the project says between which branches.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_allowedPromotionSteps"
+               aria-expanded="false" aria-controls="collapseDescriptionallowedPromotionSteps"
+            ></a>
+        </div>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="allowedPromotionSteps_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps" onclick="anchorLink('allowedPromotionSteps')">allowedPromotionSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps_items" onclick="anchorLink('allowedPromotionSteps_items')">Allowed promotion step</a></div><h4>Allowed promotion step</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>One authorized promotion step, from a major branch to another one</p>
+</span> <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordionallowedPromotionSteps_items_source">
+    <div class="card">
+        <div class="card-header" id="headingallowedPromotionSteps_items_source">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#allowedPromotionSteps_items_source"
+                        aria-expanded="" aria-controls="allowedPromotionSteps_items_source" onclick="setAnchor('#allowedPromotionSteps_items_source')"><span class="property-name">source</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="allowedPromotionSteps_items_source"
+             class="collapse property-definition-div" aria-labelledby="headingallowedPromotionSteps_items_source"
+             data-parent="#accordionallowedPromotionSteps_items_source">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps" onclick="anchorLink('allowedPromotionSteps')">allowedPromotionSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps_items" onclick="anchorLink('allowedPromotionSteps_items')">Allowed promotion step</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps_items_source" onclick="anchorLink('allowedPromotionSteps_items_source')">source</a></div><h4>Source branch</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Major branch holding the approved User Stories (ex: uat)</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="allowedPromotionSteps_items_source_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;uat&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionallowedPromotionSteps_items_target">
+    <div class="card">
+        <div class="card-header" id="headingallowedPromotionSteps_items_target">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#allowedPromotionSteps_items_target"
+                        aria-expanded="" aria-controls="allowedPromotionSteps_items_target" onclick="setAnchor('#allowedPromotionSteps_items_target')"><span class="property-name">target</span></button>
+            </h2>
+        </div>
+
+        <div id="allowedPromotionSteps_items_target"
+             class="collapse property-definition-div" aria-labelledby="headingallowedPromotionSteps_items_target"
+             data-parent="#accordionallowedPromotionSteps_items_target">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps" onclick="anchorLink('allowedPromotionSteps')">allowedPromotionSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps_items" onclick="anchorLink('allowedPromotionSteps_items')">Allowed promotion step</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps_items_target" onclick="anchorLink('allowedPromotionSteps_items_target')">target</a></div><h4>Target branch</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Major branch the promotion goes to (ex: preprod). Leave empty to allow every merge target of the source branch</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="allowedPromotionSteps_items_target_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;preprod&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#allowedPromotionSteps_ex1" aria-controls="allowedPromotionSteps_ex1"></button><div id="allowedPromotionSteps_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;source&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;uat&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;target&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;preprod&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;source&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;preprod&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;target&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;main&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionenablePromotionBranches">
+    <div class="card">
+        <div class="card-header" id="headingenablePromotionBranches">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#enablePromotionBranches"
+                        aria-expanded="" aria-controls="enablePromotionBranches" onclick="setAnchor('#enablePromotionBranches')"><span class="property-name">enablePromotionBranches</span></button>
+            </h2>
+        </div>
+
+        <div id="enablePromotionBranches"
+             class="collapse property-definition-div" aria-labelledby="headingenablePromotionBranches"
+             data-parent="#accordionenablePromotionBranches">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#enablePromotionBranches" onclick="anchorLink('enablePromotionBranches')">enablePromotionBranches</a></div><h4>Enable promotion branches (experimental)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<div class="description collapse" id="collapseDescription_enablePromotionBranches">
+            <p>Experimental feature. Enable promotion branches: a branch named promotion/&lt;source branch>/&lt;target branch>/&lt;YYYY-MM-DD&gt;-&lt;counter&gt; (ex: promotion/uat/preprod/2026-09-06-1) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_enablePromotionBranches"
+               aria-expanded="false" aria-controls="collapseDescriptionenablePromotionBranches"
+            ></a>
+        </div>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="enablePromotionBranches_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">true</span>
+</pre></div>
+</div><div id="enablePromotionBranches_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">false</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionenableDeploymentApexTestClasses">
     <div class="card">
         <div class="card-header" id="headingenableDeploymentApexTestClasses">

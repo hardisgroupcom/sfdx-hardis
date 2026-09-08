@@ -35,8 +35,9 @@ import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/org
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
-import { listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
+import { applyPromotionInheritedBehaviors, listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
 import { isDeploymentActionsDisabled } from '../../../../common/utils/prePostCommandUtils.js';
+import { assertNoPromotionConflictMarkers } from '../../../../common/utils/promotionCreateUtils.js';
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
 import { t } from '../../../../common/utils/i18n.js';
 
@@ -211,6 +212,8 @@ Post-deployment actions are never run when the metadata deployment failed: they 
 Deployment actions and selected Apex test classes are scoped to the Pull Request that has just been merged when it comes from a feature branch. A merge from a major branch (ex: integration -> uat) or from a retrofit branch (ex: retrofit/from-main -> integration) keeps those of every Pull Request merged into the source major branch since its last promotion, and a merge into the production branch keeps those of every Pull Request carried by the go-live merge. Pull Requests merged upstream (ex: a hotfix in main) are included as soon as their commits arrive in the window.
 
 If the deployment job of a feature branch fails, its actions are not picked up by the next merged Pull Request: re-run the failed deployment job, or move the actions to a new Pull Request.
+
+With \`enablePromotionBranches: true\`, a merge from a [promotion branch (experimental)](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/) (named \`promotion/<source>/<target>/<YYYY-MM-DD>-<counter>\`, ex: \`promotion/uat/preprod/2026-09-06-1\`, assembled by cherry-picking approved User Stories) keeps the deployment actions, Apex test classes and custom behaviors (NO_DELTA, PURGE_FLOW_VERSIONS...) of the Pull Requests declared in its description with \`promotionPullRequests: [482, 487]\`.
 
 After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of \`runOnlyOnceByOrg\`.
 
@@ -525,6 +528,19 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
 
     await setConnectionVariables(flags['target-org']?.getConnection(), true);
+
+    // Promotion branch: inherit the custom behaviors (NO_DELTA, PURGE_FLOW_VERSIONS...) of the
+    // Pull Requests it declares, before the delta decision reads them. No-op unless
+    // enablePromotionBranches is set and the Pull Request is a promotion one.
+    // Deliberately NOT behind the deployment actions kill switch: that switch is about running
+    // pre/post deployment commands, while these keywords decide how the metadata itself is
+    // deployed. Suppressing them would ship a delta where a story asked for a full deployment.
+    // A promotion Pull Request resolves its scope by fetching the declared Pull Requests by id,
+    // so this does not run the branch history scan the kill switch is meant to avoid.
+    await applyPromotionInheritedBehaviors(this.checkOnly);
+    // A promotion branch may carry conflicts committed on purpose (--on-conflict
+    // commit-with-markers): stop here while the markers are still in the sources
+    await assertNoPromotionConflictMarkers(this, this.configInfo);
 
     await this.initTestLevelAndTestClasses(flags.testlevel, flags.runtests);
 

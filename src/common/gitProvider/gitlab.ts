@@ -4,8 +4,9 @@ import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot, PullRequestCommentRef, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
-import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
+import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
 
 // Oldest commit date of a window, used to bound the merged MRs listing (see
@@ -365,10 +366,10 @@ export class GitlabProvider extends GitProviderRoot {
     const gitlabCiJobName = process.env.CI_JOB_NAME;
     const gitlabCIJobUrl = process.env.CI_JOB_URL;
     // Build note message
-    const messageKey = prMessage.messageKey + "-" + gitlabCiJobName + "-" + mergeRequestId;
+    const messageKey = prMessage.messageKey + "-" + this.jobMessageKeySegment(gitlabCiJobName) + "-" + mergeRequestId;
     let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
-_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
+${this.buildPoweredByFooter(gitlabCiJobName, gitlabCIJobUrl)}
 
 ${getBannerMarkdownAndLink()}
 
@@ -381,9 +382,16 @@ ${getBannerMarkdownAndLink()}
     // Check for existing note from a previous run
     uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabListingMrNotes')));
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
+    // A comment of the same kind (validation or deployment) matches even when its message key
+    // carries another job name: the key holds the CI job name, so renaming the job - or running
+    // once inside CI and once outside it - would otherwise leave the old comment in place and add
+    // a second one next to it. Same rule as the Azure DevOps provider.
+    const currentCommentKind = getPrCommentKindFromMessageKey(prMessage.messageKey);
     let existingNoteId: number | null = null;
     for (const existingNote of existingNotes) {
-      if (existingNote.body.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
+      const noteBody = existingNote.body || "";
+      if (noteBody.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`) ||
+        (currentCommentKind !== null && getPrCommentKind(noteBody) === currentCommentKind)) {
         existingNoteId = existingNote.id;
       }
     }
@@ -407,6 +415,20 @@ ${getBannerMarkdownAndLink()}
         providerResult: gitlabPostNoteResult,
       };
       return prResult;
+    }
+  }
+
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
+    if (!this.gitlabApi || !projectId) {
+      return false;
+    }
+    try {
+      await this.gitlabApi.MergeRequests.edit(projectId, pullRequestNumber, { stateEvent: 'close' });
+      return true;
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: e?.message || e })));
+      return false;
     }
   }
 
@@ -444,6 +466,20 @@ ${getBannerMarkdownAndLink()}
       return (mergeRequests as any[]).map((mr: any) => this.completePullRequestInfo(mr));
     } catch (e: any) {
       uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMergeRequests', { message: e?.message || e })));
+      return null;
+    }
+  }
+
+  public async getPullRequestById(mrIid: number): Promise<CommonPullRequestInfo | null> {
+    const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
+    if (!this.gitlabApi || !projectId) {
+      return null;
+    }
+    try {
+      const mergeRequest = await this.gitlabApi.MergeRequests.show(projectId, mrIid);
+      return mergeRequest ? this.completePullRequestInfo(mergeRequest) : null;
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitProviderPrByIdNotFound', { id: mrIid, message: String(err) })));
       return null;
     }
   }

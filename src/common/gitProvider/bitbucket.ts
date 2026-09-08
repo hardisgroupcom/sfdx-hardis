@@ -5,7 +5,7 @@ import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { getCurrentGitBranch, git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
-import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
+import { getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
 import { httpPost } from '../utils/httpUtils.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./jenkinsUtils.js";
@@ -405,26 +405,79 @@ export class BitbucketProvider extends GitProviderRoot {
     return isNaN(time) ? 0 : time;
   }
 
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    if (!workspace || !repoSlug) {
+      return false;
+    }
+    try {
+      await this.bitbucket.repositories.declinePullRequest({
+        workspace,
+        repo_slug: repoSlug,
+        pull_request_id: pullRequestNumber,
+      } as any);
+      return true;
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: e?.message || e })));
+      return false;
+    }
+  }
+
   public async listPullRequests(
-    filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
+    filters: { status?: string; pullRequestStatus?: "open" | "merged" | "abandoned"; targetBranch?: string; minDate?: Date } = {},
   ): Promise<CommonPullRequestInfo[] | null> {
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     if (!workspace || !repoSlug) return null;
 
     try {
-      const state = filters.status === "merged" ? "MERGED" : filters.status === "open" ? "OPEN" : undefined;
+      const statusInput = filters.pullRequestStatus || filters.status;
+      const state =
+        statusInput === "merged" ? "MERGED" :
+          statusInput === "open" ? "OPEN" :
+            statusInput === "abandoned" ? "DECLINED" : undefined;
       const params: any = {
         workspace,
         repo_slug: repoSlug,
         sort: "-updated_on",
+        // Bitbucket Cloud caps a Pull Request page at 50 and defaults to far less
+        pagelen: 50,
       };
+      // The target branch has to be part of the query, not applied afterwards: without it a caller
+      // asking for the promotions of one step is handed the promotions of every step, and a
+      // promotion branch retargeted at another branch counts as if it had reached this one.
+      //
+      // The state goes into the same `q` expression rather than into the `state` parameter,
+      // because Bitbucket Cloud silently DROPS `state` as soon as `q` is present: asking for the
+      // open Pull Requests of a branch that way answers with its merged ones instead.
+      const queryParts: string[] = [];
       if (state) {
-        params.state = state;
+        queryParts.push(`state = "${state}"`);
+      }
+      if (filters.targetBranch) {
+        queryParts.push(`destination.branch.name = "${filters.targetBranch}"`);
+      }
+      if (queryParts.length > 0) {
+        params.q = queryParts.join(" AND ");
       }
 
-      const result = await this.bitbucket.repositories.listPullRequests(params);
-      let prs = result?.data?.values || [];
+      // Every page: a single page silently truncates the answer, and the callers of this method
+      // decide from it whether a User Story was already promoted and which Pull Requests a release
+      // carries. A repository with more Pull Requests than one page would lose the older ones.
+      let prs = await this.fetchAllPages(
+        (pageParams) => this.bitbucket.repositories.listPullRequests(pageParams),
+        params,
+      );
+
+      // Defensive: the query above is what filters, this only guards against a Bitbucket answer
+      // that ignored it
+      if (filters.targetBranch) {
+        prs = prs.filter((pr: any) => (pr?.destination?.branch?.name || "") === filters.targetBranch);
+      }
+      if (state) {
+        prs = prs.filter((pr: any) => (pr?.state || "") === state);
+      }
 
       // Filter by minDate
       if (filters.minDate) {
@@ -477,6 +530,25 @@ export class BitbucketProvider extends GitProviderRoot {
       page++;
     }
     return all;
+  }
+
+  public async getPullRequestById(pullRequestId: number): Promise<CommonPullRequestInfo | null> {
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    if (!this.bitbucket || !workspace || !repoSlug) {
+      return null;
+    }
+    try {
+      const pullRequest = await this.bitbucket.repositories.getPullRequest({
+        pull_request_id: pullRequestId,
+        repo_slug: repoSlug,
+        workspace: workspace,
+      });
+      return pullRequest?.data?.destination ? this.completePullRequestInfo(pullRequest.data) : null;
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('gitProviderPrByIdNotFound', { id: pullRequestId, message: String(err) })));
+      return null;
+    }
   }
 
   public async listPullRequestsInBranchSinceLastMerge(
@@ -694,7 +766,7 @@ export class BitbucketProvider extends GitProviderRoot {
     const messageKey = `${prMessage.messageKey}-${pullRequestId}`;
     let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
-_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${bitbucketBuildNumber}](${bitbucketJobUrl})_
+${this.buildPoweredByFooter(bitbucketBuildNumber, bitbucketJobUrl)}
 
 ${getBannerMarkdownAndLink()}
 

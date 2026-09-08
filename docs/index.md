@@ -817,6 +817,8 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:project:lint**](hardis/project/lint.md)                                                 |       |
 | [**hardis:project:metadata:activate-decomposed**](hardis/project/metadata/activate-decomposed.md) |       |
 | [**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)           |       |
+| [**hardis:project:promotion:create**](hardis/project/promotion/create.md)                         |       |
+| [**hardis:project:promotion:list-candidates**](hardis/project/promotion/list-candidates.md)       |       |
 | [**hardis:project:skills:import**](hardis/project/skills/import.md)                               |       |
 
 ### hardis:scratch

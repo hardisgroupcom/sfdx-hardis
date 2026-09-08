@@ -1805,13 +1805,20 @@ export async function extractOrgCoverageFromLog(stdout) {
 function getCoverageFromJsonFile(jsonFile) {
   if (fs.existsSync(jsonFile)) {
     const coverageInfo = JSON.parse(fs.readFileSync(jsonFile, 'utf-8'));
-    const orgCoverage = coverageInfo?.total?.lines?.pct ?? null;
+    const rawCoverage = coverageInfo?.total?.lines?.pct ?? null;
+    // json-summary writes the string "Unknown" when there was nothing to measure, which is the
+    // normal answer for a deployment that ran no Apex test. Calling toFixed on it threw, and the
+    // catch below reported a plain situation as an error the reader had to make sense of.
+    const orgCoverage = typeof rawCoverage === 'number' ? rawCoverage : Number(rawCoverage);
+    if (rawCoverage === null || rawCoverage === '' || !Number.isFinite(orgCoverage)) {
+      return null;
+    }
     try {
-      if (orgCoverage && Number(orgCoverage.toFixed(2)) > 0.0) {
+      if (orgCoverage > 0.0) {
         return orgCoverage.toFixed(2);
       }
     } catch (e) {
-      uxLog("warning", this, c.yellow(t('warningUnableToConvertIntoString', { orgCoverage })));
+      uxLog("warning", this, c.yellow(t('warningUnableToConvertIntoString', { orgCoverage: rawCoverage })));
       uxLog("error", this, c.grey((e as Error).message));
     }
   }

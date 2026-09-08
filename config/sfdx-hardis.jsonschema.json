@@ -1919,6 +1919,67 @@
       "title": "Enable delta deployments between major branches (NOT RECOMMENDED)",
       "type": "boolean"
     },
+    "allowedPromotionSteps": {
+      "$id": "#/properties/allowedPromotionSteps",
+      "description": "Experimental feature. Required as soon as enablePromotionBranches is true.\nSource and target branches a release manager is allowed to assemble a promotion between (ex: only from uat to preprod).\nEvery other step is left out of the prompts of sf hardis:project:promotion:create and of the DevOps Pipeline, and naming one anyway fails the command.\nLeave an entry without a target to allow every merge target of that source branch.\nWhile the list is missing, sf hardis:project:promotion:create stops and asks for it: no promotion can be assembled before the project says between which branches.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/",
+      "examples": [
+        [
+          {
+            "source": "uat",
+            "target": "preprod"
+          },
+          {
+            "source": "preprod",
+            "target": "main"
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/allowedPromotionSteps/items",
+        "additionalProperties": false,
+        "description": "One authorized promotion step, from a major branch to another one",
+        "properties": {
+          "source": {
+            "$id": "#/properties/allowedPromotionSteps/items/properties/source",
+            "description": "Major branch holding the approved User Stories (ex: uat)",
+            "examples": [
+              "uat"
+            ],
+            "title": "Source branch",
+            "type": "string"
+          },
+          "target": {
+            "$id": "#/properties/allowedPromotionSteps/items/properties/target",
+            "description": "Major branch the promotion goes to (ex: preprod). Leave empty to allow every merge target of the source branch",
+            "examples": [
+              "preprod"
+            ],
+            "title": "Target branch",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "Allowed promotion step",
+        "type": "object"
+      },
+      "title": "Allowed promotion steps (experimental)",
+      "type": "array"
+    },
+    "enablePromotionBranches": {
+      "$id": "#/properties/enablePromotionBranches",
+      "description": "Experimental feature. Enable promotion branches: a branch named promotion/<source branch>/<target branch>/<YYYY-MM-DD>-<counter> (ex: promotion/uat/preprod/2026-09-06-1) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.",
+      "default": false,
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/",
+      "examples": [
+        true,
+        false
+      ],
+      "title": "Enable promotion branches (experimental)",
+      "type": "boolean"
+    },
     "enableDeploymentApexTestClasses": {
       "$id": "#/properties/enableDeploymentApexTestClasses",
       "description": "Enable the use of custom Apex Test Classes list during deployments. Requires enableDeltaDeploymentBetweenMajorBranches to be set to true. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.",

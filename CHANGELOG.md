@@ -2,6 +2,14 @@
 
 ## [beta] (main)
 
+- [Promotion branches (experimental)](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/): ship a subset of the approved User Stories of a major branch with a `promotion/<source>/<target>/<date>-<counter>` branch created by [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) that declares the Pull Requests it carries (`enablePromotionBranches`), so their deployment actions, Apex test classes, custom behaviors and release notes follow them.
+  - [hardis:project:promotion:list-candidates](https://sfdx-hardis.cloudity.com/hardis/project/promotion/list-candidates/): **new command** listing the User Stories waiting for promotion from a major branch to the next one, without creating anything, so agents and automation can choose what a promotion will carry.
+  - Promotion branches: `allowedPromotionSteps` declares the source and target branches a release manager can create a promotion between (ex: only from uat to preprod). It is required to use the feature, and is applied by [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) and by the DevOps Pipeline.
+- [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): the Pull Requests that move other Pull Requests (merges between two major branches, and promotion branches) are left out of the notes, so what is listed is the work the release delivers. Use `--include-promotions` to list them too.
+- DevOps
+  - The Pull Requests a merge brought in are now read from the git graph instead of the commit dates, so a cherry-picked commit is attributed to the merge that really carried it: this is what the promotion and backpromote candidate lists are built from.
+  - Several ```yaml blocks in a Pull Request description now add up instead of the last one replacing the first: appending a block to declare one more Apex test class no longer drops the ones above it.
+
 ## [8.6.0] 2026-09-04
 
 - [ServiceNow ticketing integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/):

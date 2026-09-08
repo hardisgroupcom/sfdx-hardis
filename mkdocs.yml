@@ -124,6 +124,7 @@ nav:
           - Review and merge Pull Requests: salesforce-ci-cd-validate-merge-request.md
           - Deploy to major orgs: salesforce-ci-cd-deploy-major-branches.md
           - Hotfixes and retrofit (RUN): salesforce-ci-cd-hotfixes.md
+          - Promotion branches (beta): salesforce-ci-cd-promotion-branches.md
           - Release Notes: hardis/doc/salesforce-ci-cd-release-notes.md
           - DORA Metrics: hardis/doc/salesforce-ci-cd-dora-report.md
           - Smart Deploy internals: salesforce-ci-cd-smart-deployment.md
@@ -423,6 +424,8 @@ nav:
           - lint: hardis/project/lint.md
           - metadata activate-decomposed: hardis/project/metadata/activate-decomposed.md
           - metadata findduplicates: hardis/project/metadata/findduplicates.md
+          - promotion create: hardis/project/promotion/create.md
+          - promotion list-candidates: hardis/project/promotion/list-candidates.md
           - skills import: hardis/project/skills/import.md
       - hardis:deploy:
           - quick: hardis/deploy/quick.md

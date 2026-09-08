@@ -3,8 +3,9 @@ import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GithubApiClient, getGithubActionsContext } from "./githubApiClient.js";
-import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
+import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
 
 export class GithubProvider extends GitProviderRoot {
@@ -399,10 +400,10 @@ export class GithubProvider extends GitProviderRoot {
     }
     const githubJobUrl = await this.getCurrentJobUrl();
     // Build note message
-    const messageKey = prMessage.messageKey + "-" + this.workflow + "-" + this.prNumber;
+    const messageKey = prMessage.messageKey + "-" + this.jobMessageKeySegment(this.workflow) + "-" + this.prNumber;
     let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
-_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}](${githubJobUrl})_
+${this.buildPoweredByFooter(this.workflow, githubJobUrl)}
 
 ${getBannerMarkdownAndLink()}
 
@@ -416,9 +417,16 @@ ${getBannerMarkdownAndLink()}
     // Check for existing note from a previous run
     uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubListingPrCommentsAll')));
     const existingComments = await this.listIssueComments(this.prNumber, this.repoOwner || "", this.repoName);
+    // A comment of the same kind (validation or deployment) matches even when its message key
+    // carries another workflow name: the key holds it, so renaming the workflow - or running once
+    // inside GitHub Actions and once outside it - would otherwise leave the old comment in place
+    // and add a second one next to it. Same rule as the Azure DevOps provider.
+    const currentCommentKind = getPrCommentKindFromMessageKey(prMessage.messageKey);
     let existingCommentId: number | null = null;
     for (const existingComment of existingComments) {
-      if (existingComment?.body?.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
+      const commentBody = existingComment?.body || "";
+      if (commentBody.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`) ||
+        (currentCommentKind !== null && getPrCommentKind(commentBody) === currentCommentKind)) {
         existingCommentId = existingComment.id;
       }
     }
@@ -442,6 +450,19 @@ ${getBannerMarkdownAndLink()}
         providerResult: githubCommentCreateResult,
       };
       return prResult;
+    }
+  }
+
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    if (!this.repoOwner || !this.repoName) {
+      return false;
+    }
+    try {
+      await this.api.patch<any>(`${this.repoPath()}/pulls/${pullRequestNumber}`, { state: 'closed' });
+      return true;
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: e?.message || e })));
+      return false;
     }
   }
 
@@ -584,6 +605,19 @@ ${getBannerMarkdownAndLink()}
         c.yellow('[GitHub Integration] ' + t('githubErrorListingPrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })),
       );
       return [];
+    }
+  }
+
+  public async getPullRequestById(prNumber: number): Promise<CommonPullRequestInfo | null> {
+    if (!this.api || !this.repoOwner || !this.repoName) {
+      return null;
+    }
+    try {
+      const { data } = await this.api.get<any>(`${this.repoPath()}/pulls/${prNumber}`);
+      return data ? this.completePullRequestInfo(data) : null;
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('gitProviderPrByIdNotFound', { id: prNumber, message: String(err) })));
+      return null;
     }
   }
 
