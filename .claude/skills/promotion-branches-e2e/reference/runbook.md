@@ -253,6 +253,39 @@ e2e_deploy integration "deploy-integration-retrofit"
 | retrofit validation / deployment               | the go-live promotion is expanded, then `Pull Request N was already deployed through promotion branch(es) ...` for each story already shipped                                                                                                                                                        |
 | release notes of the go-live                   | `hardis-report/release-notes/main-<date>/release-notes-main-<date>.md` lists the **User Stories**, not the promotion Pull Requests: the Pull Request count, the contributor counts and the ticket rows must name the stories only. With `--include-promotions`, the vehicles are listed next to them |
 
+## 5bis. Auditing the Pull Request comments
+
+The job logs say what the command decided; they do not say what the reviewer ends up reading.
+`scripts/audit-pr-comments.cjs` checks the comments themselves, and it is where three defects of
+the 2026-09-08 runs came from. Each `e2e-lib-*.sh` provides `dump_pr_comments`, which writes the
+provider agnostic shape the auditor reads:
+
+```bash
+dump_pr_comments "C:/tmp/promo-e2e-comments.json"
+node .claude/skills/promotion-branches-e2e/scripts/audit-pr-comments.cjs \
+  "C:/tmp/promo-e2e-comments.json" "C:/tmp/promo-e2e-expect.json"
+```
+
+The expectations file is optional and only says what each Pull Request should have reached:
+
+```json
+{ "1": { "kind": "story", "manualActions": ["e2e-manual-1"] },
+  "7": { "kind": "promotion", "carries": [1, 3] } }
+```
+
+`kind` is `story`, `promotion`, or `promotion-not-run` for a promotion that was assembled to prove
+the supersede path and never validated. Everything else is checked without being told: one comment
+per kind (a re-run updates in place, it never appends a second one), no leaked `undefined`, `null`,
+`[object Object]` or uninterpolated `{{placeholder}}`, a navigation block that links to comments of
+**this** Pull Request, one column and one pending checkbox per org branch, no manual action left
+`skipped`, no duplicated action row, and a promotion that names every story it carries.
+
+Run it at the end of the run, and read its findings against what the run did: a comment written by
+a job that ran BEFORE a fix landed keeps its old text until a job touches that Pull Request again,
+and the flag-off passes deliberately run the pre-fix `origin/main` CLI.
+
+## 5ter. Deployment action state from the git provider
+
 Check the deployment action state from the git provider too:
 
 ```bash
@@ -423,6 +456,10 @@ Traps that only bite on GitLab:
   within seconds of a push without that wait.
 - **Python's `urllib` refuses a corporate CA** that `curl` and node accept. Every API call of the
   GitLab library goes through `curl`; python is only used to build and read JSON.
+- **Python on Windows decodes stdin with the system codepage.** Piping a GitLab API answer into
+  `json.load(sys.stdin)` mangles every emoji of a merge request description and can produce a lone
+  surrogate, after which the update answers `400 Bad Request` with no explanation. Read the bytes:
+  `json.loads(sys.stdin.buffer.read().decode('utf-8'))`.
 - **Python on Windows does not resolve the git bash `/tmp` path.** Keep the merge request body
   files under a real Windows path, or the description is silently posted empty.
 - **`glab` defaults to gitlab.com** and prints its own decorations. Use `curl` with
@@ -490,10 +527,9 @@ Traps that only bite on Azure DevOps:
 
 ## 8ter. What is different on Bitbucket Cloud
 
-**Not yet exercised live.** The harness below is written and its credentials are proven, but the
-run itself has never happened: the `test-sfdx-hardis-2` workspace is over its user limit, so every
-repository in it is read-only and `git push` answers HTTP 402. Whoever restores write access can
-run sections 3 to 7 with it and finish this section.
+Exercised live twice on 2026-09-07 and 2026-09-08, on `galerieslafayette/test-prom-e2e`. The
+first workspace tried, `test-sfdx-hardis-2`, is over its user limit: every repository in it is
+read-only and `git push` answers HTTP 402, with nothing in the API to warn you beforehand.
 
 ```bash
 export ORG="your.user@example.com"
@@ -529,8 +565,20 @@ Traps already met on Bitbucket:
   API says so beforehand; the repository can still be created.
 - Merge with `merge_strategy: merge_commit` and `close_source_branch: false`, never squash, or the
   `-x` trailers of the cherry-picks are lost.
-- The `refs/pull-requests/<id>/merge` ref is recomputed after a push, so `bb_check` waits until it
-  holds the head of the source branch, like the other two providers.
+- **Bitbucket Cloud publishes no merge ref.** Neither `refs/pull-requests/<id>/merge` nor
+  `.../from` is fetchable, and `git ls-remote` advertises none of them. A `pull-requests:` pipeline
+  checks out the **source** branch and merges the destination into it before running the steps, so
+  that is what `bb_checkout_pr_merge` reproduces. This is the one place where the Bitbucket harness
+  differs in kind from the other three: there is no lazily written ref to wait for, and a merge
+  conflict shows up at checkout rather than as a stale tree.
+- **A repository access token is scoped to its repository**, so a rerun cannot create a second one
+  and has to reuse the same repository. Reset it by deleting every branch but `main` and
+  force-pushing the base project. Two artefacts follow, neither of them a product defect:
+  - the Pull Requests of the previous run stay in the repository, so pass `MIN_PR=<first new
+    number>` to `check-diagram-bitbucket.cjs` to keep the windows readable, and expect an old
+    major-to-major Pull Request to turn up in a deployment scope, matched by its source branch;
+  - re-creating a Pull Request between the same two branches **reopens the declined one** of the
+    previous run instead of creating a new number.
 
 ## 9. Cleaning up
 

@@ -30,7 +30,8 @@ not already, so you know what each assertion is protecting.
 | `scripts/ab-run.sh`                | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                            |
 | `scripts/ab-run-gitlab.sh`         | The same on GitLab.                                                                                                                                             |
 | `scripts/ab-run-azure.sh`          | The same on Azure DevOps.                                                                                                                                       |
-| `scripts/ab-run-bitbucket.sh`      | The same on Bitbucket Cloud. Never run end to end.                                                                                                              |
+| `scripts/ab-run-bitbucket.sh`      | The same on Bitbucket Cloud.                                                                                                                                    |
+| `scripts/audit-pr-comments.cjs`    | The Pull Request comment audit, shared by the four providers. Fed by the `dump_pr_comments` of each library.                                                     |
 | `scripts/ab-diff.py`               | Normalises two log folders and diffs them: the flag-off regression proof.                                                                                       |
 
 ## Before starting
@@ -69,6 +70,9 @@ failure cannot be an artefact of the previous run's state.
 4. **Run the pipeline** (runbook section 4), asserting each log as you go with `e2e_grep`. Do not
    batch the assertions to the end: a wrong scope early makes every later log meaningless.
 5. **Run the edge cases** (runbook section 6). These are where the defects have been.
+5bis. **Audit the Pull Request comments** (runbook section 5bis). The job logs say what the command
+   decided; the audit says what the reviewer reads. Four of the defects of 2026-09-08 came from it,
+   and none of them was visible in a job log.
 6. **Check the diagram rule**: `node scripts/check-diagram.cjs <owner>/<repo> integration,uat,preprod,main`
    (`check-diagram-gitlab.cjs` / `check-diagram-azure.cjs` for the other two providers).
 7. **Run the flag-off A/B regression check** (runbook section 7ter). `TOTAL DIFFERING LINES: 0`,
@@ -94,10 +98,9 @@ failure cannot be an artefact of the previous run's state.
 
 State them again in the report unless you close them:
 
-- Bitbucket has never been exercised live: it is covered by code reading and unit tests. Its
-  harness exists and its credentials are proven, but the `test-sfdx-hardis-2` workspace is over its
-  user limit, so every push answers HTTP 402. GitHub, GitLab and Azure DevOps were all run live on
-  2026-09-07.
+- The four providers were all run live on 2026-09-07 and 2026-09-08. Bitbucket is the only one
+  whose repository has to be reused between runs, because its access token is repository-scoped;
+  see runbook section 8ter for the two artefacts that follow.
 - The four pipeline levels share one Salesforce org, so deployment action state is keyed by org
   **branch**, not by distinct orgs.
 - The pipeline webview is exercised through its compiled helpers and its unit tests, not by
