@@ -351,9 +351,15 @@ export async function listPromotionCandidates(
   const mergeBase = (
     await execCommand(`git merge-base origin/${targetBranch} origin/${sourceBranch}`, commandThis, { fail: true, output: false })
   ).stdout.trim();
-  const groups = await listMergedPrsWithCommits(`origin/${sourceBranch}`, sourceBranch, mergeBase, commandThis);
   const majorOrgs = await listMajorOrgs();
   const majorBranchNames = (majorOrgs || []).map((org: any) => org.branchName).filter((branch: string) => branch);
+  // A promotion cherry-picks one candidate at a time, so a merge that only moves other merges
+  // (integration -> uat, a promotion merged into its target) is opened up into the commits it
+  // brought in: otherwise the whole promotion window of the source branch is a single row and
+  // selecting one User Story carries every story merged in the same sync.
+  const groups = await listMergedPrsWithCommits(`origin/${sourceBranch}`, sourceBranch, mergeBase, commandThis, {
+    splitVehicleMergesFrom: majorBranchNames,
+  });
   const gitProviderForExpansion = await GitProvider.getInstance();
   const expandedGroups = gitProviderForExpansion
     ? await expandPromotionsInGroups(groups, (id) => gitProviderForExpansion.getPullRequestById(id), commandThis)

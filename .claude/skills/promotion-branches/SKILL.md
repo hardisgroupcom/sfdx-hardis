@@ -114,6 +114,24 @@ Break one of these and the feature is wrong, whatever the tests say.
     the pipeline diagram working on a project that is mid-configuration. The rule gates
     **creation**, never deployment: a promotion assembled outside the list is deployed with a
     warning, since refusing it would block a branch that is already merged.
+17. **A vehicle is opened up, never offered whole.** A first-parent commit of the source branch that
+    only moves other merges (`integration -> uat`, a promotion merged into its target) is replaced
+    by the first-parent commits it brought in (`splitVehicleMerges`, called from
+    `listMergedPrsWithCommits` only when `promotion:create` / `list-candidates` asks for it). On a
+    pipeline where stories are merged into `integration`, every first-parent commit of `uat` is one
+    of those syncs: without this, the whole promotion window is a single selectable row and carrying
+    one story carries them all. Two guards keep it honest: only a merge with exactly two parents is
+    opened up (an octopus merge would lose every side but the second), and only when everything it
+    brought in is inside the window being listed, which keeps a back-merge from the target branch
+    whole instead of turning it into a page of rows already delivered. The vehicle stays a boundary
+    of `attributeCommitsToFirstParents` (`extraBoundaries`) so the merge after it does not swallow
+    it.
+18. **A configuration file can stop being readable mid-command.** `promotion:create` commits git
+    conflict markers on purpose, and `config/.sfdx-hardis.yml` is a file like any other:
+    `loadFromConfigFile` keeps the last configuration it read from each set of files and falls back
+    to it with a warning (`configFileUnreadableUsingPrevious`, `configFileConflictMarkers`) rather
+    than crashing halfway, with a branch assembled and no Pull Request. It only falls back to
+    something it actually read: a project whose configuration is broken from the start still stops.
 
 ## sfdx-hardis (CLI)
 
@@ -124,7 +142,7 @@ Break one of these and the feature is wrong, whatever the tests say.
 | `src/commands/hardis/project/promotion/create.ts`                                                                                                                          | The command. Flags: `--source-branch`, `--target-branch`, `--pull-requests`, `--skip-pull-request`, `--include-already-promoted`, `--on-conflict`, `--agent`.                                                              |
 | `src/commands/hardis/project/promotion/list-candidates.ts`                                                                                                                 | Read-only listing of the candidates, for agents. Flags: `--source-branch`, `--target-branch`, `--include-already-promoted`, `--agent`. Creates, pushes and closes nothing.                                                 |
 | `src/common/utils/pullRequestUtils.ts`                                                                                                                                     | Resolves the declared Pull Requests from the git provider, walks the downstream promotions, merges the yaml blocks of a description.                                                                                       |
-| `src/common/utils/backpromoteUtils.ts`                                                                                                                                     | `listMergedPrsWithCommits`, which the candidate list is built from: `attributeCommitsToFirstParents` decides which commits a merge brought in.                                                                             |
+| `src/common/utils/backpromoteUtils.ts`                                                                                                                                     | `listMergedPrsWithCommits`, which the candidate list is built from: `attributeCommitsToFirstParents` decides which commits a merge brought in, `splitVehicleMerges` opens up the merges that only move other merges.                                                                             |
 | `src/common/gitProvider/gitProviderRoot.ts` + the four providers                                                                                                           | `closePullRequest()` (close on GitHub/GitLab, abandon on Azure DevOps, decline on Bitbucket), used to supersede the promotion already open.                                                                                |
 | `src/commands/hardis/project/deploy/smart.ts`                                                                                                                              | Applies the inherited custom behaviors and the conflict-marker gate.                                                                                                                                                       |
 | `src/common/utils/prePostCommandUtils.ts`                                                                                                                                  | Deployment actions of the carried stories, promotion scope wording.                                                                                                                                                        |

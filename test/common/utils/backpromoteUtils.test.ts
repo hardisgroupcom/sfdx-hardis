@@ -2,7 +2,13 @@
 import { expect } from 'chai';
 // Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
 import '../../../src/common/gitProvider/index.js';
-import { attributeCommitsToFirstParents, parseCommitParents } from '../../../src/common/utils/backpromoteUtils.js';
+import {
+  attributeCommitsToFirstParents,
+  isVehicleMerge,
+  mergedSourceBranches,
+  parseCommitParents,
+  splitVehicleMerges,
+} from '../../../src/common/utils/backpromoteUtils.js';
 
 
 describe('parseCommitParents()', () => {
@@ -67,5 +73,123 @@ describe('attributeCommitsToFirstParents()', () => {
     const attributed = attributeCommitsToFirstParents([{ hash: 'older' }, { hash: 'newer' }], shared, sharedParents);
     expect(attributed.get('older')?.map((commit) => commit.hash)).to.deep.equal(['older', 'common']);
     expect(attributed.get('newer')?.map((commit) => commit.hash)).to.deep.equal(['newer']);
+  });
+});
+
+
+describe('mergedSourceBranches()', () => {
+  it('reads the merged branch from a git or GitLab merge message', () => {
+    expect(
+      mergedSourceBranches({ hash: 'aaa', message: "Merge branch 'integration' into uat" }, new Map(), new Map()),
+    ).to.deep.equal(['integration']);
+  });
+
+  it('reads the merged branch from a GitHub merge message, dropping the owner', () => {
+    expect(
+      mergedSourceBranches(
+        { hash: 'aaa', message: 'Merge pull request #12 from cloudity/feature/SFB-1-do-things' },
+        new Map(),
+        new Map(),
+      ),
+    ).to.deep.equal(['feature/SFB-1-do-things']);
+  });
+
+  it('reads the source branch of the Pull Request the merge commit closed', () => {
+    const branches = mergedSourceBranches(
+      { hash: 'aaa', message: 'Merged PR 42: promote things' },
+      new Map([['aaa', 42]]),
+      new Map([[42, { sourceBranch: 'integration' }]]),
+    );
+    expect(branches).to.deep.equal(['integration']);
+  });
+});
+
+describe('isVehicleMerge()', () => {
+  it('recognizes a major branch and a promotion branch', () => {
+    expect(isVehicleMerge(['integration'], ['integration', 'uat', 'preprod'])).to.be.true;
+    expect(isVehicleMerge(['promotion/uat/preprod/2026-09-06-1'], ['integration', 'uat'])).to.be.true;
+  });
+
+  it('leaves a User Story branch alone', () => {
+    expect(isVehicleMerge(['feature/SFB-1-do-things'], ['integration', 'uat'])).to.be.false;
+    expect(isVehicleMerge([], ['integration', 'uat'])).to.be.false;
+  });
+});
+
+describe('splitVehicleMerges()', () => {
+  // uat holds a single integration -> uat sync merge, which brought in two User Story merges:
+  //
+  //   sync    (merge integration into uat)   parents uatBase, feat2
+  //   feat2   (merge feature/two)            parents feat1, work2
+  //   feat1   (merge feature/one)            parents intBase, work1
+  const commits = [
+    { hash: 'sync', message: "Merge branch 'integration' into uat" },
+    { hash: 'feat2', message: "Merge branch 'feature/two' into integration" },
+    { hash: 'work2', message: 'work two' },
+    { hash: 'feat1', message: "Merge branch 'feature/one' into integration" },
+    { hash: 'work1', message: 'work one' },
+  ];
+  const parents = parseCommitParents(
+    ['sync uatBase feat2', 'feat2 feat1 work2', 'work2 feat1', 'feat1 intBase work1', 'work1 intBase'].join('\n'),
+  );
+  const windowHashes = new Set(commits.map((commit) => commit.hash));
+  const firstParentsOf = async (fromCommit: string, toCommit: string) => {
+    expect(fromCommit).to.equal('uatBase');
+    expect(toCommit).to.equal('feat2');
+    // git log order: newest first
+    return [commits[1], commits[3]];
+  };
+
+  it('replaces a major-to-major merge by the User Story merges it brought in, newest first', async () => {
+    const split = await splitVehicleMerges(
+      [commits[0]],
+      ['integration', 'uat', 'preprod'],
+      parents,
+      windowHashes,
+      (commit) => mergedSourceBranches(commit, new Map(), new Map()),
+      firstParentsOf,
+    );
+    expect(split.map((commit) => commit.hash)).to.deep.equal(['feat2', 'feat1']);
+  });
+
+  it('leaves a User Story merge as it is', async () => {
+    const split = await splitVehicleMerges(
+      [commits[1]],
+      ['integration', 'uat'],
+      parents,
+      windowHashes,
+      (commit) => mergedSourceBranches(commit, new Map(), new Map()),
+      async () => {
+        throw new Error('should not be opened up');
+      },
+    );
+    expect(split.map((commit) => commit.hash)).to.deep.equal(['feat2']);
+  });
+
+  it('keeps the vehicle whole when what it brought in is outside the window being listed', async () => {
+    const split = await splitVehicleMerges(
+      [commits[0]],
+      ['integration', 'uat'],
+      parents,
+      new Set(['sync']),
+      (commit) => mergedSourceBranches(commit, new Map(), new Map()),
+      firstParentsOf,
+    );
+    expect(split.map((commit) => commit.hash)).to.deep.equal(['sync']);
+  });
+});
+
+describe('attributeCommitsToFirstParents() with opened-up vehicle merges', () => {
+  it('keeps the vehicle merge as a boundary so the merge after it does not swallow it', () => {
+    const commits = [{ hash: 'next' }, { hash: 'sync' }, { hash: 'feat' }];
+    const parents = parseCommitParents(['next sync other', 'sync uatBase feat', 'feat intBase work'].join('\n'));
+    const attributed = attributeCommitsToFirstParents(
+      [{ hash: 'feat' }, { hash: 'next' }],
+      commits,
+      parents,
+      new Set(['sync']),
+    );
+    expect(attributed.get('feat')?.map((commit) => commit.hash)).to.deep.equal(['feat']);
+    expect(attributed.get('next')?.map((commit) => commit.hash)).to.deep.equal(['next']);
   });
 });

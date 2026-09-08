@@ -71,6 +71,7 @@ On a cherry-pick conflict, you choose (or \`--on-conflict\` decides) to:
 <summary>Technical explanations</summary>
 
 - Candidates are the first-parent commits of \`origin/<source>\` since its merge base with \`origin/<target>\`, grouped with their Pull Requests like \`hardis:work:backpromote\` does (Pull Request numbers read from the merge commit messages and completed by the git provider API when a token is available).
+- A first-parent commit that only moves other merges (a major-to-major sync like \`integration -> uat\`, a promotion branch merged into its target) is opened up into the first-parent commits it brought in, so each User Story is a candidate of its own instead of the whole sync window being a single row.
 - The branch is created with \`git checkout -b <name> origin/<target>\`, commits are applied with \`git cherry-pick -x\` (\`-m 1\` for merge commits).
 - The Pull Request is created through the git provider API (GitHub, GitLab, Azure DevOps, Bitbucket token), or with the \`gh\` CLI on GitHub. Without either, the branch is pushed and the description is saved under \`hardis-report/\` to create the Pull Request by hand.
 - The counter is computed from the existing \`promotion/<source>/<target>/<date>-*\` branches, local and remote.
