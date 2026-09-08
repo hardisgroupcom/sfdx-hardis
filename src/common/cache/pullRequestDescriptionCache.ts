@@ -16,7 +16,7 @@ THE ON-DISK CONTRACT IS SHARED WITH vscode-sfdx-hardis. Its implementation lives
 
   ~/.sfdx/sfdx-hardis-pr-cache/<provider>__<sanitized repository key>.json
 
-  The repository key is the normalised git remote URL of the working copy, which is the one
+  The repository key is the normalized git remote URL of the working copy, which is the one
   identifier the CLI and the extension are guaranteed to agree on (see repositoryKeyFromRemoteUrl):
 
   {
@@ -28,7 +28,7 @@ THE ON-DISK CONTRACT IS SHARED WITH vscode-sfdx-hardis. Its implementation lives
     }
   }
 
-`state` is the normalised terminal state, `merged` or `closed`. Anything else is not written.
+`state` is the normalized terminal state, `merged` or `closed`. Anything else is not written.
 Set NO_CACHE=true, or SFDX_HARDIS_NO_PR_CACHE=true, to bypass it entirely.
 */
 
@@ -66,7 +66,7 @@ export function isPullRequestDescriptionCacheDisabled(): boolean {
 }
 
 /**
- * The terminal states, normalised across providers. A description is only cached, and a cached one
+ * The terminal states, normalized across providers. A description is only cached, and a cached one
  * is only used, when the Pull Request is in one of them: an open Pull Request is being edited.
  *
  * Bitbucket can REOPEN a declined Pull Request, and Azure DevOps can reactivate an abandoned one,
@@ -86,7 +86,7 @@ export function normalizeTerminalState(state: string | number | null | undefined
 /**
  * The repository key both tools build, so a cache warmed by one is read by the other.
  *
- * It is the git remote URL of the working copy, normalised: the CLI and the extension look at the
+ * It is the git remote URL of the working copy, normalized: the CLI and the extension look at the
  * same clone, so this is the one identifier they are guaranteed to agree on. Deriving it from CI
  * variables instead would not work - BUILD_REPOSITORY_ID is a GUID on an Azure agent and the
  * repository name when sfdx-hardis parses the remote itself.

@@ -1,6 +1,6 @@
 # Promotion branches: end to end test on Bitbucket Cloud
 
-**Date:** 2026-09-08 (re-run; the first Bitbucket run of 2026-09-07 is summarised under "What the first run found")
+**Date:** 2026-09-08 (re-run; the first Bitbucket run of 2026-09-07 is summarized under "What the first run found")
 **Repository under test:** `galerieslafayette/test-prom-e2e` (private), reset to the runbook base project for this run
 **Salesforce org:** `nicolas.vuillamy.c8024b5deb9f@agentforce.com` (developer org, shared with the three other providers)
 **sfdx-hardis:** `feat/promotion-branches`, `2c2ffa6ea` at the start, unchanged by this run
@@ -194,7 +194,7 @@ ___
 - **The "Pull Request Commit Links" app.** Not installed, so the merge job uses the branch search
   fallback; that fallback is what this run proved, not the primary path.
 - **A brand new repository.** The token is repository-scoped, so the repository is reset rather than
-  created. Two artefacts follow, both benign and both visible above: an old Pull Request matched by
+  created. Two artifacts follow, both benign and both visible above: an old Pull Request matched by
   its source branch in a deployment scope, and Bitbucket **reopening** the previous run's declined
   Pull Request (#15) instead of creating a new number when the same two branches are used again.
 - **Branch permissions and required approvals.** The test repository has none.

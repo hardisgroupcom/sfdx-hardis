@@ -255,7 +255,7 @@ The description of a Pull Request that is **merged or abandoned** no longer move
 | | |
 |---|---|
 | Where | `~/.sfdx/sfdx-hardis-pr-cache/<provider>__<repository>.json`, outside the repository so it is never committed |
-| Key | the normalised git remote URL of the working copy, which is what the CLI and the extension agree on |
+| Key | the normalized git remote URL of the working copy, which is what the CLI and the extension agree on |
 | What | the full description, the terminal state it was in, and when it was cached |
 | Shared | a cache warmed by a CI job or a local command is read by the VS Code extension, and the other way round |
 

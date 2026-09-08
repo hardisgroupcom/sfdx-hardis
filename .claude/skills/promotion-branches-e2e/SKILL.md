@@ -79,7 +79,7 @@ failure cannot be an artefact of the previous run's state.
    or 1 when a merged branch is named `promotion/...`.
 8. **Write the report** in this skill's `reports/` folder, one per provider:
    `.claude/skills/promotion-branches-e2e/reports/promotion-branches-e2e-report-github.md`,
-   `…-gitlab.md` and `…-azure.md`. Never write them at the repository root.
+   `…-gitlab.md`, `…-azure.md` and `…-bitbucket.md`. Never write them at the repository root.
    Pipeline under test, the stories, the promotions performed, a table per test group with expected
    versus result, what the run found, what it did not cover, and the suite counts. Overwrite the
    previous reports.

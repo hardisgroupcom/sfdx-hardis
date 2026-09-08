@@ -64,13 +64,13 @@ describe('Pull Request description cache', () => {
   });
 
   describe('normalizeTerminalState()', () => {
-    it('recognises the merged state of the four providers', () => {
+    it('recognizes the merged state of the four providers', () => {
       for (const state of ['merged', 'MERGED', 'completed', 3]) {
         expect(normalizeTerminalState(state), `state ${state}`).to.equal('merged');
       }
     });
 
-    it('recognises the closed state of the four providers', () => {
+    it('recognizes the closed state of the four providers', () => {
       for (const state of ['closed', 'DECLINED', 'abandoned', 'SUPERSEDED']) {
         expect(normalizeTerminalState(state), `state ${state}`).to.equal('closed');
       }
@@ -195,7 +195,7 @@ describe('Pull Request description cache', () => {
       );
     });
 
-    it('sanitises a key into a safe file name', () => {
+    it('sanitizes a key into a safe file name', () => {
       expect(sanitizeRepositoryKey('https://dev.azure.com/acme/ My Project/guid')).to.equal(
         'https_dev.azure.com_acme_My_Project_guid',
       );
