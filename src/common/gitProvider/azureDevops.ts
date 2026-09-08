@@ -1,4 +1,4 @@
-import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import * as azdev from "azure-devops-node-api";
 import c from "chalk";
 import fs from '../utils/fsUtils.js';
@@ -149,6 +149,29 @@ export class AzureDevopsProvider extends GitProviderRoot {
       });
       process.env.SYSTEM_ACCESSTOKEN = accessTokenResp.token;
     }
+  }
+
+  /**
+   * https://dev.azure.com/<org>/<project>/_git/<repo>/pullrequestcreate?sourceRef=&targetRef=
+   */
+  public static getPullRequestCreateUrl(remoteUrl: string, request: CreatePullRequestRequest): PullRequestCreateUrlResult | null {
+    const parsed = AzureDevopsProvider.parseAzureRepoUrl(remoteUrl);
+    if (!parsed) {
+      return null;
+    }
+    const collectionUri = parsed.collectionUri.replace(/\/$/, "");
+    const repoPath = `${collectionUri}/${encodeURIComponent(parsed.teamProject)}/_git/${encodeURIComponent(parsed.repositoryId)}`;
+    return buildPrCreateUrl((body) => {
+      const params = new URLSearchParams({
+        sourceRef: request.sourceBranch,
+        targetRef: request.targetBranch,
+        title: request.title,
+      });
+      if (body) {
+        params.set("description", body);
+      }
+      return `${repoPath}/pullrequestcreate?${params.toString()}`;
+    }, request.body || "");
   }
 
   public getLabel(): string {

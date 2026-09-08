@@ -1,9 +1,9 @@
 import c from "chalk";
-import { getCurrentGitBranch, isCI, uxLog } from "../utils/index.js";
+import { getCurrentGitBranch, git, isCI, uxLog } from "../utils/index.js";
 import { AzureDevopsProvider } from "./azureDevops.js";
 import { GithubProvider } from "./github.js";
 import { GitlabProvider } from "./gitlab.js";
-import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
+import { GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { BitbucketProvider } from "./bitbucket.js";
 import { debuglog } from "util";
 import { CONSTANTS, getEnvVar, PrCommentBannerKey } from "../../config/index.js";
@@ -528,30 +528,140 @@ export abstract class GitProvider {
     return prInfo;
   }
 
-  static async createPullRequest(request: CreatePullRequestRequest): Promise<string | null> {
+  /**
+   * Why the last createPullRequest call did not create anything. Callers that fall back to a manual
+   * Pull Request tell the user what actually happened instead of guessing at a missing token.
+   */
+  static lastPullRequestCreationError: string | null = null;
+
+  /**
+   * Creates a Pull Request through the git provider API.
+   *
+   * `retries` exists because the branch is usually pushed a fraction of a second before: a git
+   * provider that has not yet indexed the new ref answers that the source branch does not exist
+   * (GitLab does, on a self-managed instance), and the same call succeeds a few seconds later.
+   * Each attempt starts by looking for an already open Pull Request, so a create that succeeded
+   * while reporting an error is picked up instead of being created twice.
+   */
+  static async createPullRequest(
+    request: CreatePullRequestRequest,
+    options: { retries?: number; retryDelayMs?: number } = {},
+  ): Promise<string | null> {
+    GitProvider.lastPullRequestCreationError = null;
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
+      GitProvider.lastPullRequestCreationError = t('gitProviderNotConfiguredForPrCreation');
       uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderNotConfiguredForPrCreation')));
       return null;
     }
-    // Check if a PR already exists for this source→target branch (e.g. from a previous auto-fix run)
-    const existing = await gitProvider.findOpenPullRequest(request.sourceBranch, request.targetBranch);
-    if (existing) {
-      uxLog("log", this, c.grey(`[Git Provider] Found existing open PR for ${request.sourceBranch} → ${request.targetBranch}, updating description.`));
-      await gitProvider.updatePullRequestDescription(existing.id, request.title, request.body);
-      return existing.pullRequestUrl;
-    }
-    try {
-      const result = await gitProvider.createPullRequest(request);
-      if (result.created && result.pullRequestUrl) {
-        return result.pullRequestUrl;
+    const attempts = Math.max(1, (options.retries ?? 0) + 1);
+    const retryDelayMs = options.retryDelayMs ?? 5000;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      // Check if a PR already exists for this source→target branch (e.g. from a previous auto-fix run)
+      const existing = await gitProvider.findOpenPullRequest(request.sourceBranch, request.targetBranch);
+      if (existing) {
+        uxLog("log", this, c.grey(`[Git Provider] Found existing open PR for ${request.sourceBranch} → ${request.targetBranch}, updating description.`));
+        await gitProvider.updatePullRequestDescription(existing.id, request.title, request.body);
+        GitProvider.lastPullRequestCreationError = null;
+        return existing.pullRequestUrl;
       }
-      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationFailed')));
+      try {
+        const result = await gitProvider.createPullRequest(request);
+        if (result.created && result.pullRequestUrl) {
+          GitProvider.lastPullRequestCreationError = null;
+          return result.pullRequestUrl;
+        }
+        GitProvider.lastPullRequestCreationError = t('gitProviderPrCreationFailed');
+        uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationFailed')));
+      } catch (e) {
+        GitProvider.lastPullRequestCreationError = (e as Error).message;
+        uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationError', { message: (e as Error).message })));
+      }
+      if (attempt < attempts) {
+        uxLog("log", this, c.grey('[Git Provider] ' + t('gitProviderPrCreationRetry', { seconds: Math.round(retryDelayMs / 1000), attempt: attempt + 1, attempts })));
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Web URL of the "new Pull Request" form of the git provider, with the source branch, the target
+   * branch, the title and (when it fits in a URL) the description already filled in. Built from the
+   * git remote by the provider class itself, so it works with no token and no provider instance at
+   * all: that is exactly the situation where the user has to create the Pull Request by hand.
+   */
+  static async getPullRequestCreateUrl(request: CreatePullRequestRequest): Promise<PullRequestCreateUrlResult | null> {
+    try {
+      const remoteUrl = String((await git().remote(["get-url", "origin"])) || "").trim();
+      if (!remoteUrl) {
+        return null;
+      }
+      // The active provider knows what it is; without one, the remote URL is all there is to go on
+      const gitProvider = await GitProvider.getInstance();
+      const candidates: Array<typeof GitProviderRoot> = [];
+      if (gitProvider instanceof GithubProvider) {
+        candidates.push(GithubProvider);
+      } else if (gitProvider instanceof GitlabProvider) {
+        candidates.push(GitlabProvider);
+      } else if (gitProvider instanceof AzureDevopsProvider) {
+        candidates.push(AzureDevopsProvider);
+      } else if (gitProvider instanceof BitbucketProvider) {
+        candidates.push(BitbucketProvider);
+      } else {
+        candidates.push(...GitProvider.guessProviderClassesFromRemoteUrl(remoteUrl));
+      }
+      for (const providerClass of candidates) {
+        const result = providerClass.getPullRequestCreateUrl(remoteUrl, request);
+        if (result) {
+          return result;
+        }
+      }
       return null;
     } catch (e) {
-      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationError', { message: (e as Error).message })));
+      debug("[Git Provider] Unable to build the Pull Request creation URL: " + (e as Error).message);
       return null;
     }
+  }
+
+  /**
+   * Which provider class a remote URL belongs to, when no token tells us. The host is the only
+   * reliable signal for a self-managed instance, and the GitHub and Bitbucket URL shapes are the
+   * same, so the CI variables of the running job break the ties the host cannot.
+   */
+  private static guessProviderClassesFromRemoteUrl(remoteUrl: string): Array<typeof GitProviderRoot> {
+    // Azure DevOps URLs are recognizable by their shape, whatever the host
+    if (AzureDevopsProvider.parseAzureRepoUrl(remoteUrl)) {
+      return [AzureDevopsProvider];
+    }
+    const host = (
+      remoteUrl.match(/^[a-z+]+:\/\/(?:[^@/]+@)?([^/:]+)/i)?.[1] ||
+      remoteUrl.match(/^[^@]+@([^:]+):/)?.[1] ||
+      ""
+    ).toLowerCase();
+    if (host.includes("bitbucket")) {
+      return [BitbucketProvider];
+    }
+    if (host.includes("gitlab")) {
+      return [GitlabProvider];
+    }
+    if (host.includes("github")) {
+      return [GithubProvider];
+    }
+    // Self-managed instances rarely name themselves after the product
+    if (process.env.GITLAB_CI || process.env.CI_SERVER_URL) {
+      return [GitlabProvider];
+    }
+    if (process.env.GITHUB_ACTIONS || process.env.GITHUB_SERVER_URL) {
+      return [GithubProvider];
+    }
+    if (process.env.SYSTEM_TEAMFOUNDATIONCOLLECTIONURI) {
+      return [AzureDevopsProvider];
+    }
+    if (process.env.BITBUCKET_WORKSPACE) {
+      return [BitbucketProvider];
+    }
+    return [];
   }
 
   /**

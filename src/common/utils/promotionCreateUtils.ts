@@ -903,6 +903,9 @@ async function isMergeCommit(hash: string): Promise<boolean> {
 
 export type PromotionConflictChoice = 'skip' | 'commit-with-markers' | 'abort';
 export const PROMOTION_CONFLICT_CHOICES: PromotionConflictChoice[] = ['skip', 'commit-with-markers', 'abort'];
+// Prompt-only answer: same as commit-with-markers, and the command stops asking for the conflicts
+// after it. There is no flag value for it, --on-conflict already applies to every conflict.
+export type PromotionConflictAnswer = PromotionConflictChoice | 'commit-with-markers-all';
 
 export interface CherryPickOutcome {
   picked: PromotionCandidate[];
@@ -929,6 +932,10 @@ export async function cherryPickCandidates(
   commandThis: any,
 ): Promise<CherryPickOutcome> {
   const outcome: CherryPickOutcome = { picked: [], skipped: [], alreadyThere: [], conflicted: [] };
+  // What to do with a conflict without asking again: the --on-conflict flag, or the "and all the
+  // following ones" answer of the prompt. A promotion window usually conflicts on the same files
+  // story after story, and answering ten times in a row is answering once.
+  let rememberedChoice: PromotionConflictChoice | null = onConflict;
   for (const candidate of candidates) {
     const hash = candidate.group.commit.hash;
     const mergeOption = (await isMergeCommit(hash)) ? ' -m 1' : '';
@@ -958,7 +965,21 @@ export async function cherryPickCandidates(
       throw new SfError(t('promotionCreateCherryPickRefused', { label: candidate.label, reason: reason || '-' }));
     }
     uxLog('warning', commandThis, c.yellow(t('promotionCreateConflict', { label: candidate.label, files: conflictFiles.join('\n') || '-' })));
-    const choice = onConflict || (agentMode ? 'abort' : await promptConflictChoice(candidate, commandThis));
+    let choice: PromotionConflictChoice;
+    if (rememberedChoice) {
+      choice = rememberedChoice;
+      uxLog('log', commandThis, c.grey(t('promotionCreateConflictRemembered', { choice })));
+    } else if (agentMode) {
+      choice = 'abort';
+    } else {
+      const answer = await promptConflictChoice(candidate, commandThis);
+      if (answer === 'commit-with-markers-all') {
+        choice = 'commit-with-markers';
+        rememberedChoice = choice;
+      } else {
+        choice = answer;
+      }
+    }
     if (choice === 'skip') {
       await runCommandSafe('git cherry-pick --abort', commandThis, { output: false });
       uxLog('log', commandThis, c.grey(t('promotionCreateConflictSkipped', { label: candidate.label })));
@@ -990,7 +1011,7 @@ export async function cherryPickCandidates(
   return outcome;
 }
 
-async function promptConflictChoice(candidate: PromotionCandidate, commandThis: any): Promise<PromotionConflictChoice> {
+async function promptConflictChoice(candidate: PromotionCandidate, commandThis: any): Promise<PromotionConflictAnswer> {
   const res = await prompts({
     type: 'select',
     name: 'value',
@@ -999,11 +1020,12 @@ async function promptConflictChoice(candidate: PromotionCandidate, commandThis: 
     choices: [
       { title: t('promotionCreateConflictSkip'), value: 'skip' },
       { title: t('promotionCreateConflictCommit'), value: 'commit-with-markers' },
+      { title: t('promotionCreateConflictCommitAll'), value: 'commit-with-markers-all' },
       { title: t('promotionCreateConflictAbort'), value: 'abort' },
     ],
   });
   uxLog('action', commandThis, c.cyan(t('promotionCreateConflictChoice', { choice: res.value })));
-  return res.value as PromotionConflictChoice;
+  return res.value as PromotionConflictAnswer;
 }
 
 /**
@@ -1308,8 +1330,18 @@ export function buildConflictResolutionPrompt(options: {
   lines.push(`1. In each file, the \`<<<<<<< HEAD\` side is the current content of \`${options.targetBranch}\` (plus the stories already applied on this branch), the \`>>>>>>>\` side is the change of the story being promoted. Keep the intent of the story while preserving everything else that exists in \`${options.targetBranch}\`. A conflict usually means the story depends on another story that is not part of this promotion: in that case, bring in only the minimum the promoted story needs, never the whole other story.`);
   lines.push('2. Salesforce metadata files are XML: the result must be well-formed, keep one entry per API name (no duplicated `<fullName>`, `<labels>`, `<fields>`, `<members>`...), keep the existing element order and indentation, and keep the XML declaration and namespace untouched. For `package.xml` and `destructiveChanges.xml`, merge the `<members>` lists and sort them.');
   lines.push('3. Do not touch files that have no conflict markers, and do not reformat the files you fix beyond the conflicting lines.');
-  lines.push(`4. When no marker is left (\`git grep -n "^<<<<<<< \\|^=======$\\|^>>>>>>> " -- .\` returns nothing), run \`git diff --check\`, make sure every fixed XML file still parses, then commit with the message \`fix: solve cherry-pick conflicts of ${options.branchName}\` and push the branch (\`git push\`).`);
-  lines.push(`5. Do not merge the Pull Request${options.pullRequestUrl ? ` (${options.pullRequestUrl})` : ''}: its validation job checks the deployment once your fix is pushed, and a human reviews it.`);
+  lines.push(`4. When no marker is left (\`git grep -n "^<<<<<<< \\|^=======$\\|^>>>>>>> " -- .\` returns nothing), run \`git diff --check\` and make sure every fixed XML file still parses.`);
+  lines.push('5. Commit with a message that says how each conflict was solved, then push the branch (`git push`). The reviewer must be able to understand every decision without opening the diff, so the message body carries the explanations:');
+  lines.push('');
+  lines.push('```');
+  lines.push(`fix: solve cherry-pick conflicts of ${options.branchName}`);
+  lines.push('');
+  lines.push('<path/of/the/file> (#<Pull Request number>): <what the target side had, what the story added, what you kept and why>');
+  lines.push('<path/of/another/file> (#<Pull Request number>): ...');
+  lines.push('```');
+  lines.push('');
+  lines.push('   One line per conflicting file, in the order of the "Files to fix" list, each naming the story it belongs to. Say in the line when you left out a part of the story, when you had to bring in a piece of a story that is not promoted, and when you kept both sides. Never write "solved conflicts" or "merged both versions" without saying what was kept.');
+  lines.push(`6. Do not merge the Pull Request${options.pullRequestUrl ? ` (${options.pullRequestUrl})` : ''}: its validation job checks the deployment once your fix is pushed, and a human reviews it.`);
   lines.push('');
   lines.push('Report the files you changed and, for each conflict, the choice you made in one sentence.');
   return lines.join('\n');
@@ -1480,19 +1512,49 @@ export async function pushAndCreatePromotionPullRequest(options: {
     return { pushed: true, pullRequestUrl: null, descriptionFile };
   }
   uxLog('action', options.commandThis, c.cyan(t('promotionCreateCreatingPullRequest', { branch: c.green(options.branchName), target: c.green(options.targetBranch) })));
-  let pullRequestUrl = await GitProvider.createPullRequest({
-    title: options.title,
-    body: options.body,
-    sourceBranch: options.branchName,
-    targetBranch: options.targetBranch,
-  });
+  // The branch was pushed a moment ago: a git provider that has not indexed the new ref yet answers
+  // that the source branch does not exist, and the same call goes through a few seconds later.
+  let pullRequestUrl = await GitProvider.createPullRequest(
+    {
+      title: options.title,
+      body: options.body,
+      sourceBranch: options.branchName,
+      targetBranch: options.targetBranch,
+    },
+    { retries: 3, retryDelayMs: 5000 },
+  );
+  const providerError = GitProvider.lastPullRequestCreationError;
   if (!pullRequestUrl) {
     pullRequestUrl = await createPullRequestWithGhCli(options, descriptionFile);
   }
   if (pullRequestUrl) {
     uxLog('success', options.commandThis, c.green(t('promotionCreatePullRequestCreated', { url: pullRequestUrl })));
   } else {
-    uxLog('warning', options.commandThis, c.yellow(t('promotionCreatePullRequestManual', { branch: options.branchName, target: options.targetBranch, file: descriptionFile })));
+    // Naming the reason the provider gave: "no token" is a guess, and a wrong one whenever the
+    // provider answered and refused
+    uxLog('warning', options.commandThis, c.yellow(t('promotionCreatePullRequestManual', {
+      branch: options.branchName,
+      target: options.targetBranch,
+      file: descriptionFile,
+      reason: providerError || t('gitProviderNotConfiguredForPrCreation'),
+    })));
+    // Retyping the description is not an option: the promotionPullRequests block is what the
+    // deployment jobs read, so the link carries it whenever a URL can hold it
+    const createUrl = await GitProvider.getPullRequestCreateUrl({
+      title: options.title,
+      body: options.body,
+      sourceBranch: options.branchName,
+      targetBranch: options.targetBranch,
+    });
+    if (createUrl) {
+      uxLog('action', options.commandThis, c.cyan(t(
+        createUrl.bodyIncluded ? 'gitProviderCreatePullRequestLink' : 'promotionCreatePullRequestCreateLinkNoBody',
+        { url: createUrl.url, file: descriptionFile },
+      )));
+      if (WebSocketClient.isAliveWithLwcUI()) {
+        WebSocketClient.sendReportFileMessage(createUrl.url, t('gitProviderCreatePullRequestLinkTitle'), 'actionUrl');
+      }
+    }
   }
   return { pushed: true, pullRequestUrl, descriptionFile };
 }

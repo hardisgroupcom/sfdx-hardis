@@ -1,4 +1,4 @@
-import { GitProviderRoot, PullRequestCommentRef, getOldestCommitDateWithMargin } from './gitProviderRoot.js';
+import { GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from './gitProviderRoot.js';
 import c from 'chalk';
 import fs from '../utils/fsUtils.js';
 import * as path from "path";
@@ -123,6 +123,26 @@ export class BitbucketProvider extends GitProviderRoot {
       }
     }
     return null;
+  }
+
+  /**
+   * https://bitbucket.org/<workspace>/<repo>/pull-requests/new?source=&dest=&title=
+   * The Bitbucket form takes the branches and the title, never the description.
+   */
+  public static getPullRequestCreateUrl(remoteUrl: string, request: CreatePullRequestRequest): PullRequestCreateUrlResult | null {
+    const parsed = BitbucketProvider.parseBitbucketRepoUrl(remoteUrl);
+    if (!parsed) {
+      return null;
+    }
+    const params = new URLSearchParams({
+      source: request.sourceBranch,
+      dest: request.targetBranch,
+      title: request.title,
+    });
+    return {
+      url: `${parsed.serverUrl}/${parsed.workspace}/${parsed.repoSlug}/pull-requests/new?${params.toString()}`,
+      bodyIncluded: false,
+    };
   }
 
   public getLabel(): string {

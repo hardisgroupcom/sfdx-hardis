@@ -204,19 +204,26 @@ e2e_check <P2> preprod "check-promotion-preprod"
 gh pr merge <P2> --repo "$REPO" --merge --delete-branch=false
 e2e_deploy preprod "deploy-preprod-promotion"
 
-# P3: uat -> preprod carrying the MERGE COMMIT of P1, so the stories under it.
-# Not <P1>: a promotion Pull Request is a vehicle, it is no longer a candidate, and passing its
-# number is answered with "not among the Pull Requests waiting for promotion". Pass one of the
-# stories it carried: the candidate is the group labelled "#3, #1" and selecting either takes both.
+# P3: uat -> preprod carrying ONE of the stories that reached uat through the P1 promotion.
+# The merge of P1 into uat only moves other merges, so it is opened up into the commits it brought
+# in: S1 and S3 are two candidate rows of their own, not one row labelled "#3, #1". Promoting 3
+# carries S3 alone and leaves S1 waiting in uat.
+# Not <P1>: a promotion Pull Request is a vehicle, it is never a candidate, and passing its number
+# is answered with "not among the Pull Requests waiting for promotion".
 e2e_promote uat 3 "promotion-uat-preprod-nested"
+# Assert here, before going on: the candidate table has a row "#1" and a row "#3", the branch
+# cherry-picks one commit, and the summary declares #3 only.
+e2e_grep "$LOGS/promotion-uat-preprod-nested.log"
 
 # RUN stream: hotfix straight into preprod
 e2e_check 6 preprod "check-pr6-hotfix"
 gh pr merge 6 --repo "$REPO" --merge --delete-branch=false
 e2e_deploy preprod "deploy-preprod-pr6"
 
-# P4: preprod -> main carrying two promotions AND the hotfix (two levels of nesting)
-e2e_promote preprod <P2>,<P3>,6 "promotion-preprod-main"
+# P4: preprod -> main carrying the stories that reached preprod through P2 and P3, AND the hotfix.
+# The merges of P2 and P3 into preprod are vehicles too, so the candidates are the stories under
+# them (#4 carried by P2, #3 carried by P3) and #6, never the promotion numbers themselves.
+e2e_promote preprod 4,3,6 "promotion-preprod-main"
 e2e_check <P4> main "check-promotion-main"
 gh pr merge <P4> --repo "$REPO" --merge --delete-branch=false
 e2e_deploy main "deploy-main-promotion"
@@ -250,6 +257,7 @@ e2e_deploy integration "deploy-integration-retrofit"
 | promotion carrying test classes                | `Test classes selected from PRs:` lists the union of the carried Pull Requests, `Final test level: RunSpecifiedTests`                                                                                                                                                                                |
 | promotion deployment                           | the "Deployment Actions" comment of each **story** Pull Request gains a column for the target org branch, not the promotion Pull Request                                                                                                                                                             |
 | promotion carrying a promotion                 | the story of the inner promotion is in the scope with its actions and test classes: `Promotion Pull Request N adds X carried Pull Request(s)` appears once per level                                                                                                                                 |
+| `promotion:create` / `list-candidates` listing | **one candidate row per User Story**, whatever brought it into the source branch. A sync merge (`integration -> uat`) and a promotion merged into its target are opened up into the commits they brought in, so no row groups a whole promotion window, and each row names its own Pull Request only |
 | retrofit validation / deployment               | the go-live promotion is expanded, then `Pull Request N was already deployed through promotion branch(es) ...` for each story already shipped                                                                                                                                                        |
 | release notes of the go-live                   | `hardis-report/release-notes/main-<date>/release-notes-main-<date>.md` lists the **User Stories**, not the promotion Pull Requests: the Pull Request count, the contributor counts and the ticket rows must name the stories only. With `--include-promotions`, the vehicles are listed next to them |
 
@@ -304,6 +312,9 @@ pending manual checkbox per org branch.
 | Empty cherry-pick, dirty report folder | the same while `hardis-report/` is untracked                                                                                           | identical result: the cleanliness check and the emptiness test must both ignore the report directory                                                                                                                                                       |
 | Conflict, agent default                | two stories on the shared `CustomLabels` file merged into integration, promote only the second                                         | `Cherry-pick conflict on #N (...): the promotion has been undone`, no leftover branch                                                                                                                                                                      |
 | Conflict, kept                         | same with `--on-conflict commit-with-markers`                                                                                          | Pull Request created, `hardis-report/promotion-conflicts-prompt-*.md` written, prompt embedded in the description                                                                                                                                          |
+| Conflict, kept for all                 | two conflicting stories in the same promotion, no `--on-conflict`, answer "commit this and every following conflict" at the first one   | the second conflict is not asked about: the log holds `Applying the conflict handling chosen earlier: commit-with-markers` and both stories are committed with their markers                                                                                                                        |
+| Conflict prompt commit message         | read `hardis-report/promotion-conflicts-prompt-*.md` of the run above                                                                   | the prompt asks for a commit message whose body carries one line per conflicting file, naming the story, what the target side had, what the story added and what was kept                                                                                                                            |
+| Pull Request creation refused          | unset the provider token (or point it at a project the branch is not in) and run `promotion:create`                                     | the branch is still pushed, the warning names **the reason the provider gave** (not "no token"), and a link to the provider's own "new Pull Request" form is printed with the source branch, the target branch, the title and the description already filled in (the branches and the title only when the description is too long for a URL) |
 | Marker guard                           | validate that Pull Request                                                                                                             | job fails: `still contains git conflict markers in N file(s): ...`                                                                                                                                                                                         |
 | Marker guard, solved                   | solve as the prompt says, push, validate again                                                                                         | job passes                                                                                                                                                                                                                                                 |
 | Conflict outside force-app             | make two stories diverge on `NOTES.md` (both sides must hold the file with different content, otherwise git leaves no marker)          | the marker gate still catches it and names `NOTES.md`                                                                                                                                                                                                      |
@@ -312,6 +323,13 @@ pending manual checkbox per org branch.
 | Retargeted promotion                   | open a `promotion/uat/preprod/...` branch against `main`                                                                               | treated as an ordinary branch, scope is the Pull Request alone, with a warning naming the mismatch. **The declared stories must not run their actions against production**                                                                                 |
 | Grouped merge commit                   | promote a candidate whose label lists several numbers (`#7, #6, #4 ...`)                                                               | the command names the numbers nobody asked for **before** cherry-picking, and declares them all                                                                                                                                                            |
 | Unreadable declaration                 | declare a Pull Request number that does not exist                                                                                      | warning and skip, not a failure                                                                                                                                                                                                                            |
+| Story brought in by a sync merge       | merge `integration` into `uat` with an ordinary merge (never a promotion), then `promotion:create --source-branch uat`                  | the candidate table has one row per story of the sync, each naming its own Pull Request. **Never one row for the whole window**: promoting one story must not carry the others. Check the assembled branch holds one cherry-pick and the description declares one number                             |
+| Story brought in by a promotion        | after P1 (`integration -> uat`) is merged, `promotion:create --source-branch uat`                                                      | same: S1 and S3 are two rows, promoting `3` carries S3 alone and leaves S1 offered in the next run                                                                                                                                                                                                  |
+| Two levels of vehicle                  | merge a promotion into `integration`, then merge `integration` into `uat` with an ordinary merge, then promote from `uat`               | the stories under the inner promotion are candidates of their own: the split runs again over what it produced. The row must name the story, never the promotion or the sync                                                                                                                          |
+| Vehicle boundary                       | the same run                                                                                                                           | the merge that follows an opened-up vehicle does not swallow it: no candidate row lists the Pull Request numbers of the stories the vehicle carried on top of its own                                                                                                                                |
+| Back-merge from the target branch      | merge `preprod` into `uat` (a major branch merged backwards), then promote from `uat`                                                  | the back-merge stays a single row instead of becoming a page of stories already delivered: its commits sit before the merge base, outside the window being listed                                                                                                                                    |
+| Octopus merge                          | `git merge -m "sync" origin/integration origin/preprod` on `uat`, then promote from `uat`                                              | the merge is left whole: opening up a merge with more than two parents would lose every side but the second one                                                                                                                                                                                     |
+| Promotion that cannot be opened up     | the octopus case above, when one of its sides is a promotion branch                                                                    | the candidate keeps the promotion number, and the declaration is expanded into the stories it names before the vehicle is dropped: the offered rows are still User Stories                                                                                                                           |
 | Sync merge inside a story              | merge the major branch into a feature branch, then merge that feature branch                                                           | the candidate lists the story only: the major branch's own Pull Request must not be offered, declared or have its actions run                                                                                                                              |
 | Supersede a promotion                  | assemble a promotion, then assemble another one from the same source with the same stories                                             | the confirmation names the open promotion, then the candidate list offers those stories again with no "Already promoted by" mark, and `--include-already-promoted` is not needed                                                                           |
 | Branch merged twice                    | merge a feature branch, push a fix on it, merge it again, then promote                                                                 | the candidate lists the Pull Request once, never once with its number and once as a "-" row                                                                                                                                                                |
@@ -348,7 +366,12 @@ pending manual checkbox per org branch.
   `ab-run-azure.sh` and `ab-run-bitbucket.sh` source the library sitting next to them, because
   `bash script.sh` is a child process and does not inherit the functions the caller sourced.
 - **A promotion Pull Request number is not a candidate.** Promotions are vehicles, so `promote
-  <promotion number>` is refused. Select one of the stories it carried.
+  <promotion number>` is refused. Select one of the stories it carried: since the vehicle merge is
+  opened up into the commits it brought in, each of those stories is a candidate row of its own.
+- **A candidate row is a User Story, not a promotion window.** Runs written before the vehicle
+  merges were opened up expected one row labelled `#3, #1` for a whole `integration -> uat` sync,
+  and read "selecting either takes both" as correct. It is not: promoting one story must carry that
+  story only. A run that still sees the grouped row is looking at a regression, not at the runbook.
 
 ## 7bis. Checking the "one place in the diagram" rule
 

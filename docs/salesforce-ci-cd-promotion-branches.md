@@ -149,7 +149,10 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
 4. If a cherry-pick conflicts, the story depends on another one that is not part of the promotion. The command asks what to do (or takes it from `--on-conflict`):
     - **skip**: leave that story out, it is listed as such in the Pull Request description;
     - **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description warns about it, lists the files to fix and embeds a ready-to-paste prompt for a coding agent, also saved in `hardis-report/promotion-conflicts-prompt-*.md`. The validation job stops with an error naming the files while a marker is still in the sources;
+    - **commit-with-markers, and all the following conflicts**: the same, and the question is not asked again for the rest of the promotion. A promotion window usually conflicts on the same files story after story, and `--on-conflict commit-with-markers` is the equivalent for a non-interactive run;
     - **abort**: stop, the branch is deleted and nothing is pushed.
+
+    The coding agent prompt asks for a commit message that explains, file by file, what was on the target side, what the story added, and what was kept: the reviewer of the promotion Pull Request reads the resolutions without opening the diff.
 
     The [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) plugin solves many XML conflicts by itself.
 

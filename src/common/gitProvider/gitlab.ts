@@ -3,7 +3,7 @@ import c from "chalk";
 import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { GitProviderRoot, PullRequestCommentRef, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
@@ -61,18 +61,11 @@ export class GitlabProvider extends GitProviderRoot {
         process.env.CI_PROJECT_PATH = parsed.projectPath;
       }
       // Try to resolve project ID via API if missing
+      const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || "";
       if (!process.env.CI_PROJECT_ID) {
-        const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || "";
         if (token) {
           try {
-            const gitlabConfig: ConstructorParameters<typeof Gitlab>[0] = {
-              host: parsed.serverUrl,
-              token,
-            };
-            if (process.env.GITLAB_API_REJECT_UNAUTHORIZED === "false") {
-              gitlabConfig.agent = new HttpsAgent({ rejectUnauthorized: false });
-            }
-            const tempApi = new Gitlab(gitlabConfig);
+            const tempApi = GitlabProvider.buildApi(parsed.serverUrl, token);
             const project = await tempApi.Projects.show(parsed.projectPath);
             if (project?.id) {
               process.env.CI_PROJECT_ID = String(project.id);
@@ -81,6 +74,12 @@ export class GitlabProvider extends GitProviderRoot {
             uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderApiError", { provider: "GitLab", message: (apiErr as Error).message })));
           }
         }
+      } else if (!process.env.GITLAB_CI && token) {
+        // Outside a GitLab CI job, CI_PROJECT_ID comes from a .env file or the user environment and
+        // can be left over from another repository. Every API call would then answer about that
+        // other project: a merge request creation fails with "source_branch does not exist" even
+        // though the branch was just pushed. The local git remote is the authority here.
+        await GitlabProvider.checkProjectIdMatchesRemote(parsed, token);
       }
       // When running on Jenkins, map Jenkins-specific variables to GitLab equivalents
       if (isJenkins()) {
@@ -125,6 +124,45 @@ export class GitlabProvider extends GitProviderRoot {
     }
   }
 
+  private static buildApi(serverUrl: string, token: string): InstanceType<typeof Gitlab> {
+    const gitlabConfig: ConstructorParameters<typeof Gitlab>[0] = { host: serverUrl, token };
+    if (process.env.GITLAB_API_REJECT_UNAUTHORIZED === "false") {
+      gitlabConfig.agent = new HttpsAgent({ rejectUnauthorized: false });
+    }
+    return new Gitlab(gitlabConfig);
+  }
+
+  /**
+   * Replaces CI_PROJECT_ID when it names a project other than the one the local git remote points
+   * to. Silence is not an option: acting on the wrong project is worse than not acting at all.
+   */
+  private static async checkProjectIdMatchesRemote(parsed: { serverUrl: string; projectPath: string }, token: string): Promise<void> {
+    const configuredId = process.env.CI_PROJECT_ID as string;
+    try {
+      const tempApi = GitlabProvider.buildApi(parsed.serverUrl, token);
+      const configuredProject = await tempApi.Projects.show(configuredId);
+      const configuredPath = String((configuredProject as any)?.path_with_namespace || "");
+      if (configuredPath && configuredPath.toLowerCase() === parsed.projectPath.toLowerCase()) {
+        return;
+      }
+      const remoteProject = await tempApi.Projects.show(parsed.projectPath);
+      if (!remoteProject?.id) {
+        return;
+      }
+      uxLog("warning", GitlabProvider, c.yellow("[GitLab] " + t("gitlabProjectIdMismatch", {
+        projectId: configuredId,
+        configuredPath: configuredPath || "?",
+        remotePath: parsed.projectPath,
+        newProjectId: String(remoteProject.id),
+      })));
+      process.env.CI_PROJECT_ID = String(remoteProject.id);
+      process.env.CI_PROJECT_PATH = parsed.projectPath;
+    } catch (apiErr) {
+      // Not being able to check is not a reason to overwrite what the user configured
+      uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderApiError", { provider: "GitLab", message: (apiErr as Error).message })));
+    }
+  }
+
   public static parseGitlabRepoUrl(remoteUrl: string): { serverUrl: string; projectPath: string } | null {
     // HTTPS: https://gitlab.com/group/project.git or https://self-hosted.com/group/subgroup/project.git
     if (remoteUrl.startsWith("https://") || remoteUrl.startsWith("http://")) {
@@ -151,6 +189,27 @@ export class GitlabProvider extends GitProviderRoot {
       }
     }
     return null;
+  }
+
+  /**
+   * https://<host>/<group>/<project>/-/merge_requests/new?merge_request[source_branch]=...
+   */
+  public static getPullRequestCreateUrl(remoteUrl: string, request: CreatePullRequestRequest): PullRequestCreateUrlResult | null {
+    const parsed = GitlabProvider.parseGitlabRepoUrl(remoteUrl);
+    if (!parsed) {
+      return null;
+    }
+    return buildPrCreateUrl((body) => {
+      const params = new URLSearchParams({
+        "merge_request[source_branch]": request.sourceBranch,
+        "merge_request[target_branch]": request.targetBranch,
+        "merge_request[title]": request.title,
+      });
+      if (body) {
+        params.set("merge_request[description]", body);
+      }
+      return `${parsed.serverUrl}/${parsed.projectPath}/-/merge_requests/new?${params.toString()}`;
+    }, request.body || "");
   }
 
   public getLabel(): string {

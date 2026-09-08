@@ -281,6 +281,9 @@ describe('promotion Pull Request title and body', () => {
     expect(prompt).to.contain('Pull Request #491: Story C (https://git.example.com/pr/491). Origin commit in `uat`: `ccc3333`');
     expect(prompt).to.contain('- `force-app/main/default/labels/CustomLabels.labels-meta.xml`');
     expect(prompt).to.contain('fix: solve cherry-pick conflicts of promotion/uat/preprod/2026-09-06-1');
+    // The commit message must explain the resolutions, not only say that conflicts were solved
+    expect(prompt).to.contain('Commit with a message that says how each conflict was solved');
+    expect(prompt).to.contain('<path/of/the/file> (#<Pull Request number>): <what the target side had, what the story added, what you kept and why>');
     expect(prompt).to.contain('Do not merge the Pull Request (https://git.example.com/pr/900)');
     // The same prompt is embedded in the Pull Request description, in a collapsible block
     const body = buildPromotionPullRequestBody({
