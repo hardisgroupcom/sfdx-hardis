@@ -1097,6 +1097,49 @@ async function listConflictFiles(): Promise<string[]> {
 }
 
 /**
+ * Fail the job when a **deployment** runs from a promotion branch.
+ *
+ * A promotion branch is the source branch of a Pull Request, like a feature branch: the only job
+ * it may run is the validation of that Pull Request. A deployment job triggered by the push that
+ * created it would send the promotion to the target org before anyone reviewed or merged it, and
+ * that is a CI configuration mistake, not something to work around: the deployment trigger of the
+ * project matches more branches than the major ones.
+ *
+ * The commonest form, seen on a real project: an unanchored GitLab `DEPLOY_BRANCHES` regex,
+ * `/(integration|uat|preprod|main)/` instead of `/^(integration|uat|preprod|main)$/`, which also
+ * matches `promotion/integration/uat/2026-09-08-2`.
+ *
+ * Not a Pull Request comment, only an error: the job that trips this is the branch pipeline of the
+ * push, not the validation of the Pull Request, and marking the Pull Request failed for it would
+ * say the promotion is broken when it is the pipeline configuration that is.
+ *
+ * Silent when the feature is off (a `promotion/` branch is then an ordinary feature branch), on a
+ * validation job, and when the project deploys before merging, where a deployment legitimately
+ * runs from the source branch of the Pull Request.
+ */
+export function assertPromotionBranchIsNotDeployed(
+  commandThis: any,
+  config: any,
+  checkOnly: boolean,
+  currentBranch: string | null,
+): void {
+  if (getPromotionBranchConfig(config).enabled !== true) {
+    return;
+  }
+  if (checkOnly === true || GitProvider.isDeployBeforeMerge()) {
+    return;
+  }
+  if (parsePromotionBranchName(currentBranch || '') === null) {
+    return;
+  }
+  uxLog('error', commandThis, c.red(t('promotionBranchDeploymentForbiddenShort', { branch: currentBranch })));
+  throw new SfError(t('promotionBranchDeploymentForbidden', {
+    branch: currentBranch,
+    docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/`,
+  }));
+}
+
+/**
  * Sources still holding git conflict markers. `--on-conflict commit-with-markers` commits them on
  * purpose, so they have to be solved on the branch before the merge: this is what makes the
  * validation job fail while they are there, with a message naming the files.

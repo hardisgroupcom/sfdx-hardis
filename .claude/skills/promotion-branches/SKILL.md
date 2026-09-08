@@ -171,6 +171,30 @@ Break one of these and the feature is wrong, whatever the tests say.
     replaces it with a warning (`gitlabProjectIdMismatch`) when they disagree. A leftover
     `CI_PROJECT_ID` from another repository makes every call answer about that other project, which
     looks exactly like a branch that does not exist.
+23. **A promotion branch is validated, never deployed.** It is the source branch of a Pull
+    Request, like a feature branch: the only job it may run is that Pull Request's validation. A
+    deployment job triggered by the push that created it would send the promotion to the target org
+    before anyone reviewed or merged it. `assertPromotionBranchIsNotDeployed` stops `deploy:smart`
+    at the top of `run()` and names the CI setting to fix, because the answer is to fix the
+    trigger, not to let the job continue. Silent when the feature is off, on a validation job, and
+    with `SFDX_HARDIS_DEPLOY_BEFORE_MERGE`, where a deployment legitimately runs from the source
+    branch. It raises an error and posts **no** Pull Request comment: the job that trips it is the
+    branch pipeline of the push, not the validation, and failing the Pull Request over it would say
+    the promotion is broken when it is the pipeline configuration that is.
+24. **A promotion branch always runs two pipelines, and only one of them is its Pull Request's.**
+    It is pushed to the server, so it gets a branch pipeline of its own next to the Pull Request
+    validation pipeline, on the same commit. In vscode-sfdx-hardis,
+    `GitProviderGitlab.pickMergeRequestPipeline` reads the newest `merge_request_event` pipeline
+    (the newest of all of them when the project runs none), which is how GitLab picks the
+    `head_pipeline` its own merge request page shows; reporting every pipeline of the commit drew a
+    green merge request red on the DevOps Pipeline diagram. GitLab is the only provider concerned:
+    GitHub already asks for `event: "pull_request"` runs, Azure DevOps and Bitbucket read builds
+    and statuses attached to the Pull Request. Deployment status is a different question, answered
+    by `getJobsForBranchLatestCommit`, which leaves the merge request pipelines out.
+    Related project-side trap: an unanchored `DEPLOY_BRANCHES` regex
+    (`/(integration|uat|preprod|main)/` instead of `/^(...)$/`) matches
+    `promotion/integration/uat/...`, so every promotion branch push starts the deployment job and
+    fails it. The sfdx-hardis default template is anchored.
 
 ## sfdx-hardis (CLI)
 

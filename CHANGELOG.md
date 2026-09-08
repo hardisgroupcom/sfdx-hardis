@@ -7,6 +7,7 @@
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a cherry-pick conflict can now be answered once for the whole promotion, and the coding agent prompt asks for a commit message explaining how each conflict was solved.
 - When a Pull Request cannot be created automatically, sfdx-hardis now says what the git provider answered and gives a link to the provider's own creation form, with the branches, the title and the description already filled in.
 - A promotion Pull Request stopped because its branch still holds git conflict markers now says so in its validation comment, instead of failing the job with no comment at all.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): a deployment job running from a promotion branch now stops with an error naming the CI setting to fix, since a promotion branch must only run the validation of its Pull Request.
 
 ## [8.7.0] 2026-09-08
 

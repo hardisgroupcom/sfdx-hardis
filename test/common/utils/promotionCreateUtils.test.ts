@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import '../../../src/common/gitProvider/index.js';
 import { shouldAddVirtualPullRequest, type BackpromotePrGroup } from '../../../src/common/utils/backpromoteUtils.js';
 import {
+  assertPromotionBranchIsNotDeployed,
   buildConflictResolutionPrompt,
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
@@ -628,5 +629,55 @@ describe('expandPromotionsInGroups()', () => {
           : null,
     );
     expect(withMissing[0].associatedPrs.map((pr) => pr.id)).to.deep.equal([9]);
+  });
+});
+
+describe('assertPromotionBranchIsNotDeployed()', () => {
+  const enabled = { enablePromotionBranches: true, allowedPromotionSteps: [{ source: 'uat', target: 'preprod' }] };
+  const promotionBranch = 'promotion/uat/preprod/2026-09-08-2';
+  // The command object only has to accept a uxLog call
+  const commandThis = {} as any;
+  const deployBeforeMerge = process.env.SFDX_HARDIS_DEPLOY_BEFORE_MERGE;
+
+  afterEach(() => {
+    if (deployBeforeMerge === undefined) {
+      delete process.env.SFDX_HARDIS_DEPLOY_BEFORE_MERGE;
+    } else {
+      process.env.SFDX_HARDIS_DEPLOY_BEFORE_MERGE = deployBeforeMerge;
+    }
+  });
+
+  it('stops a deployment running from a promotion branch, naming the branch and the fix', () => {
+    let message = '';
+    try {
+      assertPromotionBranchIsNotDeployed(commandThis, enabled, false, promotionBranch);
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    expect(message).to.contain(promotionBranch);
+    expect(message).to.contain('DEPLOY_BRANCHES');
+  });
+
+  it('lets the validation of the promotion Pull Request run', () => {
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, true, promotionBranch)).to.not.throw();
+  });
+
+  it('lets the deployment of the target branch run once the promotion is merged', () => {
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, false, 'preprod')).to.not.throw();
+  });
+
+  it('says nothing while the feature is off: a promotion/ branch is then an ordinary feature branch', () => {
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, { enablePromotionBranches: false }, false, promotionBranch)).to.not.throw();
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, {}, false, promotionBranch)).to.not.throw();
+  });
+
+  it('lets a project that deploys before merging deploy from the source branch', () => {
+    process.env.SFDX_HARDIS_DEPLOY_BEFORE_MERGE = 'true';
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, false, promotionBranch)).to.not.throw();
+  });
+
+  it('ignores a branch that only looks like a promotion branch', () => {
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, false, 'promotion/hand-made-by-a-human')).to.not.throw();
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, false, null)).to.not.throw();
   });
 });

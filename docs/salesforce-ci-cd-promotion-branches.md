@@ -163,6 +163,20 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
     Promotion branch names have exactly four segments, so the source and target branch names must not contain a `/`. The command stops before touching git if one of them does.
 5. Review the Pull Request like any other, and do **not** squash it when merging: the `-x` trailers of the cherry-picks must survive in `preprod`.
 
+!!! warning "A promotion branch must only be validated, never deployed"
+    A promotion branch is the source branch of a Pull Request, like a feature branch. Your CI must run its **validation** job, never a deployment job: deploying from the promotion branch would send the promotion to the target org before it is reviewed and merged. `hardis:project:deploy:smart` stops with an error when it happens, naming the setting to fix.
+
+    The usual cause is a deployment trigger that matches more than your major branches. On GitLab, anchor the `DEPLOY_BRANCHES` regex of `.gitlab-ci-config.yml`:
+
+    ```yaml
+    # promotion/integration/uat/2026-09-08-1 matches this one
+    DEPLOY_BRANCHES: /(integration|uat|preprod|main)/
+    # it does not match this one
+    DEPLOY_BRANCHES: /^(integration|uat|preprod|main)$/
+    ```
+
+    On GitHub Actions, Azure Pipelines and Bitbucket Pipelines, list your major branches explicitly in the trigger of the deployment job.
+
 ### List what can be promoted, without creating anything
 
 `hardis:project:promotion:create` lists the candidates before asking which ones to carry, but a coding agent (or anyone who only wants to know) needs that list on its own:

@@ -2727,6 +2727,8 @@
   "projectScratchDef": "スクラッチ組織定義：\n",
   "promotedPackageVersionInstallable": "パッケージバージョン {{version}}（ID: {{id}}）をプロモートしました。本番環境組織にインストール可能になりました",
   "promotingVersionOfPackage": "パッケージ {{packageToPromote}} のバージョンをプロモートしています",
+  "promotionBranchDeploymentForbidden": "ブランチ {{branch}} はプロモーションブランチであり、その Pull Request の検証ジョブのみを実行できます。このジョブはプロモーションブランチから直接 org へデプロイしており、レビューとマージの前にプロモーションを反映してしまいます。デプロイジョブが主要ブランチでのみ起動するよう CI 設定を修正してください: GitLab では .gitlab-ci-config.yml の DEPLOY_BRANCHES 正規表現をアンカーします（/(integration|uat|preprod|main)/ は promotion/integration/uat/... にも一致するため、/^(integration|uat|preprod|main)$/ とします）。GitHub Actions、Azure Pipelines、Bitbucket Pipelines では、デプロイジョブのトリガーに主要ブランチを明示的に列挙してください。{{docUrl}} を参照してください",
+  "promotionBranchDeploymentForbiddenShort": "プロモーションブランチ {{branch}} からデプロイジョブが実行されています: プロモーションブランチは Pull Request の検証のみを実行すべきです。",
   "promotionBranchFeatureDisabled": "Pull Request {{pr}} はプロモーションブランチのように見えますが、.sfdx-hardis.yml に enablePromotionBranches が設定されていないため、通常の feature branch として扱います",
   "promotionBranchNameInvalid": "ブランチ {{branch}} は promotion/ で始まりますが、プロモーションブランチの命名規則 promotion/<source>/<target>/<YYYY-MM-DD>-<counter>（例: {{example}}）に従っていないため、通常の feature branch として扱います",
   "promotionBranchStepNotAllowed": "プロモーションブランチ {{branch}} は {{source}} から {{target}} への promotion ですが、allowedPromotionSteps で許可されたステップ ({{steps}}) に含まれていません。そのままデプロイされますので、この promotion がプロジェクトの意図どおりか確認してください",
