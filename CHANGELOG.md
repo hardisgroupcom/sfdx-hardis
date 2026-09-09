@@ -10,6 +10,7 @@
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): a deployment job running from a promotion branch now stops with an error naming the CI setting to fix, since a promotion branch must only run the validation of its Pull Request.
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a User Story a promotion carried and an ordinary sync merge delivered again is now offered on a single candidate row.
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a machine without the GitHub CLI no longer stops with `not found: gh` when a Pull Request cannot be created, and gets the manual creation link.
+- GitLab: a `CI_PROJECT_ID` left over from another repository in a local `.env` is now detected and replaced by the one of the git remote, instead of making every API call answer about the wrong project.
 
 ## [8.7.0] 2026-09-08
 
