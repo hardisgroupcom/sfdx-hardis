@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.7.1] 2026-09-09
+
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a merge that only moves other merges (`integration -> uat`, a promotion merged into its target) is now opened up, so each User Story is a candidate of its own instead of the whole sync window being a single selectable row.
 - A configuration file left unreadable while a command runs (git conflict markers in `config/.sfdx-hardis.yml`) no longer crashes it: the configuration read earlier during the command is used, with a warning naming the file to fix.
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a cherry-pick conflict can now be answered once for the whole promotion, and the coding agent prompt asks for a commit message explaining how each conflict was solved.
