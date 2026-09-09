@@ -49,13 +49,13 @@
     "xpath": "0.0.34"
   },
   "resolutions": {
-    "**/gray-matter/js-yaml": "3.15.1",
-    "**/@istanbuljs/load-nyc-config/js-yaml": "3.15.1",
+    "**/gray-matter/js-yaml": "3.15.2",
+    "**/@istanbuljs/load-nyc-config/js-yaml": "3.15.2",
     "wireit": "0.14.13",
     "uuid": "14.0.0",
     "@babel/core": "7.29.6",
     "browserslist": "4.28.7",
-    "@cparra/apexdocs/js-yaml": "4.3.1",
+    "@cparra/apexdocs/js-yaml": "4.3.2",
     "@sigstore/core": "3.2.1",
     "fast-xml-parser": "5.11.1",
     "lodash": "4.18.0",
