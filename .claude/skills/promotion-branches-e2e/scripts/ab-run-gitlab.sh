@@ -11,6 +11,14 @@
 # Copy this script (and ab-diff.py) outside the sfdx-hardis working copy before running the pair:
 # checking out origin/main takes .claude/skills away with it.
 set -u
+# The job simulators live in a function library. `bash ab-run-gitlab.sh` is a child process, so it
+# does not inherit the functions the caller sourced: source the library that sits next to this
+# script, which is why the pair is copied outside the sfdx-hardis working copy as one folder.
+if ! declare -f gl_ci_env >/dev/null 2>&1; then
+  # shellcheck source=/dev/null
+  . "$(dirname "$0")/e2e-lib-gitlab.sh"
+fi
+
 LABEL="$1"
 MODE="$2"
 FEATURE_MR="$3"

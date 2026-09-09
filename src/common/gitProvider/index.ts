@@ -64,8 +64,12 @@ export abstract class GitProvider {
           );
           return null;
         }
-        // Auto-detect missing CI variables from git remote URL
-        if (!process.env.CI_SERVER_URL || !process.env.CI_PROJECT_ID) {
+        // Auto-detect missing CI variables from git remote URL. Outside a GitLab CI job this runs
+        // even when everything is set, because CI_PROJECT_ID then comes from a .env file or the
+        // user environment and can be left over from another repository: autoDetectSettings checks
+        // it against the git remote and says so. Inside a job GITLAB_CI is always set, so the
+        // detection is skipped there exactly as before.
+        if (!process.env.CI_SERVER_URL || !process.env.CI_PROJECT_ID || !process.env.GITLAB_CI) {
           await GitlabProvider.autoDetectSettings();
         }
         return new GitlabProvider();
