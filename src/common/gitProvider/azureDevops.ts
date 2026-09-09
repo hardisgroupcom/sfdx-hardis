@@ -869,6 +869,11 @@ ${getBannerMarkdownAndLink()}
     return false;
   }
 
+  // "A description for a pull request must not be longer than 4000 characters."
+  public getMaxPullRequestDescriptionLength(): number | null {
+    return 4000;
+  }
+
   // Convert sfdx-hardis PR status to Azure Thread status value
   private pullRequestStatusToAzureThreadStatus(prMessage: PullRequestMessageRequest) {
     return prMessage.status === "valid"

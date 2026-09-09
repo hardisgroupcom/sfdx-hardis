@@ -1307,7 +1307,41 @@ export function buildPromotionPullRequestBody(options: {
   skipped: PromotionStory[];
   ticketIds: string[];
   alreadyThere?: PromotionStory[];
+  // Cap the provider puts on a description (4000 on Azure DevOps). The conflict prompt is dropped
+  // rather than the Pull Request being refused: it is saved in hardis-report/ either way.
+  maxLength?: number | null;
 }): string {
+  const full = renderPromotionPullRequestBody(options, true);
+  const maxLength = options.maxLength || null;
+  if (!maxLength || full.length <= maxLength) {
+    return full;
+  }
+  const withoutPrompt = renderPromotionPullRequestBody(options, false);
+  if (withoutPrompt.length <= maxLength) {
+    return withoutPrompt;
+  }
+  // Still too long: the yaml block the deployment jobs read sits at the top, so cutting the tail
+  // keeps the description usable rather than losing the declaration
+  const marker = '\n\n_Description truncated to fit this git provider._';
+  return withoutPrompt.substring(0, Math.max(0, maxLength - marker.length)) + marker;
+}
+
+/**
+ * The description itself. `withPrompt` embeds the coding agent prompt for the committed conflicts,
+ * which is by far the longest part and the first thing dropped when a provider caps the length.
+ */
+function renderPromotionPullRequestBody(
+  options: {
+    sourceBranch: string;
+    targetBranch: string;
+    branchName: string;
+    stories: PromotionStory[];
+    skipped: PromotionStory[];
+    ticketIds: string[];
+    alreadyThere?: PromotionStory[];
+  },
+  withPrompt: boolean,
+): string {
   const declared = declaredPullRequestNumbers(options.stories, options.alreadyThere || []);
   const conflicted = options.stories.filter((story) => (story.conflictFiles || []).length > 0);
   const lines: string[] = [];
@@ -1344,19 +1378,23 @@ export function buildPromotionPullRequestBody(options: {
       }
     }
     lines.push('');
-    lines.push('<details>');
-    lines.push('<summary>Prompt for a coding agent (Claude Code, Codex, Copilot...) to solve the conflicts</summary>');
-    lines.push('');
-    lines.push('````markdown');
-    lines.push(buildConflictResolutionPrompt({
-      sourceBranch: options.sourceBranch,
-      targetBranch: options.targetBranch,
-      branchName: options.branchName,
-      conflicted,
-    }));
-    lines.push('````');
-    lines.push('');
-    lines.push('</details>');
+    if (withPrompt) {
+      lines.push('<details>');
+      lines.push('<summary>Prompt for a coding agent (Claude Code, Codex, Copilot...) to solve the conflicts</summary>');
+      lines.push('');
+      lines.push('````markdown');
+      lines.push(buildConflictResolutionPrompt({
+        sourceBranch: options.sourceBranch,
+        targetBranch: options.targetBranch,
+        branchName: options.branchName,
+        conflicted,
+      }));
+      lines.push('````');
+      lines.push('');
+      lines.push('</details>');
+    } else {
+      lines.push('The prompt for a coding agent to solve these conflicts is too long for a description on this git provider: it is saved in the `hardis-report/` folder of the run that assembled this branch, as `promotion-conflicts-prompt-<date>.md`.');
+    }
   }
   if (options.skipped.length > 0) {
     lines.push('');

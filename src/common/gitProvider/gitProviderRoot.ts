@@ -188,6 +188,14 @@ export abstract class GitProviderRoot {
     return true;
   }
 
+  // How long a Pull Request description may be, when the provider caps it (Azure DevOps refuses
+  // anything over 4000 characters). Null means no known limit. A promotion carrying a conflict
+  // prompt is the one description that gets near it, and being refused there would leave a
+  // release manager with a pushed branch and no Pull Request at all.
+  public getMaxPullRequestDescriptionLength(): number | null {
+    return null;
+  }
+
   /**
    * Common header of a sfdx-hardis Pull Request comment: the navigation between the sfdx-hardis
    * comments first, then the banner image identifying the comment type and status. The banner

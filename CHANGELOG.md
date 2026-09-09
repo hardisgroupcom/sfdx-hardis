@@ -12,6 +12,7 @@
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a machine without the GitHub CLI no longer stops with `not found: gh` when a Pull Request cannot be created, and gets the manual creation link.
 - GitLab: a `CI_PROJECT_ID` left over from another repository in a local `.env` is now detected and replaced by the one of the git remote, instead of making every API call answer about the wrong project.
 - Azure DevOps: the Pull Request number of a merge completed without fast-forward is now read, so a User Story a promotion carried can be selected on its own in the next promotion.
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a promotion description too long for the git provider now drops the embedded conflict prompt instead of failing the Pull Request creation.
 
 ## [8.7.0] 2026-09-08
 

@@ -264,6 +264,43 @@ describe('promotion Pull Request title and body', () => {
     toCandidate(group('bbb2222', [{ id: 487, title: 'Story | B' }])),
   ]);
 
+  // Azure DevOps refuses a description over 4000 characters, and a promotion carrying the coding
+  // agent prompt gets past it: being refused there leaves a pushed branch and nothing to review
+  const conflictedStories = toStories([
+    toCandidate(group('ddd4444', [{ id: 500, title: 'Story with a conflict' }])),
+  ]).map((story) => ({ ...story, conflictFiles: ['NOTES.md', 'force-app/main/default/labels/CustomLabels.labels-meta.xml'] }));
+
+  it('embeds the conflict prompt when the provider caps nothing', () => {
+    const body = buildPromotionPullRequestBody({
+      sourceBranch: 'integration',
+      targetBranch: 'uat',
+      branchName: 'promotion/integration/uat/2026-09-06-1',
+      stories: conflictedStories,
+      skipped: [],
+      ticketIds: [],
+    });
+    expect(body).to.contain('Prompt for a coding agent');
+    expect(body.length).to.be.greaterThan(4000);
+  });
+
+  it('drops the conflict prompt rather than being refused by a provider that caps the description', () => {
+    const body = buildPromotionPullRequestBody({
+      sourceBranch: 'integration',
+      targetBranch: 'uat',
+      branchName: 'promotion/integration/uat/2026-09-06-1',
+      stories: conflictedStories,
+      skipped: [],
+      ticketIds: [],
+      maxLength: 4000,
+    });
+    expect(body.length).to.be.at.most(4000);
+    expect(body).to.not.contain('Prompt for a coding agent');
+    // What the deployment jobs read, and what the reviewer needs, both survive
+    expect(body).to.contain('```yaml\npromotionPullRequests: [500]\n```');
+    expect(body).to.contain('`NOTES.md`');
+    expect(body).to.contain('promotion-conflicts-prompt-');
+  });
+
   it('names the promotion after its branches and suffix', () => {
     expect(buildPromotionPullRequestTitle('uat', 'preprod', 'promotion/uat/preprod/2026-09-06-2')).to.equal('Promotion uat to preprod (2026-09-06-2)');
   });

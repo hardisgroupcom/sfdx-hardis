@@ -35,6 +35,7 @@ import {
   toStories,
   writeConflictResolutionPrompt,
 } from '../../../../common/utils/promotionCreateUtils.js';
+import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -247,6 +248,10 @@ In agent mode:
     const alreadyThereStories = toStories(alreadyThere);
     const ticketIds = await collectStoryTicketIds(stories);
     const title = buildPromotionPullRequestTitle(sourceBranch, targetBranch, branchName);
+    // Azure DevOps refuses a description over 4000 characters, and a promotion carrying a conflict
+    // prompt gets there: the description is trimmed to fit rather than the Pull Request being
+    // refused, which would leave the branch pushed and nothing to review
+    const bodyProvider = await GitProvider.getInstance();
     const body = buildPromotionPullRequestBody({
       sourceBranch,
       targetBranch,
@@ -255,6 +260,7 @@ In agent mode:
       skipped: skippedStories,
       ticketIds,
       alreadyThere: alreadyThereStories,
+      maxLength: bodyProvider?.getMaxPullRequestDescriptionLength() ?? null,
     });
 
     const result = await pushAndCreatePromotionPullRequest({
