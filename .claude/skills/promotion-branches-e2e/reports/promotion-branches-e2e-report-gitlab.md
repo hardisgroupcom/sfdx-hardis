@@ -41,16 +41,16 @@ comparison (!23).
 
 ## The promotions
 
-| Promotion | Merge Request | Branch                                   | Carries      | Outcome                                                                        |
-|-----------|---------------|------------------------------------------|--------------|----------------------------------------------------------------------------------|
-| P1        | !7            | `promotion/integration/uat/2026-09-08-1` | !1, !3       | merged, deployed to uat                                                          |
-| P2        | !8            | `promotion/uat/preprod/2026-09-08-1`     | !4           | merged, deployed to preprod                                                      |
-| P3        | !9            | `promotion/uat/preprod/2026-09-08-2`     | !3           | merged, deployed to preprod: a story P1 had carried, promoted alone              |
-| P4        | !10           | `promotion/preprod/main/2026-09-08-1`    | !4, !3, !6   | merged, deployed to main, two levels of vehicle under it                         |
-| P5        | !14           | `promotion/integration/uat/2026-09-08-2` | !13          | assembled with conflict markers on purpose, solved, then superseded              |
-| P6        | -             | `promotion/integration/uat/2026-09-08-3` | !12          | the Pull Request creation case: branch pushed, creation refused, link printed     |
-| P7        | !15           | `promotion/integration/uat/2026-09-08-4` | !12          | the supersede run, which closed !14. Left open                                    |
-| P8        | !18           | `promotion/uat/preprod/2026-09-08-100`   | !5           | the allowed step of the restricted configuration. Left open                       |
+| Promotion | Merge Request | Branch                                   | Carries    | Outcome                                                                       |
+|-----------|---------------|------------------------------------------|------------|-------------------------------------------------------------------------------|
+| P1        | !7            | `promotion/integration/uat/2026-09-08-1` | !1, !3     | merged, deployed to uat                                                       |
+| P2        | !8            | `promotion/uat/preprod/2026-09-08-1`     | !4         | merged, deployed to preprod                                                   |
+| P3        | !9            | `promotion/uat/preprod/2026-09-08-2`     | !3         | merged, deployed to preprod: a story P1 had carried, promoted alone           |
+| P4        | !10           | `promotion/preprod/main/2026-09-08-1`    | !4, !3, !6 | merged, deployed to main, two levels of vehicle under it                      |
+| P5        | !14           | `promotion/integration/uat/2026-09-08-2` | !13        | assembled with conflict markers on purpose, solved, then superseded           |
+| P6        | -             | `promotion/integration/uat/2026-09-08-3` | !12        | the Pull Request creation case: branch pushed, creation refused, link printed |
+| P7        | !15           | `promotion/integration/uat/2026-09-08-4` | !12        | the supersede run, which closed !14. Left open                                |
+| P8        | !18           | `promotion/uat/preprod/2026-09-08-100`   | !5         | the allowed step of the restricted configuration. Left open                   |
 
 ___
 
@@ -129,14 +129,14 @@ ___
 `scripts/check-pipeline.cjs` drives the extension's `PipelineDataProvider` against the real
 project, then reads the counter bubbles and the merge edges back out of the mermaid it produced.
 
-| Checkpoint              | integration | uat        | preprod | main       | arrows                                    | Result |
-|-------------------------|-------------|------------|---------|------------|---------------------------------------------|--------|
-| `pipeline-before-p1`    | !1, !2, !3  | -          | -       | -          | none                                        | OK     |
-| `pipeline-p1-open`      | !1, !2, !3  | -          | -       | -          | `integration>uat` draws **!7**              | OK     |
-| `pipeline-after-p1`     | !2          | !1, !3     | -       | -          | none                                        | OK     |
-| `pipeline-before-p3`    | !2          | !1, !3, !5 | !4      | -          | none                                        | OK     |
-| `pipeline-after-golive` | !2          | !1, !5     | -       | !3, !4, !6 | none                                        | OK     |
-| `pipeline-final`        | -           | -          | 8 stories | !3, !4, !6 | `integration>uat` !15, `uat>preprod` !18   | OK     |
+| Checkpoint              | integration | uat        | preprod   | main       | arrows                                   | Result |
+|-------------------------|-------------|------------|-----------|------------|------------------------------------------|--------|
+| `pipeline-before-p1`    | !1, !2, !3  | -          | -         | -          | none                                     | OK     |
+| `pipeline-p1-open`      | !1, !2, !3  | -          | -         | -          | `integration>uat` draws **!7**           | OK     |
+| `pipeline-after-p1`     | !2          | !1, !3     | -         | -          | none                                     | OK     |
+| `pipeline-before-p3`    | !2          | !1, !3, !5 | !4        | -          | none                                     | OK     |
+| `pipeline-after-golive` | !2          | !1, !5     | -         | !3, !4, !6 | none                                     | OK     |
+| `pipeline-final`        | -           | -          | 8 stories | !3, !4, !6 | `integration>uat` !15, `uat>preprod` !18 | OK     |
 
 The same conclusions as on GitHub hold here, against the GitLab provider's own fetching: an open
 promotion is drawn on the arrow of its step and takes nothing out of the source branch until it is
@@ -151,53 +151,53 @@ ___
 
 ## Test groups
 
-| Group                                    | Expected                                                                       | Result                                                                                        |
-|------------------------------------------|--------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
-| Provider detection                       | GitLab picked from `CI_SFDX_HARDIS_GITLAB_TOKEN`, project from `CI_PROJECT_ID` | OK on every job                                                                               |
-| Feature branch validation and deployment | `Pull Request scope: 1 Pull Request(s) (#N)` and nothing else                  | OK for !1..!6                                                                                 |
-| Two yaml blocks in a description         | the union of both is selected                                                  | OK on !1: `PromoE2EAlphaTest` and `PromoE2EBetaTest`                                          |
-| `NO_DELTA`                               | `Delta deployment has been disabled`, `Deployment mode: FULL`                  | OK on !2                                                                                      |
-| `PURGE_FLOW_VERSIONS`                    | extra pre-deploy action, skipped in validation, run in deployment              | OK on !3, then on !7 and !9 by inheritance                                                    |
-| Manual actions in a validation job       | `Skipping ...: deployment-only action`                                         | OK everywhere                                                                                 |
-| Merge-ref lag                            | a validation run seconds after a push must not read the previous merge         | OK: `gl_check` waits, no stale tree in the whole run                                          |
-| Promotion Merge Request creation         | branch pushed, merge request opened with the declaration and the carried table | OK: !7, !8, !9, !10, !14, !15, !18                                                            |
-| Promotion validation and deployment      | scope = declared + the promotion itself                                        | OK: !7 (`#1, #3, #7`), !8 (`#4, #8`), !9 (`#3, #9`), !10 (`#4, #3, #6, #10`)                   |
-| Keyword inheritance                      | only the keywords of the carried stories                                       | OK: !7 inherits `PURGE_FLOW_VERSIONS` from !3 and **not** `NO_DELTA` from !2, which stayed     |
-| Test classes of a promotion              | union of the carried merge requests, `RunSpecifiedTests`                       | OK on !7 and !10                                                                              |
-| One candidate row per User Story         | a sync merge and a promotion merged into its target are opened up              | OK: from `uat`, !1 and !3 are two rows, never one row for the whole `integration -> uat` sync  |
-| Story brought in by a promotion          | promoting `3` carries S3 alone                                                 | OK on P3: one cherry-pick, `assembled with 1 User Story(ies): #3`                              |
-| Two levels of vehicle                    | the stories under an inner promotion are candidates of their own               | OK: from `preprod`, !4, !3 and !6 are offered, never !8, !9 or !10                             |
-| Back-merge from the target branch        | stays a single row                                                             | OK: the retrofit row `#11, #6, #3, #4` is never opened up                                      |
-| Sync merge inside a story                | the candidate lists the story only                                             | OK: !19 alone                                                                                  |
-| Branch merged twice                      | listed once, never once with its number and once as a `-` row                  | OK: !19 and !20, one row each                                                                  |
-| A story offered twice                    | one row per User Story after a sync merge re-delivers a promoted story         | OK: after !21, !1 and !3 appear once each (the `dropOfferedTwice` fix of this cycle)            |
+| Group                                    | Expected                                                                       | Result                                                                                               |
+|------------------------------------------|--------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| Provider detection                       | GitLab picked from `CI_SFDX_HARDIS_GITLAB_TOKEN`, project from `CI_PROJECT_ID` | OK on every job                                                                                      |
+| Feature branch validation and deployment | `Pull Request scope: 1 Pull Request(s) (#N)` and nothing else                  | OK for !1..!6                                                                                        |
+| Two yaml blocks in a description         | the union of both is selected                                                  | OK on !1: `PromoE2EAlphaTest` and `PromoE2EBetaTest`                                                 |
+| `NO_DELTA`                               | `Delta deployment has been disabled`, `Deployment mode: FULL`                  | OK on !2                                                                                             |
+| `PURGE_FLOW_VERSIONS`                    | extra pre-deploy action, skipped in validation, run in deployment              | OK on !3, then on !7 and !9 by inheritance                                                           |
+| Manual actions in a validation job       | `Skipping ...: deployment-only action`                                         | OK everywhere                                                                                        |
+| Merge-ref lag                            | a validation run seconds after a push must not read the previous merge         | OK: `gl_check` waits, no stale tree in the whole run                                                 |
+| Promotion Merge Request creation         | branch pushed, merge request opened with the declaration and the carried table | OK: !7, !8, !9, !10, !14, !15, !18                                                                   |
+| Promotion validation and deployment      | scope = declared + the promotion itself                                        | OK: !7 (`#1, #3, #7`), !8 (`#4, #8`), !9 (`#3, #9`), !10 (`#4, #3, #6, #10`)                         |
+| Keyword inheritance                      | only the keywords of the carried stories                                       | OK: !7 inherits `PURGE_FLOW_VERSIONS` from !3 and **not** `NO_DELTA` from !2, which stayed           |
+| Test classes of a promotion              | union of the carried merge requests, `RunSpecifiedTests`                       | OK on !7 and !10                                                                                     |
+| One candidate row per User Story         | a sync merge and a promotion merged into its target are opened up              | OK: from `uat`, !1 and !3 are two rows, never one row for the whole `integration -> uat` sync        |
+| Story brought in by a promotion          | promoting `3` carries S3 alone                                                 | OK on P3: one cherry-pick, `assembled with 1 User Story(ies): #3`                                    |
+| Two levels of vehicle                    | the stories under an inner promotion are candidates of their own               | OK: from `preprod`, !4, !3 and !6 are offered, never !8, !9 or !10                                   |
+| Back-merge from the target branch        | stays a single row                                                             | OK: the retrofit row `#11, #6, #3, #4` is never opened up                                            |
+| Sync merge inside a story                | the candidate lists the story only                                             | OK: !19 alone                                                                                        |
+| Branch merged twice                      | listed once, never once with its number and once as a `-` row                  | OK: !19 and !20, one row each                                                                        |
+| A story offered twice                    | one row per User Story after a sync merge re-delivers a promoted story         | OK: after !21, !1 and !3 appear once each (the `dropOfferedTwice` fix of this cycle)                 |
 | Retrofit `main` -> `integration`         | the promotion is expanded, then every already shipped story is named           | OK on !11: `Promotion Pull Request 10 adds 3 carried Pull Request(s)`, then three `already deployed` |
-| Release notes of the go-live             | the User Stories, not the vehicles                                             | OK: 3 merge requests (!3, !4, !6); 4 with `--include-promotions`, !10 added                     |
-| Already promoted                         | marked in the table, `--include-already-promoted` named, no branch created     | OK, exit 1                                                                                     |
-| Empty cherry-pick                        | `Nothing to cherry-pick`, no branch, exit 0                                    | OK                                                                                             |
-| Conflict, agent default                  | promotion undone, both files named                                             | OK on !13: `NOTES.md` and the labels file named                                                 |
-| Conflict outside `force-app`             | the gate still catches it                                                      | OK, `NOTES.md` named in both the conflict and the marker gate                                    |
-| Conflict, kept                           | merge request created, prompt file written and embedded                        | OK: !14                                                                                        |
-| Conflict answered once for all           | `Applying the conflict handling chosen earlier`                                 | OK through `--on-conflict commit-with-markers`                                                  |
-| Marker guard                             | job fails naming the files **and the validation comment says so**              | OK: 2 files named, and the note carries the failure banner, the branch, the count and the list  |
-| Marker guard, solved                     | the job passes                                                                 | OK, scope `#13, #14`                                                                            |
-| Committed conflict prompt report         | the gate ignores it                                                            | OK                                                                                             |
-| Deployment from a promotion branch       | the job stops naming the branch and `DEPLOY_BRANCHES`                          | OK, and `--check` on the same branch still runs                                                 |
-| Pull Request creation refused            | branch pushed, the provider's own reason, a one-click creation link            | OK, see above                                                                                   |
-| Stale `CI_PROJECT_ID`                    | detected and replaced by the project of the git remote                         | OK after the fix of this run                                                                    |
-| Feature off                              | one informational line, scope = the merge request alone                        | OK on !15                                                                                       |
-| Hand-named branch                        | warning, treated as a feature branch, declaration ignored                      | OK on !16                                                                                       |
-| Retargeted promotion                     | warning naming the mismatch, scope = the merge request alone                   | OK on !17: "named for target preprod but its Pull Request targets main"                          |
-| Unreadable declaration                   | warning and skip, not a failure                                                | OK: `#9999 ... was not found: skipped`, the job still passed                                     |
-| Supersede an open promotion              | the open one is closed **after** the new one exists                            | OK: !15 created, then !14 closed                                                                 |
-| Restricted `allowedPromotionSteps`       | a forbidden source and a forbidden target are refused, the allowed one works   | OK, all three                                                                                    |
-| `allowedPromotionSteps` not declared     | the command stops, asking for the list and linking to the doc                  | OK                                                                                              |
-| `promotion:list-candidates`              | the candidate table, creating nothing                                          | OK from `uat` and from `integration`                                                             |
-| Full merge after a partial promotion     | already promoted stories skipped, the never promoted ones arrive, nothing left | OK on !22, then `No Pull Request merged into uat is waiting for promotion to preprod`             |
-| DevOps Pipeline before and after         | section above                                                                  | OK, six checkpoints                                                                              |
-| Single place in the diagram              | each number in one branch only                                                 | OK, and the two toggles both raise the counts                                                    |
-| Merge request comment audit              | consistent comments, navigation and action state                               | **631 checks, zero findings**                                                                     |
-| Flag-off regression                      | `TOTAL DIFFERING LINES: 0`                                                     | 33 lines, all explained, see below                                                               |
+| Release notes of the go-live             | the User Stories, not the vehicles                                             | OK: 3 merge requests (!3, !4, !6); 4 with `--include-promotions`, !10 added                          |
+| Already promoted                         | marked in the table, `--include-already-promoted` named, no branch created     | OK, exit 1                                                                                           |
+| Empty cherry-pick                        | `Nothing to cherry-pick`, no branch, exit 0                                    | OK                                                                                                   |
+| Conflict, agent default                  | promotion undone, both files named                                             | OK on !13: `NOTES.md` and the labels file named                                                      |
+| Conflict outside `force-app`             | the gate still catches it                                                      | OK, `NOTES.md` named in both the conflict and the marker gate                                        |
+| Conflict, kept                           | merge request created, prompt file written and embedded                        | OK: !14                                                                                              |
+| Conflict answered once for all           | `Applying the conflict handling chosen earlier`                                | OK through `--on-conflict commit-with-markers`                                                       |
+| Marker guard                             | job fails naming the files **and the validation comment says so**              | OK: 2 files named, and the note carries the failure banner, the branch, the count and the list       |
+| Marker guard, solved                     | the job passes                                                                 | OK, scope `#13, #14`                                                                                 |
+| Committed conflict prompt report         | the gate ignores it                                                            | OK                                                                                                   |
+| Deployment from a promotion branch       | the job stops naming the branch and `DEPLOY_BRANCHES`                          | OK, and `--check` on the same branch still runs                                                      |
+| Pull Request creation refused            | branch pushed, the provider's own reason, a one-click creation link            | OK, see above                                                                                        |
+| Stale `CI_PROJECT_ID`                    | detected and replaced by the project of the git remote                         | OK after the fix of this run                                                                         |
+| Feature off                              | one informational line, scope = the merge request alone                        | OK on !15                                                                                            |
+| Hand-named branch                        | warning, treated as a feature branch, declaration ignored                      | OK on !16                                                                                            |
+| Retargeted promotion                     | warning naming the mismatch, scope = the merge request alone                   | OK on !17: "named for target preprod but its Pull Request targets main"                              |
+| Unreadable declaration                   | warning and skip, not a failure                                                | OK: `#9999 ... was not found: skipped`, the job still passed                                         |
+| Supersede an open promotion              | the open one is closed **after** the new one exists                            | OK: !15 created, then !14 closed                                                                     |
+| Restricted `allowedPromotionSteps`       | a forbidden source and a forbidden target are refused, the allowed one works   | OK, all three                                                                                        |
+| `allowedPromotionSteps` not declared     | the command stops, asking for the list and linking to the doc                  | OK                                                                                                   |
+| `promotion:list-candidates`              | the candidate table, creating nothing                                          | OK from `uat` and from `integration`                                                                 |
+| Full merge after a partial promotion     | already promoted stories skipped, the never promoted ones arrive, nothing left | OK on !22, then `No Pull Request merged into uat is waiting for promotion to preprod`                |
+| DevOps Pipeline before and after         | section above                                                                  | OK, six checkpoints                                                                                  |
+| Single place in the diagram              | each number in one branch only                                                 | OK, and the two toggles both raise the counts                                                        |
+| Merge request comment audit              | consistent comments, navigation and action state                               | **631 checks, zero findings**                                                                        |
+| Flag-off regression                      | `TOTAL DIFFERING LINES: 0`                                                     | 33 lines, all explained, see below                                                                   |
 
 ### Merge request comment audit
 
@@ -224,11 +224,11 @@ TOTAL DIFFERING LINES: 33
 
 Not zero, and every line is accounted for:
 
-| Count | Line                                                                     | What it is                                                                                      |
-|-------|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| 31    | `git config --null --show-origin --get-all remote.origin.url`            | the stale `CI_PROJECT_ID` guard fixed in this run: outside a GitLab CI job the git remote is read to check which project the API is talking to. Intended, and paid by local runs only, never inside a job |
-| 1     | `"message": "Source validate did not run tests in the org"`              | quick-deploy state in the Salesforce org between two passes                                       |
-| 1     | `"message": "There have been deploys in the org since the source validate happened"` | the same                                                                            |
+| Count | Line                                                                                 | What it is                                                                                                                                                                                                |
+|-------|--------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 31    | `git config --null --show-origin --get-all remote.origin.url`                        | the stale `CI_PROJECT_ID` guard fixed in this run: outside a GitLab CI job the git remote is read to check which project the API is talking to. Intended, and paid by local runs only, never inside a job |
+| 1     | `"message": "Source validate did not run tests in the org"`                          | quick-deploy state in the Salesforce org between two passes                                                                                                                                               |
+| 1     | `"message": "There have been deploys in the org since the source validate happened"` | the same                                                                                                                                                                                                  |
 
 No line comes from promotion branches code. A project that does not set `enablePromotionBranches`
 gets the jobs it got before, plus one git read per command when it runs GitLab commands outside

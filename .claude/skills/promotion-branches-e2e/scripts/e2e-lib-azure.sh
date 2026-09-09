@@ -293,7 +293,7 @@ E2E_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Usage: pipeline_check <log label> [expectations file]
 pipeline_check() {
   local label="$1" expect="${2:-}" code
-  env -u NODE_OPTIONS     EXT="${EXT:-C:/git/vscode-sfdx-hardis}"     WORK="$WORK"     PROVIDER_TOKEN="$AZ_TOKEN"     node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"}     >"$LOGS/$label.log" 2>&1
+  env -u NODE_OPTIONS EXT="${EXT:-C:/git/vscode-sfdx-hardis}" WORK="$WORK" PROVIDER_TOKEN="$AZ_TOKEN" node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"} >"$LOGS/$label.log" 2>&1
   code=$?
   cat "$LOGS/$label.log"
   echo "$label exit=$code log=$LOGS/$label.log"

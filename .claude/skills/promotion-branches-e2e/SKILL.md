@@ -25,7 +25,7 @@ not already, so you know what each assertion is protecting.
 | `scripts/stories.sh`               | `story_branch` and `story_actions`: the six User Stories and the action files that travel with them. Provider agnostic.                                         |
 | `scripts/e2e-lib.sh`               | GitHub job simulators: `e2e_check`, `e2e_deploy`, `e2e_promote`, `e2e_release_notes`, `e2e_grep`. Source it.                                                    |
 | `scripts/e2e-lib-gitlab.sh`        | The same for GitLab, plus `gl_mr_create`, `gl_mr_merge` and the merge-ref wait GitLab needs.                                                                    |
-| `scripts/check-pipeline.cjs`       | Drives the extension's own PipelineDataProvider against the test repository and asserts what the DevOps Pipeline shows at a point of the run.                    |
+| `scripts/check-pipeline.cjs`       | Drives the extension's own PipelineDataProvider against the test repository and asserts what the DevOps Pipeline shows at a point of the run.                   |
 | `scripts/check-diagram.cjs`        | Feeds the extension's compiled helpers with the real Pull Requests and asserts the "single place in the diagram" rule.                                          |
 | `scripts/check-diagram-gitlab.cjs` | The same, reading merge requests from the GitLab API.                                                                                                           |
 | `scripts/ab-run.sh`                | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                            |
