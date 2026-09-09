@@ -73,8 +73,12 @@ Break one of these and the feature is wrong, whatever the tests say.
    skipped in silence; a promotion whose stories could not be resolved stays in the release notes.
 6. **Expansion is multi level.** A `preprod -> main` promotion can carry a `uat -> preprod`
    promotion, which carries stories. Both levels must resolve.
-7. **Conflict markers never reach an org.** `assertNoPromotionConflictMarkers` greps every tracked
-   file, not only the package directories.
+7. **Conflict markers never reach an org, and the reviewer is told why.**
+   `assertNoPromotionConflictMarkers` greps every tracked file, not only the package directories.
+   It stops the job before anything is deployed, so no other code would ever post a Pull Request
+   comment: it sets `deployErrorsMarkdownBody` / `status: 'invalid'` on the Pull Request data and
+   calls `GitProvider.managePostPullRequestComment(checkOnly)` **before** throwing. A red job with
+   no comment on the very Pull Request that has to be fixed is not an acceptable outcome.
 8. **A promotion is never closed before its replacement exists.** `promotion:create` closes the
    superseded Pull Requests only after the new one has been created, so a failure while
    cherry-picking cannot leave a pipeline step with no promotion open.
@@ -114,24 +118,121 @@ Break one of these and the feature is wrong, whatever the tests say.
     the pipeline diagram working on a project that is mid-configuration. The rule gates
     **creation**, never deployment: a promotion assembled outside the list is deployed with a
     warning, since refusing it would block a branch that is already merged.
+17. **A vehicle is opened up, never offered whole.** A first-parent commit of the source branch that
+    only moves other merges (`integration -> uat`, a promotion merged into its target) is replaced
+    by the first-parent commits it brought in (`splitVehicleMerges`, called from
+    `listMergedPrsWithCommits` only when `promotion:create` / `list-candidates` asks for it). On a
+    pipeline where stories are merged into `integration`, every first-parent commit of `uat` is one
+    of those syncs: without this, the whole promotion window is a single selectable row and carrying
+    one story carries them all. Two guards keep it honest: only a merge with exactly two parents is
+    opened up (an octopus merge would lose every side but the second), and only when everything it
+    brought in is inside the window being listed, which keeps a back-merge from the target branch
+    whole instead of turning it into a page of rows already delivered. The vehicle stays a boundary
+    of `attributeCommitsToFirstParents` (`extraBoundaries`) so the merge after it does not swallow
+    it.
+18. **A configuration file can stop being readable mid-command.** `promotion:create` commits git
+    conflict markers on purpose, and `config/.sfdx-hardis.yml` is a file like any other:
+    `loadFromConfigFile` keeps the last configuration it read from each set of files and falls back
+    to it with a warning (`configFileUnreadableUsingPrevious`, `configFileConflictMarkers`) rather
+    than crashing halfway, with a branch assembled and no Pull Request. It only falls back to
+    something it actually read: a project whose configuration is broken from the start still stops.
+19. **A conflict answer can be given once for the whole promotion.** The prompt of
+    `cherryPickCandidates` offers `commit-with-markers-all` next to the three
+    `PromotionConflictChoice` values: it commits the markers like `commit-with-markers` and fills
+    `rememberedChoice`, so the rest of the window is handled without asking again
+    (`promotionCreateConflictRemembered` says so in the log). It is a **prompt answer, not a flag
+    value**: `PROMOTION_CONFLICT_CHOICES` stays `skip` / `commit-with-markers` / `abort`, because
+    `--on-conflict` already applies to every conflict. A promotion window usually conflicts on the
+    same files story after story, so answering ten times in a row is answering once.
+20. **A resolution nobody can read is not a resolution.** `buildConflictResolutionPrompt` asks the
+    coding agent for a commit message whose body carries one line per conflicting file, naming the
+    story, what the target side had, what the story added and what was kept, and forbids
+    "solved conflicts" / "merged both versions". The reviewer of the promotion Pull Request reads
+    the resolutions from `git log`, without opening the diff.
+21. **A branch that was just pushed may not be visible to the provider yet.**
+    `GitProvider.createPullRequest` takes `{ retries, retryDelayMs }` and
+    `pushAndCreatePromotionPullRequest` passes 3 retries: GitLab answers
+    `{"source_branch":["does not exist"]}` on a ref its API has not indexed, a fraction of a second
+    after the push that created it. Each attempt starts with `findOpenPullRequest`, so a create that
+    succeeded while reporting an error is picked up instead of being created twice, and
+    `GitProvider.lastPullRequestCreationError` carries the reason into
+    `promotionCreatePullRequestManual`: the fallback message names what the provider said instead
+    of guessing at a missing token. When it still fails, `GitProvider.getPullRequestCreateUrl`
+    hands the user the provider's own "new Pull Request" form with the source branch, the target
+    branch, the title and the description already filled in. Each provider class builds its own URL
+    (`GithubProvider.getPullRequestCreateUrl` and the three others, static, from the git remote, so
+    a project with no token gets one too); `buildPrCreateUrl` drops the description and keeps the
+    link when the URL would go past `MAX_PR_CREATE_URL_LENGTH`, and the caller then says where to
+    paste it from. Retyping a promotion description is not an option: the `promotionPullRequests`
+    block is what the deployment jobs read.
+22. **The git remote is the authority on which project the API talks to.** Outside a GitLab CI job
+    (`!process.env.GITLAB_CI`), `GitlabProvider.autoDetectSettings` checks a `CI_PROJECT_ID` coming
+    from the environment or a `.env` file against the project path of `remote.origin.url`, and
+    replaces it with a warning (`gitlabProjectIdMismatch`) when they disagree. A leftover
+    `CI_PROJECT_ID` from another repository makes every call answer about that other project, which
+    looks exactly like a branch that does not exist.
+23. **A promotion branch is validated, never deployed.** It is the source branch of a Pull
+    Request, like a feature branch: the only job it may run is that Pull Request's validation. A
+    deployment job triggered by the push that created it would send the promotion to the target org
+    before anyone reviewed or merged it. `assertPromotionBranchIsNotDeployed` stops `deploy:smart`
+    at the top of `run()` and names the CI setting to fix, because the answer is to fix the
+    trigger, not to let the job continue. Silent when the feature is off, on a validation job, and
+    with `SFDX_HARDIS_DEPLOY_BEFORE_MERGE`, where a deployment legitimately runs from the source
+    branch. It raises an error and posts **no** Pull Request comment: the job that trips it is the
+    branch pipeline of the push, not the validation, and failing the Pull Request over it would say
+    the promotion is broken when it is the pipeline configuration that is.
+24. **A promotion branch always runs two pipelines, and only one of them is its Pull Request's.**
+    It is pushed to the server, so it gets a branch pipeline of its own next to the Pull Request
+    validation pipeline, on the same commit. In vscode-sfdx-hardis,
+    `GitProviderGitlab.pickMergeRequestPipeline` reads the newest `merge_request_event` pipeline
+    (the newest of all of them when the project runs none), which is how GitLab picks the
+    `head_pipeline` its own merge request page shows; reporting every pipeline of the commit drew a
+    green merge request red on the DevOps Pipeline diagram. GitLab is the only provider concerned:
+    GitHub already asks for `event: "pull_request"` runs, Azure DevOps and Bitbucket read builds
+    and statuses attached to the Pull Request. Deployment status is a different question, answered
+    by `getJobsForBranchLatestCommit`, which leaves the merge request pipelines out.
+    Related project-side trap: an unanchored `DEPLOY_BRANCHES` regex
+    (`/(integration|uat|preprod|main)/` instead of `/^(...)$/`) matches
+    `promotion/integration/uat/...`, so every promotion branch push starts the deployment job and
+    fails it. The sfdx-hardis default template is anchored.
+25. **A User Story is offered once, whatever brought it in.** A story a promotion cherry-picked into
+    a branch and an ordinary sync merge delivered again afterwards sits in the window twice, as two
+    commits: `dropOfferedTwice` keeps the first candidate row, which is the one the command already
+    cherry-picks, so the table a release manager reads never lists the same number twice. Only an
+    exact repeat of the same set of numbers is dropped: a row grouping several Pull Requests (a
+    back-merge, an octopus merge) never hides the finer rows of the stories it holds, and a row with
+    no number is a commit of its own and always stays.
+26. **Every provider writes its own merge sentence.** `extractPrNumbersFromMessage` and
+    `mergedSourceBranches` read the Pull Request number and the merged branch out of a merge commit
+    message, and the shapes differ: `Merge pull request #N from owner/branch` (GitHub),
+    `See merge request group/repo!N` (GitLab), `Merged PR N:` (Azure DevOps squash) and
+    `Merge pull request N from source into target` (Azure DevOps completing without fast-forward,
+    which is what keeps the `-x` trailers). Miss one and every commit a promotion cherry-picked
+    comes back as a row with no number, so the story it carried can no longer be selected.
+27. **A description a provider refuses is a promotion nobody can review.** Azure DevOps caps a
+    description at 4000 characters and a promotion whose cherry-picks conflicted embeds a coding
+    agent prompt that goes past it: `buildPromotionPullRequestBody` takes the provider's
+    `getMaxPullRequestDescriptionLength()` and drops the embedded prompt (saved in `hardis-report/`
+    either way) rather than letting the creation fail with the branch already pushed. The yaml
+    declaration, the carried table and the conflicting file list always survive.
 
 ## sfdx-hardis (CLI)
 
-| File                                                                                                                                                                       | Role                                                                                                                                                                                                                       |
-|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `src/common/utils/promotionBranchUtils.ts`                                                                                                                                 | Pure logic: naming, parsing the declaration, classification, expansion, inherited behaviors, promotion index. No I/O.                                                                                                      |
-| `src/common/utils/promotionCreateUtils.ts`                                                                                                                                 | Everything the two promotion commands need: the configuration gate, branch resolution, candidate listing, already-promoted detection, candidate table and summaries, cherry-picking, conflict handling, Pull Request body. |
-| `src/commands/hardis/project/promotion/create.ts`                                                                                                                          | The command. Flags: `--source-branch`, `--target-branch`, `--pull-requests`, `--skip-pull-request`, `--include-already-promoted`, `--on-conflict`, `--agent`.                                                              |
-| `src/commands/hardis/project/promotion/list-candidates.ts`                                                                                                                 | Read-only listing of the candidates, for agents. Flags: `--source-branch`, `--target-branch`, `--include-already-promoted`, `--agent`. Creates, pushes and closes nothing.                                                 |
-| `src/common/utils/pullRequestUtils.ts`                                                                                                                                     | Resolves the declared Pull Requests from the git provider, walks the downstream promotions, merges the yaml blocks of a description.                                                                                       |
-| `src/common/utils/backpromoteUtils.ts`                                                                                                                                     | `listMergedPrsWithCommits`, which the candidate list is built from: `attributeCommitsToFirstParents` decides which commits a merge brought in.                                                                             |
-| `src/common/gitProvider/gitProviderRoot.ts` + the four providers                                                                                                           | `closePullRequest()` (close on GitHub/GitLab, abandon on Azure DevOps, decline on Bitbucket), used to supersede the promotion already open.                                                                                |
-| `src/commands/hardis/project/deploy/smart.ts`                                                                                                                              | Applies the inherited custom behaviors and the conflict-marker gate.                                                                                                                                                       |
-| `src/common/utils/prePostCommandUtils.ts`                                                                                                                                  | Deployment actions of the carried stories, promotion scope wording.                                                                                                                                                        |
-| `src/common/utils/releaseNotesUtils.ts`                                                                                                                                    | Leaves the vehicles out, `--include-promotions` brings them back.                                                                                                                                                          |
-| `src/common/gitProvider/index.ts`                                                                                                                                          | `inheritedCustomBehaviors` + the `inheritedCustomBehaviorsPrId` guard.                                                                                                                                                     |
-| `config/sfdx-hardis.jsonschema.json`                                                                                                                                       | `enablePromotionBranches` and `allowedPromotionSteps` properties (required for any new config key).                                                                                                                        |
-| `test/common/utils/promotionBranchUtils.test.ts`, `promotionCreateUtils.test.ts`, `releaseNotesPromotion.test.ts`, `backpromoteUtils.test.ts`, `prDescriptionYaml.test.ts` | Unit tests.                                                                                                                                                                                                                |
+| File                                                                                                                                                                       | Role                                                                                                                                                                                                                                                                     |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `src/common/utils/promotionBranchUtils.ts`                                                                                                                                 | Pure logic: naming, parsing the declaration, classification, expansion, inherited behaviors, promotion index. No I/O.                                                                                                                                                    |
+| `src/common/utils/promotionCreateUtils.ts`                                                                                                                                 | Everything the two promotion commands need: the configuration gate, branch resolution, candidate listing, already-promoted detection, candidate table and summaries, cherry-picking, conflict handling, Pull Request body.                                               |
+| `src/commands/hardis/project/promotion/create.ts`                                                                                                                          | The command. Flags: `--source-branch`, `--target-branch`, `--pull-requests`, `--skip-pull-request`, `--include-already-promoted`, `--on-conflict`, `--agent`.                                                                                                            |
+| `src/commands/hardis/project/promotion/list-candidates.ts`                                                                                                                 | Read-only listing of the candidates, for agents. Flags: `--source-branch`, `--target-branch`, `--include-already-promoted`, `--agent`. Creates, pushes and closes nothing.                                                                                               |
+| `src/common/utils/pullRequestUtils.ts`                                                                                                                                     | Resolves the declared Pull Requests from the git provider, walks the downstream promotions, merges the yaml blocks of a description.                                                                                                                                     |
+| `src/common/utils/backpromoteUtils.ts`                                                                                                                                     | `listMergedPrsWithCommits`, which the candidate list is built from: `attributeCommitsToFirstParents` decides which commits a merge brought in, `splitVehicleMerges` opens up the merges that only move other merges.                                                     |
+| `src/common/gitProvider/gitProviderRoot.ts` + the four providers                                                                                                           | `closePullRequest()` (close on GitHub/GitLab, abandon on Azure DevOps, decline on Bitbucket), used to supersede the promotion already open, and `getPullRequestCreateUrl()` on each provider class (`buildPrCreateUrl` / `PullRequestCreateUrlResult` live in the root). |
+| `src/commands/hardis/project/deploy/smart.ts`                                                                                                                              | Applies the inherited custom behaviors and the conflict-marker gate.                                                                                                                                                                                                     |
+| `src/common/utils/prePostCommandUtils.ts`                                                                                                                                  | Deployment actions of the carried stories, promotion scope wording.                                                                                                                                                                                                      |
+| `src/common/utils/releaseNotesUtils.ts`                                                                                                                                    | Leaves the vehicles out, `--include-promotions` brings them back.                                                                                                                                                                                                        |
+| `src/common/gitProvider/index.ts`                                                                                                                                          | `inheritedCustomBehaviors` + the `inheritedCustomBehaviorsPrId` guard, `createPullRequest` retries + `lastPullRequestCreationError`.                                                                                                                                     |
+| `config/sfdx-hardis.jsonschema.json`                                                                                                                                       | `enablePromotionBranches` and `allowedPromotionSteps` properties (required for any new config key).                                                                                                                                                                      |
+| `test/common/utils/promotionBranchUtils.test.ts`, `promotionCreateUtils.test.ts`, `releaseNotesPromotion.test.ts`, `backpromoteUtils.test.ts`, `prDescriptionYaml.test.ts` | Unit tests.                                                                                                                                                                                                                                                              |
 
 Reading the flag: `getConfig('branch')` (project config merged with the running branch's config),
 via `getPromotionBranchConfig(config)`, which also parses `allowedPromotionSteps` into

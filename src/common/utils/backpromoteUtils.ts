@@ -27,6 +27,7 @@ import { authOrg } from './authUtils.js';
 import { findUserByUsernameLike } from './orgUtils.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
+import { parsePromotionBranchName } from './promotionBranchUtils.js';
 import { DEV_SANDBOXES_BRANCH_NAME, evaluateActionBranchFilter } from './actionUtils.js';
 import { createBlankSfdxProject } from './projectUtils.js';
 import { OrgDiffItem, WebSocketClient } from '../websocketClient.js';
@@ -173,15 +174,20 @@ export function parseCommitParents(revListOutput: string): Map<string, string[]>
  *
  * A commit shared by two merges belongs to the older one, which is why the first-parent commits
  * are walked oldest first.
+ *
+ * `extraBoundaries` are commits that stop the walk without getting a list of their own: a vehicle
+ * merge opened up into the commits it brought in is no longer a candidate, but it must not be
+ * swallowed by the merge that follows it either.
  */
 export function attributeCommitsToFirstParents<T extends { hash: string }>(
   firstParentCommits: T[],
   allCommits: T[],
   parentsByHash: Map<string, string[]>,
+  extraBoundaries: Set<string> = new Set(),
 ): Map<string, T[]> {
   const commitByHash = new Map(allCommits.map((commit) => [commit.hash, commit]));
   const positionByHash = new Map(allCommits.map((commit, index) => [commit.hash, index]));
-  const firstParentShas = new Set(firstParentCommits.map((commit) => commit.hash));
+  const firstParentShas = new Set([...firstParentCommits.map((commit) => commit.hash), ...extraBoundaries]);
   const assigned = new Set<string>();
   const result = new Map<string, T[]>();
   for (const mergeCommit of firstParentCommits) {
@@ -216,11 +222,117 @@ export function attributeCommitsToFirstParents<T extends { hash: string }>(
   return result;
 }
 
+/** How many times a vehicle merge may be opened up again: integration -> uat -> preprod is 2 */
+const MAX_VEHICLE_SPLIT_DEPTH = 5;
+
+/**
+ * The branches a merge commit merged in, as far as they can be read: the message ("Merge branch
+ * 'X' into Y" for git and GitLab, "Merge pull request #N from org/X" for GitHub) and the source
+ * branch of the Pull Request the merge commit closed.
+ *
+ * Only the merge commit itself is looked at, never the commits it brought in: a feature branch
+ * that synced with its major branch before being merged holds such a merge, and reading it here
+ * would turn the feature into a vehicle.
+ */
+export function mergedSourceBranches(
+  commit: { hash: string; message: string },
+  mergeCommitToPr: Map<string, number>,
+  prDetailsMap: Map<number, any>,
+): string[] {
+  const branches: string[] = [];
+  const messageBranch = extractSourceBranchFromMessage(commit.message);
+  if (messageBranch) {
+    branches.push(messageBranch);
+  }
+  const gitHubMatch = commit.message.match(/Merge pull request #\d+ from (\S+)/);
+  if (gitHubMatch) {
+    // owner/branch, and a branch name can hold slashes of its own
+    const parts = gitHubMatch[1].split('/');
+    branches.push(parts.length > 1 ? parts.slice(1).join('/') : gitHubMatch[1]);
+  }
+  // Azure DevOps writes the same sentence without the # and with the target branch after it, and
+  // the source branch is given as it is, with no owner in front
+  const azureMatch = commit.message.match(/Merge pull request \d+ from (\S+) into \S+/);
+  if (azureMatch) {
+    branches.push(azureMatch[1]);
+  }
+  const prNumber = mergeCommitToPr.get(commit.hash) ?? extractPrNumbersFromMessage(commit.message)[0];
+  const pullRequest = prNumber ? prDetailsMap.get(prNumber) : null;
+  if (pullRequest?.sourceBranch) {
+    branches.push(pullRequest.sourceBranch);
+  }
+  return [...new Set(branches.filter((branch) => branch))];
+}
+
+/**
+ * Whether a merge only moves other merges: a major branch merged into the next one
+ * (integration -> uat), or a promotion branch merged into its target.
+ */
+export function isVehicleMerge(branches: string[], majorBranchNames: string[]): boolean {
+  const majorBranches = new Set((majorBranchNames || []).map((branch) => (branch || '').toLowerCase()).filter((branch) => branch));
+  return branches.some(
+    (branch) => majorBranches.has(branch.toLowerCase()) || parsePromotionBranchName(branch) !== null
+  );
+}
+
+/**
+ * Replace every vehicle merge of a first-parent list by the first-parent commits it brought in.
+ *
+ * A promotion cherry-picks one candidate at a time, and a candidate is a first-parent commit of
+ * the source branch. On a pipeline where User Stories are merged into `integration` and
+ * `integration` is then merged into `uat`, every first-parent commit of `uat` is one of those
+ * major-to-major merges: the whole promotion window is a single row, and picking one User Story
+ * carries every story merged in the same sync. Opening the vehicle up gives back one row per
+ * User Story, each cherry-picking its own merge commit.
+ *
+ * The list stays in `git log` order (newest first), the sub-commits taking the place of the
+ * vehicle they came from. The loop runs again over what it produced, so a promotion merged into
+ * `integration` and carried to `uat` by a sync is opened up in turn. Only a merge with exactly two
+ * parents is opened up: an octopus merge would lose every side but the second one.
+ */
+export async function splitVehicleMerges<T extends { hash: string; message: string }>(
+  firstParentCommits: T[],
+  majorBranchNames: string[],
+  parentsByHash: Map<string, string[]>,
+  windowHashes: Set<string>,
+  vehicleBranchesOf: (commit: T) => string[],
+  logFirstParents: (fromCommit: string, toCommit: string) => Promise<T[]>,
+): Promise<T[]> {
+  let current = firstParentCommits;
+  for (let depth = 0; depth < MAX_VEHICLE_SPLIT_DEPTH; depth++) {
+    let changed = false;
+    const next: T[] = [];
+    for (const commit of current) {
+      const parents = parentsByHash.get(commit.hash) || [];
+      if (parents.length !== 2 || !isVehicleMerge(vehicleBranchesOf(commit), majorBranchNames)) {
+        next.push(commit);
+        continue;
+      }
+      const subCommits = await logFirstParents(parents[0], parents[1]);
+      // A back-merge from the target branch opens up into commits that sit before the merge base,
+      // outside the window being listed: nothing is known about them, and they are already in the
+      // target branch anyway. The vehicle stays whole rather than becoming a page of dead rows.
+      if (subCommits.length === 0 || subCommits.some((subCommit) => !windowHashes.has(subCommit.hash))) {
+        next.push(commit);
+        continue;
+      }
+      changed = true;
+      next.push(...subCommits);
+    }
+    current = next;
+    if (!changed) {
+      break;
+    }
+  }
+  return current;
+}
+
 export async function listMergedPrsWithCommits(
   parentBranch: string,
   currentBranch: string,
   sinceCommit: string | null,
   commandThis: any,
+  options: { splitVehicleMergesFrom?: string[] } = {},
 ): Promise<BackpromotePrGroup[]> {
   uxLog('action', commandThis, c.cyan(t('backpromoteListingMergedPrs', { parentBranch: c.green(parentBranch) })));
 
@@ -253,11 +365,6 @@ export async function listMergedPrsWithCommits(
     ? ['rev-list', '--parents', `${sinceCommit}..${parentBranch}`]
     : ['rev-list', '--parents', '-n', '500', parentBranch];
   const parentsByHash = parseCommitParents(await git().raw(revListArgs).catch(() => ''));
-  const childCommitsByMerge = attributeCommitsToFirstParents(
-    [...firstParentLog.all].reverse(),
-    allCommits,
-    parentsByHash,
-  );
 
   // Discover PRs from all commits using the three strategies
   const prNumbersFromCommits = extractPrNumbersFromCommits(allCommits);
@@ -292,8 +399,45 @@ export async function listMergedPrsWithCommits(
     }
   }
 
+  // A merge that only moves other merges (integration -> uat, a promotion merged into its target)
+  // is opened up into the commits it brought in, so a promotion can carry one User Story instead
+  // of a whole sync window. Only promotion:create asks for it, backpromote keeps its own grouping.
+  const splitFrom = options.splitVehicleMergesFrom;
+  const vehicleMergeHashes = new Set<string>();
+  let firstParentNewestFirst = [...firstParentLog.all];
+  if (splitFrom) {
+    const windowHashes = new Set(allCommits.map((commit) => commit.hash));
+    firstParentNewestFirst = await splitVehicleMerges(
+      firstParentNewestFirst,
+      splitFrom,
+      parentsByHash,
+      windowHashes,
+      (commit) => mergedSourceBranches(commit, mergeCommitToPr, prDetailsMap),
+      async (fromCommit, toCommit) => {
+        const log = await git().log(['--first-parent', `${fromCommit}..${toCommit}`]).catch(() => null);
+        return [...(log?.all || [])];
+      },
+    );
+    const keptHashes = new Set(firstParentNewestFirst.map((commit) => commit.hash));
+    for (const commit of firstParentLog.all) {
+      if (!keptHashes.has(commit.hash)) {
+        vehicleMergeHashes.add(commit.hash);
+      }
+    }
+  }
+
+  // The commits each candidate brought in, read from the graph (see attributeCommitsToFirstParents).
+  // The vehicle merges that were opened up still stop the walk: their own message names the sync,
+  // not a User Story, and it must not be attributed to the merge that follows them.
+  const childCommitsByMerge = attributeCommitsToFirstParents(
+    [...firstParentNewestFirst].reverse(),
+    allCommits,
+    parentsByHash,
+    vehicleMergeHashes,
+  );
+
   // Build groups: one per first-parent commit, with associated PRs as details
-  const firstParentCommits = [...firstParentLog.all].reverse(); // Chronological order
+  const firstParentCommits = [...firstParentNewestFirst].reverse(); // Chronological order
   const prGroups: BackpromotePrGroup[] = [];
 
   for (const commit of firstParentCommits) {
@@ -404,6 +548,9 @@ function extractPrNumbersFromMessage(message: string): number[] {
     /Merge pull request #(\d+)/g,
     /See merge request [^!]*!(\d+)/g,
     /Merged PR (\d+)/g,
+    // Azure DevOps completing a Pull Request without fast-forward, which is what keeps the -x
+    // trailers of a cherry-pick: "Merge pull request 52 from feature/X into integration", with no #
+    /Merge pull request (\d+) from \S+ into \S+/g,
     // Generic #NNN reference (but avoid matching issue numbers in the middle of words)
     /(?:^|\s)#(\d+)(?:\s|$|[,.):])/g,
   ];

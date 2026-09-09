@@ -20,6 +20,7 @@
   "version": "0.2",
   "ignoreRegExpList": [
     "(?<![a-zA-Z])t\\([^)]*\\)",
+    "%[0-9A-Fa-f]{2}[A-Za-z0-9_.+%-]*",
     "GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}",
     "MII[A-Za-z0-9+/=]{10,}",
     "cdklj9xhp8074d"
@@ -326,6 +327,7 @@
     "Ptak",
     "Publishe",
     "Pullrequests",
+    "pullrequestcreate",
     "Pushgateway",
     "Pyvovarchuk",
     "QESRDTHFKGKH",
@@ -371,6 +373,7 @@
     "Suwi\u0144ski",
     "Syst\u00e8me",
     "TCRM",
+    "TEAMFOUNDATIONCOLLECTIONURI",
     "TEAMPROJECT",
     "THEREISNOT",
     "Tablesort",
@@ -1044,6 +1047,8 @@
     "mypackage",
     "mypassword",
     "myproject",
+    "myrepo",
+    "myworkspace",
     "myusername",
     "namespaceprefix",
     "networkidle",

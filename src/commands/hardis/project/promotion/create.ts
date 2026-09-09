@@ -35,6 +35,7 @@ import {
   toStories,
   writeConflictResolutionPrompt,
 } from '../../../../common/utils/promotionCreateUtils.js';
+import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -65,14 +66,16 @@ On a cherry-pick conflict, you choose (or \`--on-conflict\` decides) to:
 
 - **skip**: leave the story out, it is listed as such in the Pull Request description;
 - **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description lists the files to fix and embeds a ready-to-paste prompt for a coding agent (Claude Code, Codex, Copilot...), also saved as a markdown report in \`hardis-report/\`. The validation job fails until the markers are gone;
+- **commit-with-markers, and all the following conflicts**: same, and the command stops asking for the rest of the promotion (the prompt only, \`--on-conflict commit-with-markers\` already applies to every conflict);
 - **abort**: stop, the branch is deleted and nothing is pushed.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
 - Candidates are the first-parent commits of \`origin/<source>\` since its merge base with \`origin/<target>\`, grouped with their Pull Requests like \`hardis:work:backpromote\` does (Pull Request numbers read from the merge commit messages and completed by the git provider API when a token is available).
+- A first-parent commit that only moves other merges (a major-to-major sync like \`integration -> uat\`, a promotion branch merged into its target) is opened up into the first-parent commits it brought in, so each User Story is a candidate of its own instead of the whole sync window being a single row.
 - The branch is created with \`git checkout -b <name> origin/<target>\`, commits are applied with \`git cherry-pick -x\` (\`-m 1\` for merge commits).
-- The Pull Request is created through the git provider API (GitHub, GitLab, Azure DevOps, Bitbucket token), or with the \`gh\` CLI on GitHub. Without either, the branch is pushed and the description is saved under \`hardis-report/\` to create the Pull Request by hand.
+- The Pull Request is created through the git provider API (GitHub, GitLab, Azure DevOps, Bitbucket token), or with the \`gh\` CLI on GitHub. The creation is retried a few times: the branch is pushed a fraction of a second before, and a provider that has not indexed the new ref yet answers that the source branch does not exist. Without either, the branch is pushed and the description is saved under \`hardis-report/\` to create the Pull Request by hand, and the message names the reason the provider gave.
 - The counter is computed from the existing \`promotion/<source>/<target>/<date>-*\` branches, local and remote.
 </details>
 
@@ -245,6 +248,10 @@ In agent mode:
     const alreadyThereStories = toStories(alreadyThere);
     const ticketIds = await collectStoryTicketIds(stories);
     const title = buildPromotionPullRequestTitle(sourceBranch, targetBranch, branchName);
+    // Azure DevOps refuses a description over 4000 characters, and a promotion carrying a conflict
+    // prompt gets there: the description is trimmed to fit rather than the Pull Request being
+    // refused, which would leave the branch pushed and nothing to review
+    const bodyProvider = await GitProvider.getInstance();
     const body = buildPromotionPullRequestBody({
       sourceBranch,
       targetBranch,
@@ -253,6 +260,7 @@ In agent mode:
       skipped: skippedStories,
       ticketIds,
       alreadyThere: alreadyThereStories,
+      maxLength: bodyProvider?.getMaxPullRequestDescriptionLength() ?? null,
     });
 
     const result = await pushAndCreatePromotionPullRequest({

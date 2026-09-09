@@ -46,6 +46,7 @@ With \`--json\`, the result holds \`candidates\` (Pull Request numbers, title, a
 <summary>Technical explanations</summary>
 
 - Candidates are the first-parent commits of \`origin/<source>\` since its merge base with \`origin/<target>\`, grouped with their Pull Requests like \`hardis:work:backpromote\` does (Pull Request numbers read from the merge commit messages and completed by the git provider API when a token is available).
+- A first-parent commit that only moves other merges (a major-to-major sync like \`integration -> uat\`, a promotion branch merged into its target) is opened up into the first-parent commits it brought in, so each User Story is a candidate of its own instead of the whole sync window being a single row.
 - A promotion merged into the source branch is expanded into the User Stories its \`promotionPullRequests\` block declares, recursively, so a story promoted twice in a row keeps its number.
 - A candidate can be a merge commit carrying several Pull Requests: they are listed together, because cherry-picking it carries all of them.
 - Already-promoted detection reads the promotion Pull Requests of the target branch, bounded by the date of the oldest candidate. Without a git provider token, the check is skipped and said out loud.

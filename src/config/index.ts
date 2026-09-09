@@ -152,8 +152,31 @@ export const setConfig = async (layer: string, propValues: any): Promise<string 
   return await setInConfigFile(configSearchPlaces, propValues);
 };
 
+/**
+ * The last configuration successfully read from each set of files, kept for the rest of the run.
+ *
+ * A configuration file can become unreadable while a command is running: hardis:project:promotion:create
+ * commits git conflict markers on purpose when a cherry-pick conflicts, and config/.sfdx-hardis.yml is
+ * a file like any other. Crashing on the next read would stop the command halfway, with a branch
+ * assembled and no Pull Request. The configuration read before the conflict is used instead, with a
+ * warning naming the file to fix.
+ */
+const lastGoodConfigs: Record<string, any> = {};
+
+/** Configuration files holding git conflict markers, among the ones that were searched */
+function conflictedConfigFiles(searchPlaces: string[]): string[] {
+  return searchPlaces.filter((searchPlace) => {
+    try {
+      return fs.existsSync(searchPlace) && fs.readFileSync(searchPlace, 'utf-8').includes('<<<<<<<');
+    } catch {
+      return false;
+    }
+  });
+}
+
 // Load configuration from file
 async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
+  const cacheKey = searchPlaces.join('|');
   try {
     const configExplorer = await cosmiconfig(moduleName, {
       searchPlaces,
@@ -163,12 +186,22 @@ async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
       const remoteConfig = await loadFromRemoteConfigFile(config.extends);
       config = Object.assign(remoteConfig, config);
     }
+    // A shallow copy: getConfig merges the layers into the object it gets back, and what is
+    // memorized here must not collect the keys of the layers above it
+    lastGoodConfigs[cacheKey] = Object.assign({}, config);
     return config;
   } catch (err) {
-    uxLog("error", this, c.red('[sfdx-hardis] Unable to read configuration file.\n' + (err as Error).message));
-    throw new SfError(
-      '[sfdx-hardis] Unable to read configuration file.\n' + (err as Error).message
-    );
+    const conflictedFiles = conflictedConfigFiles(searchPlaces);
+    const detail =
+      conflictedFiles.length > 0
+        ? t('configFileConflictMarkers', { file: conflictedFiles.join(', ') })
+        : (err as Error).message;
+    if (lastGoodConfigs[cacheKey]) {
+      uxLog("warning", this, c.yellow(t('configFileUnreadableUsingPrevious', { message: detail })));
+      return Object.assign({}, lastGoodConfigs[cacheKey]);
+    }
+    uxLog("error", this, c.red('[sfdx-hardis] Unable to read configuration file.\n' + detail));
+    throw new SfError('[sfdx-hardis] Unable to read configuration file.\n' + detail);
   }
 }
 

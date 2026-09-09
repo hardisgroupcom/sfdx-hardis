@@ -148,8 +148,11 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
 
 4. If a cherry-pick conflicts, the story depends on another one that is not part of the promotion. The command asks what to do (or takes it from `--on-conflict`):
     - **skip**: leave that story out, it is listed as such in the Pull Request description;
-    - **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description warns about it, lists the files to fix and embeds a ready-to-paste prompt for a coding agent, also saved in `hardis-report/promotion-conflicts-prompt-*.md`. The validation job stops with an error naming the files while a marker is still in the sources;
+    - **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description warns about it, lists the files to fix and embeds a ready-to-paste prompt for a coding agent, also saved in `hardis-report/promotion-conflicts-prompt-*.md`. The validation job stops with an error naming the files while a marker is still in the sources; on a provider that caps the description length (Azure DevOps stops at 4000 characters), the prompt is left out of the description and only the saved file carries it;
+    - **commit-with-markers, and all the following conflicts**: the same, and the question is not asked again for the rest of the promotion. A promotion window usually conflicts on the same files story after story, and `--on-conflict commit-with-markers` is the equivalent for a non-interactive run;
     - **abort**: stop, the branch is deleted and nothing is pushed.
+
+    The coding agent prompt asks for a commit message that explains, file by file, what was on the target side, what the story added, and what was kept: the reviewer of the promotion Pull Request reads the resolutions without opening the diff.
 
     The [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) plugin solves many XML conflicts by itself.
 
@@ -159,6 +162,20 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
 
     Promotion branch names have exactly four segments, so the source and target branch names must not contain a `/`. The command stops before touching git if one of them does.
 5. Review the Pull Request like any other, and do **not** squash it when merging: the `-x` trailers of the cherry-picks must survive in `preprod`.
+
+!!! warning "A promotion branch must only be validated, never deployed"
+    A promotion branch is the source branch of a Pull Request, like a feature branch. Your CI must run its **validation** job, never a deployment job: deploying from the promotion branch would send the promotion to the target org before it is reviewed and merged. `hardis:project:deploy:smart` stops with an error when it happens, naming the setting to fix.
+
+    The usual cause is a deployment trigger that matches more than your major branches. On GitLab, anchor the `DEPLOY_BRANCHES` regex of `.gitlab-ci-config.yml`:
+
+    ```yaml
+    # promotion/integration/uat/2026-09-08-1 matches this one
+    DEPLOY_BRANCHES: /(integration|uat|preprod|main)/
+    # it does not match this one
+    DEPLOY_BRANCHES: /^(integration|uat|preprod|main)$/
+    ```
+
+    On GitHub Actions, Azure Pipelines and Bitbucket Pipelines, list your major branches explicitly in the trigger of the deployment job.
 
 ### List what can be promoted, without creating anything
 
@@ -186,7 +203,7 @@ Agents and automation call the same command without prompts:
 sf hardis:project:promotion:create --agent --source-branch uat --pull-requests 482,487,491
 ```
 
-The Pull Request is created through the git provider API when a token is configured, or with the `gh` CLI on GitHub. Without either, the branch is pushed and the description is saved under `hardis-report/` so you can create the Pull Request yourself.
+The Pull Request is created through the git provider API when a token is configured, or with the `gh` CLI on GitHub. Without either, the branch is pushed and the description is saved under `hardis-report/` so you can create the Pull Request yourself. A link to the provider's own creation form, with the source branch, the target branch, the title and the description already filled in, is printed as well, so nothing has to be retyped.
 
 The `scripts/actions/.sfdx-hardis.<PR>.yml` files of the stories travel with their commits, so their deployment actions are in the branch too.
 
@@ -220,7 +237,7 @@ ___
 - **Freeze `uat -> preprod` while a promotion branch sits in `preprod`** and has not reached production yet, otherwise unapproved stories ride along. This is the RUN/BUILD rule of the hotfix process.
 - `enablePromotionBranches` is read from the **project** configuration (`config/.sfdx-hardis.yml`). sfdx-hardis merges it with the configuration of the branch a job runs on, so setting it in a single branch file would leave the command and the other branches without it.
 - A promotion Pull Request that carries another promotion is followed down to the User Stories, however many levels there are: a `preprod -> main` promotion declaring the `uat -> preprod` one reaches the stories that one carried, and their deployment actions, Apex test classes and custom behaviors travel with them.
-- A promotion carries **merge commits**, not individual Pull Requests: if one merge commit brought several Pull Requests into the source branch at once (a major-to-major merge typically does), promoting one of them carries the others too. The command names them before cherry-picking anything, and declares them all in the Pull Request.
+- A promotion carries **commits**, not Pull Request numbers. On a pipeline where User Stories are merged into `integration` and `integration` is then merged into `uat`, every first-parent commit of `uat` is one of those syncs: they are opened up into the User Story merges they brought in, so each story is a candidate of its own and can be carried alone. What stays grouped is a single commit that really brought several Pull Requests in at once (a squashed sync, an octopus merge, a back-merge from the target branch): promoting one of them carries the others too. The command names them before cherry-picking anything, and declares them all in the Pull Request.
 - In the DevOps Pipeline of the VS Code extension, a promoted story leaves the window of the branch it came from and is listed in the branch it reached, so **a Pull Request number appears in a single place in the diagram** (both in the counter on the node and in the list opened by clicking it). The "Show already promoted Pull Requests" toggle brings the other places back when you want to see where a story has been.
 - The lists and counters of the DevOps Pipeline leave out the Pull Requests that **move** other Pull Requests: a merge between two major branches, and a promotion Pull Request. Everything that carries its own change stays listed, whatever the branch is named (`feature/`, `fix/`, `retrofit/`, `hotfix/`...). The "Show merge and promotion Pull Requests" toggle at the top of the branch window brings the others back. The rule for major-to-major merges applies to **every** project, promotion branches or not, since such a merge is plumbing in any pipeline; a `promotion/` branch is only treated as a vehicle when the feature is enabled, exactly as the deployment jobs treat it.
 - In the window of a branch, tick the User Stories to carry and use the **Create promotion** button: `sf hardis:project:promotion:create` opens with them preselected, and you confirm the selection in the terminal. A story brought into the branch by a promotion is promoted through that promotion and cannot be ticked.

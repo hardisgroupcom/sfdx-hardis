@@ -4,12 +4,14 @@ import { expect } from 'chai';
 import '../../../src/common/gitProvider/index.js';
 import { shouldAddVirtualPullRequest, type BackpromotePrGroup } from '../../../src/common/utils/backpromoteUtils.js';
 import {
+  assertPromotionBranchIsNotDeployed,
   buildConflictResolutionPrompt,
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
   computePromotionCounter,
   countsAsAlreadyPromoted,
   declaredPullRequestNumbers,
+  dropOfferedTwice,
   dropVehiclePullRequests,
   excludeAlreadyPromotedCandidates,
   expandPromotionsInGroups,
@@ -85,6 +87,42 @@ describe('selectCandidatesByPullRequestNumbers()', () => {
     const noPr = toCandidate(group('ddd4444', [], 'chore: direct commit on uat'));
     expect(noPr.pullRequestNumbers).to.deep.equal([]);
     expect(noPr.label).to.equal('chore: direct commit on uat (dev) [ddd4444]');
+  });
+});
+
+describe('dropOfferedTwice()', () => {
+  it('offers a User Story once when a promotion and a sync merge both brought it in', () => {
+    // #482 reached uat through a promotion (the cherry-pick), then again through the ordinary
+    // merge of integration, which delivered the original commit: two rows for one story
+    const candidates = [
+      toCandidate(group('aaa1111', [{ id: 482, title: 'Story A' }])),
+      toCandidate(group('bbb2222', [{ id: 487, title: 'Story B' }])),
+      toCandidate(group('ccc3333', [{ id: 482, title: 'Story A' }])),
+    ];
+    const kept = dropOfferedTwice(candidates);
+    expect(kept.map((candidate) => candidate.group.commit.hash)).to.deep.equal(['aaa1111', 'bbb2222']);
+  });
+
+  it('keeps a row that groups several Pull Requests next to the rows of those stories', () => {
+    const candidates = [
+      toCandidate(group('aaa1111', [{ id: 482, title: 'Story A' }])),
+      toCandidate(group('bbb2222', [
+        { id: 482, title: 'Story A' },
+        { id: 487, title: 'Story B' },
+      ])),
+    ];
+    expect(dropOfferedTwice(candidates).map((candidate) => candidate.group.commit.hash)).to.deep.equal([
+      'aaa1111',
+      'bbb2222',
+    ]);
+  });
+
+  it('keeps every commit that carries no Pull Request number', () => {
+    const candidates = [
+      toCandidate(group('aaa1111', [], 'chore: one direct commit')),
+      toCandidate(group('bbb2222', [], 'chore: another direct commit')),
+    ];
+    expect(dropOfferedTwice(candidates)).to.have.length(2);
   });
 });
 
@@ -226,6 +264,43 @@ describe('promotion Pull Request title and body', () => {
     toCandidate(group('bbb2222', [{ id: 487, title: 'Story | B' }])),
   ]);
 
+  // Azure DevOps refuses a description over 4000 characters, and a promotion carrying the coding
+  // agent prompt gets past it: being refused there leaves a pushed branch and nothing to review
+  const conflictedStories = toStories([
+    toCandidate(group('ddd4444', [{ id: 500, title: 'Story with a conflict' }])),
+  ]).map((story) => ({ ...story, conflictFiles: ['NOTES.md', 'force-app/main/default/labels/CustomLabels.labels-meta.xml'] }));
+
+  it('embeds the conflict prompt when the provider caps nothing', () => {
+    const body = buildPromotionPullRequestBody({
+      sourceBranch: 'integration',
+      targetBranch: 'uat',
+      branchName: 'promotion/integration/uat/2026-09-06-1',
+      stories: conflictedStories,
+      skipped: [],
+      ticketIds: [],
+    });
+    expect(body).to.contain('Prompt for a coding agent');
+    expect(body.length).to.be.greaterThan(4000);
+  });
+
+  it('drops the conflict prompt rather than being refused by a provider that caps the description', () => {
+    const body = buildPromotionPullRequestBody({
+      sourceBranch: 'integration',
+      targetBranch: 'uat',
+      branchName: 'promotion/integration/uat/2026-09-06-1',
+      stories: conflictedStories,
+      skipped: [],
+      ticketIds: [],
+      maxLength: 4000,
+    });
+    expect(body.length).to.be.at.most(4000);
+    expect(body).to.not.contain('Prompt for a coding agent');
+    // What the deployment jobs read, and what the reviewer needs, both survive
+    expect(body).to.contain('```yaml\npromotionPullRequests: [500]\n```');
+    expect(body).to.contain('`NOTES.md`');
+    expect(body).to.contain('promotion-conflicts-prompt-');
+  });
+
   it('names the promotion after its branches and suffix', () => {
     expect(buildPromotionPullRequestTitle('uat', 'preprod', 'promotion/uat/preprod/2026-09-06-2')).to.equal('Promotion uat to preprod (2026-09-06-2)');
   });
@@ -281,6 +356,9 @@ describe('promotion Pull Request title and body', () => {
     expect(prompt).to.contain('Pull Request #491: Story C (https://git.example.com/pr/491). Origin commit in `uat`: `ccc3333`');
     expect(prompt).to.contain('- `force-app/main/default/labels/CustomLabels.labels-meta.xml`');
     expect(prompt).to.contain('fix: solve cherry-pick conflicts of promotion/uat/preprod/2026-09-06-1');
+    // The commit message must explain the resolutions, not only say that conflicts were solved
+    expect(prompt).to.contain('Commit with a message that says how each conflict was solved');
+    expect(prompt).to.contain('<path/of/the/file> (#<Pull Request number>): <what the target side had, what the story added, what you kept and why>');
     expect(prompt).to.contain('Do not merge the Pull Request (https://git.example.com/pr/900)');
     // The same prompt is embedded in the Pull Request description, in a collapsible block
     const body = buildPromotionPullRequestBody({
@@ -625,5 +703,55 @@ describe('expandPromotionsInGroups()', () => {
           : null,
     );
     expect(withMissing[0].associatedPrs.map((pr) => pr.id)).to.deep.equal([9]);
+  });
+});
+
+describe('assertPromotionBranchIsNotDeployed()', () => {
+  const enabled = { enablePromotionBranches: true, allowedPromotionSteps: [{ source: 'uat', target: 'preprod' }] };
+  const promotionBranch = 'promotion/uat/preprod/2026-09-08-2';
+  // The command object only has to accept a uxLog call
+  const commandThis = {} as any;
+  const deployBeforeMerge = process.env.SFDX_HARDIS_DEPLOY_BEFORE_MERGE;
+
+  afterEach(() => {
+    if (deployBeforeMerge === undefined) {
+      delete process.env.SFDX_HARDIS_DEPLOY_BEFORE_MERGE;
+    } else {
+      process.env.SFDX_HARDIS_DEPLOY_BEFORE_MERGE = deployBeforeMerge;
+    }
+  });
+
+  it('stops a deployment running from a promotion branch, naming the branch and the fix', () => {
+    let message = '';
+    try {
+      assertPromotionBranchIsNotDeployed(commandThis, enabled, false, promotionBranch);
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    expect(message).to.contain(promotionBranch);
+    expect(message).to.contain('DEPLOY_BRANCHES');
+  });
+
+  it('lets the validation of the promotion Pull Request run', () => {
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, true, promotionBranch)).to.not.throw();
+  });
+
+  it('lets the deployment of the target branch run once the promotion is merged', () => {
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, false, 'preprod')).to.not.throw();
+  });
+
+  it('says nothing while the feature is off: a promotion/ branch is then an ordinary feature branch', () => {
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, { enablePromotionBranches: false }, false, promotionBranch)).to.not.throw();
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, {}, false, promotionBranch)).to.not.throw();
+  });
+
+  it('lets a project that deploys before merging deploy from the source branch', () => {
+    process.env.SFDX_HARDIS_DEPLOY_BEFORE_MERGE = 'true';
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, false, promotionBranch)).to.not.throw();
+  });
+
+  it('ignores a branch that only looks like a promotion branch', () => {
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, false, 'promotion/hand-made-by-a-human')).to.not.throw();
+    expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, false, null)).to.not.throw();
   });
 });

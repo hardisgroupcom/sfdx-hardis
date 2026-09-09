@@ -37,7 +37,7 @@ import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, hand
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { applyPromotionInheritedBehaviors, listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
 import { isDeploymentActionsDisabled } from '../../../../common/utils/prePostCommandUtils.js';
-import { assertNoPromotionConflictMarkers } from '../../../../common/utils/promotionCreateUtils.js';
+import { assertNoPromotionConflictMarkers, assertPromotionBranchIsNotDeployed } from '../../../../common/utils/promotionCreateUtils.js';
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
 import { t } from '../../../../common/utils/i18n.js';
 
@@ -529,6 +529,11 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     await setConnectionVariables(flags['target-org']?.getConnection(), true);
 
+    // A promotion branch may only be validated, never deployed: a deployment job running from it
+    // ships the promotion to the org before it is reviewed and merged. Checked before anything is
+    // computed, because the answer is to fix the CI configuration, not to let the job continue.
+    assertPromotionBranchIsNotDeployed(this, this.configInfo, this.checkOnly, currentGitBranch);
+
     // Promotion branch: inherit the custom behaviors (NO_DELTA, PURGE_FLOW_VERSIONS...) of the
     // Pull Requests it declares, before the delta decision reads them. No-op unless
     // enablePromotionBranches is set and the Pull Request is a promotion one.
@@ -539,8 +544,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // so this does not run the branch history scan the kill switch is meant to avoid.
     await applyPromotionInheritedBehaviors(this.checkOnly);
     // A promotion branch may carry conflicts committed on purpose (--on-conflict
-    // commit-with-markers): stop here while the markers are still in the sources
-    await assertNoPromotionConflictMarkers(this, this.configInfo);
+    // commit-with-markers): stop here while the markers are still in the sources, after saying so
+    // in a Pull Request comment (nothing is deployed, so no other comment would ever be posted)
+    await assertNoPromotionConflictMarkers(this, this.configInfo, this.checkOnly);
 
     await this.initTestLevelAndTestClasses(flags.testlevel, flags.runtests);
 

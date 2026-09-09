@@ -2,6 +2,18 @@
 
 ## [beta] (main)
 
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a merge that only moves other merges (`integration -> uat`, a promotion merged into its target) is now opened up, so each User Story is a candidate of its own instead of the whole sync window being a single selectable row.
+- A configuration file left unreadable while a command runs (git conflict markers in `config/.sfdx-hardis.yml`) no longer crashes it: the configuration read earlier during the command is used, with a warning naming the file to fix.
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a cherry-pick conflict can now be answered once for the whole promotion, and the coding agent prompt asks for a commit message explaining how each conflict was solved.
+- When a Pull Request cannot be created automatically, sfdx-hardis now says what the git provider answered and gives a link to the provider's own creation form, with the branches, the title and the description already filled in.
+- A promotion Pull Request stopped because its branch still holds git conflict markers now says so in its validation comment, instead of failing the job with no comment at all.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): a deployment job running from a promotion branch now stops with an error naming the CI setting to fix, since a promotion branch must only run the validation of its Pull Request.
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a User Story a promotion carried and an ordinary sync merge delivered again is now offered on a single candidate row.
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a machine without the GitHub CLI no longer stops with `not found: gh` when a Pull Request cannot be created, and gets the manual creation link.
+- GitLab: a `CI_PROJECT_ID` left over from another repository in a local `.env` is now detected and replaced by the one of the git remote, instead of making every API call answer about the wrong project.
+- Azure DevOps: the Pull Request number of a merge completed without fast-forward is now read, so a User Story a promotion carried can be selected on its own in the next promotion.
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a promotion description too long for the git provider now drops the embedded conflict prompt instead of failing the Pull Request creation.
+
 ## [8.7.0] 2026-09-08
 
 - [Promotion branches (experimental)](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/): ship a subset of the approved User Stories of a major branch with a `promotion/<source>/<target>/<date>-<counter>` branch created by [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) that declares the Pull Requests it carries (`enablePromotionBranches`), so their deployment actions, Apex test classes, custom behaviors and release notes follow them.

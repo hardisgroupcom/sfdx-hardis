@@ -1,5 +1,5 @@
 import c from "chalk";
-import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, encodePrUrlPathBranch, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GithubApiClient, getGithubActionsContext } from "./githubApiClient.js";
@@ -131,6 +131,26 @@ export class GithubProvider extends GitProviderRoot {
       }
     }
     return null;
+  }
+
+  /**
+   * https://<host>/<owner>/<repo>/compare/<base>...<head>?expand=1&title=&body=
+   */
+  public static getPullRequestCreateUrl(remoteUrl: string, request: CreatePullRequestRequest): PullRequestCreateUrlResult | null {
+    const parsed = GithubProvider.parseGithubRepoUrl(remoteUrl);
+    if (!parsed) {
+      return null;
+    }
+    // GitHub compares the two refs in the path itself, and wants the slashes of a branch name as-is
+    const base = encodePrUrlPathBranch(request.targetBranch);
+    const head = encodePrUrlPathBranch(request.sourceBranch);
+    return buildPrCreateUrl((body) => {
+      const params = new URLSearchParams({ expand: "1", title: request.title });
+      if (body) {
+        params.set("body", body);
+      }
+      return `${parsed.serverUrl}/${parsed.owner}/${parsed.repo}/compare/${base}...${head}?${params.toString()}`;
+    }, request.body || "");
   }
 
   public getLabel(): string {

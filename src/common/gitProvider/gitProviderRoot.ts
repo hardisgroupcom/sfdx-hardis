@@ -42,6 +42,47 @@ export function hasAffirmativeFlowInterviewDeletionDirective(description: string
   });
 }
 
+/**
+ * Web URL of the "new Pull Request" form of a git provider, with the source branch, the target
+ * branch, the title and (when it fits) the description already filled in. Each provider builds its
+ * own with `getPullRequestCreateUrl`; this is what they return.
+ */
+export declare type PullRequestCreateUrlResult = {
+  url: string;
+  /**
+   * False when the description is not in the URL: too long for it, or a provider whose form does
+   * not take one. The caller must then tell the user to paste the description by hand.
+   */
+  bodyIncluded: boolean;
+};
+
+/**
+ * Query strings longer than this are refused or truncated somewhere along the way (GitHub answers
+ * 414 above 8KB, and proxies have their own limits). Above it the description is left out of the
+ * link rather than producing a URL that opens on an error page.
+ */
+export const MAX_PR_CREATE_URL_LENGTH = 7500;
+
+/**
+ * Builds the Pull Request creation URL with the description, and again without it when the first
+ * one is too long for a URL: half the information in a link that opens beats all of it in a link
+ * that does not.
+ */
+export function buildPrCreateUrl(build: (body: string) => string, body: string): PullRequestCreateUrlResult {
+  if (body) {
+    const urlWithBody = build(body);
+    if (urlWithBody.length <= MAX_PR_CREATE_URL_LENGTH) {
+      return { url: urlWithBody, bodyIncluded: true };
+    }
+  }
+  return { url: build(""), bodyIncluded: false };
+}
+
+/** Encodes a branch name for a URL path, keeping the slashes a branch name is allowed to have */
+export function encodePrUrlPathBranch(branch: string): string {
+  return branch.split("/").map((part) => encodeURIComponent(part)).join("/");
+}
+
 export abstract class GitProviderRoot {
   public serverUrl: string | null;
   public token: string;
@@ -145,6 +186,14 @@ export abstract class GitProviderRoot {
   // job creates the deployment comment as a pending placeholder.
   public isPrDescriptionEditableAfterMerge(): boolean {
     return true;
+  }
+
+  // How long a Pull Request description may be, when the provider caps it (Azure DevOps refuses
+  // anything over 4000 characters). Null means no known limit. A promotion carrying a conflict
+  // prompt is the one description that gets near it, and being refused there would leave a
+  // release manager with a pushed branch and no Pull Request at all.
+  public getMaxPullRequestDescriptionLength(): number | null {
+    return null;
   }
 
   /**
@@ -317,6 +366,17 @@ export abstract class GitProviderRoot {
   public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
     uxLog("other", this, `Method listPullRequestCommentsByMarker is not implemented yet on ${this.getLabel()}`);
     return [];
+  }
+
+  /**
+   * Web URL of the "new Pull Request" form of this provider, with the source branch, the target
+   * branch, the title and (when it fits in a URL) the description already filled in. Static because
+   * it is needed exactly when no token is configured and no provider instance exists: the git
+   * remote is all it takes.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static getPullRequestCreateUrl(remoteUrl: string, request: CreatePullRequestRequest): PullRequestCreateUrlResult | null {
+    return null;
   }
 
   // Updates the body of one precise comment, identified by the ref returned by
