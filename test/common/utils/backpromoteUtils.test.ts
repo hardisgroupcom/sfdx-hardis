@@ -94,6 +94,29 @@ describe('mergedSourceBranches()', () => {
     ).to.deep.equal(['feature/SFB-1-do-things']);
   });
 
+  // Azure DevOps completes a Pull Request without fast-forward, which is what keeps the -x
+  // trailers of the cherry-picks, and writes the sentence without a # and with the target branch
+  // after it. Read as GitHub's, the number is lost and a story a promotion carried can no longer
+  // be selected on its own.
+  it('reads the merged branch from an Azure DevOps merge message, which has no #', () => {
+    expect(
+      mergedSourceBranches(
+        { hash: 'aaa', message: 'Merge pull request 52 from feature/E2E-101-alpha into integration' },
+        new Map(),
+        new Map(),
+      ),
+    ).to.deep.equal(['feature/E2E-101-alpha']);
+  });
+
+  it('finds the Pull Request number of an Azure DevOps merge message', () => {
+    const branches = mergedSourceBranches(
+      { hash: 'aaa', message: 'Merge pull request 58 from promotion/integration/uat/2026-09-09-1 into uat' },
+      new Map(),
+      new Map([[58, { sourceBranch: 'promotion/integration/uat/2026-09-09-1' }]]),
+    );
+    expect(branches).to.deep.equal(['promotion/integration/uat/2026-09-09-1']);
+  });
+
   it('reads the source branch of the Pull Request the merge commit closed', () => {
     const branches = mergedSourceBranches(
       { hash: 'aaa', message: 'Merged PR 42: promote things' },

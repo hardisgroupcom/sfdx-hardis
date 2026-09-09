@@ -250,6 +250,12 @@ export function mergedSourceBranches(
     const parts = gitHubMatch[1].split('/');
     branches.push(parts.length > 1 ? parts.slice(1).join('/') : gitHubMatch[1]);
   }
+  // Azure DevOps writes the same sentence without the # and with the target branch after it, and
+  // the source branch is given as it is, with no owner in front
+  const azureMatch = commit.message.match(/Merge pull request \d+ from (\S+) into \S+/);
+  if (azureMatch) {
+    branches.push(azureMatch[1]);
+  }
   const prNumber = mergeCommitToPr.get(commit.hash) ?? extractPrNumbersFromMessage(commit.message)[0];
   const pullRequest = prNumber ? prDetailsMap.get(prNumber) : null;
   if (pullRequest?.sourceBranch) {
@@ -542,6 +548,9 @@ function extractPrNumbersFromMessage(message: string): number[] {
     /Merge pull request #(\d+)/g,
     /See merge request [^!]*!(\d+)/g,
     /Merged PR (\d+)/g,
+    // Azure DevOps completing a Pull Request without fast-forward, which is what keeps the -x
+    // trailers of a cherry-pick: "Merge pull request 52 from feature/X into integration", with no #
+    /Merge pull request (\d+) from \S+ into \S+/g,
     // Generic #NNN reference (but avoid matching issue numbers in the middle of words)
     /(?:^|\s)#(\d+)(?:\s|$|[,.):])/g,
   ];
