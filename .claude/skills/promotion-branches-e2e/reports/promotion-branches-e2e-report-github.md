@@ -6,6 +6,9 @@
 **sfdx-hardis:** `fix/promotion-split-sync-merges`, `7a1347715`
 **vscode-sfdx-hardis:** `fix/config-conflict-markers`, `0fd07cf0`
 
+The GitLab and Azure runs that followed landed three more fixes (`16072b2ec`, `53ea7a81a`,
+`ac317e170`); none of them touches a GitHub code path, so the results below stand as measured.
+
 This is the first run of the new **pipeline checkpoints**: five points of the run assert what the
 vscode-sfdx-hardis DevOps Pipeline shows, before and after every promotion operation, by driving
 the extension's own `PipelineDataProvider` against the real repository.

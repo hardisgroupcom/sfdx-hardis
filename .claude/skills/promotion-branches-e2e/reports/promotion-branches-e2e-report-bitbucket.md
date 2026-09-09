@@ -1,5 +1,9 @@
 # Promotion branches: end to end test on Bitbucket Cloud
 
+> **Not re-run on 2026-09-09.** The test repository was deleted, so this report is the one of
+> 2026-09-08 and does not cover the five fixes of the 2026-09-09 cycle, nor the pipeline
+> checkpoints. The three other providers were re-run.
+
 **Date:** 2026-09-08 (re-run; the first Bitbucket run of 2026-09-07 is summarized under "What the first run found")
 **Repository under test:** `galerieslafayette/test-prom-e2e` (private), reset to the runbook base project for this run
 **Salesforce org:** `nicolas.vuillamy.c8024b5deb9f@agentforce.com` (developer org, shared with the three other providers)

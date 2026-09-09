@@ -466,6 +466,17 @@ pending manual checkbox per org branch.
   `GITHUB_REPOSITORY`. To reach the "creation refused" case, take the GitHub CLI off `PATH` as well.
 - **Git will not make an octopus merge out of sides it can fast-forward.** `git merge A B` where A
   is a descendant of HEAD produces a two-parent merge. The three-parent guard stays a unit test.
+- **Azure DevOps writes a merge sentence of its own.** Completing a Pull Request without
+  fast-forward gives `Merge pull request 52 from feature/X into integration`: no `#`, and the target
+  branch after the source. A run that sees `-` rows labelled "Merge pull request N from ..." in a
+  candidate table is looking at that, not at a missing Pull Request.
+- **A promotion description can be refused for its length.** Azure DevOps caps a description at
+  4000 characters and the embedded conflict prompt goes past it. The description now drops the
+  prompt (it is saved in `hardis-report/` anyway) rather than losing the Pull Request, so a run that
+  sees no `<details>` block on an Azure promotion with conflicts is seeing the intended behaviour.
+- **Running two providers at once exhausts git bash on Windows.** `fork: retry: Resource
+  temporarily unavailable` and `dofork: child -1 ... exit code 0xC000026B` come from the shell, not
+  from the product: rerun the step, and keep the long A/B passes to one at a time.
 - **A candidate row is a User Story, not a promotion window.** Runs written before the vehicle
   merges were opened up expected one row labelled `#3, #1` for a whole `integration -> uat` sync,
   and read "selecting either takes both" as correct. It is not: promoting one story must carry that
@@ -554,7 +565,17 @@ PYTHONIOENCODING=utf-8 python "$AB/ab-diff.py" "$LOGS/ab-main2" "$LOGS/ab-branch
 
 Expected: `TOTAL DIFFERING LINES: 0`, or 1 when a merged branch is named `promotion/...` (the
 informational line saying it is treated as an ordinary feature branch). Anything else is a
-regression. Switching the CLI checkout in place is safe as long as `package.json` and `yarn.lock`
+regression, **unless** it is one of these, which the run of 2026-09-09 met and which are not
+promotion branches behaviour:
+
+- `git config --null --show-origin --get-all remote.origin.url`, once per command on GitLab: the
+  stale `CI_PROJECT_ID` guard reads the git remote outside a GitLab CI job. Intended, and paid by
+  local runs only.
+- `Changes if deployed: 1 created ...` against `0 created ... 1 unchanged`: the pass that ran first
+  deployed the metadata and the second found it unchanged. **Run a third pair** and compare that
+  one: on 2026-09-09 the third Azure pair came back at 0 while the second showed 20 such lines.
+- `Source validate did not run tests in the org` / `There have been deploys in the org since the
+  source validate happened`: quick-deploy state in the org between two passes. Switching the CLI checkout in place is safe as long as `package.json` and `yarn.lock`
 are identical on both refs (`bin/dev.js` runs the TypeScript sources through ts-node).
 
 ## 8. What is different on GitLab

@@ -195,6 +195,26 @@ Break one of these and the feature is wrong, whatever the tests say.
     (`/(integration|uat|preprod|main)/` instead of `/^(...)$/`) matches
     `promotion/integration/uat/...`, so every promotion branch push starts the deployment job and
     fails it. The sfdx-hardis default template is anchored.
+25. **A User Story is offered once, whatever brought it in.** A story a promotion cherry-picked into
+    a branch and an ordinary sync merge delivered again afterwards sits in the window twice, as two
+    commits: `dropOfferedTwice` keeps the first candidate row, which is the one the command already
+    cherry-picks, so the table a release manager reads never lists the same number twice. Only an
+    exact repeat of the same set of numbers is dropped: a row grouping several Pull Requests (a
+    back-merge, an octopus merge) never hides the finer rows of the stories it holds, and a row with
+    no number is a commit of its own and always stays.
+26. **Every provider writes its own merge sentence.** `extractPrNumbersFromMessage` and
+    `mergedSourceBranches` read the Pull Request number and the merged branch out of a merge commit
+    message, and the shapes differ: `Merge pull request #N from owner/branch` (GitHub),
+    `See merge request group/repo!N` (GitLab), `Merged PR N:` (Azure DevOps squash) and
+    `Merge pull request N from source into target` (Azure DevOps completing without fast-forward,
+    which is what keeps the `-x` trailers). Miss one and every commit a promotion cherry-picked
+    comes back as a row with no number, so the story it carried can no longer be selected.
+27. **A description a provider refuses is a promotion nobody can review.** Azure DevOps caps a
+    description at 4000 characters and a promotion whose cherry-picks conflicted embeds a coding
+    agent prompt that goes past it: `buildPromotionPullRequestBody` takes the provider's
+    `getMaxPullRequestDescriptionLength()` and drops the embedded prompt (saved in `hardis-report/`
+    either way) rather than letting the creation fail with the branch already pushed. The yaml
+    declaration, the carried table and the conflicting file list always survive.
 
 ## sfdx-hardis (CLI)
 

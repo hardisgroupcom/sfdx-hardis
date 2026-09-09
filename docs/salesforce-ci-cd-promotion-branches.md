@@ -148,7 +148,7 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
 
 4. If a cherry-pick conflicts, the story depends on another one that is not part of the promotion. The command asks what to do (or takes it from `--on-conflict`):
     - **skip**: leave that story out, it is listed as such in the Pull Request description;
-    - **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description warns about it, lists the files to fix and embeds a ready-to-paste prompt for a coding agent, also saved in `hardis-report/promotion-conflicts-prompt-*.md`. The validation job stops with an error naming the files while a marker is still in the sources;
+    - **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description warns about it, lists the files to fix and embeds a ready-to-paste prompt for a coding agent, also saved in `hardis-report/promotion-conflicts-prompt-*.md`. The validation job stops with an error naming the files while a marker is still in the sources; on a provider that caps the description length (Azure DevOps stops at 4000 characters), the prompt is left out of the description and only the saved file carries it;
     - **commit-with-markers, and all the following conflicts**: the same, and the question is not asked again for the rest of the promotion. A promotion window usually conflicts on the same files story after story, and `--on-conflict commit-with-markers` is the equivalent for a non-interactive run;
     - **abort**: stop, the branch is deleted and nothing is pushed.
 
@@ -203,7 +203,7 @@ Agents and automation call the same command without prompts:
 sf hardis:project:promotion:create --agent --source-branch uat --pull-requests 482,487,491
 ```
 
-The Pull Request is created through the git provider API when a token is configured, or with the `gh` CLI on GitHub. Without either, the branch is pushed and the description is saved under `hardis-report/` so you can create the Pull Request yourself.
+The Pull Request is created through the git provider API when a token is configured, or with the `gh` CLI on GitHub. Without either, the branch is pushed and the description is saved under `hardis-report/` so you can create the Pull Request yourself. A link to the provider's own creation form, with the source branch, the target branch, the title and the description already filled in, is printed as well, so nothing has to be retyped.
 
 The `scripts/actions/.sfdx-hardis.<PR>.yml` files of the stories travel with their commits, so their deployment actions are in the branch too.
 
