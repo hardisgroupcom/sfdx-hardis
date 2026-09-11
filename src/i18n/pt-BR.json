@@ -2651,6 +2651,7 @@
   "promotionConflictMarkersPrTitle": "Marcadores de conflito git na branch de promoção",
   "promotionCreateConflictCommitAll": "Fazer commit desta User Story e de todos os conflitos seguintes com os marcadores de conflito, sem perguntar novamente",
   "promotionCreateConflictRemembered": "Aplicando o tratamento do conflito escolhido antes: {{choice}}",
+  "promotionCreateMergedPromotionsUnavailable": "Não foi possível listar os Pull Requests de promoção já mesclados ({{message}}). O contador é calculado apenas a partir das refs do git e do histórico do branch de destino, portanto um nome de branch de promoção de hoje pode ser reutilizado se a mesclagem não deixou nenhum merge commit",
   "promotionCreatePullRequestCreateLinkNoBody": "Crie-a aqui, as branches e o título já estão preenchidos: {{url}} - a descrição é longa demais para um link, cole-a de {{file}} (o bloco promotionPullRequests é obrigatório)",
   "promotionCreateTargetHistoryUnavailable": "Não foi possível ler o histórico do branch de destino {{branch}}. O contador é calculado sem os branches de promoção que foram mesclados e depois excluídos, portanto um nome de branch de promoção de hoje pode ser reutilizado",
   "prResolutionFailed": "Falha ao resolver pull request: {{message}}",

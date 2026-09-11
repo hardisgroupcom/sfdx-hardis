@@ -2789,6 +2789,7 @@
   "promotionCreateFeatureDisabled": "Promotion branche nie są włączone w tym projekcie: najpierw należy ustawić enablePromotionBranches: true w config/.sfdx-hardis.yml. Zobacz {{url}}",
   "promotionCreateGroupCarriesMore": "{{label}} to commit typu merge: cherry-pick przeniesie równiez {{numbers}}, które nie były żądane. Zostaną zadeklarowane w Pull Requeście promocji i wdrożone razem z nim",
   "promotionCreateListingCandidates": "Wyszukiwanie Pull Requestów zmergowanych do {{source}} i jeszcze nie wypromowanych do {{target}}...",
+  "promotionCreateMergedPromotionsUnavailable": "Nie udało się wyświetlić Pull Requestów promocyjnych, które zostały już zmergowane ({{message}}). Licznik jest obliczany tylko na podstawie refów git i historii branchu docelowego, dlatego nazwa branchu promocyjnego z dzisiaj może zostać użyta ponownie, jeśli merge nie pozostawił merge commita",
   "promotionCreateNoAllowedStep": "Żaden z głównych branchy możliwych do promocji ({{branches}}) nie jest branchem źródłowym w allowedPromotionSteps ({{steps}}). Należy zaktualizować konfigurację, aby promować z innego brancha",
   "promotionCreateNoAllowedTarget": "Żaden mergeTarget dla {{source}} (mergeTargets: {{mergeTargets}}) nie jest dozwolony przez allowedPromotionSteps ({{steps}})",
   "promotionCreateNoCandidate": "Żaden Pull Request zmergowany do {{source}} nie czeka na promocję do {{target}}",

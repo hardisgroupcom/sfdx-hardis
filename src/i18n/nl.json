@@ -2789,6 +2789,7 @@
   "promotionCreateFeatureDisabled": "Promotion branches zijn niet ingeschakeld voor dit project: zet eerst enablePromotionBranches: true in config/.sfdx-hardis.yml. Zie {{url}}",
   "promotionCreateGroupCarriesMore": "{{label}} is een merge commit: cherry-picken neemt ook {{numbers}} mee, die niet zijn gevraagd. Ze worden in de promotion Pull Request gedeclareerd en ermee geïmplementeerd",
   "promotionCreateListingCandidates": "Pull Requests ophalen die in {{source}} zijn gemerged en nog niet naar {{target}} zijn gepromoot...",
+  "promotionCreateMergedPromotionsUnavailable": "Kan de al gemergede promotion Pull Requests niet opsommen ({{message}}). De teller wordt alleen uit de git refs en de historie van de target branch berekend, dus een promotion branchnaam van vandaag kan opnieuw worden gebruikt als de merge geen merge commit heeft achtergelaten",
   "promotionCreateNoAllowedStep": "Geen van de hoofdbranches die gepromoot kunnen worden ({{branches}}) is een bronbranch van allowedPromotionSteps ({{steps}}). Pas de configuratie aan om vanaf een andere branch te promoten",
   "promotionCreateNoAllowedTarget": "Geen enkel merge target van {{source}} (mergeTargets: {{mergeTargets}}) is toegestaan door allowedPromotionSteps ({{steps}})",
   "promotionCreateNoCandidate": "Geen enkele Pull Request die in {{source}} is gemerged wacht op promotion naar {{target}}",

@@ -173,7 +173,7 @@ describe('promotion branch naming', () => {
       "Merge pull request #12 from hardisgroupcom/promotion/uat/preprod/2026-09-06-1", // GitHub
       "Merge branch 'promotion/uat/preprod/2026-09-06-2' into 'preprod'", // GitLab
       'See merge request hardisgroupcom/project!34',
-      'Merge pull request 42 from promotion/uat/preprod/2026-09-06-3 into preprod', // Azure DevOps
+      'Merge pull request 42 from promotion/uat/preprod/2026-09-06-3 into preprod', // Azure DevOps, completed without fast-forward
       'Merged in promotion/uat/preprod/2026-09-06-4 (pull request #5)', // Bitbucket
       'Merge pull request #13 from hardisgroupcom/feature/PROJ-1',
     ].join('\n\n');

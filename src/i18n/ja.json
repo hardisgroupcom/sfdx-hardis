@@ -2787,6 +2787,7 @@
   "promotionCreateFeatureDisabled": "このプロジェクトではプロモーションブランチが有効になっていません: まず config/.sfdx-hardis.yml に enablePromotionBranches: true を設定してください。参照: {{url}}",
   "promotionCreateGroupCarriesMore": "{{label}} はマージコミットです: cherry-pick すると要求されていない {{numbers}} も一緒に運ばれます。これらはプロモーション Pull Request に宣言され、一緒にデプロイされます",
   "promotionCreateListingCandidates": "{{source}} に merge 済みで、まだ {{target}} にプロモーションされていない Pull Request を一覧しています...",
+  "promotionCreateMergedPromotionsUnavailable": "すでに merge されたプロモーションの Pull Request を一覧できませんでした ({{message}})。カウンターは git の ref とターゲットブランチの履歴のみから算出されるため、merge commit が残らない merge の場合は本日のプロモーションブランチ名が再利用される可能性があります",
   "promotionCreateNoAllowedStep": "プロモーション可能なメジャーブランチ ({{branches}}) のうち、allowedPromotionSteps ({{steps}}) のソースブランチに該当するものがありません。別のブランチから promotion するには設定を変更してください",
   "promotionCreateNoAllowedTarget": "{{source}} の mergeTargets ({{mergeTargets}}) のうち、allowedPromotionSteps ({{steps}}) で許可されているものがありません",
   "promotionCreateNoCandidate": "{{source}} に merge 済みで {{target}} へのプロモーションを待っている Pull Request はありません",

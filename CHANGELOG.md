@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a promotion branch deleted after its merge no longer blocks the next promotion of the same day, whose name is now taken from the target branch history and the stale remote-tracking refs too.
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a promotion branch deleted after its merge no longer blocks the next promotion of the same day, whose name is now also taken from the merged Pull Requests, the target branch history and the stale remote-tracking refs.
 
 ## [8.7.1] 2026-09-09
 

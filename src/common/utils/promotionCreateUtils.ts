@@ -25,6 +25,7 @@ import {
   PROMOTION_BRANCH_NAME_EXAMPLE,
   PromotionBranchConfig,
   PromotionStep,
+  isPromotionBranchName,
   isPromotionPullRequest,
   parsePromotionBranchName,
   parsePromotionPullRequestIds,
@@ -912,7 +913,41 @@ export async function listExistingPromotionBranchNames(sourceBranch: string, tar
   const remoteTracking = await git().branch(['-r']);
   names.push(...remoteTracking.all);
   names.push(...(await promotionBranchNamesInTargetHistory(targetBranch, commandThis)));
+  names.push(...(await promotionBranchNamesOfMergedPullRequests(targetBranch, commandThis)));
   return names;
+}
+
+/**
+ * Source branches of the promotion Pull Requests merged into the target branch these last days.
+ *
+ * The history above only answers when the merge produced a merge commit naming the branch. A
+ * project that merges with a rebase (GitHub) or a fast-forward (GitLab) keeps the cherry-picks and
+ * their -x trailers, which is all the promotion needs, and leaves no such commit; Azure DevOps
+ * squashes into "Merged PR 42: <title>", which does not hold the branch name either. The provider
+ * knows the source branch of a merged Pull Request whatever the merge style, and keeps knowing it
+ * after the branch is deleted.
+ *
+ * Best effort on purpose: a project with no token still gets the refs and the history, and a
+ * provider that cannot answer is not a reason to refuse to assemble a promotion.
+ */
+async function promotionBranchNamesOfMergedPullRequests(targetBranch: string, commandThis: any): Promise<string[]> {
+  // Never prompt for a provider here, an --agent run would block on the question
+  const gitProvider = await GitProvider.getInstance();
+  if (!gitProvider) {
+    return [];
+  }
+  // A branch named after today can only have been merged today. Two days of slack for the time
+  // zone of the provider, and the query stays small whatever the size of the project.
+  const minDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+  try {
+    const pullRequests = (await gitProvider.listPullRequests({ status: 'merged', targetBranch, minDate })) || [];
+    return pullRequests
+      .map((pullRequest) => pullRequest.sourceBranch || '')
+      .filter((branch) => isPromotionBranchName(branch));
+  } catch (e) {
+    uxLog('warning', commandThis, c.yellow(t('promotionCreateMergedPromotionsUnavailable', { message: (e as Error).message })));
+    return [];
+  }
 }
 
 /**
@@ -930,7 +965,7 @@ export async function listExistingPromotionBranchNames(sourceBranch: string, tar
  */
 async function promotionBranchNamesInTargetHistory(targetBranch: string, commandThis: any): Promise<string[]> {
   for (const ref of [`origin/${targetBranch}`, targetBranch]) {
-    const res = await runCommandSafe(`git log ${ref} --first-parent -n 500 --format=%B`, commandThis, { output: false });
+    const res = await runCommandSafe(`git log "${ref}" --first-parent -n 500 --format=%B`, commandThis, { output: false });
     if (res.status === 0) {
       return extractPromotionBranchNames(res.stdout || '');
     }
