@@ -230,12 +230,11 @@ Break one of these and the feature is wrong, whatever the tests say.
     in the extension, plus the fallback regex of `pipeline.js`) still accepts the
     `<YYYY-MM-DD>-<counter>` names of the first releases: a promotion assembled before the upgrade
     can still be open, or waiting in a branch for the next step.
-29. **A backpromote never works on a promotion branch.** `hardis:work:backpromote` brings what was merged
-    in a major branch into a developer org. On a promotion branch (like on a major or retrofit branch, or a
-    User Story branch behind its parent branch), `decideBackpromoteWorkingBranch` makes the run work on a new
-    local `backpromote/<parent>/<date>` branch created from the remote parent branch, whatever
-    `enablePromotionBranches` says, and `leaveBackpromoteBranch` brings the user back to the promotion branch
-    at the end. Nothing is ever committed on the promotion branch or on a major branch.
+29. **A backpromote never works on a promotion branch.** `hardis:work:backpromote` merges a major branch
+    into the developer's User Story branch, then deploys what the merge brought in to their org. On a
+    promotion branch, like on a major or retrofit branch, `classifyBackpromoteCurrentBranch` makes the run
+    refuse to start, whatever `enablePromotionBranches` says: the user checks out their User Story branch
+    first. Nothing is ever committed on a promotion branch or on a major branch.
 
 ## sfdx-hardis (CLI)
 
