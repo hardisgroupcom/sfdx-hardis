@@ -1,0 +1,28 @@
+{
+  "exitStatus": 0,
+  "status": "ready",
+  "orgType": "scratch",
+  "checks": [
+    { "id": "targetOrg", "ok": true },
+    { "id": "currentBranch", "ok": true },
+    { "id": "gitClean", "ok": true },
+    { "id": "upToDate", "ok": true }
+  ],
+  "groupCount": 3,
+  "groups": [
+    { "pullRequests": [1], "status": "pending", "items": ["StaticResource:E2E_S1"], "actionIds": ["e2e-pre-1", "e2e-manual-1"] },
+    { "pullRequests": [2], "status": "pending", "items": ["StaticResource:E2E_S2"], "actionIds": ["e2e-post-2"] },
+    { "pullRequests": [3], "status": "pending", "items": ["StaticResource:E2E_S3"], "actionIds": ["e2e-pre-3"] }
+  ],
+  "items": [
+    { "key": "StaticResource:E2E_S1", "orgState": "newToOrg", "mergeable": false },
+    { "key": "StaticResource:E2E_S2", "orgState": "newToOrg", "mergeable": false },
+    { "key": "StaticResource:E2E_S3", "orgState": "newToOrg", "mergeable": false }
+  ],
+  "actions": [
+    { "id": "e2e-pre-1", "when": "pre", "alreadyDone": false },
+    { "id": "e2e-manual-1", "when": "post", "alreadyDone": false },
+    { "id": "e2e-post-2", "when": "post", "alreadyDone": false },
+    { "id": "e2e-pre-3", "when": "pre", "alreadyDone": false }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "exitStatus": 0,
+  "status": "ready",
+  "groupCount": 1,
+  "deletions": ["StaticResource:E2E_S1"],
+  "absentItems": ["StaticResource:E2E_S1"]
+}

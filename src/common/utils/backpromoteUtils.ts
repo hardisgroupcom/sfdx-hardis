@@ -72,6 +72,8 @@ export interface BackpromoteState {
   lastCommit: string;
   lastTimestamp: string;
   parentBranch: string;
+  /** Groups older than lastCommit that a run left out on purpose: offered again by the next run */
+  skippedCommits?: string[];
 }
 
 // ---- Resolve parent branch ----
@@ -580,100 +582,6 @@ async function loadPrConfig(prId: number): Promise<any | null> {
   }
 }
 
-// ---- Select backpromote scope ----
-
-export async function selectBackpromoteScope(
-  prGroups: BackpromotePrGroup[],
-  lastBackpromoteState: BackpromoteState | null,
-  commandThis: any,
-  agentMode: boolean,
-  fromFlag: string | null = null,
-): Promise<{ targetCommit: string; selectedPrs: BackpromotePrGroup[]; fromCommit: string }> {
-  if (lastBackpromoteState) {
-    uxLog('log', commandThis, c.grey(t('backpromoteLastRunInfo', {
-      date: lastBackpromoteState.lastTimestamp,
-      commit: lastBackpromoteState.lastCommit.substring(0, 7),
-    })));
-  }
-
-  const lastGroup = prGroups[prGroups.length - 1];
-  const targetCommit = lastGroup.commit.hash;
-
-  if (agentMode || isCI) {
-    // In agent mode: select only the next (first) commit
-    const firstGroup = prGroups[0];
-    const label = firstGroup.commit.message.substring(0, 60);
-    uxLog('action', commandThis, c.cyan(t('backpromoteAgentAutoSelectedNextPr', {
-      id: firstGroup.commit.hash.substring(0, 7) + ' ' + label,
-    })));
-    const fromCommit = lastBackpromoteState?.lastCommit || fromFlag || firstGroup.commit.hash;
-    return {
-      targetCommit: firstGroup.commit.hash,
-      selectedPrs: [firstGroup],
-      fromCommit,
-    };
-  }
-
-  // Interactive mode: single select prompt to pick a starting point.
-  // Display newest first so the most recent commits are at the top.
-  // Everything from the selected commit up to the parent branch HEAD will be backpromoted.
-  const lastCommit = lastBackpromoteState?.lastCommit || null;
-  let initialIndex = 0;
-
-  // Build choices in reverse order (newest first) but store the original index as value
-  const choices: Array<{ title: string; value: number; description?: string }> = [];
-  for (let i = prGroups.length - 1; i >= 0; i--) {
-    const group = prGroups[i];
-    const commitShort = group.commit.hash.substring(0, 7);
-    const commitLabel = `${formatDateTime(group.commit.date)} - ${group.commit.message} [${commitShort}]`;
-
-    // Build PR details as description
-    let prDetails: string | undefined;
-    if (group.associatedPrs.length > 0) {
-      prDetails = group.associatedPrs.map((pr) => {
-        return pr.id > 0
-          ? `  PR #${pr.id} - ${pr.title} (${t('by')} ${pr.author})`
-          : `  ${pr.title} (${t('by')} ${pr.author})`;
-      }).join('\n');
-    }
-
-    // Mark the last backpromoted commit
-    const isLastBackpromote = lastCommit && group.commit.hash.startsWith(lastCommit.substring(0, 7));
-    if (isLastBackpromote) {
-      initialIndex = choices.length; // Position in the reversed list
-    }
-    const suffix = isLastBackpromote ? ` <-- ${t('backpromoteLastBackpromoteMarker')}` : '';
-
-    choices.push({
-      title: `${commitLabel}${suffix}`,
-      value: i, // Original index in prGroups
-      description: prDetails,
-    });
-  }
-
-  const selectRes = await prompts({
-    type: 'select',
-    name: 'value',
-    message: c.cyanBright(t('backpromoteSelectScope')),
-    description: t('backpromoteSelectScope'),
-    choices,
-    initial: initialIndex,
-  });
-
-  const selectedIndex = selectRes.value ?? 0;
-  // All commits from the selected starting point to the end are included
-  const selectedPrs = prGroups.slice(selectedIndex);
-  const fromCommit = selectedIndex > 0
-    ? prGroups[selectedIndex - 1].commit.hash
-    : (lastBackpromoteState?.lastCommit || fromFlag || selectedPrs[0].commit.hash);
-
-  return {
-    targetCommit,
-    selectedPrs,
-    fromCommit,
-  };
-}
-
 // ---- Ensure branch is up to date with parent ----
 
 export async function ensureBranchUpToDate(
@@ -722,6 +630,8 @@ export interface OrgConflictResult {
   tmpRetrieveDir?: string;
   /** Path of an empty placeholder file used as the right side of the diff for "deleted locally" conflicts. */
   emptyPlaceholderPath?: string;
+  /** Type:Name items of the delta that do not exist in the org yet */
+  notInOrgKeys?: string[];
 }
 
 export async function detectOrgConflicts(
@@ -742,10 +652,10 @@ export async function detectOrgConflicts(
   // First, filter the delta package.xml to only include items that exist in the org.
   // This prevents retrieve failures caused by metadata types or members not present in the target sandbox.
   const filteredPackageXml = path.join(tmpRetrieveDir, 'filtered-package.xml');
-  const packageXmlForRetrieve = await filterPackageXmlToOrgAvailable(deltaPackageXml, filteredPackageXml, targetUsername, commandThis);
+  const { packageXml: packageXmlForRetrieve, notInOrgKeys } = await filterPackageXmlToOrgAvailable(deltaPackageXml, filteredPackageXml, targetUsername, commandThis);
 
   if (!packageXmlForRetrieve) {
-    return { conflicts, success: true, tmpRetrieveDir }; // Nothing to retrieve
+    return { conflicts, success: true, tmpRetrieveDir, notInOrgKeys }; // Nothing to retrieve
   }
 
   // Create a blank sfdx project in the temp directory so the retrieve command works
@@ -774,7 +684,7 @@ export async function detectOrgConflicts(
   if (!retrieveSuccess) {
     uxLog('error', commandThis, c.red(t('backpromoteConflictDetectionFailed')));
     uxLog('error', commandThis, c.red(retrieveError));
-    return { conflicts, success: false, errorMessage: retrieveError, tmpRetrieveDir };
+    return { conflicts, success: false, errorMessage: retrieveError, tmpRetrieveDir, notInOrgKeys };
   }
 
   uxLog("action", commandThis, c.cyan(t('backpromoteComparingWithLocal')));
@@ -880,7 +790,7 @@ export async function detectOrgConflicts(
     uxLog('action', commandThis, c.green(t('backpromoteNoOrgConflicts')));
   }
 
-  return { conflicts, success: true, tmpRetrieveDir, emptyPlaceholderPath };
+  return { conflicts, success: true, tmpRetrieveDir, emptyPlaceholderPath, notInOrgKeys };
 }
 
 // ---- Generate conflict report ----
@@ -1368,32 +1278,30 @@ async function writeDeployReport(
 
 // ---- Execute deployment actions ----
 
-export async function executeBackpromoteActions(
+export type BackpromoteActionCandidate = PrePostCommand & { prLabel: string; prId: number; commitHash: string };
+
+/**
+ * The deployment actions of the given groups for one phase. Actions not meant for developer
+ * sandboxes are dropped: there is no Pull Request comment here to carry a skipped row. An invalid
+ * definition (both filter lists set) is a warning rather than a failure: backpromote is an
+ * interactive developer command, not a pipeline gate.
+ */
+export function collectBackpromoteActions(
   selectedPrs: BackpromotePrGroup[],
   currentBranch: string,
   phase: 'commandsPreDeploy' | 'commandsPostDeploy',
-  targetUsername: string,
-  conn: any,
   commandThis: any,
-  agentMode: boolean,
-): Promise<void> {
-  // Collect actions from selected PRs for the given phase only
-  const allActions: Array<PrePostCommand & { prLabel: string; prId: number }> = [];
-
+): BackpromoteActionCandidate[] {
+  const allActions: BackpromoteActionCandidate[] = [];
   // A backpromote always deploys to a developer sandbox, so branch filters are evaluated against
   // the dev-sandboxes virtual name (the feature branch name stays eligible too).
   const targetBranchCandidates = [DEV_SANDBOXES_BRANCH_NAME, currentBranch];
-
   for (const prGroup of selectedPrs) {
     for (const { config: prConfig, prId, prTitle } of prGroup.prConfigs) {
       const commands = prConfig[phase];
       if (!Array.isArray(commands)) continue;
       const prLabel = prId > 0 ? `#${prId} - ${prTitle}` : prTitle;
       for (const cmd of commands) {
-        // Actions not meant for developer sandboxes are dropped from the selection list: there is
-        // no Pull Request comment here to carry a skipped row. An invalid definition (both filter
-        // lists set) is a warning rather than a failure: backpromote is an interactive developer
-        // command, not a pipeline gate.
         const branchFilterVerdict = evaluateActionBranchFilter(cmd, targetBranchCandidates);
         if (branchFilterVerdict.run === false) {
           if (branchFilterVerdict.invalid) {
@@ -1403,10 +1311,48 @@ export async function executeBackpromoteActions(
           }
           continue;
         }
-        allActions.push({ ...cmd, prLabel, prId });
+        if (allActions.some((action) => action.id === cmd.id)) {
+          continue;
+        }
+        allActions.push({ ...cmd, prLabel, prId, commitHash: prGroup.commit.hash });
       }
     }
   }
+  return allActions;
+}
+
+/**
+ * What an action run leaves in the backpromote state. A manual action only prints its instructions:
+ * recording it as a success would make the next run skip it as already done, while nobody did it.
+ */
+export function backpromoteActionStatusFromResult(result: { statusCode?: string } | void | null): BackpromoteActionEntry['status'] {
+  switch (result?.statusCode) {
+    case 'manual':
+      return 'manual';
+    case 'failed':
+      return 'failed';
+    case 'skipped':
+    case 'not-run':
+      return 'skipped';
+    default:
+      return 'success';
+  }
+}
+
+export async function executeBackpromoteActions(
+  selectedPrs: BackpromotePrGroup[],
+  currentBranch: string,
+  phase: 'commandsPreDeploy' | 'commandsPostDeploy',
+  targetUsername: string,
+  conn: any,
+  commandThis: any,
+  agentMode: boolean,
+  options: { actionIds?: string[] | null; skipActions?: boolean; nonInteractive?: boolean } = {},
+): Promise<void> {
+  if (options.skipActions === true) {
+    return;
+  }
+  const allActions = collectBackpromoteActions(selectedPrs, currentBranch, phase, commandThis);
 
   if (allActions.length === 0) {
     return;
@@ -1420,7 +1366,11 @@ export async function executeBackpromoteActions(
 
   // Let the user select which actions to run (already-executed ones are deselected by default)
   let selectedActionIds: Set<string>;
-  if (!agentMode && !isCI) {
+  if (options.actionIds) {
+    // Explicit selection (--actions): run exactly those, whatever ran before
+    const availableIds = new Set(allActions.map((action) => action.id));
+    selectedActionIds = new Set<string>(options.actionIds.filter((id) => availableIds.has(id)));
+  } else if (!agentMode && !isCI && !options.nonInteractive) {
     const actionChoices = allActions.map((action) => {
       const existing = actionEntries.find((e) => e.actionId === action.id && e.status === 'success');
       const alreadyDone = !!existing;
@@ -1492,9 +1442,10 @@ export async function executeBackpromoteActions(
             actionInstance.customUsernameToUse = user.Username;
             try {
               uxLog('action', commandThis, c.cyan(t('backpromoteRunningAction', { label: action.label })));
-              await actionInstance.run(action);
-              uxLog('success', commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
-              actionStatus = 'success';
+              actionStatus = backpromoteActionStatusFromResult(await actionInstance.run(action));
+              if (actionStatus === 'success') {
+                uxLog('success', commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
+              }
             } catch (e) {
               uxLog('error', commandThis, c.red(`[Backpromote] ${t('backpromoteActionFailedWithMessage', { label: action.label, message: (e as Error).message })}`));
             }
@@ -1515,9 +1466,10 @@ export async function executeBackpromoteActions(
       if (actionInstance) {
         try {
           uxLog('action', commandThis, c.cyan(t('backpromoteRunningAction', { label: action.label })));
-          await actionInstance.run(action);
-          uxLog('success', commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
-          actionStatus = 'success';
+          actionStatus = backpromoteActionStatusFromResult(await actionInstance.run(action));
+          if (actionStatus === 'success') {
+            uxLog('success', commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
+          }
         } catch (e) {
           uxLog('error', commandThis, c.red(`[Backpromote] ${t('backpromoteActionFailedWithMessage', { label: action.label, message: (e as Error).message })}`));
         }
@@ -1596,19 +1548,14 @@ export async function loadBackpromoteState(currentBranch: string): Promise<Backp
 
 export async function saveBackpromoteState(
   currentBranch: string,
-  targetCommit: string,
-  parentBranch: string,
+  state: BackpromoteState,
   commandThis: any,
 ): Promise<void> {
   const config = await getConfig('user');
   const states = config.backpromoteState || {};
-  states[currentBranch] = {
-    lastCommit: targetCommit,
-    lastTimestamp: new Date().toISOString(),
-    parentBranch,
-  };
+  states[currentBranch] = state;
   await setConfig('user', { backpromoteState: states });
-  uxLog('log', commandThis, c.grey(t('backpromoteStateSaved', { commit: targetCommit.substring(0, 7) })));
+  uxLog('log', commandThis, c.grey(t('backpromoteStateSaved', { commit: (state.lastCommit || '').substring(0, 7) })));
 }
 
 // ---- Deployment actions state in user config ----
@@ -1659,10 +1606,10 @@ async function filterPackageXmlToOrgAvailable(
   outputPackageXml: string,
   targetUsername: string,
   commandThis: any,
-): Promise<string | null> {
+): Promise<{ packageXml: string | null; notInOrgKeys: string[] }> {
   const deltaContent = await parsePackageXmlFile(deltaPackageXml);
   if (Object.keys(deltaContent).length === 0) {
-    return null;
+    return { packageXml: null, notInOrgKeys: [] };
   }
 
   // Build a full org manifest to know what metadata exists in the target sandbox
@@ -1698,13 +1645,14 @@ async function filterPackageXmlToOrgAvailable(
     });
   }
   uxLog('log', commandThis, c.grey(t('backpromoteFilteredRemainingItems', { count: remainingCount })));
+  const notInOrgKeys = filteredOutItems.map((item) => `${item.Type}:${item.Name}`);
 
   if (Object.keys(filteredContent).length === 0) {
-    return null;
+    return { packageXml: null, notInOrgKeys };
   }
 
   await writePackageXmlFile(outputPackageXml, filteredContent);
-  return outputPackageXml;
+  return { packageXml: outputPackageXml, notInOrgKeys };
 }
 
 // ---- Helper: format date ----
@@ -1769,7 +1717,7 @@ function formatShortDate(dateStr: string): string {
   }
 }
 
-function formatDateTime(dateStr: string): string {
+export function formatDateTime(dateStr: string): string {
   try {
     const d = new Date(dateStr);
     const date = d.toISOString().split('T')[0];

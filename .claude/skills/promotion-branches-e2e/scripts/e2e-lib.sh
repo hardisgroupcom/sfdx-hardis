@@ -109,6 +109,60 @@ e2e_release_notes() {
   return $code
 }
 
+# Backpromote (Beta) of the branch checked out in $WORK into the developer's own org (runbook
+# section 6bis). Never CI=true: backpromote is a developer command, and in CI mode it would not
+# behave the way a developer sees it. DEVORG is the target org unless --target-org is passed.
+# Usage: e2e_backpromote <log label> [flags...]
+e2e_backpromote() {
+  local label="$1" code
+  shift
+  cd "$WORK" || return 1
+  local target=()
+  case " $* " in
+  *" --target-org "*) ;;
+  *) target=(--target-org "${DEVORG:?set DEVORG to the developer scratch org}") ;;
+  esac
+  env -u NODE_OPTIONS -u CI \
+    GITHUB_TOKEN="$(gh auth token)" \
+    GITHUB_REPOSITORY="$REPO" \
+    GITHUB_REPOSITORY_OWNER="${REPO%%/*}" \
+    GITHUB_SERVER_URL="https://github.com" \
+    node "$DEV" hardis:work:backpromote "${target[@]}" "$@" \
+    >"$LOGS/$label.log" 2>&1
+  code=$?
+  echo "$label exit=$code log=$LOGS/$label.log"
+  return $code
+}
+
+# The same with --json: the JSON document goes to $LOGS/<label>.json, stderr to $LOGS/<label>.log
+# Usage: e2e_backpromote_json <label> [flags...]
+e2e_backpromote_json() {
+  local label="$1" code
+  shift
+  cd "$WORK" || return 1
+  local target=()
+  case " $* " in
+  *" --target-org "*) ;;
+  *) target=(--target-org "${DEVORG:?set DEVORG to the developer scratch org}") ;;
+  esac
+  env -u NODE_OPTIONS -u CI \
+    GITHUB_TOKEN="$(gh auth token)" \
+    GITHUB_REPOSITORY="$REPO" \
+    GITHUB_REPOSITORY_OWNER="${REPO%%/*}" \
+    GITHUB_SERVER_URL="https://github.com" \
+    node "$DEV" hardis:work:backpromote "${target[@]}" --json "$@" \
+    >"$LOGS/$label.json" 2>"$LOGS/$label.log"
+  code=$?
+  echo "$label exit=$code json=$LOGS/$label.json"
+  return $code
+}
+
+# Assert a backpromote --plan / --prepare-merge JSON document against expectations
+# Usage: backpromote_check <label> <expectations.json>
+backpromote_check() {
+  env -u NODE_OPTIONS node "$E2E_SCRIPTS_DIR/check-backpromote-plan.cjs" "$LOGS/$1.json" "$2"
+}
+
 # The lines worth reading in a job log
 # Usage: e2e_grep <log file>
 e2e_grep() {

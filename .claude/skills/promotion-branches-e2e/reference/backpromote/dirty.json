@@ -1,0 +1,5 @@
+{
+  "exitStatus": 0,
+  "status": "blocked",
+  "checks": [{ "id": "gitClean", "ok": false, "detailsContain": ["NOTES.md"], "detailsExclude": "hardis-report/" }]
+}

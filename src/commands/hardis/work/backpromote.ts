@@ -3,13 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import * as path from 'path';
-import {
-  checkGitClean,
-  createTempDir,
-  getCurrentGitBranch,
-  uxLog,
-} from '../../../common/utils/index.js';
+import { getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 import {
   collectTestClassesFromPrs,
   confirmDestructiveChanges,
@@ -25,11 +19,46 @@ import {
   promptOpenVisualDiffsInVsCode,
   resolveParentBranch,
   saveBackpromoteState,
-  selectBackpromoteScope,
 } from '../../../common/utils/backpromoteUtils.js';
-import { callSfdxGitDelta } from '../../../common/utils/gitUtils.js';
+import {
+  BackpromotePlanCheck,
+  BackpromotePrepareMergeResult,
+  announceBackpromoteMerge,
+  buildBackpromotePlan,
+  computeBackpromoteGroupDeltas,
+  findLocalMetadataFiles,
+  findOldestCommit,
+  getBackpromoteTargetOrgInfo,
+  listBackpromoteParentBranchChoices,
+  listBackpromotePlanActions,
+  listFilesWithConflictMarkers,
+  listUncommittedFiles,
+  prepareBackpromoteMerge,
+  promptBackpromoteConflictDecisions,
+  promptBackpromoteGroups,
+  removeKeysFromPackageXml,
+  resolveBackpromoteGroupStatuses,
+  writeBackpromoteMergePrompt,
+  writeBackpromotePackages,
+} from '../../../common/utils/backpromotePlanUtils.js';
+import {
+  buildBackpromoteMergePrompt,
+  buildBackpromoteRunCommand,
+  computeNextBackpromoteState,
+  defaultGroupSelection,
+  findItemsAlsoChangedByUnselected,
+  getBackpromoteWindowStart,
+  parseMetadataKey,
+  resolveExplicitGroupSelection,
+  selectDeltaUnion,
+  splitListFlag,
+  splitMetadataKeysFlag,
+  toMetadataKey,
+  unionGroupDeltas,
+} from '../../../common/utils/backpromoteSelectionUtils.js';
+import { getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
-import { countPackageXmlItems, isPackageXmlEmpty } from '../../../common/utils/xmlUtils.js';
+import { isPackageXmlEmpty } from '../../../common/utils/xmlUtils.js';
 import { t } from '../../../common/utils/i18n.js';
 import fs from '../../../common/utils/fsUtils.js';
 
@@ -44,53 +73,71 @@ export default class BackpromoteTask extends SfCommand<any> {
 
 > **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
-**Brings the latest changes merged into a parent branch (e.g. integration) into the developer's feature branch and deploys them to their dev sandbox.**
+**Brings the changes merged into a parent branch (e.g. integration) into the developer's own org: a developer sandbox or a scratch org.**
 
-This command automates the "backpromote" workflow, similar to what Copado provides. It allows developers to stay synchronized with changes made by other team members that have been merged into a shared branch.
+Developers stay in sync with what their teammates merged, without waiting for a new sandbox. In VS Code, the **Backpromote (Beta)** panel of the sfdx-hardis extension shows everything on one page and runs this same command with the choices made in the panel.
 
 Key functionalities:
 
-- **Pre-flight checks:** Verifies the git working directory is clean (no unstaged or staged files) and that the feature branch is already up to date with the parent branch.
-- **Scope selection:** Lists merged pull requests on the parent branch (grouped with their commits) and lets the user choose up to which PR to backpromote. Tracks the last backpromoted commit for incremental runs.
-- **Delta computation:** Uses sfdx-git-delta to compute the metadata differences between the last backpromoted state and the selected target.
-- **Org conflict detection:** Retrieves the same metadata from the org, compares with local files, and generates Excel and PDF conflict reports showing git-diff-style colored output.
-- **Interactive validation:** Lets the user review and deselect metadata items before deployment. Destructive changes require explicit confirmation.
-- **Deployment:** Deploys validated metadata to the dev sandbox with NoTestRun (or RunSpecifiedTests if PR test classes are configured).
-- **Deployment actions:** Executes deployment actions from the selected PRs. For actions requiring a different user, attempts LoginAs authentication and falls back to a manual checklist with one-by-one validation.
-- **State tracking:** Stores the last backpromoted commit and executed deployment actions in user config for future runs.
+- **Developer orgs only:** the target org must be a developer sandbox or a scratch org. A production org, or the org of a major branch declared in \`config/branches\`, is refused: the CI/CD pipeline deploys those.
+- **Pre-flight checks:** the git working directory must be clean, the current branch must not be a major branch, and it must already contain the latest commit of the parent branch.
+- **Pull Request selection:** the Pull Requests merged in the parent branch since the last backpromote are listed, and each one can be selected or left out. A Pull Request left out is offered again by the next run. An item also changed by a Pull Request left out is deployed with that change too, since the deployment reads the files of the branch: the command warns about it.
+- **Delta computation:** sfdx-git-delta computes what each selected Pull Request deploys and deletes.
+- **Org conflict detection:** the same metadata is retrieved from the org and compared with the local files, with Excel and PDF reports and VS Code diffs.
+- **Items changed in the org:** each one is deployed by default, can be kept as it is in the org, or merged. A merge writes a three-way merge with git conflict markers into the local file, opens it in VS Code, and saves a prompt to paste into a coding agent (Claude Code, GitHub Copilot...) to solve it. The solved file is then deployed as it is, and is to be committed with the User Story.
+- **Deletions:** listed and confirmed. Declining really skips them.
+- **Deployment:** NoTestRun, or RunSpecifiedTests when the selected Pull Requests declare test classes.
+- **Deployment actions:** the actions of the selected Pull Requests run before and after the deployment. Actions requiring another user try LoginAs, then fall back to a manual checklist.
+- **State tracking:** the last backpromoted commit, the Pull Requests left out and the actions already run are stored in the user config.
+
+### Explicit selection
+
+As soon as \`--pull-requests\`, \`--commits\` or \`--to\` is passed, the command asks nothing about what to deploy: every item of the selection is deployed and every deletion applied, unless \`--exclude-metadata\` or \`--skip-destructive\` says otherwise, and the actions not already run are executed, unless \`--actions\` or \`--skip-actions\` says otherwise. This is how the VS Code panel runs the command.
+
+### Plan and merge (read-only modes)
+
+- \`--plan --json\` returns the checks, the waiting Pull Requests with what each one deploys, the items changed in the org, the deletions and the deployment actions. It deploys nothing and saves nothing.
+- \`--prepare-merge Type:Name\` writes the three-way merge of these items into the local files and returns the coding agent prompt. Run the command again with \`--merged-metadata Type:Name\` once the conflicts are solved.
 
 ### Agent Mode
 
 Use \`--agent\` to disable all interactive prompts. The command will:
 
-- Use the configured \`developmentBranch\` as the parent branch
-- If a previous backpromote state exists, auto-select only the next PR
-- If no previous state, require \`--from\` flag (PR number or commit SHA) and select only the next PR from that point
-- Deploy all metadata without interactive validation
-- Auto-confirm destructive changes with a warning
+- Use the configured \`developmentBranch\` (or the branch the feature branch was created from) as the parent branch
+- Without selection flags, select only the next Pull Request waiting (\`--from\` is required when no previous backpromote state exists)
+- With \`--pull-requests\`, \`--commits\` or \`--to\`, deploy exactly that selection
+- Deploy every item without interactive validation, apart from \`--exclude-metadata\`
+- Auto-confirm destructive changes with a warning, unless \`--skip-destructive\`
 - Log manual actions instead of prompting
 
-Required flags: \`--agent\`, and \`--from\` if no previous backpromote state exists.
+Required flags: \`--agent\`, and \`--from\` or a selection flag if no previous backpromote state exists.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
-- **Git Integration:** Uses \`simple-git\` to verify branch status and list commits. Requires the branch to be clean and up to date with the parent branch before proceeding.
-- **sfdx-git-delta:** Computes metadata deltas between git commits to identify changed metadata items.
+- **Target org check:** queries \`Organization.IsSandbox\` and \`TrialExpirationDate\`, and compares the username and instance URL with the major orgs of \`config/branches\`.
+- **Git Integration:** Uses \`simple-git\` to verify branch status, list the first-parent commits of the parent branch and group the Pull Requests each one brought in.
+- **sfdx-git-delta:** Computes the delta of each selected first-parent commit against its first parent, and unions them. The last commit touching an item decides whether it is deployed or deleted.
 - **Org Metadata Retrieval:** Uses \`sf project retrieve start\` with the delta package.xml to retrieve current org state for conflict detection.
 - **Diff Library:** Uses the \`diff\` npm package to compute file-level differences between org and local metadata.
+- **Merge:** \`git merge-file --diff3\` between the org file, the file before the selection and the incoming file.
 - **ExcelJS:** Generates Excel conflict reports via \`generateCsvFile\`.
 - **md-to-pdf:** Converts markdown conflict reports to PDF using \`generatePdfFileFromMarkdown\`.
 - **Deployment Actions:** Uses \`ActionsProvider\` to execute deployment actions, with \`authOrg\` for LoginAs authentication.
-- **Configuration:** Stores backpromote state and deployment action history in user config via \`setConfig('user', ...)\`.
+- **Configuration:** Stores backpromote state (\`lastCommit\`, \`skippedCommits\`) and deployment action history in user config via \`setConfig('user', ...)\`.
 </details>
 `;
 
   public static examples = [
     '$ sf hardis:work:backpromote',
     '$ sf hardis:work:backpromote --parentbranch integration',
+    '$ sf hardis:work:backpromote --pull-requests 478,481,487',
+    '$ sf hardis:work:backpromote --pull-requests 482 --exclude-metadata "Layout:Opportunity-Sales Layout" --skip-actions',
+    '$ sf hardis:work:backpromote --plan --json',
+    '$ sf hardis:work:backpromote --pull-requests 482 --prepare-merge Flow:Quote_Approval --json',
+    '$ sf hardis:work:backpromote --pull-requests 482 --merged-metadata Flow:Quote_Approval',
     '$ sf hardis:work:backpromote --agent',
     '$ sf hardis:work:backpromote --agent --from abc1234',
   ];
@@ -104,7 +151,43 @@ The command's technical implementation involves:
       description: 'Name of the parent branch to backpromote from. Will be guessed or prompted if not provided.',
     }),
     from: Flags.string({
-      description: 'PR number or commit SHA to start the backpromote from. Required in --agent mode when no previous backpromote state exists.',
+      description: 'PR number or commit SHA to start the backpromote from. Required in --agent mode when no previous backpromote state exists and no selection flag is passed.',
+    }),
+    to: Flags.string({
+      description: 'PR number or commit SHA: select every Pull Request waiting up to this one (included).',
+    }),
+    'pull-requests': Flags.string({
+      description: 'Comma-separated numbers of the Pull Requests to backpromote. Asks nothing about what to deploy.',
+    }),
+    commits: Flags.string({
+      description: 'Comma-separated SHAs of the parent branch commits to backpromote (for merges without a Pull Request number). Asks nothing about what to deploy.',
+    }),
+    'exclude-metadata': Flags.string({
+      multiple: true,
+      description: 'Type:Name of an item not to deploy nor delete, for example "Layout:Account-Account Layout". Repeatable.',
+    }),
+    'merged-metadata': Flags.string({
+      multiple: true,
+      description: 'Type:Name of an item whose local file holds a solved merge (see --prepare-merge): deploy it as it is. Repeatable.',
+    }),
+    'prepare-merge': Flags.string({
+      multiple: true,
+      description: 'Type:Name of an item changed both in the org and in the parent branch: write the three-way merge into the local file, return the coding agent prompt, and exit. Repeatable.',
+    }),
+    'skip-destructive': Flags.boolean({
+      default: false,
+      description: 'Do not delete anything from the org.',
+    }),
+    actions: Flags.string({
+      description: 'Comma-separated ids of the deployment actions to run. Default: the actions not already run on this branch.',
+    }),
+    'skip-actions': Flags.boolean({
+      default: false,
+      description: 'Run no deployment action.',
+    }),
+    plan: Flags.boolean({
+      default: false,
+      description: 'Read-only: return what a backpromote would do (use with --json). Deploys and saves nothing.',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -128,161 +211,342 @@ The command's technical implementation involves:
     const { flags } = await this.parse(BackpromoteTask);
     const agentMode = flags.agent === true;
     const debugMode = flags.debug || false;
+    const planMode = flags.plan === true;
     const targetUsername = flags['target-org'].getUsername();
     const conn = flags['target-org'].getConnection();
 
-    // Step 1: Verify git is clean
-    uxLog('log', this, c.cyan(t('backpromoteStarting', { parentBranch: '' })));
-    await checkGitClean({ allowStash: false });
+    const pullRequests = splitListFlag(flags['pull-requests']).map((value) => parseInt(value, 10)).filter((value) => !isNaN(value));
+    const commits = splitListFlag(flags.commits);
+    const toFlag: string | null = flags.to || null;
+    const excludedKeys = splitMetadataKeysFlag(flags['exclude-metadata']);
+    const mergedKeys = splitMetadataKeysFlag(flags['merged-metadata']);
+    const prepareMergeKeys = splitMetadataKeysFlag(flags['prepare-merge']);
+    const actionIds = flags.actions !== undefined ? splitListFlag(flags.actions) : null;
+    for (const key of [...excludedKeys, ...mergedKeys, ...prepareMergeKeys]) {
+      if (!parseMetadataKey(key)) {
+        throw new SfError(t('backpromoteInvalidMetadataKey', { key }));
+      }
+    }
+    const explicitSelection = pullRequests.length > 0 || commits.length > 0 || toFlag !== null;
+    const prepareMode = prepareMergeKeys.length > 0;
+    const nonInteractive = agentMode || planMode || prepareMode || explicitSelection;
+    const checks: BackpromotePlanCheck[] = [];
 
+    // Step 1: the target org must be a developer sandbox or a scratch org
+    uxLog('log', this, c.cyan(t('backpromoteStarting', { parentBranch: '' })));
+    const targetOrg = await getBackpromoteTargetOrgInfo(conn, targetUsername);
+    checks.push({ id: 'targetOrg', ok: targetOrg.refusal === null, message: targetOrg.message });
+    const projectConfig = await getConfig('project');
+    const parentBranchChoices = await listBackpromoteParentBranchChoices(projectConfig.developmentBranch || null);
+    const blockedPlan = (currentBranch: string, parentBranch: string) =>
+      buildBackpromotePlan({ status: 'blocked', currentBranch, parentBranch, parentBranchChoices, targetOrg, checks, lastState: null }) as unknown as AnyJson;
+    if (targetOrg.refusal !== null) {
+      if (planMode) {
+        return blockedPlan((await getCurrentGitBranch()) || '', flags.parentbranch || '');
+      }
+      throw new SfError(targetOrg.message);
+    }
+
+    // Step 2: never from a major branch
     const currentBranch = (await getCurrentGitBranch()) || '';
     if (!currentBranch) {
       throw new Error('Unable to determine current git branch');
     }
-
-    // Check that the current branch is not a major org branch
     const majorOrgs = await listMajorOrgs();
-    const matchingMajorOrg = majorOrgs.find((org: any) => org.branchName === currentBranch);
-    if (matchingMajorOrg) {
-      throw new SfError(t('backpromoteNotAllowedOnMajorOrg', { currentBranch }));
+    if (majorOrgs.some((org: any) => org.branchName === currentBranch)) {
+      const message = t('backpromoteNotAllowedOnMajorOrg', { currentBranch });
+      checks.push({ id: 'currentBranch', ok: false, message });
+      if (planMode) {
+        return blockedPlan(currentBranch, flags.parentbranch || '');
+      }
+      throw new SfError(message);
     }
 
-    // Step 2: Resolve parent branch
-    const parentBranch = await resolveParentBranch(this, flags.parentbranch || null, agentMode, currentBranch);
+    // Step 3: parent branch
+    const parentBranch = await resolveParentBranch(this, flags.parentbranch || null, nonInteractive, currentBranch);
     uxLog('log', this, c.cyan(t('backpromoteStarting', { parentBranch: c.green(parentBranch) })));
-
     if (currentBranch === parentBranch) {
-      throw new Error(t('backpromoteCannotBackpromoteFromSameBranch'));
+      const message = t('backpromoteCannotBackpromoteFromSameBranch');
+      checks.push({ id: 'currentBranch', ok: false, message });
+      if (planMode) {
+        return blockedPlan(currentBranch, parentBranch);
+      }
+      throw new Error(message);
     }
+    checks.push({ id: 'currentBranch', ok: true, message: t('backpromoteCheckCurrentBranchOk', { branch: currentBranch }) });
 
-    // Step 3: Ensure branch is up to date with parent
-    await ensureBranchUpToDate(parentBranch, currentBranch, this);
-
-    // Step 4: Load previous backpromote state and resolve --from flag
-    const lastState = await loadBackpromoteState(currentBranch);
-    const fromFlag = flags.from || null;
-
-    // In agent mode, require either a previous backpromote state or --from flag
-    if (agentMode && !lastState && !fromFlag) {
-      throw new SfError(t('backpromoteAgentRequiresFromFlag'));
+    // Step 4: clean working tree, apart from the files holding a merge (prepared or solved)
+    const mergeFiles = await findLocalMetadataFiles([...mergedKeys, ...prepareMergeKeys]);
+    for (const key of mergedKeys) {
+      if (!mergeFiles.get(key)) {
+        throw new SfError(t('backpromoteMergedMetadataNotFound', { key }));
+      }
     }
-
-    // Step 5: List all PRs/commits on the parent branch and let the user select which ones to backpromote
-    // In interactive mode this is a single prompt (no separate "starting point" + "scope" steps)
-    const sinceCommit = fromFlag || null;
-    const allPrGroups = await listMergedPrsWithCommits(parentBranch, currentBranch, sinceCommit, this);
-
-    if (allPrGroups.length === 0) {
-      uxLog('action', this, c.cyan(t('backpromoteNoPrsMerged', { parentBranch })));
-      return { outputString: 'No changes to backpromote' };
+    const uncommittedFiles = await listUncommittedFiles([...mergeFiles.values()].filter((file): file is string => !!file));
+    checks.push({
+      id: 'gitClean',
+      ok: uncommittedFiles.length === 0,
+      message: uncommittedFiles.length === 0 ? t('backpromoteCheckGitCleanOk') : t('backpromoteCheckGitCleanFailed'),
+      details: uncommittedFiles.length > 0 ? uncommittedFiles : undefined,
+    });
+    if (uncommittedFiles.length > 0 && !planMode) {
+      throw new SfError(t('branchIsNotCleanCommitOrResetLocalUpdates', { branch: currentBranch, localUpdates: uncommittedFiles.join('\n') }));
     }
-
-    // Select which PRs to include: single unified prompt in interactive mode, auto-select in agent mode
-    const { targetCommit, selectedPrs, fromCommit } = await selectBackpromoteScope(
-      allPrGroups, lastState, this, agentMode, fromFlag,
-    );
-
-    uxLog('action', this, c.cyan(t('backpromoteComputingDelta', {
-      fromCommit: fromCommit.substring(0, 7),
-      toCommit: targetCommit.substring(0, 7),
-    })));
-
-    const tmpDir = await createTempDir();
-    const deltaResult = await callSfdxGitDelta(fromCommit, targetCommit, tmpDir);
-    if (deltaResult.status !== 0) {
-      uxLog('error', this, c.red(`[Backpromote] sfdx-git-delta failed: ${JSON.stringify(deltaResult)}`));
-      throw new Error('Failed to compute metadata delta');
-    }
-
-    const deltaPackageXml = path.join(tmpDir, 'package', 'package.xml');
-    const destructiveChangesXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
-
-    // Check if delta is empty
-    if (!fs.existsSync(deltaPackageXml) || await isPackageXmlEmpty(deltaPackageXml)) {
-      const hasDestructive = fs.existsSync(destructiveChangesXml) && !(await isPackageXmlEmpty(destructiveChangesXml));
-      if (!hasDestructive) {
-        uxLog('action', this, c.cyan(t('backpromoteNoDelta')));
-        await saveBackpromoteState(currentBranch, targetCommit, parentBranch, this);
-        return { outputString: 'No metadata changes to deploy' };
+    if (mergedKeys.length > 0) {
+      const stillConflicting = await listFilesWithConflictMarkers(mergedKeys.map((key) => mergeFiles.get(key) as string));
+      if (stillConflicting.length > 0) {
+        throw new SfError(t('backpromoteMergedFilesHaveMarkers', { files: stillConflicting.join(', ') }));
       }
     }
 
-    // Display delta summary
-    const addedModified = fs.existsSync(deltaPackageXml) ? await countPackageXmlItems(deltaPackageXml) : 0;
-    const deleted = fs.existsSync(destructiveChangesXml) ? await countPackageXmlItems(destructiveChangesXml) : 0;
-    uxLog('log', this, c.cyan(t('backpromoteDeltaSummary', { addedModified, deleted })));
+    // Step 5: the branch must already contain the latest commit of the parent branch
+    try {
+      await ensureBranchUpToDate(parentBranch, currentBranch, this);
+      checks.push({ id: 'upToDate', ok: true, message: t('backpromoteCheckUpToDateOk', { currentBranch, parentBranch }) });
+    } catch (e) {
+      checks.push({ id: 'upToDate', ok: false, message: (e as Error).message });
+      if (!planMode) {
+        throw e;
+      }
+    }
+    const checksPassed = checks.every((check) => check.ok);
 
-    // Step 8: Detect org conflicts
-    const conflictResult = await detectOrgConflicts(deltaPackageXml, targetUsername, this, debugMode);
-    let conflicts = conflictResult.conflicts;
+    // Step 6: list the Pull Request groups waiting in the parent branch
+    const lastState = await loadBackpromoteState(currentBranch);
+    const fromFlag: string | null = flags.from || null;
+    if (agentMode && !lastState && !fromFlag && !explicitSelection) {
+      throw new SfError(t('backpromoteAgentRequiresFromFlag'));
+    }
+    const oldestSkipped = lastState?.skippedCommits?.length ? await findOldestCommit(lastState.skippedCommits, parentBranch) : null;
+    const groupsOldestFirst = await listMergedPrsWithCommits(parentBranch, currentBranch, getBackpromoteWindowStart(fromFlag, lastState, oldestSkipped), this);
+    const statuses = await resolveBackpromoteGroupStatuses(groupsOldestFirst, lastState);
+    const waitingIndexes = statuses.map((status, index) => (status === 'done' ? -1 : index)).filter((index) => index >= 0);
+    const planBase = { currentBranch, parentBranch, parentBranchChoices, targetOrg, checks, lastState };
 
-    // If conflict detection failed, warn and prompt user
+    if (waitingIndexes.length === 0 && !explicitSelection) {
+      if (planMode) {
+        return buildBackpromotePlan({ ...planBase, status: checksPassed ? 'upToDate' : 'blocked', groupsOldestFirst, statuses }) as unknown as AnyJson;
+      }
+      uxLog('action', this, c.cyan(t('backpromoteUpToDate', { parentBranch })));
+      return { outputString: 'No changes to backpromote' };
+    }
+
+    // Step 7: which groups this run takes
+    let selectedIndexes: number[];
+    if (planMode) {
+      selectedIndexes = waitingIndexes;
+    } else if (explicitSelection) {
+      const resolved = resolveExplicitGroupSelection(groupsOldestFirst, statuses, { pullRequests, commits, to: toFlag });
+      if (resolved.unknownPullRequests.length > 0) {
+        throw new SfError(t('backpromoteUnknownPullRequests', { parentBranch, ids: resolved.unknownPullRequests.join(', ') }));
+      }
+      if (resolved.unknownCommits.length > 0) {
+        throw new SfError(t('backpromoteUnknownCommits', { parentBranch, commits: resolved.unknownCommits.join(', ') }));
+      }
+      selectedIndexes = resolved.selected;
+    } else if (prepareMode) {
+      selectedIndexes = defaultGroupSelection(statuses);
+    } else if (agentMode) {
+      // Without selection flags, agent mode takes only the next group waiting
+      selectedIndexes = [waitingIndexes[0]];
+      const nextGroup = groupsOldestFirst[waitingIndexes[0]];
+      uxLog('action', this, c.cyan(t('backpromoteAgentAutoSelectedNextPr', {
+        id: nextGroup.commit.hash.substring(0, 7) + ' ' + nextGroup.commit.message.substring(0, 60),
+      })));
+    } else {
+      selectedIndexes = await promptBackpromoteGroups(groupsOldestFirst, statuses, lastState);
+    }
+    if (selectedIndexes.length === 0) {
+      uxLog('action', this, c.cyan(t('backpromoteNothingSelected')));
+      return { outputString: 'No Pull Request selected' };
+    }
+    const selectedGroups = selectedIndexes.map((index) => groupsOldestFirst[index]);
+    const selectedHashes = selectedGroups.map((group) => group.commit.hash);
+
+    // Step 8: what the selection deploys and deletes. The waiting groups left out are computed too,
+    // to warn about the items they also changed.
+    const computedIndexes = [...new Set([...waitingIndexes, ...selectedIndexes])].sort((a, b) => a - b);
+    const computedGroups = computedIndexes.map((index) => groupsOldestFirst[index]);
+    const deltas = checksPassed || !planMode ? await computeBackpromoteGroupDeltas(computedGroups, this) : [];
+    const computedHashes = computedGroups.map((group) => group.commit.hash);
+    const union = unionGroupDeltas(deltas);
+    const selection = selectDeltaUnion(union, selectedHashes, computedHashes);
+
+    if (planMode && !checksPassed) {
+      return buildBackpromotePlan({ ...planBase, status: 'blocked', groupsOldestFirst, statuses }) as unknown as AnyJson;
+    }
+
+    if (!planMode) {
+      const alsoChanged = findItemsAlsoChangedByUnselected(selection, selectedHashes, waitingIndexes.map((index) => groupsOldestFirst[index].commit.hash));
+      if (alsoChanged.length > 0) {
+        uxLog('warning', this, c.yellow(t('backpromoteItemsAlsoChangedByUnselected', { count: alsoChanged.length, items: alsoChanged.join(', ') })));
+      }
+      if (excludedKeys.length > 0) {
+        uxLog('log', this, c.grey(t('backpromoteExcludedItems', { count: excludedKeys.length, items: excludedKeys.join(', ') })));
+      }
+    }
+    const deployKeys = [...selection.items.keys()].filter((key) => !excludedKeys.includes(key));
+    const deleteKeys = [...selection.deletions.keys()].filter((key) => !excludedKeys.includes(key));
+
+    if (deployKeys.length === 0 && deleteKeys.length === 0 && !planMode) {
+      uxLog('action', this, c.cyan(t('backpromoteNoDelta')));
+      await saveBackpromoteState(currentBranch, computeNextBackpromoteState(groupsOldestFirst, statuses, selectedIndexes, lastState, parentBranch), this);
+      return { outputString: 'No metadata changes to deploy' };
+    }
+    uxLog('log', this, c.cyan(t('backpromoteDeltaSummary', { addedModified: deployKeys.length, deleted: deleteKeys.length })));
+    const { packageXml, destructiveXml } = await writeBackpromotePackages(deployKeys, deleteKeys);
+
+    // Step 9: items changed in the org
+    const conflictResult = deployKeys.length > 0
+      ? await detectOrgConflicts(packageXml, targetUsername, this, debugMode)
+      : { conflicts: [], success: true, notInOrgKeys: [] as string[] };
+    const conflictsInSelection = conflictResult.conflicts.filter((item) => deployKeys.includes(toMetadataKey(item.metadataType, item.metadataName)));
+
+    if (planMode) {
+      const localFiles = await findLocalMetadataFiles(selection.items.keys());
+      return buildBackpromotePlan({
+        ...planBase,
+        status: 'ready',
+        groupsOldestFirst,
+        statuses,
+        deltas,
+        selection,
+        conflicts: conflictResult.conflicts,
+        notInOrgKeys: conflictResult.notInOrgKeys,
+        conflictDetection: { success: conflictResult.success, errorMessage: conflictResult.success ? null : (conflictResult as any).errorMessage || null },
+        actions: await listBackpromotePlanActions(computedGroups, currentBranch, this),
+        localFiles,
+      }) as unknown as AnyJson;
+    }
+
+    // The merge base is the parent branch as it was just before the oldest selected group
+    const baseCommit = `${selectedHashes[0]}^1`;
+    const selectionPullRequests = selectedGroups.flatMap((group) => group.associatedPrs).filter((pr, index, all) => all.findIndex((other) => other.id === pr.id && other.title === pr.title) === index);
+    const runCommandFor = (merged: string[], excluded: string[]) => buildBackpromoteRunCommand({
+      parentBranch,
+      pullRequests: [...new Set(selectedGroups.flatMap((group) => group.associatedPrs.map((pr) => pr.id)).filter((id) => id > 0))],
+      commits: selectedGroups.filter((group) => !group.associatedPrs.some((pr) => pr.id > 0)).map((group) => group.commit.hash),
+      excludeMetadata: excluded,
+      mergedMetadata: merged,
+      actions: actionIds,
+      skipActions: flags['skip-actions'] === true,
+      skipDestructive: flags['skip-destructive'] === true,
+      targetUsername,
+    });
+    const mergePromptFor = (files: Array<{ key: string; localPath: string; conflictBlocks: number }>, merged: string[], excluded: string[]) =>
+      buildBackpromoteMergePrompt({
+        parentBranch,
+        currentBranch,
+        orgLabel: targetUsername,
+        files,
+        pullRequests: selectionPullRequests,
+        nextCommand: runCommandFor(merged, excluded),
+      });
+
+    // --prepare-merge: write the merges, give the prompt, and stop
+    if (prepareMode) {
+      const files: BackpromotePrepareMergeResult['files'] = [];
+      for (const key of prepareMergeKeys) {
+        const conflict = conflictResult.conflicts.find((item) => toMetadataKey(item.metadataType, item.metadataName) === key && item.status === 'modified');
+        if (!conflict || !conflict.localPath || !conflict.orgPath) {
+          throw new SfError(t('backpromoteMergeCannotMerge', { key, parentBranch }));
+        }
+        const prepared = await prepareBackpromoteMerge({ key, localPath: conflict.localPath, orgPath: conflict.orgPath, baseCommit, parentBranch });
+        files.push({ key: prepared.key, localPath: prepared.localPath, basePath: prepared.basePath, orgPath: prepared.orgPath, conflictBlocks: prepared.conflictBlocks });
+      }
+      const nextCommand = runCommandFor([...new Set([...mergedKeys, ...prepareMergeKeys])], excludedKeys);
+      const prompt = mergePromptFor(files, [...new Set([...mergedKeys, ...prepareMergeKeys])], excludedKeys);
+      const promptFile = await writeBackpromoteMergePrompt(prompt);
+      for (const file of files) {
+        announceBackpromoteMerge({ ...file, originalContent: '' }, promptFile, this);
+      }
+      const result: BackpromotePrepareMergeResult = { files, prompt, promptFile, nextCommand };
+      return result as unknown as AnyJson;
+    }
+
+    // Step 10: interactive review of the conflicts and of the items to deploy
+    let conflictsToReview = conflictsInSelection.filter((item) => !mergedKeys.includes(toMetadataKey(item.metadataType, item.metadataName)));
     if (!conflictResult.success) {
-      if (agentMode) {
+      if (nonInteractive) {
         uxLog('warning', this, c.yellow(t('backpromoteConflictDetectionFailedAgentContinue')));
       } else {
-        const continueRes = await promptConfirmContinueAfterConflictFailure(conflictResult.errorMessage || '', this);
+        const continueRes = await promptConfirmContinueAfterConflictFailure((conflictResult as any).errorMessage || '', this);
         if (!continueRes) {
           return { outputString: 'Backpromote cancelled due to conflict detection failure' };
         }
       }
-      conflicts = [];
+      conflictsToReview = [];
     }
-
-    // Step 9: Generate conflict report if there are conflicts
     let diffsShownInVsCode = false;
-    if (conflicts.length > 0) {
-      await generateConflictReport(conflicts, this);
-      // Offer to open a VS Code visual diff for each conflict (no-op outside VS Code / in agent/CI mode)
-      diffsShownInVsCode = await promptOpenVisualDiffsInVsCode(
-        conflicts,
-        conflictResult.emptyPlaceholderPath,
-        this,
-        agentMode,
-      );
+    if (conflictsToReview.length > 0 && !explicitSelection) {
+      await generateConflictReport(conflictsToReview, this);
+      diffsShownInVsCode = await promptOpenVisualDiffsInVsCode(conflictsToReview, (conflictResult as any).emptyPlaceholderPath, this, nonInteractive);
     }
-
-    // Step 10: Prompt user to validate metadata to deploy
-    const { validatedPackageXml, validatedDestructiveXml } = await promptMetadataValidation(
-      deltaPackageXml,
-      fs.existsSync(destructiveChangesXml) ? destructiveChangesXml : null,
-      conflicts,
+    const { validatedPackageXml } = await promptMetadataValidation(
+      packageXml,
+      destructiveXml,
+      conflictsToReview,
       this,
-      agentMode,
+      nonInteractive,
       conn.instanceUrl || '',
       diffsShownInVsCode,
     );
-
-    // Step 11: Handle destructive changes
-    if (validatedDestructiveXml && fs.existsSync(validatedDestructiveXml) && !(await isPackageXmlEmpty(validatedDestructiveXml))) {
-      const confirmed = await confirmDestructiveChanges(validatedDestructiveXml, this, agentMode);
-      if (!confirmed) {
-        uxLog('action', this, c.cyan(t('backpromoteDestructiveChangesSkipped')));
+    const runMergedKeys = [...mergedKeys];
+    if (!nonInteractive && conflictsToReview.length > 0) {
+      const decisions = await promptBackpromoteConflictDecisions({
+        conflicts: conflictsToReview,
+        baseCommit,
+        parentBranch,
+        buildMergePrompt: (files, merged, excluded) => mergePromptFor(files, merged, [...excludedKeys, ...excluded]),
+        commandThis: this,
+      });
+      runMergedKeys.push(...decisions.mergedKeys);
+      if (decisions.excludedKeys.length > 0) {
+        uxLog('log', this, c.grey(t('backpromoteExcludedItems', { count: decisions.excludedKeys.length, items: decisions.excludedKeys.join(', ') })));
+        await removeKeysFromPackageXml(validatedPackageXml, decisions.excludedKeys);
       }
     }
 
-    // Step 12: Execute pre-deploy actions
-    await executeBackpromoteActions(selectedPrs, currentBranch, 'commandsPreDeploy', targetUsername, conn, this, agentMode);
+    // Step 11: deletions. Declining them, or --skip-destructive, really leaves them out.
+    let validatedDestructiveXml: string | null = destructiveXml;
+    if (flags['skip-destructive'] === true) {
+      if (validatedDestructiveXml) {
+        uxLog('action', this, c.cyan(t('backpromoteDestructiveChangesSkipped')));
+      }
+      validatedDestructiveXml = null;
+    } else if (validatedDestructiveXml && fs.existsSync(validatedDestructiveXml) && !(await isPackageXmlEmpty(validatedDestructiveXml))) {
+      const confirmed = await confirmDestructiveChanges(validatedDestructiveXml, this, nonInteractive);
+      if (!confirmed) {
+        uxLog('action', this, c.cyan(t('backpromoteDestructiveChangesSkipped')));
+        validatedDestructiveXml = null;
+      }
+    }
 
-    // Step 13: Deploy metadata
-    const testClasses = collectTestClassesFromPrs(selectedPrs);
+    // Step 12: deployment actions, deployment
+    const actionOptions = { actionIds, skipActions: flags['skip-actions'] === true, nonInteractive: explicitSelection };
+    if (actionOptions.skipActions) {
+      uxLog('log', this, c.grey(t('backpromoteActionsSkippedByFlag')));
+    }
+    await executeBackpromoteActions(selectedGroups, currentBranch, 'commandsPreDeploy', targetUsername, conn, this, agentMode, actionOptions);
     await deployBackpromoteMetadata(
       validatedPackageXml,
       validatedDestructiveXml,
       targetUsername,
-      testClasses,
+      collectTestClassesFromPrs(selectedGroups),
       this,
       debugMode,
       agentMode,
     );
+    await executeBackpromoteActions(selectedGroups, currentBranch, 'commandsPostDeploy', targetUsername, conn, this, agentMode, actionOptions);
 
-    // Step 14: Execute post-deploy actions
-    await executeBackpromoteActions(selectedPrs, currentBranch, 'commandsPostDeploy', targetUsername, conn, this, agentMode);
-
-    // Step 15: Save backpromote state
-    await saveBackpromoteState(currentBranch, targetCommit, parentBranch, this);
+    // Step 13: state
+    await saveBackpromoteState(currentBranch, computeNextBackpromoteState(groupsOldestFirst, statuses, selectedIndexes, lastState, parentBranch), this);
+    if (runMergedKeys.length > 0) {
+      const merged = await findLocalMetadataFiles(runMergedKeys);
+      uxLog('action', this, c.yellow(t('backpromoteMergedFilesToCommit', { files: [...merged.values()].filter(Boolean).join(', ') })));
+    }
 
     uxLog('action', this, c.green(t('backpromoteCompleted')));
-    return { outputString: 'Backpromote completed successfully' };
+    return { outputString: 'Backpromote completed successfully', selectedCommits: selectedHashes, deployed: deployKeys.length, deleted: validatedDestructiveXml ? deleteKeys.length : 0 };
   }
 }

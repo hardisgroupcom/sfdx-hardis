@@ -30,8 +30,14 @@ export WORK="/c/tmp/promo-e2e"               # local clone
 export LOGS="/c/tmp/promo-e2e-logs"
 export DEV="C:/git/sfdx-hardis/bin/dev.js"
 export EXT="C:/git/vscode-sfdx-hardis"       # only for the diagram check
+export DEVHUB="$ORG"                         # Dev Hub for the backpromote scratch org (section 6bis)
+export DEVORG="promo-e2e-dev"                # alias of that scratch org
 mkdir -p "$LOGS"
 ```
+
+> Backpromote (Beta) refuses production orgs and the orgs of the major branches, so section 6bis
+> needs a **scratch org** (or a developer sandbox). A Developer Edition org with Dev Hub enabled
+> creates it; `sf org list` shows `isDevHub`.
 
 ## 1. The job simulators
 
@@ -421,6 +427,123 @@ pending manual checkbox per org branch.
 | Pipeline before and after a promotion  | section 4bis, `pipeline_check` around every promotion operation                                                                        | the open promotion is drawn on the arrow of its step and takes nothing out of the source branch until it is merged; afterwards the stories are listed in the branch they reached, the counter bubbles follow, and no story is listed in two branches or in none                                                                              |
 | Counter bubble against its own list    | every `pipeline_check`, no expectations needed                                                                                         | the number on a branch node equals the number of User Stories the modal lists under it                                                                                                                                                                                                                                                       |
 
+## 6bis. Backpromote (Beta)
+
+`hardis:work:backpromote` brings what was merged in `integration` into a developer's own org. It is
+tested here on the same repository, from a developer feature branch, against a **scratch org**: a
+backpromote refuses production orgs and the orgs of the major branches, which is what `$ORG` is.
+
+It runs after section 4, or on its own right after sections 2 and 3 once the BUILD stream merges of
+section 4 are done (`#1`, `#2`, `#3` merged into `integration`). The expectations below name the
+groups of that short run; after a full section 4, the retrofit merge is one more `pending` group,
+the newest one, and the story numbers created below are higher.
+
+### Setup
+
+```bash
+cd "$WORK"
+git fetch -q origin
+ROOT=$(git rev-list --max-parents=0 origin/integration)    # the base project commit
+BPX=".claude/skills/promotion-branches-e2e/reference/backpromote"   # expectations, from the sfdx-hardis clone
+echo '{"orgName":"promo e2e dev","edition":"Developer"}' >"$LOGS/scratch-def.json"
+sf org create scratch --definition-file "$LOGS/scratch-def.json" --target-dev-hub "$DEVHUB" \
+  --alias "$DEVORG" --duration-days 1 --wait 30
+DEVUSER=$(sf org display --target-org "$DEVORG" --json | node -pe "JSON.parse(require('fs').readFileSync(0)).result.username")
+
+# The developer's org starts from the base project, before any story
+git worktree add -f "$LOGS/bp-base" "$ROOT"
+(cd "$LOGS/bp-base" && sf project deploy start --source-dir force-app --target-org "$DEVORG" --ignore-conflicts)
+git worktree remove --force "$LOGS/bp-base"
+
+# The developer's branch already contains everything integration has
+git checkout -q -f integration && git pull -q origin integration
+git checkout -q -b feature/E2E-401-dev
+```
+
+Expectation files live in `reference/backpromote/`; pass them with an absolute path
+(`C:/git/sfdx-hardis/$BPX/...`) since the simulators run from `$WORK`.
+
+### Steps
+
+Run them in this order: each one starts from the state the previous one left.
+
+| Step | Command | Expected |
+|------|---------|----------|
+| B1 Org of a major branch | add `targetUsername: <DEVUSER>` to `config/branches/.sfdx-hardis.uat.yml` without committing, `e2e_backpromote_json bp-refused-major --plan --from "$ROOT"`, then `e2e_backpromote bp-refused-major-run --agent --from "$ROOT"`, then `git checkout -- config/branches` | `backpromote_check bp-refused-major $BPX/refused-major.json`: plan `blocked`, check `targetOrg` fails naming the `uat` branch, no group listed. The run exits 1 with the same message, before listing anything |
+| B2 Production org | `e2e_backpromote_json bp-refused-prod --plan --from "$ROOT" --target-org "$ORG"` | `refused-production.json`: `blocked`, `is a production org` |
+| B3 Plan | `e2e_backpromote_json bp-plan-1 --plan --from "$ROOT"` | `plan-1.json`: `ready`, org type `scratch`, groups `#1` `#2` `#3` pending with their static resource, every item `newToOrg`, the actions `e2e-pre-1` (pre), `e2e-manual-1` (post), `e2e-post-2` (post), `e2e-pre-3` (pre) |
+| B4 Pull Requests picked one by one | `e2e_backpromote bp-run-1-3 --agent --from "$ROOT" --pull-requests 1,3` | exit 0, `E2E pre-deploy of PR 1` and `of PR 3` in the log, nothing of PR 2; `E2E_S1` and `E2E_S3` in the org, `E2E_S2` not (query below); `config/user/.sfdx-hardis.*.yml` holds `backpromoteState` with `skippedCommits` = the merge of `#2` |
+| B5 A Pull Request left out is offered again | `e2e_backpromote_json bp-plan-2 --plan` (no `--from`: the saved state decides) | `plan-2.json`: `#2` listed as `skipped`, `#1` and `#3` not listed |
+| B6 The skipped one, no actions | `e2e_backpromote bp-run-2 --agent --pull-requests 2 --skip-actions` | exit 0, `Deployment actions skipped (--skip-actions)`, `E2E post-deploy of PR 2` absent, `E2E_S2` in the org, `skippedCommits` empty. A plan now answers `upToDate` |
+| B7 Unknown Pull Request | `e2e_backpromote bp-unknown --agent --pull-requests 999` | exit 1, `These Pull Requests are not waiting to be backpromoted from integration: 999` |
+| B8 Changed in the org and in integration | the S7 commands below, then `e2e_backpromote_json bp-plan-3 --plan` | `plan-3.json`: `ApexClass:PromoE2EAlphaTest` is `changedInOrg` and `mergeable` |
+| B9 Prepare the merge | `e2e_backpromote_json bp-prepare --pull-requests $S7 --prepare-merge ApexClass:PromoE2EAlphaTest` | `prepare.json`: one file with 1 conflict block; the class holds `<<<<<<< your org`, `\|\|\|\|\|\|\| last backpromoted` and `>>>>>>> integration`; the prompt names the file and the three sides; `nextCommand` carries `--merged-metadata ApexClass:PromoE2EAlphaTest`; `hardis-report/backpromote-merge-prompt-*.md` exists |
+| B10 Markers left | run `nextCommand` as it is, through `e2e_backpromote bp-merged-markers --agent <its flags>` | exit 1, `Solve the conflict markers left in these files before deploying them`, nothing deployed. The prompt file in `hardis-report/` does not make the tree "not clean" |
+| B11 Merge solved and deployed | solve with the node one-liner below, then `e2e_backpromote bp-merged --agent <the same flags>` | exit 0, `Commit the merged files with your User Story`, the org class body holds **both** lines (query below). `git status` shows the class modified, nothing else outside `hardis-report/`. Commit it on the developer branch, as the developer would (`git commit -qam "chore: keep the org change of PromoE2EAlphaTest"`): the next steps need a clean tree |
+| B12 Keep the org version | the S8 commands below, then `e2e_backpromote bp-keep-org --agent --pull-requests $S8 --exclude-metadata ApexClass:PromoE2EBetaTest` | exit 0, `1 item(s) left out of the deployment`, the org still has its own version of `PromoE2EBetaTest` |
+| B13 Declined deletions | the S9 commands below, `e2e_backpromote_json bp-plan-4 --plan`, then `e2e_backpromote bp-skip-destructive --agent --pull-requests $S9 --skip-destructive` | `plan-4.json` lists the deletion of `StaticResource:E2E_S1`; the run exits 0 and `E2E_S1` is **still** in the org |
+| B14 Dirty tree | `echo x >> NOTES.md`, `e2e_backpromote_json bp-dirty --plan`, then `git checkout -- NOTES.md` | `dirty.json`: `blocked`, check `gitClean` fails listing `NOTES.md` and nothing under `hardis-report/` |
+| B15 Terminal prompts | `node "$DEV" hardis:work:backpromote --target-org "$DEVORG"` by hand, answer the prompts | one multiselect of the waiting Pull Requests (newest first, the new ones preselected), then per item changed in the org: deploy / keep the org version / merge. Not scriptable: say "not covered" when skipped |
+
+Queries and helper commands:
+
+```bash
+# Static resources of the stories present in the developer org
+sf data query --target-org "$DEVORG" --query "SELECT Name FROM StaticResource WHERE Name LIKE 'E2E_S%' ORDER BY Name"
+
+# S7: the developer changes a line of PromoE2EAlphaTest directly in their org...
+git checkout -q feature/E2E-401-dev
+sed -i "s/'promotion branches end to end test'/'changed in the dev org'/" force-app/main/default/classes/PromoE2EAlphaTest.cls
+sf project deploy start --metadata ApexClass:PromoE2EAlphaTest --target-org "$DEVORG" --ignore-conflicts
+git checkout -- force-app/main/default/classes/PromoE2EAlphaTest.cls
+# ...while a teammate changes the same line in integration
+git checkout -q -f integration && git pull -q origin integration && git checkout -q -b feature/E2E-105-apex
+sed -i "s/'promotion branches end to end test'/'incoming from integration'/" force-app/main/default/classes/PromoE2EAlphaTest.cls
+git commit -qam "feat: E2E-105 apex change" && git push -q -u origin feature/E2E-105-apex
+S7=$(gh pr create --repo "$REPO" --base integration --head feature/E2E-105-apex --title "E2E-105 apex change" --body "Story S7: backpromote conflict." | grep -o '[0-9]*$')
+gh pr merge "$S7" --repo "$REPO" --merge --delete-branch=false
+git checkout -q feature/E2E-401-dev && git fetch -q origin && git merge -q --no-edit origin/integration
+
+# B11: keep both lines of the conflict
+node -e "const fs=require('fs');const f='force-app/main/default/classes/PromoE2EAlphaTest.cls';const s=fs.readFileSync(f,'utf8');fs.writeFileSync(f,s.replace(/<<<<<<< your org\r?\n([\s\S]*?)\r?\n\|\|\|\|\|\|\| [\s\S]*?\r?\n=======\r?\n([\s\S]*?)\r?\n>>>>>>> integration/,(m,org,inc)=>org+'\n'+inc))"
+sf data query --use-tooling-api --target-org "$DEVORG" --query "SELECT Body FROM ApexClass WHERE Name = 'PromoE2EAlphaTest'" --json | grep -o "changed in the dev org\|incoming from integration"
+
+# S8: the same shape on PromoE2EBetaTest, deployed with --exclude-metadata
+git checkout -q feature/E2E-401-dev
+sed -i "s/'promotion branches end to end test'/'kept in the dev org'/" force-app/main/default/classes/PromoE2EBetaTest.cls
+sf project deploy start --metadata ApexClass:PromoE2EBetaTest --target-org "$DEVORG" --ignore-conflicts
+git checkout -- force-app/main/default/classes/PromoE2EBetaTest.cls
+git checkout -q -f integration && git pull -q origin integration && git checkout -q -b feature/E2E-106-apex
+sed -i "s/'promotion branches end to end test'/'not deployed by the backpromote'/" force-app/main/default/classes/PromoE2EBetaTest.cls
+git commit -qam "feat: E2E-106 apex change" && git push -q -u origin feature/E2E-106-apex
+S8=$(gh pr create --repo "$REPO" --base integration --head feature/E2E-106-apex --title "E2E-106 apex change" --body "Story S8: keep the org version." | grep -o '[0-9]*$')
+gh pr merge "$S8" --repo "$REPO" --merge --delete-branch=false
+git checkout -q feature/E2E-401-dev && git fetch -q origin && git merge -q --no-edit origin/integration
+
+# S9: a story deleting the static resource of S1
+git checkout -q -f integration && git pull -q origin integration && git checkout -q -b feature/E2E-107-delete
+git rm -q force-app/main/default/staticresources/E2E_S1.resource force-app/main/default/staticresources/E2E_S1.resource-meta.xml
+git commit -qm "feat: E2E-107 remove E2E_S1" && git push -q -u origin feature/E2E-107-delete
+S9=$(gh pr create --repo "$REPO" --base integration --head feature/E2E-107-delete --title "E2E-107 delete E2E_S1" --body "Story S9: deletion." | grep -o '[0-9]*$')
+gh pr merge "$S9" --repo "$REPO" --merge --delete-branch=false
+git checkout -q feature/E2E-401-dev && git fetch -q origin && git merge -q --no-edit origin/integration
+```
+
+### What the VS Code panel adds
+
+The Backpromote (Beta) panel of vscode-sfdx-hardis reads the same `--plan --json` document and runs
+the same command with flags. Its command builder is covered by the extension's unit tests; this run
+does not click the panel. Say so in the report.
+
+### Traps
+
+- **`--from` on the first run.** Without a saved state and without `--from`, the window is the last
+  50 first-parent commits of `integration`, base project commit included.
+- **The feature branch must contain the latest `origin/integration`.** Merge it after every story
+  merged in `integration`, or every run stops on the up-to-date check.
+- **`config/user/` is ignored by the test repository**, so the backpromote state survives between
+  steps but never shows in `git status`. Read it with `cat config/user/.sfdx-hardis.*.yml`.
+
 ## 7. Traps met while writing this
 
 - **`NODE_OPTIONS`**: with VS Code's inspector bootloader set, node hangs after the command
@@ -743,4 +866,4 @@ Traps already met on Bitbucket:
 The repository is disposable. `gh repo delete "$REPO" --yes` needs the `delete_repo` scope
 (`gh auth refresh -h github.com -s delete_repo`). The static resources, labels and Apex classes
 left in the org are prefixed `PromoE2E` / `E2E_` and can be removed with a destructive changes
-deployment.
+deployment. Delete the backpromote scratch org with `sf org delete scratch --target-org "$DEVORG" --no-prompt`.
