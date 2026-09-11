@@ -27,6 +27,7 @@ import {
   computeBackpromoteGroupDeltas,
   findLocalMetadataFiles,
   getBackpromoteTargetOrgInfo,
+  hasFirstParent,
   listBackpromoteParentBranchChoices,
   listBackpromotePlanActions,
   listFilesWithConflictMarkers,
@@ -52,6 +53,7 @@ import {
   buildBackpromoteRunCommand,
   defaultGroupSelection,
   findItemsAlsoChangedByUnselected,
+  findNewestDoneGroupIndex,
   parseMetadataKey,
   resolveExplicitGroupSelection,
   selectDeltaUnion,
@@ -335,7 +337,7 @@ The command's technical implementation involves:
     // Step 7: the Pull Requests merged in the parent branch, and what the Pull Request comments say
     // this org already received. The window starts at the newest one already backpromoted here.
     const parentRef = await resolveBackpromoteParentRef(parentBranch);
-    const listedGroups = await listMergedPrsWithCommits(parentRef, currentBranch, fromFlag, this);
+    const listedGroups = (await listMergedPrsWithCommits(parentRef, currentBranch, fromFlag, this)).filter((group) => hasFirstParent(group.commit.hash));
     const history = await loadBackpromoteHistory(provider, listedGroups, targetOrg.orgId, fromFlag !== null || explicitSelection);
     const groupsOldestFirst = listedGroups.slice(history.windowStartIndex);
     const histories = history.histories;
@@ -407,7 +409,11 @@ The command's technical implementation involves:
 
     // Step 9: what the selection deploys and deletes. The pending groups left out are computed too,
     // to warn about the items they also changed.
-    const computedIndexes = [...new Set([...waitingIndexes, ...selectedIndexes])].sort((a, b) => a - b);
+    // In explicit mode the whole listing is read, but only the pending groups after the newest one
+    // already backpromoted are recomputed: each older one would cost a delta for a warning only
+    const deltaAnchorIndex = explicitSelection && fromFlag === null ? findNewestDoneGroupIndex(statuses) : -1;
+    const deltaWaitingIndexes = waitingIndexes.filter((index) => index > deltaAnchorIndex);
+    const computedIndexes = [...new Set([...deltaWaitingIndexes, ...selectedIndexes])].sort((a, b) => a - b);
     const computedGroups = computedIndexes.map((index) => groupsOldestFirst[index]);
     const deltas = checksPassed || !planMode ? await computeBackpromoteGroupDeltas(computedGroups, this) : [];
     const computedHashes = computedGroups.map((group) => group.commit.hash);
@@ -419,7 +425,7 @@ The command's technical implementation involves:
     }
 
     if (!planMode) {
-      const alsoChanged = findItemsAlsoChangedByUnselected(selection, selectedHashes, waitingIndexes.map((index) => groupsOldestFirst[index].commit.hash));
+      const alsoChanged = findItemsAlsoChangedByUnselected(selection, selectedHashes, deltaWaitingIndexes.map((index) => groupsOldestFirst[index].commit.hash));
       if (alsoChanged.length > 0) {
         uxLog('warning', this, c.yellow(t('backpromoteItemsAlsoChangedByUnselected', { count: alsoChanged.length, items: alsoChanged.join(', ') })));
       }

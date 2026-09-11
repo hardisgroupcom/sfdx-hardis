@@ -3,9 +3,9 @@
   "status": "ready",
   "orgType": "scratch",
   "groups": [
-    { "pullRequests": [1], "status": "pending", "backpromotedToThisOrg": false, "backpromotedToCount": 1 },
-    { "pullRequests": [2], "status": "pending", "backpromotedToThisOrg": false, "backpromotedToCount": 1 },
-    { "pullRequests": [3], "status": "pending", "backpromotedToThisOrg": false, "backpromotedToCount": 1 }
+    { "pullRequests": [{{S1}}], "status": "pending", "backpromotedToThisOrg": false, "backpromotedToCount": 1 },
+    { "pullRequests": [{{S2}}], "status": "pending", "backpromotedToThisOrg": false, "backpromotedToCount": 1 },
+    { "pullRequests": [{{S3}}], "status": "pending", "backpromotedToThisOrg": false, "backpromotedToCount": 1 }
   ],
-  "actions": [{ "id": "e2e-pre-1", "when": "pre", "alreadyDone": false }]
+  "actions": [{ "id": "e2e-pre-{{S1}}", "when": "pre", "alreadyDone": false }]
 }

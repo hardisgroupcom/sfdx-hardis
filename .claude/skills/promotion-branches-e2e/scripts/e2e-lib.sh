@@ -109,80 +109,27 @@ e2e_release_notes() {
   return $code
 }
 
-# Backpromote (Beta) of the branch checked out in $WORK into the developer's own org (runbook
-# section 6bis). Never CI=true: backpromote is a developer command, and in CI mode it would not
-# behave the way a developer sees it. DEVORG is the target org unless --target-org is passed.
-# Usage: e2e_backpromote <log label> [flags...]
-e2e_backpromote() {
-  local label="$1" code
-  shift
-  cd "$WORK" || return 1
-  local target=()
-  case " $* " in
-  *" --target-org "*) ;;
-  *) target=(--target-org "${DEVORG:?set DEVORG to the developer scratch org}") ;;
-  esac
+# Backpromote (Beta) hooks of scripts/e2e-lib-backpromote.sh (runbook section 6bis): the variables the
+# CLI reads outside CI, and a Pull Request into integration opened then merged
+bp_provider_env() {
   env -u NODE_OPTIONS -u CI \
     GITHUB_TOKEN="$(gh auth token)" \
     GITHUB_REPOSITORY="$REPO" \
     GITHUB_REPOSITORY_OWNER="${REPO%%/*}" \
     GITHUB_SERVER_URL="https://github.com" \
-    node "$DEV" hardis:work:backpromote "${target[@]}" "$@" \
-    >"$LOGS/$label.log" 2>&1
-  code=$?
-  echo "$label exit=$code log=$LOGS/$label.log"
-  return $code
+    "$@"
 }
 
-# The same with --json: the JSON document goes to $LOGS/<label>.json, stderr to $LOGS/<label>.log
-# Usage: e2e_backpromote_json <label> [flags...]
-e2e_backpromote_json() {
-  local label="$1" code
-  shift
-  cd "$WORK" || return 1
-  local target=()
-  case " $* " in
-  *" --target-org "*) ;;
-  *) target=(--target-org "${DEVORG:?set DEVORG to the developer scratch org}") ;;
-  esac
-  env -u NODE_OPTIONS -u CI \
-    GITHUB_TOKEN="$(gh auth token)" \
-    GITHUB_REPOSITORY="$REPO" \
-    GITHUB_REPOSITORY_OWNER="${REPO%%/*}" \
-    GITHUB_SERVER_URL="https://github.com" \
-    node "$DEV" hardis:work:backpromote "${target[@]}" --json "$@" \
-    >"$LOGS/$label.json" 2>"$LOGS/$label.log"
-  code=$?
-  echo "$label exit=$code json=$LOGS/$label.json"
-  return $code
+# Usage: bp_open <branch> <title> [body]  (prints the Pull Request number)
+bp_open() {
+  local url
+  url=$(gh pr create --repo "$REPO" --base integration --head "$1" --title "$2" --body "${3:-backpromote end to end test}") || return 1
+  echo "${url##*/}"
 }
 
-# The same --plan call with no git provider credential at all: backpromote must refuse to run
-# Usage: e2e_backpromote_nogit_json <label> [flags...]
-e2e_backpromote_nogit_json() {
-  local label="$1" code
-  shift
-  cd "$WORK" || return 1
-  env -u NODE_OPTIONS -u CI -u GITHUB_TOKEN -u CI_SFDX_HARDIS_GITHUB_TOKEN -u GITHUB_REPOSITORY \
-    -u CI_JOB_TOKEN -u CI_SFDX_HARDIS_GITLAB_TOKEN -u SYSTEM_ACCESSTOKEN -u CI_SFDX_HARDIS_AZURE_TOKEN \
-    -u AZURE_DEVOPS_EXT_PAT -u CI_SFDX_HARDIS_BITBUCKET_TOKEN -u BITBUCKET_WORKSPACE \
-    node "$DEV" hardis:work:backpromote --target-org "${DEVORG:?set DEVORG to the developer scratch org}" --json "$@" \
-    >"$LOGS/$label.json" 2>"$LOGS/$label.log"
-  code=$?
-  echo "$label exit=$code json=$LOGS/$label.json"
-  return $code
-}
-
-# Number of backpromote history comments on a Pull Request, and the org names they record
-# Usage: backpromote_comment <pr number>
-backpromote_comment() {
-  gh api "repos/$REPO/issues/$1/comments" --jq '.[] | select(.body | contains("sfdx-hardis backpromote-state")) | .body'
-}
-
-# Assert a backpromote --plan / --prepare-merge JSON document against expectations
-# Usage: backpromote_check <label> <expectations.json>
-backpromote_check() {
-  env -u NODE_OPTIONS node "$E2E_SCRIPTS_DIR/check-backpromote-plan.cjs" "$LOGS/$1.json" "$2"
+# Usage: bp_merge <number>
+bp_merge() {
+  gh pr merge "$1" --repo "$REPO" --merge --delete-branch=false
 }
 
 # The lines worth reading in a job log
@@ -236,3 +183,6 @@ pipeline_check() {
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
+
+# Backpromote (Beta) helpers, provider agnostic
+source "$E2E_SCRIPTS_DIR/e2e-lib-backpromote.sh"

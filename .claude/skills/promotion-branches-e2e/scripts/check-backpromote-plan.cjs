@@ -51,7 +51,15 @@ if (!documentFile || !expectationsFile) {
 }
 const envelope = readSfJson(documentFile);
 const doc = envelope.result !== undefined ? envelope.result : envelope;
-const expect = JSON.parse(fs.readFileSync(expectationsFile, 'utf8'));
+// `{{NAME}}` in the expectations is replaced by the BP_VAR_NAME environment variable (Pull Request
+// numbers differ from one git provider to the other)
+let expectationsText = fs.readFileSync(expectationsFile, 'utf8');
+for (const [name, value] of Object.entries(process.env)) {
+  if (name.startsWith('BP_VAR_')) {
+    expectationsText = expectationsText.split(`{{${name.substring('BP_VAR_'.length)}}}`).join(value);
+  }
+}
+const expect = JSON.parse(expectationsText);
 const failures = [];
 let passed = 0;
 function check(label, ok, detail) {

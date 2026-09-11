@@ -250,3 +250,40 @@ pipeline_check() {
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
+
+# Backpromote (Beta) hooks of scripts/e2e-lib-backpromote.sh (runbook section 6bis). Outside a GitLab
+# CI job (no GITLAB_CI) the provider checks CI_PROJECT_ID against the git remote.
+bp_provider_env() {
+  env -u NODE_OPTIONS -u CI -u GITLAB_CI \
+    CI_SFDX_HARDIS_GITLAB_TOKEN="$GL_TOKEN" \
+    CI_SERVER_URL="$GL_HOST" \
+    CI_PROJECT_ID="$PROJECT_ID" \
+    CI_PROJECT_PATH="$PROJECT_PATH" \
+    CI_PROJECT_URL="$GL_HOST/$PROJECT_PATH" \
+    "$@"
+}
+
+# Usage: bp_open <branch> <title> [body]  (prints the merge request iid)
+bp_open() {
+  local body="$LOGS/bp-mr-body.md"
+  printf '%s\n' "${3:-backpromote end to end test}" >"$body"
+  # python does not resolve the git bash /c/... paths: hand it a Windows path
+  gl_mr_create "$1" integration "$2" "$(cygpath -m "$body" 2>/dev/null || echo "$body")"
+}
+
+# Usage: bp_merge <iid>. Waits until GitLab knows the last commit pushed on the source branch, so the
+# merge carries it (the deployment actions file is pushed right after the merge request is opened).
+bp_merge() {
+  local iid="$1" branch head
+  branch=$(curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" "$GL_HOST/api/v4/projects/$PROJECT_ID/merge_requests/$iid" |
+    python -c "import json,sys; print(json.loads(sys.stdin.buffer.read().decode('utf-8'))['source_branch'])")
+  head=$(git -C "$WORK" rev-parse "origin/$branch" 2>/dev/null || git -C "$WORK" rev-parse "$branch")
+  for _ in $(seq 1 30); do
+    [ "$(gl_mr_sha "$iid")" = "$head" ] && break
+    sleep 2
+  done
+  gl_mr_merge "$iid"
+}
+
+# Backpromote (Beta) helpers, provider agnostic
+source "$E2E_SCRIPTS_DIR/e2e-lib-backpromote.sh"

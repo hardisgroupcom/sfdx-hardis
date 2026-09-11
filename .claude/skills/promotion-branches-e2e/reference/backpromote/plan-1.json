@@ -10,9 +10,9 @@
     { "id": "upToDate", "ok": true }
   ],
   "groups": [
-    { "pullRequests": [1], "status": "pending", "trackable": true, "backpromotedToThisOrg": false, "items": ["StaticResource:E2E_S1"], "actionIds": ["e2e-pre-1", "e2e-manual-1"] },
-    { "pullRequests": [2], "status": "pending", "trackable": true, "backpromotedToThisOrg": false, "items": ["StaticResource:E2E_S2"], "actionIds": ["e2e-post-2"] },
-    { "pullRequests": [3], "status": "pending", "trackable": true, "backpromotedToThisOrg": false, "items": ["StaticResource:E2E_S3"], "actionIds": ["e2e-pre-3"] }
+    { "pullRequests": [{{S1}}], "status": "pending", "trackable": true, "backpromotedToThisOrg": false, "items": ["StaticResource:E2E_S1"], "actionIds": ["e2e-pre-{{S1}}", "e2e-manual-{{S1}}"] },
+    { "pullRequests": [{{S2}}], "status": "pending", "trackable": true, "backpromotedToThisOrg": false, "items": ["StaticResource:E2E_S2"], "actionIds": ["e2e-post-{{S2}}"] },
+    { "pullRequests": [{{S3}}], "status": "pending", "trackable": true, "backpromotedToThisOrg": false, "items": ["StaticResource:E2E_S3"], "actionIds": ["e2e-pre-{{S3}}"] }
   ],
   "groupCount": 3,
   "items": [
@@ -21,9 +21,9 @@
     { "key": "StaticResource:E2E_S3", "orgState": "newToOrg", "mergeable": false }
   ],
   "actions": [
-    { "id": "e2e-pre-1", "when": "pre", "alreadyDone": false },
-    { "id": "e2e-manual-1", "when": "post", "alreadyDone": false },
-    { "id": "e2e-post-2", "when": "post", "alreadyDone": false },
-    { "id": "e2e-pre-3", "when": "pre", "alreadyDone": false }
+    { "id": "e2e-pre-{{S1}}", "when": "pre", "alreadyDone": false },
+    { "id": "e2e-manual-{{S1}}", "when": "post", "alreadyDone": false },
+    { "id": "e2e-post-{{S2}}", "when": "post", "alreadyDone": false },
+    { "id": "e2e-pre-{{S3}}", "when": "pre", "alreadyDone": false }
   ]
 }

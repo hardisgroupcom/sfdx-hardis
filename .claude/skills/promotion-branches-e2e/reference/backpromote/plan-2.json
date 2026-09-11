@@ -2,7 +2,7 @@
   "exitStatus": 0,
   "status": "upToDate",
   "groupCount": 1,
-  "groups": [{ "pullRequests": [3], "status": "done", "backpromotedToThisOrg": true, "backpromotedToCount": 1 }],
-  "absentGroups": [[1], [2]],
+  "groups": [{ "pullRequests": [{{S3}}], "status": "done", "backpromotedToThisOrg": true, "backpromotedToCount": 1 }],
+  "absentGroups": [[{{S1}}], [{{S2}}]],
   "olderFromSet": true
 }

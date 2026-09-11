@@ -175,6 +175,14 @@ export async function resolveBackpromoteParentRef(parentBranch: string): Promise
 }
 
 /**
+ * A commit with a first parent. The first commit of a repository has none: it was not merged into the
+ * parent branch, and sfdx-git-delta cannot compute `<commit>^1..<commit>` for it.
+ */
+export function hasFirstParent(hash: string): boolean {
+  return spawnSync('git', ['rev-parse', '--verify', '--quiet', `${hash}^1`], { encoding: 'utf8' }).status === 0;
+}
+
+/**
  * What the Pull Request comments say about each listed group, newest first. Unless readAll, the reading
  * stops at the newest group already backpromoted to the org: the window starts there, so a long history
  * is not read and recomputed at every run. windowStartIndex is that group (0 when none was found).

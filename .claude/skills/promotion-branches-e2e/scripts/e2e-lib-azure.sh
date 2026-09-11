@@ -299,3 +299,38 @@ pipeline_check() {
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
+
+# Backpromote (Beta) hooks of scripts/e2e-lib-backpromote.sh (runbook section 6bis)
+bp_provider_env() {
+  env -u NODE_OPTIONS -u CI \
+    SYSTEM_ACCESSTOKEN="$AZ_TOKEN" \
+    SYSTEM_COLLECTIONURI="$AZ_COLLECTION" \
+    SYSTEM_TEAMPROJECT="$AZ_PROJECT" \
+    BUILD_REPOSITORY_ID="$AZ_REPO_ID" \
+    BUILD_REPOSITORY_NAME="$AZ_REPO_NAME" \
+    "$@"
+}
+
+# Usage: bp_open <branch> <title> [body]  (prints the Pull Request id)
+bp_open() {
+  local body="$LOGS/bp-pr-body.md"
+  printf '%s\n' "${3:-backpromote end to end test}" >"$body"
+  # python does not resolve the git bash /c/... paths: hand it a Windows path
+  az_pr_create "$1" integration "$2" "$(cygpath -m "$body" 2>/dev/null || echo "$body")"
+}
+
+# Usage: bp_merge <id>. Waits until Azure DevOps knows the last commit pushed on the source branch, so
+# the completion carries it (the deployment actions file is pushed right after the Pull Request is opened).
+bp_merge() {
+  local pr="$1" branch head
+  branch=$(az_pr_field "$pr" "d['sourceRefName'].replace('refs/heads/', '')")
+  head=$(git -C "$WORK" rev-parse "origin/$branch" 2>/dev/null || git -C "$WORK" rev-parse "$branch")
+  for _ in $(seq 1 30); do
+    [ "$(az_pr_field "$pr" "d['lastMergeSourceCommit']['commitId']")" = "$head" ] && break
+    sleep 2
+  done
+  az_pr_merge "$pr"
+}
+
+# Backpromote (Beta) helpers, provider agnostic
+source "$E2E_SCRIPTS_DIR/e2e-lib-backpromote.sh"
