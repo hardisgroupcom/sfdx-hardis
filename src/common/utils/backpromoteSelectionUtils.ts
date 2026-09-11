@@ -7,7 +7,7 @@
  */
 
 import { isRetrofit } from './orgConfigUtils.js';
-import { isPromotionBranchName } from './promotionBranchUtils.js';
+import { isPromotionBranchName, parsePromotionBranchName } from './promotionBranchUtils.js';
 
 export type BackpromoteGroupStatus = 'pending' | 'done';
 
@@ -280,50 +280,123 @@ export function findBackpromoteTargetOrgRefusal(options: {
   return null;
 }
 
-export type BackpromoteBranchRefusal =
-  | { reason: 'majorBranch' }
-  | { reason: 'promotionBranch' }
-  | { reason: 'retrofitBranch' }
-  | { reason: 'sameBranch' }
-  | { reason: 'parentNotMajor'; majorBranches: string[] };
+export type BackpromoteCurrentBranchKind = 'majorBranch' | 'promotionBranch' | 'retrofitBranch' | 'userStoryBranch';
 
 /**
- * Why a backpromote must not run from this branch, or null when it may. A backpromote brings what was
- * merged in a major branch into a User Story branch created from it, so:
- * - the current branch must be a User Story branch: a major branch is deployed by the CI/CD pipeline,
- *   a promotion branch only carries User Stories from one major branch to the next (its Pull Request
- *   validates it, nothing deploys it) and a retrofit branch carries a major branch down to another one.
- *   None of them is the work of a developer, so none of them feeds a developer org.
- * - the parent branch must be a major branch (or the development branch). Pass parentBranch null to
- *   check the current branch only, before the parent branch is known. A project declaring no major
- *   branch at all gives nothing to compare with, and its parent branch is accepted.
+ * What the current branch is. Only a User Story branch can receive a backpromote itself: a major
+ * branch is deployed by the CI/CD pipeline, a promotion branch only carries User Stories from one
+ * major branch to the next and a retrofit branch carries a major branch down to another one.
  */
-export function findBackpromoteBranchRefusal(options: {
+export function classifyBackpromoteCurrentBranch(currentBranch: string, majorBranches: string[]): BackpromoteCurrentBranchKind {
+  const branch = currentBranch || '';
+  if ((majorBranches || []).includes(branch)) {
+    return 'majorBranch';
+  }
+  if (isPromotionBranchName(branch)) {
+    return 'promotionBranch';
+  }
+  if (isRetrofit(branch)) {
+    return 'retrofitBranch';
+  }
+  return 'userStoryBranch';
+}
+
+/**
+ * The major branches a backpromote may come from, when the parent branch is not one of them. A
+ * project declaring no major branch at all gives nothing to compare with: its parent branch is accepted.
+ */
+export function findBackpromoteParentBranchRefusal(parentBranch: string, majorBranches: string[]): { majorBranches: string[] } | null {
+  const branches = (majorBranches || []).filter((branch) => !!branch);
+  return branches.length > 0 && !branches.includes(parentBranch) ? { majorBranches: branches } : null;
+}
+
+export interface BackpromoteWorkingBranch {
+  /**
+   * currentBranch: the run works on the checked out branch.
+   * newBackpromoteBranch: it works on a new local backpromote/<parent>/<date> branch created from the
+   * remote parent branch.
+   */
+  mode: 'currentBranch' | 'newBackpromoteBranch';
+  /** userStoryBranch and backpromoteBranch stay on the current branch, the others get a new one */
+  reason: 'userStoryBranch' | 'backpromoteBranch' | 'majorBranch' | 'promotionBranch' | 'retrofitBranch' | 'notUpToDate';
+  /** The branch the run brings the user back to, null when it stays on the current branch */
+  returnBranch: string | null;
+}
+
+/**
+ * Where a backpromote works. It stays on a User Story branch that already contains the latest commit
+ * of the parent branch, and on a backpromote branch a previous run created (a merge to finish).
+ * Anything else, a major, promotion or retrofit branch, or a User Story branch behind its parent
+ * branch, gets a new local backpromote branch from the remote parent branch: a run never works on a
+ * major branch, so nothing can be committed there by accident.
+ */
+export function decideBackpromoteWorkingBranch(options: {
   currentBranch: string;
-  parentBranch: string | null;
+  parentBranch: string;
   majorBranches: string[];
-}): BackpromoteBranchRefusal | null {
-  const currentBranch = options.currentBranch || '';
-  const majorBranches = (options.majorBranches || []).filter((branch) => !!branch);
-  if (majorBranches.includes(currentBranch)) {
-    return { reason: 'majorBranch' };
+  upToDate: boolean;
+  /** The return branch a previous run recorded on the current branch, when it created it */
+  backpromoteReturnBranch: string | null;
+}): BackpromoteWorkingBranch {
+  if (options.backpromoteReturnBranch) {
+    return { mode: 'currentBranch', reason: 'backpromoteBranch', returnBranch: options.backpromoteReturnBranch };
   }
-  if (isPromotionBranchName(currentBranch)) {
-    return { reason: 'promotionBranch' };
+  const kind = options.currentBranch === options.parentBranch ? 'majorBranch' : classifyBackpromoteCurrentBranch(options.currentBranch, options.majorBranches);
+  if (kind !== 'userStoryBranch') {
+    return { mode: 'newBackpromoteBranch', reason: kind, returnBranch: options.currentBranch };
   }
-  if (isRetrofit(currentBranch)) {
-    return { reason: 'retrofitBranch' };
+  if (!options.upToDate) {
+    return { mode: 'newBackpromoteBranch', reason: 'notUpToDate', returnBranch: options.currentBranch };
   }
-  if (options.parentBranch === null) {
-    return null;
+  return { mode: 'currentBranch', reason: 'userStoryBranch', returnBranch: null };
+}
+
+/**
+ * The parent branch a backpromote comes from when none is given: the parent branch of a backpromote
+ * branch, the branch the User Story was created from (hardis:work:new), the current branch when it is
+ * a major branch, the source branch of a promotion branch (where its stories were merged, as for the
+ * developer orgs), then its target branch, then the development branch.
+ */
+export function guessBackpromoteParentBranch(options: {
+  currentBranch: string;
+  originBranch: string | null;
+  backpromoteParentBranch: string | null;
+  majorBranches: string[];
+  developmentBranch: string | null;
+}): string {
+  if (options.backpromoteParentBranch) {
+    return options.backpromoteParentBranch;
   }
-  if (options.parentBranch === currentBranch) {
-    return { reason: 'sameBranch' };
+  if (options.originBranch) {
+    return options.originBranch;
   }
-  if (majorBranches.length > 0 && !majorBranches.includes(options.parentBranch)) {
-    return { reason: 'parentNotMajor', majorBranches };
+  const majorBranches = options.majorBranches || [];
+  if (majorBranches.includes(options.currentBranch)) {
+    return options.currentBranch;
   }
-  return null;
+  const promotion = parsePromotionBranchName(options.currentBranch);
+  if (promotion && majorBranches.includes(promotion.sourceBranch)) {
+    return promotion.sourceBranch;
+  }
+  if (promotion && majorBranches.includes(promotion.targetBranch)) {
+    return promotion.targetBranch;
+  }
+  return options.developmentBranch || majorBranches[0] || 'integration';
+}
+
+/** Name of a new backpromote branch: backpromote/<parent branch>/<YYYY-MM-DD>-<HHMM> (UTC), with -2, -3... when taken */
+export function buildBackpromoteBranchName(parentBranch: string, date: Date, existingBranches: string[] = []): string {
+  const stamp = date.toISOString();
+  const base = `backpromote/${parentBranch}/${stamp.substring(0, 10)}-${stamp.substring(11, 13)}${stamp.substring(14, 16)}`;
+  const taken = new Set(existingBranches);
+  if (!taken.has(base)) {
+    return base;
+  }
+  let counter = 2;
+  while (taken.has(`${base}-${counter}`)) {
+    counter++;
+  }
+  return `${base}-${counter}`;
 }
 
 /** Number of git conflict blocks left in a file content */

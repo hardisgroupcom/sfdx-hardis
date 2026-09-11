@@ -20,7 +20,7 @@ Runbook section 6bis (steps B0 to B17, Pull Request comment consistency checks C
 |------|----------|--------|--------------|--------|
 | B0 Not connected to the git provider | plan `blocked` on `gitProvider`, run exits 1 before listing anything | OK | OK | OK |
 | B1 Org of a major branch | plan `blocked` naming `uat`, run exits 1 | OK | OK | OK |
-| B1b Promotion branch (added after the three runs) | plan `blocked` on `currentBranch` naming a promotion branch, run exits 1 | OK | not run | not run |
+| B1b Promotion branch (added after the three runs) | plan for a new backpromote branch created from `integration` (the source branch of the promotion branch), return branch the promotion branch, nothing checked out | OK | not run | not run |
 | B1c Parent branch not a major branch (added after the three runs) | plan `blocked` on `parentBranch` | OK | not run | not run |
 | B2 Production org | plan `blocked`, `is a production org` | OK | OK | OK |
 | B3 Plan | `ready`, `scratch`, S1 S2 S3 pending and trackable, items `newToOrg`, four actions | OK | OK | OK |
@@ -38,6 +38,8 @@ Runbook section 6bis (steps B0 to B17, Pull Request comment consistency checks C
 | B15 Terminal prompts | answered by hand | not covered | not covered | not covered |
 | B16 Refreshed sandbox (new org) | S1 S2 S3 pending again, each naming the first org in `backpromotedTo` | OK | OK | OK |
 | B17 Second org backpromoted | exit 0 | OK | OK | OK |
+| B18 Behind its parent branch (added after the three runs) | plan `newBackpromoteBranch` (`notUpToDate`); the run creates `backpromote/integration/<date>`, deploys, comes back to `feature/E2E-401-dev` and deletes the empty branch | OK | not run | not run |
+| B19 Merge on a new backpromote branch (added after the three runs) | `--prepare-merge` leaves the working tree on the backpromote branch; the merged run commits `chore(sfdx-hardis): backpromote merge of ApexClass:PromoE2EAlphaTest from integration` there, keeps the branch and comes back, clean; the org holds both lines | OK | not run | not run |
 
 ## Pull Request comment consistency
 
@@ -50,7 +52,7 @@ Runbook section 6bis (steps B0 to B17, Pull Request comment consistency checks C
 | C3 | B11 | S7 lists the org, deployed | 7/7 | 7/7 | 7/7 |
 | C4 | B13 | S8 and S9 list the org, deployed | 14/14 | 14/14 | 14/14 |
 | C5 | B17 | S3 still has **one** history comment, now with **two rows** (both orgs, `e2e-pre-S3` success in each); S1 still one row | 20/20 | 20/20 | 20/20 |
-| C6 | end | every history comment: at most one per Pull Request, each org listed once, records well formed, visible row matching the hidden record, recorded commit equal to the merge commit the plan lists | 51/51 | 51/51 | 51/51 |
+| C6 | end | every history comment: at most one per Pull Request, each org listed once, records well formed, visible row matching the hidden record, recorded commit equal to the merge commit the plan lists (S10 and S11 of B18 and B19 included on the replay) | 51/51, replay 67/67 | 51/51 | 51/51 |
 
 ## What the runs found
 
@@ -62,7 +64,8 @@ Product fixes (all in PR #2192):
 4. **`--json` stdout started with `WS Client started`**, and the panel's background calls opened a command tab in VS Code. No WebSocket for `--plan` and `--prepare-merge --json`, the line goes to stderr in `--json` runs.
 5. **The first commit of the repository broke an explicit selection without `--from`** (`--from is not a valid sha pointer <root>^1`). Commits without a first parent are not listed, and in explicit mode only the groups after the last backpromoted one are recomputed.
 6. **`hardis-report/` files blocked the clean tree check** after a first run. They are ignored.
-7. **A promotion branch, a retrofit branch or a parent branch that is not a major branch was accepted** (found reviewing the panel on a real project, after the three runs). A backpromote now runs only from a User Story branch whose parent is a major branch; B1b and B1c were added and run on GitHub against the same scratch org.
+7. **A backpromote could run on a promotion, retrofit or major branch, or on a User Story branch behind its parent branch** (found reviewing the panel on a real project, after the three runs). It now never works on any of them: the developer picks the major branch to backpromote from, the run stays on an up to date User Story branch, and otherwise works on a new local `backpromote/<parent>/<date>` branch created from the remote parent branch, then comes back. B1b, B18 and B19 were added and run on GitHub against the same scratch org.
+8. **A report file name broke on a branch name with more than one slash** (`backpromote/integration/<date>`, or a GitLab `CI_COMMIT_REF_NAME` like `feature/team/story`): the deployment succeeded, then the run failed writing its log into a folder that does not exist. Every slash of the branch part is now replaced in report file names. On B19 the failure also proved the safety path: with the merged file still uncommitted, the run stayed on the backpromote branch; the next run from there committed and came back.
 
 Test harness only (the product already handles these, the scripts did not):
 

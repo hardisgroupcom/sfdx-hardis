@@ -1,0 +1,15 @@
+{
+  "exitStatus": 0,
+  "workingBranch": {
+    "mode": "newBackpromoteBranch",
+    "reason": "promotionBranch",
+    "returnBranch": "promotion/integration/uat/2026-09-11-0859"
+  },
+  "checks": [
+    {
+      "id": "currentBranch",
+      "ok": true,
+      "messageContains": "is a promotion branch: the backpromote runs on a new local branch created from integration"
+    }
+  ]
+}

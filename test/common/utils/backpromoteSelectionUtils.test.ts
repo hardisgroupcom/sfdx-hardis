@@ -2,11 +2,15 @@
 import { expect } from 'chai';
 import {
   BackpromoteGroupStatus,
+  buildBackpromoteBranchName,
   buildBackpromoteMergePrompt,
+  classifyBackpromoteCurrentBranch,
+  decideBackpromoteWorkingBranch,
+  findBackpromoteParentBranchRefusal,
+  guessBackpromoteParentBranch,
   buildBackpromoteRunCommand,
   countConflictMarkerBlocks,
   defaultGroupSelection,
-  findBackpromoteBranchRefusal,
   findBackpromoteTargetOrgRefusal,
   findItemsAlsoChangedByUnselected,
   findNewestDoneGroupIndex,
@@ -154,36 +158,76 @@ describe('selectDeltaUnion()', () => {
   });
 });
 
-describe('findBackpromoteBranchRefusal()', () => {
+describe('backpromote working branch', () => {
   const majorBranches = ['integration', 'uat', 'preprod', 'main'];
-  const refusal = (currentBranch: string, parentBranch: string | null, branches = majorBranches) =>
-    findBackpromoteBranchRefusal({ currentBranch, parentBranch, majorBranches: branches });
+  const decide = (currentBranch: string, upToDate: boolean, backpromoteReturnBranch: string | null = null) =>
+    decideBackpromoteWorkingBranch({ currentBranch, parentBranch: 'integration', majorBranches, upToDate, backpromoteReturnBranch });
 
-  it('accepts a User Story branch backpromoted from a major branch', () => {
-    expect(refusal('feature/MKTCRMHG-1016-business-model', null)).to.be.null;
-    expect(refusal('feature/MKTCRMHG-1016-business-model', 'integration')).to.be.null;
+  it('stays on a User Story branch up to date with the parent branch', () => {
+    expect(decide('feature/MKTCRMHG-1016-business-model', true)).to.deep.equal({ mode: 'currentBranch', reason: 'userStoryBranch', returnBranch: null });
   });
 
-  it('refuses a major branch, a promotion branch and a retrofit branch, before the parent branch is known', () => {
-    expect(refusal('uat', null)).to.deep.equal({ reason: 'majorBranch' });
-    expect(refusal('promotion/integration/uat/2026-09-11-0859', null)).to.deep.equal({ reason: 'promotionBranch' });
-    expect(refusal('promotion/uat/preprod/2026-09-06-1', 'preprod')).to.deep.equal({ reason: 'promotionBranch' });
-    expect(refusal('retrofit/from-main', 'integration')).to.deep.equal({ reason: 'retrofitBranch' });
+  it('works on a new backpromote branch when the User Story branch is behind the parent branch, and comes back', () => {
+    expect(decide('feature/MKTCRMHG-1016-business-model', false)).to.deep.equal({
+      mode: 'newBackpromoteBranch',
+      reason: 'notUpToDate',
+      returnBranch: 'feature/MKTCRMHG-1016-business-model',
+    });
+  });
+
+  it('never works on a major, promotion or retrofit branch, even up to date', () => {
+    expect(decide('integration', true)).to.deep.equal({ mode: 'newBackpromoteBranch', reason: 'majorBranch', returnBranch: 'integration' });
+    expect(decide('uat', true).reason).to.equal('majorBranch');
+    expect(decide('promotion/integration/uat/2026-09-11-0859', true)).to.deep.equal({
+      mode: 'newBackpromoteBranch',
+      reason: 'promotionBranch',
+      returnBranch: 'promotion/integration/uat/2026-09-11-0859',
+    });
+    expect(decide('retrofit/from-main', true).reason).to.equal('retrofitBranch');
+  });
+
+  it('never works on the parent branch itself, even when the project declares no major branch', () => {
+    expect(
+      decideBackpromoteWorkingBranch({ currentBranch: 'develop', parentBranch: 'develop', majorBranches: [], upToDate: true, backpromoteReturnBranch: null }).mode
+    ).to.equal('newBackpromoteBranch');
+  });
+
+  it('stays on a backpromote branch a previous run created, to finish its merge', () => {
+    expect(decide('backpromote/integration/2026-09-11-0859', false, 'feature/E2E-401-dev')).to.deep.equal({
+      mode: 'currentBranch',
+      reason: 'backpromoteBranch',
+      returnBranch: 'feature/E2E-401-dev',
+    });
   });
 
   it('treats a branch only named like a promotion or retrofit branch as a User Story branch', () => {
-    expect(refusal('promotion/fix-labels', 'integration')).to.be.null;
-    expect(refusal('retrofitting-legacy', 'integration')).to.be.null;
+    expect(classifyBackpromoteCurrentBranch('promotion/fix-labels', majorBranches)).to.equal('userStoryBranch');
+    expect(classifyBackpromoteCurrentBranch('retrofitting-legacy', majorBranches)).to.equal('userStoryBranch');
   });
 
-  it('refuses the current branch as its own parent, and a parent branch that is not a major branch', () => {
-    expect(refusal('feature/E2E-401-dev', 'feature/E2E-401-dev')).to.deep.equal({ reason: 'sameBranch' });
-    expect(refusal('feature/E2E-401-dev', 'feature/E2E-105-apex')).to.deep.equal({ reason: 'parentNotMajor', majorBranches });
+  it('refuses a parent branch that is not a major branch, unless the project declares none', () => {
+    expect(findBackpromoteParentBranchRefusal('integration', majorBranches)).to.be.null;
+    expect(findBackpromoteParentBranchRefusal('feature/E2E-105-apex', majorBranches)).to.deep.equal({ majorBranches });
+    expect(findBackpromoteParentBranchRefusal('develop', [])).to.be.null;
   });
 
-  it('accepts any parent branch when the project declares no major branch, and still refuses a promotion branch', () => {
-    expect(refusal('feature/E2E-401-dev', 'develop', [])).to.be.null;
-    expect(refusal('promotion/integration/uat/2026-09-11-0859', 'integration', [])).to.deep.equal({ reason: 'promotionBranch' });
+  it('guesses the parent branch from the current branch', () => {
+    const guess = (currentBranch: string, originBranch: string | null = null, backpromoteParentBranch: string | null = null) =>
+      guessBackpromoteParentBranch({ currentBranch, originBranch, backpromoteParentBranch, majorBranches, developmentBranch: 'integration' });
+    expect(guess('feature/MKTCRMHG-948-order-id', 'uat')).to.equal('uat');
+    expect(guess('preprod')).to.equal('preprod');
+    expect(guess('promotion/integration/uat/2026-09-11-0859')).to.equal('integration');
+    expect(guess('promotion/hotfix/uat/2026-09-11-0859')).to.equal('uat');
+    expect(guess('backpromote/preprod/2026-09-11-0859', null, 'preprod')).to.equal('preprod');
+    expect(guess('feature/no-origin')).to.equal('integration');
+  });
+
+  it('names a new backpromote branch after the parent branch and the UTC minute, without reusing a name', () => {
+    const date = new Date('2026-09-11T08:59:30.000Z');
+    expect(buildBackpromoteBranchName('integration', date)).to.equal('backpromote/integration/2026-09-11-0859');
+    expect(
+      buildBackpromoteBranchName('integration', date, ['backpromote/integration/2026-09-11-0859', 'backpromote/integration/2026-09-11-0859-2'])
+    ).to.equal('backpromote/integration/2026-09-11-0859-3');
   });
 });
 

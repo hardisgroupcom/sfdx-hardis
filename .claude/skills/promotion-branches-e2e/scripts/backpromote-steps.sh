@@ -95,15 +95,14 @@ grep -q "org of the uat branch" "$LOGS/bp-refused-major-run.log" && [ "$code" !=
 ok_if B1-run $? "exit=$code"
 git checkout -- config/branches
 
-echo; echo "=== B1b promotion branch ==="
+echo; echo "=== B1b promotion branch: a plan for a new backpromote branch, nothing checked out ==="
 PROMO_BRANCH=promotion/integration/uat/2026-09-11-0859
 git checkout -q -b "$PROMO_BRANCH"
-e2e_backpromote_json bp-refused-promotion --plan --from "$ROOT"
-check_plan B1b-plan bp-refused-promotion "$BPX/refused-promotion.json"
-e2e_backpromote bp-refused-promotion-run --agent --from "$ROOT"
-code=$?
-grep -q "promotion branch" "$LOGS/bp-refused-promotion-run.log" && [ "$code" != "0" ]
-ok_if B1b-run $? "exit=$code"
+BP_BRANCHES_BEFORE=$(git branch --list 'backpromote/*' | tr -d ' *')
+e2e_backpromote_json bp-promotion-branch --plan --from "$ROOT"
+check_plan B1b-plan bp-promotion-branch "$BPX/promotion-branch.json"
+[ "$(git branch --show-current)" = "$PROMO_BRANCH" ] && [ "$(git branch --list 'backpromote/*' | tr -d ' *')" = "$BP_BRANCHES_BEFORE" ]
+ok_if B1b-no-checkout $? "on $(git branch --show-current), backpromote branches: $(git branch --list 'backpromote/*' | tr -d ' ' | tr '\n' ' ')"
 git checkout -q feature/E2E-401-dev && git branch -q -D "$PROMO_BRANCH"
 
 echo; echo "=== B1c parent branch not a major branch ==="
@@ -286,6 +285,60 @@ cat >"$LOGS/c5.json" <<JSON
 JSON
 check_comments C5-comments "$LOGS/c5.json" "$S1" "$S3"
 
+echo; echo "=== B18 behind its parent branch: a new backpromote branch, deleted at the end ==="
+git checkout -q -f integration && git pull -q origin integration && git checkout -q -b feature/E2E-108-refresh
+echo "refreshed while the developer branch is behind" >>force-app/main/default/staticresources/E2E_S2.resource
+git commit -qam "feat: E2E-108 refresh E2E_S2"
+git push -q -u origin feature/E2E-108-refresh
+# Not merge_story: the developer branch must stay behind integration
+S10=$(bp_open_and_merge feature/E2E-108-refresh "E2E-108 refresh E2E_S2")
+git checkout -q feature/E2E-401-dev && git fetch -q origin
+export BP_VAR_S10="$S10"
+echo "story $S10 merged, developer branch left behind"
+e2e_backpromote_json bp-plan-behind --plan
+check_plan B18-plan bp-plan-behind "$BPX/plan-behind.json"
+# The backpromote branches a replay of the steps may already hold (B19 keeps its own)
+BP_BRANCHES_BEFORE=$(git branch --list 'backpromote/*' | tr -d ' *')
+e2e_backpromote bp-run-behind --agent --pull-requests "$S10"
+code=$?
+ok_if B18-exit "$code" "exit=$code"
+grep -q "Creating the local branch backpromote/integration/" "$LOGS/bp-run-behind.log" && grep -q "Back on feature/E2E-401-dev" "$LOGS/bp-run-behind.log"
+ok_if B18-log $? "created a backpromote branch, came back"
+[ "$(git branch --show-current)" = "feature/E2E-401-dev" ] && [ "$(git branch --list 'backpromote/*' | tr -d ' *')" = "$BP_BRANCHES_BEFORE" ]
+ok_if B18-branches $? "on $(git branch --show-current), backpromote branches: $(git branch --list 'backpromote/*' | tr -d ' ' | tr '\n' ' ')"
+
+echo; echo "=== B19 merge on a new backpromote branch: committed there, kept, back on the developer branch ==="
+CLS=force-app/main/default/classes/PromoE2EAlphaTest.cls
+sed -i "s/'incoming from integration'/'changed again in the dev org'/" "$CLS"
+env -u NODE_OPTIONS sf project deploy start --metadata ApexClass:PromoE2EAlphaTest --target-org "$DEVORG" --ignore-conflicts >"$LOGS/bp-org-change-alpha-2.log" 2>&1
+git checkout -- "$CLS"
+git checkout -q -f integration && git pull -q origin integration && git checkout -q -b feature/E2E-109-apex
+sed -i "s/'incoming from integration'/'incoming again from integration'/" "$CLS"
+git commit -qam "feat: E2E-109 apex change"
+git push -q -u origin feature/E2E-109-apex
+S11=$(bp_open_and_merge feature/E2E-109-apex "E2E-109 apex change")
+git checkout -q feature/E2E-401-dev && git fetch -q origin
+export BP_VAR_S11="$S11"
+echo "story $S11 merged, developer branch left behind"
+e2e_backpromote_json bp-prepare-branch --pull-requests "$S11" --prepare-merge ApexClass:PromoE2EAlphaTest
+check_plan B19-prepare bp-prepare-branch "$BPX/prepare-branch.json"
+MERGE_BRANCH=$(json_field "$LOGS/bp-prepare-branch.json" result.backpromoteBranch)
+[ -n "$MERGE_BRANCH" ] && [ "$(git branch --show-current)" = "$MERGE_BRANCH" ] && grep -q "^<<<<<<< your org" "$CLS"
+ok_if B19-on-branch $? "on $(git branch --show-current), merge written on $MERGE_BRANCH"
+NEXT=$(json_field "$LOGS/bp-prepare-branch.json" result.nextCommand)
+node -e "const fs=require('fs');const f='$CLS';const s=fs.readFileSync(f,'utf8');fs.writeFileSync(f,s.replace(/<<<<<<< your org\r?\n([\s\S]*?)\r?\n\|\|\|\|\|\|\| [\s\S]*?\r?\n=======\r?\n([\s\S]*?)\r?\n>>>>>>> integration/,(m,org,inc)=>org+'\n'+inc))"
+eval "e2e_backpromote bp-merged-branch --agent ${NEXT#sf hardis:work:backpromote }"
+code=$?
+ok_if B19-exit "$code" "exit=$code"
+[ "$(git branch --show-current)" = "feature/E2E-401-dev" ] && git log -1 --format=%s "$MERGE_BRANCH" 2>/dev/null | grep -q "backpromote merge of ApexClass:PromoE2EAlphaTest"
+ok_if B19-branches $? "on $(git branch --show-current), $MERGE_BRANCH: $(git log -1 --format=%s "$MERGE_BRANCH" 2>/dev/null)"
+DIRTY=$(git status --porcelain | grep -v "hardis-report/" | tr '\n' ' ')
+[ -z "$DIRTY" ]
+ok_if B19-tree $? "status: $DIRTY"
+BODY=$(apex_body PromoE2EAlphaTest)
+echo "$BODY" | grep -q "changed again in the dev org" && echo "$BODY" | grep -q "incoming again from integration"
+ok_if B19-org $? "org body keeps both lines"
+
 echo; echo "=== C6 every history comment of the repository ==="
 e2e_backpromote_json bp-plan-final --plan --from "$ROOT"
 cat >"$LOGS/c6.json" <<JSON
@@ -295,7 +348,9 @@ cat >"$LOGS/c6.json" <<JSON
   "$S3": { "orgCount": 2, "orgs": [{ "orgId": "$ORGID", "commit": "$(commit_of bp-plan-final "$S3")" }, { "orgId": "$ORG2ID", "commit": "$(commit_of bp-plan-final "$S3")" }] },
   "$S7": { "orgCount": 1, "orgs": [{ "orgId": "$ORGID", "deployed": true, "commit": "$(commit_of bp-plan-final "$S7")" }] },
   "$S8": { "orgCount": 1, "orgs": [{ "orgId": "$ORGID", "deployed": true, "commit": "$(commit_of bp-plan-final "$S8")" }] },
-  "$S9": { "orgCount": 1, "orgs": [{ "orgId": "$ORGID", "deployed": true, "commit": "$(commit_of bp-plan-final "$S9")" }] }
+  "$S9": { "orgCount": 1, "orgs": [{ "orgId": "$ORGID", "deployed": true, "commit": "$(commit_of bp-plan-final "$S9")" }] },
+  "$S10": { "orgCount": 1, "orgs": [{ "orgId": "$ORGID", "deployed": true, "commit": "$(commit_of bp-plan-final "$S10")" }] },
+  "$S11": { "orgCount": 1, "orgs": [{ "orgId": "$ORGID", "deployed": true, "commit": "$(commit_of bp-plan-final "$S11")" }] }
 } }
 JSON
 check_comments C6-comments "$LOGS/c6.json"

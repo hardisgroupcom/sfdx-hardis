@@ -8,7 +8,6 @@ import {
   createTempDir,
   execCommand,
   git,
-  gitFetch,
   isCI,
   uxLog,
 } from './index.js';
@@ -28,6 +27,8 @@ import { findUserByUsernameLike } from './orgUtils.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { parsePromotionBranchName } from './promotionBranchUtils.js';
+import { guessBackpromoteParentBranch } from './backpromoteSelectionUtils.js';
+import { readBackpromoteBranchInfo } from './backpromoteBranchUtils.js';
 import { DEV_SANDBOXES_BRANCH_NAME, evaluateActionBranchFilter } from './actionUtils.js';
 import { createBlankSfdxProject } from './projectUtils.js';
 import { OrgDiffItem, WebSocketClient } from '../websocketClient.js';
@@ -82,16 +83,21 @@ export async function resolveParentBranch(
   }
   const config = await getConfig('project');
   const userConfig = await getConfig('user');
-  // The branch that the current feature branch was created from (set by work:new)
-  const originBranch = userConfig?.localStorageBranchTargets?.[currentBranch] || null;
-  const recommendedBranch = originBranch || config.developmentBranch || 'integration';
+  const majorOrgs = await listMajorOrgs();
+  const recommendedBranch = guessBackpromoteParentBranch({
+    currentBranch,
+    // The branch that the current feature branch was created from (set by work:new)
+    originBranch: userConfig?.localStorageBranchTargets?.[currentBranch] || null,
+    backpromoteParentBranch: readBackpromoteBranchInfo(currentBranch).parentBranch,
+    majorBranches: majorOrgs.map((org: any) => org.branchName).filter(Boolean),
+    developmentBranch: config.developmentBranch || null,
+  });
 
   if (agentMode || isCI) {
     uxLog('action', commandThis, c.cyan(t('backpromoteParentBranchAutoSelected', { parentBranch: c.green(recommendedBranch) })));
     return recommendedBranch;
   }
   // Interactive: let user choose from major org branches (+ developmentBranch)
-  const majorOrgs = await listMajorOrgs();
   const majorBranchNames = new Set(majorOrgs.map((org: any) => org.branchName).filter(Boolean));
   // Also include developmentBranch even if it's not a major org
   if (config.developmentBranch) {
@@ -574,44 +580,6 @@ async function loadPrConfig(prId: number): Promise<any | null> {
   }
 }
 
-// ---- Ensure branch is up to date with parent ----
-
-export async function ensureBranchUpToDate(
-  parentBranch: string,
-  currentBranch: string,
-  commandThis: any,
-): Promise<void> {
-  uxLog('action', commandThis, c.cyan(t('backpromoteCheckingBranchUpToDate', {
-    parentBranch: c.green(parentBranch),
-    currentBranch: c.green(currentBranch),
-  })));
-
-  // Fetch latest state of the parent branch
-  await gitFetch({ output: true });
-
-  // Check if the feature branch contains the latest parent branch commit
-  const parentRef = (
-    await execCommand(`git rev-parse origin/${parentBranch}`, commandThis, { output: false })
-  ).stdout.replace(/[\n\r]/g, '');
-  const mergeBase = (
-    await execCommand(`git merge-base origin/${parentBranch} ${currentBranch}`, commandThis, { output: false })
-  ).stdout.replace(/[\n\r]/g, '');
-
-  if (parentRef !== mergeBase) {
-    throw new SfError(
-      t('backpromoteBranchNotUpToDate', {
-        currentBranch,
-        parentBranch,
-      })
-    );
-  }
-
-  uxLog('log', commandThis, c.cyan(t('backpromoteBranchUpToDate', {
-    currentBranch: c.green(currentBranch),
-    parentBranch: c.green(parentBranch),
-  })));
-}
-
 // ---- Detect org conflicts ----
 
 export interface OrgConflictResult {
@@ -631,6 +599,8 @@ export async function detectOrgConflicts(
   targetUsername: string,
   commandThis: any,
   debugMode: boolean,
+  // Where the local files are read, when they are not the checked out ones (a plan for a parent branch)
+  localPackageDirectories: Array<{ path: string; fullPath: string }> = [],
 ): Promise<OrgConflictResult> {
   uxLog('action', commandThis, c.cyan(t('backpromoteDetectingOrgConflicts')));
 
@@ -690,7 +660,7 @@ export async function detectOrgConflicts(
     const members = deltaContent[metadataType];
     // Locate the local and the retrieved source files of all the members in a single pass each,
     // instead of walking the package directories once per member
-    const localFileByMember = await MetadataUtils.findMetaFilesFromTypeAndNames(metadataType, members);
+    const localFileByMember = await MetadataUtils.findMetaFilesFromTypeAndNames(metadataType, members, localPackageDirectories);
     const retrievedFileByMember = await MetadataUtils.findMetaFilesFromTypeAndNames(
       metadataType,
       members,

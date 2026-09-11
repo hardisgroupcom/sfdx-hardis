@@ -1,6 +1,0 @@
-{
-  "exitStatus": 0,
-  "status": "blocked",
-  "checks": [{ "id": "currentBranch", "ok": false, "messageContains": "promotion branch" }],
-  "groupCount": 0
-}

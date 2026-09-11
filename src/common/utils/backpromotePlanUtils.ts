@@ -32,6 +32,7 @@ import {
   orgShortName,
 } from './backpromoteStateUtils.js';
 import {
+  BackpromoteWorkingBranch,
   BackpromoteDeltaUnion,
   BackpromoteGroupDelta,
   BackpromoteTargetOrgRefusal,
@@ -46,7 +47,7 @@ import {
 // ---- Plan returned by --plan --json (read by the VS Code Backpromote panel) ----
 
 export interface BackpromotePlanCheck {
-  id: 'gitProvider' | 'targetOrg' | 'currentBranch' | 'parentBranch' | 'gitClean' | 'upToDate';
+  id: 'gitProvider' | 'targetOrg' | 'currentBranch' | 'parentBranch' | 'gitClean';
   ok: boolean;
   message: string;
   details?: string[];
@@ -60,7 +61,8 @@ export interface BackpromotePlan {
   currentBranch: string;
   parentBranch: string;
   parentBranchChoices: string[];
-  targetOrg: { username: string; instanceUrl: string; orgType: 'sandbox' | 'scratch' | 'production'; orgId: string; orgName: string };
+  /** Where a run works, null when the plan stopped before knowing */
+  workingBranch: BackpromoteWorkingBranch | null;  targetOrg: { username: string; instanceUrl: string; orgType: 'sandbox' | 'scratch' | 'production'; orgId: string; orgName: string };
   checks: BackpromotePlanCheck[];
   /** Pass it as --from to also list the Pull Requests merged before the last one backpromoted to this org */
   olderFrom: string | null;
@@ -113,6 +115,10 @@ export interface BackpromotePrepareMergeResult {
   prompt: string;
   promptFile: string;
   nextCommand: string;
+  /** The backpromote branch the merge was written on, where the user stays to solve it */
+  backpromoteBranch: string | null;
+  /** The branch the run of nextCommand brings the user back to */
+  returnBranch: string | null;
 }
 
 // ---- Target org ----
@@ -257,7 +263,10 @@ export async function computeBackpromoteGroupDeltas(groups: BackpromotePrGroup[]
 // ---- Files ----
 
 /** Local source file of each Type:Name item, or null when it cannot be found */
-export async function findLocalMetadataFiles(keys: Iterable<string>): Promise<Map<string, string | null>> {
+export async function findLocalMetadataFiles(
+  keys: Iterable<string>,
+  packageDirectories: Array<{ path: string; fullPath: string }> = []
+): Promise<Map<string, string | null>> {
   const namesByType = new Map<string, string[]>();
   for (const key of keys) {
     const parsed = parseMetadataKey(key);
@@ -267,7 +276,7 @@ export async function findLocalMetadataFiles(keys: Iterable<string>): Promise<Ma
   }
   const files = new Map<string, string | null>();
   for (const [type, names] of namesByType) {
-    const found = await MetadataUtils.findMetaFilesFromTypeAndNames(type, names);
+    const found = await MetadataUtils.findMetaFilesFromTypeAndNames(type, names, packageDirectories);
     for (const name of names) {
       const file = found.get(name) ?? null;
       files.set(toMetadataKey(type, name), file && fs.existsSync(file) ? file : null);
@@ -359,6 +368,7 @@ export function buildBackpromotePlan(options: {
   currentBranch: string;
   parentBranch: string;
   parentBranchChoices: string[];
+  workingBranch?: BackpromoteWorkingBranch | null;
   targetOrg: BackpromoteTargetOrgInfo;
   gitProviderName: BackpromoteGitProviderName | null;
   checks: BackpromotePlanCheck[];
@@ -457,6 +467,7 @@ export function buildBackpromotePlan(options: {
     currentBranch: options.currentBranch,
     parentBranch: options.parentBranch,
     parentBranchChoices: options.parentBranchChoices,
+    workingBranch: options.workingBranch || null,
     targetOrg: {
       username: options.targetOrg.username,
       instanceUrl: options.targetOrg.instanceUrl,

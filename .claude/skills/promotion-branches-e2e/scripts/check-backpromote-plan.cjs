@@ -9,6 +9,7 @@
 //   errorContains       text of the error message of a failed run
 //   status              plan status: ready | blocked | upToDate
 //   orgType             sandbox | scratch | production
+//   workingBranch       { mode, reason, returnBranch }  where a run works (currentBranch | newBackpromoteBranch)
 //   checks              [{ id, ok, messageContains, detailsContain: ["file"], detailsExclude: "folder/" }]
 //   groupCount          number of groups listed
 //   groups              [{ pullRequests: [1], status, trackable, backpromotedToThisOrg: true, backpromotedToCount: 1,
@@ -22,6 +23,8 @@
 //   mergeFiles          [{ key, conflictBlocks }]        (--prepare-merge)
 //   promptContains      ["text"]                         (--prepare-merge)
 //   nextCommandContains ["text"]                         (--prepare-merge)
+//   backpromoteBranchPrefix "backpromote/integration/"  (--prepare-merge) branch the merge was written on
+//   returnBranch        branch the run brings the user back to (--prepare-merge)
 const fs = require('fs');
 
 function readSfJson(file) {
@@ -86,6 +89,18 @@ if (expect.status) {
 }
 if (expect.orgType) {
   check(`target org type is ${expect.orgType}`, doc.targetOrg && doc.targetOrg.orgType === expect.orgType, `got ${doc.targetOrg && doc.targetOrg.orgType}`);
+}
+if (expect.workingBranch) {
+  const actual = doc.workingBranch || {};
+  for (const [field, value] of Object.entries(expect.workingBranch)) {
+    check(`working branch ${field} is ${value}`, (actual[field] ?? null) === value, `got ${actual[field]}`);
+  }
+}
+if (expect.backpromoteBranchPrefix) {
+  check(`merge written on ${expect.backpromoteBranchPrefix}...`, String(doc.backpromoteBranch || '').startsWith(expect.backpromoteBranchPrefix), `got ${doc.backpromoteBranch}`);
+}
+if (expect.returnBranch !== undefined) {
+  check(`return branch is ${expect.returnBranch}`, (doc.returnBranch ?? null) === expect.returnBranch, `got ${doc.returnBranch}`);
 }
 for (const expected of expect.checks || []) {
   const found = (doc.checks || []).find((item) => item.id === expected.id);

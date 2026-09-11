@@ -1,0 +1,7 @@
+{
+  "exitStatus": 0,
+  "status": "ready",
+  "workingBranch": { "mode": "newBackpromoteBranch", "reason": "notUpToDate", "returnBranch": "feature/E2E-401-dev" },
+  "checks": [{ "id": "currentBranch", "ok": true, "messageContains": "does not contain the latest commit of integration" }],
+  "groups": [{ "pullRequests": [{{S10}}], "status": "pending", "items": ["StaticResource:E2E_S2"] }]
+}

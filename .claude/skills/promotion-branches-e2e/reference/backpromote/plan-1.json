@@ -2,12 +2,12 @@
   "exitStatus": 0,
   "status": "ready",
   "orgType": "scratch",
+  "workingBranch": { "mode": "currentBranch", "reason": "userStoryBranch", "returnBranch": null },
   "checks": [
     { "id": "gitProvider", "ok": true },
     { "id": "targetOrg", "ok": true },
     { "id": "currentBranch", "ok": true },
-    { "id": "gitClean", "ok": true },
-    { "id": "upToDate", "ok": true }
+    { "id": "gitClean", "ok": true }
   ],
   "groups": [
     { "pullRequests": [{{S1}}], "status": "pending", "trackable": true, "backpromotedToThisOrg": false, "items": ["StaticResource:E2E_S1"], "actionIds": ["e2e-pre-{{S1}}", "e2e-manual-{{S1}}"] },
