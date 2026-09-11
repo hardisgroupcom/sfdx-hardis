@@ -234,7 +234,12 @@ async function readPackageContent(file: string): Promise<Record<string, string[]
 }
 
 /** What each group deploys and deletes, from sfdx-git-delta between the group and its first parent */
-export async function computeBackpromoteGroupDeltas(groups: BackpromotePrGroup[], commandThis: any): Promise<BackpromoteGroupDelta[]> {
+export async function computeBackpromoteGroupDeltas(
+  groups: BackpromotePrGroup[],
+  commandThis: any,
+  // Called before each group, for the progress a VS Code panel shows
+  onGroup?: (index: number, total: number, group: BackpromotePrGroup) => void
+): Promise<BackpromoteGroupDelta[]> {
   if (groups.length === 0) {
     return [];
   }
@@ -244,6 +249,7 @@ export async function computeBackpromoteGroupDeltas(groups: BackpromotePrGroup[]
   // One run at a time: sfdx-git-delta writes the git config of the repository, and two runs in
   // parallel fail on its lock ("could not lock config file .git/config")
   for (let index = 0; index < groups.length; index++) {
+    onGroup?.(index, groups.length, groups[index]);
     const hash = groups[index].commit.hash;
     const outputDir = path.join(rootDir, `${index}-${hash.substring(0, 12)}`);
     await fs.ensureDir(outputDir);

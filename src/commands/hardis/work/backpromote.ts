@@ -74,10 +74,17 @@ import {
 import { getConfig } from '../../../config/index.js';
 import { isPackageXmlEmpty } from '../../../common/utils/xmlUtils.js';
 import { t } from '../../../common/utils/i18n.js';
+import { reportCommandProgress } from '../../../common/utils/progressFileUtils.js';
 import fs from '../../../common/utils/fsUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+/** How a group is named in progress messages: its Pull Requests, or its commit */
+function backpromoteGroupLabel(group: { commit: { hash: string }; associatedPrs: Array<{ id: number }> }): string {
+  const ids = group.associatedPrs.filter((pr) => pr.id > 0).map((pr) => `#${pr.id}`);
+  return ids.length > 0 ? ids.join(', ') : group.commit.hash.substring(0, 7);
+}
 
 /** Where the run works, as the currentBranch check of the plan says it */
 function backpromoteWorkingBranchMessage(workingBranch: BackpromoteWorkingBranch, currentBranch: string, parentBranch: string): string {
@@ -162,6 +169,7 @@ The command's technical implementation involves:
 - **ExcelJS:** Generates Excel conflict reports via \`generateCsvFile\`.
 - **md-to-pdf:** Converts markdown conflict reports to PDF using \`generatePdfFileFromMarkdown\`.
 - **Deployment Actions:** Uses \`ActionsProvider\` to execute deployment actions, with \`authOrg\` for LoginAs authentication.
+- **Progress of a background plan:** when \`SFDX_HARDIS_PROGRESS_FILE\` is set (the VS Code panel sets it), each step of the plan is appended to that file as one JSON line (\`step\`, \`message\`, and \`current\` / \`total\` on counted steps), so the panel shows what the command is doing while it waits for the JSON result.
 </details>
 `;
 
@@ -277,9 +285,11 @@ The command's technical implementation involves:
     const parentBranchChoices = await listBackpromoteParentBranchChoices(projectConfig.developmentBranch || null);
     // A plan always names its parent branch, even when it stops on a failed check
     const planParentBranch = planMode ? await resolveParentBranch(this, flags.parentbranch || null, true, currentBranch) : '';
+    reportCommandProgress({ step: 'targetOrg', message: t('backpromoteProgressTargetOrg') });
     const targetOrg = await getBackpromoteTargetOrgInfo(conn, targetUsername);
 
     // Step 1: the history lives in Pull Request comments, so a git provider connection is required
+    reportCommandProgress({ step: 'gitProvider', message: t('backpromoteProgressGitProvider') });
     const gitProviderCheck = await checkBackpromoteGitProvider(planMode ? planParentBranch : flags.parentbranch || null);
     const gitProviderName = gitProviderCheck.name;
     checks.push({ id: 'gitProvider', ok: gitProviderCheck.ok, message: gitProviderCheck.message });
@@ -341,6 +351,7 @@ The command's technical implementation involves:
 
     // Step 5: where the run works. Never on a major branch: on the current branch when it can receive the
     // backpromote, otherwise on a new local backpromote branch created from the remote parent branch
+    reportCommandProgress({ step: 'fetch', message: t('backpromoteProgressFetch', { parentBranch }) });
     await gitFetch({ output: true });
     const parentRef = await resolveBackpromoteParentRef(parentBranch);
     const backpromoteBranchInfo = readBackpromoteBranchInfo(currentBranch);
@@ -358,7 +369,9 @@ The command's technical implementation involves:
 
     // Step 7: the Pull Requests merged in the parent branch, and what the Pull Request comments say
     // this org already received. The window starts at the newest one already backpromoted here.
+    reportCommandProgress({ step: 'listing', message: t('backpromoteProgressListing', { parentBranch }) });
     const listedGroups = (await listMergedPrsWithCommits(parentRef, currentBranch, fromFlag, this)).filter((group) => hasFirstParent(group.commit.hash));
+    reportCommandProgress({ step: 'history', message: t('backpromoteProgressHistory', { count: listedGroups.length }) });
     const history = await loadBackpromoteHistory(provider, listedGroups, targetOrg.orgId, fromFlag !== null || explicitSelection);
     const groupsOldestFirst = listedGroups.slice(history.windowStartIndex);
     const histories = history.histories;
@@ -437,7 +450,14 @@ The command's technical implementation involves:
     const deltaWaitingIndexes = waitingIndexes.filter((index) => index > deltaAnchorIndex);
     const computedIndexes = [...new Set([...deltaWaitingIndexes, ...selectedIndexes])].sort((a, b) => a - b);
     const computedGroups = computedIndexes.map((index) => groupsOldestFirst[index]);
-    const deltas = checksPassed || !planMode ? await computeBackpromoteGroupDeltas(computedGroups, this) : [];
+    const deltas = checksPassed || !planMode ? await computeBackpromoteGroupDeltas(computedGroups, this, (index, total, group) =>
+          reportCommandProgress({
+            step: 'delta',
+            message: t('backpromoteProgressDelta', { pr: backpromoteGroupLabel(group), current: index + 1, total }),
+            current: index + 1,
+            total,
+          })
+        ) : [];
     const computedHashes = computedGroups.map((group) => group.commit.hash);
     const union = unionGroupDeltas(deltas);
     const selection = selectDeltaUnion(union, selectedHashes, computedHashes);
@@ -512,6 +532,9 @@ The command's technical implementation involves:
 
     // A plan reads the files of the parent branch without checking it out. A run works on a new local
     // backpromote branch when the current branch cannot receive the backpromote.
+    if (planMode && workingBranch.mode === 'newBackpromoteBranch') {
+      reportCommandProgress({ step: 'parentFiles', message: t('backpromoteProgressParentFiles', { parentBranch }) });
+    }
     const localPackageDirectories = planMode && workingBranch.mode === 'newBackpromoteBranch' ? await exportBranchPackageDirectories(parentRef) : [];
     const backpromoteBranch =
       !planMode && workingBranch.mode === 'newBackpromoteBranch' ? await createBackpromoteBranch(parentBranch, parentRef, currentBranch, this) : null;
@@ -525,12 +548,16 @@ The command's technical implementation involves:
       const { packageXml, destructiveXml } = await writeBackpromotePackages(deployKeys, deleteKeys);
 
       // Step 10: items changed in the org
+      if (deployKeys.length > 0) {
+        reportCommandProgress({ step: 'orgCompare', message: t('backpromoteProgressOrgCompare', { count: deployKeys.length }) });
+      }
       const conflictResult = deployKeys.length > 0
         ? await detectOrgConflicts(packageXml, targetUsername, this, debugMode, localPackageDirectories)
         : { conflicts: [], success: true, notInOrgKeys: [] as string[] };
       const conflictsInSelection = conflictResult.conflicts.filter((item) => deployKeys.includes(toMetadataKey(item.metadataType, item.metadataName)));
 
       if (planMode) {
+        reportCommandProgress({ step: 'actions', message: t('backpromoteProgressActions') });
         const localFiles = await findLocalMetadataFiles(selection.items.keys(), localPackageDirectories);
         return buildBackpromotePlan({
           ...planBase,

@@ -64,6 +64,7 @@ The command's technical implementation involves:
 - **ExcelJS:** Generates Excel conflict reports via `generateCsvFile`.
 - **md-to-pdf:** Converts markdown conflict reports to PDF using `generatePdfFileFromMarkdown`.
 - **Deployment Actions:** Uses `ActionsProvider` to execute deployment actions, with `authOrg` for LoginAs authentication.
+- **Progress of a background plan:** when `SFDX_HARDIS_PROGRESS_FILE` is set (the VS Code panel sets it), each step of the plan is appended to that file as one JSON line (`step`, `message`, and `current` / `total` on counted steps), so the panel shows what the command is doing while it waits for the JSON result.
 </details>
 
 

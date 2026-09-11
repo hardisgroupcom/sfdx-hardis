@@ -114,8 +114,13 @@ e2e_backpromote_json bp-refused-prod --plan --from "$ROOT" --target-org "$ORG"
 check_plan B2-plan bp-refused-prod "$BPX/refused-production.json"
 
 echo; echo "=== B3 plan ==="
-e2e_backpromote_json bp-plan-1 --plan --from "$ROOT"
+# The progress file the VS Code panel reads while the plan is computed (node needs a Windows path)
+PROGRESS_FILE="$(cygpath -m "$LOGS" 2>/dev/null || echo "$LOGS")/bp-plan-1.progress.jsonl"
+rm -f "$PROGRESS_FILE"
+SFDX_HARDIS_PROGRESS_FILE="$PROGRESS_FILE" e2e_backpromote_json bp-plan-1 --plan --from "$ROOT"
 check_plan B3-plan bp-plan-1 "$BPX/plan-1.json"
+node -e "const fs=require('fs');const steps=fs.readFileSync(process.argv[1],'utf8').trim().split(/\r?\n/).map((l)=>JSON.parse(l).step);const missing=['targetOrg','gitProvider','fetch','listing','history','delta','orgCompare','actions'].filter((s)=>!steps.includes(s));console.log(missing.length?'missing '+missing.join(','):[...new Set(steps)].join(','));process.exit(missing.length?1:0)" "$PROGRESS_FILE" >"$LOGS/B3-progress.txt" 2>&1
+ok_if B3-progress $? "steps: $(cat "$LOGS/B3-progress.txt")"
 ORGID=$(json_field "$LOGS/bp-plan-1.json" result.targetOrg.orgId)
 ORGNAME=$(json_field "$LOGS/bp-plan-1.json" result.targetOrg.orgName)
 echo "ORGID=$ORGID ORGNAME=$ORGNAME"
