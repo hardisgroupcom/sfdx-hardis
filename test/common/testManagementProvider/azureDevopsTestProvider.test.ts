@@ -164,7 +164,7 @@ describe('AzureDevopsTestProvider', () => {
     it('types a step with an expected result as ValidateStep, and one without as ActionStep', () => {
       const xml = azureDevopsStepsXml([
         { action: 'Ouvrir', expected: 'La page apparait' },
-        { action: 'Fermer', expected: '' },
+        { action: 'Close', expected: '' },
       ]);
       expect(xml).to.contain('<step id="2" type="ValidateStep">');
       expect(xml).to.contain('<step id="3" type="ActionStep">');
