@@ -307,7 +307,7 @@ describe('AzureDevopsTestProvider - api calls through the injected factory', () 
 
   // A live Azure DevOps instance answers a tag CONTAINS with whole-tag matches, so it would
   // not hand us a prefix hit in the first place. These stubs return one anyway: the point is
-  // to pin the provider's own behaviour when a hit is not an exact tag, since that whole-tag
+  // to pin the provider's own behavior when a hit is not an exact tag, since that whole-tag
   // semantic is undocumented and belongs to the Tags field alone. Accepting such a hit would
   // update the wrong work item and then create the right case as a duplicate.
   describe('tag matching beyond the CONTAINS query', () => {

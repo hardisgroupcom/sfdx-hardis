@@ -209,7 +209,7 @@ export class AzureDevopsTestProvider extends TestManagementProviderRoot {
     // already exact and `TESTKIT:T:F1` does NOT match the tag of case `F10`.
     //
     // Each hit is still re-checked against its own `System.Tags` before being accepted. That
-    // whole-tag behaviour is specific to the Tags field and differs from `CONTAINS` on a text
+    // whole-tag behavior is specific to the Tags field and differs from `CONTAINS` on a text
     // field, it is not something the WIQL reference states, and accepting the wrong work item
     // here would update it and then create the right case as a duplicate. The check is free:
     // the work item has to be read anyway to build the reference.
