@@ -56,7 +56,7 @@ This is the only supported way to create a [promotion branch (experimental)](${C
 - checks that \`enablePromotionBranches: true\` is set in the sfdx-hardis configuration;
 - checks that \`allowedPromotionSteps\` declares the steps promotions may run on (ex: \`- source: uat\` / \`target: preprod\`), and keeps to them: only those source and target branches are offered, and naming another one fails;
 - lists the Pull Requests merged into the source branch and not yet promoted to the target branch, and lets you select the ones to carry (or takes them from \`--pull-requests\`). A Pull Request another promotion branch already carries to the same target is left out, unless \`--include-already-promoted\` is passed;
-- creates the branch from the target branch, named \`promotion/<source>/<target>/<YYYY-MM-DD>-<counter>\` (ex: \`promotion/uat/preprod/2026-09-06-1\`), the counter separating several promotions assembled the same day;
+- creates the branch from the target branch, named \`promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>\` (UTC, ex: \`promotion/uat/preprod/2026-09-06-1430\`), with \`-2\`, \`-3\`... added only when that name is already taken;
 - cherry-picks the merge commit of each selected Pull Request, oldest first, with \`-x\` so each commit keeps a pointer to its origin;
 - pushes the branch and creates the Pull Request to the target branch, with a description declaring the carried Pull Requests (\`${PROMOTION_PULL_REQUESTS_KEY}\`), their titles, authors, source branches and tickets.
 
@@ -76,7 +76,7 @@ On a cherry-pick conflict, you choose (or \`--on-conflict\` decides) to:
 - A first-parent commit that only moves other merges (a major-to-major sync like \`integration -> uat\`, a promotion branch merged into its target) is opened up into the first-parent commits it brought in, so each User Story is a candidate of its own instead of the whole sync window being a single row.
 - The branch is created with \`git checkout -b <name> origin/<target>\`, commits are applied with \`git cherry-pick -x\` (\`-m 1\` for merge commits).
 - The Pull Request is created through the git provider API (GitHub, GitLab, Azure DevOps, Bitbucket token), or with the \`gh\` CLI on GitHub. The creation is retried a few times: the branch is pushed a fraction of a second before, and a provider that has not indexed the new ref yet answers that the source branch does not exist. Without either, the branch is pushed and the description is saved under \`hardis-report/\` to create the Pull Request by hand, and the message names the reason the provider gave.
-- The counter is computed from the existing \`promotion/<source>/<target>/<date>-*\` branches, local and remote.
+- The date and the time are in UTC. The name is checked against every promotion branch of the step that exists or existed: local and remote branches, remote-tracking refs, the merge commits of the target branch and its Pull Requests merged in the last two days. A name already taken gets \`-2\`, \`-3\`..., one more than the highest one found, and the branch creation stops on a name that still exists instead of resuming that branch.
 </details>
 
 ### Agent Mode

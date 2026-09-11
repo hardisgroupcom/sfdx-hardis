@@ -8233,7 +8233,7 @@ While the list is missing, sf hardis:project:promotion:create stops and asks for
         </svg>
     <a href="#enablePromotionBranches" onclick="anchorLink('enablePromotionBranches')">enablePromotionBranches</a></div><h4>Enable promotion branches (experimental)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <div class="description collapse" id="collapseDescription_enablePromotionBranches">
-            <p>Experimental feature. Enable promotion branches: a branch named promotion/&lt;source branch>/&lt;target branch>/&lt;YYYY-MM-DD&gt;-&lt;counter&gt; (ex: promotion/uat/preprod/2026-09-06-1) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.</p>
+            <p>Experimental feature. Enable promotion branches: a branch named promotion/&lt;source branch>/&lt;target branch>/&lt;YYYY-MM-DD&gt;-&lt;HHMM&gt; (ex: promotion/uat/preprod/2026-09-06-1430) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.</p>
 
         </div>
         <div>

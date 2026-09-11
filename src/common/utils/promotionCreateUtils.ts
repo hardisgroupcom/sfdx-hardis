@@ -871,22 +871,26 @@ export async function selectPromotionCandidates(
 // ---- Branch name ----
 
 /**
- * Next counter for promotion/<source>/<target>/<date>-<n>: one more than the highest existing
- * one among the given branch names (local and remote), 1 when there is none.
+ * Name of the next promotion branch: promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM> for the UTC
+ * minute of `now`, as is while no existing name holds it. A name already taken gets a counter, one
+ * more than the highest one found (-2 when only the bare name is taken), so a promotion never
+ * reuses the name of a branch that exists or existed, even when a lower counter looks free.
+ *
+ * The existing names come as git writes them (refs/heads/..., origin/..., remotes/origin/...) and
+ * are compared whatever their case, like git providers compare branch names.
  */
-export function computePromotionCounter(existingBranchNames: string[], sourceBranch: string, targetBranch: string, date: string): number {
-  const prefix = `${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/${date}-`.toLowerCase();
-  let max = 0;
+export function computePromotionBranchName(existingBranchNames: string[], sourceBranch: string, targetBranch: string, now: Date = new Date()): string {
+  const baseName = buildPromotionBranchName(sourceBranch, targetBranch, now).toLowerCase();
+  let highest = 0;
   for (const rawName of existingBranchNames) {
     const name = rawName.trim().replace(/^refs\/heads\//, '').replace(/^(origin|remotes\/origin)\//, '').toLowerCase();
-    if (name.startsWith(prefix)) {
-      const counter = parseInt(name.substring(prefix.length), 10);
-      if (Number.isInteger(counter) && counter > max) {
-        max = counter;
-      }
+    if (name === baseName) {
+      highest = Math.max(highest, 1);
+    } else if (name.startsWith(baseName + '-') && /^\d+$/.test(name.substring(baseName.length + 1))) {
+      highest = Math.max(highest, parseInt(name.substring(baseName.length + 1), 10));
     }
   }
-  return max + 1;
+  return buildPromotionBranchName(sourceBranch, targetBranch, now, highest + 1);
 }
 
 export async function listExistingPromotionBranchNames(sourceBranch: string, targetBranch: string, commandThis: any): Promise<string[]> {
@@ -936,8 +940,9 @@ async function promotionBranchNamesOfMergedPullRequests(targetBranch: string, co
   if (!gitProvider) {
     return [];
   }
-  // A branch named after today can only have been merged today. Two days of slack for the time
-  // zone of the provider, and the query stays small whatever the size of the project.
+  // A branch named after this minute can only have been merged since. Two days of slack for the
+  // clock and the time zone of the provider, and the query stays small whatever the size of the
+  // project.
   const minDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
   try {
     const pullRequests = (await gitProvider.listPullRequests({ status: 'merged', targetBranch, minDate })) || [];
@@ -955,13 +960,14 @@ async function promotionBranchNamesOfMergedPullRequests(targetBranch: string, co
  *
  * A merged promotion branch can be deleted right away, by hand or by a repository that deletes the
  * head branch of every merged Pull Request. Once it is deleted on the remote and pruned locally,
- * no ref holds its name any more: the next promotion of the same day would take the name back,
+ * no ref holds its name any more: a later promotion of the same minute would take the name back,
  * and the Pull Request opened from it would sit next to a merged one carrying the same name. The
  * merge commit of the target branch names the branch it merged, whatever the git provider, so the
  * history answers the question without a provider call.
  *
- * First-parent commits only, and the last 500 of them: a promotion assembled today can only have
- * been merged in the meantime, so it is at the tip of the branch.
+ * First-parent commits only, and the last 500 of them: a promotion carrying the name about to be
+ * handed out was assembled in the same minute, so if it is merged already it is at the tip of the
+ * branch.
  */
 async function promotionBranchNamesInTargetHistory(targetBranch: string, commandThis: any): Promise<string[]> {
   for (const ref of [`origin/${targetBranch}`, targetBranch]) {
@@ -977,10 +983,8 @@ async function promotionBranchNamesInTargetHistory(targetBranch: string, command
 }
 
 export async function nextPromotionBranchName(sourceBranch: string, targetBranch: string, commandThis: any, now: Date = new Date()): Promise<string> {
-  const date = now.toISOString().substring(0, 10);
   const existing = await listExistingPromotionBranchNames(sourceBranch, targetBranch, commandThis);
-  const counter = computePromotionCounter(existing, sourceBranch, targetBranch, date);
-  return buildPromotionBranchName(sourceBranch, targetBranch, counter, now);
+  return computePromotionBranchName(existing, sourceBranch, targetBranch, now);
 }
 
 // ---- Cherry-picks ----

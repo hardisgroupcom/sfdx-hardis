@@ -166,7 +166,7 @@ Deployment actions and selected Apex test classes are scoped to the Pull Request
 
 If the deployment job of a feature branch fails, its actions are not picked up by the next merged Pull Request: re-run the failed deployment job, or move the actions to a new Pull Request.
 
-With `enablePromotionBranches: true`, a merge from a [promotion branch (experimental)](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/) (named `promotion/<source>/<target>/<YYYY-MM-DD>-<counter>`, ex: `promotion/uat/preprod/2026-09-06-1`, assembled by cherry-picking approved User Stories) keeps the deployment actions, Apex test classes and custom behaviors (NO_DELTA, PURGE_FLOW_VERSIONS...) of the Pull Requests declared in its description with `promotionPullRequests: [482, 487]`.
+With `enablePromotionBranches: true`, a merge from a [promotion branch (experimental)](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/) (named `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>`, ex: `promotion/uat/preprod/2026-09-06-1430`, assembled by cherry-picking approved User Stories) keeps the deployment actions, Apex test classes and custom behaviors (NO_DELTA, PURGE_FLOW_VERSIONS...) of the Pull Requests declared in its description with `promotionPullRequests: [482, 487]`.
 
 After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of `runOnlyOnceByOrg`.
 

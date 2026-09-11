@@ -22,8 +22,8 @@ import { t } from './i18n.js';
 
 export const PROMOTION_PULL_REQUESTS_KEY = 'promotionPullRequests';
 export const PROMOTION_BRANCH_PREFIX = 'promotion';
-// promotion/<source major branch>/<target major branch>/<YYYY-MM-DD>-<counter>
-export const PROMOTION_BRANCH_NAME_EXAMPLE = 'promotion/uat/preprod/2026-09-06-1';
+// promotion/<source major branch>/<target major branch>/<YYYY-MM-DD>-<HHMM>, then -2, -3... when taken
+export const PROMOTION_BRANCH_NAME_EXAMPLE = 'promotion/uat/preprod/2026-09-06-1430';
 
 export interface PromotionBranchConfig {
   enabled: boolean;
@@ -46,6 +46,12 @@ export interface PromotionBranchNameParts {
   sourceBranch: string;
   targetBranch: string;
   date: string;
+  /**
+   * UTC hour and minutes the promotion was assembled at (HHMM). Null for a name of the first
+   * releases of the feature, which carried a counter after the date instead.
+   */
+  time: string | null;
+  /** 1 unless the name ends with -2, -3... because the same name was already taken */
   counter: number;
 }
 
@@ -161,11 +167,20 @@ export function formatPromotionSteps(steps: PromotionStep[]): string {
   return steps.map((step) => `${step.source} -> ${step.target || '*'}`).join(', ');
 }
 
+// HHMM of a valid time of day: 0000 to 2359
+const PROMOTION_BRANCH_TIME_REGEX = /^([01]\d|2[0-3])[0-5]\d$/;
+
 /**
  * Split a promotion branch name into its parts. The convention is not configurable:
- * promotion/<source major branch>/<target major branch>/<YYYY-MM-DD>-<counter>, so the name
- * alone says where the stories come from and where they go, and two promotions assembled the
- * same day do not collide. Returns null for anything else, including a bare "promotion/xxx".
+ * promotion/<source major branch>/<target major branch>/<YYYY-MM-DD>-<HHMM>, with -2, -3... added
+ * only when that name is already taken. The name alone says where the stories come from and where
+ * they go, and the minute it was assembled at keeps two promotions apart without anybody having to
+ * count the branches of the day. Returns null for anything else, including a bare "promotion/xxx".
+ *
+ * The first releases of the feature named the branches <YYYY-MM-DD>-<counter>, and promotions
+ * assembled with them can still be open or waiting in a branch: they are still recognized. A group
+ * of four digits that is a valid time of day is read as the time, which a counter of the old
+ * convention never reached.
  */
 export function parsePromotionBranchName(branchName: string): PromotionBranchNameParts | null {
   const segments = (branchName || '').trim().split('/');
@@ -173,20 +188,26 @@ export function parsePromotionBranchName(branchName: string): PromotionBranchNam
     return null;
   }
   const [, sourceBranch, targetBranch, suffix] = segments;
-  const suffixMatch = suffix.match(/^(\d{4}-\d{2}-\d{2})-(\d+)$/);
+  const suffixMatch = suffix.match(/^(\d{4}-\d{2}-\d{2})-(\d+)(?:-(\d+))?$/);
   if (!sourceBranch || !targetBranch || !suffixMatch) {
     return null;
   }
-  return {
-    sourceBranch,
-    targetBranch,
-    date: suffixMatch[1],
-    counter: parseInt(suffixMatch[2], 10),
-  };
+  const [, date, first, second] = suffixMatch;
+  if (second !== undefined) {
+    // <HHMM>-<n>: the part before the counter must really be a time
+    return PROMOTION_BRANCH_TIME_REGEX.test(first)
+      ? { sourceBranch, targetBranch, date, time: first, counter: parseInt(second, 10) }
+      : null;
+  }
+  if (PROMOTION_BRANCH_TIME_REGEX.test(first)) {
+    return { sourceBranch, targetBranch, date, time: first, counter: 1 };
+  }
+  return { sourceBranch, targetBranch, date, time: null, counter: parseInt(first, 10) };
 }
 
 /**
- * True for a branch following the promotion/<source>/<target>/<YYYY-MM-DD>-<counter> convention.
+ * True for a branch following the promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM> convention (or
+ * the <YYYY-MM-DD>-<counter> one of the first releases).
  */
 export function isPromotionBranchName(branchName: string): boolean {
   return parsePromotionBranchName(branchName) !== null;
@@ -202,12 +223,20 @@ export function hasPromotionPrefixOnly(branchName: string): boolean {
 }
 
 /**
- * Build a promotion branch name, with today's date unless given. The counter separates the
- * promotions assembled the same day between the same branches (1, 2, 3...).
+ * Build a promotion branch name, stamped with the current UTC date and minute unless a date is
+ * given. UTC, not the local time: two release managers in different time zones assembling at the
+ * same moment must compute the same name, so the collision check sees it.
+ *
+ * The counter is left out when it is 1, which is the case of every name that is not taken yet: a
+ * second promotion of the same step in the same minute gets -2, then -3...
  */
-export function buildPromotionBranchName(sourceBranch: string, targetBranch: string, counter: number, date: Date = new Date()): string {
-  const day = date.toISOString().substring(0, 10);
-  return `${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/${day}-${Math.max(1, Math.floor(counter))}`;
+export function buildPromotionBranchName(sourceBranch: string, targetBranch: string, date: Date = new Date(), counter = 1): string {
+  const iso = date.toISOString();
+  const day = iso.substring(0, 10);
+  const time = iso.substring(11, 13) + iso.substring(14, 16);
+  const base = `${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/${day}-${time}`;
+  const n = Math.floor(counter);
+  return n >= 2 ? `${base}-${n}` : base;
 }
 
 /**
@@ -216,15 +245,15 @@ export function buildPromotionBranchName(sourceBranch: string, targetBranch: str
  *
  * A promotion branch merged and then deleted (a repository can be set up to delete the head
  * branch of a merged Pull Request) is not a ref any more, on the remote or locally, so nothing
- * would stop the next promotion of the same day from taking its name back. The merge commit of
- * the target branch still names it, whatever the git provider, and that name must not be handed
- * out twice.
+ * would stop a later promotion from taking its name back. The merge commit of the target branch
+ * still names it, whatever the git provider, and that name must not be handed out twice.
  */
 export function extractPromotionBranchNames(text: string): string[] {
   // The convention has exactly four segments and the source and target branch names may not hold
-  // a "/", so the name stops at the counter: "into 'preprod'" after it is not part of it.
+  // a "/", so the name stops after the time and its optional counter: "into 'preprod'" after it
+  // is not part of it. The second group is optional and greedy, so -1430-2 is read whole.
   const segment = String.raw`[^\s/'"\\]+`;
-  const suffix = String.raw`\d{4}-\d{2}-\d{2}-\d+`;
+  const suffix = String.raw`\d{4}-\d{2}-\d{2}-\d+(?:-\d+)?`;
   const nameRegex = new RegExp(`${PROMOTION_BRANCH_PREFIX}/${segment}/${segment}/${suffix}`, 'gi');
   const matches = (text || '').match(nameRegex) || [];
   return [...new Set(matches.filter((name) => isPromotionBranchName(name)))];

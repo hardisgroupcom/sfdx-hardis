@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a promotion branch deleted after its merge no longer blocks the next promotion of the same day, whose name is now also taken from the merged Pull Requests, the target branch history and the stale remote-tracking refs.
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/#naming): new branches are named `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>` (UTC), with `-2`, `-3`... only when that name is already taken, and the `<YYYY-MM-DD>-<counter>` names of earlier promotions are still recognized.
 
 ## [8.7.1] 2026-09-09
 

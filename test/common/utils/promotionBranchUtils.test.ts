@@ -128,11 +128,34 @@ describe('allowedPromotionSteps', () => {
 });
 
 describe('promotion branch naming', () => {
-  it('parses promotion/<source>/<target>/<YYYY-MM-DD>-<counter>', () => {
+  it('parses promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>, with or without the counter of a taken name', () => {
+    expect(parsePromotionBranchName('promotion/uat/preprod/2026-09-06-1430')).to.deep.equal({
+      sourceBranch: 'uat',
+      targetBranch: 'preprod',
+      date: '2026-09-06',
+      time: '1430',
+      counter: 1,
+    });
+    expect(parsePromotionBranchName('promotion/uat/preprod/2026-09-06-0000-12')).to.deep.equal({
+      sourceBranch: 'uat',
+      targetBranch: 'preprod',
+      date: '2026-09-06',
+      time: '0000',
+      counter: 12,
+    });
+    // A counter only follows a real time of day
+    expect(parsePromotionBranchName('promotion/uat/preprod/2026-09-06-2460-2')).to.equal(null);
+    expect(parsePromotionBranchName('promotion/uat/preprod/2026-09-06-1-2')).to.equal(null);
+  });
+
+  // Promotions assembled by the first releases can still be open, or waiting in a branch for the
+  // next step: the deployment jobs and the candidate list must keep seeing them as promotions
+  it('still recognizes the <YYYY-MM-DD>-<counter> names of the first releases', () => {
     expect(parsePromotionBranchName(PROMOTION_BRANCH)).to.deep.equal({
       sourceBranch: 'uat',
       targetBranch: 'preprod',
       date: '2026-09-06',
+      time: null,
       counter: 1,
     });
     expect(parsePromotionBranchName('Promotion/UAT/main/2026-12-31-12')?.counter).to.equal(12);
@@ -149,8 +172,8 @@ describe('promotion branch naming', () => {
   it('cannot express a branch name holding a slash, which is why the command refuses one', () => {
     // hardis:project:promotion:create stops before touching git when a major branch name has a
     // "/": the name it would build has five segments and would never be recognized here
-    const built = buildPromotionBranchName('release/uat', 'preprod', 1, new Date('2026-09-06T10:00:00Z'));
-    expect(built).to.equal('promotion/release/uat/preprod/2026-09-06-1');
+    const built = buildPromotionBranchName('release/uat', 'preprod', new Date('2026-09-06T10:00:00Z'));
+    expect(built).to.equal('promotion/release/uat/preprod/2026-09-06-1000');
     expect(isPromotionBranchName(built)).to.equal(false);
   });
 
@@ -160,10 +183,26 @@ describe('promotion branch naming', () => {
     expect(hasPromotionPrefixOnly('feature/x')).to.equal(false);
   });
 
-  it('builds a name with the date and counter', () => {
-    expect(buildPromotionBranchName('uat', 'preprod', 1, new Date('2026-09-06T10:00:00Z'))).to.equal(PROMOTION_BRANCH);
-    expect(buildPromotionBranchName('uat', 'preprod', 0, new Date('2026-09-06T10:00:00Z'))).to.equal(PROMOTION_BRANCH);
-    expect(buildPromotionBranchName('integration', 'uat', 3, new Date('2026-01-02T23:59:00Z'))).to.equal('promotion/integration/uat/2026-01-02-3');
+  it('builds a name with the UTC date and minute, and a counter only from 2', () => {
+    const at1430 = new Date('2026-09-06T14:30:59Z');
+    expect(buildPromotionBranchName('uat', 'preprod', at1430)).to.equal('promotion/uat/preprod/2026-09-06-1430');
+    expect(buildPromotionBranchName('uat', 'preprod', at1430, 1)).to.equal('promotion/uat/preprod/2026-09-06-1430');
+    expect(buildPromotionBranchName('uat', 'preprod', at1430, 0)).to.equal('promotion/uat/preprod/2026-09-06-1430');
+    expect(buildPromotionBranchName('uat', 'preprod', at1430, 2)).to.equal('promotion/uat/preprod/2026-09-06-1430-2');
+    expect(buildPromotionBranchName('integration', 'uat', new Date('2026-01-02T23:59:00Z'), 3)).to.equal('promotion/integration/uat/2026-01-02-2359-3');
+  });
+
+  it('recognizes every name it builds', () => {
+    for (const counter of [1, 2, 10]) {
+      const built = buildPromotionBranchName('uat', 'preprod', new Date('2026-09-06T00:05:00Z'), counter);
+      expect(parsePromotionBranchName(built), built).to.deep.equal({
+        sourceBranch: 'uat',
+        targetBranch: 'preprod',
+        date: '2026-09-06',
+        time: '0005',
+        counter,
+      });
+    }
   });
 
   // A merged promotion branch deleted from the remote is not a ref any more: the merge sentence of
@@ -193,6 +232,13 @@ describe('promotion branch naming', () => {
     // a prefix without a counter
     expect(extractPromotionBranchNames('promotion/release/uat/preprod/2026-09-06-1')).to.deep.equal([]);
     expect(extractPromotionBranchNames('promotion/uat/preprod/2026-09-06')).to.deep.equal([]);
+    // A taken name keeps its counter: stopping at the time would name another branch
+    expect(extractPromotionBranchNames("Merge branch 'promotion/uat/preprod/2026-09-06-1430-2' into 'preprod'")).to.deep.equal([
+      'promotion/uat/preprod/2026-09-06-1430-2',
+    ]);
+    expect(extractPromotionBranchNames('Merge pull request #12 from acme/promotion/uat/preprod/2026-09-06-1430')).to.deep.equal([
+      'promotion/uat/preprod/2026-09-06-1430',
+    ]);
     expect(extractPromotionBranchNames('')).to.deep.equal([]);
     expect(extractPromotionBranchNames(null as any)).to.deep.equal([]);
   });

@@ -105,10 +105,14 @@ would be invisible to it.
 Promotion branches follow one naming convention, which is not configurable:
 
 ```text
-promotion/<source branch>/<target branch>/<YYYY-MM-DD>-<counter>
+promotion/<source branch>/<target branch>/<YYYY-MM-DD>-<HHMM>
 ```
 
-For example `promotion/uat/preprod/2026-09-06-1` is the first promotion assembled on September 6th, 2026, from `uat` to `preprod`. The name alone says where the stories come from and where they go, and the counter separates two promotions assembled the same day between the same branches (`-1`, `-2`...). If the Pull Request targets another branch than the one in the name, the job warns about it.
+For example `promotion/uat/preprod/2026-09-06-1430` is the promotion assembled on September 6th, 2026 at 14:30 UTC, from `uat` to `preprod`. The name alone says where the stories come from and where they go. The date and the time are in UTC, so the name does not depend on the time zone of the machine that assembles the promotion.
+
+A counter is added only when that name is already taken: a second promotion of the same step in the same minute is `promotion/uat/preprod/2026-09-06-1430-2`, then `-3`... A name stays taken as long as a branch, a merge commit of the target branch or a recently merged Pull Request still carries it, so a promotion branch deleted after its merge never gives its name back. If the Pull Request targets another branch than the one in the name, the job warns about it.
+
+Promotion branches assembled by the first releases of the feature are named `<YYYY-MM-DD>-<counter>` (ex: `promotion/uat/preprod/2026-09-06-1`). They are still recognized, so a promotion opened or merged before the upgrade keeps working.
 
 A Pull Request is a promotion Pull Request when **all** of the following are true:
 
@@ -142,7 +146,7 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
 
 3. The command then:
 
-    - creates `promotion/uat/preprod/<today>-<counter>` from `origin/preprod`;
+    - creates `promotion/uat/preprod/<YYYY-MM-DD>-<HHMM>` (UTC) from `origin/preprod`, with `-2`, `-3`... added only when that name is already taken;
     - cherry-picks the merge commit of each selected story, oldest first, with `-x` so each commit keeps a pointer to its origin (`-m 1` on merge commits, plain on squash commits);
     - pushes the branch and **creates the Pull Request** to `preprod`, with a description that declares the carried Pull Requests (`promotionPullRequests`), lists their titles, authors, source branches and tickets.
 
@@ -162,7 +166,7 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
 
     Promotion branch names have exactly four segments, so the source and target branch names must not contain a `/`. The command stops before touching git if one of them does.
 
-5. Review the Pull Request like any other, and do **not** squash it when merging: the `-x` trailers of the cherry-picks must survive in `preprod`. The branch itself can be deleted right after the merge, by hand or by a repository that deletes the head branch of every merged Pull Request: the next promotion of the same day gets the next counter, because the name of a deleted branch is still read from the merged Pull Requests of the target branch and from its history.
+5. Review the Pull Request like any other, and do **not** squash it when merging: the `-x` trailers of the cherry-picks must survive in `preprod`. The branch itself can be deleted right after the merge, by hand or by a repository that deletes the head branch of every merged Pull Request: a later promotion never takes its name back, because the name of a deleted branch is still read from the merged Pull Requests of the target branch and from its history.
 
 !!! warning "A promotion branch must only be validated, never deployed"
     A promotion branch is the source branch of a Pull Request, like a feature branch. Your CI must run its **validation** job, never a deployment job: deploying from the promotion branch would send the promotion to the target org before it is reviewed and merged. `hardis:project:deploy:smart` stops with an error when it happens, naming the setting to fix.
@@ -170,7 +174,7 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
     The usual cause is a deployment trigger that matches more than your major branches. On GitLab, anchor the `DEPLOY_BRANCHES` regex of `.gitlab-ci-config.yml`:
 
     ```yaml
-    # promotion/integration/uat/2026-09-08-1 matches this one
+    # promotion/integration/uat/2026-09-08-1430 matches this one
     DEPLOY_BRANCHES: /(integration|uat|preprod|main)/
     # it does not match this one
     DEPLOY_BRANCHES: /^(integration|uat|preprod|main)$/
@@ -220,8 +224,8 @@ ___
 
 | Job                                                           | Behavior                                                                                                                                                                                                                                                                                                                 |
 |---------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Validation of `promotion/uat/preprod/2026-09-06-1 -> preprod` | Delta deployment of the cherry-picked changes. The scope is the declared Pull Requests: their deployment actions are listed, their pending manual actions appear as checkboxes, their Apex test classes are collected when `enableDeploymentApexTestClasses` is active.                                                  |
-| Deployment of `promotion/uat/preprod/2026-09-06-1 -> preprod` | Same scope. Actions run in `preprod` and each one is recorded on its own story Pull Request, in the "Deployment Actions" comment (`preprod` column).                                                                                                                                                                     |
+| Validation of `promotion/uat/preprod/2026-09-06-1430 -> preprod` | Delta deployment of the cherry-picked changes. The scope is the declared Pull Requests: their deployment actions are listed, their pending manual actions appear as checkboxes, their Apex test classes are collected when `enableDeploymentApexTestClasses` is active.                                                  |
+| Deployment of `promotion/uat/preprod/2026-09-06-1430 -> preprod` | Same scope. Actions run in `preprod` and each one is recorded on its own story Pull Request, in the "Deployment Actions" comment (`preprod` column).                                                                                                                                                                     |
 | Promotion `preprod -> main`                                   | The promotion Pull Request is part of the go-live like any other merge. sfdx-hardis expands it with the stories it declares, so their actions run in production and the release notes list them.                                                                                                                         |
 | Later promotion `uat -> preprod`                              | The stories are still in the `uat` promotion window: their original merge commits have not reached `preprod`. Their metadata is redeployed as a no-op, and their actions are skipped where already performed (`runOnlyOnceByOrg`). The Pull Request comment lists them as already deployed through the promotion branch. |
 | Next `sf hardis:project:promotion:create` from `uat`          | A Pull Request another promotion branch already carries to the same target is left out of the choices, so the same story is not shipped twice. `--include-already-promoted` offers it again; the cherry-pick is then empty and the story is simply listed as already in the target branch.                               |
