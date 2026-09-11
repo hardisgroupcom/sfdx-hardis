@@ -760,7 +760,11 @@ ${getBannerMarkdownAndLink()}
   public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
     const issueNumber = prNumber || this.prNumber;
     if (!issueNumber) return;
-    const comments = await this.listIssueComments(issueNumber, this.repoOwner || '', this.repoName || '');
+    // Paginated like the read side: a Pull Request carrying more comments than one page would get
+    // a second marker comment at every run, each one notifying the participants again
+    const comments = await this.api.paginate<any>(`${this.repoPath(this.repoOwner || '', this.repoName || '')}/issues/${issueNumber}/comments`, {
+      params: { per_page: 100 },
+    });
     let existingId: number | null = null;
     for (const comment of comments) {
       if (comment?.body?.includes(marker)) {

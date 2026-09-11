@@ -812,7 +812,9 @@ ${getBannerMarkdownAndLink()}
   }
 
   private resolveMergeRequestContext(prNumber?: number): { projectId: string; mergeRequestId: number } | null {
-    const projectId = process.env.CI_PROJECT_ID || null;
+    // Same fallback as listPullRequests: outside a GitLab job only CI_PROJECT_PATH may be set, and
+    // without it every comment read answers "no comment" instead of saying it could not read
+    const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH || null;
     if (!projectId) return null;
     let mergeRequestId: number;
     if (prNumber) {

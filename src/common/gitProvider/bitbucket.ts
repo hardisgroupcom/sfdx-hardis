@@ -999,13 +999,20 @@ ${getBannerMarkdownAndLink()}
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const pullRequestId = prNumber || Number(process.env.BITBUCKET_PR_ID || '');
     if (!pullRequestId || !repoSlug || !workspace) return;
-    const comments = await this.bitbucket.repositories.listPullRequestComments({
-      pull_request_id: pullRequestId,
-      repo_slug: repoSlug,
-      workspace,
-    });
+    // Paginated like the read side: a Pull Request carrying more comments than one page would get
+    // a second marker comment at every run, each one notifying the participants again
+    const comments = await this.fetchAllPages(
+      (params) => this.bitbucket.repositories.listPullRequestComments(params),
+      {
+        pull_request_id: pullRequestId,
+        repo_slug: repoSlug,
+        workspace,
+        pagelen: 50,
+      },
+    );
     let existingCommentId: number | null = null;
-    for (const comment of comments?.data?.values || []) {
+    for (const comment of comments) {
+      if (comment?.deleted) continue;
       if ((comment?.content?.raw || '').includes(marker)) {
         existingCommentId = comment.id || null;
         break;

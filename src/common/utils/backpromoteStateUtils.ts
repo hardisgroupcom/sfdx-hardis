@@ -257,11 +257,16 @@ export async function checkBackpromoteGitProvider(parentBranch: string | null): 
   const name = gitProviderNameFromLabel(provider.getLabel());
   const providerLabel = provider.getLabel().replace(/^sfdx-hardis\s+/i, '').replace(/\s+connector$/i, '');
   try {
-    await provider.listPullRequests({
+    const pullRequests = await provider.listPullRequests({
       status: 'merged',
       ...(parentBranch ? { targetBranch: parentBranch } : {}),
       minDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
     });
+    // Every provider catches its own API errors and answers null: an expired token would otherwise
+    // pass the check, and every Pull Request would then look like it was never backpromoted
+    if (pullRequests === null || pullRequests === undefined) {
+      return { provider, name, ok: false, message: t('backpromoteGitProviderNoAnswer', { provider: providerLabel }) };
+    }
   } catch (e) {
     return { provider, name, ok: false, message: t('backpromoteGitProviderUnreachable', { provider: providerLabel, message: (e as Error).message }) };
   }
