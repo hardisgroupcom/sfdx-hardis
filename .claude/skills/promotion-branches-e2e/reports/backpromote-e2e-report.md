@@ -24,6 +24,7 @@ Runbook section 6bis (steps B0 to B17, Pull Request comment consistency checks C
 | B1c Parent branch not a major branch (added after the three runs) | plan `blocked` on `parentBranch` | OK | not run | not run |
 | B2 Production org | plan `blocked`, `is a production org` | OK | OK | OK |
 | B3 Plan | `ready`, `scratch`, S1 S2 S3 pending and trackable, items `newToOrg`, four actions | OK | OK | OK |
+| B3 progress (added after the three runs) | with `SFDX_HARDIS_PROGRESS_FILE` set, the plan writes its steps `targetOrg`, `gitProvider`, `fetch`, `listing`, `history`, `delta` (counted), `parentFiles` (developer branch behind), `orgCompare`, `actions` | OK (replay with a Pull Request left waiting: all 9 steps, delta 24 s, org compare 84 s) | not run | not run |
 | B4 S1 and S3 picked | only `E2E_S1` and `E2E_S3` deployed, only their pre-deploy actions, nothing stored in `config/user` | OK | OK | OK |
 | B5 Window after the last backpromoted | `upToDate` with `olderFrom` set; with `--from`, S2 pending and S1 S3 done in this org | OK | OK | OK |
 | B6 S2 with `--skip-actions` | `E2E_S2` deployed, no action run | OK | OK | OK |
