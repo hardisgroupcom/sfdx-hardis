@@ -127,9 +127,17 @@ bp_open() {
   echo "${url##*/}"
 }
 
-# Usage: bp_merge <number>
+# Usage: bp_merge <number>. GitHub refuses a merge right after a push to the source branch ("Base
+# branch was modified"): retry for a while.
 bp_merge() {
-  gh pr merge "$1" --repo "$REPO" --merge --delete-branch=false
+  local attempt
+  for attempt in $(seq 1 10); do
+    if gh pr merge "$1" --repo "$REPO" --merge --delete-branch=false; then
+      return 0
+    fi
+    sleep 3
+  done
+  return 1
 }
 
 # The lines worth reading in a job log

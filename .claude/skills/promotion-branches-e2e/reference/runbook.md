@@ -445,7 +445,53 @@ section 4 are done (`#1`, `#2`, `#3` merged into `integration`). The expectation
 groups of that short run; after a full section 4, the story numbers created below are higher and the
 retrofit merge is one more group.
 
-### Setup
+### Running it on GitHub, GitLab or Azure DevOps
+
+The steps below are scripted, provider agnostic, in `scripts/backpromote-setup.sh` and
+`scripts/backpromote-steps.sh`. Each provider library defines three hooks (`bp_provider_env`, the
+variables the CLI reads outside CI; `bp_open` and `bp_merge`, a Pull Request into `integration`) and
+sources `scripts/e2e-lib-backpromote.sh`, which holds `e2e_backpromote`, `e2e_backpromote_json`,
+`e2e_backpromote_nogit_json`, `backpromote_check`, `backpromote_comment`, `backpromote_comments_check`
+and `backpromote_reset_org`.
+
+```bash
+# after build-repo.sh and the push of main, integration, uat and preprod to a NEW repository
+export BP_PROVIDER_LIB=".../scripts/e2e-lib.sh"          # or e2e-lib-gitlab.sh, e2e-lib-azure.sh
+export ORG DEVHUB DEVORG DEVORG2 WORK LOGS DEV API        # plus the variables of that library
+bash .claude/skills/promotion-branches-e2e/scripts/backpromote-setup.sh   # stories, scratch orgs, developer branch
+bash .claude/skills/promotion-branches-e2e/scripts/backpromote-steps.sh   # B0 to B17, C1 to C6, summary
+```
+
+Pull Request numbers differ from one provider to the other: the expectation files use `{{S1}}`,
+`{{S2}}`, `{{S3}}`, replaced by the `BP_VAR_S1`... variables the steps script exports. The two scratch
+orgs are created once from the Dev Hub and reset to the base project by the setup of the next run (a
+developer Dev Hub creates 6 scratch orgs a day): run the providers one after the other, never in
+parallel.
+
+### Pull Request comment consistency (C1 to C6)
+
+`backpromote_comments_check <label> <expectations.json> [numbers...]` dumps the Pull Requests with the
+provider's `dump_pr_comments` and runs `scripts/check-backpromote-comments.cjs`, which checks on every
+dumped Pull Request:
+
+- **at most one history comment**, whatever the number of orgs and runs;
+- every row carries a record that decodes, with an org id, an org name, an ISO date (or none for
+  actions only), a 40 character merge commit when deployed, and known action statuses;
+- **one row per org**, and the visible row shows the org name and the short commit of its record;
+
+then the expectations: Pull Requests with no history, the orgs each one lists, their merge commit and
+action results.
+
+| Check | After | Expected |
+|-------|-------|----------|
+| C1 | B4 | `S1` and `S3` list the scratch org, deployed, with `e2e-pre-S1` success, `e2e-manual-S1` manual, `e2e-pre-S3` success; `S2` has no history |
+| C2 | B6 | `S2` lists the org, deployed, with no action recorded (`--skip-actions`) |
+| C3 | B11 | `S7` lists the org, deployed |
+| C4 | B13 | `S8` and `S9` list the org, deployed |
+| C5 | B17 | `S3` still has **one** comment, now with **two rows** (both orgs, `e2e-pre-S3` success in each); `S1` still one row |
+| C6 | end | every history comment of the repository is consistent, and each record's commit is the merge commit the plan lists for its Pull Request |
+
+### Setup (by hand)
 
 ```bash
 cd "$WORK"
@@ -489,7 +535,8 @@ Run them in this order: each one starts from the state the previous one left.
 | B13 Declined deletions | the S9 commands below, `e2e_backpromote_json bp-plan-4 --plan`, then `e2e_backpromote bp-skip-destructive --agent --pull-requests $S9 --skip-destructive` | `plan-4.json` lists the deletion of `StaticResource:E2E_S1`; the run exits 0 and `E2E_S1` is **still** in the org |
 | B14 Dirty tree | `echo x >> NOTES.md`, `e2e_backpromote_json bp-dirty --plan`, then `git checkout -- NOTES.md` | `dirty.json`: `blocked`, check `gitClean` fails listing `NOTES.md` and nothing under `hardis-report/` |
 | B15 Terminal prompts | `node "$DEV" hardis:work:backpromote --target-org "$DEVORG"` by hand, answer the prompts | one multiselect of the pending Pull Requests (newest first, preselected), then per item changed in the org: deploy / keep the org version / merge. Not scriptable: say "not covered" when skipped |
-| B16 Refreshed sandbox (new org) | create a second scratch org `$DEVORG2` from the Dev Hub with the base project, then `DEVORG="$DEVORG2" e2e_backpromote_json bp-new-org --plan --from "$ROOT"` | `new-org.json`: `#1` `#2` `#3` pending again (the history is per org id), each naming the first scratch org in `backpromotedTo`, and the actions of #1 not done. Delete `$DEVORG2` afterwards |
+| B16 Refreshed sandbox (new org) | a second scratch org `$DEVORG2` with the base project, then `DEVORG="$DEVORG2" e2e_backpromote_json bp-new-org --plan --from "$ROOT"` | `new-org.json`: `S1` `S2` `S3` pending again (the history is per org id), each naming the first scratch org in `backpromotedTo`, and the actions of `S1` not done |
+| B17 Second org backpromoted | `DEVORG="$DEVORG2" e2e_backpromote bp-new-org-run --agent --from "$ROOT" --pull-requests $S3` | exit 0; C5: the history comment of `S3` gains a second row instead of a second comment |
 
 Queries and helper commands:
 
@@ -554,6 +601,11 @@ click the panel. Say so in the report.
 - **The history is in the Pull Request comments, not in `config/user/`.** Read it with
   `backpromote_comment <pr>`; a stale `backpromoteState` in an old user config is ignored.
 - **sfdx-git-delta runs one at a time.** Parallel runs fail on `could not lock config file .git/config`.
+- **The first commit of the repository is never a group.** It has no parent, so sfdx-git-delta cannot
+  compute its delta; without `--from`, an explicit selection used to fail on `<first commit>^1`.
+- **GitLab and Azure DevOps know a pushed commit a few seconds later.** The deployment actions file is
+  pushed right after the Pull Request is opened: `bp_merge` waits until the provider reports that commit
+  as the head of the Pull Request, otherwise the merge leaves the actions out.
 
 ## 7. Traps met while writing this
 
