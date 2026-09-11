@@ -51,6 +51,7 @@ import {
 import {
   BackpromoteBranchRefusal,
   buildBackpromoteMergePrompt,
+  buildBackpromoteNewUserStoryCommand,
   buildBackpromoteRunCommand,
   defaultGroupSelection,
   findBackpromoteBranchRefusal,
@@ -71,6 +72,12 @@ import fs from '../../../common/utils/fsUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+/** A refusal in the terminal also says how to create the User Story branch that can receive the backpromote */
+function withNewUserStoryHint(message: string, nextCommand: string | null): string {
+  return nextCommand ? `${message}
+${t('backpromoteCreateUserStoryHint', { command: nextCommand })}` : message;
+}
 
 /** The message of a branch refusal, as the plan check and the run error give it */
 function backpromoteBranchRefusalMessage(refusal: BackpromoteBranchRefusal, currentBranch: string, parentBranch: string): string {
@@ -104,7 +111,7 @@ Key functionalities:
 
 - **Connected to the git provider:** the history of what each developer org received is kept in Pull Request comments, shared by every developer and machine, and nothing is stored locally. The command refuses to run until sfdx-hardis is connected to GitHub, GitLab, Azure DevOps or Bitbucket.
 - **Developer orgs only:** the target org must be a developer sandbox or a scratch org. A production org, or the org of a major branch declared in \`config/branches\`, is refused: the CI/CD pipeline deploys those.
-- **Pre-flight checks:** the git working directory must be clean, the current branch must be a User Story branch (not a major branch, a promotion branch or a retrofit branch), the parent branch must be a major branch, and the current branch must already contain the latest commit of the parent branch.
+- **Pre-flight checks:** the git working directory must be clean, the current branch must be a User Story branch (not a major branch, a promotion branch or a retrofit branch), the parent branch must be a major branch, and the current branch must already contain the latest commit of the parent branch. When the current branch cannot receive a backpromote, the command gives the \`sf hardis:work:new --backpromote <parent branch>\` command creating one (a New User Story button in the VS Code panel).
 - **Pull Request selection:** the Pull Requests merged in the parent branch after the last one backpromoted to this org are listed (use \`--from\` to list older ones), and each one can be selected or left out. An item also changed by a Pull Request left out is deployed with that change too, since the deployment reads the files of the branch: the command warns about it.
 - **History per org:** a Pull Request deployed into an org is recorded in a comment of that Pull Request with the Salesforce Organization Id, the date, the merge commit and the result of its deployment actions. A refreshed sandbox is a new org and starts with nothing backpromoted.
 - **Delta computation:** sfdx-git-delta computes what each selected Pull Request deploys and deletes.
@@ -295,11 +302,15 @@ The command's technical implementation involves:
     const branchRefusal = findBackpromoteBranchRefusal({ currentBranch, parentBranch: null, majorBranches: parentBranchChoices });
     if (branchRefusal) {
       const message = backpromoteBranchRefusalMessage(branchRefusal, currentBranch, '');
-      checks.push({ id: 'currentBranch', ok: false, message });
+      // A User Story branch receiving the backpromote, from the parent branch the plan would use
+      const nextCommand = buildBackpromoteNewUserStoryCommand(
+        planMode ? planParentBranch : flags.parentbranch || projectConfig.developmentBranch || parentBranchChoices[0] || ''
+      );
+      checks.push({ id: 'currentBranch', ok: false, message, ...(nextCommand ? { nextCommand } : {}) });
       if (planMode) {
         return blockedPlan();
       }
-      throw new SfError(message);
+      throw new SfError(withNewUserStoryHint(message, nextCommand));
     }
 
     // Step 4: parent branch, a major branch
@@ -308,11 +319,12 @@ The command's technical implementation involves:
     const parentRefusal = findBackpromoteBranchRefusal({ currentBranch, parentBranch, majorBranches: parentBranchChoices });
     if (parentRefusal) {
       const message = backpromoteBranchRefusalMessage(parentRefusal, currentBranch, parentBranch);
-      checks.push({ id: parentRefusal.reason === 'parentNotMajor' ? 'parentBranch' : 'currentBranch', ok: false, message });
+      const nextCommand = parentRefusal.reason === 'parentNotMajor' ? null : buildBackpromoteNewUserStoryCommand(parentBranch);
+      checks.push({ id: parentRefusal.reason === 'parentNotMajor' ? 'parentBranch' : 'currentBranch', ok: false, message, ...(nextCommand ? { nextCommand } : {}) });
       if (planMode) {
         return blockedPlan();
       }
-      throw new SfError(message);
+      throw new SfError(withNewUserStoryHint(message, nextCommand));
     }
     checks.push({ id: 'currentBranch', ok: true, message: t('backpromoteCheckCurrentBranchOk', { branch: currentBranch }) });
 

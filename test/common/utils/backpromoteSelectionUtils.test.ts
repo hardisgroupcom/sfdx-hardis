@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import {
   BackpromoteGroupStatus,
   buildBackpromoteMergePrompt,
+  buildBackpromoteNewUserStoryCommand,
   buildBackpromoteRunCommand,
   countConflictMarkerBlocks,
   defaultGroupSelection,
@@ -184,6 +185,18 @@ describe('findBackpromoteBranchRefusal()', () => {
   it('accepts any parent branch when the project declares no major branch, and still refuses a promotion branch', () => {
     expect(refusal('feature/E2E-401-dev', 'develop', [])).to.be.null;
     expect(refusal('promotion/integration/uat/2026-09-11-0859', 'integration', [])).to.deep.equal({ reason: 'promotionBranch' });
+  });
+});
+
+describe('buildBackpromoteNewUserStoryCommand()', () => {
+  it('creates a User Story branch receiving the backpromote from the parent branch', () => {
+    expect(buildBackpromoteNewUserStoryCommand('integration')).to.equal('sf hardis:work:new --backpromote integration');
+    expect(buildBackpromoteNewUserStoryCommand('release/2026 Q3')).to.equal('sf hardis:work:new --backpromote "release/2026 Q3"');
+  });
+
+  it('offers nothing without a parent branch', () => {
+    expect(buildBackpromoteNewUserStoryCommand('')).to.be.null;
+    expect(buildBackpromoteNewUserStoryCommand('  ')).to.be.null;
   });
 });
 

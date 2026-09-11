@@ -106,6 +106,19 @@ grep -q "promotion branch" "$LOGS/bp-refused-promotion-run.log" && [ "$code" != 
 ok_if B1b-run $? "exit=$code"
 git checkout -q feature/E2E-401-dev && git branch -q -D "$PROMO_BRANCH"
 
+echo; echo "=== B1d New User Story receiving a backpromote ==="
+# What the New User Story button of a refused plan runs (here with --agent: no prompt)
+cd "$WORK" && git checkout -q -b "$PROMO_BRANCH"
+bp_provider_env node "$DEV" hardis:work:new --agent --backpromote integration --task-name "E2E-402 receive backpromote"   --target-branch integration --target-org "$DEVORG" >"$LOGS/bp-new-user-story.log" 2>&1
+code=$?
+grep -q "will receive the backpromote (Beta) of integration" "$LOGS/bp-new-user-story.log" &&
+  grep -q "the backpromote brings what was merged in integration" "$LOGS/bp-new-user-story.log" &&
+  [ "$code" = "0" ] && [ "$(git branch --show-current)" = "feature/E2E-402-receive-backpromote" ]
+ok_if B1d-new-user-story $? "exit=$code branch=$(git branch --show-current)"
+e2e_backpromote_json bp-new-user-story-plan --plan --from "$ROOT"
+check_plan B1d-plan bp-new-user-story-plan "$BPX/new-user-story.json"
+git checkout -q feature/E2E-401-dev && git branch -q -D feature/E2E-402-receive-backpromote "$PROMO_BRANCH"
+
 echo; echo "=== B1c parent branch not a major branch ==="
 e2e_backpromote_json bp-refused-parent --plan --from "$ROOT" --parentbranch feature/E2E-105-apex
 check_plan B1c-plan bp-refused-parent "$BPX/refused-parent.json"

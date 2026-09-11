@@ -22,6 +22,8 @@ Key features include:
 - **User Story Name Validation:** Enforces User Story name formatting using `newTaskNameRegex` and provides examples via `newTaskNameRegexExample
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
 
+- **Backpromote (Beta) (`--backpromote <parent branch>`):** creates the User Story branch that will receive a backpromote from this parent branch, as offered by `sf hardis:work:backpromote` (and its VS Code panel) when the current branch cannot receive one. The parent branch is preselected as target branch and the current org as the org to work in, the sandbox update and the org opening are skipped (the backpromote brings the updates of the parent branch into the org), and the command ends with a **Back to backpromote** button in VS Code.
+
 - **Agent Mode (`--agent`):** Enables a fully non-interactive execution path for AI agents and automation. In this mode, all required decisions must be provided as flags and are validated at command start with explicit error messages listing missing inputs and available options.
 
 ### Agent Mode Invocation
@@ -76,6 +78,7 @@ The command's logic orchestrates various underlying processes:
 | Name                  |  Type   | Description                                                                                   | Default | Required | Options |
 |:----------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent                 | boolean | Run in non-interactive mode for agents and automation                                         |         |          |         |
+| backpromote           | option  | Parent branch of a backpromote (Beta): create the User Story branch that will receive it, with this branch preselected as target, the current org preselected, no sandbox update, and a way back to the backpromote at the end |         |          |         |
 | branch-prefix         | option  | Branch prefix to use (must be in configured branchPrefixChoices, e.g. feature, fix, retrofit) |         |          |         |
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                                               |         |          |         |
 | flags-dir             | option  | undefined                                                                                     |         |          |         |
@@ -100,6 +103,10 @@ $ sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branc
 
 ```shell
 $ sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration --branch-prefix retrofit
+```
+
+```shell
+$ sf hardis:work:new --backpromote integration
 ```
 
 
