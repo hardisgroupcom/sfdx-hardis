@@ -257,6 +257,8 @@
 | Command                                       | Title |
 |:----------------------------------------------|:------|
 | [**hardis:ticket:get**](hardis/ticket/get.md) |       |
+| [**hardis:ticket:test-cases:init**](hardis/ticket/test-cases/init.md) |       |
+| [**hardis:ticket:test-cases:upsert**](hardis/ticket/test-cases/upsert.md) |       |
 
 ## hardis:work
 
