@@ -223,7 +223,9 @@ export async function computeBackpromoteGroupDeltas(groups: BackpromotePrGroup[]
       };
     }
   };
-  await Promise.all([worker(), worker(), worker()]);
+  // One run at a time: sfdx-git-delta writes the git config of the repository, and two runs in
+  // parallel fail on its lock ("could not lock config file .git/config")
+  await worker();
   return results;
 }
 
