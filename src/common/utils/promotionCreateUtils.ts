@@ -18,12 +18,14 @@ import {
   allowedPromotionSourceBranches,
   allowedPromotionTargetBranches,
   buildPromotionBranchName,
+  extractPromotionBranchNames,
   formatPromotionSteps,
   getPromotionBranchConfig,
   isPromotionStepAllowed,
   PROMOTION_BRANCH_NAME_EXAMPLE,
   PromotionBranchConfig,
   PromotionStep,
+  isPromotionBranchName,
   isPromotionPullRequest,
   parsePromotionBranchName,
   parsePromotionPullRequestIds,
@@ -869,22 +871,26 @@ export async function selectPromotionCandidates(
 // ---- Branch name ----
 
 /**
- * Next counter for promotion/<source>/<target>/<date>-<n>: one more than the highest existing
- * one among the given branch names (local and remote), 1 when there is none.
+ * Name of the next promotion branch: promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM> for the UTC
+ * minute of `now`, as is while no existing name holds it. A name already taken gets a counter, one
+ * more than the highest one found (-2 when only the bare name is taken), so a promotion never
+ * reuses the name of a branch that exists or existed, even when a lower counter looks free.
+ *
+ * The existing names come as git writes them (refs/heads/..., origin/..., remotes/origin/...) and
+ * are compared whatever their case, like git providers compare branch names.
  */
-export function computePromotionCounter(existingBranchNames: string[], sourceBranch: string, targetBranch: string, date: string): number {
-  const prefix = `${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/${date}-`.toLowerCase();
-  let max = 0;
+export function computePromotionBranchName(existingBranchNames: string[], sourceBranch: string, targetBranch: string, now: Date = new Date()): string {
+  const baseName = buildPromotionBranchName(sourceBranch, targetBranch, now).toLowerCase();
+  let highest = 0;
   for (const rawName of existingBranchNames) {
     const name = rawName.trim().replace(/^refs\/heads\//, '').replace(/^(origin|remotes\/origin)\//, '').toLowerCase();
-    if (name.startsWith(prefix)) {
-      const counter = parseInt(name.substring(prefix.length), 10);
-      if (Number.isInteger(counter) && counter > max) {
-        max = counter;
-      }
+    if (name === baseName) {
+      highest = Math.max(highest, 1);
+    } else if (name.startsWith(baseName + '-') && /^\d+$/.test(name.substring(baseName.length + 1))) {
+      highest = Math.max(highest, parseInt(name.substring(baseName.length + 1), 10));
     }
   }
-  return max + 1;
+  return buildPromotionBranchName(sourceBranch, targetBranch, now, highest + 1);
 }
 
 export async function listExistingPromotionBranchNames(sourceBranch: string, targetBranch: string, commandThis: any): Promise<string[]> {
@@ -905,14 +911,80 @@ export async function listExistingPromotionBranchNames(sourceBranch: string, tar
   }
   const local = await git().branchLocal();
   names.push(...local.all);
+  // A branch deleted on the remote leaves its remote-tracking ref behind until someone prunes it:
+  // git ls-remote does not see it any more, and a branch created with that name again would be
+  // checked out from the stale ref, carrying the commits of the promotion already merged.
+  const remoteTracking = await git().branch(['-r']);
+  names.push(...remoteTracking.all);
+  names.push(...(await promotionBranchNamesInTargetHistory(targetBranch, commandThis)));
+  names.push(...(await promotionBranchNamesOfMergedPullRequests(targetBranch, commandThis)));
   return names;
 }
 
+/**
+ * Source branches of the promotion Pull Requests merged into the target branch these last days.
+ *
+ * The history above only answers when the merge produced a merge commit naming the branch. A
+ * project that merges with a rebase (GitHub) or a fast-forward (GitLab) keeps the cherry-picks and
+ * their -x trailers, which is all the promotion needs, and leaves no such commit; Azure DevOps
+ * squashes into "Merged PR 42: <title>", which does not hold the branch name either. The provider
+ * knows the source branch of a merged Pull Request whatever the merge style, and keeps knowing it
+ * after the branch is deleted.
+ *
+ * Best effort on purpose: a project with no token still gets the refs and the history, and a
+ * provider that cannot answer is not a reason to refuse to assemble a promotion.
+ */
+async function promotionBranchNamesOfMergedPullRequests(targetBranch: string, commandThis: any): Promise<string[]> {
+  // Never prompt for a provider here, an --agent run would block on the question
+  const gitProvider = await GitProvider.getInstance();
+  if (!gitProvider) {
+    return [];
+  }
+  // A branch named after this minute can only have been merged since. Two days of slack for the
+  // clock and the time zone of the provider, and the query stays small whatever the size of the
+  // project.
+  const minDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+  try {
+    const pullRequests = (await gitProvider.listPullRequests({ status: 'merged', targetBranch, minDate })) || [];
+    return pullRequests
+      .map((pullRequest) => pullRequest.sourceBranch || '')
+      .filter((branch) => isPromotionBranchName(branch));
+  } catch (e) {
+    uxLog('warning', commandThis, c.yellow(t('promotionCreateMergedPromotionsUnavailable', { message: (e as Error).message })));
+    return [];
+  }
+}
+
+/**
+ * Promotion branch names still named in the recent history of the target branch.
+ *
+ * A merged promotion branch can be deleted right away, by hand or by a repository that deletes the
+ * head branch of every merged Pull Request. Once it is deleted on the remote and pruned locally,
+ * no ref holds its name any more: a later promotion of the same minute would take the name back,
+ * and the Pull Request opened from it would sit next to a merged one carrying the same name. The
+ * merge commit of the target branch names the branch it merged, whatever the git provider, so the
+ * history answers the question without a provider call.
+ *
+ * First-parent commits only, and the last 500 of them: a promotion carrying the name about to be
+ * handed out was assembled in the same minute, so if it is merged already it is at the tip of the
+ * branch.
+ */
+async function promotionBranchNamesInTargetHistory(targetBranch: string, commandThis: any): Promise<string[]> {
+  for (const ref of [`origin/${targetBranch}`, targetBranch]) {
+    const res = await runCommandSafe(`git log "${ref}" --first-parent -n 500 --format=%B`, commandThis, { output: false });
+    if (res.status === 0) {
+      return extractPromotionBranchNames(res.stdout || '');
+    }
+  }
+  // Not a reason to stop: the branch is created from the target branch right after, and that step
+  // says what is wrong with it much better than a counter could
+  uxLog('warning', commandThis, c.yellow(t('promotionCreateTargetHistoryUnavailable', { branch: targetBranch })));
+  return [];
+}
+
 export async function nextPromotionBranchName(sourceBranch: string, targetBranch: string, commandThis: any, now: Date = new Date()): Promise<string> {
-  const date = now.toISOString().substring(0, 10);
   const existing = await listExistingPromotionBranchNames(sourceBranch, targetBranch, commandThis);
-  const counter = computePromotionCounter(existing, sourceBranch, targetBranch, date);
-  return buildPromotionBranchName(sourceBranch, targetBranch, counter, now);
+  return computePromotionBranchName(existing, sourceBranch, targetBranch, now);
 }
 
 // ---- Cherry-picks ----
@@ -920,9 +992,11 @@ export async function nextPromotionBranchName(sourceBranch: string, targetBranch
 export async function createPromotionBranch(branchName: string, targetBranch: string, commandThis: any): Promise<void> {
   uxLog('action', commandThis, c.cyan(t('promotionCreateCreatingBranch', { branch: c.green(branchName), target: c.green(targetBranch) })));
   // The shared helper of hardis:work:new: it refuses a branch already checked out in another
-  // worktree, resumes an existing local or remote branch, and falls back to a local ref when the
-  // remote-tracking one is missing. Re-implementing the checkout lost all three.
-  await createWorkBranchFromTarget(branchName, targetBranch);
+  // worktree and falls back to a local ref when the remote-tracking one is missing.
+  // Re-implementing the checkout lost both. refuseExisting: unlike a User Story branch, a
+  // promotion is never resumed, so a name the counter thought was free and is not stops the
+  // command instead of assembling on top of a branch already merged.
+  await createWorkBranchFromTarget(branchName, targetBranch, { refuseExisting: true });
 }
 
 async function isMergeCommit(hash: string): Promise<boolean> {
