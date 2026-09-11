@@ -70,12 +70,21 @@ describe('testNotebookUtils - markdown', () => {
       expect(step.action).to.equal('Saisir A → B');
       expect(step.expected).to.equal('Le champ vaut A → B');
     });
+
+    it('strips a list marker only when a space follows it', () => {
+      const steps = parseSteps('1. -1 quantity is rejected → Error<br>2. **Save** the record → Saved<br>- Bullet step → OK');
+      expect(steps.map((step) => step.action)).to.deep.equal([
+        '-1 quantity is rejected',
+        '**Save** the record',
+        'Bullet step',
+      ]);
+    });
   });
 
   describe('renderStepsFlat', () => {
-    it('renders a numbered one-line cell and substitutes a literal pipe', () => {
+    it('renders a numbered one-line cell and keeps a literal pipe', () => {
       const flat = renderStepsFlat([{ action: 'A|B', expected: 'C' }, { action: 'D', expected: 'E' }]);
-      expect(flat).to.equal('1. A/B → C<br>2. D → E');
+      expect(flat).to.equal('1. A|B → C<br>2. D → E');
     });
 
     // The default separator has to be one parseSteps reads back, otherwise a rendered cell

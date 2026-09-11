@@ -199,12 +199,51 @@ describe('XrayTestProvider', () => {
       { id: 'PROJ-9', url: 'https://acme.atlassian.net/browse/PROJ-9' },
       makeCase({ priority: 2, expected: 'Le devis est enregistre' })
     );
-    const call = requests.find((entry) => entry.url.includes('/rest/api/3/issue/PROJ-9'));
+    const call = requests.find((entry) => entry.url.includes('/rest/api/2/issue/PROJ-9'));
     expect(call?.init.method).to.equal('PUT');
     const fields = JSON.parse(call?.init.body).fields;
     expect(fields.summary).to.equal('Créer un devis');
     expect(fields.description).to.contain('Le devis est enregistre');
     expect(fields.priority).to.deep.equal({ name: 'High' });
     expect(fields.labels).to.include('TESTKIT:PROJ-123:F01');
+  });
+
+  // Jira Cloud REST API v3 only takes an Atlassian Document Format description, so a plain
+  // string sent to /rest/api/3/issue made every update fail with a 400.
+  it('sends the update through REST API v2, where the description is a plain string', async () => {
+    setAllEnv();
+    mockFetch(jsonResponse({}));
+    await new XrayTestProvider().update({ id: 'PROJ-9', url: 'x' }, makeCase());
+    expect(requests[0].url).to.equal('https://acme.atlassian.net/rest/api/2/issue/PROJ-9');
+    expect(JSON.parse(requests[0].init.body).fields.description).to.be.a('string');
+  });
+
+  it('accepts a bare JIRA_HOST, as the Jira ticket provider does', async () => {
+    setAllEnv();
+    process.env.JIRA_HOST = 'acme.atlassian.net';
+    mockFetch(jsonResponse({ issues: [{ id: '10', key: 'PROJ-9' }] }));
+    const found = await new XrayTestProvider().findByKey('TESTKIT:PROJ-123:F01');
+    expect(requests[0].url).to.match(/^https:\/\/acme\.atlassian\.net\/rest\/api\/3\/search\/jql\?/);
+    expect(found?.url).to.equal('https://acme.atlassian.net/browse/PROJ-9');
+  });
+
+  it('puts a timeout on every Xray and Jira call', async () => {
+    setAllEnv();
+    mockFetch(
+      jsonResponse('jwt'),
+      jsonResponse({ data: { createTest: { test: { issueId: '1', jira: { key: 'PROJ-9' } } } } }),
+      jsonResponse({}),
+      jsonResponse({ issues: [] }),
+      jsonResponse({})
+    );
+    const provider = new XrayTestProvider();
+    await provider.create(makeCase());
+    await provider.linkToStory({ id: 'PROJ-9', url: 'x' }, 'PROJ-123');
+    await provider.findByKey('TESTKIT:PROJ-123:F01');
+    await provider.update({ id: 'PROJ-9', url: 'x' }, makeCase());
+    expect(requests).to.have.lengthOf(5);
+    for (const request of requests) {
+      expect(request.init.signal, request.url).to.be.instanceOf(AbortSignal);
+    }
   });
 });

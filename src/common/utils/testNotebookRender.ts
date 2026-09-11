@@ -202,6 +202,11 @@ function _addCasesSheet(workbook: ExcelJS.Workbook, kind: TestCaseKind, cases: N
   }
 }
 
+/** The synthesis rows with their module name guarded, since a module name is free text. */
+function _guardedSynthesisRows(cases: NormalizedTestCase[]): Array<Array<string | number>> {
+  return synthesisRows(cases).map(([moduleName, ...counts]) => [sanitizeCell(moduleName), ...counts]);
+}
+
 function _addSynthesisSheet(workbook: ExcelJS.Workbook, cases: NormalizedTestCase[]): void {
   const worksheet = workbook.addWorksheet(SYNTHESIS_SHEET_NAME);
   worksheet.columns = [
@@ -212,7 +217,7 @@ function _addSynthesisSheet(workbook: ExcelJS.Workbook, cases: NormalizedTestCas
     { header: 'P3', key: 'p3', width: 6 },
   ];
   _styleHeader(worksheet);
-  for (const row of synthesisRows(cases)) {
+  for (const row of _guardedSynthesisRows(cases)) {
     worksheet.addRow(row);
   }
   if (worksheet.lastRow) {
@@ -272,7 +277,7 @@ export async function writeNotebookCsv(
   lines.push(_csvLine([], width));
   lines.push(_csvLine([SYNTHESIS_MARKER], width));
   lines.push(_csvLine(['Module', 'Nb tests', 'P1', 'P2', 'P3'], width));
-  for (const row of synthesisRows(cases)) {
+  for (const row of _guardedSynthesisRows(cases)) {
     lines.push(_csvLine(row, width));
   }
   await fs.ensureDir(path.dirname(path.resolve(outputPath)));
@@ -300,7 +305,7 @@ export async function writeNotebookMarkdown(
   const headers = columns.map((column) => column.header);
   const lines = [`| ${headers.join(' | ')} |`, `|${headers.map(() => '---').join('|')}|`];
   for (const testCase of cases) {
-    const cells = columns.map((column) => _valueFor(column.key, testCase, STEP_SEPARATOR).replace(/\|/g, '/'));
+    const cells = columns.map((column) => _markdownCell(_valueFor(column.key, testCase, STEP_SEPARATOR)));
     lines.push(`| ${cells.join(' | ')} |`);
   }
   await fs.ensureDir(path.dirname(path.resolve(outputPath)));
@@ -352,6 +357,11 @@ export function buildTemplateRows(options: TemplateOptions): Array<Record<string
   return rows;
 }
 
+/** A markdown table cell: a pipe would end the cell, so it is escaped as `\|`, which the reader decodes. */
+function _markdownCell(value: string): string {
+  return value.replace(/\|/g, '\\|');
+}
+
 /** Write an empty notebook as a workbook, a CSV or a markdown table. */
 export async function writeTemplate(
   outputPath: string,
@@ -359,14 +369,21 @@ export async function writeTemplate(
   format: 'xlsx' | 'csv' | 'md'
 ): Promise<string> {
   const headers = headersFor(options.kind);
-  const rows = buildTemplateRows(options);
+  // ID and Module come from --ticket-number and --modules: guarded once here, for every format.
+  const rows = buildTemplateRows(options).map((row) => {
+    const guarded: Record<string, string> = {};
+    for (const [header, value] of Object.entries(row)) {
+      guarded[header] = sanitizeCell(value);
+    }
+    return guarded;
+  });
   await fs.ensureDir(path.dirname(path.resolve(outputPath)));
 
   if (format === 'md') {
     const lines = [
       `| ${headers.join(' | ')} |`,
       `|${headers.map(() => '---').join('|')}|`,
-      ...rows.map((row) => `| ${headers.map((header) => row[header] || '').join(' | ')} |`),
+      ...rows.map((row) => `| ${headers.map((header) => _markdownCell(row[header] || '')).join(' | ')} |`),
     ];
     await fs.writeFile(outputPath, lines.join('\n') + '\n', 'utf8');
     return outputPath;

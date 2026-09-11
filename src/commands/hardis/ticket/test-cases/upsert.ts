@@ -86,6 +86,7 @@ The same skip applies in CI, where \`isCI\` is true.
 - **ServiceNow updates do not touch the steps** of an existing test version: replacing them would delete rows a tester may already have executed against.
 - **Xray updates do not touch the steps** either: the steps live on the Xray side and the mutation that writes them is \`createTest\`, with no update counterpart, so a corrected step list needs the test to be recreated. The summary, description, priority and labels are updated.
 - **No ADF conversion on the Jira description:** it is sent as a plain string, so it renders without formatting.
+- **A partial create is not repaired by a rerun:** a case that exists on the tracker only goes through an update, so a story link that failed (reported with the tracker id) must be added by hand, and a ServiceNow test whose steps could not be inserted keeps no steps.
 - **Return codes:** 0 when every case went through, 2 when some failed, 1 when nothing could be attempted.
 `;
 
@@ -168,9 +169,19 @@ The same skip applies in CI, where \`isCI\` is true.
     const report = await pushCases(providers, cases, { dryRun: flags['dry-run'], provider: flags.provider });
 
     const reportFile = await generateReportPath('test-cases-upsert', flags.outputfile, { withDate: true });
-    await generateCsvFile(report.rows, reportFile, { fileTitle: 'Test cases upsert' });
+    // Every row gets every column: the CSV header is built from the first row only, so a first
+    // row without trackerId, or without error, would drop that column for all the others.
+    const rows = report.rows.map((row) => ({
+      provider: row.provider,
+      caseId: row.caseId,
+      action: row.action,
+      trackerId: row.trackerId ?? '',
+      url: row.url ?? '',
+      error: row.error ?? '',
+    }));
+    await generateCsvFile(rows, reportFile, { fileTitle: 'Test cases upsert' });
 
-    uxLogTable(this, report.rows, ['provider', 'caseId', 'action', 'trackerId', 'url']);
+    uxLogTable(this, rows, ['provider', 'caseId', 'action', 'trackerId', 'url', 'error']);
     if (report.exitCode !== 0) {
       uxLog('warning', this, c.yellow(`[TestCasesUpsert] ${report.message}`));
       process.exitCode = report.exitCode;

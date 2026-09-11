@@ -96,10 +96,10 @@ export function describeRequiredEnvVars(provider?: string): string {
 /**
  * Push every case to every provider, best effort per case.
  *
- * Best effort is safe here only because the push is idempotent: a half applied run is
- * repaired by running the same command again. The alternative, aborting on the first error,
- * was observed live on a push of ten cases where the first one failed and the other nine
- * were never attempted.
+ * Aborting on the first error was observed live on a push of ten cases where the first one
+ * failed and the other nine were never attempted. A rerun creates the cases that failed before
+ * being created, but it does not repair a partial create: an existing case only goes through
+ * update(), so a failed story link or missing ServiceNow steps stay as they are.
  */
 export async function pushCases(
   providers: TestManagementProviderRoot[],

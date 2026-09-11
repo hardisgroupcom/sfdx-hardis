@@ -3491,6 +3491,7 @@
   "testCasesNoneFound": "Kein Testfall in der übergebenen Eingabe gefunden.",
   "testCasesNotebookReport": "Testheft",
   "testCaseSoqlQuery": "SOQL-Abfrage:",
+  "testCasesOutputIsInputNotebook": "Die Ausgabedatei ist das gelesene Testheft ({{file}}): Beim Schreiben würden die von einem Tester eingetragenen Ergebnisse gelöscht. Verwenden Sie --outputfile, um eine andere Datei zu schreiben.",
   "testCasesPromptKind": "Welche Art von Testheft möchten Sie erstellen?",
   "testCasesPromptKindDescription": "Die Art bestimmt die Spalten und das Bezeichner-Präfix des generierten Testhefts",
   "testCasesPromptTicket": "Wie lautet die Ticketnummer, zu der die Testfälle gehören?",

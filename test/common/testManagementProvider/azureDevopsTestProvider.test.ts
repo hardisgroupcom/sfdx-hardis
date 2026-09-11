@@ -122,6 +122,14 @@ describe('AzureDevopsTestProvider', () => {
       expect(description).to.not.contain('<script>');
       expect(description).to.contain('<b>gras</b>');
     });
+
+    it('renders real line breaks of the description as <br>', () => {
+      const testCase = makeCase({ expected: 'Le devis existe\r\nSon total vaut 100\nIl est visible' });
+      const description = AzureDevopsTestProvider.buildPatch(testCase, null).find(
+        (op: any) => op.path === '/fields/System.Description'
+      ).value;
+      expect(description).to.contain('Le devis existe<br>Son total vaut 100<br>Il est visible');
+    });
   });
 
   describe('azureDevopsStepsXml', () => {
@@ -142,6 +150,24 @@ describe('AzureDevopsTestProvider', () => {
 
     it('renders an empty step list as a valid empty steps element', () => {
       expect(azureDevopsStepsXml([])).to.equal('<steps id="0" last="1"></steps>');
+    });
+
+    it('escapes step text twice, so angle brackets stay text once Azure DevOps decodes the XML', () => {
+      const xml = azureDevopsStepsXml([{ action: 'Enter <Account Name> & search', expected: 'List<Account>' }]);
+      expect(xml).to.contain(
+        '&lt;DIV&gt;&lt;P&gt;Enter &amp;lt;Account Name&amp;gt; &amp;amp; search&lt;/P&gt;&lt;/DIV&gt;'
+      );
+      expect(xml).to.contain('List&amp;lt;Account&amp;gt;');
+      expect(xml).to.not.contain('<Account');
+    });
+
+    it('types a step with an expected result as ValidateStep, and one without as ActionStep', () => {
+      const xml = azureDevopsStepsXml([
+        { action: 'Ouvrir', expected: 'La page apparait' },
+        { action: 'Fermer', expected: '' },
+      ]);
+      expect(xml).to.contain('<step id="2" type="ValidateStep">');
+      expect(xml).to.contain('<step id="3" type="ActionStep">');
     });
   });
 });
@@ -303,6 +329,8 @@ describe('AzureDevopsTestProvider - api calls through the injected factory', () 
     const query = (calls.find((entry) => entry.call === 'queryByWiql')?.args[0] as any).query;
     expect(query).to.contain("[System.WorkItemType] = 'Test Case'");
     expect(query).to.contain("CONTAINS 'TESTKIT:PROJ-123:F01'");
+    // A key living in another project of the collection must never be matched.
+    expect(query).to.contain('[System.TeamProject] = @project');
   });
 
   // A live Azure DevOps instance answers a tag CONTAINS with whole-tag matches, so it would

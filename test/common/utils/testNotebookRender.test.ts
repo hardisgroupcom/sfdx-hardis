@@ -8,10 +8,12 @@ import {
   COLUMNS,
   SHEET_NAMES,
   STATUS_VALUES,
+  SYNTHESIS_SHEET_NAME,
   synthesisRows,
   writeNotebookCsv,
   writeNotebookMarkdown,
   writeNotebookXlsx,
+  writeTemplate,
 } from '../../../src/common/utils/testNotebookRender.js';
 import {
   parseNotebookXlsx,
@@ -168,6 +170,63 @@ describe('testNotebookRender', () => {
       const content = await fs.readFile(file, 'utf8');
       expect(content).to.contain("'=1+1");
     });
+
+    it('guards the module names of the summary footer too', async () => {
+      const file = path.join(tmpDir, 'cahier.csv');
+      await writeNotebookCsv(file, 'functional', [makeCase({ module: '=1+1' })]);
+      const lines = (await fs.readFile(file, 'utf8')).split('\r\n');
+      expect(lines.some((line) => line.startsWith('='))).to.be.false;
+      expect(lines.some((line) => line.startsWith("'=1+1;1;"))).to.be.true;
+    });
+
+    it('guards the module names of the synthesis sheet', async () => {
+      const file = path.join(tmpDir, 'cahier.xlsx');
+      await writeNotebookXlsx(file, 'functional', [makeCase({ module: '=1+1' })]);
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(file);
+      expect(workbook.getWorksheet(SYNTHESIS_SHEET_NAME)?.getRow(2).getCell(1).value).to.equal("'=1+1");
+    });
+
+    it('guards the cells of a blank template, whose ID and module come from flags', async () => {
+      const file = path.join(tmpDir, 'template.csv');
+      await writeTemplate(file, { kind: 'functional', ticket: 'PROJ-1', modules: ['=1+1'], rows: 1 }, 'csv');
+      const lines = (await fs.readFile(file, 'utf8')).split('\r\n');
+      expect(lines.some((line) => line.startsWith('=') || line.includes(';=1+1'))).to.be.false;
+      expect(lines[1]).to.contain("'=1+1");
+    });
+
+    it('keeps pipes through a markdown round trip, the blank template included', async () => {
+      const file = path.join(tmpDir, 'pipes.md');
+      const original = makeCase({
+        expected: 'ISBLANK(Phone) || ISBLANK(Email)',
+        steps: [{ action: 'Pick A | B', expected: 'Both | shown' }],
+      });
+      await writeNotebookMarkdown(file, 'functional', [original]);
+      const cases = parseNotebookMarkdown(await fs.readFile(file, 'utf8'));
+      expect(cases).to.have.lengthOf(1);
+      expect(cases[0].expected).to.equal(original.expected);
+      expect(cases[0].steps).to.deep.equal(original.steps);
+      expect(cases[0].soql).to.equal(original.soql);
+
+      const template = path.join(tmpDir, 'template.md');
+      await writeTemplate(template, { kind: 'functional', ticket: 'PROJ-1', modules: ['A|B'], rows: 1 }, 'md');
+      const [blank] = parseNotebookMarkdown(await fs.readFile(template, 'utf8'));
+      expect(blank.module).to.equal('A|B');
+    });
+
+    it('keeps pipes as is in the csv and the xlsx', async () => {
+      const original = makeCase({ expected: 'A || B', steps: [{ action: 'Pick A | B', expected: 'Shown' }] });
+      const csvFile = path.join(tmpDir, 'pipes.csv');
+      await writeNotebookCsv(csvFile, 'functional', [original]);
+      const [fromCsv] = parseNotebookCsv(await fs.readFile(csvFile, 'utf8'));
+      const xlsxFile = path.join(tmpDir, 'pipes.xlsx');
+      await writeNotebookXlsx(xlsxFile, 'functional', [original]);
+      const [fromXlsx] = await parseNotebookXlsx(xlsxFile);
+      for (const reread of [fromCsv, fromXlsx]) {
+        expect(reread.expected).to.equal('A || B');
+        expect(reread.steps).to.deep.equal(original.steps);
+      }
+    });
   });
 
   describe('round trip', () => {
@@ -253,14 +312,21 @@ describe('testNotebookRender', () => {
       expect(lineCount(await fs.readFile(folded, 'utf8'))).to.equal(lineCount(await fs.readFile(flat, 'utf8')));
     });
 
-    it('reads that csv back as one case, with the line breaks folded onto the separator', async () => {
+    it('reads that csv back as one case, with its line breaks restored', async () => {
       const file = path.join(tmpDir, 'multi.csv');
       await writeNotebookCsv(file, 'functional', [multiLine()]);
       const cases = parseNotebookCsv(await fs.readFile(file, 'utf8'));
       expect(cases).to.have.lengthOf(1);
       expect(cases[0].id).to.equal('PROJ-123-F01');
-      expect(cases[0].expected).to.equal('Le devis existe<br>Son total vaut 100<br>Il est visible');
-      expect(cases[0].preconditions).to.equal('Un compte actif<br>Un contact rattache');
+      expect(cases[0].expected).to.equal('Le devis existe\nSon total vaut 100\nIl est visible');
+      expect(cases[0].preconditions).to.equal('Un compte actif\nUn contact rattache');
+    });
+
+    it('reads a multi-line title back on a single line', async () => {
+      const file = path.join(tmpDir, 'title.csv');
+      await writeNotebookCsv(file, 'functional', [makeCase({ title: 'Create a quote\nfrom an account' })]);
+      const [reread] = parseNotebookCsv(await fs.readFile(file, 'utf8'));
+      expect(reread.title).to.equal('Create a quote from an account');
     });
 
     it('keeps a case on a single markdown row too', async () => {

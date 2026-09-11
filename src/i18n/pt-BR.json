@@ -3458,6 +3458,7 @@
   "testCasesNoneFound": "Nenhum caso de teste encontrado na entrada fornecida.",
   "testCasesNotebookReport": "Caderno de casos de teste",
   "testCaseSoqlQuery": "Consulta SOQL:",
+  "testCasesOutputIsInputNotebook": "O arquivo de saída é o caderno de casos de teste que está sendo lido ({{file}}): gravá-lo apagaria os resultados inseridos por um testador. Use --outputfile para gravar outro arquivo.",
   "testCasesPromptKind": "Qual tipo de caderno de casos de teste você quer criar?",
   "testCasesPromptKindDescription": "O tipo determina as colunas e o prefixo do identificador do caderno gerado",
   "testCasesPromptTicket": "Qual é o número do ticket ao qual os casos de teste pertencem?",

@@ -91,4 +91,39 @@ describe('testNotebookUtils - csv and json', () => {
     }
     expect(message).to.match(/\.docx/);
   });
+
+  // Excel writes a cell holding an Alt+Enter line break as a quoted field spanning two
+  // physical lines. Splitting on newlines first used to cut that record in two.
+  it('reads a quoted CSV cell holding line breaks as one field', async () => {
+    const file = path.join(tmpDir, 'cahier.csv');
+    const csv =
+      BOM +
+      'ID;Cas de test;Étapes;Résultat attendu\r\n' +
+      'PROJ-123-01;"A ""quoted"" case";"1. Open → OK\n2. Save → Done";"Line 1\r\nLine 2"\r\n' +
+      'PROJ-123-02;Another case;1. A → B;C\r\n';
+    await fs.writeFile(file, csv, 'utf8');
+
+    const cases = await parseNotebookFile(file);
+    expect(cases).to.have.lengthOf(2);
+    expect(cases[0].title).to.equal('A "quoted" case');
+    expect(cases[0].steps).to.deep.equal([
+      { action: 'Open', expected: 'OK' },
+      { action: 'Save', expected: 'Done' },
+    ]);
+    expect(cases[0].expected).to.equal('Line 1\nLine 2');
+    expect(cases[1].id).to.equal('PROJ-123-02');
+  });
+
+  it('keeps counting CSV rows by record, not by physical line, in its error messages', async () => {
+    const file = path.join(tmpDir, 'cahier.csv');
+    const csv = 'ID;Cas de test;Résultat attendu\r\n' + 'PROJ-123-01;A case;"Line 1\nLine 2"\r\n' + 'not-an-id;Another case;C\r\n';
+    await fs.writeFile(file, csv, 'utf8');
+    let message = '';
+    try {
+      await parseNotebookFile(file);
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    expect(message).to.match(/row 2\b/);
+  });
 });

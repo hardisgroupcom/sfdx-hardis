@@ -3492,6 +3492,7 @@
   "testCasesNoneFound": "Aucun cas de test trouvé dans l'entrée fournie.",
   "testCasesNotebookReport": "Cahier de tests",
   "testCaseSoqlQuery": "Requête SOQL :",
+  "testCasesOutputIsInputNotebook": "Le fichier de sortie est le cahier de tests en cours de lecture ({{file}}) : l'écrire effacerait les résultats saisis par un testeur. Utilisez --outputfile pour écrire un autre fichier.",
   "testCasesPromptKind": "Quel type de cahier de tests souhaitez-vous créer ?",
   "testCasesPromptKindDescription": "Le type détermine les colonnes et le préfixe d'identifiant du cahier généré",
   "testCasesPromptTicket": "Quel est le numéro de ticket auquel appartiennent les cas de test ?",

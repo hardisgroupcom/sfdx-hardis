@@ -3492,6 +3492,7 @@
   "testCasesNoneFound": "Geen testgeval gevonden in de opgegeven invoer.",
   "testCasesNotebookReport": "Testboek",
   "testCaseSoqlQuery": "SOQL-query:",
+  "testCasesOutputIsInputNotebook": "Het uitvoerbestand is het testboek dat wordt gelezen ({{file}}): schrijven zou de resultaten wissen die een tester heeft ingevuld. Gebruik --outputfile om een ander bestand te schrijven.",
   "testCasesPromptKind": "Welk soort testboek wil je aanmaken?",
   "testCasesPromptKindDescription": "Het soort bepaalt de kolommen en het identificatorvoorvoegsel van het gegenereerde testboek",
   "testCasesPromptTicket": "Wat is het ticketnummer waartoe de testgevallen behoren?",

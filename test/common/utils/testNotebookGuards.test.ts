@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
-import { assertPushable, sanitizeCell } from '../../../src/common/utils/testNotebookGuards.js';
+import { assertPushable, sanitizeCell, unsanitizeCell } from '../../../src/common/utils/testNotebookGuards.js';
 import { NormalizedTestCase } from '../../../src/common/utils/testNotebookTypes.js';
 
 function makeCase(overrides: Partial<NormalizedTestCase> = {}): NormalizedTestCase {
@@ -62,6 +62,24 @@ describe('testNotebookGuards', () => {
     it('still refuses a placeholder inside the advisory soql cell', () => {
       expect(() => assertPushable([makeCase({ soql: '{QUERY}' })])).to.throw(/QUERY/);
     });
+
+    it('refuses two cases sharing an id, listing every duplicated id at once', () => {
+      let message = '';
+      try {
+        assertPushable([
+          makeCase(),
+          makeCase(),
+          makeCase({ id: 'PROJ-123-F02' }),
+          makeCase({ id: 'PROJ-123-F02' }),
+          makeCase({ id: 'PROJ-123-F03' }),
+        ]);
+      } catch (e) {
+        message = (e as Error).message;
+      }
+      expect(message).to.match(/more than once/);
+      expect(message).to.contain('PROJ-123-F01').and.to.contain('PROJ-123-F02');
+      expect(message).to.not.contain('PROJ-123-F03');
+    });
   });
 
   describe('sanitizeCell', () => {
@@ -76,6 +94,18 @@ describe('testNotebookGuards', () => {
       expect(sanitizeCell('Créer un devis')).to.equal('Créer un devis');
       expect(sanitizeCell('')).to.equal('');
       expect(sanitizeCell(undefined)).to.equal('');
+    });
+
+    it('also guards a value the author started with an apostrophe before a formula character', () => {
+      expect(sanitizeCell("'+' button adds a line")).to.equal("''+' button adds a line");
+      expect(sanitizeCell("'plain")).to.equal("'plain");
+    });
+
+    it('reads back exactly what it guarded, apostrophes typed by the author included', () => {
+      for (const value of ['=1+1', "'=1+1", "''=1+1", "'+' button adds a line", "'plain", 'plain', '-1', '\tx', '']) {
+        expect(unsanitizeCell(sanitizeCell(value)), JSON.stringify(value)).to.equal(value);
+      }
+      expect(unsanitizeCell("'plain")).to.equal("'plain");
     });
   });
 });

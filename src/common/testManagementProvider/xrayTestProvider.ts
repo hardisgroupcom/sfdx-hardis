@@ -12,6 +12,8 @@ const REGION_BASE: Record<string, string> = {
 };
 const DEFAULT_BASE = 'https://xray.cloud.getxray.app';
 const PRIORITY_NAME: Record<number, string> = { 1: 'Highest', 2: 'High', 3: 'Medium' };
+/** Same timeout as the ServiceNow adapter: a host that never answers fails the case instead of hanging it. */
+const HTTP_TIMEOUT_MS = 60000;
 
 /**
  * One mutation creates the Jira issue AND its steps atomically, which is why Xray was
@@ -141,6 +143,7 @@ export class XrayTestProvider extends TestManagementProviderRoot {
     const response = await httpGet(`${this.jiraBase()}/rest/api/3/search/jql`, {
       params: { jql, maxResults: 1, fields: 'key' },
       headers: this.jiraHeaders(),
+      timeout: HTTP_TIMEOUT_MS,
     });
     const issues = response.data?.issues ?? [];
     if (issues.length === 0) {
@@ -170,6 +173,9 @@ export class XrayTestProvider extends TestManagementProviderRoot {
    * sent only the summary and the labels, which silently discarded a corrected description or
    * priority while still reporting the case as updated.
    *
+   * It goes through REST API v2, where `description` is a plain string. REST API v3 only accepts
+   * an Atlassian Document Format value there and rejects the whole update with a 400.
+   *
    * **The steps are not updated**, and cannot be from here: they live on the Xray side, and
    * the GraphQL mutation that writes them is `createTest`, not an update. A corrected step
    * list therefore needs the test to be recreated. This is documented as a known limitation
@@ -178,7 +184,7 @@ export class XrayTestProvider extends TestManagementProviderRoot {
   public async update(ref: ProviderRef, testCase: NormalizedTestCase): Promise<ProviderRef> {
     const fields = XrayTestProvider.buildVariables(testCase, String(this.projectKey)).jira.fields;
     await httpPut(
-      `${this.jiraBase()}/rest/api/3/issue/${ref.id}`,
+      `${this.jiraBase()}/rest/api/2/issue/${ref.id}`,
       {
         fields: {
           summary: fields.summary,
@@ -187,7 +193,7 @@ export class XrayTestProvider extends TestManagementProviderRoot {
           labels: fields.labels,
         },
       },
-      { headers: this.jiraHeaders() }
+      { headers: this.jiraHeaders(), timeout: HTTP_TIMEOUT_MS }
     );
     return { id: ref.id, url: `${this.jiraBase()}/browse/${ref.id}` };
   }
@@ -201,12 +207,15 @@ export class XrayTestProvider extends TestManagementProviderRoot {
         inwardIssue: { key: ref.id },
         outwardIssue: { key: String(storyId) },
       },
-      { headers: this.jiraHeaders() }
+      { headers: this.jiraHeaders(), timeout: HTTP_TIMEOUT_MS }
     );
   }
 
   private jiraBase(): string {
-    return String(this.jiraBaseUrl ?? '').replace(/\/+$/, '');
+    // Same normalization as jiraProvider.ts: a bare host such as mycompany.atlassian.net is accepted.
+    const raw = String(this.jiraBaseUrl ?? '').trim();
+    const withScheme = raw && !raw.startsWith('http') ? `https://${raw}` : raw;
+    return withScheme.replace(/\/+$/, '');
   }
 
   private jiraHeaders(): Record<string, string> {
@@ -222,7 +231,7 @@ export class XrayTestProvider extends TestManagementProviderRoot {
       const response = await httpPost(
         `${xrayBaseUrlFor(this.region)}/api/v2/authenticate`,
         { client_id: this.clientId, client_secret: this.clientSecret },
-        { headers: { 'Content-Type': 'application/json' } }
+        { headers: { 'Content-Type': 'application/json' }, timeout: HTTP_TIMEOUT_MS }
       );
       // The endpoint returns the raw JWT as a quoted JSON string. Two shapes reach us: a
       // `application/json` response is parsed and yields the bare token, while a `text/plain`
@@ -240,6 +249,7 @@ export class XrayTestProvider extends TestManagementProviderRoot {
   private async graphql(jwt: string, body: any): Promise<any> {
     const response = await httpPost(`${xrayBaseUrlFor(this.region)}/api/v2/graphql`, body, {
       headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+      timeout: HTTP_TIMEOUT_MS,
     });
     // GraphQL answers 200 with an errors array, so a failure is not an HTTP failure here.
     const errors = response.data?.errors;

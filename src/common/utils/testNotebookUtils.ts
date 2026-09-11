@@ -109,7 +109,8 @@ export function parseSteps(raw: unknown): TestCaseStep[] {
     .map((line) =>
       line
         .replace(/^\s*\d+[.)]\s*/, '')
-        .replace(/^\s*[-*]\s*/, '')
+        // A list marker only when a space follows it: `-1 quantity` and `**Save**` are content.
+        .replace(/^\s*[-*]\s+/, '')
         .trim()
     )
     .filter(Boolean)
@@ -142,7 +143,8 @@ export function parseSteps(raw: unknown): TestCaseStep[] {
  * joined with ` | ` would not, and is deliberately not offered: in a markdown table the pipe is
  * the column separator, so it would shred the row into extra columns.
  *
- * A literal pipe in the content becomes `/`, a cosmetic loss for the same reason.
+ * A literal pipe is kept: a CSV or xlsx cell does not care about it, and the markdown writer
+ * escapes it as `\|`, which the markdown reader decodes.
  */
 export function renderStepsFlat(steps: TestCaseStep[], separator: string = STEP_SEPARATOR): string {
   if (!Array.isArray(steps) || steps.length === 0) {
@@ -154,7 +156,6 @@ export function renderStepsFlat(steps: TestCaseStep[], separator: string = STEP_
   // the expected result.
   const clean = (value: unknown): string =>
     String(value ?? '')
-      .replace(/\|/g, '/')
       .split(PAIR_SEPARATOR.trim())
       .join(LITERAL_ARROW)
       .replace(/\s*[\r\n]+\s*/g, ' ')
@@ -196,13 +197,26 @@ function _rowToCase(keys: string[], row: string[], rowNumber: number, ticketOver
     kind: derived.kind,
     module: rec.module || '',
     priority: normalizePriority(rec.priority),
-    title: rec.title || '',
-    target: rec.target || '',
-    preconditions: rec.preconditions || '',
-    soql: normalizeSoql(rec.soql),
+    // The CSV and markdown writers fold line breaks into `<br>`: restore them, except in the
+    // title, which a tracker shows on a single line.
+    title: _decodeBreaks(rec.title, ' '),
+    target: _decodeBreaks(rec.target, '\n'),
+    preconditions: _decodeBreaks(rec.preconditions, '\n'),
+    soql: normalizeSoql(_decodeBreaks(rec.soql, '\n')),
     steps: parseSteps(rec.steps),
-    expected: rec.expected || '',
+    expected: _decodeBreaks(rec.expected, '\n'),
   };
+}
+
+/**
+ * Turn the `<br>` of a one-line cell back into a line break. With a space as replacement, real
+ * line breaks are folded too, so the value ends up on one line whatever the source format.
+ */
+function _decodeBreaks(value: string | undefined, replacement: '\n' | ' '): string {
+  const pattern = replacement === '\n' ? /[ \t]*<br\s*\/?>[ \t]*/gi : /\s*(?:<br\s*\/?>|\r?\n)\s*/gi;
+  return String(value ?? '')
+    .replace(pattern, replacement)
+    .trim();
 }
 
 /**
@@ -255,50 +269,68 @@ const CSV_DELIMITER = ';';
 export const CSV_FOOTER_MARKER = 'SYNTHÈSE';
 
 /**
- * Split one CSV line on `;`, honoring RFC 4180 double quotes (a quoted field may hold the
- * delimiter, and `""` is an escaped quote).
+ * Split CSV content into records of `;` separated fields, honoring RFC 4180 double quotes: a
+ * quoted field may hold the delimiter or a line break (Alt+Enter in Excel), and `""` is an
+ * escaped quote. A line break only ends a record outside quotes.
  */
-function _splitCsvLine(line: string): string[] {
-  const fields: string[] = [];
+function _splitCsvRecords(content: string): string[][] {
+  const records: string[][] = [];
+  let fields: string[] = [];
   let current = '';
   let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
+  const endField = (): void => {
+    fields.push(current.replace(/\r\n?/g, '\n').trim());
+    current = '';
+  };
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i];
     if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
+      if (inQuotes && content[i + 1] === '"') {
         current += '"';
         i++;
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (char === CSV_DELIMITER && !inQuotes) {
-      fields.push(current);
-      current = '';
+    } else if (inQuotes) {
+      current += char;
+    } else if (char === CSV_DELIMITER) {
+      endField();
+    } else if (char === '\n' || char === '\r') {
+      if (char === '\r' && content[i + 1] === '\n') {
+        i++;
+      }
+      endField();
+      records.push(fields);
+      fields = [];
     } else {
       current += char;
     }
   }
-  fields.push(current);
-  return fields.map((field) => field.trim());
+  if (current !== '' || fields.length > 0) {
+    endField();
+    records.push(fields);
+  }
+  return records;
 }
 
 export function parseNotebookCsv(content: string, ticketOverride?: string): NormalizedTestCase[] {
   // Strip the UTF-8 BOM the renderer writes so Excel opens accents on a double click.
-  const lines = String(content).replace(/^\ufeff/, '').split(/\r?\n/);
-  if (lines.length === 0 || !lines[0].trim()) {
+  const records = _splitCsvRecords(String(content).replace(/^\ufeff/, ''));
+  if (records.length === 0 || records[0].every((field) => field === '')) {
     throw new Error('Empty CSV notebook: the first line must hold the column headers.');
   }
-  const keys = _splitCsvLine(lines[0]).map(_normalizeHeader);
+  const keys = records[0].map(_normalizeHeader);
   if (!keys.includes('id')) {
     throw new Error('CSV notebook has no "ID" column. Its first line must be the header row.');
   }
   const cases: NormalizedTestCase[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const raw = lines[i];
-    if (!raw.trim() || raw.split(CSV_DELIMITER).join('').trim() === '') {
+  // `i` counts records, not physical lines, so the row number in an error stays the one a
+  // spreadsheet shows even when a cell above spans several lines.
+  for (let i = 1; i < records.length; i++) {
+    const row = records[i];
+    if (row.every((field) => field === '')) {
       continue;
     }
-    const row = _splitCsvLine(raw);
     if ((row[0] || '').startsWith(CSV_FOOTER_MARKER)) {
       break;
     }

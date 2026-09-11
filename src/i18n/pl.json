@@ -3492,6 +3492,7 @@
   "testCasesNoneFound": "Nie znaleziono żadnego przypadku testowego w podanych danych wejściowych.",
   "testCasesNotebookReport": "Arkusz testowy",
   "testCaseSoqlQuery": "Zapytanie SOQL:",
+  "testCasesOutputIsInputNotebook": "Plik wyjściowy jest odczytywanym arkuszem testowym ({{file}}): jego zapisanie usunęłoby wyniki wprowadzone przez testera. Należy użyć --outputfile, aby zapisać inny plik.",
   "testCasesPromptKind": "Jaki rodzaj arkusza testowego należy utworzyć?",
   "testCasesPromptKindDescription": "Rodzaj decyduje o kolumnach i prefiksie identyfikatora wygenerowanego arkusza",
   "testCasesPromptTicket": "Jaki jest numer ticketu, do którego należą przypadki testowe?",

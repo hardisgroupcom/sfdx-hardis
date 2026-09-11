@@ -16,9 +16,19 @@ import {
 } from '../../../../common/utils/testNotebookRender.js';
 import { NormalizedTestCase, TestCaseKind } from '../../../../common/utils/testNotebookTypes.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import path from 'path';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+/** Same file once resolved, ignoring case on Windows where the file system does. */
+function samePath(first: string, second: string): boolean {
+  const normalize = (value: string) => {
+    const resolved = path.resolve(value);
+    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+  };
+  return normalize(first) === normalize(second);
+}
 
 export default class TicketTestCasesInit extends SfCommand<any> {
   public static title = 'Initialize the test cases of a ticket';
@@ -219,7 +229,12 @@ The same applies in CI, where \`isCI\` is true.
    */
   private async targetFor(flags: any, extension: string): Promise<string> {
     const forced = flags.outputfile ? flags.outputfile.replace(/\.(xlsx|csv|md)$/i, '') + '.' + extension : '';
-    return generateReportPath('test-cases', forced, { fileExtension: extension });
+    const target = await generateReportPath('test-cases', forced, { fileExtension: extension });
+    // Writing over the notebook being read would wipe the results a tester already entered in it.
+    if (flags.notebook && samePath(target, flags.notebook)) {
+      throw new SfError(t('testCasesOutputIsInputNotebook', { file: flags.notebook }));
+    }
+    return target;
   }
 
   private announce(files: string[]): void {

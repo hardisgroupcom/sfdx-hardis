@@ -3496,6 +3496,7 @@
   "testCasesNoneFound": "No test case found in the provided input.",
   "testCasesNotebookReport": "Test cases notebook",
   "testCaseSoqlQuery": "SOQL query:",
+  "testCasesOutputIsInputNotebook": "The output file is the notebook being read ({{file}}): writing it would erase the results a tester entered. Use --outputfile to write another file.",
   "testCasesPromptKind": "Which kind of test notebook do you want to create?",
   "testCasesPromptKindDescription": "The kind decides the columns and the identifier prefix of the generated notebook",
   "testCasesPromptTicket": "What is the ticket number the test cases belong to?",

@@ -34,6 +34,24 @@ function _assertClean(where: string, value: unknown, required: boolean): void {
  * half of it to a client tracker only creates cleanup work.
  */
 export function assertPushable(cases: NormalizedTestCase[]): void {
+  // A copied Excel row that was not renumbered shares its id with the original: in the same
+  // run, the second row would overwrite the tracker item the first row created.
+  const seenIds = new Set<string>();
+  const duplicatedIds = new Set<string>();
+  for (const testCase of cases) {
+    const id = String(testCase.id ?? '').trim();
+    if (seenIds.has(id)) {
+      duplicatedIds.add(id);
+    }
+    seenIds.add(id);
+  }
+  if (duplicatedIds.size > 0) {
+    throw new Error(
+      `Upsert refused: ${duplicatedIds.size} test case id(s) appear more than once: ${[...duplicatedIds].join(', ')}. ` +
+        'Give each row of the notebook its own identifier, then run the command again.'
+    );
+  }
+
   const offenders: string[] = [];
   for (const testCase of cases) {
     _assertClean(`${testCase.id}.title`, testCase.title, true);
@@ -70,23 +88,31 @@ export function assertPushable(cases: NormalizedTestCase[]): void {
   }
 }
 
+/** A formula lead character, possibly behind apostrophes the author or a previous guard added. */
+const GUARDED_START_RE = /^'*[=+\-@\t\r]/;
+
 /**
  * Neutralize a cell a spreadsheet would execute as a formula.
  *
  * A notebook is written by a human, rendered to xlsx, and opened by another human: a cell
  * starting with `=`, `+`, `-` or `@` is run by Excel and LibreOffice on open, which is the
  * classic CSV injection path. Prefixing an apostrophe is the standard mitigation and keeps
- * the value readable.
+ * the value readable. A value already starting with apostrophes before such a character gets
+ * one more, so that `unsanitizeCell` can always give back what the author typed.
  */
 export function sanitizeCell(value: unknown): string {
   const text = String(value ?? '');
-  return /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return GUARDED_START_RE.test(text) ? `'${text}` : text;
 }
 
 /**
  * Reverse of `sanitizeCell`, applied when a notebook is read back: without it, a title such as
  * `-1 day` would come back as `'-1 day` and the apostrophe would be sent to the tracker.
+ *
+ * It removes exactly one apostrophe, and only from a value `sanitizeCell` would have guarded:
+ * `'+' button` is written `''+' button` and reads back as the author typed it.
  */
 export function unsanitizeCell(value: unknown): string {
-  return String(value ?? '').replace(/^'(?=[=+\-@\t\r])/, '');
+  const text = String(value ?? '');
+  return text.startsWith("'") && GUARDED_START_RE.test(text.slice(1)) ? text.slice(1) : text;
 }

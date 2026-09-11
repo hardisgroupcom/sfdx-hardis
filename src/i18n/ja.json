@@ -3489,6 +3489,7 @@
   "testCasesNoneFound": "指定された入力にテストケースが見つかりませんでした。",
   "testCasesNotebookReport": "テストケース一覧",
   "testCaseSoqlQuery": "SOQL クエリ:",
+  "testCasesOutputIsInputNotebook": "出力ファイルが読み込み中のテストケース一覧 ({{file}}) と同じです。書き込むとテスターが入力した結果が消去されます。別のファイルに書き込むには --outputfile を使用してください。",
   "testCasesPromptKind": "どの種類のテストケース一覧を作成しますか？",
   "testCasesPromptKindDescription": "種類によって、生成されるテストケース一覧の列と識別子のプレフィックスが決まります",
   "testCasesPromptTicket": "テストケースが属するチケット番号は何ですか？",

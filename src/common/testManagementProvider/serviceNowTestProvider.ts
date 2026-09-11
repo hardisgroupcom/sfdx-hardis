@@ -7,7 +7,7 @@ import { t } from '../utils/i18n.js';
 
 const T_TEST = 'sn_test_management_test';
 const T_VERSION = 'sn_test_management_test_version';
-const T_STEP = 'sn_test_management_test_step';
+const T_STEP = 'sn_test_management_step';
 const PLUGIN = 'com.snc.test_management.2.0';
 /** ServiceNow orders steps by hundreds, leaving room to insert one by hand later. */
 const STEP_ORDER_INCREMENT = 100;
@@ -153,7 +153,7 @@ export class ServiceNowTestProvider extends TestManagementProviderRoot {
       await this.insert(T_STEP, {
         test_version: version.sys_id,
         order,
-        description: step.action,
+        step: step.action,
         expected_result: step.expected,
       });
       order += STEP_ORDER_INCREMENT;

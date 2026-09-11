@@ -134,8 +134,8 @@ describe('ServiceNowTestProvider', () => {
       expect(tables).to.deep.equal([
         'sn_test_management_test',
         'sn_test_management_test_version',
-        'sn_test_management_test_step',
-        'sn_test_management_test_step',
+        'sn_test_management_step',
+        'sn_test_management_step',
       ]);
       expect(ref.id).to.equal('test-1');
       expect(ref.url).to.equal('https://acme.service-now.com/sn_test_management_test.do?sys_id=test-1');
@@ -152,7 +152,7 @@ describe('ServiceNowTestProvider', () => {
       await new ServiceNowTestProvider().create(makeCase());
       const steps = requests.slice(2).map((request) => JSON.parse(request.init.body));
       expect(steps.map((step) => step.order)).to.deep.equal([100, 200]);
-      expect(steps[0].description).to.equal('Ouvrir');
+      expect(steps[0].step).to.equal('Ouvrir');
       expect(steps[0].expected_result).to.equal('La page apparait');
       expect(steps[0].test_version).to.equal('version-1');
     });

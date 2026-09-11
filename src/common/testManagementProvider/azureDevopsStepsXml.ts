@@ -8,9 +8,13 @@ function _htmlEscape(value: unknown): string {
     .replace(/"/g, '&quot;');
 }
 
-/** The field stores HTML as an escaped string, so the DIV/P wrappers are escaped too. */
+/**
+ * The field stores HTML as an XML escaped string. The step text is HTML escaped first, then
+ * the whole DIV/P fragment is escaped again, so `Enter <Account Name>` stays text once Azure
+ * DevOps decodes the XML, instead of turning into a tag that swallows it.
+ */
 function _wrap(text: string): string {
-  return `&lt;DIV&gt;&lt;P&gt;${_htmlEscape(text)}&lt;/P&gt;&lt;/DIV&gt;`;
+  return _htmlEscape(`<DIV><P>${_htmlEscape(text)}</P></DIV>`);
 }
 
 function _oneLine(value: unknown): string {
@@ -35,10 +39,13 @@ export function azureDevopsStepsXml(steps: TestCaseStep[]): string {
   }
   const parts = [`<steps id="0" last="${list.length + 1}">`];
   list.forEach((step, i) => {
+    const expected = _oneLine(step.expected);
+    // Azure DevOps types a step with an expected result as ValidateStep.
+    const type = expected ? 'ValidateStep' : 'ActionStep';
     parts.push(
-      `<step id="${i + 2}" type="ActionStep">`,
+      `<step id="${i + 2}" type="${type}">`,
       `<parameterizedString isformatted="true">${_wrap(_oneLine(step.action))}</parameterizedString>`,
-      `<parameterizedString isformatted="true">${_wrap(_oneLine(step.expected))}</parameterizedString>`,
+      `<parameterizedString isformatted="true">${_wrap(expected)}</parameterizedString>`,
       '<description/>',
       '</step>'
     );

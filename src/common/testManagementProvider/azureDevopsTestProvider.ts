@@ -44,7 +44,10 @@ function _htmlEscape(value: unknown): string {
  * into real tags, built from already escaped text. Reversing the two opens an HTML injection.
  */
 function _richText(text: unknown): string {
-  const protectedBreaks = String(text ?? '').replace(BR_RE, BR_PLACEHOLDER);
+  // Real line breaks (from an xlsx cell or a JSON payload) render as <br> too.
+  const protectedBreaks = String(text ?? '')
+    .replace(BR_RE, BR_PLACEHOLDER)
+    .replace(/\r\n|\r|\n/g, BR_PLACEHOLDER);
   const html = _htmlEscape(protectedBreaks)
     .replace(MD_LINK_RE, '<a href="$2">$1</a>')
     .replace(MD_CODE_RE, '<code>$1</code>')
@@ -198,7 +201,8 @@ export class AzureDevopsTestProvider extends TestManagementProviderRoot {
   public async findByKey(key: string): Promise<ProviderRef | null> {
     const wiql = {
       query:
-        `SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = '${WORK_ITEM_TYPE}' ` +
+        `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project ` +
+        `AND [System.WorkItemType] = '${WORK_ITEM_TYPE}' ` +
         `AND [System.Tags] CONTAINS '${String(key).replace(/'/g, "''")}'`,
     };
     const api = await this.api();
