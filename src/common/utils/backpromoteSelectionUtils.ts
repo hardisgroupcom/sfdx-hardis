@@ -6,6 +6,9 @@
  * (backpromoteStateUtils).
  */
 
+import { isRetrofit } from './orgConfigUtils.js';
+import { isPromotionBranchName } from './promotionBranchUtils.js';
+
 export type BackpromoteGroupStatus = 'pending' | 'done';
 
 /** The part of a BackpromotePrGroup these helpers need */
@@ -273,6 +276,52 @@ export function findBackpromoteTargetOrgRefusal(options: {
   }
   if (options.isSandbox !== true) {
     return { reason: 'production' };
+  }
+  return null;
+}
+
+export type BackpromoteBranchRefusal =
+  | { reason: 'majorBranch' }
+  | { reason: 'promotionBranch' }
+  | { reason: 'retrofitBranch' }
+  | { reason: 'sameBranch' }
+  | { reason: 'parentNotMajor'; majorBranches: string[] };
+
+/**
+ * Why a backpromote must not run from this branch, or null when it may. A backpromote brings what was
+ * merged in a major branch into a User Story branch created from it, so:
+ * - the current branch must be a User Story branch: a major branch is deployed by the CI/CD pipeline,
+ *   a promotion branch only carries User Stories from one major branch to the next (its Pull Request
+ *   validates it, nothing deploys it) and a retrofit branch carries a major branch down to another one.
+ *   None of them is the work of a developer, so none of them feeds a developer org.
+ * - the parent branch must be a major branch (or the development branch). Pass parentBranch null to
+ *   check the current branch only, before the parent branch is known. A project declaring no major
+ *   branch at all gives nothing to compare with, and its parent branch is accepted.
+ */
+export function findBackpromoteBranchRefusal(options: {
+  currentBranch: string;
+  parentBranch: string | null;
+  majorBranches: string[];
+}): BackpromoteBranchRefusal | null {
+  const currentBranch = options.currentBranch || '';
+  const majorBranches = (options.majorBranches || []).filter((branch) => !!branch);
+  if (majorBranches.includes(currentBranch)) {
+    return { reason: 'majorBranch' };
+  }
+  if (isPromotionBranchName(currentBranch)) {
+    return { reason: 'promotionBranch' };
+  }
+  if (isRetrofit(currentBranch)) {
+    return { reason: 'retrofitBranch' };
+  }
+  if (options.parentBranch === null) {
+    return null;
+  }
+  if (options.parentBranch === currentBranch) {
+    return { reason: 'sameBranch' };
+  }
+  if (majorBranches.length > 0 && !majorBranches.includes(options.parentBranch)) {
+    return { reason: 'parentNotMajor', majorBranches };
   }
   return null;
 }

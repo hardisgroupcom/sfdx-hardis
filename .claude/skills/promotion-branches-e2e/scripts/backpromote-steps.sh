@@ -95,6 +95,21 @@ grep -q "org of the uat branch" "$LOGS/bp-refused-major-run.log" && [ "$code" !=
 ok_if B1-run $? "exit=$code"
 git checkout -- config/branches
 
+echo; echo "=== B1b promotion branch ==="
+PROMO_BRANCH=promotion/integration/uat/2026-09-11-0859
+git checkout -q -b "$PROMO_BRANCH"
+e2e_backpromote_json bp-refused-promotion --plan --from "$ROOT"
+check_plan B1b-plan bp-refused-promotion "$BPX/refused-promotion.json"
+e2e_backpromote bp-refused-promotion-run --agent --from "$ROOT"
+code=$?
+grep -q "promotion branch" "$LOGS/bp-refused-promotion-run.log" && [ "$code" != "0" ]
+ok_if B1b-run $? "exit=$code"
+git checkout -q feature/E2E-401-dev && git branch -q -D "$PROMO_BRANCH"
+
+echo; echo "=== B1c parent branch not a major branch ==="
+e2e_backpromote_json bp-refused-parent --plan --from "$ROOT" --parentbranch feature/E2E-105-apex
+check_plan B1c-plan bp-refused-parent "$BPX/refused-parent.json"
+
 echo; echo "=== B2 production org ==="
 e2e_backpromote_json bp-refused-prod --plan --from "$ROOT" --target-org "$ORG"
 check_plan B2-plan bp-refused-prod "$BPX/refused-production.json"

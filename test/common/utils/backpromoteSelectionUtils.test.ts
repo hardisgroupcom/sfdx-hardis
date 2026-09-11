@@ -6,6 +6,7 @@ import {
   buildBackpromoteRunCommand,
   countConflictMarkerBlocks,
   defaultGroupSelection,
+  findBackpromoteBranchRefusal,
   findBackpromoteTargetOrgRefusal,
   findItemsAlsoChangedByUnselected,
   findNewestDoneGroupIndex,
@@ -150,6 +151,39 @@ describe('selectDeltaUnion()', () => {
     const selection = selectDeltaUnion(union, [G481, G482], order);
     expect(findItemsAlsoChangedByUnselected(selection, [G481, G482], [G481, G482, G485, G487])).to.deep.equal(['Flow:Quote_Approval']);
     expect(findItemsAlsoChangedByUnselected(selection, [G481, G482], [G481, G482])).to.deep.equal([]);
+  });
+});
+
+describe('findBackpromoteBranchRefusal()', () => {
+  const majorBranches = ['integration', 'uat', 'preprod', 'main'];
+  const refusal = (currentBranch: string, parentBranch: string | null, branches = majorBranches) =>
+    findBackpromoteBranchRefusal({ currentBranch, parentBranch, majorBranches: branches });
+
+  it('accepts a User Story branch backpromoted from a major branch', () => {
+    expect(refusal('feature/MKTCRMHG-1016-business-model', null)).to.be.null;
+    expect(refusal('feature/MKTCRMHG-1016-business-model', 'integration')).to.be.null;
+  });
+
+  it('refuses a major branch, a promotion branch and a retrofit branch, before the parent branch is known', () => {
+    expect(refusal('uat', null)).to.deep.equal({ reason: 'majorBranch' });
+    expect(refusal('promotion/integration/uat/2026-09-11-0859', null)).to.deep.equal({ reason: 'promotionBranch' });
+    expect(refusal('promotion/uat/preprod/2026-09-06-1', 'preprod')).to.deep.equal({ reason: 'promotionBranch' });
+    expect(refusal('retrofit/from-main', 'integration')).to.deep.equal({ reason: 'retrofitBranch' });
+  });
+
+  it('treats a branch only named like a promotion or retrofit branch as a User Story branch', () => {
+    expect(refusal('promotion/fix-labels', 'integration')).to.be.null;
+    expect(refusal('retrofitting-legacy', 'integration')).to.be.null;
+  });
+
+  it('refuses the current branch as its own parent, and a parent branch that is not a major branch', () => {
+    expect(refusal('feature/E2E-401-dev', 'feature/E2E-401-dev')).to.deep.equal({ reason: 'sameBranch' });
+    expect(refusal('feature/E2E-401-dev', 'feature/E2E-105-apex')).to.deep.equal({ reason: 'parentNotMajor', majorBranches });
+  });
+
+  it('accepts any parent branch when the project declares no major branch, and still refuses a promotion branch', () => {
+    expect(refusal('feature/E2E-401-dev', 'develop', [])).to.be.null;
+    expect(refusal('promotion/integration/uat/2026-09-11-0859', 'integration', [])).to.deep.equal({ reason: 'promotionBranch' });
   });
 });
 

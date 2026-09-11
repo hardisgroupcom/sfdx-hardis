@@ -46,7 +46,7 @@ import {
 // ---- Plan returned by --plan --json (read by the VS Code Backpromote panel) ----
 
 export interface BackpromotePlanCheck {
-  id: 'gitProvider' | 'targetOrg' | 'currentBranch' | 'gitClean' | 'upToDate';
+  id: 'gitProvider' | 'targetOrg' | 'currentBranch' | 'parentBranch' | 'gitClean' | 'upToDate';
   ok: boolean;
   message: string;
   details?: string[];

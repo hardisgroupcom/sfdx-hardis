@@ -49,9 +49,11 @@ import {
   persistBackpromoteOrgRecords,
 } from '../../../common/utils/backpromoteStateUtils.js';
 import {
+  BackpromoteBranchRefusal,
   buildBackpromoteMergePrompt,
   buildBackpromoteRunCommand,
   defaultGroupSelection,
+  findBackpromoteBranchRefusal,
   findItemsAlsoChangedByUnselected,
   findNewestDoneGroupIndex,
   parseMetadataKey,
@@ -63,13 +65,28 @@ import {
   unionGroupDeltas,
 } from '../../../common/utils/backpromoteSelectionUtils.js';
 import { getConfig } from '../../../config/index.js';
-import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { isPackageXmlEmpty } from '../../../common/utils/xmlUtils.js';
 import { t } from '../../../common/utils/i18n.js';
 import fs from '../../../common/utils/fsUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+/** The message of a branch refusal, as the plan check and the run error give it */
+function backpromoteBranchRefusalMessage(refusal: BackpromoteBranchRefusal, currentBranch: string, parentBranch: string): string {
+  switch (refusal.reason) {
+    case 'majorBranch':
+      return t('backpromoteNotAllowedOnMajorOrg', { currentBranch });
+    case 'promotionBranch':
+      return t('backpromoteNotAllowedOnPromotionBranch', { currentBranch });
+    case 'retrofitBranch':
+      return t('backpromoteNotAllowedOnRetrofitBranch', { currentBranch });
+    case 'sameBranch':
+      return t('backpromoteCannotBackpromoteFromSameBranch');
+    default:
+      return t('backpromoteParentBranchNotMajor', { parentBranch, branches: refusal.majorBranches.join(', ') });
+  }
+}
 
 export default class BackpromoteTask extends SfCommand<any> {
   public static title = 'Backpromote to dev sandbox (Beta)';
@@ -87,7 +104,7 @@ Key functionalities:
 
 - **Connected to the git provider:** the history of what each developer org received is kept in Pull Request comments, shared by every developer and machine, and nothing is stored locally. The command refuses to run until sfdx-hardis is connected to GitHub, GitLab, Azure DevOps or Bitbucket.
 - **Developer orgs only:** the target org must be a developer sandbox or a scratch org. A production org, or the org of a major branch declared in \`config/branches\`, is refused: the CI/CD pipeline deploys those.
-- **Pre-flight checks:** the git working directory must be clean, the current branch must not be a major branch, and it must already contain the latest commit of the parent branch.
+- **Pre-flight checks:** the git working directory must be clean, the current branch must be a User Story branch (not a major branch, a promotion branch or a retrofit branch), the parent branch must be a major branch, and the current branch must already contain the latest commit of the parent branch.
 - **Pull Request selection:** the Pull Requests merged in the parent branch after the last one backpromoted to this org are listed (use \`--from\` to list older ones), and each one can be selected or left out. An item also changed by a Pull Request left out is deployed with that change too, since the deployment reads the files of the branch: the command warns about it.
 - **History per org:** a Pull Request deployed into an org is recorded in a comment of that Pull Request with the Salesforce Organization Id, the date, the merge commit and the result of its deployment actions. A refreshed sandbox is a new org and starts with nothing backpromoted.
 - **Delta computation:** sfdx-git-delta computes what each selected Pull Request deploys and deletes.
@@ -274,10 +291,10 @@ The command's technical implementation involves:
       throw new SfError(targetOrg.message);
     }
 
-    // Step 3: never from a major branch
-    const majorOrgs = await listMajorOrgs();
-    if (majorOrgs.some((org: any) => org.branchName === currentBranch)) {
-      const message = t('backpromoteNotAllowedOnMajorOrg', { currentBranch });
+    // Step 3: only from a User Story branch, never from a major, promotion or retrofit branch
+    const branchRefusal = findBackpromoteBranchRefusal({ currentBranch, parentBranch: null, majorBranches: parentBranchChoices });
+    if (branchRefusal) {
+      const message = backpromoteBranchRefusalMessage(branchRefusal, currentBranch, '');
       checks.push({ id: 'currentBranch', ok: false, message });
       if (planMode) {
         return blockedPlan();
@@ -285,16 +302,17 @@ The command's technical implementation involves:
       throw new SfError(message);
     }
 
-    // Step 4: parent branch
+    // Step 4: parent branch, a major branch
     const parentBranch = planMode ? planParentBranch : await resolveParentBranch(this, flags.parentbranch || null, nonInteractive, currentBranch);
     uxLog('log', this, c.cyan(t('backpromoteStarting', { parentBranch: c.green(parentBranch) })));
-    if (currentBranch === parentBranch) {
-      const message = t('backpromoteCannotBackpromoteFromSameBranch');
-      checks.push({ id: 'currentBranch', ok: false, message });
+    const parentRefusal = findBackpromoteBranchRefusal({ currentBranch, parentBranch, majorBranches: parentBranchChoices });
+    if (parentRefusal) {
+      const message = backpromoteBranchRefusalMessage(parentRefusal, currentBranch, parentBranch);
+      checks.push({ id: parentRefusal.reason === 'parentNotMajor' ? 'parentBranch' : 'currentBranch', ok: false, message });
       if (planMode) {
         return blockedPlan();
       }
-      throw new Error(message);
+      throw new SfError(message);
     }
     checks.push({ id: 'currentBranch', ok: true, message: t('backpromoteCheckCurrentBranchOk', { branch: currentBranch }) });
 
