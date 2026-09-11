@@ -8,7 +8,7 @@ import {
   buildConflictResolutionPrompt,
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
-  computePromotionCounter,
+  computePromotionBranchName,
   countsAsAlreadyPromoted,
   declaredPullRequestNumbers,
   dropOfferedTwice,
@@ -39,19 +39,42 @@ function group(hash: string, prs: Array<{ id: number; title: string }>, message 
   };
 }
 
-describe('computePromotionCounter()', () => {
-  it('starts at 1 and follows the highest existing counter of the day, local or remote', () => {
-    expect(computePromotionCounter([], 'uat', 'preprod', '2026-09-06')).to.equal(1);
-    const existing = [
-      'refs/heads/promotion/uat/preprod/2026-09-06-1',
-      'origin/promotion/uat/preprod/2026-09-06-3',
-      'promotion/uat/preprod/2026-09-05-9', // another day
-      'promotion/uat/main/2026-09-06-7', // another target
+describe('computePromotionBranchName()', () => {
+  const now = new Date('2026-09-06T14:30:25Z');
+
+  it('stamps the UTC date and minute, with no counter while the name is free', () => {
+    expect(computePromotionBranchName([], 'uat', 'preprod', now)).to.equal('promotion/uat/preprod/2026-09-06-1430');
+    // Zero-padded, and in UTC whatever the time zone of the machine running the command
+    expect(computePromotionBranchName([], 'integration', 'uat', new Date('2026-01-02T00:05:59Z'))).to.equal(
+      'promotion/integration/uat/2026-01-02-0005'
+    );
+    const notThisName = [
+      'promotion/uat/preprod/2026-09-06-1431', // another minute
+      'promotion/uat/main/2026-09-06-1430', // another target
+      'promotion/uat/preprod/2026-09-06-1', // a <date>-<counter> name of the first releases, same day
+      'promotion/uat/preprod/2026-09-06-14301', // starts like the name, but is another one
       'feature/x',
     ];
-    expect(computePromotionCounter(existing, 'uat', 'preprod', '2026-09-06')).to.equal(4);
-    expect(computePromotionCounter(existing, 'uat', 'main', '2026-09-06')).to.equal(8);
-    expect(computePromotionCounter(existing, 'UAT', 'preprod', '2026-09-06')).to.equal(4);
+    expect(computePromotionBranchName(notThisName, 'uat', 'preprod', now)).to.equal('promotion/uat/preprod/2026-09-06-1430');
+  });
+
+  it('adds -2 when the name is taken, whatever the ref form or the case', () => {
+    expect(computePromotionBranchName(['refs/heads/promotion/uat/preprod/2026-09-06-1430'], 'uat', 'preprod', now)).to.equal(
+      'promotion/uat/preprod/2026-09-06-1430-2'
+    );
+    expect(computePromotionBranchName(['origin/Promotion/UAT/preprod/2026-09-06-1430'], 'uat', 'preprod', now)).to.equal(
+      'promotion/uat/preprod/2026-09-06-1430-2'
+    );
+  });
+
+  // A counter that looks free below the highest one may belong to a branch deleted after its merge
+  it('goes one past the highest counter taken, never back into a gap', () => {
+    const taken = [
+      'remotes/origin/promotion/uat/preprod/2026-09-06-1430',
+      'promotion/uat/preprod/2026-09-06-1430-2',
+      'promotion/uat/preprod/2026-09-06-1430-4',
+    ];
+    expect(computePromotionBranchName(taken, 'uat', 'preprod', now)).to.equal('promotion/uat/preprod/2026-09-06-1430-5');
   });
 });
 

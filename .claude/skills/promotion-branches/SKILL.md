@@ -24,8 +24,9 @@ End to end test runbook: the `promotion-branches-e2e` skill.
 
 ## Mental model
 
-- **Promotion branch** = `promotion/<source>/<target>/<YYYY-MM-DD>-<counter>`, for example
-  `promotion/uat/preprod/2026-09-06-1`. The shape is **fixed, not configurable**. Only
+- **Promotion branch** = `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>`, for example
+  `promotion/uat/preprod/2026-09-06-1430` (UTC minute, `-2`, `-3`... only when that name is
+  taken). The shape is **fixed, not configurable**. Only
   `sf hardis:project:promotion:create` builds one, with `git cherry-pick -x` (`-m 1` on merge
   commits).
 - **Declaration** = the promotion Pull Request lists what it carries in a ```yaml block of its
@@ -215,6 +216,20 @@ Break one of these and the feature is wrong, whatever the tests say.
     `getMaxPullRequestDescriptionLength()` and drops the embedded prompt (saved in `hardis-report/`
     either way) rather than letting the creation fail with the branch already pushed. The yaml
     declaration, the carried table and the conflicting file list always survive.
+28. **A promotion branch name is never handed out twice.** `buildPromotionBranchName` stamps the
+    UTC date and minute (`<YYYY-MM-DD>-<HHMM>`, UTC so two machines in different time zones
+    compute the same name), and `computePromotionBranchName` adds `-2`, `-3`... only when that
+    name is taken, one past the highest counter found, never back into a gap. "Taken" is read from
+    everything that can still carry a name after the branch is gone:
+    `listExistingPromotionBranchNames` collects local branches, `git ls-remote`, stale
+    remote-tracking refs, the merge commits of the target branch (`extractPromotionBranchNames`,
+    the merge sentence of all four providers) and the promotion Pull Requests merged into it in the
+    last two days (rebase, fast-forward and Azure squash merges leave no merge commit naming the
+    branch). `createPromotionBranch` passes `refuseExisting`, so a name that still exists stops the
+    command instead of resuming a branch already merged. `parsePromotionBranchName` (and its mirror
+    in the extension, plus the fallback regex of `pipeline.js`) still accepts the
+    `<YYYY-MM-DD>-<counter>` names of the first releases: a promotion assembled before the upgrade
+    can still be open, or waiting in a branch for the next step.
 
 ## sfdx-hardis (CLI)
 

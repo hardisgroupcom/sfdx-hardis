@@ -742,8 +742,16 @@ export async function assertBranchNotInOtherWorktree(branchName: string): Promis
  * - Fetches origin/<target> and creates the new branch from it, falling back to the local <target> ref.
  * - If the branch already exists and is free, checks it out (resume work).
  * - If the branch is checked out in another worktree, throws a clear error.
+ *
+ * `refuseExisting` turns the resume into an error: a promotion branch is always assembled from
+ * scratch on top of its target branch, so checking out a branch that already exists (or the
+ * stale remote-tracking ref of one deleted on the remote) would silently carry its commits.
  */
-export async function createWorkBranchFromTarget(branchName: string, targetBranch: string): Promise<void> {
+export async function createWorkBranchFromTarget(
+  branchName: string,
+  targetBranch: string,
+  options: { refuseExisting?: boolean } = {}
+): Promise<void> {
   if (!isGitRepo()) {
     throw new SfError('[sfdx-hardis] You must be within a git repository');
   }
@@ -761,6 +769,9 @@ export async function createWorkBranchFromTarget(branchName: string, targetBranc
   const localBranches = await git().branchLocal();
   // Resume an existing local branch
   if (localBranches.all.includes(branchName)) {
+    if (options.refuseExisting === true) {
+      throw new SfError(t('gitBranchAlreadyExistsLocally', { branch: branchName }));
+    }
     await git().checkout(branchName);
     uxLog("action", this, c.green(t('checkedOutGitBranch', { branchName: c.bold(branchName) })));
     return;
@@ -769,6 +780,9 @@ export async function createWorkBranchFromTarget(branchName: string, targetBranc
   // Resume a branch that exists only on origin (git creates the local tracking branch)
   const remoteBranches = await git().branch(['-r']);
   if (remoteBranches.all.includes(`origin/${branchName}`)) {
+    if (options.refuseExisting === true) {
+      throw new SfError(t('gitBranchAlreadyExistsOnRemote', { branch: branchName }));
+    }
     await git().checkout(branchName);
     uxLog("action", this, c.green(t('checkedOutGitBranch', { branchName: c.bold(branchName) })));
     return;
