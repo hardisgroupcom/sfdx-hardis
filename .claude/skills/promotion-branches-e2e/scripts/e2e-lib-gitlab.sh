@@ -263,12 +263,23 @@ bp_provider_env() {
     "$@"
 }
 
-# Usage: bp_open <branch> <title> [body]  (prints the merge request iid)
+# Usage: bp_open <branch> <title> [body]  (prints the merge request iid). GitLab answers
+# {"source_branch":["does not exist"]} for a branch pushed a moment ago, before its API indexed it:
+# retry for a while, and say what GitLab answered when it never works.
 bp_open() {
-  local body="$LOGS/bp-mr-body.md"
+  local body="$LOGS/bp-mr-body.md" iid attempt
   printf '%s\n' "${3:-backpromote end to end test}" >"$body"
-  # python does not resolve the git bash /c/... paths: hand it a Windows path
-  gl_mr_create "$1" integration "$2" "$(cygpath -m "$body" 2>/dev/null || echo "$body")"
+  for attempt in $(seq 1 15); do
+    # python does not resolve the git bash /c/... paths: hand it a Windows path
+    iid=$(gl_mr_create "$1" integration "$2" "$(cygpath -m "$body" 2>/dev/null || echo "$body")" 2>"$LOGS/bp-mr-create.err")
+    if [[ "$iid" =~ ^[0-9]+$ ]]; then
+      echo "$iid"
+      return 0
+    fi
+    sleep 3
+  done
+  echo "merge request creation failed for $1: $(tail -3 "$LOGS/bp-mr-create.err")" >&2
+  return 1
 }
 
 # Usage: bp_merge <iid>. Waits until GitLab knows the last commit pushed on the source branch, so the
