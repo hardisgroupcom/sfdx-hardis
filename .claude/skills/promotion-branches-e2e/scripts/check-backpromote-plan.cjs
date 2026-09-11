@@ -9,7 +9,7 @@
 //   errorContains       text of the error message of a failed run
 //   status              plan status: ready | blocked | upToDate
 //   orgType             sandbox | scratch | production
-//   checks              [{ id, ok, messageContains, detailsContain: ["file"], detailsExclude: "folder/", nextCommandContains, noNextCommand }]
+//   checks              [{ id, ok, messageContains, detailsContain: ["file"], detailsExclude: "folder/" }]
 //   groupCount          number of groups listed
 //   groups              [{ pullRequests: [1], status, trackable, backpromotedToThisOrg: true, backpromotedToCount: 1,
 //                          items: ["Type:Name"], deletions: [...], actionIds: [...] }]
@@ -81,9 +81,6 @@ if (expect.exitStatus !== undefined) {
 if (expect.errorContains) {
   check(`error contains "${expect.errorContains}"`, String(envelope.message || '').includes(expect.errorContains), envelope.message);
 }
-if (expect.statusIn) {
-  check(`plan status is one of ${expect.statusIn.join(', ')}`, expect.statusIn.includes(doc.status), `got ${doc.status}`);
-}
 if (expect.status) {
   check(`plan status is ${expect.status}`, doc.status === expect.status, `got ${doc.status}`);
 }
@@ -93,15 +90,13 @@ if (expect.orgType) {
 for (const expected of expect.checks || []) {
   const found = (doc.checks || []).find((item) => item.id === expected.id);
   check(
-    `check ${expected.id} ok=${expected.ok}${expected.messageContains ? ` "${expected.messageContains}"` : ''}${expected.nextCommandContains ? ` next command "${expected.nextCommandContains}"` : ''}${expected.noNextCommand ? ' without next command' : ''}`,
+    `check ${expected.id} ok=${expected.ok}${expected.messageContains ? ` "${expected.messageContains}"` : ''}`,
     found &&
       found.ok === expected.ok &&
       (!expected.messageContains || String(found.message).includes(expected.messageContains)) &&
       includesAll(found.details, expected.detailsContain) &&
-      (!expected.detailsExclude || !(found.details || []).some((detail) => String(detail).includes(expected.detailsExclude))) &&
-      (!expected.nextCommandContains || String(found.nextCommand || '').includes(expected.nextCommandContains)) &&
-      (!expected.noNextCommand || !found.nextCommand),
-    found ? `ok=${found.ok} message=${found.message} details=${JSON.stringify(found.details || [])} nextCommand=${found.nextCommand || ''}` : 'missing',
+      (!expected.detailsExclude || !(found.details || []).some((detail) => String(detail).includes(expected.detailsExclude))),
+    found ? `ok=${found.ok} message=${found.message} details=${JSON.stringify(found.details || [])}` : 'missing',
   );
 }
 if (expect.olderFromSet !== undefined) {

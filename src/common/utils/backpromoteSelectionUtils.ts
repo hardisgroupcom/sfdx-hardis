@@ -326,16 +326,6 @@ export function findBackpromoteBranchRefusal(options: {
   return null;
 }
 
-/**
- * The command creating a User Story branch that receives a backpromote from this parent branch,
- * offered when the current branch cannot receive one: it preselects the parent branch as target
- * branch and ends with a way back to the backpromote. Null without a parent branch.
- */
-export function buildBackpromoteNewUserStoryCommand(parentBranch: string): string | null {
-  const branch = (parentBranch || '').trim();
-  return branch === '' ? null : `sf hardis:work:new --backpromote ${quoteArgument(branch)}`;
-}
-
 /** Number of git conflict blocks left in a file content */
 export function countConflictMarkerBlocks(content: string): number {
   return (content || '').split(/\r?\n/).filter((line) => line.startsWith('<<<<<<< ')).length;

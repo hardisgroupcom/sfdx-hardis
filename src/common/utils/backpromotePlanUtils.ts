@@ -50,8 +50,6 @@ export interface BackpromotePlanCheck {
   ok: boolean;
   message: string;
   details?: string[];
-  /** Command solving the check: a New User Story receiving the backpromote, when the current branch cannot receive one */
-  nextCommand?: string;
 }
 
 export interface BackpromotePlan {

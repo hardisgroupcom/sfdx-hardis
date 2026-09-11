@@ -1,8 +1,0 @@
-{
-  "exitStatus": 0,
-  "statusIn": ["ready", "upToDate"],
-  "checks": [
-    { "id": "currentBranch", "ok": true, "messageContains": "feature/E2E-402-receive-backpromote" },
-    { "id": "upToDate", "ok": true }
-  ]
-}

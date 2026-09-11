@@ -58,8 +58,6 @@ Key features include:
 
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
 
-- **Backpromote (Beta) (\`--backpromote <parent branch>\`):** creates the User Story branch that will receive a backpromote from this parent branch, as offered by \`sf hardis:work:backpromote\` (and its VS Code panel) when the current branch cannot receive one. The parent branch is preselected as target branch and the current org as the org to work in, the sandbox update and the org opening are skipped (the backpromote brings the updates of the parent branch into the org), and the command ends with a **Back to backpromote** button in VS Code.
-
 - **Agent Mode (\`--agent\`):** Enables a fully non-interactive execution path for AI agents and automation. In this mode, all required decisions must be provided as flags and are validated at command start with explicit error messages listing missing inputs and available options.
 
 ### Agent Mode Invocation
@@ -115,8 +113,7 @@ The command's logic orchestrates various underlying processes:
   public static examples = [
     '$ sf hardis:work:new',
     '$ sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration',
-    '$ sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration --branch-prefix retrofit',
-    '$ sf hardis:work:new --backpromote integration'
+    '$ sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration --branch-prefix retrofit'
   ];
 
   // public static args = [{name: 'file'}];
@@ -134,9 +131,6 @@ The command's logic orchestrates various underlying processes:
     }),
     'branch-prefix': Flags.string({
       description: 'Branch prefix to use (must be in configured branchPrefixChoices, e.g. feature, fix, retrofit)',
-    }),
-    backpromote: Flags.string({
-      description: 'Parent branch of a backpromote (Beta): create the User Story branch that will receive it, with this branch preselected as target, the current org preselected, no sandbox update, and a way back to the backpromote at the end',
     }),
     'open-org': Flags.boolean({
       default: false,
@@ -162,8 +156,6 @@ The command's logic orchestrates various underlying processes:
 
   protected targetBranch: string;
   protected debugMode = false;
-  // Parent branch of the backpromote this User Story branch is created for (--backpromote)
-  protected backpromoteParentBranch: string | null = null;
 
   /* jscpd:ignore-end */
 
@@ -176,10 +168,6 @@ The command's logic orchestrates various underlying processes:
     const agentInputs = agentMode ? await this.validateAgentInputs(flags, config) : null;
 
     uxLog("action", this, c.cyan(t('creatingNewUserStoryDevOrConfig')));
-    this.backpromoteParentBranch = (flags.backpromote || '').trim() || null;
-    if (this.backpromoteParentBranch) {
-      uxLog("action", this, c.cyan(t('newUserStoryForBackpromote', { parentBranch: c.green(this.backpromoteParentBranch) })));
-    }
     if (!agentMode) {
       uxLog("log", this, c.grey(t('whenUnsurePressEnterToUseThe')));
     }
@@ -189,7 +177,7 @@ The command's logic orchestrates various underlying processes:
 
     this.targetBranch = agentMode
       ? agentInputs.targetBranch
-      : (flags['target-branch'] || await selectTargetBranch({ initial: this.backpromoteParentBranch || undefined }));
+      : (flags['target-branch'] || await selectTargetBranch());
 
     const defaultBranchPrefixChoices = [
       {
@@ -339,8 +327,7 @@ The command's logic orchestrates various underlying processes:
         message: c.cyanBright(t('whichSalesforceOrgDoYouWantToWorkIn')),
         description: t('chooseTypeOfSalesforceOrgForWork'),
         placeholder: t('selectOrgType'),
-        // A backpromote goes to the org it was started from
-        initial: this.backpromoteParentBranch && orgTypeChoices.some((choice) => choice.value === 'currentOrg') ? 'currentOrg' : 0,
+        initial: 0,
         choices: orgTypeChoices,
       });
       selectedOrgType = orgTypeResponse.value;
@@ -365,15 +352,6 @@ The command's logic orchestrates various underlying processes:
     }
     if (selectedOrgInfo?.instanceUrl) {
       uxLog("log", this, c.cyan(t('yourCurrentOrgUrlIs', { url: c.green(selectedOrgInfo.instanceUrl) })));
-    }
-    if (this.backpromoteParentBranch) {
-      uxLog("action", this, c.cyan(t('newUserStoryBackpromoteNext', { command: c.green('sf hardis:work:backpromote') })));
-      // Back to the Backpromote panel, which reloads its plan on this branch
-      if (WebSocketClient.isAliveWithLwcUI()) {
-        WebSocketClient.sendReportFileMessage('vscode-sfdx-hardis.showBackpromote', t('backToBackpromote'), 'actionCommand', [
-          { parentBranch: this.targetBranch },
-        ]);
-      }
     }
     // Return an object to be displayed with --json
     return { outputString: 'Created new User Story' };
@@ -725,10 +703,7 @@ The command's logic orchestrates various underlying processes:
     }
 
     // Initialize / Update existing sandbox if available
-    if (this.backpromoteParentBranch) {
-      // The backpromote itself brings the updates of the parent branch into the org
-      uxLog("action", this, c.cyan(t('newUserStoryBackpromoteSkipsSandboxUpdate', { branch: c.green(this.targetBranch) })));
-    } else if (!(config.sharedDevSandboxes === true)) {
+    if (!(config.sharedDevSandboxes === true)) {
       let initSandbox = false;
       if (agentInputs) {
         initSandbox = agentInputs.initSandbox === true;
@@ -822,8 +797,8 @@ The command's logic orchestrates various underlying processes:
         }
       }
     }
-    // Open of if not already open (a backpromote goes back to its panel instead)
-    if (openOrg === true && !this.backpromoteParentBranch) {
+    // Open of if not already open
+    if (openOrg === true) {
       let shouldOpenOrg = false;
       if (agentInputs) {
         shouldOpenOrg = agentInputs.openOrg === true;

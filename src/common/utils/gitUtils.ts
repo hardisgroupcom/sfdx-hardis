@@ -135,7 +135,7 @@ export function buildAvailableTargetBranches(config: any): { branches: string[];
   return { branches, display };
 }
 
-export async function selectTargetBranch(options: { message?: string; initial?: string } = {}) {
+export async function selectTargetBranch(options: { message?: string } = {}) {
   const gitUrl = await getGitRepoUrl() || '';
   const message =
     options.message ||
@@ -168,7 +168,7 @@ export async function selectTargetBranch(options: { message?: string; initial?: 
           };
         })
         : [],
-      initial: options.initial || config.developmentBranch || 'integration',
+      initial: config.developmentBranch || 'integration',
     },
   ]);
   const targetBranch = response.targetBranch || 'integration';

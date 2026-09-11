@@ -22,7 +22,6 @@ Runbook section 6bis (steps B0 to B17, Pull Request comment consistency checks C
 | B1 Org of a major branch | plan `blocked` naming `uat`, run exits 1 | OK | OK | OK |
 | B1b Promotion branch (added after the three runs) | plan `blocked` on `currentBranch` naming a promotion branch, run exits 1 | OK | not run | not run |
 | B1c Parent branch not a major branch (added after the three runs) | plan `blocked` on `parentBranch` | OK | not run | not run |
-| B1d New User Story receiving a backpromote (added after the three runs) | `hardis:work:new --backpromote integration` from the refused promotion branch creates `feature/E2E-402-receive-backpromote`, skips the sandbox update, and its plan passes the `currentBranch` check | OK | not run | not run |
 | B2 Production org | plan `blocked`, `is a production org` | OK | OK | OK |
 | B3 Plan | `ready`, `scratch`, S1 S2 S3 pending and trackable, items `newToOrg`, four actions | OK | OK | OK |
 | B4 S1 and S3 picked | only `E2E_S1` and `E2E_S3` deployed, only their pre-deploy actions, nothing stored in `config/user` | OK | OK | OK |
@@ -63,7 +62,7 @@ Product fixes (all in PR #2192):
 4. **`--json` stdout started with `WS Client started`**, and the panel's background calls opened a command tab in VS Code. No WebSocket for `--plan` and `--prepare-merge --json`, the line goes to stderr in `--json` runs.
 5. **The first commit of the repository broke an explicit selection without `--from`** (`--from is not a valid sha pointer <root>^1`). Commits without a first parent are not listed, and in explicit mode only the groups after the last backpromoted one are recomputed.
 6. **`hardis-report/` files blocked the clean tree check** after a first run. They are ignored.
-7. **A promotion branch, a retrofit branch or a parent branch that is not a major branch was accepted** (found reviewing the panel on a real project, after the three runs). A backpromote now runs only from a User Story branch whose parent is a major branch; B1b and B1c were added and run on GitHub against the same scratch org. The refused plan now offers `sf hardis:work:new --backpromote <parent branch>` (a New User Story button in the panel, ending with Back to backpromote): B1d runs it.
+7. **A promotion branch, a retrofit branch or a parent branch that is not a major branch was accepted** (found reviewing the panel on a real project, after the three runs). A backpromote now runs only from a User Story branch whose parent is a major branch; B1b and B1c were added and run on GitHub against the same scratch org.
 
 Test harness only (the product already handles these, the scripts did not):
 
