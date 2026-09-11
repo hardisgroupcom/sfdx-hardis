@@ -556,7 +556,16 @@ export function countConflictMarkerBlocks(content: string): number {
 }
 
 function quoteArgument(value: string): string {
-  return /^[A-Za-z0-9_.@:/-]+$/.test(value) ? value : `"${value.replace(/"/g, '\\"')}"`;
+  if (/^[A-Za-z0-9_.@:/-]+$/.test(value)) {
+    return value;
+  }
+  // Reports, Dashboards and Email Templates of the default folder are named unfiled$public: inside
+  // double quotes a shell would expand that dollar sign, and the command the user copies would name
+  // another item. Single quotes are literal in bash and in PowerShell.
+  if (value.includes('$') && !value.includes("'")) {
+    return `'${value}'`;
+  }
+  return `"${value.replace(/"/g, '\\"')}"`;
 }
 
 /** The run command matching a selection, as the VS Code panel and the merge prompt give it */

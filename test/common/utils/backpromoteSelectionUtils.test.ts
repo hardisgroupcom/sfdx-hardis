@@ -403,6 +403,16 @@ describe('backpromote merge helpers', () => {
     );
   });
 
+  it('quotes an unfiled$public item so a shell does not expand it', () => {
+    const command = buildBackpromoteRunCommand({
+      parentBranch: 'integration',
+      pullRequests: [482],
+      commits: [],
+      excludeMetadata: ['Report:unfiled$public/Pipeline by stage'],
+    });
+    expect(command).to.contain("--exclude-metadata 'Report:unfiled$public/Pipeline by stage'");
+  });
+
   it('gives the coding agent the files, the three sides, the Pull Requests and the next command', () => {
     const prompt = buildBackpromoteMergePrompt({
       parentBranch: 'integration',
