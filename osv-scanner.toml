@@ -39,3 +39,41 @@ reason = "image-size 1.2.1 is a transitive dependency of pptxgenjs 4.0.1; no pat
 [[IgnoredVulns]]
 id = "GHSA-w3rx-r6r6-pgpr"
 reason = "image-size 1.2.1 is a transitive dependency of pptxgenjs 4.0.1; no patched version exists (all releases up to the latest 2.0.2 are affected). Our PPTX report generates text and tables only and never decodes images, so the vulnerable ICNS parser is unreachable."
+
+# https://github.com/advisories/GHSA-8cw4-87c7-c6xx (CVE-2026-85063)
+# csv-parse: with the columns and group_columns_by_name options enabled, a duplicate __proto__ header
+# is treated as an existing property, an attacker-controlled array is assigned through
+# obj['__proto__'] and the prototype of the parsed record is replaced. Fixed in 7.0.2.
+# Not a direct dependency of sfdx-hardis: it reaches us through @salesforce/core ->
+# @jsforce/jsforce-node, which declares "csv-parse": "^5.5.2". jsforce-node uses it in lib/csv.js to
+# parse Bulk API CSV results, so the CSV that goes through the vulnerable parser is the one returned
+# by the user's own Salesforce org, not untrusted third-party input.
+# Fixing it here would mean overriding a dependency two majors past its declared range (5.x -> 7.x),
+# whose parser options and record/info semantics changed, with no test coverage of that path. The
+# real fix belongs upstream: remove once @jsforce/jsforce-node moves to csv-parse 7.x. Added 2026-09-09.
+[[IgnoredVulns]]
+id = "GHSA-8cw4-87c7-c6xx"
+reason = "csv-parse 5.6.0 is transitive through @salesforce/core -> @jsforce/jsforce-node, which declares csv-parse ^5.5.2 and uses it to parse Bulk API results returned by the user's own org, not untrusted input. The fix is two majors past the declared range (5.x -> 7.x) with changed parser and record semantics, so it belongs upstream in jsforce-node."
+
+[[IgnoredVulns]]
+id = "CVE-2026-85063"
+reason = "Same finding as GHSA-8cw4-87c7-c6xx, ignored under the same id alias."
+
+# https://github.com/advisories/GHSA-vwc7-r8mq-g2x9 (CVE-2026-76845)
+# adm-zip: Utils.sanitize enforces containment by comparing only the string form of an entry name
+# against the resolved extraction root, and Utils.writeFileTo opens the destination without
+# O_NOFOLLOW and without a pre-write lstat, so a symlink already present at the destination is
+# followed and a file is written outside the target directory.
+# No patched release exists: 0.6.0 is the latest release on npm, so there is nothing to upgrade to.
+# Single call site in sfdx-hardis: src/common/metadata-utils/index.ts builds `new AdmZip(...)` and
+# calls extractAllTo(metadataFolder, true) on the unpackaged.zip retrieved from the Salesforce
+# Metadata API into a temporary metadata folder. The archive is produced by the org's own Metadata
+# API, not supplied by an untrusted uploader, which is the premise of adm-zip path-traversal
+# findings. Remove as soon as adm-zip ships a fixed release. Added 2026-09-09.
+[[IgnoredVulns]]
+id = "GHSA-vwc7-r8mq-g2x9"
+reason = "adm-zip 0.6.0 is the latest release on npm and no patched version exists. Our single call site (src/common/metadata-utils/index.ts) extracts the unpackaged.zip returned by the Salesforce Metadata API into a temporary folder, so the archive is produced by the org itself and never supplied by an untrusted uploader."
+
+[[IgnoredVulns]]
+id = "CVE-2026-76845"
+reason = "Same finding as GHSA-vwc7-r8mq-g2x9, ignored under the same id alias."

@@ -10,7 +10,7 @@ _Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessi
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/total](https://img.shields.io/npm/dt/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
-[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-201.1k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
+[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-216.6k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
 [![GitHub stars](https://img.shields.io/github/stars/hardisgroupcom/sfdx-hardis)](https://GitHub.com/hardisgroupcom/sfdx-hardis/stargazers/)
 [![GitHub contributors](https://img.shields.io/github/contributors/hardisgroupcom/sfdx-hardis.svg)](https://gitHub.com/hardisgroupcom/sfdx-hardis/graphs/contributors/)
 [![MegaLinter](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml/badge.svg?branch=main)](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml?query=branch%3Amain)
@@ -817,6 +817,8 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:project:lint**](hardis/project/lint.md)                                                 |       |
 | [**hardis:project:metadata:activate-decomposed**](hardis/project/metadata/activate-decomposed.md) |       |
 | [**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)           |       |
+| [**hardis:project:promotion:create**](hardis/project/promotion/create.md)                         |       |
+| [**hardis:project:promotion:list-candidates**](hardis/project/promotion/list-candidates.md)       |       |
 | [**hardis:project:skills:import**](hardis/project/skills/import.md)                               |       |
 
 ### hardis:scratch

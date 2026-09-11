@@ -18,6 +18,18 @@ import { convertMermaidBlocksToImages } from '../../../common/utils/mermaidUtils
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
+// The five entities XHTML declares, and so the only names Confluence resolves on its own.
+const XML_ENTITY_NAMES = ['amp', 'lt', 'gt', 'quot', 'apos'];
+
+// The named entities a generated page can hold, written as the code point Confluence accepts.
+// Anything outside this list keeps its ampersand escaped and reads as it was typed.
+const HTML_ENTITY_CODE_POINTS: Record<string, number> = {
+  nbsp: 160, copy: 169, laquo: 171, reg: 174, deg: 176, middot: 183, raquo: 187,
+  times: 215, ndash: 8211, mdash: 8212, lsquo: 8216, rsquo: 8217, ldquo: 8220, rdquo: 8221,
+  dagger: 8224, bull: 8226, hellip: 8230, prime: 8242, euro: 8364, trade: 8482,
+  larr: 8592, uarr: 8593, rarr: 8594, darr: 8595, harr: 8596, ne: 8800, le: 8804, ge: 8805,
+};
+
 export default class MkDocsToConfluence extends SfCommand<any> {
   public static title = 'MkDocs to Confluence';
 
@@ -34,6 +46,8 @@ Key operations performed:
   - **Internal links:** Rewrites \`[text](page.md)\` links into Confluence page links using \`<ac:link>\` macros.
   - **Images:** Uploads images as attachments to the corresponding Confluence page and replaces Markdown image references with \`<ac:image>\` macros.
   - **Code blocks:** Converts fenced code blocks into Confluence \`<ac:structured-macro>\` code blocks.
+  - **Collapsible sections:** Converts \`<details>\` / \`<summary>\` blocks into the Confluence **expand** macro, so a section that folds on the website folds in Confluence too.
+  - **Website-only markup:** Drops the layout \`<div>\` containers and the attribute lists (\`{ .css-class }\`) the documentation site styles itself with, since Confluence carries no stylesheet of yours.
   - **Standard Markdown:** Converts headings, lists, tables, bold, italic, and other formatting to Confluence-compatible XHTML.
 - **Page Hierarchy:** Creates Confluence pages mirroring the MkDocs navigation tree, with parent-child relationships matching the nav structure.
 - **Incremental Updates:** If a page already exists in Confluence, it is updated (with an incremented version number) rather than duplicated.
@@ -629,13 +643,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
     // which breaks table detection that expects rows to end exactly with '|')
     html = html.replace(/[ \t]+$/gm, '');
 
-    // Remove HTML comments
-    html = html.replace(/<!--[\s\S]*?-->/g, '');
-
     // Convert fenced code blocks to Confluence code macro
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_match, lang, code) => {
       const langAttr = lang ? `<ac:parameter ac:name="language">${this.escapeXml(lang)}</ac:parameter>` : '';
-      const macro = `<ac:structured-macro ac:name="code">${langAttr}<ac:plain-text-body><![CDATA[${code}]]></ac:plain-text-body></ac:structured-macro>`;
+      // Source code holding "]]>" (an Aura component with a CDATA of its own) closed the CDATA
+      // that carries it, and the rest of the file was read as markup. Split across two sections,
+      // the sequence reaches the reader whole.
+      const cdataBody = String(code).replaceAll(']]>', ']]]]><![CDATA[>');
+      const macro = `<ac:structured-macro ac:name="code">${langAttr}<ac:plain-text-body><![CDATA[${cdataBody}]]></ac:plain-text-body></ac:structured-macro>`;
       const placeholder = `@@HARDIS_CODE_BLOCK_${codeBlockPlaceholders.length}@@`;
       codeBlockPlaceholders.push(macro);
       return placeholder;
@@ -651,14 +666,52 @@ In agent mode, all interactive prompts are skipped and default values are used.
       return placeholder;
     });
 
-    // Convert images: ![alt](path) → placeholder (will be replaced after attachment upload)
-    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, imgPath) => {
-      if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
-        return `<ac:image><ri:url ri:value="${this.escapeXml(imgPath)}" /></ac:image>`;
-      }
-      const resolvedFileName = path.basename(imgPath);
-      return `<ac:image ac:alt="${this.escapeXml(alt)}"><ri:attachment ri:filename="${this.escapeXml(resolvedFileName)}" /></ac:image>`;
+    // Comments are removed once code is out of the way: a page documenting an HTML comment holds
+    // it inside a code span, and removing it there left the two backticks around it facing each
+    // other, which spliced a <code> tag across the rest of the sentence.
+    html = html.replace(/<!--[\s\S]*?-->/g, '');
+
+    // Collapsible sections become the Confluence expand macro. The markers survive the markdown
+    // passes below, so the body of the section is converted like any other content, and they are
+    // replaced by the macro once everything else is done.
+    const expandTitles: string[] = [];
+    html = html.replace(/<details[^>]*>\s*<summary>([\s\S]*?)<\/summary>/gi, (_match, title) => {
+      expandTitles.push(String(title).replace(/<[^>]+>/g, '').trim());
+      return `@@HARDIS_EXPAND_OPEN_${expandTitles.length - 1}@@`;
     });
+    html = html.replace(/<details[^>]*>/gi, '@@HARDIS_EXPAND_OPEN_UNTITLED@@');
+    html = html.replace(/<\/details>/gi, '@@HARDIS_EXPAND_CLOSE@@');
+    // A section someone opened and never closed would leave the macro open and cost the page:
+    // it is closed at the end, and a closing tag that opens nothing is dropped.
+    html = this.balanceExpandMarkers(html);
+
+    // attr_list decorates an element with a CSS class or an id for the documentation website.
+    // Confluence carries no stylesheet of ours, and an attribute list nobody removes is printed
+    // to the reader as "{ .sfdx-hardis-home-card__title }". Only a list opening on . or # is
+    // taken, so a Salesforce formula holding {!Record.Field} is left alone.
+    html = html.replace(/[ \t]*\{\s*[.#][^}\n]*\}/g, '');
+
+    // Layout containers of the website. A div carries no meaning in Confluence storage format,
+    // and the "markdown" attribute md_in_html needs is not valid XHTML, which makes Confluence
+    // refuse the whole page. Unwrapping them is also what the attribute asks for: read what is
+    // inside as markdown.
+    html = html.replace(/<\/?div[^>]*>/gi, '');
+
+    // Storage format markup a page talks about, outside of a code span. Nothing has emitted any
+    // of ours yet, so anything found here was typed by the author and is meant to be read: left
+    // as it is, an <ac:structured-macro> quoted in a sentence opens a macro that never closes.
+    html = html.replace(/<\/?(?:ac|ri):[^<>]*>/gi, (quoted) => quoted.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+    html = html.replace(/<(\/?(?:ac|ri):)/gi, '&lt;$1');
+
+    // An image wrapped in a link, such as the banner every generated page ends with. The image
+    // has to be built here: converted separately, the link pass would take the <ac:image> for the
+    // label of the link and escape it, printing its markup to the reader on every page.
+    html = html.replace(/\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)/g, (_match, alt, imgPath, href) =>
+      `<a href="${this.escapeXml(href)}">${this.markdownImageToStorage(alt, imgPath)}</a>`);
+
+    // Convert images: ![alt](path) → placeholder (will be replaced after attachment upload)
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, imgPath) =>
+      this.markdownImageToStorage(alt, imgPath));
 
     // Convert internal page links: [text](page.md) → Confluence link macro
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, text, href) => {
@@ -687,14 +740,18 @@ In agent mode, all interactive prompts are skipped and default values are used.
     }
 
     // Convert bold. Disallow newlines inside the span so a stray `**` can't match
-    // across unrelated paragraphs/list items.
-    html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    // across unrelated paragraphs/list items, and stop at a cell boundary: a row written
+    // **SLACK*CHANNEL_ID*{BRANCH}** leaves its closing ** unpaired, and the next ** to pair it
+    // with is several cells away.
+    html = html.replace(/\*\*((?:(?!<\/t[dh]>)[^*\n])+)\*\*/g, '<strong>$1</strong>');
 
     // Convert italic using *text* and _text_ variants. Both variants forbid newlines
     // inside the span - otherwise a leftover `*` on one line greedily pairs with a
     // `*` many lines later and splices `<em>` across unrelated content.
     // For _text_, apply strict boundaries so Salesforce API names like Siren__c are preserved.
-    html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+    // Emphasis never opens on "* " nor closes on " *", so the multiplication of a formula
+    // ({!a.Cost__c} * {!b.Duration__c}) no longer opens an <em> that closes in another cell.
+    html = html.replace(/\*(?![\s*])((?:(?!<\/t[dh]>)[^*\n])+?)(?<![\s*])\*/g, '<em>$1</em>');
     html = html.replace(/(?<![A-Za-z0-9_])_([^_\n]+)_(?![A-Za-z0-9_])/g, '<em>$1</em>');
 
     // Convert lists (supports nested bullet and ordered lists)
@@ -715,7 +772,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
           paragraphed.push(this.wrapInParagraphIfNeeded(buffer.trim()));
         }
         buffer = '';
-      } else if (/^<(h[1-6]|p|ul|ol|li|table|ac:|div|hr|blockquote)/i.test(trimmed) || /^@@HARDIS_CODE_BLOCK_\d+@@$/.test(trimmed)) {
+      } else if (/^<(h[1-6]|p|ul|ol|li|table|ac:|div|hr|blockquote)/i.test(trimmed) || /^@@HARDIS_(CODE_BLOCK_\d+|EXPAND_(OPEN_(\d+|UNTITLED)|CLOSE))@@$/.test(trimmed)) {
         // Block-level element: flush pending text first, then add the block directly
         if (buffer.trim()) {
           paragraphed.push(this.wrapInParagraphIfNeeded(buffer.trim()));
@@ -736,6 +793,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
     // Restore inline code spans (kept as placeholders during markdown-to-HTML passes).
     html = html.replace(/@@HARDIS_INLINE_CODE_(\d+)@@/g, (_match, index) => inlineCodePlaceholders[parseInt(index, 10)] || '');
 
+    // Collapsible sections: the markers become the expand macro now that their body is converted.
+    html = html.replace(/@@HARDIS_EXPAND_OPEN_(\d+|UNTITLED)@@/g, (_match, index: string) => {
+      const title = index === 'UNTITLED' ? '' : (expandTitles[parseInt(index, 10)] || '');
+      const titleParameter = title ? `<ac:parameter ac:name="title">${this.escapeXml(title)}</ac:parameter>` : '';
+      return `<ac:structured-macro ac:name="expand">${titleParameter}<ac:rich-text-body>`;
+    });
+    html = html.replace(/@@HARDIS_EXPAND_CLOSE@@/g, '</ac:rich-text-body></ac:structured-macro>');
+
     // Final XHTML sanitization. Confluence storage format is XHTML-strict - any malformed
     // markup triggers "Content contains unsupported extensions and cannot be edited in
     // Fabric editor" (HTTP 400). CDATA blocks are protected because their contents must
@@ -743,6 +808,34 @@ In agent mode, all interactive prompts are skipped and default values are used.
     html = this.sanitizeConfluenceXhtml(html);
 
     return html;
+  }
+
+  // Keeps the expand markers of a page paired: an extra close is dropped where it stands, and a
+  // section still open at the end of the page is closed there.
+  private balanceExpandMarkers(html: string): string {
+    let open = 0;
+    let balanced = html.replace(/@@HARDIS_EXPAND_(OPEN_(?:\d+|UNTITLED)|CLOSE)@@/g, (marker) => {
+      if (marker === '@@HARDIS_EXPAND_CLOSE@@') {
+        if (open === 0) {
+          return '';
+        }
+        open--;
+        return marker;
+      }
+      open++;
+      return marker;
+    });
+    balanced += '\n@@HARDIS_EXPAND_CLOSE@@'.repeat(open);
+    return balanced;
+  }
+
+  // An image hosted elsewhere is read from its address; an image of the project is uploaded as an
+  // attachment of the page beforehand and referenced by its file name.
+  private markdownImageToStorage(alt: string, imgPath: string): string {
+    if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
+      return `<ac:image><ri:url ri:value="${this.escapeXml(imgPath)}" /></ac:image>`;
+    }
+    return `<ac:image ac:alt="${this.escapeXml(alt)}"><ri:attachment ri:filename="${this.escapeXml(path.basename(imgPath))}" /></ac:image>`;
   }
 
   private sanitizeConfluenceXhtml(html: string): string {
@@ -753,10 +846,20 @@ In agent mode, all interactive prompts are skipped and default values are used.
       return placeholder;
     });
 
-    // Escape bare ampersands. Confluence storage format accepts HTML named entities
-    // (e.g. &mdash;, &nbsp;) in addition to the five XML ones, so we preserve any
-    // &name; / &#NN; / &#xHH; pattern and only escape ampersands not followed by one.
+    // Escape bare ampersands: anything that is not already an entity reference.
     out = out.replace(/&(?![a-zA-Z][a-zA-Z0-9]*;|#\d+;|#x[0-9a-fA-F]+;)/g, '&amp;');
+
+    // Storage format is XHTML, and XHTML declares five entities. A named one it does not know,
+    // &nbsp; above all, is answered with "The entity nbsp was referenced, but not declared" and
+    // the page is refused, so the character it stands for is written as its code point instead.
+    out = out.replace(/&([a-zA-Z][a-zA-Z0-9]*);/g, (entity, name: string) => {
+      if (XML_ENTITY_NAMES.includes(name)) {
+        return entity;
+      }
+      const codePoint = HTML_ENTITY_CODE_POINTS[name];
+      // A name nobody can resolve means the ampersand was meant literally
+      return codePoint ? `&#${codePoint};` : `&amp;${name};`;
+    });
 
     // Self-close void elements, matching the `<br />` / `<hr />` style used in the
     // Confluence storage format docs.
@@ -768,11 +871,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
     // (e.g. stray `<>` or `<SomeClass>` in prose) gets escaped so Fabric doesn't
     // treat it as unknown markup.
     const allowedTag = /^<\/?(?:h[1-6]|p|div|blockquote|hr|ul|ol|li|table|thead|tbody|tr|th|td|col|colgroup|caption|strong|em|code|a|br|img|span|b|i|u|sub|sup|s|del|ins|ac:[a-z-]+|ri:[a-z-]+)(?:\s[^>]*)?\/?>$/i;
-    out = out.replace(/<[^<>]*>/g, (m) =>
-      allowedTag.test(m) ? m : m.replace(/</g, '&lt;').replace(/>/g, '&gt;'),
+    // The two alternatives matter: a chunk that looks like a tag is judged as one, and a `<` that
+    // opens nothing is escaped where it stands. Generic Apex code used to be left half escaped -
+    // `Map<Id,List<Opportunity>>` became `<Id,List&lt;Opportunity&gt;>`, which Confluence read as
+    // a tag named "Id,List&lt;Opportunity&gt;" and refused.
+    out = out.replace(/<[^<>]*>|</g, (m) =>
+      m === '<' ? '&lt;' : allowedTag.test(m) ? m : m.replace(/</g, '&lt;').replace(/>/g, '&gt;'),
     );
-    // Escape any unpaired `<` left over (no matching `>`).
-    out = out.replace(/<(?![a-zA-Z!/])/g, '&lt;');
 
     out = out.replace(/@@HARDIS_CDATA_(\d+)@@/g, (_m, idx) => cdataPlaceholders[parseInt(idx, 10)] || '');
     return out;
@@ -796,8 +901,11 @@ In agent mode, all interactive prompts are skipped and default values are used.
       const secondRow = rows[1];
       if (!/^\|[\s:|-]+\|$/.test(secondRow.trim())) return tableBlock;
 
+      // A cell holding a pipe writes it escaped, which is how a Salesforce formula keeps the "||"
+      // of its OR conditions. Splitting on every pipe broke that row into extra cells and left a
+      // tag opened in one cell and closed in another, which Confluence refuses.
       const parseRow = (row: string): string[] =>
-        row.split('|').slice(1, -1).map((cell) => this.escapeCellBrackets(cell.trim()));
+        row.split(/(?<!\\)\|/).slice(1, -1).map((cell) => this.escapeCellBrackets(cell.trim().replace(/\\\|/g, '|')));
 
       const headerCells = parseRow(rows[0]);
       const dataRows = rows.slice(2);
@@ -826,7 +934,9 @@ In agent mode, all interactive prompts are skipped and default values are used.
    * Prevents cell content like `List<LogRequest>` from being parsed as a tag.
    */
   private escapeCellBrackets(cell: string): string {
-    const allowedTag = /^<\/?(?:code|strong|em|a|br|hr|img|ac:[a-z-]+|ri:[a-z-]+)(?:\s[^>]*)?\/?>$/i;
+    // span carries the colors a Flow element is drawn with, and Confluence keeps its style
+    // attribute, so escaping it printed the markup of every colored cell to the reader.
+    const allowedTag = /^<\/?(?:code|strong|em|a|br|hr|img|span|b|i|u|sub|sup|del|ins|ac:[a-z-]+|ri:[a-z-]+)(?:\s[^>]*)?\/?>$/i;
     let out = cell.replace(/<[^<>]*>/g, (m) =>
       allowedTag.test(m) ? m : m.replace(/</g, '&lt;').replace(/>/g, '&gt;'),
     );

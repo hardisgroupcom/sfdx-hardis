@@ -3,7 +3,7 @@ import c from "chalk";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils/index.js";
 import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
-import { getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
+import { CONSTANTS, getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 
 // Oldest commit date of a window, minus one day of margin, used to bound merged PR listings:
@@ -40,6 +40,47 @@ export function hasAffirmativeFlowInterviewDeletionDirective(description: string
       /^[-*]\s+\[[xX]\]\s+FLOW_DELETE_INTERVIEWS(?:\s*=\s*true)?$/.test(line)
     );
   });
+}
+
+/**
+ * Web URL of the "new Pull Request" form of a git provider, with the source branch, the target
+ * branch, the title and (when it fits) the description already filled in. Each provider builds its
+ * own with `getPullRequestCreateUrl`; this is what they return.
+ */
+export declare type PullRequestCreateUrlResult = {
+  url: string;
+  /**
+   * False when the description is not in the URL: too long for it, or a provider whose form does
+   * not take one. The caller must then tell the user to paste the description by hand.
+   */
+  bodyIncluded: boolean;
+};
+
+/**
+ * Query strings longer than this are refused or truncated somewhere along the way (GitHub answers
+ * 414 above 8KB, and proxies have their own limits). Above it the description is left out of the
+ * link rather than producing a URL that opens on an error page.
+ */
+export const MAX_PR_CREATE_URL_LENGTH = 7500;
+
+/**
+ * Builds the Pull Request creation URL with the description, and again without it when the first
+ * one is too long for a URL: half the information in a link that opens beats all of it in a link
+ * that does not.
+ */
+export function buildPrCreateUrl(build: (body: string) => string, body: string): PullRequestCreateUrlResult {
+  if (body) {
+    const urlWithBody = build(body);
+    if (urlWithBody.length <= MAX_PR_CREATE_URL_LENGTH) {
+      return { url: urlWithBody, bodyIncluded: true };
+    }
+  }
+  return { url: build(""), bodyIncluded: false };
+}
+
+/** Encodes a branch name for a URL path, keeping the slashes a branch name is allowed to have */
+export function encodePrUrlPathBranch(branch: string): string {
+  return branch.split("/").map((part) => encodeURIComponent(part)).join("/");
 }
 
 export abstract class GitProviderRoot {
@@ -124,6 +165,17 @@ export abstract class GitProviderRoot {
     return [];
   }
 
+  /**
+   * Fetch a single Pull Request by its provider-native number (GitHub number, GitLab iid, Azure id,
+   * Bitbucket id). Used to resolve the stories declared by a promotion Pull Request, whose
+   * cherry-picked commits cannot be matched by merge commit SHA. Returns null when not found.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getPullRequestById(_prNumber: number): Promise<CommonPullRequestInfo | null> {
+    uxLog("other", this, `Method getPullRequestById is not implemented yet on ${this.getLabel()}`);
+    return null;
+  }
+
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     uxLog("warning", this, c.yellow(t('methodPostpullrequestmessageIsNotYetImplementedOn') + this.getLabel() + " to post " + JSON.stringify(prMessage)));
     return { posted: false, providerResult: { error: "Not implemented in sfdx-hardis" } };
@@ -134,6 +186,14 @@ export abstract class GitProviderRoot {
   // job creates the deployment comment as a pending placeholder.
   public isPrDescriptionEditableAfterMerge(): boolean {
     return true;
+  }
+
+  // How long a Pull Request description may be, when the provider caps it (Azure DevOps refuses
+  // anything over 4000 characters). Null means no known limit. A promotion carrying a conflict
+  // prompt is the one description that gets near it, and being refused there would leave a
+  // release manager with a pushed branch and no Pull Request at all.
+  public getMaxPullRequestDescriptionLength(): number | null {
+    return null;
   }
 
   /**
@@ -152,10 +212,55 @@ export abstract class GitProviderRoot {
     return `${prMessage.navBlock || ''}${bannerMarkdown}${headingMarkdown}${titleRest ? `${titleRest}\n\n` : ''}`;
   }
 
+  /**
+   * The "Powered by sfdx-hardis" footer of a Pull Request comment, with the link to the CI job that
+   * wrote it.
+   *
+   * The job name and its URL come from CI variables that only exist inside the CI system: a run
+   * from a developer machine, or from a CI system other than the git provider's own, has neither.
+   * Interpolating them anyway printed `from job [null](null)` on GitHub and
+   * `from job [undefined](undefined)` on GitLab in EVERY comment, which is a dead link in the face
+   * of every reviewer. When there is no job to point at, the footer simply does not mention one.
+   */
+  protected buildPoweredByFooter(jobName: string | null | undefined, jobUrl: string | null | undefined): string {
+    const poweredBy = `_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})`;
+    const name = (jobName ?? '').toString().trim();
+    const url = (jobUrl ?? '').toString().trim();
+    if (name === '' || name === 'null' || name === 'undefined' || url === '' || url === 'null' || url === 'undefined') {
+      return `${poweredBy}_`;
+    }
+    return `${poweredBy} from job [${name}](${url})_`;
+  }
+
+  /**
+   * The job part of the message key that identifies an sfdx-hardis comment, so a re-run updates the
+   * comment it wrote instead of adding a second one.
+   *
+   * The key is written into the comment, so an absent job name used to bake the literal `null` or
+   * `undefined` into it. That is not only ugly to read in the page source: a project whose jobs
+   * sometimes carry a job name and sometimes do not would produce two different keys for the same
+   * comment. A stable placeholder keeps the key comparable in both cases.
+   */
+  protected jobMessageKeySegment(jobName: string | null | undefined): string {
+    const name = (jobName ?? '').toString().trim();
+    return name === '' || name === 'null' || name === 'undefined' ? 'job' : name;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
     uxLog("warning", this, c.yellow(`[GitProvider] createPullRequest is not yet implemented on ${this.getLabel()}`));
     return { created: false, pullRequestUrl: null, providerResult: { error: "Not implemented in sfdx-hardis" } };
+  }
+
+  /**
+   * Closes an open Pull Request without merging it (abandon on Azure DevOps, decline on Bitbucket).
+   * Used to keep a single open promotion Pull Request between two major branches, so the DevOps
+   * Pipeline shows one promotion in flight per pipeline step.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    uxLog("warning", this, c.yellow(`[GitProvider] closePullRequest is not yet implemented on ${this.getLabel()}`));
+    return false;
   }
 
   public logAutoFixRemediation(step: "push" | "pr-create"): void {
@@ -261,6 +366,17 @@ export abstract class GitProviderRoot {
   public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
     uxLog("other", this, `Method listPullRequestCommentsByMarker is not implemented yet on ${this.getLabel()}`);
     return [];
+  }
+
+  /**
+   * Web URL of the "new Pull Request" form of this provider, with the source branch, the target
+   * branch, the title and (when it fits in a URL) the description already filled in. Static because
+   * it is needed exactly when no token is configured and no provider instance exists: the git
+   * remote is all it takes.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static getPullRequestCreateUrl(remoteUrl: string, request: CreatePullRequestRequest): PullRequestCreateUrlResult | null {
+    return null;
   }
 
   // Updates the body of one precise comment, identified by the ref returned by

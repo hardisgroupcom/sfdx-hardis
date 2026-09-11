@@ -65,7 +65,7 @@ The **Dependencies** section of the SFDX Hardis side bar shows the same informat
 >   - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 >   - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility) (SFDMU)
 >   - [@salesforce/plugin-packaging](https://github.com/salesforcecli/plugin-packaging)
->   - [sf-git-merge-driver](https://github.com/jayree/sf-git-merge-driver)
+>   - [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver)
 > - The [Salesforce Extension Pack](https://marketplace.visualstudio.com/items?itemName=salesforce.salesforcedx-vscode) for VS Code
 
 ### Optional: video tutorial

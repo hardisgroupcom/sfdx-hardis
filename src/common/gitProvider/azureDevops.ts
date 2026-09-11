@@ -1,4 +1,4 @@
-import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import * as azdev from "azure-devops-node-api";
 import c from "chalk";
 import fs from '../utils/fsUtils.js';
@@ -6,12 +6,13 @@ import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../ut
 import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
-import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
+import { getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
+import { getCachedPullRequestDescription, repositoryKeyFromRemoteUrl, setCachedPullRequestDescription } from "../cache/pullRequestDescriptionCache.js";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -24,8 +25,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
     super();
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
     this.serverUrl = process.env.SYSTEM_COLLECTIONURI || "";
-    // a Personal Access Token must be defined
-    this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || "";
+    // a Personal Access Token must be defined. AZURE_DEVOPS_EXT_PAT comes last: it is the variable
+    // the Azure CLI uses, so a developer machine usually already has it.
+    this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || process.env.AZURE_DEVOPS_EXT_PAT || "";
     const authHandler = azdev.getHandlerFromToken(this.token);
     this.azureApi = new azdev.WebApi(this.serverUrl, authHandler);
   }
@@ -37,9 +39,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
         uxLog("log", AzureDevopsProvider, c.grey("[Azure DevOps] " + t("autoDetectProviderNoGitRemote", { provider: "Azure DevOps" })));
         return;
       }
-      // Map CI_SFDX_HARDIS_AZURE_TOKEN to SYSTEM_ACCESSTOKEN if needed
-      if (!process.env.SYSTEM_ACCESSTOKEN && process.env.CI_SFDX_HARDIS_AZURE_TOKEN) {
-        process.env.SYSTEM_ACCESSTOKEN = process.env.CI_SFDX_HARDIS_AZURE_TOKEN;
+      // Map CI_SFDX_HARDIS_AZURE_TOKEN or AZURE_DEVOPS_EXT_PAT to SYSTEM_ACCESSTOKEN if needed
+      if (!process.env.SYSTEM_ACCESSTOKEN && (process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.AZURE_DEVOPS_EXT_PAT)) {
+        process.env.SYSTEM_ACCESSTOKEN = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.AZURE_DEVOPS_EXT_PAT;
       }
       // Parse git remote URL to extract collection URI, team project, and repository ID
       if (!process.env.SYSTEM_COLLECTIONURI) {
@@ -147,6 +149,29 @@ export class AzureDevopsProvider extends GitProviderRoot {
       });
       process.env.SYSTEM_ACCESSTOKEN = accessTokenResp.token;
     }
+  }
+
+  /**
+   * https://dev.azure.com/<org>/<project>/_git/<repo>/pullrequestcreate?sourceRef=&targetRef=
+   */
+  public static getPullRequestCreateUrl(remoteUrl: string, request: CreatePullRequestRequest): PullRequestCreateUrlResult | null {
+    const parsed = AzureDevopsProvider.parseAzureRepoUrl(remoteUrl);
+    if (!parsed) {
+      return null;
+    }
+    const collectionUri = parsed.collectionUri.replace(/\/$/, "");
+    const repoPath = `${collectionUri}/${encodeURIComponent(parsed.teamProject)}/_git/${encodeURIComponent(parsed.repositoryId)}`;
+    return buildPrCreateUrl((body) => {
+      const params = new URLSearchParams({
+        sourceRef: request.sourceBranch,
+        targetRef: request.targetBranch,
+        title: request.title,
+      });
+      if (body) {
+        params.set("description", body);
+      }
+      return `${repoPath}/pullrequestcreate?${params.toString()}`;
+    }, request.body || "");
   }
 
   public getLabel(): string {
@@ -312,10 +337,26 @@ ${this.getPipelineVariablesConfig()}
       if (!pullRequest.workItemRefs) {
         pullRequest.workItemRefs = pullRequestWorkItemRefs;
       }
-      return this.completePullRequestInfo(latestMergedPullRequestOnBranch[0]);
+      return this.completePullRequestInfo(await this.completeTruncatedDescription(azureGitApi, pullRequest));
     }
     uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationUnableToFindPrInfo')));
     return null;
+  }
+
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const teamProject = process.env.SYSTEM_TEAMPROJECT || null;
+    if (!repositoryId || !teamProject) {
+      return false;
+    }
+    try {
+      const azureGitApi = await this.azureApi.getGitApi();
+      await azureGitApi.updatePullRequest({ status: PullRequestStatus.Abandoned }, repositoryId, pullRequestNumber, teamProject);
+      return true;
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: e?.message || e })));
+      return false;
+    }
   }
 
   public async listPullRequests(filters: {
@@ -368,7 +409,7 @@ ${this.getPipelineVariablesConfig()}
     // Complete results with PR comments (stored in providerInfo)
     const results: CommonPullRequestInfo[] = [];
     for (const pullRequest of pullRequests) {
-      const pr: GitPullRequest & { threads?: any[] } = Object.assign({}, pullRequest);
+      const pr: GitPullRequest & { threads?: any[] } = Object.assign({}, await this.completeTruncatedDescription(azureGitApi, pullRequest));
       uxLog("log", this, c.grey(t('gettingThreadsForPr', { pullRequest: pullRequest.pullRequestId })));
       const existingThreads = await azureGitApi.getThreads(pullRequest.repository?.id || "", pullRequest.pullRequestId || 0, teamProject);
       pr.threads = existingThreads.filter(thread => !thread.isDeleted);
@@ -496,6 +537,33 @@ ${this.getPipelineVariablesConfig()}
       }
     }
     return latest;
+  }
+
+  public async getPullRequestById(pullRequestId: number): Promise<CommonPullRequestInfo | null> {
+    try {
+      const azureGitApi = await this.azureApi.getGitApi();
+      const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
+      if (!pullRequest || !pullRequest.targetRefName) {
+        return null;
+      }
+      // Azure Pull Request ids are unique per organization, not per repository: without this check
+      // a number copied from another repository of the same organization would resolve, and its
+      // deployment actions and Apex test classes would be run against this project's org.
+      const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+      if (repositoryId && pullRequest.repository?.id && pullRequest.repository.id !== repositoryId) {
+        uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPrOtherRepository', { id: pullRequestId })));
+        return null;
+      }
+      // status 3 is "completed" (merged). An abandoned Pull Request also carries a closedDate, and
+      // completePullRequestInfo derives mergedDate from it, so it would look merged to the callers.
+      if (pullRequest.status !== undefined && pullRequest.status !== 3) {
+        return this.completePullRequestInfo({ ...pullRequest, closedDate: undefined });
+      }
+      return this.completePullRequestInfo(pullRequest);
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPrByIdNotFound', { id: pullRequestId, message: String(err) })));
+      return null;
+    }
   }
 
   public async listPullRequestsInBranchSinceLastMerge(
@@ -680,7 +748,11 @@ ${this.getPipelineVariablesConfig()}
         uniquePRsMap.set(pr.pullRequestId, pr);
       }
     }
-    return Array.from(uniquePRsMap.values()).map((pr) => this.completePullRequestInfo(pr));
+    const completed: CommonPullRequestInfo[] = [];
+    for (const pr of uniquePRsMap.values()) {
+      completed.push(this.completePullRequestInfo(await this.completeTruncatedDescription(gitApi, pr)));
+    }
+    return completed;
   }
 
   // Posts a note on the merge request
@@ -709,12 +781,12 @@ ${this.getPipelineVariablesConfig()}
     const SYSTEM_TEAMPROJECT = (process.env.SYSTEM_TEAMPROJECT || "").replace(/ /g, "%20");
     const azureBuildUri = `${SYSTEM_COLLECTIONURI}${encodeURIComponent(SYSTEM_TEAMPROJECT)}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
     // Build thread message
-    const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
+    const messageKey = prMessage.messageKey + "-" + this.jobMessageKeySegment(azureJobName) + "-" + pullRequestId;
     let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
 <br/>
 
-_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](${azureBuildUri})_
+${this.buildPoweredByFooter(azureJobName, azureBuildUri)}
 
 ${getBannerMarkdownAndLink()}
 
@@ -797,6 +869,11 @@ ${getBannerMarkdownAndLink()}
     return false;
   }
 
+  // "A description for a pull request must not be longer than 4000 characters."
+  public getMaxPullRequestDescriptionLength(): number | null {
+    return 4000;
+  }
+
   // Convert sfdx-hardis PR status to Azure Thread status value
   private pullRequestStatusToAzureThreadStatus(prMessage: PullRequestMessageRequest) {
     return prMessage.status === "valid"
@@ -813,6 +890,62 @@ ${getBannerMarkdownAndLink()}
     return `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(
       process.env.SYSTEM_TEAMPROJECT || "",
     )}/_git/${encodeURIComponent(repositoryName)}/pullrequest/${pullRequestId}`;
+  }
+
+  // Azure DevOps truncates the description of a Pull Request returned by the list API, with no
+  // marker saying so. Everything sfdx-hardis reads from a description is then silently lost: the
+  // promotionPullRequests declaration of a promotion branch, the deploymentApexTestClasses blocks,
+  // the custom behavior keywords. The single Pull Request API returns the whole description, so it
+  // is read again for every listed Pull Request whose description is long enough to have been cut.
+  private static readonly LIST_DESCRIPTION_TRUNCATION_LENGTH = 400;
+
+  private async completeTruncatedDescription(azureGitApi: any, pullRequest: GitPullRequest): Promise<GitPullRequest> {
+    const listedDescription = pullRequest.description || "";
+    if (listedDescription.length < AzureDevopsProvider.LIST_DESCRIPTION_TRUNCATION_LENGTH) {
+      return pullRequest;
+    }
+    // One API call per Pull Request whose description was cut adds up fast on a repository with a
+    // long history, and the description of a merged or abandoned Pull Request no longer moves. The
+    // cache is keyed on the state seen right now, so a reopened Pull Request is read again.
+    const repositoryKey = await this.pullRequestCacheRepositoryKey();
+    const cached = await getCachedPullRequestDescription(
+      "azure",
+      repositoryKey,
+      pullRequest.pullRequestId || 0,
+      pullRequest.status,
+    );
+    if (cached !== null) {
+      return Object.assign({}, pullRequest, { description: cached });
+    }
+    try {
+      const fullPullRequest = await azureGitApi.getPullRequestById(pullRequest.pullRequestId);
+      const fullDescription = fullPullRequest?.description || "";
+      if (fullDescription.length > listedDescription.length) {
+        await setCachedPullRequestDescription(
+          "azure",
+          repositoryKey,
+          pullRequest.pullRequestId || 0,
+          pullRequest.status,
+          fullDescription,
+        );
+        return Object.assign({}, pullRequest, { description: fullDescription });
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[Azure Integration] Unable to read the full description of Pull Request ${pullRequest.pullRequestId}: ${(e as Error).message}`));
+    }
+    return pullRequest;
+  }
+
+  // Identifies the repository the cached descriptions belong to, from the git remote of the working
+  // copy: that is the identifier vscode-sfdx-hardis agrees on, so the two share one cache. Read
+  // once per process, since it costs a git call.
+  private cachedRepositoryKey: string | null = null;
+
+  private async pullRequestCacheRepositoryKey(): Promise<string> {
+    if (this.cachedRepositoryKey === null) {
+      this.cachedRepositoryKey = repositoryKeyFromRemoteUrl((await getGitRepoUrl()) || "");
+    }
+    return this.cachedRepositoryKey;
   }
 
   private completePullRequestInfo(prData: GitPullRequest): CommonPullRequestInfo {
@@ -870,54 +1003,51 @@ ${getBannerMarkdownAndLink()}
     return prResult;
   }
 
+  /**
+   * Extracts the organization, project and repository from an Azure DevOps remote URL.
+   *
+   * Handles the three shapes a clone can produce - modern `dev.azure.com` (with or without the
+   * `user@` prefix), legacy `*.visualstudio.com`, and SSH - and URL-decodes the project and
+   * repository names, which are percent-encoded whenever they contain a space.
+   *
+   * Returns null when the URL belongs to another provider.
+   */
   public static parseAzureRepoUrl(remoteUrl: string): {
     collectionUri: string;
     teamProject: string;
     repositoryId: string;
   } | null {
-    let collectionUri: string;
-    let repositoryId: string;
-    let teamProject: string;
-
     if (remoteUrl.startsWith("https://")) {
-      // Handle modern dev.azure.com URLs with or without username
-      const devAzureRegex = /https:\/\/(?:[^@]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)/;
-      const devAzureMatch = remoteUrl.match(devAzureRegex);
+      // https://dev.azure.com/{org}/{project}/_git/{repo}, optionally prefixed with {user}@
+      const devAzureMatch = remoteUrl.match(/https:\/\/(?:[^@]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/?]+)/);
       if (devAzureMatch) {
-        const organization = devAzureMatch[1];
-        teamProject = decodeURIComponent(devAzureMatch[2]); // Decode URL-encoded project name
-        repositoryId = decodeURIComponent(devAzureMatch[3]); // Decode URL-encoded repository name
-        collectionUri = `https://dev.azure.com/${organization}/`;
-        return { collectionUri, teamProject, repositoryId };
+        return {
+          collectionUri: `https://dev.azure.com/${devAzureMatch[1]}/`,
+          teamProject: decodeURIComponent(devAzureMatch[2]),
+          repositoryId: decodeURIComponent(devAzureMatch[3]),
+        };
       }
 
-      // Handle legacy visualstudio.com URLs
-      // Format: https://organization.visualstudio.com/ProjectName/_git/RepoName
-      const vsRegex = /https:\/\/(?:[^@]+@)?([^.]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/?]+)/;
-      const vsMatch = remoteUrl.match(vsRegex);
+      // https://{org}.visualstudio.com/{project}/_git/{repo}
+      const vsMatch = remoteUrl.match(/https:\/\/(?:[^@]+@)?([^.]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/?]+)/);
       if (vsMatch) {
-        const organization = vsMatch[1];
-        teamProject = decodeURIComponent(vsMatch[2]); // Decode URL-encoded project name
-        repositoryId = decodeURIComponent(vsMatch[3]); // Decode URL-encoded repository name
-        collectionUri = `https://${organization}.visualstudio.com/`;
-        return { collectionUri, teamProject, repositoryId };
+        return {
+          collectionUri: `https://${vsMatch[1]}.visualstudio.com/`,
+          teamProject: decodeURIComponent(vsMatch[2]),
+          repositoryId: decodeURIComponent(vsMatch[3]),
+        };
       }
     } else if (remoteUrl.startsWith("git@")) {
-      /* jscpd:ignore-start */
-      // Handle SSH URLs
-      const sshRegex = /git@ssh\.dev\.azure\.com:v3\/([^/]+)\/([^/]+)\/([^/]+)/;
-      const match = remoteUrl.match(sshRegex);
-      if (match) {
-        const organization = match[1];
-        teamProject = decodeURIComponent(match[2]); // Decode URL-encoded project name
-        repositoryId = decodeURIComponent(match[3]); // Decode URL-encoded repository name
-        collectionUri = `https://dev.azure.com/${organization}/`;
-        return { collectionUri, teamProject, repositoryId };
+      // git@ssh.dev.azure.com:v3/{org}/{project}/{repo}
+      const sshMatch = remoteUrl.match(/git@ssh\.dev\.azure\.com:v3\/([^/]+)\/([^/]+)\/([^/]+)/);
+      if (sshMatch) {
+        return {
+          collectionUri: `https://dev.azure.com/${sshMatch[1]}/`,
+          teamProject: decodeURIComponent(sshMatch[2]),
+          repositoryId: decodeURIComponent(sshMatch[3]),
+        };
       }
-      /* jscpd:ignore-end */
     }
-
-    // Return null if the URL doesn't match expected patterns
     return null;
   }
 

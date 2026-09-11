@@ -258,6 +258,40 @@ describe('Deployment Actions state comment (matrix format)', () => {
       expect(state.entriesByPr.get(483)[0].status).to.equal('success');
     });
 
+    // Seen on the Bitbucket end to end run: a manual action of a story still waiting to be
+    // performed in uat. Any later job whose scope holds that Pull Request skips the action as
+    // "already run in this org", which used to overwrite the manual entry with a skip. The action
+    // then disappeared from the "Pending manual actions" list, so the release manager had no
+    // checkbox left to tick and the org branch showed a skip for a step nobody had performed.
+    it('keeps a manual action waiting when a later job skips it', () => {
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+      upsertActionInState(entry({ status: 'manual', jobId: '111', date: '2026-09-07T21:01:00.000Z' }), 483);
+      upsertActionInState(entry({ status: 'skipped', jobId: '222', date: '2026-09-07T21:57:00.000Z' }), 483);
+
+      const state = (globalThis as any)._deploymentActionsMultiPrState;
+      const kept = state.entriesByPr.get(483).find((e: DeploymentActionStateEntry) => e.actionId === 'action-1');
+      expect(kept.status).to.equal('manual');
+      expect(kept.jobId).to.equal('111');
+    });
+
+    it('keeps a failure when a later job skips the same action', () => {
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+      upsertActionInState(entry({ status: 'failed', jobId: '111' }), 483);
+      upsertActionInState(entry({ status: 'skipped', jobId: '222' }), 483);
+
+      const state = (globalThis as any)._deploymentActionsMultiPrState;
+      expect(state.entriesByPr.get(483)[0].status).to.equal('failed');
+    });
+
+    it('still lets a manual action become a success once it is ticked', () => {
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+      upsertActionInState(entry({ status: 'manual', jobId: '111' }), 483);
+      upsertActionInState(entry({ status: 'success', jobId: '222' }), 483);
+
+      const state = (globalThis as any)._deploymentActionsMultiPrState;
+      expect(state.entriesByPr.get(483)[0].status).to.equal('success');
+    });
+
     it('records a skip normally when the action has no entry yet for the org', () => {
       delete (globalThis as any)._deploymentActionsMultiPrState;
       upsertActionInState(entry({ status: 'skipped', orgBranch: 'uat' }), 483);

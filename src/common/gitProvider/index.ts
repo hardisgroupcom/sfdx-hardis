@@ -1,9 +1,9 @@
 import c from "chalk";
-import { getCurrentGitBranch, isCI, uxLog } from "../utils/index.js";
+import { getCurrentGitBranch, git, isCI, uxLog } from "../utils/index.js";
 import { AzureDevopsProvider } from "./azureDevops.js";
 import { GithubProvider } from "./github.js";
 import { GitlabProvider } from "./gitlab.js";
-import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
+import { GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { BitbucketProvider } from "./bitbucket.js";
 import { debuglog } from "util";
 import { CONSTANTS, getEnvVar, PrCommentBannerKey } from "../../config/index.js";
@@ -30,22 +30,22 @@ const debug = debuglog("sfdxhardis");
 export abstract class GitProvider {
   static async getInstance(prompt = false): Promise<GitProviderRoot | null> {
     try {
-      // Azure - detect from SYSTEM_ACCESSTOKEN or CI_SFDX_HARDIS_AZURE_TOKEN
-      if (process.env.SYSTEM_ACCESSTOKEN || process.env.CI_SFDX_HARDIS_AZURE_TOKEN) {
+      // Azure - detect from SYSTEM_ACCESSTOKEN, CI_SFDX_HARDIS_AZURE_TOKEN or AZURE_DEVOPS_EXT_PAT
+      if (process.env.SYSTEM_ACCESSTOKEN || process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.AZURE_DEVOPS_EXT_PAT) {
         // Auto-detect missing CI variables from git remote URL when only a token is available
         if (!process.env.SYSTEM_COLLECTIONURI || !process.env.SYSTEM_ACCESSTOKEN) {
           await AzureDevopsProvider.autoDetectSettings();
         }
         const serverUrl = process.env.SYSTEM_COLLECTIONURI || null;
         // a Personal Access Token must be defined
-        const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || null;
+        const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || process.env.AZURE_DEVOPS_EXT_PAT || null;
         if (serverUrl == null || token == null) {
           uxLog(
             "warning",
             this,
             c.yellow(`To benefit from Azure Pipelines advanced integration, you need to define the following variables as ENV vars:
 - SYSTEM_COLLECTIONURI
-- SYSTEM_ACCESSTOKEN or CI_SFDX_HARDIS_AZURE_TOKEN`),
+- SYSTEM_ACCESSTOKEN, CI_SFDX_HARDIS_AZURE_TOKEN or AZURE_DEVOPS_EXT_PAT`),
           );
           return null;
         }
@@ -64,8 +64,12 @@ export abstract class GitProvider {
           );
           return null;
         }
-        // Auto-detect missing CI variables from git remote URL
-        if (!process.env.CI_SERVER_URL || !process.env.CI_PROJECT_ID) {
+        // Auto-detect missing CI variables from git remote URL. Outside a GitLab CI job this runs
+        // even when everything is set, because CI_PROJECT_ID then comes from a .env file or the
+        // user environment and can be left over from another repository: autoDetectSettings checks
+        // it against the git remote and says so. Inside a job GITLAB_CI is always set, so the
+        // detection is skipped there exactly as before.
+        if (!process.env.CI_SERVER_URL || !process.env.CI_PROJECT_ID || !process.env.GITLAB_CI) {
           await GitlabProvider.autoDetectSettings();
         }
         return new GitlabProvider();
@@ -490,6 +494,12 @@ export abstract class GitProvider {
   }
 
   static prInfoCache: any = null;
+  // Custom behaviors inherited by a promotion Pull Request from the stories it declares
+  // (see promotionBranchUtils.mergeInheritedCustomBehaviors). Null when nothing was inherited.
+  static inheritedCustomBehaviors: Partial<CommonPullRequestInfo['customBehaviors']> | null = null;
+  // The Pull Request the inheritance above was computed for. A process handling more than one
+  // (tests, a long-lived server) must not carry a NO_DELTA from one Pull Request to the next.
+  static inheritedCustomBehaviorsPrId: number | null = null;
 
   static async getPullRequestInfo(options: { useCache: boolean } = { useCache: false }): Promise<CommonPullRequestInfo | null> {
     // Return cached result if available and caching is enabled
@@ -506,6 +516,11 @@ export abstract class GitProvider {
     let prInfo: CommonPullRequestInfo | null = null;
     try {
       prInfo = await gitProvider.getPullRequestInfo();
+      // A promotion Pull Request inherits the custom behaviors of the stories it carries. They are
+      // re-applied on every fresh fetch, so a caller refreshing the cache cannot lose them.
+      if (prInfo && GitProvider.inheritedCustomBehaviors && GitProvider.inheritedCustomBehaviorsPrId === prInfo.idNumber) {
+        prInfo.customBehaviors = Object.assign(prInfo.customBehaviors || {}, GitProvider.inheritedCustomBehaviors);
+      }
       debug("[GitProvider][PR Info] " + JSON.stringify(prInfo, null, 2));
       GitProvider.prInfoCache = prInfo;
     } catch (e) {
@@ -517,29 +532,170 @@ export abstract class GitProvider {
     return prInfo;
   }
 
-  static async createPullRequest(request: CreatePullRequestRequest): Promise<string | null> {
+  /**
+   * Why the last createPullRequest call did not create anything. Callers that fall back to a manual
+   * Pull Request tell the user what actually happened instead of guessing at a missing token.
+   */
+  static lastPullRequestCreationError: string | null = null;
+
+  /**
+   * Creates a Pull Request through the git provider API.
+   *
+   * `retries` exists because the branch is usually pushed a fraction of a second before: a git
+   * provider that has not yet indexed the new ref answers that the source branch does not exist
+   * (GitLab does, on a self-managed instance), and the same call succeeds a few seconds later.
+   * Each attempt starts by looking for an already open Pull Request, so a create that succeeded
+   * while reporting an error is picked up instead of being created twice.
+   */
+  static async createPullRequest(
+    request: CreatePullRequestRequest,
+    options: { retries?: number; retryDelayMs?: number } = {},
+  ): Promise<string | null> {
+    GitProvider.lastPullRequestCreationError = null;
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
+      GitProvider.lastPullRequestCreationError = t('gitProviderNotConfiguredForPrCreation');
       uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderNotConfiguredForPrCreation')));
       return null;
     }
-    // Check if a PR already exists for this source→target branch (e.g. from a previous auto-fix run)
-    const existing = await gitProvider.findOpenPullRequest(request.sourceBranch, request.targetBranch);
-    if (existing) {
-      uxLog("log", this, c.grey(`[Git Provider] Found existing open PR for ${request.sourceBranch} → ${request.targetBranch}, updating description.`));
-      await gitProvider.updatePullRequestDescription(existing.id, request.title, request.body);
-      return existing.pullRequestUrl;
-    }
-    try {
-      const result = await gitProvider.createPullRequest(request);
-      if (result.created && result.pullRequestUrl) {
-        return result.pullRequestUrl;
+    const attempts = Math.max(1, (options.retries ?? 0) + 1);
+    const retryDelayMs = options.retryDelayMs ?? 5000;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      // Check if a PR already exists for this source→target branch (e.g. from a previous auto-fix run)
+      const existing = await gitProvider.findOpenPullRequest(request.sourceBranch, request.targetBranch);
+      if (existing) {
+        uxLog("log", this, c.grey(`[Git Provider] Found existing open PR for ${request.sourceBranch} → ${request.targetBranch}, updating description.`));
+        await gitProvider.updatePullRequestDescription(existing.id, request.title, request.body);
+        GitProvider.lastPullRequestCreationError = null;
+        return existing.pullRequestUrl;
       }
-      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationFailed')));
+      try {
+        const result = await gitProvider.createPullRequest(request);
+        if (result.created && result.pullRequestUrl) {
+          GitProvider.lastPullRequestCreationError = null;
+          return result.pullRequestUrl;
+        }
+        GitProvider.lastPullRequestCreationError = t('gitProviderPrCreationFailed');
+        uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationFailed')));
+      } catch (e) {
+        GitProvider.lastPullRequestCreationError = (e as Error).message;
+        uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationError', { message: (e as Error).message })));
+      }
+      if (attempt < attempts) {
+        uxLog("log", this, c.grey('[Git Provider] ' + t('gitProviderPrCreationRetry', { seconds: Math.round(retryDelayMs / 1000), attempt: attempt + 1, attempts })));
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Web URL of the "new Pull Request" form of the git provider, with the source branch, the target
+   * branch, the title and (when it fits in a URL) the description already filled in. Built from the
+   * git remote by the provider class itself, so it works with no token and no provider instance at
+   * all: that is exactly the situation where the user has to create the Pull Request by hand.
+   */
+  static async getPullRequestCreateUrl(request: CreatePullRequestRequest): Promise<PullRequestCreateUrlResult | null> {
+    try {
+      const remoteUrl = String((await git().remote(["get-url", "origin"])) || "").trim();
+      if (!remoteUrl) {
+        return null;
+      }
+      // The active provider knows what it is; without one, the remote URL is all there is to go on
+      const gitProvider = await GitProvider.getInstance();
+      const candidates: Array<typeof GitProviderRoot> = [];
+      if (gitProvider instanceof GithubProvider) {
+        candidates.push(GithubProvider);
+      } else if (gitProvider instanceof GitlabProvider) {
+        candidates.push(GitlabProvider);
+      } else if (gitProvider instanceof AzureDevopsProvider) {
+        candidates.push(AzureDevopsProvider);
+      } else if (gitProvider instanceof BitbucketProvider) {
+        candidates.push(BitbucketProvider);
+      } else {
+        candidates.push(...GitProvider.guessProviderClassesFromRemoteUrl(remoteUrl));
+      }
+      for (const providerClass of candidates) {
+        const result = providerClass.getPullRequestCreateUrl(remoteUrl, request);
+        if (result) {
+          return result;
+        }
+      }
       return null;
     } catch (e) {
-      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationError', { message: (e as Error).message })));
+      debug("[Git Provider] Unable to build the Pull Request creation URL: " + (e as Error).message);
       return null;
+    }
+  }
+
+  /**
+   * Which provider class a remote URL belongs to, when no token tells us. The host is the only
+   * reliable signal for a self-managed instance, and the GitHub and Bitbucket URL shapes are the
+   * same, so the CI variables of the running job break the ties the host cannot.
+   */
+  private static guessProviderClassesFromRemoteUrl(remoteUrl: string): Array<typeof GitProviderRoot> {
+    // Azure DevOps URLs are recognizable by their shape, whatever the host
+    if (AzureDevopsProvider.parseAzureRepoUrl(remoteUrl)) {
+      return [AzureDevopsProvider];
+    }
+    const host = (
+      remoteUrl.match(/^[a-z+]+:\/\/(?:[^@/]+@)?([^/:]+)/i)?.[1] ||
+      remoteUrl.match(/^[^@]+@([^:]+):/)?.[1] ||
+      ""
+    ).toLowerCase();
+    if (host.includes("bitbucket")) {
+      return [BitbucketProvider];
+    }
+    if (host.includes("gitlab")) {
+      return [GitlabProvider];
+    }
+    if (host.includes("github")) {
+      return [GithubProvider];
+    }
+    // Self-managed instances rarely name themselves after the product
+    if (process.env.GITLAB_CI || process.env.CI_SERVER_URL) {
+      return [GitlabProvider];
+    }
+    if (process.env.GITHUB_ACTIONS || process.env.GITHUB_SERVER_URL) {
+      return [GithubProvider];
+    }
+    if (process.env.SYSTEM_TEAMFOUNDATIONCOLLECTIONURI) {
+      return [AzureDevopsProvider];
+    }
+    if (process.env.BITBUCKET_WORKSPACE) {
+      return [BitbucketProvider];
+    }
+    return [];
+  }
+
+  /**
+   * Lists the open Pull Requests targeting a branch. Returns null when the provider cannot answer,
+   * which callers must not read as "there is none".
+   */
+  static async listOpenPullRequests(targetBranch: string): Promise<CommonPullRequestInfo[] | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    try {
+      return await gitProvider.listPullRequests({ status: 'open', targetBranch: targetBranch });
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderClosePullRequestFailed', { number: 0, message: (e as Error).message })));
+      return null;
+    }
+  }
+
+  /** Closes an open Pull Request without merging it. Returns false when the provider refused. */
+  static async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return false;
+    }
+    try {
+      return await gitProvider.closePullRequest(pullRequestNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: (e as Error).message })));
+      return false;
     }
   }
 

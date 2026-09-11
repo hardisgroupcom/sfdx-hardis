@@ -10,7 +10,8 @@ import { loadDeploymentActionsState, checkActionInState, upsertActionInState, pe
 // data import moved to DataAction class in actionsProvider
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
-import { getPullRequestScopedSfdxHardisConfig, getPullRequestScopeInfo, isSinglePullRequestScope, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
+import { getPromotionScopeDetails, getPullRequestScopedSfdxHardisConfig, getPullRequestScopeInfo, isSinglePullRequestScope, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
+import { buildAlreadyPromotedMarkdown, buildInheritedBehaviorsMarkdown, getCarriedBy, getPromotionBranchConfig, isPromotionPullRequest } from './promotionBranchUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { t } from './i18n.js';
 import { ActionWhen, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getPrIdFromUserConfig } from './actionUtils.js';
@@ -380,6 +381,41 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
     const subjects = buildDeploymentScopeSubjects(prConfigs, projectConfig?.enableDeploymentApexTestClasses === true);
     const subjectsLabel = subjects.join(' and ');
     const paragraphs: string[] = [];
+    const promotionDetails = getPromotionScopeDetails();
+    if (scopeInfo.kind === 'promotion' || scopeInfo.kind === 'promotion-check') {
+      // Promotion branch: the stories come from the Pull Request description, say so in both jobs
+      const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+      const carried = scopeInfo.pullRequests.filter((pr) => pr.idNumber !== prInfo?.idNumber);
+      const carriedLinks = carried.map((pr) => (pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`)).join(', ');
+      const branchLabel = prInfo?.sourceBranch ? `\`${prInfo.sourceBranch}\`` : 'this promotion branch';
+      if (carried.length === 0) {
+        paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch but none of the Pull Requests it declares (\`promotionPullRequests\`) could be used, so only its own deployment actions and Apex test classes ${checkOnly ? 'are' : 'were'} processed.`);
+      } else {
+        const subjectsSentence = subjects.length > 0 ? `${subjectsLabel} ${checkOnly ? 'are' : 'were'} collected from them` : `They carry no deployment action and no Apex test class`;
+        paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch carrying ${carried.length} Pull Request(s) declared in its description: ${carriedLinks}. ${subjectsSentence}${subjects.includes('Deployment actions') ? ', and each action keeps its tracked state on its own Pull Request' : ''}.`);
+      }
+      const inheritedMarkdown = buildInheritedBehaviorsMarkdown(promotionDetails.inheritedBehaviors, scopeInfo.pullRequests);
+      if (inheritedMarkdown) {
+        paragraphs.push(inheritedMarkdown);
+      }
+      setPullRequestData({ deploymentScopeMarkdownBody: paragraphs.join('\n\n') });
+      return;
+    }
+    // Stories brought by a promotion Pull Request of the window: say where they come from
+    const carriedByPromotion = scopeInfo.pullRequests.filter((pr) => getCarriedBy(pr) !== null);
+    if (carriedByPromotion.length > 0) {
+      const items = carriedByPromotion.map((pr) => {
+        const carriedBy = getCarriedBy(pr)!;
+        const prLink = pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`;
+        const promotionLink = carriedBy.webUrl ? `[#${carriedBy.idStr}](${carriedBy.webUrl})` : `#${carriedBy.idStr}`;
+        return `${prLink} (via \`${carriedBy.sourceBranch}\` ${promotionLink})`;
+      });
+      paragraphs.push(`ℹ️ Pull Requests carried by a promotion branch of this window: ${items.join(', ')}.`);
+    }
+    const alreadyPromotedMarkdown = buildAlreadyPromotedMarkdown(promotionDetails.alreadyPromoted);
+    if (alreadyPromotedMarkdown) {
+      paragraphs.push(alreadyPromotedMarkdown);
+    }
     if (checkOnly) {
       if (subjects.length > 0) {
         let collectedSentence = `ℹ️ ${subjectsLabel} are collected from the content of this Pull Request`;
@@ -402,6 +438,9 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
     } else {
       // A feature Pull Request merge processes only its own actions: nothing to explain
       if (scopeInfo.kind === 'single-pr' || subjects.length === 0) {
+        if (paragraphs.length > 0) {
+          setPullRequestData({ deploymentScopeMarkdownBody: paragraphs.join('\n\n') });
+        }
         return;
       }
       // Tense-neutral wording: this paragraph is also posted when the metadata deployment failed,
@@ -456,8 +495,16 @@ async function buildPrNumbersToScan(basePrNumbers: number[]): Promise<number[]> 
   let batchPrNumbers: number[] = [];
   if (scopePrs.length > 0) {
     const majorBranchNames = (await listMajorOrgs()).map((majorOrg: any) => majorOrg.branchName);
+    const promotionConfig = getPromotionBranchConfig(await getConfig('branch'));
     batchPrNumbers = scopePrs
-      .filter((pr) => !isSinglePullRequestScope(pr.sourceBranch, majorBranchNames))
+      .filter(
+        (pr) =>
+          !isSinglePullRequestScope(pr.sourceBranch, majorBranchNames) ||
+          // A promotion Pull Request carries a whole batch like a major-to-major merge does, but
+          // its branch is not a major one, so the rule above would leave it out and the manual
+          // actions ticked on its own comment would never be read back in a later window.
+          isPromotionPullRequest(pr, promotionConfig),
+      )
       .map((pr) => pr.idNumber);
   }
   return [...new Set([...basePrNumbers, ...batchPrNumbers])].filter((prNumber) => prNumber > 0);

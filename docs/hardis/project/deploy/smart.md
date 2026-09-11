@@ -1,4 +1,5 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+
 # hardis:project:deploy:smart
 
 ## Description
@@ -165,6 +166,8 @@ Deployment actions and selected Apex test classes are scoped to the Pull Request
 
 If the deployment job of a feature branch fails, its actions are not picked up by the next merged Pull Request: re-run the failed deployment job, or move the actions to a new Pull Request.
 
+With `enablePromotionBranches: true`, a merge from a [promotion branch (experimental)](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/) (named `promotion/<source>/<target>/<YYYY-MM-DD>-<counter>`, ex: `promotion/uat/preprod/2026-09-06-1`, assembled by cherry-picking approved User Stories) keeps the deployment actions, Apex test classes and custom behaviors (NO_DELTA, PURGE_FLOW_VERSIONS...) of the Pull Requests declared in its description with `promotionPullRequests: [482, 487]`.
+
 After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of `runOnlyOnceByOrg`.
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
@@ -264,7 +267,7 @@ Note: it is also possible to define these behaviors as ENV variables:
 
 ### Deployment plan (deprecated)
 
-> **This feature is deactivated by default (enable with `enableDeprecatedDeploymentPlan` in project configuration). Use preCommands and postCommands instead.** 
+> **This feature is deactivated by default (enable with `enableDeprecatedDeploymentPlan` in project configuration). Use preCommands and postCommands instead.**
 
 If you need to deploy in multiple steps, you can define a property `deploymentPlan` in `.sfdx-hardis.yml`.
 
@@ -340,7 +343,6 @@ In agent mode:
 - Use `--target-branch` to specify the target git branch. This sets `FORCE_TARGET_BRANCH` for delta/PR scope and also sets `CONFIG_BRANCH` so the target branch config file (`config/branches/.sfdx-hardis-BRANCHNAME.yml`) is loaded - providing the correct `targetUsername` for that org automatically.
 - If a deployment action requires a `customUsername` and authentication for that user fails, the action is **skipped** (not failed) so the simulation can continue.
 
-
 ## Parameters
 
 | Name              |  Type   | Description                                                             | Default | Required | Options |
@@ -352,14 +354,14 @@ In agent mode:
 | flags-dir         | option  | undefined                                                               |         |          |         |
 | json              | boolean | Format output as json.                                                  |         |          |         |
 | packagexml<br/>-p | option  | Path to package.xml containing what you want to deploy in target org    |         |          |         |
-|runtests<br/>-r|option|If testlevel=RunSpecifiedTests, please provide a list of classes.
-If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|source-branch|option|Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)||||
-|target-branch|option|Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername)||||
-|target-org<br/>-o|option|undefined||||
-|testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg|
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| runtests<br/>-r                                                                                                                                                  | option  | If testlevel=RunSpecifiedTests, please provide a list of classes.                                                                   |
+| If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo. |         |                                                                                                                                     |         |
+| skipauth                                                                                                                                                         | boolean | Skip authentication check when a default username is required                                                                       |         |          |                                                                                                                                                           |
+| source-branch                                                                                                                                                    | option  | Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)                                   |         |          |                                                                                                                                                           |
+| target-branch                                                                                                                                                    | option  | Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername) |         |          |                                                                                                                                                           |
+| target-org<br/>-o                                                                                                                                                | option  | undefined                                                                                                                           |         |          |                                                                                                                                                           |
+| testlevel<br/>-l                                                                                                                                                 | option  | Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes                           |         |          | NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg |
+| websocket                                                                                                                                                        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                           |         |          |                                                                                                                                                           |
 
 ## Examples
 
@@ -410,5 +412,3 @@ $ sf hardis:project:deploy:smart --agent --check
 ```shell
 $ sf hardis:project:deploy:smart --agent --check --source-branch feature/my-feature --target-branch integration --target-org deploy@myclient.com.integration
 ```
-
-

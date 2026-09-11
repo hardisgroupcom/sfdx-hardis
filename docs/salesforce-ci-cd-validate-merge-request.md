@@ -28,7 +28,7 @@ If the same metadata has been modified in another branch that is already merged 
 
 Solve the conflicts, then commit and push: the control jobs run again on the new state of the branch.
 
-The Salesforce CLI plugin [sf-git-merge-driver](https://github.com/jayree/sf-git-merge-driver) automatically solves many XML conflicts (Profiles, Permission Sets, custom labels...). It is part of the [recommended tools](salesforce-ci-cd-use-install.md) and can be activated from the VS Code SFDX Hardis extension.
+The Salesforce CLI plugin [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) automatically solves many XML conflicts (Profiles, Permission Sets, custom labels...). It is part of the [recommended tools](salesforce-ci-cd-use-install.md) and can be activated from the VS Code SFDX Hardis extension.
 
 This video shows how to solve conflicts with VS Code.
 

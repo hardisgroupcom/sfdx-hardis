@@ -384,8 +384,10 @@ export interface DownloadAttachmentInput {
  * Never throws: a failing attachment records its error and the others keep going.
  *
  * Binary and document attachments are saved as-is and never handed to an external converter - the
- * caller reads them with its own tooling. That removes the sub-process (and the Python dependency)
- * that a markdown-conversion step would otherwise need.
+ * caller reads them with its own tooling. Converting a PDF or a Word document is a choice with its
+ * own dependencies (markitdown, pandoc...); making it here would impose them on every command that
+ * touches a ticket, and would spawn a sub-process on attacker-influenced content inside the
+ * credential-handling path. The caller converts what it needs, from a file that is already on disk.
  */
 export async function downloadTicketAttachment(input: DownloadAttachmentInput): Promise<TicketAttachment> {
   const { attachment, baseUrl, headers, targetDir, maxBytes, index } = input;

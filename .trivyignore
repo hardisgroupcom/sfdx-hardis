@@ -380,3 +380,22 @@ CVE-2026-75899
 CVE-2026-75931
 CVE-2026-75975
 CVE-2026-76172
+
+# https://avd.aquasec.com/nvd/cve-2026-85063 (GHSA-8cw4-87c7-c6xx)
+# csv-parse: with the columns and group_columns_by_name options enabled, a duplicate __proto__ header is treated as an existing property, an attacker-controlled array is assigned through obj['__proto__'] and the prototype of the parsed record is replaced (prototype replacement, MEDIUM). Fixed in 7.0.2.
+# Not a direct dependency of sfdx-hardis: it reaches us through @salesforce/core -> @jsforce/jsforce-node, which declares "csv-parse": "^5.5.2". jsforce-node uses it in lib/csv.js to parse Bulk API CSV results, so the CSV that goes through the vulnerable parser is the one returned by the user's own Salesforce org, not untrusted third-party input.
+# Fixing it here would mean overriding a dependency two majors past its declared range (5.x -> 7.x), whose parser options and record/info semantics changed, with no test coverage of that path. The real fix belongs upstream: remove this entry once @jsforce/jsforce-node moves to csv-parse 7.x. Added 2026-09-09.
+CVE-2026-85063
+
+# https://avd.aquasec.com/nvd/cve-2026-76845 (GHSA-vwc7-r8mq-g2x9)
+# adm-zip: Utils.sanitize enforces containment by comparing only the string form of an entry name against the resolved extraction root, and Utils.writeFileTo opens the destination without O_NOFOLLOW and without a pre-write lstat, so a symlink already present at the destination is followed and a file is written outside the target directory (arbitrary file overwrite, MEDIUM).
+# No fixed version exists: 0.6.0 is the latest release on npm, so there is nothing to upgrade to.
+# Single call site in sfdx-hardis: src/common/metadata-utils/index.ts builds `new AdmZip(...)` and calls extractAllTo(metadataFolder, true) on the unpackaged.zip retrieved from the Salesforce Metadata API into a temporary metadata folder. The archive is produced by the org's own Metadata API, not supplied by an untrusted uploader, which is the premise of adm-zip path-traversal findings. Remove this entry as soon as adm-zip ships a fixed release. Added 2026-09-09.
+CVE-2026-76845
+
+# https://avd.aquasec.com/nvd/cve-2026-84375 (GHSA-2883-xcg3-v3hh)
+# js-yaml: the maxTotalMergeKeys cap counts the keys actually merged, so merge sources that resolve to nothing never increment it and a document built from many empty merge references keeps the resolver working while staying under the limit (CPU exhaustion, DoS, HIGH). Fixed in 4.3.2 and 3.15.2.
+# sfdx-hardis own tree is already on the fixed versions: yarn.lock resolves js-yaml to 4.3.2 and 3.15.2. The single 4.1.1 copy left in both images sits under @cparra/apexdocs/node_modules/js-yaml. apexdocs hard-pins "js-yaml": "4.1.1" and still does in its latest release 3.24.2, so there is no version to upgrade to. Our yarn resolutions force 4.3.2 on that copy for the repo build, but the images install the plugin through `sf plugins install`, which runs npm, and npm ignores the resolutions of a package installed as a dependency.
+# Same assessment as the GHSA-5p4m-2wfm-xmqj entry above: DoS only, and apexdocs parses YAML the release manager owns (its own config file and the project sources), never untrusted remote input. Remove once @cparra/apexdocs bumps its js-yaml pin. Added 2026-09-09.
+CVE-2026-84375
+GHSA-2883-xcg3-v3hh

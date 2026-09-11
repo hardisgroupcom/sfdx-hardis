@@ -143,3 +143,25 @@ describe('prompts terminal mapping to @inquirer', () => {
     expect(calls[1].config.default).to.equal(undefined);
   });
 });
+
+describe('preselection reaches both prompt front ends', () => {
+  it('marks the initial choices as selected, which is what the VS Code QuickPick reads', async () => {
+    // The terminal prompt reads question.initial, the VS Code QuickPick reads choice.selected.
+    // A caller passing a preselection (ex: the stories ticked in the DevOps Pipeline, handed to
+    // hardis:project:promotion:create with --pull-requests) must see it in both.
+    const question: any = {
+      type: 'multiselect',
+      name: 'value',
+      message: 'Pick the stories',
+      choices: [
+        { title: '#482 Story A', value: 'aaa1111' },
+        { title: '#487 Story B', value: 'bbb2222' },
+        { title: '#491 Story C', value: 'ccc3333' },
+      ],
+      initial: ['aaa1111', 'ccc3333'],
+    };
+    const { prepareQuestionsForTests } = await import('../../../src/common/utils/prompts.js');
+    const [prepared] = prepareQuestionsForTests([question]);
+    expect(prepared.choices.map((choice: any) => choice.selected === true)).to.deep.equal([true, false, true]);
+  });
+});

@@ -2,50 +2,78 @@
 
 ## [beta] (main)
 
-### [hardis:ticket:test-cases:init](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/init/)
+- [hardis:ticket:test-cases:init](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/init/): **new command** writing the test cases of a ticket into a notebook a tester fills in: an Excel workbook, a CSV or a markdown table.
+- [hardis:ticket:test-cases:upsert](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/): **new command** creating or updating the test cases of a notebook in Azure DevOps, ServiceNow Test Management or Xray Cloud, safe to run again from a CI job.
 
-- **New command** that takes the test cases drafted for a ticket and writes them into a notebook a human can review and correct: a formatted **Excel workbook**, a CSV, or a markdown table. The test cases come in as structured data, so whatever produced them (an AI agent that read the specification and the code, or a script) never has to format a table.
-- The result columns are left empty for the tester to fill in, the status column is restricted to a value list so a campaign can be counted rather than read, and a summary sheet gives the counts per module and priority.
-- Without test cases to write, it falls back to a blank notebook with its identifiers already numbered, for the case where nobody has drafted anything yet.
+## [8.7.1] 2026-09-09
 
-### [hardis:ticket:test-cases:upsert](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/)
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a merge that only moves other merges (`integration -> uat`, a promotion merged into its target) is now opened up, so each User Story is a candidate of its own instead of the whole sync window being a single selectable row.
+- A configuration file left unreadable while a command runs (git conflict markers in `config/.sfdx-hardis.yml`) no longer crashes it: the configuration read earlier during the command is used, with a warning naming the file to fix.
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a cherry-pick conflict can now be answered once for the whole promotion, and the coding agent prompt asks for a commit message explaining how each conflict was solved.
+- When a Pull Request cannot be created automatically, sfdx-hardis now says what the git provider answered and gives a link to the provider's own creation form, with the branches, the title and the description already filled in.
+- A promotion Pull Request stopped because its branch still holds git conflict markers now says so in its validation comment, instead of failing the job with no comment at all.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): a deployment job running from a promotion branch now stops with an error naming the CI setting to fix, since a promotion branch must only run the validation of its Pull Request.
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a User Story a promotion carried and an ordinary sync merge delivered again is now offered on a single candidate row.
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a machine without the GitHub CLI no longer stops with `not found: gh` when a Pull Request cannot be created, and gets the manual creation link.
+- GitLab: a `CI_PROJECT_ID` left over from another repository in a local `.env` is now detected and replaced by the one of the git remote, instead of making every API call answer about the wrong project.
+- Azure DevOps: the Pull Request number of a merge completed without fast-forward is now read, so a User Story a promotion carried can be selected on its own in the next promotion.
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a promotion description too long for the git provider now drops the embedded conflict prompt instead of failing the Pull Request creation.
 
-- **New command** that sends the test cases of a notebook to **Azure DevOps, ServiceNow Test Management or Xray Cloud**, creating what does not exist yet and updating what does. It reads back the workbook a human corrected, so the corrections reach the tracker.
-- **Safe to run twice.** Every case carries an idempotency key, so a second run updates what it already created instead of duplicating it. A notebook committed next to the code plus a CI job keeps the tracker in sync at every merge, with no AI involved.
-- **An unfinished notebook is refused whole**, listing every case that still holds a completion marker or an unsubstituted template token, rather than sending half of it and leaving you to clean up the tracker.
-- One case failing does not abandon the others, and one tool being unreachable does not block the rest: the command returns 0 when everything went through, 2 when some cases failed, 1 when nothing could be attempted. `--dry-run` validates everything and writes nothing.
-- On Azure DevOps, a created test case **inherits the area path, iteration and assignee of the user story it tests**, which is what keeps Azure DevOps from rejecting it outright. An unassigned story leaves the cases unassigned rather than inventing a recipient.
-- Reuses the variables you already configure (`SYSTEM_COLLECTIONURI`..., `SERVICENOW_URL`..., `XRAY_CLIENT_ID` + `JIRA_HOST`...), from CI/CD variables or a local `.env`, and works outside of a Salesforce project. When nothing is configured, it names the variables to set instead of reporting an empty result.
+## [8.7.0] 2026-09-08
 
-### [hardis:ticket:get](https://sfdx-hardis.cloudity.com/hardis/ticket/get/)
+- [Promotion branches (experimental)](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/): ship a subset of the approved User Stories of a major branch with a `promotion/<source>/<target>/<date>-<counter>` branch created by [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) that declares the Pull Requests it carries (`enablePromotionBranches`), so their deployment actions, Apex test classes, custom behaviors and release notes follow them.
+  - [hardis:project:promotion:list-candidates](https://sfdx-hardis.cloudity.com/hardis/project/promotion/list-candidates/): **new command** listing the User Stories waiting for promotion from a major branch to the next one, without creating anything, so agents and automation can choose what a promotion will carry.
+  - Promotion branches: `allowedPromotionSteps` declares the source and target branches a release manager can create a promotion between (ex: only from uat to preprod). It is required to use the feature, and is applied by [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) and by the DevOps Pipeline.
+- [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): the Pull Requests that move other Pull Requests (merges between two major branches, and promotion branches) are left out of the notes, so what is listed is the work the release delivers. Use `--include-promotions` to list them too.
+- DevOps
+  - The Pull Requests a merge brought in are now read from the git graph instead of the commit dates, so a cherry-picked commit is attributed to the merge that really carried it: this is what the promotion and backpromote candidate lists are built from.
+  - Several ```yaml blocks in a Pull Request description now add up instead of the last one replacing the first: appending a block to declare one more Apex test class no longer drops the ones above it.
 
-- **New command** that reads a **single ticket in full** from JIRA, Azure Boards or ServiceNow and returns it as structured JSON, or as a markdown extract with `--output-file`. Where the Pull Request flows collect a one-line summary of every referenced ticket, this one gives you the whole requirement: description, acceptance criteria, all comments, subtasks, linked items and attachments, without opening the ticketing system.
-- The ticketing system is **deduced from the identifier**: `ACME-4567` is JIRA, `1234` / `AB-4567` is Azure Boards, `INC0012345` is ServiceNow. `--provider` forces one when you need to.
-- **Attachments are downloaded** next to the extract, so screenshots and wireframes can be looked at and PDF or Office documents opened. Text attachments come back inline in the JSON.
-- The extract highlights the lines of the ticket that mention an operation deployable metadata will not carry (permission set assignment, org setting, scheduled job, data load), so they can be registered as [deployment actions](https://sfdx-hardis.cloudity.com/hardis/project/action/create/) rather than discovered at promotion time.
-- Reuses the ticketing variables you already configure (`JIRA_HOST` / `JIRA_TOKEN`..., `SYSTEM_COLLECTIONURI`..., `SERVICENOW_URL`...), from CI/CD variables or a local `.env`, and works outside of a Salesforce project.
-- **New ServiceNow ticketing connector**, using the same `SERVICENOW_URL` / `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD` variables as `hardis:misc:servicenow-report`. It is only used by this command: the content of your Pull Request comments and release notes is unchanged. When `sys_journal_field` is ACL-restricted (ServiceNow answers a denied read with an empty result rather than an error, so a ticket full of comments would otherwise look like a ticket with none), the comments are read from the record's own `comments` / `work_notes` / `close_notes` fields instead, and the log says so.
+## [8.6.0] 2026-09-04
+
+- [ServiceNow ticketing integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/):
+  - ServiceNow records referenced in your commits, branches and Pull Requests are now shown in Pull Request comments and deployment notifications, with their description and state, like Jira issues already were.
+  - A work note naming the org, the branch and the Pull Request is posted on each record deployed in a major org.
+- Azure Boards: work items linked to the commits of a Pull Request are collected again, and a failure to read them no longer costs the whole Pull Request comment.
+
+## [8.5.0] 2026-09-03
+
+- Fixed the [deployment assistant error pages](https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-error-list/) whose error message contains a quote or a regular expression: their page metadata was invalid, so they were missing from the site and their links were dead.
+- [hardis:ticket:get](https://sfdx-hardis.cloudity.com/hardis/ticket/get/):
+  - **New command** that reads a **single ticket in full** from JIRA, Azure Boards or ServiceNow and returns it as structured JSON, or as a markdown extract with `--output-file`. Where the Pull Request flows collect a one-line summary of every referenced ticket, this one gives you the whole requirement: description, acceptance criteria, all comments, subtasks, linked items and attachments, without opening the ticketing system.
+  - The ticketing system is **deduced from the identifier**: `ACME-4567` is JIRA, `1234` / `AB-4567` is Azure Boards, `INC0012345` is ServiceNow. `--provider` forces one when you need to.
+  - **Attachments are downloaded** next to the extract, so screenshots and wireframes can be looked at and PDF or Office documents opened. Text attachments come back inline in the JSON.
+  - The extract highlights the lines of the ticket that mention an operation deployable metadata will not carry (permission set assignment, org setting, scheduled job, data load), so they can be registered as [deployment actions](https://sfdx-hardis.cloudity.com/hardis/project/action/create/) rather than discovered at promotion time.
+  - Reuses the ticketing variables you already configure (`JIRA_HOST` / `JIRA_TOKEN`..., `SERVICENOW_URL`...), from CI/CD variables or a local `.env`, and works outside of a Salesforce project.
+  - **Azure Boards needs a token and nothing else.** The organization and the project are read from the git remote of the repository you are standing in, so `SYSTEM_COLLECTIONURI` and `SYSTEM_TEAMPROJECT` are only needed to override that. `AZURE_DEVOPS_EXT_PAT` - the variable the Azure CLI uses, so one you probably already have - is accepted alongside `CI_SFDX_HARDIS_AZURE_TOKEN` and `SYSTEM_ACCESSTOKEN`.
+  - **New ServiceNow ticketing connector**, using the same `SERVICENOW_URL` / `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD` variables as `hardis:misc:servicenow-report`. It is only used by this command: the content of your Pull Request comments and release notes is unchanged. When `sys_journal_field` is ACL-restricted (ServiceNow answers a denied read with an empty result rather than an error, so a ticket full of comments would otherwise look like a ticket with none), the comments are read from the record's own `comments` / `work_notes` / `close_notes` fields instead, and the log says so.
+- [hardis:doc:mkdocs-to-confluence](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-confluence/):
+  - Pages that Confluence used to refuse now publish. Confluence reads the storage format as strict XHTML and rejects a whole page on the first malformed tag, which cost you the **home page** (its section cards are laid out with `<div>` containers Confluence knows nothing about), any **object page** whose validation rule formula holds a `||`, and the pages carrying **generic Apex code** such as `Map<Id,List<Opportunity>>`.
+  - **Collapsible sections** (`<details>` / `<summary>`, used by the manifest pages) now become the Confluence **expand** macro, instead of being printed to the reader as raw markup. A section left unclosed no longer costs the page.
+  - Fixed **`&nbsp;`** and the other named entities being sent as they are, which Confluence answers with "the entity was referenced, but not declared". They are now written as the character they stand for.
+  - The **banner** at the bottom of every page is an image inside a link, and its markup used to be printed as text on every single page. It is now an image.
+  - Fixed emphasis running from one **table cell** into the next: the `*` of a formula multiplication was read as italic, and a row holding an unpaired `**` turned the rest of the table bold.
+  - The colors a **Flow diagram** table uses are kept, and the CSS classes the website styles itself with no longer reach the reader as `{ .some-class }`.
 
 ## [8.4.2] 2026-09-02
 
-### [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)
-
-- The **home page** is now a grid of cards, one per section, saying in plain language what the section holds and how many pages are behind it. Only the sections your project actually has are listed, instead of links to pages that were never generated.
-- `DO_NOT_OVERWRITE_INDEX_MD=true` no longer freezes your home page on the version that first generated it: as long as `docs/index.md` is still exactly what a previous run wrote, it is refreshed with the latest home page. The first edit you make to it keeps the page yours for good.
-- A section that documents nothing, and a section whose metadata is gone since the last run, no longer leave behind an index page listing nothing, absent from the menu but still built into the site.
-- An **object page** now lists the assignment rules, auto-response rules, escalation rules, approval processes, workflow rules and Lightning Web Components that touch it: building those tables raised an error the documentation swallowed, which silently dropped the sections from every object page.
-- Fixed the **validation rules table** of an object breaking apart when a rule description or a formula spans several lines, and formulas no longer lose the `||` of their OR conditions.
-- **Wide tables** now fit the page instead of hiding their last column behind a horizontal scrollbar, and a table longer than **15 rows** gets a **filter box**, so a 500 field object can be searched instead of scrolled.
-- Every page now carries its **own title**, so section pages are no longer all called "Index" in the browser tab and in search results.
-- Documentation pages ship about **30 times less navigation markup**, which is what made a large project's site slow to open.
-- Fixed the site title, the repository link and the whole **footer** being written in near-black on the navy bar, and added **breadcrumbs** and a **back to top** button.
-- Fields without a description no longer display the text **"undefined"**, and user licenses are no longer mangled into "B2 B M A Integration User".
-- **Process Builders** now have their own section title instead of appearing as a second "Flows" list, and every index table is **sorted by name**.
-- An object whose page **fails to generate** is now reported, instead of leaving the page short of a few sections with nothing said about it.
-- The **manifest pages** now carry a title too, instead of being called "Package.Xml" and "Destructivechanges.Xml" after their file name.
-- The links inside a **mermaid diagram** are now relative, so they still work on a site that is not served from the root of a domain, such as a Salesforce static resource or a GitHub Pages project site.
-- `docs/javascripts/gtag.js` is refreshed while it still holds the placeholder measurement id, so an existing documentation stops calling googletagmanager on every page load. A **real id you configured is never touched**.
-- Documentation styling and behavior moved to **`docs/stylesheets/sfdx-hardis-doc.css`** and **`docs/javascripts/sfdx-hardis-doc.js`**, rewritten on every run, so an existing documentation receives the fixes. Your own customizations stay in `extra.css` and `tables.js`.
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - The **home page** is now a grid of cards, one per section, saying in plain language what the section holds and how many pages are behind it. Only the sections your project actually has are listed, instead of links to pages that were never generated.
+  - `DO_NOT_OVERWRITE_INDEX_MD=true` no longer freezes your home page on the version that first generated it: as long as `docs/index.md` is still exactly what a previous run wrote, it is refreshed with the latest home page. The first edit you make to it keeps the page yours for good.
+  - A section that documents nothing, and a section whose metadata is gone since the last run, no longer leave behind an index page listing nothing, absent from the menu but still built into the site.
+  - An **object page** now lists the assignment rules, auto-response rules, escalation rules, approval processes, workflow rules and Lightning Web Components that touch it: building those tables raised an error the documentation swallowed, which silently dropped the sections from every object page.
+  - Fixed the **validation rules table** of an object breaking apart when a rule description or a formula spans several lines, and formulas no longer lose the `||` of their OR conditions.
+  - **Wide tables** now fit the page instead of hiding their last column behind a horizontal scrollbar, and a table longer than **15 rows** gets a **filter box**, so a 500 field object can be searched instead of scrolled.
+  - Every page now carries its **own title**, so section pages are no longer all called "Index" in the browser tab and in search results.
+  - Documentation pages ship about **30 times less navigation markup**, which is what made a large project's site slow to open.
+  - Fixed the site title, the repository link and the whole **footer** being written in near-black on the navy bar, and added **breadcrumbs** and a **back to top** button.
+  - Fields without a description no longer display the text **"undefined"**, and user licenses are no longer mangled into "B2 B M A Integration User".
+  - **Process Builders** now have their own section title instead of appearing as a second "Flows" list, and every index table is **sorted by name**.
+  - An object whose page **fails to generate** is now reported, instead of leaving the page short of a few sections with nothing said about it.
+  - The **manifest pages** now carry a title too, instead of being called "Package.Xml" and "Destructivechanges.Xml" after their file name.
+  - The links inside a **mermaid diagram** are now relative, so they still work on a site that is not served from the root of a domain, such as a Salesforce static resource or a GitHub Pages project site.
+  - `docs/javascripts/gtag.js` is refreshed while it still holds the placeholder measurement id, so an existing documentation stops calling googletagmanager on every page load. A **real id you configured is never touched**.
+  - Documentation styling and behavior moved to **`docs/stylesheets/sfdx-hardis-doc.css`** and **`docs/javascripts/sfdx-hardis-doc.js`**, rewritten on every run, so an existing documentation receives the fixes. Your own customizations stay in `extra.css` and `tables.js`.
 
 ## [8.4.1] 2026-09-02
 

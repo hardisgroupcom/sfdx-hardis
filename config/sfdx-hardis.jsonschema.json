@@ -1919,6 +1919,67 @@
       "title": "Enable delta deployments between major branches (NOT RECOMMENDED)",
       "type": "boolean"
     },
+    "allowedPromotionSteps": {
+      "$id": "#/properties/allowedPromotionSteps",
+      "description": "Experimental feature. Required as soon as enablePromotionBranches is true.\nSource and target branches a release manager is allowed to assemble a promotion between (ex: only from uat to preprod).\nEvery other step is left out of the prompts of sf hardis:project:promotion:create and of the DevOps Pipeline, and naming one anyway fails the command.\nLeave an entry without a target to allow every merge target of that source branch.\nWhile the list is missing, sf hardis:project:promotion:create stops and asks for it: no promotion can be assembled before the project says between which branches.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/",
+      "examples": [
+        [
+          {
+            "source": "uat",
+            "target": "preprod"
+          },
+          {
+            "source": "preprod",
+            "target": "main"
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/allowedPromotionSteps/items",
+        "additionalProperties": false,
+        "description": "One authorized promotion step, from a major branch to another one",
+        "properties": {
+          "source": {
+            "$id": "#/properties/allowedPromotionSteps/items/properties/source",
+            "description": "Major branch holding the approved User Stories (ex: uat)",
+            "examples": [
+              "uat"
+            ],
+            "title": "Source branch",
+            "type": "string"
+          },
+          "target": {
+            "$id": "#/properties/allowedPromotionSteps/items/properties/target",
+            "description": "Major branch the promotion goes to (ex: preprod). Leave empty to allow every merge target of the source branch",
+            "examples": [
+              "preprod"
+            ],
+            "title": "Target branch",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "Allowed promotion step",
+        "type": "object"
+      },
+      "title": "Allowed promotion steps (experimental)",
+      "type": "array"
+    },
+    "enablePromotionBranches": {
+      "$id": "#/properties/enablePromotionBranches",
+      "description": "Experimental feature. Enable promotion branches: a branch named promotion/<source branch>/<target branch>/<YYYY-MM-DD>-<counter> (ex: promotion/uat/preprod/2026-09-06-1) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.",
+      "default": false,
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/",
+      "examples": [
+        true,
+        false
+      ],
+      "title": "Enable promotion branches (experimental)",
+      "type": "boolean"
+    },
     "enableDeploymentApexTestClasses": {
       "$id": "#/properties/enableDeploymentApexTestClasses",
       "description": "Enable the use of custom Apex Test Classes list during deployments. Requires enableDeltaDeploymentBetweenMajorBranches to be set to true. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.",
@@ -2172,7 +2233,14 @@
         "hardisgroup.atlassian.net"
       ],
       "title": "Jira Host",
-      "type": "string"
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "JIRA"
+        }
+      ]
     },
     "jiraTicketRegex": {
       "$id": "#/properties/jiraTicketRegex",
@@ -3234,17 +3302,89 @@
       "title": "Test level for deployments",
       "type": "string"
     },
+    "serviceNowAddDeploymentTag": {
+      "$id": "#/properties/serviceNowAddDeploymentTag",
+      "default": false,
+      "description": "Add a tag on ServiceNow records when they are deployed in a major org. A ServiceNow tag is a record of the global label table, created on first use: keep it disabled unless the CI user is allowed to write there.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "title": "ServiceNow Add Deployment Tag",
+      "type": "boolean",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "SERVICENOW"
+        }
+      ]
+    },
+    "serviceNowCommentField": {
+      "$id": "#/properties/serviceNowCommentField",
+      "default": "work_notes",
+      "description": "Journal field the deployment comment is written into. work_notes is the internal journal, comments is read by the person who opened the record.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "examples": [
+        "work_notes",
+        "comments"
+      ],
+      "title": "ServiceNow Comment Field",
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "SERVICENOW"
+        }
+      ]
+    },
+    "serviceNowTablePrefixes": {
+      "$id": "#/properties/serviceNowTablePrefixes",
+      "description": "Additional record number prefixes, and the ServiceNow table each one belongs to, as PREFIX:table,PREFIX:table. Use it to reach the tables of a scoped application.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "examples": [
+        "STRY:x_acme_story",
+        "STRY:x_acme_story,DEFECT:x_acme_defect"
+      ],
+      "title": "ServiceNow Table Prefixes",
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "SERVICENOW"
+        }
+      ]
+    },
+    "serviceNowTicketRegex": {
+      "$id": "#/properties/serviceNowTicketRegex",
+      "description": "Regular expression to identify ServiceNow record numbers in commits, branch names and Pull Request descriptions. The first capturing group must be the whole record number. Example: (INC[0-9]{7})",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "examples": [
+        "(INC[0-9]{7})",
+        "((?:INC|CHG|RITM)[0-9]{4,})"
+      ],
+      "title": "ServiceNow Ticket Regex",
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "SERVICENOW"
+        }
+      ]
+    },
     "ticketingProvider": {
       "$id": "#/properties/ticketingProvider",
       "description": "Ticketing provider used on the project",
       "enum": [
         "JIRA",
         "AZURE",
+        "SERVICENOW",
         "GENERIC"
       ],
       "enumNames": [
         "Jira",
         "Azure Boards",
+        "ServiceNow",
         "Generic"
       ],
       "examples": [

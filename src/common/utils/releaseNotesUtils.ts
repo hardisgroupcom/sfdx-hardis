@@ -16,6 +16,13 @@ import {
 } from "./deploymentActionsStateUtils.js";
 import { readActions } from "./actionUtils.js";
 import { isDeploymentActionsDisabled } from "./prePostCommandUtils.js";
+import {
+  expandPromotionPullRequests,
+  getPromotionBranchConfig,
+  isPromotionPullRequest,
+  parsePromotionPullRequestIds,
+  PromotionBranchConfig,
+} from "./promotionBranchUtils.js";
 import { getConfig } from "../../config/index.js";
 import { ActionWhen } from "../actionsProvider/actionsProvider.js";
 import { AiProvider } from "../aiProvider/index.js";
@@ -481,6 +488,7 @@ export async function getReleaseDate(scope: ReleaseNotesScope): Promise<string> 
 export async function collectPullRequests(
   scope: ReleaseNotesScope,
   commandRef: any,
+  options: { includePromotions?: boolean } = {},
 ): Promise<CommonPullRequestInfo[]> {
   const gitProvider = await GitProvider.getInstance();
   if (!gitProvider) {
@@ -566,15 +574,58 @@ export async function collectPullRequests(
     )) || [];
   }
 
-  // Filter out inter-major-branch PRs, but always keep the release go-live merge PR
+  // A merge between two major branches moves the User Stories from one branch to the next, it is
+  // not work of its own: it is left out whether or not the project uses promotion branches, and
+  // --include-promotions brings it back next to the stories. The go-live merge of the release is
+  // always kept, since it is what the notes are about. Branches that carry their own change
+  // (feature, fix, retrofit and the rest) are never touched by this rule.
   pullRequests = pullRequests.filter((pr) => {
-    if (releaseCommitPrIds.has(pr.idStr)) {
+    if (releaseCommitPrIds.has(pr.idStr) || options.includePromotions === true) {
       return true;
     }
     return !(majorBranchNames.has(pr.sourceBranch) && majorBranchNames.has(pr.targetBranch));
   });
 
+  // Promotion branches: a promotion Pull Request of the release carries stories whose
+  // cherry-picked commits never match by SHA, list the stories it declares as well
+  const promotionConfig = getPromotionBranchConfig(await getConfig("branch"));
+  pullRequests = await expandPromotionPullRequests(pullRequests, promotionConfig, (id) => gitProvider.getPullRequestById(id));
+  pullRequests = dropResolvedPromotionPullRequests(pullRequests, promotionConfig, options);
+
   return pullRequests;
+}
+
+/**
+ * A promotion Pull Request moves other Pull Requests, like a merge between two major branches
+ * does: what the release delivers are the User Stories it carries, which the expansion above just
+ * added. Listing it as well would put the same work in the notes twice, attach the stories'
+ * tickets to it, and inflate the Pull Request and contributor counts. It is only kept when none of
+ * the Pull Requests it declares could be resolved, so the notes never end up hiding a change.
+ *
+ * Unlike the merge rule above, this one needs the feature switch: without it a promotion/ branch
+ * is an ordinary branch, exactly as the deployment jobs treat it.
+ */
+export function dropResolvedPromotionPullRequests(
+  pullRequests: CommonPullRequestInfo[],
+  config: PromotionBranchConfig,
+  options: { includePromotions?: boolean } = {},
+): CommonPullRequestInfo[] {
+  // --include-promotions: the reader wants the vehicles listed next to the stories
+  if (!config.enabled || options.includePromotions === true) {
+    return pullRequests;
+  }
+  const present = new Set(pullRequests.map((pr) => pr.idNumber));
+  return pullRequests.filter((pr) => {
+    if (!isPromotionPullRequest(pr, config)) {
+      return true;
+    }
+    const declared = (parsePromotionPullRequestIds(pr.description) || []).filter((id) => id !== pr.idNumber);
+    const resolved = declared.filter((id) => present.has(id));
+    // Keep the vehicle unless every story it carries is listed on its own. As soon as one could
+    // not be resolved, the promotion is the only thing naming that change: keeping it is what makes
+    // the documented promise true.
+    return !(declared.length > 0 && resolved.length === declared.length);
+  });
 }
 
 function recursiveGetChildBranches(

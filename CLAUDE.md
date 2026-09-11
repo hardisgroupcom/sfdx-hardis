@@ -32,6 +32,11 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 - `grafana-dashboards` skill: rules and workflow for the "Org Monitoring by sfdx-hardis" v2 dashboards (`docs/grafana/dashboards-v2`). Load it for any dashboard or alert-rule work, and for every indicator evolution: **any change to a monitoring indicator must also handle its impact on the Grafana dashboards.**
 - Generic Grafana skills (`dashboarding`, `promql`, `loki`, `alerting-irm`) are vendored in `.claude/skills/` from [grafana/skills](https://github.com/grafana/skills) via `npx skills` (tracked in `skills-lock.json`, refresh with `npx skills update`). They are agent-agnostic: any coding agent reading `.claude/skills/` can use them.
 
+## Promotion Branches Skills
+
+- `promotion-branches` skill: how the promotion branches feature (`enablePromotionBranches`, `sf hardis:project:promotion:create`) works across sfdx-hardis and vscode-sfdx-hardis, its invariants, and every file to touch. Load it for any work on promotion branches, on the Pull Request scope of `deploy:smart`, on release notes filtering, or on the DevOps Pipeline windows, counters and toggles.
+- `promotion-branches-e2e` skill: the runbook, the job simulators and the regression scripts to prove the feature again end to end against a real org and a throwaway private repository. Run it whenever promotion branches change in a way unit tests cannot cover.
+
 ## Behavior Preferences
 
 - Always continue iterating until the task is complete -- do not ask to continue.

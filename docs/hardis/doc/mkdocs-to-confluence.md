@@ -16,6 +16,8 @@ Key operations performed:
   - **Internal links:** Rewrites `[text](page.md)` links into Confluence page links using `<ac:link>` macros.
   - **Images:** Uploads images as attachments to the corresponding Confluence page and replaces Markdown image references with `<ac:image>` macros.
   - **Code blocks:** Converts fenced code blocks into Confluence `<ac:structured-macro>` code blocks.
+  - **Collapsible sections:** Converts `<details>` / `<summary>` blocks into the Confluence **expand** macro, so a section that folds on the website folds in Confluence too.
+  - **Website-only markup:** Drops the layout `<div>` containers and the attribute lists (`{ .css-class }`) the documentation site styles itself with, since Confluence carries no stylesheet of yours.
   - **Standard Markdown:** Converts headings, lists, tables, bold, italic, and other formatting to Confluence-compatible XHTML.
 - **Page Hierarchy:** Creates Confluence pages mirroring the MkDocs navigation tree, with parent-child relationships matching the nav structure.
 - **Incremental Updates:** If a page already exists in Confluence, it is updated (with an incremented version number) rather than duplicated.

@@ -68,7 +68,7 @@ _Note: in this example, the hotfix is merged directly into **preprod**. More adv
 
 ### 3. Retrofit in the BUILD stream
 
-Activate the [sf-git-merge-driver](https://github.com/jayree/sf-git-merge-driver) plugin before the retrofit: it automatically solves many XML conflicts.
+Activate the [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) plugin before the retrofit: it automatically solves many XML conflicts.
 
 ![Activate the merge driver from the VS Code SFDX Hardis extension](assets/images/activate-merge-driver-in-sfdx-hardis.gif)
 
@@ -78,3 +78,9 @@ Activate the [sf-git-merge-driver](https://github.com/jayree/sf-git-merge-driver
 - Create a Pull Request from `retrofit/from-main` to `integration`
 - Merge the Pull Request into `integration`: the retrofit from the RUN to the BUILD is done
   - If the retrofit has many impacts, consider refreshing the dev sandboxes
+
+___
+
+## Ship only some of the uat stories
+
+When the fix is already in `uat` with other stories that are not approved yet, do not hotfix it a second time: assemble a [promotion branch (experimental)](salesforce-ci-cd-promotion-branches.md) from the approved stories.
