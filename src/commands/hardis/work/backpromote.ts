@@ -38,6 +38,7 @@ import {
   promptBackpromoteGroups,
   removeKeysFromPackageXml,
   resolveBackpromoteGroupStatuses,
+  resolveBackpromoteParentRef,
   writeBackpromoteMergePrompt,
   writeBackpromotePackages,
 } from '../../../common/utils/backpromotePlanUtils.js';
@@ -317,8 +318,10 @@ The command's technical implementation involves:
     if (agentMode && !lastState && !fromFlag && !explicitSelection) {
       throw new SfError(t('backpromoteAgentRequiresFromFlag'));
     }
-    const oldestSkipped = lastState?.skippedCommits?.length ? await findOldestCommit(lastState.skippedCommits, parentBranch) : null;
-    const groupsOldestFirst = await listMergedPrsWithCommits(parentBranch, currentBranch, getBackpromoteWindowStart(fromFlag, lastState, oldestSkipped), this);
+    // What the remote parent branch holds, which is what the up-to-date check compared with
+    const parentRef = await resolveBackpromoteParentRef(parentBranch);
+    const oldestSkipped = lastState?.skippedCommits?.length ? await findOldestCommit(lastState.skippedCommits, parentRef) : null;
+    const groupsOldestFirst = await listMergedPrsWithCommits(parentRef, currentBranch, getBackpromoteWindowStart(fromFlag, lastState, oldestSkipped), this);
     const statuses = await resolveBackpromoteGroupStatuses(groupsOldestFirst, lastState);
     const waitingIndexes = statuses.map((status, index) => (status === 'done' ? -1 : index)).filter((index) => index >= 0);
     const planBase = { currentBranch, parentBranch, parentBranchChoices, targetOrg, checks, lastState };

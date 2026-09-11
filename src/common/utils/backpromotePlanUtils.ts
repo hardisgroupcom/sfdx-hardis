@@ -144,6 +144,17 @@ export async function getBackpromoteTargetOrgInfo(conn: Connection, username: st
 
 // ---- Groups ----
 
+/**
+ * The parent branch as the remote has it. A developer brings the parent branch into their feature
+ * branch with `git merge origin/integration` and never updates their local `integration`: listing the
+ * local branch would find nothing waiting, while the up-to-date check (which reads origin) passes.
+ */
+export async function resolveBackpromoteParentRef(parentBranch: string): Promise<string> {
+  const remoteRef = `origin/${parentBranch}`;
+  const verify = spawnSync('git', ['rev-parse', '--verify', '--quiet', `${remoteRef}^{commit}`], { encoding: 'utf8' });
+  return verify.status === 0 ? remoteRef : parentBranch;
+}
+
 /** The oldest of several commits of the parent branch (the one with the most commits after it) */
 export async function findOldestCommit(commits: string[], parentBranch: string): Promise<string | null> {
   let oldest: string | null = null;

@@ -6,7 +6,12 @@ import { simpleGit } from 'simple-git';
 // Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
 import '../../../src/common/gitProvider/index.js';
 import fs from '../../../src/common/utils/fsUtils.js';
-import { listFilesWithConflictMarkers, listUncommittedFiles, prepareBackpromoteMerge } from '../../../src/common/utils/backpromotePlanUtils.js';
+import {
+  listFilesWithConflictMarkers,
+  listUncommittedFiles,
+  prepareBackpromoteMerge,
+  resolveBackpromoteParentRef,
+} from '../../../src/common/utils/backpromotePlanUtils.js';
 
 // prepareBackpromoteMerge and listUncommittedFiles read git from process.cwd(): each test works in
 // a throwaway repository and gives the original cwd back.
@@ -81,6 +86,17 @@ describe('prepareBackpromoteMerge() on a real git repository', () => {
     expect(merged).to.contain('>>>>>>> integration');
     expect(merged.replace(/\r\n/g, '')).to.not.contain('\n');
     expect(await listFilesWithConflictMarkers([path.join(repo, file)])).to.deep.equal([`${file} (1)`]);
+  });
+
+  it('reads the parent branch from origin when the remote-tracking branch exists', async () => {
+    const first = await commit(repo, 'README.md', '# repo\n', 'first');
+    await commit(repo, 'README.md', '# repo, merged on the remote\n', 'second');
+    const g = simpleGit(repo);
+    // origin/integration is ahead of a local integration left at the first commit
+    await g.raw(['update-ref', 'refs/remotes/origin/integration', 'HEAD']);
+    await g.raw(['branch', 'integration', first]);
+    expect(await resolveBackpromoteParentRef('integration')).to.equal('origin/integration');
+    expect(await resolveBackpromoteParentRef('uat')).to.equal('uat');
   });
 
   it('only reports the uncommitted files that are not allowed, never the reports sfdx-hardis wrote', async () => {
