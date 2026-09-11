@@ -4,7 +4,6 @@ import { expect } from 'chai';
 import '../../../src/common/gitProvider/index.js';
 import {
   attributeCommitsToFirstParents,
-  backpromoteActionStatusFromResult,
   isVehicleMerge,
   mergedSourceBranches,
   parseCommitParents,
@@ -215,16 +214,5 @@ describe('attributeCommitsToFirstParents() with opened-up vehicle merges', () =>
     );
     expect(attributed.get('feat')?.map((commit) => commit.hash)).to.deep.equal(['feat']);
     expect(attributed.get('next')?.map((commit) => commit.hash)).to.deep.equal(['next']);
-  });
-});
-
-describe('backpromoteActionStatusFromResult()', () => {
-  it('never records a manual action as done', () => {
-    expect(backpromoteActionStatusFromResult({ statusCode: 'manual' })).to.equal('manual');
-    expect(backpromoteActionStatusFromResult({ statusCode: 'failed' })).to.equal('failed');
-    expect(backpromoteActionStatusFromResult({ statusCode: 'skipped' })).to.equal('skipped');
-    expect(backpromoteActionStatusFromResult({ statusCode: 'not-run' })).to.equal('skipped');
-    expect(backpromoteActionStatusFromResult({ statusCode: 'success' })).to.equal('success');
-    expect(backpromoteActionStatusFromResult(undefined)).to.equal('success');
   });
 });

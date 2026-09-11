@@ -1,135 +1,60 @@
 /*
- * I/O side of the backpromote selection: target org check, what each org already received (read from
- * the Pull Request comments), per group deltas, the plan returned to the VS Code panel (--plan), the
- * interactive prompts that fill the same options as the flags, and the three-way merge of an item
- * changed in the org.
+ * Org side and plan of hardis:work:backpromote: the target org check, the pending changes of a
+ * source-tracked org, the plan returned to the VS Code panel (--plan --json), and the terminal
+ * prompts that fill the same options as the flags.
  */
-import { Connection, SfError } from '@salesforce/core';
+import { Connection } from '@salesforce/core';
 import c from 'chalk';
-import { spawnSync } from 'child_process';
-import * as os from 'os';
 import * as path from 'path';
 import fs from './fsUtils.js';
-import { createTempDir, getGitRepoRoot, git, uxLog } from './index.js';
+import { execSfdxJson, getGitRepoRoot, uxLog } from './index.js';
 import { soqlQuery } from './apiUtils.js';
-import { callSfdxGitDelta } from './gitUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
-import { parsePackageXmlFile, writePackageXmlFile } from './xmlUtils.js';
-import { MetadataUtils } from '../metadata-utils/index.js';
 import { prompts } from './prompts.js';
 import { generateReportPath } from './filesUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { t } from './i18n.js';
-import { getReportDirectory } from '../../config/index.js';
-import { userChangesOutsideReports } from './promotionCreateUtils.js';
-import { GitProviderRoot } from '../gitProvider/gitProviderRoot.js';
-import { BackpromotePrGroup, OrgConflictItem, collectBackpromoteActions, extractPrNumbersFromMessage, formatDateTime } from './backpromoteUtils.js';
+import { BackpromotePrGroup, collectBackpromoteActions, collectTestClassesFromPrs } from './backpromoteUtils.js';
 import {
-  BackpromoteGitProviderName,
-  BackpromoteGroupHistory,
-  BackpromoteOrgRecord,
-  computeBackpromoteGroupHistory,
-  loadBackpromoteOrgRecords,
-  orgShortName,
-} from './backpromoteStateUtils.js';
-import {
-  BackpromoteWorkingBranch,
-  BackpromoteDeltaUnion,
-  BackpromoteGroupDelta,
+  BackpromoteConflictChoice,
+  BackpromotePredictedConflict,
   BackpromoteTargetOrgRefusal,
-  countConflictMarkerBlocks,
-  defaultGroupSelection,
   findBackpromoteTargetOrgRefusal,
-  isSameCommit,
-  metadataKeysToPackageContent,
+  itemsOfFile,
+  normalizeRepoPath,
   parseMetadataKey,
-  parsePullRequestReference,
-  toMetadataKey,
-} from './backpromoteSelectionUtils.js';
+} from './backpromoteRules.js';
 
 // ---- Plan returned by --plan --json (read by the VS Code Backpromote panel) ----
 
 export interface BackpromotePlanCheck {
-  id: 'gitProvider' | 'targetOrg' | 'currentBranch' | 'parentBranch' | 'gitClean' | 'mergeMarkers';
+  id: 'currentBranch' | 'gitClean' | 'targetOrg' | 'parentBranch';
   ok: boolean;
   message: string;
   details?: string[];
 }
 
-/** How many groups back the Pull Request comments are read before giving up on finding a history */
-export const BACKPROMOTE_HISTORY_LOOKBACK = 20;
-
-/** How many groups an org with no backpromote history at all is offered */
-export const BACKPROMOTE_NEW_ORG_WINDOW = 5;
-
 export interface BackpromotePlan {
-  planVersion: 1;
-  status: 'ready' | 'blocked' | 'upToDate';
-  stateStorage: 'pullRequestComments';
-  gitProvider: { name: BackpromoteGitProviderName | null };
+  planVersion: 2;
+  /** mergeInProgress: a previous run left a merge waiting for its conflicts to be solved */
+  status: 'ready' | 'blocked' | 'upToDate' | 'mergeInProgress';
   currentBranch: string;
   parentBranch: string;
   parentBranchChoices: string[];
-  /** Where a run works, null when the plan stopped before knowing */
-  workingBranch: BackpromoteWorkingBranch | null;  targetOrg: { username: string; instanceUrl: string; orgType: 'sandbox' | 'scratch' | 'production'; orgId: string; orgName: string };
+  targetOrg: { username: string; instanceUrl: string; orgType: 'sandbox' | 'scratch' | 'production'; orgId: string; orgName: string; tracksSource: boolean };
   checks: BackpromotePlanCheck[];
-  /** Pass it as --from to also list the Pull Requests merged before the ones listed here */
-  olderFrom: string | null;
-  /** Nothing was ever backpromoted to this org: only the newest Pull Request is preselected */
-  noHistory: boolean;
-  stateReadErrors: string[];
-  groups: Array<{
-    hash: string;
-    shortHash: string;
-    message: string;
-    author: string;
-    date: string;
-    status: BackpromoteGroupHistory['status'];
-    trackable: boolean;
-    selectedByDefault: boolean;
-    backpromotedToThisOrg: BackpromoteGroupHistory['backpromotedToThisOrg'];
-    backpromotedTo: BackpromoteGroupHistory['backpromotedTo'];
-    pullRequests: Array<{ id: number; title: string; author: string; webUrl: string; sourceBranch: string }>;
-    items: string[];
-    deletions: string[];
-    testClasses: string[];
-    actionIds: string[];
-  }>;
-  items: Array<{
-    key: string;
-    type: string;
-    name: string;
-    commits: string[];
-    orgState: 'changedInOrg' | 'deletedLocally' | 'newToOrg' | 'noOrgChange' | 'unknown';
-    localPath: string | null;
-    orgPath: string | null;
-    mergeable: boolean;
-  }>;
-  deletions: Array<{ key: string; type: string; name: string; commits: string[] }>;
-  actions: Array<{
-    id: string;
-    label: string;
-    type: string;
-    when: 'pre' | 'post';
-    commits: string[];
-    pullRequestId: number;
-    customUsername: string | null;
-    alreadyDone: { date: string } | null;
-    selectedByDefault: boolean;
-  }>;
-  conflictDetection: { success: boolean; errorMessage: string | null };
+  /** The Pull Requests the merge brings in, newest first */
+  pullRequests: Array<{ id: number; title: string; author: string; webUrl: string; sourceBranch: string; date: string; commit: string }>;
+  commitCount: number;
+  items: Array<{ key: string; type: string; name: string; path: string | null; conflict: BackpromotePredictedConflict | null }>;
+  deletions: Array<{ key: string; type: string; name: string }>;
+  actions: Array<{ id: string; label: string; type: string; when: 'pre' | 'post'; pullRequestId: number; customUsername: string | null }>;
+  testClasses: string[];
+  /** Files the merge may stop on (ready), or stopped on (mergeInProgress) */
+  conflicts: Array<{ path: string; changedInBranch: boolean; changedInOrg: boolean; items: string[]; conflictBlocks: number | null }>;
+  /** Pending changes of the org, saved to the branch before the merge. tracked is false when the org has no source tracking. */
+  orgChanges: { tracked: boolean; files: string[] };
   reports: string[];
-}
-
-export interface BackpromotePrepareMergeResult {
-  files: Array<{ key: string; localPath: string; basePath: string | null; orgPath: string; conflictBlocks: number }>;
-  prompt: string;
-  promptFile: string;
-  nextCommand: string;
-  /** The backpromote branch the merge was written on, where the user stays to solve it */
-  backpromoteBranch: string | null;
-  /** The branch the run of nextCommand brings the user back to */
-  returnBranch: string | null;
 }
 
 // ---- Target org ----
@@ -140,381 +65,55 @@ export interface BackpromoteTargetOrgInfo {
   orgType: 'sandbox' | 'scratch' | 'production';
   orgId: string;
   orgName: string;
+  tracksSource: boolean;
   refusal: BackpromoteTargetOrgRefusal | null;
   message: string;
 }
 
+/** Short name of an org from its instance URL: mycompany--dev-sam for https://mycompany--dev-sam.sandbox.my.salesforce.com */
+export function orgShortName(instanceUrl: string, fallback: string): string {
+  const host = (instanceUrl || '').replace(/^https?:\/\//i, '').split('/')[0].toLowerCase();
+  return host.split('.')[0] || fallback;
+}
+
 /**
  * Only developer sandboxes and scratch orgs receive a backpromote. A production org, or the org of a
- * major branch, is deployed by the CI/CD pipeline. The Organization Id keys the history: a refreshed
- * sandbox gets a new one.
+ * major branch, is deployed by the CI/CD pipeline.
  */
-export async function getBackpromoteTargetOrgInfo(conn: Connection, username: string): Promise<BackpromoteTargetOrgInfo> {
+export async function getBackpromoteTargetOrgInfo(conn: Connection, username: string, tracksSource: boolean): Promise<BackpromoteTargetOrgInfo> {
   const orgResult = await soqlQuery('SELECT Id, IsSandbox, TrialExpirationDate FROM Organization LIMIT 1', conn);
   const organization = orgResult?.records?.[0] || {};
   const isSandboxOrg = organization.IsSandbox === true;
   const orgType: BackpromoteTargetOrgInfo['orgType'] = !isSandboxOrg ? 'production' : organization.TrialExpirationDate ? 'scratch' : 'sandbox';
   const instanceUrl = conn.instanceUrl || '';
-  const refusal = findBackpromoteTargetOrgRefusal({
-    isSandbox: isSandboxOrg,
-    username,
-    instanceUrl,
-    majorOrgs: await listMajorOrgs(),
-  });
+  const refusal = findBackpromoteTargetOrgRefusal({ isSandbox: isSandboxOrg, username, instanceUrl, majorOrgs: await listMajorOrgs() });
   let message = t('backpromoteCheckTargetOrgOk', { username });
   if (refusal?.reason === 'production') {
     message = t('backpromoteTargetOrgIsProduction', { username });
   } else if (refusal?.reason === 'majorOrg') {
     message = t('backpromoteTargetOrgIsMajorOrg', { username, branch: refusal.branchName });
   }
-  return {
-    username,
-    instanceUrl,
-    orgType,
-    orgId: String(organization.Id || ''),
-    orgName: orgShortName(instanceUrl, username),
-    refusal,
-    message,
-  };
-}
-
-// ---- Groups ----
-
-/**
- * The parent branch as the remote has it. A developer brings the parent branch into their feature
- * branch with `git merge origin/integration` and never updates their local `integration`: listing the
- * local branch would find nothing waiting, while the up-to-date check (which reads origin) passes.
- */
-export async function resolveBackpromoteParentRef(parentBranch: string): Promise<string> {
-  const remoteRef = `origin/${parentBranch}`;
-  const verify = spawnSync('git', ['rev-parse', '--verify', '--quiet', `${remoteRef}^{commit}`], { encoding: 'utf8' });
-  return verify.status === 0 ? remoteRef : parentBranch;
+  return { username, instanceUrl, orgType, orgId: String(organization.Id || ''), orgName: orgShortName(instanceUrl, username), tracksSource, refusal, message };
 }
 
 /**
- * A commit with a first parent. The first commit of a repository has none: it was not merged into the
- * parent branch, and sfdx-git-delta cannot compute `<commit>^1..<commit>` for it.
+ * The files changed in a source-tracked org and not yet in the branch, as repository paths. They are
+ * saved to the branch before the merge, so the merge sees them and the deployment never overwrites
+ * them. Empty when the org has no pending change, or when the preview cannot be read.
  */
-export function hasFirstParent(hash: string): boolean {
-  return spawnSync('git', ['rev-parse', '--verify', '--quiet', `${hash}^1`], { encoding: 'utf8' }).status === 0;
-}
-
-/**
- * What the Pull Request comments say about each listed group, newest first. Unless readAll, the reading
- * stops at the newest group already backpromoted to the org: the window starts there, so a long history
- * is not read and recomputed at every run. windowStartIndex is that group (0 when none was found).
- *
- * The reading also stops after BACKPROMOTE_HISTORY_LOOKBACK groups: an org that received none of
- * them (a new or refreshed sandbox, a scratch org) would otherwise cost one API call per Pull
- * Request of the whole listing, at every step of the panel, to end up with the same answer.
- */
-export async function loadBackpromoteHistory(
-  provider: GitProviderRoot,
-  groupsOldestFirst: BackpromotePrGroup[],
-  orgId: string,
-  readAll: boolean,
-): Promise<{
-  windowStartIndex: number;
-  histories: BackpromoteGroupHistory[];
-  recordsByPr: Map<number, BackpromoteOrgRecord[]>;
-  readErrors: string[];
-  /** Pull Requests whose comments could be read: zero with a token that cannot read them */
-  readOk: number;
-  /** No group of the window was ever backpromoted to this org */
-  noHistory: boolean;
-}> {
-  const recordsByPr = new Map<number, BackpromoteOrgRecord[]>();
-  const readErrors: string[] = [];
-  const histories: BackpromoteGroupHistory[] = new Array(groupsOldestFirst.length);
-  let windowStartIndex = 0;
-  let readGroups = 0;
-  for (let index = groupsOldestFirst.length - 1; index >= 0; index--) {
-    const group = groupsOldestFirst[index];
-    await loadBackpromoteOrgRecords(provider, group.associatedPrs.map((pr) => pr.id), recordsByPr, readErrors);
-    histories[index] = computeBackpromoteGroupHistory(group, recordsByPr, orgId);
-    readGroups++;
-    if (!readAll && histories[index].status === 'done') {
-      windowStartIndex = index;
-      break;
-    }
-    if (!readAll && readGroups >= BACKPROMOTE_HISTORY_LOOKBACK) {
-      windowStartIndex = index;
-      break;
-    }
-  }
-  const windowHistories = histories.slice(windowStartIndex);
-  return {
-    windowStartIndex,
-    histories: windowHistories,
-    recordsByPr,
-    readErrors,
-    readOk: Math.max(0, recordsByPr.size - readErrors.length),
-    noHistory: !windowHistories.some((history) => history && history.status === 'done'),
-  };
-}
-
-/**
- * The commit --from designates. A Pull Request number is resolved to the merge commit that brought
- * it in, and that Pull Request is listed too: `--from 481` answers "from #481", not "after it".
- */
-export async function resolveBackpromoteFromRef(parentRef: string, from: string): Promise<string> {
-  const pullRequest = parsePullRequestReference(from);
-  if (pullRequest === null) {
-    return from;
-  }
-  const log = spawnSync('git', ['log', '--first-parent', '-n', '500', '--format=%H%x1f%B%x1e', parentRef], {
-    encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  for (const record of (log.stdout || '').split('\x1e')) {
-    const [hash, message] = record.split('\x1f');
-    if (!hash || !message) {
-      continue;
-    }
-    if (extractPrNumbersFromMessage(message).includes(pullRequest)) {
-      return `${hash.trim()}^1`;
-    }
-  }
-  throw new SfError(t('backpromoteUnknownFromPullRequest', { id: pullRequest, parentBranch: parentRef }));
-}
-
-/** A commit 50 first-parent steps before the window start, to list older Pull Requests with --from */
-export function resolveOlderWindowStart(windowStartHash: string): string | null {
-  const ancestor = spawnSync('git', ['rev-parse', '--verify', '--quiet', `${windowStartHash}~50^{commit}`], { encoding: 'utf8' });
-  if (ancestor.status === 0 && ancestor.stdout.trim() !== '') {
-    return ancestor.stdout.trim();
-  }
-  const root = spawnSync('git', ['rev-list', '--max-parents=0', windowStartHash], { encoding: 'utf8' });
-  const rootHash = (root.stdout || '').split(/\r?\n/).filter((line) => line.trim() !== '')[0];
-  return rootHash && !isSameCommit(rootHash, windowStartHash) ? rootHash.trim() : null;
-}
-
-async function readPackageContent(file: string): Promise<Record<string, string[]>> {
-  if (!fs.existsSync(file)) {
-    return {};
-  }
-  return ((await parsePackageXmlFile(file)) || {}) as Record<string, string[]>;
-}
-
-/**
- * Where the delta of a commit is kept between runs. What a merge commit changed against its first
- * parent never changes, and every step of the VS Code panel (the plan, each merge, the run)
- * recomputes the same ones: each sfdx-git-delta run boots a CLI process and takes seconds.
- */
-async function backpromoteDeltaCacheDir(): Promise<string> {
-  const gitRoot = path.resolve((await getGitRepoRoot()).trim()).toLowerCase();
-  // Small stable fingerprint of the repository path, to keep the cache of two clones apart
-  let fingerprint = 5381;
-  for (let index = 0; index < gitRoot.length; index++) {
-    fingerprint = ((fingerprint * 33) ^ gitRoot.charCodeAt(index)) >>> 0;
-  }
-  const dir = path.join(os.tmpdir(), 'sfdx-hardis-backpromote-delta', fingerprint.toString(16));
-  await fs.ensureDir(dir);
-  return dir;
-}
-
-async function readCachedGroupDelta(cacheDir: string, hash: string): Promise<BackpromoteGroupDelta | null> {
-  try {
-    const file = path.join(cacheDir, `${hash}.json`);
-    if (!fs.existsSync(file)) {
-      return null;
-    }
-    const cached = JSON.parse(await fs.readFile(file, 'utf8'));
-    return cached && cached.hash === hash && cached.items && cached.deletions ? (cached as BackpromoteGroupDelta) : null;
-  } catch {
-    return null;
-  }
-}
-
-/** What each group deploys and deletes, from sfdx-git-delta between the group and its first parent */
-export async function computeBackpromoteGroupDeltas(
-  groups: BackpromotePrGroup[],
-  commandThis: any,
-  // Called before each group, for the progress a VS Code panel shows
-  onGroup?: (index: number, total: number, group: BackpromotePrGroup) => void
-): Promise<BackpromoteGroupDelta[]> {
-  if (groups.length === 0) {
-    return [];
-  }
-  uxLog('action', commandThis, c.cyan(t('backpromoteComputingGroupDeltas', { count: groups.length })));
-  const rootDir = await createTempDir();
-  const cacheDir = await backpromoteDeltaCacheDir();
-  const results: BackpromoteGroupDelta[] = [];
-  let computed = 0;
-  // One run at a time: sfdx-git-delta writes the git config of the repository, and two runs in
-  // parallel fail on its lock ("could not lock config file .git/config")
-  for (let index = 0; index < groups.length; index++) {
-    onGroup?.(index, groups.length, groups[index]);
-    const hash = groups[index].commit.hash;
-    const cached = await readCachedGroupDelta(cacheDir, hash);
-    if (cached) {
-      results.push(cached);
-      continue;
-    }
-    const outputDir = path.join(rootDir, `${index}-${hash.substring(0, 12)}`);
-    await fs.ensureDir(outputDir);
-    const deltaResult = await callSfdxGitDelta(`${hash}^1`, hash, outputDir);
-    if (deltaResult?.status !== 0) {
-      throw new SfError(`[Backpromote] sfdx-git-delta failed on ${hash.substring(0, 7)}: ${JSON.stringify(deltaResult)}`);
-    }
-    const delta: BackpromoteGroupDelta = {
-      hash,
-      items: await readPackageContent(path.join(outputDir, 'package', 'package.xml')),
-      deletions: await readPackageContent(path.join(outputDir, 'destructiveChanges', 'destructiveChanges.xml')),
-    };
-    computed++;
-    results.push(delta);
-    try {
-      await fs.writeFile(path.join(cacheDir, `${hash}.json`), JSON.stringify(delta), 'utf8');
-    } catch {
-      // A delta that cannot be cached is simply computed again next time
-    }
-  }
-  if (computed < groups.length) {
-    uxLog('log', commandThis, c.grey(t('backpromoteDeltasFromCache', { count: groups.length - computed })));
-  }
-  return results;
-}
-
-/**
- * Reads a metadata file as it was when the org last received it, to tell a real org change from an
- * item the org simply has in an older state. Null when the file did not exist then, or when the run
- * does not know what the org received (nothing recorded yet): every difference then counts as an
- * org change, which is the careful answer.
- */
-export function buildBackpromoteBaseVersionReader(options: {
-  baseCommit: string | null;
-  gitRoot: string;
-  packageDirectories?: Array<{ path: string; fullPath: string }>;
-}): ((localFile: string) => Promise<string | null>) | null {
-  if (!options.baseCommit) {
-    return null;
-  }
-  const baseCommit = options.baseCommit;
-  const gitRoot = options.gitRoot;
-  const packageDirectories = options.packageDirectories || [];
-  const cache = new Map<string, string | null>();
-  return async (localFile: string): Promise<string | null> => {
-    const absolute = path.resolve(localFile);
-    if (cache.has(absolute)) {
-      return cache.get(absolute) as string | null;
-    }
-    // A plan reads the files of the parent branch from a temporary export: the path inside the
-    // repository is the package directory it came from plus the path inside it
-    let repoPath = path.relative(gitRoot, absolute).split(path.sep).join('/');
-    for (const packageDirectory of packageDirectories) {
-      const inside = path.relative(path.resolve(packageDirectory.fullPath), absolute);
-      if (inside && !inside.startsWith('..') && !path.isAbsolute(inside)) {
-        repoPath = `${packageDirectory.path}/${inside.split(path.sep).join('/')}`;
-        break;
-      }
-    }
-    const show = spawnSync('git', ['show', `${baseCommit}:${repoPath}`], { cwd: gitRoot, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
-    const content = show.status === 0 ? show.stdout : null;
-    cache.set(absolute, content);
-    return content;
-  };
-}
-
-// ---- Files ----
-
-/** Local source file of each Type:Name item, or null when it cannot be found */
-export async function findLocalMetadataFiles(
-  keys: Iterable<string>,
-  packageDirectories: Array<{ path: string; fullPath: string }> = []
-): Promise<Map<string, string | null>> {
-  const namesByType = new Map<string, string[]>();
-  for (const key of keys) {
-    const parsed = parseMetadataKey(key);
-    if (parsed) {
-      namesByType.set(parsed.type, [...(namesByType.get(parsed.type) || []), parsed.name]);
-    }
-  }
-  const files = new Map<string, string | null>();
-  for (const [type, names] of namesByType) {
-    const found = await MetadataUtils.findMetaFilesFromTypeAndNames(type, names, packageDirectories);
-    for (const name of names) {
-      const file = found.get(name) ?? null;
-      files.set(toMetadataKey(type, name), file && fs.existsSync(file) ? file : null);
-    }
-  }
-  return files;
-}
-
-/**
- * Files with uncommitted changes, apart from the allowed ones (merged files awaiting deployment)
- * and the reports sfdx-hardis writes inside the repository: the merge prompt of a previous
- * --prepare-merge must not block the run that deploys the merge.
- */
-export async function listUncommittedFiles(allowedFiles: string[] = []): Promise<string[]> {
+export async function listOrgPendingChanges(username: string, commandThis: any): Promise<string[]> {
   const gitRoot = path.resolve((await getGitRepoRoot()).trim());
-  const allowed = new Set(allowedFiles.map((file) => path.resolve(file).toLowerCase()));
-  const status = await git().status();
-  const reportDirectory = path.basename(await getReportDirectory());
-  return userChangesOutsideReports(status.files || [], reportDirectory)
-    .map((file) => file.path)
-    .filter((file) => !allowed.has(path.resolve(gitRoot, file).toLowerCase()));
-}
-
-/** Items whose local file still holds conflict markers, as "path (count)" */
-export async function listFilesWithConflictMarkers(files: Iterable<string>): Promise<string[]> {
-  const withMarkers: string[] = [];
-  for (const file of files) {
-    if (!fs.existsSync(file)) {
+  const preview = await execSfdxJson(`sf project retrieve preview -o ${username} --json`, commandThis, { fail: false, output: false });
+  const entries = [...(preview?.result?.toRetrieve || []), ...(preview?.result?.conflicts || []), ...(preview?.result?.toDelete || [])];
+  const files = new Set<string>();
+  for (const entry of entries) {
+    const file = entry?.projectRelativePath || entry?.path || '';
+    if (!file) {
       continue;
     }
-    const count = countConflictMarkerBlocks(await fs.readFile(file, 'utf8'));
-    if (count > 0) {
-      withMarkers.push(`${toWorkspacePath(file)} (${count})`);
-    }
+    files.add(normalizeRepoPath(path.isAbsolute(file) ? path.relative(gitRoot, file) : file));
   }
-  return withMarkers;
-}
-
-export async function writeBackpromotePackages(deployKeys: string[], deleteKeys: string[]): Promise<{ packageXml: string; destructiveXml: string | null }> {
-  const dir = await createTempDir();
-  const packageXml = path.join(dir, 'package', 'package.xml');
-  await fs.ensureDir(path.dirname(packageXml));
-  await writePackageXmlFile(packageXml, metadataKeysToPackageContent(deployKeys));
-  let destructiveXml: string | null = null;
-  if (deleteKeys.length > 0) {
-    destructiveXml = path.join(dir, 'destructiveChanges', 'destructiveChanges.xml');
-    await fs.ensureDir(path.dirname(destructiveXml));
-    await writePackageXmlFile(destructiveXml, metadataKeysToPackageContent(deleteKeys));
-  }
-  return { packageXml, destructiveXml };
-}
-
-/** Remove Type:Name items from a package.xml file, in place */
-export async function removeKeysFromPackageXml(packageXml: string, keys: string[]): Promise<void> {
-  if (keys.length === 0 || !fs.existsSync(packageXml)) {
-    return;
-  }
-  const content = ((await parsePackageXmlFile(packageXml)) || {}) as Record<string, string[]>;
-  const remaining: string[] = [];
-  for (const type of Object.keys(content)) {
-    for (const member of content[type] || []) {
-      const key = toMetadataKey(type, member);
-      if (!keys.includes(key)) {
-        remaining.push(key);
-      }
-    }
-  }
-  await fs.remove(packageXml);
-  await writePackageXmlFile(packageXml, metadataKeysToPackageContent(remaining));
-}
-
-function toWorkspacePath(file: string): string {
-  return path.relative(process.cwd(), path.resolve(file)).split(path.sep).join('/');
-}
-
-function isTextFile(file: string): boolean {
-  try {
-    const buffer = fs.readFileSync(file);
-    return !buffer.subarray(0, 8000).includes(0);
-  } catch {
-    return false;
-  }
+  return [...files].sort();
 }
 
 // ---- Plan ----
@@ -524,155 +123,76 @@ export function buildBackpromotePlan(options: {
   currentBranch: string;
   parentBranch: string;
   parentBranchChoices: string[];
-  workingBranch?: BackpromoteWorkingBranch | null;
   targetOrg: BackpromoteTargetOrgInfo;
-  gitProviderName: BackpromoteGitProviderName | null;
   checks: BackpromotePlanCheck[];
-  olderFrom?: string | null;
-  stateReadErrors?: string[];
-  groupsOldestFirst?: BackpromotePrGroup[];
-  histories?: BackpromoteGroupHistory[];
-  deltas?: BackpromoteGroupDelta[];
-  selection?: BackpromoteDeltaUnion;
-  conflicts?: OrgConflictItem[];
-  notInOrgKeys?: string[];
-  conflictDetection?: { success: boolean; errorMessage: string | null };
-  actions?: BackpromotePlan['actions'];
-  localFiles?: Map<string, string | null>;
-  /** Hashes of the groups a run takes when the user changes nothing */
-  preselectedHashes?: string[];
-  noHistory?: boolean;
+  groups?: BackpromotePrGroup[];
+  items?: string[];
+  itemPaths?: Map<string, string | null>;
+  deletions?: string[];
+  conflicts?: Array<BackpromotePredictedConflict & { conflictBlocks?: number | null }>;
+  orgChanges?: { tracked: boolean; files: string[] };
+  commandThis?: any;
 }): BackpromotePlan {
-  const groups = options.groupsOldestFirst || [];
-  const histories = options.histories || [];
-  const deltaByHash = new Map((options.deltas || []).map((delta) => [delta.hash, delta]));
-  const actions = options.actions || [];
-  const conflictByKey = new Map((options.conflicts || []).map((item) => [toMetadataKey(item.metadataType, item.metadataName), item]));
-  const notInOrg = new Set(options.notInOrgKeys || []);
-  const detection = options.conflictDetection || { success: true, errorMessage: null };
-  const keysOf = (content: Record<string, string[]> | undefined) =>
-    Object.keys(content || {}).flatMap((type) => (content![type] || []).map((member) => toMetadataKey(type, member)));
-
-  const preselected = options.preselectedHashes ? new Set(options.preselectedHashes) : null;
-  const planGroups: BackpromotePlan['groups'] = [];
-  for (let index = groups.length - 1; index >= 0; index--) {
-    const group = groups[index];
-    const history: BackpromoteGroupHistory = histories[index] || { status: 'pending', trackable: true, backpromotedToThisOrg: null, backpromotedTo: [] };
-    const delta = deltaByHash.get(group.commit.hash);
-    const testClasses = new Set<string>();
-    for (const { config } of group.prConfigs) {
-      for (const testClass of config?.deploymentApexTestClasses || []) {
-        testClasses.add(testClass);
+  const groups = options.groups || [];
+  const itemPaths = options.itemPaths || new Map<string, string | null>();
+  const pullRequests: BackpromotePlan['pullRequests'] = [];
+  for (const group of [...groups].reverse()) {
+    for (const pr of group.associatedPrs) {
+      pullRequests.push({ ...pr, date: group.commit.date, commit: group.commit.hash });
+    }
+  }
+  const actions: BackpromotePlan['actions'] = [];
+  for (const [phase, when] of [['commandsPreDeploy', 'pre'], ['commandsPostDeploy', 'post']] as const) {
+    for (const action of collectBackpromoteActions(groups, options.currentBranch, phase, options.commandThis)) {
+      actions.push({ id: action.id, label: action.label, type: action.type, when, pullRequestId: action.prId, customUsername: action.customUsername || null });
+    }
+  }
+  const conflicts = (options.conflicts || []).map((conflict) => ({
+    path: conflict.path,
+    changedInBranch: conflict.changedInBranch,
+    changedInOrg: conflict.changedInOrg,
+    items: itemsOfFile(conflict.path, itemPaths),
+    conflictBlocks: conflict.conflictBlocks ?? null,
+  }));
+  const conflictOfItem = new Map<string, BackpromotePredictedConflict>();
+  for (const conflict of conflicts) {
+    for (const key of conflict.items) {
+      if (!conflictOfItem.has(key)) {
+        conflictOfItem.set(key, { path: conflict.path, changedInBranch: conflict.changedInBranch, changedInOrg: conflict.changedInOrg });
       }
     }
-    planGroups.push({
-      hash: group.commit.hash,
-      shortHash: group.commit.hash.substring(0, 7),
-      message: (group.commit.message || '').split('\n')[0],
-      author: group.commit.author,
-      date: group.commit.date,
-      status: history.status,
-      trackable: history.trackable,
-      selectedByDefault: preselected ? preselected.has(group.commit.hash) : history.status === 'pending' && history.trackable,
-      backpromotedToThisOrg: history.backpromotedToThisOrg,
-      backpromotedTo: history.backpromotedTo,
-      pullRequests: group.associatedPrs.map((pr) => ({ ...pr })),
-      items: keysOf(delta?.items),
-      deletions: keysOf(delta?.deletions),
-      testClasses: [...testClasses],
-      actionIds: actions.filter((action) => action.commits.includes(group.commit.hash)).map((action) => action.id),
-    });
   }
-
-  const items: BackpromotePlan['items'] = [...(options.selection?.items.entries() || [])]
-    .map(([key, commits]) => {
-      const parsed = parseMetadataKey(key)!;
-      const conflict = conflictByKey.get(key);
-      let orgState: BackpromotePlan['items'][number]['orgState'] = 'noOrgChange';
-      if (!detection.success) {
-        orgState = 'unknown';
-      } else if (conflict?.status === 'modified') {
-        orgState = 'changedInOrg';
-      } else if (conflict?.status === 'deleted') {
-        orgState = 'deletedLocally';
-      } else if (notInOrg.has(key)) {
-        orgState = 'newToOrg';
-      }
-      const localFile = conflict?.localPath || options.localFiles?.get(key) || null;
-      return {
-        key,
-        type: parsed.type,
-        name: parsed.name,
-        commits,
-        orgState,
-        localPath: localFile ? toWorkspacePath(localFile) : null,
-        orgPath: conflict?.orgPath || null,
-        mergeable: orgState === 'changedInOrg' && !!conflict?.localPath && !!conflict?.orgPath && isTextFile(conflict.localPath) && isTextFile(conflict.orgPath),
-      };
-    })
-    .sort((a, b) => a.key.localeCompare(b.key));
-
-  const deletions: BackpromotePlan['deletions'] = [...(options.selection?.deletions.entries() || [])]
-    .map(([key, commits]) => {
-      const parsed = parseMetadataKey(key)!;
-      return { key, type: parsed.type, name: parsed.name, commits };
-    })
-    .sort((a, b) => a.key.localeCompare(b.key));
-
+  const toEntry = (key: string) => {
+    const parsed = parseMetadataKey(key) || { type: '', name: key };
+    return { key, type: parsed.type, name: parsed.name };
+  };
   return {
-    planVersion: 1,
+    planVersion: 2,
     status: options.status,
-    stateStorage: 'pullRequestComments',
-    gitProvider: { name: options.gitProviderName },
     currentBranch: options.currentBranch,
     parentBranch: options.parentBranch,
     parentBranchChoices: options.parentBranchChoices,
-    workingBranch: options.workingBranch || null,
     targetOrg: {
       username: options.targetOrg.username,
       instanceUrl: options.targetOrg.instanceUrl,
       orgType: options.targetOrg.orgType,
       orgId: options.targetOrg.orgId,
       orgName: options.targetOrg.orgName,
+      tracksSource: options.targetOrg.tracksSource,
     },
     checks: options.checks,
-    olderFrom: options.olderFrom || null,
-    noHistory: options.noHistory === true,
-    stateReadErrors: options.stateReadErrors || [],
-    groups: planGroups,
-    items,
-    deletions,
+    pullRequests,
+    commitCount: groups.length,
+    items: (options.items || [])
+      .map((key) => ({ ...toEntry(key), path: itemPaths.get(key) ?? null, conflict: conflictOfItem.get(key) || null }))
+      .sort((a, b) => a.key.localeCompare(b.key)),
+    deletions: (options.deletions || []).map(toEntry).sort((a, b) => a.key.localeCompare(b.key)),
     actions,
-    conflictDetection: detection,
+    testClasses: collectTestClassesFromPrs(groups),
+    conflicts,
+    orgChanges: options.orgChanges || { tracked: false, files: [] },
     reports: [],
   };
-}
-
-/** The deployment actions of the pending groups, both phases, with what already ran in this org */
-export function listBackpromotePlanActions(
-  groups: BackpromotePrGroup[],
-  userStoryBranch: string | null,
-  actionsDoneInOrg: Map<string, string>,
-  commandThis: any,
-): BackpromotePlan['actions'] {
-  const planActions: BackpromotePlan['actions'] = [];
-  for (const [phase, when] of [['commandsPreDeploy', 'pre'], ['commandsPostDeploy', 'post']] as const) {
-    for (const action of collectBackpromoteActions(groups, userStoryBranch, phase, commandThis)) {
-      const doneDate = actionsDoneInOrg.get(action.id);
-      planActions.push({
-        id: action.id,
-        label: action.label,
-        type: action.type,
-        when,
-        commits: [action.commitHash],
-        pullRequestId: action.prId,
-        customUsername: action.customUsername || null,
-        alreadyDone: doneDate ? { date: doneDate } : null,
-        selectedByDefault: !doneDate,
-      });
-    }
-  }
-  return planActions;
 }
 
 /** Major branches and the development branch, the parent branches a backpromote can come from */
@@ -689,102 +209,7 @@ export async function listBackpromoteParentBranchChoices(developmentBranch: stri
   return [...choices];
 }
 
-// ---- Interactive prompts (they fill the same options as the flags) ----
-
-/** One multiselect of the pending groups, newest first, the ones that can be remembered preselected */
-export async function promptBackpromoteGroups(
-  groupsOldestFirst: BackpromotePrGroup[],
-  histories: BackpromoteGroupHistory[],
-  options: { noHistory?: boolean } = {},
-): Promise<number[]> {
-  const preselected = new Set(defaultGroupSelection(histories, options));
-  const choices: Array<{ title: string; value: number; description?: string; selected: boolean }> = [];
-  for (let index = groupsOldestFirst.length - 1; index >= 0; index--) {
-    const history = histories[index];
-    if (!history || history.status === 'done') {
-      continue;
-    }
-    const group = groupsOldestFirst[index];
-    const description = group.associatedPrs.length > 0
-      ? group.associatedPrs
-        .map((pr) => (pr.id > 0 ? `PR #${pr.id} - ${pr.title} (${t('by')} ${pr.author})` : `${pr.title} (${t('by')} ${pr.author})`))
-        .join('\n')
-      : undefined;
-    choices.push({
-      title: `${formatDateTime(group.commit.date)} - ${(group.commit.message || '').split('\n')[0]} [${group.commit.hash.substring(0, 7)}]`,
-      value: index,
-      description,
-      selected: preselected.has(index),
-    });
-  }
-  if (choices.length === 0) {
-    return [];
-  }
-  const selectRes = await prompts({
-    type: 'multiselect',
-    name: 'value',
-    message: c.cyanBright(t('backpromoteSelectGroups')),
-    description: t('backpromoteSelectGroups'),
-    choices,
-  });
-  return ((selectRes.value || []) as number[]).slice().sort((a, b) => a - b);
-}
-
-export type PreparedBackpromoteMerge = BackpromotePrepareMergeResult['files'][number] & { originalContent: string };
-
-/**
- * Write the three-way merge of an item changed both in the org and in the parent branch into its
- * local file: "your org" against the incoming version, from the version before the selection.
- */
-export async function prepareBackpromoteMerge(options: {
-  key: string;
-  localPath: string;
-  orgPath: string;
-  baseCommit: string | null;
-  parentBranch: string;
-}): Promise<PreparedBackpromoteMerge> {
-  const localFile = path.resolve(options.localPath);
-  const originalContent = await fs.readFile(localFile, 'utf8');
-  const crlf = originalContent.includes('\r\n');
-  const toLf = (content: string) => content.replace(/\r\n/g, '\n');
-  const tmpDir = await createTempDir();
-  const orgCopy = path.join(tmpDir, 'org');
-  const baseCopy = path.join(tmpDir, 'base');
-  const incomingCopy = path.join(tmpDir, 'incoming');
-  await fs.writeFile(orgCopy, toLf(await fs.readFile(options.orgPath, 'utf8')), 'utf8');
-  await fs.writeFile(incomingCopy, toLf(originalContent), 'utf8');
-  let baseContent = '';
-  let basePath: string | null = null;
-  if (options.baseCommit) {
-    const gitRoot = path.resolve((await getGitRepoRoot()).trim());
-    const repoPath = path.relative(gitRoot, localFile).split(path.sep).join('/');
-    const show = spawnSync('git', ['show', `${options.baseCommit}:${repoPath}`], { cwd: gitRoot, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
-    if (show.status === 0) {
-      baseContent = show.stdout;
-      basePath = `${options.baseCommit.substring(0, 12)}:${repoPath}`;
-    }
-  }
-  await fs.writeFile(baseCopy, toLf(baseContent), 'utf8');
-  // git merge-file exits with the number of conflicts (capped at 127), and above that on error
-  const merge = spawnSync(
-    'git',
-    ['merge-file', '-p', '--diff3', '-L', 'your org', '-L', 'last backpromoted', '-L', options.parentBranch, orgCopy, baseCopy, incomingCopy],
-    { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 },
-  );
-  if (merge.error || merge.status === null || merge.status > 127) {
-    throw new SfError(`[Backpromote] git merge-file failed on ${toWorkspacePath(localFile)}: ${merge.error?.message || merge.stderr || merge.status}`);
-  }
-  const merged = crlf ? merge.stdout.replace(/\n/g, '\r\n') : merge.stdout;
-  await fs.writeFile(localFile, merged, 'utf8');
-  return {
-    key: options.key,
-    localPath: toWorkspacePath(localFile),
-    basePath,
-    orgPath: options.orgPath,
-    conflictBlocks: countConflictMarkerBlocks(merged),
-    originalContent,
-  };
-}
+// ---- Coding agent prompt ----
 
 export async function writeBackpromoteMergePrompt(prompt: string): Promise<string> {
   const promptFile = await generateReportPath('backpromote-merge-prompt', '', { withDate: true, withBranchName: false, fileExtension: 'md' });
@@ -793,88 +218,61 @@ export async function writeBackpromoteMergePrompt(prompt: string): Promise<strin
   return promptFile;
 }
 
-/** Tell VS Code (when it launched the command) to open the merged file and to offer the prompt */
-export function announceBackpromoteMerge(file: PreparedBackpromoteMerge, promptFile: string, commandThis: any): void {
-  uxLog('action', commandThis, c.cyan(t('backpromoteMergePrepared', { file: file.localPath, count: file.conflictBlocks })));
+/** Tell the user, and VS Code when it launched the command, where the conflicts and the prompt are */
+export async function announceBackpromoteConflicts(files: Array<{ path: string; conflictBlocks: number }>, promptFile: string, commandThis: any): Promise<void> {
+  const gitRoot = path.resolve((await getGitRepoRoot()).trim());
+  for (const file of files) {
+    uxLog('action', commandThis, c.yellow(t('backpromoteConflictToSolve', { file: file.path, count: file.conflictBlocks })));
+    WebSocketClient.requestOpenFile(path.resolve(gitRoot, file.path));
+  }
   uxLog('log', commandThis, c.grey(t('backpromoteMergePromptSaved', { file: promptFile })));
-  WebSocketClient.requestOpenFile(path.resolve(file.localPath));
   WebSocketClient.sendReportFileMessage(promptFile, t('backpromoteMergePromptLabel'), 'report');
 }
 
-/**
- * For each selected item changed in the org: deploy the incoming version (default), keep the org
- * version (excluded), or merge both, waiting until no conflict marker is left.
- */
-export async function promptBackpromoteConflictDecisions(options: {
-  conflicts: OrgConflictItem[];
-  baseCommit: string | null;
-  parentBranch: string;
-  buildMergePrompt: (files: PreparedBackpromoteMerge[], mergedKeys: string[], excludedKeys: string[]) => string;
-  commandThis: any;
-}): Promise<{ excludedKeys: string[]; mergedKeys: string[] }> {
-  const excludedKeys: string[] = [];
-  const mergedKeys: string[] = [];
-  for (const conflict of options.conflicts) {
-    const key = toMetadataKey(conflict.metadataType, conflict.metadataName);
-    const mergeable = conflict.status === 'modified' && !!conflict.localPath && !!conflict.orgPath && isTextFile(conflict.localPath) && isTextFile(conflict.orgPath);
-    const choices = [
-      { title: t('backpromoteConflictDecisionDeploy'), value: 'deploy' },
+// ---- Interactive prompts (they fill the same options as the flags) ----
+
+/** What to do with a file git could not merge */
+export async function promptConflictDecision(file: string): Promise<BackpromoteConflictChoice> {
+  const res = await prompts({
+    type: 'select',
+    name: 'value',
+    message: c.cyanBright(t('backpromoteConflictDecisionPrompt', { file })),
+    description: t('backpromoteConflictDecisionPrompt', { file }),
+    choices: [
+      { title: t('backpromoteConflictDecisionOverwrite'), value: 'overwrite' },
+      { title: t('backpromoteConflictDecisionMerge'), value: 'merge' },
       { title: t('backpromoteConflictDecisionKeepOrg'), value: 'keep' },
-    ];
-    if (mergeable) {
-      choices.push({ title: t('backpromoteConflictDecisionMerge'), value: 'merge' });
-    }
-    const decisionRes = await prompts({
-      type: 'select',
-      name: 'value',
-      message: c.cyanBright(t('backpromoteConflictDecisionPrompt', { type: conflict.metadataType, name: conflict.metadataName })),
-      description: t('backpromoteConflictDecisionPrompt', { type: conflict.metadataType, name: conflict.metadataName }),
-      choices,
-    });
-    const decision = decisionRes.value || 'deploy';
-    if (decision === 'keep') {
-      excludedKeys.push(key);
-      continue;
-    }
-    if (decision !== 'merge') {
-      continue;
-    }
-    const prepared = await prepareBackpromoteMerge({
-      key,
-      localPath: conflict.localPath,
-      orgPath: conflict.orgPath,
-      baseCommit: options.baseCommit,
-      parentBranch: options.parentBranch,
-    });
-    const promptFile = await writeBackpromoteMergePrompt(options.buildMergePrompt([prepared], [...mergedKeys, key], excludedKeys));
-    announceBackpromoteMerge(prepared, promptFile, options.commandThis);
-    for (;;) {
-      const waitRes = await prompts({
-        type: 'select',
-        name: 'value',
-        message: c.cyanBright(t('backpromoteMergeWaitPrompt', { file: prepared.localPath })),
-        description: t('backpromoteMergeWaitPrompt', { file: prepared.localPath }),
-        choices: [
-          { title: t('backpromoteMergeWaitContinue'), value: 'continue' },
-          { title: t('backpromoteMergeDecisionKeepOrgInstead'), value: 'keep' },
-          { title: t('backpromoteMergeDecisionDeployInstead'), value: 'deploy' },
-        ],
-      });
-      if (waitRes.value === 'keep' || waitRes.value === 'deploy') {
-        // Give the incoming version back to the working tree: the merge is abandoned
-        await fs.writeFile(path.resolve(prepared.localPath), prepared.originalContent, 'utf8');
-        if (waitRes.value === 'keep') {
-          excludedKeys.push(key);
-        }
-        break;
-      }
-      const remaining = countConflictMarkerBlocks(await fs.readFile(path.resolve(prepared.localPath), 'utf8'));
-      if (remaining === 0) {
-        mergedKeys.push(key);
-        break;
-      }
-      uxLog('warning', options.commandThis, c.yellow(t('backpromoteMergeStillHasMarkers', { file: prepared.localPath, count: remaining })));
-    }
+    ],
+  });
+  return (res.value || 'merge') as BackpromoteConflictChoice;
+}
+
+/** Wait until the user solved the markers of the files, or gave them up */
+export async function promptWaitForSolvedConflicts(files: string[]): Promise<'continue' | 'abort'> {
+  const res = await prompts({
+    type: 'select',
+    name: 'value',
+    message: c.cyanBright(t('backpromoteMergeWaitPrompt', { files: files.join(', ') })),
+    description: t('backpromoteMergeWaitPrompt', { files: files.join(', ') }),
+    choices: [
+      { title: t('backpromoteMergeWaitContinue'), value: 'continue' },
+      { title: t('backpromoteMergeWaitAbort'), value: 'abort' },
+    ],
+  });
+  return res.value === 'abort' ? 'abort' : 'continue';
+}
+
+/** One multiselect of the items to deploy, all ticked */
+export async function promptItemsToDeploy(keys: string[], instanceUrl: string): Promise<string[]> {
+  if (keys.length === 0) {
+    return [];
   }
-  return { excludedKeys, mergedKeys };
+  const res = await prompts({
+    type: 'multiselect',
+    name: 'value',
+    message: c.cyanBright(t('backpromoteSelectMetadataToDeploy', { instanceUrl })),
+    description: t('backpromoteSelectMetadataToDeploy', { instanceUrl }),
+    choices: keys.map((key) => ({ title: key, value: key, selected: true })),
+  });
+  return (res.value || keys) as string[];
 }

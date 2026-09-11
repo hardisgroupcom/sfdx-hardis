@@ -9,14 +9,11 @@ const DISABLE_WEBSOCKET_COMMANDS = new Set([
 ]);
 
 /**
- * The Backpromote (Beta) panel reads `--plan --json` and prepares merges with
- * `--prepare-merge ... --json` itself: neither must show up as a command in the extension.
+ * The Backpromote (Beta) panel reads `--plan --json` itself: it must not show up as a command in
+ * the extension.
  */
 export function isBackgroundJsonCall(commandId: string, argv: string[]): boolean {
-  if (commandId !== 'hardis:work:backpromote') {
-    return false;
-  }
-  return argv.includes('--plan') || (argv.includes('--prepare-merge') && argv.includes('--json'));
+  return commandId === 'hardis:work:backpromote' && argv.includes('--plan');
 }
 
 const hook: Hook<'init'> = async (options) => {
