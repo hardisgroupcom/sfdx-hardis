@@ -206,6 +206,21 @@ describe('testNotebookRender', () => {
       expect(reread.soql).to.equal('SELECT Id FROM Account LIMIT 1');
     });
 
+    it('reads back a value the formula guard prefixed, without the apostrophe', async () => {
+      const original = makeCase({ title: '=1+1', preconditions: '- Un compte actif' });
+
+      const xlsxFile = path.join(tmpDir, 'formule.xlsx');
+      await writeNotebookXlsx(xlsxFile, 'functional', [original]);
+      const [fromXlsx] = await parseNotebookXlsx(xlsxFile);
+      expect(fromXlsx.title).to.equal('=1+1');
+      expect(fromXlsx.preconditions).to.equal('- Un compte actif');
+
+      const csvFile = path.join(tmpDir, 'formule.csv');
+      await writeNotebookCsv(csvFile, 'functional', [original]);
+      const [fromCsv] = parseNotebookCsv(await fs.readFile(csvFile, 'utf8'));
+      expect(fromCsv.title).to.equal('=1+1');
+      expect(fromCsv.preconditions).to.equal('- Un compte actif');
+    });
 
     it('reads back a csv it just wrote, stopping at the footer', async () => {
       const file = path.join(tmpDir, 'cahier.csv');

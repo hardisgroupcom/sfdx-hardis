@@ -162,7 +162,7 @@ describe('XrayTestProvider', () => {
     mockFetch(jsonResponse({ issues: [] }));
     const found = await new XrayTestProvider().findByKey('TESTKIT:PROJ-123:F01');
     expect(found).to.equal(null);
-    expect(requests[0].url).to.contain('/rest/api/3/search');
+    expect(requests[0].url).to.contain('/rest/api/3/search/jql');
     // Read the parameter itself: the query is form encoded, so a raw string match would be
     // asserting on the encoding rather than on the JQL.
     const jql = new URL(requests[0].url).searchParams.get('jql');

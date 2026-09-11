@@ -82,3 +82,11 @@ export function sanitizeCell(value: unknown): string {
   const text = String(value ?? '');
   return /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
 }
+
+/**
+ * Reverse of `sanitizeCell`, applied when a notebook is read back: without it, a title such as
+ * `-1 day` would come back as `'-1 day` and the apostrophe would be sent to the tracker.
+ */
+export function unsanitizeCell(value: unknown): string {
+  return String(value ?? '').replace(/^'(?=[=+\-@\t\r])/, '');
+}

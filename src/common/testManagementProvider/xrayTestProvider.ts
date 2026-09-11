@@ -138,7 +138,7 @@ export class XrayTestProvider extends TestManagementProviderRoot {
 
   public async findByKey(key: string): Promise<ProviderRef | null> {
     const jql = `project = "${this.projectKey}" AND labels = "${key}"`;
-    const response = await httpGet(`${this.jiraBase()}/rest/api/3/search`, {
+    const response = await httpGet(`${this.jiraBase()}/rest/api/3/search/jql`, {
       params: { jql, maxResults: 1, fields: 'key' },
       headers: this.jiraHeaders(),
     });

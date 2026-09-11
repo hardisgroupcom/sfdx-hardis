@@ -191,16 +191,25 @@ The same applies in CI, where \`isCI\` is true.
     // A prompt must be followed by an action line, or the VS Code UI hides everything after it.
     uxLog('action', this, c.cyan(t('testCasesGeneratingTemplate', { kind, ticket })));
 
-    const format = flags.format === 'both' ? 'xlsx' : flags.format;
-    const file = await writeTemplate(await this.targetFor(flags, format), { kind, ticket, modules, rows }, format);
+    // "both" means the xlsx and the CSV here too, as the flag documents.
+    const formats: Array<'xlsx' | 'csv' | 'md'> = flags.format === 'both' ? ['xlsx', 'csv'] : [flags.format];
+    const files: string[] = [];
+    for (const format of formats) {
+      files.push(await writeTemplate(await this.targetFor(flags, format), { kind, ticket, modules, rows }, format));
+    }
 
-    this.announce([file]);
+    this.announce(files);
     uxLog(
       'success',
       this,
-      c.green(t('testCasesTemplateGenerated', { count: Math.max(1, rows) * Math.max(1, modules.length), file }))
+      c.green(
+        t('testCasesTemplateGenerated', {
+          count: Math.max(1, rows) * Math.max(1, modules.length),
+          file: files.join(', '),
+        })
+      )
     );
-    return { outputString: `Initialized a blank ${kind} notebook`, kind, ticket, file };
+    return { outputString: `Initialized a blank ${kind} notebook`, kind, ticket, file: files[0], files };
   }
 
   /**

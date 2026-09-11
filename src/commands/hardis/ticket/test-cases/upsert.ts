@@ -162,6 +162,9 @@ The same skip applies in CI, where \`isCI\` is true.
       return { outputString: 'Upsert cancelled', upserted: 0 };
     }
 
+    // Opens the section the provider warnings and the result table belong to: after the
+    // confirmation prompt, the VS Code UI hides anything that is not an action line.
+    uxLog('action', this, c.cyan(t('pushingTestCases', { count: cases.length })));
     const report = await pushCases(providers, cases, { dryRun: flags['dry-run'], provider: flags.provider });
 
     const reportFile = await generateReportPath('test-cases-upsert', flags.outputfile, { withDate: true });

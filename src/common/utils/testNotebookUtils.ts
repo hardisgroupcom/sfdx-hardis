@@ -11,6 +11,7 @@
 import ExcelJS from 'exceljs';
 import path from 'path';
 import fs from './fsUtils.js';
+import { unsanitizeCell } from './testNotebookGuards.js';
 import {
   deriveTicketAndKind,
   normalizePriority,
@@ -175,7 +176,7 @@ function _rowToCase(keys: string[], row: string[], rowNumber: number, ticketOver
   const rec: Record<string, string> = {};
   keys.forEach((key, i) => {
     if (key) {
-      rec[key] = row[i] === undefined ? '' : row[i];
+      rec[key] = row[i] === undefined ? '' : unsanitizeCell(row[i]);
     }
   });
   const id = (rec.id || '').trim();

@@ -120,14 +120,13 @@ export async function pushCases(
       exitCode: 1,
       // Naming the variables of the provider actually asked for, rather than of all three, is
       // what turns "nothing happened" into an actionable message.
-      message:
-        'No active test management provider. Set the environment variables of at least one:\n' +
-        describeRequiredEnvVars(options.provider),
+      message: t('testCasesNoActiveProvider') + '\n' + describeRequiredEnvVars(options.provider),
     };
   }
 
   const totalSteps = providers.length * cases.length;
   let doneSteps = 0;
+  let usableProviders = 0;
   if (totalSteps > 1) {
     WebSocketClient.sendProgressStartMessage(t('pushingTestCases', { count: cases.length }), totalSteps);
   }
@@ -148,6 +147,7 @@ export async function pushCases(
         doneSteps += cases.length;
         continue;
       }
+      usableProviders++;
 
       for (const testCase of cases) {
         const key = idempotencyKey(testCase.id, testCase.ticket);
@@ -163,9 +163,28 @@ export async function pushCases(
               rows.push({ provider: label, caseId: testCase.id, action: 'updated', trackerId: ref.id, url: ref.url });
             } else {
               const ref = await provider.create(testCase);
-              created++;
-              await provider.linkToStory(ref, testCase.ticket);
-              rows.push({ provider: label, caseId: testCase.id, action: 'created', trackerId: ref.id, url: ref.url });
+              // The case exists from here on, and the next run will find it and update it
+              // without linking it again. A link failure is therefore reported on its own row,
+              // with the tracker id, so the link can be added by hand, and the case is not
+              // counted as both created and failed.
+              const linkError = await provider.linkToStory(ref, testCase.ticket).then(
+                () => null,
+                (e: Error) => e
+              );
+              if (linkError) {
+                failed++;
+                rows.push({
+                  provider: label,
+                  caseId: testCase.id,
+                  action: 'failed',
+                  trackerId: ref.id,
+                  url: ref.url,
+                  error: `Created but not linked to ${testCase.ticket}: ${linkError.message}`,
+                });
+              } else {
+                created++;
+                rows.push({ provider: label, caseId: testCase.id, action: 'created', trackerId: ref.id, url: ref.url });
+              }
             }
           }
         } catch (e) {
@@ -184,9 +203,10 @@ export async function pushCases(
     }
   }
 
-  const exitCode: 0 | 1 | 2 = failed === 0 ? 0 : 2;
+  // 1 when no provider could even be probed: nothing was attempted, as the command documents.
+  const exitCode: 0 | 1 | 2 = failed === 0 ? 0 : usableProviders === 0 ? 1 : 2;
   const message = options.dryRun
-    ? `Dry run: ${cases.length} case(s) validated against ${providers.length} provider(s), nothing written.`
-    : `${created} created, ${updated} updated, ${failed} failed.`;
+    ? t('testCasesDryRunSummary', { count: cases.length, providers: providers.length })
+    : t('testCasesUpsertSummary', { created, updated, failed });
   return { rows, created, updated, failed, exitCode, message };
 }

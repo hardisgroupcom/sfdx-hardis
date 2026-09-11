@@ -32,6 +32,8 @@ class FakeProvider extends TestManagementProviderRoot {
   public linked: string[] = [];
   public existingKeys = new Set<string>();
   public failOn: string | null = null;
+  public failLinkOn: string | null = null;
+  public failProbe = false;
 
   public constructor(public label = 'fake') {
     super();
@@ -43,7 +45,9 @@ class FakeProvider extends TestManagementProviderRoot {
   }
 
   public async checkPrerequisites(): Promise<void> {
-    return;
+    if (this.failProbe) {
+      throw new Error(`${this.label} is unreachable`);
+    }
   }
 
   public async findByKey(key: string): Promise<ProviderRef | null> {
@@ -64,6 +68,9 @@ class FakeProvider extends TestManagementProviderRoot {
   }
 
   public async linkToStory(ref: ProviderRef, storyId: string): Promise<void> {
+    if (this.failLinkOn === ref.id) {
+      throw new Error(`link refused for ${ref.id}`);
+    }
     this.linked.push(`${ref.id}->${storyId}`);
   }
 }
@@ -126,6 +133,24 @@ describe('testManagementProvider dispatch', () => {
     const report = await pushCases([], [makeCase()], {});
     expect(report.exitCode).to.equal(1);
     expect(report.message).to.match(/no active test management provider/i);
+  });
+
+  it('reports a created case that could not be linked as failed, with its tracker id', async () => {
+    const provider = new FakeProvider();
+    provider.failLinkOn = 'new-PROJ-123-F01';
+    const report = await pushCases([provider], [makeCase()], {});
+    expect(report.created).to.equal(0);
+    expect(report.failed).to.equal(1);
+    expect(report.rows[0]).to.include({ action: 'failed', trackerId: 'new-PROJ-123-F01' });
+    expect(report.exitCode).to.equal(2);
+  });
+
+  it('returns exit code 1 when no provider passes its probe', async () => {
+    const provider = new FakeProvider();
+    provider.failProbe = true;
+    const report = await pushCases([provider], [makeCase()], {});
+    expect(report.failed).to.equal(1);
+    expect(report.exitCode).to.equal(1);
   });
 });
 
