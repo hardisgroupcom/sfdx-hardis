@@ -2,6 +2,7 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import * as Diff from 'diff';
+import { spawnSync } from 'child_process';
 import fs from './fsUtils.js';
 import * as path from 'path';
 import {
@@ -379,7 +380,14 @@ export async function listMergedPrsWithCommits(
 
   if (gitProvider) {
     try {
-      const allMergedPrs = (await gitProvider.listPullRequests({ status: 'merged' })) || [];
+      // Bounded by the window being listed: asking for every merged Pull Request of the repository
+      // costs one extra API call per Pull Request on some providers, at every step of the panel
+      const oldestCommitDate = allCommits
+        .map((commit) => new Date(commit.date))
+        .filter((date) => !isNaN(date.getTime()))
+        .sort((a, b) => a.getTime() - b.getTime())[0];
+      const minDate = oldestCommitDate ? new Date(oldestCommitDate.getTime() - 7 * 24 * 60 * 60 * 1000) : undefined;
+      const allMergedPrs = (await gitProvider.listPullRequests({ status: 'merged', ...(minDate ? { minDate } : {}) })) || [];
       for (const pr of allMergedPrs) {
         const prNum = pr.idNumber;
         if (!prNum) continue;
@@ -469,7 +477,7 @@ export async function listMergedPrsWithCommits(
           webUrl: prDetail?.webUrl || '',
           sourceBranch: prDetail?.sourceBranch || sourceBranch || '',
         });
-        const prConfig = await loadPrConfig(prNum);
+        const prConfig = await loadPrConfig(prNum, parentBranch);
         if (prConfig) prConfigs.push({ config: prConfig, prId: prNum, prTitle });
       } else if (sourceBranch && shouldAddVirtualPullRequest(associatedPrs, seenPrIds, sourceBranch)) {
         // Virtual PR from source branch name
@@ -539,7 +547,7 @@ function extractPrNumbersFromCommits(commits: Array<{ message: string }>): Set<n
 
 // Extract PR/MR numbers from a single commit message.
 // Matches patterns like: #123, Merge pull request #123, !123 (GitLab MR syntax)
-function extractPrNumbersFromMessage(message: string): number[] {
+export function extractPrNumbersFromMessage(message: string): number[] {
   const numbers: number[] = [];
   // GitHub: "Merge pull request #123" or just "#123" in the message
   // GitLab: "Merge branch ... into ... See merge request org/repo!123"
@@ -566,15 +574,34 @@ function extractPrNumbersFromMessage(message: string): number[] {
   return [...new Set(numbers)];
 }
 
-// Load PR-scoped config file if it exists
-async function loadPrConfig(prId: number): Promise<any | null> {
-  const prConfigFile = path.join('scripts', 'actions', `.sfdx-hardis.${prId}.yml`);
-  if (!fs.existsSync(prConfigFile)) {
-    return null;
+/**
+ * The deployment actions and Apex test classes a Pull Request declares, read from the parent branch
+ * ref rather than from the checked out branch.
+ *
+ * A backpromote runs from a User Story branch that is usually behind the parent branch, or from a
+ * local backpromote branch: reading `scripts/actions/.sfdx-hardis.<PR>.yml` in the working tree
+ * finds nothing for a Pull Request merged since, so its data action never runs and its test classes
+ * are never selected, while the Pull Request is recorded as backpromoted and never offered again.
+ */
+async function loadPrConfig(prId: number, ref: string | null): Promise<any | null> {
+  const repoPath = `scripts/actions/.sfdx-hardis.${prId}.yml`;
+  let content: string | null = null;
+  if (ref) {
+    const show = spawnSync('git', ['show', `${ref}:${repoPath}`], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    if (show.status === 0) {
+      content = show.stdout;
+    }
+  }
+  if (content === null) {
+    const prConfigFile = path.join('scripts', 'actions', `.sfdx-hardis.${prId}.yml`);
+    if (!fs.existsSync(prConfigFile)) {
+      return null;
+    }
+    content = await fs.readFile(prConfigFile, 'utf-8');
   }
   try {
     const yaml = await import('js-yaml');
-    return yaml.load(await fs.readFile(prConfigFile, 'utf-8'));
+    return yaml.load(content);
   } catch {
     return null;
   }
@@ -601,6 +628,9 @@ export async function detectOrgConflicts(
   debugMode: boolean,
   // Where the local files are read, when they are not the checked out ones (a plan for a parent branch)
   localPackageDirectories: Array<{ path: string; fullPath: string }> = [],
+  // The version of a file the org received last: an org that only differs from the incoming version
+  // by the changes being backpromoted was not changed by anybody, and needs no decision
+  readBaseVersion: ((localFile: string) => Promise<string | null>) | null = null,
 ): Promise<OrgConflictResult> {
   uxLog('action', commandThis, c.cyan(t('backpromoteDetectingOrgConflicts')));
 
@@ -705,7 +735,14 @@ export async function detectOrgConflicts(
         const diffResult = Diff.diffLines(orgContent, localContent, { ignoreWhitespace: true });
         const hasRealChanges = diffResult.some((p) => p.added || p.removed);
 
-        if (hasRealChanges) {
+        // Differing from the incoming version is not the same as having been changed in the org:
+        // an item nobody touched simply holds the version that was there before the Pull Requests
+        // being backpromoted. Only a difference with the version the org received last is a real
+        // org change, and the only one worth asking the user about.
+        const baseContent = hasRealChanges && readBaseVersion ? await readBaseVersion(localFile) : null;
+        const changedInOrg = baseContent === null || contentsDiffer(normalizeForDiff(baseContent), orgContent);
+
+        if (hasRealChanges && changedInOrg) {
           status = 'modified';
           hasOrgChanges = true;
 
@@ -1250,14 +1287,17 @@ export type BackpromoteActionCandidate = PrePostCommand & { prLabel: string; prI
  */
 export function collectBackpromoteActions(
   selectedPrs: BackpromotePrGroup[],
-  currentBranch: string,
+  // The User Story branch of the developer, or null when the run does not work on one (a major,
+  // promotion or retrofit branch, a local backpromote branch): its name must never make an action
+  // meant for a major org pass its branch filter
+  userStoryBranch: string | null,
   phase: 'commandsPreDeploy' | 'commandsPostDeploy',
   commandThis: any,
 ): BackpromoteActionCandidate[] {
   const allActions: BackpromoteActionCandidate[] = [];
   // A backpromote always deploys to a developer sandbox, so branch filters are evaluated against
-  // the dev-sandboxes virtual name (the feature branch name stays eligible too).
-  const targetBranchCandidates = [DEV_SANDBOXES_BRANCH_NAME, currentBranch];
+  // the dev-sandboxes virtual name (the User Story branch name stays eligible too).
+  const targetBranchCandidates = [DEV_SANDBOXES_BRANCH_NAME, ...(userStoryBranch ? [userStoryBranch] : [])];
   for (const prGroup of selectedPrs) {
     for (const { config: prConfig, prId, prTitle } of prGroup.prConfigs) {
       const commands = prConfig[phase];
@@ -1303,7 +1343,7 @@ export function backpromoteActionStatusFromResult(result: { statusCode?: string 
 
 export async function executeBackpromoteActions(
   selectedPrs: BackpromotePrGroup[],
-  currentBranch: string,
+  userStoryBranch: string | null,
   phase: 'commandsPreDeploy' | 'commandsPostDeploy',
   targetUsername: string,
   conn: any,
@@ -1322,7 +1362,7 @@ export async function executeBackpromoteActions(
   if (options.skipActions === true) {
     return;
   }
-  const allActions = collectBackpromoteActions(selectedPrs, currentBranch, phase, commandThis);
+  const allActions = collectBackpromoteActions(selectedPrs, userStoryBranch, phase, commandThis);
 
   if (allActions.length === 0) {
     return;
@@ -1614,6 +1654,11 @@ function buildDiffMarkdown(diffResult: Diff.Change[], contextLines: number): str
   }
   md += '```\n';
   return md;
+}
+
+/** Two already normalized contents differ by something else than whitespace */
+function contentsDiffer(left: string, right: string): boolean {
+  return Diff.diffLines(left, right, { ignoreWhitespace: true }).some((part) => part.added || part.removed);
 }
 
 // Normalize content for diff comparison: unify line endings, trim trailing whitespace per line

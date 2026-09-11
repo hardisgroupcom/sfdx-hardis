@@ -17,6 +17,9 @@ import {
   isSameCommit,
   metadataKeysToPackageContent,
   parseMetadataKey,
+  parsePullRequestNumbers,
+  parseSandboxOfUsername,
+  resolveBackpromoteMergeBase,
   resolveExplicitGroupSelection,
   selectDeltaUnion,
   splitListFlag,
@@ -82,6 +85,43 @@ describe('backpromote window and default selection', () => {
     ];
     expect(defaultGroupSelection(histories)).to.deep.equal([1, 3]);
   });
+
+  it('preselects the newest Pull Request only when the org never received a backpromote', () => {
+    const histories = [
+      { status: 'pending' as BackpromoteGroupStatus, trackable: true },
+      { status: 'pending' as BackpromoteGroupStatus, trackable: true },
+      { status: 'pending' as BackpromoteGroupStatus, trackable: false },
+    ];
+    expect(defaultGroupSelection(histories, { noHistory: true })).to.deep.equal([1]);
+    expect(defaultGroupSelection([], { noHistory: true })).to.deep.equal([]);
+  });
+
+  it('reads Pull Request numbers written with or without a #', () => {
+    expect(parsePullRequestNumbers(['#482', '481', '482'])).to.deep.equal({ ids: [482, 481], invalid: [] });
+    expect(parsePullRequestNumbers(['abc', '#12x'])).to.deep.equal({ ids: [], invalid: ['abc', '#12x'] });
+  });
+});
+
+describe('resolveBackpromoteMergeBase()', () => {
+  const hashes = [G478, G481, G482, G485, G487];
+
+  it('starts the merge from the newest group the org already received', () => {
+    const statuses: BackpromoteGroupStatus[] = ['done', 'done', 'pending', 'pending', 'pending'];
+    expect(resolveBackpromoteMergeBase({ groupHashesOldestFirst: hashes, statuses, selectedIndexes: [3] })).to.equal(G481);
+  });
+
+  it('keeps a pending Pull Request left out on the incoming side instead of putting it in the base', () => {
+    // #481 is pending and unticked, #482 is selected: with #481 in the base, git merge-file would
+    // read its change as a deletion made in the org and drop it without a conflict marker
+    const statuses: BackpromoteGroupStatus[] = ['done', 'pending', 'pending', 'pending', 'pending'];
+    expect(resolveBackpromoteMergeBase({ groupHashesOldestFirst: hashes, statuses, selectedIndexes: [2] })).to.equal(G478);
+  });
+
+  it('starts just before the window when nothing of it ever reached the org', () => {
+    const statuses: BackpromoteGroupStatus[] = ['pending', 'pending', 'pending', 'pending', 'pending'];
+    expect(resolveBackpromoteMergeBase({ groupHashesOldestFirst: hashes, statuses, selectedIndexes: [4] })).to.equal(`${G478}^1`);
+    expect(resolveBackpromoteMergeBase({ groupHashesOldestFirst: hashes, statuses, selectedIndexes: [] })).to.be.null;
+  });
 });
 
 describe('resolveExplicitGroupSelection()', () => {
@@ -108,6 +148,19 @@ describe('resolveExplicitGroupSelection()', () => {
 
   it('lets an explicit Pull Request designate a group already done, to backpromote it again', () => {
     expect(resolveExplicitGroupSelection(groups, statuses, { pullRequests: [478], commits: [], to: null }).selected).to.deep.equal([0]);
+  });
+
+  it('takes the pending group of a Pull Request number, never an old done group quoting it', () => {
+    // #487 is also named by the message of the oldest group (a revert, a "fixes #487" line)
+    const withEcho = [group(G478, 478, 487), group(G481, 481), group(G482, 482), group(G485, 485), group(G487, 487)];
+    const resolved = resolveExplicitGroupSelection(withEcho, statuses, { pullRequests: [487], commits: [], to: null });
+    expect(resolved.selected).to.deep.equal([4]);
+  });
+
+  it('never reaches back before the newest group already backpromoted with --to', () => {
+    const withUntracked = [group(G478, 478), group(G481), group(G482, 482), group(G485, 485), group(G487, 487)];
+    const withDone: BackpromoteGroupStatus[] = ['done', 'pending', 'done', 'pending', 'pending'];
+    expect(resolveExplicitGroupSelection(withUntracked, withDone, { pullRequests: [], commits: [], to: '485' }).selected).to.deep.equal([3]);
   });
 });
 
@@ -193,11 +246,45 @@ describe('backpromote working branch', () => {
   });
 
   it('stays on a backpromote branch a previous run created, to finish its merge', () => {
-    expect(decide('backpromote/integration/2026-09-11-0859', false, 'feature/E2E-401-dev')).to.deep.equal({
+    expect(decide('backpromote/integration/2026-09-11-0859', true, 'feature/E2E-401-dev')).to.deep.equal({
       mode: 'currentBranch',
       reason: 'backpromoteBranch',
       returnBranch: 'feature/E2E-401-dev',
     });
+  });
+
+  it('lists what a backpromote branch holds when teammates merged since it was created', () => {
+    expect(decide('backpromote/integration/2026-09-11-0859', false, 'feature/E2E-401-dev')).to.deep.equal({
+      mode: 'currentBranch',
+      reason: 'backpromoteBranchBehind',
+      returnBranch: 'feature/E2E-401-dev',
+      listFromCurrentBranch: true,
+    });
+  });
+
+  it('refuses to backpromote from another parent branch while a backpromote branch is not finished', () => {
+    const decided = decideBackpromoteWorkingBranch({
+      currentBranch: 'backpromote/integration/2026-09-11-0859',
+      parentBranch: 'uat',
+      majorBranches,
+      upToDate: true,
+      backpromoteReturnBranch: 'feature/E2E-401-dev',
+      backpromoteParentBranch: 'integration',
+    });
+    expect(decided.refusal).to.deep.equal({ reason: 'backpromoteBranchOtherParent', parentBranch: 'integration' });
+  });
+
+  it('stays where a solved merge waits, even when the branch fell behind meanwhile', () => {
+    expect(
+      decideBackpromoteWorkingBranch({
+        currentBranch: 'feature/E2E-401-dev',
+        parentBranch: 'integration',
+        majorBranches,
+        upToDate: false,
+        backpromoteReturnBranch: null,
+        hasSolvedMerge: true,
+      })
+    ).to.deep.equal({ mode: 'currentBranch', reason: 'solvedMerge', returnBranch: null });
   });
 
   it('treats a branch only named like a promotion or retrofit branch as a User Story branch', () => {
@@ -253,6 +340,32 @@ describe('findBackpromoteTargetOrgRefusal()', () => {
   it('never matches a major org on the generic test.salesforce.com login URL', () => {
     expect(findBackpromoteTargetOrgRefusal({ isSandbox: true, username: 'sam@mycompany.com.dev', instanceUrl: 'https://test.salesforce.com', majorOrgs })).to.be.null;
   });
+
+  it('refuses a major sandbox a developer is signed into with their own user', () => {
+    // The config of a major sandbox usually carries the generic login URL, so the username of its
+    // deployment user is the only evidence that this org is the one the pipeline deploys
+    expect(
+      findBackpromoteTargetOrgRefusal({
+        isSandbox: true,
+        username: 'sam@mycompany.com.uat',
+        instanceUrl: 'https://mycompany--uat.sandbox.my.salesforce.com',
+        majorOrgs: [{ branchName: 'uat', targetUsername: 'deploy@mycompany.com.uat', instanceUrl: 'https://test.salesforce.com' }],
+      })
+    ).to.deep.equal({ reason: 'majorOrg', branchName: 'uat' });
+  });
+
+  it('leaves a developer sandbox of the same company alone', () => {
+    expect(
+      findBackpromoteTargetOrgRefusal({
+        isSandbox: true,
+        username: 'sam@mycompany.com.devsam',
+        instanceUrl: 'https://mycompany--devsam.sandbox.my.salesforce.com',
+        majorOrgs: [{ branchName: 'uat', targetUsername: 'deploy@mycompany.com.uat', instanceUrl: 'https://test.salesforce.com' }],
+      })
+    ).to.be.null;
+    expect(parseSandboxOfUsername('deploy@mycompany.com.uat')).to.deep.equal({ base: 'mycompany.com', sandbox: 'uat' });
+    expect(parseSandboxOfUsername('admin@mycompany.com')).to.be.null;
+  });
 });
 
 describe('backpromote merge helpers', () => {
@@ -260,6 +373,14 @@ describe('backpromote merge helpers', () => {
     const content = ['<a>', '<<<<<<< your org', 'x', '||||||| last backpromoted', 'y', '=======', 'z', '>>>>>>> integration', '<<<<<<< your org', '=======', '>>>>>>> integration'].join('\r\n');
     expect(countConflictMarkerBlocks(content)).to.equal(2);
     expect(countConflictMarkerBlocks('<Flow>\n</Flow>\n')).to.equal(0);
+  });
+
+  it('still finds a conflict when only some marker lines were removed', () => {
+    // Deleting the <<<<<<< line and leaving the rest is the usual half-solved file: deploying it
+    // would send ======= and >>>>>>> lines to the org
+    expect(countConflictMarkerBlocks(['<a>', '  <label>org</label>', '=======', '  <label>integration</label>', '>>>>>>> integration'].join('\n'))).to.equal(1);
+    expect(countConflictMarkerBlocks(['<<<<<<< your org', 'x'].join('\n'))).to.equal(1);
+    expect(countConflictMarkerBlocks('<<<<<<<< eight is not a marker\n')).to.equal(0);
   });
 
   it('builds the run command of a selection, quoting what needs it', () => {

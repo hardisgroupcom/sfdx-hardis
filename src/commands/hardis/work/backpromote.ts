@@ -3,7 +3,8 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { getCurrentGitBranch, gitFetch, uxLog } from '../../../common/utils/index.js';
+import * as path from 'path';
+import { getCurrentGitBranch, getGitRepoRoot, gitFetch, uxLog } from '../../../common/utils/index.js';
 import {
   BackpromoteActionEntry,
   collectTestClassesFromPrs,
@@ -19,9 +20,11 @@ import {
   resolveParentBranch,
 } from '../../../common/utils/backpromoteUtils.js';
 import {
+  BACKPROMOTE_NEW_ORG_WINDOW,
   BackpromotePlanCheck,
   BackpromotePrepareMergeResult,
   announceBackpromoteMerge,
+  buildBackpromoteBaseVersionReader,
   buildBackpromotePlan,
   computeBackpromoteGroupDeltas,
   findLocalMetadataFiles,
@@ -36,6 +39,7 @@ import {
   promptBackpromoteConflictDecisions,
   promptBackpromoteGroups,
   removeKeysFromPackageXml,
+  resolveBackpromoteFromRef,
   resolveBackpromoteParentRef,
   resolveOlderWindowStart,
   writeBackpromoteMergePrompt,
@@ -64,6 +68,8 @@ import {
   findItemsAlsoChangedByUnselected,
   findNewestDoneGroupIndex,
   parseMetadataKey,
+  parsePullRequestNumbers,
+  resolveBackpromoteMergeBase,
   resolveExplicitGroupSelection,
   selectDeltaUnion,
   splitListFlag,
@@ -89,11 +95,18 @@ function backpromoteGroupLabel(group: { commit: { hash: string }; associatedPrs:
 /** Where the run works, as the currentBranch check of the plan says it */
 function backpromoteWorkingBranchMessage(workingBranch: BackpromoteWorkingBranch, currentBranch: string, parentBranch: string): string {
   const values = { branch: currentBranch, parentBranch, returnBranch: workingBranch.returnBranch || '' };
+  if (workingBranch.refusal?.reason === 'backpromoteBranchOtherParent') {
+    return t('backpromoteWorkingBranchOtherParent', { ...values, branchParentBranch: workingBranch.refusal.parentBranch });
+  }
   switch (workingBranch.reason) {
     case 'userStoryBranch':
       return t('backpromoteWorkingBranchCurrent', values);
     case 'backpromoteBranch':
       return t('backpromoteWorkingBranchResume', values);
+    case 'backpromoteBranchBehind':
+      return t('backpromoteWorkingBranchResumeBehind', values);
+    case 'solvedMerge':
+      return t('backpromoteWorkingBranchSolvedMerge', values);
     case 'majorBranch':
       return t('backpromoteWorkingBranchNewMajor', values);
     case 'promotionBranch':
@@ -123,14 +136,15 @@ Key functionalities:
 - **Developer orgs only:** the target org must be a developer sandbox or a scratch org. A production org, or the org of a major branch declared in \`config/branches\`, is refused: the CI/CD pipeline deploys those.
 - **Pre-flight checks:** the git working directory must be clean and the parent branch must be a major branch (or the development branch).
 - **Never on a major branch:** the backpromote runs on the current branch when it is a User Story branch that already contains the latest commit of the parent branch. From anything else (a major, promotion or retrofit branch, or a User Story branch behind its parent branch), it creates a local branch \`backpromote/<parent branch>/<date>\` from the remote parent branch, without tracking it, runs there, then brings you back to the branch you started from. That branch is kept when it holds merged files (committed on it), and deleted when it holds nothing of its own.
-- **Pull Request selection:** the Pull Requests merged in the parent branch after the last one backpromoted to this org are listed (use \`--from\` to list older ones), and each one can be selected or left out. An item also changed by a Pull Request left out is deployed with that change too, since the deployment reads the files of the branch: the command warns about it.
+- **Pull Request selection:** the Pull Requests merged in the parent branch after the last one backpromoted to this org are listed, and each one can be selected or left out. A Pull Request left out stays in the list of the next run, and \`--from\` (a commit SHA, or a Pull Request number) lists older ones. An item also changed by a Pull Request left out is deployed with that change too, since the deployment reads the files of the branch: the command warns about it.
+- **An org with no history:** a new or refreshed sandbox, a scratch org, or any org that never received a backpromote is offered the newest Pull Requests only, with the newest one selected: nothing redeploys months of merges by accident.
 - **History per org:** a Pull Request deployed into an org is recorded in a comment of that Pull Request with the Salesforce Organization Id, the date, the merge commit and the result of its deployment actions. A refreshed sandbox is a new org and starts with nothing backpromoted.
-- **Delta computation:** sfdx-git-delta computes what each selected Pull Request deploys and deletes.
-- **Org conflict detection:** the same metadata is retrieved from the org and compared with the local files, with Excel and PDF reports and VS Code diffs.
-- **Items changed in the org:** each one is deployed by default, can be kept as it is in the org, or merged. A merge writes a three-way merge with git conflict markers into the local file, opens it in VS Code, and saves a prompt to paste into a coding agent (Claude Code, GitHub Copilot...) to solve it. The solved file is then deployed as it is, and is to be committed with the User Story.
+- **Delta computation:** sfdx-git-delta computes what each selected Pull Request deploys and deletes. The delta of a commit never changes, so it is cached between runs.
+- **Org conflict detection:** the same metadata is retrieved from the org and compared with the local files, with Excel and PDF reports and VS Code diffs. An explicit selection (the VS Code panel, an agent) skips that retrieve: the decisions are already taken.
+- **Items changed in the org:** an item counts as changed in the org only when it differs from the version the org received last, not from the version being backpromoted: an item nobody touched is deployed without asking. Each one is deployed by default, can be kept as it is in the org, or merged. A merge writes a three-way merge with git conflict markers into the local file, starting from that same last received version so a Pull Request left out is never silently reverted, opens it in VS Code, and saves a prompt to paste into a coding agent (Claude Code, GitHub Copilot...) to solve it. The solved file is then deployed as it is, and is to be committed with the User Story.
 - **Deletions:** listed and confirmed. Declining really skips them.
 - **Deployment:** NoTestRun, or RunSpecifiedTests when the selected Pull Requests declare test classes.
-- **Deployment actions:** the actions of the selected Pull Requests run before and after the deployment, skipping those already run in this org. Actions requiring another user try LoginAs, then fall back to a manual checklist.
+- **Deployment actions:** the actions of the selected Pull Requests run before and after the deployment, skipping those already run in this org. They are read from the parent branch, so a Pull Request merged after your branch keeps its actions and its test classes. Actions requiring another user try LoginAs, then fall back to a manual checklist. A selection holding only actions runs them.
 
 ### Explicit selection
 
@@ -161,8 +175,9 @@ The command's technical implementation involves:
 
 - **Git provider:** \`GitProvider.getInstance()\` then a merged Pull Request listing checks the connection. The history is one comment per Pull Request, found by the \`<!-- sfdx-hardis backpromote-state -->\` marker; each table row carries its record as encoded JSON in a hidden marker, and is merged with the comment's current content before every write.
 - **Target org check:** queries \`Organization.Id\`, \`IsSandbox\` and \`TrialExpirationDate\`, and compares the username and instance URL with the major orgs of \`config/branches\`.
-- **Git Integration:** Uses \`simple-git\` to verify branch status, list the first-parent commits of \`origin/<parent branch>\` and group the Pull Requests each one brought in. The listing stops at the newest group already backpromoted to the org.
-- **sfdx-git-delta:** Computes the delta of each selected first-parent commit against its first parent, one run at a time, and unions them. The last commit touching an item decides whether it is deployed or deleted.
+- **Git Integration:** Uses \`simple-git\` to verify branch status, list the first-parent commits of \`origin/<parent branch>\` and group the Pull Requests each one brought in. The listing stops at the newest group already backpromoted to the org, and after 20 groups when none of them was.
+- **Merge base:** the merge of an item changed in the org, and the comparison that decides whether it was changed at all, both start from the newest group already backpromoted to this org (from just before the window when there is none). Starting from the parent of the selection would put the changes of a Pull Request the org never received in the base, and \`git merge-file\` would drop them without a conflict marker.
+- **sfdx-git-delta:** Computes the delta of each selected first-parent commit against its first parent, one run at a time, and unions them. The last commit touching an item decides whether it is deployed or deleted. Each delta is cached in the temporary folder, keyed by commit.
 - **Org Metadata Retrieval:** Uses \`sf project retrieve start\` with the delta package.xml to retrieve current org state for conflict detection.
 - **Diff Library:** Uses the \`diff\` npm package to compute file-level differences between org and local metadata.
 - **Merge:** \`git merge-file --diff3\` between the org file, the file before the selection and the incoming file.
@@ -194,7 +209,7 @@ The command's technical implementation involves:
       description: 'Name of the parent branch to backpromote from. Will be guessed or prompted if not provided.',
     }),
     from: Flags.string({
-      description: 'PR number or commit SHA: list the Pull Requests merged after it, instead of those merged after the last one backpromoted to the org.',
+      description: 'Commit SHA: list the Pull Requests merged after it. PR number: list from that Pull Request, included. Instead of listing those merged after the last one backpromoted to the org.',
     }),
     to: Flags.string({
       description: 'PR number or commit SHA: select every Pull Request not yet backpromoted up to this one (included).',
@@ -258,7 +273,10 @@ The command's technical implementation involves:
     const targetUsername = flags['target-org'].getUsername();
     const conn = flags['target-org'].getConnection();
 
-    const pullRequests = splitListFlag(flags['pull-requests']).map((value) => parseInt(value, 10)).filter((value) => !isNaN(value));
+    const { ids: pullRequests, invalid: invalidPullRequests } = parsePullRequestNumbers(splitListFlag(flags['pull-requests']));
+    if (invalidPullRequests.length > 0) {
+      throw new SfError(t('backpromoteInvalidPullRequestNumbers', { values: invalidPullRequests.join(', ') }));
+    }
     const commits = splitListFlag(flags.commits);
     const toFlag: string | null = flags.to || null;
     const fromFlag: string | null = flags.from || null;
@@ -314,7 +332,8 @@ The command's technical implementation involves:
 
     // Step 3: the parent branch, a major branch
     const parentBranch = planMode ? planParentBranch : await resolveParentBranch(this, flags.parentbranch || null, nonInteractive, currentBranch);
-    uxLog('log', this, c.cyan(t('backpromoteStarting', { parentBranch: c.green(parentBranch) })));
+    // First output after the parent branch prompt: the VS Code UI only shows "action" lines there
+    uxLog('action', this, c.cyan(t('backpromoteStarting', { parentBranch: c.green(parentBranch) })));
     const parentRefusal = findBackpromoteParentBranchRefusal(parentBranch, parentBranchChoices);
     if (parentRefusal) {
       const message = t('backpromoteParentBranchNotMajor', { parentBranch, branches: parentRefusal.majorBranches.join(', ') });
@@ -344,7 +363,15 @@ The command's technical implementation involves:
     }
     if (mergedKeys.length > 0) {
       const stillConflicting = await listFilesWithConflictMarkers(mergedKeys.map((key) => mergeFiles.get(key) as string));
-      if (stillConflicting.length > 0) {
+      // A plan says it in its checks rather than failing: the panel reloads a plan after every
+      // merge, and a refusal there would leave it read-only with the merge still waiting
+      checks.push({
+        id: 'mergeMarkers',
+        ok: stillConflicting.length === 0,
+        message: stillConflicting.length === 0 ? t('backpromoteCheckMergeMarkersOk') : t('backpromoteMergedFilesHaveMarkers', { files: stillConflicting.join(', ') }),
+        details: stillConflicting.length > 0 ? stillConflicting : undefined,
+      });
+      if (stillConflicting.length > 0 && !planMode) {
         throw new SfError(t('backpromoteMergedFilesHaveMarkers', { files: stillConflicting.join(', ') }));
       }
     }
@@ -359,34 +386,71 @@ The command's technical implementation involves:
       currentBranch,
       parentBranch,
       majorBranches: parentBranchChoices,
-      upToDate: backpromoteBranchInfo.returnBranch !== null || isBranchUpToDateWith(parentRef, currentBranch),
+      upToDate: isBranchUpToDateWith(parentRef, currentBranch),
       backpromoteReturnBranch: backpromoteBranchInfo.returnBranch,
+      backpromoteParentBranch: backpromoteBranchInfo.parentBranch,
+      hasSolvedMerge: mergedKeys.length > 0,
     });
     const workingBranchMessage = backpromoteWorkingBranchMessage(workingBranch, currentBranch, parentBranch);
-    checks.push({ id: 'currentBranch', ok: true, message: workingBranchMessage });
+    checks.push({ id: 'currentBranch', ok: !workingBranch.refusal, message: workingBranchMessage });
+    if (workingBranch.refusal) {
+      if (planMode) {
+        return blockedPlan();
+      }
+      throw new SfError(workingBranchMessage);
+    }
     uxLog('log', this, c.cyan(workingBranchMessage));
-    const checksPassed = checks.every((check) => check.ok);
+    // A backpromote branch behind the remote parent branch deploys the files it holds: listing the
+    // newer Pull Requests of origin would deploy their metadata from a working tree without them
+    const listingRef = workingBranch.listFromCurrentBranch ? currentBranch : parentRef;
+    const fromRef = fromFlag ? await resolveBackpromoteFromRef(listingRef, fromFlag) : null;
 
     // Step 7: the Pull Requests merged in the parent branch, and what the Pull Request comments say
     // this org already received. The window starts at the newest one already backpromoted here.
     reportCommandProgress({ step: 'listing', message: t('backpromoteProgressListing', { parentBranch }) });
-    const listedGroups = (await listMergedPrsWithCommits(parentRef, currentBranch, fromFlag, this)).filter((group) => hasFirstParent(group.commit.hash));
+    const listedGroups = (await listMergedPrsWithCommits(listingRef, currentBranch, fromRef, this)).filter((group) => hasFirstParent(group.commit.hash));
     reportCommandProgress({ step: 'history', message: t('backpromoteProgressHistory', { count: listedGroups.length }) });
     const history = await loadBackpromoteHistory(provider, listedGroups, targetOrg.orgId, fromFlag !== null || explicitSelection);
-    const groupsOldestFirst = listedGroups.slice(history.windowStartIndex);
-    const histories = history.histories;
-    const statuses = histories.map((item) => item.status);
     if (history.readErrors.length > 0) {
+      // Not one comment could be read: the token cannot read them, and every Pull Request would be
+      // offered again and redeployed. Saying so beats silently redoing everything.
+      if (history.readOk === 0) {
+        const message = t('backpromoteStateReadFailedAll', { prs: history.readErrors.join(', ') });
+        checks.push({ id: 'gitProvider', ok: false, message });
+        if (planMode) {
+          return blockedPlan();
+        }
+        throw new SfError(message);
+      }
       uxLog('warning', this, c.yellow(t('backpromoteStateReadFailed', { prs: history.readErrors.join(', ') })));
     }
+    let groupsOldestFirst = listedGroups.slice(history.windowStartIndex);
+    let histories = history.histories;
+    // An org with no backpromote history at all (new or refreshed sandbox, scratch org) gets the
+    // newest Pull Requests only: offering months of merges preselected would redeploy the whole
+    // history and rerun every data action of the window on the first run
+    const noHistory = history.noHistory && fromFlag === null && !explicitSelection;
+    if (noHistory && groupsOldestFirst.length > BACKPROMOTE_NEW_ORG_WINDOW) {
+      const firstListed = groupsOldestFirst.length - BACKPROMOTE_NEW_ORG_WINDOW;
+      groupsOldestFirst = groupsOldestFirst.slice(firstListed);
+      histories = histories.slice(firstListed);
+    }
+    const statuses = histories.map((item) => item.status);
     const windowAnchored = fromFlag === null && !explicitSelection && statuses[0] === 'done';
     if (windowAnchored) {
       const anchorPrs = groupsOldestFirst[0].associatedPrs.filter((pr) => pr.id > 0).map((pr) => `#${pr.id}`).join(', ');
       uxLog('log', this, c.grey(t('backpromoteWindowSinceLastBackpromoted', { parentBranch, pr: anchorPrs, orgName: targetOrg.orgName })));
+    } else if (noHistory) {
+      uxLog('log', this, c.grey(t('backpromoteWindowNewOrg', { orgName: targetOrg.orgName, count: groupsOldestFirst.length })));
     }
-    const olderFrom = windowAnchored ? resolveOlderWindowStart(groupsOldestFirst[0].commit.hash) : null;
+    // Always given, so a Pull Request left out of a run can be listed again afterwards
+    const olderFrom = fromFlag === null && !explicitSelection && groupsOldestFirst.length > 0
+      ? resolveOlderWindowStart(groupsOldestFirst[0].commit.hash)
+      : null;
     const waitingIndexes = statuses.map((status, index) => (status === 'pending' ? index : -1)).filter((index) => index >= 0);
+    const preselectedIndexes = defaultGroupSelection(histories, { noHistory });
     const actionsDoneInOrg = findActionsDoneInOrg(history.recordsByPr, targetOrg.orgId);
+    const checksPassed = checks.every((check) => check.ok);
     const planBase = {
       currentBranch,
       parentBranch,
@@ -396,6 +460,8 @@ The command's technical implementation involves:
       checks,
       workingBranch,
       olderFrom,
+      noHistory,
+      preselectedHashes: preselectedIndexes.map((index) => groupsOldestFirst[index].commit.hash),
       stateReadErrors: history.readErrors,
       groupsOldestFirst,
       histories,
@@ -423,7 +489,7 @@ The command's technical implementation involves:
       }
       selectedIndexes = resolved.selected;
     } else if (prepareMode) {
-      selectedIndexes = defaultGroupSelection(histories);
+      selectedIndexes = preselectedIndexes;
     } else if (agentMode) {
       // Without selection flags, agent mode takes only the oldest group not yet backpromoted
       const nextIndex = waitingIndexes.find((index) => histories[index].trackable) ?? waitingIndexes[0];
@@ -433,7 +499,7 @@ The command's technical implementation involves:
         id: nextGroup.commit.hash.substring(0, 7) + ' ' + nextGroup.commit.message.substring(0, 60),
       })));
     } else {
-      selectedIndexes = await promptBackpromoteGroups(groupsOldestFirst, histories);
+      selectedIndexes = await promptBackpromoteGroups(groupsOldestFirst, histories, { noHistory });
     }
     if (selectedIndexes.length === 0) {
       uxLog('action', this, c.cyan(t('backpromoteNothingSelected')));
@@ -441,6 +507,17 @@ The command's technical implementation involves:
     }
     const selectedGroups = selectedIndexes.map((index) => groupsOldestFirst[index]);
     const selectedHashes = selectedGroups.map((group) => group.commit.hash);
+    // What the org received last: the three-way merge starts there, and an item whose org version
+    // is identical to it was not changed in the org, whatever the incoming version holds
+    const mergeBaseCommit = resolveBackpromoteMergeBase({
+      groupHashesOldestFirst: groupsOldestFirst.map((group) => group.commit.hash),
+      statuses,
+      selectedIndexes,
+    });
+    // The branch filters of the deployment actions must never match a major branch name: the run
+    // works on a User Story branch, or on a temporary branch that carries no meaning of its own
+    const userStoryBranchForActions =
+      workingBranch.mode === 'currentBranch' && ['userStoryBranch', 'solvedMerge'].includes(workingBranch.reason) ? currentBranch : null;
 
     // Step 9: what the selection deploys and deletes. The pending groups left out are computed too,
     // to warn about the items they also changed.
@@ -523,36 +600,43 @@ The command's technical implementation involves:
     const deployKeys = [...selection.items.keys()].filter((key) => !excludedKeys.includes(key));
     const deleteKeys = [...selection.deletions.keys()].filter((key) => !excludedKeys.includes(key));
 
-    if (deployKeys.length === 0 && deleteKeys.length === 0 && !planMode && !prepareMode) {
-      uxLog('action', this, c.cyan(t('backpromoteNoDelta')));
-      markSelectionBackpromoted();
-      await persistBackpromoteOrgRecords(provider, orgRecordUpdates, this);
-      return { outputString: 'No metadata changes to deploy' };
-    }
-
     // A plan reads the files of the parent branch without checking it out. A run works on a new local
     // backpromote branch when the current branch cannot receive the backpromote.
     if (planMode && workingBranch.mode === 'newBackpromoteBranch') {
       reportCommandProgress({ step: 'parentFiles', message: t('backpromoteProgressParentFiles', { parentBranch }) });
     }
-    const localPackageDirectories = planMode && workingBranch.mode === 'newBackpromoteBranch' ? await exportBranchPackageDirectories(parentRef) : [];
+    const localPackageDirectories = planMode && workingBranch.mode === 'newBackpromoteBranch' ? await exportBranchPackageDirectories(listingRef, this) : [];
     const backpromoteBranch =
       !planMode && workingBranch.mode === 'newBackpromoteBranch' ? await createBackpromoteBranch(parentBranch, parentRef, currentBranch, this) : null;
     const workBranch = backpromoteBranch || currentBranch;
-    // The branch to leave at the end of the run: the new one, or the backpromote branch this run resumed on
-    const branchToLeave = backpromoteBranch || (workingBranch.reason === 'backpromoteBranch' ? currentBranch : null);
+    // The branch to leave at the end of the run: the new one, or the backpromote branch this run
+    // resumed on. A plan changes no branch at all: it is read-only, and the panel runs it in the
+    // background while the user works in their editor.
+    const branchToLeave = planMode
+      ? null
+      : backpromoteBranch || (['backpromoteBranch', 'backpromoteBranchBehind'].includes(workingBranch.reason) ? currentBranch : null);
     let runOutcome: 'mergePrepared' | 'deployed' | 'notDeployed' = 'notDeployed';
     let deployedMergedKeys: string[] = [];
     try {
       uxLog('log', this, c.cyan(t('backpromoteDeltaSummary', { addedModified: deployKeys.length, deleted: deleteKeys.length })));
       const { packageXml, destructiveXml } = await writeBackpromotePackages(deployKeys, deleteKeys);
 
-      // Step 10: items changed in the org
-      if (deployKeys.length > 0) {
-        reportCommandProgress({ step: 'orgCompare', message: t('backpromoteProgressOrgCompare', { count: deployKeys.length }) });
+      // Step 10: items changed in the org. An explicit selection (the VS Code panel Run, an agent)
+      // already decided what to do with each item: retrieving the whole delta from the org again
+      // would cost minutes and change nothing.
+      const comparedKeys = prepareMode ? prepareMergeKeys.filter((key) => deployKeys.includes(key)) : deployKeys;
+      const compareWithOrg = comparedKeys.length > 0 && (planMode || prepareMode || !explicitSelection);
+      if (compareWithOrg) {
+        reportCommandProgress({ step: 'orgCompare', message: t('backpromoteProgressOrgCompare', { count: comparedKeys.length }) });
       }
-      const conflictResult = deployKeys.length > 0
-        ? await detectOrgConflicts(packageXml, targetUsername, this, debugMode, localPackageDirectories)
+      const comparedPackageXml = prepareMode ? (await writeBackpromotePackages(comparedKeys, [])).packageXml : packageXml;
+      const readBaseVersion = buildBackpromoteBaseVersionReader({
+        baseCommit: mergeBaseCommit,
+        gitRoot: path.resolve((await getGitRepoRoot()).trim()),
+        packageDirectories: localPackageDirectories,
+      });
+      const conflictResult = compareWithOrg
+        ? await detectOrgConflicts(comparedPackageXml, targetUsername, this, debugMode, localPackageDirectories, readBaseVersion)
         : { conflicts: [], success: true, notInOrgKeys: [] as string[] };
       const conflictsInSelection = conflictResult.conflicts.filter((item) => deployKeys.includes(toMetadataKey(item.metadataType, item.metadataName)));
 
@@ -567,13 +651,12 @@ The command's technical implementation involves:
           conflicts: conflictResult.conflicts,
           notInOrgKeys: conflictResult.notInOrgKeys,
           conflictDetection: { success: conflictResult.success, errorMessage: conflictResult.success ? null : (conflictResult as any).errorMessage || null },
-          actions: listBackpromotePlanActions(computedGroups, currentBranch, actionsDoneInOrg, this),
+          actions: listBackpromotePlanActions(computedGroups, userStoryBranchForActions, actionsDoneInOrg, this),
           localFiles,
         }) as unknown as AnyJson;
       }
 
-      // The merge base is the parent branch as it was just before the oldest selected group
-      const baseCommit = `${selectedHashes[0]}^1`;
+      const baseCommit = mergeBaseCommit;
       const selectionPullRequests = selectedGroups.flatMap((group) => group.associatedPrs).filter((pr, index, all) => all.findIndex((other) => other.id === pr.id && other.title === pr.title) === index);
       const runCommandFor = (merged: string[], excluded: string[]) => buildBackpromoteRunCommand({
         parentBranch,
@@ -664,7 +747,8 @@ The command's technical implementation involves:
         });
         runMergedKeys.push(...decisions.mergedKeys);
         if (decisions.excludedKeys.length > 0) {
-          uxLog('log', this, c.grey(t('backpromoteExcludedItems', { count: decisions.excludedKeys.length, items: decisions.excludedKeys.join(', ') })));
+          // First output after the decision prompts: the VS Code UI hides everything but "action"
+          uxLog('action', this, c.cyan(t('backpromoteExcludedItems', { count: decisions.excludedKeys.length, items: decisions.excludedKeys.join(', ') })));
           await removeKeysFromPackageXml(validatedPackageXml, decisions.excludedKeys);
         }
       }
@@ -697,7 +781,7 @@ The command's technical implementation involves:
         uxLog('log', this, c.grey(t('backpromoteActionsSkippedByFlag')));
       }
       try {
-        await executeBackpromoteActions(selectedGroups, currentBranch, 'commandsPreDeploy', targetUsername, conn, this, agentMode, actionOptions);
+        await executeBackpromoteActions(selectedGroups, userStoryBranchForActions, 'commandsPreDeploy', targetUsername, conn, this, agentMode, actionOptions);
         await deployBackpromoteMetadata(
           validatedPackageXml,
           validatedDestructiveXml,
@@ -710,7 +794,7 @@ The command's technical implementation involves:
         markSelectionBackpromoted();
         runOutcome = 'deployed';
         deployedMergedKeys = runMergedKeys;
-        await executeBackpromoteActions(selectedGroups, currentBranch, 'commandsPostDeploy', targetUsername, conn, this, agentMode, actionOptions);
+        await executeBackpromoteActions(selectedGroups, userStoryBranchForActions, 'commandsPostDeploy', targetUsername, conn, this, agentMode, actionOptions);
       } finally {
         await persistBackpromoteOrgRecords(provider, orgRecordUpdates, this);
       }

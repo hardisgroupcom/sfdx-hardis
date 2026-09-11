@@ -101,13 +101,41 @@ export function findNewestDoneGroupIndex(statuses: BackpromoteGroupStatus[]): nu
 
 /** A --to or --from value made of digits only and short enough is a Pull Request number, not a SHA */
 export function isPullRequestReference(value: string): boolean {
-  return /^\d{1,6}$/.test((value || '').trim());
+  return /^#?\d{1,6}$/.test((value || '').trim());
+}
+
+/** The number of a Pull Request reference, written 482 or #482, or null */
+export function parsePullRequestReference(value: string): number | null {
+  const text = (value || '').trim().replace(/^#/, '');
+  return /^\d{1,6}$/.test(text) ? parseInt(text, 10) : null;
+}
+
+/** Pull Request numbers of a list flag, written 482 or #482 */
+export function parsePullRequestNumbers(values: string[]): { ids: number[]; invalid: string[] } {
+  const ids: number[] = [];
+  const invalid: string[] = [];
+  for (const value of values) {
+    const id = parsePullRequestReference(value);
+    if (id === null || id <= 0) {
+      invalid.push(value);
+    } else if (!ids.includes(id)) {
+      ids.push(id);
+    }
+  }
+  return { ids, invalid };
 }
 
 /**
  * Indexes (oldest first) of the groups selected by --pull-requests, --commits and --to. --to selects
- * every group still pending up to that one. An explicit Pull Request or commit can also designate a
- * group already done, to backpromote it again.
+ * every group still pending up to that one, never one older than the newest group already
+ * backpromoted to the org. An explicit Pull Request or commit can also designate a group already
+ * done, to backpromote it again.
+ *
+ * A Pull Request number can appear in several groups (a revert, a message quoting it, a branch
+ * merged twice): only the groups still pending are taken, so an old group nobody selected, that the
+ * panel never showed and the org comparison never looked at, is not deployed on the side. When every
+ * group carrying the number is already done, the newest one is taken: that is the "backpromote it
+ * again" case.
  */
 export function resolveExplicitGroupSelection(
   groupsOldestFirst: BackpromoteGroupLike[],
@@ -117,14 +145,18 @@ export function resolveExplicitGroupSelection(
   const selected = new Set<number>();
   const unknownPullRequests: number[] = [];
   const unknownCommits: string[] = [];
+  const doneAnchor = findNewestDoneGroupIndex(statuses);
   for (const prNumber of selection.pullRequests) {
     const indexes = groupsOldestFirst
       .map((group, index) => (group.associatedPrs.some((pr) => pr.id === prNumber) ? index : -1))
       .filter((index) => index >= 0);
     if (indexes.length === 0) {
       unknownPullRequests.push(prNumber);
+      continue;
     }
-    indexes.forEach((index) => selected.add(index));
+    const pending = indexes.filter((index) => statuses[index] !== 'done');
+    const kept = pending.length > 0 ? pending : [indexes[indexes.length - 1]];
+    kept.forEach((index) => selected.add(index));
   }
   for (const commit of selection.commits) {
     const index = groupsOldestFirst.findIndex((group) => isSameCommit(group.commit.hash, commit));
@@ -136,17 +168,20 @@ export function resolveExplicitGroupSelection(
   }
   if (selection.to) {
     const to = selection.to.trim();
-    const toIndex = isPullRequestReference(to)
-      ? groupsOldestFirst.findIndex((group) => group.associatedPrs.some((pr) => pr.id === parseInt(to, 10)))
+    const toPullRequest = parsePullRequestReference(to);
+    const toIndex = toPullRequest !== null
+      ? groupsOldestFirst.findIndex((group) => group.associatedPrs.some((pr) => pr.id === toPullRequest))
       : groupsOldestFirst.findIndex((group) => isSameCommit(group.commit.hash, to));
     if (toIndex < 0) {
-      if (isPullRequestReference(to)) {
-        unknownPullRequests.push(parseInt(to, 10));
+      if (toPullRequest !== null) {
+        unknownPullRequests.push(toPullRequest);
       } else {
         unknownCommits.push(to);
       }
     } else {
-      for (let index = 0; index <= toIndex; index++) {
+      // Never reach back before the newest group the org already received: a merge with no Pull
+      // Request number is never "done", so --to would redeploy every one of them at each run
+      for (let index = Math.max(0, doneAnchor + 1); index <= toIndex; index++) {
         if (statuses[index] !== 'done') {
           selected.add(index);
         }
@@ -156,9 +191,52 @@ export function resolveExplicitGroupSelection(
   return { selected: [...selected].sort((a, b) => a - b), unknownPullRequests, unknownCommits };
 }
 
-/** The groups a run preselects: pending ones that can be remembered once deployed */
-export function defaultGroupSelection(groups: Array<{ status: BackpromoteGroupStatus; trackable: boolean }>): number[] {
-  return groups.map((group, index) => (group.status === 'pending' && group.trackable ? index : -1)).filter((index) => index >= 0);
+/**
+ * The groups a run preselects: pending ones that can be remembered once deployed.
+ *
+ * An org with no backpromote history at all (a new or refreshed sandbox, a scratch org, an org
+ * whose history was never written) would otherwise preselect the whole window and redeploy months
+ * of merges in one run: only the newest group is preselected there, and the others are listed
+ * unticked, ready to be added.
+ */
+export function defaultGroupSelection(
+  groups: Array<{ status: BackpromoteGroupStatus; trackable: boolean }>,
+  options: { noHistory?: boolean } = {},
+): number[] {
+  const pending = groups.map((group, index) => (group.status === 'pending' && group.trackable ? index : -1)).filter((index) => index >= 0);
+  if (options.noHistory === true && pending.length > 0) {
+    return [pending[pending.length - 1]];
+  }
+  return pending;
+}
+
+/**
+ * The commit the three-way merge of an item changed in the org starts from: what the org received
+ * last, which is the newest group already backpromoted to it before the selection.
+ *
+ * Taking the parent of the oldest selected group instead would put the changes of an older Pull
+ * Request the org never received inside the base, and `git merge-file` reads a change present in
+ * the base but missing from the org as a deletion the org made on purpose: it drops it from the
+ * merged file, without a conflict marker, and the deployment silently reverts that Pull Request.
+ * Everything the org has not received yet must stay on the incoming side.
+ */
+export function resolveBackpromoteMergeBase(options: {
+  groupHashesOldestFirst: string[];
+  statuses: BackpromoteGroupStatus[];
+  selectedIndexes: number[];
+}): string | null {
+  const hashes = options.groupHashesOldestFirst || [];
+  if (hashes.length === 0 || (options.selectedIndexes || []).length === 0) {
+    return null;
+  }
+  const firstSelected = Math.min(...options.selectedIndexes);
+  for (let index = Math.min(firstSelected - 1, hashes.length - 1); index >= 0; index--) {
+    if (options.statuses[index] === 'done') {
+      return hashes[index];
+    }
+  }
+  // Nothing of this window reached the org: it starts just before the oldest group listed
+  return `${hashes[0]}^1`;
 }
 
 /** Union of the deltas of several groups, remembering which groups deploy or delete each item */
@@ -250,10 +328,31 @@ export function metadataKeysToPackageContent(keys: Iterable<string>): Record<str
 }
 
 /**
+ * The sandbox a Salesforce username belongs to: every user of a sandbox has the username they have
+ * in production with `.<sandbox name>` appended, so `ci@acme.com.uat` and `dev@acme.com.uat` are two
+ * users of the same UAT sandbox. Null for a production username.
+ */
+export function parseSandboxOfUsername(username: string): { base: string; sandbox: string } | null {
+  const value = (username || '').trim().toLowerCase();
+  const at = value.lastIndexOf('@');
+  if (at <= 0) {
+    return null;
+  }
+  const domain = value.substring(at + 1);
+  const parts = domain.split('.');
+  // production usernames are user@company.com: a sandbox adds one more part
+  if (parts.length < 3) {
+    return null;
+  }
+  return { base: parts.slice(0, -1).join('.'), sandbox: parts[parts.length - 1] };
+}
+
+/**
  * Why a backpromote must not deploy to this org, or null when it may. Only developer sandboxes and
  * scratch orgs receive a backpromote: a production org, or the org of a major branch, is deployed by
- * the CI/CD pipeline. A major org matches on its username, or on its instance URL unless that URL is
- * the generic test.salesforce.com login.
+ * the CI/CD pipeline. A major org matches on its username, on the sandbox that username belongs to
+ * (a developer signed into the UAT sandbox with their own user is still in UAT), or on its instance
+ * URL unless that URL is the generic test.salesforce.com login.
  */
 export function findBackpromoteTargetOrgRefusal(options: {
   isSandbox: boolean;
@@ -264,8 +363,16 @@ export function findBackpromoteTargetOrgRefusal(options: {
   const normalizeUrl = (url: string | undefined) => (url || '').trim().toLowerCase().replace(/\/+$/, '');
   const username = (options.username || '').trim().toLowerCase();
   const instanceUrl = normalizeUrl(options.instanceUrl);
+  const sandbox = parseSandboxOfUsername(username);
   const majorOrg = (options.majorOrgs || []).find((org) => {
-    if (username !== '' && (org.targetUsername || '').trim().toLowerCase() === username) {
+    const majorUsername = (org.targetUsername || '').trim().toLowerCase();
+    if (username !== '' && majorUsername === username) {
+      return true;
+    }
+    // Same sandbox as the major org, with another user: the config instanceUrl of a major sandbox
+    // is often the generic login URL, which never matches, so the username is the only evidence
+    const majorSandbox = parseSandboxOfUsername(majorUsername);
+    if (sandbox && majorSandbox && sandbox.base === majorSandbox.base && sandbox.sandbox === majorSandbox.sandbox) {
       return true;
     }
     const orgUrl = normalizeUrl(org.instanceUrl);
@@ -318,9 +425,24 @@ export interface BackpromoteWorkingBranch {
    */
   mode: 'currentBranch' | 'newBackpromoteBranch';
   /** userStoryBranch and backpromoteBranch stay on the current branch, the others get a new one */
-  reason: 'userStoryBranch' | 'backpromoteBranch' | 'majorBranch' | 'promotionBranch' | 'retrofitBranch' | 'notUpToDate';
+  reason:
+  | 'userStoryBranch'
+  | 'backpromoteBranch'
+  | 'backpromoteBranchBehind'
+  | 'majorBranch'
+  | 'promotionBranch'
+  | 'retrofitBranch'
+  | 'notUpToDate'
+  | 'solvedMerge';
   /** The branch the run brings the user back to, null when it stays on the current branch */
   returnBranch: string | null;
+  /**
+   * Set when the run must list and deploy what the resumed backpromote branch holds instead of the
+   * newer remote parent branch: its working tree is the one being deployed.
+   */
+  listFromCurrentBranch?: boolean;
+  /** Why the run cannot start at all, for the currentBranch check of the plan */
+  refusal?: { reason: 'backpromoteBranchOtherParent'; parentBranch: string } | null;
 }
 
 /**
@@ -337,13 +459,36 @@ export function decideBackpromoteWorkingBranch(options: {
   upToDate: boolean;
   /** The return branch a previous run recorded on the current branch, when it created it */
   backpromoteReturnBranch: string | null;
+  /** The parent branch a previous run recorded on the current branch, when it created it */
+  backpromoteParentBranch?: string | null;
+  /** A merge written by a previous run is waiting in the working tree (--merged-metadata) */
+  hasSolvedMerge?: boolean;
 }): BackpromoteWorkingBranch {
   if (options.backpromoteReturnBranch) {
-    return { mode: 'currentBranch', reason: 'backpromoteBranch', returnBranch: options.backpromoteReturnBranch };
+    // A backpromote branch was created from one parent branch and carries its files: asking for
+    // another one would deploy the files of the first from a branch named after it
+    if (options.backpromoteParentBranch && options.backpromoteParentBranch !== options.parentBranch) {
+      return {
+        mode: 'currentBranch',
+        reason: 'backpromoteBranch',
+        returnBranch: options.backpromoteReturnBranch,
+        refusal: { reason: 'backpromoteBranchOtherParent', parentBranch: options.backpromoteParentBranch },
+      };
+    }
+    // Teammates merged since the branch was created: what it holds is what its working tree
+    // deploys, so the run lists that state instead of the newer remote parent branch
+    return options.upToDate
+      ? { mode: 'currentBranch', reason: 'backpromoteBranch', returnBranch: options.backpromoteReturnBranch }
+      : { mode: 'currentBranch', reason: 'backpromoteBranchBehind', returnBranch: options.backpromoteReturnBranch, listFromCurrentBranch: true };
   }
   const kind = options.currentBranch === options.parentBranch ? 'majorBranch' : classifyBackpromoteCurrentBranch(options.currentBranch, options.majorBranches);
   if (kind !== 'userStoryBranch') {
     return { mode: 'newBackpromoteBranch', reason: kind, returnBranch: options.currentBranch };
+  }
+  // A solved merge lives in the working tree of this branch: moving to another branch would carry
+  // it over, or lose it, and the merge was computed against what this branch holds
+  if (options.hasSolvedMerge === true) {
+    return { mode: 'currentBranch', reason: options.upToDate ? 'userStoryBranch' : 'solvedMerge', returnBranch: null };
   }
   if (!options.upToDate) {
     return { mode: 'newBackpromoteBranch', reason: 'notUpToDate', returnBranch: options.currentBranch };
@@ -399,9 +544,15 @@ export function buildBackpromoteBranchName(parentBranch: string, date: Date, exi
   return `${base}-${counter}`;
 }
 
-/** Number of git conflict blocks left in a file content */
+/**
+ * Number of git conflict blocks left in a file content. Every marker line counts, not only the
+ * opening one: a file where somebody removed the `<<<<<<<` line and left the rest still holds a
+ * conflict, and deploying it would send `=======` and `>>>>>>>` lines to the org.
+ */
 export function countConflictMarkerBlocks(content: string): number {
-  return (content || '').split(/\r?\n/).filter((line) => line.startsWith('<<<<<<< ')).length;
+  const lines = (content || '').split(/\r?\n/);
+  const count = (marker: RegExp) => lines.filter((line) => marker.test(line)).length;
+  return Math.max(count(/^<{7}(?!<)/), count(/^\|{7}(?!\|)/), count(/^>{7}(?!>)/));
 }
 
 function quoteArgument(value: string): string {

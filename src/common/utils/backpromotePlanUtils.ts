@@ -7,6 +7,7 @@
 import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import { spawnSync } from 'child_process';
+import * as os from 'os';
 import * as path from 'path';
 import fs from './fsUtils.js';
 import { createTempDir, getGitRepoRoot, git, uxLog } from './index.js';
@@ -22,7 +23,7 @@ import { t } from './i18n.js';
 import { getReportDirectory } from '../../config/index.js';
 import { userChangesOutsideReports } from './promotionCreateUtils.js';
 import { GitProviderRoot } from '../gitProvider/gitProviderRoot.js';
-import { BackpromotePrGroup, OrgConflictItem, collectBackpromoteActions, formatDateTime } from './backpromoteUtils.js';
+import { BackpromotePrGroup, OrgConflictItem, collectBackpromoteActions, extractPrNumbersFromMessage, formatDateTime } from './backpromoteUtils.js';
 import {
   BackpromoteGitProviderName,
   BackpromoteGroupHistory,
@@ -37,21 +38,29 @@ import {
   BackpromoteGroupDelta,
   BackpromoteTargetOrgRefusal,
   countConflictMarkerBlocks,
+  defaultGroupSelection,
   findBackpromoteTargetOrgRefusal,
   isSameCommit,
   metadataKeysToPackageContent,
   parseMetadataKey,
+  parsePullRequestReference,
   toMetadataKey,
 } from './backpromoteSelectionUtils.js';
 
 // ---- Plan returned by --plan --json (read by the VS Code Backpromote panel) ----
 
 export interface BackpromotePlanCheck {
-  id: 'gitProvider' | 'targetOrg' | 'currentBranch' | 'parentBranch' | 'gitClean';
+  id: 'gitProvider' | 'targetOrg' | 'currentBranch' | 'parentBranch' | 'gitClean' | 'mergeMarkers';
   ok: boolean;
   message: string;
   details?: string[];
 }
+
+/** How many groups back the Pull Request comments are read before giving up on finding a history */
+export const BACKPROMOTE_HISTORY_LOOKBACK = 20;
+
+/** How many groups an org with no backpromote history at all is offered */
+export const BACKPROMOTE_NEW_ORG_WINDOW = 5;
 
 export interface BackpromotePlan {
   planVersion: 1;
@@ -64,8 +73,10 @@ export interface BackpromotePlan {
   /** Where a run works, null when the plan stopped before knowing */
   workingBranch: BackpromoteWorkingBranch | null;  targetOrg: { username: string; instanceUrl: string; orgType: 'sandbox' | 'scratch' | 'production'; orgId: string; orgName: string };
   checks: BackpromotePlanCheck[];
-  /** Pass it as --from to also list the Pull Requests merged before the last one backpromoted to this org */
+  /** Pass it as --from to also list the Pull Requests merged before the ones listed here */
   olderFrom: string | null;
+  /** Nothing was ever backpromoted to this org: only the newest Pull Request is preselected */
+  noHistory: boolean;
   stateReadErrors: string[];
   groups: Array<{
     hash: string;
@@ -192,27 +203,79 @@ export function hasFirstParent(hash: string): boolean {
  * What the Pull Request comments say about each listed group, newest first. Unless readAll, the reading
  * stops at the newest group already backpromoted to the org: the window starts there, so a long history
  * is not read and recomputed at every run. windowStartIndex is that group (0 when none was found).
+ *
+ * The reading also stops after BACKPROMOTE_HISTORY_LOOKBACK groups: an org that received none of
+ * them (a new or refreshed sandbox, a scratch org) would otherwise cost one API call per Pull
+ * Request of the whole listing, at every step of the panel, to end up with the same answer.
  */
 export async function loadBackpromoteHistory(
   provider: GitProviderRoot,
   groupsOldestFirst: BackpromotePrGroup[],
   orgId: string,
   readAll: boolean,
-): Promise<{ windowStartIndex: number; histories: BackpromoteGroupHistory[]; recordsByPr: Map<number, BackpromoteOrgRecord[]>; readErrors: string[] }> {
+): Promise<{
+  windowStartIndex: number;
+  histories: BackpromoteGroupHistory[];
+  recordsByPr: Map<number, BackpromoteOrgRecord[]>;
+  readErrors: string[];
+  /** Pull Requests whose comments could be read: zero with a token that cannot read them */
+  readOk: number;
+  /** No group of the window was ever backpromoted to this org */
+  noHistory: boolean;
+}> {
   const recordsByPr = new Map<number, BackpromoteOrgRecord[]>();
   const readErrors: string[] = [];
   const histories: BackpromoteGroupHistory[] = new Array(groupsOldestFirst.length);
   let windowStartIndex = 0;
+  let readGroups = 0;
   for (let index = groupsOldestFirst.length - 1; index >= 0; index--) {
     const group = groupsOldestFirst[index];
     await loadBackpromoteOrgRecords(provider, group.associatedPrs.map((pr) => pr.id), recordsByPr, readErrors);
     histories[index] = computeBackpromoteGroupHistory(group, recordsByPr, orgId);
+    readGroups++;
     if (!readAll && histories[index].status === 'done') {
       windowStartIndex = index;
       break;
     }
+    if (!readAll && readGroups >= BACKPROMOTE_HISTORY_LOOKBACK) {
+      windowStartIndex = index;
+      break;
+    }
   }
-  return { windowStartIndex, histories: histories.slice(windowStartIndex), recordsByPr, readErrors };
+  const windowHistories = histories.slice(windowStartIndex);
+  return {
+    windowStartIndex,
+    histories: windowHistories,
+    recordsByPr,
+    readErrors,
+    readOk: Math.max(0, recordsByPr.size - readErrors.length),
+    noHistory: !windowHistories.some((history) => history && history.status === 'done'),
+  };
+}
+
+/**
+ * The commit --from designates. A Pull Request number is resolved to the merge commit that brought
+ * it in, and that Pull Request is listed too: `--from 481` answers "from #481", not "after it".
+ */
+export async function resolveBackpromoteFromRef(parentRef: string, from: string): Promise<string> {
+  const pullRequest = parsePullRequestReference(from);
+  if (pullRequest === null) {
+    return from;
+  }
+  const log = spawnSync('git', ['log', '--first-parent', '-n', '500', '--format=%H%x1f%B%x1e', parentRef], {
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  for (const record of (log.stdout || '').split('\x1e')) {
+    const [hash, message] = record.split('\x1f');
+    if (!hash || !message) {
+      continue;
+    }
+    if (extractPrNumbersFromMessage(message).includes(pullRequest)) {
+      return `${hash.trim()}^1`;
+    }
+  }
+  throw new SfError(t('backpromoteUnknownFromPullRequest', { id: pullRequest, parentBranch: parentRef }));
 }
 
 /** A commit 50 first-parent steps before the window start, to list older Pull Requests with --from */
@@ -233,6 +296,36 @@ async function readPackageContent(file: string): Promise<Record<string, string[]
   return ((await parsePackageXmlFile(file)) || {}) as Record<string, string[]>;
 }
 
+/**
+ * Where the delta of a commit is kept between runs. What a merge commit changed against its first
+ * parent never changes, and every step of the VS Code panel (the plan, each merge, the run)
+ * recomputes the same ones: each sfdx-git-delta run boots a CLI process and takes seconds.
+ */
+async function backpromoteDeltaCacheDir(): Promise<string> {
+  const gitRoot = path.resolve((await getGitRepoRoot()).trim()).toLowerCase();
+  // Small stable fingerprint of the repository path, to keep the cache of two clones apart
+  let fingerprint = 5381;
+  for (let index = 0; index < gitRoot.length; index++) {
+    fingerprint = ((fingerprint * 33) ^ gitRoot.charCodeAt(index)) >>> 0;
+  }
+  const dir = path.join(os.tmpdir(), 'sfdx-hardis-backpromote-delta', fingerprint.toString(16));
+  await fs.ensureDir(dir);
+  return dir;
+}
+
+async function readCachedGroupDelta(cacheDir: string, hash: string): Promise<BackpromoteGroupDelta | null> {
+  try {
+    const file = path.join(cacheDir, `${hash}.json`);
+    if (!fs.existsSync(file)) {
+      return null;
+    }
+    const cached = JSON.parse(await fs.readFile(file, 'utf8'));
+    return cached && cached.hash === hash && cached.items && cached.deletions ? (cached as BackpromoteGroupDelta) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** What each group deploys and deletes, from sfdx-git-delta between the group and its first parent */
 export async function computeBackpromoteGroupDeltas(
   groups: BackpromotePrGroup[],
@@ -245,25 +338,82 @@ export async function computeBackpromoteGroupDeltas(
   }
   uxLog('action', commandThis, c.cyan(t('backpromoteComputingGroupDeltas', { count: groups.length })));
   const rootDir = await createTempDir();
+  const cacheDir = await backpromoteDeltaCacheDir();
   const results: BackpromoteGroupDelta[] = [];
+  let computed = 0;
   // One run at a time: sfdx-git-delta writes the git config of the repository, and two runs in
   // parallel fail on its lock ("could not lock config file .git/config")
   for (let index = 0; index < groups.length; index++) {
     onGroup?.(index, groups.length, groups[index]);
     const hash = groups[index].commit.hash;
+    const cached = await readCachedGroupDelta(cacheDir, hash);
+    if (cached) {
+      results.push(cached);
+      continue;
+    }
     const outputDir = path.join(rootDir, `${index}-${hash.substring(0, 12)}`);
     await fs.ensureDir(outputDir);
     const deltaResult = await callSfdxGitDelta(`${hash}^1`, hash, outputDir);
     if (deltaResult?.status !== 0) {
       throw new SfError(`[Backpromote] sfdx-git-delta failed on ${hash.substring(0, 7)}: ${JSON.stringify(deltaResult)}`);
     }
-    results.push({
+    const delta: BackpromoteGroupDelta = {
       hash,
       items: await readPackageContent(path.join(outputDir, 'package', 'package.xml')),
       deletions: await readPackageContent(path.join(outputDir, 'destructiveChanges', 'destructiveChanges.xml')),
-    });
+    };
+    computed++;
+    results.push(delta);
+    try {
+      await fs.writeFile(path.join(cacheDir, `${hash}.json`), JSON.stringify(delta), 'utf8');
+    } catch {
+      // A delta that cannot be cached is simply computed again next time
+    }
+  }
+  if (computed < groups.length) {
+    uxLog('log', commandThis, c.grey(t('backpromoteDeltasFromCache', { count: groups.length - computed })));
   }
   return results;
+}
+
+/**
+ * Reads a metadata file as it was when the org last received it, to tell a real org change from an
+ * item the org simply has in an older state. Null when the file did not exist then, or when the run
+ * does not know what the org received (nothing recorded yet): every difference then counts as an
+ * org change, which is the careful answer.
+ */
+export function buildBackpromoteBaseVersionReader(options: {
+  baseCommit: string | null;
+  gitRoot: string;
+  packageDirectories?: Array<{ path: string; fullPath: string }>;
+}): ((localFile: string) => Promise<string | null>) | null {
+  if (!options.baseCommit) {
+    return null;
+  }
+  const baseCommit = options.baseCommit;
+  const gitRoot = options.gitRoot;
+  const packageDirectories = options.packageDirectories || [];
+  const cache = new Map<string, string | null>();
+  return async (localFile: string): Promise<string | null> => {
+    const absolute = path.resolve(localFile);
+    if (cache.has(absolute)) {
+      return cache.get(absolute) as string | null;
+    }
+    // A plan reads the files of the parent branch from a temporary export: the path inside the
+    // repository is the package directory it came from plus the path inside it
+    let repoPath = path.relative(gitRoot, absolute).split(path.sep).join('/');
+    for (const packageDirectory of packageDirectories) {
+      const inside = path.relative(path.resolve(packageDirectory.fullPath), absolute);
+      if (inside && !inside.startsWith('..') && !path.isAbsolute(inside)) {
+        repoPath = `${packageDirectory.path}/${inside.split(path.sep).join('/')}`;
+        break;
+      }
+    }
+    const show = spawnSync('git', ['show', `${baseCommit}:${repoPath}`], { cwd: gitRoot, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+    const content = show.status === 0 ? show.stdout : null;
+    cache.set(absolute, content);
+    return content;
+  };
 }
 
 // ---- Files ----
@@ -389,6 +539,9 @@ export function buildBackpromotePlan(options: {
   conflictDetection?: { success: boolean; errorMessage: string | null };
   actions?: BackpromotePlan['actions'];
   localFiles?: Map<string, string | null>;
+  /** Hashes of the groups a run takes when the user changes nothing */
+  preselectedHashes?: string[];
+  noHistory?: boolean;
 }): BackpromotePlan {
   const groups = options.groupsOldestFirst || [];
   const histories = options.histories || [];
@@ -400,6 +553,7 @@ export function buildBackpromotePlan(options: {
   const keysOf = (content: Record<string, string[]> | undefined) =>
     Object.keys(content || {}).flatMap((type) => (content![type] || []).map((member) => toMetadataKey(type, member)));
 
+  const preselected = options.preselectedHashes ? new Set(options.preselectedHashes) : null;
   const planGroups: BackpromotePlan['groups'] = [];
   for (let index = groups.length - 1; index >= 0; index--) {
     const group = groups[index];
@@ -419,7 +573,7 @@ export function buildBackpromotePlan(options: {
       date: group.commit.date,
       status: history.status,
       trackable: history.trackable,
-      selectedByDefault: history.status === 'pending' && history.trackable,
+      selectedByDefault: preselected ? preselected.has(group.commit.hash) : history.status === 'pending' && history.trackable,
       backpromotedToThisOrg: history.backpromotedToThisOrg,
       backpromotedTo: history.backpromotedTo,
       pullRequests: group.associatedPrs.map((pr) => ({ ...pr })),
@@ -483,6 +637,7 @@ export function buildBackpromotePlan(options: {
     },
     checks: options.checks,
     olderFrom: options.olderFrom || null,
+    noHistory: options.noHistory === true,
     stateReadErrors: options.stateReadErrors || [],
     groups: planGroups,
     items,
@@ -496,13 +651,13 @@ export function buildBackpromotePlan(options: {
 /** The deployment actions of the pending groups, both phases, with what already ran in this org */
 export function listBackpromotePlanActions(
   groups: BackpromotePrGroup[],
-  currentBranch: string,
+  userStoryBranch: string | null,
   actionsDoneInOrg: Map<string, string>,
   commandThis: any,
 ): BackpromotePlan['actions'] {
   const planActions: BackpromotePlan['actions'] = [];
   for (const [phase, when] of [['commandsPreDeploy', 'pre'], ['commandsPostDeploy', 'post']] as const) {
-    for (const action of collectBackpromoteActions(groups, currentBranch, phase, commandThis)) {
+    for (const action of collectBackpromoteActions(groups, userStoryBranch, phase, commandThis)) {
       const doneDate = actionsDoneInOrg.get(action.id);
       planActions.push({
         id: action.id,
@@ -540,7 +695,9 @@ export async function listBackpromoteParentBranchChoices(developmentBranch: stri
 export async function promptBackpromoteGroups(
   groupsOldestFirst: BackpromotePrGroup[],
   histories: BackpromoteGroupHistory[],
+  options: { noHistory?: boolean } = {},
 ): Promise<number[]> {
+  const preselected = new Set(defaultGroupSelection(histories, options));
   const choices: Array<{ title: string; value: number; description?: string; selected: boolean }> = [];
   for (let index = groupsOldestFirst.length - 1; index >= 0; index--) {
     const history = histories[index];
@@ -557,7 +714,7 @@ export async function promptBackpromoteGroups(
       title: `${formatDateTime(group.commit.date)} - ${(group.commit.message || '').split('\n')[0]} [${group.commit.hash.substring(0, 7)}]`,
       value: index,
       description,
-      selected: history.trackable,
+      selected: preselected.has(index),
     });
   }
   if (choices.length === 0) {
