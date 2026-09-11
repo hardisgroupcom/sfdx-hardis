@@ -1,0 +1,6 @@
+{
+  "exitStatus": 0,
+  "status": "ready",
+  "items": ["StaticResource:E2E_S7"],
+  "deletions": ["StaticResource:E2E_S4"]
+}

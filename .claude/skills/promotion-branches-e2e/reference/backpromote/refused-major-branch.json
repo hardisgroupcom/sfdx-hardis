@@ -1,0 +1,5 @@
+{
+  "exitStatus": 0,
+  "status": "blocked",
+  "checks": [{ "id": "currentBranch", "ok": false, "messageContains": "major branch" }]
+}

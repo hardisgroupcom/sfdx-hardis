@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Backpromote (Beta) helpers of runbook section 6bis, shared by the GitHub, GitLab and Azure DevOps
-# libraries. Do not source it directly: each provider library defines three hooks, then sources it.
+# libraries. Do not source it directly: each provider library defines two hooks, then sources it.
 #
 #   bp_provider_env <command...>     runs a command with the git provider variables the CLI reads
-#                                    outside CI (never CI=true: backpromote is a developer command)
+#                                    outside CI (never CI=true: backpromote is a developer command).
+#                                    Only used to complete the Pull Request titles: a backpromote
+#                                    needs no git provider.
 #   bp_open <branch> <title> <body>  opens a Pull Request into integration, prints its number
 #   bp_merge <number>                merges it with a merge commit
-#   dump_pr_comments <out> [prs...]  provider agnostic dump of Pull Requests and their comments
 #
 # Needs WORK, LOGS, DEV, and DEVORG (the developer scratch org) exported.
 
@@ -52,50 +53,14 @@ e2e_backpromote_json() {
   return $code
 }
 
-# Any command with no git provider credential at all
-bp_no_git_env() {
-  env -u NODE_OPTIONS -u CI -u GITLAB_CI -u GITHUB_TOKEN -u CI_SFDX_HARDIS_GITHUB_TOKEN -u GITHUB_REPOSITORY \
-    -u CI_JOB_TOKEN -u CI_SFDX_HARDIS_GITLAB_TOKEN -u SYSTEM_ACCESSTOKEN -u CI_SFDX_HARDIS_AZURE_TOKEN \
-    -u AZURE_DEVOPS_EXT_PAT -u CI_SFDX_HARDIS_BITBUCKET_TOKEN -u BITBUCKET_WORKSPACE "$@"
-}
-
-# --json backpromote without git provider credentials: must be refused
-e2e_backpromote_nogit_json() {
-  local label="$1" code
-  shift
-  cd "$WORK" || return 1
-  bp_no_git_env node "$DEV" hardis:work:backpromote --target-org "${DEVORG:?set DEVORG}" --json "$@" >"$LOGS/$label.json" 2>"$LOGS/$label.log"
-  code=$?
-  echo "$label exit=$code json=$LOGS/$label.json"
-  return $code
-}
-
-# Assert a --plan / --prepare-merge JSON document. Usage: backpromote_check <label> <expectations.json>
+# Assert a --plan JSON document. Usage: backpromote_check <label> <expectations.json>
 backpromote_check() {
   env -u NODE_OPTIONS node "$BP_SCRIPTS_DIR/check-backpromote-plan.cjs" "$LOGS/$1.json" "$2"
 }
 
-# The history comment bodies of one Pull Request. Usage: backpromote_comment <number>
-backpromote_comment() {
-  dump_pr_comments "$LOGS/.comments-$1.json" "$1" >/dev/null || return 1
-  node -e "
-const dump = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'));
-for (const pr of dump.prs || []) for (const c of pr.comments || []) if ((c.body || '').includes('sfdx-hardis backpromote-state')) console.log(c.body);
-" "$LOGS/.comments-$1.json"
-}
-
-# Consistency of the history comments of these Pull Requests (all of them when none is given)
-# Usage: backpromote_comments_check <label> <expectations.json> [numbers...]
-backpromote_comments_check() {
-  local label="$1" expectations="$2"
-  shift 2
-  dump_pr_comments "$LOGS/$label.comments.json" "$@" >/dev/null || return 1
-  env -u NODE_OPTIONS node "$BP_SCRIPTS_DIR/check-backpromote-comments.cjs" "$LOGS/$label.comments.json" "$expectations"
-}
-
 # Put a developer scratch org back to the base project: the story static resources deleted, the
 # Apex classes and the label of the base commit deployed again. A scratch org can then serve the next
-# provider's run: its history is per repository, and each run uses a new one.
+# provider's run.
 # Usage: backpromote_reset_org <org alias> <base commit>
 backpromote_reset_org() {
   local org="$1" base="$2" dir="$LOGS/bp-reset-$1"
@@ -111,7 +76,7 @@ XML
     echo '<?xml version="1.0" encoding="UTF-8"?>'
     echo '<Package xmlns="http://soap.sforce.com/2006/04/metadata">'
     echo '    <types>'
-    for resource in E2E_S1 E2E_S2 E2E_S3 E2E_S4 E2E_S5 E2E_S6; do
+    for resource in E2E_S1 E2E_S2 E2E_S3 E2E_S4 E2E_S5 E2E_S6 E2E_S7; do
       echo "        <members>$resource</members>"
     done
     echo '        <name>StaticResource</name>'
@@ -127,6 +92,8 @@ XML
     >>"$LOGS/bp-reset-$org.log" 2>&1
   local code=$?
   git -C "$WORK" worktree remove --force "$LOGS/bp-reset-base-$1" >/dev/null 2>&1
+  # The org tracking must forget the reset, or the next plan lists the base project as pending
+  (cd "$WORK" && env -u NODE_OPTIONS sf project reset tracking --target-org "$org" --no-prompt) >>"$LOGS/bp-reset-$org.log" 2>&1
   echo "reset $org to $base exit=$code log=$LOGS/bp-reset-$org.log"
   return $code
 }

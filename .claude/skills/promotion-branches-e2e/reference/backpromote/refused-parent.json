@@ -1,6 +1,5 @@
 {
   "exitStatus": 0,
   "status": "blocked",
-  "checks": [{ "id": "parentBranch", "ok": false, "messageContains": "is not a major branch" }],
-  "groupCount": 0
+  "checks": [{ "id": "parentBranch", "ok": false, "messageContains": "is not a major branch" }]
 }

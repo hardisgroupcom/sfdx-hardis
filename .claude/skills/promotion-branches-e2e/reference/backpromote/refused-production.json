@@ -2,6 +2,5 @@
   "exitStatus": 0,
   "status": "blocked",
   "orgType": "production",
-  "checks": [{ "id": "targetOrg", "ok": false, "messageContains": "production org" }],
-  "groupCount": 0
+  "checks": [{ "id": "targetOrg", "ok": false, "messageContains": "production org" }]
 }

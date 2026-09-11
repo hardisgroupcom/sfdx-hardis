@@ -28,7 +28,7 @@ not already, so you know what each assertion is protecting.
 | `scripts/check-pipeline.cjs`       | Drives the extension's own PipelineDataProvider against the test repository and asserts what the DevOps Pipeline shows at a point of the run.                   |
 | `scripts/check-diagram.cjs`        | Feeds the extension's compiled helpers with the real Pull Requests and asserts the "single place in the diagram" rule.                                          |
 | `scripts/check-diagram-gitlab.cjs` | The same, reading merge requests from the GitLab API.                                                                                                           |
-| `scripts/check-backpromote-plan.cjs` | Asserts a `hardis:work:backpromote --plan --json` or `--prepare-merge --json` document against the expectations of `reference/backpromote/*.json` (section 6bis). |
+| `scripts/check-backpromote-plan.cjs` | Asserts a `hardis:work:backpromote --plan --json` document (plan version 2) against the expectations of `reference/backpromote/*.json` (section 6bis).             |
 | `scripts/ab-run.sh`                | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                            |
 | `scripts/ab-run-gitlab.sh`         | The same on GitLab.                                                                                                                                             |
 | `scripts/ab-run-azure.sh`          | The same on Azure DevOps.                                                                                                                                       |
@@ -41,8 +41,9 @@ not already, so you know what each assertion is protecting.
 Ask the user only for what you cannot find yourself:
 
 - the **Salesforce org** to deploy to (an authenticated org alias or username);
-- for backpromote (Beta), a **Dev Hub** to create the developer's scratch org from (the org above
-  when it has Dev Hub enabled): backpromote refuses production orgs and major branch orgs;
+- for backpromote (Beta), a **Dev Hub** to create the developer's scratch orgs from (the org above
+  when it has Dev Hub enabled): backpromote refuses production orgs and major branch orgs, and a
+  scratch org tracks its sources, which is what the "pending org changes are saved first" step needs;
 - the **repository slug** to create, if they care about the name. Otherwise pick
   `<gh login>/sfdx-hardis-promo-e2e-<n>`, incrementing `<n>` past the ones that already exist;
   on GitLab, `<user>/sfdx-hardis-promo-e2e-gl-<n>`; on Azure DevOps,
@@ -80,13 +81,16 @@ failure cannot be an artefact of the previous run's state.
 5ter. **Check the DevOps Pipeline before and after every promotion operation**
    (runbook section 4bis): `pipeline_check <label> <expectations.json>`. The job logs and the Pull
    Request comments say nothing about the view the release manager actually reads.
-5quater. **Run backpromote (Beta)** (runbook section 6bis), against scratch orgs created from the Dev
-   Hub: refused without a git provider connection, refused orgs, the plan, Pull Requests picked one by
-   one with the history written in their comments, the window after the last backpromoted one and
-   `--from`, an item changed in the org merged through `--prepare-merge` then deployed, keep the org
-   version, declined deletions, and a second org (a refreshed sandbox) seeing everything pending
-   again. Assert each JSON document with `backpromote_check` and each comment with
-   `backpromote_comment`.
+5quater. **Run backpromote (Beta)** (runbook section 6bis): `backpromote-setup.sh` then
+   `backpromote-steps.sh`, against scratch orgs created from the Dev Hub. The developer branch is
+   created before the stories are merged, so it is behind integration. Steps B0 to B9: refused from a
+   major branch, refused orgs (major branch org, production), refused parent branch, the read-only
+   plan and its progress file, the run that merges and deploys S1 to S3 with their deployment actions,
+   pending org changes saved in the branch before the merge, a conflicting file overwritten with the
+   parent branch version, a conflicting file merged by hand (the merge waits, the plan says
+   `mergeInProgress`, the next run finishes it), an item left out that stays pending in the source
+   tracking with a declined deletion, and a second developer branch and org getting everything.
+   Assert each JSON document with `backpromote_check`.
 6. **Check the diagram rule**: `node scripts/check-diagram.cjs <owner>/<repo> integration,uat,preprod,main`
    (`check-diagram-gitlab.cjs` / `check-diagram-azure.cjs` for the other two providers).
 7. **Run the flag-off A/B regression check** (runbook section 7ter). `TOTAL DIFFERING LINES: 0`,
@@ -95,7 +99,7 @@ failure cannot be an artefact of the previous run's state.
    `.claude/skills/promotion-branches-e2e/reports/promotion-branches-e2e-report-github.md`,
    `…-gitlab.md`, `…-azure.md` and `…-bitbucket.md`. Never write them at the repository root.
    Pipeline under test, the stories, the promotions performed, a table per test group with expected
-   versus result (backpromote steps B0 to B16 included), what the run found, what it did not cover,
+   versus result (backpromote steps B0 to B9 included), what the run found, what it did not cover,
    and the suite counts. Overwrite the previous reports.
 
 ## Rules for the run

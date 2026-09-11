@@ -8,65 +8,42 @@
 
 > **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
-**Brings the changes merged into a parent branch (e.g. integration) into the developer's own org: a developer sandbox or a scratch org.**
+**Brings what your teammates merged in the parent branch (e.g. integration) into your User Story branch and your own org: a developer sandbox or a scratch org.**
 
-Developers stay in sync with what their teammates merged, without waiting for a new sandbox. In VS Code, the **Backpromote (Beta)** panel of the sfdx-hardis extension shows everything on one page and runs this same command with the choices made in the panel.
+A backpromote is a git merge of the parent branch into your branch, followed by the deployment of what that merge brought in. Git is the only source of truth: nothing is stored anywhere else. In VS Code, the **Backpromote (Beta)** panel of the sfdx-hardis extension shows what the merge brings and runs this same command with the choices made in the panel.
 
-Key functionalities:
+What the command does, in order:
 
-- **Connected to the git provider:** the history of what each developer org received is kept in Pull Request comments, shared by every developer and machine, and nothing is stored locally. The command refuses to run until sfdx-hardis is connected to GitHub, GitLab, Azure DevOps or Bitbucket.
-- **Developer orgs only:** the target org must be a developer sandbox or a scratch org. A production org, or the org of a major branch declared in `config/branches`, is refused: the CI/CD pipeline deploys those.
-- **Pre-flight checks:** the git working directory must be clean and the parent branch must be a major branch (or the development branch).
-- **Never on a major branch:** the backpromote runs on the current branch when it is a User Story branch that already contains the latest commit of the parent branch. From anything else (a major, promotion or retrofit branch, or a User Story branch behind its parent branch), it creates a local branch `backpromote/<parent branch>/<date>` from the remote parent branch, without tracking it, runs there, then brings you back to the branch you started from. That branch is kept when it holds merged files (committed on it), and deleted when it holds nothing of its own.
-- **Pull Request selection:** the Pull Requests merged in the parent branch after the last one backpromoted to this org are listed, and each one can be selected or left out. A Pull Request left out stays in the list of the next run, and `--from` (a commit SHA, or a Pull Request number) lists older ones. An item also changed by a Pull Request left out is deployed with that change too, since the deployment reads the files of the branch: the command warns about it.
-- **An org with no history:** a new or refreshed sandbox, a scratch org, or any org that never received a backpromote is offered the newest Pull Requests only, with the newest one selected: nothing redeploys months of merges by accident.
-- **History per org:** a Pull Request deployed into an org is recorded in a comment of that Pull Request with the Salesforce Organization Id, the date, the merge commit and the result of its deployment actions. A refreshed sandbox is a new org and starts with nothing backpromoted.
-- **Delta computation:** sfdx-git-delta computes what each selected Pull Request deploys and deletes. The delta of a commit never changes, so it is cached between runs.
-- **Org conflict detection:** the same metadata is retrieved from the org and compared with the local files, with Excel and PDF reports and VS Code diffs. An explicit selection (the VS Code panel, an agent) skips that retrieve: the decisions are already taken.
-- **Items changed in the org:** an item counts as changed in the org only when it differs from the version the org received last, not from the version being backpromoted: an item nobody touched is deployed without asking. Each one is deployed by default, can be kept as it is in the org, or merged. A merge writes a three-way merge with git conflict markers into the local file, starting from that same last received version so a Pull Request left out is never silently reverted, opens it in VS Code, and saves a prompt to paste into a coding agent (Claude Code, GitHub Copilot...) to solve it. The solved file is then deployed as it is, and is to be committed with the User Story.
-- **Deletions:** listed and confirmed. Declining really skips them.
-- **Deployment:** NoTestRun, or RunSpecifiedTests when the selected Pull Requests declare test classes.
-- **Deployment actions:** the actions of the selected Pull Requests run before and after the deployment, skipping those already run in this org. They are read from the parent branch, so a Pull Request merged after your branch keeps its actions and its test classes. Actions requiring another user try LoginAs, then fall back to a manual checklist. A selection holding only actions runs them.
+1. **Checks:** you must be on a User Story branch (never a major, promotion or retrofit branch), with no uncommitted change, and the target org must be a developer sandbox or a scratch org. A production org, or the org of a major branch declared in `config/branches`, is refused: the CI/CD pipeline deploys those.
+2. **Saves your org work:** when the org tracks its sources, its pending changes are pulled and committed in your branch first, so the merge sees them and the deployment never overwrites them. Use `--no-pull` to skip it.
+3. **Merges the parent branch:** `git fetch` then `git merge origin/<parent branch>`. A file changed on both sides that git cannot merge on its own gets one decision: **overwrite** (take the parent branch version), **keep** (keep yours, as your org has it) or **merge** (solve it by hand). For a manual merge, the files are opened in VS Code and a prompt to paste into a coding agent (Claude Code, GitHub Copilot...) is saved: solve the conflicts, then run the command again, it finishes the merge and continues.
+4. **Deploys the delta:** sfdx-git-delta computes what the merge brought in, and it is deployed to your org with its deletions (confirmed), the Apex test classes and the deployment actions declared by the Pull Requests merged, before and after the deployment. An item left out with `--exclude-metadata` stays in your branch and is not deployed now: with source tracking it stays pending, ready for a later push.
 
-### Explicit selection
+### Decisions from the flags
 
-As soon as `--pull-requests`, `--commits` or `--to` is passed, the command asks nothing about what to deploy: every item of the selection is deployed and every deletion applied, unless `--exclude-metadata` or `--skip-destructive` says otherwise, and the actions not already run in this org are executed, unless `--actions` or `--skip-actions` says otherwise. This is how the VS Code panel runs the command.
+`--auto` takes every decision from the flags and asks nothing: every item is deployed unless `--exclude-metadata` says otherwise, every deletion applied unless `--skip-destructive`, every deployment action run unless `--actions` or `--skip-actions` says otherwise, and a conflicting file without an `--on-conflict` decision is left for a manual merge. This is how the VS Code panel runs the command.
 
-### Plan and merge (read-only modes)
+### Plan (read-only)
 
-- `--plan --json` returns the checks, the listed Pull Requests with what each one deploys and where it was already backpromoted, the items changed in the org, the deletions and the deployment actions. It deploys nothing and writes nothing.
-- `--prepare-merge Type:Name` writes the three-way merge of these items into the local files and returns the coding agent prompt. Run the command again with `--merged-metadata Type:Name` once the conflicts are solved.
+`--plan --json` returns the checks, the Pull Requests the merge brings in, the items and the deletions it deploys, the files the merge may stop on (changed in the parent branch and in your branch or your org), the deployment actions and the pending changes of your org. It reads git and previews the org: it deploys, merges and writes nothing.
 
 ### Agent Mode
 
 Use `--agent` to disable all interactive prompts. The command will:
 
-- Use the configured `developmentBranch` (or the branch the feature branch was created from) as the parent branch
-- Without selection flags, select only the oldest Pull Request not yet backpromoted to the org
-- With `--pull-requests`, `--commits` or `--to`, deploy exactly that selection
-- Deploy every item without interactive validation, apart from `--exclude-metadata`
-- Auto-confirm destructive changes with a warning, unless `--skip-destructive`
-- Log manual actions instead of prompting
-
-Required: a git provider token in the environment (`GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`, `AZURE_DEVOPS_EXT_PAT` or `CI_SFDX_HARDIS_BITBUCKET_TOKEN`).
+- Use the branch the User Story was created from, or the configured `developmentBranch`, as the parent branch
+- Behave as with `--auto`
+- Stop on a conflicting file without decision, leaving the merge in progress and the coding agent prompt in `hardis-report/`: solve it and run the command again
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-The command's technical implementation involves:
-
-- **Git provider:** `GitProvider.getInstance()` then a merged Pull Request listing checks the connection. The history is one comment per Pull Request, found by the `<!-- sfdx-hardis backpromote-state -->` marker; each table row carries its record as encoded JSON in a hidden marker, and is merged with the comment's current content before every write.
-- **Target org check:** queries `Organization.Id`, `IsSandbox` and `TrialExpirationDate`, and compares the username and instance URL with the major orgs of `config/branches`.
-- **Git Integration:** Uses `simple-git` to verify branch status, list the first-parent commits of `origin/<parent branch>` and group the Pull Requests each one brought in. The listing stops at the newest group already backpromoted to the org, and after 20 groups when none of them was.
-- **Merge base:** the merge of an item changed in the org, and the comparison that decides whether it was changed at all, both start from the newest group already backpromoted to this org (from just before the window when there is none). Starting from the parent of the selection would put the changes of a Pull Request the org never received in the base, and `git merge-file` would drop them without a conflict marker.
-- **sfdx-git-delta:** Computes the delta of each selected first-parent commit against its first parent, one run at a time, and unions them. The last commit touching an item decides whether it is deployed or deleted. Each delta is cached in the temporary folder, keyed by commit.
-- **Org Metadata Retrieval:** Uses `sf project retrieve start` with the delta package.xml to retrieve current org state for conflict detection.
-- **Diff Library:** Uses the `diff` npm package to compute file-level differences between org and local metadata.
-- **Merge:** `git merge-file --diff3` between the org file, the file before the selection and the incoming file.
-- **ExcelJS:** Generates Excel conflict reports via `generateCsvFile`.
-- **md-to-pdf:** Converts markdown conflict reports to PDF using `generatePdfFileFromMarkdown`.
-- **Deployment Actions:** Uses `ActionsProvider` to execute deployment actions, with `authOrg` for LoginAs authentication.
-- **Progress of a background plan:** when `SFDX_HARDIS_PROGRESS_FILE` is set (the VS Code panel sets it), each step of the plan is appended to that file as one JSON line (`step`, `message`, and `current` / `total` on counted steps), so the panel shows what the command is doing while it waits for the JSON result.
+- **Target org check:** queries `Organization.Id`, `IsSandbox` and `TrialExpirationDate`, and compares the username (and the sandbox it belongs to) and the instance URL with the major orgs of `config/branches`.
+- **Org pending changes:** `sf project retrieve preview` for the plan, `sf project retrieve start` then a commit for the run, when the org tracks its sources.
+- **Merge:** `git merge --no-edit origin/<parent>`. The pre-merge commit is kept in the `refs/sfdx-hardis/backpromote-base` ref while the merge waits for its conflicts, so the next run finishes the merge (`git commit`) and deploys the same delta. `overwrite` is `git checkout --theirs`, `keep` is `git checkout --ours`.
+- **Delta:** sfdx-git-delta between the pre-merge commit and the merge commit, cached in the temporary folder per commit pair.
+- **Pull Requests, actions and test classes:** the first-parent commits of the parent branch since the merge base, with the Pull Request numbers read from their messages, and `scripts/actions/.sfdx-hardis.<PR>.yml` read from the parent branch.
+- **Progress of a background plan:** when `SFDX_HARDIS_PROGRESS_FILE` is set (the VS Code panel sets it), each step is appended to that file as one JSON line.
 </details>
 
 
@@ -74,24 +51,21 @@ The command's technical implementation involves:
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
-|actions|option|Comma-separated ids of the deployment actions to run. Default: the actions not already run in this org.||||
+|actions|option|Comma-separated ids of the deployment actions to run. Default: every action of the Pull Requests brought in.||||
 |agent|boolean|Run in non-interactive mode for agents and automation||||
-|commits|option|Comma-separated SHAs of the parent branch commits to backpromote (for merges without a Pull Request number). Asks nothing about what to deploy.||||
+|auto|boolean|Take every decision from the flags and ask nothing (the VS Code panel passes it).||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|exclude-metadata|option|Type:Name of an item not to deploy nor delete, for example "Layout:Account-Account Layout". Repeatable.||||
+|exclude-metadata|option|Type:Name of an item not to deploy nor delete now, for example "Layout:Account-Account Layout". Repeatable.||||
 |flags-dir|option|undefined||||
-|from|option|PR number or commit SHA: list the Pull Requests merged after it, instead of those merged after the last one backpromoted to the org.||||
 |json|boolean|Format output as json.||||
-|merged-metadata|option|Type:Name of an item whose local file holds a solved merge (see --prepare-merge): deploy it as it is. Repeatable.||||
+|no-pull|boolean|Do not pull the pending changes of the org into your branch before the merge.||||
+|on-conflict|option|What to do with a file git cannot merge: "<file path>=overwrite" (parent branch version), "=keep" (your version) or "=merge" (solve it by hand). Repeatable.||||
 |parentbranch|option|Name of the parent branch to backpromote from. Will be guessed or prompted if not provided.||||
-|plan|boolean|Read-only: return what a backpromote would do (use with --json). Deploys and writes nothing.||||
-|prepare-merge|option|Type:Name of an item changed both in the org and in the parent branch: write the three-way merge into the local file, return the coding agent prompt, and exit. Repeatable.||||
-|pull-requests|option|Comma-separated numbers of the Pull Requests to backpromote. Asks nothing about what to deploy.||||
+|plan|boolean|Read-only: return what a backpromote would do (use with --json). Deploys, merges and writes nothing.||||
 |skip-actions|boolean|Run no deployment action.||||
 |skip-destructive|boolean|Do not delete anything from the org.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
 |target-org<br/>-o|option|undefined||||
-|to|option|PR number or commit SHA: select every Pull Request not yet backpromoted up to this one (included).||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
@@ -105,27 +79,15 @@ $ sf hardis:work:backpromote --parentbranch integration
 ```
 
 ```shell
-$ sf hardis:work:backpromote --pull-requests 478,481,487
+$ sf hardis:work:backpromote --auto --exclude-metadata "Layout:Opportunity-Sales Layout" --skip-actions
 ```
 
 ```shell
-$ sf hardis:work:backpromote --pull-requests 482 --exclude-metadata "Layout:Opportunity-Sales Layout" --skip-actions
+$ sf hardis:work:backpromote --auto --on-conflict "force-app/main/default/classes/InvoiceCalculator.cls=overwrite"
 ```
 
 ```shell
 $ sf hardis:work:backpromote --plan --json
-```
-
-```shell
-$ sf hardis:work:backpromote --plan --from abc1234 --json
-```
-
-```shell
-$ sf hardis:work:backpromote --pull-requests 482 --prepare-merge Flow:Quote_Approval --json
-```
-
-```shell
-$ sf hardis:work:backpromote --pull-requests 482 --merged-metadata Flow:Quote_Approval
 ```
 
 ```shell

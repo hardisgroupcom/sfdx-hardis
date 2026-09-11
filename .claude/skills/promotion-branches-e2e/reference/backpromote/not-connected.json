@@ -1,6 +1,0 @@
-{
-  "exitStatus": 0,
-  "status": "blocked",
-  "checks": [{ "id": "gitProvider", "ok": false, "messageContains": "git provider" }],
-  "groupCount": 0
-}
