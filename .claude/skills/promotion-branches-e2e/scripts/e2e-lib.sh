@@ -157,6 +157,28 @@ e2e_backpromote_json() {
   return $code
 }
 
+# The same --plan call with no git provider credential at all: backpromote must refuse to run
+# Usage: e2e_backpromote_nogit_json <label> [flags...]
+e2e_backpromote_nogit_json() {
+  local label="$1" code
+  shift
+  cd "$WORK" || return 1
+  env -u NODE_OPTIONS -u CI -u GITHUB_TOKEN -u CI_SFDX_HARDIS_GITHUB_TOKEN -u GITHUB_REPOSITORY \
+    -u CI_JOB_TOKEN -u CI_SFDX_HARDIS_GITLAB_TOKEN -u SYSTEM_ACCESSTOKEN -u CI_SFDX_HARDIS_AZURE_TOKEN \
+    -u AZURE_DEVOPS_EXT_PAT -u CI_SFDX_HARDIS_BITBUCKET_TOKEN -u BITBUCKET_WORKSPACE \
+    node "$DEV" hardis:work:backpromote --target-org "${DEVORG:?set DEVORG to the developer scratch org}" --json "$@" \
+    >"$LOGS/$label.json" 2>"$LOGS/$label.log"
+  code=$?
+  echo "$label exit=$code json=$LOGS/$label.json"
+  return $code
+}
+
+# Number of backpromote history comments on a Pull Request, and the org names they record
+# Usage: backpromote_comment <pr number>
+backpromote_comment() {
+  gh api "repos/$REPO/issues/$1/comments" --jq '.[] | select(.body | contains("sfdx-hardis backpromote-state")) | .body'
+}
+
 # Assert a backpromote --plan / --prepare-merge JSON document against expectations
 # Usage: backpromote_check <label> <expectations.json>
 backpromote_check() {

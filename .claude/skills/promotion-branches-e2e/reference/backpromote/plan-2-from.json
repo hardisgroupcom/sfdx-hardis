@@ -1,0 +1,15 @@
+{
+  "exitStatus": 0,
+  "status": "ready",
+  "groupCount": 3,
+  "groups": [
+    { "pullRequests": [1], "status": "done", "backpromotedToThisOrg": true },
+    { "pullRequests": [2], "status": "pending", "backpromotedToThisOrg": false, "items": ["StaticResource:E2E_S2"] },
+    { "pullRequests": [3], "status": "done", "backpromotedToThisOrg": true }
+  ],
+  "items": [{ "key": "StaticResource:E2E_S2", "orgState": "newToOrg" }],
+  "absentItems": ["StaticResource:E2E_S1", "StaticResource:E2E_S3"],
+  "actions": [
+    { "id": "e2e-post-2", "when": "post", "alreadyDone": false }
+  ]
+}

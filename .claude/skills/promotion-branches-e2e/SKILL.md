@@ -80,10 +80,13 @@ failure cannot be an artefact of the previous run's state.
 5ter. **Check the DevOps Pipeline before and after every promotion operation**
    (runbook section 4bis): `pipeline_check <label> <expectations.json>`. The job logs and the Pull
    Request comments say nothing about the view the release manager actually reads.
-5quater. **Run backpromote (Beta)** (runbook section 6bis), against a scratch org created from the Dev
-   Hub: refused orgs, the plan, Pull Requests picked one by one and the one left out offered again,
-   an item changed in the org merged through `--prepare-merge` then deployed, keep the org version,
-   declined deletions. Assert each JSON document with `backpromote_check`.
+5quater. **Run backpromote (Beta)** (runbook section 6bis), against scratch orgs created from the Dev
+   Hub: refused without a git provider connection, refused orgs, the plan, Pull Requests picked one by
+   one with the history written in their comments, the window after the last backpromoted one and
+   `--from`, an item changed in the org merged through `--prepare-merge` then deployed, keep the org
+   version, declined deletions, and a second org (a refreshed sandbox) seeing everything pending
+   again. Assert each JSON document with `backpromote_check` and each comment with
+   `backpromote_comment`.
 6. **Check the diagram rule**: `node scripts/check-diagram.cjs <owner>/<repo> integration,uat,preprod,main`
    (`check-diagram-gitlab.cjs` / `check-diagram-azure.cjs` for the other two providers).
 7. **Run the flag-off A/B regression check** (runbook section 7ter). `TOTAL DIFFERING LINES: 0`,
@@ -92,7 +95,7 @@ failure cannot be an artefact of the previous run's state.
    `.claude/skills/promotion-branches-e2e/reports/promotion-branches-e2e-report-github.md`,
    `…-gitlab.md`, `…-azure.md` and `…-bitbucket.md`. Never write them at the repository root.
    Pipeline under test, the stories, the promotions performed, a table per test group with expected
-   versus result (backpromote steps B1 to B15 included), what the run found, what it did not cover,
+   versus result (backpromote steps B0 to B16 included), what the run found, what it did not cover,
    and the suite counts. Overwrite the previous reports.
 
 ## Rules for the run

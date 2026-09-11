@@ -11,7 +11,9 @@
 //   orgType             sandbox | scratch | production
 //   checks              [{ id, ok, messageContains, detailsContain: ["file"], detailsExclude: "folder/" }]
 //   groupCount          number of groups listed
-//   groups              [{ pullRequests: [1], status, items: ["Type:Name"], deletions: [...], actionIds: [...] }]
+//   groups              [{ pullRequests: [1], status, trackable, backpromotedToThisOrg: true, backpromotedToCount: 1,
+//                          items: ["Type:Name"], deletions: [...], actionIds: [...] }]
+//   olderFromSet        true when the plan offers older Pull Requests through --from
 //   absentGroups        [[2], [1, 3]]  groups that must not be listed
 //   items               [{ key, orgState, mergeable }]
 //   absentItems         ["Type:Name"]
@@ -89,6 +91,9 @@ for (const expected of expect.checks || []) {
     found ? `ok=${found.ok} message=${found.message} details=${JSON.stringify(found.details || [])}` : 'missing',
   );
 }
+if (expect.olderFromSet !== undefined) {
+  check(`olderFrom ${expect.olderFromSet ? 'set' : 'empty'}`, !!doc.olderFrom === expect.olderFromSet, `got ${doc.olderFrom}`);
+}
 if (expect.groupCount !== undefined) {
   check(`${expect.groupCount} group(s) listed`, groups.length === expect.groupCount, `got ${groups.length}: ${groups.map((group) => group.message).join(' | ')}`);
 }
@@ -98,10 +103,15 @@ for (const expected of expect.groups || []) {
     `group #${expected.pullRequests.join(',')}${expected.status ? ` ${expected.status}` : ''}`,
     found &&
       (!expected.status || found.status === expected.status) &&
+      (expected.trackable === undefined || found.trackable === expected.trackable) &&
+      (expected.backpromotedToThisOrg === undefined || !!found.backpromotedToThisOrg === expected.backpromotedToThisOrg) &&
+      (expected.backpromotedToCount === undefined || (found.backpromotedTo || []).length === expected.backpromotedToCount) &&
       includesAll(found.items, expected.items) &&
       includesAll(found.deletions, expected.deletions) &&
       includesAll(found.actionIds, expected.actionIds),
-    found ? JSON.stringify({ status: found.status, items: found.items, deletions: found.deletions, actionIds: found.actionIds }) : 'missing',
+    found
+      ? JSON.stringify({ status: found.status, trackable: found.trackable, backpromotedToThisOrg: found.backpromotedToThisOrg, backpromotedTo: found.backpromotedTo, items: found.items, deletions: found.deletions, actionIds: found.actionIds })
+      : 'missing',
   );
 }
 for (const ids of expect.absentGroups || []) {

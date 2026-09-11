@@ -32,6 +32,7 @@ export DEV="C:/git/sfdx-hardis/bin/dev.js"
 export EXT="C:/git/vscode-sfdx-hardis"       # only for the diagram check
 export DEVHUB="$ORG"                         # Dev Hub for the backpromote scratch org (section 6bis)
 export DEVORG="promo-e2e-dev"                # alias of that scratch org
+export DEVORG2="promo-e2e-dev2"              # a second one, standing for a refreshed sandbox (B16)
 mkdir -p "$LOGS"
 ```
 
@@ -430,13 +431,19 @@ pending manual checkbox per org branch.
 ## 6bis. Backpromote (Beta)
 
 `hardis:work:backpromote` brings what was merged in `integration` into a developer's own org. It is
-tested here on the same repository, from a developer feature branch, against a **scratch org**: a
+tested here on the same repository, from a developer feature branch, against **scratch orgs**: a
 backpromote refuses production orgs and the orgs of the major branches, which is what `$ORG` is.
+
+What each org already received is **not stored locally**: every Pull Request deployed into an org
+gets a `<!-- sfdx-hardis backpromote-state -->` comment recording the Salesforce Organization Id, the
+date, the merge commit and its deployment action results. The command refuses to run without a git
+provider connection. The listing starts after the newest Pull Request already backpromoted to the
+org; `--from` lists older ones.
 
 It runs after section 4, or on its own right after sections 2 and 3 once the BUILD stream merges of
 section 4 are done (`#1`, `#2`, `#3` merged into `integration`). The expectations below name the
-groups of that short run; after a full section 4, the retrofit merge is one more `pending` group,
-the newest one, and the story numbers created below are higher.
+groups of that short run; after a full section 4, the story numbers created below are higher and the
+retrofit merge is one more group.
 
 ### Setup
 
@@ -444,7 +451,7 @@ the newest one, and the story numbers created below are higher.
 cd "$WORK"
 git fetch -q origin
 ROOT=$(git rev-list --max-parents=0 origin/integration)    # the base project commit
-BPX=".claude/skills/promotion-branches-e2e/reference/backpromote"   # expectations, from the sfdx-hardis clone
+BPX="C:/git/sfdx-hardis/.claude/skills/promotion-branches-e2e/reference/backpromote"   # expectations
 echo '{"orgName":"promo e2e dev","edition":"Developer"}' >"$LOGS/scratch-def.json"
 sf org create scratch --definition-file "$LOGS/scratch-def.json" --target-dev-hub "$DEVHUB" \
   --alias "$DEVORG" --duration-days 1 --wait 30
@@ -460,30 +467,29 @@ git checkout -q -f integration && git pull -q origin integration
 git checkout -q -b feature/E2E-401-dev
 ```
 
-Expectation files live in `reference/backpromote/`; pass them with an absolute path
-(`C:/git/sfdx-hardis/$BPX/...`) since the simulators run from `$WORK`.
-
 ### Steps
 
 Run them in this order: each one starts from the state the previous one left.
 
 | Step | Command | Expected |
 |------|---------|----------|
-| B1 Org of a major branch | add `targetUsername: <DEVUSER>` to `config/branches/.sfdx-hardis.uat.yml` without committing, `e2e_backpromote_json bp-refused-major --plan --from "$ROOT"`, then `e2e_backpromote bp-refused-major-run --agent --from "$ROOT"`, then `git checkout -- config/branches` | `backpromote_check bp-refused-major $BPX/refused-major.json`: plan `blocked`, check `targetOrg` fails naming the `uat` branch, no group listed. The run exits 1 with the same message, before listing anything |
+| B0 Not connected | `e2e_backpromote_nogit_json bp-no-git --plan --from "$ROOT"`, then the same without `--plan` | `not-connected.json`: plan `blocked` on the `gitProvider` check, inviting to connect; the run exits 1 with the same message, before listing anything |
+| B1 Org of a major branch | add `targetUsername: <DEVUSER>` to `config/branches/.sfdx-hardis.uat.yml` without committing, `e2e_backpromote_json bp-refused-major --plan --from "$ROOT"`, then `e2e_backpromote bp-refused-major-run --agent --from "$ROOT"`, then `git checkout -- config/branches` | `refused-major.json`: plan `blocked`, check `targetOrg` fails naming the `uat` branch, no group listed. The run exits 1 with the same message |
 | B2 Production org | `e2e_backpromote_json bp-refused-prod --plan --from "$ROOT" --target-org "$ORG"` | `refused-production.json`: `blocked`, `is a production org` |
-| B3 Plan | `e2e_backpromote_json bp-plan-1 --plan --from "$ROOT"` | `plan-1.json`: `ready`, org type `scratch`, groups `#1` `#2` `#3` pending with their static resource, every item `newToOrg`, the actions `e2e-pre-1` (pre), `e2e-manual-1` (post), `e2e-post-2` (post), `e2e-pre-3` (pre) |
-| B4 Pull Requests picked one by one | `e2e_backpromote bp-run-1-3 --agent --from "$ROOT" --pull-requests 1,3` | exit 0, `E2E pre-deploy of PR 1` and `of PR 3` in the log, nothing of PR 2; `E2E_S1` and `E2E_S3` in the org, `E2E_S2` not (query below); `config/user/.sfdx-hardis.*.yml` holds `backpromoteState` with `skippedCommits` = the merge of `#2` |
-| B5 A Pull Request left out is offered again | `e2e_backpromote_json bp-plan-2 --plan` (no `--from`: the saved state decides) | `plan-2.json`: `#2` listed as `skipped`, `#1` and `#3` not listed |
-| B6 The skipped one, no actions | `e2e_backpromote bp-run-2 --agent --pull-requests 2 --skip-actions` | exit 0, `Deployment actions skipped (--skip-actions)`, `E2E post-deploy of PR 2` absent, `E2E_S2` in the org, `skippedCommits` empty. A plan now answers `upToDate` |
-| B7 Unknown Pull Request | `e2e_backpromote bp-unknown --agent --pull-requests 999` | exit 1, `These Pull Requests are not waiting to be backpromoted from integration: 999` |
+| B3 Plan | `e2e_backpromote_json bp-plan-1 --plan --from "$ROOT"` | `plan-1.json`: `ready`, org type `scratch`, the five checks pass, groups `#1` `#2` `#3` pending and trackable with their static resource, every item `newToOrg`, the four actions |
+| B4 Pull Requests picked one by one | `e2e_backpromote bp-run-1-3 --agent --from "$ROOT" --pull-requests 1,3` | exit 0, `E2E pre-deploy of PR 1` and `of PR 3` in the log, nothing of PR 2; `E2E_S1` and `E2E_S3` in the org, `E2E_S2` not. `backpromote_comment 1` and `backpromote_comment 3` show a history table naming the scratch org, `backpromote_comment 2` shows nothing; the comment of #1 lists `E2E pre-deploy of PR 1` as done and `E2E manual step of PR 1` as manual. `config/user/` holds no `backpromoteState` |
+| B5 Window after the last backpromoted | `e2e_backpromote_json bp-plan-2 --plan` (no `--from`), then `e2e_backpromote_json bp-plan-2-from --plan --from "$ROOT"` | `plan-2.json`: `upToDate`, only `#3` listed as done, `olderFrom` set, `#2` not listed. `plan-2-from.json`: `#2` pending, `#1` and `#3` done in this org, only the action of #2 left |
+| B6 The one left out, no actions | `e2e_backpromote bp-run-2 --agent --from "$ROOT" --pull-requests 2 --skip-actions` | exit 0, `Deployment actions skipped (--skip-actions)`, `E2E_S2` in the org, `backpromote_comment 2` now names the org |
+| B7 Unknown Pull Request | `e2e_backpromote bp-unknown --agent --pull-requests 999` | exit 1, `These Pull Requests are not waiting to be backpromoted from integration: 999`, with the `--from` hint |
 | B8 Changed in the org and in integration | the S7 commands below, then `e2e_backpromote_json bp-plan-3 --plan` | `plan-3.json`: `ApexClass:PromoE2EAlphaTest` is `changedInOrg` and `mergeable` |
-| B9 Prepare the merge | `e2e_backpromote_json bp-prepare --pull-requests $S7 --prepare-merge ApexClass:PromoE2EAlphaTest` | `prepare.json`: one file with 1 conflict block; the class holds `<<<<<<< your org`, `\|\|\|\|\|\|\| last backpromoted` and `>>>>>>> integration`; the prompt names the file and the three sides; `nextCommand` carries `--merged-metadata ApexClass:PromoE2EAlphaTest`; `hardis-report/backpromote-merge-prompt-*.md` exists |
-| B10 Markers left | run `nextCommand` as it is, through `e2e_backpromote bp-merged-markers --agent <its flags>` | exit 1, `Solve the conflict markers left in these files before deploying them`, nothing deployed. The prompt file in `hardis-report/` does not make the tree "not clean" |
-| B11 Merge solved and deployed | solve with the node one-liner below, then `e2e_backpromote bp-merged --agent <the same flags>` | exit 0, `Commit the merged files with your User Story`, the org class body holds **both** lines (query below). `git status` shows the class modified, nothing else outside `hardis-report/`. Commit it on the developer branch, as the developer would (`git commit -qam "chore: keep the org change of PromoE2EAlphaTest"`): the next steps need a clean tree |
+| B9 Prepare the merge | `e2e_backpromote_json bp-prepare --pull-requests $S7 --prepare-merge ApexClass:PromoE2EAlphaTest` | `prepare.json`: one file with 1 conflict block; the class holds `<<<<<<< your org`, `\|\|\|\|\|\|\| last backpromoted` and `>>>>>>> integration`; `nextCommand` carries `--merged-metadata ApexClass:PromoE2EAlphaTest`; `hardis-report/backpromote-merge-prompt-*.md` exists |
+| B10 Markers left | run `nextCommand` as it is, through `e2e_backpromote bp-merged-markers --agent <its flags>` | exit 1, `Solve the conflict markers left in these files before deploying them`, nothing deployed |
+| B11 Merge solved and deployed | solve with the node one-liner below, then `e2e_backpromote bp-merged --agent <the same flags>` | exit 0, `Commit the merged files with your User Story`, the org class body holds **both** lines. `git status` shows the class modified, nothing else outside `hardis-report/`. Commit it on the developer branch (`git commit -qam "chore: keep the org change of PromoE2EAlphaTest"`) |
 | B12 Keep the org version | the S8 commands below, then `e2e_backpromote bp-keep-org --agent --pull-requests $S8 --exclude-metadata ApexClass:PromoE2EBetaTest` | exit 0, `1 item(s) left out of the deployment`, the org still has its own version of `PromoE2EBetaTest` |
 | B13 Declined deletions | the S9 commands below, `e2e_backpromote_json bp-plan-4 --plan`, then `e2e_backpromote bp-skip-destructive --agent --pull-requests $S9 --skip-destructive` | `plan-4.json` lists the deletion of `StaticResource:E2E_S1`; the run exits 0 and `E2E_S1` is **still** in the org |
 | B14 Dirty tree | `echo x >> NOTES.md`, `e2e_backpromote_json bp-dirty --plan`, then `git checkout -- NOTES.md` | `dirty.json`: `blocked`, check `gitClean` fails listing `NOTES.md` and nothing under `hardis-report/` |
-| B15 Terminal prompts | `node "$DEV" hardis:work:backpromote --target-org "$DEVORG"` by hand, answer the prompts | one multiselect of the waiting Pull Requests (newest first, the new ones preselected), then per item changed in the org: deploy / keep the org version / merge. Not scriptable: say "not covered" when skipped |
+| B15 Terminal prompts | `node "$DEV" hardis:work:backpromote --target-org "$DEVORG"` by hand, answer the prompts | one multiselect of the pending Pull Requests (newest first, preselected), then per item changed in the org: deploy / keep the org version / merge. Not scriptable: say "not covered" when skipped |
+| B16 Refreshed sandbox (new org) | create a second scratch org `$DEVORG2` from the Dev Hub with the base project, then `DEVORG="$DEVORG2" e2e_backpromote_json bp-new-org --plan --from "$ROOT"` | `new-org.json`: `#1` `#2` `#3` pending again (the history is per org id), each naming the first scratch org in `backpromotedTo`, and the actions of #1 not done. Delete `$DEVORG2` afterwards |
 
 Queries and helper commands:
 
@@ -531,18 +537,23 @@ git checkout -q feature/E2E-401-dev && git fetch -q origin && git merge -q --no-
 
 ### What the VS Code panel adds
 
-The Backpromote (Beta) panel of vscode-sfdx-hardis reads the same `--plan --json` document and runs
-the same command with flags. Its command builder is covered by the extension's unit tests; this run
-does not click the panel. Say so in the report.
+The Backpromote (Beta) panel of vscode-sfdx-hardis reads the same `--plan --json` document, passes
+the extension's git provider credentials to the CLI, and runs the same command with flags. Its
+command builder and its not-connected state are covered by the extension's tests; this run does not
+click the panel. Say so in the report.
 
 ### Traps
 
-- **`--from` on the first run.** Without a saved state and without `--from`, the window is the last
-  50 first-parent commits of `integration`, base project commit included.
+- **`--from` on the first run.** An org with nothing recorded lists the last 50 first-parent commits
+  of `origin/integration`, base project commit included (a group with no Pull Request, never
+  preselected). `--from "$ROOT"` keeps the expectations stable.
+- **The window starts after the newest Pull Request already backpromoted to the org.** A Pull
+  Request left out and older than that one is only listed again with `--from`: B5 checks both.
 - **The feature branch must contain the latest `origin/integration`.** Merge it after every story
   merged in `integration`, or every run stops on the up-to-date check.
-- **`config/user/` is ignored by the test repository**, so the backpromote state survives between
-  steps but never shows in `git status`. Read it with `cat config/user/.sfdx-hardis.*.yml`.
+- **The history is in the Pull Request comments, not in `config/user/`.** Read it with
+  `backpromote_comment <pr>`; a stale `backpromoteState` in an old user config is ignored.
+- **sfdx-git-delta runs one at a time.** Parallel runs fail on `could not lock config file .git/config`.
 
 ## 7. Traps met while writing this
 
@@ -866,4 +877,4 @@ Traps already met on Bitbucket:
 The repository is disposable. `gh repo delete "$REPO" --yes` needs the `delete_repo` scope
 (`gh auth refresh -h github.com -s delete_repo`). The static resources, labels and Apex classes
 left in the org are prefixed `PromoE2E` / `E2E_` and can be removed with a destructive changes
-deployment. Delete the backpromote scratch org with `sf org delete scratch --target-org "$DEVORG" --no-prompt`.
+deployment. Delete the backpromote scratch orgs with `sf org delete scratch --target-org "$DEVORG" --no-prompt` (and `$DEVORG2`). The backpromote history comments disappear with the repository.

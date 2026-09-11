@@ -14,7 +14,7 @@ import {
 } from './index.js';
 import { buildOrgManifest } from './deployUtils.js';
 import { analyzeDeployErrorLogs } from './deployTips.js';
-import { getConfig, getEnvVar, setConfig } from '../../config/index.js';
+import { getConfig, getEnvVar } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 // callSfdxGitDelta is used by the command file directly
 
@@ -66,14 +66,6 @@ export interface OrgConflictItem {
   diffPreview: string;
   diffMarkdown: string;
   hasOrgChanges: boolean;
-}
-
-export interface BackpromoteState {
-  lastCommit: string;
-  lastTimestamp: string;
-  parentBranch: string;
-  /** Groups older than lastCommit that a run left out on purpose: offered again by the next run */
-  skippedCommits?: string[];
 }
 
 // ---- Resolve parent branch ----
@@ -1347,7 +1339,15 @@ export async function executeBackpromoteActions(
   conn: any,
   commandThis: any,
   agentMode: boolean,
-  options: { actionIds?: string[] | null; skipActions?: boolean; nonInteractive?: boolean } = {},
+  options: {
+    actionIds?: string[] | null;
+    skipActions?: boolean;
+    nonInteractive?: boolean;
+    /** Actions that already ran successfully in the target org (from the Pull Request comments): id -> date */
+    actionsDoneInOrg?: Map<string, string>;
+    /** Receives the result of each action, to be recorded in the Pull Request comments */
+    recordActionResult?: (entry: BackpromoteActionEntry) => void;
+  } = {},
 ): Promise<void> {
   if (options.skipActions === true) {
     return;
@@ -1361,8 +1361,9 @@ export async function executeBackpromoteActions(
   const phaseLabel = phase === 'commandsPreDeploy' ? t('actionWhenPreDeploy') : t('actionWhenPostDeploy');
   uxLog('action', commandThis, c.cyan(t('backpromoteExecutingActions', { count: allActions.length })));
 
-  const manualActions: Array<{ label: string; username: string; prLabel: string }> = [];
-  const actionEntries: BackpromoteActionEntry[] = await loadBackpromoteActionsState(currentBranch);
+  const manualActions: Array<{ id: string; label: string; username: string; prLabel: string; prId: number }> = [];
+  const actionsDoneInOrg = options.actionsDoneInOrg || new Map<string, string>();
+  const recordActionResult = options.recordActionResult || (() => undefined);
 
   // Let the user select which actions to run (already-executed ones are deselected by default)
   let selectedActionIds: Set<string>;
@@ -1372,9 +1373,9 @@ export async function executeBackpromoteActions(
     selectedActionIds = new Set<string>(options.actionIds.filter((id) => availableIds.has(id)));
   } else if (!agentMode && !isCI && !options.nonInteractive) {
     const actionChoices = allActions.map((action) => {
-      const existing = actionEntries.find((e) => e.actionId === action.id && e.status === 'success');
-      const alreadyDone = !!existing;
-      const suffix = alreadyDone ? ` (${t('backpromoteActionAlreadyDone', { date: formatShortDate(existing!.date) })})` : '';
+      const doneDate = actionsDoneInOrg.get(action.id);
+      const alreadyDone = !!doneDate;
+      const suffix = alreadyDone ? ` (${t('backpromoteActionAlreadyDone', { date: formatShortDate(doneDate as string) })})` : '';
       return {
         title: `[${phaseLabel}] ${action.label} (${action.prLabel})${suffix}`,
         value: action.id,
@@ -1391,16 +1392,11 @@ export async function executeBackpromoteActions(
     selectedActionIds = new Set<string>(selectRes.value || []);
   } else {
     // Agent mode: auto-exclude already-executed actions
-    selectedActionIds = new Set<string>(
-      allActions
-        .filter((action) => !actionEntries.find((e) => e.actionId === action.id && e.status === 'success'))
-        .map((action) => action.id)
-    );
+    selectedActionIds = new Set<string>(allActions.filter((action) => !actionsDoneInOrg.has(action.id)).map((action) => action.id));
     // Log skipped actions
     for (const action of allActions) {
       if (!selectedActionIds.has(action.id)) {
-        const existing = actionEntries.find((e) => e.actionId === action.id && e.status === 'success');
-        uxLog('log', commandThis, c.grey(`[Backpromote] ${t('backpromoteSkippingActionAlreadyExecutedOn', { label: action.label, date: existing?.date || '' })}`));
+        uxLog('log', commandThis, c.grey(`[Backpromote] ${t('backpromoteSkippingActionAlreadyExecutedOn', { label: action.label, date: actionsDoneInOrg.get(action.id) || '' })}`));
       }
     }
   }
@@ -1430,7 +1426,7 @@ export async function executeBackpromoteActions(
           username: action.customUsername,
           label: action.label,
         })));
-        manualActions.push({ label: action.label, username: action.customUsername, prLabel: action.prLabel });
+        manualActions.push({ id: action.id, label: action.label, username: action.customUsername, prLabel: action.prLabel, prId: action.prId });
         actionStatus = 'manual';
       } else {
         try {
@@ -1451,12 +1447,12 @@ export async function executeBackpromoteActions(
             }
           } else {
             uxLog('warning', commandThis, c.yellow(t('backpromoteActionLoginAsFailed', { username: user.Username, label: action.label })));
-            manualActions.push({ label: action.label, username: action.customUsername, prLabel: action.prLabel });
+            manualActions.push({ id: action.id, label: action.label, username: action.customUsername, prLabel: action.prLabel, prId: action.prId });
             actionStatus = 'manual';
           }
         } catch {
           uxLog('warning', commandThis, c.yellow(t('backpromoteActionLoginAsFailed', { username: action.customUsername, label: action.label })));
-          manualActions.push({ label: action.label, username: action.customUsername, prLabel: action.prLabel });
+          manualActions.push({ id: action.id, label: action.label, username: action.customUsername, prLabel: action.prLabel, prId: action.prId });
           actionStatus = 'manual';
         }
       }
@@ -1476,21 +1472,14 @@ export async function executeBackpromoteActions(
       }
     }
 
-    // Record action state in user config
-    const entryIndex = actionEntries.findIndex((e) => e.actionId === action.id);
-    const entry: BackpromoteActionEntry = {
+    // Recorded in the Pull Request comment of the action's Pull Request, for this org
+    recordActionResult({
       actionId: action.id,
       actionLabel: action.label,
       prId: action.prId,
       status: actionStatus,
       date: new Date().toISOString(),
-    };
-    if (entryIndex >= 0) {
-      actionEntries[entryIndex] = entry;
-    } else {
-      actionEntries.push(entry);
-    }
-    await saveBackpromoteActionsState(currentBranch, actionEntries);
+    });
   }
 
   // Handle manual actions with one-by-one validation
@@ -1513,13 +1502,13 @@ export async function executeBackpromoteActions(
         uxLog('action', commandThis, c.cyan(t('backpromoteManualActionSkipped', { label: manualAction.label })));
       } else {
         uxLog('action', commandThis, c.cyan(t('backpromoteManualActionCompleted', { label: manualAction.label })));
-        // Update state to success
-        const entryIdx = actionEntries.findIndex((e) => e.actionLabel === manualAction.label && e.status === 'manual');
-        if (entryIdx >= 0) {
-          actionEntries[entryIdx].status = 'success';
-          actionEntries[entryIdx].date = new Date().toISOString();
-          await saveBackpromoteActionsState(currentBranch, actionEntries);
-        }
+        recordActionResult({
+          actionId: manualAction.id,
+          actionLabel: manualAction.label,
+          prId: manualAction.prId,
+          status: 'success',
+          date: new Date().toISOString(),
+        });
       }
     }
   } else if (manualActions.length > 0) {
@@ -1534,31 +1523,7 @@ export async function executeBackpromoteActions(
   }
 }
 
-// ---- State management ----
-
-export async function loadBackpromoteState(currentBranch: string): Promise<BackpromoteState | null> {
-  const config = await getConfig('user');
-  const states = config.backpromoteState || {};
-  const state = states[currentBranch];
-  if (state && state.lastCommit) {
-    return state as BackpromoteState;
-  }
-  return null;
-}
-
-export async function saveBackpromoteState(
-  currentBranch: string,
-  state: BackpromoteState,
-  commandThis: any,
-): Promise<void> {
-  const config = await getConfig('user');
-  const states = config.backpromoteState || {};
-  states[currentBranch] = state;
-  await setConfig('user', { backpromoteState: states });
-  uxLog('log', commandThis, c.grey(t('backpromoteStateSaved', { commit: (state.lastCommit || '').substring(0, 7) })));
-}
-
-// ---- Deployment actions state in user config ----
+// ---- Deployment action results (recorded in the Pull Request comments) ----
 
 export interface BackpromoteActionEntry {
   actionId: string;
@@ -1566,22 +1531,6 @@ export interface BackpromoteActionEntry {
   prId: number;
   status: 'success' | 'failed' | 'warning' | 'manual' | 'skipped';
   date: string;
-}
-
-export async function loadBackpromoteActionsState(currentBranch: string): Promise<BackpromoteActionEntry[]> {
-  const config = await getConfig('user');
-  const actionsState = config.backpromoteActionsState || {};
-  return actionsState[currentBranch] || [];
-}
-
-export async function saveBackpromoteActionsState(
-  currentBranch: string,
-  entries: BackpromoteActionEntry[],
-): Promise<void> {
-  const config = await getConfig('user');
-  const actionsState = config.backpromoteActionsState || {};
-  actionsState[currentBranch] = entries;
-  await setConfig('user', { backpromoteActionsState: actionsState });
 }
 
 // ---- Collect test classes from PRs ----

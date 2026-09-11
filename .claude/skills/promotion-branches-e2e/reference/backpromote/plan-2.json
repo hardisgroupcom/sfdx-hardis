@@ -1,9 +1,8 @@
 {
   "exitStatus": 0,
-  "status": "ready",
+  "status": "upToDate",
   "groupCount": 1,
-  "groups": [{ "pullRequests": [2], "status": "skipped", "items": ["StaticResource:E2E_S2"] }],
-  "absentGroups": [[1], [3]],
-  "items": [{ "key": "StaticResource:E2E_S2", "orgState": "newToOrg" }],
-  "absentItems": ["StaticResource:E2E_S1", "StaticResource:E2E_S3"]
+  "groups": [{ "pullRequests": [3], "status": "done", "backpromotedToThisOrg": true, "backpromotedToCount": 1 }],
+  "absentGroups": [[1], [2]],
+  "olderFromSet": true
 }

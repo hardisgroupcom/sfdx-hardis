@@ -1,15 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import {
+  BackpromoteGroupStatus,
   buildBackpromoteMergePrompt,
   buildBackpromoteRunCommand,
-  computeBackpromoteGroupStatuses,
-  computeNextBackpromoteState,
   countConflictMarkerBlocks,
   defaultGroupSelection,
   findBackpromoteTargetOrgRefusal,
   findItemsAlsoChangedByUnselected,
-  getBackpromoteWindowStart,
+  findNewestDoneGroupIndex,
   isSameCommit,
   metadataKeysToPackageContent,
   parseMetadataKey,
@@ -62,84 +61,48 @@ describe('backpromote keys and flags', () => {
   });
 });
 
-describe('computeBackpromoteGroupStatuses()', () => {
-  it('lists every group as pending before the first backpromote', () => {
-    expect(computeBackpromoteGroupStatuses(groups, null)).to.deep.equal(['pending', 'pending', 'pending', 'pending', 'pending']);
+describe('backpromote window and default selection', () => {
+  it('starts the window at the newest group already backpromoted to the org', () => {
+    expect(findNewestDoneGroupIndex(['done', 'pending', 'done', 'pending', 'pending'])).to.equal(2);
+    expect(findNewestDoneGroupIndex(['pending', 'pending'])).to.equal(-1);
+    expect(findNewestDoneGroupIndex([])).to.equal(-1);
   });
 
-  it('marks the groups up to the last backpromoted commit as done, and the skipped ones as skipped', () => {
-    const state = { lastCommit: G482, lastTimestamp: '2026-09-10T10:00:00Z', parentBranch: 'integration', skippedCommits: [G481] };
-    expect(computeBackpromoteGroupStatuses(groups, state)).to.deep.equal(['done', 'skipped', 'done', 'pending', 'pending']);
-  });
-
-  it('asks git ancestry when the last backpromoted commit is outside the listed window', () => {
-    const state = { lastCommit: 'f000000000', lastTimestamp: '', parentBranch: 'integration' };
-    const statuses = computeBackpromoteGroupStatuses(groups, state, (hash) => hash === G478);
-    expect(statuses).to.deep.equal(['done', 'pending', 'pending', 'pending', 'pending']);
-    expect(defaultGroupSelection(statuses)).to.deep.equal([1, 2, 3, 4]);
-  });
-
-  it('starts the window at --from, else before the oldest skipped group, else at the last backpromoted commit', () => {
-    const state = { lastCommit: G482, lastTimestamp: '', parentBranch: 'integration' };
-    expect(getBackpromoteWindowStart('abc1234', state, G478)).to.equal('abc1234');
-    expect(getBackpromoteWindowStart(null, state, G478)).to.equal(`${G478}^1`);
-    expect(getBackpromoteWindowStart(null, state, null)).to.equal(G482);
-    expect(getBackpromoteWindowStart(null, null, null)).to.be.null;
+  it('preselects the pending groups that can be remembered, never a merge without Pull Request', () => {
+    const histories = [
+      { status: 'done' as BackpromoteGroupStatus, trackable: true },
+      { status: 'pending' as BackpromoteGroupStatus, trackable: true },
+      { status: 'pending' as BackpromoteGroupStatus, trackable: false },
+      { status: 'pending' as BackpromoteGroupStatus, trackable: true },
+    ];
+    expect(defaultGroupSelection(histories)).to.deep.equal([1, 3]);
   });
 });
 
 describe('resolveExplicitGroupSelection()', () => {
-  const statuses = ['done', 'skipped', 'pending', 'pending', 'pending'] as const;
+  const statuses: BackpromoteGroupStatus[] = ['done', 'pending', 'pending', 'pending', 'pending'];
 
   it('selects the groups of the given Pull Requests and commits, in history order', () => {
-    const resolved = resolveExplicitGroupSelection(groups, [...statuses], { pullRequests: [487, 481], commits: ['c482000'], to: null });
+    const resolved = resolveExplicitGroupSelection(groups, statuses, { pullRequests: [487, 481], commits: ['c482000'], to: null });
     expect(resolved.selected).to.deep.equal([1, 2, 4]);
     expect(resolved.unknownPullRequests).to.deep.equal([]);
     expect(resolved.unknownCommits).to.deep.equal([]);
   });
 
-  it('selects every group still waiting up to --to, by Pull Request number or by SHA', () => {
-    expect(resolveExplicitGroupSelection(groups, [...statuses], { pullRequests: [], commits: [], to: '485' }).selected).to.deep.equal([1, 2, 3]);
-    expect(resolveExplicitGroupSelection(groups, [...statuses], { pullRequests: [], commits: [], to: 'd485000' }).selected).to.deep.equal([1, 2, 3]);
+  it('selects every group still pending up to --to, by Pull Request number or by SHA', () => {
+    expect(resolveExplicitGroupSelection(groups, statuses, { pullRequests: [], commits: [], to: '485' }).selected).to.deep.equal([1, 2, 3]);
+    expect(resolveExplicitGroupSelection(groups, statuses, { pullRequests: [], commits: [], to: 'd485000' }).selected).to.deep.equal([1, 2, 3]);
   });
 
   it('reports the Pull Requests and commits it cannot find instead of ignoring them', () => {
-    const resolved = resolveExplicitGroupSelection(groups, [...statuses], { pullRequests: [999], commits: ['0123456789'], to: '777' });
+    const resolved = resolveExplicitGroupSelection(groups, statuses, { pullRequests: [999], commits: ['0123456789'], to: '777' });
     expect(resolved.selected).to.deep.equal([]);
     expect(resolved.unknownPullRequests).to.deep.equal([999, 777]);
     expect(resolved.unknownCommits).to.deep.equal(['0123456789']);
   });
 
   it('lets an explicit Pull Request designate a group already done, to backpromote it again', () => {
-    expect(resolveExplicitGroupSelection(groups, [...statuses], { pullRequests: [478], commits: [], to: null }).selected).to.deep.equal([0]);
-  });
-});
-
-describe('computeNextBackpromoteState()', () => {
-  const now = new Date('2026-09-11T12:00:00Z');
-
-  it('moves lastCommit to the newest selected group and skips the waiting groups left out before it', () => {
-    const statuses = computeBackpromoteGroupStatuses(groups, null);
-    const next = computeNextBackpromoteState(groups, statuses, [0, 1, 4], null, 'integration', now);
-    expect(next.lastCommit).to.equal(G487);
-    expect(next.skippedCommits).to.deep.equal([G482, G485]);
-    expect(next.lastTimestamp).to.equal('2026-09-11T12:00:00.000Z');
-    expect(next.parentBranch).to.equal('integration');
-  });
-
-  it('removes a skipped group once a run selects it, and never moves lastCommit backwards', () => {
-    const previous = { lastCommit: G487, lastTimestamp: '', parentBranch: 'integration', skippedCommits: [G482, G485] };
-    const statuses = computeBackpromoteGroupStatuses(groups, previous);
-    expect(statuses).to.deep.equal(['done', 'done', 'skipped', 'skipped', 'done']);
-    const next = computeNextBackpromoteState(groups, statuses, [2], previous, 'integration', now);
-    expect(next.lastCommit).to.equal(G487);
-    expect(next.skippedCommits).to.deep.equal([G485]);
-  });
-
-  it('keeps the skipped groups older than the listed window', () => {
-    const previous = { lastCommit: 'f00000000', lastTimestamp: '', parentBranch: 'integration', skippedCommits: ['0ld0000000'] };
-    const next = computeNextBackpromoteState(groups, ['pending', 'pending', 'pending', 'pending', 'pending'], [4], previous, 'integration', now);
-    expect(next.skippedCommits).to.deep.equal(['0ld0000000', G478, G481, G482, G485]);
+    expect(resolveExplicitGroupSelection(groups, statuses, { pullRequests: [478], commits: [], to: null }).selected).to.deep.equal([0]);
   });
 });
 
@@ -183,7 +146,7 @@ describe('selectDeltaUnion()', () => {
     expect(selection.items.has('Flow:X')).to.be.true;
   });
 
-  it('warns about the selected items also changed by a waiting group left out', () => {
+  it('warns about the selected items also changed by a pending group left out', () => {
     const selection = selectDeltaUnion(union, [G481, G482], order);
     expect(findItemsAlsoChangedByUnselected(selection, [G481, G482], [G481, G482, G485, G487])).to.deep.equal(['Flow:Quote_Approval']);
     expect(findItemsAlsoChangedByUnselected(selection, [G481, G482], [G481, G482])).to.deep.equal([]);
@@ -245,7 +208,7 @@ describe('backpromote merge helpers', () => {
     const prompt = buildBackpromoteMergePrompt({
       parentBranch: 'integration',
       currentBranch: 'feature/CRM-1432',
-      orgLabel: 'sam@mycompany.com.dev',
+      orgLabel: 'mycompany--dev-sam',
       files: [{ key: 'Flow:Quote_Approval', localPath: 'force-app/main/default/flows/Quote_Approval.flow-meta.xml', conflictBlocks: 2 }],
       pullRequests: [{ id: 482, title: 'Quote approval process', webUrl: 'https://github.com/acme/crm/pull/482' }],
       nextCommand: 'sf hardis:work:backpromote --parentbranch integration --pull-requests 482 --merged-metadata Flow:Quote_Approval',

@@ -1,19 +1,12 @@
 /*
- * Pure helpers of hardis:work:backpromote: which Pull Request groups are waiting, which ones the
- * user selected, what the selection deploys, where the state goes after a run, whether the target
- * org may receive a backpromote, and the coding agent prompt of a merge. No I/O here, so that the
- * terminal, the agent mode and the VS Code panel (--plan) share the exact same rules.
+ * Pure helpers of hardis:work:backpromote: which Pull Request groups the user selected, what the
+ * selection deploys, whether the target org may receive a backpromote, and the coding agent prompt of
+ * a merge. No I/O here, so that the terminal, the agent mode and the VS Code panel (--plan) share the
+ * exact same rules. What each org already received comes from Pull Request comments
+ * (backpromoteStateUtils).
  */
 
-export type BackpromoteGroupStatus = 'pending' | 'skipped' | 'done';
-
-export interface BackpromoteSavedState {
-  lastCommit: string;
-  lastTimestamp: string;
-  parentBranch: string;
-  /** Groups older than lastCommit that a run left out on purpose: offered again next time */
-  skippedCommits?: string[];
-}
+export type BackpromoteGroupStatus = 'pending' | 'done';
 
 /** The part of a BackpromotePrGroup these helpers need */
 export interface BackpromoteGroupLike {
@@ -91,48 +84,16 @@ export function splitMetadataKeysFlag(value: string | string[] | undefined | nul
 }
 
 /**
- * Status of each listed group, oldest first. A group left out by a previous run stays "skipped"
- * until a run selects it. Everything at or before the last backpromoted commit is "done".
- * When the last backpromoted commit is outside the listed window, isOlderThanLastCommit answers
- * for each group (git ancestry).
+ * Index (oldest first) of the newest group already backpromoted to the org: the listing starts after
+ * it, so a project with a long history does not recompute every old merge at each run.
  */
-export function computeBackpromoteGroupStatuses(
-  groupsOldestFirst: BackpromoteGroupLike[],
-  state: BackpromoteSavedState | null,
-  isOlderThanLastCommit?: (hash: string) => boolean,
-): BackpromoteGroupStatus[] {
-  if (!state?.lastCommit) {
-    return groupsOldestFirst.map(() => 'pending');
-  }
-  const skipped = state.skippedCommits || [];
-  const lastIndex = groupsOldestFirst.findIndex((group) => isSameCommit(group.commit.hash, state.lastCommit));
-  return groupsOldestFirst.map((group, index) => {
-    if (skipped.some((hash) => isSameCommit(hash, group.commit.hash))) {
-      return 'skipped';
+export function findNewestDoneGroupIndex(statuses: BackpromoteGroupStatus[]): number {
+  for (let index = statuses.length - 1; index >= 0; index--) {
+    if (statuses[index] === 'done') {
+      return index;
     }
-    if (lastIndex >= 0) {
-      return index <= lastIndex ? 'done' : 'pending';
-    }
-    return isOlderThanLastCommit && isOlderThanLastCommit(group.commit.hash) ? 'done' : 'pending';
-  });
-}
-
-/**
- * First commit of the window to list (excluded, as in `from..parentBranch`): the --from flag, else
- * just before the oldest skipped group so it is listed again, else the last backpromoted commit.
- */
-export function getBackpromoteWindowStart(
-  fromFlag: string | null,
-  state: BackpromoteSavedState | null,
-  oldestSkippedCommit: string | null,
-): string | null {
-  if (fromFlag) {
-    return fromFlag;
   }
-  if (oldestSkippedCommit) {
-    return `${oldestSkippedCommit}^1`;
-  }
-  return state?.lastCommit || null;
+  return -1;
 }
 
 /** A --to or --from value made of digits only and short enough is a Pull Request number, not a SHA */
@@ -142,8 +103,8 @@ export function isPullRequestReference(value: string): boolean {
 
 /**
  * Indexes (oldest first) of the groups selected by --pull-requests, --commits and --to. --to selects
- * every group still waiting (pending or skipped) up to that one. An explicit Pull Request or commit
- * can also designate a group already done, to backpromote it again.
+ * every group still pending up to that one. An explicit Pull Request or commit can also designate a
+ * group already done, to backpromote it again.
  */
 export function resolveExplicitGroupSelection(
   groupsOldestFirst: BackpromoteGroupLike[],
@@ -192,50 +153,9 @@ export function resolveExplicitGroupSelection(
   return { selected: [...selected].sort((a, b) => a - b), unknownPullRequests, unknownCommits };
 }
 
-/** The groups a run preselects: every group waiting for the first time */
-export function defaultGroupSelection(statuses: BackpromoteGroupStatus[]): number[] {
-  return statuses.map((status, index) => (status === 'pending' ? index : -1)).filter((index) => index >= 0);
-}
-
-/**
- * State to save after a successful run. lastCommit only moves forward. A group waiting for the first
- * time, older than the new lastCommit and not selected, becomes skipped; a skipped group selected now
- * is no longer skipped.
- */
-export function computeNextBackpromoteState(
-  groupsOldestFirst: BackpromoteGroupLike[],
-  statuses: BackpromoteGroupStatus[],
-  selectedIndexes: number[],
-  previous: BackpromoteSavedState | null,
-  parentBranch: string,
-  now: Date = new Date(),
-): BackpromoteSavedState {
-  const selected = new Set(selectedIndexes);
-  const newestSelected = selectedIndexes.length > 0 ? Math.max(...selectedIndexes) : -1;
-  const previousLastIndex = previous?.lastCommit
-    ? groupsOldestFirst.findIndex((group) => isSameCommit(group.commit.hash, previous.lastCommit))
-    : -1;
-  const lastIndex = Math.max(newestSelected, previousLastIndex);
-  const lastCommit = lastIndex >= 0 ? groupsOldestFirst[lastIndex].commit.hash : previous?.lastCommit || '';
-  const selectedHashes = selectedIndexes.map((index) => groupsOldestFirst[index].commit.hash);
-  const skipped: string[] = [];
-  for (const hash of previous?.skippedCommits || []) {
-    if (!selectedHashes.some((selectedHash) => isSameCommit(selectedHash, hash))) {
-      skipped.push(hash);
-    }
-  }
-  for (let index = 0; index < lastIndex; index++) {
-    const hash = groupsOldestFirst[index].commit.hash;
-    if (statuses[index] === 'pending' && !selected.has(index) && !skipped.some((skippedHash) => isSameCommit(skippedHash, hash))) {
-      skipped.push(hash);
-    }
-  }
-  return {
-    lastCommit,
-    lastTimestamp: now.toISOString(),
-    parentBranch,
-    skippedCommits: skipped,
-  };
+/** The groups a run preselects: pending ones that can be remembered once deployed */
+export function defaultGroupSelection(groups: Array<{ status: BackpromoteGroupStatus; trackable: boolean }>): number[] {
+  return groups.map((group, index) => (group.status === 'pending' && group.trackable ? index : -1)).filter((index) => index >= 0);
 }
 
 /** Union of the deltas of several groups, remembering which groups deploy or delete each item */
@@ -292,7 +212,7 @@ export function selectDeltaUnion(
 }
 
 /**
- * Items of the selection also changed by a waiting group the user did not select: the deployment
+ * Items of the selection also changed by a pending group the user did not select: the deployment
  * reads the working tree, so they go to the org with that other change too.
  */
 export function findItemsAlsoChangedByUnselected(
