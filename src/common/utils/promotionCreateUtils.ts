@@ -18,6 +18,7 @@ import {
   allowedPromotionSourceBranches,
   allowedPromotionTargetBranches,
   buildPromotionBranchName,
+  extractPromotionBranchNames,
   formatPromotionSteps,
   getPromotionBranchConfig,
   isPromotionStepAllowed,
@@ -905,7 +906,39 @@ export async function listExistingPromotionBranchNames(sourceBranch: string, tar
   }
   const local = await git().branchLocal();
   names.push(...local.all);
+  // A branch deleted on the remote leaves its remote-tracking ref behind until someone prunes it:
+  // git ls-remote does not see it any more, and a branch created with that name again would be
+  // checked out from the stale ref, carrying the commits of the promotion already merged.
+  const remoteTracking = await git().branch(['-r']);
+  names.push(...remoteTracking.all);
+  names.push(...(await promotionBranchNamesInTargetHistory(targetBranch, commandThis)));
   return names;
+}
+
+/**
+ * Promotion branch names still named in the recent history of the target branch.
+ *
+ * A merged promotion branch can be deleted right away, by hand or by a repository that deletes the
+ * head branch of every merged Pull Request. Once it is deleted on the remote and pruned locally,
+ * no ref holds its name any more: the next promotion of the same day would take the name back,
+ * and the Pull Request opened from it would sit next to a merged one carrying the same name. The
+ * merge commit of the target branch names the branch it merged, whatever the git provider, so the
+ * history answers the question without a provider call.
+ *
+ * First-parent commits only, and the last 500 of them: a promotion assembled today can only have
+ * been merged in the meantime, so it is at the tip of the branch.
+ */
+async function promotionBranchNamesInTargetHistory(targetBranch: string, commandThis: any): Promise<string[]> {
+  for (const ref of [`origin/${targetBranch}`, targetBranch]) {
+    const res = await runCommandSafe(`git log ${ref} --first-parent -n 500 --format=%B`, commandThis, { output: false });
+    if (res.status === 0) {
+      return extractPromotionBranchNames(res.stdout || '');
+    }
+  }
+  // Not a reason to stop: the branch is created from the target branch right after, and that step
+  // says what is wrong with it much better than a counter could
+  uxLog('warning', commandThis, c.yellow(t('promotionCreateTargetHistoryUnavailable', { branch: targetBranch })));
+  return [];
 }
 
 export async function nextPromotionBranchName(sourceBranch: string, targetBranch: string, commandThis: any, now: Date = new Date()): Promise<string> {
@@ -920,9 +953,11 @@ export async function nextPromotionBranchName(sourceBranch: string, targetBranch
 export async function createPromotionBranch(branchName: string, targetBranch: string, commandThis: any): Promise<void> {
   uxLog('action', commandThis, c.cyan(t('promotionCreateCreatingBranch', { branch: c.green(branchName), target: c.green(targetBranch) })));
   // The shared helper of hardis:work:new: it refuses a branch already checked out in another
-  // worktree, resumes an existing local or remote branch, and falls back to a local ref when the
-  // remote-tracking one is missing. Re-implementing the checkout lost all three.
-  await createWorkBranchFromTarget(branchName, targetBranch);
+  // worktree and falls back to a local ref when the remote-tracking one is missing.
+  // Re-implementing the checkout lost both. refuseExisting: unlike a User Story branch, a
+  // promotion is never resumed, so a name the counter thought was free and is not stops the
+  // command instead of assembling on top of a branch already merged.
+  await createWorkBranchFromTarget(branchName, targetBranch, { refuseExisting: true });
 }
 
 async function isMergeCommit(hash: string): Promise<boolean> {

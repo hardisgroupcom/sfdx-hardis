@@ -26,6 +26,7 @@ import {
   isPromotionPullRequest,
   isPromotionPullRequestForItsTarget,
   mergeInheritedCustomBehaviors,
+  extractPromotionBranchNames,
   parsePromotionBranchName,
   parsePromotionPullRequestIds,
 } from '../../../src/common/utils/promotionBranchUtils.js';
@@ -163,6 +164,37 @@ describe('promotion branch naming', () => {
     expect(buildPromotionBranchName('uat', 'preprod', 1, new Date('2026-09-06T10:00:00Z'))).to.equal(PROMOTION_BRANCH);
     expect(buildPromotionBranchName('uat', 'preprod', 0, new Date('2026-09-06T10:00:00Z'))).to.equal(PROMOTION_BRANCH);
     expect(buildPromotionBranchName('integration', 'uat', 3, new Date('2026-01-02T23:59:00Z'))).to.equal('promotion/integration/uat/2026-01-02-3');
+  });
+
+  // A merged promotion branch deleted from the remote is not a ref any more: the merge sentence of
+  // the target branch is the only thing left saying its name was already used today
+  it('reads the promotion branch names out of the merge sentences of every provider', () => {
+    const log = [
+      "Merge pull request #12 from hardisgroupcom/promotion/uat/preprod/2026-09-06-1", // GitHub
+      "Merge branch 'promotion/uat/preprod/2026-09-06-2' into 'preprod'", // GitLab
+      'See merge request hardisgroupcom/project!34',
+      'Merge pull request 42 from promotion/uat/preprod/2026-09-06-3 into preprod', // Azure DevOps
+      'Merged in promotion/uat/preprod/2026-09-06-4 (pull request #5)', // Bitbucket
+      'Merge pull request #13 from hardisgroupcom/feature/PROJ-1',
+    ].join('\n\n');
+    expect(extractPromotionBranchNames(log)).to.deep.equal([
+      'promotion/uat/preprod/2026-09-06-1',
+      'promotion/uat/preprod/2026-09-06-2',
+      'promotion/uat/preprod/2026-09-06-3',
+      'promotion/uat/preprod/2026-09-06-4',
+    ]);
+  });
+
+  it('names each promotion branch once and never returns something the convention rejects', () => {
+    expect(extractPromotionBranchNames('promotion/uat/preprod/2026-09-06-1 and promotion/uat/preprod/2026-09-06-1')).to.deep.equal([
+      PROMOTION_BRANCH,
+    ]);
+    // A five-segment name (a major branch holding a "/") is not a promotion branch, and neither is
+    // a prefix without a counter
+    expect(extractPromotionBranchNames('promotion/release/uat/preprod/2026-09-06-1')).to.deep.equal([]);
+    expect(extractPromotionBranchNames('promotion/uat/preprod/2026-09-06')).to.deep.equal([]);
+    expect(extractPromotionBranchNames('')).to.deep.equal([]);
+    expect(extractPromotionBranchNames(null as any)).to.deep.equal([]);
   });
 });
 

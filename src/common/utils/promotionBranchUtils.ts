@@ -211,6 +211,26 @@ export function buildPromotionBranchName(sourceBranch: string, targetBranch: str
 }
 
 /**
+ * Every promotion branch name of a step named in a text: a git log, a merge commit message, a
+ * Pull Request description.
+ *
+ * A promotion branch merged and then deleted (a repository can be set up to delete the head
+ * branch of a merged Pull Request) is not a ref any more, on the remote or locally, so nothing
+ * would stop the next promotion of the same day from taking its name back. The merge commit of
+ * the target branch still names it, whatever the git provider, and that name must not be handed
+ * out twice.
+ */
+export function extractPromotionBranchNames(text: string): string[] {
+  // The convention has exactly four segments and the source and target branch names may not hold
+  // a "/", so the name stops at the counter: "into 'preprod'" after it is not part of it.
+  const segment = String.raw`[^\s/'"\\]+`;
+  const suffix = String.raw`\d{4}-\d{2}-\d{2}-\d+`;
+  const nameRegex = new RegExp(`${PROMOTION_BRANCH_PREFIX}/${segment}/${segment}/${suffix}`, 'gi');
+  const matches = (text || '').match(nameRegex) || [];
+  return [...new Set(matches.filter((name) => isPromotionBranchName(name)))];
+}
+
+/**
  * Pull Request numbers declared in the YAML block of a Pull Request description.
  * Accepts numbers and strings ("482", "#482", "!482", "PR 482"), ignores anything else, and
  * returns null when the key is absent, so the caller can tell "not declared" from "declared empty".

@@ -161,7 +161,8 @@ Promotion branches are **always created with the command** [`sf hardis:project:p
     Only the Pull Requests that carry their own change are listed. A merge between two major branches, and a promotion Pull Request, move other work: they are never offered as candidates, never declared and never have their deployment actions run, even when they appear in the history of a selected commit (a sync of `integration` into a feature branch, for instance).
 
     Promotion branch names have exactly four segments, so the source and target branch names must not contain a `/`. The command stops before touching git if one of them does.
-5. Review the Pull Request like any other, and do **not** squash it when merging: the `-x` trailers of the cherry-picks must survive in `preprod`.
+
+5. Review the Pull Request like any other, and do **not** squash it when merging: the `-x` trailers of the cherry-picks must survive in `preprod`. The branch itself can be deleted right after the merge, by hand or by a repository that deletes the head branch of every merged Pull Request: the next promotion of the same day gets the next counter, because the merge commit of the target branch still names the branch that was deleted.
 
 !!! warning "A promotion branch must only be validated, never deployed"
     A promotion branch is the source branch of a Pull Request, like a feature branch. Your CI must run its **validation** job, never a deployment job: deploying from the promotion branch would send the promotion to the target org before it is reviewed and merged. `hardis:project:deploy:smart` stops with an error when it happens, naming the setting to fix.
