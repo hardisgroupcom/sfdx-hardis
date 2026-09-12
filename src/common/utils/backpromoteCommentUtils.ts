@@ -247,6 +247,13 @@ export class BackpromoteCommentStore {
     const current = await this.read(prNumber, { fresh: true });
     const next = change(current);
     await gitProvider.upsertPullRequestCommentByMarker(BACKPROMOTES_MARKER, renderBackpromotesComment(next), prNumber);
+    // Some providers return without writing when their repository context is missing: the comment
+    // is read back, and the run only trusts (and caches) what the provider really holds
+    const written = parseBackpromotesComment(await gitProvider.getPullRequestCommentByMarker(BACKPROMOTES_MARKER, prNumber));
+    if (JSON.stringify(written) !== JSON.stringify(next)) {
+      this.memory.delete(prNumber);
+      throw new Error(t('backpromoteCommentNotWritten', { pr: prNumber }));
+    }
     this.memory.set(prNumber, next);
     await this.writeCacheFile(prNumber, next);
     uxLog('log', this.commandThis, c.grey(t('backpromoteCommentUpdated', { pr: prNumber })));

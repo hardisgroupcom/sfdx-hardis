@@ -225,7 +225,7 @@ Returned by `--plan --json` and consumed by the panel. One object:
 
 - `version: 3`, `runId`, `status` (R54)
 - `targetOrg`: alias, instance URL, org id, sandbox name, tracks sources, refusal (if any)
-- `parentBranch`, `allowedParentBranches` (R5b), `backpromoteBranch` (exists on origin, head, pending manual merges), `checkout` (original branch, clean or not, stash made or not)
+- `parentBranch`, `allowedParentBranches` (R5b), `gitRoot` (absolute path every repository path of the plan is relative to), `backpromoteBranch` (exists on origin, head, pending manual merges), `checkout` (original branch, clean or not, stash made or not)
 - `pullRequests[]`: number, title, author, merge date, source branch, commit, item count, action count, `backpromote` (the comment row for this sandbox: date, user, status, left-out items, or null), `beforeRefresh`, `beforeLastBackpromote` (older than the newest backpromoted one: counted as backpromoted, comment not read), `selected`, `inWindow`, `scanned`
 - `scan`: Pull Requests read, scan limit, whether the walk found a row (R14), cursor for "Show earlier"
 - `window`: from commit, to commit, start Pull Request

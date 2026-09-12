@@ -748,7 +748,11 @@ ${getBannerMarkdownAndLink()}
   public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
     const issueNumber = prNumber || this.prNumber;
     if (!issueNumber) return null;
-    const comments = await this.listIssueComments(issueNumber, this.repoOwner || '', this.repoName || '');
+    // Paginated like the upsert: a marker comment sitting past the first page must be found, or the
+    // upsert rewrites it from an empty state
+    const comments = await this.api.paginate<any>(`${this.repoPath(this.repoOwner || '', this.repoName || '')}/issues/${issueNumber}/comments`, {
+      params: { per_page: 100 },
+    });
     for (const comment of comments) {
       if (comment?.body?.includes(marker)) {
         return comment.body;

@@ -132,6 +132,8 @@ export interface BackpromotePlan {
   };
   parentBranch: string;
   allowedParentBranches: string[];
+  /** Absolute path of the git repository root: every repository path of the plan is relative to it */
+  gitRoot: string;
   backpromoteBranch: { name: string; existsOnOrigin: boolean; head: string | null; pendingMerges: string[] };
   checkout: { originalBranch: string; currentBranch: string; clean: boolean; dirtyFiles: string[]; stashed: boolean; stashMessage: string | null; onBackpromoteBranch: boolean };
   pullRequests: BackpromotePlanPullRequest[];
@@ -238,17 +240,24 @@ export async function promptParentBranch(allowedBranches: string[]): Promise<str
   return res.value || allowedBranches[0];
 }
 
-/** The start Pull Request: newest first, the ones already backpromoted greyed with their date */
-export async function promptStartPullRequest(pullRequests: BackpromotePlanPullRequest[], sandboxName: string): Promise<number | null> {
-  const candidates = pullRequests.filter((pr) => pr.number > 0);
+/**
+ * The start: newest first, the ones already backpromoted greyed with their date. A direct commit on
+ * the parent branch (no Pull Request) is listed under its subject, so that it can be the start too.
+ * Returns the commit of the chosen entry.
+ */
+export async function promptStartPullRequest(pullRequests: BackpromotePlanPullRequest[], sandboxName: string): Promise<string | null> {
+  const candidates = pullRequests.filter((pr, index, all) => all.findIndex((other) => other.commit === pr.commit) === index);
   if (candidates.length === 0) {
     return null;
   }
   const choices = candidates.map((pr) => {
-    const done = pr.backpromote ? ` [${t('backpromoteAlreadyBackpromotedOn', { date: pr.backpromote.date.substring(0, 10), user: pr.backpromote.user })}]` : pr.beforeRefresh ? ` [${t('backpromoteBeforeRefresh')}]` : '';
+    const done = pr.backpromote || pr.beforeLastBackpromote
+      ? ` [${pr.backpromote ? t('backpromoteAlreadyBackpromotedOn', { date: pr.backpromote.date.substring(0, 10), user: pr.backpromote.user }) : t('backpromoteBeforeLastBackpromoteLabel')}]`
+      : pr.beforeRefresh ? ` [${t('backpromoteBeforeRefresh')}]` : '';
+    const label = pr.number > 0 ? `#${pr.number} ${pr.title}` : `${pr.commit.substring(0, 7)} ${pr.title}`;
     return {
-      title: `#${pr.number} ${pr.title} (${pr.author}, ${pr.mergeDate.substring(0, 10)}, ${pr.itemCount} items, ${pr.actionCount} actions)${done}`,
-      value: pr.number,
+      title: `${label} (${pr.author}, ${pr.mergeDate.substring(0, 10)}, ${pr.itemCount} files, ${pr.actionCount} actions)${done}`,
+      value: pr.commit,
     };
   });
   const preselected = candidates.findIndex((pr) => pr.selected);
@@ -260,7 +269,7 @@ export async function promptStartPullRequest(pullRequests: BackpromotePlanPullRe
     choices,
     initial: preselected >= 0 ? preselected : 0,
   });
-  return typeof res.value === 'number' ? res.value : null;
+  return typeof res.value === 'string' && res.value ? res.value : null;
 }
 
 /** One multiselect of the items to deploy, all ticked; deletions in the same list, ticked too */

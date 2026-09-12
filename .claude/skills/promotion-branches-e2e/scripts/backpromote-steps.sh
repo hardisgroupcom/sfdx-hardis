@@ -62,12 +62,32 @@ static_resources() {
   env -u NODE_OPTIONS sf data query --target-org "${1:-$DEVORG}" --query "SELECT Name FROM StaticResource WHERE Name LIKE 'E2E_S%' ORDER BY Name" --json |
     node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).result.records.map(r=>r.Name).join(',')))"
 }
+# The body of a static resource of the org, newlines replaced by "|". A SOQL query on a blob field
+# gives back the REST path of the blob, never its content, so the blob has to be fetched.
 resource_body() {
-  env -u NODE_OPTIONS sf data query --target-org "${2:-$DEVORG}" --query "SELECT Body FROM StaticResource WHERE Name = '$1'" --json |
-    node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const r=JSON.parse(s).result.records[0];console.log(r?Buffer.from(r.Body||'','base64').toString().trim().replace(/\r?\n/g,'|'):'')})"
+  local org="${2:-$DEVORG}" path token instance
+  path=$(env -u NODE_OPTIONS sf data query --target-org "$org" --query "SELECT Body FROM StaticResource WHERE Name = '$1'" --json |
+    node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const r=JSON.parse(s).result.records[0];console.log(r?r.Body:'')})")
+  [ -z "$path" ] && return 0
+  token=$(env -u NODE_OPTIONS sf org auth show-access-token --target-org "$org" --json |
+    node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const r=JSON.parse(s).result;console.log(typeof r==='string'?r:(r.accessToken||''))})")
+  instance=$(env -u NODE_OPTIONS sf org display --target-org "$org" --json |
+    node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).result.instanceUrl))")
+  curl -s -H "Authorization: Bearer $token" "$instance$path" |
+    node -e "const b=[];process.stdin.on('data',c=>b.push(c)).on('end',()=>console.log(Buffer.concat(b).toString().trim().replace(/\r?\n/g,'|')))"
 }
-# The source file of a story static resource
-resource_file() { git ls-files "force-app/**/staticresources/$1.resource" "force-app/**/staticresources/$1.resource-*" | grep -v "meta.xml" | head -1; }
+# The source file of a story static resource. The developer branch was cut before the stories were
+# merged, so the working tree does not always hold them: fall back to the parent branch of origin,
+# which always does. Returning an empty path silently turns `--on-diff "$FILE=git"` into `=git`,
+# which the command refuses, and every later step then fails for the wrong reason.
+resource_file() {
+  local found
+  found=$(git ls-files "force-app/**/staticresources/$1.resource" "force-app/**/staticresources/$1.resource-*" | grep -v "meta.xml" | head -1)
+  if [ -z "$found" ]; then
+    found=$(git ls-tree -r --name-only origin/integration | grep -E "staticresources/$1\.resource$" | head -1)
+  fi
+  echo "$found"
+}
 # Change a story resource directly in the developer org (the org version differs from git)
 change_in_org() {
   local resource="$1" content="$2" org="${3:-$DEVORG}" file

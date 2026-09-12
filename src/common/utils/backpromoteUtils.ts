@@ -295,7 +295,9 @@ export async function listMergedPrsWithCommits(
         .map((commit) => new Date(commit.date))
         .filter((date) => !isNaN(date.getTime()))
         .sort((a, b) => a.getTime() - b.getTime())[0];
-      const minDate = oldestCommitDate ? new Date(oldestCommitDate.getTime() - 7 * 24 * 60 * 60 * 1000) : undefined;
+      // GitHub, Bitbucket and Azure DevOps filter on the creation date: a long-lived Pull Request is
+      // created long before the merge that puts it in the window
+      const minDate = oldestCommitDate ? new Date(oldestCommitDate.getTime() - 180 * 24 * 60 * 60 * 1000) : undefined;
       const allMergedPrs = (await gitProvider.listPullRequests({ status: 'merged', ...(minDate ? { minDate } : {}) })) || [];
       for (const pr of allMergedPrs) {
         const prNum = pr.idNumber;
@@ -531,7 +533,10 @@ export function collectBackpromoteActions(
 ): BackpromoteActionCandidate[] {
   const allActions: BackpromoteActionCandidate[] = [];
   const targetBranchCandidates = [DEV_SANDBOXES_BRANCH_NAME, parentBranch];
-  for (const prGroup of selectedPrs) {
+  // Newest first: when two Pull Requests declare the same action id, the newest one owns it (and
+  // its comment gets the row); the result goes back to the chronological order of the groups
+  const groupIndex = new Map(selectedPrs.map((group, index) => [group.commit.hash, index]));
+  for (const prGroup of [...selectedPrs].reverse()) {
     for (const { config: prConfig, prId, prTitle } of prGroup.prConfigs) {
       const commands = prConfig[phase];
       if (!Array.isArray(commands)) continue;
@@ -555,7 +560,7 @@ export function collectBackpromoteActions(
       }
     }
   }
-  return allActions;
+  return allActions.sort((a, b) => (groupIndex.get(a.commitHash) ?? 0) - (groupIndex.get(b.commitHash) ?? 0));
 }
 
 export interface BackpromoteActionsOutcome {

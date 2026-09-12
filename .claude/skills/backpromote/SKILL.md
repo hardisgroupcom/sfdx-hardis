@@ -43,8 +43,8 @@ Everything runs with `--json`; every decision is a flag; nothing is asked in `--
    when it holds merges. Exit code 0 with `status` `ok`, `nothingToDo` or `waitingForMerges`; exit
    code 1 with the plan in `data` for `refused`, `conflictsRemaining`, `deployFailed`, `pushRejected`.
 4. **Merge when asked.** `status: waitingForMerges` means the files marked `merge` were written with
-   conflict markers in the checkout (absolute paths in `comparison[].file` under the git root, the
-   prompt in `promptFile`, the exact command in `runCommand`). Edit each file, leave no
+   conflict markers in the checkout (`comparison[].file` is relative to `gitRoot`, the prompt is in
+   `promptFile`, the exact command in `runCommand`). Edit each file, leave no
    `<<<<<<<`, `|||||||`, `=======`, `>>>>>>>` line, do not commit, then run `runCommand`. It commits
    the merged files in the backpromote branch, checks them and deploys. A file left with markers is
    not deployed and is listed as "conflict pending": the next plan offers it first.

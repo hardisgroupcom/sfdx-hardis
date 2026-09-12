@@ -981,12 +981,18 @@ ${getBannerMarkdownAndLink()}
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const pullRequestId = prNumber || Number(process.env.BITBUCKET_PR_ID || '');
     if (!pullRequestId || !repoSlug || !workspace) return null;
-    const comments = await this.bitbucket.repositories.listPullRequestComments({
-      pull_request_id: pullRequestId,
-      repo_slug: repoSlug,
-      workspace,
-    });
-    for (const comment of comments?.data?.values || []) {
+    // Paginated like the upsert: a marker comment past the first page must be found, or the upsert
+    // rewrites it from an empty state
+    const comments = await this.fetchAllPages(
+      (params) => this.bitbucket.repositories.listPullRequestComments(params),
+      {
+        pull_request_id: pullRequestId,
+        repo_slug: repoSlug,
+        workspace,
+        pagelen: 50,
+      },
+    );
+    for (const comment of comments) {
       if ((comment?.content?.raw || '').includes(marker)) {
         return comment.content?.raw || null;
       }

@@ -447,7 +447,7 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
   // Nobody can answer a prompt in a CI job, and neither can they in a background --json run a VS
   // Code panel started: no WebSocket to show the question in VS Code, and no terminal to type in.
   // Asking there waits forever, with the panel spinning on a command that never answers.
-  if (isCI || (!globalThis.webSocketClient && !process.stdin.isTTY)) {
+  if (isCI || (!globalThis.webSocketClient && process.argv.includes('--json'))) {
     uxLog("error", this, c.red(t('gitFailedDueToAuthenticationErrorIn', { operation })));
     return false;
   }

@@ -17,9 +17,24 @@ import { userChangesOutsideReports } from './promotionCreateUtils.js';
 import { backpromoteCacheRoot } from './backpromotePlanUtils.js';
 import { buildTwoWayMergeWithMarkers, countConflictMarkerBlocks, normalizeRepoPath, toMetadataKey } from './backpromoteRules.js';
 
+const gitRootByCwd = new Map<string, string>();
+
+/** The repository root of the working directory, resolved once per directory: every path the command handles is relative to it */
+function gitRoot(): string {
+  const cwd = process.cwd();
+  let root = gitRootByCwd.get(cwd);
+  if (!root) {
+    const result = spawnSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', windowsHide: true, cwd });
+    root = result.status === 0 && (result.stdout || '').trim() ? path.resolve((result.stdout || '').trim()) : cwd;
+    gitRootByCwd.set(cwd, root);
+  }
+  return root;
+}
+
 function runGit(args: string[], options: { cwd?: string; input?: string } = {}) {
-  // quotepath off: a non-ASCII file name is printed as it is, not as octal escapes
-  return spawnSync('git', ['-c', 'core.quotepath=off', ...args], { encoding: 'utf8', windowsHide: true, maxBuffer: 256 * 1024 * 1024, ...options });
+  // Run from the repository root (the command may be started from a sub-folder, and every path it
+  // handles is root-relative); quotepath off: a non-ASCII file name is printed as it is
+  return spawnSync('git', ['-c', 'core.quotepath=off', ...args], { encoding: 'utf8', windowsHide: true, maxBuffer: 256 * 1024 * 1024, cwd: gitRoot(), ...options });
 }
 
 function runGitOrFail(args: string[]): string {
@@ -184,8 +199,23 @@ export function checkoutBackpromoteBranch(branch: string, parentRef: string): { 
   if (!parentHead) {
     throw new SfError(`[Backpromote] Unknown parent ref ${parentRef}`);
   }
-  const startPoint = remoteBranchExists(branch) ? `origin/${branch}` : parentHead;
-  runGitOrFail(['checkout', '-q', '-B', branch, startPoint]);
+  // A local copy of the branch may hold merge commits that never reached origin (a run whose push
+  // was rejected, a branch checked out then left): they are kept, and the commits origin holds
+  // beyond them are picked on top, so that nothing committed on either side is lost
+  if (localBranchExists(branch)) {
+    runGitOrFail(['checkout', '-q', '-f', branch]);
+    if (remoteBranchExists(branch)) {
+      for (const commit of gitLines(['rev-list', '--reverse', `HEAD..origin/${branch}`])) {
+        if (runGit(['cherry-pick', '--allow-empty', '--keep-redundant-commits', commit]).status !== 0) {
+          runGit(['cherry-pick', '--abort']);
+          runGit(['reset', '-q', '--hard', 'HEAD']);
+        }
+      }
+    }
+  } else {
+    const startPoint = remoteBranchExists(branch) ? `origin/${branch}` : parentHead;
+    runGitOrFail(['checkout', '-q', '-B', branch, startPoint]);
+  }
   return rebuildBackpromoteBranchOnParent(parentRef);
 }
 
@@ -281,8 +311,11 @@ export async function writeMergedFile(options: {
   await fs.writeFile(base, options.baseContent, 'utf8');
   await fs.writeFile(theirs, options.parentContent, 'utf8');
   const result = runGit(['merge-file', '-p', '-L', options.labels.sandbox, '-L', options.labels.base, '-L', options.labels.parent, ours, base, theirs]);
-  if (result.status === null || result.status < 0 || result.error) {
-    throw new SfError(`[Backpromote] git merge-file failed: ${(result.stderr || result.error?.message || '').trim()}`);
+  // Exit code = number of conflicts (0 when clean); anything else (255 for a binary file, a missing
+  // input) is an error, and its empty output must never be written over the file
+  const conflicts = result.status ?? -1;
+  if (result.error || conflicts < 0 || conflicts > 200 || (conflicts > 0 && !(result.stdout || '').includes('<<<<<<<'))) {
+    throw new SfError(`[Backpromote] git merge-file failed: ${(result.stderr || result.error?.message || `exit code ${result.status}`).trim()}`);
   }
   await fs.writeFile(options.absolutePath, result.stdout || '', 'utf8');
   return { conflictBlocks: countConflictMarkerBlocks(result.stdout || ''), threeWay: true };
@@ -409,8 +442,10 @@ export function collectItemFiles(items: string[], changedFiles: string[], parent
     for (const file of [...files]) {
       const segments = file.split('/');
       const folderIndex = segments.lastIndexOf(name);
-      // A bundle folder named after the item (lwc/myComponent, aura/myComponent, staticresources/myResource)
-      if (folderIndex >= 0 && folderIndex < segments.length - 1) {
+      // A bundle folder named after the item, directly under a bundle directory (lwc/myComponent,
+      // aura/myComponent, staticresources/myResource...): never an ancestor folder that happens to
+      // carry the item name (an item named "main" must not take the whole package directory)
+      if (folderIndex > 0 && folderIndex < segments.length - 1 && BUNDLE_DIRECTORIES.has(segments[folderIndex - 1])) {
         for (const bundleFile of listFilesAtRef(parentRef, segments.slice(0, folderIndex + 1).join('/'))) {
           files.add(bundleFile);
         }
@@ -419,6 +454,9 @@ export function collectItemFiles(items: string[], changedFiles: string[], parent
   }
   return new Map([...filesByItem].map(([key, files]) => [key, [...files].sort()]));
 }
+
+/** Source directories whose children are bundle folders named after the item */
+const BUNDLE_DIRECTORIES = new Set(['lwc', 'aura', 'staticresources', 'experiences', 'waveTemplates', 'digitalExperiences', 'documents', 'contentassets']);
 
 // A decomposed child (CustomField Account.Name) resolves to itself; a file of a parent-only type
 // (CustomObject Account) resolves to the parent. When the delta lists the child and the file

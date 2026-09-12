@@ -377,7 +377,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
 
     const failedCheck = checks.find((check) => !check.ok);
     if (failedCheck) {
-      const blocked = this.emptyPlan({ mode, runId: flags['run-id'] || newBackpromoteRunId(), status: 'blocked', message: failedCheck.message, targetOrg, parentBranch, allowedParentBranches, backpromoteBranch, checks });
+      const blocked = this.emptyPlan({ mode, runId: flags['run-id'] || newBackpromoteRunId(), status: 'blocked', message: failedCheck.message, targetOrg, parentBranch, allowedParentBranches, backpromoteBranch, checks, gitRoot });
       if (mode === 'plan') {
         return blocked as unknown as AnyJson;
       }
@@ -417,7 +417,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     const store = new BackpromoteCommentStore(runId, this);
 
     if (mode === 'reset') {
-      return this.resetBranch({ backpromoteBranch, parentRef, interactive, targetOrg, parentBranch, allowedParentBranches, checks, runId, mode }) as unknown as AnyJson;
+      return this.resetBranch({ backpromoteBranch, parentRef, interactive, targetOrg, parentBranch, allowedParentBranches, checks, runId, mode, gitRoot }) as unknown as AnyJson;
     }
 
     const ctx: BackpromoteContext = {
@@ -506,7 +506,10 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       uxLog('action', this, c.cyan(t('backpromotePrepared', { count: merges.prepared.length, branch: backpromoteBranch })));
       return this.buildPlan(ctx, 'ok', null) as unknown as AnyJson;
     }
-    if (merges.withMarkers.length > 0) {
+    // Agent mode stops once for the files it just wrote; on the next call the files still holding
+    // markers are not deployed and recorded as conflict pending (R37), the run goes on
+    const agentMustStop = agentMode && merges.newlyWritten.length > 0;
+    if (merges.withMarkers.length > 0 && (!agentMode || agentMustStop)) {
       if (agentMode) {
         const plan = this.buildPlan(ctx, 'waitingForMerges', t('backpromoteWaitingForMerges', { count: merges.withMarkers.length }));
         uxLog('action', this, c.yellow(t('backpromoteWaitingForMerges', { count: merges.withMarkers.length })));
@@ -629,15 +632,15 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     }
     const preselected = ctx.pullRequests.find((pr) => pr.selected);
     if (ctx.interactive) {
-      const chosen = await promptStartPullRequest(ctx.pullRequests, ctx.targetOrg.sandboxName);
-      if (chosen === null) {
+      const chosenCommit = await promptStartPullRequest(ctx.pullRequests, ctx.targetOrg.sandboxName);
+      const entry = chosenCommit ? ctx.pullRequests.find((pr) => pr.commit === chosenCommit) : null;
+      if (!entry) {
         return null;
       }
-      const entry = ctx.pullRequests.find((pr) => pr.number === chosen);
       for (const pr of ctx.pullRequests) {
-        pr.selected = !!entry && pr.commit === entry.commit;
+        pr.selected = pr.commit === entry.commit;
       }
-      return chosen;
+      return entry.number;
     }
     // Everything is backpromoted, or nothing is known within the scan limit: nothing is pre-selected
     return preselected ? preselected.number : null;
@@ -921,10 +924,11 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
   }
 
   /** Write the files marked merge that are not prepared yet, and the coding agent prompt */
-  private async prepareMerges(ctx: BackpromoteContext): Promise<{ prepared: BackpromotePlanComparison[]; withMarkers: Array<{ path: string; conflictBlocks: number }> }> {
+  private async prepareMerges(ctx: BackpromoteContext): Promise<{ prepared: BackpromotePlanComparison[]; withMarkers: Array<{ path: string; conflictBlocks: number }>; newlyWritten: string[] }> {
     const toMerge = ctx.comparison.filter((entry) => entry.decision === 'merge' && !ctx.excludedKeys.has(entry.item));
+    const newlyWritten: string[] = [];
     if (toMerge.length === 0) {
-      return { prepared: [], withMarkers: [] };
+      return { prepared: [], withMarkers: [], newlyWritten };
     }
     reportCommandProgress({ step: 'merges', message: t('backpromoteProgressMerges', { count: toMerge.length }) });
     const labels = { sandbox: `sandbox ${ctx.targetOrg.sandboxName}`, parent: ctx.parentBranch, base: 'base' };
@@ -951,6 +955,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       entry.prepared = true;
       entry.threeWay = written.threeWay;
       entry.markersRemaining = written.conflictBlocks;
+      newlyWritten.push(entry.file);
       if (!ctx.state.prepared.some((file) => file.file === entry.file)) {
         ctx.state.prepared.push({ file: entry.file, item: entry.item, threeWay: written.threeWay });
       }
@@ -981,7 +986,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       }
     }
     await this.persistState(ctx);
-    return { prepared, withMarkers };
+    return { prepared, withMarkers, newlyWritten };
   }
 
   private async waitForMerges(ctx: BackpromoteContext, files: string[]): Promise<'solved' | 'aborted'> {
@@ -1292,6 +1297,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     checks: BackpromotePlanCheck[];
     runId: string;
     mode: BackpromoteMode;
+    gitRoot: string;
   }): Promise<BackpromotePlan> {
     if (options.interactive && !(await promptConfirmReset(options.backpromoteBranch))) {
       return this.emptyPlan({ ...options, status: 'refused', message: t('backpromoteResetCancelled') });
@@ -1351,6 +1357,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       },
       parentBranch: ctx.parentBranch,
       allowedParentBranches: ctx.allowedParentBranches,
+      gitRoot: ctx.gitRoot,
       backpromoteBranch: inspectBackpromoteBranch(ctx.backpromoteBranch, ctx.parentRef),
       checkout: {
         originalBranch: ctx.state.checkout?.originalBranch || current,
@@ -1385,6 +1392,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     allowedParentBranches: string[];
     backpromoteBranch: string;
     checks: BackpromotePlanCheck[];
+    gitRoot: string;
   }): BackpromotePlan {
     let current = '';
     try {
@@ -1410,6 +1418,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       },
       parentBranch: options.parentBranch,
       allowedParentBranches: options.allowedParentBranches,
+      gitRoot: options.gitRoot,
       backpromoteBranch: { name: options.backpromoteBranch, existsOnOrigin: false, head: null, pendingMerges: [] },
       checkout: { originalBranch: current, currentBranch: current, clean: true, dirtyFiles: [], stashed: false, stashMessage: null, onBackpromoteBranch: current === options.backpromoteBranch },
       pullRequests: [],
