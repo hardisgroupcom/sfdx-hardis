@@ -153,6 +153,9 @@ describe('backpromote branch on a real git repository', () => {
     const content = await fs.readFile(path.join(repo, layout), 'utf8');
     expect(content).to.contain('<<<<<<< sandbox dev1');
     expect(content).to.contain('>>>>>>> integration');
+    // diff3 style: whoever solves the merge must see what both sides started from
+    expect(content).to.contain('||||||| base');
+    expect(content).to.contain('<z/>');
     const clean = await writeMergedFile({
       absolutePath: path.join(repo, apexClass),
       baseContent: 'a\nb\nc\nd\ne\n',

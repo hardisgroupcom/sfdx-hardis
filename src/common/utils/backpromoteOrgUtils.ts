@@ -117,11 +117,29 @@ async function listFilesRecursively(directory: string): Promise<string[]> {
   return files;
 }
 
+/** Folder and name of a source path without its last extension: staticresources/E2E_S2.resource -> staticresources/E2E_S2 */
+function pathStem(tail: string): string {
+  const value = normalizeRepoPath(tail);
+  const slash = value.lastIndexOf('/');
+  const folder = slash >= 0 ? value.substring(0, slash + 1) : '';
+  const name = slash >= 0 ? value.substring(slash + 1) : value;
+  const dot = name.lastIndexOf('.');
+  return dot > 0 ? `${folder}${name.substring(0, dot)}` : `${folder}${name}`;
+}
+
 export interface BackpromoteRetrieveResult {
   /** Absolute folder holding the org versions (source format) */
   orgDir: string;
   /** Retrieved absolute file by source path tail (classes/A.cls) */
   filesByTail: Map<string, string>;
+  /**
+   * Retrieved absolute file by folder and name without the extension. `sf project convert mdapi`
+   * names the content file of a StaticResource after its contentType (E2E_S2.resource retrieved from
+   * the org comes back as E2E_S2.txt), so the tail of the repository file finds nothing and the item
+   * would be reported as absent from the org and overwritten without a question. Only kept when one
+   * file of the folder has that name, so an LWC bundle (card.js, card.html) is never matched by it.
+   */
+  filesByStem: Map<string, string>;
 }
 
 /**
@@ -185,14 +203,27 @@ export async function retrieveItemsForComparison(options: {
     await fs.writeFile(doneMarker, JSON.stringify({ keys: wanted, date: new Date().toISOString() }), 'utf8');
   }
   const filesByTail = new Map<string, string>();
+  const stemCandidates = new Map<string, string[]>();
   for (const file of await listFilesRecursively(orgDir)) {
     const relative = normalizeRepoPath(path.relative(orgDir, file));
     if (relative === 'package.xml') {
       continue;
     }
-    filesByTail.set(sourcePathTail(relative), file);
+    const tail = sourcePathTail(relative);
+    filesByTail.set(tail, file);
+    if (tail.endsWith('-meta.xml')) {
+      continue;
+    }
+    const stem = pathStem(tail);
+    stemCandidates.set(stem, [...(stemCandidates.get(stem) || []), file]);
   }
-  return { orgDir, filesByTail };
+  const filesByStem = new Map<string, string>();
+  for (const [stem, candidates] of stemCandidates) {
+    if (candidates.length === 1) {
+      filesByStem.set(stem, candidates[0]);
+    }
+  }
+  return { orgDir, filesByTail, filesByStem };
 }
 
 /**
@@ -239,7 +270,7 @@ export async function compareItemsWithOrg(options: {
         continue;
       }
       const tail = sourcePathTail(file, packageDirectories);
-      const orgFile = options.retrieve.filesByTail.get(tail) || null;
+      const orgFile = options.retrieve.filesByTail.get(tail) || options.retrieve.filesByStem.get(pathStem(tail)) || null;
       const parentContent = fileAtRef(options.parentRef, file);
       if (parentContent === null) {
         continue;

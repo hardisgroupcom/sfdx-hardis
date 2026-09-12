@@ -18,7 +18,9 @@
 //   checks                  [{ id, ok, messageContains }]
 //   pullRequests            [numbers that must be listed]
 //   absentPullRequests      [numbers that must not be listed]
-//   backpromoted            [numbers whose backpromote row is set]
+//   backpromoted            [numbers whose backpromote row is set: only the newest one of a sandbox,
+//                            the walk stops at the first hit]
+//   beforeLastBackpromote   [numbers merged before it: counted as backpromoted, comment not read]
 //   notBackpromoted         [numbers whose backpromote row is null]
 //   beforeRefresh           [numbers flagged beforeRefresh]
 //   selected                the start Pull Request number (0: none selected)
@@ -126,6 +128,10 @@ for (const number of expect.absentPullRequests || []) {
 for (const number of expect.backpromoted || []) {
   const pr = prs.find((entry) => entry.number === number);
   check(`Pull Request #${number} backpromoted`, !!pr && pr.backpromote !== null, pr ? JSON.stringify(pr.backpromote) : 'not listed');
+}
+for (const number of expect.beforeLastBackpromote || []) {
+  const pr = prs.find((entry) => entry.number === number);
+  check(`Pull Request #${number} merged before the last backpromote`, !!pr && pr.beforeLastBackpromote === true && pr.scanned === false, pr ? `beforeLastBackpromote=${pr.beforeLastBackpromote} scanned=${pr.scanned}` : 'not listed');
 }
 for (const number of expect.notBackpromoted || []) {
   const pr = prs.find((entry) => entry.number === number);

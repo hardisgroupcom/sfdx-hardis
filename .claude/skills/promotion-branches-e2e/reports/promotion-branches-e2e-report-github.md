@@ -4,10 +4,11 @@
 **Repositories under test:**
 
 - promotion branches: `nvuillam/sfdx-hardis-promo-e2e-12` (private, created empty for this run)
-- backpromote (Beta): `nvuillam/sfdx-hardis-promo-e2e-11` (private, created empty for this run)
+- backpromote (Beta): `nvuillam/sfdx-hardis-promo-e2e-14` (private, created empty; `-11` and
+  `-13` were the two earlier attempts of the same section, kept for their logs)
 
 **Salesforce org:** `nicolas.vuillamy.c8024b5deb9f@agentforce.com` (developer org, Dev Hub)
-**sfdx-hardis:** `feat/backpromote-panel`, `e40613b7a` plus the uncommitted backpromote rewrite
+**sfdx-hardis:** `feat/backpromote-panel`, `1eb6ab82b` plus the two uncommitted fixes this run landed
 **vscode-sfdx-hardis:** `feat/backpromote-panel`, `f6001f80`, compiled with `yarn compile`
 
 Two repositories, not one: `backpromote-setup.sh` opens `feature/E2E-101-alpha`,
@@ -65,6 +66,13 @@ ___
 
 ## What this run found
 
+Three product defects, all fixed inside the run and proven again afterwards: one in the promotion
+branches, two in backpromote (Beta), which had never been run end to end before. Four runbook rows
+were wrong and six defects were found in the backpromote step script, which had never been run
+either. Counts: **55 / 55 OK** for the promotion branches (sections 4 to 7ter, 0 FAIL) and
+**63 / 63 OK** for backpromote (section 6bis, 0 FAIL), on top of the 697-check Pull Request comment
+audit and a flag-off A/B at `TOTAL DIFFERING LINES: 0`.
+
 ### 1. The undo of a conflicted promotion ran twice and ended on an error line (fixed)
 
 `cherryPickCandidates` undoes the promotion branch before rethrowing, and `create.ts` undoes again
@@ -83,6 +91,8 @@ the local promotion branch is already gone, so the undo is idempotent and logs o
 with `edge-conflict-abort-once`: one `Undoing promotion branch` line, no `not found` warning, no
 leftover branch. Covered by two unit tests on a throwaway git repository in
 `test/common/utils/promotionAbort.test.ts`.
+
+The two backpromote defects are in the backpromote section below.
 
 ### 2. Three runbook rows were wrong, and two traps were missing
 
@@ -221,70 +231,125 @@ ___
 
 ## Backpromote (Beta), section 6bis
 
-The Dev Hub was out of daily scratch org signups for the whole run
-(`sf limits api display` reported `DailyScratchOrgs 0 / 6` from the first minute, and
-`sf org create scratch` answered `LIMIT_EXCEEDED: this organization has reached its daily scratch
-org signup limit` every time it was tried). The counter did not come back at midnight in the Dev
-Hub timezone (`America/Los_Angeles`, 07:00 UTC): the six signups of the previous day were made
-between 10:07 and 11:50 UTC, so the window looks like a rolling 24 hours and the first slot only
-comes back around 10:07 UTC. Nothing in this run could create the two developer scratch orgs that
-steps B3 to B16 deploy into.
+Run against `nvuillam/sfdx-hardis-promo-e2e-14` (private, created empty) and two scratch orgs created
+from the Dev Hub, `promo-e2e-dev` (sandbox name `devorg1`) and `promo-e2e-dev2` (the same sandbox
+name, another org id, for the refresh of B14). Eleven User Stories, `#1` to `#11`, merged into
+`integration` as the steps need them; the developer branch is `feature/E2E-401-dev` and the
+backpromote branch `backpromote/integration/devorg1`.
 
-Everything the command refuses **before** it touches a developer org was proven, against the
-production org, which reaches exactly the same checks:
+**63 checks, 63 OK, 0 FAIL.**
 
 | Step | What | Expected | Result |
 |------|------|----------|--------|
-| B0 | `--plan` with no provider variable | `blocked` on the `gitProvider` check, no window | OK |
-| B0 | `--auto` with no provider variable | exit 1 with the same message, before listing anything | OK |
-| B1 | `targetUsername` of the `uat` branch pointed at the target org | `blocked`, `targetOrg` names `uat` | OK |
-| B1c | `--parent-branch feature/E2E-105-apex` | `blocked`, `parentBranch` says "not an allowed parent branch", naming `integration` | OK |
+| B0 | `--plan` and `--auto` with no provider variable | `blocked` on the `gitProvider` check; the run exits 1 with the same message, before listing anything | OK |
+| B1 | `targetUsername` of `uat` pointed at the target org | `blocked`, check `targetOrg` names `uat` | OK |
+| B1c | `--parent-branch feature/E2E-105-apex` | `blocked`, check `parentBranch` says "not an allowed parent branch" and names `integration` | OK |
 | B2 | `--target-org` on a production org | `blocked`, "production" | OK |
-| B3 to B16 | the first plan, the run, the comments, the merges, the deletions, the refresh, the scan limit, the reset | - | NOT RUN: no scratch org could be created |
-| C1 to C4 | the "Backpromotes" Pull Request comments | - | NOT RUN live. `check-backpromote-comments.cjs` was proven against a dump rendered by the product's own `renderBackpromotesComment`, so the checker and the renderer are known to agree |
+| B3 | the first plan, then the plan from `#1` with a progress file | `ok`, org type `scratch`, `scan.found` false, nothing selected, no window; then the window from `#1`, the three resources, the four actions not run, every file `missingInOrg`; 10 progress lines with `history`, `delta` and `retrieve`; the checkout untouched and clean | OK |
+| B4 | `--auto --from-pull-request 1` | 3 deployed, `e2e-pre-1`, `e2e-post-2` and `e2e-pre-3` run, `e2e-manual-1` pending, nothing excluded, comments on `#1` `#2` `#3`, checkout on `backpromote/integration/devorg1`, branch not pushed (no manual merge); the org holds `E2E_S1..S3`; **C1**: one Backpromotes comment per Pull Request with one complete sandbox row and its action rows | OK |
+| B5 | `--plan` when up to date, then `--confirm-action e2e-manual-1` | `nothingToDo`, `scan.found` true, the newest Pull Request holds the row and the two older ones are `beforeLastBackpromote`; the confirm runs in `confirm` mode; **C2**: the action row of `e2e-manual-1` is `success`, one row | OK |
+| B6 | a new story `#4`, `--plan` then `--auto` | `#4` selected by default, window from `#4`, one item; 1 deployed, comment on `#4` | OK |
+| B7 | `E2E_S2` changed in the org, `#5` changes it in `integration`, `--on-diff "<file>=git"` | the file is `different`, three-way, the three versions in the cache; 1 deployed and the org body is the git version | OK (after the retrieve defect below was fixed) |
+| B8 | the same with `=org`, then the item comes back | 0 deployed, `E2E_S3` left out as `keptOrg`, **C3**: the row of `#6` is `partial` with the item; the next plan starts at `#6` again with `excludedLastTime`; then `=git` deploys it | OK (same defect) |
+| B9 | agent protocol: `--agent --on-diff "<file>=merge"`, solve, run again | exit 0 with `waitingForMerges`, the file written with `<<<<<<<` and `|||||||` (three-way), a prompt file; then `ok`, 1 deployed, the branch pushed with the merge and the org body holding both lines | OK (after the diff3 defect below was fixed) |
+| B10 | panel protocol: `--prepare`, `--auto` while the markers remain, solve, `--auto` | prepared with markers on the backpromote branch; then exit 1 `conflictsRemaining` with nothing deployed (the org body untouched); then `ok`, 1 deployed, pushed, both lines in the org | OK |
+| B11 | `#9` removes `E2E_S4`: `--skip-destructive`, then a redeploy of `#9` | the deletion is listed, 0 deleted and `E2E_S4` still in the org; then 1 deleted and gone | OK |
+| B12 | `#10` adds `E2E_S5` and `E2E_S6`, `--exclude-metadata StaticResource:E2E_S6` | 1 deployed, `E2E_S6` excluded; the next plan starts at `#10` again with `excludedLastTime`; then nothing excluded and `E2E_S6` in the org | OK |
+| B13 | a dirty `NOTES.md` on the developer branch | `checkout.clean` false naming `NOTES.md`; the run stashes it under `sfdx-hardis backpromote <runId> from feature/E2E-401-dev`, lands on the backpromote branch clean, and `git stash pop` brings `NOTES.md` back | OK |
+| B14 | `promo-e2e-dev2` with the same `--sandbox-name devorg1` | `scan.found` false, `#1` `#2` `#3` flagged `beforeRefresh` and not backpromoted, nothing selected; the run replays the actions in the other org; **C4**: `#1` `#2` `#3` keep one comment each, now with two sandbox rows, and `e2e-pre-1` has two action rows | OK |
+| B15 | `--plan --sandbox-name never-seen --scan-limit 2` | `scan.read` 2, `found` false, `hasMore` true | OK |
+| B16 | `--reset --auto` | mode `reset`, the branch gone from origin | OK |
+| B17 | the terminal prompts | - | NOT COVERED: not scriptable, nobody answered them by hand |
 
-The repository for those steps is built and ready: `nvuillam/sfdx-hardis-promo-e2e-11` holds the four
-major branches, the stories `#1`, `#2` and `#3` merged into `integration` with their deployment
-actions, and the developer branch `feature/E2E-401-dev`. Only the two scratch orgs and
-`$LOGS/bp-vars.sh` are missing; the resume is two `sf org create scratch` calls, two
-`backpromote_reset_org` calls and `bash backpromote-steps.sh`.
+### The two product defects this section found
 
-### What the step script got wrong, found by reading it against the product
+Both were found by the run, fixed in `src/`, and proven again by a full rerun on a fresh repository
+and freshly reset scratch orgs.
 
-`scripts/backpromote-steps.sh` had never been run. Four defects were found and fixed by desk-checking
-it against the command, before any of them could cost a live cycle:
+**1. A static resource of the org was reported as absent from it, and overwritten without a question.**
+
+`sf project convert mdapi` names the content file of a StaticResource after its `contentType`, so
+`E2E_S2.resource` retrieved from the sandbox comes back as `E2E_S2.txt` in the converted tree. The
+comparison looked the file up by the source path tail of the **repository** file
+(`staticresources/E2E_S2.resource`), found nothing, and set the status to `missingInOrg` with no
+sandbox version:
+
+```
+B7-plan | FAIL | status in different|pendingInOrg (got missingInOrg); three-way true (got false);
+                 sandbox and parent head versions exist in the cache ({"base":null,"sandbox":null,...})
+```
+
+The consequence is the one the feature exists to prevent: the developer is never offered
+"keep the org version" or "merge", and `--on-diff "<file>=org"` keeps nothing, so the work done in
+the sandbox is deployed over without a word (B8 deployed the item the run had asked to keep).
+
+Fixed in `src/common/utils/backpromoteOrgUtils.ts`: the retrieve result now also indexes the
+converted files by folder and name without the extension, and the comparison falls back to that
+index when the exact tail misses. The fallback only takes a match when **one** file of the folder
+carries that name, so an LWC bundle (`card.js` next to `card.html`) is never matched by it.
+
+**2. A three-way merge was written without the base side.**
+
+`writeMergedFile` called `git merge-file -p -L sandbox -L base -L parent`, which writes two-sided
+markers: the `base` label was never used and whoever solves the merge (the developer, the VS Code
+merge editor, the coding agent the prompt is written for) could not see what the two sides started
+from. The command page, the `backpromote` skill and this runbook all describe `|||||||` markers.
+
+Fixed in `src/common/utils/backpromoteGitUtils.ts` by passing `--diff3`, and covered by an assertion
+on `||||||| base` in the existing `writeMergedFile` test.
+
+### What the step script got wrong
+
+`scripts/backpromote-steps.sh` had never been run. Six defects were found in it, four by reading it
+against the command before the orgs were available and two by the first live run:
 
 - **B12 left its commits on `integration`.** The step created `feature/E2E-110-kappa` and then called
   `story_branch`, which checks `integration` out again and whose own `git checkout -b` then fails on
-  the branch that already exists: `story_branch` has no early return, so it wrote the resource,
-  committed it on `integration` and pushed the stale branch. The Pull Request would have been opened
-  on a branch with no commits. The step now writes the four files itself.
+  the branch that already exists. `story_branch` has no early return, so it wrote the resource,
+  committed it on `integration` and pushed the stale branch. The step now writes the four files itself.
 - **A `--json` run logs nothing to stderr.** oclif silences `uxLog` when `--json` is passed, so
   `$LOGS/<label>.log` is always empty and the B4 assertion on the deployment action lines could never
-  have passed. It now reads the sfdx-hardis command log,
-  `hardis-report/commands/<timestamp>-hardis-work-backpromote.log`, which is written either way.
+  have passed. It now reads `hardis-report/commands/<timestamp>-hardis-work-backpromote.log`.
 - **`hardis-report/` is not gitignored in the test project**, so `git status --porcelain` is never
   empty after a backpromote and the "the checkout is clean" assertions of B3 and B13 could never have
-  passed. They now exclude the report directory, which is what the command itself does
-  (`userChangesOutsideReports`).
+  passed. They now exclude the report directory, which is what the command itself does.
 - **`git add -A` in `stories.sh`** committed whatever sfdx-hardis had left in `hardis-report/` into
   the User Story. Both functions now add only the files of the story.
+- **The story file paths were read from the wrong branch.** `S1_FILE`, `S2_FILE` and `S3_FILE` were
+  resolved with `git ls-files` while `feature/E2E-401-dev` was checked out, and that branch is cut
+  **before** the stories are merged: all three came back empty, `--on-diff "$S2_FILE=git"` became
+  `--on-diff "=git"`, and every step from B7 on failed for the wrong reason. `resource_file` now
+  falls back to `origin/integration`.
+- **`SELECT Body FROM StaticResource` gives the REST path of the blob, not its content.** Decoding
+  it as base64 produced binary noise, so every assertion on an org body compared garbage.
+  `resource_body` now fetches the blob with the access token of the org.
 
-Two more changes make a failed run cheaper to pick up again: every Pull Request number the steps
-open is appended to `$LOGS/bp-vars.sh` (`remember`), and the branches the steps create use
-`git checkout -B`, so a step rerun by hand does not leave its commits on the parent branch.
+Two changes make a failed run cheaper to pick up again: every Pull Request number the steps open is
+appended to `$LOGS/bp-vars.sh`, and the branches the steps create use `git checkout -B`.
+
+### Expectations that were wrong
+
+`plan-up-to-date.json` and `plan-s4.json` asked for a `backpromote` row on **every** Pull Request of
+the sandbox. The history walk is newest first and stops at the first Pull Request that carries a row
+(`scan.found`), which is what the scan limit exists for: the older ones are `beforeLastBackpromote`
+with `scanned: false`, which is the documented design. The two files now pin the newest one under
+`backpromoted` and the older ones under the new `beforeLastBackpromote` key of
+`check-backpromote-plan.cjs`.
 
 ___
 
 ## What this run did not cover
 
-- **Steps B3 to B16 and the comment checks C1 to C4 of backpromote (Beta).** The Dev Hub daily
-  scratch org signup limit was exhausted for the whole run, so the two developer scratch orgs could
-  not be created. The scratch org of the previous run had been deleted before that limit was read,
-  which is a mistake this report's new runbook trap now prevents. See the backpromote section.
+- **Nothing of section 6bis was skipped except B17.** The Dev Hub daily scratch org signup limit was
+  exhausted for the first hours of the run (the scratch org of the previous run had been deleted
+  before that limit was read, a mistake the new runbook trap now prevents); the section ran in full
+  once the window rolled over.
 - **B17, the terminal prompts of `hardis:work:backpromote`** (parent branch, start Pull Request, the
   multiselect of items and deletions, one decision per file that differs, the actions, the manual
   actions). They are not scriptable and nobody answered them by hand.
+- **`--plan` with an unknown `--from-pull-request`** (refused with exit 0) and the refusal of
+  `hardis:work:save` from a `backpromote/*` branch: both landed in the CLI during this run and have
+  no step of their own in section 6bis.
 - **The VS Code Backpromote panel is not clicked.** It reads the same `--plan --json` documents this
   run asserts, calls `--prepare` on Merge and `--auto --run-id` in the background; its command
   builder, greying rules and marker watch are covered by the extension's own unit tests.

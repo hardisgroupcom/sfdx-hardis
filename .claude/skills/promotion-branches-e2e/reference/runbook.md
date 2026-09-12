@@ -493,7 +493,7 @@ call, asserted with `backpromote_check` against `reference/backpromote/<file>`.
 | B6 New story | `S4` merged, `--plan`, then `--auto --run-id` | `plan-s4.json`: `S4` selected by default, window from `S4`, one item. `run-s4.json`: 1 deployed, comment on `S4` |
 | B7 Overwrite | `E2E_S2` changed in the org, `S5` changes it in integration, `--plan`, then `--auto --on-diff "<S2 file>=git"` | `plan-diff.json`: the file is `different` (or `pendingInOrg`), three-way (the sandbox has a history), the three versions exist in the cache. `run-overwrite.json`: 1 deployed; the org body is the git version |
 | B8 Keep org version, then it comes back | `E2E_S3` changed in the org, `S6` changes it, `--auto --on-diff "<S3 file>=org"`, then `--plan`, then `--auto --on-diff "<S3 file>=git"` | `run-keep-org.json`: 0 deployed, `E2E_S3` left out as `keptOrg`. C3: the row of `S6` is `partial` with `StaticResource:E2E_S3 (org version kept)`. `plan-left-out.json`: `S6` is the start again, `E2E_S3` flagged `excludedLastTime`. `run-left-out.json`: 1 deployed, the org body is the git version |
-| B9 Agent protocol | `E2E_S1` changed in the org, `S7` changes it, `--agent --on-diff "<S1 file>=merge"`, solve the markers keeping both lines, run again with `--run-id` | `agent-waiting.json`: exit 0, `waitingForMerges`, the file prepared with markers (`<<<<<<<` and `|||||||`: three-way), prompt file. `agent-done.json`: `ok`, 1 deployed, branch pushed with the merge (`pendingMerges` names the file); the org body holds both lines |
+| B9 Agent protocol | `E2E_S1` changed in the org, `S7` changes it, `--agent --on-diff "<S1 file>=merge"`, solve the markers keeping both lines, run again with `--run-id` | `agent-waiting.json`: exit 0, `waitingForMerges`, the file prepared with markers (`<<<<<<<` and `|||||||`: `git merge-file --diff3`, so the base side is visible), prompt file. `agent-done.json`: `ok`, 1 deployed, branch pushed with the merge (`pendingMerges` names the file); the org body holds both lines |
 | B10 Panel protocol | `E2E_S2` changed in the org, `S8` changes it, `--plan`, `--prepare --run-id --on-diff "<S2 file>=merge"`, `--auto` with the markers still there, solve, `--auto` again | `prepare.json`: mode `prepare`, prepared with markers, on the backpromote branch. `conflicts-remaining.json`: exit 1, `conflictsRemaining`, nothing deployed (the org body is untouched). `run-after-merge.json`: `ok`, 1 deployed, pushed; both lines in the org |
 | B11 Deletion | `S9` removes `E2E_S4`, `--plan`, `--auto --skip-destructive`, then `--auto --from-pull-request $S9` | `plan-deletion.json` lists the deletion. `run-skip-destructive.json`: 0 deleted, `E2E_S4` left out; still in the org. `run-delete.json` (a redeploy of an already backpromoted Pull Request): 1 deleted; gone from the org |
 | B12 Excluded item comes back | `S10` adds `E2E_S5` and `E2E_S6`, `--auto --exclude-metadata StaticResource:E2E_S6`, `--plan`, `--auto` | `run-exclude.json`: 1 deployed, `E2E_S6` excluded. `plan-excluded-last-time.json`: `S10` is the start again, `E2E_S6` flagged. `run-excluded-back.json`: nothing excluded; `E2E_S6` in the org |
@@ -538,6 +538,24 @@ panel. Say so in the report.
   `git status --porcelain` is never empty after a backpromote. The command itself ignores the report
   directory when it decides whether the tree is clean (`userChangesOutsideReports`), and the harness
   has to do the same: `git status --porcelain -- . ':(exclude)hardis-report' ':(exclude)hardis-report/**'`.
+- **`sf project convert mdapi` renames the content file of a StaticResource.** The org version of
+  `E2E_S2.resource` comes back as `E2E_S2.txt`, named after its `contentType`. A run that sees
+  `missingInOrg` for an item that is in the org is looking at that, and the CLI now falls back to a
+  match by folder and name without the extension. The same trap will bite any other type whose
+  converted file name differs from the one the repository holds.
+- **`SELECT Body FROM StaticResource` gives the REST path of the blob, never its content.** Decoding
+  it as base64 produces binary noise. Fetch it: `curl -H "Authorization: Bearer $(sf org auth
+  show-access-token ...)" "<instanceUrl><the Body value>"`.
+- **The developer branch is cut before the stories are merged**, so `git ls-files` finds none of
+  their files while it is checked out. Resolve the story file paths from `origin/integration`, never
+  from the working tree: an empty path silently turns `--on-diff "$FILE=git"` into `--on-diff "=git"`,
+  the command refuses it, and every later step fails for the wrong reason.
+- **A backpromote leaves a history in the Pull Request comments of the repository.** Rerunning
+  section 6bis on the same repository with the same `--sandbox-name` makes B3 start from a sandbox
+  that is already up to date: rerun it on a **new** repository, and reset the scratch orgs with
+  `backpromote_reset_org` (the setup does both).
+- **Never `source backpromote-steps.sh`.** It is a script, not a library: sourcing it runs the whole
+  section again against whatever state the repository and the orgs are in.
 - **sfdx-git-delta runs one at a time.** Parallel runs fail on `could not lock config file .git/config`.
 - **GitLab and Azure DevOps know a pushed commit a few seconds later.** The deployment actions file is
   pushed right after the Pull Request is opened: `bp_merge` waits until the provider reports that commit

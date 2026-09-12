@@ -11,8 +11,6 @@
     "StaticResource:E2E_S1"
   ],
   "backpromoted": [
-    "{{S1}}",
-    "{{S2}}",
     "{{S3}}"
   ],
   "notBackpromoted": [
@@ -23,5 +21,9 @@
       "fileContains": "E2E_S4.resource",
       "status": "missingInOrg"
     }
+  ],
+  "beforeLastBackpromote": [
+    "{{S1}}",
+    "{{S2}}"
   ]
 }

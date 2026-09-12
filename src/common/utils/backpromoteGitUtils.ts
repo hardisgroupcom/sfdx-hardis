@@ -310,7 +310,10 @@ export async function writeMergedFile(options: {
   await fs.writeFile(ours, options.sandboxContent, 'utf8');
   await fs.writeFile(base, options.baseContent, 'utf8');
   await fs.writeFile(theirs, options.parentContent, 'utf8');
-  const result = runGit(['merge-file', '-p', '-L', options.labels.sandbox, '-L', options.labels.base, '-L', options.labels.parent, ours, base, theirs]);
+  // --diff3: without it git writes two-sided markers only, the base label is never used and whoever
+  // solves the merge (the developer, the VS Code merge editor, a coding agent) cannot see what the
+  // sandbox and the parent branch both started from
+  const result = runGit(['merge-file', '--diff3', '-p', '-L', options.labels.sandbox, '-L', options.labels.base, '-L', options.labels.parent, ours, base, theirs]);
   // Exit code = number of conflicts (0 when clean); anything else (255 for a binary file, a missing
   // input) is an error, and its empty output must never be written over the file
   const conflicts = result.status ?? -1;
