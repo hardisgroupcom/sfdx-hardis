@@ -9,11 +9,11 @@ const DISABLE_WEBSOCKET_COMMANDS = new Set([
 ]);
 
 /**
- * The Backpromote (Beta) panel reads `--plan --json` itself: it must not show up as a command in
- * the extension.
+ * The Backpromote (Beta) panel runs the command itself in the background with --json (plan,
+ * prepare, run, confirm): those calls must not show up as a command in the extension.
  */
 export function isBackgroundJsonCall(commandId: string, argv: string[]): boolean {
-  return commandId === 'hardis:work:backpromote' && argv.includes('--plan');
+  return commandId === 'hardis:work:backpromote' && (argv.includes('--plan') || argv.includes('--json'));
 }
 
 const hook: Hook<'init'> = async (options) => {

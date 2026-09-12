@@ -108,6 +108,7 @@ nav:
               - Development guidelines: salesforce-ci-cd-work-on-task-development.md
               - Install packages: salesforce-ci-cd-work-on-task-install-packages.md
               - Deployment actions: salesforce-ci-cd-work-on-task-deployment-actions.md
+              - Backpromote (Beta): salesforce-ci-cd-backpromote.md
           - 3. Publish your User Story: salesforce-ci-cd-publish-task.md
           - 4. Create the Pull Request:
               - On GitHub: salesforce-ci-cd-pull-request-github.md

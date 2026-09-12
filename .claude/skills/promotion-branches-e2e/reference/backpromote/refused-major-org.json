@@ -1,5 +1,12 @@
 {
   "exitStatus": 0,
   "status": "blocked",
-  "checks": [{ "id": "targetOrg", "ok": false, "messageContains": "org of the uat branch" }]
+  "checks": [
+    {
+      "id": "targetOrg",
+      "ok": false,
+      "messageContains": "uat"
+    }
+  ],
+  "windowNull": true
 }

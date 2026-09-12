@@ -1,0 +1,21 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "selected": "{{S5}}",
+  "items": [
+    "StaticResource:E2E_S2"
+  ],
+  "comparison": [
+    {
+      "fileContains": "E2E_S2.resource",
+      "statusIn": [
+        "different",
+        "pendingInOrg"
+      ],
+      "threeWay": true,
+      "hasVersions": true,
+      "decision": "git",
+      "prepared": false
+    }
+  ]
+}

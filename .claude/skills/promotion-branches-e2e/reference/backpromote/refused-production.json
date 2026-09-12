@@ -1,6 +1,12 @@
 {
   "exitStatus": 0,
   "status": "blocked",
-  "orgType": "production",
-  "checks": [{ "id": "targetOrg", "ok": false, "messageContains": "production org" }]
+  "checks": [
+    {
+      "id": "targetOrg",
+      "ok": false,
+      "messageContains": "production"
+    }
+  ],
+  "windowNull": true
 }

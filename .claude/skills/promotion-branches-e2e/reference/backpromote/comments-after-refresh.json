@@ -1,0 +1,21 @@
+{
+  "{{S1}}": {
+    "comment": true,
+    "sandboxRowCount": 2,
+    "actions": [
+      {
+        "id": "e2e-pre-{{S1}}",
+        "status": "success",
+        "count": 2
+      }
+    ]
+  },
+  "{{S2}}": {
+    "comment": true,
+    "sandboxRowCount": 2
+  },
+  "{{S3}}": {
+    "comment": true,
+    "sandboxRowCount": 2
+  }
+}

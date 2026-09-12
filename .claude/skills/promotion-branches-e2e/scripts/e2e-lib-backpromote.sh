@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # Backpromote (Beta) helpers of runbook section 6bis, shared by the GitHub, GitLab and Azure DevOps
-# libraries. Do not source it directly: each provider library defines two hooks, then sources it.
+# libraries. Do not source it directly: each provider library defines three hooks, then sources it.
 #
 #   bp_provider_env <command...>     runs a command with the git provider variables the CLI reads
 #                                    outside CI (never CI=true: backpromote is a developer command).
-#                                    Only used to complete the Pull Request titles: a backpromote
-#                                    needs no git provider.
+#                                    A backpromote needs the provider: the history lives in the
+#                                    "Backpromotes" Pull Request comments.
 #   bp_open <branch> <title> <body>  opens a Pull Request into integration, prints its number
 #   bp_merge <number>                merges it with a merge commit
+#   dump_pr_comments <out> [n...]    dumps the Pull Requests and their comments (audit shape)
 #
 # Needs WORK, LOGS, DEV, and DEVORG (the developer scratch org) exported.
 
@@ -53,9 +54,42 @@ e2e_backpromote_json() {
   return $code
 }
 
-# Assert a --plan JSON document. Usage: backpromote_check <label> <expectations.json>
+# The same without any git provider variable: what a developer without a token gets
+e2e_backpromote_nogit_json() {
+  local label="$1" code target=()
+  shift
+  cd "$WORK" || return 1
+  case " $* " in
+  *" --target-org "*) ;;
+  *) target=(--target-org "${DEVORG:?set DEVORG to the developer scratch org}") ;;
+  esac
+  env -u NODE_OPTIONS -u CI -u GITHUB_TOKEN -u CI_SFDX_HARDIS_GITHUB_TOKEN -u GITHUB_REPOSITORY \
+    -u CI_SFDX_HARDIS_GITLAB_TOKEN -u CI_JOB_TOKEN -u SYSTEM_ACCESSTOKEN -u CI_SFDX_HARDIS_AZURE_TOKEN -u AZURE_DEVOPS_EXT_PAT \
+    -u CI_SFDX_HARDIS_BITBUCKET_TOKEN -u BITBUCKET_WORKSPACE \
+    node "$DEV" hardis:work:backpromote "${target[@]}" --json "$@" >"$LOGS/$label.json" 2>"$LOGS/$label.log"
+  code=$?
+  echo "$label exit=$code json=$LOGS/$label.json"
+  return $code
+}
+
+# Assert a --json document (plan version 3). Usage: backpromote_check <label> <expectations.json>
 backpromote_check() {
   env -u NODE_OPTIONS node "$BP_SCRIPTS_DIR/check-backpromote-plan.cjs" "$LOGS/$1.json" "$2"
+}
+
+# Dump the given Pull Requests and assert their "Backpromotes" comments.
+# Usage: backpromote_comments_check <label> <expectations.json> <pr number...>
+backpromote_comments_check() {
+  local label="$1" expectations="$2"
+  shift 2
+  dump_pr_comments "$LOGS/$label.dump.json" "$@" >/dev/null || return 1
+  env -u NODE_OPTIONS node "$BP_SCRIPTS_DIR/check-backpromote-comments.cjs" "$LOGS/$label.dump.json" "$expectations"
+}
+
+# Print the "Backpromotes" comment of one Pull Request, as the reviewer reads it
+backpromote_comment() {
+  dump_pr_comments "$LOGS/bp-comment-$1.dump.json" "$1" >/dev/null || return 1
+  node -e "const d=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));for(const pr of d.prs){for(const c of pr.comments){if(c.body.includes('<!-- sfdx-hardis backpromotes -->')){console.log(c.body.split('\n').filter(l=>!l.startsWith('<!--')).join('\n'))}}}" "$LOGS/bp-comment-$1.dump.json"
 }
 
 # Put a developer scratch org back to the base project: the story static resources deleted, the

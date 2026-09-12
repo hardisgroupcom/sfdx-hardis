@@ -1,18 +1,23 @@
 /*
- * Pure rules of hardis:work:backpromote: which branches and orgs may receive a backpromote, how the
- * flags are read, which files of a merge may conflict, and the command and coding agent prompt the
- * VS Code panel and the terminal share. No I/O here.
+ * Pure rules of hardis:work:backpromote: branch naming, sandbox naming, which orgs and parent
+ * branches may take part, how the flags are read, the history walk over the "Backpromotes" comment
+ * rows, the two-way merge with markers, and the command and coding agent prompt the VS Code panel
+ * and the terminal share. No I/O here.
  */
 
+import { diffLines } from 'diff';
 import { isRetrofit } from './orgConfigUtils.js';
-import { isPromotionBranchName, parsePromotionBranchName } from './promotionBranchUtils.js';
+import { isPromotionBranchName } from './promotionBranchUtils.js';
 
-export type BackpromoteConflictChoice = 'overwrite' | 'merge' | 'keep';
-export const BACKPROMOTE_CONFLICT_CHOICES: BackpromoteConflictChoice[] = ['overwrite', 'merge', 'keep'];
+/** What to deploy for a file whose sandbox version differs from the parent branch version */
+export type BackpromoteDiffChoice = 'git' | 'org' | 'merge';
+export const BACKPROMOTE_DIFF_CHOICES: BackpromoteDiffChoice[] = ['git', 'org', 'merge'];
 
 export type BackpromoteTargetOrgRefusal = { reason: 'production' } | { reason: 'majorOrg'; branchName: string };
 
-export type BackpromoteCurrentBranchKind = 'majorBranch' | 'promotionBranch' | 'retrofitBranch' | 'userStoryBranch';
+export type BackpromoteCurrentBranchKind = 'majorBranch' | 'promotionBranch' | 'retrofitBranch' | 'backpromoteBranch' | 'userStoryBranch';
+
+export const BACKPROMOTE_BRANCH_PREFIX = 'backpromote/';
 
 // ---- Keys and flags ----
 
@@ -59,25 +64,25 @@ export function splitMetadataKeysFlag(value: string | string[] | undefined | nul
 }
 
 /**
- * The decisions of --on-conflict, written `<file path>=overwrite|merge|keep`. A file path can hold
- * an `=` (rare, but allowed by Salesforce for report folders): the choice is read from the end.
+ * The decisions of --on-diff, written `<file path>=git|org|merge`. A file path can hold an `=`
+ * (rare, but allowed by Salesforce for report folders): the choice is read from the end.
  */
-export function parseConflictDecisions(values: string[] | undefined | null): {
-  decisions: Map<string, BackpromoteConflictChoice>;
+export function parseDiffDecisions(values: string[] | undefined | null): {
+  decisions: Map<string, BackpromoteDiffChoice>;
   invalid: string[];
 } {
-  const decisions = new Map<string, BackpromoteConflictChoice>();
+  const decisions = new Map<string, BackpromoteDiffChoice>();
   const invalid: string[] = [];
   for (const raw of values || []) {
     const value = String(raw || '').trim();
     const separator = value.lastIndexOf('=');
     const choice = separator >= 0 ? value.substring(separator + 1).trim().toLowerCase() : '';
     const file = separator > 0 ? value.substring(0, separator).trim() : '';
-    if (!file || !BACKPROMOTE_CONFLICT_CHOICES.includes(choice as BackpromoteConflictChoice)) {
+    if (!file || !BACKPROMOTE_DIFF_CHOICES.includes(choice as BackpromoteDiffChoice)) {
       invalid.push(value);
       continue;
     }
-    decisions.set(normalizeRepoPath(file), choice as BackpromoteConflictChoice);
+    decisions.set(normalizeRepoPath(file), choice as BackpromoteDiffChoice);
   }
   return { decisions, invalid };
 }
@@ -111,12 +116,53 @@ export function packageContentToMetadataKeys(content: Record<string, string[]> |
   return Object.keys(content || {}).flatMap((type) => (content![type] || []).map((member) => toMetadataKey(type, member)));
 }
 
+/**
+ * The keys a package-no-overwrite.xml holds back: an exact Type:Name, or every member of a type
+ * when the manifest names the type with a `*` wildcard.
+ */
+export function filterNoOverwriteKeys(keys: string[], noOverwrite: Record<string, string[]> | null | undefined): string[] {
+  if (!noOverwrite) {
+    return [];
+  }
+  return keys.filter((key) => {
+    const parsed = parseMetadataKey(key);
+    if (!parsed) {
+      return false;
+    }
+    const members = noOverwrite[parsed.type] || [];
+    return members.includes('*') || members.includes(parsed.name);
+  });
+}
+
 // ---- Branches ----
 
+/** backpromote/<parent branch>/<sandbox name>: the parent branch may hold slashes, the sandbox name never */
+export function buildBackpromoteBranchName(parentBranch: string, sandboxName: string): string {
+  return `${BACKPROMOTE_BRANCH_PREFIX}${parentBranch}/${sandboxName}`;
+}
+
+export function parseBackpromoteBranchName(branch: string): { parentBranch: string; sandboxName: string } | null {
+  const value = branch || '';
+  if (!value.startsWith(BACKPROMOTE_BRANCH_PREFIX)) {
+    return null;
+  }
+  const rest = value.substring(BACKPROMOTE_BRANCH_PREFIX.length);
+  const separator = rest.lastIndexOf('/');
+  if (separator <= 0 || separator === rest.length - 1) {
+    return null;
+  }
+  return { parentBranch: rest.substring(0, separator), sandboxName: rest.substring(separator + 1) };
+}
+
+export function isBackpromoteBranchName(branch: string): boolean {
+  return parseBackpromoteBranchName(branch) !== null;
+}
+
 /**
- * What the current branch is. Only a User Story branch can receive a backpromote: a major branch is
- * deployed by the CI/CD pipeline, a promotion branch only carries User Stories from one major branch
- * to the next and a retrofit branch carries a major branch down to another one.
+ * What a branch is. The DevOps Pipeline, the release notes and the promotion candidates ignore the
+ * technical branches: a promotion branch carries User Stories from one major branch to the next, a
+ * retrofit branch carries a major branch down to another one, a backpromote branch holds the manual
+ * merges of a backpromote to one sandbox.
  */
 export function classifyBackpromoteCurrentBranch(currentBranch: string, majorBranches: string[]): BackpromoteCurrentBranchKind {
   const branch = currentBranch || '';
@@ -129,41 +175,36 @@ export function classifyBackpromoteCurrentBranch(currentBranch: string, majorBra
   if (isRetrofit(branch)) {
     return 'retrofitBranch';
   }
+  if (isBackpromoteBranchName(branch)) {
+    return 'backpromoteBranch';
+  }
   return 'userStoryBranch';
 }
 
 /**
- * The major branches a backpromote may come from, when the parent branch is not one of them. A
- * project declaring no major branch at all gives nothing to compare with: its parent branch is accepted.
+ * The parent branches a backpromote may come from: the development branch, then the branches of
+ * `availableTargetBranches`, in that order and without duplicates. Nothing else, whatever
+ * config/branches declares.
  */
-export function findBackpromoteParentBranchRefusal(parentBranch: string, majorBranches: string[]): { majorBranches: string[] } | null {
-  const branches = (majorBranches || []).filter((branch) => !!branch);
-  return branches.length > 0 && !branches.includes(parentBranch) ? { majorBranches: branches } : null;
+export function listAllowedBackpromoteParentBranches(config: { developmentBranch?: string | null; availableTargetBranches?: string[] | null } | null | undefined): string[] {
+  const branches: string[] = [];
+  const add = (branch: unknown) => {
+    const value = typeof branch === 'string' ? branch.trim() : '';
+    if (value && !branches.includes(value)) {
+      branches.push(value);
+    }
+  };
+  add(config?.developmentBranch);
+  for (const branch of config?.availableTargetBranches || []) {
+    add(branch);
+  }
+  return branches;
 }
 
-/**
- * The parent branch a backpromote comes from when none is given: the branch the User Story was
- * created from (hardis:work:new), the source branch of a promotion branch, then its target branch,
- * then the development branch.
- */
-export function guessBackpromoteParentBranch(options: {
-  currentBranch: string;
-  originBranch: string | null;
-  majorBranches: string[];
-  developmentBranch: string | null;
-}): string {
-  if (options.originBranch) {
-    return options.originBranch;
-  }
-  const majorBranches = options.majorBranches || [];
-  const promotion = parsePromotionBranchName(options.currentBranch);
-  if (promotion && majorBranches.includes(promotion.sourceBranch)) {
-    return promotion.sourceBranch;
-  }
-  if (promotion && majorBranches.includes(promotion.targetBranch)) {
-    return promotion.targetBranch;
-  }
-  return options.developmentBranch || majorBranches[0] || 'integration';
+/** Null when the parent branch is allowed, else the list of the allowed branches to name in the message */
+export function findBackpromoteParentBranchRefusal(parentBranch: string, allowedBranches: string[]): { allowedBranches: string[] } | null {
+  const branches = (allowedBranches || []).filter((branch) => !!branch);
+  return branches.includes(parentBranch) ? null : { allowedBranches: branches };
 }
 
 // ---- Target org ----
@@ -185,6 +226,30 @@ export function parseSandboxOfUsername(username: string): { base: string; sandbo
     return null;
   }
   return { base: parts.slice(0, -1).join('.'), sandbox: parts[parts.length - 1] };
+}
+
+/**
+ * Short name of a sandbox, used in the backpromote branch name and in the comment rows: the part of
+ * the instance URL between `--` and `.sandbox` (`mycompany--dev1.sandbox.my.salesforce.com` gives
+ * `dev1`), else the sandbox part of the username, else the org id. Lower case, only characters a
+ * branch name accepts.
+ */
+export function deriveSandboxName(options: { instanceUrl: string; username: string; orgId: string; override?: string | null }): string {
+  const clean = (value: string) => value.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^[-.]+|[-.]+$/g, '');
+  if (options.override && clean(options.override)) {
+    return clean(options.override);
+  }
+  const host = (options.instanceUrl || '').replace(/^https?:\/\//i, '').split('/')[0].toLowerCase();
+  const firstLabel = host.split('.')[0] || '';
+  const doubleDash = firstLabel.indexOf('--');
+  if (doubleDash > 0 && doubleDash < firstLabel.length - 2) {
+    return clean(firstLabel.substring(doubleDash + 2));
+  }
+  const sandbox = parseSandboxOfUsername(options.username || '');
+  if (sandbox) {
+    return clean(sandbox.sandbox);
+  }
+  return clean(options.orgId || '') || 'org';
 }
 
 /**
@@ -225,7 +290,51 @@ export function findBackpromoteTargetOrgRefusal(options: {
   return null;
 }
 
-// ---- Conflicts ----
+// ---- History walk over the "Backpromotes" comment rows ----
+
+export interface BackpromoteHistoryCandidate<TRow> {
+  /** The merged Pull Requests of one first-parent commit of the parent branch (usually one) */
+  pullRequestNumbers: number[];
+  /** The sandbox rows found in the "Backpromotes" comments of those Pull Requests, all sandboxes and org ids */
+  rows: TRow[];
+}
+
+export interface BackpromoteHistoryVerdict<TRow> {
+  /** The row for this sandbox name and org id, when the candidate was backpromoted to it */
+  row: TRow | null;
+  /** A row exists for this sandbox name with another org id: the sandbox was refreshed since */
+  beforeRefresh: boolean;
+}
+
+/**
+ * The verdict of each candidate, newest first, and where the default window starts. The walk stops
+ * at the first candidate holding a row for this sandbox name and org id: it and every older one
+ * count as backpromoted, and the default start is the candidate merged right after it. Candidates
+ * after the stop are not looked at (their rows are given as they are, usually empty because the
+ * caller stopped reading comments too).
+ */
+export function walkBackpromoteHistory<TRow extends { sandboxName: string; orgId: string }>(
+  candidatesNewestFirst: Array<BackpromoteHistoryCandidate<TRow>>,
+  sandboxName: string,
+  orgId: string,
+): { verdicts: Array<BackpromoteHistoryVerdict<TRow>>; foundIndex: number; defaultStartIndex: number | null } {
+  const verdicts: Array<BackpromoteHistoryVerdict<TRow>> = [];
+  let foundIndex = -1;
+  for (let index = 0; index < candidatesNewestFirst.length; index++) {
+    const rows = candidatesNewestFirst[index].rows || [];
+    const row = rows.find((entry) => entry.sandboxName === sandboxName && entry.orgId === orgId) || null;
+    const beforeRefresh = row === null && rows.some((entry) => entry.sandboxName === sandboxName && entry.orgId !== orgId);
+    verdicts.push({ row, beforeRefresh });
+    if (row && foundIndex === -1) {
+      foundIndex = index;
+    }
+  }
+  // Newest first: the candidate merged right after the found one sits just before it in the list
+  const defaultStartIndex = foundIndex === -1 ? null : foundIndex === 0 ? null : foundIndex - 1;
+  return { verdicts, foundIndex, defaultStartIndex };
+}
+
+// ---- Conflicts and merges ----
 
 /**
  * Number of git conflict blocks left in a file content. Every marker line counts, not only the
@@ -238,31 +347,72 @@ export function countConflictMarkerBlocks(content: string): number {
   return Math.max(count(/^<{7}(?!<)/), count(/^\|{7}(?!\|)/), count(/^>{7}(?!>)/));
 }
 
-export interface BackpromotePredictedConflict {
-  path: string;
-  changedInBranch: boolean;
-  changedInOrg: boolean;
+/**
+ * A two-way merge: the sandbox version and the parent branch version side by side, with conflict
+ * markers around every block that differs. Used when the sandbox never received a backpromote, so
+ * there is no common base to run a real three-way merge from. Lines equal on both sides are kept
+ * once. Returns the merged text and the number of conflict blocks.
+ */
+export function buildTwoWayMergeWithMarkers(
+  sandboxContent: string,
+  parentContent: string,
+  labels: { sandbox: string; parent: string },
+): { content: string; conflictBlocks: number } {
+  const normalize = (text: string) => (text || '').replace(/\r\n/g, '\n');
+  const changes = diffLines(normalize(sandboxContent), normalize(parentContent));
+  const output: string[] = [];
+  let conflictBlocks = 0;
+  let index = 0;
+  while (index < changes.length) {
+    const change = changes[index];
+    if (!change.added && !change.removed) {
+      output.push(change.value);
+      index++;
+      continue;
+    }
+    // A differing block: what the sandbox has (removed), then what the parent branch has (added)
+    let sandboxSide = '';
+    let parentSide = '';
+    while (index < changes.length && (changes[index].added || changes[index].removed)) {
+      if (changes[index].removed) {
+        sandboxSide += changes[index].value;
+      } else {
+        parentSide += changes[index].value;
+      }
+      index++;
+    }
+    const endsWithNewline = (text: string) => text === '' || text.endsWith('\n');
+    output.push(`<<<<<<< ${labels.sandbox}\n`);
+    output.push(sandboxSide + (endsWithNewline(sandboxSide) ? '' : '\n'));
+    output.push('=======\n');
+    output.push(parentSide + (endsWithNewline(parentSide) ? '' : '\n'));
+    output.push(`>>>>>>> ${labels.parent}\n`);
+    conflictBlocks++;
+  }
+  return { content: output.join(''), conflictBlocks };
 }
 
-/**
- * The files a merge of the parent branch may conflict on: changed by the Pull Requests being brought
- * in, and also changed in the User Story branch or in the org since the branches diverged. git only
- * conflicts when the same lines changed on both sides, so the run asks about fewer files than this
- * list, never about more.
- */
-export function predictConflictingFiles(options: {
-  parentChangedFiles: string[];
-  branchChangedFiles: string[];
-  orgChangedFiles: string[];
-}): BackpromotePredictedConflict[] {
-  const branch = new Set(options.branchChangedFiles.map(normalizeRepoPath));
-  // The org preview names a bundle by its folder (lwc/myComponent), git names its files
-  const org = options.orgChangedFiles.map(normalizeRepoPath).filter((file) => file !== '');
-  const changedInOrg = (file: string) => org.some((orgPath) => orgPath === file || file.startsWith(`${orgPath}/`));
-  return [...new Set(options.parentChangedFiles.map(normalizeRepoPath))]
-    .filter((file) => branch.has(file) || changedInOrg(file))
-    .sort()
-    .map((file) => ({ path: file, changedInBranch: branch.has(file), changedInOrg: changedInOrg(file) }));
+/** Whether two file contents are the same once line endings and trailing blank lines are ignored */
+export function sameFileContent(a: string, b: string): boolean {
+  const normalize = (text: string) => (text || '').replace(/\r\n/g, '\n').replace(/\s+$/, '');
+  return normalize(a) === normalize(b);
+}
+
+/** Number of lines that differ between two contents (added plus removed), for the plan */
+export function countDifferingLines(a: string, b: string): number {
+  const normalize = (text: string) => (text || '').replace(/\r\n/g, '\n');
+  return diffLines(normalize(a), normalize(b))
+    .filter((change) => change.added || change.removed)
+    .reduce((total, change) => total + (change.count || 0), 0);
+}
+
+const BINARY_EXTENSIONS = new Set(['zip', 'jar', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'pdf', 'woff', 'woff2', 'ttf', 'eot', 'mp3', 'mp4', 'gz', 'tgz', 'bin', 'exe', 'dll', 'swf']);
+
+/** A file the comparison must not open as text: a static resource archive, an image, a font... */
+export function isBinaryMetadataFile(file: string): boolean {
+  const name = normalizeRepoPath(file).split('/').pop() || '';
+  const extension = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
+  return BINARY_EXTENSIONS.has(extension);
 }
 
 /**
@@ -290,6 +440,30 @@ export function itemsOfFile(file: string, itemPaths: Map<string, string | null>)
   return keys;
 }
 
+/**
+ * The tail of a source path after its package directory and the `main/default` folder, so that a
+ * file of the repository and the same file retrieved into another folder can be matched:
+ * `force-app/main/default/classes/A.cls` and `out/main/default/classes/A.cls` both give
+ * `classes/A.cls`.
+ */
+export function sourcePathTail(file: string, packageDirectories: string[] = []): string {
+  let value = normalizeRepoPath(file);
+  const mainDefault = value.indexOf('/main/default/');
+  if (mainDefault >= 0) {
+    return value.substring(mainDefault + '/main/default/'.length);
+  }
+  if (value.startsWith('main/default/')) {
+    return value.substring('main/default/'.length);
+  }
+  for (const directory of packageDirectories.map(normalizeRepoPath).filter((directory) => directory !== '')) {
+    if (value.startsWith(`${directory}/`)) {
+      value = value.substring(directory.length + 1);
+      break;
+    }
+  }
+  return value;
+}
+
 // ---- Command and prompt ----
 
 function quoteArgument(value: string): string {
@@ -305,24 +479,44 @@ function quoteArgument(value: string): string {
   return `"${value.replace(/"/g, '\\"')}"`;
 }
 
-/** The run command matching the decisions of the panel, as the panel and the merge prompt give it */
-export function buildBackpromoteRunCommand(options: {
+export interface BackpromoteRunCommandOptions {
+  mode: 'auto' | 'agent' | 'plan' | 'prepare';
   parentBranch: string;
+  targetOrg?: string | null;
+  fromPullRequest?: number | null;
+  runId?: string | null;
   excludeMetadata?: string[];
-  conflictDecisions?: Map<string, BackpromoteConflictChoice> | Record<string, BackpromoteConflictChoice>;
+  diffDecisions?: Map<string, BackpromoteDiffChoice> | Record<string, BackpromoteDiffChoice>;
+  diffDefault?: BackpromoteDiffChoice | null;
   actions?: string[] | null;
   skipActions?: boolean;
   skipDestructive?: boolean;
-  noPull?: boolean;
-  targetUsername?: string;
-}): string {
-  const parts = ['sf hardis:work:backpromote', `--parentbranch ${quoteArgument(options.parentBranch)}`, '--auto'];
+  confirmActions?: string[];
+  json?: boolean;
+}
+
+/** The command matching a set of decisions, as the panel, the merge prompt and the JSON give it */
+export function buildBackpromoteRunCommand(options: BackpromoteRunCommandOptions): string {
+  const parts = ['sf hardis:work:backpromote', `--${options.mode}`];
+  if (options.targetOrg) {
+    parts.push(`--target-org ${quoteArgument(options.targetOrg)}`);
+  }
+  parts.push(`--parent-branch ${quoteArgument(options.parentBranch)}`);
+  if (options.fromPullRequest && options.fromPullRequest > 0) {
+    parts.push(`--from-pull-request ${options.fromPullRequest}`);
+  }
+  if (options.runId) {
+    parts.push(`--run-id ${quoteArgument(options.runId)}`);
+  }
   for (const key of options.excludeMetadata || []) {
     parts.push(`--exclude-metadata ${quoteArgument(key)}`);
   }
-  const decisions = options.conflictDecisions instanceof Map ? [...options.conflictDecisions.entries()] : Object.entries(options.conflictDecisions || {});
+  const decisions = options.diffDecisions instanceof Map ? [...options.diffDecisions.entries()] : Object.entries(options.diffDecisions || {});
   for (const [file, choice] of decisions) {
-    parts.push(`--on-conflict ${quoteArgument(`${file}=${choice}`)}`);
+    parts.push(`--on-diff ${quoteArgument(`${file}=${choice}`)}`);
+  }
+  if (options.diffDefault && options.diffDefault !== 'git') {
+    parts.push(`--on-diff-default ${options.diffDefault}`);
   }
   if (options.skipDestructive) {
     parts.push('--skip-destructive');
@@ -332,47 +526,71 @@ export function buildBackpromoteRunCommand(options: {
   } else if (options.actions && options.actions.length > 0) {
     parts.push(`--actions ${options.actions.map(quoteArgument).join(',')}`);
   }
-  if (options.noPull) {
-    parts.push('--no-pull');
+  for (const actionId of options.confirmActions || []) {
+    parts.push(`--confirm-action ${quoteArgument(actionId)}`);
   }
-  if (options.targetUsername) {
-    parts.push(`--target-org ${quoteArgument(options.targetUsername)}`);
+  if (options.json) {
+    parts.push('--json');
   }
   return parts.join(' ');
 }
 
+export interface BackpromoteMergePromptFile {
+  /** Repository path of the file holding the markers, in the backpromote branch checkout */
+  path: string;
+  absolutePath: string;
+  conflictBlocks: number;
+  /** Absolute paths of the three versions kept in the cache (base is null for a two-way merge) */
+  versions: { base: string | null; sandbox: string | null; parentHead: string | null };
+  pullRequests: number[];
+}
+
 /**
- * Prompt to paste into a coding agent (Claude Code, GitHub Copilot, Codex...) to solve the git
- * conflicts a backpromote merge left in the developer's files. Self-contained: the files, what each
- * side of a marker is, the Pull Requests behind the incoming side, the rules of a Salesforce metadata
- * merge, and what to run once no marker is left.
+ * One prompt per run to paste into a coding agent (Claude Code, GitHub Copilot, Codex...): every
+ * prepared file with its versions, what each side of a marker is, the Pull Requests behind the
+ * parent branch side, the rules of a Salesforce metadata merge, and the command to run once no
+ * marker is left. The agent commits nothing outside agent mode: the backpromote commits the files
+ * itself and asks for one commit message body naming each file.
  */
 export function buildBackpromoteMergePrompt(options: {
   parentBranch: string;
-  currentBranch: string;
-  orgLabel: string;
-  files: Array<{ path: string; conflictBlocks: number }>;
+  backpromoteBranch: string;
+  sandboxName: string;
+  files: BackpromoteMergePromptFile[];
   pullRequests: Array<{ id: number; title: string; webUrl?: string }>;
   nextCommand: string;
+  agentMode: boolean;
 }): string {
   const lines: string[] = [];
-  lines.push(`You are working in a Salesforce DX git repository managed with sfdx-hardis, on the branch \`${options.currentBranch}\`.`);
+  lines.push(`You are working in a Salesforce DX git repository managed with sfdx-hardis. The checkout is on the branch \`${options.backpromoteBranch}\`, a technical branch created from \`${options.parentBranch}\` for the backpromote of the sandbox \`${options.sandboxName}\`.`);
   lines.push('');
-  lines.push(`The developer is running a backpromote: \`git merge origin/${options.parentBranch}\` brings the changes their teammates merged in \`${options.parentBranch}\` into their branch, before deploying them to their own org (\`${options.orgLabel}\`). The merge stopped on conflicts: the same lines were changed in the branch (which holds the developer's work, including the changes just pulled from their org) and in \`${options.parentBranch}\`. Your job is to solve those conflicts so that both sides are kept.`);
+  lines.push(`A backpromote deploys into the sandbox \`${options.sandboxName}\` what the team merged in \`${options.parentBranch}\`. For the files below, the sandbox holds a version that differs from the \`${options.parentBranch}\` version, and the developer chose to merge the two rather than to overwrite one with the other. Each file was written with conflict markers: your job is to solve them so that both versions are kept.`);
   lines.push('');
-  lines.push('## Files to fix');
+  lines.push('## Files to merge');
   lines.push('');
   for (const file of options.files) {
-    lines.push(`- \`${file.path}\`: ${file.conflictBlocks} conflict block(s)`);
+    lines.push(`- \`${file.path}\` (${file.conflictBlocks} conflict block(s)), absolute path \`${file.absolutePath}\``);
+    if (file.versions.sandbox) {
+      lines.push(`  - sandbox version: \`${file.versions.sandbox}\``);
+    }
+    if (file.versions.parentHead) {
+      lines.push(`  - ${options.parentBranch} version: \`${file.versions.parentHead}\``);
+    }
+    if (file.versions.base) {
+      lines.push(`  - common base (the version at the start of the window, both sides were changed from it): \`${file.versions.base}\``);
+    }
+    if (file.pullRequests.length > 0) {
+      lines.push(`  - changed in ${options.parentBranch} by the Pull Request(s) ${file.pullRequests.map((number) => `#${number}`).join(', ')}`);
+    }
   }
   lines.push('');
   lines.push('## How to read a conflict');
   lines.push('');
-  lines.push("- Between `<<<<<<< HEAD` and `=======`: the developer's version (their branch and their org).");
-  lines.push(`- Between \`=======\` and \`>>>>>>> origin/${options.parentBranch}\`: what the teammates merged in \`${options.parentBranch}\`.`);
+  lines.push(`- Between \`<<<<<<< sandbox\` and \`=======\` (or \`|||||||\` when a base is shown): the version of the sandbox \`${options.sandboxName}\`, which may hold work done directly in the org.`);
+  lines.push(`- Between \`=======\` and \`>>>>>>> ${options.parentBranch}\`: what the team merged in \`${options.parentBranch}\`.`);
   if (options.pullRequests.length > 0) {
     lines.push('');
-    lines.push(`## Pull Requests merged in ${options.parentBranch} that are being brought in`);
+    lines.push(`## Pull Requests merged in ${options.parentBranch} that are being backpromoted`);
     lines.push('');
     for (const pr of options.pullRequests) {
       lines.push(`- ${pr.id > 0 ? `#${pr.id} ` : ''}${pr.title}${pr.webUrl ? ` (${pr.webUrl})` : ''}`);
@@ -381,15 +599,17 @@ export function buildBackpromoteMergePrompt(options: {
   lines.push('');
   lines.push('## Rules');
   lines.push('');
-  lines.push("1. Keep both intents: the developer's change and the incoming change. When they really contradict each other, keep the incoming change and write down what the developer has to redo.");
+  lines.push(`1. Keep both intents when they touch different parts. For shared configuration (layouts, profiles, permission sets, settings) prefer the \`${options.parentBranch}\` version, and never remove an org-only element the sandbox work still needs.`);
   lines.push('2. Salesforce metadata files are XML: the result must be well-formed, keep one entry per API name (no duplicated `<fullName>`, `<fields>`, `<labels>`, `<members>`...), keep the existing element order and indentation, and keep the XML declaration and namespace untouched.');
   lines.push('3. Only change the conflicting lines. Do not reformat the files and do not touch other files.');
-  lines.push('4. Leave no marker: `<<<<<<<`, `=======` and `>>>>>>>` lines must all be gone.');
-  lines.push('5. Do not commit, do not push and do not deploy: the developer reviews the result, then the backpromote commits the merge itself.');
+  lines.push('4. Leave no marker: `<<<<<<<`, `|||||||`, `=======` and `>>>>>>>` lines must all be gone.');
+  lines.push(options.agentMode
+    ? '5. Do not commit, do not push and do not deploy: the command below commits the merged files in the backpromote branch, checks them and deploys them.'
+    : '5. Do not commit, do not push and do not deploy: the developer reviews the result, then the Backpromote button (or the command below) commits the merged files in the backpromote branch and deploys them.');
   lines.push('');
   lines.push('## Once done');
   lines.push('');
-  lines.push('Report, for each file, what you kept from each side in one sentence. The developer then continues with the Backpromote button of the VS Code panel, or with:');
+  lines.push('Report, for each file, what you kept from each side in one sentence: this is the body of the commit message of the merge. Then run, or let the developer run:');
   lines.push('');
   lines.push('```');
   lines.push(options.nextCommand);

@@ -230,11 +230,15 @@ Break one of these and the feature is wrong, whatever the tests say.
     in the extension, plus the fallback regex of `pipeline.js`) still accepts the
     `<YYYY-MM-DD>-<counter>` names of the first releases: a promotion assembled before the upgrade
     can still be open, or waiting in a branch for the next step.
-29. **A backpromote never works on a promotion branch.** `hardis:work:backpromote` merges a major branch
-    into the developer's User Story branch, then deploys what the merge brought in to their org. On a
-    promotion branch, like on a major or retrofit branch, `classifyBackpromoteCurrentBranch` makes the run
-    refuse to start, whatever `enablePromotionBranches` says: the user checks out their User Story branch
-    first. Nothing is ever committed on a promotion branch or on a major branch.
+29. **A backpromote never touches a promotion branch, and a promotion never sees a backpromote branch.**
+    `hardis:work:backpromote` deploys what was merged in a parent major branch into a developer sandbox
+    from its own technical branch `backpromote/<parent branch>/<sandbox name>` (a child of the parent
+    branch holding the manual merges only, see the `backpromote` skill). Whatever branch is checked out
+    when it starts, it commits nothing there: it switches to the backpromote branch. `backpromote/*`
+    branches join `promotion/*` and `retrofit/*` in `classifyBackpromoteCurrentBranch` and in the
+    extension mirror: the DevOps Pipeline, the release notes and the promotion candidates ignore them,
+    and no CI job runs on them. The backpromote history lives in the "Backpromotes" Pull Request
+    comment, which is not the CI/CD "Deployment Actions" comment: neither side reads the other's.
 
 ## sfdx-hardis (CLI)
 

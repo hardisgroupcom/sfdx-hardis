@@ -1,0 +1,27 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "scanFound": true,
+  "selected": "{{S4}}",
+  "windowStart": "{{S4}}",
+  "items": [
+    "StaticResource:E2E_S4"
+  ],
+  "absentItems": [
+    "StaticResource:E2E_S1"
+  ],
+  "backpromoted": [
+    "{{S1}}",
+    "{{S2}}",
+    "{{S3}}"
+  ],
+  "notBackpromoted": [
+    "{{S4}}"
+  ],
+  "comparison": [
+    {
+      "fileContains": "E2E_S4.resource",
+      "status": "missingInOrg"
+    }
+  ]
+}

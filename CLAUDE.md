@@ -37,7 +37,8 @@ Every step also covers the VS Code extension: see [VS Code Extension](#vs-code-e
 ## Promotion Branches Skills
 
 - `promotion-branches` skill: how the promotion branches feature (`enablePromotionBranches`, `sf hardis:project:promotion:create`) works across sfdx-hardis and vscode-sfdx-hardis, its invariants, and every file to touch. Load it for any work on promotion branches, on the Pull Request scope of `deploy:smart`, on release notes filtering, or on the DevOps Pipeline windows, counters and toggles.
-- `promotion-branches-e2e` skill: the runbook, the job simulators and the regression scripts to prove the feature again end to end against a real org and a throwaway private repository. Run it whenever promotion branches change in a way unit tests cannot cover.
+- `promotion-branches-e2e` skill: the runbook, the job simulators and the regression scripts to prove the feature again end to end against a real org and a throwaway private repository. Run it whenever promotion branches or backpromote change in a way unit tests cannot cover.
+- `backpromote` skill: how a coding agent drives `sf hardis:work:backpromote` (plan, decide, run, solve the merges it asks for, confirm manual actions) and where the feature lives in both repositories. Load it for any work on backpromote, on the "Backpromotes" Pull Request comments or on the VS Code Backpromote panel. The requirements are in `backpromote.md`.
 
 ## VS Code Extension (vscode-sfdx-hardis)
 

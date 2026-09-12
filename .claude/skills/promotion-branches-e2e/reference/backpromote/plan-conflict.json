@@ -1,7 +1,0 @@
-{
-  "exitStatus": 0,
-  "status": "ready",
-  "pullRequests": ["{{S5}}"],
-  "items": ["StaticResource:E2E_S2"],
-  "conflicts": [{ "pathContains": "E2E_S2", "changedInBranch": true }]
-}

@@ -1,25 +1,17 @@
 /* jscpd:ignore-start */
-import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import { spawnSync } from 'child_process';
 import fs from './fsUtils.js';
 import * as path from 'path';
-import { execCommand, git, isCI, uxLog } from './index.js';
-import { analyzeDeployErrorLogs } from './deployTips.js';
-import { getConfig, getEnvVar } from '../../config/index.js';
+import { git, uxLog } from './index.js';
 import { GitProvider } from '../gitProvider/index.js';
-import { countPackageXmlItems, isPackageXmlEmpty, parsePackageXmlFile } from './xmlUtils.js';
-import { generateReportPath, uxLogTableWithReport } from './filesUtils.js';
-import { prompts } from './prompts.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { authOrg } from './authUtils.js';
 import { findUserByUsernameLike } from './orgUtils.js';
-import { listMajorOrgs } from './orgConfigUtils.js';
 import { parsePromotionBranchName } from './promotionBranchUtils.js';
-import { guessBackpromoteParentBranch } from './backpromoteRules.js';
 import { DEV_SANDBOXES_BRANCH_NAME, evaluateActionBranchFilter } from './actionUtils.js';
-import { WebSocketClient } from '../websocketClient.js';
 import { t } from './i18n.js';
+import { BackpromoteActionRow, BackpromoteCommentStore, upsertActionRow } from './backpromoteCommentUtils.js';
 
 // ---- Interfaces ----
 
@@ -42,64 +34,6 @@ export interface BackpromotePrGroup {
   }>;
   /** PR-scoped configs for deployment actions and test classes (merged from all associated PRs) */
   prConfigs: Array<{ config: any; prId: number; prTitle: string }>;
-}
-
-// ---- Resolve parent branch ----
-
-export async function resolveParentBranch(
-  commandThis: any,
-  flagOverride: string | null,
-  agentMode: boolean,
-  currentBranch: string,
-): Promise<string> {
-  if (flagOverride) {
-    uxLog('action', commandThis, c.cyan(t('backpromoteParentBranchAutoSelected', { parentBranch: c.green(flagOverride) })));
-    return flagOverride;
-  }
-  const config = await getConfig('project');
-  const userConfig = await getConfig('user');
-  const majorOrgs = await listMajorOrgs();
-  const recommendedBranch = guessBackpromoteParentBranch({
-    currentBranch,
-    // The branch that the current feature branch was created from (set by work:new)
-    originBranch: userConfig?.localStorageBranchTargets?.[currentBranch] || null,
-    majorBranches: majorOrgs.map((org: any) => org.branchName).filter(Boolean),
-    developmentBranch: config.developmentBranch || null,
-  });
-
-  if (agentMode || isCI) {
-    uxLog('action', commandThis, c.cyan(t('backpromoteParentBranchAutoSelected', { parentBranch: c.green(recommendedBranch) })));
-    return recommendedBranch;
-  }
-  // Interactive: let user choose from major org branches (+ developmentBranch)
-  const majorBranchNames = new Set(majorOrgs.map((org: any) => org.branchName).filter(Boolean));
-  // Also include developmentBranch even if it's not a major org
-  if (config.developmentBranch) {
-    majorBranchNames.add(config.developmentBranch);
-  }
-
-  const branchChoices: any[] = [];
-  // Add recommended branch first
-  if (majorBranchNames.has(recommendedBranch)) {
-    branchChoices.push({
-      title: `${recommendedBranch} (${t('recommended')})`,
-      value: recommendedBranch,
-    });
-  }
-  // Add remaining major branches
-  for (const branchName of majorBranchNames) {
-    if (branchName !== recommendedBranch) {
-      branchChoices.push({ title: branchName, value: branchName });
-    }
-  }
-  const branchRes = await prompts({
-    type: 'select',
-    message: c.cyanBright(t('backpromoteSelectParentBranch')),
-    description: t('backpromoteSelectParentBranch'),
-    name: 'value',
-    choices: branchChoices,
-  });
-  return branchRes.value || recommendedBranch;
 }
 
 // ---- List first-parent commits with associated PRs ----
@@ -306,8 +240,10 @@ export async function listMergedPrsWithCommits(
   currentBranch: string,
   sinceCommit: string | null,
   commandThis: any,
-  options: { splitVehicleMergesFrom?: string[] } = {},
+  options: { splitVehicleMergesFrom?: string[]; maxCount?: number } = {},
 ): Promise<BackpromotePrGroup[]> {
+  const maxCount = options.maxCount && options.maxCount > 0 ? options.maxCount : 50;
+  const maxAllCommits = Math.max(500, maxCount * 10);
   uxLog('action', commandThis, c.cyan(t('backpromoteListingMergedPrs', { parentBranch: c.green(parentBranch) })));
 
   // Get first-parent commits on the parent branch (only direct merges/commits, not inherited ones)
@@ -316,8 +252,8 @@ export async function listMergedPrsWithCommits(
     if (sinceCommit) {
       firstParentLog = await git().log(['--first-parent', `${sinceCommit}..${parentBranch}`]);
     } else {
-      // No starting point: show recent history (50 commits)
-      firstParentLog = await git().log(['--first-parent', '-n', '50', parentBranch]);
+      // No starting point: the most recent first-parent commits
+      firstParentLog = await git().log(['--first-parent', '-n', String(maxCount), parentBranch]);
     }
   } catch {
     return [];
@@ -330,14 +266,14 @@ export async function listMergedPrsWithCommits(
   // by looking at ALL commits reachable from it (not just first-parent)
   const allCommitsLog = sinceCommit
     ? await git().log([`${sinceCommit}..${parentBranch}`]).catch(() => null)
-    : await git().log(['-n', '500', parentBranch]).catch(() => null);
+    : await git().log(['-n', String(maxAllCommits), parentBranch]).catch(() => null);
   const allCommits = [...(allCommitsLog?.all || [])];
 
   // The parent of every commit of the window, in one call: which merge brought a commit in is a
   // question about the graph, and answering it from the dates is wrong for cherry-picks.
   const revListArgs = sinceCommit
     ? ['rev-list', '--parents', `${sinceCommit}..${parentBranch}`]
-    : ['rev-list', '--parents', '-n', '500', parentBranch];
+    : ['rev-list', '--parents', '-n', String(maxAllCommits), parentBranch];
   const parentsByHash = parseCommitParents(await git().raw(revListArgs).catch(() => ''));
 
   // Discover PRs from all commits using the three strategies
@@ -576,230 +512,33 @@ async function loadPrConfig(prId: number, ref: string | null): Promise<any | nul
   }
 }
 
-// ---- Handle destructive changes ----
-
-export async function confirmDestructiveChanges(
-  destructiveChangesXml: string,
-  commandThis: any,
-  agentMode: boolean,
-): Promise<boolean> {
-  if (!fs.existsSync(destructiveChangesXml) || await isPackageXmlEmpty(destructiveChangesXml)) {
-    return false;
-  }
-
-  const destructiveContent = await parsePackageXmlFile(destructiveChangesXml);
-  let totalItems = 0;
-  const items: Array<{ Type: string; Name: string }> = [];
-  for (const mdType of Object.keys(destructiveContent)) {
-    for (const member of destructiveContent[mdType]) {
-      items.push({ Type: mdType, Name: member });
-      totalItems++;
-    }
-  }
-
-  uxLog('warning', commandThis, c.yellow(t('backpromoteDestructiveChangesWarning', { count: totalItems })));
-  await uxLogTableWithReport(commandThis, items, ['Type', 'Name'], {
-    fileNamePrefix: 'backpromote-destructive-changes',
-    fileTitle: 'Backpromote destructive changes',
-  });
-
-  if (agentMode || isCI) {
-    uxLog('warning', commandThis, c.yellow(t('backpromoteDestructiveChangesAutoConfirmed')));
-    return true;
-  }
-
-  const confirmRes = await prompts({
-    type: 'confirm',
-    name: 'value',
-    message: c.cyanBright(t('backpromoteConfirmDestructiveChanges')),
-    description: t('backpromoteConfirmDestructiveChanges'),
-    initial: false,
-  });
-
-  return confirmRes.value === true;
-}
-
-// ---- Deploy metadata ----
-
-export async function deployBackpromoteMetadata(
-  packageXmlFile: string,
-  destructiveChangesFile: string | null,
-  targetUsername: string,
-  testClasses: string[],
-  commandThis: any,
-  debugMode: boolean,
-  agentMode: boolean = false,
-): Promise<void> {
-  if (!fs.existsSync(packageXmlFile) || await isPackageXmlEmpty(packageXmlFile)) {
-    // Check if we have destructive changes only
-    if (!destructiveChangesFile || !fs.existsSync(destructiveChangesFile) || await isPackageXmlEmpty(destructiveChangesFile)) {
-      uxLog('action', commandThis, c.cyan(t('backpromoteNoDelta')));
-      return;
-    }
-  }
-
-  const itemCount = fs.existsSync(packageXmlFile) ? await countPackageXmlItems(packageXmlFile) : 0;
-  uxLog('action', commandThis, c.cyan(t('backpromoteDeploying', { count: itemCount })));
-
-  const testLevel = testClasses.length > 0 ? 'RunSpecifiedTests' : 'NoTestRun';
-  if (testClasses.length > 0) {
-    uxLog('log', commandThis, c.grey(t('backpromoteTestClassesFromPrs', { classes: testClasses.join(', ') })));
-  }
-
-  const deployCmd =
-    `sf project deploy start` +
-    ` --manifest "${packageXmlFile}"` +
-    ' --ignore-warnings' +
-    ' --ignore-conflicts' +
-    ` --test-level ${testLevel}` +
-    (testClasses.length > 0 ? ` --tests ${testClasses.join(',')}` : '') +
-    (destructiveChangesFile && fs.existsSync(destructiveChangesFile) ? ` --post-destructive-changes "${destructiveChangesFile}"` : '') +
-    ` -o ${targetUsername}` +
-    ` --wait ${getEnvVar('SFDX_DEPLOY_WAIT_MINUTES') || '120'}` +
-    ' --json';
-
-  const result = await runDeploy(deployCmd, testLevel, commandThis, debugMode);
-
-  // If deployment failed because of test classes or coverage, offer to retry without tests
-  if (!result.success && testClasses.length > 0 && (result.hasTestFailures || result.hasCoverageFailures)) {
-    uxLog('warning', commandThis, c.yellow(t('backpromoteDeployTestFailure')));
-    let retryWithoutTests = agentMode; // Agent mode: auto-retry without tests
-    if (!retryWithoutTests && !isCI) {
-      const retryRes = await prompts({
-        type: 'confirm',
-        name: 'value',
-        message: c.cyanBright(t('backpromoteRetryWithoutTests')),
-        description: t('backpromoteRetryWithoutTests'),
-        initial: true,
-      });
-      retryWithoutTests = retryRes.value === true;
-    }
-    if (retryWithoutTests) {
-      uxLog('action', commandThis, c.cyan(t('backpromoteRetryingWithoutTests')));
-      const noTestCmd =
-        `sf project deploy start` +
-        ` --manifest "${packageXmlFile}"` +
-        ' --ignore-warnings' +
-        ' --ignore-conflicts' +
-        ' --test-level NoTestRun' +
-        (destructiveChangesFile && fs.existsSync(destructiveChangesFile) ? ` --post-destructive-changes "${destructiveChangesFile}"` : '') +
-        ` -o ${targetUsername}` +
-        ` --wait ${getEnvVar('SFDX_DEPLOY_WAIT_MINUTES') || '120'}` +
-        ' --json';
-      const retryResult = await runDeploy(noTestCmd, 'NoTestRun', commandThis, debugMode);
-      await writeDeployReport(retryResult, targetUsername, itemCount, 'NoTestRun', [], packageXmlFile, destructiveChangesFile, commandThis);
-      if (!retryResult.success) {
-        throw new SfError(t('backpromoteDeployFailed'));
-      }
-      uxLog('warning', commandThis, c.yellow(t('backpromoteDeploySuccessButFixTests')));
-      uxLog('action', commandThis, c.green(t('backpromoteDeploySuccess', { count: itemCount })));
-      return;
-    }
-  }
-
-  await writeDeployReport(result, targetUsername, itemCount, testLevel, testClasses, packageXmlFile, destructiveChangesFile, commandThis);
-
-  if (!result.success) {
-    throw new SfError(t('backpromoteDeployFailed'));
-  }
-
-  uxLog('action', commandThis, c.green(t('backpromoteDeploySuccess', { count: itemCount })));
-}
-
-// ---- Deploy helpers ----
-
-interface DeployResult {
-  success: boolean;
-  output: string;
-  hasTestFailures: boolean;
-  hasCoverageFailures: boolean;
-}
-
-async function runDeploy(
-  deployCmd: string,
-  _testLevel: string,
-  commandThis: any,
-  debugMode: boolean,
-): Promise<DeployResult> {
-  try {
-    const deployResult = await execCommand(deployCmd, commandThis, {
-      fail: true,
-      output: true,
-      debug: debugMode,
-    });
-    return { success: true, output: deployResult.stdout || '', hasTestFailures: false, hasCoverageFailures: false };
-  } catch (e) {
-    const output = ((e as any).stdout || '') + ((e as any).stderr || '');
-    const { errLog, failedTests, errorsAndTips } = await analyzeDeployErrorLogs(output, true, { label: 'backpromote' });
-    uxLog('error', commandThis, c.red(t('backpromoteDeployFailed')));
-    uxLog('error', commandThis, c.red('\n' + errLog));
-    const hasTestFailures = (failedTests || []).length > 0;
-    const hasCoverageFailures = (errorsAndTips || []).some(
-      (item: any) => item?.tip?.label === 'CodeCoverageWarning'
-    );
-    return { success: false, output, hasTestFailures, hasCoverageFailures };
-  }
-}
-
-async function writeDeployReport(
-  result: { success: boolean; output: string },
-  targetUsername: string,
-  itemCount: number,
-  testLevel: string,
-  testClasses: string[],
-  packageXmlFile: string,
-  destructiveChangesFile: string | null,
-  commandThis: any,
-): Promise<void> {
-  const reportPath = await generateReportPath('backpromote-deploy', '', {
-    withDate: true,
-    withBranchName: true,
-    fileExtension: 'log',
-  });
-  const reportContent = [
-    'Backpromote Deployment Report',
-    `Date: ${new Date().toISOString()}`,
-    `Target org: ${targetUsername}`,
-    `Status: ${result.success ? 'SUCCESS' : 'FAILED'}`,
-    `Items: ${itemCount}`,
-    `Test level: ${testLevel}`,
-    testClasses.length > 0 ? `Test classes: ${testClasses.join(', ')}` : '',
-    `Package XML: ${packageXmlFile}`,
-    destructiveChangesFile ? `Destructive changes: ${destructiveChangesFile}` : '',
-    '',
-    '--- Deployment output ---',
-    result.output,
-  ].filter(Boolean).join('\n');
-  await fs.writeFile(reportPath, reportContent, 'utf-8');
-  uxLog('log', commandThis, c.grey(t('backpromoteDeployReportSaved', { reportPath })));
-  WebSocketClient.sendReportFileMessage(reportPath, t('backpromoteDeployReportLabel'), 'report');
-}
-
 // ---- Execute deployment actions ----
 
 export type BackpromoteActionCandidate = PrePostCommand & { prLabel: string; prId: number; commitHash: string };
 
 /**
  * The deployment actions of the given groups for one phase. Actions not meant for developer
- * sandboxes are dropped. An invalid definition (both filter lists set) is a warning rather than a
- * failure: backpromote is an interactive developer command, not a pipeline gate.
+ * sandboxes are dropped, and so are the ones of the check-deployment-only context: a backpromote is
+ * a real deployment. Branch filters are evaluated against the parent branch: the sandbox stands for
+ * the branch it is backpromoted from. An invalid definition (both filter lists set) is a warning
+ * rather than a failure: backpromote is an interactive developer command, not a pipeline gate.
  */
 export function collectBackpromoteActions(
   selectedPrs: BackpromotePrGroup[],
-  currentBranch: string,
+  parentBranch: string,
   phase: 'commandsPreDeploy' | 'commandsPostDeploy',
   commandThis: any,
 ): BackpromoteActionCandidate[] {
   const allActions: BackpromoteActionCandidate[] = [];
-  // A backpromote always deploys to a developer sandbox, so branch filters are evaluated against
-  // the dev-sandboxes virtual name (the User Story branch name stays eligible too).
-  const targetBranchCandidates = [DEV_SANDBOXES_BRANCH_NAME, currentBranch];
+  const targetBranchCandidates = [DEV_SANDBOXES_BRANCH_NAME, parentBranch];
   for (const prGroup of selectedPrs) {
     for (const { config: prConfig, prId, prTitle } of prGroup.prConfigs) {
       const commands = prConfig[phase];
       if (!Array.isArray(commands)) continue;
       const prLabel = prId > 0 ? `#${prId} - ${prTitle}` : prTitle;
       for (const cmd of commands) {
+        if (!cmd || !cmd.id) continue;
+        if (cmd.context === 'check-deployment-only') continue;
         const branchFilterVerdict = evaluateActionBranchFilter(cmd, targetBranchCandidates);
         if (branchFilterVerdict.run === false) {
           if (branchFilterVerdict.invalid) {
@@ -819,166 +558,118 @@ export function collectBackpromoteActions(
   return allActions;
 }
 
-export async function executeBackpromoteActions(
-  selectedPrs: BackpromotePrGroup[],
-  currentBranch: string,
-  phase: 'commandsPreDeploy' | 'commandsPostDeploy',
-  targetUsername: string,
-  conn: any,
-  commandThis: any,
-  agentMode: boolean,
-  options: {
-    actionIds?: string[] | null;
-    skipActions?: boolean;
-    nonInteractive?: boolean;
-  } = {},
-): Promise<void> {
-  if (options.skipActions === true) {
-    return;
+export interface BackpromoteActionsOutcome {
+  run: string[];
+  skipped: string[];
+  failed: string[];
+  pending: string[];
+}
+
+/**
+ * Run the actions of one phase in the sandbox, with the actions table of the "Backpromotes" comment
+ * as the state store: an action with a success row for this sandbox and org id is skipped (unless
+ * runOnlyOnceByOrg is false), and every outcome is written as soon as the action finishes, so that
+ * an action that ran before a failed deployment is not run again. A manual action, or an action
+ * whose custom username cannot be authenticated, is written as pending: the user confirms it later.
+ */
+export async function executeBackpromoteActions(options: {
+  actions: BackpromoteActionCandidate[];
+  phase: 'commandsPreDeploy' | 'commandsPostDeploy';
+  selectedActionIds: Set<string>;
+  alreadyRun: Map<string, BackpromoteActionRow>;
+  sandboxName: string;
+  orgId: string;
+  user: string;
+  conn: any;
+  store: BackpromoteCommentStore;
+  commandThis: any;
+}): Promise<BackpromoteActionsOutcome> {
+  const outcome: BackpromoteActionsOutcome = { run: [], skipped: [], failed: [], pending: [] };
+  const phase: 'pre' | 'post' = options.phase === 'commandsPreDeploy' ? 'pre' : 'post';
+  const record = async (action: BackpromoteActionCandidate, status: BackpromoteActionRow['status']) => {
+    if (action.prId <= 0) {
+      return;
+    }
+    const row: BackpromoteActionRow = { actionId: action.id, label: action.label, phase, sandboxName: options.sandboxName, orgId: options.orgId, date: new Date().toISOString(), status, user: options.user };
+    try {
+      await options.store.update(action.prId, (state) => upsertActionRow(state, row));
+    } catch (e) {
+      uxLog('warning', options.commandThis, c.yellow(t('backpromoteCommentWriteFailed', { pr: action.prId, message: (e as Error).message })));
+    }
+  };
+  const toRun = options.actions.filter((action) => options.selectedActionIds.has(action.id));
+  if (toRun.length === 0) {
+    return outcome;
   }
-  const allActions = collectBackpromoteActions(selectedPrs, currentBranch, phase, commandThis);
-
-  if (allActions.length === 0) {
-    return;
-  }
-
-  const phaseLabel = phase === 'commandsPreDeploy' ? t('actionWhenPreDeploy') : t('actionWhenPostDeploy');
-
-  const manualActions: Array<{ id: string; label: string; username: string; prLabel: string; prId: number }> = [];
-
-  // Let the user select which actions to run
-  let selectedActionIds: Set<string>;
-  if (options.actionIds) {
-    // Explicit selection (--actions): run exactly those
-    const availableIds = new Set(allActions.map((action) => action.id));
-    selectedActionIds = new Set<string>(options.actionIds.filter((id) => availableIds.has(id)));
-  } else if (!agentMode && !isCI && !options.nonInteractive) {
-    const actionChoices = allActions.map((action) => ({
-      title: `[${phaseLabel}] ${action.label} (${action.prLabel})`,
-      value: action.id,
-      selected: true,
-    }));
-    const selectRes = await prompts({
-      type: 'multiselect',
-      name: 'value',
-      message: c.cyanBright(t('backpromoteSelectActions', { phase: phaseLabel })),
-      description: t('backpromoteSelectActions', { phase: phaseLabel }),
-      choices: actionChoices,
-    });
-    selectedActionIds = new Set<string>(selectRes.value || []);
-  } else {
-    selectedActionIds = new Set<string>(allActions.map((action) => action.id));
-  }
-
-  if (selectedActionIds.size === 0) {
-    uxLog('action', commandThis, c.cyan(`[Backpromote] ${t('backpromoteNoPhaseActionsSelected', { phase: phaseLabel })}`));
-    return;
-  }
-
-  uxLog('action', commandThis, c.cyan(t('backpromoteExecutingActions', { count: selectedActionIds.size })));
-
-  // Store connection for actions that need it
-  globalThis.jsForceConn = conn;
-
-  for (const action of allActions) {
-    if (!selectedActionIds.has(action.id)) {
+  uxLog('action', options.commandThis, c.cyan(t('backpromoteExecutingActions', { count: toRun.length, phase: phase === 'pre' ? t('actionWhenPreDeploy') : t('actionWhenPostDeploy') })));
+  globalThis.jsForceConn = options.conn;
+  for (const action of toRun) {
+    const previous = options.alreadyRun.get(action.id);
+    if (previous && previous.status === 'success' && action.runOnlyOnceByOrg !== false) {
+      uxLog('log', options.commandThis, c.grey(t('backpromoteActionAlreadyRun', { label: action.label, date: previous.date.substring(0, 10) })));
+      outcome.skipped.push(action.id);
       continue;
     }
-
+    if (action.type === 'manual') {
+      uxLog('warning', options.commandThis, c.yellow(t('backpromoteManualActionPending', { label: action.label })));
+      outcome.pending.push(action.id);
+      await record(action, 'pending');
+      continue;
+    }
+    let actionInstance: any = null;
     if (action.customUsername) {
-      // Try LoginAs
-      const user = await findUserByUsernameLike(action.customUsername, conn);
-      if (!user) {
-        uxLog('warning', commandThis, c.yellow(t('backpromoteActionLoginAsFailed', {
-          username: action.customUsername,
-          label: action.label,
-        })));
-        manualActions.push({ id: action.id, label: action.label, username: action.customUsername, prLabel: action.prLabel, prId: action.prId });
-      } else {
+      const user = await findUserByUsernameLike(action.customUsername, options.conn).catch(() => null);
+      let authenticated = false;
+      if (user) {
         try {
-          const instanceUrl = conn.instanceUrl;
-          const authResult = await authOrg('', { forceUsername: user.Username, instanceUrl, setDefault: false });
-          if (authResult === true) {
-            uxLog('log', commandThis, c.green(t('backpromoteActionLoginAsSuccess', { username: user.Username, label: action.label })));
-            const actionInstance = await ActionsProvider.buildActionInstance(action);
-            actionInstance.customUsernameToUse = user.Username;
-            await runBackpromoteAction(actionInstance, action, commandThis);
-          } else {
-            uxLog('warning', commandThis, c.yellow(t('backpromoteActionLoginAsFailed', { username: user.Username, label: action.label })));
-            manualActions.push({ id: action.id, label: action.label, username: action.customUsername, prLabel: action.prLabel, prId: action.prId });
-          }
+          authenticated = (await authOrg('', { forceUsername: user.Username, instanceUrl: options.conn.instanceUrl, setDefault: false })) === true;
         } catch {
-          uxLog('warning', commandThis, c.yellow(t('backpromoteActionLoginAsFailed', { username: action.customUsername, label: action.label })));
-          manualActions.push({ id: action.id, label: action.label, username: action.customUsername, prLabel: action.prLabel, prId: action.prId });
+          authenticated = false;
         }
       }
+      if (!user || !authenticated) {
+        uxLog('warning', options.commandThis, c.yellow(t('backpromoteActionLoginAsFailed', { username: action.customUsername, label: action.label })));
+        outcome.pending.push(action.id);
+        await record(action, 'pending');
+        continue;
+      }
+      uxLog('log', options.commandThis, c.green(t('backpromoteActionLoginAsSuccess', { username: user.Username, label: action.label })));
+      actionInstance = await ActionsProvider.buildActionInstance(action);
+      actionInstance.customUsernameToUse = user.Username;
     } else {
-      // Execute directly
-      const actionInstance = await ActionsProvider.buildActionInstance(action);
-      if (actionInstance) {
-        await runBackpromoteAction(actionInstance, action, commandThis);
+      actionInstance = await ActionsProvider.buildActionInstance(action);
+    }
+    if (!actionInstance) {
+      outcome.skipped.push(action.id);
+      continue;
+    }
+    let status: BackpromoteActionRow['status'] = 'success';
+    try {
+      uxLog('action', options.commandThis, c.cyan(t('backpromoteRunningAction', { label: action.label })));
+      const result = await actionInstance.run(action);
+      const code = result?.statusCode || 'success';
+      if (code === 'manual') {
+        status = 'pending';
+      } else if (['failed', 'not-run'].includes(code)) {
+        status = 'failed';
+      } else if (code === 'skipped') {
+        outcome.skipped.push(action.id);
+        continue;
       }
+    } catch (e) {
+      uxLog('error', options.commandThis, c.red(`[Backpromote] ${t('backpromoteActionFailedWithMessage', { label: action.label, message: (e as Error).message })}`));
+      status = 'failed';
     }
+    if (status === 'success') {
+      uxLog('success', options.commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
+      outcome.run.push(action.id);
+    } else if (status === 'pending') {
+      outcome.pending.push(action.id);
+    } else {
+      outcome.failed.push(action.id);
+    }
+    await record(action, status);
   }
-
-  // Handle manual actions with one-by-one validation
-  if (manualActions.length > 0 && !agentMode && !isCI) {
-    uxLog('action', commandThis, c.cyan(t('backpromoteManualActionsRequired', { count: manualActions.length })));
-    for (const manualAction of manualActions) {
-      const actionRes = await prompts({
-        type: 'text',
-        name: 'value',
-        message: c.cyanBright(t('backpromoteManualActionPrompt', {
-          label: manualAction.label,
-          username: manualAction.username,
-        })),
-        description: t('backpromoteManualActionPrompt', {
-          label: manualAction.label,
-          username: manualAction.username,
-        }),
-      });
-      if (actionRes.value === 's' || actionRes.value === 'S') {
-        uxLog('action', commandThis, c.cyan(t('backpromoteManualActionSkipped', { label: manualAction.label })));
-      } else {
-        uxLog('action', commandThis, c.cyan(t('backpromoteManualActionCompleted', { label: manualAction.label })));
-      }
-    }
-  } else if (manualActions.length > 0) {
-    // In agent mode, just log the manual actions
-    uxLog('warning', commandThis, c.yellow(t('backpromoteManualActionsRequired', { count: manualActions.length })));
-    for (const manualAction of manualActions) {
-      uxLog('warning', commandThis, c.yellow(t('backpromoteActionRequiresLoginAs', {
-        label: manualAction.label,
-        username: manualAction.username,
-      })));
-    }
-  }
-}
-
-async function runBackpromoteAction(actionInstance: any, action: BackpromoteActionCandidate, commandThis: any): Promise<void> {
-  try {
-    uxLog('action', commandThis, c.cyan(t('backpromoteRunningAction', { label: action.label })));
-    const result = await actionInstance.run(action);
-    if (!['manual', 'failed', 'skipped', 'not-run'].includes(result?.statusCode)) {
-      uxLog('success', commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
-    }
-  } catch (e) {
-    uxLog('error', commandThis, c.red(`[Backpromote] ${t('backpromoteActionFailedWithMessage', { label: action.label, message: (e as Error).message })}`));
-  }
-}
-
-// ---- Collect test classes from PRs ----
-
-export function collectTestClassesFromPrs(selectedPrs: BackpromotePrGroup[]): string[] {
-  const testClasses: string[] = [];
-  for (const prGroup of selectedPrs) {
-    for (const { config: prConfig } of prGroup.prConfigs) {
-      if (prConfig?.deploymentApexTestClasses && Array.isArray(prConfig.deploymentApexTestClasses)) {
-        testClasses.push(...prConfig.deploymentApexTestClasses);
-      }
-    }
-  }
-  // Deduplicate
-  return [...new Set(testClasses)];
+  return outcome;
 }
 /* jscpd:ignore-end */

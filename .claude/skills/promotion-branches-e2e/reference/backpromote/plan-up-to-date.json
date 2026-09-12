@@ -1,4 +1,12 @@
 {
   "exitStatus": 0,
-  "status": "upToDate"
+  "status": "nothingToDo",
+  "scanFound": true,
+  "backpromoted": [
+    "{{S1}}",
+    "{{S2}}",
+    "{{S3}}"
+  ],
+  "selected": 0,
+  "windowNull": true
 }

@@ -1309,6 +1309,16 @@ export async function assertNoPromotionConflictMarkers(commandThis: any, config:
  * promotion branch. Nothing was pushed yet.
  */
 export async function abortPromotion(branchName: string, previousBranch: string, commandThis: any): Promise<void> {
+  // Idempotent: cherryPickCandidates undoes what it started before rethrowing, and the caller undoes
+  // again in its catch. Without this, the second pass logs the undo a second time and then an
+  // "error: branch ... not found" warning, which reads like the cleanup failed.
+  try {
+    if (!(await git().branchLocal()).all.includes(branchName)) {
+      return;
+    }
+  } catch {
+    // Unreadable branch list: undo anyway, it is safe
+  }
   uxLog('action', commandThis, c.cyan(t('promotionCreateUndoing', { branch: branchName })));
   await runCommandSafe('git cherry-pick --abort', commandThis, { output: false });
   try {

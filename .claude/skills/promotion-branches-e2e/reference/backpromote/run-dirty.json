@@ -1,0 +1,13 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "onBackpromoteBranch": true,
+  "originalBranch": "feature/E2E-401-dev",
+  "stashed": true,
+  "result": {
+    "deployed": 1,
+    "commentedPullRequests": [
+      "{{S11}}"
+    ]
+  }
+}

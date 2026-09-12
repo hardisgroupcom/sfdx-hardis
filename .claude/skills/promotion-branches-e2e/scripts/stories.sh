@@ -30,7 +30,9 @@ story_branch() {
     <description>$resource</description>
 </StaticResource>
 META
-  git add -A
+  # Only the files of the story: hardis-report/ is deliberately not gitignored, and a `git add -A`
+  # would commit the reports a previous sfdx-hardis command left in the tree
+  git add "force-app/main/default/staticresources/$resource.resource"     "force-app/main/default/staticresources/$resource.resource-meta.xml"
   git commit -qm "feat: $resource"
   git push -q -u origin "$branch"
   echo "story_branch $branch -> $target ($resource)"
@@ -91,7 +93,7 @@ YAML
     return 1
     ;;
   esac
-  git add -A
+  git add "$file"
   git commit -qm "chore: deployment actions of PR $pr"
   git push -q origin "$branch"
   echo "story_actions $branch PR $pr ($kind)"

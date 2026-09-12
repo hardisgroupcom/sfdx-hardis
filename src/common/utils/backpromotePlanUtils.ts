@@ -1,229 +1,222 @@
 /*
- * Org side and plan of hardis:work:backpromote: the target org check, the pending changes of a
- * source-tracked org, the plan returned to the VS Code panel (--plan --json), and the terminal
- * prompts that fill the same options as the flags.
+ * The plan of hardis:work:backpromote (version 3): the JSON the command returns in every mode and
+ * the VS Code Backpromote panel reads, the run state cached under a run id, and the terminal
+ * prompts of the interactive mode, which fill the same options as the flags.
  */
-import { Connection } from '@salesforce/core';
 import c from 'chalk';
+import * as os from 'os';
 import * as path from 'path';
 import fs from './fsUtils.js';
-import { execSfdxJson, getGitRepoRoot, uxLog } from './index.js';
-import { soqlQuery } from './apiUtils.js';
-import { listMajorOrgs } from './orgConfigUtils.js';
+import { uxLog } from './index.js';
 import { prompts } from './prompts.js';
 import { generateReportPath } from './filesUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { t } from './i18n.js';
-import { BackpromotePrGroup, collectBackpromoteActions, collectTestClassesFromPrs } from './backpromoteUtils.js';
-import {
-  BackpromoteConflictChoice,
-  BackpromotePredictedConflict,
-  BackpromoteTargetOrgRefusal,
-  findBackpromoteTargetOrgRefusal,
-  itemsOfFile,
-  normalizeRepoPath,
-  parseMetadataKey,
-} from './backpromoteRules.js';
+import { BackpromoteDiffChoice } from './backpromoteRules.js';
+import { BackpromoteLeftOutItem, BackpromoteSandboxRow } from './backpromoteCommentUtils.js';
 
-// ---- Plan returned by --plan --json (read by the VS Code Backpromote panel) ----
+export const BACKPROMOTE_PLAN_VERSION = 3;
+export const BACKPROMOTE_DEFAULT_SCAN_LIMIT = 100;
+
+export type BackpromoteStatus = 'ok' | 'blocked' | 'nothingToDo' | 'waitingForMerges' | 'conflictsRemaining' | 'refused' | 'pushRejected' | 'deployFailed';
+export type BackpromoteMode = 'plan' | 'prepare' | 'run' | 'reset' | 'confirm' | 'interactive';
 
 export interface BackpromotePlanCheck {
-  id: 'currentBranch' | 'gitClean' | 'targetOrg' | 'parentBranch';
+  id: 'gitProvider' | 'targetOrg' | 'parentBranch' | 'workingTree' | 'backpromoteBranch' | 'window';
   ok: boolean;
   message: string;
   details?: string[];
 }
 
+export interface BackpromotePlanPullRequest {
+  number: number;
+  title: string;
+  author: string;
+  mergeDate: string;
+  sourceBranch: string;
+  commit: string;
+  webUrl: string;
+  itemCount: number;
+  actionCount: number;
+  /** The row of this sandbox in the "Backpromotes" comment, null when the Pull Request was not backpromoted to it */
+  backpromote: { date: string; user: string; status: 'complete' | 'partial'; leftOut: BackpromoteLeftOutItem[] } | null;
+  /** A row exists for this sandbox name with another org id: the sandbox was refreshed since */
+  beforeRefresh: boolean;
+  /** Merged before the newest Pull Request backpromoted to this sandbox: counted as backpromoted, its comment was not read */
+  beforeLastBackpromote: boolean;
+  /** The start Pull Request of the window */
+  selected: boolean;
+  /** Merged after the start Pull Request (or is it): part of the window */
+  inWindow: boolean;
+  /** The walk of the history read its comment (false after the first hit, and beyond the scan limit) */
+  scanned: boolean;
+}
+
+export interface BackpromotePlanItem {
+  key: string;
+  type: string;
+  name: string;
+  /** Repository paths of the files of the item changed in the window (bundles: every file of the bundle) */
+  files: string[];
+  pullRequests: number[];
+  /** Listed as left out in a previous partial backpromote of this sandbox */
+  excludedLastTime: boolean;
+  /** Held back by package-no-overwrite.xml of the parent branch: never deployed */
+  noOverwrite: boolean;
+}
+
+export interface BackpromotePlanAction {
+  id: string;
+  label: string;
+  type: string;
+  phase: 'pre' | 'post';
+  context: string;
+  pullRequest: number;
+  /** Date of the success row of this sandbox in the "Backpromotes" comment, null when it never ran here */
+  alreadyRunOn: string | null;
+  manual: boolean;
+  customUsername: string | null;
+  /** Can run from this computer (a custom username must be authenticated locally) */
+  runnable: boolean;
+  runOnlyOnceByOrg: boolean;
+}
+
+export type BackpromoteComparisonStatus = 'same' | 'different' | 'missingInOrg' | 'pendingInOrg' | 'notCompared';
+
+export interface BackpromotePlanComparison {
+  /** Repository path */
+  file: string;
+  item: string;
+  status: BackpromoteComparisonStatus;
+  /** Absolute paths of the versions kept in the cache; null when the version does not exist */
+  versions: { base: string | null; sandbox: string | null; parentHead: string | null };
+  diffLines: number;
+  pullRequests: number[];
+  decision: BackpromoteDiffChoice | null;
+  /** The merged file with markers was written in the backpromote branch checkout */
+  prepared: boolean;
+  markersRemaining: number;
+  conflictPending: boolean;
+  /** A three-way merge (the sandbox already received a backpromote), else two-way */
+  threeWay: boolean;
+}
+
+export interface BackpromoteRunResult {
+  deployed: number;
+  deleted: number;
+  excluded: BackpromoteLeftOutItem[];
+  actions: { run: string[]; skipped: string[]; failed: string[]; pending: string[] };
+  conflictPending: string[];
+  commentedPullRequests: number[];
+  pushed: boolean;
+  pushRejected: boolean;
+  deployReport: string | null;
+  orgUrl: string | null;
+}
+
 export interface BackpromotePlan {
-  planVersion: 2;
-  /** mergeInProgress: a previous run left a merge waiting for its conflicts to be solved */
-  status: 'ready' | 'blocked' | 'upToDate' | 'mergeInProgress';
-  currentBranch: string;
+  version: typeof BACKPROMOTE_PLAN_VERSION;
+  runId: string;
+  mode: BackpromoteMode;
+  status: BackpromoteStatus;
+  message: string | null;
+  targetOrg: {
+    alias: string | null;
+    username: string;
+    instanceUrl: string;
+    orgId: string;
+    sandboxName: string;
+    orgType: 'sandbox' | 'scratch' | 'production';
+    tracksSource: boolean;
+    refusal: 'production' | 'majorOrg' | null;
+  };
   parentBranch: string;
-  parentBranchChoices: string[];
-  targetOrg: { username: string; instanceUrl: string; orgType: 'sandbox' | 'scratch' | 'production'; orgId: string; orgName: string; tracksSource: boolean };
-  checks: BackpromotePlanCheck[];
-  /** The Pull Requests the merge brings in, newest first */
-  pullRequests: Array<{ id: number; title: string; author: string; webUrl: string; sourceBranch: string; date: string; commit: string }>;
-  commitCount: number;
-  items: Array<{ key: string; type: string; name: string; path: string | null; conflict: BackpromotePredictedConflict | null }>;
+  allowedParentBranches: string[];
+  backpromoteBranch: { name: string; existsOnOrigin: boolean; head: string | null; pendingMerges: string[] };
+  checkout: { originalBranch: string; currentBranch: string; clean: boolean; dirtyFiles: string[]; stashed: boolean; stashMessage: string | null; onBackpromoteBranch: boolean };
+  pullRequests: BackpromotePlanPullRequest[];
+  scan: { read: number; limit: number; found: boolean; hasMore: boolean };
+  window: { fromCommit: string; toCommit: string; startPullRequest: number | null } | null;
+  items: BackpromotePlanItem[];
   deletions: Array<{ key: string; type: string; name: string }>;
-  actions: Array<{ id: string; label: string; type: string; when: 'pre' | 'post'; pullRequestId: number; customUsername: string | null }>;
-  testClasses: string[];
-  /** Files the merge may stop on (ready), or stopped on (mergeInProgress) */
-  conflicts: Array<{ path: string; changedInBranch: boolean; changedInOrg: boolean; items: string[]; conflictBlocks: number | null }>;
-  /** Pending changes of the org, saved to the branch before the merge. tracked is false when the org has no source tracking. */
-  orgChanges: { tracked: boolean; files: string[] };
-  reports: string[];
-}
-
-// ---- Target org ----
-
-export interface BackpromoteTargetOrgInfo {
-  username: string;
-  instanceUrl: string;
-  orgType: 'sandbox' | 'scratch' | 'production';
-  orgId: string;
-  orgName: string;
-  tracksSource: boolean;
-  refusal: BackpromoteTargetOrgRefusal | null;
-  message: string;
-}
-
-/** Short name of an org from its instance URL: mycompany--dev-sam for https://mycompany--dev-sam.sandbox.my.salesforce.com */
-export function orgShortName(instanceUrl: string, fallback: string): string {
-  const host = (instanceUrl || '').replace(/^https?:\/\//i, '').split('/')[0].toLowerCase();
-  return host.split('.')[0] || fallback;
-}
-
-/**
- * Only developer sandboxes and scratch orgs receive a backpromote. A production org, or the org of a
- * major branch, is deployed by the CI/CD pipeline.
- */
-export async function getBackpromoteTargetOrgInfo(conn: Connection, username: string, tracksSource: boolean): Promise<BackpromoteTargetOrgInfo> {
-  const orgResult = await soqlQuery('SELECT Id, IsSandbox, TrialExpirationDate FROM Organization LIMIT 1', conn);
-  const organization = orgResult?.records?.[0] || {};
-  const isSandboxOrg = organization.IsSandbox === true;
-  const orgType: BackpromoteTargetOrgInfo['orgType'] = !isSandboxOrg ? 'production' : organization.TrialExpirationDate ? 'scratch' : 'sandbox';
-  const instanceUrl = conn.instanceUrl || '';
-  const refusal = findBackpromoteTargetOrgRefusal({ isSandbox: isSandboxOrg, username, instanceUrl, majorOrgs: await listMajorOrgs() });
-  let message = t('backpromoteCheckTargetOrgOk', { username });
-  if (refusal?.reason === 'production') {
-    message = t('backpromoteTargetOrgIsProduction', { username });
-  } else if (refusal?.reason === 'majorOrg') {
-    message = t('backpromoteTargetOrgIsMajorOrg', { username, branch: refusal.branchName });
-  }
-  return { username, instanceUrl, orgType, orgId: String(organization.Id || ''), orgName: orgShortName(instanceUrl, username), tracksSource, refusal, message };
-}
-
-/**
- * The files changed in a source-tracked org and not yet in the branch, as repository paths. They are
- * saved to the branch before the merge, so the merge sees them and the deployment never overwrites
- * them. Empty when the org has no pending change, or when the preview cannot be read.
- */
-export async function listOrgPendingChanges(username: string, commandThis: any): Promise<string[]> {
-  const gitRoot = path.resolve((await getGitRepoRoot()).trim());
-  const preview = await execSfdxJson(`sf project retrieve preview -o ${username} --json`, commandThis, { fail: false, output: false });
-  const entries = [...(preview?.result?.toRetrieve || []), ...(preview?.result?.conflicts || []), ...(preview?.result?.toDelete || [])];
-  const files = new Set<string>();
-  for (const entry of entries) {
-    const file = entry?.projectRelativePath || entry?.path || '';
-    if (!file) {
-      continue;
-    }
-    files.add(normalizeRepoPath(path.isAbsolute(file) ? path.relative(gitRoot, file) : file));
-  }
-  return [...files].sort();
-}
-
-// ---- Plan ----
-
-export function buildBackpromotePlan(options: {
-  status: BackpromotePlan['status'];
-  currentBranch: string;
-  parentBranch: string;
-  parentBranchChoices: string[];
-  targetOrg: BackpromoteTargetOrgInfo;
+  actions: BackpromotePlanAction[];
+  comparison: BackpromotePlanComparison[];
   checks: BackpromotePlanCheck[];
-  groups?: BackpromotePrGroup[];
-  items?: string[];
-  itemPaths?: Map<string, string | null>;
-  deletions?: string[];
-  conflicts?: Array<BackpromotePredictedConflict & { conflictBlocks?: number | null }>;
-  orgChanges?: { tracked: boolean; files: string[] };
-  commandThis?: any;
-}): BackpromotePlan {
-  const groups = options.groups || [];
-  const itemPaths = options.itemPaths || new Map<string, string | null>();
-  const pullRequests: BackpromotePlan['pullRequests'] = [];
-  for (const group of [...groups].reverse()) {
-    for (const pr of group.associatedPrs) {
-      pullRequests.push({ ...pr, date: group.commit.date, commit: group.commit.hash });
-    }
-  }
-  const actions: BackpromotePlan['actions'] = [];
-  for (const [phase, when] of [['commandsPreDeploy', 'pre'], ['commandsPostDeploy', 'post']] as const) {
-    for (const action of collectBackpromoteActions(groups, options.currentBranch, phase, options.commandThis)) {
-      actions.push({ id: action.id, label: action.label, type: action.type, when, pullRequestId: action.prId, customUsername: action.customUsername || null });
-    }
-  }
-  const conflicts = (options.conflicts || []).map((conflict) => ({
-    path: conflict.path,
-    changedInBranch: conflict.changedInBranch,
-    changedInOrg: conflict.changedInOrg,
-    items: itemsOfFile(conflict.path, itemPaths),
-    conflictBlocks: conflict.conflictBlocks ?? null,
-  }));
-  const conflictOfItem = new Map<string, BackpromotePredictedConflict>();
-  for (const conflict of conflicts) {
-    for (const key of conflict.items) {
-      if (!conflictOfItem.has(key)) {
-        conflictOfItem.set(key, { path: conflict.path, changedInBranch: conflict.changedInBranch, changedInOrg: conflict.changedInOrg });
-      }
-    }
-  }
-  const toEntry = (key: string) => {
-    const parsed = parseMetadataKey(key) || { type: '', name: key };
-    return { key, type: parsed.type, name: parsed.name };
-  };
-  return {
-    planVersion: 2,
-    status: options.status,
-    currentBranch: options.currentBranch,
-    parentBranch: options.parentBranch,
-    parentBranchChoices: options.parentBranchChoices,
-    targetOrg: {
-      username: options.targetOrg.username,
-      instanceUrl: options.targetOrg.instanceUrl,
-      orgType: options.targetOrg.orgType,
-      orgId: options.targetOrg.orgId,
-      orgName: options.targetOrg.orgName,
-      tracksSource: options.targetOrg.tracksSource,
-    },
-    checks: options.checks,
-    pullRequests,
-    commitCount: groups.length,
-    items: (options.items || [])
-      .map((key) => ({ ...toEntry(key), path: itemPaths.get(key) ?? null, conflict: conflictOfItem.get(key) || null }))
-      .sort((a, b) => a.key.localeCompare(b.key)),
-    deletions: (options.deletions || []).map(toEntry).sort((a, b) => a.key.localeCompare(b.key)),
-    actions,
-    testClasses: collectTestClassesFromPrs(groups),
-    conflicts,
-    orgChanges: options.orgChanges || { tracked: false, files: [] },
-    reports: [],
-  };
+  promptFile: string | null;
+  runCommand: string | null;
+  result: BackpromoteRunResult | null;
 }
 
-/** Major branches and the development branch, the parent branches a backpromote can come from */
-export async function listBackpromoteParentBranchChoices(developmentBranch: string | null): Promise<string[]> {
-  const choices = new Set<string>();
-  if (developmentBranch) {
-    choices.add(developmentBranch);
+// ---- Run state cached under the run id (R55) ----
+
+export interface BackpromoteRunState {
+  runId: string;
+  createdAt: string;
+  orgId: string;
+  sandboxName: string;
+  username: string;
+  parentBranch: string;
+  parentHead: string;
+  backpromoteBranch: string;
+  fromCommit: string | null;
+  startPullRequest: number | null;
+  /** The sandbox already had a row before this run: manual merges are three-way */
+  historyFound: boolean;
+  checkout: { originalBranch: string; stashed: boolean; stashMessage: string | null } | null;
+  /** Files prepared with markers, by repository path */
+  prepared: Array<{ file: string; item: string; threeWay: boolean }>;
+  retrieveDir: string | null;
+  comparison: BackpromotePlanComparison[];
+}
+
+export function backpromoteCacheRoot(): string {
+  return path.join(os.tmpdir(), 'sfdx-hardis', 'backpromote');
+}
+
+export function newBackpromoteRunId(): string {
+  return `${Date.now().toString(36)}${Math.random().toString(36).substring(2, 6)}`;
+}
+
+function runStateFile(runId: string): string {
+  return path.join(backpromoteCacheRoot(), 'runs', `${runId}.json`);
+}
+
+export async function readBackpromoteRunState(runId: string | null): Promise<BackpromoteRunState | null> {
+  if (!runId || !/^[A-Za-z0-9_-]{4,64}$/.test(runId)) {
+    return null;
   }
-  for (const org of await listMajorOrgs()) {
-    if (org.branchName) {
-      choices.add(org.branchName);
-    }
+  const file = runStateFile(runId);
+  if (!fs.existsSync(file)) {
+    return null;
   }
-  return [...choices];
+  try {
+    const raw = JSON.parse(await fs.readFile(file, 'utf8'));
+    return raw && typeof raw === 'object' && raw.runId === runId ? (raw as BackpromoteRunState) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function writeBackpromoteRunState(state: BackpromoteRunState): Promise<void> {
+  const file = runStateFile(state.runId);
+  await fs.ensureDir(path.dirname(file));
+  await fs.writeFile(file, JSON.stringify(state, null, 2), 'utf8');
 }
 
 // ---- Coding agent prompt ----
 
-export async function writeBackpromoteMergePrompt(prompt: string): Promise<string> {
-  const promptFile = await generateReportPath('backpromote-merge-prompt', '', { withDate: true, withBranchName: false, fileExtension: 'md' });
+export async function writeBackpromoteMergePrompt(prompt: string, runId: string): Promise<string> {
+  const promptFile = await generateReportPath(`backpromote-merge-prompt-${runId}`, '', { withDate: false, withBranchName: false, fileExtension: 'md' });
   await fs.ensureDir(path.dirname(promptFile));
   await fs.writeFile(promptFile, prompt, 'utf8');
   return promptFile;
 }
 
-/** Tell the user, and VS Code when it launched the command, where the conflicts and the prompt are */
-export async function announceBackpromoteConflicts(files: Array<{ path: string; conflictBlocks: number }>, promptFile: string, commandThis: any): Promise<void> {
-  const gitRoot = path.resolve((await getGitRepoRoot()).trim());
+/** Tell the user, and VS Code when it launched the command, where the merges and the prompt are */
+export function announceBackpromoteMerges(files: Array<{ absolutePath: string; path: string; conflictBlocks: number }>, promptFile: string, commandThis: any): void {
   for (const file of files) {
     uxLog('action', commandThis, c.yellow(t('backpromoteConflictToSolve', { file: file.path, count: file.conflictBlocks })));
-    WebSocketClient.requestOpenFile(path.resolve(gitRoot, file.path));
+    WebSocketClient.requestOpenFile(file.absolutePath);
   }
   uxLog('log', commandThis, c.grey(t('backpromoteMergePromptSaved', { file: promptFile })));
   WebSocketClient.sendReportFileMessage(promptFile, t('backpromoteMergePromptLabel'), 'report');
@@ -231,24 +224,88 @@ export async function announceBackpromoteConflicts(files: Array<{ path: string; 
 
 // ---- Interactive prompts (they fill the same options as the flags) ----
 
-/** What to do with a file git could not merge */
-export async function promptConflictDecision(file: string): Promise<BackpromoteConflictChoice> {
+export async function promptParentBranch(allowedBranches: string[]): Promise<string> {
+  if (allowedBranches.length === 1) {
+    return allowedBranches[0];
+  }
   const res = await prompts({
     type: 'select',
     name: 'value',
-    message: c.cyanBright(t('backpromoteConflictDecisionPrompt', { file })),
-    description: t('backpromoteConflictDecisionPrompt', { file }),
-    choices: [
-      { title: t('backpromoteConflictDecisionOverwrite'), value: 'overwrite' },
-      { title: t('backpromoteConflictDecisionMerge'), value: 'merge' },
-      { title: t('backpromoteConflictDecisionKeepOrg'), value: 'keep' },
-    ],
+    message: c.cyanBright(t('backpromoteSelectParentBranch')),
+    description: t('backpromoteSelectParentBranch'),
+    choices: allowedBranches.map((branch, index) => ({ title: index === 0 ? `${branch} (${t('recommended')})` : branch, value: branch })),
   });
-  return (res.value || 'merge') as BackpromoteConflictChoice;
+  return res.value || allowedBranches[0];
 }
 
-/** Wait until the user solved the markers of the files, or gave them up */
-export async function promptWaitForSolvedConflicts(files: string[]): Promise<'continue' | 'abort'> {
+/** The start Pull Request: newest first, the ones already backpromoted greyed with their date */
+export async function promptStartPullRequest(pullRequests: BackpromotePlanPullRequest[], sandboxName: string): Promise<number | null> {
+  const candidates = pullRequests.filter((pr) => pr.number > 0);
+  if (candidates.length === 0) {
+    return null;
+  }
+  const choices = candidates.map((pr) => {
+    const done = pr.backpromote ? ` [${t('backpromoteAlreadyBackpromotedOn', { date: pr.backpromote.date.substring(0, 10), user: pr.backpromote.user })}]` : pr.beforeRefresh ? ` [${t('backpromoteBeforeRefresh')}]` : '';
+    return {
+      title: `#${pr.number} ${pr.title} (${pr.author}, ${pr.mergeDate.substring(0, 10)}, ${pr.itemCount} items, ${pr.actionCount} actions)${done}`,
+      value: pr.number,
+    };
+  });
+  const preselected = candidates.findIndex((pr) => pr.selected);
+  const res = await prompts({
+    type: 'select',
+    name: 'value',
+    message: c.cyanBright(t('backpromoteSelectStartPullRequest', { sandboxName })),
+    description: t('backpromoteSelectStartPullRequestDesc'),
+    choices,
+    initial: preselected >= 0 ? preselected : 0,
+  });
+  return typeof res.value === 'number' ? res.value : null;
+}
+
+/** One multiselect of the items to deploy, all ticked; deletions in the same list, ticked too */
+export async function promptItemsToDeploy(keys: string[], deletions: string[], sandboxName: string): Promise<{ items: string[]; deletions: string[] }> {
+  if (keys.length === 0 && deletions.length === 0) {
+    return { items: [], deletions: [] };
+  }
+  const res = await prompts({
+    type: 'multiselect',
+    name: 'value',
+    message: c.cyanBright(t('backpromoteSelectMetadataToDeploy', { sandboxName })),
+    description: t('backpromoteSelectMetadataToDeploy', { sandboxName }),
+    choices: [
+      ...keys.map((key) => ({ title: key, value: `deploy:${key}`, selected: true })),
+      ...deletions.map((key) => ({ title: `${t('backpromoteDeleteLabel')} ${key}`, value: `delete:${key}`, selected: true })),
+    ],
+  });
+  const selected: string[] = res.value || [...keys.map((key) => `deploy:${key}`), ...deletions.map((key) => `delete:${key}`)];
+  return {
+    items: keys.filter((key) => selected.includes(`deploy:${key}`)),
+    deletions: deletions.filter((key) => selected.includes(`delete:${key}`)),
+  };
+}
+
+/** What to do with a file whose sandbox version differs, with a "for all remaining files" option */
+export async function promptDiffDecision(file: string, parentBranch: string, sandboxName: string): Promise<{ choice: BackpromoteDiffChoice; forAll: boolean }> {
+  const res = await prompts({
+    type: 'select',
+    name: 'value',
+    message: c.cyanBright(t('backpromoteDiffDecisionPrompt', { file, sandboxName, parentBranch })),
+    description: t('backpromoteDiffDecisionPrompt', { file, sandboxName, parentBranch }),
+    choices: [
+      { title: t('backpromoteDiffDecisionOverwrite', { parentBranch }), value: 'git' },
+      { title: t('backpromoteDiffDecisionKeepOrg', { sandboxName }), value: 'org' },
+      { title: t('backpromoteDiffDecisionMerge'), value: 'merge' },
+      { title: t('backpromoteDiffDecisionOverwriteAll', { parentBranch }), value: 'git:all' },
+      { title: t('backpromoteDiffDecisionKeepOrgAll', { sandboxName }), value: 'org:all' },
+    ],
+  });
+  const value = String(res.value || 'git');
+  return { choice: value.split(':')[0] as BackpromoteDiffChoice, forAll: value.endsWith(':all') };
+}
+
+/** Wait until the user solved the markers of the prepared files, or gave the merges up */
+export async function promptWaitForSolvedMerges(files: string[]): Promise<'continue' | 'abort'> {
   const res = await prompts({
     type: 'select',
     name: 'value',
@@ -262,17 +319,90 @@ export async function promptWaitForSolvedConflicts(files: string[]): Promise<'co
   return res.value === 'abort' ? 'abort' : 'continue';
 }
 
-/** One multiselect of the items to deploy, all ticked */
-export async function promptItemsToDeploy(keys: string[], instanceUrl: string): Promise<string[]> {
-  if (keys.length === 0) {
+/** Commit or stash the working tree before the checkout switches to the backpromote branch */
+export async function promptDirtyTree(files: string[], currentBranch: string): Promise<{ action: 'commit' | 'stash'; message: string | null }> {
+  const res = await prompts({
+    type: 'select',
+    name: 'value',
+    message: c.cyanBright(t('backpromoteDirtyTreePrompt', { count: files.length, branch: currentBranch })),
+    description: files.slice(0, 20).join(', '),
+    choices: [
+      { title: t('backpromoteDirtyTreeCommit', { branch: currentBranch }), value: 'commit' },
+      { title: t('backpromoteDirtyTreeStash'), value: 'stash' },
+    ],
+  });
+  if (res.value === 'commit') {
+    const messageRes = await prompts({
+      type: 'text',
+      name: 'value',
+      message: c.cyanBright(t('backpromoteCommitMessagePrompt')),
+      description: t('backpromoteCommitMessagePrompt'),
+      initial: 'WIP',
+    });
+    return { action: 'commit', message: String(messageRes.value || 'WIP') };
+  }
+  return { action: 'stash', message: null };
+}
+
+export async function promptActionsToRun(actions: BackpromotePlanAction[]): Promise<string[]> {
+  const runnable = actions.filter((action) => action.alreadyRunOn === null || !action.runOnlyOnceByOrg);
+  if (runnable.length === 0) {
     return [];
   }
   const res = await prompts({
     type: 'multiselect',
     name: 'value',
-    message: c.cyanBright(t('backpromoteSelectMetadataToDeploy', { instanceUrl })),
-    description: t('backpromoteSelectMetadataToDeploy', { instanceUrl }),
-    choices: keys.map((key) => ({ title: key, value: key, selected: true })),
+    message: c.cyanBright(t('backpromoteSelectActionsPrompt')),
+    description: t('backpromoteSelectActionsPrompt'),
+    choices: runnable.map((action) => ({
+      title: `[${action.phase === 'pre' ? t('actionWhenPreDeploy') : t('actionWhenPostDeploy')}] ${action.label} (#${action.pullRequest})${action.manual ? ` [${t('backpromoteManualStep')}]` : ''}`,
+      value: action.id,
+      selected: true,
+    })),
   });
-  return (res.value || keys) as string[];
+  return (res.value || runnable.map((action) => action.id)) as string[];
+}
+
+/** After the run, confirm that a manual action was done in the sandbox */
+export async function promptManualActionDone(action: BackpromotePlanAction, sandboxName: string): Promise<boolean> {
+  const res = await prompts({
+    type: 'confirm',
+    name: 'value',
+    message: c.cyanBright(t('backpromoteManualActionDonePrompt', { label: action.label, sandboxName })),
+    description: t('backpromoteManualActionDonePrompt', { label: action.label, sandboxName }),
+    initial: false,
+  });
+  return res.value === true;
+}
+
+export async function promptConfirmReset(branch: string): Promise<boolean> {
+  const res = await prompts({
+    type: 'confirm',
+    name: 'value',
+    message: c.cyanBright(t('backpromoteConfirmReset', { branch })),
+    description: t('backpromoteConfirmReset', { branch }),
+    initial: false,
+  });
+  return res.value === true;
+}
+
+/** Row written for this sandbox in the "Backpromotes" comment of a Pull Request of the window */
+export function buildSandboxRow(options: {
+  sandboxName: string;
+  orgId: string;
+  user: string;
+  parentBranch: string;
+  leftOut: BackpromoteLeftOutItem[];
+  version: string;
+}): BackpromoteSandboxRow {
+  return {
+    sandboxName: options.sandboxName,
+    orgId: options.orgId,
+    date: new Date().toISOString(),
+    user: options.user,
+    parentBranch: options.parentBranch,
+    status: options.leftOut.length > 0 ? 'partial' : 'complete',
+    leftOut: options.leftOut,
+    version: options.version,
+  };
 }

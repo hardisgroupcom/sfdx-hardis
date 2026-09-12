@@ -1,7 +1,0 @@
-{
-  "exitStatus": 0,
-  "status": "ready",
-  "pullRequests": ["{{S1}}", "{{S2}}", "{{S3}}", "{{S4}}", "{{S5}}"],
-  "items": ["StaticResource:E2E_S1", "StaticResource:E2E_S2", "StaticResource:E2E_S3", "StaticResource:E2E_S7"],
-  "absentItems": ["StaticResource:E2E_S4"]
-}
