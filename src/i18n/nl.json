@@ -224,6 +224,7 @@
   "backpromoteExcludedItems": "{{count}} item(s) buiten de implementatie gelaten: {{items}}",
   "backpromoteExecutingActions": "{{count}} {{phase}}-actie(s) uitvoeren...",
   "backpromoteGitProviderRequired": "Er is een git-providertoken nodig: de geschiedenis van de backpromote leeft in de Pull Request-opmerkingen. Stel GITHUB_TOKEN, CI_SFDX_HARDIS_GITLAB_TOKEN, SYSTEM_ACCESSTOKEN of CI_SFDX_HARDIS_BITBUCKET_TOKEN in (bijvoorbeeld in een .env-bestand in de root van de repository).",
+  "backpromoteHistoryReadRetry": "De backpromote-historie wordt na een fout per {{count}} Pull Request(s) tegelijk gelezen: {{message}}",
   "backpromoteInvalidDiffDecision": "Ongeldige --on-diff-waarde(n): {{values}}. Verwacht: \"<file path>=git\", \"=org\" of \"=merge\".",
   "backpromoteInvalidMetadataKey": "Ongeldig metadata-item {{key}}: Type:Name verwacht",
   "backpromoteListingMergedPrs": "Gemergede pull requests op {{parentBranch}} ophalen...",

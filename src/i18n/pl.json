@@ -224,6 +224,7 @@
   "backpromoteExcludedItems": "{{count}} element(y) pominięte we wdrożeniu: {{items}}",
   "backpromoteExecutingActions": "Wykonywanie {{count}} akcji {{phase}}...",
   "backpromoteGitProviderRequired": "Wymagany jest token dostawcy git: historia backpromote znajduje się w komentarzach Pull Request. Należy ustawić GITHUB_TOKEN, CI_SFDX_HARDIS_GITLAB_TOKEN, SYSTEM_ACCESSTOKEN lub CI_SFDX_HARDIS_BITBUCKET_TOKEN (na przykład w pliku .env w katalogu głównym repozytorium).",
+  "backpromoteHistoryReadRetry": "Po bledzie historia backpromote jest odczytywana po {{count}} Pull Request(ow) naraz: {{message}}",
   "backpromoteInvalidDiffDecision": "Nieprawidłowa(e) wartość(i) --on-diff: {{values}}. Oczekiwano \"<file path>=git\", \"=org\" lub \"=merge\".",
   "backpromoteInvalidMetadataKey": "Nieprawidłowy element metadanych {{key}}: oczekiwano Type:Name",
   "backpromoteListingMergedPrs": "Pobieranie listy zmergowanych pull request na {{parentBranch}}...",

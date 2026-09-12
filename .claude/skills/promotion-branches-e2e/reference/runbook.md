@@ -525,11 +525,11 @@ panel. Say so in the report.
 - **The retrieve preview may not flag a change deployed from this project.** Deploying the changed
   file with `sf project deploy start` from `$WORK` updates the local tracking, so the plan reports
   `different` rather than `pendingInOrg`: the expectations accept both.
-- **The sandbox versions are retrieved in metadata format.** `sf project retrieve start --output-dir`
-  refuses a folder outside the project and drops what `.forceignore` excludes inside it: the run
-  retrieves with `--target-metadata-dir` in the temporary folder, then converts with
-  `sf project convert mdapi`. A `missingInOrg` status for an item that exists in the org means
-  that step went wrong.
+- **The sandbox versions are retrieved into a blank sfdx project.** `sf project retrieve start
+  --output-dir` refuses a folder outside the project and drops what `.forceignore` excludes inside
+  it: the run creates a blank project in the temporary folder (`createBlankSfdxProject`) and
+  retrieves there in source format. A `missingInOrg` status for an item that exists in the org
+  means that step went wrong.
 - **A `--json` run prints nothing on stdout but the document, and nothing at all on stderr.** oclif
   silences `uxLog` when `--json` is passed, so `$LOGS/<label>.log` is empty: the lines of the run
   (the deployment actions among them) are in the sfdx-hardis command log,
@@ -538,11 +538,11 @@ panel. Say so in the report.
   `git status --porcelain` is never empty after a backpromote. The command itself ignores the report
   directory when it decides whether the tree is clean (`userChangesOutsideReports`), and the harness
   has to do the same: `git status --porcelain -- . ':(exclude)hardis-report' ':(exclude)hardis-report/**'`.
-- **`sf project convert mdapi` renames the content file of a StaticResource.** The org version of
+- **The source format renames the content file of a StaticResource.** The org version of
   `E2E_S2.resource` comes back as `E2E_S2.txt`, named after its `contentType`. A run that sees
-  `missingInOrg` for an item that is in the org is looking at that, and the CLI now falls back to a
+  `missingInOrg` for an item that is in the org is looking at that, and the CLI falls back to a
   match by folder and name without the extension. The same trap will bite any other type whose
-  converted file name differs from the one the repository holds.
+  retrieved file name differs from the one the repository holds.
 - **`SELECT Body FROM StaticResource` gives the REST path of the blob, never its content.** Decoding
   it as base64 produces binary noise. Fetch it: `curl -H "Authorization: Bearer $(sf org auth
   show-access-token ...)" "<instanceUrl><the Body value>"`.

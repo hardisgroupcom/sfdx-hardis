@@ -224,6 +224,7 @@
   "backpromoteExcludedItems": "{{count}} Element(e) vom Deployment ausgeschlossen: {{items}}",
   "backpromoteExecutingActions": "{{count}} {{phase}}-Aktion(en) werden ausgeführt...",
   "backpromoteGitProviderRequired": "Ein Git-Provider-Token ist erforderlich: der Backpromote-Verlauf lebt in den Pull-Request-Kommentaren. Setzen Sie GITHUB_TOKEN, CI_SFDX_HARDIS_GITLAB_TOKEN, SYSTEM_ACCESSTOKEN oder CI_SFDX_HARDIS_BITBUCKET_TOKEN (zum Beispiel in einer .env-Datei im Wurzelverzeichnis des Repositorys).",
+  "backpromoteHistoryReadRetry": "Die Backpromote-Historie wird nach einem Fehler mit {{count}} Pull Request(s) gleichzeitig gelesen: {{message}}",
   "backpromoteInvalidDiffDecision": "Ungültige(r) --on-diff-Wert(e): {{values}}. Erwartet: \"<file path>=git\", \"=org\" oder \"=merge\".",
   "backpromoteInvalidMetadataKey": "Ungültiges Metadaten-Element {{key}}: erwartet wird Type:Name",
   "backpromoteListingMergedPrs": "Liste der gemergten Pull Requests auf {{parentBranch}}...",

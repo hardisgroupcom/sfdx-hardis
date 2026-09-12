@@ -539,20 +539,33 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     let read = 0;
     let found = false;
     reportCommandProgress({ step: 'history', message: t('backpromoteProgressHistory'), current: 0, total: newestFirst.length });
-    // The comments are read a few at a time (one API call each), newest first, and the walk stops
-    // at the first Pull Request holding a row for this sandbox and org id
-    const CHUNK = 5;
-    for (let start = 0; start < newestFirst.length && !found; start += CHUNK) {
-      const chunk = newestFirst.slice(start, start + CHUNK);
-      const chunkRows = await Promise.all(
-        chunk.map(async (group) => {
-          const rows: BackpromoteSandboxRow[] = [];
-          for (const pr of group.associatedPrs.filter((entry) => entry.id > 0)) {
-            rows.push(...(await ctx.store.read(pr.id)).sandboxRows);
-          }
-          return rows;
-        }),
-      );
+    // The comments are read in parallel (one API call each), newest first, and the walk stops at
+    // the first Pull Request holding a row for this sandbox and org id. 20 at a time; when a batch
+    // fails (rate limit, provider hiccup) it is read again with 10, then 5, then one by one, and the
+    // smaller size is kept for the rest of the walk
+    const CHUNK_SIZES = [20, 10, 5, 1];
+    let sizeIndex = 0;
+    const readGroup = async (group: BackpromotePrGroup): Promise<BackpromoteSandboxRow[]> => {
+      const rows: BackpromoteSandboxRow[] = [];
+      for (const pr of group.associatedPrs.filter((entry) => entry.id > 0)) {
+        rows.push(...(await ctx.store.read(pr.id)).sandboxRows);
+      }
+      return rows;
+    };
+    for (let start = 0; start < newestFirst.length && !found; ) {
+      const chunk = newestFirst.slice(start, start + CHUNK_SIZES[sizeIndex]);
+      let chunkRows: BackpromoteSandboxRow[][];
+      try {
+        chunkRows = await Promise.all(chunk.map(readGroup));
+      } catch (error) {
+        if (sizeIndex >= CHUNK_SIZES.length - 1) {
+          throw error;
+        }
+        sizeIndex++;
+        uxLog('log', this, c.grey(`[Backpromote] ${t('backpromoteHistoryReadRetry', { count: CHUNK_SIZES[sizeIndex], message: (error as Error).message })}`));
+        continue;
+      }
+      start += chunk.length;
       for (let index = 0; index < chunk.length; index++) {
         rowsByGroup.set(chunk[index].commit.hash, chunkRows[index]);
         read++;

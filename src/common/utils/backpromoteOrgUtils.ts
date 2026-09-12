@@ -27,6 +27,7 @@ import {
   sourcePathTail,
 } from './backpromoteRules.js';
 import { fileAtRef } from './backpromoteGitUtils.js';
+import { createBlankSfdxProject } from './projectUtils.js';
 import { BackpromotePlanComparison, backpromoteCacheRoot } from './backpromotePlanUtils.js';
 
 // ---- Target org ----
@@ -133,9 +134,9 @@ export interface BackpromoteRetrieveResult {
   /** Retrieved absolute file by source path tail (classes/A.cls) */
   filesByTail: Map<string, string>;
   /**
-   * Retrieved absolute file by folder and name without the extension. `sf project convert mdapi`
-   * names the content file of a StaticResource after its contentType (E2E_S2.resource retrieved from
-   * the org comes back as E2E_S2.txt), so the tail of the repository file finds nothing and the item
+   * Retrieved absolute file by folder and name without the extension. The source format names the
+   * content file of a StaticResource after its contentType (E2E_S2.resource retrieved from the org
+   * comes back as E2E_S2.txt), so the tail of the repository file finds nothing and the item
    * would be reported as absent from the org and overwritten without a question. Only kept when one
    * file of the folder has that name, so an LWC bundle (card.js, card.html) is never matched by it.
    */
@@ -146,10 +147,9 @@ export interface BackpromoteRetrieveResult {
  * Retrieve the ticked items from the sandbox into the run cache, once per run: a second call for the
  * same run id finds the folder and reads it again. The retrieve never touches the project sources:
  * `sf project retrieve start --output-dir` refuses a folder outside the project (and drops what
- * .forceignore excludes), so the items are retrieved in metadata format into the temporary folder,
- * then converted to source format next to it. A retrieve that fails stops the run: with no sandbox
- * version to compare, every file would look absent from the org and be deployed over it without a
- * question.
+ * .forceignore excludes), so the items are retrieved in source format into a blank sfdx project
+ * created in the temporary folder. A retrieve that fails stops the run: with no sandbox version to
+ * compare, every file would look absent from the org and be deployed over it without a question.
  */
 export async function retrieveItemsForComparison(options: {
   username: string;
@@ -160,8 +160,8 @@ export async function retrieveItemsForComparison(options: {
   force?: boolean;
 }): Promise<BackpromoteRetrieveResult> {
   const runDir = path.join(backpromoteCacheRoot(), 'retrieve', options.orgId || 'org', options.runId);
-  const orgDir = path.join(runDir, 'org');
-  const mdapiDir = path.join(runDir, 'mdapi');
+  const blankProject = path.join(runDir, 'sfdx-hardis-blank-project');
+  const orgDir = path.join(blankProject, 'force-app');
   const doneMarker = path.join(runDir, 'retrieved.json');
   const wanted = [...options.keys].sort();
   let reuse = false;
@@ -175,30 +175,20 @@ export async function retrieveItemsForComparison(options: {
     }
   }
   if (!reuse && wanted.length > 0) {
-    await fs.remove(orgDir);
-    await fs.remove(mdapiDir);
+    await fs.remove(blankProject);
     await fs.remove(doneMarker);
-    await fs.ensureDir(orgDir);
+    await fs.ensureDir(runDir);
+    await createBlankSfdxProject(runDir);
     const manifest = path.join(runDir, 'retrieve-package.xml');
     await writePackageXmlFile(manifest, metadataKeysToPackageContent(wanted));
-    const retrieveCommand =
-      `sf project retrieve start --manifest "${manifest}" --target-metadata-dir "${mdapiDir}" --unzip --zip-file-name org` +
-      ` -o ${options.username} --wait ${getEnvVar('SFDX_RETRIEVE_WAIT_MINUTES') || '60'} --json`;
-    const retrieved = await execSfdxJson(retrieveCommand, options.commandThis, { fail: false, output: false });
-    const unpackaged = path.join(mdapiDir, 'org', 'unpackaged');
-    const metadataFiles = (await listFilesRecursively(unpackaged)).filter((file) => path.basename(file) !== 'package.xml');
-    if (retrieved?.status !== 0 && metadataFiles.length === 0) {
+    const retrieveCommand = `sf project retrieve start --manifest "${manifest}" -o ${options.username} --wait ${getEnvVar('SFDX_RETRIEVE_WAIT_MINUTES') || '60'} --json`;
+    const retrieved = await execSfdxJson(retrieveCommand, options.commandThis, { fail: false, output: false, cwd: blankProject });
+    const retrievedFiles = (await listFilesRecursively(orgDir)).filter((file) => path.basename(file) !== 'package.xml');
+    if (retrieved?.status !== 0 && retrievedFiles.length === 0) {
       throw new SfError(t('backpromoteRetrieveFailed', { message: retrieved?.message || retrieved?.name || JSON.stringify(retrieved || {}).substring(0, 500) }));
     }
     if (retrieved?.status !== 0) {
       uxLog('warning', options.commandThis, c.yellow(t('backpromoteRetrieveWarning', { message: retrieved?.message || '' })));
-    }
-    if (metadataFiles.length > 0) {
-      const convertCommand = `sf project convert mdapi --root-dir "${unpackaged}" --output-dir "${orgDir}" --json`;
-      const converted = await execSfdxJson(convertCommand, options.commandThis, { fail: false, output: false });
-      if (converted?.status !== 0) {
-        throw new SfError(t('backpromoteRetrieveFailed', { message: converted?.message || converted?.name || JSON.stringify(converted || {}).substring(0, 500) }));
-      }
     }
     await fs.writeFile(doneMarker, JSON.stringify({ keys: wanted, date: new Date().toISOString() }), 'utf8');
   }

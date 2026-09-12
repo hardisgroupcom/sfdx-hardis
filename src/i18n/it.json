@@ -224,6 +224,7 @@
   "backpromoteExcludedItems": "{{count}} elemento/i escluso/i dalla distribuzione: {{items}}",
   "backpromoteExecutingActions": "Esecuzione di {{count}} azione/i {{phase}}...",
   "backpromoteGitProviderRequired": "È richiesto un token del provider git: la cronologia del backpromote vive nei commenti della Pull Request. Imposta GITHUB_TOKEN, CI_SFDX_HARDIS_GITLAB_TOKEN, SYSTEM_ACCESSTOKEN o CI_SFDX_HARDIS_BITBUCKET_TOKEN (ad esempio in un file .env nella radice del repository).",
+  "backpromoteHistoryReadRetry": "Lettura della cronologia dei backpromote {{count}} Pull Request alla volta dopo un errore: {{message}}",
   "backpromoteInvalidDiffDecision": "Valore/i --on-diff non valido/i: {{values}}. Atteso \"<file path>=git\", \"=org\" o \"=merge\".",
   "backpromoteInvalidMetadataKey": "Elemento di metadati non valido {{key}}: atteso Type:Name",
   "backpromoteListingMergedPrs": "Elenco delle pull request mergiate su {{parentBranch}}...",
