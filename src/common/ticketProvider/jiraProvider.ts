@@ -6,6 +6,7 @@ import sortArray from '../utils/sortArray.js';
 // Type-only: a value import here would close a runtime cycle index -> provider -> index
 import type { Ticket, TicketsFromStringOptions } from "./index.js";
 import { extractRegexMatches, getCurrentGitBranch, uxLog } from "../utils/index.js";
+import { mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 import { SfError } from "@salesforce/core";
 import { CONSTANTS, getConfig, getEnvVar } from "../../config/index.js";
 import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
@@ -366,23 +367,31 @@ export class JiraProvider extends TicketProviderRoot {
     if (showProgress) {
       WebSocketClient.sendProgressStartMessage(t('collectingTicketsInfo', { count: jiraTicketsNumber }), jiraTicketsNumber);
     }
-    let collectedTicketsNumber = 0;
     let failedTicketsNumber = 0;
     let firstErrorMessage = '';
+    // One HTTP call per ticket, in adaptive batches: 20 at a time, 10 then 5 then 1 after a failure.
+    // A single aggregated warning is displayed after the loop: per-ticket failures usually share the
+    // same cause (expired token, missing permission) and would flood the log.
+    const jiraTickets = tickets.filter((ticket) => ticket.provider === "JIRA");
+    const failedIds = new Set<string>();
+    const infos = await mapInAdaptiveBatchesSettled(jiraTickets, (ticket) => this.runJiraCall((client) => client.issues.getIssue({ issueIdOrKey: ticket.id })), {
+      onError: (e, ticket) => {
+        uxLog("log", this, c.grey('[JiraApi] ' + t('jiraApiErrorGettingTicket', { ticketId: ticket.id, message: (e as Error).message })));
+        failedIds.add(ticket.id);
+        failedTicketsNumber++;
+        firstErrorMessage = firstErrorMessage || (e as Error).message;
+      },
+      onProgress: (done, total) => {
+        if (showProgress) {
+          WebSocketClient.sendProgressStepMessage(done, total);
+        }
+      },
+    });
+    const infoById = new Map(jiraTickets.map((ticket, index) => [ticket.id, infos[index] ?? null]));
     for (const ticket of tickets) {
       if (ticket.provider === "JIRA") {
-        let ticketInfo: any = null;
-        let errorCaught = false;
-        try {
-          ticketInfo = await this.runJiraCall((client) => client.issues.getIssue({ issueIdOrKey: ticket.id }));
-        } catch (e) {
-          // A single aggregated warning is displayed after the loop: per-ticket failures usually
-          // share the same cause (expired token, missing permission) and would flood the log.
-          uxLog("log", this, c.grey('[JiraApi] ' + t('jiraApiErrorGettingTicket', { ticketId: ticket.id, message: (e as Error).message })));
-          errorCaught = true;
-          failedTicketsNumber++;
-          firstErrorMessage = firstErrorMessage || (e as Error).message;
-        }
+        const ticketInfo: any = infoById.get(ticket.id) ?? null;
+        const errorCaught = failedIds.has(ticket.id);
         if (ticketInfo) {
           // Description is ADF Document on Cloud (v3) or plain string on Server/DC (v2)
           const body = this.getPlainTextFromDescription(ticketInfo?.fields?.description);
@@ -425,10 +434,6 @@ export class JiraProvider extends TicketProviderRoot {
           uxLog("log", this, c.grey('[JiraProvider] ' + t('jiraProviderUnableToGetIssue', { ticketId: ticket.id })));
           failedTicketsNumber++;
           firstErrorMessage = firstErrorMessage || 'no details returned by the JIRA API';
-        }
-        collectedTicketsNumber++;
-        if (showProgress) {
-          WebSocketClient.sendProgressStepMessage(collectedTicketsNumber, jiraTicketsNumber);
         }
       }
     }

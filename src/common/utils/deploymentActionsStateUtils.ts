@@ -6,6 +6,7 @@ import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.j
 import { readActions } from './actionUtils.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
+import { mapInAdaptiveBatchesSettled } from './adaptiveBatch.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
 import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/prCommentNav.js';
@@ -144,26 +145,25 @@ export async function loadDeploymentActionsState(sourcePrNumbers: number[]): Pro
   if (showProgress) {
     WebSocketClient.sendProgressStartMessage(t('loadingDeploymentActionsStateFromPrs', { count: uniquePrs.length }), uniquePrs.length);
   }
-  let counter = 0;
-  for (const prNumber of uniquePrs) {
-    try {
-      const body = await GitProvider.tryGetDeploymentActionsCommentBodyForPr(prNumber);
-      if (body) {
-        const entries = parseDeploymentActionsCommentBody(body);
-        state.entriesByPr.set(prNumber, entries);
-        uxLog("log", null, c.grey(`[DeploymentActions] ${t('loadedDeploymentActionsStateEntries', { count: entries.length, pr: prNumber })}`));
-        // Full entries are diagnostic data: keep them out of the console unless DEBUG is enabled
-        debug(`Deployment actions state entries loaded from PR #${prNumber}: ${JSON.stringify(entries, null, 2)}`);
-      } else {
-        state.entriesByPr.set(prNumber, []);
+  // One comment read per Pull Request, in adaptive batches: 20 at a time, 10 then 5 then 1 after a failure
+  const bodies = await mapInAdaptiveBatchesSettled(uniquePrs, (prNumber) => GitProvider.tryGetDeploymentActionsCommentBodyForPr(prNumber), {
+    onError: (e, prNumber) => uxLog("warning", null, c.yellow(`Could not load deployment actions state from PR #${prNumber}: ${(e as Error).message}`)),
+    onProgress: (done, total) => {
+      if (showProgress) {
+        WebSocketClient.sendProgressStepMessage(done, total);
       }
-    } catch (e) {
-      uxLog("warning", null, c.yellow(`Could not load deployment actions state from PR #${prNumber}: ${(e as Error).message}`));
+    },
+  });
+  for (const [index, prNumber] of uniquePrs.entries()) {
+    const body = bodies[index];
+    if (body) {
+      const entries = parseDeploymentActionsCommentBody(body);
+      state.entriesByPr.set(prNumber, entries);
+      uxLog("log", null, c.grey(`[DeploymentActions] ${t('loadedDeploymentActionsStateEntries', { count: entries.length, pr: prNumber })}`));
+      // Full entries are diagnostic data: keep them out of the console unless DEBUG is enabled
+      debug(`Deployment actions state entries loaded from PR #${prNumber}: ${JSON.stringify(entries, null, 2)}`);
+    } else {
       state.entriesByPr.set(prNumber, []);
-    }
-    counter++;
-    if (showProgress) {
-      WebSocketClient.sendProgressStepMessage(counter, uniquePrs.length);
     }
   }
   if (showProgress) {

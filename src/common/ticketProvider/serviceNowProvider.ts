@@ -4,6 +4,7 @@ import sortArray from '../utils/sortArray.js';
 import type { Ticket, TicketsFromStringOptions } from './index.js';
 import { recordTicketCollectionIssue, TicketProviderRoot } from './ticketProviderRoot.js';
 import { extractRegexMatches, getCurrentGitBranch, uxLog } from '../utils/index.js';
+import { mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 import { getConfig, getEnvVar } from '../../config/index.js';
 import { httpGet, httpPatch, httpPost } from '../utils/httpUtils.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
@@ -376,18 +377,33 @@ export class ServiceNowProvider extends TicketProviderRoot {
     if (showProgress) {
       WebSocketClient.sendProgressStartMessage(t('collectingTicketsInfo', { count: serviceNowTickets.length }), serviceNowTickets.length);
     }
-    let collectedTicketsNumber = 0;
     let failedTicketsNumber = 0;
     let firstErrorMessage = '';
     // try/finally so the progress bar never stays stuck in the VS Code UI when a fetch throws
     try {
-      for (const ticket of serviceNowTickets) {
-        const table = ServiceNowProvider.tableOfTicketId(ticket.id, config);
-        if (!table) {
-          continue;
-        }
-        try {
-          const record = await this.fetchRecord(table, ticket.id);
+      // One HTTP call per ticket, in adaptive batches: 20 at a time, 10 then 5 then 1 after a failure.
+      // A single aggregated warning is displayed after the loop: per-ticket failures usually share
+      // the same cause (expired credential, missing ACL) and would flood the log.
+      const ticketsWithTable = serviceNowTickets
+        .map((ticket) => ({ ticket, table: ServiceNowProvider.tableOfTicketId(ticket.id, config) }))
+        .filter((entry): entry is { ticket: Ticket; table: string } => !!entry.table);
+      const failedIds = new Set<string>();
+      const records = await mapInAdaptiveBatchesSettled(ticketsWithTable, (entry) => this.fetchRecord(entry.table, entry.ticket.id), {
+        onError: (e: any, entry) => {
+          failedIds.add(entry.ticket.id);
+          failedTicketsNumber++;
+          firstErrorMessage = firstErrorMessage || e.message;
+          uxLog('log', this, c.grey('[ServiceNowProvider] ' + t('serviceNowRecordError', { ticketId: entry.ticket.id, message: e.message })));
+        },
+        onProgress: (done, total) => {
+          if (showProgress) {
+            WebSocketClient.sendProgressStepMessage(done, total);
+          }
+        },
+      });
+      for (const [index, { ticket, table }] of ticketsWithTable.entries()) {
+        const record = records[index] ?? null;
+        {
           if (record) {
             const sysId = ServiceNowProvider.rawFieldValue(record, 'sys_id');
             ticket.foundOnServer = true;
@@ -412,22 +428,12 @@ export class ServiceNowProvider extends TicketProviderRoot {
             }
             // "other" keeps this per-ticket line out of the VS Code UI, where the progress bar shows instead
             uxLog('other', this, c.grey('[ServiceNowProvider] ' + t('serviceNowProviderCollectedTicket', { ticketId: ticket.id })));
-          } else {
+          } else if (!failedIds.has(ticket.id)) {
             // The number matched the shape but no record answers: a typo, or a table the CI user cannot read
             failedTicketsNumber++;
             firstErrorMessage = firstErrorMessage || `no ${table} record numbered ${ticket.id}`;
             uxLog('log', this, c.grey('[ServiceNowProvider] ' + t('serviceNowProviderRecordNotFound', { ticketId: ticket.id, table })));
           }
-        } catch (e: any) {
-          // A single aggregated warning is displayed after the loop: per-ticket failures usually
-          // share the same cause (expired credential, missing ACL) and would flood the log.
-          failedTicketsNumber++;
-          firstErrorMessage = firstErrorMessage || e.message;
-          uxLog('log', this, c.grey('[ServiceNowProvider] ' + t('serviceNowRecordError', { ticketId: ticket.id, message: e.message })));
-        }
-        collectedTicketsNumber++;
-        if (showProgress) {
-          WebSocketClient.sendProgressStepMessage(collectedTicketsNumber, serviceNowTickets.length);
         }
       }
     } finally {

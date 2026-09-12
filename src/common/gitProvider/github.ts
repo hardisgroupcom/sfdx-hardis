@@ -5,6 +5,8 @@ import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResul
 import { GithubApiClient, getGithubActionsContext } from "./githubApiClient.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
+import { mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
 
@@ -647,27 +649,19 @@ ${getBannerMarkdownAndLink()}
     allBranches: string[],
     commitSHAs: Set<string>,
   ): Promise<CommonPullRequestInfo[]> {
-    const prPromises = allBranches.map(async (branchName) => {
-      try {
-        const prs = await this.listPulls({
-          state: "closed",
-          base: branchName,
-          per_page: 1000,
-        });
-        uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubFetchingMergedPrs', { branchName })));
-        return prs.filter((pr) => pr.merged_at);
-      } catch (err) {
-        uxLog(
-          "warning",
-          this,
-          c.yellow('[GitHub Integration] ' + t('githubErrorFetchingMergedPrs', { branchName, message: String(err) })),
-        );
-        return [];
-      }
+    // Adaptive batches: 20 branches at a time, 10 then 5 then 1 after a failure
+    const prResults = await mapInAdaptiveBatchesSettled(allBranches, async (branchName) => {
+      const prs = await this.listPulls({
+        state: "closed",
+        base: branchName,
+        per_page: 1000,
+      });
+      uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubFetchingMergedPrs', { branchName })));
+      return prs.filter((pr) => pr.merged_at);
+    }, {
+      onError: (err, branchName) => uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('githubErrorFetchingMergedPrs', { branchName, message: String(err) }))),
     });
-
-    const prResults = await Promise.all(prPromises);
-    const allMergedPRs: any[] = prResults.flat();
+    const allMergedPRs: any[] = prResults.flatMap((prs) => prs || []);
 
     // Keep PRs whose merge commit is in our commit list
     const relevantPRs = allMergedPRs.filter((pr) => pr.merge_commit_sha && commitSHAs.has(pr.merge_commit_sha));

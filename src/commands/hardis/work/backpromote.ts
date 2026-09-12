@@ -109,6 +109,7 @@ import { getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { t } from '../../../common/utils/i18n.js';
 import { reportCommandProgress } from '../../../common/utils/progressFileUtils.js';
+import { mapInAdaptiveBatches } from '../../../common/utils/adaptiveBatch.js';
 import fs from '../../../common/utils/fsUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -539,42 +540,36 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     let read = 0;
     let found = false;
     reportCommandProgress({ step: 'history', message: t('backpromoteProgressHistory'), current: 0, total: newestFirst.length });
-    // The comments are read in parallel (one API call each), newest first, and the walk stops at
-    // the first Pull Request holding a row for this sandbox and org id. 20 at a time; when a batch
-    // fails (rate limit, provider hiccup) it is read again with 10, then 5, then one by one, and the
-    // smaller size is kept for the rest of the walk
-    const CHUNK_SIZES = [20, 10, 5, 1];
-    let sizeIndex = 0;
-    const readGroup = async (group: BackpromotePrGroup): Promise<BackpromoteSandboxRow[]> => {
-      const rows: BackpromoteSandboxRow[] = [];
-      for (const pr of group.associatedPrs.filter((entry) => entry.id > 0)) {
-        rows.push(...(await ctx.store.read(pr.id)).sandboxRows);
-      }
-      return rows;
-    };
-    for (let start = 0; start < newestFirst.length && !found; ) {
-      const chunk = newestFirst.slice(start, start + CHUNK_SIZES[sizeIndex]);
-      let chunkRows: BackpromoteSandboxRow[][];
-      try {
-        chunkRows = await Promise.all(chunk.map(readGroup));
-      } catch (error) {
-        if (sizeIndex >= CHUNK_SIZES.length - 1) {
-          throw error;
+    // The comments are read in adaptive batches (one API call each, 20 at a time, then 10, 5 and
+    // one by one after a failure), newest first, and the walk stops at the batch holding the first
+    // Pull Request with a row for this sandbox and org id
+    const isMine = (row: BackpromoteSandboxRow) => row.sandboxName === ctx.targetOrg.sandboxName && row.orgId === ctx.targetOrg.orgId;
+    const groupRows = await mapInAdaptiveBatches(
+      newestFirst,
+      async (group) => {
+        const rows: BackpromoteSandboxRow[] = [];
+        for (const pr of group.associatedPrs.filter((entry) => entry.id > 0)) {
+          rows.push(...(await ctx.store.read(pr.id)).sandboxRows);
         }
-        sizeIndex++;
-        uxLog('log', this, c.grey(`[Backpromote] ${t('backpromoteHistoryReadRetry', { count: CHUNK_SIZES[sizeIndex], message: (error as Error).message })}`));
-        continue;
+        return rows;
+      },
+      {
+        stopWhen: (rows) => rows.some(isMine),
+        onBackoff: (size, error) => uxLog('log', this, c.grey(`[Backpromote] ${t('backpromoteHistoryReadRetry', { count: size, message: (error as Error).message })}`)),
+        onProgress: (done) => reportCommandProgress({ step: 'history', message: t('backpromoteProgressHistory'), current: done, total: newestFirst.length }),
+      },
+    );
+    for (let index = 0; index < newestFirst.length; index++) {
+      const rows = groupRows[index];
+      if (rows === undefined) {
+        break;
       }
-      start += chunk.length;
-      for (let index = 0; index < chunk.length; index++) {
-        rowsByGroup.set(chunk[index].commit.hash, chunkRows[index]);
-        read++;
-        if (chunkRows[index].some((row) => row.sandboxName === ctx.targetOrg.sandboxName && row.orgId === ctx.targetOrg.orgId)) {
-          found = true;
-          break;
-        }
+      rowsByGroup.set(newestFirst[index].commit.hash, rows);
+      read++;
+      if (rows.some(isMine)) {
+        found = true;
+        break;
       }
-      reportCommandProgress({ step: 'history', message: t('backpromoteProgressHistory'), current: read, total: newestFirst.length });
     }
     const walk = walkBackpromoteHistory(
       newestFirst.map((group) => ({ pullRequestNumbers: group.associatedPrs.map((pr) => pr.id), rows: rowsByGroup.get(group.commit.hash) || [] })),

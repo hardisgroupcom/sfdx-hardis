@@ -7,6 +7,8 @@ import { getCurrentGitBranch, git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
+import { mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+
 import { httpPost } from '../utils/httpUtils.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./jenkinsUtils.js";
 const { Bitbucket } = bbPkg;
@@ -723,8 +725,9 @@ export class BitbucketProvider extends GitProviderRoot {
     updatedAfter: string | null = null,
   ): Promise<CommonPullRequestInfo[]> {
     uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFetchingMergedPrs', { branches: allBranches.join(', ') })));
-    const prPromises = allBranches.map(async (branchName) => {
-      try {
+    // Adaptive batches: 20 branches at a time, 10 then 5 then 1 after a failure
+    const prResults = await mapInAdaptiveBatchesSettled(allBranches, async (branchName) => {
+      {
         const branchQuery = `destination.branch.name = "${branchName}" AND state = "MERGED"`
           + (updatedAfter ? ` AND updated_on >= "${updatedAfter}"` : '');
         // Paginated: a branch can have more merged PRs than fit on one page
@@ -739,14 +742,11 @@ export class BitbucketProvider extends GitProviderRoot {
         );
         uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFoundMergedPrs', { count: values.length, branchName })));
         return values;
-      } catch (err) {
-        uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketErrorFetchingMergedPrs', { branchName, message: String(err) })));
-        return [];
       }
+    }, {
+      onError: (err, branchName) => uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketErrorFetchingMergedPrs', { branchName, message: String(err) }))),
     });
-
-    const prResults = await Promise.all(prPromises);
-    const allMergedPRs: any[] = prResults.flat();
+    const allMergedPRs: any[] = prResults.flatMap((prs) => prs || []);
     uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketTotalMergedPrs', { count: allMergedPRs.length })));
 
     // Keep PRs whose merge commit is in our commit list (prefix-aware match)
