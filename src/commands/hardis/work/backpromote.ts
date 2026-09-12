@@ -54,6 +54,8 @@ import {
 } from '../../../common/utils/backpromoteOrgUtils.js';
 import {
   changedFilesBetween,
+  changedFilesByFirstParentCommit,
+  packageDirectoriesAtRef,
   checkoutBackpromoteBranch,
   collectItemFiles,
   commitAllChanges,
@@ -109,13 +111,15 @@ import { getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { t } from '../../../common/utils/i18n.js';
 import { reportCommandProgress } from '../../../common/utils/progressFileUtils.js';
-import { gitProviderBatchSizes, mapInAdaptiveBatches } from '../../../common/utils/adaptiveBatch.js';
+import { gitProviderBatchSizes, mapInAdaptiveBatches, mapInAdaptiveBatchesSettled } from '../../../common/utils/adaptiveBatch.js';
 import { GitProvider } from '../../../common/gitProvider/index.js';
 import fs from '../../../common/utils/fsUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
+// Comments read by the first batch of the history walk (then 10, 20... up to the provider ladder)
+const HISTORY_FIRST_BATCH = 5;
 const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
 /** Everything the modes share once the checks passed */
@@ -138,6 +142,10 @@ interface BackpromoteContext {
   user: string;
   scanLimit: number;
   groups: BackpromotePrGroup[];
+  /** The files each listed first-parent commit changed, read in one git call */
+  filesByCommit: Map<string, string[]>;
+  /** The pending changes of the sandbox, queried while the window is computed (null until a start is known) */
+  pendingInOrg: Promise<string[]> | null;
   pullRequests: BackpromotePlanPullRequest[];
   scan: BackpromotePlan['scan'];
   historyFound: boolean;
@@ -441,6 +449,8 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       user,
       scanLimit,
       groups: [],
+      filesByCommit: new Map(),
+      pendingInOrg: null,
       pullRequests: [],
       scan: { read: 0, limit: scanLimit, found: false, hasMore: false },
       historyFound: false,
@@ -488,6 +498,9 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       }
       throw this.refusal(message, plan);
     }
+    // The sandbox's own pending changes take a Salesforce CLI call of several seconds: it runs
+    // while the window is computed and the files retrieved, and is awaited by the comparison
+    ctx.pendingInOrg = ctx.targetOrg.tracksSource ? listOrgPendingChanges(ctx.targetOrg.username, this).catch(() => []) : Promise.resolve([]);
     await this.computeWindow(ctx, startNumber);
     await this.compare(ctx);
     if (interactive) {
@@ -536,6 +549,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
   private async listPullRequestsAndHistory(ctx: BackpromoteContext): Promise<void> {
     reportCommandProgress({ step: 'listing', message: t('backpromoteProgressListing', { parentBranch: ctx.parentBranch }) });
     ctx.groups = await listMergedPrsWithCommits(ctx.parentRef, '', null, this, { maxCount: ctx.scanLimit });
+    ctx.filesByCommit = changedFilesByFirstParentCommit(['-n', String(ctx.scanLimit), ctx.parentRef]);
     const newestFirst = [...ctx.groups].reverse();
     const rowsByGroup = new Map<string, BackpromoteSandboxRow[]>();
     let read = 0;
@@ -543,7 +557,9 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     reportCommandProgress({ step: 'history', message: t('backpromoteProgressHistory'), current: 0, total: newestFirst.length });
     // The comments are read in the adaptive batches of the git provider's ladder (one API call
     // each, shrunk only when the provider throttles), newest first, and the walk stops at the batch
-    // holding the first Pull Request with a row for this sandbox and org id
+    // holding the first Pull Request with a row for this sandbox and org id. The first batch is
+    // small and the next ones double: a developer who backpromotes regularly finds the row among
+    // the newest Pull Requests, and 80 reads for one hit was most of the time of a plan
     const isMine = (row: BackpromoteSandboxRow) => row.sandboxName === ctx.targetOrg.sandboxName && row.orgId === ctx.targetOrg.orgId;
     const groupRows = await mapInAdaptiveBatches(
       newestFirst,
@@ -556,6 +572,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       },
       {
         sizes: gitProviderBatchSizes(await GitProvider.getInstance()),
+        startSize: HISTORY_FIRST_BATCH,
         stopWhen: (rows) => rows.some(isMine),
         onBackoff: (size, error, waitMs) => uxLog('log', this, c.grey(`[Backpromote] ${t('providerThrottledBackoff', { count: size, waitSeconds: Math.round(waitMs / 1000), message: (error as Error)?.message || '' })}`)),
         onProgress: (done) => reportCommandProgress({ step: 'history', message: t('backpromoteProgressHistory'), current: done, total: newestFirst.length }),
@@ -586,7 +603,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     }
     ctx.pullRequests = newestFirst.flatMap((group, index) => {
       const verdict = walk.verdicts[index];
-      const items = changedFilesBetween(`${group.commit.hash}^1`, group.commit.hash).length;
+      const items = this.filesOfGroup(ctx, group).length;
       const actionCount = group.prConfigs.reduce((total, config) => total + (config.config?.commandsPreDeploy?.length || 0) + (config.config?.commandsPostDeploy?.length || 0), 0);
       // A first-parent commit with no Pull Request (a direct commit on the parent branch) is
       // listed under its commit subject, so that it can be the start and is never skipped
@@ -621,6 +638,17 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
         entry.selected = true;
       }
     }
+  }
+
+  /** The files a listed merge changed, from the single git call of the listing, or from git for a merge outside it */
+  private filesOfGroup(ctx: BackpromoteContext, group: BackpromotePrGroup): string[] {
+    const known = ctx.filesByCommit.get(group.commit.hash);
+    if (known) {
+      return known;
+    }
+    const files = changedFilesBetween(`${group.commit.hash}^1`, group.commit.hash);
+    ctx.filesByCommit.set(group.commit.hash, files);
+    return files;
   }
 
   /** The number of the start Pull Request (0 for a merge without number), or null when there is no window */
@@ -691,7 +719,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     const groupsForFiles = ctx.foundGroup && leftOutBefore.size > 0 ? [ctx.foundGroup, ...ctx.windowGroups] : ctx.windowGroups;
     for (const group of groupsForFiles) {
       const numbers = group.associatedPrs.map((pr) => pr.id).filter((id) => id > 0);
-      for (const file of changedFilesBetween(`${group.commit.hash}^1`, group.commit.hash)) {
+      for (const file of this.filesOfGroup(ctx, group)) {
         const set = prsOfFile.get(file) || new Set<number>();
         for (const number of numbers) {
           set.add(number);
@@ -700,13 +728,14 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       }
     }
     const filesFrom = ctx.foundGroup && leftOutBefore.size > 0 ? revParse(`${ctx.foundGroup.commit.hash}^1`) || fromCommit : fromCommit;
-    const itemFiles = collectItemFiles(allKeys, changedFilesBetween(filesFrom, ctx.parentHead), ctx.parentRef);
+    const packageDirectories = packageDirectoriesAtRef(ctx.parentRef);
+    const itemFiles = collectItemFiles(allKeys, changedFilesBetween(filesFrom, ctx.parentHead), ctx.parentRef, packageDirectories);
     // A left-out item touched before the found Pull Request: look for its files in the recent history of the parent branch
     const orphans = [...leftOutBefore.keys()].filter((key) => (itemFiles.get(key) || []).length === 0 && !delta.deletions.includes(key));
     if (orphans.length > 0) {
       const oldest = ctx.groups[0] ? revParse(`${ctx.groups[0].commit.hash}^1`) : null;
       const recentFiles = oldest ? changedFilesBetween(oldest, ctx.parentHead) : [];
-      for (const [key, files] of collectItemFiles(orphans, recentFiles, ctx.parentRef)) {
+      for (const [key, files] of collectItemFiles(orphans, recentFiles, ctx.parentRef, packageDirectories)) {
         if (files.length > 0) {
           itemFiles.set(key, files);
         }
@@ -738,9 +767,21 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       post: collectBackpromoteActions(groups, ctx.parentBranch, 'commandsPostDeploy', this),
     };
     ctx.actions = [];
-    for (const [phase, candidates] of [['pre', ctx.actionCandidates.pre], ['post', ctx.actionCandidates.post]] as const) {
-      for (const action of candidates) {
-        const row = action.prId > 0 ? findActionRow(await ctx.store.read(action.prId), action.id, ctx.targetOrg.sandboxName, ctx.targetOrg.orgId) : null;
+    const phased = [
+      ...ctx.actionCandidates.pre.map((action) => ({ phase: 'pre' as const, action })),
+      ...ctx.actionCandidates.post.map((action) => ({ phase: 'post' as const, action })),
+    ];
+    // The comments of the Pull Requests holding actions are read in the batches of the provider
+    // ladder (the store answers once per Pull Request, whatever the number of its actions)
+    const rows = await mapInAdaptiveBatches(
+      phased,
+      async ({ action }) => (action.prId > 0 ? findActionRow(await ctx.store.read(action.prId), action.id, ctx.targetOrg.sandboxName, ctx.targetOrg.orgId) : null),
+      { sizes: gitProviderBatchSizes(await GitProvider.getInstance()) },
+    );
+    for (let index = 0; index < phased.length; index++) {
+      const { phase, action } = phased[index];
+      const row = rows[index] || null;
+      {
         if (row) {
           ctx.actionRows.set(action.id, row);
         }
@@ -783,10 +824,10 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
   private async compare(ctx: BackpromoteContext): Promise<void> {
     const keys = ctx.items.filter((item) => !ctx.excludedKeys.has(item.key) && !item.noOverwrite).map((item) => item.key);
     reportCommandProgress({ step: 'retrieve', message: t('backpromoteProgressRetrieve', { count: keys.length, sandboxName: ctx.targetOrg.sandboxName }) });
-    const retrieve = await retrieveItemsForComparison({ username: ctx.targetOrg.username, keys, orgId: ctx.targetOrg.orgId, runId: ctx.runId, commandThis: this });
+    const retrieve = await retrieveItemsForComparison({ username: ctx.targetOrg.username, keys, orgId: ctx.targetOrg.orgId, runId: ctx.runId, commandThis: this, conn: ctx.conn, tracksSource: ctx.targetOrg.tracksSource });
     ctx.state.retrieveDir = retrieve.orgDir;
     reportCommandProgress({ step: 'compare', message: t('backpromoteProgressCompare') });
-    const pendingInOrg = new Set(ctx.targetOrg.tracksSource ? await listOrgPendingChanges(ctx.targetOrg.username, this).catch(() => []) : []);
+    const pendingInOrg = new Set(await (ctx.pendingInOrg || (ctx.targetOrg.tracksSource ? listOrgPendingChanges(ctx.targetOrg.username, this).catch(() => []) : Promise.resolve([]))));
     const prsOfItem = new Map(ctx.items.map((item) => [item.key, item.pullRequests]));
     const itemFiles = new Map(ctx.items.filter((item) => keys.includes(item.key)).map((item) => [item.key, item.files]));
     ctx.comparison = await compareItemsWithOrg({
@@ -1209,15 +1250,21 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
         leftOutByPr.set(number, [...(leftOutByPr.get(number) || []), item]);
       }
     }
-    for (const number of prNumbers) {
-      try {
+    // One comment per Pull Request, written in the batches of the provider ladder: the Pull
+    // Requests are distinct, so the writes do not race each other
+    const commented = await mapInAdaptiveBatchesSettled(
+      [...prNumbers],
+      async (number) => {
         const row = buildSandboxRow({ sandboxName: ctx.targetOrg.sandboxName, orgId: ctx.targetOrg.orgId, user: ctx.user, parentBranch: ctx.parentBranch, leftOut: leftOutByPr.get(number) || [], version: this.config.version });
         await ctx.store.update(number, (state) => upsertSandboxRow(state, row));
-        result.commentedPullRequests.push(number);
-      } catch (e) {
-        uxLog('warning', this, c.yellow(t('backpromoteCommentWriteFailed', { pr: number, message: (e as Error).message })));
-      }
-    }
+        return number;
+      },
+      {
+        sizes: gitProviderBatchSizes(await GitProvider.getInstance()),
+        onError: (e, number) => uxLog('warning', this, c.yellow(t('backpromoteCommentWriteFailed', { pr: number, message: (e as Error).message }))),
+      },
+    );
+    result.commentedPullRequests.push(...commented.filter((number): number is number => typeof number === 'number'));
     for (const pr of ctx.pullRequests) {
       if (result.commentedPullRequests.includes(pr.number)) {
         pr.backpromote = { date: new Date().toISOString(), user: ctx.user, status: (leftOutByPr.get(pr.number) || []).length > 0 ? 'partial' : 'complete', leftOut: leftOutByPr.get(pr.number) || [] };

@@ -100,6 +100,50 @@ export function changedFilesBetween(from: string, to: string): string[] {
   return gitLines(['diff', '--name-only', from, to]).map(normalizeRepoPath);
 }
 
+/** The package directories declared by sfdx-project.json at a ref, empty when it cannot be read */
+export function packageDirectoriesAtRef(ref: string): string[] {
+  const content = fileAtRef(ref, 'sfdx-project.json');
+  if (content === null) {
+    return [];
+  }
+  try {
+    const project = JSON.parse(content);
+    return (Array.isArray(project?.packageDirectories) ? project.packageDirectories : [])
+      .map((entry: any) => (typeof entry?.path === 'string' ? entry.path : ''))
+      .filter((directory: string) => directory !== '');
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The files each first-parent commit of a range changed against its first parent, keyed by
+ * commit hash, in one git call: one `git diff` per merge was one process per Pull Request listed,
+ * a hundred on a scan. The arguments select the range exactly as `git log --first-parent` does
+ * (`-n 100 origin/integration`, `abc123..origin/integration`).
+ */
+export function changedFilesByFirstParentCommit(logArgs: string[]): Map<string, string[]> {
+  const files = new Map<string, string[]>();
+  // -m with --first-parent: a merge is diffed against its first parent only
+  const result = runGit(['log', '--first-parent', '-m', '--name-only', '--pretty=format:%x1e%H', ...logArgs]);
+  if (result.status !== 0) {
+    return files;
+  }
+  let current: string[] | null = null;
+  for (const line of (result.stdout || '').split(/\r?\n/)) {
+    if (line.startsWith('\u001e')) {
+      current = [];
+      files.set(line.substring(1).trim(), current);
+      continue;
+    }
+    const file = line.trim();
+    if (current && file !== '') {
+      current.push(normalizeRepoPath(file));
+    }
+  }
+  return files;
+}
+
 /** The content of a file at a ref, null when the file does not exist there */
 export function fileAtRef(ref: string, file: string): string | null {
   const result = runGit(['show', `${ref}:${normalizeRepoPath(file)}`]);
@@ -426,19 +470,35 @@ export function resolveFilesToMetadataKeys(files: string[]): Map<string, string[
  * item, and for a bundle (a folder named after the item) every file of the folder, so that the
  * comparison sees the whole bundle.
  */
-export function collectItemFiles(items: string[], changedFiles: string[], parentRef: string): Map<string, string[]> {
-  const keysByFile = resolveFilesToMetadataKeys(changedFiles);
+export function collectItemFiles(items: string[], changedFiles: string[], parentRef: string, packageDirectories: string[] = []): Map<string, string[]> {
   const filesByItem = new Map<string, Set<string>>();
+  // A file outside the package directories is never deployable metadata: the docs or the agent
+  // skills of a merge are not worth a resolver pass
+  const roots = packageDirectories.map((directory) => normalizeRepoPath(directory).replace(/\/+$/, '')).filter((directory) => directory !== '');
+  if (roots.length > 0) {
+    changedFiles = changedFiles.filter((file) => roots.some((root) => normalizeRepoPath(file).startsWith(`${root}/`)));
+  }
   for (const key of items) {
     filesByItem.set(key, new Set());
   }
-  for (const [file, keys] of keysByFile) {
-    for (const key of keys) {
-      const owner = filesByItem.get(key) || matchDecomposedParent(key, filesByItem);
-      if (owner) {
-        owner.add(file);
+  const attribute = (keysByFile: Map<string, string[]>) => {
+    for (const [file, keys] of keysByFile) {
+      for (const key of keys) {
+        const owner = filesByItem.get(key) || matchDecomposedParent(key, filesByItem);
+        if (owner) {
+          owner.add(file);
+        }
       }
     }
+  };
+  // The resolver costs a few milliseconds per file, and a window can carry thousands of files
+  // that are not even metadata (a merge of the docs, of the agent skills): only the files that
+  // carry the name of a wanted item, or of its parent, are resolved first. An item still without
+  // a file after that is looked for in every other file, so an unusual layout loses nothing.
+  const likely = new Set(changedFiles.filter((file) => fileMayBelongToItems(file, items)));
+  attribute(resolveFilesToMetadataKeys([...likely]));
+  if ([...filesByItem.values()].some((files) => files.size === 0)) {
+    attribute(resolveFilesToMetadataKeys(changedFiles.filter((file) => !likely.has(file))));
   }
   for (const [key, files] of filesByItem) {
     const name = key.substring(key.indexOf(':') + 1).split('.').pop() || '';
@@ -456,6 +516,25 @@ export function collectItemFiles(items: string[], changedFiles: string[], parent
     }
   }
   return new Map([...filesByItem].map(([key, files]) => [key, [...files].sort()]));
+}
+
+/**
+ * True when a path segment of the file (folder, or file name up to its first dot) is one of the
+ * names of the items, of their parents (CustomField Account.Name: Account and Name) or of their
+ * folders (EmailTemplate folder/Name), or the file is the single file of all the custom labels.
+ */
+function fileMayBelongToItems(file: string, items: string[]): boolean {
+  const names = new Set<string>();
+  for (const key of items) {
+    for (const part of key.substring(key.indexOf(':') + 1).split(/[./]/)) {
+      if (part !== '') {
+        names.add(part);
+      }
+    }
+  }
+  return normalizeRepoPath(file)
+    .split('/')
+    .some((segment) => names.has(segment) || names.has(segment.split('.')[0]) || segment.startsWith('CustomLabels.'));
 }
 
 /** Source directories whose children are bundle folders named after the item */

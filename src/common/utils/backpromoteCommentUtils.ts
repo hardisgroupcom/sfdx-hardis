@@ -12,6 +12,7 @@ import * as os from 'os';
 import * as path from 'path';
 import fs from './fsUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
+import { retryOnThrottling } from './adaptiveBatch.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
 
@@ -209,6 +210,8 @@ export function findActionRow(state: BackpromotesCommentState | null | undefined
 export class BackpromoteCommentStore {
   private readonly cacheDir: string | null;
   private readonly memory = new Map<number, BackpromotesCommentState>();
+  // Reads in flight, so that two parallel readers of the same Pull Request cost one API call
+  private readonly pending = new Map<number, Promise<BackpromotesCommentState>>();
 
   /** The reads of a run are cached under its id, so --plan then --auto do not read a comment twice */
   constructor(runId: string | null, private readonly commandThis: any = null) {
@@ -223,12 +226,29 @@ export class BackpromoteCommentStore {
         this.memory.set(prNumber, cached);
         return cached;
       }
+      const inFlight = this.pending.get(prNumber);
+      if (inFlight) {
+        return inFlight;
+      }
     }
+    const reading = this.readFromProvider(prNumber);
+    this.pending.set(prNumber, reading);
+    try {
+      return await reading;
+    } finally {
+      this.pending.delete(prNumber);
+    }
+  }
+
+  private async readFromProvider(prNumber: number): Promise<BackpromotesCommentState> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       throw new Error(t('backpromoteGitProviderRequired'));
     }
-    const body = await gitProvider.getPullRequestCommentByMarker(BACKPROMOTES_MARKER, prNumber);
+    // A dropped keep-alive connection or a throttling is tried again: one lost read must not end a plan
+    const body = await retryOnThrottling(() => gitProvider.getPullRequestCommentByMarker(BACKPROMOTES_MARKER, prNumber), {
+      onRetry: (error, waitMs) => uxLog('log', this.commandThis, c.grey(t('providerCallRetried', { pr: prNumber, waitSeconds: Math.round(waitMs / 1000), message: (error as Error)?.message || String(error) }))),
+    });
     const state = parseBackpromotesComment(body);
     this.memory.set(prNumber, state);
     await this.writeCacheFile(prNumber, state);

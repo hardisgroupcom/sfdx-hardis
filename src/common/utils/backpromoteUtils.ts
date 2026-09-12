@@ -358,6 +358,9 @@ export async function listMergedPrsWithCommits(
   // Build groups: one per first-parent commit, with associated PRs as details
   const firstParentCommits = [...firstParentNewestFirst].reverse(); // Chronological order
   const prGroups: BackpromotePrGroup[] = [];
+  // The action files present at the parent ref, listed once: one `git show` per Pull Request
+  // was one process per Pull Request, for a file most of them do not have
+  const actionFilesAtRef = listActionFilesAtRef(parentBranch);
 
   for (const commit of firstParentCommits) {
 
@@ -388,7 +391,7 @@ export async function listMergedPrsWithCommits(
           webUrl: prDetail?.webUrl || '',
           sourceBranch: prDetail?.sourceBranch || sourceBranch || '',
         });
-        const prConfig = await loadPrConfig(prNum, parentBranch);
+        const prConfig = await loadPrConfig(prNum, parentBranch, actionFilesAtRef);
         if (prConfig) prConfigs.push({ config: prConfig, prId: prNum, prTitle });
       } else if (sourceBranch && shouldAddVirtualPullRequest(associatedPrs, seenPrIds, sourceBranch)) {
         // Virtual PR from source branch name
@@ -490,10 +493,10 @@ export function extractPrNumbersFromMessage(message: string): number[] {
  * ref rather than from the checked out branch: a backpromote runs from a User Story branch that is
  * behind the parent branch, where the file of a Pull Request merged since does not exist yet.
  */
-async function loadPrConfig(prId: number, ref: string | null): Promise<any | null> {
+async function loadPrConfig(prId: number, ref: string | null, filesAtRef: Set<string> | null = null): Promise<any | null> {
   const repoPath = `scripts/actions/.sfdx-hardis.${prId}.yml`;
   let content: string | null = null;
-  if (ref) {
+  if (ref && (filesAtRef === null || filesAtRef.has(repoPath))) {
     const show = spawnSync('git', ['show', `${ref}:${repoPath}`], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
     if (show.status === 0) {
       content = show.stdout;
@@ -512,6 +515,18 @@ async function loadPrConfig(prId: number, ref: string | null): Promise<any | nul
   } catch {
     return null;
   }
+}
+
+/** The Pull Request action files present at a ref (scripts/actions/.sfdx-hardis.<pr>.yml), null when the ref cannot be read */
+function listActionFilesAtRef(ref: string | null): Set<string> | null {
+  if (!ref) {
+    return null;
+  }
+  const result = spawnSync('git', ['ls-tree', '-r', '--name-only', ref, '--', 'scripts/actions'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  if (result.status !== 0) {
+    return null;
+  }
+  return new Set((result.stdout || '').split(/\r?\n/).map((line) => line.trim().replace(/\\/g, '/')).filter((line) => line !== ''));
 }
 
 // ---- Execute deployment actions ----

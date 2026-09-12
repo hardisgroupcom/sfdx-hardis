@@ -157,6 +157,12 @@ export interface AdaptiveBatchOptions<T, R> {
   onProgress?: (done: number, total: number) => void;
   /** Stop after the batch holding the first result for which it is true; the items after are left undefined */
   stopWhen?: (result: R, item: T, index: number) => boolean;
+  /**
+   * Size of the first batch, doubled after every batch that was not throttled, up to the current
+   * size of the ladder. For a walk that stops at the first hit (stopWhen): when the hit is usually
+   * among the first items, a first batch of 5 costs 5 calls instead of 80.
+   */
+  startSize?: number;
   /** Pause function, replaceable in tests */
   sleep?: (ms: number) => Promise<void>;
 }
@@ -179,10 +185,12 @@ async function runAdaptiveBatches<T, R>(
   // At the smallest size a throttled item gets one more try after the pause the provider asked for
   const lastChanceGiven = new Set<number>();
   let sizeIndex = 0;
+  // The size of the next batch: the ladder size, or the ramp from startSize up to it
+  let rampSize = options.startSize && options.startSize > 0 ? Math.min(Math.floor(options.startSize), sizes[sizeIndex]) : null;
   let done = 0;
   let stopped = false;
   while (queue.length > 0 && !stopped) {
-    const batch = queue.splice(0, Math.max(1, Math.floor(sizes[sizeIndex])));
+    const batch = queue.splice(0, Math.max(1, Math.floor(rampSize ?? sizes[sizeIndex])));
     const outcomes = await Promise.allSettled(batch.map((index) => mapper(items[index], index)));
     const retry: number[] = [];
     let throttling: unknown = null;
@@ -218,15 +226,49 @@ async function runAdaptiveBatches<T, R>(
       if (sizeIndex < sizes.length - 1) {
         sizeIndex++;
       }
+      if (rampSize !== null) {
+        rampSize = Math.min(rampSize, sizes[sizeIndex]);
+      }
       const waitMs = Math.min(Math.max(0, retryAfter(throttling) ?? 0), maxWaitMs);
-      options.onBackoff?.(sizes[sizeIndex], throttling, waitMs);
+      options.onBackoff?.(rampSize ?? sizes[sizeIndex], throttling, waitMs);
       if (waitMs > 0) {
         await sleep(waitMs);
       }
       queue.unshift(...retry);
+    } else if (rampSize !== null) {
+      rampSize = Math.min(rampSize * 2, sizes[sizeIndex]);
     }
   }
   return results;
+}
+
+/**
+ * One provider call, tried again after a throttling or a dropped connection (a keep-alive socket
+ * the server closed while the command was busy elsewhere): `attempts` tries in total, with the
+ * pause the provider asked for, or one more second at each try. Reads only: a write tried again
+ * after a lost answer could be applied twice.
+ */
+export async function retryOnThrottling<R>(
+  call: () => Promise<R>,
+  options: { attempts?: number; maxWaitMs?: number; sleep?: (ms: number) => Promise<void>; onRetry?: (error: unknown, waitMs: number, attempt: number) => void } = {},
+): Promise<R> {
+  const attempts = Math.max(1, options.attempts ?? 3);
+  const sleep = options.sleep || ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+  const maxWaitMs = options.maxWaitMs ?? DEFAULT_MAX_WAIT_MS;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await call();
+    } catch (error) {
+      if (attempt >= attempts || !isThrottlingError(error)) {
+        throw error;
+      }
+      const waitMs = Math.min(Math.max(retryAfterMs(error) ?? attempt * 1000, 0), maxWaitMs);
+      options.onRetry?.(error, waitMs, attempt);
+      if (waitMs > 0) {
+        await sleep(waitMs);
+      }
+    }
+  }
 }
 
 /**

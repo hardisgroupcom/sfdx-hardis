@@ -65,8 +65,8 @@ Break one of these and the feature is wrong, whatever the tests say.
 2. **A promotion never runs actions against the wrong org.** A `promotion/uat/preprod/...` branch
    whose Pull Request targets `main` is retargeted by hand: its declaration is ignored
    (`isPromotionPullRequestForItsTarget`), scope is the Pull Request alone, with a warning.
-3. **A Pull Request number appears in a single place** in the pipeline diagram, unless the
-   **Show already promoted Pull Requests** toggle is on.
+3. **A Pull Request number appears in a single place** in the pipeline diagram: the branch the
+   promotion carried it to (`promotedAway` hides it from the branch it left).
 4. **User facing lists show User Stories only.** Vehicles are hidden unless the **Show merge and
    promotion Pull Requests** toggle is on (diagram and modal), or `--include-promotions` is passed
    (release notes).
@@ -304,7 +304,6 @@ not leak in.
 | `src/webviews/lwc-ui/modules/s/pipeline/pipeline.js` | Branch window modal: filtering, the two toggles, the per-Pull-Request checkboxes and the **Create promotion** button.                                                                         |
 | `src/utils/pipeline/sfdxHardisConfigHelper.ts`       | `enablePromotionBranches` and `allowedPromotionSteps` sit in the **Danger Zone** of Pipeline Settings, scope `["global"]`.                                                                    |
 | `src/hardis-commands-provider.ts`                    | Command palette entry for `hardis:project:promotion:create`.                                                                                                                                  |
-| `package.json`                                       | `pipelineShowAlreadyPromotedPullRequests` setting.                                                                                                                                            |
 
 ## Filtering: what moves the Pull Requests
 

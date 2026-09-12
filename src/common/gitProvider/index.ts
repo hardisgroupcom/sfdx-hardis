@@ -27,8 +27,60 @@ import {
 // Enable with NODE_DEBUG=sfdxhardis
 const debug = debuglog("sfdxhardis");
 
+// The environment the provider is built from: a change of one of these (a token set by a prompt,
+// a CI variable auto-detected from the git remote) is a new provider
+const PROVIDER_ENV_VARS = [
+  "SYSTEM_ACCESSTOKEN",
+  "CI_SFDX_HARDIS_AZURE_TOKEN",
+  "AZURE_DEVOPS_EXT_PAT",
+  "SYSTEM_COLLECTIONURI",
+  "SYSTEM_TEAMPROJECT",
+  "BUILD_REPOSITORY_ID",
+  "CI_JOB_TOKEN",
+  "CI_SFDX_HARDIS_GITLAB_TOKEN",
+  "ACCESS_TOKEN",
+  "CI_SERVER_URL",
+  "CI_PROJECT_ID",
+  "CI_PROJECT_PATH",
+  "GITLAB_CI",
+  "GITHUB_TOKEN",
+  "CI_SFDX_HARDIS_GITHUB_TOKEN",
+  "GITHUB_REPOSITORY",
+  "GITHUB_API_URL",
+  "BITBUCKET_WORKSPACE",
+  "BITBUCKET_REPO_SLUG",
+  "CI_SFDX_HARDIS_BITBUCKET_TOKEN",
+];
+
 export abstract class GitProvider {
+  // One provider per process: every call used to run the auto-detection again (a git config
+  // read, sometimes an API call), and a batch of 80 Pull Request reads spawned 80 git processes
+  // for the same answer. The instance is kept as long as the environment it was built from
+  // (and the working directory) does not change.
+  private static cachedInstance: { key: string; instance: GitProviderRoot | null } | null = null;
+
+  private static instanceKey(): string {
+    return [process.cwd(), ...PROVIDER_ENV_VARS.map((name) => `${name}=${process.env[name] || ""}`)].join("\u0000");
+  }
+
+  /** Forget the cached provider (tests, or after the environment changed by other means than a prompt) */
+  static resetInstance(): void {
+    GitProvider.cachedInstance = null;
+  }
+
   static async getInstance(prompt = false): Promise<GitProviderRoot | null> {
+    const cached = GitProvider.cachedInstance;
+    // A cached "no provider" answer is kept only when the caller does not want the prompt
+    if (cached && cached.key === GitProvider.instanceKey() && (cached.instance != null || !prompt)) {
+      return cached.instance;
+    }
+    const instance = await GitProvider.buildInstance(prompt);
+    // The key is read after the build: the auto-detection completes the environment
+    GitProvider.cachedInstance = { key: GitProvider.instanceKey(), instance };
+    return instance;
+  }
+
+  private static async buildInstance(prompt: boolean): Promise<GitProviderRoot | null> {
     try {
       // Azure - detect from SYSTEM_ACCESSTOKEN, CI_SFDX_HARDIS_AZURE_TOKEN or AZURE_DEVOPS_EXT_PAT
       if (process.env.SYSTEM_ACCESSTOKEN || process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.AZURE_DEVOPS_EXT_PAT) {
@@ -104,7 +156,7 @@ export abstract class GitProvider {
       // If prompt allowed and no vars found, request to user
       else if (prompt && !isCI) {
         await GitProvider.handleManualGitServerAuth();
-        return this.getInstance(false);
+        return this.buildInstance(false);
       }
       else if (isCI) {
         uxLog(

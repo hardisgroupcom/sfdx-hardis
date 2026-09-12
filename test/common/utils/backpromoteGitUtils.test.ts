@@ -8,6 +8,8 @@ import '../../../src/common/gitProvider/index.js';
 import fs from '../../../src/common/utils/fsUtils.js';
 import {
   changedFilesBetween,
+  changedFilesByFirstParentCommit,
+  packageDirectoriesAtRef,
   checkoutBackpromoteBranch,
   collectItemFiles,
   commitAllChanges,
@@ -99,6 +101,12 @@ describe('backpromote branch on a real git repository', () => {
     expect(inspectBackpromoteBranch(BRANCH, 'origin/integration')).to.deep.equal({ name: BRANCH, existsOnOrigin: false, head: null, pendingMerges: [] });
     expect(isAncestor(parentHead, 'HEAD')).to.be.false;
     expect(changedFilesBetween(`${parentHead}^1`, parentHead)).to.deep.equal([apexClass, lwcFile, lwcMeta]);
+    // The single git call of the listing gives the same files for that merge, keyed by its hash
+    const byCommit = changedFilesByFirstParentCommit(['-n', '10', parentHead]);
+    expect(byCommit.get(parentHead)).to.deep.equal([apexClass, lwcFile, lwcMeta]);
+    expect(byCommit.size).to.be.greaterThan(1);
+    // A merge outside the range is not in the map (the caller falls back to one git diff)
+    expect(changedFilesByFirstParentCommit(['-n', '1', `${parentHead}^1`]).has(parentHead)).to.be.false;
     expect(fileAtRef('origin/integration', apexClass)).to.contain('scale = 3');
     expect(fileAtRef('origin/integration', 'nope.txt')).to.be.null;
     expect(commitsTouchingFiles(`${parentHead}^1`, parentHead, [lwcFile])).to.deep.equal([parentHead]);
@@ -213,6 +221,17 @@ describe('backpromote branch on a real git repository', () => {
     expect(keys.has('README.md')).to.be.false;
     fetchOrigin();
     const files = collectItemFiles(['ApexClass:InvoiceCalculator', 'LightningComponentBundle:card'], [apexClass, lwcFile], 'origin/integration');
+    // Files that cannot belong to the items are not even handed to the resolver, and the items
+    // still find their files among thousands of others
+    const noise = Array.from({ length: 50 }, (_, index) => `.claude/skills/skill-${index}/SKILL.md`);
+    const withNoise = collectItemFiles(['ApexClass:InvoiceCalculator', 'LightningComponentBundle:card'], [...noise, apexClass, lwcFile], 'origin/integration');
+    expect(withNoise).to.deep.equal(files);
+    // With the package directories known, an item without a file (a custom label lives in the
+    // single labels file) does not send the files outside them to the resolver either
+    const withLabel = collectItemFiles(['ApexClass:InvoiceCalculator', 'CustomLabel:Greeting'], [...noise, apexClass, lwcFile], 'origin/integration', packageDirectoriesAtRef('origin/integration'));
+    expect(withLabel.get('ApexClass:InvoiceCalculator')).to.deep.equal(files.get('ApexClass:InvoiceCalculator'));
+    expect(withLabel.get('CustomLabel:Greeting')).to.deep.equal([]);
+    expect(packageDirectoriesAtRef('origin/integration')).to.deep.equal(['force-app']);
     expect(files.get('ApexClass:InvoiceCalculator')).to.deep.equal([apexClass]);
     expect(files.get('LightningComponentBundle:card')).to.deep.equal([lwcFile, lwcMeta]);
   });

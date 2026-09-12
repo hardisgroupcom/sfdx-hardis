@@ -2,8 +2,10 @@
 import { expect } from 'chai';
 // Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
 import '../../../src/common/gitProvider/index.js';
+import { GitProvider } from '../../../src/common/gitProvider/index.js';
 import {
   BACKPROMOTES_MARKER,
+  BackpromoteCommentStore,
   BackpromoteActionRow,
   BackpromoteSandboxRow,
   emptyBackpromotesState,
@@ -39,6 +41,39 @@ const actionRow: BackpromoteActionRow = {
   status: 'success',
   user: 'Sam Lee',
 };
+
+describe('BackpromoteCommentStore', () => {
+  const originalGetInstance = GitProvider.getInstance;
+  afterEach(() => {
+    GitProvider.getInstance = originalGetInstance;
+  });
+
+  it('reads a comment once for parallel readers, and tries again after a dropped connection', async () => {
+    const calls: number[] = [];
+    let dropOnce = true;
+    GitProvider.getInstance = (async () => ({
+      getPullRequestCommentByMarker: async (_marker: string, prNumber: number) => {
+        calls.push(prNumber);
+        if (dropOnce) {
+          dropOnce = false;
+          throw Object.assign(new TypeError('fetch failed'), { cause: Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' }) });
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        return renderBackpromotesComment(upsertSandboxRow(emptyBackpromotesState(), sandboxRow));
+      },
+    })) as unknown as typeof GitProvider.getInstance;
+    const store = new BackpromoteCommentStore(null);
+    const [first, second, third] = await Promise.all([store.read(42), store.read(42), store.read(43)]);
+    expect(first.sandboxRows).to.deep.equal([sandboxRow]);
+    expect(second).to.equal(first);
+    expect(third.sandboxRows).to.deep.equal([sandboxRow]);
+    // 42 twice (the dropped read and its retry), 43 once: the parallel reader of 42 shared the read
+    expect(calls.sort()).to.deep.equal([42, 42, 43]);
+    // The memory serves the next read
+    await store.read(42);
+    expect(calls.length).to.equal(3);
+  });
+});
 
 describe('Backpromotes comment', () => {
   it('renders a readable comment with the marker and reads its rows back exactly', () => {

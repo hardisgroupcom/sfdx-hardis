@@ -7,6 +7,7 @@ import {
   mapInAdaptiveBatches,
   mapInAdaptiveBatchesSettled,
   retryAfterMs,
+  retryOnThrottling,
 } from '../../../src/common/utils/adaptiveBatch.js';
 
 const throttled = (retryAfter?: string) => Object.assign(new Error('API rate limit exceeded'), { status: 429, response: { headers: retryAfter ? { 'retry-after': retryAfter } : {} } });
@@ -69,6 +70,44 @@ describe('adaptive batches of provider calls', () => {
     const results = await mapInAdaptiveBatches(items, mapper, { sizes: PROVIDER_BATCH_PROFILES.github, ...noSleep });
     expect(results).to.deep.equal(items.map((value) => value * 2));
     expect(state.peak).to.equal(80);
+  });
+
+  it('ramps up from the start size, and stops at the batch holding the first hit', async () => {
+    const items = Array.from({ length: 200 }, (_, index) => index);
+    const batches: number[] = [];
+    let inFlight = 0;
+    const mapper = async (value: number) => {
+      inFlight++;
+      await new Promise((resolve) => setTimeout(resolve, 2));
+      batches.push(inFlight);
+      inFlight--;
+      return value;
+    };
+    // The hit is at index 2: a first batch of 5 finds it, nothing else is read
+    const early = await mapInAdaptiveBatches(items, mapper, { sizes: PROVIDER_BATCH_PROFILES.github, startSize: 5, stopWhen: (value) => value === 2 });
+    expect(early.filter((value) => value !== undefined)).to.have.length(5);
+    expect(Math.max(...batches)).to.equal(5);
+
+    // No hit before index 60: 5, 10, 20 then 40 items are read, the batch doubles each time
+    batches.length = 0;
+    const peaks: number[] = [];
+    const late = await mapInAdaptiveBatches(items, async (value: number) => {
+      const result = await mapper(value);
+      return result;
+    }, {
+      sizes: PROVIDER_BATCH_PROFILES.github,
+      startSize: 5,
+      stopWhen: (value) => value === 60,
+      onProgress: (done) => peaks.push(done),
+    });
+    expect(late.filter((value) => value !== undefined)).to.have.length(75);
+    expect(peaks[peaks.length - 1]).to.equal(75);
+    // A throttling at the ramp keeps the size below the ladder step reached
+    const { state, mapper: throttledMapper } = trackingMapper(new Map([[6, { times: 1, error: () => throttled() }]]));
+    const backoffs: number[] = [];
+    await mapInAdaptiveBatches(items.slice(0, 40), throttledMapper, { sizes: [80, 40, 20, 10, 5, 1], startSize: 5, ...noSleep, onBackoff: (size) => backoffs.push(size) });
+    expect(backoffs).to.deep.equal([10]);
+    expect(state.peak).to.be.at.most(40);
   });
 
   it('backs off to the smaller sizes on a throttling, waits the delay asked for, and keeps the smaller size', async () => {
@@ -136,6 +175,43 @@ describe('adaptive batches of provider calls', () => {
     expect(results.slice(0, 10)).to.deep.equal(items.slice(0, 10));
     expect(results[10]).to.be.undefined;
     expect(progress[progress.length - 1]).to.equal(10);
+  });
+
+  it('tries one read again after a dropped connection, not after an answer of the provider', async () => {
+    let calls = 0;
+    const dropped = Object.assign(new TypeError('fetch failed'), { cause: Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' }) });
+    const waits: number[] = [];
+    const value = await retryOnThrottling(
+      async () => {
+        calls++;
+        if (calls < 3) {
+          throw dropped;
+        }
+        return 'ok';
+      },
+      { sleep: async (ms) => { waits.push(ms); }, onRetry: () => undefined },
+    );
+    expect(value).to.equal('ok');
+    expect(calls).to.equal(3);
+    expect(waits).to.deep.equal([1000, 2000]);
+    // Still dropped at the last try: the error comes out
+    calls = 0;
+    let rejected: Error | null = null;
+    try {
+      await retryOnThrottling(async () => { calls++; throw dropped; }, { attempts: 2, ...noSleep });
+    } catch (error) {
+      rejected = error as Error;
+    }
+    expect(rejected?.message).to.equal('fetch failed');
+    expect(calls).to.equal(2);
+    // A missing ticket is the answer of the provider: one call
+    calls = 0;
+    try {
+      await retryOnThrottling(async () => { calls++; throw notFound(); }, noSleep);
+    } catch {
+      // expected
+    }
+    expect(calls).to.equal(1);
   });
 
   it('handles an empty list without calling the mapper', async () => {
