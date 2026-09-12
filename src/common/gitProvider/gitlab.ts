@@ -6,7 +6,7 @@ import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { buildPrCreateUrl, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
-import { mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
@@ -646,7 +646,7 @@ ${getBannerMarkdownAndLink()}
     commitSHAs: Set<string>,
     updatedAfter: string | null = null,
   ): Promise<CommonPullRequestInfo[]> {
-    // Adaptive batches: 20 branches at a time, 10 then 5 then 1 after a failure
+    // Adaptive batches of the Gitlab ladder, shrunk only when the provider throttles
     const mrResults = await mapInAdaptiveBatchesSettled(allBranches, async (branchName) => {
       {
         const mergedMRs = await this.gitlabApi!.MergeRequests.all({
@@ -664,6 +664,7 @@ ${getBannerMarkdownAndLink()}
         return mergedMRs;
       }
     }, {
+      sizes: PROVIDER_BATCH_PROFILES.gitlab,
       onError: (err, branchName) => uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorFetchingMergedMrsForBranch', { branchName, message: String(err) }))),
     });
     const allMergedMRs: any[] = mrResults.flatMap((mrs) => mrs || []);

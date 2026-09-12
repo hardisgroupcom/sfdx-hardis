@@ -6,7 +6,7 @@ import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.j
 import { readActions } from './actionUtils.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
-import { mapInAdaptiveBatchesSettled } from './adaptiveBatch.js';
+import { gitProviderBatchSizes, mapInAdaptiveBatchesSettled } from './adaptiveBatch.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
 import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/prCommentNav.js';
@@ -145,8 +145,11 @@ export async function loadDeploymentActionsState(sourcePrNumbers: number[]): Pro
   if (showProgress) {
     WebSocketClient.sendProgressStartMessage(t('loadingDeploymentActionsStateFromPrs', { count: uniquePrs.length }), uniquePrs.length);
   }
-  // One comment read per Pull Request, in adaptive batches: 20 at a time, 10 then 5 then 1 after a failure
+  // One comment read per Pull Request, in the adaptive batches of the git provider's ladder, shrunk
+  // only when the provider throttles
   const bodies = await mapInAdaptiveBatchesSettled(uniquePrs, (prNumber) => GitProvider.tryGetDeploymentActionsCommentBodyForPr(prNumber), {
+    sizes: gitProviderBatchSizes(await GitProvider.getInstance()),
+    onBackoff: (size, e, waitMs) => uxLog("log", null, c.grey('[DeploymentActions] ' + t('providerThrottledBackoff', { count: size, waitSeconds: Math.round(waitMs / 1000), message: (e as Error)?.message || '' }))),
     onError: (e, prNumber) => uxLog("warning", null, c.yellow(`Could not load deployment actions state from PR #${prNumber}: ${(e as Error).message}`)),
     onProgress: (done, total) => {
       if (showProgress) {

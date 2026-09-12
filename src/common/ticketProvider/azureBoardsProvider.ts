@@ -8,7 +8,7 @@ import type { Ticket, TicketsFromStringOptions } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
 import { extractRegexMatches, git, isGitRepo, uxLog } from "../utils/index.js";
-import { mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 import { AzureDevopsProvider } from "../gitProvider/azureDevops.js";
 import { SfError } from "@salesforce/core";
 import { getConfig, getEnvVar } from "../../config/index.js";
@@ -217,11 +217,13 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     }
     // try/finally so the progress bar never stays stuck in the VS Code UI when a fetch throws
     try {
-      // One HTTP call per work item, in adaptive batches: 20 at a time, 10 then 5 then 1 after a
-      // failure. One failing work item (deleted id, expired PAT...) must not lose the others.
+      // One HTTP call per work item, in the adaptive batches of the Azure DevOps ladder, shrunk only
+      // when Azure throttles. One failing work item (deleted id, expired PAT...) must not lose the others.
       const azureTickets = tickets.filter((ticket) => ticket.provider === "AZURE");
       const errorById = new Map<string, string>();
       const infos = await mapInAdaptiveBatchesSettled(azureTickets, (ticket) => azureWorkItemApi.getWorkItem(Number(ticket.id)), {
+        sizes: PROVIDER_BATCH_PROFILES.azure,
+        onBackoff: (size, e, waitMs) => uxLog("log", this, c.grey('[AzureBoardsProvider] ' + t('providerThrottledBackoff', { count: size, waitSeconds: Math.round(waitMs / 1000), message: (e as Error)?.message || '' }))),
         onError: (e, ticket) => errorById.set(ticket.id, (e as Error).message),
         onProgress: (done, total) => {
           if (showProgress) {

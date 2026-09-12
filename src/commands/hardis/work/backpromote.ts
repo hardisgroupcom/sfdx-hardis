@@ -109,7 +109,8 @@ import { getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { t } from '../../../common/utils/i18n.js';
 import { reportCommandProgress } from '../../../common/utils/progressFileUtils.js';
-import { mapInAdaptiveBatches } from '../../../common/utils/adaptiveBatch.js';
+import { gitProviderBatchSizes, mapInAdaptiveBatches } from '../../../common/utils/adaptiveBatch.js';
+import { GitProvider } from '../../../common/gitProvider/index.js';
 import fs from '../../../common/utils/fsUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -540,9 +541,9 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     let read = 0;
     let found = false;
     reportCommandProgress({ step: 'history', message: t('backpromoteProgressHistory'), current: 0, total: newestFirst.length });
-    // The comments are read in adaptive batches (one API call each, 20 at a time, then 10, 5 and
-    // one by one after a failure), newest first, and the walk stops at the batch holding the first
-    // Pull Request with a row for this sandbox and org id
+    // The comments are read in the adaptive batches of the git provider's ladder (one API call
+    // each, shrunk only when the provider throttles), newest first, and the walk stops at the batch
+    // holding the first Pull Request with a row for this sandbox and org id
     const isMine = (row: BackpromoteSandboxRow) => row.sandboxName === ctx.targetOrg.sandboxName && row.orgId === ctx.targetOrg.orgId;
     const groupRows = await mapInAdaptiveBatches(
       newestFirst,
@@ -554,8 +555,9 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
         return rows;
       },
       {
+        sizes: gitProviderBatchSizes(await GitProvider.getInstance()),
         stopWhen: (rows) => rows.some(isMine),
-        onBackoff: (size, error) => uxLog('log', this, c.grey(`[Backpromote] ${t('backpromoteHistoryReadRetry', { count: size, message: (error as Error).message })}`)),
+        onBackoff: (size, error, waitMs) => uxLog('log', this, c.grey(`[Backpromote] ${t('providerThrottledBackoff', { count: size, waitSeconds: Math.round(waitMs / 1000), message: (error as Error)?.message || '' })}`)),
         onProgress: (done) => reportCommandProgress({ step: 'history', message: t('backpromoteProgressHistory'), current: done, total: newestFirst.length }),
       },
     );

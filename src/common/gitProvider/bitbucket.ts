@@ -7,7 +7,7 @@ import { getCurrentGitBranch, git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
-import { mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { httpPost } from '../utils/httpUtils.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./jenkinsUtils.js";
@@ -725,7 +725,7 @@ export class BitbucketProvider extends GitProviderRoot {
     updatedAfter: string | null = null,
   ): Promise<CommonPullRequestInfo[]> {
     uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFetchingMergedPrs', { branches: allBranches.join(', ') })));
-    // Adaptive batches: 20 branches at a time, 10 then 5 then 1 after a failure
+    // Adaptive batches of the Bitbucket ladder, shrunk only when the provider throttles
     const prResults = await mapInAdaptiveBatchesSettled(allBranches, async (branchName) => {
       {
         const branchQuery = `destination.branch.name = "${branchName}" AND state = "MERGED"`
@@ -744,6 +744,7 @@ export class BitbucketProvider extends GitProviderRoot {
         return values;
       }
     }, {
+      sizes: PROVIDER_BATCH_PROFILES.bitbucket,
       onError: (err, branchName) => uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketErrorFetchingMergedPrs', { branchName, message: String(err) }))),
     });
     const allMergedPRs: any[] = prResults.flatMap((prs) => prs || []);

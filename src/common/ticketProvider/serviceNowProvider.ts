@@ -4,7 +4,7 @@ import sortArray from '../utils/sortArray.js';
 import type { Ticket, TicketsFromStringOptions } from './index.js';
 import { recordTicketCollectionIssue, TicketProviderRoot } from './ticketProviderRoot.js';
 import { extractRegexMatches, getCurrentGitBranch, uxLog } from '../utils/index.js';
-import { mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 import { getConfig, getEnvVar } from '../../config/index.js';
 import { httpGet, httpPatch, httpPost } from '../utils/httpUtils.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
@@ -381,14 +381,17 @@ export class ServiceNowProvider extends TicketProviderRoot {
     let firstErrorMessage = '';
     // try/finally so the progress bar never stays stuck in the VS Code UI when a fetch throws
     try {
-      // One HTTP call per ticket, in adaptive batches: 20 at a time, 10 then 5 then 1 after a failure.
-      // A single aggregated warning is displayed after the loop: per-ticket failures usually share
-      // the same cause (expired credential, missing ACL) and would flood the log.
+      // One HTTP call per ticket, in the adaptive batches of the ServiceNow ladder (a node serves a
+      // few REST calls at a time), shrunk only when the instance throttles. A single aggregated warning
+      // is displayed after the loop: per-ticket failures usually share the same cause (expired
+      // credential, missing ACL) and would flood the log.
       const ticketsWithTable = serviceNowTickets
         .map((ticket) => ({ ticket, table: ServiceNowProvider.tableOfTicketId(ticket.id, config) }))
         .filter((entry): entry is { ticket: Ticket; table: string } => !!entry.table);
       const failedIds = new Set<string>();
       const records = await mapInAdaptiveBatchesSettled(ticketsWithTable, (entry) => this.fetchRecord(entry.table, entry.ticket.id), {
+        sizes: PROVIDER_BATCH_PROFILES.serviceNow,
+        onBackoff: (size, e, waitMs) => uxLog('log', this, c.grey('[ServiceNowProvider] ' + t('providerThrottledBackoff', { count: size, waitSeconds: Math.round(waitMs / 1000), message: (e as Error)?.message || '' }))),
         onError: (e: any, entry) => {
           failedIds.add(entry.ticket.id);
           failedTicketsNumber++;

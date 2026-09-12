@@ -6,7 +6,7 @@ import sortArray from '../utils/sortArray.js';
 // Type-only: a value import here would close a runtime cycle index -> provider -> index
 import type { Ticket, TicketsFromStringOptions } from "./index.js";
 import { extractRegexMatches, getCurrentGitBranch, uxLog } from "../utils/index.js";
-import { mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 import { SfError } from "@salesforce/core";
 import { CONSTANTS, getConfig, getEnvVar } from "../../config/index.js";
 import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
@@ -369,12 +369,14 @@ export class JiraProvider extends TicketProviderRoot {
     }
     let failedTicketsNumber = 0;
     let firstErrorMessage = '';
-    // One HTTP call per ticket, in adaptive batches: 20 at a time, 10 then 5 then 1 after a failure.
-    // A single aggregated warning is displayed after the loop: per-ticket failures usually share the
-    // same cause (expired token, missing permission) and would flood the log.
+    // One HTTP call per ticket, in the adaptive batches of the Jira ladder (Cloud or Server), shrunk
+    // only when Jira throttles. A single aggregated warning is displayed after the loop: per-ticket
+    // failures usually share the same cause (expired token, missing permission) and would flood the log.
     const jiraTickets = tickets.filter((ticket) => ticket.provider === "JIRA");
     const failedIds = new Set<string>();
     const infos = await mapInAdaptiveBatchesSettled(jiraTickets, (ticket) => this.runJiraCall((client) => client.issues.getIssue({ issueIdOrKey: ticket.id })), {
+      sizes: this.isJiraCloud() ? PROVIDER_BATCH_PROFILES.jiraCloud : PROVIDER_BATCH_PROFILES.jiraServer,
+      onBackoff: (size, e, waitMs) => uxLog("log", this, c.grey('[JiraApi] ' + t('providerThrottledBackoff', { count: size, waitSeconds: Math.round(waitMs / 1000), message: (e as Error)?.message || '' }))),
       onError: (e, ticket) => {
         uxLog("log", this, c.grey('[JiraApi] ' + t('jiraApiErrorGettingTicket', { ticketId: ticket.id, message: (e as Error).message })));
         failedIds.add(ticket.id);

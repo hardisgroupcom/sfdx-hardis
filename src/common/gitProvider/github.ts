@@ -5,7 +5,7 @@ import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResul
 import { GithubApiClient, getGithubActionsContext } from "./githubApiClient.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
-import { mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
@@ -649,7 +649,7 @@ ${getBannerMarkdownAndLink()}
     allBranches: string[],
     commitSHAs: Set<string>,
   ): Promise<CommonPullRequestInfo[]> {
-    // Adaptive batches: 20 branches at a time, 10 then 5 then 1 after a failure
+    // Adaptive batches of the GitHub ladder, shrunk only when the provider throttles
     const prResults = await mapInAdaptiveBatchesSettled(allBranches, async (branchName) => {
       const prs = await this.listPulls({
         state: "closed",
@@ -659,6 +659,7 @@ ${getBannerMarkdownAndLink()}
       uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubFetchingMergedPrs', { branchName })));
       return prs.filter((pr) => pr.merged_at);
     }, {
+      sizes: PROVIDER_BATCH_PROFILES.github,
       onError: (err, branchName) => uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('githubErrorFetchingMergedPrs', { branchName, message: String(err) }))),
     });
     const allMergedPRs: any[] = prResults.flatMap((prs) => prs || []);

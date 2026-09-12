@@ -11,7 +11,7 @@ import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';
-import { mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
 import { getCachedPullRequestDescription, repositoryKeyFromRemoteUrl, setCachedPullRequestDescription } from "../cache/pullRequestDescriptionCache.js";
@@ -702,7 +702,7 @@ ${this.getPipelineVariablesConfig()}
     allBranches: string[],
     commitIds: Set<string>,
   ): Promise<CommonPullRequestInfo[]> {
-    // Adaptive batches: 20 branches at a time, 10 then 5 then 1 after a failure
+    // Adaptive batches of the Azure ladder, shrunk only when the provider throttles
     const prResults = await mapInAdaptiveBatchesSettled(allBranches, async (branchName) => {
       {
         const prs = await gitApi.getPullRequests(
@@ -720,6 +720,7 @@ ${this.getPipelineVariablesConfig()}
         return prs || [];
       }
     }, {
+      sizes: PROVIDER_BATCH_PROFILES.azure,
       onError: (err, branchName) => uxLog("warning", this, c.yellow(`Error fetching completed PRs for branch ${branchName}: ${String(err)}`)),
     });
     const allMergedPRs: any[] = prResults.flatMap((prs) => prs || []);
