@@ -5,6 +5,8 @@ import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResul
 import { GithubApiClient, getGithubActionsContext } from "./githubApiClient.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
 
@@ -647,27 +649,20 @@ ${getBannerMarkdownAndLink()}
     allBranches: string[],
     commitSHAs: Set<string>,
   ): Promise<CommonPullRequestInfo[]> {
-    const prPromises = allBranches.map(async (branchName) => {
-      try {
-        const prs = await this.listPulls({
-          state: "closed",
-          base: branchName,
-          per_page: 1000,
-        });
-        uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubFetchingMergedPrs', { branchName })));
-        return prs.filter((pr) => pr.merged_at);
-      } catch (err) {
-        uxLog(
-          "warning",
-          this,
-          c.yellow('[GitHub Integration] ' + t('githubErrorFetchingMergedPrs', { branchName, message: String(err) })),
-        );
-        return [];
-      }
+    // Adaptive batches of the GitHub ladder, shrunk only when the provider throttles
+    const prResults = await mapInAdaptiveBatchesSettled(allBranches, async (branchName) => {
+      const prs = await this.listPulls({
+        state: "closed",
+        base: branchName,
+        per_page: 1000,
+      });
+      uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubFetchingMergedPrs', { branchName })));
+      return prs.filter((pr) => pr.merged_at);
+    }, {
+      sizes: PROVIDER_BATCH_PROFILES.github,
+      onError: (err, branchName) => uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('githubErrorFetchingMergedPrs', { branchName, message: String(err) }))),
     });
-
-    const prResults = await Promise.all(prPromises);
-    const allMergedPRs: any[] = prResults.flat();
+    const allMergedPRs: any[] = prResults.flatMap((prs) => prs || []);
 
     // Keep PRs whose merge commit is in our commit list
     const relevantPRs = allMergedPRs.filter((pr) => pr.merge_commit_sha && commitSHAs.has(pr.merge_commit_sha));
@@ -748,7 +743,11 @@ ${getBannerMarkdownAndLink()}
   public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
     const issueNumber = prNumber || this.prNumber;
     if (!issueNumber) return null;
-    const comments = await this.listIssueComments(issueNumber, this.repoOwner || '', this.repoName || '');
+    // Paginated like the upsert: a marker comment sitting past the first page must be found, or the
+    // upsert rewrites it from an empty state
+    const comments = await this.api.paginate<any>(`${this.repoPath(this.repoOwner || '', this.repoName || '')}/issues/${issueNumber}/comments`, {
+      params: { per_page: 100 },
+    });
     for (const comment of comments) {
       if (comment?.body?.includes(marker)) {
         return comment.body;
@@ -760,7 +759,11 @@ ${getBannerMarkdownAndLink()}
   public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
     const issueNumber = prNumber || this.prNumber;
     if (!issueNumber) return;
-    const comments = await this.listIssueComments(issueNumber, this.repoOwner || '', this.repoName || '');
+    // Paginated like the read side: a Pull Request carrying more comments than one page would get
+    // a second marker comment at every run, each one notifying the participants again
+    const comments = await this.api.paginate<any>(`${this.repoPath(this.repoOwner || '', this.repoName || '')}/issues/${issueNumber}/comments`, {
+      params: { per_page: 100 },
+    });
     let existingId: number | null = null;
     for (const comment of comments) {
       if (comment?.body?.includes(marker)) {

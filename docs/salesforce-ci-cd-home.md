@@ -79,7 +79,7 @@ Deploying a User Story is not always just about metadata. With [deployment actio
 
 - [Release Notes](hardis/doc/salesforce-ci-cd-release-notes.md): generated from the Git history, the tickets, the metadata changes and the deployment actions. Markdown, PDF and XLSX outputs, with an optional AI summary.
 - [DORA Metrics](hardis/doc/salesforce-ci-cd-dora-report.md): Deployment Frequency, Lead Time for Changes, Change Failure Rate and MTTR, scored Elite / High / Medium / Low against industry benchmarks.
-- [Backpromote (Beta)](hardis/work/backpromote.md): bring the changes merged in a parent branch back into a developer's sandbox, with org conflict detection and diff reports.
+- [Backpromote (Beta)](salesforce-ci-cd-backpromote.md): bring what was merged in a parent branch into a developer's sandbox, with the deployment actions of the merged Pull Requests, a decision for each file that differs in the sandbox, and a history shared through the Pull Request comments.
 
 **Integrations**
 

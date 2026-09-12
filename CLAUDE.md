@@ -26,6 +26,8 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 3. `/implement` -- Implement the changes in source code
 4. `/test` -- Build, lint, and run tests
 
+Every step also covers the VS Code extension: see [VS Code Extension](#vs-code-extension-vscode-sfdx-hardis).
+
 ## Monitoring and Grafana Skills
 
 - `monitoring-notifications` skill: load it whenever a monitoring command, notification type, routing threshold, metric key, or logElements shape is created, updated, or deleted.
@@ -35,7 +37,17 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 ## Promotion Branches Skills
 
 - `promotion-branches` skill: how the promotion branches feature (`enablePromotionBranches`, `sf hardis:project:promotion:create`) works across sfdx-hardis and vscode-sfdx-hardis, its invariants, and every file to touch. Load it for any work on promotion branches, on the Pull Request scope of `deploy:smart`, on release notes filtering, or on the DevOps Pipeline windows, counters and toggles.
-- `promotion-branches-e2e` skill: the runbook, the job simulators and the regression scripts to prove the feature again end to end against a real org and a throwaway private repository. Run it whenever promotion branches change in a way unit tests cannot cover.
+- `promotion-branches-e2e` skill: the runbook, the job simulators and the regression scripts to prove the feature again end to end against a real org and a throwaway private repository. Run it whenever promotion branches or backpromote change in a way unit tests cannot cover.
+- `backpromote` skill: how a coding agent drives `sf hardis:work:backpromote` (plan, decide, run, solve the merges it asks for, confirm manual actions) and where the feature lives in both repositories. Load it for any work on backpromote, on the "Backpromotes" Pull Request comments or on the VS Code Backpromote panel. The requirements are in `backpromote.md`.
+
+## VS Code Extension (vscode-sfdx-hardis)
+
+Most users run sfdx-hardis through the VS Code extension [vscode-sfdx-hardis](https://github.com/hardisgroupcom/vscode-sfdx-hardis) (local clone: `../vscode-sfdx-hardis`). Every task run from this repository must take its impact on the extension into account.
+
+- `vscode-sfdx-hardis` skill: load it whenever a change touches command flags, prompts, `--json` output, `WebSocketClient` messages, the JSON schema or the command list, and whenever a request mentions VS Code, the extension, a panel, an LWC or the DevOps Pipeline.
+- The analysis and the design always state the extension impact, even when it is "none".
+- A feature available in both must behave the same: the CLI is the engine and the extension passes it flags. Never reimplement CLI logic in the extension.
+- Work in the extension follows the extension's own `CLAUDE.md`, `.claude/skills` (`analyze`, `design`, `implement`, `test`...) and `.claude/agents`, not the sfdx-hardis ones. One PR per repository, cross-linked.
 
 ## Behavior Preferences
 

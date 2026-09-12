@@ -11,6 +11,8 @@ import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
 import { getCachedPullRequestDescription, repositoryKeyFromRemoteUrl, setCachedPullRequestDescription } from "../cache/pullRequestDescriptionCache.js";
 
@@ -700,8 +702,9 @@ ${this.getPipelineVariablesConfig()}
     allBranches: string[],
     commitIds: Set<string>,
   ): Promise<CommonPullRequestInfo[]> {
-    const prPromises = allBranches.map(async (branchName) => {
-      try {
+    // Adaptive batches of the Azure ladder, shrunk only when the provider throttles
+    const prResults = await mapInAdaptiveBatchesSettled(allBranches, async (branchName) => {
+      {
         const prs = await gitApi.getPullRequests(
           process.env.BUILD_REPOSITORY_ID!,
           {
@@ -715,18 +718,12 @@ ${this.getPipelineVariablesConfig()}
         // does not suggest that all these PRs are part of the scope.
         uxLog("other", this, c.grey(`[Azure Integration] Fetched ${prs?.length || 0} recently completed PRs targeting branch ${branchName}, as candidates to match against the commits window`));
         return prs || [];
-      } catch (err) {
-        uxLog(
-          "warning",
-          this,
-          c.yellow(`Error fetching completed PRs for branch ${branchName}: ${String(err)}`),
-        );
-        return [];
       }
+    }, {
+      sizes: PROVIDER_BATCH_PROFILES.azure,
+      onError: (err, branchName) => uxLog("warning", this, c.yellow(`Error fetching completed PRs for branch ${branchName}: ${String(err)}`)),
     });
-
-    const prResults = await Promise.all(prPromises);
-    const allMergedPRs: any[] = prResults.flat();
+    const allMergedPRs: any[] = prResults.flatMap((prs) => prs || []);
 
     // Keep PRs whose merge commit (or source commit) is in our commit list
     const relevantPRs = allMergedPRs.filter((pr) => {

@@ -8,6 +8,14 @@ const DISABLE_WEBSOCKET_COMMANDS = new Set([
   'hardis:config:monitoring-defaults',
 ]);
 
+/**
+ * The Backpromote (Beta) panel runs the command itself in the background with --json (plan,
+ * prepare, run, confirm): those calls must not show up as a command in the extension.
+ */
+export function isBackgroundJsonCall(commandId: string, argv: string[]): boolean {
+  return commandId === 'hardis:work:backpromote' && (argv.includes('--plan') || argv.includes('--json'));
+}
+
 const hook: Hook<'init'> = async (options) => {
   const commandId = options?.id || '';
 
@@ -38,6 +46,12 @@ const hook: Hook<'init'> = async (options) => {
 
   // Fast path: skip WebSocket for known CLI-only commands without loading the class
   if (DISABLE_WEBSOCKET_COMMANDS.has(commandId)) {
+    return;
+  }
+
+  // Read-only JSON calls a VS Code panel makes in the background: connecting would open an empty
+  // command execution tab next to the panel that is waiting for the JSON document
+  if (isBackgroundJsonCall(commandId, options?.argv || [])) {
     return;
   }
 

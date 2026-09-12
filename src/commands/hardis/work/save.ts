@@ -36,6 +36,7 @@ import CleanXml from '../project/clean/xml.js';
 import { GitProvider } from '../../../common/gitProvider/index.js';
 import { t } from '../../../common/utils/i18n.js';
 import { getPromotionBranchConfig, isPromotionBranchName } from '../../../common/utils/promotionBranchUtils.js';
+import { isBackpromoteBranchName, parseBackpromoteBranchName } from '../../../common/utils/backpromoteRules.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -233,6 +234,12 @@ The command's technical implementation involves a series of orchestrated steps:
     const promotionConfig = getPromotionBranchConfig(await getConfig('branch'));
     if (promotionConfig.enabled && isPromotionBranchName(this.currentBranch)) {
       uxLog("warning", this, c.yellow(t('workSaveOnPromotionBranch', { branch: this.currentBranch })));
+    }
+    // A backpromote branch only holds the manual merges of a backpromote to one sandbox: it is never
+    // pushed as a User Story. The developer gets back to their own branch first.
+    if (isBackpromoteBranchName(this.currentBranch)) {
+      const parsed = parseBackpromoteBranchName(this.currentBranch);
+      throw new SfError(t('workSaveOnBackpromoteBranch', { branch: this.currentBranch, parentBranch: parsed?.parentBranch || '' }));
     }
     if (this.targetBranch == null) {
       const userConfig = await getConfig('user');

@@ -60,7 +60,7 @@ Once the validation jobs are green, your release manager [reviews and merges the
 - [Deployment actions](salesforce-ci-cd-work-on-task-deployment-actions.md): declare on your Pull Request the steps that must run before or after the deployment (data loads, Apex scripts, manual steps...).
 - [Install packages](salesforce-ci-cd-work-on-task-install-packages.md): register the packages installed in your org so the CI server installs them in the other orgs.
 - [Work with AI coding agents](salesforce-ci-cd-agent-skills.md): drive the same commands from Claude Code, GitHub Copilot or another coding agent.
-- [Backpromote to your dev sandbox (Beta)](hardis/work/backpromote.md): bring the changes merged by your colleagues into your own sandbox.
+- [Backpromote to your dev sandbox (Beta)](salesforce-ci-cd-backpromote.md): bring the changes merged by your colleagues into your own sandbox.
 
 ---
 

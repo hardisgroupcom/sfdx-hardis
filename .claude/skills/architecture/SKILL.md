@@ -142,7 +142,7 @@ Oclif lifecycle hooks:
 
 ## WebSocket Client (`src/common/websocketClient.ts`)
 
-Communicates with VS Code extension (vscode-sfdx-hardis) for UI interactions, progress, and prompts.
+Communicates with VS Code extension (vscode-sfdx-hardis) for UI interactions, progress, and prompts. Every message carries an `event` handled in the extension's `src/hardis-websocket-server.ts`, so adding or changing one is an extension change too. See the `vscode-sfdx-hardis` skill for the full integration surface.
 
 ## Utilities (`src/common/utils/`)
 

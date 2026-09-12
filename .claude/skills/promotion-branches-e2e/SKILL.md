@@ -1,6 +1,6 @@
 ---
 name: promotion-branches-e2e
-description: Run the hardcore end to end test of the promotion branches feature against a real Salesforce org and a throwaway private GitHub, GitLab or Azure DevOps repository, then write the report. Use when promotion branches (enablePromotionBranches, hardis:project:promotion:create) changed and must be proven again, or when the user asks for the promotion branches end to end / hardcore test.
+description: Run the hardcore end to end test of the promotion branches feature, and of backpromote (Beta), against real Salesforce orgs and a throwaway private GitHub, GitLab or Azure DevOps repository, then write the report. Use when promotion branches (enablePromotionBranches, hardis:project:promotion:create) or backpromote (hardis:work:backpromote, the VS Code Backpromote panel) changed and must be proven again, or when the user asks for the promotion branches / backpromote end to end / hardcore test.
 argument-hint: "[org username] [repo slug] [what to focus on]"
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write, AskUserQuestion
 user-invocable: true
@@ -28,6 +28,8 @@ not already, so you know what each assertion is protecting.
 | `scripts/check-pipeline.cjs`       | Drives the extension's own PipelineDataProvider against the test repository and asserts what the DevOps Pipeline shows at a point of the run.                   |
 | `scripts/check-diagram.cjs`        | Feeds the extension's compiled helpers with the real Pull Requests and asserts the "single place in the diagram" rule.                                          |
 | `scripts/check-diagram-gitlab.cjs` | The same, reading merge requests from the GitLab API.                                                                                                           |
+| `scripts/check-backpromote-plan.cjs` | Asserts a `hardis:work:backpromote ... --json` document (plan version 3: plan, prepare, run, confirm, reset) against the expectations of `reference/backpromote/*.json` (section 6bis). |
+| `scripts/check-backpromote-comments.cjs` | Asserts the "Backpromotes" Pull Request comments of a `dump_pr_comments` dump: one comment per Pull Request, its sandbox rows and action rows (section 6bis, C1 to C4).           |
 | `scripts/ab-run.sh`                | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                            |
 | `scripts/ab-run-gitlab.sh`         | The same on GitLab.                                                                                                                                             |
 | `scripts/ab-run-azure.sh`          | The same on Azure DevOps.                                                                                                                                       |
@@ -40,6 +42,9 @@ not already, so you know what each assertion is protecting.
 Ask the user only for what you cannot find yourself:
 
 - the **Salesforce org** to deploy to (an authenticated org alias or username);
+- for backpromote (Beta), a **Dev Hub** to create the developer's scratch orgs from (the org above
+  when it has Dev Hub enabled): backpromote refuses production orgs and major branch orgs, and a
+  scratch org tracks its sources, which is what the "pending org changes are saved first" step needs;
 - the **repository slug** to create, if they care about the name. Otherwise pick
   `<gh login>/sfdx-hardis-promo-e2e-<n>`, incrementing `<n>` past the ones that already exist;
   on GitLab, `<user>/sfdx-hardis-promo-e2e-gl-<n>`; on Azure DevOps,
@@ -77,6 +82,17 @@ failure cannot be an artefact of the previous run's state.
 5ter. **Check the DevOps Pipeline before and after every promotion operation**
    (runbook section 4bis): `pipeline_check <label> <expectations.json>`. The job logs and the Pull
    Request comments say nothing about the view the release manager actually reads.
+5quater. **Run backpromote (Beta)** (runbook section 6bis): `backpromote-setup.sh` then
+   `backpromote-steps.sh`, against scratch orgs created from the Dev Hub. Steps B0 to B16: no git
+   provider token, refused orgs (major branch org, production), refused parent branch, the first plan
+   with no history and its progress file, the run from S1 with the deployment actions and the
+   "Backpromotes" comments, up to date and a manual action confirmed, the default start after a new
+   story, a file that differs overwritten, the org version kept then offered again, the agent protocol
+   (`waitingForMerges`, solve, run again, branch pushed), the panel protocol (`--prepare`, refused
+   while markers remain, run), a deletion skipped then applied, an excluded item that comes back, a
+   dirty working tree stashed, a refreshed sandbox (same name, other org id), the scan limit and the
+   reset. Assert each JSON document with `backpromote_check` and the comments with
+   `backpromote_comments_check` (C1 to C4).
 6. **Check the diagram rule**: `node scripts/check-diagram.cjs <owner>/<repo> integration,uat,preprod,main`
    (`check-diagram-gitlab.cjs` / `check-diagram-azure.cjs` for the other two providers).
 7. **Run the flag-off A/B regression check** (runbook section 7ter). `TOTAL DIFFERING LINES: 0`,
@@ -85,8 +101,8 @@ failure cannot be an artefact of the previous run's state.
    `.claude/skills/promotion-branches-e2e/reports/promotion-branches-e2e-report-github.md`,
    `…-gitlab.md`, `…-azure.md` and `…-bitbucket.md`. Never write them at the repository root.
    Pipeline under test, the stories, the promotions performed, a table per test group with expected
-   versus result, what the run found, what it did not cover, and the suite counts. Overwrite the
-   previous reports.
+   versus result (backpromote steps B0 to B9 included), what the run found, what it did not cover,
+   and the suite counts. Overwrite the previous reports.
 
 ## Rules for the run
 
@@ -109,5 +125,9 @@ State them again in the report unless you close them:
   **branch**, not by distinct orgs.
 - The pipeline webview is exercised through its own data provider (section 4bis), its compiled
   helpers and its unit tests, not by clicking: the mermaid is asserted as text, never rendered.
+- Backpromote (Beta) runs on GitHub only so far, and its VS Code panel is not clicked: the panel
+  reads the same `--json` documents the run asserts, and its command builder, greying rules and
+  marker watch are unit tested. The terminal prompts of step B17 are only covered when someone
+  answers them by hand.
 
 $ARGUMENTS

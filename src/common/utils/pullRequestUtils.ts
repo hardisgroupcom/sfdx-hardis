@@ -5,6 +5,7 @@ import path from "path";
 import fs from './fsUtils.js';
 import yaml from "js-yaml";
 import { isRetrofit, listMajorOrgs } from "./orgConfigUtils.js";
+import { isBackpromoteBranchName } from "./backpromoteRules.js";
 import { SfError } from "@salesforce/core";
 import { t } from "./i18n.js";
 import { getConfig } from "../../config/index.js";
@@ -344,7 +345,7 @@ export function isSinglePullRequestScope(sourceBranch: string, majorBranchNames:
   // Compared without case, like the other branch classifiers: major branch names come from the
   // config/branches/.sfdx-hardis.<branch>.yml file names, which may not match the git branch case.
   const isMajorBranch = majorBranchNames.some((majorBranchName) => (majorBranchName || "").toLowerCase() === branchName);
-  return !isMajorBranch && !isRetrofit(branchName);
+  return !isMajorBranch && !isRetrofit(branchName) && !isBackpromoteBranchName(branchName);
 }
 
 /**

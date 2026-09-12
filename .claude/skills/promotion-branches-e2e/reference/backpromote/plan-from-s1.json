@@ -1,0 +1,49 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "mode": "plan",
+  "windowStart": "{{S1}}",
+  "items": [
+    "StaticResource:E2E_S1",
+    "StaticResource:E2E_S2",
+    "StaticResource:E2E_S3"
+  ],
+  "actions": [
+    {
+      "id": "e2e-pre-{{S1}}",
+      "phase": "pre",
+      "alreadyRun": false
+    },
+    {
+      "id": "e2e-manual-{{S1}}",
+      "phase": "post",
+      "alreadyRun": false
+    },
+    {
+      "id": "e2e-post-{{S2}}",
+      "phase": "post",
+      "alreadyRun": false
+    },
+    {
+      "id": "e2e-pre-{{S3}}",
+      "phase": "pre",
+      "alreadyRun": false
+    }
+  ],
+  "comparison": [
+    {
+      "fileContains": "E2E_S1.resource",
+      "status": "missingInOrg"
+    },
+    {
+      "fileContains": "E2E_S2.resource",
+      "status": "missingInOrg"
+    },
+    {
+      "fileContains": "E2E_S3.resource",
+      "status": "missingInOrg"
+    }
+  ],
+  "checkoutClean": true,
+  "onBackpromoteBranch": false
+}

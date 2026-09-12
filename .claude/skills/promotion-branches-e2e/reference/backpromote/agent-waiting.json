@@ -1,0 +1,17 @@
+{
+  "exitStatus": 0,
+  "status": "waitingForMerges",
+  "mode": "run",
+  "onBackpromoteBranch": true,
+  "promptFile": true,
+  "comparison": [
+    {
+      "fileContains": "E2E_S1.resource",
+      "decision": "merge",
+      "prepared": true,
+      "markersRemainingMin": 1,
+      "threeWay": true,
+      "hasVersions": true
+    }
+  ]
+}

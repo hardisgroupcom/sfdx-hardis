@@ -109,6 +109,37 @@ e2e_release_notes() {
   return $code
 }
 
+# Backpromote (Beta) hooks of scripts/e2e-lib-backpromote.sh (runbook section 6bis): the variables the
+# CLI reads outside CI, and a Pull Request into integration opened then merged
+bp_provider_env() {
+  env -u NODE_OPTIONS -u CI \
+    GITHUB_TOKEN="$(gh auth token)" \
+    GITHUB_REPOSITORY="$REPO" \
+    GITHUB_REPOSITORY_OWNER="${REPO%%/*}" \
+    GITHUB_SERVER_URL="https://github.com" \
+    "$@"
+}
+
+# Usage: bp_open <branch> <title> [body]  (prints the Pull Request number)
+bp_open() {
+  local url
+  url=$(gh pr create --repo "$REPO" --base integration --head "$1" --title "$2" --body "${3:-backpromote end to end test}") || return 1
+  echo "${url##*/}"
+}
+
+# Usage: bp_merge <number>. GitHub refuses a merge right after a push to the source branch ("Base
+# branch was modified"): retry for a while.
+bp_merge() {
+  local attempt
+  for attempt in $(seq 1 10); do
+    if gh pr merge "$1" --repo "$REPO" --merge --delete-branch=false; then
+      return 0
+    fi
+    sleep 3
+  done
+  return 1
+}
+
 # The lines worth reading in a job log
 # Usage: e2e_grep <log file>
 e2e_grep() {
@@ -160,3 +191,6 @@ pipeline_check() {
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
+
+# Backpromote (Beta) helpers, provider agnostic
+source "$E2E_SCRIPTS_DIR/e2e-lib-backpromote.sh"
