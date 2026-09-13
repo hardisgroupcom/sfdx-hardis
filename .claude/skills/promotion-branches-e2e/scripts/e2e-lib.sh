@@ -142,8 +142,7 @@ bp_open() {
 # Usage: bp_merge <number>. GitHub refuses a merge right after a push to the source branch ("Base
 # branch was modified"): retry for a while.
 bp_merge() {
-  local attempt
-  for attempt in $(seq 1 10); do
+  for _ in $(seq 1 10); do
     if gh pr merge "$1" --repo "$REPO" --merge --delete-branch=false; then
       return 0
     fi
@@ -205,4 +204,5 @@ pipeline_check() {
 }
 
 # Backpromote (Beta) helpers, provider agnostic
+# shellcheck source=/dev/null
 source "$E2E_SCRIPTS_DIR/e2e-lib-backpromote.sh"

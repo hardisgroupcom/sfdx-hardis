@@ -16,6 +16,7 @@
 _P_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 case "${PROVIDER:?set PROVIDER to github or gitlab}" in
 github)
+  # shellcheck source=/dev/null
   source "$_P_DIR/e2e-lib.sh"
   p_check() { e2e_check "$@"; }
   p_deploy() { e2e_deploy "$@"; }
@@ -23,8 +24,8 @@ github)
   p_release_notes() { e2e_release_notes "$@"; }
   p_token() { gh auth token; }
   p_open() {
-    local url attempt
-    for attempt in $(seq 1 10); do
+    local url
+    for _ in $(seq 1 10); do
       if url=$(gh pr create --repo "$REPO" --base "$2" --head "$1" --title "$3" --body-file "$4" 2>"$LOGS/p-open.err"); then
         echo "${url##*/}"
         return 0
@@ -36,8 +37,7 @@ github)
   }
   # GitHub refuses a merge right after a push to the source branch ("Base branch was modified")
   p_merge() {
-    local attempt
-    for attempt in $(seq 1 15); do
+    for _ in $(seq 1 15); do
       if gh pr merge "$1" --repo "$REPO" --merge --delete-branch=false >/dev/null 2>"$LOGS/p-merge.err"; then
         echo merged
         return 0
@@ -124,6 +124,7 @@ github)
   }
   ;;
 gitlab)
+  # shellcheck source=/dev/null
   source "$_P_DIR/e2e-lib-gitlab.sh"
   p_check() { gl_check "$@"; }
   p_deploy() { gl_deploy "$@"; }
@@ -131,9 +132,9 @@ gitlab)
   p_release_notes() { gl_release_notes "$@"; }
   p_token() { echo "$GL_TOKEN"; }
   p_open() {
-    local iid attempt body
+    local iid body
     body="$(cygpath -m "$4" 2>/dev/null || echo "$4")"
-    for attempt in $(seq 1 15); do
+    for _ in $(seq 1 15); do
       iid=$(gl_mr_create "$1" "$2" "$3" "$body" 2>"$LOGS/p-open.err")
       if [[ "$iid" =~ ^[0-9]+$ ]]; then
         echo "$iid"

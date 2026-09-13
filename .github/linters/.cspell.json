@@ -106,6 +106,8 @@
     "backpromote",
     "backpromoted",
     "backpromotes",
+    "backpromoting",
+    "accordionbackpromote",
     "parentbranch",
     "metadatanames",
     "filesutils",
@@ -430,6 +432,7 @@
     "accordionavailable",
     "accordionbranch",
     "devskim",
+    "devsam",
     "accordionclean",
     "accordioncommands",
     "accordioncustom",
@@ -1397,6 +1400,9 @@
     "unstage",
     "unstaging",
     "unticked",
+    "untick",
+    "unticking",
+    "unticks",
     "unusedlicenses",
     "unusedmetadata",
     "unusedmetadatas",
@@ -1690,6 +1696,12 @@
     "uarr",
     "rarr",
     "darr",
-    "harr"
+    "harr",
+    "abcdeaa",
+    "backoffs",
+    "dnew",
+    "dold",
+    "mktcrmhg",
+    "throttl"
   ]
 }

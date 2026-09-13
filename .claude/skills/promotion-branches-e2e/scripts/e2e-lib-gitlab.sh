@@ -279,9 +279,9 @@ bp_provider_env() {
 # {"source_branch":["does not exist"]} for a branch pushed a moment ago, before its API indexed it:
 # retry for a while, and say what GitLab answered when it never works.
 bp_open() {
-  local body="$LOGS/bp-mr-body.md" iid attempt
+  local body="$LOGS/bp-mr-body.md" iid
   printf '%s\n' "${3:-backpromote end to end test}" >"$body"
-  for attempt in $(seq 1 15); do
+  for _ in $(seq 1 15); do
     # python does not resolve the git bash /c/... paths: hand it a Windows path
     iid=$(gl_mr_create "$1" integration "$2" "$(cygpath -m "$body" 2>/dev/null || echo "$body")" 2>"$LOGS/bp-mr-create.err")
     if [[ "$iid" =~ ^[0-9]+$ ]]; then
@@ -309,4 +309,5 @@ bp_merge() {
 }
 
 # Backpromote (Beta) helpers, provider agnostic
+# shellcheck source=/dev/null
 source "$E2E_SCRIPTS_DIR/e2e-lib-backpromote.sh"

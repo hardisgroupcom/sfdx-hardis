@@ -296,9 +296,9 @@ bp_provider_env() {
 
 # Usage: bp_open <branch> <title> [body]  (prints the Pull Request id)
 bp_open() {
-  local body="$LOGS/bp-pr-body.md" id attempt
+  local body="$LOGS/bp-pr-body.md" id
   printf '%s\n' "${3:-backpromote end to end test}" >"$body"
-  for attempt in $(seq 1 10); do
+  for _ in $(seq 1 10); do
     id=$(bb_pr_create "$1" integration "$2" "$(cygpath -m "$body" 2>/dev/null || echo "$body")" 2>"$LOGS/bp-pr-create.err")
     if [[ "$id" =~ ^[0-9]+$ ]]; then
       echo "$id"
@@ -325,4 +325,5 @@ bp_merge() {
 }
 
 # Backpromote (Beta) helpers, provider agnostic
+# shellcheck source=/dev/null
 source "$E2E_SCRIPTS_DIR/e2e-lib-backpromote.sh"

@@ -333,4 +333,5 @@ bp_merge() {
 }
 
 # Backpromote (Beta) helpers, provider agnostic
+# shellcheck source=/dev/null
 source "$E2E_SCRIPTS_DIR/e2e-lib-backpromote.sh"

@@ -15,7 +15,9 @@ set -uo pipefail
 : "${BP_PROVIDER_LIB:?set BP_PROVIDER_LIB to the provider library}"
 : "${DEVHUB:?set DEVHUB}" "${DEVORG:?set DEVORG}" "${DEVORG2:?set DEVORG2}"
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
 source "$BP_PROVIDER_LIB"
+# shellcheck source=/dev/null
 source "$SCRIPTS_DIR/stories.sh"
 mkdir -p "$LOGS"
 cd "$WORK" || exit 1
