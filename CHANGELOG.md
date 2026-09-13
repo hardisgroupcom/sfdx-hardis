@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-- [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) (Beta), reworked: bring into your developer sandbox what your teammates merged in the parent branch, from the new VS Code Backpromote panel or with a coding agent. The history of each sandbox is kept on the Pull Requests, differing items can be overwritten, kept or merged, and failed deployments come with sfdx-hardis hints. It replaces `hardis:work:refresh`.
+- [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) (Beta), reworked: bring into your developer sandbox what your teammates merged, from the new VS Code panel or with a coding agent, with its history kept on the Pull Requests. It replaces `hardis:work:refresh`.
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): updating an existing sandbox no longer deploys the target branch metadata, use [backpromote](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) for that.
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): on GitLab, stories can be selected by their merge request number even when GitLab cannot be reached, and an undone promotion no longer ends with a misleading error.
 - Git and ticketing providers: large projects load faster, with calls slowed down only when the provider asks for it, and a Pull Request comment is never written twice.
