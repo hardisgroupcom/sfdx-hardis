@@ -1474,7 +1474,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
 
   /**
    * A failed deployment: the components the sandbox refused travel in the result, and the message
-   * says what to do with them (fix them in the parent branch, or untick them), so that the panel
+   * says what to do with them (fix them on the backpromote branch, or untick them), so that the panel
    * shows the errors themselves instead of pointing at a log it does not display.
    */
   private async deployFailure(ctx: BackpromoteContext, result: BackpromoteRunResult, errors: BackpromoteRunResult['deployErrors']): Promise<Error> {
@@ -1509,7 +1509,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     }
     const message =
       errors.length > 0
-        ? t('backpromoteDeployFailedItems', { count: errors.length, items: [...new Set(errors.map((error) => error.key || error.problem))].join(', '), parentBranch: ctx.parentBranch })
+        ? t('backpromoteDeployFailedItems', { count: errors.length, items: [...new Set(errors.map((error) => error.key || error.problem))].join(', '), branch: ctx.backpromoteBranch })
         : t('backpromoteDeployFailedSeeReport');
     const plan = this.buildPlan(ctx, 'deployFailed', message, result);
     return this.refusal(message, plan);

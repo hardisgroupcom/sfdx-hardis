@@ -206,7 +206,7 @@
   "backpromoteDeltaSummary": "Delta-Zusammenfassung: {{addedModified}} Elemente zum Deployen, {{deleted}} Elemente zum Loeschen",
   "backpromoteDeployErrorsPromptWritten": "Ein Prompt, um die Bereitstellungsfehler mit einem Coding-Agenten (Claude Code, Codex, GitHub Copilot...) zu lösen, liegt in {{file}}",
   "backpromoteDeployFailed": "Deployment fehlgeschlagen. Pruefen Sie die Fehlermeldungen oben.",
-  "backpromoteDeployFailedItems": "Die Bereitstellung ist bei {{count}} Komponente(n) fehlgeschlagen: {{items}}. Korrigieren Sie sie in {{parentBranch}} mit einem Pull Request, damit sie bereitgestellt werden, oder wählen Sie sie ab, um sie bei diesem Backpromote auszulassen.",
+  "backpromoteDeployFailedItems": "Die Bereitstellung ist bei {{count}} Komponente(n) fehlgeschlagen: {{items}}. Korrigieren Sie sie auf dem Backpromote-Branch {{branch}} und starten Sie den Backpromote erneut, oder wählen Sie sie ab, um sie bei diesem Backpromote auszulassen.",
   "backpromoteDeployFailedSeeReport": "Die Bereitstellung ist fehlgeschlagen: öffnen Sie den Bereitstellungsbericht, um den Grund zu sehen.",
   "backpromoteDeployReportLabel": "Backpromote-Deployment-Bericht",
   "backpromoteDeployReportSaved": "Deployment-Bericht gespeichert: {{reportPath}}",

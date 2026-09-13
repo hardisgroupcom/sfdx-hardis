@@ -204,7 +204,7 @@
   "backpromoteDeltaSummary": "Resumo do delta: {{addedModified}} itens para deploy, {{deleted}} itens para excluir",
   "backpromoteDeployErrorsPromptWritten": "Um prompt para resolver os erros de implantação com um agente de código (Claude Code, Codex, GitHub Copilot...) está em {{file}}",
   "backpromoteDeployFailed": "O deploy falhou. Verifique as mensagens de erro acima.",
-  "backpromoteDeployFailedItems": "A implantação falhou em {{count}} componente(s): {{items}}. Corrija-os em {{parentBranch}} com uma Pull Request para que sejam implantados, ou desmarque-os para deixá-los fora deste backpromote.",
+  "backpromoteDeployFailedItems": "A implantação falhou em {{count}} componente(s): {{items}}. Corrija-os na branch de backpromote {{branch}} e execute o backpromote novamente, ou desmarque-os para deixá-los fora deste backpromote.",
   "backpromoteDeployFailedSeeReport": "A implantação falhou: abra o relatório de implantação para ver o motivo.",
   "backpromoteDeployReportLabel": "Relatorio de deploy do backpromote",
   "backpromoteDeployReportSaved": "Relatorio de deploy salvo: {{reportPath}}",

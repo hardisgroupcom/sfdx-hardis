@@ -206,7 +206,7 @@
   "backpromoteDeltaSummary": "差分の概要: デプロイする項目 {{addedModified}} 件、削除する項目 {{deleted}} 件",
   "backpromoteDeployErrorsPromptWritten": "コーディングエージェント (Claude Code、Codex、GitHub Copilot など) でデプロイエラーを解決するためのプロンプトは {{file}} にあります",
   "backpromoteDeployFailed": "デプロイに失敗しました。上記のエラーメッセージを確認してください。",
-  "backpromoteDeployFailedItems": "{{count}} 件のコンポーネントでデプロイに失敗しました: {{items}}。デプロイできるように {{parentBranch}} で Pull Request により修正するか、選択を外してこの backpromote から除外してください。",
+  "backpromoteDeployFailedItems": "{{count}} 件のコンポーネントでデプロイに失敗しました: {{items}}。backpromote の branch {{branch}} で修正して backpromote を再実行するか、選択を外してこの backpromote から除外してください。",
   "backpromoteDeployFailedSeeReport": "デプロイに失敗しました。原因はデプロイレポートを開いて確認してください。",
   "backpromoteDeployReportLabel": "backpromote デプロイレポート",
   "backpromoteDeployReportSaved": "デプロイレポートを保存しました: {{reportPath}}",

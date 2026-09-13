@@ -52,10 +52,16 @@ Everything runs with `--json`; every decision is a flag; nothing is asked in `--
    (the body of the message says what was kept from each side), then run `runCommand`. It checks
    the files, commits any merged file still uncommitted, deploys and pushes the branch. A file left with markers is
    not deployed and is listed as "conflict pending": the next plan offers it first.
-5. **Manual actions.** `result.actions.pending` lists the manual actions (and the ones whose custom
+5. **Deployment errors.** `status: deployFailed` lists the refused components in
+   `result.deployErrors` (file, line, the Salesforce error, the sfdx-hardis hint in `tip` and the AI
+   suggestion in `aiTip` when there is one), and `result.deployErrorsPromptFile` holds a prompt with
+   all of it. Fix the files on the backpromote branch and nowhere else (no other branch, no Pull
+   Request), commit them there, then run the same command again. A component that cannot be fixed
+   now is left out with `--exclude-metadata Type:Name`.
+6. **Manual actions.** `result.actions.pending` lists the manual actions (and the ones whose custom
    username could not be authenticated). Once done by hand in the sandbox:
    `sf hardis:work:backpromote --confirm-action <id> --json --run-id <runId> --target-org <alias> --parent-branch <branch>`.
-6. **Back to the developer's branch.** The checkout stays on the backpromote branch. When the user
+7. **Back to the developer's branch.** The checkout stays on the backpromote branch. When the user
    wants their branch back: `git checkout <checkout.originalBranch>`, `git stash pop` when
    `checkout.stashed` is true, then propose `git merge origin/<parent branch>` so that the next
    `hardis:work:save` does not commit the backpromoted metadata as the story's own work.

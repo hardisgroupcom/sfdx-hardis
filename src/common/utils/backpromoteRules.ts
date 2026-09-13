@@ -584,9 +584,9 @@ export interface BackpromoteDeployErrorPromptEntry {
 /**
  * One prompt to paste into a coding agent (Claude Code, Codex, GitHub Copilot...) when the deployment
  * of a backpromote fails: every refused component with its file, the error, the Pull Requests that
- * brought it and the sfdx-hardis deployment tip when one matches, the rule that a fix of the metadata
- * belongs in the parent branch (a fix on the backpromote branch would only reach this sandbox), and
- * the commands to run the backpromote again or to leave the components out.
+ * brought it and the sfdx-hardis deployment tip when one matches, the rule that the fix happens on
+ * the backpromote branch and nowhere else (it is what the backpromote deploys), and the commands to
+ * run the backpromote again or to leave the components out.
  */
 export function buildBackpromoteDeployErrorsPrompt(options: {
   parentBranch: string;
@@ -601,7 +601,7 @@ export function buildBackpromoteDeployErrorsPrompt(options: {
   const lines: string[] = [];
   lines.push(`You are working in a Salesforce DX git repository managed with sfdx-hardis. The checkout is on the branch \`${options.backpromoteBranch}\`, a technical branch created from \`${options.parentBranch}\` for the backpromote of the sandbox \`${options.sandboxName}\` (org \`${options.targetOrg}\`).`);
   lines.push('');
-  lines.push(`A backpromote deploys into the sandbox \`${options.sandboxName}\` what the team merged in \`${options.parentBranch}\`. The deployment failed: the sandbox refused the components below. Your job is to find why each one fails, and to fix it where it belongs.`);
+  lines.push(`A backpromote deploys into the sandbox \`${options.sandboxName}\` what the team merged in \`${options.parentBranch}\`, from the branch \`${options.backpromoteBranch}\`. The deployment failed: the sandbox refused the components below. Your job is to find why each one fails, and to fix it on \`${options.backpromoteBranch}\` so that the next run deploys it.`);
   lines.push('');
   lines.push('## Components in error');
   for (const error of options.errors) {
@@ -634,10 +634,11 @@ export function buildBackpromoteDeployErrorsPrompt(options: {
   lines.push('## How to fix');
   lines.push('');
   lines.push('1. For each component, read the file in error and the metadata it references (fields, record types, permissions, classes, flows...) in this repository. Use the sfdx-hardis hints above when present: they describe the known causes of these errors.');
-  lines.push(`2. When the cause is in the metadata itself (a syntax error, a reference to a component missing from \`${options.parentBranch}\`, an API version...), the fix belongs in \`${options.parentBranch}\`: create a branch from \`origin/${options.parentBranch}\`, fix the files there, commit with a message that explains the fix, push it and open a Pull Request to \`${options.parentBranch}\`. Do not commit the fix on \`${options.backpromoteBranch}\`: it would only reach this sandbox, and the next deployment of \`${options.parentBranch}\` would fail the same way.`);
-  lines.push(`3. When the cause is in the sandbox (a feature, a license, a setting or data the sandbox lacks, a component changed or deleted by hand in \`${options.sandboxName}\`), do not change the files: explain exactly what the developer must change in the sandbox.`);
-  lines.push('4. Salesforce metadata files are XML: keep them well-formed, keep the element order and indentation, and only change what the fix needs.');
-  lines.push('5. Do not deploy anything, and do not run the backpromote yourself.');
+  lines.push(`2. Fix the files in this checkout, on \`${options.backpromoteBranch}\` (check \`git branch --show-current\` first), and nowhere else: do not create another branch, do not switch branches, do not open a Pull Request. The backpromote deploys this branch, and keeps its commits from one run to the next.`);
+  lines.push(`3. Commit the fixed files on \`${options.backpromoteBranch}\`, with a message body that says, for each component, the cause and the fix. Do not push: the backpromote pushes the branch.`);
+  lines.push(`4. When the cause is only in the sandbox (a feature, a license, a setting or data \`${options.sandboxName}\` lacks) and no file change can solve it, change nothing and explain exactly what the developer must change in the sandbox.`);
+  lines.push('5. Salesforce metadata files are XML: keep them well-formed, keep the element order and indentation, and only change what the fix needs.');
+  lines.push('6. Do not deploy anything, and do not run the backpromote yourself.');
   if (options.deployReport) {
     lines.push('');
     lines.push(`The full deployment output is in \`${options.deployReport}\`.`);
@@ -645,7 +646,7 @@ export function buildBackpromoteDeployErrorsPrompt(options: {
   lines.push('');
   lines.push('## Once done');
   lines.push('');
-  lines.push('Report, for each component, the cause and what you changed (or what the developer must change in the sandbox). Once the fix is merged in the parent branch, the developer runs the backpromote again from the VS Code Backpromote panel, or with:');
+  lines.push('Report, for each component, the cause and what you changed (or what the developer must change in the sandbox). Then the developer runs the backpromote again from the VS Code Backpromote panel, or with:');
   lines.push('');
   lines.push('```');
   lines.push(options.rerunCommand);

@@ -297,7 +297,10 @@ describe('backpromote command and prompt', () => {
     expect(prompt).to.contain('Merged in `integration` by the Pull Request(s): #415');
     expect(prompt).to.contain('### Average test coverage 60%');
     expect(prompt).to.contain('  > Add tests for InvoiceCalculator.');
-    expect(prompt).to.contain('Do not commit the fix on `backpromote/integration/dev1`');
+    expect(prompt).to.contain('Fix the files in this checkout, on `backpromote/integration/dev1`');
+    expect(prompt).to.contain('Commit the fixed files on `backpromote/integration/dev1`');
+    expect(prompt).to.contain('do not create another branch');
+    expect(prompt).not.to.contain('open a Pull Request to');
     expect(prompt).to.contain('sf hardis:work:backpromote --auto --run-id 7f3a --json');
     expect(prompt).to.contain('--exclude-metadata "Layout:Case-Case Layout"');
   });

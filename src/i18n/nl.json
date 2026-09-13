@@ -206,7 +206,7 @@
   "backpromoteDeltaSummary": "Delta-samenvatting: {{addedModified}} items te implementeren, {{deleted}} items te verwijderen",
   "backpromoteDeployErrorsPromptWritten": "Een prompt om de implementatiefouten met een coding agent (Claude Code, Codex, GitHub Copilot...) op te lossen staat in {{file}}",
   "backpromoteDeployFailed": "Implementatie mislukt. Controleer de foutmeldingen hierboven.",
-  "backpromoteDeployFailedItems": "De implementatie is mislukt op {{count}} component(en): {{items}}. Herstel ze in {{parentBranch}} met een Pull Request zodat ze implementeren, of vink ze uit om ze buiten deze backpromote te laten.",
+  "backpromoteDeployFailedItems": "De implementatie is mislukt op {{count}} component(en): {{items}}. Herstel ze op de backpromote-branch {{branch}} en start de backpromote opnieuw, of vink ze uit om ze buiten deze backpromote te laten.",
   "backpromoteDeployFailedSeeReport": "De implementatie is mislukt: open het implementatierapport om te zien waarom.",
   "backpromoteDeployReportLabel": "Backpromote implementatierapport",
   "backpromoteDeployReportSaved": "Implementatierapport opgeslagen: {{reportPath}}",
