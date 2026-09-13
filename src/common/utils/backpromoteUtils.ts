@@ -143,7 +143,7 @@ const MAX_VEHICLE_SPLIT_DEPTH = 5;
  * would turn the feature into a vehicle.
  */
 export function mergedSourceBranches(
-  commit: { hash: string; message: string },
+  commit: { hash: string; message: string; body?: string },
   mergeCommitToPr: Map<string, number>,
   prDetailsMap: Map<number, any>,
 ): string[] {
@@ -164,7 +164,7 @@ export function mergedSourceBranches(
   if (azureMatch) {
     branches.push(azureMatch[1]);
   }
-  const prNumber = mergeCommitToPr.get(commit.hash) ?? extractPrNumbersFromMessage(commit.message)[0];
+  const prNumber = mergeCommitToPr.get(commit.hash) ?? extractPrNumbersFromCommit(commit)[0];
   const pullRequest = prNumber ? prDetailsMap.get(prNumber) : null;
   if (pullRequest?.sourceBranch) {
     branches.push(pullRequest.sourceBranch);
@@ -374,7 +374,7 @@ export async function listMergedPrsWithCommits(
 
     for (const childCommit of childCommits) {
       let prNum: number | null = null;
-      const prNumbersInMsg = extractPrNumbersFromMessage(childCommit.message);
+      const prNumbersInMsg = extractPrNumbersFromCommit(childCommit);
       if (prNumbersInMsg.length > 0) prNum = prNumbersInMsg[0];
       if (prNum === null && mergeCommitToPr.has(childCommit.hash)) prNum = mergeCommitToPr.get(childCommit.hash)!;
       const sourceBranch = extractSourceBranchFromMessage(childCommit.message);
@@ -449,14 +449,39 @@ function extractSourceBranchFromMessage(message: string): string | null {
 }
 
 // Extract all PR/MR numbers referenced in commit messages
-function extractPrNumbersFromCommits(commits: Array<{ message: string }>): Set<number> {
+function extractPrNumbersFromCommits(commits: Array<{ message: string; body?: string }>): Set<number> {
   const prNumbers = new Set<number>();
   for (const commit of commits) {
-    for (const num of extractPrNumbersFromMessage(commit.message)) {
+    for (const num of extractPrNumbersFromCommit(commit)) {
       prNumbers.add(num);
     }
   }
   return prNumbers;
+}
+
+/**
+ * The Pull Request numbers of a commit. git log gives the subject as `message` and the rest as
+ * `body`, and GitLab writes its merge request number in the body ("Merge branch 'X' into 'Y'",
+ * then "See merge request group/project!12"): read from the subject alone, a GitLab merge commit
+ * names no merge request, and every candidate of a promotion listed without the provider is a "-"
+ * row that cannot be selected. Only the GitLab sentence is read in the body, never the generic #N
+ * references a description may hold.
+ */
+export function extractPrNumbersFromCommit(commit: { message: string; body?: string }): number[] {
+  const fromSubject = extractPrNumbersFromMessage(commit.message || '');
+  if (fromSubject.length > 0 || !commit.body) {
+    return fromSubject;
+  }
+  const numbers: number[] = [];
+  const pattern = /See merge request [^!\s]*!(\d+)/g;
+  let match;
+  while ((match = pattern.exec(commit.body)) !== null) {
+    const num = parseInt(match[1], 10);
+    if (num > 0) {
+      numbers.push(num);
+    }
+  }
+  return [...new Set(numbers)];
 }
 
 // Extract PR/MR numbers from a single commit message.

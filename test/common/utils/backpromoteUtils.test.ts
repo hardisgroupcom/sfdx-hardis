@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import '../../../src/common/gitProvider/index.js';
 import {
   attributeCommitsToFirstParents,
+  extractPrNumbersFromCommit,
   isVehicleMerge,
   mergedSourceBranches,
   parseCommitParents,
@@ -214,5 +215,24 @@ describe('attributeCommitsToFirstParents() with opened-up vehicle merges', () =>
     );
     expect(attributed.get('feat')?.map((commit) => commit.hash)).to.deep.equal(['feat']);
     expect(attributed.get('next')?.map((commit) => commit.hash)).to.deep.equal(['next']);
+  });
+});
+
+describe('extractPrNumbersFromCommit()', () => {
+  it('reads the GitLab merge request number from the body of the merge commit', () => {
+    const commit = {
+      message: "Merge branch 'feature/E2E-101-alpha' into 'integration'",
+      body: 'E2E-101 S1 alpha\n\nSee merge request nicolas.vuillamy/sfdx-hardis-promo-e2e-gl-7!1\n\n(cherry picked from commit c1babc0ede39dea9544e0e1949bf211426de5255)\n',
+    };
+    expect(extractPrNumbersFromCommit(commit)).to.deep.equal([1]);
+  });
+
+  it('keeps the number of the subject when it has one (GitHub, Azure DevOps)', () => {
+    expect(extractPrNumbersFromCommit({ message: 'Merge pull request #7 from org/feature/x', body: 'See merge request a/b!99' })).to.deep.equal([7]);
+    expect(extractPrNumbersFromCommit({ message: 'Merged PR 52: feature x' })).to.deep.equal([52]);
+  });
+
+  it('never takes a generic #N reference of the body for a Pull Request', () => {
+    expect(extractPrNumbersFromCommit({ message: "Merge branch 'feature/x' into 'integration'", body: 'Fixes #12 and relates to #13' })).to.deep.equal([]);
   });
 });
