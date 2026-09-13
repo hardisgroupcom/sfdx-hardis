@@ -1,0 +1,293 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+import { expect } from 'chai';
+import { execFileSync } from 'child_process';
+import * as os from 'os';
+import * as path from 'path';
+import { SimpleGit, simpleGit } from 'simple-git';
+// Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
+import '../../../src/common/gitProvider/index.js';
+import fs from '../../../src/common/utils/fsUtils.js';
+import {
+  changedFilesBetween,
+  changedFilesByFirstParentCommit,
+  packageDirectoriesAtRef,
+  checkoutBackpromoteBranch,
+  releaseBranchFromOtherWorktrees,
+  collectItemFiles,
+  commitAllChanges,
+  commitFiles,
+  commitsTouchingFiles,
+  currentBranchName,
+  deleteBackpromoteBranch,
+  fetchOrigin,
+  fileAtRef,
+  headCommit,
+  inspectBackpromoteBranch,
+  isAncestor,
+  listFilesWithConflictMarkers,
+  listUncommittedFiles,
+  pushBackpromoteBranch,
+  remoteBranchExists,
+  resolveBackpromoteParentRef,
+  resolveFilesToMetadataKeys,
+  revParse,
+  stashWorkingTree,
+  writeMergedFile,
+} from '../../../src/common/utils/backpromoteGitUtils.js';
+import { countConflictMarkerBlocks } from '../../../src/common/utils/backpromoteRules.js';
+
+// The helpers run git in process.cwd(): each test works in a throwaway repository and gives the
+// original cwd back
+const originalCwd = process.cwd();
+const apexClass = 'force-app/main/default/classes/InvoiceCalculator.cls';
+const layout = 'force-app/main/default/layouts/Case-Case Layout.layout-meta.xml';
+const lwcFile = 'force-app/main/default/lwc/card/card.js';
+const lwcMeta = 'force-app/main/default/lwc/card/card.js-meta.xml';
+const BRANCH = 'backpromote/integration/dev1';
+
+async function makeRepo(): Promise<{ work: string; origin: string }> {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'hardis-backpromote-git-')));
+  const origin = path.join(root, 'origin.git');
+  const work = path.join(root, 'work');
+  await fs.ensureDir(origin);
+  await simpleGit(origin).init(true);
+  await fs.ensureDir(work);
+  const g = simpleGit(work);
+  await g.init();
+  await g.addConfig('user.email', 'hardis-test@example.com');
+  await g.addConfig('user.name', 'Hardis Test');
+  await g.addConfig('commit.gpgsign', 'false');
+  await g.addConfig('core.autocrlf', 'false');
+  await g.addRemote('origin', origin);
+  return { work, origin };
+}
+
+async function commit(dir: string, files: Record<string, string>, message: string): Promise<string> {
+  const g = simpleGit(dir);
+  for (const [file, content] of Object.entries(files)) {
+    await fs.ensureDir(path.dirname(path.join(dir, file)));
+    await fs.writeFile(path.join(dir, file), content);
+    await g.add(file);
+  }
+  await g.commit(message);
+  return (await g.revparse(['HEAD'])).trim();
+}
+
+describe('backpromote branch on a real git repository', () => {
+  let repo: string;
+  let g: SimpleGit;
+  let parentHead: string;
+
+  beforeEach(async () => {
+    const made = await makeRepo();
+    repo = made.work;
+    g = simpleGit(repo);
+    await commit(repo, { 'sfdx-project.json': JSON.stringify({ packageDirectories: [{ path: 'force-app', default: true }] }) }, 'project');
+    await g.branch(['-M', 'integration']);
+    await commit(repo, { [apexClass]: 'public class InvoiceCalculator { Decimal scale = 2; }\n', [layout]: '<Layout><a/><z/></Layout>\n' }, 'base');
+    parentHead = await commit(repo, { [apexClass]: 'public class InvoiceCalculator { Decimal scale = 3; }\n', [lwcFile]: 'export default class Card {}\n', [lwcMeta]: '<LightningComponentBundle/>\n' }, "Merge pull request #482 from acme/feature/quote");
+    await g.push(['-u', 'origin', 'integration']);
+    await g.checkout(['-b', 'feature/my-story', 'integration~1']);
+    process.chdir(repo);
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+  });
+
+  it('reads the parent branch from origin, and knows the backpromote branch does not exist yet', () => {
+    fetchOrigin();
+    expect(resolveBackpromoteParentRef('integration')).to.equal('origin/integration');
+    expect(revParse('origin/integration')).to.equal(parentHead);
+    expect(remoteBranchExists(BRANCH)).to.be.false;
+    expect(inspectBackpromoteBranch(BRANCH, 'origin/integration')).to.deep.equal({ name: BRANCH, existsOnOrigin: false, head: null, pendingMerges: [] });
+    expect(isAncestor(parentHead, 'HEAD')).to.be.false;
+    expect(changedFilesBetween(`${parentHead}^1`, parentHead)).to.deep.equal([apexClass, lwcFile, lwcMeta]);
+    // The single git call of the listing gives the same files for that merge, keyed by its hash
+    const byCommit = changedFilesByFirstParentCommit(['-n', '10', parentHead]);
+    expect(byCommit.get(parentHead)).to.deep.equal([apexClass, lwcFile, lwcMeta]);
+    expect(byCommit.size).to.be.greaterThan(1);
+    // A merge outside the range is not in the map (the caller falls back to one git diff)
+    expect(changedFilesByFirstParentCommit(['-n', '1', `${parentHead}^1`]).has(parentHead)).to.be.false;
+    expect(fileAtRef('origin/integration', apexClass)).to.contain('scale = 3');
+    expect(fileAtRef('origin/integration', 'nope.txt')).to.be.null;
+    expect(commitsTouchingFiles(`${parentHead}^1`, parentHead, [lwcFile])).to.deep.equal([parentHead]);
+  });
+
+  it('lists the own files of the merges a retrofit brought in, in one call', async () => {
+    // main gets two Pull Request merges, then main is merged into integration by a retrofit
+    await g.checkout(['-b', 'main', 'integration']);
+    await g.checkout(['-b', 'feature/a', 'main']);
+    await commit(repo, { 'force-app/main/default/classes/A.cls': 'a\n' }, 'a');
+    await g.checkout(['main']);
+    await g.merge(['--no-ff', '-m', 'Merge pull request #390 from acme/feature/a', 'feature/a']);
+    const mergeA = (await g.revparse(['HEAD'])).trim();
+    await g.checkout(['-b', 'feature/b', 'main']);
+    await commit(repo, { 'force-app/main/default/classes/B.cls': 'b\n' }, 'b');
+    await g.checkout(['main']);
+    await g.merge(['--no-ff', '-m', 'Merge pull request #391 from acme/feature/b', 'feature/b']);
+    const mergeB = (await g.revparse(['HEAD'])).trim();
+    await g.checkout(['integration']);
+    await g.merge(['--no-ff', '-m', 'Retrofit main into integration', 'main']);
+    const retrofit = (await g.revparse(['HEAD'])).trim();
+    const byCommit = changedFilesByFirstParentCommit(['--no-walk', mergeA, mergeB]);
+    expect(byCommit.get(mergeA)).to.deep.equal(['force-app/main/default/classes/A.cls']);
+    expect(byCommit.get(mergeB)).to.deep.equal(['force-app/main/default/classes/B.cls']);
+    // The retrofit itself carries both
+    expect(changedFilesByFirstParentCommit(['-n', '1', retrofit]).get(retrofit)).to.deep.equal(['force-app/main/default/classes/A.cls', 'force-app/main/default/classes/B.cls']);
+  });
+
+  it('removes another worktree holding the backpromote branch, so that the checkout works', async () => {
+    fetchOrigin();
+    const other = path.join(path.dirname(repo), 'other-worktree');
+    await g.raw(['worktree', 'add', '-b', BRANCH, other, 'origin/integration']);
+    await fs.writeFile(path.join(other, 'scratch.txt'), 'uncommitted\n');
+    // Nothing to do for a branch no other worktree holds
+    expect(releaseBranchFromOtherWorktrees('feature/my-story')).to.deep.equal([]);
+    const removed = releaseBranchFromOtherWorktrees(BRANCH);
+    expect(removed.map((dir) => path.resolve(dir).toLowerCase())).to.deep.equal([path.resolve(other).toLowerCase()]);
+    expect(fs.existsSync(other)).to.be.false;
+    // The branch and its commits stay, and the checkout now works
+    expect(revParse(BRANCH)).to.equal(parentHead);
+    checkoutBackpromoteBranch(BRANCH, 'origin/integration');
+    expect(currentBranchName()).to.equal(BRANCH);
+    // The current worktree is never removed
+    expect(releaseBranchFromOtherWorktrees(BRANCH)).to.deep.equal([]);
+  });
+
+  it('creates the backpromote branch from the parent head, commits a merge on it and pushes it with a lease', async () => {
+    fetchOrigin();
+    const carried = checkoutBackpromoteBranch(BRANCH, 'origin/integration');
+    expect(carried).to.deep.equal({ droppedMerges: [], carriedCommits: 0 });
+    expect(currentBranchName()).to.equal(BRANCH);
+    expect(headCommit()).to.equal(parentHead);
+    await fs.writeFile(path.join(repo, apexClass), 'public class InvoiceCalculator { Decimal scale = 3; String merged = "yes"; }\n');
+    const mergeCommit = commitFiles([apexClass], 'chore(sfdx-hardis): backpromote merges for dev1 from integration\n\n- ' + apexClass);
+    expect(mergeCommit).to.not.equal(parentHead);
+    expect(pushBackpromoteBranch(BRANCH)).to.deep.equal({ pushed: true, rejected: false, error: null });
+    expect(inspectBackpromoteBranch(BRANCH, 'origin/integration')).to.deep.equal({ name: BRANCH, existsOnOrigin: true, head: mergeCommit, pendingMerges: [apexClass] });
+  });
+
+  it('carries the pending merges over a new parent head, and drops the ones the parent changed again', async () => {
+    fetchOrigin();
+    checkoutBackpromoteBranch(BRANCH, 'origin/integration');
+    await fs.writeFile(path.join(repo, apexClass), 'public class InvoiceCalculator { Decimal scale = 3; String merged = "yes"; }\n');
+    commitFiles([apexClass], 'merge of the class');
+    await fs.writeFile(path.join(repo, layout), '<Layout><a/><merged/><z/></Layout>\n');
+    commitFiles([layout], 'merge of the layout');
+    pushBackpromoteBranch(BRANCH);
+    // The parent branch moves on: the class changes again (the merge is stale), the layout does not
+    await g.checkout('integration');
+    const newParentHead = await commit(repo, { [apexClass]: 'public class InvoiceCalculator { Decimal scale = 4; }\n' }, "Merge pull request #483 from acme/feature/scale");
+    await g.push('origin', 'integration');
+    await g.checkout('feature/my-story');
+    fetchOrigin();
+    const carried = checkoutBackpromoteBranch(BRANCH, 'origin/integration');
+    expect(carried.carriedCommits).to.equal(1);
+    expect(carried.droppedMerges).to.deep.equal([apexClass]);
+    expect(isAncestor(newParentHead, 'HEAD')).to.be.true;
+    expect(await fs.readFile(path.join(repo, layout), 'utf8')).to.contain('<merged/>');
+    expect(await fs.readFile(path.join(repo, apexClass), 'utf8')).to.contain('scale = 4');
+    expect(countConflictMarkerBlocks(await fs.readFile(path.join(repo, apexClass), 'utf8'))).to.equal(0);
+  });
+
+  it('writes a three-way merge with git merge-file and a two-way merge with markers, and lists the files left with markers', async () => {
+    const threeWay = await writeMergedFile({
+      absolutePath: path.join(repo, layout),
+      baseContent: '<Layout><a/><z/></Layout>\n',
+      sandboxContent: '<Layout><a/><fromOrg/><z/></Layout>\n',
+      parentContent: '<Layout><a/><fromGit/><z/></Layout>\n',
+      labels: { sandbox: 'sandbox dev1', parent: 'integration', base: 'base' },
+    });
+    expect(threeWay.threeWay).to.be.true;
+    expect(threeWay.conflictBlocks).to.equal(1);
+    const content = await fs.readFile(path.join(repo, layout), 'utf8');
+    expect(content).to.contain('<<<<<<< sandbox dev1');
+    expect(content).to.contain('>>>>>>> integration');
+    // diff3 style: whoever solves the merge must see what both sides started from
+    expect(content).to.contain('||||||| base');
+    expect(content).to.contain('<z/>');
+    const clean = await writeMergedFile({
+      absolutePath: path.join(repo, apexClass),
+      baseContent: 'a\nb\nc\nd\ne\n',
+      sandboxContent: 'a\nB\nc\nd\ne\n',
+      parentContent: 'a\nb\nc\nd\nE\n',
+      labels: { sandbox: 'sandbox dev1', parent: 'integration', base: 'base' },
+    });
+    expect(clean).to.deep.equal({ conflictBlocks: 0, threeWay: true });
+    expect(await fs.readFile(path.join(repo, apexClass), 'utf8')).to.equal('a\nB\nc\nd\nE\n');
+    const twoWay = await writeMergedFile({
+      absolutePath: path.join(repo, lwcFile),
+      baseContent: null,
+      sandboxContent: 'export default class Card { org = 1; }\n',
+      parentContent: 'export default class Card { git = 1; }\n',
+      labels: { sandbox: 'sandbox dev1', parent: 'integration', base: 'base' },
+    });
+    expect(twoWay).to.deep.equal({ conflictBlocks: 1, threeWay: false });
+    expect(await listFilesWithConflictMarkers([layout, apexClass, lwcFile, 'missing.txt'])).to.deep.equal([
+      { path: layout, conflictBlocks: 1 },
+      { path: lwcFile, conflictBlocks: 1 },
+    ]);
+  });
+
+  it('stashes a dirty working tree under a message, and commits everything when asked', async () => {
+    await fs.writeFile(path.join(repo, layout), '<Layout>dirty</Layout>\n');
+    await fs.writeFile(path.join(repo, 'notes.txt'), 'untracked\n');
+    await fs.ensureDir(path.join(repo, 'hardis-report'));
+    await fs.writeFile(path.join(repo, 'hardis-report', 'command.log'), 'report\n');
+    const dirty = await listUncommittedFiles();
+    expect(dirty).to.have.members([layout, 'notes.txt']);
+    expect(stashWorkingTree('sfdx-hardis backpromote 7f3a from feature/my-story', dirty)).to.be.true;
+    expect(await listUncommittedFiles()).to.deep.equal([]);
+    // Only the listed files are stashed: the report written by sfdx-hardis stays in place
+    expect(await fs.pathExists(path.join(repo, 'hardis-report', 'command.log'))).to.be.true;
+    expect(stashWorkingTree('nothing to stash', [])).to.be.false;
+    expect((await g.stashList()).all[0].message).to.contain('sfdx-hardis backpromote 7f3a from feature/my-story');
+    await g.stash(['pop']);
+    const committed = await commitAllChanges('WIP');
+    expect(committed).to.have.members([layout, 'notes.txt']);
+    expect(await commitAllChanges('nothing')).to.deep.equal([]);
+  });
+
+  it('deletes the backpromote branch on origin and locally, leaving it first when it is checked out', () => {
+    fetchOrigin();
+    checkoutBackpromoteBranch(BRANCH, 'origin/integration');
+    pushBackpromoteBranch(BRANCH);
+    fetchOrigin();
+    expect(remoteBranchExists(BRANCH)).to.be.true;
+    const deleted = deleteBackpromoteBranch(BRANCH, 'origin/integration');
+    expect(deleted).to.deep.equal({ deletedOnOrigin: true, deletedLocally: true });
+    fetchOrigin();
+    expect(remoteBranchExists(BRANCH)).to.be.false;
+    expect(currentBranchName()).to.equal('HEAD');
+  });
+
+  it('resolves files to metadata items with the Salesforce registry, and collects whole bundles at the parent head', () => {
+    const keys = resolveFilesToMetadataKeys([apexClass, lwcFile, 'force-app/main/default/objects/Account/fields/X__c.field-meta.xml', 'README.md']);
+    expect(keys.get(apexClass)).to.deep.equal(['ApexClass:InvoiceCalculator']);
+    expect(keys.get(lwcFile)).to.deep.equal(['LightningComponentBundle:card']);
+    expect(keys.get('force-app/main/default/objects/Account/fields/X__c.field-meta.xml')).to.deep.equal(['CustomField:Account.X__c']);
+    expect(keys.has('README.md')).to.be.false;
+    fetchOrigin();
+    const files = collectItemFiles(['ApexClass:InvoiceCalculator', 'LightningComponentBundle:card'], [apexClass, lwcFile], 'origin/integration');
+    // Files that cannot belong to the items are not even handed to the resolver, and the items
+    // still find their files among thousands of others
+    const noise = Array.from({ length: 50 }, (_, index) => `.claude/skills/skill-${index}/SKILL.md`);
+    const withNoise = collectItemFiles(['ApexClass:InvoiceCalculator', 'LightningComponentBundle:card'], [...noise, apexClass, lwcFile], 'origin/integration');
+    expect(withNoise).to.deep.equal(files);
+    // With the package directories known, an item without a file (a custom label lives in the
+    // single labels file) does not send the files outside them to the resolver either
+    const withLabel = collectItemFiles(['ApexClass:InvoiceCalculator', 'CustomLabel:Greeting'], [...noise, apexClass, lwcFile], 'origin/integration', packageDirectoriesAtRef('origin/integration'));
+    expect(withLabel.get('ApexClass:InvoiceCalculator')).to.deep.equal(files.get('ApexClass:InvoiceCalculator'));
+    expect(withLabel.get('CustomLabel:Greeting')).to.deep.equal([]);
+    expect(packageDirectoriesAtRef('origin/integration')).to.deep.equal(['force-app']);
+    // A package directory spelled with another case, or ".", keeps the files
+    expect(collectItemFiles(['ApexClass:InvoiceCalculator'], [apexClass], 'origin/integration', ['Force-App']).get('ApexClass:InvoiceCalculator')).to.deep.equal(files.get('ApexClass:InvoiceCalculator'));
+    expect(collectItemFiles(['ApexClass:InvoiceCalculator'], [apexClass], 'origin/integration', ['.']).get('ApexClass:InvoiceCalculator')).to.deep.equal(files.get('ApexClass:InvoiceCalculator'));
+    // The root commit of the repository changes nothing against a first parent it does not have
+    const rootCommit = execFileSync('git', ['rev-list', '--max-parents=0', parentHead], { cwd: repo, encoding: 'utf8' }).trim();
+    expect(changedFilesByFirstParentCommit(['-n', '100', parentHead]).get(rootCommit)).to.deep.equal([]);
+    expect(files.get('ApexClass:InvoiceCalculator')).to.deep.equal([apexClass]);
+    expect(files.get('LightningComponentBundle:card')).to.deep.equal([lwcFile, lwcMeta]);
+  });
+});

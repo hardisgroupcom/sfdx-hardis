@@ -148,7 +148,8 @@ describe('GithubProvider (native fetch client)', () => {
     const provider = new GithubProvider();
     await provider.upsertPullRequestCommentByMarker('<!-- marker -->', 'new body', 7);
     expect(requests).to.have.length(2);
-    expect(requests[0].url).to.equal('https://api.github.com/repos/acme/widgets/issues/7/comments');
+    // Paginated like the read side: the marker comment may sit past the first page
+    expect(requests[0].url).to.equal('https://api.github.com/repos/acme/widgets/issues/7/comments?per_page=100');
     expect(requests[0].init.method).to.equal('GET');
     expect(requests[1].url).to.equal('https://api.github.com/repos/acme/widgets/issues/comments/11');
     expect(requests[1].init.method).to.equal('PATCH');

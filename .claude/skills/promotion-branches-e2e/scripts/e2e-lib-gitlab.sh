@@ -85,6 +85,8 @@ gl_check() {
   git checkout -q -f --detach HEAD
   gl_fetch_merge_ref "$mr" || return 1
   git checkout -q -f "mrmerge-$mr" || return 1
+  local start
+  start=$(e2e_now_ms)
   gl_ci_env \
     CI_MERGE_REQUEST_IID="$mr" \
     CI_COMMIT_REF_NAME="refs/merge-requests/$mr/merge" \
@@ -94,6 +96,7 @@ gl_check() {
     node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" check "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -104,12 +107,15 @@ gl_deploy() {
   local target="$1" label="$2" code
   cd "$WORK" || return 1
   git checkout -q -f "$target" && git pull -q origin "$target"
+  local start
+  start=$(e2e_now_ms)
   gl_ci_env \
     CI_COMMIT_REF_NAME="$target" \
     CONFIG_BRANCH="$target" \
     node "$DEV" hardis:project:deploy:smart --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" deploy "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -121,6 +127,8 @@ gl_promote() {
   shift 3
   cd "$WORK" || return 1
   git checkout -q -f "$source" && git pull -q origin "$source"
+  local start
+  start=$(e2e_now_ms)
   gl_ci_env \
     CI_COMMIT_REF_NAME="$source" \
     CONFIG_BRANCH="$source" \
@@ -128,6 +136,7 @@ gl_promote() {
     --source-branch "$source" --pull-requests "$mrs" "$@" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" promote "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -139,6 +148,8 @@ gl_release_notes() {
   shift
   cd "$WORK" || return 1
   git checkout -q -f main && git pull -q origin main
+  local start
+  start=$(e2e_now_ms)
   gl_ci_env \
     CI_COMMIT_REF_NAME=main \
     CONFIG_BRANCH=main \
@@ -146,6 +157,7 @@ gl_release_notes() {
     --merge-commit "$(git log --merges -1 --format=%H)" --no-pdf --agent "$@" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" release-notes "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -250,3 +262,52 @@ pipeline_check() {
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
+
+# Backpromote (Beta) hooks of scripts/e2e-lib-backpromote.sh (runbook section 6bis). Outside a GitLab
+# CI job (no GITLAB_CI) the provider checks CI_PROJECT_ID against the git remote.
+bp_provider_env() {
+  env -u NODE_OPTIONS -u CI -u GITLAB_CI \
+    CI_SFDX_HARDIS_GITLAB_TOKEN="$GL_TOKEN" \
+    CI_SERVER_URL="$GL_HOST" \
+    CI_PROJECT_ID="$PROJECT_ID" \
+    CI_PROJECT_PATH="$PROJECT_PATH" \
+    CI_PROJECT_URL="$GL_HOST/$PROJECT_PATH" \
+    "$@"
+}
+
+# Usage: bp_open <branch> <title> [body]  (prints the merge request iid). GitLab answers
+# {"source_branch":["does not exist"]} for a branch pushed a moment ago, before its API indexed it:
+# retry for a while, and say what GitLab answered when it never works.
+bp_open() {
+  local body="$LOGS/bp-mr-body.md" iid
+  printf '%s\n' "${3:-backpromote end to end test}" >"$body"
+  for _ in $(seq 1 15); do
+    # python does not resolve the git bash /c/... paths: hand it a Windows path
+    iid=$(gl_mr_create "$1" integration "$2" "$(cygpath -m "$body" 2>/dev/null || echo "$body")" 2>"$LOGS/bp-mr-create.err")
+    if [[ "$iid" =~ ^[0-9]+$ ]]; then
+      echo "$iid"
+      return 0
+    fi
+    sleep 3
+  done
+  echo "merge request creation failed for $1: $(tail -3 "$LOGS/bp-mr-create.err")" >&2
+  return 1
+}
+
+# Usage: bp_merge <iid>. Waits until GitLab knows the last commit pushed on the source branch, so the
+# merge carries it (the deployment actions file is pushed right after the merge request is opened).
+bp_merge() {
+  local iid="$1" branch head
+  branch=$(curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" "$GL_HOST/api/v4/projects/$PROJECT_ID/merge_requests/$iid" |
+    python -c "import json,sys; print(json.loads(sys.stdin.buffer.read().decode('utf-8'))['source_branch'])")
+  head=$(git -C "$WORK" rev-parse "origin/$branch" 2>/dev/null || git -C "$WORK" rev-parse "$branch")
+  for _ in $(seq 1 30); do
+    [ "$(gl_mr_sha "$iid")" = "$head" ] && break
+    sleep 2
+  done
+  gl_mr_merge "$iid"
+}
+
+# Backpromote (Beta) helpers, provider agnostic
+# shellcheck source=/dev/null
+source "$E2E_SCRIPTS_DIR/e2e-lib-backpromote.sh"

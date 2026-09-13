@@ -112,7 +112,12 @@ export class WebSocketClient {
       this.ws = new WebSocket(wsHostPort);
       globalWs = this; // eslint-disable-line
       this.start();
-      console.log("WS Client started");
+      // stdout carries the JSON document of a --json run: keep it clean
+      if (process.argv.includes('--json')) {
+        console.error("WS Client started");
+      } else {
+        console.log("WS Client started");
+      }
     } catch (err) {
       this.isDead = true;
       this.markInitialized(false);

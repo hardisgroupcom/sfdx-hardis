@@ -1,5 +1,13 @@
 # Promotion branches: end to end test on Bitbucket Cloud
 
+> **Not re-run on 2026-09-13 either.** The only Bitbucket access token available is scoped to the
+> repository of the previous runs, which has been deleted: the API answers 404 on that repository
+> and 403 on the creation of a new one, so no Bitbucket run is possible until a new token (or a
+> workspace access token) is issued. GitHub and GitLab were re-run on 2026-09-13, backpromote (Beta)
+> included. The backpromote hooks of `scripts/e2e-lib-bitbucket.sh` (`bp_provider_env`, `bp_open`,
+> `bp_merge`) were written for this cycle and have **never run**; this report covers neither them,
+> nor the pipeline checkpoints, nor any fix made after 2026-09-08.
+>
 > **Not re-run on 2026-09-09.** The test repository was deleted, so this report is the one of
 > 2026-09-08 and does not cover the five fixes of the 2026-09-09 cycle, nor the pipeline
 > checkpoints. The three other providers were re-run.

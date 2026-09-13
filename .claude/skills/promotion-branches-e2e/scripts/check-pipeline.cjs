@@ -22,7 +22,8 @@
 //     "windows":  { "integration": [1, 2, 3], "uat": [] },
 //     "counters": { "integration": 3 },
 //     "arrows":   { "integration>uat": 7, "uat>preprod": null },
-//     "noFeatureNodeFor": ["promotion/integration/uat/2026-09-08-1"]
+//     "noFeatureNodeFor": ["promotion/integration/uat/2026-09-08-1"],
+//     "promotionSteps": ["uat>preprod"]
 //   }
 // "windows" lists the User Story numbers the branch node must show, order free. "arrows" gives the
 // number of the open Pull Request drawn on a merge edge, or null for "no Pull Request chip there".
@@ -148,7 +149,8 @@ function readDiagram(mermaid) {
   const counters = {};
   // A node line is `name("label"):::class`, `name(["label"])` or `name@{ shape: ..., label: "..." }`
   const nodeNameRe = /^\s*([A-Za-z0-9_-]+)\s*(?:\(\[|\(|\[|@\{)/;
-  const countRe = /data-count='(\d+)' data-count-all='(\d+)'/;
+  // The marker only exists when the branch holds at least one User Story: no marker means zero
+  const countRe = /data-count='(\d+)'/;
   const edgeRe = /^\s*([A-Za-z0-9_-]+)\s*[=.-]+>\|"(.*)"\|\s*([A-Za-z0-9_-]+)\s*$/;
   const nodes = [];
   const edges = [];
@@ -158,7 +160,7 @@ function readDiagram(mermaid) {
       nodes.push(node[1]);
       const counted = line.match(countRe);
       if (counted) {
-        counters[node[1]] = { count: Number(counted[1]), countAll: Number(counted[2]) };
+        counters[node[1]] = { count: Number(counted[1]) };
       }
     }
     const edge = line.match(edgeRe);
@@ -214,6 +216,10 @@ const same = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
     counters: {},
     arrows: {},
     nodes: diagram.nodes,
+    // The steps the DevOps Pipeline offers "Create promotion" on, from allowedPromotionSteps
+    promotionSteps: (promotionConfig.allowedSteps || [])
+      .map((step) => `${step.source}>${step.target}`)
+      .sort(),
   };
   for (const org of data.orgs) {
     const window = org.pullRequestsInBranchSinceLastMerge || [];
@@ -249,6 +255,10 @@ const same = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
     );
   }
   console.log("");
+  console.log(
+    `Create promotion offered on: ${observed.promotionSteps.join(", ") || "nothing"}`,
+  );
+  console.log("");
   console.log("Merge arrow                | open Pull Request drawn on it");
   console.log("---------------------------|------------------------------");
   for (const [arrow, pr] of Object.entries(observed.arrows)) {
@@ -280,6 +290,14 @@ const same = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
         `${branch} lists ${got.map((n) => "#" + n).join(", ") || "nothing"}, expected ${
           want.map((n) => "#" + n).join(", ") || "nothing"
         }`,
+      );
+    }
+  }
+  if (expected.promotionSteps) {
+    const want = [...expected.promotionSteps].sort();
+    if (!same(want, observed.promotionSteps)) {
+      failures.push(
+        `the pipeline offers Create promotion on ${observed.promotionSteps.join(", ") || "nothing"}, expected ${want.join(", ") || "nothing"}`,
       );
     }
   }

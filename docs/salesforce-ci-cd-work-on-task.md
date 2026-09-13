@@ -17,7 +17,7 @@ Once your User Story is started, you work in your dev sandbox or scratch org lik
 
 When you are done, [publish your User Story](salesforce-ci-cd-publish-task.md).
 
-> If your colleagues merged changes in the meantime, [Backpromote (Beta)](hardis/work/backpromote.md) brings them into your dev sandbox so you work on an up-to-date org.
+> If your colleagues merged changes in the meantime, [Backpromote (Beta)](salesforce-ci-cd-backpromote.md) brings them into your dev sandbox or scratch org, so you work on an up-to-date org: it reads what your sandbox already received from the Pull Request comments, deploys what was merged since, runs the deployment actions of those Pull Requests, and gives you one decision for each file that differs in your sandbox (overwrite, keep the org version, or merge with the VS Code merge editor or a coding agent prompt). In VS Code, the **Backpromote (Beta)** panel shows the Pull Requests, the items, the deletions and the deployment actions, lets you untick what you do not want yet, and runs it in one click.
 
 ---
 
