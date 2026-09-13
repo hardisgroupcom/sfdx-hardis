@@ -76,14 +76,14 @@ the pending merges; the history in the comments is never touched.
 
 ## Where things live
 
-| What | Where |
-|------|-------|
-| Command | `src/commands/hardis/work/backpromote.ts` |
-| Pure rules (branch and sandbox names, history walk, two-way merge, flags, prompt) | `src/common/utils/backpromoteRules.ts` |
-| "Backpromotes" comment (parse, render, upsert, cached reads) | `src/common/utils/backpromoteCommentUtils.ts` |
-| Git (fetch, checkout switch, branch rebuild, merge-file, push with lease, delta cache) | `src/common/utils/backpromoteGitUtils.ts` |
-| Org (target org, retrieve to the cache, comparison, deployments) | `src/common/utils/backpromoteOrgUtils.ts` |
-| Plan JSON version 3, run state, terminal prompts | `src/common/utils/backpromotePlanUtils.ts` |
-| Pull Request listing and action execution shared with promotion branches | `src/common/utils/backpromoteUtils.ts` |
-| VS Code panel | `../vscode-sfdx-hardis/src/commands/showBackpromote.ts`, `src/utils/backpromote/`, `src/webviews/lwc-ui/modules/s/backpromote/` |
-| End to end runbook | `.claude/skills/promotion-branches-e2e/reference/runbook.md`, section 6bis |
+| What                                                                                   | Where                                                                                                                           |
+|----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| Command                                                                                | `src/commands/hardis/work/backpromote.ts`                                                                                       |
+| Pure rules (branch and sandbox names, history walk, two-way merge, flags, prompt)      | `src/common/utils/backpromoteRules.ts`                                                                                          |
+| "Backpromotes" comment (parse, render, upsert, cached reads)                           | `src/common/utils/backpromoteCommentUtils.ts`                                                                                   |
+| Git (fetch, checkout switch, branch rebuild, merge-file, push with lease, delta cache) | `src/common/utils/backpromoteGitUtils.ts`                                                                                       |
+| Org (target org, retrieve to the cache, comparison, deployments)                       | `src/common/utils/backpromoteOrgUtils.ts`                                                                                       |
+| Plan JSON version 3, run state, terminal prompts                                       | `src/common/utils/backpromotePlanUtils.ts`                                                                                      |
+| Pull Request listing and action execution shared with promotion branches               | `src/common/utils/backpromoteUtils.ts`                                                                                          |
+| VS Code panel                                                                          | `../vscode-sfdx-hardis/src/commands/showBackpromote.ts`, `src/utils/backpromote/`, `src/webviews/lwc-ui/modules/s/backpromote/` |
+| End to end runbook                                                                     | `.claude/skills/promotion-branches-e2e/reference/runbook.md`, section 6bis                                                      |

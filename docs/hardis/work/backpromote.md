@@ -54,33 +54,33 @@ Typical sequence: `--plan --json` to read the plan, decide, `--agent --run-id <r
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|actions|option|Comma-separated ids of the deployment actions to run. Default: every action of the window not run in this sandbox yet.||||
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|auto|boolean|Take every decision from the flags and ask nothing (the VS Code panel passes it).||||
-|commit-message|option|Commit message when --dirty-tree commit is used.||||
-|confirm-action|option|Id of a manual deployment action done in the sandbox by hand: its row is written as done. Repeatable.||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|dirty-tree|option|What to do with uncommitted changes before the checkout switches to the backpromote branch. Default: stash with --auto and --agent, asked otherwise.|||stash<br/>commit|
-|exclude-metadata|option|Type:Name of an item not to deploy nor delete now, for example "Layout:Account-Account Layout". Repeatable.||||
-|flags-dir|option|undefined||||
-|from-pull-request|option|Number of the start Pull Request: it and everything merged after it are backpromoted. Default: the first one not backpromoted yet.||||
-|json|boolean|Format output as json.||||
-|on-diff|option|Decision for a file whose sandbox version differs: "<file path>=git" (overwrite with the parent branch version), "=org" (keep the org version) or "=merge" (merge by hand). Repeatable.||||
-|on-diff-default|option|Decision for the files that differ and have no --on-diff decision.|git||git<br/>org<br/>merge|
-|parent-branch|option|Parent branch to backpromote from: developmentBranch or one of availableTargetBranches. Default: developmentBranch.||||
-|plan|boolean|Read-only: return what a backpromote would do (use with --json). Deploys, merges, commits and writes nothing.||||
-|prepare|boolean|Switch the checkout to the backpromote branch and write the files marked merge with their conflict markers, without deploying.||||
-|reset|boolean|Delete the backpromote branch of the sandbox on origin and locally (abandons the pending manual merges).||||
-|run-id|option|Id of a previous --plan or --prepare call, to reuse its cache and its prepared files.||||
-|sandbox-name|option|Short name of the sandbox (branch name and comment rows), when the one read from the instance URL is not right.||||
-|scan-limit|option|Number of merged Pull Requests read to find the last backpromote of the sandbox. Default: backpromoteScanLimit (100).||||
-|skip-actions|boolean|Run no deployment action.||||
-|skip-destructive|boolean|Do not delete anything from the org.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name              |  Type   | Description                                                                                                                                                                             | Default | Required |        Options        |
+|:------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:---------------------:|
+| actions           | option  | Comma-separated ids of the deployment actions to run. Default: every action of the window not run in this sandbox yet.                                                                  |         |          |                       |
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                                                                                                   |         |          |                       |
+| auto              | boolean | Take every decision from the flags and ask nothing (the VS Code panel passes it).                                                                                                       |         |          |                       |
+| commit-message    | option  | Commit message when --dirty-tree commit is used.                                                                                                                                        |         |          |                       |
+| confirm-action    | option  | Id of a manual deployment action done in the sandbox by hand: its row is written as done. Repeatable.                                                                                   |         |          |                       |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                                                                         |         |          |                       |
+| dirty-tree        | option  | What to do with uncommitted changes before the checkout switches to the backpromote branch. Default: stash with --auto and --agent, asked otherwise.                                    |         |          |   stash<br/>commit    |
+| exclude-metadata  | option  | Type:Name of an item not to deploy nor delete now, for example "Layout:Account-Account Layout". Repeatable.                                                                             |         |          |                       |
+| flags-dir         | option  | undefined                                                                                                                                                                               |         |          |                       |
+| from-pull-request | option  | Number of the start Pull Request: it and everything merged after it are backpromoted. Default: the first one not backpromoted yet.                                                      |         |          |                       |
+| json              | boolean | Format output as json.                                                                                                                                                                  |         |          |                       |
+| on-diff           | option  | Decision for a file whose sandbox version differs: "<file path>=git" (overwrite with the parent branch version), "=org" (keep the org version) or "=merge" (merge by hand). Repeatable. |         |          |                       |
+| on-diff-default   | option  | Decision for the files that differ and have no --on-diff decision.                                                                                                                      |   git   |          | git<br/>org<br/>merge |
+| parent-branch     | option  | Parent branch to backpromote from: developmentBranch or one of availableTargetBranches. Default: developmentBranch.                                                                     |         |          |                       |
+| plan              | boolean | Read-only: return what a backpromote would do (use with --json). Deploys, merges, commits and writes nothing.                                                                           |         |          |                       |
+| prepare           | boolean | Switch the checkout to the backpromote branch and write the files marked merge with their conflict markers, without deploying.                                                          |         |          |                       |
+| reset             | boolean | Delete the backpromote branch of the sandbox on origin and locally (abandons the pending manual merges).                                                                                |         |          |                       |
+| run-id            | option  | Id of a previous --plan or --prepare call, to reuse its cache and its prepared files.                                                                                                   |         |          |                       |
+| sandbox-name      | option  | Short name of the sandbox (branch name and comment rows), when the one read from the instance URL is not right.                                                                         |         |          |                       |
+| scan-limit        | option  | Number of merged Pull Requests read to find the last backpromote of the sandbox. Default: backpromoteScanLimit (100).                                                                   |         |          |                       |
+| skip-actions      | boolean | Run no deployment action.                                                                                                                                                               |         |          |                       |
+| skip-destructive  | boolean | Do not delete anything from the org.                                                                                                                                                    |         |          |                       |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                                                                                           |         |          |                       |
+| target-org<br/>-o | option  | undefined                                                                                                                                                                               |         |          |                       |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                               |         |          |                       |
 
 ## Examples
 

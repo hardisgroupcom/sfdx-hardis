@@ -348,7 +348,8 @@ assert_log 23b deploy-integration-retrofit 0 "already performed actions skipped"
 expect pipeline-after-retrofit "{ \"label\": \"after the retrofit\", \"windows\": { \"main\": [$S3, $S4, $S6] } }"
 pipeline pipeline-after-retrofit
 
-echo; echo "=== section 4 summary ==="
+echo
+echo "=== section 4 summary ==="
 echo "$(grep -c '| OK |' "$RESULTS") OK"
 echo "$(grep -c '| FAIL |' "$RESULTS") FAIL"
 grep "| FAIL |" "$RESULTS" || true

@@ -32,7 +32,7 @@ story_branch() {
 META
   # Only the files of the story: hardis-report/ is deliberately not gitignored, and a `git add -A`
   # would commit the reports a previous sfdx-hardis command left in the tree
-  git add "force-app/main/default/staticresources/$resource.resource"     "force-app/main/default/staticresources/$resource.resource-meta.xml"
+  git add "force-app/main/default/staticresources/$resource.resource" "force-app/main/default/staticresources/$resource.resource-meta.xml"
   git commit -qm "feat: $resource"
   git push -q -u origin "$branch"
   echo "story_branch $branch -> $target ($resource)"
