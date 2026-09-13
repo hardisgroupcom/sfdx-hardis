@@ -29,9 +29,17 @@ While you work on a User Story, your teammates merge theirs in the parent branch
 
 Open the **Backpromote (Beta)** panel from the card below the DevOps Pipeline diagram, or from the commands panel. One page, read from top to bottom:
 
-1. **Where:** the target sandbox (major orgs are greyed with the reason), the parent branch (hidden when only `developmentBranch` is allowed), and the merged Pull Requests, newest first. The ones your sandbox already received are greyed with their date; the first one not backpromoted yet is the default start.
-2. **What:** the metadata of the window grouped by type, the deletions and the deployment actions, all ticked. Untick what must not go now. An item whose sandbox version differs from the parent branch version carries, on its own line, a select button **Overwrite / Keep org version / Merge** and a **Compare** button that opens the VS Code diff editor. **Merge** writes the file with conflict markers in the backpromote branch and opens the VS Code merge editor: solve it there, or copy the coding agent prompt (one prompt for every merge of the run) and let your agent solve it. **Merge all** prepares every item that differs at once and copies that prompt: paste it into Claude Code or Codex, which solves the markers and commits the files on the backpromote branch.
+![Backpromote panel: the target sandbox, the parent branch and the merged Pull Requests, then the metadata to deploy](assets/images/backpromote.png)
+
+1. **Where:** the target sandbox (major orgs are greyed with the reason), the parent branch (hidden when only `developmentBranch` is allowed), and the merged Pull Requests, newest first. The ones your sandbox already received are greyed with their date; the first one not backpromoted yet is the default start. The plan is computed once the sandbox and the parent branch are chosen.
+2. **What:** the metadata of the window grouped by type, the deletions and the deployment actions, all ticked except the `package-no-overwrite.xml` items your sandbox already has (they carry a `package-no-overwrite.xml` marker). Untick what must not go now. An item whose sandbox version differs from the parent branch version carries, on its own line, a select button **Overwrite / Keep org version / Merge** and a **Compare** button that opens the VS Code diff editor. **Merge** writes the file with conflict markers in the backpromote branch and opens the VS Code merge editor: solve it there, or copy the coding agent prompt (one prompt for every merge of the run) and let your agent solve it. **Merge all** prepares every item that differs at once and copies that prompt: paste it into Claude Code or Codex, which solves the markers and commits the files on the backpromote branch.
+
+![The package-no-overwrite.xml items, the deletions and the deployment actions of the plan](assets/images/backpromote-what.png)
+
+![Merge all: every differing item is prepared and the coding agent prompt is in the clipboard](assets/images/backpromote-merge-all.png)
 3. **Go:** the **Backpromote** button, enabled once no marker remains, runs the pre-deployment actions, the deployment, the deletions, the post-deployment actions, writes the "Backpromotes" comments and pushes the backpromote branch when it holds merges. The panel shows each step, then the result. A manual action is confirmed with its **Done in the sandbox** checkbox.
+
+![Result of a backpromote: the steps, the deployed items, the deployment actions and the updated Pull Requests](assets/images/backpromote-result.png)
 
 Your checkout stays on the backpromote branch after the run. **Back to my branch** checks your branch out again, restores the changes it had stashed, and proposes to merge the parent branch into it, so that your next `hardis:work:save` does not commit the backpromoted metadata as your own work.
 
