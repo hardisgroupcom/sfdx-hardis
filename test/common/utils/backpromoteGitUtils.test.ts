@@ -191,9 +191,15 @@ describe('backpromote branch on a real git repository', () => {
   it('stashes a dirty working tree under a message, and commits everything when asked', async () => {
     await fs.writeFile(path.join(repo, layout), '<Layout>dirty</Layout>\n');
     await fs.writeFile(path.join(repo, 'notes.txt'), 'untracked\n');
-    expect(await listUncommittedFiles()).to.have.members([layout, 'notes.txt']);
-    expect(stashWorkingTree('sfdx-hardis backpromote 7f3a from feature/my-story')).to.be.true;
+    await fs.ensureDir(path.join(repo, 'hardis-report'));
+    await fs.writeFile(path.join(repo, 'hardis-report', 'command.log'), 'report\n');
+    const dirty = await listUncommittedFiles();
+    expect(dirty).to.have.members([layout, 'notes.txt']);
+    expect(stashWorkingTree('sfdx-hardis backpromote 7f3a from feature/my-story', dirty)).to.be.true;
     expect(await listUncommittedFiles()).to.deep.equal([]);
+    // Only the listed files are stashed: the report written by sfdx-hardis stays in place
+    expect(await fs.pathExists(path.join(repo, 'hardis-report', 'command.log'))).to.be.true;
+    expect(stashWorkingTree('nothing to stash', [])).to.be.false;
     expect((await g.stashList()).all[0].message).to.contain('sfdx-hardis backpromote 7f3a from feature/my-story');
     await g.stash(['pop']);
     const committed = await commitAllChanges('WIP');

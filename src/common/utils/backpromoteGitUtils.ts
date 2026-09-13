@@ -178,7 +178,17 @@ export function commitsTouchingFiles(from: string, to: string, files: string[]):
 export async function listUncommittedFiles(): Promise<string[]> {
   const status = await git().status();
   const reportDirectory = path.basename(await getReportDirectory());
-  return userChangesOutsideReports(status.files || [], reportDirectory).map((file) => normalizeRepoPath(file.path));
+  const files = new Set<string>();
+  for (const file of userChangesOutsideReports(status.files || [], reportDirectory)) {
+    files.add(normalizeRepoPath(file.path));
+    // A staged rename changes its old path too: a stash or a commit of the new path alone would
+    // leave the removal of the old one behind
+    const from = (file as { from?: string }).from;
+    if (from && from !== file.path) {
+      files.add(normalizeRepoPath(from));
+    }
+  }
+  return [...files];
 }
 
 /** Commit every change of the working tree. Returns the committed files, empty when there was nothing. */
@@ -192,10 +202,27 @@ export async function commitAllChanges(message: string): Promise<string[]> {
   return files;
 }
 
-/** Stash the working tree (untracked files included) under a message the panel can find again */
-export function stashWorkingTree(message: string): boolean {
+/**
+ * Stash the given changed files (untracked ones included) under a message the panel can find again.
+ *
+ * `git stash push --include-untracked` walks every untracked folder and fails on one Windows cannot
+ * open (a name ending with a dot or a space, created on another OS): "could not open directory",
+ * then "failed to remove", exit 1. With a pathspec it fails as well, on untracked files. So the
+ * listed files are staged first (paths through stdin: no command line limit) and the index alone is
+ * stashed with `--staged`, which never looks at untracked folders. The reports sfdx-hardis writes
+ * are not in the list and stay where they are. A pop gives every change back, a file that was
+ * untracked coming back as a new staged file.
+ */
+export function stashWorkingTree(message: string, files: string[]): boolean {
+  if (files.length === 0) {
+    return false;
+  }
   const before = gitLines(['stash', 'list']).length;
-  const result = runGit(['stash', 'push', '--include-untracked', '-m', message]);
+  const added = runGit(['add', '-A', '--pathspec-from-file=-', '--pathspec-file-nul'], { input: files.map(normalizeRepoPath).join('\0') });
+  if (added.status !== 0) {
+    throw new SfError(`[Backpromote] git add before the stash failed: ${(added.stderr || added.stdout || '').trim()}`);
+  }
+  const result = runGit(['stash', 'push', '--staged', '-m', message]);
   if (result.status !== 0) {
     throw new SfError(`[Backpromote] git stash failed: ${(result.stderr || result.stdout || '').trim()}`);
   }

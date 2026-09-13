@@ -940,7 +940,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
           uxLog('action', this, c.cyan(t('backpromoteDirtyTreeCommitted', { count: committed.length, branch: current })));
         } else {
           stashMessage = `sfdx-hardis backpromote ${ctx.runId} from ${current}`;
-          stashed = stashWorkingTree(stashMessage);
+          stashed = stashWorkingTree(stashMessage, dirty);
           uxLog('action', this, c.cyan(t('backpromoteDirtyTreeStashed', { count: dirty.length, branch: current })));
         }
       }
