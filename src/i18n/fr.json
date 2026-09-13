@@ -206,7 +206,7 @@
   "backpromoteDeltaSummary": "Resume du delta : {{addedModified}} elements a deployer, {{deleted}} elements a supprimer",
   "backpromoteDeployErrorsPromptWritten": "Un prompt pour résoudre les erreurs de déploiement avec un agent de code (Claude Code, Codex, GitHub Copilot...) est dans {{file}}",
   "backpromoteDeployFailed": "Le deploiement a echoue. Verifiez les messages d'erreur ci-dessus.",
-  "backpromoteDeployFailedItems": "Le déploiement a échoué sur {{count}} composant(s) : {{items}}. Corrigez-les sur la branche de backpromote {{branch}} et relancez le backpromote, ou décochez-les pour les laisser hors de ce backpromote.",
+  "backpromoteDeployFailedItems": "La sandbox a refusé {{count}} composant(s) : {{items}}. Corrigez-les sur la branche de backpromote {{branch}} et relancez le backpromote, ou décochez-les pour les laisser hors de ce backpromote.",
   "backpromoteDeployFailedSeeReport": "Le déploiement a échoué : ouvrez le rapport de déploiement pour voir pourquoi.",
   "backpromoteDeployReportLabel": "Rapport de deploiement backpromote",
   "backpromoteDeployReportSaved": "Rapport de deploiement sauvegarde : {{reportPath}}",

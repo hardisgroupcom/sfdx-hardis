@@ -206,7 +206,7 @@
   "backpromoteDeltaSummary": "Delta summary: {{addedModified}} items to deploy, {{deleted}} items to delete",
   "backpromoteDeployErrorsPromptWritten": "A prompt to solve the deployment errors with a coding agent (Claude Code, Codex, GitHub Copilot...) is in {{file}}",
   "backpromoteDeployFailed": "Deployment failed. Check error messages above.",
-  "backpromoteDeployFailedItems": "The deployment failed on {{count}} component(s): {{items}}. Fix them on the backpromote branch {{branch}} and run the backpromote again, or untick them to leave them out of this backpromote.",
+  "backpromoteDeployFailedItems": "The sandbox refused {{count}} component(s): {{items}}. Fix them on the backpromote branch {{branch}} and run the backpromote again, or untick them to leave them out of this backpromote.",
   "backpromoteDeployFailedSeeReport": "The deployment failed: open the deployment report to see why.",
   "backpromoteDeployReportLabel": "Backpromote Deployment Report",
   "backpromoteDeployReportSaved": "Deployment report saved: {{reportPath}}",
