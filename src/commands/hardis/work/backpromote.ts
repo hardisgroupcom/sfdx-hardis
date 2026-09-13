@@ -88,6 +88,7 @@ import {
   countConflictMarkerBlocks,
   filterNoOverwriteKeys,
   findBackpromoteParentBranchRefusal,
+  isNoOverwriteItemInSandbox,
   listAllowedBackpromoteParentBranches,
   normalizeRepoPath,
   parseDiffDecisions,
@@ -162,6 +163,8 @@ interface BackpromoteContext {
   comparison: BackpromotePlanComparison[];
   checks: BackpromotePlanCheck[];
   excludedKeys: Set<string>;
+  /** package-no-overwrite.xml items already in the sandbox that are deployed anyway */
+  includedNoOverwriteKeys: Set<string>;
   diffDecisions: Map<string, BackpromoteDiffChoice>;
   diffDefault: BackpromoteDiffChoice;
   skipDestructive: boolean;
@@ -190,7 +193,7 @@ What the command does, in order:
 1. **Checks:** a git provider token must be configured (the history lives in the Pull Request comments), the target org must be a developer sandbox or a scratch org (a production org, or the org of a major branch declared in \`config/branches\`, is refused: the CI/CD pipeline deploys those), and the parent branch must be \`developmentBranch\` or one of \`availableTargetBranches\`.
 2. **Start Pull Request:** the merged Pull Requests of the parent branch are listed, newest first, and the "Backpromotes" comment of each one is read until one holds a row for this sandbox: the default start is the Pull Request merged right after it. Everything merged after the start, up to the head of the parent branch, is the **window**.
 3. **Delta and actions:** sfdx-git-delta computes what the window deploys and deletes, and \`scripts/actions/.sfdx-hardis.<PR>.yml\` gives the deployment actions of its Pull Requests. An action with a success row for this sandbox in the "Backpromotes" comment never runs twice (\`runOnlyOnceByOrg\`).
-4. **Comparison with the sandbox:** the ticked items are retrieved from the sandbox into a cache and compared with the parent branch version. For every file that differs, one decision: **Overwrite** (\`git\`, the parent branch version is deployed), **Keep org version** (\`org\`, the item is not deployed and listed as kept) or **Merge** (\`merge\`, the file is written with conflict markers in the backpromote branch and solved with the VS Code merge editor, by hand or with the coding agent prompt saved in \`hardis-report/\`).
+4. **Comparison with the sandbox:** the ticked items are retrieved from the sandbox into a cache and compared with the parent branch version. For every file that differs, one decision: **Overwrite** (\`git\`, the parent branch version is deployed), **Keep org version** (\`org\`, the item is not deployed and listed as kept) or **Merge** (\`merge\`, the file is written with conflict markers in the backpromote branch and solved with the VS Code merge editor, by hand or with the coding agent prompt saved in \`hardis-report/\`). An item listed in \`manifest/package-no-overwrite.xml\` of the parent branch is deployed when it is absent from the sandbox; when the sandbox already has it, it is not deployed unless you tick it (\`--include-no-overwrite Type:Name\`).
 5. **Deployment from the backpromote branch:** the checkout is switched to \`backpromote/<parent branch>/<sandbox name>\` (a child of the parent branch that only holds the manual merges; the working tree is committed or stashed first when it is not clean), the merged files are committed, then the pre-deployment actions run, the metadata is deployed (\`NoTestRun\`), the deletions are applied, the post-deployment actions run.
 6. **History:** every Pull Request of the window gets a row for the sandbox in its "Backpromotes" comment (complete, or partial with the items left out), and the backpromote branch is pushed when it holds manual merges. The checkout **stays on the backpromote branch**: the last line of the output says how to get back to your own branch.
 
@@ -208,6 +211,7 @@ Use \`--agent\` to disable all interactive prompts. The command will:
 
 - Take the parent branch from \`--parent-branch\`, else \`developmentBranch\`
 - Take the start from \`--from-pull-request\`, else the first Pull Request not backpromoted yet (and refuse when the history holds no row within the scan limit)
+- Leave out the items of \`manifest/package-no-overwrite.xml\` that already exist in the sandbox, unless \`--include-no-overwrite Type:Name\` names them
 - Behave as with \`--auto\`, leaving manual actions pending (confirm them later with \`--confirm-action <id>\`)
 - Stop with status \`waitingForMerges\` (exit code 0) when a file marked \`merge\` is written with markers: edit the files listed in the JSON, then run the same command again with the returned \`runId\`. A file left with markers is not deployed and is listed as "conflict pending" in the comment row.
 
@@ -270,6 +274,10 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     'exclude-metadata': Flags.string({
       multiple: true,
       description: 'Type:Name of an item not to deploy nor delete now, for example "Layout:Account-Account Layout". Repeatable.',
+    }),
+    'include-no-overwrite': Flags.string({
+      multiple: true,
+      description: 'Type:Name of an item listed in manifest/package-no-overwrite.xml that already exists in the sandbox, to deploy it anyway. Without it such an item is not deployed. Repeatable.',
     }),
     'on-diff': Flags.string({
       multiple: true,
@@ -336,7 +344,8 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     const conn = flags['target-org'].getConnection();
 
     const excludedKeys = new Set(splitMetadataKeysFlag(flags['exclude-metadata']));
-    for (const key of excludedKeys) {
+    const includedNoOverwriteKeys = new Set(splitMetadataKeysFlag(flags['include-no-overwrite']));
+    for (const key of [...excludedKeys, ...includedNoOverwriteKeys]) {
       if (!parseMetadataKey(key)) {
         throw new SfError(t('backpromoteInvalidMetadataKey', { key }));
       }
@@ -466,6 +475,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       comparison: [],
       checks,
       excludedKeys,
+      includedNoOverwriteKeys,
       diffDecisions,
       diffDefault: (flags['on-diff-default'] || 'git') as BackpromoteDiffChoice,
       skipDestructive: flags['skip-destructive'] === true,
@@ -820,7 +830,10 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
   // ---- Comparison and decisions ----
 
   private async compare(ctx: BackpromoteContext): Promise<void> {
-    const keys = ctx.items.filter((item) => !ctx.excludedKeys.has(item.key) && !item.noOverwrite).map((item) => item.key);
+    // A package-no-overwrite.xml item is compared even when it is unticked: whether it is in the
+    // sandbox decides if it is ticked by default, and the panel offers a decision once it is ticked
+    const keys = ctx.items.filter((item) => item.noOverwrite || !ctx.excludedKeys.has(item.key)).map((item) => item.key);
+    const noOverwriteKeys = new Set(ctx.items.filter((item) => item.noOverwrite).map((item) => item.key));
     reportCommandProgress({ step: 'retrieve', message: t('backpromoteProgressRetrieve', { count: keys.length, sandboxName: ctx.targetOrg.sandboxName }) });
     const retrieve = await retrieveItemsForComparison({ username: ctx.targetOrg.username, keys, orgId: ctx.targetOrg.orgId, runId: ctx.runId, commandThis: this, conn: ctx.conn, tracksSource: ctx.targetOrg.tracksSource });
     ctx.state.retrieveDir = retrieve.orgDir;
@@ -837,9 +850,10 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       pendingInOrg,
       orgId: ctx.targetOrg.orgId,
       runId: ctx.runId,
-      excludedItems: ctx.excludedKeys,
+      excludedItems: new Set([...ctx.excludedKeys].filter((key) => !noOverwriteKeys.has(key))),
     });
     // What a previous --prepare wrote, when the checkout is still on the backpromote branch
+    // (a package-no-overwrite.xml item included by the panel keeps its prepared files across plans)
     const onBranch = currentBranchName() === ctx.backpromoteBranch;
     for (const entry of ctx.comparison) {
       const prepared = ctx.state.prepared.find((file) => file.file === entry.file);
@@ -858,15 +872,37 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     }
   }
 
+  /**
+   * The package-no-overwrite.xml items this run does not deploy: the ones already in the sandbox,
+   * unless --include-no-overwrite names them (R22). One absent from the sandbox is deployed like any
+   * other item. Needs the comparison.
+   */
+  private heldNoOverwriteKeys(ctx: BackpromoteContext): Set<string> {
+    return new Set(
+      ctx.items
+        .filter((item) => item.noOverwrite && !ctx.includedNoOverwriteKeys.has(item.key) && isNoOverwriteItemInSandbox(item.key, ctx.comparison))
+        .map((item) => item.key)
+    );
+  }
+
   /** Terminal mode: the items, the deletions and the decision for every file that differs */
   private async askDecisions(ctx: BackpromoteContext): Promise<void> {
-    const candidates = ctx.items.filter((item) => !item.noOverwrite).map((item) => item.key);
-    const chosen = await promptItemsToDeploy(candidates, ctx.deletions.map((deletion) => deletion.key), ctx.targetOrg.sandboxName);
+    const candidates = ctx.items.map((item) => item.key);
+    // A package-no-overwrite.xml item already in the sandbox is offered unticked
+    const noOverwriteInSandbox = new Set(ctx.items.filter((item) => item.noOverwrite && isNoOverwriteItemInSandbox(item.key, ctx.comparison)).map((item) => item.key));
+    const chosen = await promptItemsToDeploy(candidates, ctx.deletions.map((deletion) => deletion.key), ctx.targetOrg.sandboxName, this.heldNoOverwriteKeys(ctx));
     for (const key of candidates) {
-      if (!chosen.items.includes(key)) {
+      if (noOverwriteInSandbox.has(key)) {
+        if (chosen.items.includes(key)) {
+          ctx.includedNoOverwriteKeys.add(key);
+        } else {
+          ctx.includedNoOverwriteKeys.delete(key);
+        }
+      } else if (!chosen.items.includes(key)) {
         ctx.excludedKeys.add(key);
       }
     }
+    const noOverwriteKeys = this.heldNoOverwriteKeys(ctx);
     for (const deletion of ctx.deletions) {
       if (!chosen.deletions.includes(deletion.key)) {
         ctx.excludedKeys.add(deletion.key);
@@ -874,7 +910,8 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     }
     let forAll: BackpromoteDiffChoice | null = null;
     for (const entry of ctx.comparison) {
-      if (!['different', 'pendingInOrg'].includes(entry.status) || ctx.excludedKeys.has(entry.item) || ctx.diffDecisions.has(entry.file)) {
+      // A package-no-overwrite.xml item that is not deployed takes no decision
+      if (!['different', 'pendingInOrg'].includes(entry.status) || noOverwriteKeys.has(entry.item) || ctx.excludedKeys.has(entry.item) || ctx.diffDecisions.has(entry.file)) {
         continue;
       }
       if (entry.prepared) {
@@ -897,8 +934,10 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
   }
 
   private applyDecisions(ctx: BackpromoteContext): void {
+    // --on-diff values given for the files of a package-no-overwrite.xml item not deployed are ignored
+    const noOverwriteKeys = this.heldNoOverwriteKeys(ctx);
     for (const entry of ctx.comparison) {
-      if (!['different', 'pendingInOrg'].includes(entry.status)) {
+      if (!['different', 'pendingInOrg'].includes(entry.status) || noOverwriteKeys.has(entry.item)) {
         entry.decision = null;
         continue;
       }
@@ -1074,11 +1113,15 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     };
     const leftOut = new Map<string, BackpromoteLeftOutItem>();
     const mergedFiles: string[] = [];
-    // package-no-overwrite.xml items are never deployed and never listed as left out: they are not
-    // pending, they are held back by the project rule (R22)
-    const noOverwriteKeys = new Set(ctx.items.filter((item) => item.noOverwrite).map((item) => item.key));
+    // A package-no-overwrite.xml item already in the sandbox is not deployed unless
+    // --include-no-overwrite names it, and never listed as left out: the org version stays by the
+    // project rule. One absent from the sandbox is deployed like any other item (R22).
+    const noOverwriteKeys = this.heldNoOverwriteKeys(ctx);
+    if (noOverwriteKeys.size > 0) {
+      uxLog('action', this, c.cyan(t('backpromoteNoOverwriteKeptInSandbox', { count: noOverwriteKeys.size, items: [...noOverwriteKeys].join(', ') })));
+    }
     for (const item of ctx.items) {
-      if (!item.noOverwrite && ctx.excludedKeys.has(item.key)) {
+      if (!noOverwriteKeys.has(item.key) && ctx.excludedKeys.has(item.key)) {
         leftOut.set(item.key, { key: item.key, reason: 'excluded' });
       }
     }
@@ -1383,6 +1426,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       fromPullRequest: ctx.window?.startPullRequest || null,
       runId: ctx.runId,
       excludeMetadata: [...ctx.excludedKeys],
+      includeNoOverwrite: [...ctx.includedNoOverwriteKeys],
       diffDecisions: decisions,
       diffDefault: ctx.diffDefault,
       actions: ctx.skipActions ? null : ctx.actionIds,

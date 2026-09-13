@@ -243,6 +243,7 @@
   "backpromoteMergesDropped": "前回の backpromote の保留中の手動マージを新しい親ブランチの head に引き継げなかったため、破棄されました: {{files}}。これらは再度提示されます。",
   "backpromoteNoAllowedParentBranch": "許可された親 branch がありません: config/.sfdx-hardis.yml で developmentBranch (および availableTargetBranches) を設定してください",
   "backpromoteNoHistoryFound": "直近の {{count}} 件のマージ済み Pull Request の中に、この sandbox の backpromote が見つかりませんでした。開始 Pull Request を選択する (--from-pull-request) か、スキャン範囲を広げてください (--scan-limit)。",
+  "backpromoteNoOverwriteKeptInSandbox": "package-no-overwrite.xml の {{count}} 件の項目はすでに sandbox に存在するため、デプロイされません (デプロイするには選択するか、--include-no-overwrite を指定してください): {{items}}",
   "backpromoteParentBranchNotAllowed": "{{parentBranch}} は許可された親 branch ではありません。backpromote は developmentBranch または availableTargetBranches のいずれかから行われます: {{branches}}。",
   "backpromoteParentBranchNotFound": "branch {{parentBranch}} が origin に見つかりませんでした",
   "backpromotePrepared": "{{branch}} に {{count}} 件のファイルを競合マーカー付きで準備しました: 解決してから backpromote を実行してください",

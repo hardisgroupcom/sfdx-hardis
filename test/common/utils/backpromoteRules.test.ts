@@ -13,6 +13,7 @@ import {
   findBackpromoteParentBranchRefusal,
   findBackpromoteTargetOrgRefusal,
   isBinaryMetadataFile,
+  isNoOverwriteItemInSandbox,
   itemsOfFile,
   listAllowedBackpromoteParentBranches,
   metadataKeysToPackageContent,
@@ -75,6 +76,22 @@ describe('backpromote keys and flags', () => {
     const noOverwrite = { Profile: ['*'], Layout: ['Account-Account Layout'] };
     expect(filterNoOverwriteKeys(['Profile:Admin', 'Layout:Account-Account Layout', 'Layout:Case-Case Layout', 'ApexClass:A'], noOverwrite)).to.deep.equal(['Profile:Admin', 'Layout:Account-Account Layout']);
     expect(filterNoOverwriteKeys(['Profile:Admin'], null)).to.deep.equal([]);
+  });
+
+  it('treats a package-no-overwrite.xml item as in the sandbox unless every file is missing there', () => {
+    const comparison = [
+      { item: 'Report:Sales/Pipeline', status: 'missingInOrg' },
+      { item: 'Dashboard:Sales/Board', status: 'missingInOrg' },
+      { item: 'Dashboard:Sales/Board', status: 'same' },
+      { item: 'NamedCredential:Erp', status: 'different' },
+      { item: 'StaticResource:Logo', status: 'notCompared' },
+    ];
+    expect(isNoOverwriteItemInSandbox('Report:Sales/Pipeline', comparison)).to.be.false;
+    expect(isNoOverwriteItemInSandbox('Dashboard:Sales/Board', comparison)).to.be.true;
+    expect(isNoOverwriteItemInSandbox('NamedCredential:Erp', comparison)).to.be.true;
+    expect(isNoOverwriteItemInSandbox('StaticResource:Logo', comparison)).to.be.true;
+    // No file compared: nothing proves the item is absent, it is never deployed
+    expect(isNoOverwriteItemInSandbox('RemoteSiteSetting:Erp', comparison)).to.be.true;
   });
 });
 
@@ -230,6 +247,7 @@ describe('backpromote command and prompt', () => {
       fromPullRequest: 412,
       runId: '7f3a',
       excludeMetadata: ['Layout:Opportunity-Sales Layout', 'Report:unfiled$public/Pipeline by stage'],
+      includeNoOverwrite: ['Dashboard:Sales/Board'],
       diffDecisions: new Map([['force-app/main/default/classes/A.cls', 'merge']]),
       diffDefault: 'org',
       actions: ['load-matrix'],
@@ -238,7 +256,7 @@ describe('backpromote command and prompt', () => {
     expect(command).to.equal(
       'sf hardis:work:backpromote --auto --target-org dev1 --parent-branch integration --from-pull-request 412 --run-id 7f3a' +
       ' --exclude-metadata "Layout:Opportunity-Sales Layout"' +
-      " --exclude-metadata 'Report:unfiled$public/Pipeline by stage' --on-diff force-app/main/default/classes/A.cls=merge" +
+      " --exclude-metadata 'Report:unfiled$public/Pipeline by stage' --include-no-overwrite Dashboard:Sales/Board --on-diff force-app/main/default/classes/A.cls=merge" +
       ' --on-diff-default org --actions load-matrix --json'
     );
     expect(buildBackpromoteRunCommand({ mode: 'agent', parentBranch: 'integration', skipActions: true, skipDestructive: true, diffDefault: 'git', confirmActions: ['step-1'] })).to.equal(
@@ -271,7 +289,10 @@ describe('backpromote command and prompt', () => {
     expect(prompt).to.contain('changed in integration by the Pull Request(s) #482');
     expect(prompt).to.contain('backpromote/integration/dev1');
     expect(prompt).to.contain('#482 Quote approval process (https://github.com/acme/crm/pull/482)');
-    expect(prompt).to.contain('Do not commit, do not push and do not deploy');
+    expect(prompt).to.contain('then to commit the solved files on `backpromote/integration/dev1`');
+    expect(prompt).to.contain('Commit only the solved files, on `backpromote/integration/dev1`');
+    expect(prompt).to.contain('Do not push and do not deploy');
+    expect(prompt).to.contain('click Backpromote in the VS Code Backpromote panel');
     expect(prompt).to.contain('sf hardis:work:backpromote --auto --run-id 7f3a');
   });
 });

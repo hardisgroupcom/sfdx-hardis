@@ -33,7 +33,10 @@ Everything runs with `--json`; every decision is a flag; nothing is asked in `--
    (or three) versions at `versions.sandbox`, `versions.parentHead` and `versions.base` (absolute
    paths in the cache), then choose: `--on-diff "<file>=git"` (overwrite with the parent branch
    version, the default), `=org` (keep the org version, the item is listed as kept and offered again
-   next time) or `=merge`. `--on-diff-default git|org|merge` covers the rest. Untick with
+   next time) or `=merge`. `--on-diff-default git|org|merge` covers the rest. An item with
+   `noOverwrite: true` (listed in `manifest/package-no-overwrite.xml`) is deployed when every
+   `comparison[]` entry of it is `missingInOrg`; when the sandbox already has it, it is left alone
+   unless `--include-no-overwrite Type:Name` names it (then it takes decisions like any item). Untick with
    `--exclude-metadata Type:Name`, `--skip-destructive`, `--actions a,b`, `--skip-actions`.
 3. **Run.** `sf hardis:work:backpromote --agent --json --run-id <runId> --target-org <alias>
    --parent-branch <branch> --from-pull-request <n> [decisions]`. The checkout is switched to the
@@ -45,8 +48,9 @@ Everything runs with `--json`; every decision is a flag; nothing is asked in `--
 4. **Merge when asked.** `status: waitingForMerges` means the files marked `merge` were written with
    conflict markers in the checkout (`comparison[].file` is relative to `gitRoot`, the prompt is in
    `promptFile`, the exact command in `runCommand`). Edit each file, leave no
-   `<<<<<<<`, `|||||||`, `=======`, `>>>>>>>` line, do not commit, then run `runCommand`. It commits
-   the merged files in the backpromote branch, checks them and deploys. A file left with markers is
+   `<<<<<<<`, `|||||||`, `=======`, `>>>>>>>` line, commit the solved files on the backpromote branch
+   (the body of the message says what was kept from each side), then run `runCommand`. It checks
+   the files, commits any merged file still uncommitted, deploys and pushes the branch. A file left with markers is
    not deployed and is listed as "conflict pending": the next plan offers it first.
 5. **Manual actions.** `result.actions.pending` lists the manual actions (and the ones whose custom
    username could not be authenticated). Once done by hand in the sandbox:
@@ -68,7 +72,7 @@ the pending merges; the history in the comments is never touched.
 - Salesforce metadata is XML: well-formed result, one entry per API name, the existing order and
   indentation, the XML declaration and namespace untouched. Only change the conflicting lines.
 - Write, for each file, one sentence on what was kept from each side: it is the body of the commit
-  message of the merge (the command asks for it in the prompt it writes).
+  of the solved files on the backpromote branch (the prompt the command writes asks for it).
 
 ## Where things live
 

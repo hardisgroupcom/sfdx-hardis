@@ -61,7 +61,10 @@ export interface BackpromotePlanItem {
   pullRequests: number[];
   /** Listed as left out in a previous partial backpromote of this sandbox */
   excludedLastTime: boolean;
-  /** Held back by package-no-overwrite.xml of the parent branch: never deployed */
+  /**
+   * Listed in package-no-overwrite.xml of the parent branch: deployed when absent from the sandbox
+   * (every comparison entry of the item is missingInOrg), else only with --include-no-overwrite
+   */
   noOverwrite: boolean;
 }
 
@@ -273,7 +276,7 @@ export async function promptStartPullRequest(pullRequests: BackpromotePlanPullRe
 }
 
 /** One multiselect of the items to deploy, all ticked; deletions in the same list, ticked too */
-export async function promptItemsToDeploy(keys: string[], deletions: string[], sandboxName: string): Promise<{ items: string[]; deletions: string[] }> {
+export async function promptItemsToDeploy(keys: string[], deletions: string[], sandboxName: string, unticked: Set<string> = new Set()): Promise<{ items: string[]; deletions: string[] }> {
   if (keys.length === 0 && deletions.length === 0) {
     return { items: [], deletions: [] };
   }
@@ -283,11 +286,11 @@ export async function promptItemsToDeploy(keys: string[], deletions: string[], s
     message: c.cyanBright(t('backpromoteSelectMetadataToDeploy', { sandboxName })),
     description: t('backpromoteSelectMetadataToDeploy', { sandboxName }),
     choices: [
-      ...keys.map((key) => ({ title: key, value: `deploy:${key}`, selected: true })),
+      ...keys.map((key) => ({ title: unticked.has(key) ? `${key} (package-no-overwrite.xml)` : key, value: `deploy:${key}`, selected: !unticked.has(key) })),
       ...deletions.map((key) => ({ title: `${t('backpromoteDeleteLabel')} ${key}`, value: `delete:${key}`, selected: true })),
     ],
   });
-  const selected: string[] = res.value || [...keys.map((key) => `deploy:${key}`), ...deletions.map((key) => `delete:${key}`)];
+  const selected: string[] = res.value || [...keys.filter((key) => !unticked.has(key)).map((key) => `deploy:${key}`), ...deletions.map((key) => `delete:${key}`)];
   return {
     items: keys.filter((key) => selected.includes(`deploy:${key}`)),
     deletions: deletions.filter((key) => selected.includes(`delete:${key}`)),

@@ -117,8 +117,9 @@ export function packageContentToMetadataKeys(content: Record<string, string[]> |
 }
 
 /**
- * The keys a package-no-overwrite.xml holds back: an exact Type:Name, or every member of a type
- * when the manifest names the type with a `*` wildcard.
+ * The keys a package-no-overwrite.xml lists: an exact Type:Name, or every member of a type when the
+ * manifest names the type with a `*` wildcard. Such an item is deployed when it is absent from the
+ * target org, and only when explicitly included when the org already has it (see isNoOverwriteItemInSandbox).
  */
 export function filterNoOverwriteKeys(keys: string[], noOverwrite: Record<string, string[]> | null | undefined): string[] {
   if (!noOverwrite) {
@@ -132,6 +133,16 @@ export function filterNoOverwriteKeys(keys: string[], noOverwrite: Record<string
     const members = noOverwrite[parsed.type] || [];
     return members.includes('*') || members.includes(parsed.name);
   });
+}
+
+/**
+ * A package-no-overwrite.xml item is in the sandbox when one of its files was found there (any
+ * comparison status but missingInOrg). An item with no comparison entry at all counts as present:
+ * nothing proves it is absent, and deploying it could overwrite the org version.
+ */
+export function isNoOverwriteItemInSandbox(key: string, comparison: Array<{ item: string; status: string }>): boolean {
+  const entries = comparison.filter((entry) => entry.item === key);
+  return entries.length === 0 || entries.some((entry) => entry.status !== 'missingInOrg');
 }
 
 // ---- Branches ----
@@ -486,6 +497,7 @@ export interface BackpromoteRunCommandOptions {
   fromPullRequest?: number | null;
   runId?: string | null;
   excludeMetadata?: string[];
+  includeNoOverwrite?: string[];
   diffDecisions?: Map<string, BackpromoteDiffChoice> | Record<string, BackpromoteDiffChoice>;
   diffDefault?: BackpromoteDiffChoice | null;
   actions?: string[] | null;
@@ -510,6 +522,9 @@ export function buildBackpromoteRunCommand(options: BackpromoteRunCommandOptions
   }
   for (const key of options.excludeMetadata || []) {
     parts.push(`--exclude-metadata ${quoteArgument(key)}`);
+  }
+  for (const key of options.includeNoOverwrite || []) {
+    parts.push(`--include-no-overwrite ${quoteArgument(key)}`);
   }
   const decisions = options.diffDecisions instanceof Map ? [...options.diffDecisions.entries()] : Object.entries(options.diffDecisions || {});
   for (const [file, choice] of decisions) {
@@ -549,8 +564,9 @@ export interface BackpromoteMergePromptFile {
  * One prompt per run to paste into a coding agent (Claude Code, GitHub Copilot, Codex...): every
  * prepared file with its versions, what each side of a marker is, the Pull Requests behind the
  * parent branch side, the rules of a Salesforce metadata merge, and the command to run once no
- * marker is left. The agent commits nothing outside agent mode: the backpromote commits the files
- * itself and asks for one commit message body naming each file.
+ * marker is left. The agent commits the solved files on the backpromote branch itself, so that a
+ * developer who pastes the prompt gets a finished merge and only has to deploy (the run commits
+ * whatever is still uncommitted, so an agent that did not commit breaks nothing).
  */
 export function buildBackpromoteMergePrompt(options: {
   parentBranch: string;
@@ -564,7 +580,7 @@ export function buildBackpromoteMergePrompt(options: {
   const lines: string[] = [];
   lines.push(`You are working in a Salesforce DX git repository managed with sfdx-hardis. The checkout is on the branch \`${options.backpromoteBranch}\`, a technical branch created from \`${options.parentBranch}\` for the backpromote of the sandbox \`${options.sandboxName}\`.`);
   lines.push('');
-  lines.push(`A backpromote deploys into the sandbox \`${options.sandboxName}\` what the team merged in \`${options.parentBranch}\`. For the files below, the sandbox holds a version that differs from the \`${options.parentBranch}\` version, and the developer chose to merge the two rather than to overwrite one with the other. Each file was written with conflict markers: your job is to solve them so that both versions are kept.`);
+  lines.push(`A backpromote deploys into the sandbox \`${options.sandboxName}\` what the team merged in \`${options.parentBranch}\`. For the files below, the sandbox holds a version that differs from the \`${options.parentBranch}\` version, and the developer chose to merge the two rather than to overwrite one with the other. Each file was written with conflict markers in this checkout: your job is to solve them so that both versions are kept, then to commit the solved files on \`${options.backpromoteBranch}\`.`);
   lines.push('');
   lines.push('## Files to merge');
   lines.push('');
@@ -603,13 +619,13 @@ export function buildBackpromoteMergePrompt(options: {
   lines.push('2. Salesforce metadata files are XML: the result must be well-formed, keep one entry per API name (no duplicated `<fullName>`, `<fields>`, `<labels>`, `<members>`...), keep the existing element order and indentation, and keep the XML declaration and namespace untouched.');
   lines.push('3. Only change the conflicting lines. Do not reformat the files and do not touch other files.');
   lines.push('4. Leave no marker: `<<<<<<<`, `|||||||`, `=======` and `>>>>>>>` lines must all be gone.');
-  lines.push(options.agentMode
-    ? '5. Do not commit, do not push and do not deploy: the command below commits the merged files in the backpromote branch, checks them and deploys them.'
-    : '5. Do not commit, do not push and do not deploy: the developer reviews the result, then the Backpromote button (or the command below) commits the merged files in the backpromote branch and deploys them.');
+  lines.push(`5. Commit only the solved files, on \`${options.backpromoteBranch}\` (check \`git branch --show-current\` first). The commit message body says, for each file, in one sentence, what you kept from each side. Do not push and do not deploy: the command below checks the files, deploys them and pushes the branch.`);
   lines.push('');
   lines.push('## Once done');
   lines.push('');
-  lines.push('Report, for each file, what you kept from each side in one sentence: this is the body of the commit message of the merge. Then run, or let the developer run:');
+  lines.push(options.agentMode
+    ? 'Once the commit is done, run:'
+    : 'Once the commit is done, tell the developer to click Backpromote in the VS Code Backpromote panel, or run:');
   lines.push('');
   lines.push('```');
   lines.push(options.nextCommand);

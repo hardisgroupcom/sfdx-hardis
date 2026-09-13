@@ -243,6 +243,7 @@
   "backpromoteMergesDropped": "I merge manuali in sospeso di un backpromote precedente non hanno potuto essere riportati sulla nuova head del branch padre e sono stati scartati: {{files}}. Verranno riproposti.",
   "backpromoteNoAllowedParentBranch": "Nessun branch padre consentito: imposta developmentBranch (e availableTargetBranches) in config/.sfdx-hardis.yml",
   "backpromoteNoHistoryFound": "Nessun backpromote di questa sandbox trovato nelle {{count}} Pull Request unite più recenti: scegli la Pull Request di partenza (--from-pull-request), oppure estendi la scansione (--scan-limit).",
+  "backpromoteNoOverwriteKeptInSandbox": "{{count}} elemento/i di package-no-overwrite.xml già presenti nella sandbox non vengono distribuiti (selezionali, o usa --include-no-overwrite, per distribuirli): {{items}}",
   "backpromoteParentBranchNotAllowed": "{{parentBranch}} non è un branch padre consentito. Un backpromote proviene da developmentBranch o da uno degli availableTargetBranches: {{branches}}.",
   "backpromoteParentBranchNotFound": "Il branch {{parentBranch}} non è stato trovato su origin",
   "backpromotePrepared": "{{count}} file preparato/i con marcatori di conflitto in {{branch}}: risolvili, poi esegui il backpromote",

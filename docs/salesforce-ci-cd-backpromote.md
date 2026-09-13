@@ -30,7 +30,7 @@ While you work on a User Story, your teammates merge theirs in the parent branch
 Open the **Backpromote (Beta)** panel from the card below the DevOps Pipeline diagram, or from the commands panel. One page, read from top to bottom:
 
 1. **Where:** the target sandbox (major orgs are greyed with the reason), the parent branch (hidden when only `developmentBranch` is allowed), and the merged Pull Requests, newest first. The ones your sandbox already received are greyed with their date; the first one not backpromoted yet is the default start.
-2. **What:** the metadata of the window grouped by type, the deletions and the deployment actions, all ticked. Untick what must not go now. An item whose sandbox version differs from the parent branch version carries, on its own line, a select button **Overwrite / Keep org version / Merge** and a **Compare** button that opens the VS Code diff editor. **Merge** writes the file with conflict markers in the backpromote branch and opens the VS Code merge editor: solve it there, or copy the coding agent prompt (one prompt for every merge of the run) and let your agent solve it.
+2. **What:** the metadata of the window grouped by type, the deletions and the deployment actions, all ticked. Untick what must not go now. An item whose sandbox version differs from the parent branch version carries, on its own line, a select button **Overwrite / Keep org version / Merge** and a **Compare** button that opens the VS Code diff editor. **Merge** writes the file with conflict markers in the backpromote branch and opens the VS Code merge editor: solve it there, or copy the coding agent prompt (one prompt for every merge of the run) and let your agent solve it. **Merge all** prepares every item that differs at once and copies that prompt: paste it into Claude Code or Codex, which solves the markers and commits the files on the backpromote branch.
 3. **Go:** the **Backpromote** button, enabled once no marker remains, runs the pre-deployment actions, the deployment, the deletions, the post-deployment actions, writes the "Backpromotes" comments and pushes the backpromote branch when it holds merges. The panel shows each step, then the result. A manual action is confirmed with its **Done in the sandbox** checkbox.
 
 Your checkout stays on the backpromote branch after the run. **Back to my branch** checks your branch out again, restores the changes it had stashed, and proposes to merge the parent branch into it, so that your next `hardis:work:save` does not commit the backpromoted metadata as your own work.
@@ -51,7 +51,7 @@ The command asks the same questions as the panel: the parent branch, the start P
 - It never commits on a major branch or on a promotion branch, and on your User Story branch it only commits your own uncommitted changes when you ask it to (the alternative is a stash): the backpromote itself only commits on `backpromote/<parent branch>/<sandbox name>`. `hardis:work:save` refuses to run from that branch.
 - It never runs a deployment action twice in the same sandbox (`runOnlyOnceByOrg`), and it never touches the CI/CD "Deployment Actions" comment.
 - It never deploys a file that still holds conflict markers.
-- It never deploys the items of `package-no-overwrite.xml`: a dev sandbox is an org like the others for that rule.
+- An item of `package-no-overwrite.xml` that already exists in your sandbox is unticked by default and marked as such: it is only deployed if you tick it. One that is not in the sandbox yet is ticked like any other item.
 
 ## Configuration
 

@@ -243,6 +243,7 @@
   "backpromoteMergesDropped": "Openstaande handmatige merges van een eerdere backpromote konden niet worden overgezet naar de nieuwe head van de bovenliggende branch en zijn losgelaten: {{files}}. Ze worden opnieuw aangeboden.",
   "backpromoteNoAllowedParentBranch": "Geen bovenliggende branch toegestaan: stel developmentBranch (en availableTargetBranches) in config/.sfdx-hardis.yml in",
   "backpromoteNoHistoryFound": "Geen backpromote van deze sandbox gevonden in de {{count}} meest recente gemergede Pull Requests: kies de start-Pull Request (--from-pull-request), of breid de scan uit (--scan-limit).",
+  "backpromoteNoOverwriteKeptInSandbox": "{{count}} item(s) uit package-no-overwrite.xml staan al in de sandbox en worden niet geïmplementeerd (vink ze aan, of gebruik --include-no-overwrite, om ze te implementeren): {{items}}",
   "backpromoteParentBranchNotAllowed": "{{parentBranch}} is geen toegestane bovenliggende branch. Een backpromote komt van developmentBranch of een van de availableTargetBranches: {{branches}}.",
   "backpromoteParentBranchNotFound": "Branch {{parentBranch}} niet gevonden op origin",
   "backpromotePrepared": "{{count}} bestand(en) voorbereid met conflictmarkeringen in {{branch}}: los ze op en voer daarna de backpromote uit",
