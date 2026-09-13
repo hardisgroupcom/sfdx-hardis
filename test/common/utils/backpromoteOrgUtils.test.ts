@@ -213,11 +213,25 @@ describe('retrieveItemsForComparison() cross-run cache', () => {
       expect(indexItems()).to.deep.equal({});
     });
 
-    it('queries the names in chunks of 200', async () => {
+    it('queries the names in chunks of 200, and in smaller chunks when the names are long', async () => {
       const names = Array.from({ length: 450 }, (_, position) => `Class${position}`);
       const org: FakeOrg = { members: {}, sources: {} };
       await run(org, names.map((name) => `ApexClass:${name}`), tracked);
       expect(calls.sourceMemberQueries.map((query) => query.names.length)).to.deep.equal([200, 200, 50]);
+      // 100 layouts of 80 characters would not fit in one GET URL
+      calls.sourceMemberQueries = [];
+      const layouts = Array.from({ length: 100 }, (_, position) => `Account-Account Layout for the sales team of the north east region ${String(position).padStart(3, '0')}`);
+      await run(org, layouts.map((name) => `Layout:${name}`), tracked);
+      expect(calls.sourceMemberQueries.length).to.be.greaterThan(1);
+      expect(calls.sourceMemberQueries.flatMap((query) => query.names)).to.deep.equal(layouts);
+    });
+
+    it('never serves a container type from the cache: its changes are tracked under its child types', async () => {
+      const org: FakeOrg = { members: {}, sources: { 'CustomLabels:CustomLabels': [{ folder: 'labels', file: 'CustomLabels.labels-meta.xml', content: '<CustomLabels/>' }] } };
+      await run(org, ['CustomLabels:CustomLabels'], tracked);
+      await run(org, ['CustomLabels:CustomLabels'], tracked);
+      expect(calls.retrieved).to.have.length(2);
+      expect(calls.sourceMemberQueries).to.be.empty;
     });
   });
 
@@ -275,20 +289,31 @@ describe('retrieveItemsForComparison() cross-run cache', () => {
       expect(indexItems()).to.deep.equal({});
     });
 
-    it('records an item the listing does not know as missing, without a retrieve', async () => {
-      const org: FakeOrg = { dates: {}, sources: {} };
-      const result = await run(org, ['ApexClass:Gone']);
-      expect(calls.retrieved).to.be.empty;
-      expect(calls.projectsCreated).to.equal(0);
-      expect(result.filesByTail.size).to.equal(0);
-      expect(indexItems()['ApexClass:Gone']).to.include({ missing: true, validator: null });
-      // Once the item exists in the org, it is retrieved
-      org.dates!['ApexClass:Gone'] = '2026-09-12T07:00:00.000Z';
-      org.sources['ApexClass:Gone'] = [{ folder: 'classes', file: 'Gone.cls', content: 'public class Gone {}' }];
-      const later = await run(org, ['ApexClass:Gone']);
-      expect(calls.retrieved).to.have.length(1);
-      expect(later.filesByTail.has('classes/Gone.cls')).to.be.true;
-      expect(indexItems()['ApexClass:Gone'].missing).to.be.undefined;
+    it('never takes a name the listing does not return for an absence: it is retrieved every time', async () => {
+      // A standard field or an unlisted item exists in the org although the listing leaves it out
+      const org: FakeOrg = { dates: { [APEX]: '2026-09-10T10:00:00.000Z' }, sources: { [APEX]: [apex, apexMeta], 'ApexClass:Unlisted': [{ folder: 'classes', file: 'Unlisted.cls', content: 'public class Unlisted {}' }] } };
+      await run(org, [APEX, 'ApexClass:Unlisted']);
+      const second = await run(org, [APEX, 'ApexClass:Unlisted']);
+      expect(calls.retrieved).to.have.length(2);
+      expect(second.filesByTail.has('classes/Unlisted.cls')).to.be.true;
+      expect(indexItems()).to.not.have.property('ApexClass:Unlisted');
+    });
+
+    it('never serves a standard field, a container type or a manifest dependent type from the cache', async () => {
+      const keys = ['CustomField:Account.Industry', 'CustomLabels:CustomLabels', 'Profile:Admin'];
+      const org: FakeOrg = {
+        dates: { 'CustomField:Account.Industry': '2026-09-01T08:00:00.000Z', 'CustomLabels:CustomLabels': '2026-09-01T08:00:00.000Z', 'Profile:Admin': '2026-09-01T08:00:00.000Z' },
+        sources: {
+          'CustomField:Account.Industry': [{ folder: 'objects/Account/fields', file: 'Industry.field-meta.xml', content: '<CustomField/>' }],
+          'CustomLabels:CustomLabels': [{ folder: 'labels', file: 'CustomLabels.labels-meta.xml', content: '<CustomLabels/>' }],
+          'Profile:Admin': [{ folder: 'profiles', file: 'Admin.profile-meta.xml', content: '<Profile/>' }],
+        },
+      };
+      await run(org, keys);
+      await run(org, keys);
+      expect(calls.retrieved).to.have.length(2);
+      expect(calls.listed).to.be.empty;
+      expect(indexItems()).to.deep.equal({});
     });
 
     it('retrieves again when a cached file disappeared', async () => {
@@ -309,6 +334,18 @@ describe('retrieveItemsForComparison() cross-run cache', () => {
     expect(calls.sourceMemberQueries).to.be.empty;
     expect(fs.existsSync(path.join(cacheRoot, 'retrieve-cache'))).to.be.false;
     expect(first.filesByTail.has('classes/InvoiceCalculator.cls')).to.be.true;
+  });
+
+  it('SFDX_HARDIS_BACKPROMOTE_RETRIEVE_CACHE=false retrieves every time', async () => {
+    const org: FakeOrg = { dates: { [APEX]: '2026-09-10T10:00:00.000Z' }, sources: { [APEX]: [apex, apexMeta] } };
+    await run(org, [APEX]);
+    process.env.SFDX_HARDIS_BACKPROMOTE_RETRIEVE_CACHE = 'false';
+    try {
+      await run(org, [APEX]);
+    } finally {
+      delete process.env.SFDX_HARDIS_BACKPROMOTE_RETRIEVE_CACHE;
+    }
+    expect(calls.retrieved).to.have.length(2);
   });
 
   it('force bypasses the cache: no validation, one retrieve', async () => {

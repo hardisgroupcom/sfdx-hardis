@@ -246,7 +246,10 @@ export class BackpromoteCommentStore {
       throw new Error(t('backpromoteGitProviderRequired'));
     }
     // A dropped keep-alive connection or a throttling is tried again: one lost read must not end a plan
+    // Short pauses only: a long throttling is left to the adaptive batches the reads run in, which
+    // honour the delay the provider asks for once for the whole batch
     const body = await retryOnThrottling(() => gitProvider.getPullRequestCommentByMarker(BACKPROMOTES_MARKER, prNumber), {
+      maxWaitMs: 5000,
       onRetry: (error, waitMs) => uxLog('log', this.commandThis, c.grey(t('providerCallRetried', { pr: prNumber, waitSeconds: Math.round(waitMs / 1000), message: (error as Error)?.message || String(error) }))),
     });
     const state = parseBackpromotesComment(body);

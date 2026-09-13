@@ -223,11 +223,17 @@ async function runAdaptiveBatches<T, R>(
       }
     }
     if (retry.length > 0) {
-      if (sizeIndex < sizes.length - 1) {
-        sizeIndex++;
-      }
-      if (rampSize !== null) {
-        rampSize = Math.min(rampSize, sizes[sizeIndex]);
+      if (rampSize !== null && rampSize < sizes[sizeIndex]) {
+        // Throttled while still ramping up: the provider pushed back at the ramp size, so the ramp
+        // shrinks and the ladder keeps its step
+        rampSize = Math.max(1, Math.floor(rampSize / 2));
+      } else {
+        if (sizeIndex < sizes.length - 1) {
+          sizeIndex++;
+        }
+        if (rampSize !== null) {
+          rampSize = Math.min(rampSize, sizes[sizeIndex]);
+        }
       }
       const waitMs = Math.min(Math.max(0, retryAfter(throttling) ?? 0), maxWaitMs);
       options.onBackoff?.(rampSize ?? sizes[sizeIndex], throttling, waitMs);

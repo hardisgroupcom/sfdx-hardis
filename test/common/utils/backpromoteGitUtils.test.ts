@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
+import { execFileSync } from 'child_process';
 import * as os from 'os';
 import * as path from 'path';
 import { SimpleGit, simpleGit } from 'simple-git';
@@ -232,6 +233,12 @@ describe('backpromote branch on a real git repository', () => {
     expect(withLabel.get('ApexClass:InvoiceCalculator')).to.deep.equal(files.get('ApexClass:InvoiceCalculator'));
     expect(withLabel.get('CustomLabel:Greeting')).to.deep.equal([]);
     expect(packageDirectoriesAtRef('origin/integration')).to.deep.equal(['force-app']);
+    // A package directory spelled with another case, or ".", keeps the files
+    expect(collectItemFiles(['ApexClass:InvoiceCalculator'], [apexClass], 'origin/integration', ['Force-App']).get('ApexClass:InvoiceCalculator')).to.deep.equal(files.get('ApexClass:InvoiceCalculator'));
+    expect(collectItemFiles(['ApexClass:InvoiceCalculator'], [apexClass], 'origin/integration', ['.']).get('ApexClass:InvoiceCalculator')).to.deep.equal(files.get('ApexClass:InvoiceCalculator'));
+    // The root commit of the repository changes nothing against a first parent it does not have
+    const rootCommit = execFileSync('git', ['rev-list', '--max-parents=0', parentHead], { cwd: repo, encoding: 'utf8' }).trim();
+    expect(changedFilesByFirstParentCommit(['-n', '100', parentHead]).get(rootCommit)).to.deep.equal([]);
     expect(files.get('ApexClass:InvoiceCalculator')).to.deep.equal([apexClass]);
     expect(files.get('LightningComponentBundle:card')).to.deep.equal([lwcFile, lwcMeta]);
   });

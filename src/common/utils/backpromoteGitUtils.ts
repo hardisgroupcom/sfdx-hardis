@@ -125,15 +125,21 @@ export function packageDirectoriesAtRef(ref: string): string[] {
 export function changedFilesByFirstParentCommit(logArgs: string[]): Map<string, string[]> {
   const files = new Map<string, string[]>();
   // -m with --first-parent: a merge is diffed against its first parent only
-  const result = runGit(['log', '--first-parent', '-m', '--name-only', '--pretty=format:%x1e%H', ...logArgs]);
+  // --no-show-signature: a log.showSignature config prints gpg lines that would read as file names
+  const result = runGit(['log', '--no-show-signature', '--first-parent', '-m', '--name-only', '--pretty=format:%x1e%H %P', ...logArgs]);
   if (result.status !== 0) {
     return files;
   }
   let current: string[] | null = null;
   for (const line of (result.stdout || '').split(/\r?\n/)) {
     if (line.startsWith('\u001e')) {
+      const [hash, ...parents] = line.substring(1).trim().split(/\s+/);
       current = [];
-      files.set(line.substring(1).trim(), current);
+      files.set(hash, current);
+      // A root commit has no first parent: `git diff <root>^1 <root>` gives nothing, so does this
+      if (parents.length === 0) {
+        current = null;
+      }
       continue;
     }
     const file = line.trim();
@@ -474,9 +480,13 @@ export function collectItemFiles(items: string[], changedFiles: string[], parent
   const filesByItem = new Map<string, Set<string>>();
   // A file outside the package directories is never deployable metadata: the docs or the agent
   // skills of a merge are not worth a resolver pass
-  const roots = packageDirectories.map((directory) => normalizeRepoPath(directory).replace(/\/+$/, '')).filter((directory) => directory !== '');
-  if (roots.length > 0) {
-    changedFiles = changedFiles.filter((file) => roots.some((root) => normalizeRepoPath(file).startsWith(`${root}/`)));
+  const roots = packageDirectories.map((directory) => normalizeRepoPath(directory).replace(/^\.\/?/, '').replace(/\/+$/, '').toLowerCase());
+  // A package directory "." (or one that is empty) holds the whole repository: no filter then
+  if (roots.length > 0 && !roots.includes('')) {
+    changedFiles = changedFiles.filter((file) => {
+      const lower = normalizeRepoPath(file).toLowerCase();
+      return roots.some((root) => lower.startsWith(`${root}/`));
+    });
   }
   for (const key of items) {
     filesByItem.set(key, new Set());
@@ -495,7 +505,8 @@ export function collectItemFiles(items: string[], changedFiles: string[], parent
   // that are not even metadata (a merge of the docs, of the agent skills): only the files that
   // carry the name of a wanted item, or of its parent, are resolved first. An item still without
   // a file after that is looked for in every other file, so an unusual layout loses nothing.
-  const likely = new Set(changedFiles.filter((file) => fileMayBelongToItems(file, items)));
+  const itemNames = itemNameSegments(items);
+  const likely = new Set(changedFiles.filter((file) => fileMayBelongToItems(file, itemNames)));
   attribute(resolveFilesToMetadataKeys([...likely]));
   if ([...filesByItem.values()].some((files) => files.size === 0)) {
     attribute(resolveFilesToMetadataKeys(changedFiles.filter((file) => !likely.has(file))));
@@ -518,12 +529,8 @@ export function collectItemFiles(items: string[], changedFiles: string[], parent
   return new Map([...filesByItem].map(([key, files]) => [key, [...files].sort()]));
 }
 
-/**
- * True when a path segment of the file (folder, or file name up to its first dot) is one of the
- * names of the items, of their parents (CustomField Account.Name: Account and Name) or of their
- * folders (EmailTemplate folder/Name), or the file is the single file of all the custom labels.
- */
-function fileMayBelongToItems(file: string, items: string[]): boolean {
+/** The name segments of the items (Account.Name gives Account and Name), built once per call */
+function itemNameSegments(items: string[]): Set<string> {
   const names = new Set<string>();
   for (const key of items) {
     for (const part of key.substring(key.indexOf(':') + 1).split(/[./]/)) {
@@ -532,6 +539,15 @@ function fileMayBelongToItems(file: string, items: string[]): boolean {
       }
     }
   }
+  return names;
+}
+
+/**
+ * True when a path segment of the file (folder, or file name up to its first dot) is one of the
+ * names of the items, of their parents (CustomField Account.Name: Account and Name) or of their
+ * folders (EmailTemplate folder/Name), or the file is the single file of all the custom labels.
+ */
+function fileMayBelongToItems(file: string, names: Set<string>): boolean {
   return normalizeRepoPath(file)
     .split('/')
     .some((segment) => names.has(segment) || names.has(segment.split('.')[0]) || segment.startsWith('CustomLabels.'));

@@ -280,3 +280,49 @@ pipeline_check() {
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
+
+# Backpromote (Beta) hooks of scripts/e2e-lib-backpromote.sh (runbook section 6bis): the variables the
+# CLI reads outside CI (no CI, no BITBUCKET_PR_ID), and a Pull Request into integration opened then
+# merged. Bitbucket knows a pushed commit a moment later: bp_merge waits until the Pull Request head is
+# the last commit of its source branch, so the merge carries the deployment actions file.
+bp_provider_env() {
+  env -u NODE_OPTIONS -u CI -u BITBUCKET_PR_ID \
+    CI_SFDX_HARDIS_BITBUCKET_TOKEN="$BB_TOKEN" \
+    CI_SFDX_HARDIS_BITBUCKET_EMAIL="$BB_EMAIL" \
+    BITBUCKET_WORKSPACE="$BB_WORKSPACE" \
+    BITBUCKET_REPO_SLUG="$BB_REPO" \
+    "$@"
+}
+
+# Usage: bp_open <branch> <title> [body]  (prints the Pull Request id)
+bp_open() {
+  local body="$LOGS/bp-pr-body.md" id attempt
+  printf '%s\n' "${3:-backpromote end to end test}" >"$body"
+  for attempt in $(seq 1 10); do
+    id=$(bb_pr_create "$1" integration "$2" "$(cygpath -m "$body" 2>/dev/null || echo "$body")" 2>"$LOGS/bp-pr-create.err")
+    if [[ "$id" =~ ^[0-9]+$ ]]; then
+      echo "$id"
+      return 0
+    fi
+    sleep 3
+  done
+  echo "Pull Request creation failed for $1: $(tail -3 "$LOGS/bp-pr-create.err")" >&2
+  return 1
+}
+
+# Usage: bp_merge <id>
+bp_merge() {
+  local id="$1" branch head short
+  branch=$(bb_pr_field "$id" "d['source']['branch']['name']")
+  head=$(git -C "$WORK" rev-parse "origin/$branch" 2>/dev/null || git -C "$WORK" rev-parse "$branch")
+  short="${head:0:12}"
+  for _ in $(seq 1 30); do
+    [[ "$head" == "$(bb_pr_field "$id" "d['source']['commit']['hash']")"* ]] && break
+    [[ "$(bb_pr_field "$id" "d['source']['commit']['hash']")" == "$short"* ]] && break
+    sleep 2
+  done
+  bb_pr_merge "$id" >/dev/null
+}
+
+# Backpromote (Beta) helpers, provider agnostic
+source "$E2E_SCRIPTS_DIR/e2e-lib-backpromote.sh"

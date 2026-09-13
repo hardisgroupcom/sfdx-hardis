@@ -781,24 +781,22 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     for (let index = 0; index < phased.length; index++) {
       const { phase, action } = phased[index];
       const row = rows[index] || null;
-      {
-        if (row) {
-          ctx.actionRows.set(action.id, row);
-        }
-        ctx.actions.push({
-          id: action.id,
-          label: action.label,
-          type: action.type || 'command',
-          phase,
-          context: action.context || 'all',
-          pullRequest: action.prId,
-          alreadyRunOn: row && row.status === 'success' ? row.date : null,
-          manual: action.type === 'manual',
-          customUsername: action.customUsername || null,
-          runnable: true,
-          runOnlyOnceByOrg: action.runOnlyOnceByOrg !== false,
-        });
+      if (row) {
+        ctx.actionRows.set(action.id, row);
       }
+      ctx.actions.push({
+        id: action.id,
+        label: action.label,
+        type: action.type || 'command',
+        phase,
+        context: action.context || 'all',
+        pullRequest: action.prId,
+        alreadyRunOn: row && row.status === 'success' ? row.date : null,
+        manual: action.type === 'manual',
+        customUsername: action.customUsername || null,
+        runnable: true,
+        runOnlyOnceByOrg: action.runOnlyOnceByOrg !== false,
+      });
     }
   }
 

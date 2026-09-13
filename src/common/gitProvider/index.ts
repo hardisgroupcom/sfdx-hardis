@@ -50,6 +50,17 @@ const PROVIDER_ENV_VARS = [
   "BITBUCKET_WORKSPACE",
   "BITBUCKET_REPO_SLUG",
   "CI_SFDX_HARDIS_BITBUCKET_TOKEN",
+  "CI_SFDX_HARDIS_BITBUCKET_EMAIL",
+  "PAT",
+  "GITLAB_API_REJECT_UNAUTHORIZED",
+  "GITHUB_EVENT_PATH",
+  "GITHUB_REF",
+  "GITHUB_REF_NAME",
+  "GITHUB_SERVER_URL",
+  "GITHUB_GRAPHQL_URL",
+  "GITHUB_REPOSITORY_OWNER",
+  "CHANGE_ID",
+  "AZURE_ATTACHMENTS_WORK_ITEM_TITLE",
 ];
 
 export abstract class GitProvider {
@@ -74,11 +85,17 @@ export abstract class GitProvider {
     if (cached && cached.key === GitProvider.instanceKey() && (cached.instance != null || !prompt)) {
       return cached.instance;
     }
+    GitProvider.lastBuildFailed = false;
     const instance = await GitProvider.buildInstance(prompt);
-    // The key is read after the build: the auto-detection completes the environment
-    GitProvider.cachedInstance = { key: GitProvider.instanceKey(), instance };
+    // The key is read after the build: the auto-detection completes the environment. A null caused
+    // by an error (a network blip during the auto-detection) is not kept: the next call tries again
+    if (instance != null || !GitProvider.lastBuildFailed) {
+      GitProvider.cachedInstance = { key: GitProvider.instanceKey(), instance };
+    }
     return instance;
   }
+
+  private static lastBuildFailed = false;
 
   private static async buildInstance(prompt: boolean): Promise<GitProviderRoot | null> {
     try {
@@ -168,6 +185,7 @@ export abstract class GitProvider {
         );
       }
     } catch (e) {
+      GitProvider.lastBuildFailed = true;
       uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderErrorGettingInstance', { message: (e as Error).message })));
     }
     return null;

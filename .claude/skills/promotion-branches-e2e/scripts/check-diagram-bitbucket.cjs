@@ -126,10 +126,6 @@ const known = new Map(all.map((pr) => [pr.number, pr]));
       ? "OK: every Pull Request number appears in a single branch"
       : "DUPLICATES: " + duplicates.map(([n, b]) => `#${n} in ${b.join(" and ")}`).join("; "),
   );
-  const withToggle = BRANCHES.map(
-    (b) => `${b}=${M.userStoryPullRequests(M.visiblePullRequests(windows.get(b), true), BRANCHES, CONFIG).length}`,
-  ).join(" ");
-  console.log("With 'show already promoted' on: " + withToggle);
   const withPromotions = BRANCHES.map(
     (b) => `${b}=${M.userStoryPullRequests(M.visiblePullRequests(windows.get(b)), BRANCHES, CONFIG, true).length}`,
   ).join(" ");

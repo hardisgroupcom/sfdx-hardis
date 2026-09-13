@@ -149,7 +149,8 @@ function readDiagram(mermaid) {
   const counters = {};
   // A node line is `name("label"):::class`, `name(["label"])` or `name@{ shape: ..., label: "..." }`
   const nodeNameRe = /^\s*([A-Za-z0-9_-]+)\s*(?:\(\[|\(|\[|@\{)/;
-  const countRe = /data-count='(\d+)' data-count-all='(\d+)'/;
+  // The marker only exists when the branch holds at least one User Story: no marker means zero
+  const countRe = /data-count='(\d+)'/;
   const edgeRe = /^\s*([A-Za-z0-9_-]+)\s*[=.-]+>\|"(.*)"\|\s*([A-Za-z0-9_-]+)\s*$/;
   const nodes = [];
   const edges = [];
@@ -159,7 +160,7 @@ function readDiagram(mermaid) {
       nodes.push(node[1]);
       const counted = line.match(countRe);
       if (counted) {
-        counters[node[1]] = { count: Number(counted[1]), countAll: Number(counted[2]) };
+        counters[node[1]] = { count: Number(counted[1]) };
       }
     }
     const edge = line.match(edgeRe);

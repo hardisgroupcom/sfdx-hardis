@@ -522,7 +522,8 @@ function listActionFilesAtRef(ref: string | null): Set<string> | null {
   if (!ref) {
     return null;
   }
-  const result = spawnSync('git', ['ls-tree', '-r', '--name-only', ref, '--', 'scripts/actions'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  // --full-tree: from a sub-folder, ls-tree reads the path relative to it and lists nothing
+  const result = spawnSync('git', ['ls-tree', '-r', '--full-tree', '--name-only', ref, '--', 'scripts/actions'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   if (result.status !== 0) {
     return null;
   }

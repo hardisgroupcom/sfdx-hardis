@@ -106,7 +106,8 @@ describe('adaptive batches of provider calls', () => {
     const { state, mapper: throttledMapper } = trackingMapper(new Map([[6, { times: 1, error: () => throttled() }]]));
     const backoffs: number[] = [];
     await mapInAdaptiveBatches(items.slice(0, 40), throttledMapper, { sizes: [80, 40, 20, 10, 5, 1], startSize: 5, ...noSleep, onBackoff: (size) => backoffs.push(size) });
-    expect(backoffs).to.deep.equal([10]);
+    // Item 6 is in the second batch (10): the ramp halves to 5, the ladder stays on 80
+    expect(backoffs).to.deep.equal([5]);
     expect(state.peak).to.be.at.most(40);
   });
 

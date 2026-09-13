@@ -147,14 +147,64 @@ export interface BackpromoteRetrieveResult {
 
 // ---- Retrieve cache ----
 
-/** The Metadata API lists these types by folder, so their items are always retrieved */
-const FOLDER_BASED_TYPES = new Set(['Report', 'Dashboard', 'Document', 'EmailTemplate']);
+/**
+ * The types the cache may serve. A type stays out when a validator cannot prove its content did not
+ * change: a container whose changes are tracked under its child types (CustomLabels holds
+ * CustomLabel rows, Workflow holds WorkflowRule rows...), a type whose retrieved content depends on
+ * the rest of the manifest (Profile, PermissionSet, translations only hold the entries of the
+ * components retrieved with them), a folder based type the Metadata API lists by folder, a standard
+ * item the listing leaves out (standard fields, StandardValueSet). Everything else is retrieved,
+ * every time: a cache miss costs seconds, a wrong cache hit overwrites a sandbox change.
+ */
+const CACHEABLE_TYPES = new Set([
+  'ApexClass',
+  'ApexComponent',
+  'ApexPage',
+  'ApexTrigger',
+  'AuraDefinitionBundle',
+  'CompactLayout',
+  'ContentAsset',
+  'CustomApplication',
+  'CustomMetadata',
+  'CustomPermission',
+  'CustomTab',
+  'FlexiPage',
+  'Flow',
+  'GlobalValueSet',
+  'Layout',
+  'LightningComponentBundle',
+  'LightningMessageChannel',
+  'ListView',
+  'NamedCredential',
+  'QuickAction',
+  'RecordType',
+  'RemoteSiteSetting',
+  'StaticResource',
+  'ValidationRule',
+  'WebLink',
+]);
+
+/**
+ * A custom field is cacheable, a standard one is not: the Metadata API listing leaves standard
+ * fields out, and their SourceMember rows are not reliable either
+ */
+function isCacheableKey(key: string): boolean {
+  const parsed = parseMetadataKey(key);
+  if (!parsed) {
+    return false;
+  }
+  if (parsed.type === 'CustomField') {
+    return /__c$/i.test(parsed.name) && !parsed.name.includes('__mdt.');
+  }
+  return CACHEABLE_TYPES.has(parsed.type);
+}
 
 /** Validation calls run at a time: the org is not a git provider, no adaptive ladder here */
 const VALIDATION_BATCH_SIZE = 5;
 
-/** Names per SourceMember query, to keep the SOQL under the size the API accepts */
+/** Names per SourceMember query, and encoded characters of names: the query goes out as a GET URL */
 const SOURCE_MEMBER_CHUNK_SIZE = 200;
+const SOURCE_MEMBER_CHUNK_URL_LENGTH = 6000;
 
 /** The item as tracking saw it when it was never modified since the tracking began */
 const NO_SOURCE_MEMBER = 'none';
@@ -234,6 +284,27 @@ function connectionRetrieveRunners(conn: Connection | undefined): BackpromoteRet
   };
 }
 
+/** Chunks of at most SOURCE_MEMBER_CHUNK_SIZE names and SOURCE_MEMBER_CHUNK_URL_LENGTH encoded characters */
+function chunkNames(names: string[]): string[][] {
+  const chunks: string[][] = [];
+  let current: string[] = [];
+  let length = 0;
+  for (const name of names) {
+    const encoded = encodeURIComponent(soqlString(name)).length + 3;
+    if (current.length > 0 && (current.length >= SOURCE_MEMBER_CHUNK_SIZE || length + encoded > SOURCE_MEMBER_CHUNK_URL_LENGTH)) {
+      chunks.push(current);
+      current = [];
+      length = 0;
+    }
+    current.push(name);
+    length += encoded;
+  }
+  if (current.length > 0) {
+    chunks.push(current);
+  }
+  return chunks;
+}
+
 async function inBatches<T>(tasks: (() => Promise<T>)[], size: number): Promise<T[]> {
   const results: T[] = [];
   for (let start = 0; start < tasks.length; start += size) {
@@ -243,9 +314,9 @@ async function inBatches<T>(tasks: (() => Promise<T>)[], size: number): Promise<
 }
 
 /**
- * Current validator of every wanted key. A key absent from the map cannot be validated (folder
- * type, failed call), a null value means the org does not have the item, a string is compared
- * with the cached one.
+ * Current validator of every wanted key. A key absent from the map cannot be validated (a type the
+ * cache does not serve, a failed call, a name the listing does not return) and is retrieved; a
+ * string is compared with the cached one.
  */
 async function readCurrentValidators(options: {
   wanted: string[];
@@ -255,7 +326,7 @@ async function readCurrentValidators(options: {
   const namesByType = new Map<string, string[]>();
   for (const key of options.wanted) {
     const parsed = parseMetadataKey(key);
-    if (parsed) {
+    if (parsed && isCacheableKey(key)) {
       namesByType.set(parsed.type, [...(namesByType.get(parsed.type) || []), parsed.name]);
     }
   }
@@ -267,8 +338,7 @@ async function readCurrentValidators(options: {
     const rowsByType = new Map<string, Map<string, string>>();
     for (const [type, names] of namesByType) {
       rowsByType.set(type, new Map());
-      for (let start = 0; start < names.length; start += SOURCE_MEMBER_CHUNK_SIZE) {
-        const chunk = names.slice(start, start + SOURCE_MEMBER_CHUNK_SIZE);
+      for (const chunk of chunkNames(names)) {
         tasks.push(async () => {
           try {
             for (const row of await options.runners.readSourceMembers(type, chunk)) {
@@ -295,9 +365,6 @@ async function readCurrentValidators(options: {
   const types = [...namesByType.keys()];
   const listings = await inBatches(
     types.map((type) => async () => {
-      if (FOLDER_BASED_TYPES.has(type)) {
-        return null;
-      }
       try {
         return await options.runners.listMetadataDates(type);
       } catch {
@@ -312,7 +379,11 @@ async function readCurrentValidators(options: {
       return;
     }
     for (const name of namesByType.get(type) || []) {
-      validators.set(toMetadataKey(type, name), Object.prototype.hasOwnProperty.call(dates, name) ? dates[name] : null);
+      // A name the listing does not return proves nothing (the listing is not complete for every
+      // type): the item is left out of the validators, so it is retrieved
+      if (Object.prototype.hasOwnProperty.call(dates, name)) {
+        validators.set(toMetadataKey(type, name), dates[name]);
+      }
     }
   });
   return validators;
@@ -347,7 +418,7 @@ interface BackpromoteRetrieveCacheLookup {
   validators: Map<string, string | null>;
   /** Wanted keys served from the cache (files, or a recorded absence) */
   fresh: string[];
-  /** Wanted keys the listing does not know (Metadata API only) */
+  /** Wanted keys cached as absent from the org under the tracking value they still have */
   missing: string[];
   /** Wanted keys that need the retrieve */
   stale: string[];
@@ -375,11 +446,12 @@ async function lookupRetrieveCache(options: {
       continue;
     }
     const current = validators.get(key);
-    if (current === null) {
+    const cached = index.items[key];
+    if (cached?.missing === true && cached.validator === current && current !== null) {
+      // Absent from the org at the last retrieve, and its tracking row did not change since
       lookup.missing.push(key);
       continue;
     }
-    const cached = index.items[key];
     const filesStillThere = cached?.files?.every((file) => fs.existsSync(path.join(options.cacheDir, 'force-app', file))) === true;
     if (cached && cached.validator === current && filesStillThere) {
       lookup.fresh.push(key);
@@ -426,7 +498,8 @@ async function updateRetrieveCacheAfterRetrieve(lookup: BackpromoteRetrieveCache
   for (const [key, validator] of lookup.validators) {
     const files = filesByKey.get(key) || [];
     if (files.length === 0) {
-      if (validator === null || lookup.tracksSource) {
+      // Only source tracking can vouch for an absence: a new row appears when the item is created
+      if (lookup.tracksSource && validator !== null) {
         lookup.index.items[key] = { validator, missing: true, files: [], cachedAt };
       } else {
         delete lookup.index.items[key];
@@ -434,7 +507,6 @@ async function updateRetrieveCacheAfterRetrieve(lookup: BackpromoteRetrieveCache
       continue;
     }
     if (validator === null) {
-      // Retrieved but unknown to the listing: nothing to validate it with next time
       delete lookup.index.items[key];
       continue;
     }
@@ -513,7 +585,9 @@ export async function retrieveItemsForComparison(options: {
     await fs.remove(doneMarker);
     await fs.ensureDir(runDir);
     let lookup: BackpromoteRetrieveCacheLookup | null = null;
-    if (!options.force && canValidate) {
+    // SFDX_HARDIS_BACKPROMOTE_RETRIEVE_CACHE=false retrieves every time, as force does
+    const cacheDisabled = String(getEnvVar('SFDX_HARDIS_BACKPROMOTE_RETRIEVE_CACHE') || '').toLowerCase() === 'false';
+    if (!options.force && !cacheDisabled && canValidate) {
       try {
         const cacheDir = path.join(cacheRoot, 'retrieve-cache', options.orgId || 'org');
         lookup = await lookupRetrieveCache({ cacheDir, wanted, tracksSource, runners });
