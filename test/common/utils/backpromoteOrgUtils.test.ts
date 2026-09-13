@@ -5,7 +5,7 @@ import * as path from 'path';
 // Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
 import '../../../src/common/gitProvider/index.js';
 import fs from '../../../src/common/utils/fsUtils.js';
-import { BackpromoteRetrieveRunners, BackpromoteSourceMemberRow, retrieveItemsForComparison } from '../../../src/common/utils/backpromoteOrgUtils.js';
+import { BackpromoteRetrieveRunners, BackpromoteSourceMemberRow, createRetrieveProject, retrieveItemsForComparison } from '../../../src/common/utils/backpromoteOrgUtils.js';
 
 // The org is faked: SourceMember rows and Metadata API dates by "Type:Name" answer the validation,
 // and the retrieve writes the files of the keys the org has into the blank project, like sf does
@@ -366,5 +366,26 @@ describe('retrieveItemsForComparison() cross-run cache', () => {
     expect(calls.retrieved).to.have.length(1);
     expect(again.filesByTail.has('classes/InvoiceCalculator.cls')).to.be.true;
     expect(again.filesByTail.has('objects/Account/fields/Region__c.field-meta.xml')).to.be.true;
+  });
+});
+
+describe('createRetrieveProject()', () => {
+  it('writes the sfdx project the retrieve reads, without a Salesforce CLI call', async () => {
+    const runDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bp-retrieve-project-'));
+    try {
+      const project = await createRetrieveProject(runDir, '66.0');
+      expect(project).to.equal(path.join(runDir, 'sfdx-hardis-blank-project'));
+      const sfdxProject = JSON.parse(await fs.readFile(path.join(project, 'sfdx-project.json'), 'utf8'));
+      expect(sfdxProject.packageDirectories).to.deep.equal([{ path: 'force-app', default: true }]);
+      expect(sfdxProject.sourceApiVersion).to.equal('66.0');
+      expect(fs.existsSync(path.join(project, 'force-app'))).to.be.true;
+      const forceIgnore = await fs.readFile(path.join(project, '.forceignore'), 'utf8');
+      // The same exclusions as the standard template: LWC Jest tests and configuration files stay out
+      expect(forceIgnore).to.include('**/__tests__/**');
+      expect(forceIgnore).to.include('**/jsconfig.json');
+      expect(forceIgnore.split(/\r?\n/)).to.include('package.xml');
+    } finally {
+      await fs.remove(runDir);
+    }
   });
 });

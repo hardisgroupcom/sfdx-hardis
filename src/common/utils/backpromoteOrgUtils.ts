@@ -29,7 +29,6 @@ import {
   toMetadataKey,
 } from './backpromoteRules.js';
 import { fileAtRef } from './backpromoteGitUtils.js';
-import { createBlankSfdxProject } from './projectUtils.js';
 import { BackpromotePlanComparison, backpromoteCacheRoot } from './backpromotePlanUtils.js';
 
 // ---- Target org ----
@@ -247,6 +246,45 @@ export interface BackpromoteRetrieveRunners {
   createBlankProject: (runDir: string) => Promise<string>;
 }
 
+/** The .forceignore of the standard `sf project generate` template */
+const RETRIEVE_PROJECT_FORCEIGNORE = `# List files or directories below to ignore them when running force:source:push, force:source:pull, and force:source:status
+# More information: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_exclude_source.htm
+#
+
+package.xml
+
+# LWC configuration files
+**/jsconfig.json
+**/.eslintrc.json
+
+# LWC Jest
+**/__tests__/**
+
+node_modules/
+`;
+
+/**
+ * Creates <runDir>/sfdx-hardis-blank-project with the two files `sf project retrieve start` reads:
+ * the sfdx-project.json and the .forceignore of the standard template. Written directly rather than
+ * with `sf project generate`, which starts a Salesforce CLI process of its own (10 seconds or more on
+ * Windows) on every retrieve that the cache cannot serve. The source API version is the one of the
+ * retrieve manifest.
+ */
+export async function createRetrieveProject(runDir: string, apiVersion: string = getApiVersion()): Promise<string> {
+  const projectDir = path.join(runDir, 'sfdx-hardis-blank-project');
+  await fs.ensureDir(path.join(projectDir, 'force-app'));
+  const project = {
+    packageDirectories: [{ path: 'force-app', default: true }],
+    name: 'sfdx-hardis-blank-project',
+    namespace: '',
+    sfdcLoginUrl: 'https://login.salesforce.com',
+    sourceApiVersion: apiVersion,
+  };
+  await fs.writeFile(path.join(projectDir, 'sfdx-project.json'), JSON.stringify(project, null, 2) + '\n', 'utf8');
+  await fs.writeFile(path.join(projectDir, '.forceignore'), RETRIEVE_PROJECT_FORCEIGNORE, 'utf8');
+  return projectDir;
+}
+
 function soqlString(value: string): string {
   return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
@@ -280,7 +318,7 @@ function connectionRetrieveRunners(conn: Connection | undefined): BackpromoteRet
       return dates;
     },
     retrieve: (command, cwd, commandThis) => execSfdxJson(command, commandThis, { fail: false, output: false, cwd }),
-    createBlankProject: (runDir) => createBlankSfdxProject(runDir),
+    createBlankProject: (runDir) => createRetrieveProject(runDir),
   };
 }
 
