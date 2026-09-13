@@ -23,9 +23,8 @@ A **backpromote** deploys into your sandbox what the team merged since your last
 
 ## Before you start
 
-- Install the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis).
-- Authenticate your developer sandbox (or scratch org) in the Orgs Manager.
-- Have a **git provider token** on your computer, for example in a `.env` file at the root of the repository: `GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`, `SYSTEM_ACCESSTOKEN` (Azure DevOps) or `CI_SFDX_HARDIS_BITBUCKET_TOKEN`. The panel tells you when it is missing.
+- Authenticate your developer sandbox (or scratch org) in the **Orgs Manager**.
+- Connect to your git provider (GitHub, GitLab, Azure DevOps or Bitbucket) from the **DevOps Pipeline** panel. A backpromote needs it to read and write its history on the Pull Requests. VS Code keeps the connection, and each time the Backpromote panel runs sfdx-hardis, it passes the token as environment variables of the command. The panel tells you when no connection is found.
 
 ## Backpromote in 5 steps
 
@@ -140,6 +139,8 @@ sf hardis:work:backpromote --target-org dev1
 ```
 
 The command asks the same questions as the panel. `--plan --json` returns the plan without deploying anything, `--auto` takes every decision from the flags, and `--agent` lets a coding agent drive the whole backpromote. See the [command page](hardis/work/backpromote.md) for all the flags.
+
+Outside the panel, the git provider token must be in the environment of the command: `GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`, `SYSTEM_ACCESSTOKEN` (Azure DevOps) or `CI_SFDX_HARDIS_BITBUCKET_TOKEN`.
 
 ## What a backpromote never does
 
