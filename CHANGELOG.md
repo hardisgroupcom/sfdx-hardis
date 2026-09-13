@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.8.0] 2026-09-13
+
 - [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) (Beta), reworked: bring into your developer sandbox what your teammates merged, from the new VS Code panel or with a coding agent, with its history kept on the Pull Requests. It replaces `hardis:work:refresh`.
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): updating an existing sandbox no longer deploys the target branch metadata, use [backpromote](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) for that.
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): on GitLab, stories can be selected by their merge request number even when GitLab cannot be reached, and an undone promotion no longer ends with a misleading error.
