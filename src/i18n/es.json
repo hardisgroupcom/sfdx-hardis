@@ -204,6 +204,7 @@
   "backpromoteDeleteSuccess": "{{count}} elemento(s) de metadatos eliminado(s) del sandbox",
   "backpromoteDeleting": "Eliminando {{count}} elemento(s) de metadatos del sandbox...",
   "backpromoteDeltaSummary": "Resumen del delta: {{addedModified}} elementos a desplegar, {{deleted}} elementos a eliminar",
+  "backpromoteDeployErrorsPromptWritten": "Un prompt para resolver los errores de despliegue con un agente de código (Claude Code, Codex, GitHub Copilot...) está en {{file}}",
   "backpromoteDeployFailed": "El despliegue ha fallado. Comprueba los mensajes de error anteriores.",
   "backpromoteDeployFailedItems": "El despliegue ha fallado en {{count}} componente(s): {{items}}. Corríjalos en {{parentBranch}} con una Pull Request para que se desplieguen, o desmárquelos para dejarlos fuera de este backpromote.",
   "backpromoteDeployFailedSeeReport": "El despliegue ha fallado: abra el informe de despliegue para ver el motivo.",

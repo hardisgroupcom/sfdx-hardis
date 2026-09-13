@@ -2,6 +2,7 @@
 import { expect } from 'chai';
 import {
   buildBackpromoteBranchName,
+  buildBackpromoteDeployErrorsPrompt,
   buildBackpromoteMergePrompt,
   buildBackpromoteRunCommand,
   buildTwoWayMergeWithMarkers,
@@ -262,6 +263,43 @@ describe('backpromote command and prompt', () => {
     expect(buildBackpromoteRunCommand({ mode: 'agent', parentBranch: 'integration', skipActions: true, skipDestructive: true, diffDefault: 'git', confirmActions: ['step-1'] })).to.equal(
       'sf hardis:work:backpromote --agent --parent-branch integration --skip-destructive --skip-actions --confirm-action step-1'
     );
+  });
+
+  it('gives the coding agent every refused component with its hint, where to fix it and how to run again', () => {
+    const prompt = buildBackpromoteDeployErrorsPrompt({
+      parentBranch: 'integration',
+      backpromoteBranch: 'backpromote/integration/dev1',
+      sandboxName: 'dev1',
+      targetOrg: 'dev1',
+      errors: [
+        {
+          key: 'Layout:Case-Case Layout',
+          type: 'Layout',
+          name: 'Case-Case Layout',
+          file: 'force-app/main/default/layouts/Case-Case Layout.layout-meta.xml',
+          absolutePath: 'C:/git/crm/force-app/main/default/layouts/Case-Case Layout.layout-meta.xml',
+          line: null,
+          problem: 'Invalid field:SOLUTION.ISSUE in related list:RelatedSolutionList',
+          tip: { label: 'Invalid field in related list', message: 'Field **SOLUTION.ISSUE** is unknown. You can:\n- Activate the related feature', docUrl: 'https://sfdx-hardis.cloudity.com/sf-deployment-assistant/Invalid-field-in-related-list/' },
+          aiTip: null,
+          pullRequests: [415],
+        },
+        { key: '', type: '', name: '', file: null, absolutePath: null, line: null, problem: 'Average test coverage 60%', tip: null, aiTip: 'Add tests for InvoiceCalculator.' , pullRequests: [] },
+      ],
+      deployReport: 'C:/git/crm/hardis-report/backpromote-deploy.log',
+      rerunCommand: 'sf hardis:work:backpromote --auto --run-id 7f3a --json',
+      excludeCommand: 'sf hardis:work:backpromote --auto --run-id 7f3a --exclude-metadata "Layout:Case-Case Layout" --json',
+    });
+    expect(prompt).to.contain('### Layout Case-Case Layout');
+    expect(prompt).to.contain('Invalid field:SOLUTION.ISSUE in related list:RelatedSolutionList');
+    expect(prompt).to.contain('sfdx-hardis deployment hint "Invalid field in related list"');
+    expect(prompt).to.contain('  > - Activate the related feature');
+    expect(prompt).to.contain('Merged in `integration` by the Pull Request(s): #415');
+    expect(prompt).to.contain('### Average test coverage 60%');
+    expect(prompt).to.contain('  > Add tests for InvoiceCalculator.');
+    expect(prompt).to.contain('Do not commit the fix on `backpromote/integration/dev1`');
+    expect(prompt).to.contain('sf hardis:work:backpromote --auto --run-id 7f3a --json');
+    expect(prompt).to.contain('--exclude-metadata "Layout:Case-Case Layout"');
   });
 
   it('gives the coding agent every prepared file, its versions, the Pull Requests and the next command', () => {

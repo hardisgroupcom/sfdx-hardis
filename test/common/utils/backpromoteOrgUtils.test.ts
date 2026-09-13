@@ -5,7 +5,7 @@ import * as path from 'path';
 // Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
 import '../../../src/common/gitProvider/index.js';
 import fs from '../../../src/common/utils/fsUtils.js';
-import { BackpromoteRetrieveRunners, BackpromoteSourceMemberRow, createRetrieveProject, parseDeployComponentFailures, retrieveItemsForComparison } from '../../../src/common/utils/backpromoteOrgUtils.js';
+import { BackpromoteRetrieveRunners, BackpromoteSourceMemberRow, attachDeployTips, createRetrieveProject, parseDeployComponentFailures, retrieveItemsForComparison } from '../../../src/common/utils/backpromoteOrgUtils.js';
 
 // The org is faked: SourceMember rows and Metadata API dates by "Type:Name" answer the validation,
 // and the retrieve writes the files of the keys the org has into the blank project, like sf does
@@ -404,11 +404,44 @@ describe('backpromote deployment errors', () => {
       },
     });
     expect(parseDeployComponentFailures(output)).to.deep.equal([
-      { key: 'ApexClass:InvoiceCalculator', type: 'ApexClass', name: 'InvoiceCalculator', file: 'force-app/main/default/classes/InvoiceCalculator.cls', line: 12, problem: 'Variable does not exist: scale' },
+      { key: 'ApexClass:InvoiceCalculator', type: 'ApexClass', name: 'InvoiceCalculator', file: 'force-app/main/default/classes/InvoiceCalculator.cls', line: 12, problem: 'Variable does not exist: scale', tip: null, aiTip: null },
     ]);
     // A single failure comes as an object, not an array
     const single = JSON.stringify({ result: { details: { componentFailures: { componentType: 'Flow', fullName: 'Quote_Approval', problem: 'Invalid reference', problemType: 'Error', success: 'false' } } } });
     expect(parseDeployComponentFailures(single).map((error) => error.key)).to.deep.equal(['Flow:Quote_Approval']);
     expect(parseDeployComponentFailures('not json')).to.deep.equal([]);
+  });
+});
+
+describe('backpromote deployment tips', () => {
+  const refused = [{ key: 'CustomField:Account.Rating__c', type: 'CustomField', name: 'Account.Rating__c', file: null, line: null, problem: 'Picklist value not found', tip: null, aiTip: null }];
+
+  it('attaches the tip analyzeDeployErrorLogs found for each refused component', () => {
+    const errorsAndTips = [
+      {
+        error: { componentType: 'CustomField', fullName: 'Account.Rating__c', problem: 'Picklist value not found', message: 'Error Account.Rating__c Picklist value not found' },
+        tip: { label: 'Picklist value not found', message: '\u001b[33mAdd the value\u001b[39m in the Record Type', docUrl: 'https://sfdx-hardis.cloudity.com/sf-deployment-assistant/Picklist-value-not-found/' },
+        tipFromAi: { promptResponse: 'Add the value Hot to the Rating picklist.' },
+      },
+    ];
+    expect(attachDeployTips(refused, errorsAndTips)).to.deep.equal([
+      {
+        ...refused[0],
+        tip: { label: 'Picklist value not found', message: 'Add the value in the Record Type', docUrl: 'https://sfdx-hardis.cloudity.com/sf-deployment-assistant/Picklist-value-not-found/' },
+        aiTip: 'Add the value Hot to the Rating picklist.',
+      },
+    ]);
+  });
+
+  it('keeps the errors that name no component, and drops the parsing fallback when components were read', () => {
+    const errorsAndTips = [
+      { error: { message: 'Average test coverage 60%' }, tip: { label: 'CodeCoverageWarning', message: 'Fix the coverage', docUrl: null } },
+      { error: { message: 'There has been an issue parsing errors' }, tip: { label: 'SfdxHardisInternalError', message: 'Declare issue' } },
+    ];
+    const result = attachDeployTips(refused, errorsAndTips);
+    expect(result.map((error) => error.key || error.problem)).to.deep.equal(['CustomField:Account.Rating__c', 'Average test coverage 60%']);
+    expect(result[1].tip?.label).to.equal('CodeCoverageWarning');
+    // Nothing read from the output: the fallback is the only information left, it is kept
+    expect(attachDeployTips([], errorsAndTips.slice(1)).map((error) => error.tip?.label)).to.deep.equal(['SfdxHardisInternalError']);
   });
 });

@@ -204,6 +204,7 @@
   "backpromoteDeleteSuccess": "Usunięto {{count}} element(y) metadanych z sandbox",
   "backpromoteDeleting": "Usuwanie {{count}} element(ów) metadanych z sandbox...",
   "backpromoteDeltaSummary": "Podsumowanie delty: {{addedModified}} elementow do wdrozenia, {{deleted}} elementow do usuniecia",
+  "backpromoteDeployErrorsPromptWritten": "Prompt do rozwiązania błędów wdrożenia za pomocą agenta kodującego (Claude Code, Codex, GitHub Copilot...) znajduje się w {{file}}",
   "backpromoteDeployFailed": "Wdrozenie nie powiodlo sie. Sprawdz komunikaty o bledach powyzej.",
   "backpromoteDeployFailedItems": "Wdrożenie nie powiodło się dla komponentów ({{count}}): {{items}}. Należy je poprawić w {{parentBranch}} przez Pull Request, aby się wdrożyły, lub odznaczyć, aby pominąć je w tym backpromote.",
   "backpromoteDeployFailedSeeReport": "Wdrożenie nie powiodło się: przyczyna jest w raporcie wdrożenia.",

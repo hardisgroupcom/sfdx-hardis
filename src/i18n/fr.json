@@ -204,6 +204,7 @@
   "backpromoteDeleteSuccess": "{{count}} élément(s) de métadonnées supprimé(s) du sandbox",
   "backpromoteDeleting": "Suppression de {{count}} élément(s) de métadonnées du sandbox...",
   "backpromoteDeltaSummary": "Resume du delta : {{addedModified}} elements a deployer, {{deleted}} elements a supprimer",
+  "backpromoteDeployErrorsPromptWritten": "Un prompt pour résoudre les erreurs de déploiement avec un agent de code (Claude Code, Codex, GitHub Copilot...) est dans {{file}}",
   "backpromoteDeployFailed": "Le deploiement a echoue. Verifiez les messages d'erreur ci-dessus.",
   "backpromoteDeployFailedItems": "Le déploiement a échoué sur {{count}} composant(s) : {{items}}. Corrigez-les dans {{parentBranch}} avec une Pull Request pour qu'ils se déploient, ou décochez-les pour les laisser hors de ce backpromote.",
   "backpromoteDeployFailedSeeReport": "Le déploiement a échoué : ouvrez le rapport de déploiement pour voir pourquoi.",

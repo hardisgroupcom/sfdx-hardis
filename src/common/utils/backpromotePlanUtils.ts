@@ -115,7 +115,18 @@ export interface BackpromoteRunResult {
   pushRejected: boolean;
   deployReport: string | null;
   /** The components the sandbox refused when the deployment failed */
-  deployErrors: Array<{ key: string; type: string; name: string; file: string | null; line: number | null; problem: string }>;
+  deployErrors: Array<{
+    key: string;
+    type: string;
+    name: string;
+    file: string | null;
+    line: number | null;
+    problem: string;
+    tip: { label: string; message: string; docUrl: string | null } | null;
+    aiTip: string | null;
+  }>;
+  /** The coding agent prompt written for a failed deployment */
+  deployErrorsPromptFile: string | null;
   orgUrl: string | null;
 }
 
@@ -211,6 +222,13 @@ export async function writeBackpromoteRunState(state: BackpromoteRunState): Prom
 }
 
 // ---- Coding agent prompt ----
+
+export async function writeBackpromoteDeployErrorsPrompt(prompt: string, runId: string): Promise<string> {
+  const promptFile = await generateReportPath(`backpromote-deploy-errors-prompt-${runId}`, '', { withDate: false, withBranchName: false, fileExtension: 'md' });
+  await fs.ensureDir(path.dirname(promptFile));
+  await fs.writeFile(promptFile, prompt, 'utf8');
+  return promptFile;
+}
 
 export async function writeBackpromoteMergePrompt(prompt: string, runId: string): Promise<string> {
   const promptFile = await generateReportPath(`backpromote-merge-prompt-${runId}`, '', { withDate: false, withBranchName: false, fileExtension: 'md' });

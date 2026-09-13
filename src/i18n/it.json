@@ -204,6 +204,7 @@
   "backpromoteDeleteSuccess": "{{count}} elemento/i di metadati eliminato/i dalla sandbox",
   "backpromoteDeleting": "Eliminazione di {{count}} elemento/i di metadati dalla sandbox...",
   "backpromoteDeltaSummary": "Riepilogo delta: {{addedModified}} elementi da distribuire, {{deleted}} elementi da eliminare",
+  "backpromoteDeployErrorsPromptWritten": "Un prompt per risolvere gli errori di distribuzione con un agente di codice (Claude Code, Codex, GitHub Copilot...) è in {{file}}",
   "backpromoteDeployFailed": "La distribuzione e' fallita. Controlla i messaggi di errore sopra.",
   "backpromoteDeployFailedItems": "La distribuzione non è riuscita su {{count}} componente/i: {{items}}. Correggili in {{parentBranch}} con una Pull Request perché vengano distribuiti, oppure deselezionali per lasciarli fuori da questo backpromote.",
   "backpromoteDeployFailedSeeReport": "La distribuzione non è riuscita: apri il report di distribuzione per vedere il motivo.",

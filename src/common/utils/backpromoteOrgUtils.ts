@@ -784,13 +784,17 @@ export interface BackpromoteDeployOutcome {
 }
 
 export interface BackpromoteDeployError {
-  /** Type:Name of the component */
+  /** Type:Name of the component, empty for an error that names no component (code coverage...) */
   key: string;
   type: string;
   name: string;
   file: string | null;
   line: number | null;
   problem: string;
+  /** The sfdx-hardis deployment tip matching the error, as in the CI/CD deployment comments */
+  tip: { label: string; message: string; docUrl: string | null } | null;
+  /** The answer of the AI deployment assistant, when it is configured */
+  aiTip: string | null;
 }
 
 /**
@@ -816,21 +820,66 @@ export function parseDeployComponentFailures(output: string): BackpromoteDeployE
       file: failure.fileName ? normalizeRepoPath(String(failure.fileName)) : null,
       line: Number.isFinite(line) && line > 0 ? line : null,
       problem: String(failure.problem || '').trim(),
+      tip: null,
+      aiTip: null,
     });
   }
   return errors;
 }
 
-async function runDeploy(command: string, label: string, commandThis: any, debugMode: boolean): Promise<{ success: boolean; output: string }> {
+/**
+ * The refused components with the tips analyzeDeployErrorLogs found for them (the same tips as the
+ * deployment comments of smart deploy), plus the errors that name no component (code coverage, an
+ * unknown error). The internal "could not parse" fallback is dropped when components were read.
+ */
+export function attachDeployTips(errors: BackpromoteDeployError[], errorsAndTips: any[]): BackpromoteDeployError[] {
+  const tipOf = (entry: any) =>
+    entry?.tip
+      ? { label: String(entry.tip.label || ''), message: stripAnsiText(String(entry.tip.message || entry.tip.messageConsole || '')).trim(), docUrl: entry.tip.docUrl ? String(entry.tip.docUrl) : null }
+      : null;
+  const aiOf = (entry: any) => (entry?.tipFromAi?.promptResponse ? String(entry.tipFromAi.promptResponse).trim() : null);
+  const used = new Set<any>();
+  const withTips = errors.map((error) => {
+    const entry = (errorsAndTips || []).find(
+      (candidate) => !used.has(candidate) && candidate?.error?.fullName === error.name && (candidate?.error?.componentType || '') === error.type && String(candidate?.error?.problem || '').trim() === error.problem,
+    );
+    if (!entry) {
+      return error;
+    }
+    used.add(entry);
+    return { ...error, tip: tipOf(entry), aiTip: aiOf(entry) };
+  });
+  for (const entry of errorsAndTips || []) {
+    if (used.has(entry) || entry?.error?.fullName) {
+      continue;
+    }
+    if (errors.length > 0 && entry?.tip?.label === 'SfdxHardisInternalError') {
+      continue;
+    }
+    const problem = stripAnsiText(String(entry?.error?.message || '')).trim();
+    if (!problem) {
+      continue;
+    }
+    withTips.push({ key: '', type: '', name: '', file: null, line: null, problem, tip: tipOf(entry), aiTip: aiOf(entry) });
+  }
+  return withTips;
+}
+
+function stripAnsiText(text: string): string {
+  // eslint-disable-next-line no-control-regex
+  return text.replace(/\u001b\[[0-9;]*m/g, '');
+}
+
+async function runDeploy(command: string, label: string, commandThis: any, debugMode: boolean): Promise<{ success: boolean; output: string; errorsAndTips: any[] }> {
   try {
     const result = await execCommand(command, commandThis, { fail: true, output: true, debug: debugMode });
-    return { success: true, output: result.stdout || '' };
+    return { success: true, output: result.stdout || '', errorsAndTips: [] };
   } catch (e) {
     const output = ((e as any).stdout || '') + ((e as any).stderr || '');
-    const { errLog } = await analyzeDeployErrorLogs(output, true, { label });
+    const { errLog, errorsAndTips } = await analyzeDeployErrorLogs(output, true, { label });
     uxLog('error', commandThis, c.red(t('backpromoteDeployFailed')));
     uxLog('error', commandThis, c.red('\n' + errLog));
-    return { success: false, output };
+    return { success: false, output, errorsAndTips: errorsAndTips || [] };
   }
 }
 
@@ -885,7 +934,7 @@ export async function deployBackpromotePackage(options: {
   if (result.success) {
     uxLog('action', options.commandThis, c.green(t('backpromoteDeploySuccess', { count: options.keys.length })));
   }
-  return { success: result.success, reportPath, errors: result.success ? [] : parseDeployComponentFailures(result.output) };
+  return { success: result.success, reportPath, errors: result.success ? [] : attachDeployTips(parseDeployComponentFailures(result.output), result.errorsAndTips) };
 }
 
 /** Delete the ticked deletions in their own deployment, after the metadata went in */
@@ -917,5 +966,5 @@ export async function deployBackpromoteDeletions(options: {
   if (result.success) {
     uxLog('action', options.commandThis, c.green(t('backpromoteDeleteSuccess', { count: options.keys.length })));
   }
-  return { success: result.success, reportPath, errors: result.success ? [] : parseDeployComponentFailures(result.output) };
+  return { success: result.success, reportPath, errors: result.success ? [] : attachDeployTips(parseDeployComponentFailures(result.output), result.errorsAndTips) };
 }

@@ -40,6 +40,7 @@ import {
   promptStartPullRequest,
   promptWaitForSolvedMerges,
   readBackpromoteRunState,
+  writeBackpromoteDeployErrorsPrompt,
   writeBackpromoteMergePrompt,
   writeBackpromoteRunState,
 } from '../../../common/utils/backpromotePlanUtils.js';
@@ -83,6 +84,7 @@ import {
   BackpromoteDiffChoice,
   BackpromoteMergePromptFile,
   buildBackpromoteBranchName,
+  buildBackpromoteDeployErrorsPrompt,
   buildBackpromoteMergePrompt,
   buildBackpromoteRunCommand,
   classifyBackpromoteCurrentBranch,
@@ -1143,6 +1145,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       pushRejected: false,
       deployReport: null,
       deployErrors: [],
+      deployErrorsPromptFile: null,
       orgUrl: ctx.targetOrg.instanceUrl || null,
     };
     const leftOut = new Map<string, BackpromoteLeftOutItem>();
@@ -1267,7 +1270,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     const deployment = await deployBackpromotePackage({ keys: deployKeys, username: ctx.targetOrg.username, workDir, commandThis: this, debugMode: ctx.debugMode });
     result.deployReport = deployment.reportPath;
     if (!deployment.success) {
-      throw this.deployFailure(ctx, result, deployment.errors);
+      throw await this.deployFailure(ctx, result, deployment.errors);
     }
     result.deployed = deployKeys.length;
     if (deleteKeys.length > 0) {
@@ -1282,7 +1285,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
         const deletion = await deployBackpromoteDeletions({ keys: deleteKeys, username: ctx.targetOrg.username, workDir, commandThis: this, debugMode: ctx.debugMode });
         if (!deletion.success) {
           result.deployReport = deletion.reportPath || result.deployReport;
-          throw this.deployFailure(ctx, result, deletion.errors);
+          throw await this.deployFailure(ctx, result, deletion.errors);
         }
         result.deleted = deleteKeys.length;
       } else {
@@ -1474,11 +1477,39 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
    * says what to do with them (fix them in the parent branch, or untick them), so that the panel
    * shows the errors themselves instead of pointing at a log it does not display.
    */
-  private deployFailure(ctx: BackpromoteContext, result: BackpromoteRunResult, errors: BackpromoteRunResult['deployErrors']): Error {
+  private async deployFailure(ctx: BackpromoteContext, result: BackpromoteRunResult, errors: BackpromoteRunResult['deployErrors']): Promise<Error> {
     result.deployErrors = errors;
+    if (errors.length > 0) {
+      // A prompt for a coding agent, with the sfdx-hardis hints of each error
+      const itemKeys = new Set(ctx.items.map((item) => item.key));
+      const errorItemKeys = [...new Set(errors.map((error) => error.key).filter((key) => itemKeys.has(key)))];
+      let excludeCommand: string | null = null;
+      if (errorItemKeys.length > 0) {
+        const added = errorItemKeys.filter((key) => !ctx.excludedKeys.has(key));
+        added.forEach((key) => ctx.excludedKeys.add(key));
+        excludeCommand = this.runCommand(ctx, 'auto');
+        added.forEach((key) => ctx.excludedKeys.delete(key));
+      }
+      const prompt = buildBackpromoteDeployErrorsPrompt({
+        parentBranch: ctx.parentBranch,
+        backpromoteBranch: ctx.backpromoteBranch,
+        sandboxName: ctx.targetOrg.sandboxName,
+        targetOrg: ctx.targetOrg.alias || ctx.targetOrg.username,
+        errors: errors.map((error) => ({
+          ...error,
+          absolutePath: error.file ? path.join(ctx.gitRoot, error.file) : null,
+          pullRequests: ctx.items.find((item) => item.key === error.key)?.pullRequests || [],
+        })),
+        deployReport: result.deployReport,
+        rerunCommand: this.runCommand(ctx, 'auto'),
+        excludeCommand,
+      });
+      result.deployErrorsPromptFile = await writeBackpromoteDeployErrorsPrompt(prompt, ctx.runId);
+      uxLog('action', this, c.yellow(t('backpromoteDeployErrorsPromptWritten', { file: result.deployErrorsPromptFile })));
+    }
     const message =
       errors.length > 0
-        ? t('backpromoteDeployFailedItems', { count: errors.length, items: [...new Set(errors.map((error) => error.key))].join(', '), parentBranch: ctx.parentBranch })
+        ? t('backpromoteDeployFailedItems', { count: errors.length, items: [...new Set(errors.map((error) => error.key || error.problem))].join(', '), parentBranch: ctx.parentBranch })
         : t('backpromoteDeployFailedSeeReport');
     const plan = this.buildPlan(ctx, 'deployFailed', message, result);
     return this.refusal(message, plan);
