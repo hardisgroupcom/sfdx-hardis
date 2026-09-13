@@ -114,6 +114,8 @@ export interface BackpromoteRunResult {
   pushed: boolean;
   pushRejected: boolean;
   deployReport: string | null;
+  /** The components the sandbox refused when the deployment failed */
+  deployErrors: Array<{ key: string; type: string; name: string; file: string | null; line: number | null; problem: string }>;
   orgUrl: string | null;
 }
 

@@ -205,6 +205,8 @@
   "backpromoteDeleting": "Deleting {{count}} metadata item(s) from the sandbox...",
   "backpromoteDeltaSummary": "Delta summary: {{addedModified}} items to deploy, {{deleted}} items to delete",
   "backpromoteDeployFailed": "Deployment failed. Check error messages above.",
+  "backpromoteDeployFailedItems": "The deployment failed on {{count}} component(s): {{items}}. Fix them in {{parentBranch}} with a Pull Request so that they deploy, or untick them to leave them out of this backpromote.",
+  "backpromoteDeployFailedSeeReport": "The deployment failed: open the deployment report to see why.",
   "backpromoteDeployReportLabel": "Backpromote Deployment Report",
   "backpromoteDeployReportSaved": "Deployment report saved: {{reportPath}}",
   "backpromoteDeploySuccess": "{{count}} metadata item(s) deployed to the sandbox",

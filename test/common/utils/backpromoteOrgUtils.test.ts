@@ -5,7 +5,7 @@ import * as path from 'path';
 // Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
 import '../../../src/common/gitProvider/index.js';
 import fs from '../../../src/common/utils/fsUtils.js';
-import { BackpromoteRetrieveRunners, BackpromoteSourceMemberRow, createRetrieveProject, retrieveItemsForComparison } from '../../../src/common/utils/backpromoteOrgUtils.js';
+import { BackpromoteRetrieveRunners, BackpromoteSourceMemberRow, createRetrieveProject, parseDeployComponentFailures, retrieveItemsForComparison } from '../../../src/common/utils/backpromoteOrgUtils.js';
 
 // The org is faked: SourceMember rows and Metadata API dates by "Type:Name" answer the validation,
 // and the retrieve writes the files of the keys the org has into the blank project, like sf does
@@ -387,5 +387,28 @@ describe('createRetrieveProject()', () => {
     } finally {
       await fs.remove(runDir);
     }
+  });
+});
+
+describe('backpromote deployment errors', () => {
+  it('reads the components the org refused from the --json output of a failed deployment', () => {
+    const output = 'Deploying...\n' + JSON.stringify({
+      status: 1,
+      result: {
+        details: {
+          componentFailures: [
+            { componentType: 'ApexClass', fullName: 'InvoiceCalculator', fileName: 'force-app\\main\\default\\classes\\InvoiceCalculator.cls', lineNumber: '12', problem: 'Variable does not exist: scale', problemType: 'Error', success: false },
+            { componentType: 'Layout', fullName: 'Case-Case Layout', problem: 'A warning only', problemType: 'Warning', success: false },
+          ],
+        },
+      },
+    });
+    expect(parseDeployComponentFailures(output)).to.deep.equal([
+      { key: 'ApexClass:InvoiceCalculator', type: 'ApexClass', name: 'InvoiceCalculator', file: 'force-app/main/default/classes/InvoiceCalculator.cls', line: 12, problem: 'Variable does not exist: scale' },
+    ]);
+    // A single failure comes as an object, not an array
+    const single = JSON.stringify({ result: { details: { componentFailures: { componentType: 'Flow', fullName: 'Quote_Approval', problem: 'Invalid reference', problemType: 'Error', success: 'false' } } } });
+    expect(parseDeployComponentFailures(single).map((error) => error.key)).to.deep.equal(['Flow:Quote_Approval']);
+    expect(parseDeployComponentFailures('not json')).to.deep.equal([]);
   });
 });

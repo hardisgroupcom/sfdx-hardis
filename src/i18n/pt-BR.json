@@ -203,6 +203,8 @@
   "backpromoteDeleting": "Excluindo {{count}} item(ns) de metadados do sandbox...",
   "backpromoteDeltaSummary": "Resumo do delta: {{addedModified}} itens para deploy, {{deleted}} itens para excluir",
   "backpromoteDeployFailed": "O deploy falhou. Verifique as mensagens de erro acima.",
+  "backpromoteDeployFailedItems": "A implantação falhou em {{count}} componente(s): {{items}}. Corrija-os em {{parentBranch}} com uma Pull Request para que sejam implantados, ou desmarque-os para deixá-los fora deste backpromote.",
+  "backpromoteDeployFailedSeeReport": "A implantação falhou: abra o relatório de implantação para ver o motivo.",
   "backpromoteDeployReportLabel": "Relatorio de deploy do backpromote",
   "backpromoteDeployReportSaved": "Relatorio de deploy salvo: {{reportPath}}",
   "backpromoteDeploySuccess": "{{count}} item(ns) de metadados implantado(s) no sandbox",

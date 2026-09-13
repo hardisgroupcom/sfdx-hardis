@@ -1142,6 +1142,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       pushed: false,
       pushRejected: false,
       deployReport: null,
+      deployErrors: [],
       orgUrl: ctx.targetOrg.instanceUrl || null,
     };
     const leftOut = new Map<string, BackpromoteLeftOutItem>();
@@ -1266,8 +1267,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     const deployment = await deployBackpromotePackage({ keys: deployKeys, username: ctx.targetOrg.username, workDir, commandThis: this, debugMode: ctx.debugMode });
     result.deployReport = deployment.reportPath;
     if (!deployment.success) {
-      const plan = this.buildPlan(ctx, 'deployFailed', t('backpromoteDeployFailed'), result);
-      throw this.refusal(t('backpromoteDeployFailed'), plan);
+      throw this.deployFailure(ctx, result, deployment.errors);
     }
     result.deployed = deployKeys.length;
     if (deleteKeys.length > 0) {
@@ -1281,8 +1281,8 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       if (confirmed) {
         const deletion = await deployBackpromoteDeletions({ keys: deleteKeys, username: ctx.targetOrg.username, workDir, commandThis: this, debugMode: ctx.debugMode });
         if (!deletion.success) {
-          const plan = this.buildPlan(ctx, 'deployFailed', t('backpromoteDeployFailed'), result);
-          throw this.refusal(t('backpromoteDeployFailed'), plan);
+          result.deployReport = deletion.reportPath || result.deployReport;
+          throw this.deployFailure(ctx, result, deletion.errors);
         }
         result.deleted = deleteKeys.length;
       } else {
@@ -1467,6 +1467,21 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
       skipDestructive: ctx.skipDestructive,
       json: true,
     });
+  }
+
+  /**
+   * A failed deployment: the components the sandbox refused travel in the result, and the message
+   * says what to do with them (fix them in the parent branch, or untick them), so that the panel
+   * shows the errors themselves instead of pointing at a log it does not display.
+   */
+  private deployFailure(ctx: BackpromoteContext, result: BackpromoteRunResult, errors: BackpromoteRunResult['deployErrors']): Error {
+    result.deployErrors = errors;
+    const message =
+      errors.length > 0
+        ? t('backpromoteDeployFailedItems', { count: errors.length, items: [...new Set(errors.map((error) => error.key))].join(', '), parentBranch: ctx.parentBranch })
+        : t('backpromoteDeployFailedSeeReport');
+    const plan = this.buildPlan(ctx, 'deployFailed', message, result);
+    return this.refusal(message, plan);
   }
 
   private buildPlan(ctx: BackpromoteContext, status: BackpromoteStatus, message: string | null, result: BackpromoteRunResult | null = null): BackpromotePlan {

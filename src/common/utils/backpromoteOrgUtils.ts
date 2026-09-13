@@ -6,7 +6,7 @@ import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import * as path from 'path';
 import fs from './fsUtils.js';
-import { execCommand, execSfdxJson, getGitRepoRoot, uxLog } from './index.js';
+import { execCommand, execSfdxJson, findJsonInString, getGitRepoRoot, uxLog } from './index.js';
 import { soqlQuery, soqlQueryTooling } from './apiUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { generateReportPath } from './filesUtils.js';
@@ -779,6 +779,46 @@ export async function compareItemsWithOrg(options: {
 export interface BackpromoteDeployOutcome {
   success: boolean;
   reportPath: string | null;
+  /** The components the org refused, read from the --json output of the deployment */
+  errors: BackpromoteDeployError[];
+}
+
+export interface BackpromoteDeployError {
+  /** Type:Name of the component */
+  key: string;
+  type: string;
+  name: string;
+  file: string | null;
+  line: number | null;
+  problem: string;
+}
+
+/**
+ * The components a failed `sf project deploy start --json` refused: result.details.componentFailures
+ * (one object instead of an array when there is a single failure), errors only, not warnings.
+ */
+export function parseDeployComponentFailures(output: string): BackpromoteDeployError[] {
+  const json: any = findJsonInString(output || '');
+  const details = json?.result?.details || json?.data?.details || null;
+  const failures = details?.componentFailures ? [].concat(details.componentFailures) : [];
+  const errors: BackpromoteDeployError[] = [];
+  for (const failure of failures as any[]) {
+    if (!failure || failure.success === true || failure.success === 'true' || (failure.problemType && failure.problemType !== 'Error')) {
+      continue;
+    }
+    const type = String(failure.componentType || '');
+    const name = String(failure.fullName || '');
+    const line = Number(failure.lineNumber);
+    errors.push({
+      key: type ? `${type}:${name}` : name,
+      type,
+      name,
+      file: failure.fileName ? normalizeRepoPath(String(failure.fileName)) : null,
+      line: Number.isFinite(line) && line > 0 ? line : null,
+      problem: String(failure.problem || '').trim(),
+    });
+  }
+  return errors;
 }
 
 async function runDeploy(command: string, label: string, commandThis: any, debugMode: boolean): Promise<{ success: boolean; output: string }> {
@@ -828,7 +868,7 @@ export async function deployBackpromotePackage(options: {
   debugMode: boolean;
 }): Promise<BackpromoteDeployOutcome> {
   if (options.keys.length === 0) {
-    return { success: true, reportPath: null };
+    return { success: true, reportPath: null, errors: [] };
   }
   const packageXml = path.join(options.workDir, 'package', 'package.xml');
   await writePackageXmlFile(packageXml, metadataKeysToPackageContent(options.keys));
@@ -845,7 +885,7 @@ export async function deployBackpromotePackage(options: {
   if (result.success) {
     uxLog('action', options.commandThis, c.green(t('backpromoteDeploySuccess', { count: options.keys.length })));
   }
-  return { success: result.success, reportPath };
+  return { success: result.success, reportPath, errors: result.success ? [] : parseDeployComponentFailures(result.output) };
 }
 
 /** Delete the ticked deletions in their own deployment, after the metadata went in */
@@ -857,7 +897,7 @@ export async function deployBackpromoteDeletions(options: {
   debugMode: boolean;
 }): Promise<BackpromoteDeployOutcome> {
   if (options.keys.length === 0) {
-    return { success: true, reportPath: null };
+    return { success: true, reportPath: null, errors: [] };
   }
   const packageXml = path.join(options.workDir, 'destructive', 'package.xml');
   const destructiveXml = path.join(options.workDir, 'destructive', 'destructiveChanges.xml');
@@ -877,5 +917,5 @@ export async function deployBackpromoteDeletions(options: {
   if (result.success) {
     uxLog('action', options.commandThis, c.green(t('backpromoteDeleteSuccess', { count: options.keys.length })));
   }
-  return { success: result.success, reportPath };
+  return { success: result.success, reportPath, errors: result.success ? [] : parseDeployComponentFailures(result.output) };
 }
