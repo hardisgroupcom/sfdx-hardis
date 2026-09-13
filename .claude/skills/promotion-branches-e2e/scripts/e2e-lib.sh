@@ -41,6 +41,8 @@ e2e_check() {
   git checkout -q -f --detach HEAD
   git fetch -q origin "+refs/pull/$pr/merge:refs/heads/prmerge-$pr" || return 1
   git checkout -q -f "prmerge-$pr" || return 1
+  local start
+  start=$(e2e_now_ms)
   e2e_ci_env \
     GITHUB_REF_NAME="$pr/merge" \
     GITHUB_REF="refs/pull/$pr/merge" \
@@ -49,6 +51,7 @@ e2e_check() {
     node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" check "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -59,6 +62,8 @@ e2e_deploy() {
   local target="$1" label="$2" code
   cd "$WORK" || return 1
   git checkout -q -f "$target" && git pull -q origin "$target"
+  local start
+  start=$(e2e_now_ms)
   e2e_ci_env \
     GITHUB_REF_NAME="$target" \
     GITHUB_REF="refs/heads/$target" \
@@ -66,6 +71,7 @@ e2e_deploy() {
     node "$DEV" hardis:project:deploy:smart --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" deploy "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -77,6 +83,8 @@ e2e_promote() {
   shift 3
   cd "$WORK" || return 1
   git checkout -q -f "$source" && git pull -q origin "$source"
+  local start
+  start=$(e2e_now_ms)
   env -u NODE_OPTIONS \
     GITHUB_TOKEN="$(gh auth token)" \
     GITHUB_REPOSITORY="$REPO" \
@@ -87,6 +95,7 @@ e2e_promote() {
     --source-branch "$source" --pull-requests "$prs" "$@" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" promote "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -98,6 +107,8 @@ e2e_release_notes() {
   shift
   cd "$WORK" || return 1
   git checkout -q -f main && git pull -q origin main
+  local start
+  start=$(e2e_now_ms)
   e2e_ci_env \
     GITHUB_REF_NAME=main \
     CONFIG_BRANCH=main \
@@ -105,6 +116,7 @@ e2e_release_notes() {
     --merge-commit "$(git log --merges -1 --format=%H)" --no-pdf --agent "$@" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" release-notes "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }

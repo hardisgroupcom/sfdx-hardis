@@ -1,22 +1,47 @@
 # Promotion branches and backpromote: end to end test on GitHub
 
-**Date:** 2026-09-12 (supersedes the run of 2026-09-09)
-**Repositories under test:**
+**Date:** 2026-09-13 (supersedes the run of 2026-09-12)
+**Repositories under test (private, created empty for this run):**
 
-- promotion branches: `nvuillam/sfdx-hardis-promo-e2e-12` (private, created empty for this run)
-- backpromote (Beta): `nvuillam/sfdx-hardis-promo-e2e-14` (private, created empty; `-11` and
-  `-13` were the two earlier attempts of the same section, kept for their logs)
+- promotion branches: `nvuillam/sfdx-hardis-promo-e2e-15`
+- backpromote (Beta): `nvuillam/sfdx-hardis-promo-e2e-16` (code of `7efe8867f`), then
+  `nvuillam/sfdx-hardis-promo-e2e-17` (the same steps again after the retrieve project change below)
 
-**Salesforce org:** `nicolas.vuillamy.c8024b5deb9f@agentforce.com` (developer org, Dev Hub)
-**sfdx-hardis:** `feat/backpromote-panel`, `1eb6ab82b` plus the two uncommitted fixes this run landed
-**vscode-sfdx-hardis:** `feat/backpromote-panel`, `f6001f80`, compiled with `yarn compile`
+**Salesforce org:** `nicolas.vuillamy.c8024b5deb9f@agentforce.com` (developer org, Dev Hub), shared
+with GitLab. Scratch orgs `promo-e2e-dev` and `promo-e2e-dev2` (sandbox name `devorg1`), reset to
+the base project by `backpromote-setup.sh` before each backpromote run.
+**sfdx-hardis:** `feat/backpromote-panel`, `7efe8867f` at the start, `272abcbeb` plus the skill commit at the end.
+Every call went through `bin/run.js` after `yarn compile` (see "Performance" for why not `bin/dev.js`).
+**vscode-sfdx-hardis:** `feat/backpromote-panel`, `1b1eab85`, compiled with `yarn compile`, not
+modified by this run.
 
-Two repositories, not one: `backpromote-setup.sh` opens `feature/E2E-101-alpha`,
-`feature/E2E-102-beta` and `feature/E2E-103-gamma` itself, which are the branch names section 3 of
-the runbook uses for the User Stories of the promotion pipeline. The runbook now says so.
+Every job is a real `deploy:smart`, `promotion:create`, `promotion:list-candidates`,
+`doc:release-notes` or `work:backpromote` against the org, run locally with the GitHub Actions
+variables set. Two repositories, not one: `backpromote-setup.sh` opens the same branch names as the
+User Stories of section 3.
 
-Every job below is a real `deploy:smart` or `work:backpromote` against that org, run locally with
-the GitHub Actions variables set, which is what the git provider reads.
+**This run is the first one where sections 3, 4 and 6 are scripted** (`promotion-run.sh`,
+`promotion-edge.sh`, over `promotion-provider.sh`), so GitHub and GitLab ran exactly the same steps
+and assertions. Earlier runs typed section 6 by hand.
+
+___
+
+## Counts
+
+| Section | Checks | OK | FAIL |
+|---------|--------|----|------|
+| 3, 4 and 4bis: stories, promotions, release notes, retrofit, 11 pipeline checkpoints | 40 | 40 | 0 |
+| 6: edge cases (groups g1 to g6) | 47 | 47 | 0 |
+| 5bis: Pull Request comment audit | 700 checks over 36 Pull Requests | all | 0 |
+| 7bis: single place in the diagram | 1 | 1 | 0 |
+| 6bis: backpromote B0 to B16, C1 to C4, on `-16` | 63 | 63 | 0 |
+| 6bis again on `-17`, after the retrieve project change | 63 | 63 | 0 |
+| 7ter: flag-off A/B against `origin/main` (`2685237d3`), second pair | 5 files compared | `TOTAL DIFFERING LINES: 0` | 0 |
+
+Six assertions failed on their first pass and were all harness defects, not product defects: each
+was fixed in the script, the log was read by hand, and the case was run again (details in "What the
+run found"). The counts above are after that. No product defect was found by the functional part of
+the run.
 
 ___
 
@@ -24,7 +49,7 @@ ___
 
 `integration` -> `uat` -> `preprod` -> `main`, one org, `enablePromotionBranches: true`,
 `allowedPromotionSteps` with the three steps, delta deployment on, Apex test classes on, always
-merged with a merge commit so the `-x` trailers of the cherry-picks survive.
+merged with a merge commit.
 
 | Story | Pull Request | Branch                    | Target      | Actions                   | Test classes                            | Keyword                  |
 |-------|--------------|---------------------------|-------------|---------------------------|-----------------------------------------|--------------------------|
@@ -35,332 +60,333 @@ merged with a merge commit so the `-x` trailers of the cherry-picks survive.
 | S5    | #5           | `feature/E2E-202-epsilon` | uat         | post command              | -                                       | -                        |
 | S6    | #6           | `feature/E2E-301-hotfix`  | preprod     | pre command + post manual | `PromoE2EBetaTest`                      | `FLOW_DELETE_INTERVIEWS` |
 
-S1 declares its two test classes in **two separate yaml blocks** of its description.
-
-Twenty-nine more Pull Requests exercise the edge cases: the retrofit (#11), the conflicting pair
-(#12, #13), a hand-named branch (#15), a retargeted promotion (#16), the ordinary
-`integration -> uat` sync (#19), a branch merged twice (#21, #22), a story carrying a sync merge of
-its own (#23), the conflicting pair promoted together (#25, #26), the back-merge (#28), the preprod
-only story (#29, #30), the octopus sides (#31, #32), the full `uat -> preprod` merge (#35) and the
-two Pull Requests kept open for the flag-off comparison (#36, #38).
+S1 declares its two test classes in two separate yaml blocks. The edge cases add #11 (retrofit),
+#12 and #13 (the conflicting pair), #15 (hand-named), #16 (retargeted), #19 (sync `integration ->
+uat`), #21 and #22 (a branch merged twice), #23 (a story carrying a sync merge), #25 and #26 (the
+pair promoted together), #28 (back-merge), #29 to #31 (the octopus sides), #34 (full `uat ->
+preprod` merge) and #35 (the story of the restricted steps case).
 
 ## The promotions
 
-| Promotion | Pull Request | Branch                                     | Carries  | Outcome                                                                     |
-|-----------|--------------|--------------------------------------------|----------|-----------------------------------------------------------------------------|
-| P1        | #7           | `promotion/integration/uat/2026-09-12-0307` | #1, #3   | merged, deployed to uat                                                     |
-| P2        | #8           | `promotion/uat/preprod/2026-09-12-0317`     | #4       | merged, deployed to preprod                                                 |
-| P3        | #9           | `promotion/uat/preprod/2026-09-12-0321`     | #3       | merged, deployed to preprod: a story P1 had carried, promoted alone         |
-| P4        | #10          | `promotion/preprod/main/2026-09-12-0327`    | #4,#3,#6 | merged, deployed to main, two levels of vehicle under it                    |
-| P5        | #14          | `promotion/integration/uat/2026-09-12-0338` | #13      | assembled with conflict markers on purpose, gate red, solved, gate green    |
-| P6        | -            | `promotion/uat/preprod/2026-09-12-0348`     | #1       | the "Pull Request creation refused" case: branch pushed, no Pull Request    |
-| P7        | #17          | `promotion/uat/preprod/2026-09-12-0348-2`   | #1       | the supersede case, closed by P8                                            |
-| P8        | #18          | `promotion/uat/preprod/2026-09-12-0349`     | #1       | the supersede run, closed by P9                                             |
-| P9        | #20          | `promotion/uat/preprod/2026-09-12-0350`     | #2       | a story of the sync merge, merged and deployed to preprod                   |
-| P10       | #24          | `promotion/integration/uat/2026-09-12-0355` | #23      | the story that carried a sync merge, later swallowed by the octopus merge   |
-| P11       | #27          | `promotion/uat/preprod/2026-09-12-0357`     | #25, #26 | two conflicts in one promotion, both committed with markers, then closed    |
-| P12       | #33          | `promotion/uat/preprod/2026-09-12-0402`     | #32, #23 | the octopus whose third side is a promotion branch                          |
-| P13       | #34          | `promotion/uat/preprod/2026-09-12-0404`     | #5       | the allowed step of the restricted configuration, left open                 |
+| Promotion | Pull Request | Carries  | Outcome |
+|-----------|--------------|----------|---------|
+| P1        | #7           | #1, #3   | merged, deployed to uat |
+| P2        | #8           | #4       | merged, deployed to preprod |
+| P3        | #9           | #3       | merged, deployed to preprod: a story P1 carried, promoted alone |
+| P4        | #10          | #4, #3, #6 | merged, deployed to main |
+| P5        | #14          | #13      | committed with conflict markers, gate red, solved, gate green, superseded by #24 |
+| P6        | -            | #1       | Pull Request creation refused: branch pushed, no Pull Request |
+| P7, P8    | #17, #18     | #1       | the supersede case: #17 closed by #18, #18 closed by #20 |
+| P9        | #20          | #2       | a story of the sync merge, merged and deployed to preprod |
+| P10       | #24          | #23      | the story that carried a sync merge; GitHub marks it merged when the octopus merge brought its head into uat |
+| P11       | #27          | #25, #26 | two conflicts in one promotion, both committed with markers, closed |
+| -         | #32, #33     | #5       | created by the first pass of the restricted steps case, whose config edit did not apply (harness defect 5), closed |
+| P13       | #36          | #35      | the allowed step of the restricted configuration, closed |
 
 ___
 
-## What this run found
-
-Three product defects, all fixed inside the run and proven again afterwards: one in the promotion
-branches, two in backpromote (Beta), which had never been run end to end before. Four runbook rows
-were wrong and six defects were found in the backpromote step script, which had never been run
-either. Counts: **55 / 55 OK** for the promotion branches (sections 4 to 7ter, 0 FAIL) and
-**63 / 63 OK** for backpromote (section 6bis, 0 FAIL), on top of the 697-check Pull Request comment
-audit and a flag-off A/B at `TOTAL DIFFERING LINES: 0`.
-
-### 1. The undo of a conflicted promotion ran twice and ended on an error line (fixed)
-
-`cherryPickCandidates` undoes the promotion branch before rethrowing, and `create.ts` undoes again
-in its catch. The second pass logged the undo a second time and then
-
-```
-[sfdx-hardis][PromotionCreate] error: branch 'promotion/uat/preprod/2026-09-12-0357-2' not found
-```
-
-right before the real error, which reads like the cleanup failed. Nothing was actually left behind,
-but a red line at the end of a handled abort is exactly what sends a release manager looking for a
-leftover branch.
-
-Fixed in `src/common/utils/promotionCreateUtils.ts`: `abortPromotion` now returns straight away when
-the local promotion branch is already gone, so the undo is idempotent and logs once. Proven again
-with `edge-conflict-abort-once`: one `Undoing promotion branch` line, no `not found` warning, no
-leftover branch. Covered by two unit tests on a throwaway git repository in
-`test/common/utils/promotionAbort.test.ts`.
-
-The two backpromote defects are in the backpromote section below.
-
-### 2. Three runbook rows were wrong, and two traps were missing
-
-None of them is a product defect; all four were corrected in
-`reference/runbook.md`.
-
-- **Back-merge from the target branch.** The row the candidate table keeps for the back-merge is
-  labelled `-`, not `#28`. That is deliberate: `dropVehiclePullRequests` takes the number off a
-  Pull Request whose source branch is a major branch, on every provider. The runbook only mentioned
-  `-` rows as an Azure DevOps artefact, which would make a GitHub run report a defect.
-- **Promotion that cannot be opened up.** The runbook said the candidate "keeps the promotion
-  number". It does not: the declaration is expanded into the stories first, then the vehicle number
-  is dropped, so the row reads `#32, #23` and never names the promotion. The behaviour is the one
-  the feature wants, the sentence was not.
-- **Restricted promotion steps.** Narrowing `allowedPromotionSteps` in the working tree without
-  committing makes the cleanliness check fail before the step gate is reached, and the tree that
-  counts is the one of the branch `promotion:create` checks out. The row now says to commit it on
-  the source branch.
-- **Two traps added**: the Dev Hub daily scratch org signup limit (see "What this run did not
-  cover"), and the fact that section 6bis needs its own repository when section 4 also runs.
-
-___
-
-## Test groups
-
-### Section 4, the run
+## Section 3, 4 and 4bis
 
 | # | Check | Expected | Result |
 |---|-------|----------|--------|
-| 1 | `check-pr1` | scope `#1` alone, the union of the two yaml blocks (`PromoE2EAlphaTest`, `PromoE2EBetaTest`), `RunSpecifiedTests` | OK |
+| 1 | `check-pr1` | scope `#1` alone, union of the two yaml blocks, `RunSpecifiedTests`, manual action skipped | OK |
 | 2 | `check-pr2` | `NO_DELTA` read, `Deployment mode: FULL`, `NoTestRun` | OK |
 | 3 | `check-pr3` | `PURGE_FLOW_VERSIONS` adds a pre-deploy action, skipped in a validation job | OK |
-| 4 | `deploy-integration-pr1..3` | actions already run are skipped, the manual action of #1 becomes pending in `integration` | OK |
-| 5 | `pipeline-before-p1` | `integration` lists #1, #2, #3; `uat`, `preprod`, `main` empty; no promotion on any arrow | OK |
-| 6 | `promotion-integration-uat` | P1 #7 carries #1 and #3, one candidate row per story | OK |
-| 7 | `pipeline-p1-open` | #7 drawn on the `integration -> uat` arrow, no branch node of its own, nothing taken out of `integration` | OK |
-| 8 | `check-promotion-uat` | scope `#1, #3, #7`, `Inherited PURGE_FLOW_VERSIONS from carried Pull Request(s) #3`, no `NO_DELTA` of the story left behind, union of the test classes | OK |
-| 9 | `deploy-uat-promotion` | Purge Flow Versions runs, the manual action of #1 becomes pending in `uat` | OK |
-| 10 | `pipeline-after-p1` | `uat` lists #1 and #3, `integration` keeps #2, arrow empty | OK |
-| 11 | `check-pr4`, `check-pr5`, their deployments | scope of one Pull Request each | OK |
-| 12 | `promotion-uat-preprod` | the P1 merge is opened up into rows `#1` and `#3`; P2 #8 carries #4 | OK |
-| 13 | `check`/`deploy` of P2 | scope `#4, #8` | OK |
-| 14 | `pipeline-before-p3` | `uat` lists #1, #3, #5; `preprod` lists #4 | OK (the expectation file was wrong at first: #3 was still in `uat`) |
-| 15 | `promotion-uat-preprod-nested` | promoting `3` carries S3 alone, #4 marked `Already promoted by` | OK |
-| 16 | `check`/`deploy` of P3 | scope `#3, #9`, `PURGE_FLOW_VERSIONS` inherited | OK |
-| 17 | `check-pr6-hotfix` and its deployment | scope `#6`, manual action pending in `preprod` | OK |
-| 18 | `promotion-preprod-main` | P4 #10 carries #4, #3, #6: two levels of vehicle opened up, no promotion number offered | OK |
-| 19 | `check`/`deploy` of P4 | scope `#4, #3, #6, #10`, `PURGE_FLOW_VERSIONS` and `FLOW_DELETE_INTERVIEWS` inherited, manual actions of #4 and #6 pending in `main` | OK |
-| 20 | `pipeline-after-golive` | `main` lists #3, #4, #6, none of them twice, counters follow | OK |
-| 21 | `release-notes` | three User Stories, no vehicle, the ticket rows name the stories | OK |
-| 22 | `release-notes --include-promotions` | the same three plus #10 with the three tickets | OK |
-| 23 | `check-retrofit`, `deploy-integration-retrofit` | `Promotion Pull Request 10 adds 3 carried Pull Request(s)`, then one `already deployed through promotion branch(es)` per story | OK |
+| 4a | `deploy-integration-pr1` | pre action skipped (already run), manual action runs | OK (first pass FAIL: the harness wanted `Successfully deployed`, the job used a quick deploy; log read, pattern fixed) |
+| 4b, 4c | `deploy-integration-pr2`, `-pr3` | scope of one Pull Request, FULL for #2, Purge Flow Versions runs for #3 | OK |
+| cp | `pipeline-before-p1` | integration #1, #2, #3; the others empty; no arrow | OK |
+| 6 | `promotion-integration-uat` | P1 #7 carries #1 and #3, one row per story | OK |
+| cp | `pipeline-p1-open` | #7 on the `integration -> uat` arrow, no node of its own, integration unchanged | OK |
+| 8 | `check-promotion-uat` | scope `#1, #3, #7`, `PURGE_FLOW_VERSIONS` inherited, no `NO_DELTA`, both test classes | OK |
+| 9 | `deploy-uat-promotion` | Purge Flow Versions runs, manual action of #1 runs in uat | OK |
+| cp | `pipeline-after-p1` | uat #1, #3; integration #2; arrow empty | OK |
+| 11a-d | `check-pr4`, `check-pr5` and their deployments | scope of one Pull Request each | OK |
+| cp | `pipeline-before-p2` | uat #1, #3, #4, #5 | OK |
+| 12 | `promotion-uat-preprod` | the P1 merge opened up into rows #1 and #3, P2 #8 carries #4, no row for #7 | OK |
+| cp | `pipeline-p2-open` | #8 on the `uat -> preprod` arrow, uat unchanged | OK |
+| 13a, 13b | check and deployment of P2 | scope `#4, #8`, manual action of #4 runs in preprod | OK |
+| cp | `pipeline-before-p3` | uat #1, #3, #5; preprod #4 | OK |
+| 15 | `promotion-uat-preprod-nested` | promoting 3 carries S3 alone, #4 marked `Already promoted by` P2 | OK |
+| cp | `pipeline-p3-open` | #9 on the arrow | OK |
+| 16a, 16b | check and deployment of P3 | scope `#3, #9`, `PURGE_FLOW_VERSIONS` inherited | OK |
+| cp | `pipeline-after-p3` | uat #1, #5; preprod #3, #4 | OK |
+| 17a, 17b | hotfix #6 into preprod | scope `#6`, manual action runs in preprod | OK |
+| 18 | `promotion-preprod-main` | P4 #10 carries #4, #3, #6, no row for #8 or #9 | OK |
+| cp | `pipeline-p4-open` | #10 on the `preprod -> main` arrow, preprod #3, #4, #6 | OK |
+| 19a, 19b | check and deployment of P4 | 4 Pull Requests in scope, both keywords inherited, manual actions of #4 and #6 run in main | OK |
+| cp | `pipeline-after-golive` | main #3, #4, #6; preprod empty; uat #1, #5; integration #2 | OK |
+| 21, 21b | `release-notes` | #3, #4, #6, not the vehicle #10 | OK |
+| 22 | `release-notes --include-promotions` | #10 next to the stories | OK |
+| 23a, 23b | retrofit #11 check and deployment | `Promotion Pull Request 10 adds 3 carried Pull Request(s)`, each story `already deployed through promotion branch(es)`, actions already run skipped | OK |
+| cp | `pipeline-after-retrofit` | main #3, #4, #6; integration #2, #11 | OK |
 
-### Section 6, the edge cases
+### What changed in the DevOps Pipeline, and what the checkpoints prove
+
+The "Show already promoted Pull Requests" toggle and its setting are gone. The eleven checkpoints
+(five before, six added by this run: `before-p2`, `p2-open`, `p3-open`, `after-p3`, `p4-open`,
+`after-retrofit`) read the node marker `data-count='N'` from the mermaid the extension builds, with a
+missing marker counted as 0, and assert at every point that:
+
+- a story is listed in one branch only (after each promotion, the stories it carried left the
+  branch they came from: `after-p1`, `after-p3`, `after-golive`),
+- the counter equals the length of the list the branch window shows,
+- a branch with no story has no marker at all (every `0` in the table above is a missing marker),
+- an open promotion is drawn on its arrow and takes nothing out of the source branch.
+
+A final check after section 6 (`pipeline-final`: main #3, #4, #6; preprod 14 stories; uat #35;
+integration empty) passed the same invariants on 36 Pull Requests.
+
+## Section 6, the edge cases
 
 | # | Case | Expected | Result |
 |---|------|----------|--------|
-| 24 | Already promoted | candidate table shows `Already promoted by promotion/uat/preprod/...`, the warning names `--include-already-promoted`, no branch created | OK (exit 1, `#4 are not among the Pull Requests waiting for promotion (#1, #5)`) |
-| 25 | Empty cherry-pick | `Nothing to cherry-pick ...: this change is already in the target branch`, branch undone, exit 0 | OK |
-| 26 | Empty cherry-pick, dirty report folder | identical with `hardis-report/` untracked | OK |
-| 27 | Conflict, agent default | `Cherry-pick conflict on #13 ... (NOTES.md, ...CustomLabels...): the promotion has been undone`, no leftover branch | OK |
-| 28 | Conflict, kept | Pull Request #14 created, `hardis-report/promotion-conflicts-prompt-*.md` written, prompt embedded in the description | OK |
-| 29 | Conflict prompt commit message | the prompt asks for a commit message with one line per conflicting file, naming the story, the target side, the story side and what was kept | OK |
-| 30 | Conflict, kept for all | two conflicting stories in one promotion, both committed with markers, `Applying the conflict handling chosen earlier: commit-with-markers` printed for each | OK (through `--on-conflict commit-with-markers`, which takes the same code path; the interactive answer is not scriptable) |
-| 31 | Marker guard | job fails, `still contains git conflict markers in 2 file(s): NOTES.md, force-app/.../CustomLabels...`, and the validation comment carries the failure banner, the branch, the count and the file list | OK |
-| 32 | Marker guard, solved | solve, push, wait for the merge ref, validate again: green | OK |
-| 33 | Conflict outside `force-app` | `NOTES.md` named by the gate | OK |
-| 34 | A committed conflict prompt report | the report committed on the branch does not add a file to the gate: still `2 file(s)` | OK |
-| 35 | Pull Request creation refused | branch pushed, the warning names the provider's own reason (`Git provider is not configured. Unable to create pull request.`), a one-click creation URL with source branch, target branch, title and description | OK (GitHub CLI taken off `PATH` as well) |
-| 36 | Deployment from a promotion branch | the command stops naming the branch and the CI setting to fix | OK |
-| 37 | Feature off | one informational line, scope = the Pull Request alone | OK |
-| 38 | Hand-named branch | `starts with promotion/ but does not follow the promotion branch naming ...`, treated as a feature branch, declaration ignored | OK |
-| 39 | Retargeted promotion | `is named for target preprod but its Pull Request targets main`, scope = the Pull Request alone, the declared stories do not run against production | OK |
-| 40 | Grouped merge commit | `is a merge commit: cherry-picking it also carries #6, #3, #4, which were not requested` before the cherry-pick | OK (the cherry-pick was then empty, so exit 0 with `Every selected User Story ... is already in preprod`) |
-| 41 | Unreadable declaration | `Pull Request #999 declared by promotion Pull Request 20 was not found: skipped`, not a failure | OK |
-| 42 | Story brought in by a sync merge | one row per story of the sync (#2, #12, #13), promoting `2` cherry-picks one commit and declares `[2]` | OK |
-| 43 | Story brought in by a promotion | S1 and S3 are two rows, promoting `3` carries S3 alone | OK (test 15) |
-| 44 | Two levels of vehicle | the retrofit merge under the sync keeps naming the stories (`#11, #6, #3, #4`), never the promotion #10 | OK |
-| 45 | Vehicle boundary | the merges after the opened-up vehicle (#12, #13) do not list its numbers | OK |
-| 46 | Back-merge from the target branch | one row, labelled `-`, not a page of stories already delivered | OK (runbook corrected) |
-| 47 | Octopus merge | the three-parent merge is left whole: one row `#23, #22, #21` | OK |
-| 48 | Promotion that cannot be opened up | the octopus whose third side is `promotion/integration/uat/2026-09-12-0355` gives the row `#32, #23`: the declaration expanded, the vehicle dropped | OK (runbook corrected) |
-| 49 | Sync merge inside a story | the candidate lists #23 only, the major branch's own Pull Requests are not offered | OK |
-| 50 | Supersede a promotion | `A promotion from uat to preprod is already open ... it will be closed`, #1 offered again with no `Already promoted by`, `Closed the promotion it supersedes: #17` | OK |
-| 51 | Branch merged twice | #21 and #22 are two rows, no `-` row for the same branch | OK |
-| 52 | Full merge after a partial promotion | #2 named `already deployed through promotion branch(es) promotion/uat/preprod/2026-09-12-0350 (#20)`, its actions skipped, the others arrive for the first time; afterwards `No Pull Request merged into uat is waiting for promotion to preprod` | OK |
-| 53 | Restricted promotion steps | `Promotions from integration are not allowed by allowedPromotionSteps (uat -> preprod)`, `A promotion from uat to main is not allowed ...`, `--source-branch uat` still works, and the DevOps Pipeline offers **Create promotion** on `uat` only | OK (the config has to be committed for the command half, see finding 2; the pipeline half is now asserted by the new `promotionSteps` key of `check-pipeline.cjs`) |
-| 54 | Promotion steps not declared | `Promotion branches need the steps they are allowed to run on: set allowedPromotionSteps ...` with the doc link, before listing anything | OK |
-| 55 | Two yaml blocks with the same key | the union of both is selected | OK (test 1) |
+| 24, 24b | Already promoted | table marks #4 with P2's branch, warning names `--include-already-promoted`, exit 1, no branch | OK |
+| 25, 25b | Empty cherry-pick | `Nothing to cherry-pick for #4`, `there is nothing to promote and no branch was created`, exit 0, tree clean | OK (first pass FAIL on the word `conflict` in git's own output; pattern fixed) |
+| 26 | Empty cherry-pick, dirty report folder | same with an untracked file in `hardis-report/` | OK |
+| 27, 27b | Conflict, agent default | `Cherry-pick conflict on #13 ... (NOTES.md, CustomLabels...)`, one `Undoing promotion branch` line, no `not found` | OK |
+| 28 | Conflict, kept | #14 created, prompt saved and embedded | OK |
+| 29 | Conflict prompt commit message | prompt asks to commit with a message whose body carries one line per file and story; description embeds it in `<details>` | OK (first pass FAIL: the harness looked for "commit message", the prompt says "Commit with a message") |
+| 29b | Abort once | a conflicted promotion from uat undone once, no `not found` | OK |
+| 30, 30b | Conflict, kept for all | `Applying the conflict handling chosen earlier` printed twice, both stories committed | OK (through `--on-conflict commit-with-markers`) |
+| 31, 31b | Marker guard | job fails naming 2 files, the validation comment carries the failure and the files | OK |
+| 32 | Marker guard, solved | validation green, scope `#13, #14` | OK (first pass FAIL: harness defect 2, stale merge ref) |
+| 33 | Conflict outside force-app | `NOTES.md` named | OK |
+| 34 | Committed conflict prompt report | still `2 file(s)` | OK |
+| 35, 35b | Pull Request creation refused | branch pushed, reason, one-click link | OK (GitHub CLI off `PATH` and no token) |
+| 36 | Deployment from a promotion branch | stops, naming the branch | OK |
+| 37 | Feature off | `looks like a promotion branch, but enablePromotionBranches is not set`, scope `#14` alone | OK (rerun on the fresh merge ref) |
+| 38 | Hand-named branch | warning, scope `#15`, declaration ignored | OK |
+| 39 | Retargeted promotion | warning, scope `#16`, no action of #1 or #5 against main | OK (first pass FAIL: harness defect 3, an empty resource file) |
+| 40 | Grouped merge commit | `is a merge commit: cherry-picking it also carries` before the cherry-pick | OK |
+| 41, 41b | Unreadable declaration | `Pull Request #999 declared by promotion Pull Request 20 was not found: skipped`; P9 deployed | OK |
+| 42, 42b | Story brought in by a sync merge | rows #2, #12, #13; one cherry-pick; `promotionPullRequests: [2]` | OK |
+| 44 | Two levels of vehicle | the retrofit row `#11, #6, #3, #4`, never #10 | OK |
+| 45 | Vehicle boundary | #12 and #13 keep one number each | OK |
+| 46 | Back-merge from the target branch | one row labelled `-`, no row for #6 | OK |
+| 47, 47a | Octopus merge | three parents; one row `#30, #23, #22, #21`, no own row for #30 or #21 | OK |
+| 48, 48a | Promotion that cannot be opened up | row `#31, #23`, never #24 | OK |
+| 49 | Sync merge inside a story | #23 alone, closes the open P5 | OK |
+| 50 | Supersede a promotion | #17 named and closed, #1 offered unmarked | OK |
+| 51 | Branch merged twice | rows #21 and #22, no `-` row | OK |
+| 52a-c | Full merge after a partial promotion | #2 `already deployed through ... (#20)`, #5 runs its action for the first time; afterwards `No Pull Request merged into uat is waiting` | OK |
+| 53a-e | Restricted promotion steps | integration refused, `uat -> main` refused, `uat -> preprod` works, pipeline offers `uat>preprod` only, then the three steps again | OK (first pass FAIL: harness defect 5, CRLF) |
+| 54 | Promotion steps not declared | stops before listing | OK (same) |
+| 55 | Two yaml blocks with the same key | union selected | OK (test 1) |
 
-### Section 5bis, the Pull Request comment audit
-
-`audit-pr-comments.cjs` over the 35 Pull Requests of the run:
+### Section 5bis and 7bis
 
 ```
-697 checks over 35 Pull Requests (github)
+700 checks over 36 Pull Requests (github)
 OK: every sfdx-hardis Pull Request comment is consistent
-```
 
-One finding appeared on the first pass and was not a defect: `e2e-manual-1` showed as
-`skipped` in `preprod` because the validation job of the full merge (#35) had recorded it and the
-`preprod` deployment had not run yet. Running that deployment turned it into "waiting for manual
-execution" with its checkbox, which is the intended sequence. The audit is clean afterwards.
-
-### Section 7bis, the single place in the diagram
-
-```
-integration | 6 | #32, #22, #21, #13, #12, #11
-uat         | 6 | #31, #26, #25, #5, #23, #1
-preprod     | 3 | #30, #29, #2
+integration | 7 | #31, #30, #22, #21, #13, #12, #11
+uat         | 6 | #35, #26, #25, #5, #23, #1
+preprod     | 2 | #29, #2
 main        | 3 | #4, #3, #6
 OK: every Pull Request number appears in a single branch
-With 'show already promoted' on:                       integration=10 uat=8 preprod=6 main=3
-With 'show merge and promotion Pull Requests' on:       integration=6  uat=10 preprod=7 main=4
+With 'show merge and promotion Pull Requests' on: integration=7 uat=10 preprod=6 main=4
 ```
 
 ### Section 7ter, the flag-off regression check
 
-Two pairs run against `nvuillam/sfdx-hardis-promo-e2e-12` with `enablePromotionBranches: false`,
-the branch under test against `origin/main` (`0b3feacbf`), the second pair compared:
+Two pairs run on `-15` with `enablePromotionBranches: false`: an open feature Pull Request
+#37 into uat, an open `integration -> uat` Pull Request #39 (after story #38), the deployment of uat
+and the release notes. The branch under test ran from the working copy, `origin/main` from a
+separate worktree (`C:/tmp/sfdx-hardis-main-0913`, `node_modules` junctioned), both through
+`bin/dev.js`. The second pair:
 
 ```
-check-feature-pr36.log: 119 lines vs 119 lines, only in A: 0, only in B: 0
-check-major-pr38.log:   124 lines vs 124 lines, only in A: 0, only in B: 0
+check-feature-pr37.log: 119 lines vs 119 lines, only in A: 0, only in B: 0
+check-major-pr39.log:   126 lines vs 126 lines, only in A: 0, only in B: 0
 deploy-uat.log:          93 lines vs  93 lines, only in A: 0, only in B: 0
 release-notes.log:       77 lines vs  77 lines, only in A: 0, only in B: 0
 release-notes.md:        40 lines vs  40 lines, only in A: 0, only in B: 0
 TOTAL DIFFERING LINES: 0
 ```
 
-`origin/main` was checked out in a separate `git worktree` (`/c/tmp/sfdx-hardis-main`) with
-`node_modules` junctioned from the working copy, instead of switching the checkout in place: the
-working copy carries the uncommitted backpromote rewrite and must not be disturbed.
+The branch had `b60271506` and `e39dec046` at that point: neither touches `deploy:smart`, the
+release notes, or anything this pass runs with the feature off.
 
 ___
 
 ## Backpromote (Beta), section 6bis
 
-Run against `nvuillam/sfdx-hardis-promo-e2e-14` (private, created empty) and two scratch orgs created
-from the Dev Hub, `promo-e2e-dev` (sandbox name `devorg1`) and `promo-e2e-dev2` (the same sandbox
-name, another org id, for the refresh of B14). Eleven User Stories, `#1` to `#11`, merged into
-`integration` as the steps need them; the developer branch is `feature/E2E-401-dev` and the
-backpromote branch `backpromote/integration/devorg1`.
-
-**63 checks, 63 OK, 0 FAIL.**
+`nvuillam/sfdx-hardis-promo-e2e-16`, eleven stories `#1` to `#11` merged into `integration` as the
+steps need them, developer branch `feature/E2E-401-dev`, backpromote branch
+`backpromote/integration/devorg1`. **63 checks, 63 OK, 0 FAIL.** The same 63 checks passed again on
+`-17` with the retrieve project change.
 
 | Step | What | Expected | Result |
 |------|------|----------|--------|
-| B0 | `--plan` and `--auto` with no provider variable | `blocked` on the `gitProvider` check; the run exits 1 with the same message, before listing anything | OK |
-| B1 | `targetUsername` of `uat` pointed at the target org | `blocked`, check `targetOrg` names `uat` | OK |
-| B1c | `--parent-branch feature/E2E-105-apex` | `blocked`, check `parentBranch` says "not an allowed parent branch" and names `integration` | OK |
-| B2 | `--target-org` on a production org | `blocked`, "production" | OK |
-| B3 | the first plan, then the plan from `#1` with a progress file | `ok`, org type `scratch`, `scan.found` false, nothing selected, no window; then the window from `#1`, the three resources, the four actions not run, every file `missingInOrg`; 10 progress lines with `history`, `delta` and `retrieve`; the checkout untouched and clean | OK |
-| B4 | `--auto --from-pull-request 1` | 3 deployed, `e2e-pre-1`, `e2e-post-2` and `e2e-pre-3` run, `e2e-manual-1` pending, nothing excluded, comments on `#1` `#2` `#3`, checkout on `backpromote/integration/devorg1`, branch not pushed (no manual merge); the org holds `E2E_S1..S3`; **C1**: one Backpromotes comment per Pull Request with one complete sandbox row and its action rows | OK |
-| B5 | `--plan` when up to date, then `--confirm-action e2e-manual-1` | `nothingToDo`, `scan.found` true, the newest Pull Request holds the row and the two older ones are `beforeLastBackpromote`; the confirm runs in `confirm` mode; **C2**: the action row of `e2e-manual-1` is `success`, one row | OK |
-| B6 | a new story `#4`, `--plan` then `--auto` | `#4` selected by default, window from `#4`, one item; 1 deployed, comment on `#4` | OK |
-| B7 | `E2E_S2` changed in the org, `#5` changes it in `integration`, `--on-diff "<file>=git"` | the file is `different`, three-way, the three versions in the cache; 1 deployed and the org body is the git version | OK (after the retrieve defect below was fixed) |
-| B8 | the same with `=org`, then the item comes back | 0 deployed, `E2E_S3` left out as `keptOrg`, **C3**: the row of `#6` is `partial` with the item; the next plan starts at `#6` again with `excludedLastTime`; then `=git` deploys it | OK (same defect) |
-| B9 | agent protocol: `--agent --on-diff "<file>=merge"`, solve, run again | exit 0 with `waitingForMerges`, the file written with `<<<<<<<` and `|||||||` (three-way), a prompt file; then `ok`, 1 deployed, the branch pushed with the merge and the org body holding both lines | OK (after the diff3 defect below was fixed) |
-| B10 | panel protocol: `--prepare`, `--auto` while the markers remain, solve, `--auto` | prepared with markers on the backpromote branch; then exit 1 `conflictsRemaining` with nothing deployed (the org body untouched); then `ok`, 1 deployed, pushed, both lines in the org | OK |
-| B11 | `#9` removes `E2E_S4`: `--skip-destructive`, then a redeploy of `#9` | the deletion is listed, 0 deleted and `E2E_S4` still in the org; then 1 deleted and gone | OK |
-| B12 | `#10` adds `E2E_S5` and `E2E_S6`, `--exclude-metadata StaticResource:E2E_S6` | 1 deployed, `E2E_S6` excluded; the next plan starts at `#10` again with `excludedLastTime`; then nothing excluded and `E2E_S6` in the org | OK |
-| B13 | a dirty `NOTES.md` on the developer branch | `checkout.clean` false naming `NOTES.md`; the run stashes it under `sfdx-hardis backpromote <runId> from feature/E2E-401-dev`, lands on the backpromote branch clean, and `git stash pop` brings `NOTES.md` back | OK |
-| B14 | `promo-e2e-dev2` with the same `--sandbox-name devorg1` | `scan.found` false, `#1` `#2` `#3` flagged `beforeRefresh` and not backpromoted, nothing selected; the run replays the actions in the other org; **C4**: `#1` `#2` `#3` keep one comment each, now with two sandbox rows, and `e2e-pre-1` has two action rows | OK |
-| B15 | `--plan --sandbox-name never-seen --scan-limit 2` | `scan.read` 2, `found` false, `hasMore` true | OK |
-| B16 | `--reset --auto` | mode `reset`, the branch gone from origin | OK |
-| B17 | the terminal prompts | - | NOT COVERED: not scriptable, nobody answered them by hand |
+| B0 | no provider variable | `blocked` on `gitProvider`; the run exits 1 with the message | OK |
+| B1 | `targetUsername` of `uat` pointed at the scratch org | `blocked`, `targetOrg` names `uat` | OK |
+| B1c | `--parent-branch feature/E2E-105-apex` | `blocked`, not an allowed parent branch | OK |
+| B2 | production org | `blocked`, "production" | OK |
+| B3 | first plan, then the plan from `#1` with a progress file | no history, nothing selected; then the window from #1, three items, four actions, `missingInOrg`; 13 progress lines; checkout clean | OK |
+| B4 | `--auto --from-pull-request 1` | 3 deployed, actions run, manual pending, comments on #1 to #3, checkout on the backpromote branch, not pushed; **C1** | OK |
+| B5 | up to date, confirm `e2e-manual-1` | `nothingToDo`; `confirm`; **C2** | OK |
+| B6 | new story #4 | #4 selected by default, 1 deployed | OK |
+| B7 | `E2E_S2` changed in the org, `=git` | `different`, three-way; the org holds the git version | OK |
+| B8 | `=org`, then back | `keptOrg`, **C3** `partial`; next plan starts at #6 again; then deployed | OK |
+| B9 | agent protocol | `waitingForMerges` with diff3 markers and a prompt; then `ok`, pushed, both lines in the org | OK |
+| B10 | panel protocol | `prepare`; `conflictsRemaining` exit 1 with nothing deployed; then `ok`, both lines | OK |
+| B11 | deletion | listed; skipped with `--skip-destructive`; deleted on the redeploy | OK |
+| B12 | excluded item | `E2E_S6` excluded, flagged next time, then deployed | OK |
+| B13 | dirty tree | `checkout.clean` false; stashed under the run id; `git stash pop` brings `NOTES.md` back | OK |
+| B14 | refreshed sandbox | `beforeRefresh`, nothing selected; actions replayed; **C4** two sandbox rows | OK |
+| B15 | scan limit | `read` 2, `hasMore` true | OK |
+| B16 | reset | mode `reset`, branch deleted on origin | OK |
+| B17 | terminal prompts | - | NOT COVERED (not scriptable) |
 
-### The two product defects this section found
+What changed since the last run and is proven by these steps: the provider instance cached per
+process, the history walk ramp, one git call for the merge files, `ls-tree --full-tree`, the retrieve
+cache validated by `SourceMember` (the scratch orgs are source-tracked: B7, B8, B12 and B14 read it),
+the cache allowlist, the pending org changes queried in parallel (B7 `different`, B10), the adaptive
+batches of the comment reads and writes (C1 to C4), and the retried comment reads (no dropped
+connection happened in this run, so the retry path itself was not exercised).
 
-Both were found by the run, fixed in `src/`, and proven again by a full rerun on a fresh repository
-and freshly reset scratch orgs.
+___
 
-**1. A static resource of the org was reported as absent from it, and overwritten without a question.**
+## Performance
 
-`sf project convert mdapi` names the content file of a StaticResource after its `contentType`, so
-`E2E_S2.resource` retrieved from the sandbox comes back as `E2E_S2.txt` in the converted tree. The
-comparison looked the file up by the source path tail of the **repository** file
-(`staticresources/E2E_S2.resource`), found nothing, and set the status to `missingInOrg` with no
-sandbox version:
+Wall-clock time of every job and backpromote call (`timings.tsv`), per-step times from the
+`SFDX_HARDIS_PROGRESS_FILE` of every backpromote call, `timing-report.cjs` for the tables.
 
-```
-B7-plan | FAIL | status in different|pendingInOrg (got missingInOrg); three-way true (got false);
-                 sandbox and parent head versions exist in the cache ({"base":null,"sandbox":null,...})
-```
+### Backpromote
 
-The consequence is the one the feature exists to prevent: the developer is never offered
-"keep the org version" or "merge", and `--on-diff "<file>=org"` keeps nothing, so the work done in
-the sandbox is deployed over without a word (B8 deployed the item the run had asked to keep).
+| Figure | `-16`, before | `-17`, after |
+|--------|---------------|--------------|
+| plans with a window (8 calls), median | 56.0 s | 45.1 s |
+| every plan (16 calls, refusals and "nothing to do" included), median | 21.4 s | 22.3 s |
+| runs (16 calls), median | 44.3 s | 45.0 s |
+| retrieve step when the cache misses (10 calls), median | 29.0 s | 16.9 s |
+| slowest call | `bp-run-exclude` 105.8 s | `bp-plan-s4` 162.4 s (a retrieve of one item that waited 121 s on the org) |
+| all backpromote calls | 1334 s | 1340 s |
 
-Fixed in `src/common/utils/backpromoteOrgUtils.ts`: the retrieve result now also indexes the
-converted files by folder and name without the extension, and the comparison falls back to that
-index when the exact tail misses. The fallback only takes a match when **one** file of the folder
-carries that name, so an LWC bundle (`card.js` next to `card.html`) is never matched by it.
+| Step | before, median / worst (s) | after, median / worst (s) |
+|------|----------------------------|---------------------------|
+| startup (node, oclif, imports) | 7.8 / 10.5 | 7.4 / 11.5 |
+| gitProvider | 0.0 / 0.0 | 0.0 / 0.0 |
+| targetOrg | 0.7 / 2.0 | 0.5 / 1.6 |
+| fetch | 1.4 / 3.9 | 1.4 / 5.6 |
+| listing | 0.8 / 1.0 | 0.8 / 1.0 |
+| history | 0.3 / 3.8 | 0.3 / 4.6 |
+| delta | 0.6 / 18.1 | 0.5 / 28.7 |
+| actions | 0.0 / 2.6 | 0.0 / 2.3 |
+| retrieve | 0.0 / 45.0 | 0.0 / 121.7 |
+| compare | 11.7 / 14.9 | 11.5 / 15.8 |
+| checkout | 0.7 / 1.9 | 0.7 / 1.7 |
+| preActions | 0.0 / 4.6 | 0.0 / 4.8 |
+| merges | 0.5 / 1.0 | 0.5 / 0.8 |
+| deploy | 13.8 / 27.2 | 16.6 / 22.0 |
+| destructive | 17.0 / 17.0 | 17.5 / 17.5 |
+| postActions | 0.0 / 4.6 | 0.0 / 4.9 |
+| comments | 1.9 / 2.9 | 2.0 / 3.1 |
+| push | 2.8 / 3.1 | 2.4 / 3.2 |
 
-**2. A three-way merge was written without the base side.**
+Medians of 0.0 are steps the caches skip in most calls (delta and retrieve are cached per commit
+range and per org). Slowest calls before the change: `bp-run-exclude` 105.8 s (retrieve 45.0,
+deploy 27.2, delta 15.9), `bp-run-refresh` 98.2 s, `bp-run-keep-org` 77.5 s, `bp-plan-diff` 59.0 s
+(retrieve 31.5, delta 15.8).
 
-`writeMergedFile` called `git merge-file -p -L sandbox -L base -L parent`, which writes two-sided
-markers: the `base` label was never used and whoever solves the merge (the developer, the VS Code
-merge editor, the coding agent the prompt is written for) could not see what the two sides started
-from. The command page, the `backpromote` skill and this runbook all describe `|||||||` markers.
+Where the time goes: the git provider is not the bottleneck any more (history, actions and comments
+together stay under 5 s). Every step that takes more than a few seconds is a Salesforce CLI child
+process: `delta` is `sf sgd:source:delta`, `retrieve` was `sf project generate` then
+`sf project retrieve start`, `compare` in a run is the wait for `sf project retrieve preview` (started
+in parallel, 12 to 15 s on its own), `deploy` is `sf project deploy start`. On Windows each child
+process costs 7 to 15 s before it does anything.
 
-Fixed in `src/common/utils/backpromoteGitUtils.ts` by passing `--diff3`, and covered by an assertion
-on `||||||| base` in the existing `writeMergedFile` test.
+### The improvement: no `sf project generate` in the retrieve
 
-### What the step script got wrong
+The retrieve of the sandbox versions created its blank project with `sf project generate`, a
+Salesforce CLI process of its own (14.5 s measured alone on this machine) whose only useful output
+is `sfdx-project.json` and `.forceignore`. `createRetrieveProject` now writes those two files
+directly, with the same `.forceignore` as the template and the API version of the retrieve manifest.
+Other commands keep `createBlankSfdxProject`.
 
-`scripts/backpromote-steps.sh` had never been run. Six defects were found in it, four by reading it
-against the command before the orgs were available and two by the first live run:
+- Before / after on the same 63 steps: retrieve on a cache miss 29.0 s -> 16.9 s (10 calls each),
+  plans with a window 56.0 s -> 45.1 s. Runs did not move: their retrieve is served by the cache.
+- Correctness: the 63 checks passed again on `-17`, including B7, B8, B9 and B10, which compare the
+  retrieved versions with git, and B12 and B14, which retrieve items the cache does not hold.
+- Unit test added (`createRetrieveProject()` in `test/common/utils/backpromoteOrgUtils.test.ts`);
+  `yarn compile`, `yarn lint` and `npx mocha "test/**/*.test.ts"` (1967 passing, 1 pending) green.
+- Commit `b60271506`.
 
-- **B12 left its commits on `integration`.** The step created `feature/E2E-110-kappa` and then called
-  `story_branch`, which checks `integration` out again and whose own `git checkout -b` then fails on
-  the branch that already exists. `story_branch` has no early return, so it wrote the resource,
-  committed it on `integration` and pushed the stale branch. The step now writes the four files itself.
-- **A `--json` run logs nothing to stderr.** oclif silences `uxLog` when `--json` is passed, so
-  `$LOGS/<label>.log` is always empty and the B4 assertion on the deployment action lines could never
-  have passed. It now reads `hardis-report/commands/<timestamp>-hardis-work-backpromote.log`.
-- **`hardis-report/` is not gitignored in the test project**, so `git status --porcelain` is never
-  empty after a backpromote and the "the checkout is clean" assertions of B3 and B13 could never have
-  passed. They now exclude the report directory, which is what the command itself does.
-- **`git add -A` in `stories.sh`** committed whatever sfdx-hardis had left in `hardis-report/` into
-  the User Story. Both functions now add only the files of the story.
-- **The story file paths were read from the wrong branch.** `S1_FILE`, `S2_FILE` and `S3_FILE` were
-  resolved with `git ls-files` while `feature/E2E-401-dev` was checked out, and that branch is cut
-  **before** the stories are merged: all three came back empty, `--on-diff "$S2_FILE=git"` became
-  `--on-diff "=git"`, and every step from B7 on failed for the wrong reason. `resource_file` now
-  falls back to `origin/integration`.
-- **`SELECT Body FROM StaticResource` gives the REST path of the blob, not its content.** Decoding
-  it as base64 produced binary noise, so every assertion on an org body compared garbage.
-  `resource_body` now fetches the blob with the access token of the org.
+Not changed, and why: the `delta` step (`sf sgd:source:delta`) and the pending org changes
+(`sf project retrieve preview`) could only be sped up by running those tools in-process, which means
+new dependencies or a rewrite of source tracking, not a small change. Starting the preview earlier
+would save about 3 s per run and waste a CLI process on every "nothing to do" plan. The 7 to 8 s
+startup is oclif and the plugin imports, shared by every sfdx-hardis command.
 
-Two changes make a failed run cheaper to pick up again: every Pull Request number the steps open is
-appended to `$LOGS/bp-vars.sh`, and the branches the steps create use `git checkout -B`.
+### Promotion jobs
 
-### Expectations that were wrong
+| Kind | Calls | Median (s) | Worst (s) | Worst call |
+|------|-------|------------|-----------|------------|
+| check (`deploy:smart --check`) | 18 | 71.1 | 85.4 | `check-promotion-preprod-nested` |
+| deploy (`deploy:smart`) | 13 | 74.5 | 106.6 | `deploy-integration-pr3` |
+| promote (`promotion:create`) | 20 | 18.7 | 23.0 | `edge-supersede-second` |
+| list-candidates | 4 | 14.1 | 15.3 | `edge-back-merge` |
+| release-notes | 2 | 28.6 | 28.7 | `release-notes` |
 
-`plan-up-to-date.json` and `plan-s4.json` asked for a `backpromote` row on **every** Pull Request of
-the sandbox. The history walk is newest first and stops at the first Pull Request that carries a row
-(`scan.found`), which is what the scan limit exists for: the older ones are `beforeLastBackpromote`
-with `scanned: false`, which is the documented design. The two files now pin the newest one under
-`backpromoted` and the older ones under the new `beforeLastBackpromote` key of
-`check-backpromote-plan.cjs`.
+A validation or deployment job is dominated by the Salesforce deployment itself (`sf project
+deploy start`, with the Apex tests of `RunSpecifiedTests`) and by the Salesforce CLI child processes
+around it; this run did not profile inside `deploy:smart`, so no change was made there. GitLab is
+within 5 % of GitHub on every kind of job (see the GitLab report).
+
+___
+
+## What the run found
+
+### Product
+
+No functional defect showed on GitHub: every promotion branches case, every pipeline checkpoint and
+every backpromote step passed. One performance change in backpromote (above).
+
+The GitLab run found one defect in code shared by both providers, fixed in `e39dec046`: the
+candidate listing read Pull Request numbers from the subject of a merge commit only, and GitLab writes
+`See merge request group/project!N` in the body, so a promotion listed without a reachable GitLab
+had no number on any row. GitHub was not affected (its number is in the subject). Asked the same
+question without a token, the GitHub listing of `preprod` also shows two artefacts of that degraded
+mode that are not fixed: the cherry-picks of the promotions appear as `-` rows next to the
+original merges, and vehicle numbers leak into story rows (`#4, #7`, `#25, #19`), because only the
+provider knows which Pull Requests are promotions or syncs. The command already warns that this list
+may offer stories already on their way.
+
+### Harness (all fixed in the skill, each case rerun)
+
+1. **`Successfully deployed` is not the only success line.** A deployment that reuses the validation
+   job answers `Successfully processed QuickDeploy`: 4a failed on a green job.
+2. **The GitHub API answers with the previous head for a while after a push.** `p_wait_merge_ref`
+   compared the merge ref with `head.sha` from the API, which still named the old commit, so it
+   returned at once and the "solved" validation ran on the merge ref with the markers. It now waits
+   on the commit pushed locally. Runbook trap added.
+3. **A new static resource copied its meta file from `E2E_S1`**, which is not on `main`: the
+   retargeted branch got an empty `-meta.xml` and the validation failed on `Premature end of file`.
+   The meta file is now written directly.
+4. **Two text patterns were wrong**: the word `conflict` appears in git's own cherry-pick output,
+   and the prompt says "Commit with a message", not "commit message".
+5. **Git on Windows checks the config out with CRLF** (`core.autocrlf`), so the `\n` patterns that
+   narrowed `allowedPromotionSteps` matched nothing, the commit was empty and the restricted and
+   undeclared cases ran against the unchanged config: they created #32 and #33 instead of being
+   refused. `set_steps` now normalises the line endings and `commit_steps` fails when nothing
+   changed. Runbook trap added.
+6. The local promotion branches of section 4 stay in the clone, so "no branch was created" is now
+   a count before and after, not zero.
 
 ___
 
 ## What this run did not cover
 
-- **Nothing of section 6bis was skipped except B17.** The Dev Hub daily scratch org signup limit was
-  exhausted for the first hours of the run (the scratch org of the previous run had been deleted
-  before that limit was read, a mistake the new runbook trap now prevents); the section ran in full
-  once the window rolled over.
-- **B17, the terminal prompts of `hardis:work:backpromote`** (parent branch, start Pull Request, the
-  multiselect of items and deletions, one decision per file that differs, the actions, the manual
-  actions). They are not scriptable and nobody answered them by hand.
-- **`--plan` with an unknown `--from-pull-request`** (refused with exit 0) and the refusal of
-  `hardis:work:save` from a `backpromote/*` branch: both landed in the CLI during this run and have
-  no step of their own in section 6bis.
-- **The VS Code Backpromote panel is not clicked.** It reads the same `--plan --json` documents this
-  run asserts, calls `--prepare` on Merge and `--auto --run-id` in the background; its command
-  builder, greying rules and marker watch are covered by the extension's own unit tests.
-- **The DevOps Pipeline webview is exercised through its data provider** (section 4bis), its
-  compiled helpers and its unit tests, never by clicking: the mermaid is asserted as text, never
-  rendered.
+- **B17, the terminal prompts of `hardis:work:backpromote`**: not scriptable, nobody answered them.
+- **The VS Code Backpromote panel and the DevOps Pipeline are not clicked.** The pipeline is
+  asserted through its own data provider and mermaid builder (`data-count` markers read from the
+  text, never rendered). The panel reads the same `--json` documents this run asserts.
+- **The retry of a comment read after a dropped connection** did not happen during the run.
 - **The interactive answer "commit this and every following conflict"** was exercised through
-  `--on-conflict commit-with-markers`, which reaches the same code and prints the same line, not
-  through the prompt itself.
-- **GitLab, Azure DevOps and Bitbucket were not run.** Only GitHub was asked for. The four providers
-  were all run live on 2026-09-07 and 2026-09-08; Bitbucket is still the only one whose repository
-  has to be reused between runs, because its access token is repository-scoped.
+  `--on-conflict commit-with-markers`.
+- **Bitbucket** was not run (see its report). Azure DevOps was not run either: it was not asked
+  for this cycle.
 - **The four pipeline levels share one Salesforce org**, so deployment action state is keyed by org
-  **branch**, not by distinct orgs.
+  branch, not by distinct orgs.
+- The `-17` rerun measured the improvement on GitHub only; the GitLab backpromote run used the code
+  before it.

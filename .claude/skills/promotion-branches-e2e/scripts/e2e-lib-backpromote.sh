@@ -13,6 +13,31 @@
 # Needs WORK, LOGS, DEV, and DEVORG (the developer scratch org) exported.
 
 BP_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Wall-clock timing of every job and backpromote call, one tab separated line per call in
+# $LOGS/timings.tsv: label, kind, milliseconds, exit code, start and end (epoch milliseconds).
+# scripts/timing-report.cjs turns it, and the progress files of the backpromote calls, into the
+# performance tables of the report.
+e2e_now_ms() { date +%s%3N; }
+# Usage: e2e_time_record <label> <kind> <start ms> <exit code>
+e2e_time_record() {
+  local end
+  end=$(e2e_now_ms)
+  printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$((end - $3))" "$4" "$3" "$end" >>"$LOGS/timings.tsv"
+}
+# The progress file of a backpromote call: the one the caller set, or $LOGS/progress/<label>.jsonl
+# (a Windows path, node does not resolve the git bash /c/... ones)
+bp_progress_file() {
+  if [ -n "${SFDX_HARDIS_PROGRESS_FILE:-}" ]; then
+    echo "$SFDX_HARDIS_PROGRESS_FILE"
+    return 0
+  fi
+  mkdir -p "$LOGS/progress"
+  local file
+  file="$(cygpath -m "$LOGS" 2>/dev/null || echo "$LOGS")/progress/$1.jsonl"
+  rm -f "$file"
+  echo "$file"
+}
 BPX="${BPX:-$(cd "$BP_SCRIPTS_DIR/../reference/backpromote" && pwd)}"
 
 # Open a Pull Request into integration and merge it. Usage: bp_open_and_merge <branch> <title> [body]
@@ -33,8 +58,12 @@ e2e_backpromote() {
   *" --target-org "*) ;;
   *) target=(--target-org "${DEVORG:?set DEVORG to the developer scratch org}") ;;
   esac
-  bp_provider_env node "$DEV" hardis:work:backpromote "${target[@]}" "$@" >"$LOGS/$label.log" 2>&1
+  local start progress
+  progress=$(bp_progress_file "$label")
+  start=$(e2e_now_ms)
+  SFDX_HARDIS_PROGRESS_FILE="$progress" bp_provider_env node "$DEV" hardis:work:backpromote "${target[@]}" "$@" >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" backpromote "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -48,8 +77,12 @@ e2e_backpromote_json() {
   *" --target-org "*) ;;
   *) target=(--target-org "${DEVORG:?set DEVORG to the developer scratch org}") ;;
   esac
-  bp_provider_env node "$DEV" hardis:work:backpromote "${target[@]}" --json "$@" >"$LOGS/$label.json" 2>"$LOGS/$label.log"
+  local start progress
+  progress=$(bp_progress_file "$label")
+  start=$(e2e_now_ms)
+  SFDX_HARDIS_PROGRESS_FILE="$progress" bp_provider_env node "$DEV" hardis:work:backpromote "${target[@]}" --json "$@" >"$LOGS/$label.json" 2>"$LOGS/$label.log"
   code=$?
+  e2e_time_record "$label" backpromote "$start" "$code"
   echo "$label exit=$code json=$LOGS/$label.json"
   return $code
 }
@@ -63,11 +96,14 @@ e2e_backpromote_nogit_json() {
   *" --target-org "*) ;;
   *) target=(--target-org "${DEVORG:?set DEVORG to the developer scratch org}") ;;
   esac
+  local start
+  start=$(e2e_now_ms)
   env -u NODE_OPTIONS -u CI -u GITHUB_TOKEN -u CI_SFDX_HARDIS_GITHUB_TOKEN -u GITHUB_REPOSITORY \
     -u CI_SFDX_HARDIS_GITLAB_TOKEN -u CI_JOB_TOKEN -u SYSTEM_ACCESSTOKEN -u CI_SFDX_HARDIS_AZURE_TOKEN -u AZURE_DEVOPS_EXT_PAT \
     -u CI_SFDX_HARDIS_BITBUCKET_TOKEN -u BITBUCKET_WORKSPACE \
     node "$DEV" hardis:work:backpromote "${target[@]}" --json "$@" >"$LOGS/$label.json" 2>"$LOGS/$label.log"
   code=$?
+  e2e_time_record "$label" backpromote "$start" "$code"
   echo "$label exit=$code json=$LOGS/$label.json"
   return $code
 }

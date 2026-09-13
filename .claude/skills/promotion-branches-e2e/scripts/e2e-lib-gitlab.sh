@@ -85,6 +85,8 @@ gl_check() {
   git checkout -q -f --detach HEAD
   gl_fetch_merge_ref "$mr" || return 1
   git checkout -q -f "mrmerge-$mr" || return 1
+  local start
+  start=$(e2e_now_ms)
   gl_ci_env \
     CI_MERGE_REQUEST_IID="$mr" \
     CI_COMMIT_REF_NAME="refs/merge-requests/$mr/merge" \
@@ -94,6 +96,7 @@ gl_check() {
     node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" check "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -104,12 +107,15 @@ gl_deploy() {
   local target="$1" label="$2" code
   cd "$WORK" || return 1
   git checkout -q -f "$target" && git pull -q origin "$target"
+  local start
+  start=$(e2e_now_ms)
   gl_ci_env \
     CI_COMMIT_REF_NAME="$target" \
     CONFIG_BRANCH="$target" \
     node "$DEV" hardis:project:deploy:smart --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" deploy "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -121,6 +127,8 @@ gl_promote() {
   shift 3
   cd "$WORK" || return 1
   git checkout -q -f "$source" && git pull -q origin "$source"
+  local start
+  start=$(e2e_now_ms)
   gl_ci_env \
     CI_COMMIT_REF_NAME="$source" \
     CONFIG_BRANCH="$source" \
@@ -128,6 +136,7 @@ gl_promote() {
     --source-branch "$source" --pull-requests "$mrs" "$@" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" promote "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -139,6 +148,8 @@ gl_release_notes() {
   shift
   cd "$WORK" || return 1
   git checkout -q -f main && git pull -q origin main
+  local start
+  start=$(e2e_now_ms)
   gl_ci_env \
     CI_COMMIT_REF_NAME=main \
     CONFIG_BRANCH=main \
@@ -146,6 +157,7 @@ gl_release_notes() {
     --merge-commit "$(git log --merges -1 --format=%H)" --no-pdf --agent "$@" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" release-notes "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }

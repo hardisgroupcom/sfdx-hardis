@@ -30,6 +30,10 @@ not already, so you know what each assertion is protecting.
 | `scripts/check-diagram-gitlab.cjs` | The same, reading merge requests from the GitLab API.                                                                                                           |
 | `scripts/check-backpromote-plan.cjs` | Asserts a `hardis:work:backpromote ... --json` document (plan version 3: plan, prepare, run, confirm, reset) against the expectations of `reference/backpromote/*.json` (section 6bis). |
 | `scripts/check-backpromote-comments.cjs` | Asserts the "Backpromotes" Pull Request comments of a `dump_pr_comments` dump: one comment per Pull Request, its sandbox rows and action rows (section 6bis, C1 to C4).           |
+| `scripts/promotion-provider.sh`    | Provider neutral job names (`p_check`, `p_deploy`, `p_promote`, `p_open`, `p_merge`...) over the GitHub or GitLab library, picked with `PROVIDER`.               |
+| `scripts/promotion-run.sh`         | Sections 3, 4 and 4bis scripted: the six stories, the four promotions, the release notes, the retrofit, an assertion per job log and a pipeline check per step. |
+| `scripts/promotion-edge.sh`        | Section 6 scripted in five groups (`g1` to `g5`) that build on each other, run after `promotion-run.sh`.                                                        |
+| `scripts/timing-report.cjs`        | Performance tables of a run: `timings.tsv` (every job and backpromote call) and the backpromote progress files, median and worst per step, slowest calls.       |
 | `scripts/ab-run.sh`                | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                            |
 | `scripts/ab-run-gitlab.sh`         | The same on GitLab.                                                                                                                                             |
 | `scripts/ab-run-azure.sh`          | The same on Azure DevOps.                                                                                                                                       |
@@ -118,16 +122,20 @@ failure cannot be an artefact of the previous run's state.
 
 State them again in the report unless you close them:
 
-- The four providers were all run live on 2026-09-07 and 2026-09-08. Bitbucket is the only one
-  whose repository has to be reused between runs, because its access token is repository-scoped;
-  see runbook section 8ter for the two artefacts that follow.
+- The four providers were all run live on 2026-09-07 and 2026-09-08; GitHub and GitLab again on
+  2026-09-13, with sections 3, 4 and 6 scripted. Bitbucket has not been run since 2026-09-08: its
+  only access token is scoped to a repository that no longer exists (404 on it, 403 on repository
+  creation), so a new token is needed before the next Bitbucket run.
 - The four pipeline levels share one Salesforce org, so deployment action state is keyed by org
   **branch**, not by distinct orgs.
 - The pipeline webview is exercised through its own data provider (section 4bis), its compiled
   helpers and its unit tests, not by clicking: the mermaid is asserted as text, never rendered.
-- Backpromote (Beta) runs on GitHub only so far, and its VS Code panel is not clicked: the panel
-  reads the same `--json` documents the run asserts, and its command builder, greying rules and
-  marker watch are unit tested. The terminal prompts of step B17 are only covered when someone
-  answers them by hand.
+- Backpromote (Beta) ran on GitHub and GitLab (2026-09-13). Its Bitbucket and Azure DevOps hooks
+  exist in the libraries but have never run. Its VS Code panel is not clicked: the panel reads the
+  same `--json` documents the run asserts, and its command builder, greying rules and marker watch
+  are unit tested. The terminal prompts of step B17 are only covered when someone answers them by
+  hand. The retry of a comment read after a dropped connection only runs when the provider drops one.
+- `scripts/promotion-provider.sh` covers GitHub and GitLab only: Azure DevOps and Bitbucket still
+  run sections 4 and 6 by hand with their own libraries.
 
 $ARGUMENTS

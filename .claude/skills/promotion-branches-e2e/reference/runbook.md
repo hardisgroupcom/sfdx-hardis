@@ -527,7 +527,7 @@ panel. Say so in the report.
   `different` rather than `pendingInOrg`: the expectations accept both.
 - **The sandbox versions are retrieved into a blank sfdx project.** `sf project retrieve start
   --output-dir` refuses a folder outside the project and drops what `.forceignore` excludes inside
-  it: the run creates a blank project in the temporary folder (`createBlankSfdxProject`) and
+  it: the run writes a two-file sfdx project in the temporary folder (`createRetrieveProject`, no `sf project generate` call since 2026-09-13) and
   retrieves there in source format. A `missingInOrg` status for an item that exists in the org
   means that step went wrong.
 - **A `--json` run prints nothing on stdout but the document, and nothing at all on stderr.** oclif
@@ -561,6 +561,48 @@ panel. Say so in the report.
   pushed right after the Pull Request is opened: `bp_merge` waits until the provider reports that commit
   as the head of the Pull Request, otherwise the merge leaves the actions out.
 
+## 6ter. Scripted runs and timings
+
+Sections 3, 4 and 4bis are scripted in `scripts/promotion-run.sh`, section 6 in
+`scripts/promotion-edge.sh` (groups `g1` to `g5`, in that order, after `promotion-run.sh`). Both
+run on GitHub and GitLab through `scripts/promotion-provider.sh`, which picks the library with
+`PROVIDER=github|gitlab`:
+
+```bash
+export PROVIDER=github ORG REPO WORK LOGS EXPECT DEV API EXT   # plus GL_* and PROJECT_* on GitLab
+bash .claude/skills/promotion-branches-e2e/scripts/promotion-run.sh       # results-section4.txt
+bash .claude/skills/promotion-branches-e2e/scripts/promotion-edge.sh g1 g2 g3 g4 g5   # results-section6.txt
+```
+
+Every Pull Request number they get is appended to `$LOGS/promo-vars.sh`, so a group can be rerun on
+its own after a fix.
+
+Every job simulator (`*_check`, `*_deploy`, `*_promote`, `*_release_notes`, `p_list_candidates`) and
+every backpromote call appends one line to `$LOGS/timings.tsv` (label, kind, milliseconds, exit code,
+start, end). The backpromote calls also get `SFDX_HARDIS_PROGRESS_FILE=$LOGS/progress/<label>.jsonl`
+unless the caller set one. Then:
+
+```bash
+node .claude/skills/promotion-branches-e2e/scripts/timing-report.cjs "$(cygpath -m "$LOGS")" --title GitHub --json "$(cygpath -m "$LOGS")/timing.json"
+```
+
+prints the median and worst time per kind of call, per backpromote step, and the slowest calls.
+Read the numbers with these in mind:
+
+- **Use `bin/run.js` with a fresh `yarn compile` for timings**, not `bin/dev.js`: `dev.js` compiles
+  TypeScript on the fly and adds seconds to every call that a user never pays.
+- **`startup` is 7 to 8 seconds on Windows** for every call (node, oclif and the command imports),
+  before the first progress line. It is the floor of any backpromote call.
+- **Every Salesforce CLI child process costs 7 to 15 seconds on Windows**, whatever it does: the
+  `delta` step is mostly `sf sgd:source:delta`, the `retrieve` step `sf project retrieve start`, and the
+  `compare` step of a run whose delta and retrieve came from the caches is the wait for the
+  `sf project retrieve preview` started in parallel. The git provider calls (history, actions,
+  comments) take one to three seconds on GitHub and on GitLab alike.
+- **A retrieve can wait minutes on the Salesforce side** (121 seconds for one static resource on
+  2026-09-13): one slow call is the org, not the code, when the same step took 17 seconds before and
+  after it.
+- Never time two runs at once: they share the CPU, the scratch orgs and the target org.
+
 ## 7. Traps met while writing this
 
 - **The Dev Hub has a daily scratch org signup limit, and it resets at midnight in the org's own
@@ -590,6 +632,17 @@ panel. Say so in the report.
 - **`refs/pull/<N>/merge` lags behind a push.** After pushing a fix to a Pull Request branch, a
   validation job fetched immediately can still run against the previous merge ref and fail on
   something you just fixed. Fetch again a few seconds later before believing the failure.
+- **So does the head the GitHub API reports.** `GET /pulls/<N>` can answer with the previous
+  `head.sha` for several seconds after a push, so waiting until the merge ref contains "the head the
+  API gives" returns at once and validates the old tree. Wait on the commit you pushed
+  (`p_wait_merge_ref <N> "$(git rev-parse HEAD)"`).
+- **Git on Windows checks files out with CRLF** (`core.autocrlf=true`). A script that edits
+  `config/.sfdx-hardis.yml` with patterns written for `\n` matches nothing, commits nothing, and
+  the case silently runs on the unchanged config. Normalise the line endings first and fail when
+  `git diff --cached --quiet` says nothing changed (`set_steps` / `commit_steps` in
+  `promotion-edge.sh`).
+- **A deployment that reuses its validation prints `Successfully processed QuickDeploy`**, not
+  `Successfully deployed`: assert on both.
 - **Writing into the user's `.gitignore`** to work around the dirty-tree check is not a fix: it
   only moves the failure to the modified `.gitignore`.
 - **The A/B scripts cannot be run from inside the sfdx-hardis working copy.** Section 7ter checks
@@ -660,8 +713,10 @@ The script fetches every Pull Request with `gh`, normalises the state like
 `out/utils/pipeline/promotionBranchUtils.js`: `expandPullRequestsWithPromotions`,
 `buildPromotionIndex`, `annotateAlreadyPromoted`, `enforceSinglePlacePerPullRequest` and
 `userStoryPullRequests`. It prints the counter of each branch node with the Pull Requests it lists,
-and exits non-zero if a number appears twice. It also prints the counts the two toggles produce,
-which must be higher.
+and exits non-zero if a number appears twice. It also prints the counts the **Show merge and
+promotion Pull Requests** toggle produces, which can only be higher. There is no "show already
+promoted" toggle any more: a story a promotion carried further is listed in the branch it reached
+and nowhere else, in the node counter and in the branch window alike.
 
 The extension must be compiled first (`cd $EXT && yarn compile`), on the branch under test.
 
