@@ -17,7 +17,6 @@ import { buildAvailableTargetBranches, selectTargetBranch } from '../../../commo
 import {
   initApexScripts,
   initOrgData,
-  initOrgMetadatas,
   initPermissionSetAssignments,
   installPackages,
   makeSureOrgIsConnected,
@@ -57,6 +56,8 @@ Key features include:
 - **User Story Name Validation:** Enforces User Story name formatting using \`newTaskNameRegex\` and provides examples via \`newTaskNameRegexExample\
 
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
+
+- **Developer sandbox metadata:** The metadata of an existing sandbox is not updated by this command. To bring into it what the team merged in the target branch, use [hardis:work:backpromote](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-backpromote/) (the Backpromote panel in VS Code).
 
 - **Agent Mode (\`--agent\`):** Enables a fully non-interactive execution path for AI agents and automation. In this mode, all required decisions must be provided as flags and are validated at command start with explicit error messages listing missing inputs and available options.
 
@@ -103,8 +104,8 @@ The command's logic orchestrates various underlying processes:
 - **Git Operations:** Utilizes \`checkGitClean\` and \`createWorkBranchFromTarget\` to manage Git repository state and branches. \`createWorkBranchFromTarget\` fetches \`origin/<target>\` and creates the new branch from it (falling back to the local target ref), checks out the branch if it already exists, and fails with a clear message if it is checked out in another git worktree.
 - **Interactive Prompts:** Leverages the \`prompts\` library to gather user input for User Story type, source types, and User Story names.
 - **Configuration Management:** Reads and applies project-specific configurations from \`.sfdx-hardis.yml\` using \`getConfig\` and \`setConfig\
-- **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including \`initApexScripts\`, \`initOrgData\`, \`initOrgMetadatas\`, \`initPermissionSetAssignments\`, \`installPackages\`, and \`makeSureOrgIsConnected\
-- **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., \`sf config set target-org\`, \`sf org open\`, \`sf project delete tracking\`) via \`execCommand\` and \`execSfdxJson\
+- **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including \`initApexScripts\`, \`initOrgData\`, \`initPermissionSetAssignments\`, \`installPackages\`, and \`makeSureOrgIsConnected\
+- **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., \`sf config set target-org\`, \`sf org open\`) via \`execCommand\` and \`execSfdxJson\
 - **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling \`ScratchCreate.run\` or \`SandboxCreate.run\` as needed.
 - **WebSocket Communication:** Sends refresh status messages via \`WebSocketClient.sendRefreshStatusMessage()\` to update connected VS Code clients.
 </details>
@@ -740,23 +741,13 @@ The command's logic orchestrates various underlying processes:
       }
 
       if (initSandbox) {
-        let initSourcesErr: any = null;
         let initSandboxErr: any = null;
         try {
           if (config.installedPackages) {
             await installPackages(config.installedPackages || [], orgUsername);
           }
-          try {
-            // Continue initialization even if push did not work... it could work and be not such a problem 😊
-            uxLog("action", this, c.cyan(t('resettingLocalSfCliTracking')));
-            await execCommand(`sf project delete tracking --no-prompt -o ${orgUsername}`, this, {
-              fail: false,
-              output: true,
-            });
-            await initOrgMetadatas(config, orgUsername, orgUsername, {}, this.debugMode, { scratch: false });
-          } catch (e1) {
-            initSourcesErr = e1;
-          }
+          // The metadata is not deployed from here: a backpromote brings into the sandbox what the
+          // team merged in the target branch
           await initPermissionSetAssignments(config.initPermissionSets || [], orgUsername);
           await initApexScripts(config.scratchOrgInitApexScripts || [], orgUsername);
           await initOrgData(path.join('.', 'scripts', 'data', 'ScratchInit'), orgUsername);
@@ -777,25 +768,13 @@ The command's logic orchestrates various underlying processes:
             )
           );
         }
-        if (initSourcesErr) {
-          uxLog(
-            "log",
-            this,
-            c.grey('Error(s) while pushing sources to sandbox: ' + initSourcesErr.message + '\n' + initSourcesErr.stack)
-          );
-          uxLog(
-            "warning",
-            this,
-            c.yellow(`To sync sandbox with branch ${c.bold(this.targetBranch)}:
-  - ${c.bold(
-              'Fix the errors'
-            )} (manually update target sandbox in setup), then run "New User Story" again with same sandbox
-  - ${c.bold('Refresh your sandbox')} (contact release manager if needed)
-  Otherwise, start working now (beware of potential conflicts)
-        `)
-          );
-        }
       }
+      // The metadata of the sandbox is brought up to date with a backpromote, not by this command
+      uxLog(
+        "action",
+        this,
+        c.cyan(t('workNewBackpromoteHint', { branch: this.targetBranch, docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-backpromote/` }))
+      );
     }
     // Open of if not already open
     if (openOrg === true) {

@@ -7,6 +7,8 @@ import { getCurrentGitBranch, git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+
 import { httpPost } from '../utils/httpUtils.js';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./jenkinsUtils.js";
 const { Bitbucket } = bbPkg;
@@ -723,8 +725,9 @@ export class BitbucketProvider extends GitProviderRoot {
     updatedAfter: string | null = null,
   ): Promise<CommonPullRequestInfo[]> {
     uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFetchingMergedPrs', { branches: allBranches.join(', ') })));
-    const prPromises = allBranches.map(async (branchName) => {
-      try {
+    // Adaptive batches of the Bitbucket ladder, shrunk only when the provider throttles
+    const prResults = await mapInAdaptiveBatchesSettled(allBranches, async (branchName) => {
+      {
         const branchQuery = `destination.branch.name = "${branchName}" AND state = "MERGED"`
           + (updatedAfter ? ` AND updated_on >= "${updatedAfter}"` : '');
         // Paginated: a branch can have more merged PRs than fit on one page
@@ -739,14 +742,12 @@ export class BitbucketProvider extends GitProviderRoot {
         );
         uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFoundMergedPrs', { count: values.length, branchName })));
         return values;
-      } catch (err) {
-        uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketErrorFetchingMergedPrs', { branchName, message: String(err) })));
-        return [];
       }
+    }, {
+      sizes: PROVIDER_BATCH_PROFILES.bitbucket,
+      onError: (err, branchName) => uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketErrorFetchingMergedPrs', { branchName, message: String(err) }))),
     });
-
-    const prResults = await Promise.all(prPromises);
-    const allMergedPRs: any[] = prResults.flat();
+    const allMergedPRs: any[] = prResults.flatMap((prs) => prs || []);
     uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketTotalMergedPrs', { count: allMergedPRs.length })));
 
     // Keep PRs whose merge commit is in our commit list (prefix-aware match)
@@ -981,12 +982,18 @@ ${getBannerMarkdownAndLink()}
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const pullRequestId = prNumber || Number(process.env.BITBUCKET_PR_ID || '');
     if (!pullRequestId || !repoSlug || !workspace) return null;
-    const comments = await this.bitbucket.repositories.listPullRequestComments({
-      pull_request_id: pullRequestId,
-      repo_slug: repoSlug,
-      workspace,
-    });
-    for (const comment of comments?.data?.values || []) {
+    // Paginated like the upsert: a marker comment past the first page must be found, or the upsert
+    // rewrites it from an empty state
+    const comments = await this.fetchAllPages(
+      (params) => this.bitbucket.repositories.listPullRequestComments(params),
+      {
+        pull_request_id: pullRequestId,
+        repo_slug: repoSlug,
+        workspace,
+        pagelen: 50,
+      },
+    );
+    for (const comment of comments) {
       if ((comment?.content?.raw || '').includes(marker)) {
         return comment.content?.raw || null;
       }
@@ -999,13 +1006,20 @@ ${getBannerMarkdownAndLink()}
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const pullRequestId = prNumber || Number(process.env.BITBUCKET_PR_ID || '');
     if (!pullRequestId || !repoSlug || !workspace) return;
-    const comments = await this.bitbucket.repositories.listPullRequestComments({
-      pull_request_id: pullRequestId,
-      repo_slug: repoSlug,
-      workspace,
-    });
+    // Paginated like the read side: a Pull Request carrying more comments than one page would get
+    // a second marker comment at every run, each one notifying the participants again
+    const comments = await this.fetchAllPages(
+      (params) => this.bitbucket.repositories.listPullRequestComments(params),
+      {
+        pull_request_id: pullRequestId,
+        repo_slug: repoSlug,
+        workspace,
+        pagelen: 50,
+      },
+    );
     let existingCommentId: number | null = null;
-    for (const comment of comments?.data?.values || []) {
+    for (const comment of comments) {
+      if (comment?.deleted) continue;
       if ((comment?.content?.raw || '').includes(marker)) {
         existingCommentId = comment.id || null;
         break;

@@ -22,7 +22,8 @@ Read `.claude/rules/` for coding conventions, i18n rules, and translation rules 
    - Use `fs-extra` for file operations
    - Use `prompts()` for user input
    - Follow the provider pattern for external integrations
-3. **Add translations**: If new i18n keys were introduced, add them to **all 9 locale files** (`en`, `de`, `es`, `fr`, `it`, `ja`, `nl`, `pl`, `pt-BR`), sorted alphabetically.
-4. **Verify patterns**: Ensure new code matches existing patterns in the codebase.
+3. **Extension side**: When the design touches vscode-sfdx-hardis, load the `vscode-sfdx-hardis` skill and implement that part in `../vscode-sfdx-hardis`, following that repository's `CLAUDE.md` and `.claude/skills/implement/SKILL.md` rather than the sfdx-hardis conventions. The CLI stays the engine: the extension passes flags, it does not duplicate CLI logic.
+4. **Add translations**: If new i18n keys were introduced, add them to **all 9 locale files** (`en`, `de`, `es`, `fr`, `it`, `ja`, `nl`, `pl`, `pt-BR`), sorted alphabetically.
+5. **Verify patterns**: Ensure new code matches existing patterns in the codebase.
 
 Continue iterating until all changes from the design are implemented. Do not stop to ask whether to continue.

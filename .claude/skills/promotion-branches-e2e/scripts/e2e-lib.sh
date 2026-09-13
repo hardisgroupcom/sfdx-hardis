@@ -41,6 +41,8 @@ e2e_check() {
   git checkout -q -f --detach HEAD
   git fetch -q origin "+refs/pull/$pr/merge:refs/heads/prmerge-$pr" || return 1
   git checkout -q -f "prmerge-$pr" || return 1
+  local start
+  start=$(e2e_now_ms)
   e2e_ci_env \
     GITHUB_REF_NAME="$pr/merge" \
     GITHUB_REF="refs/pull/$pr/merge" \
@@ -49,6 +51,7 @@ e2e_check() {
     node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" check "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -59,6 +62,8 @@ e2e_deploy() {
   local target="$1" label="$2" code
   cd "$WORK" || return 1
   git checkout -q -f "$target" && git pull -q origin "$target"
+  local start
+  start=$(e2e_now_ms)
   e2e_ci_env \
     GITHUB_REF_NAME="$target" \
     GITHUB_REF="refs/heads/$target" \
@@ -66,6 +71,7 @@ e2e_deploy() {
     node "$DEV" hardis:project:deploy:smart --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" deploy "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -77,6 +83,8 @@ e2e_promote() {
   shift 3
   cd "$WORK" || return 1
   git checkout -q -f "$source" && git pull -q origin "$source"
+  local start
+  start=$(e2e_now_ms)
   env -u NODE_OPTIONS \
     GITHUB_TOKEN="$(gh auth token)" \
     GITHUB_REPOSITORY="$REPO" \
@@ -87,6 +95,7 @@ e2e_promote() {
     --source-branch "$source" --pull-requests "$prs" "$@" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" promote "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -98,6 +107,8 @@ e2e_release_notes() {
   shift
   cd "$WORK" || return 1
   git checkout -q -f main && git pull -q origin main
+  local start
+  start=$(e2e_now_ms)
   e2e_ci_env \
     GITHUB_REF_NAME=main \
     CONFIG_BRANCH=main \
@@ -105,8 +116,39 @@ e2e_release_notes() {
     --merge-commit "$(git log --merges -1 --format=%H)" --no-pdf --agent "$@" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" release-notes "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
+}
+
+# Backpromote (Beta) hooks of scripts/e2e-lib-backpromote.sh (runbook section 6bis): the variables the
+# CLI reads outside CI, and a Pull Request into integration opened then merged
+bp_provider_env() {
+  env -u NODE_OPTIONS -u CI \
+    GITHUB_TOKEN="$(gh auth token)" \
+    GITHUB_REPOSITORY="$REPO" \
+    GITHUB_REPOSITORY_OWNER="${REPO%%/*}" \
+    GITHUB_SERVER_URL="https://github.com" \
+    "$@"
+}
+
+# Usage: bp_open <branch> <title> [body]  (prints the Pull Request number)
+bp_open() {
+  local url
+  url=$(gh pr create --repo "$REPO" --base integration --head "$1" --title "$2" --body "${3:-backpromote end to end test}") || return 1
+  echo "${url##*/}"
+}
+
+# Usage: bp_merge <number>. GitHub refuses a merge right after a push to the source branch ("Base
+# branch was modified"): retry for a while.
+bp_merge() {
+  for _ in $(seq 1 10); do
+    if gh pr merge "$1" --repo "$REPO" --merge --delete-branch=false; then
+      return 0
+    fi
+    sleep 3
+  done
+  return 1
 }
 
 # The lines worth reading in a job log
@@ -160,3 +202,7 @@ pipeline_check() {
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
+
+# Backpromote (Beta) helpers, provider agnostic
+# shellcheck source=/dev/null
+source "$E2E_SCRIPTS_DIR/e2e-lib-backpromote.sh"

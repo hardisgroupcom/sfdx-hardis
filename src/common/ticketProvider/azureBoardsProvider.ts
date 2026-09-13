@@ -8,6 +8,7 @@ import type { Ticket, TicketsFromStringOptions } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
 import { extractRegexMatches, git, isGitRepo, uxLog } from "../utils/index.js";
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 import { AzureDevopsProvider } from "../gitProvider/azureDevops.js";
 import { SfError } from "@salesforce/core";
 import { getConfig, getEnvVar } from "../../config/index.js";
@@ -214,18 +215,26 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     if (showProgress) {
       WebSocketClient.sendProgressStartMessage(t('collectingTicketsInfo', { count: azureTicketsNumber }), azureTicketsNumber);
     }
-    let collectedTicketsNumber = 0;
     // try/finally so the progress bar never stays stuck in the VS Code UI when a fetch throws
     try {
+      // One HTTP call per work item, in the adaptive batches of the Azure DevOps ladder, shrunk only
+      // when Azure throttles. One failing work item (deleted id, expired PAT...) must not lose the others.
+      const azureTickets = tickets.filter((ticket) => ticket.provider === "AZURE");
+      const errorById = new Map<string, string>();
+      const infos = await mapInAdaptiveBatchesSettled(azureTickets, (ticket) => azureWorkItemApi.getWorkItem(Number(ticket.id)), {
+        sizes: PROVIDER_BATCH_PROFILES.azure,
+        onBackoff: (size, e, waitMs) => uxLog("log", this, c.grey('[AzureBoardsProvider] ' + t('providerThrottledBackoff', { count: size, waitSeconds: Math.round(waitMs / 1000), message: (e as Error)?.message || '' }))),
+        onError: (e, ticket) => errorById.set(ticket.id, (e as Error).message),
+        onProgress: (done, total) => {
+          if (showProgress) {
+            WebSocketClient.sendProgressStepMessage(done, total);
+          }
+        },
+      });
+      const infoById = new Map(azureTickets.map((ticket, index) => [ticket.id, infos[index] ?? null]));
       for (const ticket of tickets) {
         if (ticket.provider === "AZURE") {
-          // One failing work item (deleted id, expired PAT mid-loop...) must not lose the others
-          let ticketInfo: any = null;
-          try {
-            ticketInfo = await azureWorkItemApi.getWorkItem(Number(ticket.id));
-          } catch (e) {
-            ticketInfo = { error: (e as Error).message };
-          }
+          const ticketInfo: any = infoById.get(ticket.id) ?? { error: errorById.get(ticket.id) || 'no work item returned' };
           if (ticketInfo && ticketInfo?.fields) {
             ticket.foundOnServer = true;
             ticket.subject = ticketInfo.fields["System.Title"] || "";
@@ -238,10 +247,6 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             uxLog("other", this, c.grey('[AzureBoardsProvider] ' + t('azureBoardsProviderCollectedWorkItem', { ticketId: ticket.id })));
           } else {
             uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderUnableToGetWorkItem', { ticketId: ticket.id, ticketInfo: JSON.stringify(ticketInfo) })));
-          }
-          collectedTicketsNumber++;
-          if (showProgress) {
-            WebSocketClient.sendProgressStepMessage(collectedTicketsNumber, azureTicketsNumber);
           }
         }
       }

@@ -1,0 +1,10 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "result": {
+    "noExclusion": true,
+    "commentedPullRequests": [
+      "{{S10}}"
+    ]
+  }
+}

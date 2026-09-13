@@ -1,0 +1,37 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "mode": "plan",
+  "orgType": "scratch",
+  "sandboxName": "{{SANDBOX}}",
+  "checks": [
+    {
+      "id": "gitProvider",
+      "ok": true
+    },
+    {
+      "id": "targetOrg",
+      "ok": true
+    },
+    {
+      "id": "parentBranch",
+      "ok": true
+    }
+  ],
+  "pullRequests": [
+    "{{S1}}",
+    "{{S2}}",
+    "{{S3}}"
+  ],
+  "notBackpromoted": [
+    "{{S1}}",
+    "{{S2}}",
+    "{{S3}}"
+  ],
+  "selected": 0,
+  "scanFound": false,
+  "windowNull": true,
+  "checkoutClean": true,
+  "onBackpromoteBranch": false,
+  "branchExistsOnOrigin": false
+}

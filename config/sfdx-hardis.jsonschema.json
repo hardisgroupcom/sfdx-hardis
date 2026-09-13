@@ -721,6 +721,18 @@
       "title": "Labels for available PR/MR target branches",
       "type": "array"
     },
+    "backpromoteScanLimit": {
+      "$id": "#/properties/backpromoteScanLimit",
+      "description": "Number of merged Pull Requests of the parent branch that sf hardis:work:backpromote reads, newest first, to find the last backpromote of a sandbox in the Backpromotes Pull Request comments. When no row is found within this limit, nothing is pre-selected and the user picks the start Pull Request (or extends the scan with --scan-limit).",
+      "default": 100,
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/work/backpromote/",
+      "examples": [
+        100,
+        250
+      ],
+      "title": "Backpromote history scan limit",
+      "type": "integer"
+    },
     "branchPrefixChoices": {
       "$id": "#/properties/branchPrefixChoices",
       "description": "When calling hardis:work:new, you can override the default branch prefixes. Input title, value and description for each of them",

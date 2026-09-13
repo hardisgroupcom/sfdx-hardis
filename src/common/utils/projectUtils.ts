@@ -25,9 +25,9 @@ export const GLOB_IGNORE_PATTERNS = [
 // glob tests every ignore pattern against every walked path, so a pattern that never matches only costs
 // time, and most of the repository root folders never show up inside a package directory.
 // The ones kept here would be walked whenever the glob root turns out to be a project root after all:
-// a project declaring "." as a package directory, a --folder pointing at the repository, or the blank
-// project the backpromote conflict detection retrieves into. Walking .git alone can mean tens of
-// thousands of loose objects, which costs far more than testing a handful of patterns.
+// a project declaring "." as a package directory, a --folder pointing at the repository, or a blank
+// project a command retrieves into. Walking .git alone can mean tens of thousands of loose objects,
+// which costs far more than testing a handful of patterns.
 export const PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS = [
   '**/node_modules/**',
   '**/.git/**',

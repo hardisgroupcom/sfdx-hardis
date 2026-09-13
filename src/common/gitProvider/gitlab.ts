@@ -6,6 +6,8 @@ import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { buildPrCreateUrl, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
 
@@ -644,8 +646,9 @@ ${getBannerMarkdownAndLink()}
     commitSHAs: Set<string>,
     updatedAfter: string | null = null,
   ): Promise<CommonPullRequestInfo[]> {
-    const mrPromises = allBranches.map(async (branchName) => {
-      try {
+    // Adaptive batches of the Gitlab ladder, shrunk only when the provider throttles
+    const mrResults = await mapInAdaptiveBatchesSettled(allBranches, async (branchName) => {
+      {
         const mergedMRs = await this.gitlabApi!.MergeRequests.all({
           projectId,
           targetBranch: branchName,
@@ -659,14 +662,12 @@ ${getBannerMarkdownAndLink()}
         });
         uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabFetchingMergedMrs', { branchName })));
         return mergedMRs;
-      } catch (err) {
-        uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorFetchingMergedMrsForBranch', { branchName, message: String(err) })));
-        return [];
       }
+    }, {
+      sizes: PROVIDER_BATCH_PROFILES.gitlab,
+      onError: (err, branchName) => uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorFetchingMergedMrsForBranch', { branchName, message: String(err) }))),
     });
-
-    const mrResults = await Promise.all(mrPromises);
-    const allMergedMRs: any[] = mrResults.flat();
+    const allMergedMRs: any[] = mrResults.flatMap((mrs) => mrs || []);
 
     // Keep MRs whose merge commit SHA (or last commit before merge) is in our commit list
     const relevantMRs = allMergedMRs.filter((mr) => {
@@ -812,7 +813,9 @@ ${getBannerMarkdownAndLink()}
   }
 
   private resolveMergeRequestContext(prNumber?: number): { projectId: string; mergeRequestId: number } | null {
-    const projectId = process.env.CI_PROJECT_ID || null;
+    // Same fallback as listPullRequests: outside a GitLab job only CI_PROJECT_PATH may be set, and
+    // without it every comment read answers "no comment" instead of saying it could not read
+    const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH || null;
     if (!projectId) return null;
     let mergeRequestId: number;
     if (prNumber) {

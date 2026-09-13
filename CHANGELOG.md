@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+- [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) (Beta), reworked: bring into your developer sandbox what your teammates merged, from the new VS Code panel or with a coding agent, with its history kept on the Pull Requests. It replaces `hardis:work:refresh`.
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): updating an existing sandbox no longer deploys the target branch metadata, use [backpromote](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) for that.
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): on GitLab, stories can be selected by their merge request number even when GitLab cannot be reached, and an undone promotion no longer ends with a misleading error.
+- Git and ticketing providers: large projects load faster, with calls slowed down only when the provider asks for it, and a Pull Request comment is never written twice.
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a promotion branch deleted after its merge no longer blocks the next promotion of the same day, whose name is now also taken from the merged Pull Requests, the target branch history and the stale remote-tracking refs.
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/#naming): new branches are named `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>` (UTC), with `-2`, `-3`... only when that name is already taken, and the `<YYYY-MM-DD>-<counter>` names of earlier promotions are still recognized.
 
