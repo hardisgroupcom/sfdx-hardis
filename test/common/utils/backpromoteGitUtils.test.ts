@@ -12,6 +12,7 @@ import {
   changedFilesByFirstParentCommit,
   packageDirectoriesAtRef,
   checkoutBackpromoteBranch,
+  releaseBranchFromOtherWorktrees,
   collectItemFiles,
   commitAllChanges,
   commitFiles,
@@ -111,6 +112,24 @@ describe('backpromote branch on a real git repository', () => {
     expect(fileAtRef('origin/integration', apexClass)).to.contain('scale = 3');
     expect(fileAtRef('origin/integration', 'nope.txt')).to.be.null;
     expect(commitsTouchingFiles(`${parentHead}^1`, parentHead, [lwcFile])).to.deep.equal([parentHead]);
+  });
+
+  it('removes another worktree holding the backpromote branch, so that the checkout works', async () => {
+    fetchOrigin();
+    const other = path.join(path.dirname(repo), 'other-worktree');
+    await g.raw(['worktree', 'add', '-b', BRANCH, other, 'origin/integration']);
+    await fs.writeFile(path.join(other, 'scratch.txt'), 'uncommitted\n');
+    // Nothing to do for a branch no other worktree holds
+    expect(releaseBranchFromOtherWorktrees('feature/my-story')).to.deep.equal([]);
+    const removed = releaseBranchFromOtherWorktrees(BRANCH);
+    expect(removed.map((dir) => path.resolve(dir).toLowerCase())).to.deep.equal([path.resolve(other).toLowerCase()]);
+    expect(fs.existsSync(other)).to.be.false;
+    // The branch and its commits stay, and the checkout now works
+    expect(revParse(BRANCH)).to.equal(parentHead);
+    checkoutBackpromoteBranch(BRANCH, 'origin/integration');
+    expect(currentBranchName()).to.equal(BRANCH);
+    // The current worktree is never removed
+    expect(releaseBranchFromOtherWorktrees(BRANCH)).to.deep.equal([]);
   });
 
   it('creates the backpromote branch from the parent head, commits a merge on it and pushes it with a lease', async () => {

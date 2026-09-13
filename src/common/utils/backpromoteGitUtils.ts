@@ -297,6 +297,43 @@ export function checkoutBackpromoteBranch(branch: string, parentRef: string): { 
 }
 
 /**
+ * A branch checked out in another worktree cannot be checked out here: git refuses with "is already
+ * used by worktree". The backpromote branch belongs to the backpromote, so every other worktree
+ * holding it is removed (forced: its uncommitted changes are lost, its commits stay on the branch).
+ * Returns the removed worktree paths. A main worktree cannot be removed: git refuses and the error is
+ * thrown with the path, so the user knows which checkout to switch.
+ */
+export function releaseBranchFromOtherWorktrees(branch: string): string[] {
+  const list = runGit(['worktree', 'list', '--porcelain']);
+  if (list.status !== 0) {
+    return [];
+  }
+  const normalize = (dir: string) => {
+    const resolved = path.resolve(dir);
+    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+  };
+  const current = normalize(gitRoot());
+  const removed: string[] = [];
+  for (const block of (list.stdout || '').split(/\r?\n\r?\n/)) {
+    const lines = block.split(/\r?\n/);
+    const worktree = lines.find((line) => line.startsWith('worktree '))?.substring('worktree '.length).trim();
+    const holdsBranch = lines.some((line) => line.trim() === `branch refs/heads/${branch}`);
+    if (!worktree || !holdsBranch || normalize(worktree) === current) {
+      continue;
+    }
+    const result = runGit(['worktree', 'remove', '--force', worktree]);
+    if (result.status !== 0) {
+      throw new SfError(`[Backpromote] ${branch} is checked out in the worktree ${worktree}, which could not be removed: ${(result.stderr || result.stdout || '').trim()}`);
+    }
+    removed.push(worktree);
+  }
+  if (removed.length > 0) {
+    runGit(['worktree', 'prune']);
+  }
+  return removed;
+}
+
+/**
  * Rebuild the checked-out backpromote branch on the current parent head: reset, then cherry-pick
  * the commits it held beyond the previous parent head. Also used when the checkout was already on
  * the branch (the command leaves it there after every run) and the parent branch moved since.

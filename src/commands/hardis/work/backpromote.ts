@@ -57,6 +57,7 @@ import {
   changedFilesByFirstParentCommit,
   packageDirectoriesAtRef,
   checkoutBackpromoteBranch,
+  releaseBranchFromOtherWorktrees,
   collectItemFiles,
   commitAllChanges,
   commitFiles,
@@ -984,6 +985,10 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
         }
       }
       ctx.state.checkout = { originalBranch: current, stashed, stashMessage };
+      // Another worktree holding the backpromote branch would make the checkout fail
+      for (const worktree of releaseBranchFromOtherWorktrees(ctx.backpromoteBranch)) {
+        uxLog('warning', this, c.yellow(t('backpromoteWorktreeRemoved', { branch: ctx.backpromoteBranch, worktree })));
+      }
       const carried = checkoutBackpromoteBranch(ctx.backpromoteBranch, ctx.parentRef);
       uxLog('action', this, c.cyan(t('backpromoteCheckedOut', { branch: ctx.backpromoteBranch, parentBranch: ctx.parentBranch })));
       if (carried.droppedMerges.length > 0) {

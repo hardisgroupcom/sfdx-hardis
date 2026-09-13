@@ -287,6 +287,7 @@
   "backpromoteWaitingForMerges": "{{count}} file(s) written with conflict markers: solve them, then run the same command again with the run id",
   "backpromoteWindowChosen": "Backpromote window: from Pull Request {{number}} to the head of {{parentBranch}}",
   "backpromoteWindowEmpty": "Nothing to backpromote: the window holds no metadata and no deployment action",
+  "backpromoteWorktreeRemoved": "{{branch}} was checked out in the worktree {{worktree}}: that worktree was removed so that the backpromote can use the branch",
   "backupFolderAlreadyExistsContinueOrRestart": "A backup folder already exists for this sandbox: {{projectPath}}. Do you want to continue with it or restart from scratch?",
   "backupFolderAlreadyExistsDescription": "Continue: keep the items already saved (each section will ask before retrieving again). Restart: delete the existing backup and start a new one.",
   "backupFolderOrgMismatch": "The selected backup folder ({{folder}}) does not match the target org ({{instanceUrl}}). Restoring a backup into a different org can corrupt both sandboxes and lose credentials.",

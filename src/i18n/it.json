@@ -287,6 +287,7 @@
   "backpromoteWaitingForMerges": "{{count}} file scritto/i con marcatori di conflitto: risolvili, poi esegui di nuovo lo stesso comando con il run id",
   "backpromoteWindowChosen": "Finestra di backpromote: dalla Pull Request {{number}} alla head di {{parentBranch}}",
   "backpromoteWindowEmpty": "Nessun elemento da includere nel backpromote: la finestra non contiene metadati né azioni di distribuzione",
+  "backpromoteWorktreeRemoved": "{{branch}} era in uso nel worktree {{worktree}}: quel worktree è stato rimosso perché il backpromote possa usare il branch",
   "backupFolderAlreadyExistsContinueOrRestart": "Esiste già una cartella di backup per questo sandbox: {{projectPath}}. Vuoi continuare con essa o ricominciare da zero?",
   "backupFolderAlreadyExistsDescription": "Continua: mantiene gli elementi già salvati (ogni sezione chiederà prima di recuperarli di nuovo). Ricomincia: elimina il backup esistente e ne avvia uno nuovo.",
   "backupFolderOrgMismatch": "La cartella di backup selezionata ({{folder}}) non corrisponde all'org di destinazione ({{instanceUrl}}). Ripristinare un backup in un org diverso può corrompere entrambi i sandbox e causare la perdita delle credenziali.",
