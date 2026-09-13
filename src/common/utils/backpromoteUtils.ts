@@ -31,6 +31,8 @@ export interface BackpromotePrGroup {
     author: string;
     webUrl: string;
     sourceBranch: string;
+    /** The commit that names this Pull Request (its merge commit, or its squash commit) */
+    commit?: string;
   }>;
   /** PR-scoped configs for deployment actions and test classes (merged from all associated PRs) */
   prConfigs: Array<{ config: any; prId: number; prTitle: string }>;
@@ -390,6 +392,7 @@ export async function listMergedPrsWithCommits(
           author: prDetail?.authorName || childCommit.author_name,
           webUrl: prDetail?.webUrl || '',
           sourceBranch: prDetail?.sourceBranch || sourceBranch || '',
+          commit: childCommit.hash,
         });
         const prConfig = await loadPrConfig(prNum, parentBranch, actionFilesAtRef);
         if (prConfig) prConfigs.push({ config: prConfig, prId: prNum, prTitle });

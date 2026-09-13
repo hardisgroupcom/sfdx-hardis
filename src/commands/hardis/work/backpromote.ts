@@ -561,6 +561,16 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     reportCommandProgress({ step: 'listing', message: t('backpromoteProgressListing', { parentBranch: ctx.parentBranch }) });
     ctx.groups = await listMergedPrsWithCommits(ctx.parentRef, '', null, this, { maxCount: ctx.scanLimit });
     ctx.filesByCommit = changedFilesByFirstParentCommit(['-n', String(ctx.scanLimit), ctx.parentRef]);
+    // A merge that brought several Pull Requests (a retrofit of main, a sync between major branches)
+    // gives each of them the files of its own merge commit: one git call for all of them
+    const innerCommits = [
+      ...new Set(ctx.groups.filter((group) => group.associatedPrs.length > 1).flatMap((group) => group.associatedPrs.map((pr) => pr.commit || '').filter((hash) => hash !== '' && hash !== group.commit.hash && !ctx.filesByCommit.has(hash)))),
+    ];
+    for (let index = 0; index < innerCommits.length; index += 200) {
+      for (const [hash, files] of changedFilesByFirstParentCommit(['--no-walk', ...innerCommits.slice(index, index + 200)])) {
+        ctx.filesByCommit.set(hash, files);
+      }
+    }
     const newestFirst = [...ctx.groups].reverse();
     const rowsByGroup = new Map<string, BackpromoteSandboxRow[]>();
     let read = 0;
@@ -614,7 +624,6 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     }
     ctx.pullRequests = newestFirst.flatMap((group, index) => {
       const verdict = walk.verdicts[index];
-      const items = this.filesOfGroup(ctx, group).length;
       const actionCount = group.prConfigs.reduce((total, config) => total + (config.config?.commandsPreDeploy?.length || 0) + (config.config?.commandsPostDeploy?.length || 0), 0);
       // A first-parent commit with no Pull Request (a direct commit on the parent branch) is
       // listed under its commit subject, so that it can be the start and is never skipped
@@ -627,7 +636,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
         sourceBranch: pr.sourceBranch,
         commit: group.commit.hash,
         webUrl: pr.webUrl,
-        itemCount: items,
+        itemCount: this.filesOfPullRequest(ctx, group, pr).length,
         actionCount,
         backpromote: verdict.row ? { date: verdict.row.date, user: verdict.row.user, status: verdict.row.status, leftOut: verdict.row.leftOut } : null,
         beforeRefresh: verdict.beforeRefresh,
@@ -649,6 +658,26 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
         entry.selected = true;
       }
     }
+  }
+
+  /**
+   * The files of one Pull Request of a listed merge. A merge that brought a single Pull Request gives
+   * it all its files. A merge that brought several (a retrofit of main into integration) gives each
+   * one the files of its own merge commit, kept only when the merge on the parent branch changed them
+   * too: a file main changed that the parent branch already had is not backpromoted.
+   */
+  private filesOfPullRequest(ctx: BackpromoteContext, group: BackpromotePrGroup, pr: BackpromotePrGroup['associatedPrs'][number]): string[] {
+    const groupFiles = this.filesOfGroup(ctx, group);
+    if (group.associatedPrs.length <= 1 || !pr.commit || pr.commit === group.commit.hash) {
+      return groupFiles;
+    }
+    let own = ctx.filesByCommit.get(pr.commit);
+    if (!own) {
+      own = changedFilesBetween(`${pr.commit}^1`, pr.commit);
+      ctx.filesByCommit.set(pr.commit, own);
+    }
+    const inGroup = new Set(groupFiles);
+    return own.filter((file) => inGroup.has(file));
   }
 
   /** The files a listed merge changed, from the single git call of the listing, or from git for a merge outside it */
@@ -729,13 +758,12 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
     const prsOfFile = new Map<string, Set<number>>();
     const groupsForFiles = ctx.foundGroup && leftOutBefore.size > 0 ? [ctx.foundGroup, ...ctx.windowGroups] : ctx.windowGroups;
     for (const group of groupsForFiles) {
-      const numbers = group.associatedPrs.map((pr) => pr.id).filter((id) => id > 0);
-      for (const file of this.filesOfGroup(ctx, group)) {
-        const set = prsOfFile.get(file) || new Set<number>();
-        for (const number of numbers) {
-          set.add(number);
+      for (const pr of group.associatedPrs.filter((entry) => entry.id > 0)) {
+        for (const file of this.filesOfPullRequest(ctx, group, pr)) {
+          const set = prsOfFile.get(file) || new Set<number>();
+          set.add(pr.id);
+          prsOfFile.set(file, set);
         }
-        prsOfFile.set(file, set);
       }
     }
     const filesFrom = ctx.foundGroup && leftOutBefore.size > 0 ? revParse(`${ctx.foundGroup.commit.hash}^1`) || fromCommit : fromCommit;

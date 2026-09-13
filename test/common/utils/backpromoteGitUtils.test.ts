@@ -114,6 +114,29 @@ describe('backpromote branch on a real git repository', () => {
     expect(commitsTouchingFiles(`${parentHead}^1`, parentHead, [lwcFile])).to.deep.equal([parentHead]);
   });
 
+  it('lists the own files of the merges a retrofit brought in, in one call', async () => {
+    // main gets two Pull Request merges, then main is merged into integration by a retrofit
+    await g.checkout(['-b', 'main', 'integration']);
+    await g.checkout(['-b', 'feature/a', 'main']);
+    await commit(repo, { 'force-app/main/default/classes/A.cls': 'a\n' }, 'a');
+    await g.checkout(['main']);
+    await g.merge(['--no-ff', '-m', 'Merge pull request #390 from acme/feature/a', 'feature/a']);
+    const mergeA = (await g.revparse(['HEAD'])).trim();
+    await g.checkout(['-b', 'feature/b', 'main']);
+    await commit(repo, { 'force-app/main/default/classes/B.cls': 'b\n' }, 'b');
+    await g.checkout(['main']);
+    await g.merge(['--no-ff', '-m', 'Merge pull request #391 from acme/feature/b', 'feature/b']);
+    const mergeB = (await g.revparse(['HEAD'])).trim();
+    await g.checkout(['integration']);
+    await g.merge(['--no-ff', '-m', 'Retrofit main into integration', 'main']);
+    const retrofit = (await g.revparse(['HEAD'])).trim();
+    const byCommit = changedFilesByFirstParentCommit(['--no-walk', mergeA, mergeB]);
+    expect(byCommit.get(mergeA)).to.deep.equal(['force-app/main/default/classes/A.cls']);
+    expect(byCommit.get(mergeB)).to.deep.equal(['force-app/main/default/classes/B.cls']);
+    // The retrofit itself carries both
+    expect(changedFilesByFirstParentCommit(['-n', '1', retrofit]).get(retrofit)).to.deep.equal(['force-app/main/default/classes/A.cls', 'force-app/main/default/classes/B.cls']);
+  });
+
   it('removes another worktree holding the backpromote branch, so that the checkout works', async () => {
     fetchOrigin();
     const other = path.join(path.dirname(repo), 'other-worktree');
