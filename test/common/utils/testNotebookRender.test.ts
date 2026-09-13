@@ -5,391 +5,465 @@ import fs from '../../../src/common/utils/fsUtils.js';
 import os from 'os';
 import path from 'path';
 import {
+  buildTemplateCases,
   COLUMNS,
+  NotebookFormat,
   SHEET_NAMES,
   STATUS_VALUES,
-  SYNTHESIS_SHEET_NAME,
-  synthesisRows,
-  writeNotebookCsv,
-  writeNotebookMarkdown,
-  writeNotebookXlsx,
-  writeTemplate,
+  SUMMARY_SHEET_NAME,
+  summaryRows,
+  writeNotebook,
 } from '../../../src/common/utils/testNotebookRender.js';
-import {
-  parseNotebookXlsx,
-  parseNotebookCsv,
-  parseNotebookMarkdown,
-} from '../../../src/common/utils/testNotebookUtils.js';
-import { NormalizedTestCase } from '../../../src/common/utils/testNotebookTypes.js';
+import { NormalizedTestCase, parseNotebookFile, SUMMARY_MARKER, TestCaseKind } from '../../../src/common/utils/testNotebookUtils.js';
 
-function makeCase(overrides: Partial<NormalizedTestCase> = {}): NormalizedTestCase {
-  return {
+const FORMATS: NotebookFormat[] = ['xlsx', 'csv', 'md'];
+const KINDS: TestCaseKind[] = ['functional', 'technical', 'maintenance'];
+const BOM = String.fromCharCode(0xfeff);
+
+/** A case filled with every field its kind writes, tester columns included. */
+function caseFor(kind: TestCaseKind, overrides: Partial<NormalizedTestCase> = {}): NormalizedTestCase {
+  const base: NormalizedTestCase = {
     id: 'PROJ-123-F01',
     ticket: 'PROJ-123',
-    kind: 'functional',
-    module: 'Devis',
-    priority: 1,
-    title: 'Creer un devis',
-    preconditions: 'Un compte actif',
-    soql: 'SELECT Id FROM Account LIMIT 1',
-    steps: [
-      { action: 'Ouvrir', expected: 'La page apparait' },
-      { action: 'Valider', expected: 'Le devis est cree' },
-    ],
-    expected: 'Le devis existe',
-    ...overrides,
+    kind,
+    title: 'Create a quote',
+    preconditions: 'An active account\nA linked contact',
+    expected: 'The quote exists',
+    actual: 'The quote exists',
+    comment: 'Checked on the Sales app',
+    status: 'Passed',
   };
+  if (kind === 'functional') {
+    Object.assign(base, {
+      module: 'Sales',
+      priority: 1,
+      soql: 'SELECT Id FROM Account LIMIT 1',
+      steps: [
+        { action: 'Open the account', expected: 'The account page is shown' },
+        { action: 'Click New quote', expected: '' },
+      ],
+    });
+  } else if (kind === 'technical') {
+    Object.assign(base, {
+      id: 'PROJ-123-T01',
+      module: 'Sales',
+      priority: 2,
+      target: 'QuoteService.create',
+    });
+  } else {
+    Object.assign(base, {
+      id: 'PROJ-123-01',
+      soql: 'SELECT Id FROM AsyncApexJob',
+      steps: [{ action: 'Run the purge batch', expected: 'Logs -> archived' }],
+    });
+  }
+  return { ...base, ...overrides };
+}
+
+/** The fields a notebook of that kind carries, with the value read back is expected to hold. */
+function expectedFieldsFor(kind: TestCaseKind): string[] {
+  return COLUMNS[kind].map((column) => column.key);
 }
 
 describe('testNotebookRender', () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'hardis-render-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'hardis-notebook-render-'));
   });
 
   afterEach(async () => {
     await fs.remove(tmpDir);
   });
 
-  describe('column sets', () => {
-    it('orders the functional columns, the tester columns last', () => {
+  async function writeAndRead(
+    format: NotebookFormat,
+    kind: TestCaseKind,
+    cases: NormalizedTestCase[],
+    options: { withSummary?: boolean } = {}
+  ): Promise<{ file: string; cases: NormalizedTestCase[] }> {
+    const file = path.join(tmpDir, `${kind}-${Math.random().toString(36).slice(2)}.${format}`);
+    const written = await writeNotebook(file, format, kind, cases, options);
+    expect(written).to.equal(file);
+    return { file, cases: await parseNotebookFile(file) };
+  }
+
+  describe('columns', () => {
+    it('writes English headers, the tester columns last', () => {
       expect(COLUMNS.functional.map((column) => column.header)).to.deep.equal([
         'ID',
         'Module',
-        'Priorité',
-        'Cas de test',
-        'Prérequis et données',
-        'Requête SOQL',
-        'Étapes',
-        'Résultat attendu',
-        'Résultat obtenu',
-        'Commentaire',
-        'Statut',
+        'Priority',
+        'Test case',
+        'Preconditions and data',
+        'SOQL query',
+        'Steps',
+        'Expected result',
+        'Actual result',
+        'Comment',
+        'Status',
       ]);
+      for (const kind of KINDS) {
+        expect(COLUMNS[kind].slice(-3).map((column) => column.key)).to.deep.equal(['actual', 'comment', 'status']);
+      }
     });
 
-    it('replaces the query and the steps by the class under test on a technical notebook', () => {
+    it('carries the class under test instead of the query and the steps on a technical notebook', () => {
+      const keys = COLUMNS.technical.map((column) => column.key);
+      expect(keys).to.include('target');
+      expect(keys).to.not.include('soql');
+      expect(keys).to.not.include('steps');
+    });
+
+    it('has no module nor priority on a maintenance notebook', () => {
+      const keys = COLUMNS.maintenance.map((column) => column.key);
+      expect(keys).to.not.include('module');
+      expect(keys).to.not.include('priority');
+    });
+
+    it('writes the English headers in every format', async () => {
+      const csv = path.join(tmpDir, 'headers.csv');
+      await writeNotebook(csv, 'csv', 'technical', [caseFor('technical')]);
       const headers = COLUMNS.technical.map((column) => column.header);
-      expect(headers).to.include('Classe / Méthode');
-      expect(headers).to.not.include('Requête SOQL');
-      expect(headers).to.not.include('Étapes');
-    });
+      expect((await fs.readFile(csv, 'utf8')).split('\r\n')[0]).to.equal(BOM + headers.join(','));
 
-    it('drops the module and the priority on a TMA notebook', () => {
-      const headers = COLUMNS.tma.map((column) => column.header);
-      expect(headers).to.not.include('Module');
-      expect(headers).to.not.include('Priorité');
-    });
-  });
+      const md = path.join(tmpDir, 'headers.md');
+      await writeNotebook(md, 'md', 'technical', [caseFor('technical')]);
+      expect((await fs.readFile(md, 'utf8')).split('\n')[0]).to.equal(`| ${headers.join(' | ')} |`);
 
-  describe('xlsx', () => {
-    async function render(kind: 'functional' | 'technical' | 'tma', cases: NormalizedTestCase[]) {
-      const file = path.join(tmpDir, 'cahier.xlsx');
-      await writeNotebookXlsx(file, kind, cases);
+      const xlsx = path.join(tmpDir, 'headers.xlsx');
+      await writeNotebook(xlsx, 'xlsx', 'technical', [caseFor('technical')]);
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.readFile(file);
-      return { file, workbook };
-    }
-
-    it('names the sheet after the kind', async () => {
-      for (const kind of ['functional', 'technical', 'tma'] as const) {
-        const { workbook } = await render(kind, [makeCase()]);
-        expect(workbook.worksheets[0].name).to.equal(SHEET_NAMES[kind]);
-      }
-    });
-
-    it('writes a bold header on a grey fill, and freezes it', async () => {
-      const { workbook } = await render('functional', [makeCase()]);
-      const header = workbook.worksheets[0].getRow(1);
-      expect(header.font?.bold).to.be.true;
-      expect((header.getCell(1).fill as any)?.fgColor?.argb).to.equal('FFD9D9D9');
-      expect(workbook.worksheets[0].views[0]).to.include({ state: 'frozen', ySplit: 1 });
-    });
-
-    it('leaves the three tester columns empty', async () => {
-      const { workbook } = await render('functional', [makeCase()]);
-      const worksheet = workbook.worksheets[0];
-      const headers = COLUMNS.functional.map((column) => column.header);
-      for (const columnName of ['Résultat obtenu', 'Commentaire', 'Statut']) {
-        const cell = worksheet.getRow(2).getCell(headers.indexOf(columnName) + 1);
-        expect(cell.text ?? '').to.equal('');
-      }
-    });
-
-    it('restricts the status column to the value list', async () => {
-      const { workbook } = await render('functional', [makeCase()]);
-      const worksheet = workbook.worksheets[0];
-      const statusIndex = COLUMNS.functional.findIndex((column) => column.key === 'status') + 1;
-      const validation = worksheet.getCell(2, statusIndex).dataValidation as any;
-      expect(validation?.type).to.equal('list');
-      expect(validation?.formulae?.[0]).to.contain(STATUS_VALUES[0]);
-    });
-
-    it('adds a synthesis sheet with one row per module and a total', async () => {
-      const cases = [makeCase(), makeCase({ id: 'PROJ-123-F02', module: 'Contrat', priority: 2 })];
-      const { workbook } = await render('functional', cases);
-      const synthesis = workbook.worksheets[1];
-      expect(synthesis.name).to.equal('Synthèse');
-      const rows = synthesisRows(cases);
-      expect(rows).to.have.lengthOf(3);
-      expect(rows[rows.length - 1][0]).to.equal('TOTAL');
-      expect(rows[rows.length - 1][1]).to.equal(2);
-    });
-
-    it('keeps the priority column width custom, which a width of exactly 9 would not', async () => {
-      const { workbook } = await render('functional', [makeCase()]);
-      const headers = COLUMNS.functional.map((column) => column.header);
-      const column = workbook.worksheets[0].getColumn(headers.indexOf('Priorité') + 1);
-      expect(column.width).to.equal(9.5);
-    });
-  });
-
-  describe('csv', () => {
-    it('writes semicolons, a BOM and CRLF endings', async () => {
-      const file = path.join(tmpDir, 'cahier.csv');
-      await writeNotebookCsv(file, 'functional', [makeCase()]);
-      const content = await fs.readFile(file, 'utf8');
-      expect(content.charCodeAt(0)).to.equal(0xfeff);
-      expect(content).to.contain('\r\n');
-      expect(content.split('\r\n')[0].split(';')).to.have.lengthOf(COLUMNS.functional.length);
-    });
-
-    it('writes a summary footer under the cases', async () => {
-      const file = path.join(tmpDir, 'cahier.csv');
-      await writeNotebookCsv(file, 'functional', [makeCase()]);
-      const content = await fs.readFile(file, 'utf8');
-      expect(content).to.contain('SYNTHÈSE');
-      expect(content).to.contain('Nb tests');
-      expect(content).to.contain('TOTAL');
-    });
-
-    it('neutralizes a cell a spreadsheet would run as a formula', async () => {
-      const file = path.join(tmpDir, 'cahier.csv');
-      await writeNotebookCsv(file, 'functional', [makeCase({ title: '=1+1' })]);
-      const content = await fs.readFile(file, 'utf8');
-      expect(content).to.contain("'=1+1");
-    });
-
-    it('guards the module names of the summary footer too', async () => {
-      const file = path.join(tmpDir, 'cahier.csv');
-      await writeNotebookCsv(file, 'functional', [makeCase({ module: '=1+1' })]);
-      const lines = (await fs.readFile(file, 'utf8')).split('\r\n');
-      expect(lines.some((line) => line.startsWith('='))).to.be.false;
-      expect(lines.some((line) => line.startsWith("'=1+1;1;"))).to.be.true;
-    });
-
-    it('guards the module names of the synthesis sheet', async () => {
-      const file = path.join(tmpDir, 'cahier.xlsx');
-      await writeNotebookXlsx(file, 'functional', [makeCase({ module: '=1+1' })]);
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.readFile(file);
-      expect(workbook.getWorksheet(SYNTHESIS_SHEET_NAME)?.getRow(2).getCell(1).value).to.equal("'=1+1");
-    });
-
-    it('guards the cells of a blank template, whose ID and module come from flags', async () => {
-      const file = path.join(tmpDir, 'template.csv');
-      await writeTemplate(file, { kind: 'functional', ticket: 'PROJ-1', modules: ['=1+1'], rows: 1 }, 'csv');
-      const lines = (await fs.readFile(file, 'utf8')).split('\r\n');
-      expect(lines.some((line) => line.startsWith('=') || line.includes(';=1+1'))).to.be.false;
-      expect(lines[1]).to.contain("'=1+1");
-    });
-
-    it('keeps pipes through a markdown round trip, the blank template included', async () => {
-      const file = path.join(tmpDir, 'pipes.md');
-      const original = makeCase({
-        expected: 'ISBLANK(Phone) || ISBLANK(Email)',
-        steps: [{ action: 'Pick A | B', expected: 'Both | shown' }],
-      });
-      await writeNotebookMarkdown(file, 'functional', [original]);
-      const cases = parseNotebookMarkdown(await fs.readFile(file, 'utf8'));
-      expect(cases).to.have.lengthOf(1);
-      expect(cases[0].expected).to.equal(original.expected);
-      expect(cases[0].steps).to.deep.equal(original.steps);
-      expect(cases[0].soql).to.equal(original.soql);
-
-      const template = path.join(tmpDir, 'template.md');
-      await writeTemplate(template, { kind: 'functional', ticket: 'PROJ-1', modules: ['A|B'], rows: 1 }, 'md');
-      const [blank] = parseNotebookMarkdown(await fs.readFile(template, 'utf8'));
-      expect(blank.module).to.equal('A|B');
-    });
-
-    it('keeps pipes as is in the csv and the xlsx', async () => {
-      const original = makeCase({ expected: 'A || B', steps: [{ action: 'Pick A | B', expected: 'Shown' }] });
-      const csvFile = path.join(tmpDir, 'pipes.csv');
-      await writeNotebookCsv(csvFile, 'functional', [original]);
-      const [fromCsv] = parseNotebookCsv(await fs.readFile(csvFile, 'utf8'));
-      const xlsxFile = path.join(tmpDir, 'pipes.xlsx');
-      await writeNotebookXlsx(xlsxFile, 'functional', [original]);
-      const [fromXlsx] = await parseNotebookXlsx(xlsxFile);
-      for (const reread of [fromCsv, fromXlsx]) {
-        expect(reread.expected).to.equal('A || B');
-        expect(reread.steps).to.deep.equal(original.steps);
-      }
+      await workbook.xlsx.readFile(xlsx);
+      const sheet = workbook.getWorksheet(SHEET_NAMES.technical);
+      expect(sheet).to.not.be.undefined;
+      const values = (sheet?.getRow(1).values as unknown[]).slice(1);
+      expect(values).to.deep.equal(headers);
     });
   });
 
   describe('round trip', () => {
-    // The most useful assertion of the file: it proves the workbook a tester receives is the
-    // one the parser knows how to read back.
-    it('reads back an xlsx it just wrote, including the technical target column', async () => {
-      const original = makeCase({
-        id: 'PROJ-123-T01',
-        kind: 'technical',
-        target: 'AccountService.createQuote',
-        soql: '',
-        steps: [],
+    for (const kind of KINDS) {
+      for (const format of FORMATS) {
+        it(`reads back a ${kind} ${format} notebook it just wrote`, async () => {
+          const original = caseFor(kind);
+          const second = caseFor(kind, {
+            id: original.id.replace(/01$/, '02'),
+            title: 'Delete a quote',
+            status: 'Failed',
+          });
+          const { cases } = await writeAndRead(format, kind, [original, second]);
+          expect(cases).to.have.lengthOf(2);
+          const [reread] = cases;
+          expect(reread.id).to.equal(original.id);
+          expect(reread.ticket).to.equal('PROJ-123');
+          expect(reread.kind).to.equal(kind);
+          for (const key of expectedFieldsFor(kind)) {
+            expect((reread as any)[key], `${format} ${kind} ${key}`).to.deep.equal((original as any)[key]);
+          }
+          // A column the kind does not write stays undefined, never blank
+          for (const key of ['module', 'priority', 'target', 'soql', 'steps'].filter((k) => !expectedFieldsFor(kind).includes(k))) {
+            expect((reread as any)[key], `${format} ${kind} ${key}`).to.be.undefined;
+          }
+          expect(cases[1].status).to.equal('Failed');
+        });
+      }
+    }
+
+    it('keeps the tester columns when a filled notebook is converted from one format to the others', async () => {
+      const filled = [
+        caseFor('functional', {
+          actual: 'Quote created twice',
+          comment: 'See ticket PROJ-200, "duplicate"',
+          status: 'Failed',
+        }),
+        caseFor('functional', {
+          id: 'PROJ-123-F02',
+          actual: '',
+          comment: '',
+          status: 'Blocked',
+        }),
+      ];
+      const fromXlsx = (await writeAndRead('xlsx', 'functional', filled)).cases;
+      const fromCsv = (await writeAndRead('csv', 'functional', fromXlsx)).cases;
+      const fromMd = (await writeAndRead('md', 'functional', fromCsv)).cases;
+      const back = (await writeAndRead('xlsx', 'functional', fromMd)).cases;
+      for (const cases of [fromXlsx, fromCsv, fromMd, back]) {
+        expect(cases.map((testCase) => [testCase.actual, testCase.comment, testCase.status])).to.deep.equal([
+          ['Quote created twice', 'See ticket PROJ-200, "duplicate"', 'Failed'],
+          ['', '', 'Blocked'],
+        ]);
+      }
+    });
+
+    it('keeps pipes, semicolons and quotes in every format', async () => {
+      const original = caseFor('functional', {
+        expected: 'ISBLANK(Phone) || ISBLANK(Email); "Missing" shown',
+        steps: [{ action: 'Pick A | B', expected: 'Both | shown' }],
       });
-      const file = path.join(tmpDir, 'technique.xlsx');
-      await writeNotebookXlsx(file, 'technical', [original]);
-
-      const [reread] = await parseNotebookXlsx(file);
-      expect(reread.id).to.equal('PROJ-123-T01');
-      expect(reread.kind).to.equal('technical');
-      expect(reread.title).to.equal(original.title);
-      expect(reread.priority).to.equal(original.priority);
-      expect(reread.target).to.equal('AccountService.createQuote');
-      expect(reread.expected).to.equal(original.expected);
+      for (const format of FORMATS) {
+        const [reread] = (await writeAndRead(format, 'functional', [original])).cases;
+        expect(reread.expected, format).to.equal(original.expected);
+        expect(reread.steps, format).to.deep.equal(original.steps);
+      }
     });
 
-    it('reads back a functional xlsx with its steps and priority', async () => {
-      const original = makeCase();
-      const file = path.join(tmpDir, 'fonctionnel.xlsx');
-      await writeNotebookXlsx(file, 'functional', [original]);
-
-      const [reread] = await parseNotebookXlsx(file);
-      expect(reread.priority).to.equal(1);
-      expect(reread.steps).to.have.lengthOf(2);
-      expect(reread.steps[0]).to.deep.equal({ action: 'Ouvrir', expected: 'La page apparait' });
-      expect(reread.steps[1]).to.deep.equal({ action: 'Valider', expected: 'Le devis est cree' });
-      expect(reread.soql).to.equal('SELECT Id FROM Account LIMIT 1');
-    });
-
-    it('reads back a value the formula guard prefixed, without the apostrophe', async () => {
-      const original = makeCase({ title: '=1+1', preconditions: '- Un compte actif' });
-
-      const xlsxFile = path.join(tmpDir, 'formula.xlsx');
-      await writeNotebookXlsx(xlsxFile, 'functional', [original]);
-      const [fromXlsx] = await parseNotebookXlsx(xlsxFile);
-      expect(fromXlsx.title).to.equal('=1+1');
-      expect(fromXlsx.preconditions).to.equal('- Un compte actif');
-
-      const csvFile = path.join(tmpDir, 'formula.csv');
-      await writeNotebookCsv(csvFile, 'functional', [original]);
-      const [fromCsv] = parseNotebookCsv(await fs.readFile(csvFile, 'utf8'));
-      expect(fromCsv.title).to.equal('=1+1');
-      expect(fromCsv.preconditions).to.equal('- Un compte actif');
-    });
-
-    it('reads back a csv it just wrote, stopping at the footer', async () => {
-      const file = path.join(tmpDir, 'cahier.csv');
-      await writeNotebookCsv(file, 'functional', [makeCase(), makeCase({ id: 'PROJ-123-F02' })]);
-      const cases = parseNotebookCsv(await fs.readFile(file, 'utf8'));
-      expect(cases).to.have.lengthOf(2);
-      expect(cases[0].steps).to.have.lengthOf(2);
+    it('reads a multi-line title back on one line', async () => {
+      for (const format of FORMATS) {
+        const [reread] = (await writeAndRead(format, 'functional', [caseFor('functional', { title: 'Create a quote\nfrom an account' })])).cases;
+        expect(reread.title, format).to.equal('Create a quote from an account');
+      }
     });
   });
 
-  // A field holding a line break used to be written as-is, so one case spread over as many
-  // physical rows as it had lines. The row ends at the newline in a CSV and in a markdown
-  // table alike, so the file became unreadable back: the second line was read as a case with
-  // an unusable id. Only the steps column was folded before.
-  describe('multi-line fields', () => {
-    const multiLine = () =>
-      makeCase({
-        preconditions: 'Un compte actif\nUn contact rattache',
-        expected: 'Le devis existe\n  Son total vaut 100  \r\nIl est visible',
-      });
-
-    it('keeps a case on a single csv row, whatever line breaks its fields hold', async () => {
-      const folded = path.join(tmpDir, 'multi.csv');
-      const flat = path.join(tmpDir, 'flat.csv');
-      await writeNotebookCsv(folded, 'functional', [multiLine()]);
-      await writeNotebookCsv(flat, 'functional', [makeCase()]);
-      const lineCount = (content: string) => content.split('\r\n').filter(Boolean).length;
-      // Compared against the same notebook without line breaks rather than a hardcoded count,
-      // so the assertion still means something if the footer ever gains a row.
-      expect(lineCount(await fs.readFile(folded, 'utf8'))).to.equal(lineCount(await fs.readFile(flat, 'utf8')));
+  describe('csv', () => {
+    it('uses a comma, a BOM and CRLF line endings', async () => {
+      const file = path.join(tmpDir, 'notebook.csv');
+      await writeNotebook(file, 'csv', 'functional', [caseFor('functional')]);
+      const content = await fs.readFile(file, 'utf8');
+      expect(content.charCodeAt(0)).to.equal(0xfeff);
+      expect(content.endsWith('\r\n')).to.be.true;
+      expect(content.replace(/\r\n/g, '')).to.not.contain('\n');
+      expect(content.split('\r\n')[0].split(',')).to.have.lengthOf(COLUMNS.functional.length);
     });
 
-    it('reads that csv back as one case, with its line breaks restored', async () => {
+    it('keeps a case on a single row whatever line breaks its fields hold', async () => {
       const file = path.join(tmpDir, 'multi.csv');
-      await writeNotebookCsv(file, 'functional', [multiLine()]);
-      const cases = parseNotebookCsv(await fs.readFile(file, 'utf8'));
-      expect(cases).to.have.lengthOf(1);
-      expect(cases[0].id).to.equal('PROJ-123-F01');
-      expect(cases[0].expected).to.equal('Le devis existe\nSon total vaut 100\nIl est visible');
-      expect(cases[0].preconditions).to.equal('Un compte actif\nUn contact rattache');
+      await writeNotebook(
+        file,
+        'csv',
+        'functional',
+        [
+          caseFor('functional', {
+            expected: 'Line one\r\n  Line two  \nLine three',
+          }),
+        ],
+        {
+          withSummary: false,
+        }
+      );
+      const lines = (await fs.readFile(file, 'utf8')).split('\r\n').filter(Boolean);
+      expect(lines).to.have.lengthOf(2);
+      const [reread] = await parseNotebookFile(file);
+      expect(reread.expected).to.equal('Line one\nLine two\nLine three');
     });
 
-    it('reads a multi-line title back on a single line', async () => {
-      const file = path.join(tmpDir, 'title.csv');
-      await writeNotebookCsv(file, 'functional', [makeCase({ title: 'Create a quote\nfrom an account' })]);
-      const [reread] = parseNotebookCsv(await fs.readFile(file, 'utf8'));
-      expect(reread.title).to.equal('Create a quote from an account');
+    it('guards formula cells in the CSV only, and reads them back unguarded', async () => {
+      const original = caseFor('functional', {
+        title: '=1+1',
+        expected: '-1 day',
+        module: '@Sales',
+      });
+      const csv = path.join(tmpDir, 'guard.csv');
+      await writeNotebook(csv, 'csv', 'functional', [original]);
+      const content = await fs.readFile(csv, 'utf8');
+      expect(content).to.contain("'=1+1");
+      expect(content).to.contain("'-1 day");
+      // The summary module name is guarded too
+      expect(content.split('\r\n').some((line) => line.startsWith("'@Sales,1,"))).to.be.true;
+      expect(content.split('\r\n').some((line) => /^[=+\-@]/.test(line))).to.be.false;
+
+      const xlsx = path.join(tmpDir, 'guard.xlsx');
+      await writeNotebook(xlsx, 'xlsx', 'functional', [original]);
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(xlsx);
+      const sheet = workbook.getWorksheet(SHEET_NAMES.functional);
+      const column = (key: string) => COLUMNS.functional.findIndex((entry) => entry.key === key) + 1;
+      expect(sheet?.getRow(2).getCell(column('expected')).value).to.equal('-1 day');
+      expect(sheet?.getRow(2).getCell(column('title')).value).to.equal('=1+1');
+      expect(workbook.getWorksheet(SUMMARY_SHEET_NAME)?.getRow(2).getCell(1).value).to.equal('@Sales');
+
+      for (const file of [csv, xlsx]) {
+        const [reread] = await parseNotebookFile(file);
+        expect(reread.title).to.equal('=1+1');
+        expect(reread.expected).to.equal('-1 day');
+        expect(reread.module).to.equal('@Sales');
+      }
+    });
+  });
+
+  describe('summary', () => {
+    const cases = [
+      caseFor('functional', {
+        id: 'PROJ-123-F01',
+        module: 'Sales',
+        priority: 1,
+      }),
+      caseFor('functional', {
+        id: 'PROJ-123-F02',
+        module: 'Billing',
+        priority: 3,
+      }),
+      caseFor('functional', {
+        id: 'PROJ-123-F03',
+        module: 'Sales',
+        priority: 2,
+      }),
+      caseFor('functional', {
+        id: 'PROJ-123-F04',
+        module: undefined,
+        priority: undefined,
+      }),
+    ];
+
+    it('counts the cases by module and by priority, with a total', () => {
+      expect(summaryRows(cases)).to.deep.equal([
+        ['Sales', 2, 1, 1, 0],
+        ['Billing', 1, 0, 0, 1],
+        ['(no module)', 1, 0, 0, 0],
+        ['TOTAL', 4, 1, 1, 1],
+      ]);
     });
 
-    it('keeps a case on a single markdown row too', async () => {
-      const file = path.join(tmpDir, 'multi.md');
-      await writeNotebookMarkdown(file, 'functional', [multiLine()]);
-      const cases = parseNotebookMarkdown(await fs.readFile(file, 'utf8'));
-      expect(cases).to.have.lengthOf(1);
-      expect(cases[0].expected).to.contain('Son total vaut 100');
-    });
-
-    // The xlsx keeps real line breaks, so this one is about normalization rather than folding:
-    // the CRLF becomes an LF and each line is trimmed. Without that, ExcelJS still produced a
-    // readable file, which is why the assertion targets the exact cell content and not just
-    // the row count.
-    it('normalizes the line breaks it keeps in the xlsx, where a cell can hold them', async () => {
-      const file = path.join(tmpDir, 'multi.xlsx');
-      await writeNotebookXlsx(file, 'functional', [multiLine()]);
+    it('adds a summary sheet the reader skips', async () => {
+      const { file, cases: reread } = await writeAndRead('xlsx', 'functional', cases);
+      expect(reread).to.have.lengthOf(4);
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.readFile(file);
-      const sheet = workbook.getWorksheet(SHEET_NAMES.functional);
-      // Column located by its key, not by its header label, so a wording change cannot make
-      // this test read the wrong cell and pass for the wrong reason.
-      const column = COLUMNS.functional.findIndex((entry) => entry.key === 'expected') + 1;
-      const cell = String(sheet?.getRow(2).getCell(column).value ?? '');
-      expect(cell).to.equal('Le devis existe\nSon total vaut 100\nIl est visible');
-      // And it still reads back as one case, not three.
-      expect(await parseNotebookXlsx(file)).to.have.lengthOf(1);
+      const summary = workbook.getWorksheet(SUMMARY_SHEET_NAME);
+      expect((summary?.getRow(1).values as unknown[]).slice(1)).to.deep.equal(['Module', 'Tests', 'P1', 'P2', 'P3']);
+      expect((summary?.getRow(5).values as unknown[]).slice(1)).to.deep.equal(['TOTAL', 4, 1, 1, 1]);
+      expect(summary?.getRow(5).font?.bold).to.be.true;
+    });
+
+    it('adds summary rows under a SUMMARY marker in the CSV, where the reader stops', async () => {
+      const { file, cases: reread } = await writeAndRead('csv', 'functional', cases);
+      expect(reread).to.have.lengthOf(4);
+      const lines = (await fs.readFile(file, 'utf8')).split('\r\n');
+      const marker = lines.findIndex((line) => line.startsWith(SUMMARY_MARKER));
+      expect(marker).to.be.greaterThan(4);
+      expect(lines[marker + 1].startsWith('Module,Tests,P1,P2,P3')).to.be.true;
+      expect(lines.some((line) => line.startsWith('TOTAL,4,1,1,1'))).to.be.true;
+    });
+
+    it('writes no summary when asked not to', async () => {
+      const csv = (await writeAndRead('csv', 'functional', cases, { withSummary: false })).file;
+      expect(await fs.readFile(csv, 'utf8')).to.not.contain(SUMMARY_MARKER);
+      const xlsx = (await writeAndRead('xlsx', 'functional', cases, { withSummary: false })).file;
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(xlsx);
+      expect(workbook.worksheets.map((sheet) => sheet.name)).to.deep.equal([SHEET_NAMES.functional]);
     });
   });
 
-  // The literal arrow escape `->` was un-escaped into a real arrow when reading, but never
-  // re-escaped when writing. So an action legitimately containing an arrow was re-split at
-  // that arrow on the next read, and half of it silently moved into the expected result.
-  describe('arrow round trip', () => {
-    const withArrow = () =>
-      makeCase({
-        steps: [{ action: 'Cliquer sur Devis → Nouveau', expected: 'Le panneau apparait' }],
+  describe('xlsx', () => {
+    it('names the sheet after the kind, styles and freezes the header, and lists the status values', async () => {
+      for (const kind of KINDS) {
+        const file = path.join(tmpDir, `${kind}.xlsx`);
+        await writeNotebook(file, 'xlsx', kind, [caseFor(kind)]);
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.readFile(file);
+        const sheet = workbook.worksheets[0];
+        expect(sheet.name).to.equal(SHEET_NAMES[kind]);
+        expect(sheet.getRow(1).font?.bold).to.be.true;
+        expect((sheet.getRow(1).getCell(1).fill as any)?.fgColor?.argb).to.equal('FFD9D9D9');
+        expect(sheet.views[0]).to.include({ state: 'frozen', ySplit: 1 });
+        const statusColumn = COLUMNS[kind].findIndex((column) => column.key === 'status') + 1;
+        const validation = sheet.getCell(2, statusColumn).dataValidation as any;
+        expect(validation?.type).to.equal('list');
+        expect(validation?.formulae?.[0]).to.equal(`"${STATUS_VALUES.join(',')}"`);
+      }
+    });
+
+    it('keeps the line breaks of a cell, normalized', async () => {
+      const { file } = await writeAndRead('xlsx', 'functional', [
+        caseFor('functional', {
+          expected: 'Line one\r\n  Line two  \nLine three',
+        }),
+      ]);
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(file);
+      const column = COLUMNS.functional.findIndex((entry) => entry.key === 'expected') + 1;
+      expect(workbook.getWorksheet(SHEET_NAMES.functional)?.getRow(2).getCell(column).value).to.equal('Line one\nLine two\nLine three');
+    });
+
+    it('keeps a custom width on the priority column', async () => {
+      const file = path.join(tmpDir, 'width.xlsx');
+      await writeNotebook(file, 'xlsx', 'functional', [caseFor('functional')]);
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(file);
+      const column = COLUMNS.functional.findIndex((entry) => entry.key === 'priority') + 1;
+      expect(workbook.worksheets[0].getColumn(column).width).to.equal(9.5);
+    });
+  });
+
+  describe('markdown', () => {
+    it('writes a single table with no summary', async () => {
+      const file = path.join(tmpDir, 'notebook.md');
+      await writeNotebook(file, 'md', 'functional', [caseFor('functional'), caseFor('functional', { id: 'PROJ-123-F02' })]);
+      const lines = (await fs.readFile(file, 'utf8')).split('\n').filter(Boolean);
+      expect(lines).to.have.lengthOf(4);
+      expect(lines[1]).to.equal(`|${COLUMNS.functional.map(() => '---').join('|')}|`);
+    });
+
+    it('creates the output folder', async () => {
+      const file = path.join(tmpDir, 'nested', 'folder', 'notebook.md');
+      await writeNotebook(file, 'md', 'maintenance', [caseFor('maintenance')]);
+      expect(await fs.pathExists(file)).to.be.true;
+    });
+  });
+
+  describe('buildTemplateCases', () => {
+    it('numbers the rows across module groups', () => {
+      const cases = buildTemplateCases({
+        kind: 'functional',
+        ticket: 'PROJ-9',
+        modules: ['Sales', 'Billing'],
+        rows: 2,
       });
-
-    // Compared against the ORIGINAL steps, not against the previous cycle: the defect reached a
-    // fixed point after a single read, so both renders came out byte-identical while the arrow
-    // had already moved half of the action into the expected result. Byte stability proves
-    // nothing here, only fidelity to the input does.
-    it('survives two full write-read cycles without drifting from the input', async () => {
-      const original = withArrow();
-      const first = path.join(tmpDir, 'arrow-1.csv');
-      const second = path.join(tmpDir, 'arrow-2.csv');
-      await writeNotebookCsv(first, 'functional', [original]);
-      const cycle1 = parseNotebookCsv(await fs.readFile(first, 'utf8'));
-      await writeNotebookCsv(second, 'functional', cycle1);
-      const cycle2 = parseNotebookCsv(await fs.readFile(second, 'utf8'));
-      expect(cycle1[0].steps).to.deep.equal(original.steps);
-      expect(cycle2[0].steps).to.deep.equal(original.steps);
-      expect(await fs.readFile(second, 'utf8')).to.equal(await fs.readFile(first, 'utf8'));
+      expect(cases.map((testCase) => [testCase.id, testCase.module])).to.deep.equal([
+        ['PROJ-9-F01', 'Sales'],
+        ['PROJ-9-F02', 'Sales'],
+        ['PROJ-9-F03', 'Billing'],
+        ['PROJ-9-F04', 'Billing'],
+      ]);
+      expect(cases.every((testCase) => testCase.title === '' && testCase.expected === '' && testCase.ticket === 'PROJ-9')).to.be.true;
     });
 
-    it('keeps the arrow inside the action instead of splitting the step at it', async () => {
-      const file = path.join(tmpDir, 'arrow.csv');
-      await writeNotebookCsv(file, 'functional', [withArrow()]);
-      const cases = parseNotebookCsv(await fs.readFile(file, 'utf8'));
-      expect(cases[0].steps).to.have.lengthOf(1);
-      expect(cases[0].steps[0].action).to.equal('Cliquer sur Devis → Nouveau');
-      expect(cases[0].steps[0].expected).to.equal('Le panneau apparait');
+    it('uses the letter of the kind and writes at least one row', () => {
+      expect(
+        buildTemplateCases({
+          kind: 'technical',
+          ticket: 'PROJ-9',
+          rows: 0,
+        }).map((testCase) => testCase.id)
+      ).to.deep.equal(['PROJ-9-T01']);
+      expect(
+        buildTemplateCases({
+          kind: 'maintenance',
+          ticket: 'DSI-2026-14545',
+          modules: [],
+          rows: 2,
+        }).map((testCase) => testCase.id)
+      ).to.deep.equal(['DSI-2026-14545-01', 'DSI-2026-14545-02']);
     });
+
+    it('switches to a 3 digit counter past 99 rows', () => {
+      const cases = buildTemplateCases({
+        kind: 'functional',
+        ticket: 'PROJ-9',
+        rows: 100,
+      });
+      expect(cases[99].id).to.equal('PROJ-9-F100');
+    });
+
+    for (const format of FORMATS) {
+      it(`writes a blank ${format} template that reads back`, async () => {
+        const template = buildTemplateCases({
+          kind: 'functional',
+          ticket: 'PROJ-9',
+          modules: ['Sales', 'A|B'],
+          rows: 2,
+        });
+        const { cases } = await writeAndRead(format, 'functional', template);
+        expect(cases.map((testCase) => [testCase.id, testCase.ticket, testCase.kind, testCase.module])).to.deep.equal([
+          ['PROJ-9-F01', 'PROJ-9', 'functional', 'Sales'],
+          ['PROJ-9-F02', 'PROJ-9', 'functional', 'Sales'],
+          ['PROJ-9-F03', 'PROJ-9', 'functional', 'A|B'],
+          ['PROJ-9-F04', 'PROJ-9', 'functional', 'A|B'],
+        ]);
+        expect(cases.every((testCase) => testCase.title === '' && testCase.expected === '')).to.be.true;
+      });
+    }
   });
 });

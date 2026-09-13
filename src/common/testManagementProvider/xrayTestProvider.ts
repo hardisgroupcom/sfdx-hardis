@@ -1,6 +1,6 @@
 import { SfError } from '@salesforce/core';
 import { TestManagementProviderRoot, ProviderRef } from './testManagementProviderRoot.js';
-import { NormalizedTestCase, idempotencyKey } from '../utils/testNotebookTypes.js';
+import { NormalizedTestCase, idempotencyKey } from '../utils/testNotebookUtils.js';
 import { httpGet, httpPost, httpPut } from '../utils/httpUtils.js';
 import { getEnvVar } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
@@ -12,13 +12,10 @@ const REGION_BASE: Record<string, string> = {
 };
 const DEFAULT_BASE = 'https://xray.cloud.getxray.app';
 const PRIORITY_NAME: Record<number, string> = { 1: 'Highest', 2: 'High', 3: 'Medium' };
-/** Same timeout as the ServiceNow adapter: a host that never answers fails the case instead of hanging it. */
+/** A host that never answers fails the case instead of hanging it. */
 const HTTP_TIMEOUT_MS = 60000;
 
-/**
- * One mutation creates the Jira issue AND its steps atomically, which is why Xray was
- * preferred over Zephyr Scale (three to four calls, including a numeric id resolution).
- */
+/** One mutation creates the Jira issue and its steps. */
 const CREATE_TEST_MUTATION = `
 mutation CreateTest($testType: UpdateTestTypeInput!, $steps: [CreateStepInput!], $jira: JSON!) {
   createTest(testType: $testType, steps: $steps, jira: $jira) {
@@ -32,229 +29,216 @@ export function xrayBaseUrlFor(region: string | null): string {
   return REGION_BASE[String(region ?? '').toLowerCase()] || DEFAULT_BASE;
 }
 
-/**
- * The Jira `description` is sent as a plain string: no ADF conversion is done, which is a
- * pre-existing limitation. A `[label](url)` markdown link would show up as literal bracket
- * and paren characters, so it is reduced to a bare URL, the honest output for a field that
- * is not markdown aware here.
- */
-function _linksToPlainText(text: unknown): string {
-  return String(text ?? '').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$2');
+/** A value inside a JQL double quoted string. */
+function _jqlString(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
-function _description(testCase: NormalizedTestCase): string {
-  const lines: string[] = [];
-  if (testCase.preconditions) {
-    lines.push(`${t('testCasePreconditions')} ${_linksToPlainText(testCase.preconditions)}`);
-  }
-  if (testCase.expected) {
-    lines.push(`${t('testCaseOverallExpectedResult')} ${_linksToPlainText(testCase.expected)}`);
-  }
-  // The advisory query is omitted cleanly when the cell is empty.
-  if (testCase.soql) {
-    lines.push(`${t('testCaseSoqlQuery')} ${testCase.soql}`);
-  }
-  return lines.join('\n');
+function _moduleLabel(testCase: NormalizedTestCase): string {
+  return testCase.module ? `MODULE:${testCase.module.replace(/\s+/g, '_')}` : '';
 }
 
 /**
- * Jira / Xray Cloud adapter.
- *
- * Creation goes through Xray GraphQL; linking to the story goes through Jira REST, with the
- * Jira credentials and not the Xray JWT. The two systems have separate authentication and
- * conflating them is the classic mistake here.
+ * Jira / Xray Cloud adapter. Creation goes through Xray GraphQL with the Xray token; search,
+ * update and story link go through Jira REST with the Jira credentials.
  */
 export class XrayTestProvider extends TestManagementProviderRoot {
+  public static readonly providerKey = 'xray';
+  public static readonly providerLabel = 'Xray Cloud';
+
   protected clientId: string | null;
   protected clientSecret: string | null;
   protected region: string | null;
-  protected jiraBaseUrl: string | null;
+  protected jiraHost: string;
   protected projectKey: string | null;
   protected jiraEmail: string | null;
   protected jiraToken: string | null;
+  private jwt: string | null = null;
 
-  public constructor() {
+  /** `config` is the sfdx-hardis configuration, where `jiraHost` may be set instead of JIRA_HOST. */
+  public constructor(config: any = {}) {
     super();
     this.clientId = getEnvVar('XRAY_CLIENT_ID');
     this.clientSecret = getEnvVar('XRAY_CLIENT_SECRET');
     this.region = getEnvVar('XRAY_REGION');
-    // JIRA_HOST / JIRA_EMAIL / JIRA_TOKEN are the names jiraProvider.ts already reads for Jira
-    // basic auth. Reusing them means a user configures their Jira credentials once, instead of
-    // once per feature under two different names for the same secret.
-    this.jiraBaseUrl = getEnvVar('JIRA_HOST');
+    // Same variables and host normalization as jiraProvider.ts, so Jira is configured once
+    const rawHost = String(getEnvVar('JIRA_HOST') || config?.jiraHost || '').trim();
+    this.jiraHost = rawHost ? (rawHost.startsWith('http') ? rawHost : `https://${rawHost}`).replace(/\/+$/, '') : '';
     this.projectKey = getEnvVar('JIRA_PROJECT_KEY');
     this.jiraEmail = getEnvVar('JIRA_EMAIL');
     this.jiraToken = getEnvVar('JIRA_TOKEN');
-    this.isActive = Boolean(
-      this.clientId && this.clientSecret && this.jiraBaseUrl && this.projectKey && this.jiraEmail && this.jiraToken
-    );
+    this.isActive = this.missingSettings().length === 0;
   }
 
   public getLabel(): string {
-    return 'xray';
+    return XrayTestProvider.providerLabel;
   }
 
   public getRequiredEnvVars(): string[] {
-    return [
-      'XRAY_CLIENT_ID',
-      'XRAY_CLIENT_SECRET',
-      'JIRA_HOST',
-      'JIRA_PROJECT_KEY',
-      'JIRA_EMAIL',
-      'JIRA_TOKEN',
-      'XRAY_REGION (optional)',
-    ];
+    return ['XRAY_CLIENT_ID', 'XRAY_CLIENT_SECRET', 'JIRA_HOST (or jiraHost config)', 'JIRA_PROJECT_KEY', 'JIRA_EMAIL', 'JIRA_TOKEN', 'XRAY_REGION (optional)'];
+  }
+
+  /** Labels a new test gets: the idempotency key and the module. */
+  public static buildLabels(testCase: NormalizedTestCase): string[] {
+    return [idempotencyKey(testCase.id), _moduleLabel(testCase)].filter(Boolean);
   }
 
   public static buildVariables(testCase: NormalizedTestCase, projectKey: string): any {
-    const labels = [idempotencyKey(testCase.id, testCase.ticket)];
-    if (testCase.module) {
-      labels.push(`MODULE:${testCase.module.replace(/\s+/g, '_')}`);
-    }
     return {
       testType: { name: 'Manual' },
-      // The `data` field of a step is deliberately left unset: nothing in a notebook produces
-      // it, and inventing a value would be a fabrication.
       steps: (testCase.steps || []).map((step) => ({ action: step.action, result: step.expected })),
       jira: {
         fields: {
           summary: testCase.title,
-          description: _description(testCase),
+          description: TestManagementProviderRoot.buildPlainDescription(testCase),
           project: { key: projectKey },
-          priority: { name: PRIORITY_NAME[testCase.priority] || PRIORITY_NAME[2] },
-          labels,
+          priority: { name: PRIORITY_NAME[testCase.priority ?? 2] },
+          labels: XrayTestProvider.buildLabels(testCase),
         },
       },
     };
   }
 
+  /**
+   * Body of the Jira update. Labels are added, never replaced, so labels set by hand stay; the
+   * priority is only sent when the notebook has that column. REST API v2 is used because v3 only
+   * accepts an Atlassian Document Format description.
+   */
+  public static buildUpdateBody(testCase: NormalizedTestCase): any {
+    const fields: Record<string, any> = {
+      summary: testCase.title,
+      description: TestManagementProviderRoot.buildPlainDescription(testCase),
+    };
+    if (testCase.priority !== undefined) {
+      fields.priority = { name: PRIORITY_NAME[testCase.priority] };
+    }
+    return { fields, update: { labels: XrayTestProvider.buildLabels(testCase).map((label) => ({ add: label })) } };
+  }
+
   public async checkPrerequisites(): Promise<void> {
-    const missing = this.getRequiredEnvVars()
-      .filter((name) => !name.includes('optional'))
-      .filter((name) => !getEnvVar(name));
+    const missing = this.missingSettings();
     if (missing.length > 0) {
-      throw new SfError(`Xray: missing environment variable(s) ${missing.join(', ')}.`);
+      throw new SfError(t('testCasesProviderMissingSettings', { label: this.getLabel(), settings: missing.join(', ') }));
     }
     await this.authenticate();
   }
 
   public async findByKey(key: string): Promise<ProviderRef | null> {
-    const jql = `project = "${this.projectKey}" AND labels = "${key}"`;
-    const response = await httpGet(`${this.jiraBase()}/rest/api/3/search/jql`, {
-      params: { jql, maxResults: 1, fields: 'key' },
-      headers: this.jiraHeaders(),
-      timeout: HTTP_TIMEOUT_MS,
-    });
-    const issues = response.data?.issues ?? [];
-    if (issues.length === 0) {
-      return null;
+    let response;
+    try {
+      response = await httpGet(`${this.jiraHost}/rest/api/3/search/jql`, {
+        params: { jql: `project = ${_jqlString(String(this.projectKey))} AND labels = ${_jqlString(key)}`, maxResults: 20, fields: 'labels' },
+        headers: this.jiraHeaders(),
+        timeout: HTTP_TIMEOUT_MS,
+      });
+    } catch (e) {
+      throw new SfError(t('testCasesJiraCallFailed', { action: 'search', message: TestManagementProviderRoot.describeHttpError(e) }));
     }
-    return { id: String(issues[0].key), url: `${this.jiraBase()}/browse/${issues[0].key}` };
+    // Each hit is checked against its own labels: accepting the wrong issue would update it
+    const issue = (response.data?.issues ?? []).find((hit: any) => (hit?.fields?.labels ?? []).includes(key));
+    return issue ? { id: String(issue.key), url: `${this.jiraHost}/browse/${issue.key}` } : null;
   }
 
   public async create(testCase: NormalizedTestCase): Promise<ProviderRef> {
-    const jwt = await this.authenticate();
-    const data = await this.graphql(jwt, {
+    const data = await this.graphql({
       query: CREATE_TEST_MUTATION,
       variables: XrayTestProvider.buildVariables(testCase, String(this.projectKey)),
     });
     const test = data?.createTest?.test;
     if (!test) {
-      throw new SfError('Xray: createTest returned no test payload.');
+      throw new SfError(t('testCasesXrayNoTestPayload'));
     }
-    const key = test.jira?.key;
-    return { id: String(key ?? test.issueId), url: `${this.jiraBase()}/browse/${key}` };
+    const key = test.jira?.key ?? test.issueId;
+    return { id: String(key), url: `${this.jiraHost}/browse/${key}` };
   }
 
   /**
-   * Updates the Jira fields of an existing test.
-   *
-   * Sends everything Jira owns: summary, description, priority and labels. An earlier version
-   * sent only the summary and the labels, which silently discarded a corrected description or
-   * priority while still reporting the case as updated.
-   *
-   * It goes through REST API v2, where `description` is a plain string. REST API v3 only accepts
-   * an Atlassian Document Format value there and rejects the whole update with a 400.
-   *
-   * **The steps are not updated**, and cannot be from here: they live on the Xray side, and
-   * the GraphQL mutation that writes them is `createTest`, not an update. A corrected step
-   * list therefore needs the test to be recreated. This is documented as a known limitation
-   * of the command rather than hidden behind a success message.
+   * Updates the Jira fields of an existing test. The steps are not updated: they live on the Xray
+   * side, and the mutation that writes them is `createTest`, with no update counterpart.
    */
   public async update(ref: ProviderRef, testCase: NormalizedTestCase): Promise<ProviderRef> {
-    const fields = XrayTestProvider.buildVariables(testCase, String(this.projectKey)).jira.fields;
-    await httpPut(
-      `${this.jiraBase()}/rest/api/2/issue/${ref.id}`,
-      {
-        fields: {
-          summary: fields.summary,
-          description: fields.description,
-          priority: fields.priority,
-          labels: fields.labels,
-        },
-      },
-      { headers: this.jiraHeaders(), timeout: HTTP_TIMEOUT_MS }
-    );
-    return { id: ref.id, url: `${this.jiraBase()}/browse/${ref.id}` };
+    try {
+      await httpPut(`${this.jiraHost}/rest/api/2/issue/${ref.id}`, XrayTestProvider.buildUpdateBody(testCase), {
+        headers: this.jiraHeaders(),
+        timeout: HTTP_TIMEOUT_MS,
+      });
+    } catch (e) {
+      throw new SfError(t('testCasesJiraCallFailed', { action: `update ${ref.id}`, message: TestManagementProviderRoot.describeHttpError(e) }));
+    }
+    return { id: ref.id, url: `${this.jiraHost}/browse/${ref.id}` };
   }
 
   /** Link through Jira REST (link type "Test"), not through Xray. */
   public async linkToStory(ref: ProviderRef, storyId: string): Promise<void> {
-    await httpPost(
-      `${this.jiraBase()}/rest/api/3/issueLink`,
-      {
-        type: { name: 'Test' },
-        inwardIssue: { key: ref.id },
-        outwardIssue: { key: String(storyId) },
-      },
-      { headers: this.jiraHeaders(), timeout: HTTP_TIMEOUT_MS }
-    );
+    try {
+      await httpPost(
+        `${this.jiraHost}/rest/api/3/issueLink`,
+        { type: { name: 'Test' }, inwardIssue: { key: ref.id }, outwardIssue: { key: String(storyId) } },
+        { headers: this.jiraHeaders(), timeout: HTTP_TIMEOUT_MS }
+      );
+    } catch (e) {
+      throw new SfError(t('testCasesJiraCallFailed', { action: `link ${ref.id} to ${storyId}`, message: TestManagementProviderRoot.describeHttpError(e) }));
+    }
   }
 
-  private jiraBase(): string {
-    // Same normalization as jiraProvider.ts: a bare host such as mycompany.atlassian.net is accepted.
-    const raw = String(this.jiraBaseUrl ?? '').trim();
-    const withScheme = raw && !raw.startsWith('http') ? `https://${raw}` : raw;
-    return withScheme.replace(/\/+$/, '');
+  private missingSettings(): string[] {
+    const settings: Array<[string, unknown]> = [
+      ['XRAY_CLIENT_ID', this.clientId],
+      ['XRAY_CLIENT_SECRET', this.clientSecret],
+      ['JIRA_HOST', this.jiraHost],
+      ['JIRA_PROJECT_KEY', this.projectKey],
+      ['JIRA_EMAIL', this.jiraEmail],
+      ['JIRA_TOKEN', this.jiraToken],
+    ];
+    return settings.filter(([, value]) => !value).map(([name]) => name);
   }
 
   private jiraHeaders(): Record<string, string> {
     return {
-      Authorization:
-        'Basic ' + Buffer.from(`${this.jiraEmail}:${this.jiraToken}`, 'utf8').toString('base64'),
+      Authorization: 'Basic ' + Buffer.from(`${this.jiraEmail}:${this.jiraToken}`, 'utf8').toString('base64'),
       'Content-Type': 'application/json',
     };
   }
 
+  /** Xray token, requested once per run: it stays valid for 24 hours. */
   private async authenticate(): Promise<string> {
+    if (this.jwt) {
+      return this.jwt;
+    }
+    let response;
     try {
-      const response = await httpPost(
+      response = await httpPost(
         `${xrayBaseUrlFor(this.region)}/api/v2/authenticate`,
         { client_id: this.clientId, client_secret: this.clientSecret },
         { headers: { 'Content-Type': 'application/json' }, timeout: HTTP_TIMEOUT_MS }
       );
-      // The endpoint returns the raw JWT as a quoted JSON string. Two shapes reach us: a
-      // `application/json` response is parsed and yields the bare token, while a `text/plain`
-      // one arrives as the literal `"eyJ..."`, quotes included. Stripping them on the string
-      // branch covers both, where stripping on the object branch covered neither.
-      const raw = typeof response.data === 'string' ? response.data : String(response.data ?? '');
-      return raw.trim().replace(/^"|"$/g, '');
     } catch (e) {
-      throw new SfError(
-        `Xray: authentication failed (${(e as Error).message}). Check XRAY_CLIENT_ID and XRAY_CLIENT_SECRET.`
-      );
+      throw new SfError(t('testCasesXrayAuthFailed', { message: TestManagementProviderRoot.describeHttpError(e) }));
     }
+    // The raw JWT comes as a quoted JSON string, parsed or not depending on the content type
+    const token = typeof response.data === 'string' ? response.data.trim().replace(/^"|"$/g, '') : '';
+    if (!token) {
+      throw new SfError(t('testCasesXrayAuthFailed', { message: 'empty token' }));
+    }
+    this.jwt = token;
+    return token;
   }
 
-  private async graphql(jwt: string, body: any): Promise<any> {
-    const response = await httpPost(`${xrayBaseUrlFor(this.region)}/api/v2/graphql`, body, {
-      headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
-      timeout: HTTP_TIMEOUT_MS,
-    });
-    // GraphQL answers 200 with an errors array, so a failure is not an HTTP failure here.
+  private async graphql(body: any): Promise<any> {
+    const jwt = await this.authenticate();
+    let response;
+    try {
+      response = await httpPost(`${xrayBaseUrlFor(this.region)}/api/v2/graphql`, body, {
+        headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+        timeout: HTTP_TIMEOUT_MS,
+      });
+    } catch (e) {
+      throw new SfError(t('testCasesXrayGraphqlError', { message: TestManagementProviderRoot.describeHttpError(e) }));
+    }
+    // GraphQL answers 200 with an errors array
     const errors = response.data?.errors;
     if (errors && errors.length > 0) {
-      throw new SfError(`Xray: GraphQL error - ${errors.map((error: any) => error.message).join('; ')}`);
+      throw new SfError(t('testCasesXrayGraphqlError', { message: errors.map((error: any) => error.message).join('; ') }));
     }
     return response.data?.data;
   }

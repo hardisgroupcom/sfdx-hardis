@@ -3,32 +3,24 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
+import path from 'path';
+import fs from '../../../../common/utils/fsUtils.js';
 import { extractRegexMatches, getCurrentGitBranch, isCI, uxLog } from '../../../../common/utils/index.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { prompts } from '../../../../common/utils/prompts.js';
-import { generateReportPath } from '../../../../common/utils/filesUtils.js';
-import { resolveNotebookInput } from '../../../../common/utils/testNotebookInput.js';
+import { generateReportPath, isSamePath } from '../../../../common/utils/filesUtils.js';
 import {
-  writeNotebookCsv,
-  writeNotebookMarkdown,
-  writeNotebookXlsx,
-  writeTemplate,
-} from '../../../../common/utils/testNotebookRender.js';
-import { NormalizedTestCase, TestCaseKind } from '../../../../common/utils/testNotebookTypes.js';
+  deriveTicketAndKind,
+  NormalizedTestCase,
+  resolveNotebookInput,
+  TEST_CASE_KINDS,
+  TestCaseKind,
+} from '../../../../common/utils/testNotebookUtils.js';
+import { buildTemplateCases, NotebookFormat, writeNotebook } from '../../../../common/utils/testNotebookRender.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
-import path from 'path';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
-
-/** Same file once resolved, ignoring case on Windows where the file system does. */
-function samePath(first: string, second: string): boolean {
-  const normalize = (value: string) => {
-    const resolved = path.resolve(value);
-    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
-  };
-  return normalize(first) === normalize(second);
-}
 
 export default class TicketTestCasesInit extends SfCommand<any> {
   public static title = 'Initialize the test cases of a ticket';
@@ -36,95 +28,98 @@ export default class TicketTestCasesInit extends SfCommand<any> {
   public static description = `
 ## Command Behavior
 
-**Writes the test cases of a ticket into a notebook a human can review and correct: an Excel workbook, a CSV, or a markdown table.**
+**Writes the test cases of a ticket into a notebook a tester reviews and fills in: an Excel workbook, a CSV or a markdown table.**
 
-The test cases come **in**, as a \`NormalizedTestCase[]\` JSON payload. That payload is what an AI agent produces after reading the specification and the code, and this command turns it into the artifact a tester actually works in. The point is not that somebody types test cases from scratch: it is that the ones already written get a shape that can be read, corrected, and then sent to a tracker with [hardis:ticket:test-cases:upsert](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/).
+The test cases usually come from a \`NormalizedTestCase[]\` JSON file written by an AI agent that read the specification and the code. This command turns them into a file a human can read and correct, then [hardis:ticket:test-cases:upsert](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/) sends the corrected file to the test management tool.
 
-It provides:
+- **One column set per kind of notebook.** Functional notebooks have the steps and a helper SOQL query, technical notebooks have the Apex class and method under test, maintenance notebooks have no module nor priority. The kind comes from the \`ID\` column, or from \`--kind\`.
+- **Tester columns:** \`Actual result\`, \`Comment\` and \`Status\` (a value list: Passed, Failed, Blocked, N/A). They are written empty for new cases, and kept when an existing notebook is converted to another format.
+- **A summary** of the cases per module and priority, in its own sheet or under the CSV rows.
+- **Readable back:** every file written here is read by \`upsert\`, after a tester corrected it.
+- **A blank notebook** when no test case is given, with identifiers already filled.
 
-- **A column set per notebook kind.** The functional notebook carries the advisory SOQL query and the steps; the technical one carries the class and method under test instead; the TMA one drops the module and the priority. The kind is derived from the \`ID\` column, or forced with \`--kind\`.
-- **The reviewer's columns left empty:** \`Résultat obtenu\`, \`Commentaire\` and \`Statut\`. Filling them would be answering for the tester.
-- **A \`Statut\` column restricted to a value list**, so a campaign can be counted rather than read, plus a per-module summary sheet with the counts by priority.
-- **A round trip that holds.** The workbook this command writes is read back by the very same parser, so the corrections a human makes in Excel survive all the way to the tracker.
-- **A blank notebook as a fallback.** Without \`--testsjsonfile\`, the command writes the scaffolding with its identifiers pre-filled and its cells empty, for the rare case where nobody has drafted the cases yet.
+### Input
 
-### Where the test cases come from
-
-Any of these, and the format is read from the file extension rather than sniffed from the content:
+The format is read from the file extension:
 
 | Input | Flag | Typical producer |
 |-------|------|------------------|
-| Pre-normalized JSON | \`--testsjsonfile\` | An AI agent that read the ticket and the code. **The main path.** |
-| An existing notebook | \`--notebook\` | A previous run of this command, or a workbook a tester has filled in |
-| Nothing | neither flag | The blank scaffolding fallback |
+| JSON test cases | \`--testsjsonfile\` | An AI agent that read the ticket and the code |
+| An existing notebook (.md, .xlsx, .csv) | \`--notebook\` | A previous run of this command, or a notebook a tester filled in |
+| Nothing | neither flag | Blank notebook |
+
+### Output
+
+- Format: \`--format\` (\`xlsx\` by default, \`both\` writes the xlsx and the CSV), or the extension of \`--outputfile\`.
+- File: \`--outputfile\`, or \`hardis-report/test-cases-<TICKET>-<KIND>-<DATE>.<ext>\`.
+- An existing file is never overwritten silently: the command asks first, and refuses in CI and in agent mode.
 
 ### Configuration
 
-None. This command reads a file and writes a file: no org, no project, no provider, no secret.
+None: this command reads a file and writes a file, without org, provider nor secret.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- **Public contract:** \`--testsjsonfile\` accepts a \`NormalizedTestCase[]\` payload, validated field by field with the array index and the field name in the error message, so a generator can be fixed without reading this source. That contract is the seam between the agent that writes the cases and the deterministic code that renders and sends them.
-- **Identifier convention:** \`<TICKET>-F01\` functional, \`<TICKET>-T01\` technical, \`<TICKET>-01\` TMA. The ticket and the kind are both derived from the identifier, and an unreadable one raises rather than guessing, because guessing "functional" for a technical case renders the wrong column set.
-- **Formula injection guard:** every cell is passed through a guard that prefixes an apostrophe to any value starting with \`=\`, \`+\`, \`-\` or \`@\`. Those are executed by Excel and LibreOffice on open, and a notebook is written by one party and opened by another.
-- **CSV shape:** \`;\` delimiter, UTF-8 **with a BOM** so Excel opens the accents on a double click, CRLF line endings, and a summary footer padded to the header width. The reader stops at that footer marker rather than turning the summary rows into malformed test cases.
-- **Step rendering:** the steps of a case are rendered into a single cell, numbered, with a separator chosen so the cell can be read back. A real line break in the xlsx, which is also what a tester wants to see; a \`<br>\` in the CSV, because a CSV field has to stay on one physical line.
-- **Column width detail:** the priority column is 9.5 characters wide and not 9. ExcelJS treats a width equal to the default column width (9) as "not custom" and omits it on write, so a width of exactly 9 reads back undefined.
+- **JSON contract:** \`id\`, \`title\` and \`expected\` are required. \`module\`, \`priority\` (1, 2 or 3), \`preconditions\`, \`target\`, \`soql\` and \`steps\` (\`[{ "action": "...", "expected": "..." }]\`) are optional. Every problem of an entry is reported at once, with its index.
+- **Identifiers:** \`<TICKET>-F01\` functional, \`<TICKET>-T01\` technical, \`<TICKET>-01\` maintenance, with a 2 or 3 digit counter. Letters, digits, \`_\`, \`.\`, \`#\` and \`-\` only. The ticket and the kind are derived from the identifier, and an unreadable one is refused.
+- **Steps cell:** one numbered line per step, \`1. Open the record → The record page is displayed\`. The first \`→\` or \`->\` separates the action from its expected result, and a step without arrow has no expected result. An arrow inside an action is written \`=>\`, so it is not read as the separator. Steps are separated by a line break in the xlsx, and by \`<br>\` in the CSV and in markdown.
+- **CSV:** \`,\` delimiter, UTF-8 with BOM so Excel reads the accents, CRLF line endings. A cell starting with \`=\`, \`+\`, \`-\` or \`@\` is prefixed with an apostrophe, so a spreadsheet does not run it as a formula. The reader detects \`,\` or \`;\`.
+- **Headers:** the reader also accepts the French headers of earlier notebooks (\`Cas de test\`, \`Étapes\`, \`Résultat attendu\`...).
 
 </details>
 
 ### Agent Mode
 
-Use \`--agent\` to disable all interactive prompts. In agent mode nothing is guessed: when no test cases are supplied, \`--kind\` and \`--ticket-number\` become required and a missing one raises an error naming the flag.
+Use \`--agent\` to disable all interactive prompts. Without test cases, \`--kind\` and \`--ticket-number\` are required. An existing output file makes the command fail instead of asking.
 
 \`\`\`sh
 sf hardis:ticket:test-cases:init --testsjsonfile cases.json --agent
 \`\`\`
 
-The same applies in CI, where \`isCI\` is true.
+The same applies in CI.
 `;
 
   public static examples = [
     '$ sf hardis:ticket:test-cases:init --testsjsonfile cases.json',
-    '$ sf hardis:ticket:test-cases:init --testsjsonfile cases.json --format both --outputfile ./DSI-11533.xlsx',
-    '$ sf hardis:ticket:test-cases:init --notebook docs/tests/DSI-11533.md --format csv',
-    '$ sf hardis:ticket:test-cases:init --agent --kind functional --ticket-number DSI-11533 --modules Opportunite --rows 5',
+    '$ sf hardis:ticket:test-cases:init --testsjsonfile cases.json --format both --outputfile ./PROJ-123.xlsx',
+    '$ sf hardis:ticket:test-cases:init --notebook docs/tests/PROJ-123.xlsx --outputfile docs/tests/PROJ-123.md',
+    '$ sf hardis:ticket:test-cases:init --kind functional --ticket-number PROJ-123 --modules Opportunity --rows 5 --agent',
+    '$ sf hardis:ticket:test-cases:init --testsjsonfile cases.json --agent',
   ];
 
   public static flags: any = {
     testsjsonfile: Flags.string({
       char: 'j',
-      description: 'NormalizedTestCase[] JSON file holding the test cases to write. The main input',
+      description: 'NormalizedTestCase[] JSON file holding the test cases to write',
     }),
     notebook: Flags.string({
       char: 'n',
-      description: 'Existing notebook to read the test cases from instead: .md, .xlsx or .csv',
+      description: 'Existing notebook to read the test cases from: .md, .xlsx or .csv',
     }),
     'ticket-number': Flags.string({
-      description: 'Ticket key the test cases belong to, overriding the one derived from the ID column',
+      description: 'Ticket key of a blank notebook. With test cases, sets their carrier ticket',
     }),
     kind: Flags.string({
       char: 'k',
-      options: ['functional', 'technical', 'tma'],
+      options: TEST_CASE_KINDS,
       description: 'Column set to write. Defaults to the kind derived from the ID column',
     }),
     modules: Flags.string({
       multiple: true,
-      description: 'Module names of the blank scaffolding, one group of rows each. Ignored when test cases are supplied',
+      description: 'Module names of a blank notebook, one group of rows each',
     }),
     rows: Flags.integer({
       default: 3,
-      description: 'Rows per module of the blank scaffolding. Ignored when test cases are supplied',
+      description: 'Rows per module of a blank notebook',
     }),
     format: Flags.string({
       options: ['xlsx', 'csv', 'md', 'both'],
-      default: 'xlsx',
-      description: 'Output format. "both" writes the xlsx and the CSV side by side',
+      description: 'Output format: xlsx (default), csv, md, or both for xlsx and csv. Defaults to the extension of --outputfile',
     }),
     outputfile: Flags.string({
       char: 'f',
-      description: 'Force the path of the generated notebook',
+      description: 'Path of the generated notebook',
     }),
     agent: Flags.boolean({
       default: false,
@@ -140,111 +135,108 @@ The same applies in CI, where \`isCI\` is true.
     }),
   };
 
-  // Writing a notebook is independent from any Salesforce project or org.
+  // Writing a notebook needs no Salesforce project nor org
   public static requiresProject = false;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(TicketTestCasesInit);
-    const hasCases = Boolean(flags.testsjsonfile || flags.notebook);
-
-    return hasCases ? this.writeSuppliedCases(flags) : this.writeBlankScaffolding(flags);
-  }
-
-  /** The main path: the cases already exist, they need a shape a human can correct. */
-  private async writeSuppliedCases(flags: any): Promise<AnyJson> {
-    const cases: NormalizedTestCase[] = await resolveNotebookInput(flags);
-    if (cases.length === 0) {
-      throw new SfError(t('testCasesNoneFound'));
-    }
-    // One notebook holds one kind, because the kind decides the column set. Mixing them would
-    // silently drop a column: a technical case in a functional payload loses its
-    // "Classe / Méthode", and nothing in the produced file would say so. `--kind` forces the
-    // column set when that is genuinely what the caller wants.
-    const kinds = [...new Set(cases.map((testCase) => testCase.kind))];
-    if (!flags.kind && kinds.length > 1) {
-      throw new SfError(t('testCasesMixedKinds', { kinds: kinds.join(', ') }));
-    }
-    const kind: TestCaseKind = (flags.kind as TestCaseKind) || cases[0].kind;
-
-    uxLog('action', this, c.cyan(t('testCasesWriting', { count: cases.length, kind })));
-
-    const writtenFiles: string[] = [];
-    if (flags.format === 'xlsx' || flags.format === 'both') {
-      writtenFiles.push(await writeNotebookXlsx(await this.targetFor(flags, 'xlsx'), kind, cases));
-    }
-    if (flags.format === 'csv' || flags.format === 'both') {
-      writtenFiles.push(await writeNotebookCsv(await this.targetFor(flags, 'csv'), kind, cases));
-    }
-    if (flags.format === 'md') {
-      writtenFiles.push(await writeNotebookMarkdown(await this.targetFor(flags, 'md'), kind, cases));
-    }
-
-    this.announce(writtenFiles);
-    uxLog('success', this, c.green(t('testCasesWritten', { count: cases.length, files: writtenFiles.length })));
-    return { outputString: `Wrote ${cases.length} test case(s)`, kind, files: writtenFiles };
-  }
-
-  /**
-   * The fallback: nobody has drafted the cases, so the command writes the scaffolding with
-   * its identifiers pre-filled. Kept because a human without an agent must still be able to
-   * start, but it is no longer the path the documentation leads with.
-   */
-  private async writeBlankScaffolding(flags: any): Promise<AnyJson> {
     const nonInteractive = flags.agent === true || isCI;
-    const kind = await this.resolveKind(flags.kind, nonInteractive);
-    const ticket = await this.resolveTicket(flags['ticket-number'], nonInteractive);
-    const modules = flags.modules && flags.modules.length > 0 ? flags.modules : [];
-    const rows = flags.rows ?? 3;
+    const formats = this.resolveFormats(flags);
 
-    // A prompt must be followed by an action line, or the VS Code UI hides everything after it.
-    uxLog('action', this, c.cyan(t('testCasesGeneratingTemplate', { kind, ticket })));
+    let cases: NormalizedTestCase[];
+    let kind: TestCaseKind;
+    let ticket: string;
+    const blank = !flags.testsjsonfile && !flags.notebook;
+    if (blank) {
+      kind = await this.resolveKind(flags.kind, nonInteractive);
+      ticket = await this.resolveTicket(flags['ticket-number'], nonInteractive);
+      // Refuses a ticket key whose identifiers could not be read back
+      deriveTicketAndKind(`${ticket}-01`);
+      cases = buildTemplateCases({ kind, ticket, modules: flags.modules ?? [], rows: flags.rows ?? 3 });
+      uxLog('action', this, c.cyan(t('testCasesGeneratingTemplate', { kind, ticket })));
+    } else {
+      cases = await resolveNotebookInput(flags);
+      if (cases.length === 0) {
+        throw new SfError(t('testCasesNoneFound'));
+      }
+      // The kind decides the columns: a technical case in a functional notebook would lose its class
+      const kinds = [...new Set(cases.map((testCase) => testCase.kind))];
+      if (!flags.kind && kinds.length > 1) {
+        throw new SfError(t('testCasesMixedKinds', { kinds: kinds.join(', ') }));
+      }
+      kind = (flags.kind as TestCaseKind) || cases[0].kind;
+      ticket = cases[0].ticket;
+      uxLog('action', this, c.cyan(t('testCasesWriting', { count: cases.length, kind })));
+    }
 
-    // "both" means the xlsx and the CSV here too, as the flag documents.
-    const formats: Array<'xlsx' | 'csv' | 'md'> = flags.format === 'both' ? ['xlsx', 'csv'] : [flags.format];
     const files: string[] = [];
     for (const format of formats) {
-      files.push(await writeTemplate(await this.targetFor(flags, format), { kind, ticket, modules, rows }, format));
+      const target = await this.targetFor(flags, format, formats.length > 1, ticket, kind, nonInteractive);
+      files.push(await writeNotebook(target, format, kind, cases, { withSummary: !blank }));
     }
 
-    this.announce(files);
-    uxLog(
-      'success',
-      this,
-      c.green(
-        t('testCasesTemplateGenerated', {
-          count: Math.max(1, rows) * Math.max(1, modules.length),
-          file: files.join(', '),
-        })
-      )
-    );
-    return { outputString: `Initialized a blank ${kind} notebook`, kind, ticket, file: files[0], files };
-  }
-
-  /**
-   * With `--format both`, one `--outputfile` cannot name two files: the extension asked for
-   * decides, so the caller gets `cahier.xlsx` and `cahier.csv` rather than one overwriting
-   * the other.
-   */
-  private async targetFor(flags: any, extension: string): Promise<string> {
-    const forced = flags.outputfile ? flags.outputfile.replace(/\.(xlsx|csv|md)$/i, '') + '.' + extension : '';
-    const target = await generateReportPath('test-cases', forced, { fileExtension: extension });
-    // Writing over the notebook being read would wipe the results a tester already entered in it.
-    if (flags.notebook && samePath(target, flags.notebook)) {
-      throw new SfError(t('testCasesOutputIsInputNotebook', { file: flags.notebook }));
-    }
-    return target;
-  }
-
-  private announce(files: string[]): void {
     for (const file of files) {
       uxLog('log', this, c.grey(`- ${file}`));
       WebSocketClient.sendReportFileMessage(file, t('testCasesNotebookReport'), 'report');
     }
-    if (files.length === 1) {
+    // VS Code opens text files only
+    if (files.length === 1 && !files[0].endsWith('.xlsx')) {
       WebSocketClient.requestOpenFile(files[0]);
     }
+    uxLog('success', this, c.green(t('testCasesWritten', { count: cases.length, files: files.length })));
+    return { outputString: t('testCasesWritten', { count: cases.length, files: files.length }), kind, ticket, blank, files };
+  }
+
+  /** `--format` wins, then the extension of `--outputfile`, then xlsx. */
+  private resolveFormats(flags: any): NotebookFormat[] {
+    const extension = flags.outputfile ? path.extname(flags.outputfile).slice(1).toLowerCase() : '';
+    const fromOutput = ['xlsx', 'csv', 'md'].includes(extension) ? extension : '';
+    const format = flags.format || fromOutput || 'xlsx';
+    if (fromOutput && format !== 'both' && format !== fromOutput) {
+      throw new SfError(t('testCasesFormatMismatch', { format, file: flags.outputfile }));
+    }
+    return format === 'both' ? ['xlsx', 'csv'] : [format as NotebookFormat];
+  }
+
+  private async targetFor(
+    flags: any,
+    format: NotebookFormat,
+    severalFormats: boolean,
+    ticket: string,
+    kind: TestCaseKind,
+    nonInteractive: boolean
+  ): Promise<string> {
+    let target: string;
+    if (flags.outputfile) {
+      const base = path.extname(flags.outputfile) ? flags.outputfile.slice(0, -path.extname(flags.outputfile).length) : flags.outputfile;
+      target = severalFormats || !path.extname(flags.outputfile) ? `${base}.${format}` : flags.outputfile;
+      await fs.ensureDir(path.dirname(path.resolve(target)));
+    } else {
+      const safeTicket = ticket.replace(/[^\w.-]/g, '_');
+      target = await generateReportPath(`test-cases-${safeTicket}-${kind}`, '', { withDate: true, withBranchName: false, fileExtension: format });
+    }
+    if (flags.notebook && isSamePath(target, flags.notebook)) {
+      throw new SfError(t('testCasesOutputIsInputNotebook', { file: flags.notebook }));
+    }
+    if (await fs.pathExists(target)) {
+      if (nonInteractive) {
+        throw new SfError(t('testCasesOutputExists', { file: target }));
+      }
+      const answer = await prompts({
+        type: 'confirm',
+        name: 'value',
+        message: t('testCasesConfirmOverwrite', { file: target }),
+        description: t('testCasesConfirmOverwriteDescription'),
+        initial: false,
+      });
+      uxLog('action', this, c.cyan(t(answer.value === true ? 'testCasesOverwriting' : 'testCasesOverwriteCancelled', { file: target })));
+      if (answer.value !== true) {
+        throw new SfError(t('testCasesOutputExists', { file: target }));
+      }
+    }
+    return target;
   }
 
   private async resolveKind(flagValue: string | undefined, nonInteractive: boolean): Promise<TestCaseKind> {
@@ -262,16 +254,13 @@ The same applies in CI, where \`isCI\` is true.
       choices: [
         { title: t('testCasesKindFunctional'), value: 'functional' },
         { title: t('testCasesKindTechnical'), value: 'technical' },
-        { title: t('testCasesKindTma'), value: 'tma' },
+        { title: t('testCasesKindMaintenance'), value: 'maintenance' },
       ],
     });
     return (answer.value as TestCaseKind) || 'functional';
   }
 
-  /**
-   * The current branch usually already carries the ticket key, so it is proposed rather than
-   * asked blind. Same extraction machinery as the ticketing providers.
-   */
+  /** The current branch usually carries the ticket key, so it is proposed. */
   private async resolveTicket(flagValue: string | undefined, nonInteractive: boolean): Promise<string> {
     if (flagValue) {
       return flagValue.trim();
@@ -287,7 +276,7 @@ The same applies in CI, where \`isCI\` is true.
       message: t('testCasesPromptTicket'),
       description: t('testCasesPromptTicketDescription'),
       initial: fromBranch,
-      placeholder: 'DSI-11533',
+      placeholder: 'PROJ-123',
     });
     const value = (answer?.value || '').trim();
     if (!value) {

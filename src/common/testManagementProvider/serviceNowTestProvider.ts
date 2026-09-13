@@ -1,9 +1,10 @@
 import { SfError } from '@salesforce/core';
 import { TestManagementProviderRoot, ProviderRef } from './testManagementProviderRoot.js';
-import { NormalizedTestCase, idempotencyKey } from '../utils/testNotebookTypes.js';
+import { NormalizedTestCase, idempotencyKey } from '../utils/testNotebookUtils.js';
 import { httpGet, httpPost, httpPatch, HttpError } from '../utils/httpUtils.js';
 import { getEnvVar } from '../../config/index.js';
-import { t } from '../utils/i18n.js';
+import { t, tEn } from '../utils/i18n.js';
+import { ServiceNowProvider } from '../ticketProvider/serviceNowProvider.js';
 
 const T_TEST = 'sn_test_management_test';
 const T_VERSION = 'sn_test_management_test_version';
@@ -13,55 +14,32 @@ const PLUGIN = 'com.snc.test_management.2.0';
 const STEP_ORDER_INCREMENT = 100;
 
 /**
- * The `description` of a ServiceNow test is plain text, unlike the HTML `System.Description`
- * of Azure DevOps. A `[label](url)` markdown link would show up as literal bracket and paren
- * characters, so it is reduced to a bare URL, the honest output for a field that cannot render
- * markup.
- */
-function _linksToPlainText(text: unknown): string {
-  return String(text ?? '').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$2');
-}
-
-/**
  * ServiceNow Test Management 2.0 adapter.
  *
- * Creating a test is three chained inserts, there being no documented composite payload:
- *   sn_test_management_test -> sn_test_management_test_version
- *                           -> sn_test_management_test_step (one per step)
+ * Creating a test is three chained inserts, there being no composite payload:
+ *   sn_test_management_test -> sn_test_management_test_version -> sn_test_management_step
  *
- * Not to be confused with `ticketProvider/serviceNowProvider.ts`, which reads tickets
- * (incident, change_request, rm_story...). This one writes test cases. Both deliberately read
- * the same three environment variables, so a project configures ServiceNow once.
+ * Not to be confused with `ticketProvider/serviceNowProvider.ts`, which reads tickets. Both read
+ * the same variables, so a project configures ServiceNow once.
  */
 export class ServiceNowTestProvider extends TestManagementProviderRoot {
+  public static readonly providerKey = 'servicenow';
+  public static readonly providerLabel = 'ServiceNow';
+
   protected instanceUrl: string;
   protected user: string;
   protected password: string;
 
   public constructor() {
     super();
-    this.instanceUrl = ServiceNowTestProvider.getInstanceUrl();
+    this.instanceUrl = ServiceNowProvider.getInstanceUrl();
     this.user = getEnvVar('SERVICENOW_USERNAME') || '';
     this.password = getEnvVar('SERVICENOW_PASSWORD') || '';
     this.isActive = Boolean(this.instanceUrl && this.user && this.password);
   }
 
-  /**
-   * `SERVICENOW_URL` may be given as a bare instance host or as a full URL, with or without a
-   * trailing slash. Same normalization as `ticketProvider/serviceNowProvider.ts`, so the two
-   * connectors accept the exact same value.
-   */
-  private static getInstanceUrl(): string {
-    const raw = getEnvVar('SERVICENOW_URL') || '';
-    if (!raw) {
-      return '';
-    }
-    const withScheme = raw.startsWith('http') ? raw : `https://${raw}`;
-    return withScheme.replace(/\/+$/, '');
-  }
-
   public getLabel(): string {
-    return 'servicenow';
+    return ServiceNowTestProvider.providerLabel;
   }
 
   public getRequiredEnvVars(): string[] {
@@ -69,126 +47,121 @@ export class ServiceNowTestProvider extends TestManagementProviderRoot {
   }
 
   /**
-   * Idempotency key carried as a `short_description` prefix.
-   *
-   * Test Management 2.0 exposes no portable correlation field on `sn_test_management_test`, so
-   * the key lives in the human readable title. This is a deliberate, documented fallback: a
-   * `findByKey` aimed at a field that turns out to be absent or ACL restricted does not raise,
-   * it returns an empty result, and would therefore re-create every already pushed case as a
-   * duplicate. See the Known limitations section of the push command.
+   * Test Management 2.0 has no portable correlation field on `sn_test_management_test`, so the
+   * idempotency key prefixes `short_description`. See the known limitations of the upsert command.
    */
   public static buildShortDescription(testCase: NormalizedTestCase): string {
-    const parts = [`[${idempotencyKey(testCase.id, testCase.ticket)}]`];
-    if (testCase.module) {
-      parts.push(`${testCase.module} -`);
-    }
-    parts.push(testCase.title);
-    return parts.join(' ');
+    return `[${idempotencyKey(testCase.id)}] ${testCase.title}`;
   }
 
+  /** Fields of the test record. The priority is only sent when the notebook has that column. */
   public static buildTestBody(testCase: NormalizedTestCase): Record<string, any> {
-    const lines: string[] = [];
-    if (testCase.preconditions) {
-      lines.push(`${t('testCasePreconditions')} ${_linksToPlainText(testCase.preconditions)}`);
-    }
-    if (testCase.expected) {
-      lines.push(`${t('testCaseOverallExpectedResult')} ${_linksToPlainText(testCase.expected)}`);
-    }
-    // The advisory query is omitted cleanly when the cell is empty.
-    if (testCase.soql) {
-      lines.push(`${t('testCaseSoqlQuery')} ${testCase.soql}`);
-    }
-    return {
+    const body: Record<string, any> = {
       short_description: ServiceNowTestProvider.buildShortDescription(testCase),
-      description: lines.join('\n'),
-      priority: testCase.priority,
+      description: TestManagementProviderRoot.buildPlainDescription(testCase),
     };
+    if (testCase.priority !== undefined) {
+      body.priority = testCase.priority;
+    }
+    return body;
+  }
+
+  /**
+   * Text of a step record. Test Management 2.0 has no expected result column on
+   * `sn_test_management_step`, and the Table API silently ignores an unknown field, so the
+   * expected result is written in the step text rather than lost.
+   */
+  public static buildStepText(action: string, expected: string): string {
+    return expected ? `${action}\n${tEn('testCaseExpectedResult')} ${expected}` : action;
   }
 
   public async checkPrerequisites(): Promise<void> {
-    if (!this.instanceUrl) {
-      throw new SfError('ServiceNow: SERVICENOW_URL is not set (ex: https://myinstance.service-now.com).');
+    if (!this.instanceUrl || !this.user || !this.password) {
+      throw new SfError(t('testCasesProviderMissingSettings', { label: this.getLabel(), settings: this.getRequiredEnvVars().join(', ') }));
     }
-    if (!this.user || !this.password) {
-      throw new SfError('ServiceNow: SERVICENOW_USERNAME and SERVICENOW_PASSWORD must both be set.');
-    }
+    let response;
     try {
-      await httpGet(`${this.instanceUrl}/api/now/table/${T_TEST}`, {
+      response = await httpGet(`${this.instanceUrl}/api/now/table/${T_TEST}`, {
         ...this.authConfig(),
         params: { sysparm_limit: 1 },
       });
     } catch (e) {
       const status = (e as HttpError)?.status;
       if (status === 403 || status === 404) {
-        // Kept word for word from the skill: it carries the license information, which is what
-        // saves the reader an hour of searching.
-        throw new SfError(
-          `ServiceNow: table ${T_TEST} answered HTTP ${status} - the plugin ${PLUGIN} is not active ` +
-            'on this instance. It is not sellable standalone: it ships with SPM / ITBM Professional. ' +
-            'No test case was created.'
-        );
+        throw new SfError(t('testCasesServiceNowPluginInactive', { table: T_TEST, status, plugin: PLUGIN }));
       }
-      throw new SfError(`ServiceNow: probe on ${T_TEST} failed - ${(e as Error).message}.`);
+      throw new SfError(t('testCasesServiceNowProbeFailed', { table: T_TEST, message: TestManagementProviderRoot.describeHttpError(e) }));
+    }
+    // A hibernating developer instance answers every call with a 200 HTML page
+    if (!Array.isArray(response.data?.result)) {
+      throw new SfError(t('testCasesServiceNowUnexpectedAnswer', { url: this.instanceUrl }));
     }
   }
 
   public async findByKey(key: string): Promise<ProviderRef | null> {
-    const response = await httpGet(`${this.instanceUrl}/api/now/table/${T_TEST}`, {
-      ...this.authConfig(),
-      params: { sysparm_query: `short_descriptionSTARTSWITH[${key}]`, sysparm_limit: 1 },
-    });
-    const hits = response.data?.result ?? [];
-    if (hits.length === 0) {
-      return null;
+    let response;
+    try {
+      response = await httpGet(`${this.instanceUrl}/api/now/table/${T_TEST}`, {
+        ...this.authConfig(),
+        params: {
+          // The key only holds [A-Za-z0-9_.#:-] (see deriveTicketAndKind): no `^` can reach the query
+          sysparm_query: `short_descriptionSTARTSWITH[${key}]`,
+          sysparm_fields: 'sys_id,short_description',
+          sysparm_limit: 20,
+        },
+      });
+    } catch (e) {
+      throw new SfError(t('testCasesServiceNowCallFailed', { action: 'search', message: TestManagementProviderRoot.describeHttpError(e) }));
     }
-    return { id: String(hits[0].sys_id), url: this.recordUrl(String(hits[0].sys_id)) };
+    const hit = (response.data?.result ?? []).find((record: any) => String(record?.short_description ?? '').startsWith(`[${key}]`));
+    return hit ? { id: String(hit.sys_id), url: this.recordUrl(String(hit.sys_id)) } : null;
   }
 
   public async create(testCase: NormalizedTestCase): Promise<ProviderRef> {
-    const test = await this.insert(T_TEST, ServiceNowTestProvider.buildTestBody(testCase));
-    const version = await this.insert(T_VERSION, { test: test.sys_id, version: 1 });
-
-    let order = STEP_ORDER_INCREMENT;
-    for (const step of testCase.steps || []) {
-      await this.insert(T_STEP, {
-        test_version: version.sys_id,
-        order,
-        step: step.action,
-        expected_result: step.expected,
-      });
-      order += STEP_ORDER_INCREMENT;
+    const body = ServiceNowTestProvider.buildTestBody(testCase);
+    const test = await this.insert(T_TEST, { priority: 2, ...body });
+    const ref = { id: String(test.sys_id), url: this.recordUrl(String(test.sys_id)) };
+    // A rerun only updates an existing test: a version or a step that failed here is never added
+    // later, so the error names the test record to fix or delete
+    try {
+      const version = await this.insert(T_VERSION, { test: test.sys_id, version: 1 });
+      let order = STEP_ORDER_INCREMENT;
+      for (const step of testCase.steps || []) {
+        await this.insert(T_STEP, {
+          test_version: version.sys_id,
+          order,
+          step: ServiceNowTestProvider.buildStepText(step.action, step.expected),
+        });
+        order += STEP_ORDER_INCREMENT;
+      }
+    } catch (e) {
+      throw new SfError(t('testCasesServiceNowPartialCreate', { url: ref.url, message: (e as Error).message }));
     }
-    return { id: String(test.sys_id), url: this.recordUrl(String(test.sys_id)) };
+    return ref;
   }
 
   /**
-   * Updates the test record only. The steps of the existing version are left alone: replacing
-   * them would mean deleting rows a tester may already have executed against.
+   * Updates the test record only. The steps of the existing version are left alone: replacing them
+   * would delete rows a tester may already have run.
    */
   public async update(ref: ProviderRef, testCase: NormalizedTestCase): Promise<ProviderRef> {
     try {
-      await httpPatch(
-        `${this.instanceUrl}/api/now/table/${T_TEST}/${ref.id}`,
-        ServiceNowTestProvider.buildTestBody(testCase),
-        this.authConfig()
-      );
+      await httpPatch(`${this.instanceUrl}/api/now/table/${T_TEST}/${ref.id}`, ServiceNowTestProvider.buildTestBody(testCase), this.authConfig());
     } catch (e) {
-      throw new SfError(`ServiceNow: update of ${ref.id} failed - ${(e as Error).message}.`);
+      throw new SfError(t('testCasesServiceNowCallFailed', { action: `update ${ref.id}`, message: TestManagementProviderRoot.describeHttpError(e) }));
     }
     return { id: ref.id, url: this.recordUrl(ref.id) };
   }
 
   /**
-   * ServiceNow Test Management 2.0 has no generic relation from a test to an arbitrary ticket,
-   * so the carrier ticket is not linked through a relation table. It already travels in the
-   * idempotency key that prefixes `short_description`, which is the trace that survives.
+   * Test Management 2.0 has no generic relation from a test to any ticket: the carrier ticket
+   * travels in the idempotency key that prefixes `short_description`.
    */
   public async linkToStory(): Promise<void> {
     return;
   }
 
   private authConfig() {
-    // Same shape as ticketProvider/serviceNowProvider.ts, timeout included.
     return { auth: { username: this.user, password: this.password }, timeout: 60000 };
   }
 
@@ -196,12 +169,18 @@ export class ServiceNowTestProvider extends TestManagementProviderRoot {
     return `${this.instanceUrl}/${T_TEST}.do?sys_id=${sysId}`;
   }
 
+  /** Insert a record, and refuse an answer that is not a Table API record. */
   private async insert(table: string, body: Record<string, any>): Promise<Record<string, any>> {
+    let response;
     try {
-      const response = await httpPost(`${this.instanceUrl}/api/now/table/${table}`, body, this.authConfig());
-      return response.data?.result ?? {};
+      response = await httpPost(`${this.instanceUrl}/api/now/table/${table}`, body, this.authConfig());
     } catch (e) {
-      throw new SfError(`ServiceNow: insert into ${table} failed - ${(e as Error).message}.`);
+      throw new SfError(t('testCasesServiceNowCallFailed', { action: `insert into ${table}`, message: TestManagementProviderRoot.describeHttpError(e) }));
     }
+    const record = response.data?.result;
+    if (!record?.sys_id) {
+      throw new SfError(t('testCasesServiceNowNoSysId', { table }));
+    }
+    return record;
   }
 }

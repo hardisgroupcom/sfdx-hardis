@@ -3278,6 +3278,26 @@
       "title": "Target Username",
       "type": "string"
     },
+    "testCasesProvider": {
+      "$id": "#/properties/testCasesProvider",
+      "description": "Test management tool that hardis:ticket:test-cases:upsert sends the test cases to, when --provider is not passed. Required in CI and in agent mode when --provider is not passed, so test cases never go to a tool only because its environment variables happen to be set.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/",
+      "enum": [
+        "azure-devops",
+        "servicenow",
+        "xray"
+      ],
+      "enumNames": [
+        "Azure DevOps",
+        "ServiceNow Test Management",
+        "Xray Cloud"
+      ],
+      "examples": [
+        "xray"
+      ],
+      "title": "Test cases provider",
+      "type": "string"
+    },
     "testCoverageNotBlocking": {
       "$id": "#/properties/testCoverageNotBlocking",
       "default": false,

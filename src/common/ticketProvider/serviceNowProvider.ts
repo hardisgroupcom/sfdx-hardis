@@ -85,7 +85,7 @@ export class ServiceNowProvider extends TicketProviderRoot {
   }
 
   /** SERVICENOW_URL may be given as a bare instance host or as a full URL, with or without a trailing slash */
-  private static getInstanceUrl(): string {
+  public static getInstanceUrl(): string {
     const raw = getEnvVar('SERVICENOW_URL') || '';
     if (!raw) {
       return '';

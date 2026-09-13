@@ -1,34 +1,30 @@
 /**
- * Render normalized test cases into the deliverable a tester receives: a formatted Excel
- * workbook, or a CSV Excel opens cleanly on a double click.
+ * Write normalized test cases into the notebook a tester works in: an Excel workbook, a CSV or a
+ * markdown table. Every file written here is read back by testNotebookUtils.ts.
  *
- * This module writes the workbook itself with ExcelJS rather than going through
- * `generateCsvFile` / `createXlsxFromCsv` of filesUtils, and that is deliberate. Those write
- * *reports*: a comma delimited CSV with no BOM, re-read through the ExcelJS CSV parser (also
- * comma based), then decorated with an Excel table whose theme rewrites the rows. A test
- * notebook is a different artifact: semicolon delimited with a UTF-8 BOM so Excel opens the
- * accents on a double click, a frozen bold header on a grey fill, a `Statut` column restricted
- * to a value list, and a SYNTHÈSE footer. Forcing one through the other would break the
- * round trip that lets the parser read back the very workbook this module produced.
- *
- * What is shared with filesUtils is what genuinely is: the report path, the IDE notification,
- * and the formula-injection guard of testNotebookGuards.
+ * The workbook is written with ExcelJS rather than with `generateCsvFile`: a notebook needs a
+ * status value list, tester columns and a summary sheet, and must stay readable back, which a
+ * report does not.
  */
 
 import ExcelJS from 'exceljs';
+import Papa from 'papaparse';
 import path from 'path';
 import fs from './fsUtils.js';
-import { sanitizeCell } from './testNotebookGuards.js';
-import { renderStepsFlat, STEP_SEPARATOR } from './testNotebookUtils.js';
-import { NormalizedTestCase, TestCaseKind } from './testNotebookTypes.js';
+import {
+  NormalizedTestCase,
+  renderStepsFlat,
+  sanitizeCsvCell,
+  STEP_SEPARATOR,
+  SUMMARY_MARKER,
+  TestCaseKind,
+} from './testNotebookUtils.js';
 
-export const STATUS_VALUES = ['OK', 'KO', 'N/A', 'Bloqué'];
+export type NotebookFormat = 'xlsx' | 'csv' | 'md';
+
+export const STATUS_VALUES = ['Passed', 'Failed', 'Blocked', 'N/A'];
+export const SUMMARY_SHEET_NAME = 'Summary';
 const HEADER_FILL_ARGB = 'FFD9D9D9';
-const BOM = '\ufeff';
-const CSV_DELIMITER = ';';
-const CSV_EOL = '\r\n';
-export const SYNTHESIS_SHEET_NAME = 'Synthèse';
-export const SYNTHESIS_MARKER = 'SYNTHÈSE';
 
 interface NotebookColumn {
   key: string;
@@ -39,24 +35,22 @@ interface NotebookColumn {
 const COL: Record<string, NotebookColumn> = {
   id: { key: 'id', header: 'ID', width: 16 },
   module: { key: 'module', header: 'Module', width: 26 },
-  // 9.5, not 9: ExcelJS treats a width equal to the default column width (9) as "not custom"
-  // and omits customWidth on write, so a width of exactly 9 reads back undefined.
-  priority: { key: 'priority', header: 'Priorité', width: 9.5 },
-  target: { key: 'target', header: 'Classe / Méthode', width: 30 },
-  title: { key: 'title', header: 'Cas de test', width: 40 },
-  preconditions: { key: 'preconditions', header: 'Prérequis et données', width: 40 },
-  soql: { key: 'soql', header: 'Requête SOQL', width: 55 },
-  steps: { key: 'steps', header: 'Étapes', width: 60 },
-  expected: { key: 'expected', header: 'Résultat attendu', width: 40 },
-  actual: { key: 'actual', header: 'Résultat obtenu', width: 24 },
-  comment: { key: 'comment', header: 'Commentaire', width: 24 },
-  status: { key: 'status', header: 'Statut', width: 10 },
+  // 9.5, not 9: ExcelJS drops a width equal to the default one (9) on write
+  priority: { key: 'priority', header: 'Priority', width: 9.5 },
+  target: { key: 'target', header: 'Class / Method', width: 30 },
+  title: { key: 'title', header: 'Test case', width: 40 },
+  preconditions: { key: 'preconditions', header: 'Preconditions and data', width: 40 },
+  soql: { key: 'soql', header: 'SOQL query', width: 55 },
+  steps: { key: 'steps', header: 'Steps', width: 60 },
+  expected: { key: 'expected', header: 'Expected result', width: 40 },
+  actual: { key: 'actual', header: 'Actual result', width: 24 },
+  comment: { key: 'comment', header: 'Comment', width: 24 },
+  status: { key: 'status', header: 'Status', width: 10 },
 };
 
 /**
- * `Requête SOQL` sits right after `Prérequis et données`: it is what finds the data that
- * column describes. The technical notebook gets neither it nor `Étapes`, a unit test building
- * its own data in its setup, and carries `Classe / Méthode` instead.
+ * The technical notebook has no SOQL query nor steps, a unit test building its own data, and
+ * carries the class and method under test instead. The maintenance one has no module nor priority.
  */
 export const COLUMNS: Record<TestCaseKind, NotebookColumn[]> = {
   functional: [
@@ -67,23 +61,19 @@ export const COLUMNS: Record<TestCaseKind, NotebookColumn[]> = {
     COL.id, COL.module, COL.priority, COL.target, COL.title, COL.preconditions, COL.expected,
     COL.actual, COL.comment, COL.status,
   ],
-  tma: [COL.id, COL.title, COL.preconditions, COL.soql, COL.steps, COL.expected, COL.actual, COL.comment, COL.status],
+  maintenance: [
+    COL.id, COL.title, COL.preconditions, COL.soql, COL.steps, COL.expected, COL.actual, COL.comment,
+    COL.status,
+  ],
 };
 
 export const SHEET_NAMES: Record<TestCaseKind, string> = {
-  functional: 'Fonctionnel',
-  technical: 'Technique',
-  tma: 'TMA',
+  functional: 'Functional',
+  technical: 'Technical',
+  maintenance: 'Maintenance',
 };
 
-/**
- * Fold a value onto one physical line, using the separator its destination understands.
- *
- * Every text field needs this, not just the steps: a CSV row ends at its newline, and so does
- * a markdown table row, so a multi-line `expected` or `preconditions` would split one case
- * across several rows and make the file unreadable back. The xlsx passes `\n` and keeps real
- * line breaks, which is what a reader wants in a cell.
- */
+/** Fold a value onto one line with the separator its destination reads back (`<br>` or `\n`). */
 function _oneLine(value: unknown, separator: string): string {
   return String(value ?? '')
     .replace(/\r\n?/g, '\n')
@@ -93,71 +83,39 @@ function _oneLine(value: unknown, separator: string): string {
     .join(separator);
 }
 
-/**
- * Value of one cell. `Résultat obtenu`, `Commentaire` and `Statut` are written empty on
- * purpose: they are the tester's columns, and pre-filling them would be answering for them.
- */
-function _valueFor(key: string, testCase: NormalizedTestCase, stepSeparator: string): string {
-  switch (key) {
-    case 'priority':
-      return sanitizeCell(`P${testCase.priority}`);
-    case 'steps':
-      return sanitizeCell(renderStepsFlat(testCase.steps, stepSeparator));
-    case 'actual':
-    case 'comment':
-    case 'status':
-      return '';
-    case 'target':
-      return sanitizeCell(_oneLine(testCase.target, stepSeparator));
-    default:
-      return sanitizeCell(_oneLine((testCase as any)[key], stepSeparator));
+function _valueFor(key: string, testCase: NormalizedTestCase, separator: string): string {
+  if (key === 'priority') {
+    return testCase.priority ? `P${testCase.priority}` : '';
   }
+  if (key === 'steps') {
+    return renderStepsFlat(testCase.steps, separator);
+  }
+  return _oneLine((testCase as any)[key], separator);
 }
 
 /** One row per module plus a TOTAL, counting the cases by priority. */
-export function synthesisRows(cases: NormalizedTestCase[]): Array<Array<string | number>> {
-  const byModule = new Map<string, { n: number; 1: number; 2: number; 3: number }>();
+export function summaryRows(cases: NormalizedTestCase[]): Array<Array<string | number>> {
+  const byModule = new Map<string, number[]>();
   for (const testCase of cases) {
-    const key = testCase.module || '(sans module)';
-    if (!byModule.has(key)) {
-      byModule.set(key, { n: 0, 1: 0, 2: 0, 3: 0 });
+    const key = testCase.module || '(no module)';
+    const counts = byModule.get(key) ?? [0, 0, 0, 0];
+    counts[0]++;
+    if (testCase.priority) {
+      counts[testCase.priority]++;
     }
-    const aggregate = byModule.get(key) as any;
-    aggregate.n++;
-    aggregate[testCase.priority] = (aggregate[testCase.priority] || 0) + 1;
+    byModule.set(key, counts);
   }
+  const total = [0, 0, 0, 0];
   const rows: Array<Array<string | number>> = [];
-  const total = { n: 0, 1: 0, 2: 0, 3: 0 };
-  for (const [moduleName, aggregate] of byModule) {
-    rows.push([moduleName, aggregate.n, aggregate[1], aggregate[2], aggregate[3]]);
-    total.n += aggregate.n;
-    total[1] += aggregate[1];
-    total[2] += aggregate[2];
-    total[3] += aggregate[3];
+  for (const [moduleName, counts] of byModule) {
+    rows.push([moduleName, ...counts]);
+    counts.forEach((count, i) => (total[i] += count));
   }
-  rows.push(['TOTAL', total.n, total[1], total[2], total[3]]);
+  rows.push(['TOTAL', ...total]);
   return rows;
 }
 
-/** Header keys of a column set, so a caller can build a header row without knowing the shape. */
-export function headersFor(kind: TestCaseKind): string[] {
-  return COLUMNS[kind].map((column) => column.header);
-}
-
-/** One record per case, keyed by header, ready to be written to a sheet or a CSV line. */
-export function buildRows(
-  kind: TestCaseKind,
-  cases: NormalizedTestCase[],
-  stepSeparator: string = STEP_SEPARATOR
-): Array<Record<string, string>> {
-  return cases.map((testCase) => {
-    const row: Record<string, string> = {};
-    for (const column of COLUMNS[kind]) {
-      row[column.header] = _valueFor(column.key, testCase, stepSeparator);
-    }
-    return row;
-  });
-}
+const SUMMARY_HEADERS = ['Module', 'Tests', 'P1', 'P2', 'P3'];
 
 function _styleHeader(worksheet: ExcelJS.Worksheet): void {
   const header = worksheet.getRow(1);
@@ -169,147 +127,102 @@ function _styleHeader(worksheet: ExcelJS.Worksheet): void {
   worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: 1 }];
 }
 
-function _addCasesSheet(workbook: ExcelJS.Workbook, kind: TestCaseKind, cases: NormalizedTestCase[]): void {
+async function _writeXlsx(outputPath: string, kind: TestCaseKind, cases: NormalizedTestCase[], withSummary: boolean): Promise<void> {
   const columns = COLUMNS[kind];
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'sfdx-hardis';
+  workbook.created = new Date();
+
   const worksheet = workbook.addWorksheet(SHEET_NAMES[kind]);
   worksheet.columns = columns.map((column) => ({ header: column.header, key: column.key, width: column.width }));
   _styleHeader(worksheet);
-
   for (const testCase of cases) {
     const row = worksheet.addRow(columns.map((column) => _valueFor(column.key, testCase, '\n')));
     row.eachCell((cell) => {
       cell.alignment = { wrapText: true, vertical: 'top' };
     });
   }
-
-  // Column letters are computed rather than derived from a single char code, so the range
-  // stays correct past Z.
   worksheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
+  // The tester picks a status from a list instead of typing free text
+  const statusColumn = columns.findIndex((column) => column.key === 'status') + 1;
+  for (let rowNumber = 2; statusColumn > 0 && rowNumber <= cases.length + 1; rowNumber++) {
+    worksheet.getCell(rowNumber, statusColumn).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: [`"${STATUS_VALUES.join(',')}"`],
+      showErrorMessage: true,
+      errorTitle: 'Invalid status',
+      error: `Allowed values: ${STATUS_VALUES.join(', ')}`,
+    };
+  }
 
-  // The tester picks a status from a list instead of typing free text.
-  const statusIndex = columns.findIndex((column) => column.key === 'status') + 1;
-  if (statusIndex > 0 && cases.length > 0) {
-    for (let rowNumber = 2; rowNumber <= cases.length + 1; rowNumber++) {
-      worksheet.getCell(rowNumber, statusIndex).dataValidation = {
-        type: 'list',
-        allowBlank: true,
-        formulae: [`"${STATUS_VALUES.join(',')}"`],
-        showErrorMessage: true,
-        errorTitle: 'Statut invalide',
-        error: `Valeurs autorisées : ${STATUS_VALUES.join(', ')}`,
-      };
+  if (withSummary) {
+    const summary = workbook.addWorksheet(SUMMARY_SHEET_NAME);
+    summary.columns = SUMMARY_HEADERS.map((header, i) => ({ header, key: header, width: i === 0 ? 34 : 8 }));
+    _styleHeader(summary);
+    summaryRows(cases).forEach((row) => summary.addRow(row));
+    if (summary.lastRow) {
+      summary.lastRow.font = { bold: true };
     }
   }
-}
-
-/** The synthesis rows with their module name guarded, since a module name is free text. */
-function _guardedSynthesisRows(cases: NormalizedTestCase[]): Array<Array<string | number>> {
-  return synthesisRows(cases).map(([moduleName, ...counts]) => [sanitizeCell(moduleName), ...counts]);
-}
-
-function _addSynthesisSheet(workbook: ExcelJS.Workbook, cases: NormalizedTestCase[]): void {
-  const worksheet = workbook.addWorksheet(SYNTHESIS_SHEET_NAME);
-  worksheet.columns = [
-    { header: 'Module', key: 'module', width: 34 },
-    { header: 'Nb tests', key: 'n', width: 10 },
-    { header: 'P1', key: 'p1', width: 6 },
-    { header: 'P2', key: 'p2', width: 6 },
-    { header: 'P3', key: 'p3', width: 6 },
-  ];
-  _styleHeader(worksheet);
-  for (const row of _guardedSynthesisRows(cases)) {
-    worksheet.addRow(row);
-  }
-  if (worksheet.lastRow) {
-    worksheet.lastRow.font = { bold: true };
-  }
-}
-
-/** Write the workbook. The sheet is named after the kind, so a tester knows what they hold. */
-export async function writeNotebookXlsx(
-  outputPath: string,
-  kind: TestCaseKind,
-  cases: NormalizedTestCase[]
-): Promise<string> {
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'sfdx-hardis';
-  workbook.created = new Date();
-  _addCasesSheet(workbook, kind, cases);
-  _addSynthesisSheet(workbook, cases);
-  await fs.ensureDir(path.dirname(path.resolve(outputPath)));
   await workbook.xlsx.writeFile(outputPath);
-  return outputPath;
-}
-
-function _escapeCsvField(value: unknown): string {
-  const text = value === null || value === undefined ? '' : String(value);
-  if (text.includes('"') || text.includes(CSV_DELIMITER) || text.includes('\n') || text.includes('\r')) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-  return text;
-}
-
-/** Pad every line to the header width, so no line is wider than the header. */
-function _csvLine(fields: Array<string | number>, width: number): string {
-  const padded = fields.slice(0, width);
-  while (padded.length < width) {
-    padded.push('');
-  }
-  return padded.map(_escapeCsvField).join(CSV_DELIMITER);
 }
 
 /**
- * Write the CSV: `;` delimiter, UTF-8 WITH BOM so Excel opens the accents on a double click,
- * CRLF line endings, and a SYNTHÈSE footer. `parseNotebookCsv` stops at that footer marker,
- * so the file stays readable back.
+ * `,` delimiter, as an English Excel expects, UTF-8 with a BOM so Excel reads the accents, CRLF
+ * line endings, formula lead characters guarded, and a summary under a `SUMMARY` marker row
+ * where the reader stops.
  */
-export async function writeNotebookCsv(
-  outputPath: string,
-  kind: TestCaseKind,
-  cases: NormalizedTestCase[]
-): Promise<string> {
+async function _writeCsv(outputPath: string, kind: TestCaseKind, cases: NormalizedTestCase[], withSummary: boolean): Promise<void> {
   const columns = COLUMNS[kind];
   const width = columns.length;
-  const lines = [_csvLine(columns.map((column) => column.header), width)];
+  const pad = (fields: Array<string | number>): string[] => {
+    const padded = fields.slice(0, width).map((field) => sanitizeCsvCell(field));
+    while (padded.length < width) {
+      padded.push('');
+    }
+    return padded;
+  };
+  const rows = [pad(columns.map((column) => column.header))];
   for (const testCase of cases) {
-    lines.push(_csvLine(columns.map((column) => _valueFor(column.key, testCase, STEP_SEPARATOR)), width));
+    rows.push(pad(columns.map((column) => _valueFor(column.key, testCase, STEP_SEPARATOR))));
   }
-  lines.push(_csvLine([], width));
-  lines.push(_csvLine([SYNTHESIS_MARKER], width));
-  lines.push(_csvLine(['Module', 'Nb tests', 'P1', 'P2', 'P3'], width));
-  for (const row of _guardedSynthesisRows(cases)) {
-    lines.push(_csvLine(row, width));
+  if (withSummary) {
+    rows.push(pad([]), pad([SUMMARY_MARKER]), pad(SUMMARY_HEADERS), ...summaryRows(cases).map(pad));
   }
-  await fs.ensureDir(path.dirname(path.resolve(outputPath)));
-  await fs.writeFile(outputPath, BOM + lines.join(CSV_EOL) + CSV_EOL, 'utf8');
-  return outputPath;
+  const content = Papa.unparse(rows, { delimiter: ',', newline: '\r\n' });
+  await fs.writeFile(outputPath, '\ufeff' + content + '\r\n', 'utf8');
 }
 
-/**
- * Write the notebook as a markdown table.
- *
- * Steps are separated by `<br>` and never by ` | `: the pipe is the column separator of a
- * markdown table, so a step list joined with it would silently shred the row into extra
- * columns. `<br>` renders as a line break and is what `parseSteps` reads back, so a markdown
- * notebook round-trips like the other two formats.
- *
- * Useful when the notebook is committed next to the code: a markdown table shows up in a diff,
- * where a workbook shows up as an unreadable binary change.
- */
-export async function writeNotebookMarkdown(
-  outputPath: string,
-  kind: TestCaseKind,
-  cases: NormalizedTestCase[]
-): Promise<string> {
+/** A markdown table, handy when the notebook is committed next to the code and read in a diff. */
+async function _writeMarkdown(outputPath: string, kind: TestCaseKind, cases: NormalizedTestCase[]): Promise<void> {
   const columns = COLUMNS[kind];
-  const headers = columns.map((column) => column.header);
-  const lines = [`| ${headers.join(' | ')} |`, `|${headers.map(() => '---').join('|')}|`];
-  for (const testCase of cases) {
-    const cells = columns.map((column) => _markdownCell(_valueFor(column.key, testCase, STEP_SEPARATOR)));
-    lines.push(`| ${cells.join(' | ')} |`);
-  }
-  await fs.ensureDir(path.dirname(path.resolve(outputPath)));
+  const cell = (value: string): string => value.replace(/\|/g, '\\|');
+  const lines = [
+    `| ${columns.map((column) => column.header).join(' | ')} |`,
+    `|${columns.map(() => '---').join('|')}|`,
+    ...cases.map((testCase) => `| ${columns.map((column) => cell(_valueFor(column.key, testCase, STEP_SEPARATOR))).join(' | ')} |`),
+  ];
   await fs.writeFile(outputPath, lines.join('\n') + '\n', 'utf8');
+}
+
+/** Write a notebook in one format. The tester columns are written as the cases carry them. */
+export async function writeNotebook(
+  outputPath: string,
+  format: NotebookFormat,
+  kind: TestCaseKind,
+  cases: NormalizedTestCase[],
+  options: { withSummary?: boolean } = {}
+): Promise<string> {
+  const withSummary = options.withSummary !== false;
+  await fs.ensureDir(path.dirname(path.resolve(outputPath)));
+  if (format === 'xlsx') {
+    await _writeXlsx(outputPath, kind, cases, withSummary);
+  } else if (format === 'csv') {
+    await _writeCsv(outputPath, kind, cases, withSummary);
+  } else {
+    await _writeMarkdown(outputPath, kind, cases);
+  }
   return outputPath;
 }
 
@@ -322,107 +235,27 @@ export interface TemplateOptions {
   rows: number;
 }
 
-/** Identifier prefix of a kind: -F01 functional, -T01 technical, -01 TMA. */
-const KIND_ID_LETTER: Record<TestCaseKind, string> = { functional: 'F', technical: 'T', tma: '' };
+const KIND_ID_LETTER: Record<TestCaseKind, string> = { functional: 'F', technical: 'T', maintenance: '' };
 
 /**
- * Build the rows of an empty notebook, identifiers pre-filled to the convention.
- *
- * Numbering runs continuously across module groups and does not restart at each one: two
- * cases sharing an identifier are indistinguishable to anything that reads the notebook back.
- *
- * Every identifier produced here is readable back by `deriveTicketAndKind`, so the blank
- * workbook this feeds is readable back without any manual fixing.
+ * The empty cases of a blank notebook, identifiers pre-filled. Numbering runs across module
+ * groups, so no two rows share an identifier.
  */
-export function buildTemplateRows(options: TemplateOptions): Array<Record<string, string>> {
+export function buildTemplateCases(options: TemplateOptions): NormalizedTestCase[] {
   const groups = options.modules && options.modules.length > 0 ? options.modules : [''];
-  const headers = headersFor(options.kind);
   const letter = KIND_ID_LETTER[options.kind];
-  const rows: Array<Record<string, string>> = [];
-  let counter = 1;
+  const cases: NormalizedTestCase[] = [];
   for (const moduleName of groups) {
     for (let i = 0; i < Math.max(1, options.rows); i++) {
-      const row: Record<string, string> = {};
-      for (const header of headers) {
-        row[header] = '';
-      }
-      row['ID'] = `${options.ticket}-${letter}${String(counter).padStart(2, '0')}`;
-      if (moduleName && headers.includes('Module')) {
-        row['Module'] = moduleName;
-      }
-      rows.push(row);
-      counter++;
+      cases.push({
+        id: `${options.ticket}-${letter}${String(cases.length + 1).padStart(2, '0')}`,
+        ticket: options.ticket,
+        kind: options.kind,
+        module: moduleName,
+        title: '',
+        expected: '',
+      });
     }
   }
-  return rows;
-}
-
-/** A markdown table cell: a pipe would end the cell, so it is escaped as `\|`, which the reader decodes. */
-function _markdownCell(value: string): string {
-  return value.replace(/\|/g, '\\|');
-}
-
-/** Write an empty notebook as a workbook, a CSV or a markdown table. */
-export async function writeTemplate(
-  outputPath: string,
-  options: TemplateOptions,
-  format: 'xlsx' | 'csv' | 'md'
-): Promise<string> {
-  const headers = headersFor(options.kind);
-  // ID and Module come from --ticket-number and --modules: guarded once here, for every format.
-  const rows = buildTemplateRows(options).map((row) => {
-    const guarded: Record<string, string> = {};
-    for (const [header, value] of Object.entries(row)) {
-      guarded[header] = sanitizeCell(value);
-    }
-    return guarded;
-  });
-  await fs.ensureDir(path.dirname(path.resolve(outputPath)));
-
-  if (format === 'md') {
-    const lines = [
-      `| ${headers.join(' | ')} |`,
-      `|${headers.map(() => '---').join('|')}|`,
-      ...rows.map((row) => `| ${headers.map((header) => _markdownCell(row[header] || '')).join(' | ')} |`),
-    ];
-    await fs.writeFile(outputPath, lines.join('\n') + '\n', 'utf8');
-    return outputPath;
-  }
-
-  if (format === 'csv') {
-    const width = headers.length;
-    const lines = [_csvLine(headers, width), ...rows.map((row) => _csvLine(headers.map((h) => row[h] || ''), width))];
-    await fs.writeFile(outputPath, BOM + lines.join(CSV_EOL) + CSV_EOL, 'utf8');
-    return outputPath;
-  }
-
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'sfdx-hardis';
-  workbook.created = new Date();
-  const columns = COLUMNS[options.kind];
-  const worksheet = workbook.addWorksheet(SHEET_NAMES[options.kind]);
-  worksheet.columns = columns.map((column) => ({ header: column.header, key: column.key, width: column.width }));
-  _styleHeader(worksheet);
-  for (const row of rows) {
-    const added = worksheet.addRow(headers.map((header) => row[header] || ''));
-    added.eachCell((cell) => {
-      cell.alignment = { wrapText: true, vertical: 'top' };
-    });
-  }
-  worksheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
-  const statusIndex = columns.findIndex((column) => column.key === 'status') + 1;
-  if (statusIndex > 0 && rows.length > 0) {
-    for (let rowNumber = 2; rowNumber <= rows.length + 1; rowNumber++) {
-      worksheet.getCell(rowNumber, statusIndex).dataValidation = {
-        type: 'list',
-        allowBlank: true,
-        formulae: [`"${STATUS_VALUES.join(',')}"`],
-        showErrorMessage: true,
-        errorTitle: 'Statut invalide',
-        error: `Valeurs autorisées : ${STATUS_VALUES.join(', ')}`,
-      };
-    }
-  }
-  await workbook.xlsx.writeFile(outputPath);
-  return outputPath;
+  return cases;
 }
