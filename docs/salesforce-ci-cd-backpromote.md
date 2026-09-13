@@ -26,13 +26,23 @@ A **backpromote** deploys into your sandbox what the team merged since your last
 - Authenticate your developer sandbox (or scratch org) in the **Orgs Manager**.
 - Connect to your git provider (GitHub, GitLab, Azure DevOps or Bitbucket) from the **DevOps Pipeline** panel. A backpromote needs it to read and write its history on the Pull Requests. VS Code keeps the connection, and each time the Backpromote panel runs sfdx-hardis, it passes the token as environment variables of the command. The panel tells you when no connection is found.
 
-## Backpromote in 5 steps
+## Three ways to backpromote
 
-### 1. Open the panel
+| Way                                                                            | What you do                              | What a coding agent does                                 |
+|--------------------------------------------------------------------------------|------------------------------------------|----------------------------------------------------------|
+| [By hand](#by-hand-in-the-panel)                                               | Everything, in the Backpromote panel     | Nothing                                                  |
+| [With a coding agent for merges and errors](#in-the-panel-with-a-coding-agent) | The choices and the clicks, in the panel | Solves the merges, and fixes the deployment errors       |
+| [Fully with a coding agent](#fully-with-a-coding-agent)                        | Paste one prompt, answer its questions   | The whole backpromote, with `sf hardis:work:backpromote` |
+
+The coding agent can be Claude Code, Codex, GitHub Copilot, or any agent that can edit files and run commands in your repository.
+
+## By hand in the panel
+
+### Step 1: open the panel
 
 Click the **Backpromote** card below the DevOps Pipeline diagram, or **Backpromote to your dev sandbox (Beta)** in the commands panel.
 
-### 2. Choose where
+### Step 2: choose where
 
 Pick the **target sandbox** and the **parent branch**. Your default org is picked for you when it is a developer sandbox. The parent branch is picked for you when it is your current branch, or when only one is allowed. Production and the orgs of major branches are greyed: a backpromote never deploys there. The last entry of the sandbox list opens the Orgs Manager to connect another org.
 
@@ -48,7 +58,7 @@ The merged Pull Requests are listed newest first:
 
 The first Pull Request not backpromoted yet is selected: it and everything merged after it will be deployed. Select another one to start earlier or later, or click **Show earlier Pull Requests**. Click a Pull Request title or number to open it.
 
-### 3. Review what will be deployed
+### Step 3: review what will be deployed
 
 The **What** block lists the metadata grouped by type, the deletions and the deployment actions. Everything is ticked; untick what must not go now (it will be offered again next time).
 
@@ -69,7 +79,7 @@ Items of `package-no-overwrite.xml` carry a **package-no-overwrite.xml** marker.
 
 Deployment actions (data loads, Apex scripts, manual steps...) of the merged Pull Requests are listed with their state. An action never runs twice in the same sandbox: the ones already run are greyed with their date. A **Manual step** is done by hand in the sandbox, then confirmed with **Done in the sandbox**.
 
-### 4. Decide for the items that differ
+### Step 4: decide for the items that differ
 
 When your sandbox holds a version of an item that differs from the parent branch, choose on its line:
 
@@ -79,13 +89,9 @@ When your sandbox holds a version of an item that differs from the parent branch
 
 **Compare** opens the VS Code diff editor between the two versions. **Overwrite all** sets Overwrite everywhere.
 
-To let a coding agent do the merges, click **Merge all**: every ticked item that differs is prepared at once, and a prompt is copied to your clipboard. Paste it into Claude Code, Codex or GitHub Copilot: the agent solves the conflicts and commits the files on the backpromote branch. **Copy agent prompt** copies that prompt again later.
-
-![Merge all: the prompt for a coding agent is in the clipboard](assets/images/backpromote-merge-all.png)
-
 The **Backpromote** button stays disabled while a file still holds conflict markers.
 
-### 5. Backpromote
+### Step 5: backpromote
 
 Click **Backpromote to (sandbox)**. A window shows each step while it runs:
 
@@ -97,13 +103,7 @@ When it is done, the panel shows what was deployed and deleted, the actions run,
 
 Your checkout stays on the backpromote branch. Click **Back to (your branch)** to return to your User Story branch: the changes set aside before the run are restored, and a merge of the parent branch is proposed so that your next save does not commit the backpromoted metadata as your own work.
 
-## Other situations
-
-### You have uncommitted changes
-
-Before switching to the backpromote branch, the panel asks what to do with them: **Commit them on my branch** (with a message), or **Stash them**, restored by **Back to my branch**.
-
-### The deployment fails
+### If the deployment fails
 
 The panel shows each component the sandbox refused, with its file, the Salesforce error, and an **sfdx-hardis hint** explaining the usual cause and how to fix it (with a link to its documentation). When the AI deployment assistant is configured, its suggestion is shown too.
 
@@ -111,10 +111,64 @@ The panel shows each component the sandbox refused, with its file, the Salesforc
 
 Then either:
 
-- **Fix the components on the backpromote branch** and click Backpromote again. **Copy the prompt for a coding agent** gives Claude Code, Codex or GitHub Copilot everything it needs (errors, hints, files) to fix them there and commit.
-- **Leave them out**: **Untick the components in error** and click Backpromote again.
+- **Fix the components** in the files of your checkout, which is on the backpromote branch, commit them there, and click **Backpromote** again.
+- **Leave them out**: click **Untick the components in error**, then **Backpromote** again.
 
 **Open the deployment report** shows the full deployment output.
+
+## In the panel, with a coding agent
+
+Follow the steps [by hand](#by-hand-in-the-panel), and hand the two technical parts to a coding agent:
+
+1. **Merges.** At step 4, click **Merge all**. Every ticked item that differs is prepared with conflict markers, and a prompt is copied to your clipboard. Paste it into your coding agent: it solves the conflicts and commits the files on the backpromote branch. **Copy agent prompt** copies that prompt again if needed.
+
+    ![Merge all: the prompt for a coding agent is in the clipboard](assets/images/backpromote-merge-all.png)
+
+2. **Backpromote.** Once the agent is done, the markers are gone: click **Backpromote**.
+3. **Deployment errors.** If the deployment fails, click **Copy the prompt for a coding agent** and paste it into your agent. The prompt holds the components in error, their files, the Salesforce errors and the sfdx-hardis hints. The agent fixes the components on the backpromote branch and commits them. Then click **Backpromote** again. Repeat until the backpromote succeeds, or untick what cannot be fixed now.
+
+## Fully with a coding agent
+
+Paste this prompt into your coding agent, opened at the root of your repository, after replacing `dev1` with your sandbox alias and `integration` with your parent branch. The agent drives `sf hardis:work:backpromote` from the plan to the result, and asks you before each decision.
+
+```text
+Backpromote into my developer sandbox what the team merged in the parent branch, with sfdx-hardis.
+
+- Target org: dev1
+- Parent branch: integration
+
+First run `sf hardis:work:backpromote --help` and read its "Agent Mode" section. Then:
+
+1. Plan: run `sf hardis:work:backpromote --plan --json --target-org dev1 --parent-branch integration`.
+   Show me the Pull Requests of the window, the items, the deletions and the deployment actions,
+   and list the files whose sandbox version differs (comparison entries with status "different"
+   or "pendingInOrg").
+2. Decide: for each file that differs, read its sandbox, parent branch and base versions (paths
+   given in the plan). Propose "git" (overwrite), "org" (keep the sandbox version) or "merge"
+   (keep both), explain why, and wait for my answer.
+3. Run: `sf hardis:work:backpromote --agent --json --run-id <runId of the plan> --target-org dev1
+   --parent-branch integration --from-pull-request <start of the plan>`, with one
+   `--on-diff "<file>=git|org|merge"` per decision.
+4. If the status is "waitingForMerges": solve the conflict markers of the files listed (keep both
+   sides, keep the XML well-formed), commit them on the backpromote branch with a message body that
+   explains each merge, then run the "runCommand" of the JSON.
+5. If the status is "deployFailed": read "result.deployErrors" (with their sfdx-hardis hints) or the
+   file in "result.deployErrorsPromptFile". Fix the components on the backpromote branch only,
+   commit, and run the same command again. If a component cannot be fixed now, ask me whether to
+   leave it out with `--exclude-metadata Type:Name`.
+6. When the status is "ok": tell me what was deployed, the Pull Requests updated, and the manual
+   actions left to do by hand in the sandbox ("result.actions.pending").
+
+Never deploy to another org, never commit outside the backpromote branch, and never push yourself.
+```
+
+The command itself refuses production and the orgs of major branches, and records the backpromote on the Pull Requests like the panel does. Outside the panel, the git provider token must be in the environment of the command: `GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`, `SYSTEM_ACCESSTOKEN` (Azure DevOps) or `CI_SFDX_HARDIS_BITBUCKET_TOKEN`.
+
+## Other situations
+
+### You have uncommitted changes
+
+Before switching to the backpromote branch, the panel asks what to do with them: **Commit them on my branch** (with a message), or **Stash them**, restored by **Back to my branch**.
 
 ### You come back later
 
@@ -132,15 +186,13 @@ Nothing needs to be shared by hand. Each backpromote writes a row for the sandbo
 
 A refreshed sandbox is a new org. Its previous backpromotes are shown as **Before refresh**, so no start is selected for you: pick the first Pull Request to deploy. The deployment actions count as not run yet.
 
-### From a terminal or a coding agent
+### From a terminal, without an agent
 
 ```bash
 sf hardis:work:backpromote --target-org dev1
 ```
 
-The command asks the same questions as the panel. `--plan --json` returns the plan without deploying anything, `--auto` takes every decision from the flags, and `--agent` lets a coding agent drive the whole backpromote. See the [command page](hardis/work/backpromote.md) for all the flags.
-
-Outside the panel, the git provider token must be in the environment of the command: `GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`, `SYSTEM_ACCESSTOKEN` (Azure DevOps) or `CI_SFDX_HARDIS_BITBUCKET_TOKEN`.
+The command asks the same questions as the panel. `--plan --json` returns the plan without deploying anything, and `--auto` takes every decision from the flags. See the [command page](hardis/work/backpromote.md) for all the flags.
 
 ## What a backpromote never does
 
