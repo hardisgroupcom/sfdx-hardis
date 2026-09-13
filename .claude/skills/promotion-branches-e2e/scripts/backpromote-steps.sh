@@ -123,10 +123,13 @@ solve_markers_keep_both() {
   node -e "const fs=require('fs');const f=process.argv[1];const s=fs.readFileSync(f,'utf8');fs.writeFileSync(f,s.replace(/<<<<<<<[^\n]*\r?\n([\s\S]*?)(?:\|\|\|\|\|\|\|[^\n]*\r?\n[\s\S]*?)?=======\r?\n([\s\S]*?)>>>>>>>[^\n]*\r?\n?/g,(m,a,b)=>a+b))" "$1"
 }
 DEVUSER=$(env -u NODE_OPTIONS sf org display --target-org "$DEVORG" --json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).result.username))")
-S1_FILE=$(resource_file E2E_S1); S2_FILE=$(resource_file E2E_S2); S3_FILE=$(resource_file E2E_S3)
+S1_FILE=$(resource_file E2E_S1)
+S2_FILE=$(resource_file E2E_S2)
+S3_FILE=$(resource_file E2E_S3)
 export BP_VAR_S1_FILE="$S1_FILE" BP_VAR_S2_FILE="$S2_FILE" BP_VAR_S3_FILE="$S3_FILE"
 
-echo; echo "=== B0 no git provider token ==="
+echo
+echo "=== B0 no git provider token ==="
 e2e_backpromote_nogit_json bp-no-token --plan --parent-branch integration --sandbox-name "$SANDBOX"
 check_plan B0-plan bp-no-token "$BPX/no-token.json"
 e2e_backpromote_nogit_json bp-no-token-run --auto --parent-branch integration --sandbox-name "$SANDBOX"
@@ -134,21 +137,25 @@ code=$?
 [ "$code" != "0" ] && grep -q "git provider token is required" "$LOGS/bp-no-token-run.json" "$LOGS/bp-no-token-run.log"
 ok_if B0-run $? "exit=$code"
 
-echo; echo "=== B1 org of a major branch ==="
+echo
+echo "=== B1 org of a major branch ==="
 printf 'targetUsername: %s\n' "$DEVUSER" >>config/branches/.sfdx-hardis.uat.yml
 e2e_backpromote_json bp-refused-major --plan --parent-branch integration --sandbox-name "$SANDBOX"
 check_plan B1-plan bp-refused-major "$BPX/refused-major-org.json"
 git checkout -- config/branches
 
-echo; echo "=== B1c parent branch not allowed ==="
+echo
+echo "=== B1c parent branch not allowed ==="
 e2e_backpromote_json bp-refused-parent --plan --parent-branch feature/E2E-105-apex --sandbox-name "$SANDBOX"
 check_plan B1c-plan bp-refused-parent "$BPX/refused-parent.json"
 
-echo; echo "=== B2 production org ==="
+echo
+echo "=== B2 production org ==="
 e2e_backpromote_json bp-refused-prod --plan --parent-branch integration --target-org "$ORG"
 check_plan B2-plan bp-refused-prod "$BPX/refused-production.json"
 
-echo; echo "=== B3 first plan: no history, then the window from S1 ==="
+echo
+echo "=== B3 first plan: no history, then the window from S1 ==="
 e2e_backpromote_json bp-plan-first --plan --parent-branch integration --sandbox-name "$SANDBOX"
 check_plan B3-plan-first bp-plan-first "$BPX/plan-first.json"
 RUN1=$(run_id_of bp-plan-first)
@@ -161,7 +168,8 @@ ok_if B3-progress $? "$(wc -l <"$PROGRESS_FILE" | tr -d ' ') progress lines"
 [ "$(git branch --show-current)" = "$DEV_BRANCH" ] && [ -z "$(tree_dirty_outside_reports)" ]
 ok_if B3-read-only $? "still on $(git branch --show-current), clean tree"
 
-echo; echo "=== B4 run from S1: S1 to S3 deployed with their actions ==="
+echo
+echo "=== B4 run from S1: S1 to S3 deployed with their actions ==="
 e2e_backpromote_json bp-run-1 --auto --parent-branch integration --sandbox-name "$SANDBOX" --from-pull-request "$S1" --run-id "$RUN1"
 check_plan B4-result bp-run-1 "$BPX/run-1.json"
 [ "$(static_resources)" = "E2E_S1,E2E_S2,E2E_S3" ]
@@ -175,14 +183,16 @@ ok_if B4-checkout $? "checkout on $(git branch --show-current)"
 ok_if B4-not-pushed $? "no manual merge: the branch is not on origin"
 check_comments C1-comments "$BPX/comments-after-run-1.json" "$S1" "$S2" "$S3"
 
-echo; echo "=== B5 up to date, then the manual action confirmed ==="
+echo
+echo "=== B5 up to date, then the manual action confirmed ==="
 e2e_backpromote_json bp-plan-up-to-date --plan --parent-branch integration --sandbox-name "$SANDBOX"
 check_plan B5-plan bp-plan-up-to-date "$BPX/plan-up-to-date.json"
 e2e_backpromote_json bp-confirm --confirm-action "e2e-manual-$S1" --parent-branch integration --sandbox-name "$SANDBOX" --run-id "$(run_id_of bp-plan-up-to-date)"
 check_plan B5-confirm bp-confirm "$BPX/confirm.json"
 check_comments C2-comments "$BPX/comments-after-confirm.json" "$S1"
 
-echo; echo "=== B6 a new story: the default start ==="
+echo
+echo "=== B6 a new story: the default start ==="
 S4=$(merge_story feature/E2E-104-delta E2E_S4 "E2E-104 delta") || exit 1
 remember S4 "$S4"
 e2e_backpromote_json bp-plan-s4 --plan --parent-branch integration --sandbox-name "$SANDBOX"
@@ -192,7 +202,8 @@ check_plan B6-result bp-run-s4 "$BPX/run-s4.json"
 [ "$(static_resources)" = "E2E_S1,E2E_S2,E2E_S3,E2E_S4" ]
 ok_if B6-org $? "resources: $(static_resources)"
 
-echo; echo "=== B7 a file that differs: overwrite with the parent branch version ==="
+echo
+echo "=== B7 a file that differs: overwrite with the parent branch version ==="
 change_in_org E2E_S2 "org version of S2"
 S5=$(merge_story feature/E2E-105-epsilon E2E_S2 "E2E-105 epsilon" "git version of S2") || exit 1
 remember S5 "$S5"
@@ -203,7 +214,8 @@ check_plan B7-result bp-run-overwrite "$BPX/run-overwrite.json"
 [ "$(resource_body E2E_S2)" = "git version of S2" ]
 ok_if B7-org $? "org body: $(resource_body E2E_S2)"
 
-echo; echo "=== B8 keep the org version, then the item comes back ==="
+echo
+echo "=== B8 keep the org version, then the item comes back ==="
 change_in_org E2E_S3 "org version of S3"
 S6=$(merge_story feature/E2E-106-zeta E2E_S3 "E2E-106 zeta" "git version of S3") || exit 1
 remember S6 "$S6"
@@ -219,7 +231,8 @@ check_plan B8-result-2 bp-run-left-out "$BPX/run-left-out.json"
 [ "$(resource_body E2E_S3)" = "git version of S3" ]
 ok_if B8-org-overwritten $? "org body: $(resource_body E2E_S3)"
 
-echo; echo "=== B9 agent mode: a merge by hand stops the run, then continues ==="
+echo
+echo "=== B9 agent mode: a merge by hand stops the run, then continues ==="
 change_in_org E2E_S1 "org line of S1"
 S7=$(merge_story feature/E2E-107-eta E2E_S1 "E2E-107 eta" "git line of S1") || exit 1
 remember S7 "$S7"
@@ -237,7 +250,8 @@ ok_if B9-org $? "org body: $(resource_body E2E_S1)"
 git ls-remote --exit-code --heads origin "$BP_BRANCH" >/dev/null 2>&1 && git log -1 --format=%s | grep -q "backpromote merges"
 ok_if B9-pushed $? "$(git log -1 --format=%s)"
 
-echo; echo "=== B10 panel protocol: prepare, refuse while markers remain, then run ==="
+echo
+echo "=== B10 panel protocol: prepare, refuse while markers remain, then run ==="
 change_in_org E2E_S2 "org line of S2"
 S8=$(merge_story feature/E2E-108-theta E2E_S2 "E2E-108 theta" "git line of S2") || exit 1
 remember S8 "$S8"
@@ -255,7 +269,8 @@ check_plan B10-result bp-run-after-merge "$BPX/run-after-merge.json"
 [ "$(resource_body E2E_S2)" = "org line of S2|git line of S2" ]
 ok_if B10-org $? "org body: $(resource_body E2E_S2)"
 
-echo; echo "=== B11 a deletion: skipped, then applied on a redeploy ==="
+echo
+echo "=== B11 a deletion: skipped, then applied on a redeploy ==="
 git checkout -q -f integration && git pull -q origin integration
 git checkout -q -B feature/E2E-109-iota
 git rm -q "$(resource_file E2E_S4)" "$(resource_file E2E_S4)-meta.xml" 2>/dev/null || git rm -q -r "$(dirname "$(resource_file E2E_S4)")/E2E_S4"* 2>/dev/null
@@ -274,7 +289,8 @@ check_plan B11-deleted bp-run-delete "$BPX/run-delete.json"
 [ "$(static_resources)" = "E2E_S1,E2E_S2,E2E_S3" ]
 ok_if B11-org-deleted $? "S4 deleted: $(static_resources)"
 
-echo; echo "=== B12 an item left out comes back in the next plan ==="
+echo
+echo "=== B12 an item left out comes back in the next plan ==="
 git checkout -q -f integration && git pull -q origin integration
 git checkout -q -B feature/E2E-110-kappa
 # Written here rather than through story_branch: story_branch checks the target branch out again
@@ -301,7 +317,8 @@ check_plan B12-result-2 bp-run-excluded-back "$BPX/run-excluded-back.json"
 [ "$(static_resources)" = "E2E_S1,E2E_S2,E2E_S3,E2E_S5,E2E_S6" ]
 ok_if B12-org-2 $? "S6 deployed: $(static_resources)"
 
-echo; echo "=== B13 dirty working tree on the developer branch: stashed ==="
+echo
+echo "=== B13 dirty working tree on the developer branch: stashed ==="
 git checkout -q -f "$DEV_BRANCH"
 echo "x" >>NOTES.md
 S11=$(merge_story feature/E2E-111-lambda E2E_S7 "E2E-111 lambda") || exit 1
@@ -320,7 +337,8 @@ git checkout -q -f "$DEV_BRANCH" && git stash pop -q && grep -q "^x$" NOTES.md
 ok_if B13-back $? "back on $DEV_BRANCH with the stash popped"
 git checkout -q -- NOTES.md
 
-echo; echo "=== B14 a refreshed sandbox: same name, another org id ==="
+echo
+echo "=== B14 a refreshed sandbox: same name, another org id ==="
 e2e_backpromote_json bp-plan-refresh --plan --parent-branch integration --sandbox-name "$SANDBOX" --target-org "$DEVORG2"
 check_plan B14-plan bp-plan-refresh "$BPX/plan-refresh.json"
 e2e_backpromote_json bp-run-refresh --auto --parent-branch integration --sandbox-name "$SANDBOX" --target-org "$DEVORG2" --from-pull-request "$S1" --run-id "$(run_id_of bp-plan-refresh)"
@@ -329,18 +347,21 @@ check_plan B14-result bp-run-refresh "$BPX/run-refresh.json"
 ok_if B14-org $? "resources: $(static_resources "$DEVORG2")"
 check_comments C4-comments "$BPX/comments-after-refresh.json" "$S1" "$S2" "$S3"
 
-echo; echo "=== B15 scan limit ==="
+echo
+echo "=== B15 scan limit ==="
 e2e_backpromote_json bp-plan-scan-limit --plan --parent-branch integration --sandbox-name never-seen --scan-limit 2
 check_plan B15-plan bp-plan-scan-limit "$BPX/plan-scan-limit.json"
 
-echo; echo "=== B16 reset the backpromote branch ==="
+echo
+echo "=== B16 reset the backpromote branch ==="
 e2e_backpromote_json bp-reset --reset --auto --parent-branch integration --sandbox-name "$SANDBOX"
 check_plan B16-reset bp-reset "$BPX/reset.json"
 ! git ls-remote --exit-code --heads origin "$BP_BRANCH" >/dev/null 2>&1
 ok_if B16-deleted $? "$BP_BRANCH deleted on origin"
 git checkout -q -f "$DEV_BRANCH"
 
-echo; echo "=== summary ==="
+echo
+echo "=== summary ==="
 grep -c "| OK |" "$RESULTS" | xargs -I{} echo "{} OK"
 grep -c "| FAIL |" "$RESULTS" | xargs -I{} echo "{} FAIL"
 grep "| FAIL |" "$RESULTS" || true

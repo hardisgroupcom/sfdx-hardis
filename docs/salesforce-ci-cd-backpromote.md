@@ -16,13 +16,13 @@ While you work on a User Story, your teammates merge theirs in the parent branch
 
 ## Vocabulary
 
-| Term | Meaning |
-|------|---------|
-| Parent branch | The major branch you backpromote from: `developmentBranch`, or one of `availableTargetBranches` of `config/.sfdx-hardis.yml`. Nothing else. |
-| Target sandbox | Your developer sandbox or scratch org. A production org, or an org declared for a major branch in `config/branches`, is refused. |
-| Sandbox name | Read from the instance URL (`mycompany--dev1.sandbox.my.salesforce.com` gives `dev1`), else from the username, else the org id. `--sandbox-name` overrides it. |
-| Backpromote branch | `backpromote/<parent branch>/<sandbox name>`: a child of the parent branch that only holds the merges you made by hand. The deployment runs from it. |
-| Start Pull Request | The first merged Pull Request included in the backpromote: it and everything merged after it, up to the head of the parent branch, form the **window**. |
+| Term                   | Meaning                                                                                                                                                                                                  |
+|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Parent branch          | The major branch you backpromote from: `developmentBranch`, or one of `availableTargetBranches` of `config/.sfdx-hardis.yml`. Nothing else.                                                              |
+| Target sandbox         | Your developer sandbox or scratch org. A production org, or an org declared for a major branch in `config/branches`, is refused.                                                                         |
+| Sandbox name           | Read from the instance URL (`mycompany--dev1.sandbox.my.salesforce.com` gives `dev1`), else from the username, else the org id. `--sandbox-name` overrides it.                                           |
+| Backpromote branch     | `backpromote/<parent branch>/<sandbox name>`: a child of the parent branch that only holds the merges you made by hand. The deployment runs from it.                                                     |
+| Start Pull Request     | The first merged Pull Request included in the backpromote: it and everything merged after it, up to the head of the parent branch, form the **window**.                                                  |
 | "Backpromotes" comment | The comment sfdx-hardis writes on every Pull Request of a window: one row per sandbox (date, user, complete or partial with the items left out), and one row per deployment action run by a backpromote. |
 
 ## From VS Code
@@ -63,11 +63,11 @@ The command asks the same questions as the panel: the parent branch, the start P
 
 ## Configuration
 
-| Key | Where | Meaning |
-|-----|-------|---------|
-| `developmentBranch`, `availableTargetBranches` | `config/.sfdx-hardis.yml` | The parent branches a backpromote may come from. |
-| `backpromoteScanLimit` | `config/.sfdx-hardis.yml` | Number of merged Pull Requests read to find the last backpromote of a sandbox (default 100). Beyond it, the user picks the start. |
-| Branch protection | Git provider | Pushes to `backpromote/*` must be allowed, and no CI job should run on those branches. |
+| Key                                            | Where                     | Meaning                                                                                                                           |
+|------------------------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `developmentBranch`, `availableTargetBranches` | `config/.sfdx-hardis.yml` | The parent branches a backpromote may come from.                                                                                  |
+| `backpromoteScanLimit`                         | `config/.sfdx-hardis.yml` | Number of merged Pull Requests read to find the last backpromote of a sandbox (default 100). Beyond it, the user picks the start. |
+| Branch protection                              | Git provider              | Pushes to `backpromote/*` must be allowed, and no CI job should run on those branches.                                            |
 
 ## Sandbox refresh
 

@@ -64,7 +64,7 @@ github)
     cd "$WORK" || return 1
     git checkout -q -f "$source" && git pull -q origin "$source"
     start=$(e2e_now_ms)
-    env -u NODE_OPTIONS GITHUB_TOKEN="$(gh auth token)" GITHUB_REPOSITORY="$REPO" GITHUB_REPOSITORY_OWNER="${REPO%%/*}"       GITHUB_SERVER_URL="https://github.com" CONFIG_BRANCH="$source"       node "$DEV" hardis:project:promotion:list-candidates --agent --source-branch "$source" "$@" >"$LOGS/$label.log" 2>&1
+    env -u NODE_OPTIONS GITHUB_TOKEN="$(gh auth token)" GITHUB_REPOSITORY="$REPO" GITHUB_REPOSITORY_OWNER="${REPO%%/*}" GITHUB_SERVER_URL="https://github.com" CONFIG_BRANCH="$source" node "$DEV" hardis:project:promotion:list-candidates --agent --source-branch "$source" "$@" >"$LOGS/$label.log" 2>&1
     code=$?
     e2e_time_record "$label" list-candidates "$start" "$code"
     echo "$label exit=$code log=$LOGS/$label.log"
@@ -78,7 +78,7 @@ github)
     git checkout -q -f "$source" && git pull -q origin "$source"
     nogh=$(echo "$PATH" | tr ':' '
 ' | grep -viE "GitHub CLI|/gh(/|$)" | paste -sd:)
-    env -u NODE_OPTIONS -u GITHUB_TOKEN -u GH_TOKEN PATH="$nogh" GITHUB_REPOSITORY="$REPO" GITHUB_REPOSITORY_OWNER="${REPO%%/*}"       GITHUB_SERVER_URL="https://github.com" CONFIG_BRANCH="$source" GH_CONFIG_DIR="$LOGS/no-gh-config"       node "$DEV" hardis:project:promotion:create --agent --source-branch "$source" --pull-requests "$prs" "$@" >"$LOGS/$label.log" 2>&1
+    env -u NODE_OPTIONS -u GITHUB_TOKEN -u GH_TOKEN PATH="$nogh" GITHUB_REPOSITORY="$REPO" GITHUB_REPOSITORY_OWNER="${REPO%%/*}" GITHUB_SERVER_URL="https://github.com" CONFIG_BRANCH="$source" GH_CONFIG_DIR="$LOGS/no-gh-config" node "$DEV" hardis:project:promotion:create --agent --source-branch "$source" --pull-requests "$prs" "$@" >"$LOGS/$label.log" 2>&1
     code=$?
     echo "$label exit=$code log=$LOGS/$label.log"
     return $code
@@ -106,7 +106,7 @@ github)
     git fetch -q origin "+refs/pull/$pr/merge:refs/heads/prmerge-$pr" || return 1
     git checkout -q -f "prmerge-$pr" || return 1
     eval "$edit"
-    e2e_ci_env GITHUB_REF_NAME="$pr/merge" GITHUB_REF="refs/pull/$pr/merge" FORCE_TARGET_BRANCH="$target" CONFIG_BRANCH="$target"       node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" >"$LOGS/$label.log" 2>&1
+    e2e_ci_env GITHUB_REF_NAME="$pr/merge" GITHUB_REF="refs/pull/$pr/merge" FORCE_TARGET_BRANCH="$target" CONFIG_BRANCH="$target" node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" >"$LOGS/$label.log" 2>&1
     code=$?
     git checkout -q -f -- . 2>/dev/null
     echo "$label exit=$code log=$LOGS/$label.log"
@@ -117,7 +117,7 @@ github)
     local branch="$1" label="$2" code
     cd "$WORK" || return 1
     git fetch -q origin "$branch" && git checkout -q -f -B "$branch" "origin/$branch"
-    e2e_ci_env GITHUB_REF_NAME="$branch" GITHUB_REF="refs/heads/$branch"       node "$DEV" hardis:project:deploy:smart --target-org "$ORG" >"$LOGS/$label.log" 2>&1
+    e2e_ci_env GITHUB_REF_NAME="$branch" GITHUB_REF="refs/heads/$branch" node "$DEV" hardis:project:deploy:smart --target-org "$ORG" >"$LOGS/$label.log" 2>&1
     code=$?
     echo "$label exit=$code log=$LOGS/$label.log"
     return $code
@@ -165,7 +165,7 @@ gitlab)
     cd "$WORK" || return 1
     git checkout -q -f "$source" && git pull -q origin "$source"
     start=$(e2e_now_ms)
-    gl_ci_env CI_COMMIT_REF_NAME="$source" CONFIG_BRANCH="$source"       node "$DEV" hardis:project:promotion:list-candidates --agent --source-branch "$source" "$@" >"$LOGS/$label.log" 2>&1
+    gl_ci_env CI_COMMIT_REF_NAME="$source" CONFIG_BRANCH="$source" node "$DEV" hardis:project:promotion:list-candidates --agent --source-branch "$source" "$@" >"$LOGS/$label.log" 2>&1
     code=$?
     e2e_time_record "$label" list-candidates "$start" "$code"
     echo "$label exit=$code log=$LOGS/$label.log"
@@ -176,7 +176,7 @@ gitlab)
     shift 3
     cd "$WORK" || return 1
     git checkout -q -f "$source" && git pull -q origin "$source"
-    env -u NODE_OPTIONS -u CI_SFDX_HARDIS_GITLAB_TOKEN -u CI_JOB_TOKEN CI_SERVER_URL="$GL_HOST" CI_PROJECT_ID="$PROJECT_ID"       CI_PROJECT_PATH="$PROJECT_PATH" CI_PROJECT_URL="$GL_HOST/$PROJECT_PATH" CI_COMMIT_REF_NAME="$source" CONFIG_BRANCH="$source"       node "$DEV" hardis:project:promotion:create --agent --source-branch "$source" --pull-requests "$prs" "$@" >"$LOGS/$label.log" 2>&1
+    env -u NODE_OPTIONS -u CI_SFDX_HARDIS_GITLAB_TOKEN -u CI_JOB_TOKEN CI_SERVER_URL="$GL_HOST" CI_PROJECT_ID="$PROJECT_ID" CI_PROJECT_PATH="$PROJECT_PATH" CI_PROJECT_URL="$GL_HOST/$PROJECT_PATH" CI_COMMIT_REF_NAME="$source" CONFIG_BRANCH="$source" node "$DEV" hardis:project:promotion:create --agent --source-branch "$source" --pull-requests "$prs" "$@" >"$LOGS/$label.log" 2>&1
     code=$?
     echo "$label exit=$code log=$LOGS/$label.log"
     return $code
@@ -192,7 +192,7 @@ gitlab)
     gl_fetch_merge_ref "$mr" || return 1
     git checkout -q -f "mrmerge-$mr" || return 1
     eval "$edit"
-    gl_ci_env CI_MERGE_REQUEST_IID="$mr" CI_COMMIT_REF_NAME="refs/merge-requests/$mr/merge" CI_MERGE_REQUEST_TARGET_BRANCH_NAME="$target"       FORCE_TARGET_BRANCH="$target" CONFIG_BRANCH="$target"       node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" >"$LOGS/$label.log" 2>&1
+    gl_ci_env CI_MERGE_REQUEST_IID="$mr" CI_COMMIT_REF_NAME="refs/merge-requests/$mr/merge" CI_MERGE_REQUEST_TARGET_BRANCH_NAME="$target" FORCE_TARGET_BRANCH="$target" CONFIG_BRANCH="$target" node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" >"$LOGS/$label.log" 2>&1
     code=$?
     git checkout -q -f -- . 2>/dev/null
     echo "$label exit=$code log=$LOGS/$label.log"
@@ -202,7 +202,7 @@ gitlab)
     local branch="$1" label="$2" code
     cd "$WORK" || return 1
     git fetch -q origin "$branch" && git checkout -q -f -B "$branch" "origin/$branch"
-    gl_ci_env CI_COMMIT_REF_NAME="$branch"       node "$DEV" hardis:project:deploy:smart --target-org "$ORG" >"$LOGS/$label.log" 2>&1
+    gl_ci_env CI_COMMIT_REF_NAME="$branch" node "$DEV" hardis:project:deploy:smart --target-org "$ORG" >"$LOGS/$label.log" 2>&1
     code=$?
     echo "$label exit=$code log=$LOGS/$label.log"
     return $code

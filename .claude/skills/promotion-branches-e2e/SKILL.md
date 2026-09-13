@@ -18,28 +18,28 @@ not already, so you know what each assertion is protecting.
 
 ## What this skill contains
 
-| File                               | Use                                                                                                                                                             |
-|------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `reference/runbook.md`             | The full procedure: repository layout, the six User Stories, the run order, what to assert in each log, the edge cases, the traps. **Read it before starting.** |
-| `scripts/build-repo.sh`            | Writes the base project, the four major branches and the config. Provider agnostic.                                                                             |
-| `scripts/stories.sh`               | `story_branch` and `story_actions`: the six User Stories and the action files that travel with them. Provider agnostic.                                         |
-| `scripts/e2e-lib.sh`               | GitHub job simulators: `e2e_check`, `e2e_deploy`, `e2e_promote`, `e2e_release_notes`, `e2e_grep`. Source it.                                                    |
-| `scripts/e2e-lib-gitlab.sh`        | The same for GitLab, plus `gl_mr_create`, `gl_mr_merge` and the merge-ref wait GitLab needs.                                                                    |
-| `scripts/check-pipeline.cjs`       | Drives the extension's own PipelineDataProvider against the test repository and asserts what the DevOps Pipeline shows at a point of the run.                   |
-| `scripts/check-diagram.cjs`        | Feeds the extension's compiled helpers with the real Pull Requests and asserts the "single place in the diagram" rule.                                          |
-| `scripts/check-diagram-gitlab.cjs` | The same, reading merge requests from the GitLab API.                                                                                                           |
-| `scripts/check-backpromote-plan.cjs` | Asserts a `hardis:work:backpromote ... --json` document (plan version 3: plan, prepare, run, confirm, reset) against the expectations of `reference/backpromote/*.json` (section 6bis). |
-| `scripts/check-backpromote-comments.cjs` | Asserts the "Backpromotes" Pull Request comments of a `dump_pr_comments` dump: one comment per Pull Request, its sandbox rows and action rows (section 6bis, C1 to C4).           |
-| `scripts/promotion-provider.sh`    | Provider neutral job names (`p_check`, `p_deploy`, `p_promote`, `p_open`, `p_merge`...) over the GitHub or GitLab library, picked with `PROVIDER`.               |
-| `scripts/promotion-run.sh`         | Sections 3, 4 and 4bis scripted: the six stories, the four promotions, the release notes, the retrofit, an assertion per job log and a pipeline check per step. |
-| `scripts/promotion-edge.sh`        | Section 6 scripted in five groups (`g1` to `g5`) that build on each other, run after `promotion-run.sh`.                                                        |
-| `scripts/timing-report.cjs`        | Performance tables of a run: `timings.tsv` (every job and backpromote call) and the backpromote progress files, median and worst per step, slowest calls.       |
-| `scripts/ab-run.sh`                | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                            |
-| `scripts/ab-run-gitlab.sh`         | The same on GitLab.                                                                                                                                             |
-| `scripts/ab-run-azure.sh`          | The same on Azure DevOps.                                                                                                                                       |
-| `scripts/ab-run-bitbucket.sh`      | The same on Bitbucket Cloud.                                                                                                                                    |
-| `scripts/audit-pr-comments.cjs`    | The Pull Request comment audit, shared by the four providers. Fed by the `dump_pr_comments` of each library.                                                    |
-| `scripts/ab-diff.py`               | Normalises two log folders and diffs them: the flag-off regression proof.                                                                                       |
+| File                                     | Use                                                                                                                                                                                     |
+|------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `reference/runbook.md`                   | The full procedure: repository layout, the six User Stories, the run order, what to assert in each log, the edge cases, the traps. **Read it before starting.**                         |
+| `scripts/build-repo.sh`                  | Writes the base project, the four major branches and the config. Provider agnostic.                                                                                                     |
+| `scripts/stories.sh`                     | `story_branch` and `story_actions`: the six User Stories and the action files that travel with them. Provider agnostic.                                                                 |
+| `scripts/e2e-lib.sh`                     | GitHub job simulators: `e2e_check`, `e2e_deploy`, `e2e_promote`, `e2e_release_notes`, `e2e_grep`. Source it.                                                                            |
+| `scripts/e2e-lib-gitlab.sh`              | The same for GitLab, plus `gl_mr_create`, `gl_mr_merge` and the merge-ref wait GitLab needs.                                                                                            |
+| `scripts/check-pipeline.cjs`             | Drives the extension's own PipelineDataProvider against the test repository and asserts what the DevOps Pipeline shows at a point of the run.                                           |
+| `scripts/check-diagram.cjs`              | Feeds the extension's compiled helpers with the real Pull Requests and asserts the "single place in the diagram" rule.                                                                  |
+| `scripts/check-diagram-gitlab.cjs`       | The same, reading merge requests from the GitLab API.                                                                                                                                   |
+| `scripts/check-backpromote-plan.cjs`     | Asserts a `hardis:work:backpromote ... --json` document (plan version 3: plan, prepare, run, confirm, reset) against the expectations of `reference/backpromote/*.json` (section 6bis). |
+| `scripts/check-backpromote-comments.cjs` | Asserts the "Backpromotes" Pull Request comments of a `dump_pr_comments` dump: one comment per Pull Request, its sandbox rows and action rows (section 6bis, C1 to C4).                 |
+| `scripts/promotion-provider.sh`          | Provider neutral job names (`p_check`, `p_deploy`, `p_promote`, `p_open`, `p_merge`...) over the GitHub or GitLab library, picked with `PROVIDER`.                                      |
+| `scripts/promotion-run.sh`               | Sections 3, 4 and 4bis scripted: the six stories, the four promotions, the release notes, the retrofit, an assertion per job log and a pipeline check per step.                         |
+| `scripts/promotion-edge.sh`              | Section 6 scripted in five groups (`g1` to `g5`) that build on each other, run after `promotion-run.sh`.                                                                                |
+| `scripts/timing-report.cjs`              | Performance tables of a run: `timings.tsv` (every job and backpromote call) and the backpromote progress files, median and worst per step, slowest calls.                               |
+| `scripts/ab-run.sh`                      | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                                                    |
+| `scripts/ab-run-gitlab.sh`               | The same on GitLab.                                                                                                                                                                     |
+| `scripts/ab-run-azure.sh`                | The same on Azure DevOps.                                                                                                                                                               |
+| `scripts/ab-run-bitbucket.sh`            | The same on Bitbucket Cloud.                                                                                                                                                            |
+| `scripts/audit-pr-comments.cjs`          | The Pull Request comment audit, shared by the four providers. Fed by the `dump_pr_comments` of each library.                                                                            |
+| `scripts/ab-diff.py`                     | Normalises two log folders and diffs them: the flag-off regression proof.                                                                                                               |
 
 ## Before starting
 
