@@ -59,6 +59,26 @@ export interface NormalizedTestCase {
 /** Marker a generator writes in a cell it could not fill. A notebook still holding it is not pushed. */
 export const TEST_CASE_TODO = 'TO BE COMPLETED';
 
+/**
+ * Every marker that blocks a push. Notebooks written before the English rendering hold the French
+ * one, and those are exactly the notebooks the header aliases keep readable, so both are refused.
+ */
+const TEST_CASE_TODO_MARKERS = [TEST_CASE_TODO, 'À COMPLÉTER'];
+
+/** Case and accents folded, so `À COMPLÉTER`, `a completer` and the English marker all match. */
+function _foldMarker(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toUpperCase();
+}
+
+/** The marker a cell holds, as declared, or undefined when it holds none. */
+export function findTodoMarker(value: unknown): string | undefined {
+  const folded = _foldMarker(String(value ?? ''));
+  return TEST_CASE_TODO_MARKERS.find((marker) => folded.includes(_foldMarker(marker)));
+}
+
 // <TICKET>-F01 functional, <TICKET>-T01 technical, <TICKET>-01 maintenance. The counter has 2 or
 // 3 digits, so a bare ticket key such as DSI-2026-14545 is not read as a test case id.
 const ID_RE = /^(.+)-([FT]?)(\d{2,3})$/;
@@ -136,8 +156,9 @@ function _cellProblems(where: string, value: unknown, required: boolean): string
   if (placeholder) {
     problems.push(t('testCasesCheckPlaceholder', { where, value: placeholder[0] }));
   }
-  if (text.includes(TEST_CASE_TODO)) {
-    problems.push(t('testCasesCheckTodoMarker', { where, marker: TEST_CASE_TODO }));
+  const todoMarker = findTodoMarker(text);
+  if (todoMarker) {
+    problems.push(t('testCasesCheckTodoMarker', { where, marker: todoMarker }));
   }
   return problems;
 }

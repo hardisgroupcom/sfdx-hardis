@@ -52,28 +52,51 @@ function _richText(text: unknown): string {
     .join('<br>');
 }
 
-/** System.Description, in English whatever the locale: the tracker is shared. */
-function _description(testCase: NormalizedTestCase): string {
+/** A `<div><b>Label</b> ...</div>` block of a description. Only the label is captured. */
+const DESCRIPTION_BLOCK_RE = /<div><b>([^<]*)<\/b>[\s\S]*?<\/div>/g;
+
+/** The description blocks a work item already holds, keyed by their label. */
+function _existingBlocks(html: unknown): Map<string, string> {
+  const blocks = new Map<string, string>();
+  const text = String(html ?? '');
+  DESCRIPTION_BLOCK_RE.lastIndex = 0;
+  let match = DESCRIPTION_BLOCK_RE.exec(text);
+  while (match !== null) {
+    blocks.set(match[1].trim(), match[0]);
+    match = DESCRIPTION_BLOCK_RE.exec(text);
+  }
+  return blocks;
+}
+
+/**
+ * System.Description, in English whatever the locale: the tracker is shared.
+ *
+ * A notebook kind carries only its own columns, so a field the notebook does not define keeps the
+ * block the work item already holds, exactly like the priority and the steps. A field defined but
+ * empty is a deliberate erasure and drops its block.
+ */
+function _description(testCase: NormalizedTestCase, existingHtml: unknown = ''): string {
+  const existing = _existingBlocks(existingHtml);
   const parts: string[] = [];
-  const add = (labelKey: string, html: string): void => {
-    parts.push(`<div><b>${_htmlEscape(tEn(labelKey))}</b> ${html}</div>`);
+  const add = (labelKey: string, value: string | undefined, render: (text: string) => string): void => {
+    const label = _htmlEscape(tEn(labelKey));
+    if (value === undefined) {
+      const kept = existing.get(label.trim());
+      if (kept) {
+        parts.push(kept);
+      }
+      return;
+    }
+    if (value) {
+      parts.push(`<div><b>${label}</b> ${render(value)}</div>`);
+    }
   };
-  if (testCase.module) {
-    add('testCaseModule', _htmlEscape(testCase.module));
-  }
-  if (testCase.target) {
-    add('testCaseTarget', `<code>${_htmlEscape(testCase.target)}</code>`);
-  }
-  if (testCase.preconditions) {
-    add('testCasePreconditions', _richText(testCase.preconditions));
-  }
-  if (testCase.expected) {
-    add('testCaseOverallExpectedResult', _richText(testCase.expected));
-  }
+  add('testCaseModule', testCase.module, (text) => _htmlEscape(text));
+  add('testCaseTarget', testCase.target, (text) => `<code>${_htmlEscape(text)}</code>`);
+  add('testCasePreconditions', testCase.preconditions, (text) => _richText(text));
+  add('testCaseOverallExpectedResult', testCase.expected, (text) => _richText(text));
   // A SOQL query is code: escaped, not converted
-  if (testCase.soql) {
-    add('testCaseSoqlQuery', `<pre>${_htmlEscape(testCase.soql)}</pre>`);
-  }
+  add('testCaseSoqlQuery', testCase.soql, (text) => `<pre>${_htmlEscape(text)}</pre>`);
   return parts.join('');
 }
 
@@ -183,13 +206,18 @@ export class AzureDevopsTestProvider extends TestManagementProviderRoot {
 
   /**
    * Patch of an existing test case: what the notebook owns, and nothing else. Assignee, area and
-   * iteration stay as the team set them, tags added by hand are kept, and the priority and steps
-   * are only sent when the notebook has those columns. `add` is an upsert on a work item field.
+   * iteration stay as the team set them, tags added by hand are kept, and the priority, the steps
+   * and each description block are only sent when the notebook has that column. `add` is an upsert
+   * on a work item field.
    */
-  public static buildUpdatePatch(testCase: NormalizedTestCase, existingTags: string[]): any[] {
+  public static buildUpdatePatch(
+    testCase: NormalizedTestCase,
+    existingTags: string[],
+    existingDescription: string = ''
+  ): any[] {
     const patch: any[] = [
       { op: 'add', path: '/fields/System.Title', value: testCase.title },
-      { op: 'add', path: '/fields/System.Description', value: _description(testCase) },
+      { op: 'add', path: '/fields/System.Description', value: _description(testCase, existingDescription) },
       { op: 'add', path: '/fields/System.Tags', value: AzureDevopsTestProvider.buildTags(testCase, existingTags).join('; ') },
     ];
     if (testCase.priority !== undefined) {
@@ -275,13 +303,17 @@ export class AzureDevopsTestProvider extends TestManagementProviderRoot {
 
   public async update(ref: ProviderRef, testCase: NormalizedTestCase): Promise<ProviderRef> {
     const api = await this.api();
-    const current = await api.getWorkItem(Number(ref.id), ['System.Tags']);
+    const current = await api.getWorkItem(Number(ref.id), ['System.Tags', 'System.Description']);
     if (!current) {
       throw new SfError(t('testCasesAzureWorkItemNotFound', { id: ref.id }));
     }
     const workItem = await api.updateWorkItem(
       {},
-      AzureDevopsTestProvider.buildUpdatePatch(testCase, this.tagsOf(current)) as JsonPatchDocument,
+      AzureDevopsTestProvider.buildUpdatePatch(
+        testCase,
+        this.tagsOf(current),
+        String(current?.fields?.['System.Description'] ?? '')
+      ) as JsonPatchDocument,
       Number(ref.id),
       this.teamProject as string
     );

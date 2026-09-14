@@ -242,6 +242,19 @@ describe('testNotebookUtils', () => {
       expectMention(error.message, 'testCasesCheckEmpty', 'PROJ-123-F01 expected');
     });
 
+    // Non-regression: notebooks written before the English rendering hold the French marker, and
+    // they are exactly the ones the header aliases keep readable, so they must be refused too.
+    it('refuses the legacy French marker, whatever its accents and case', async () => {
+      const error = await errorOf(() =>
+        assertPushable([
+          makeCase({ id: 'PROJ-123-F01', expected: 'À COMPLÉTER' }),
+          makeCase({ id: 'PROJ-123-F02', expected: 'a completer' }),
+        ])
+      );
+      expect(error.message.split('\n')).to.have.lengthOf(3);
+      expectMention(error.message, 'testCasesCheckTodoMarker', 'PROJ-123-F01 expected', 'PROJ-123-F02 expected');
+    });
+
     it('finds the marker and the placeholder in the middle of a cell', async () => {
       const error = await errorOf(() =>
         assertPushable([

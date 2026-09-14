@@ -253,6 +253,36 @@ describe('AzureDevopsTestProvider', () => {
       expect(valueOf(patch, '/fields/Microsoft.VSTS.TCM.Steps')).to.equal('<steps id="0" last="1"></steps>');
     });
 
+    // Non-regression: a maintenance or technical notebook has no module and no SOQL column, and
+    // its upsert must not empty the description blocks the work item already holds.
+    it('keeps the description blocks of the columns the notebook does not define', () => {
+      const existing =
+        '<div><b>Module:</b> Quotes</div>' +
+        '<div><b>Preconditions:</b> An <b>active</b> account</div>' +
+        '<div><b>Overall expected result:</b> The quote exists</div>' +
+        '<div><b>SOQL query:</b> <pre>SELECT Id FROM Quote</pre></div>';
+      const patch = AzureDevopsTestProvider.buildUpdatePatch(
+        makeCase({ module: undefined, preconditions: undefined }),
+        [],
+        existing
+      );
+      const description = valueOf(patch, '/fields/System.Description');
+      expect(description).to.contain('<div><b>Module:</b> Quotes</div>');
+      expect(description).to.contain('<pre>SELECT Id FROM Quote</pre>');
+      expect(description).to.contain('An <b>active</b> account');
+    });
+
+    it('drops the description block of a column the notebook defines as empty', () => {
+      const patch = AzureDevopsTestProvider.buildUpdatePatch(
+        makeCase({ module: '' }),
+        [],
+        '<div><b>Module:</b> Quotes</div>'
+      );
+      const description = valueOf(patch, '/fields/System.Description');
+      expect(description).to.not.contain('Quotes');
+      expect(description).to.contain('The quote exists');
+    });
+
     it('keeps the tags added by hand and adds the missing ones without duplicates', () => {
       const patch = AzureDevopsTestProvider.buildUpdatePatch(makeCase(), [' Regression ', 'TESTKIT:PROJ-123:F01', '']);
       expect(valueOf(patch, '/fields/System.Tags')).to.equal('Regression; TESTKIT:PROJ-123:F01; MODULE:Quotes');
@@ -499,7 +529,7 @@ describe('AzureDevopsTestProvider - api calls through the injected factory', () 
       const { api, calls } = stubApi();
       await providerWith(api).update({ id: '77', url: 'https://dev.azure.com/acme/_workitems/edit/77' }, makeCase());
       const read = callsTo(calls, 'getWorkItem')[0];
-      expect(read.args).to.deep.equal([77, ['System.Tags']]);
+      expect(read.args).to.deep.equal([77, ['System.Tags', 'System.Description']]);
       const updated = callsTo(calls, 'updateWorkItem')[0];
       expect(updated.args[2]).to.equal(77);
       expect(updated.args[3]).to.equal('Sales');
