@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.8.1] 2026-09-14
+
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): duplicate commits are no longer shown in the Pull Request selection list when branches merge both ways.
 
 ## [8.8.0] 2026-09-13
