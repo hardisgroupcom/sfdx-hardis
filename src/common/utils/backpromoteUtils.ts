@@ -199,6 +199,13 @@ export function isVehicleMerge(branches: string[], majorBranchNames: string[]): 
  * vehicle they came from. The loop runs again over what it produced, so a promotion merged into
  * `integration` and carried to `uat` by a sync is opened up in turn. Only a merge with exactly two
  * parents is opened up: an octopus merge would lose every side but the second one.
+ *
+ * A sub-commit already listed elsewhere is never added a second time. Branches merged both ways
+ * produce exactly that: `main` merged into `uat` opens up into the first-parent commits of `main`,
+ * one of which is a `uat` -> `main` back-merge, and opening that one up in turn gives back the
+ * `uat` commits the list started from. The repeats were offered twice in the promotion prompt, and
+ * a vehicle whose whole content is already listed carries nothing, so it is dropped rather than
+ * kept as a row that cherry-picks a merge commit.
  */
 export async function splitVehicleMerges<T extends { hash: string; message: string }>(
   firstParentCommits: T[],
@@ -212,6 +219,9 @@ export async function splitVehicleMerges<T extends { hash: string; message: stri
   for (let depth = 0; depth < MAX_VEHICLE_SPLIT_DEPTH; depth++) {
     let changed = false;
     const next: T[] = [];
+    // What the list already holds: the commits still to be walked at this depth, plus the ones
+    // already pushed. The vehicle being opened up is leaving the list, so it never counts itself.
+    const presentHashes = new Set(current.map((commit) => commit.hash));
     for (const commit of current) {
       const parents = parentsByHash.get(commit.hash) || [];
       if (parents.length !== 2 || !isVehicleMerge(vehicleBranchesOf(commit), majorBranchNames)) {
@@ -226,8 +236,18 @@ export async function splitVehicleMerges<T extends { hash: string; message: stri
         next.push(commit);
         continue;
       }
+      const newSubCommits = subCommits.filter(
+        (subCommit) => subCommit.hash !== commit.hash && !presentHashes.has(subCommit.hash)
+      );
       changed = true;
-      next.push(...subCommits);
+      if (newSubCommits.length === 0) {
+        // Everything this vehicle carries is already listed on its own rows: it adds nothing.
+        continue;
+      }
+      for (const subCommit of newSubCommits) {
+        presentHashes.add(subCommit.hash);
+      }
+      next.push(...newSubCommits);
     }
     current = next;
     if (!changed) {

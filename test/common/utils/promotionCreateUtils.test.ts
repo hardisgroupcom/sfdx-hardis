@@ -147,6 +147,28 @@ describe('dropOfferedTwice()', () => {
     ];
     expect(dropOfferedTwice(candidates)).to.have.length(2);
   });
+
+  it('offers a commit once when two merge routes walked it twice', () => {
+    // Branches merged both ways make the same commit reachable twice, and it carries no Pull
+    // Request number, so only the commit hash tells the repeat apart
+    const candidates = [
+      toCandidate(group('aaa1111', [], "Merge branch 'main' into uat")),
+      toCandidate(group('bbb2222', [], 'chore: direct commit on uat')),
+      toCandidate(group('aaa1111', [], "Merge branch 'main' into uat")),
+    ];
+    expect(dropOfferedTwice(candidates).map((candidate) => candidate.group.commit.hash)).to.deep.equal([
+      'aaa1111',
+      'bbb2222',
+    ]);
+  });
+
+  it('offers a commit once when the repeated row also carries a Pull Request number', () => {
+    const candidates = [
+      toCandidate(group('aaa1111', [{ id: 482, title: 'Story A' }])),
+      toCandidate(group('aaa1111', [{ id: 482, title: 'Story A' }])),
+    ];
+    expect(dropOfferedTwice(candidates)).to.have.length(1);
+  });
 });
 
 describe('markAlreadyPromotedCandidates()', () => {
