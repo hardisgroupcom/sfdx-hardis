@@ -385,19 +385,29 @@ export async function listPromotionCandidates(
 }
 
 /**
- * A User Story reaches a branch twice when a promotion carried it and an ordinary sync merge of
- * the source branch delivered the original commit afterwards: the cherry-pick and the merge are
- * two commits inside the same window, so the same Pull Request is offered on two rows. Only the
- * first is kept, which is also the one the command already cherry-picks, so nothing changes but
- * the table a release manager reads.
+ * A row can be offered twice for two independent reasons, and both are dropped here. Only the
+ * first occurrence is kept, which is also the one the command cherry-picks, so nothing changes
+ * but the table a release manager reads.
  *
- * Only an exact repeat of the same set of numbers is dropped. A row that groups several Pull
- * Requests (a back-merge, an octopus merge) is never allowed to hide the finer rows of the stories
- * it holds, and a row with no number at all is a commit of its own and always stays.
+ * The same commit twice: branches merged both ways make a commit reachable by two routes, and
+ * opening up the vehicle merges walks it once per route.
+ *
+ * The same User Story twice: a promotion carried it and an ordinary sync merge of the source
+ * branch delivered the original commit afterwards, so the cherry-pick and the merge are two
+ * commits inside the same window. Only an exact repeat of the same set of numbers is dropped
+ * there: a row that groups several Pull Requests (a back-merge, an octopus merge) is never
+ * allowed to hide the finer rows of the stories it holds, and a row with no number at all is a
+ * commit of its own and stays as long as its commit was not already offered.
  */
 export function dropOfferedTwice(candidates: PromotionCandidate[]): PromotionCandidate[] {
   const seen = new Set<string>();
+  const seenHashes = new Set<string>();
   return candidates.filter((candidate) => {
+    const hash = candidate.group.commit.hash;
+    if (seenHashes.has(hash)) {
+      return false;
+    }
+    seenHashes.add(hash);
     if (candidate.pullRequestNumbers.length === 0) {
       return true;
     }

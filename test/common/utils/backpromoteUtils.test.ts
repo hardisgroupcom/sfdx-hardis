@@ -201,6 +201,65 @@ describe('splitVehicleMerges()', () => {
     );
     expect(split.map((commit) => commit.hash)).to.deep.equal(['sync']);
   });
+
+  // main and uat merged both ways:
+  //
+  //   sync  (merge main into uat)   parents u1, back
+  //   back  (merge uat into main)   parents p1, u1
+  //   p1    (work on main)
+  //   u1    (work on uat)
+  //
+  // Opening up sync walks main, whose first-parent line holds the back-merge, and opening that
+  // one up in turn walks back to u1, which the uat list started from.
+  const crissCross = [
+    { hash: 'sync', message: "Merge branch 'main' into uat" },
+    { hash: 'back', message: "Merge branch 'uat' into main" },
+    { hash: 'p1', message: 'work on main' },
+    { hash: 'u1', message: 'work on uat' },
+  ];
+  const crissCrossParents = parseCommitParents(
+    ['sync u1 back', 'back p1 u1', 'p1 mainBase', 'u1 uatBase'].join('\n'),
+  );
+  const crissCrossWindow = new Set(crissCross.map((commit) => commit.hash));
+  const crissCrossFirstParents = async (fromCommit: string, toCommit: string) => {
+    if (fromCommit === 'u1' && toCommit === 'back') {
+      return [crissCross[1], crissCross[2]];
+    }
+    if (fromCommit === 'p1' && toCommit === 'u1') {
+      return [crissCross[3]];
+    }
+    throw new Error(`unexpected range ${fromCommit}..${toCommit}`);
+  };
+
+  it('offers a commit once when the branches were merged both ways', async () => {
+    const split = await splitVehicleMerges(
+      [crissCross[0], crissCross[3]],
+      ['main', 'uat'],
+      crissCrossParents,
+      crissCrossWindow,
+      (commit) => mergedSourceBranches(commit, new Map(), new Map()),
+      crissCrossFirstParents,
+    );
+    expect(split.map((commit) => commit.hash)).to.deep.equal(['p1', 'u1']);
+  });
+
+  it('adds only what a vehicle brings that is not listed yet', async () => {
+    // The vehicle carries one new commit and one already on its own row
+    const partial = [
+      { hash: 'sync', message: "Merge branch 'main' into uat" },
+      { hash: 'new1', message: "Merge branch 'feature/one' into main" },
+      { hash: 'u1', message: 'work on uat' },
+    ];
+    const split = await splitVehicleMerges(
+      [partial[0], partial[2]],
+      ['main', 'uat'],
+      parseCommitParents(['sync uatBase new1', 'new1 mainBase work1', 'u1 uatBase'].join('\n')),
+      new Set(partial.map((commit) => commit.hash)),
+      (commit) => mergedSourceBranches(commit, new Map(), new Map()),
+      async () => [partial[1], partial[2]],
+    );
+    expect(split.map((commit) => commit.hash)).to.deep.equal(['new1', 'u1']);
+  });
 });
 
 describe('attributeCommitsToFirstParents() with opened-up vehicle merges', () => {

@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): duplicate commits are no longer shown in the Pull Request selection list when branches merge both ways.
+
 ## [8.8.0] 2026-09-13
 
 - [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) (Beta), reworked: bring into your developer sandbox what your teammates merged, from the new VS Code panel or with a coding agent, with its history kept on the Pull Requests. It replaces `hardis:work:refresh`.
