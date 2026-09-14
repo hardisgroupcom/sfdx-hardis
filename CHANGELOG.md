@@ -2,6 +2,9 @@
 
 ## [beta] (main)
 
+- [hardis:ticket:test-cases:init](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/init/): **new command** writing the test cases of a ticket into a notebook a tester fills in: an Excel workbook, a CSV or a markdown table.
+- [hardis:ticket:test-cases:upsert](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/): **new command** creating or updating the test cases of a notebook in Azure DevOps, ServiceNow Test Management or Xray Cloud, safe to run again from a CI job.
+
 ## [8.8.0] 2026-09-13
 
 - [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) (Beta), reworked: bring into your developer sandbox what your teammates merged, from the new VS Code panel or with a coding agent, with its history kept on the Pull Requests. It replaces `hardis:work:refresh`.
