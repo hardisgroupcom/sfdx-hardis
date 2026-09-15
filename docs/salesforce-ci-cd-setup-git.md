@@ -31,10 +31,10 @@ Two decisions shape the tree: **how many levels your BUILD chain needs**, and **
 
 Each level is a branch and the Salesforce org it deploys to. Start with what you can staff, you can always add a level later.
 
-| Project | Branch tree |
-|---------|-------------|
-| Small | **main** (Production) > **preprod** (PreProd) |
-| Medium | **main** (Production) > **preprod** (PreProd) > **integration** (Integration) |
+| Project | Branch tree                                                                                   |
+|---------|-----------------------------------------------------------------------------------------------|
+| Small   | **main** (Production) > **preprod** (PreProd)                                                 |
+| Medium  | **main** (Production) > **preprod** (PreProd) > **integration** (Integration)                 |
 | Complex | **main** (Production) > **preprod** (PreProd) > **uat** (UAT) > **integration** (Integration) |
 
 The rest of this documentation uses the complex tree, `integration` > `uat` > `preprod` > `main`, because it names every level. Drop the ones you do not have.
