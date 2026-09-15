@@ -1,7 +1,6 @@
 import { SfError } from '@salesforce/core';
 import { TestManagementProviderRoot } from './testManagementProviderRoot.js';
 import { AzureDevopsTestProvider } from './azureDevopsTestProvider.js';
-import { ServiceNowTestProvider } from './serviceNowTestProvider.js';
 import { XrayTestProvider } from './xrayTestProvider.js';
 import { AzureBoardsProvider } from '../ticketProvider/azureBoardsProvider.js';
 import { NormalizedTestCase, idempotencyKey } from '../utils/testNotebookUtils.js';
@@ -19,7 +18,6 @@ export const allTestManagementProviders: Array<{
   build: (config: any) => TestManagementProviderRoot;
 }> = [
   { key: AzureDevopsTestProvider.providerKey, label: AzureDevopsTestProvider.providerLabel, build: () => new AzureDevopsTestProvider() },
-  { key: ServiceNowTestProvider.providerKey, label: ServiceNowTestProvider.providerLabel, build: () => new ServiceNowTestProvider() },
   { key: XrayTestProvider.providerKey, label: XrayTestProvider.providerLabel, build: (config) => new XrayTestProvider(config) },
 ];
 

@@ -10,7 +10,6 @@ import {
   TEST_MANAGEMENT_PROVIDER_KEYS,
 } from '../../../src/common/testManagementProvider/index.js';
 import { AzureDevopsTestProvider } from '../../../src/common/testManagementProvider/azureDevopsTestProvider.js';
-import { ServiceNowTestProvider } from '../../../src/common/testManagementProvider/serviceNowTestProvider.js';
 import { XrayTestProvider } from '../../../src/common/testManagementProvider/xrayTestProvider.js';
 import { NormalizedTestCase } from '../../../src/common/utils/testNotebookUtils.js';
 
@@ -241,7 +240,7 @@ describe('testManagementProvider selectTestManagementProvider', () => {
     }
     // The unknown key and the valid ones are named
     expect(message).to.contain('unknown-tool');
-    expect(message).to.contain('azure-devops, servicenow, xray');
+    expect(message).to.contain('azure-devops, xray');
   });
 
   it('refuses an inactive provider and names the settings it needs', () => {
@@ -262,9 +261,6 @@ describe('testManagementProvider descriptors', () => {
     'CI_SFDX_HARDIS_AZURE_TOKEN',
     'SYSTEM_ACCESSTOKEN',
     'AZURE_DEVOPS_EXT_PAT',
-    'SERVICENOW_URL',
-    'SERVICENOW_USERNAME',
-    'SERVICENOW_PASSWORD',
     'XRAY_CLIENT_ID',
     'XRAY_CLIENT_SECRET',
     'XRAY_REGION',
@@ -294,7 +290,7 @@ describe('testManagementProvider descriptors', () => {
   });
 
   it('exposes one descriptor per provider, keyed for the --provider flag', () => {
-    expect(TEST_MANAGEMENT_PROVIDER_KEYS).to.deep.equal(['azure-devops', 'servicenow', 'xray']);
+    expect(TEST_MANAGEMENT_PROVIDER_KEYS).to.deep.equal(['azure-devops', 'xray']);
     // A label is display text: it must never be what the flag matches on.
     expect(allTestManagementProviders.every((descriptor) => descriptor.label.length > 0)).to.be.true;
   });
@@ -309,26 +305,25 @@ describe('testManagementProvider descriptors', () => {
     process.env.JIRA_EMAIL = 'bot@acme.test';
     process.env.JIRA_TOKEN = 'jira-token';
     const built = await buildTestManagementProviders({ jiraHost: 'acme.atlassian.net' });
-    expect(built.map((entry) => entry.key)).to.deep.equal(['azure-devops', 'servicenow', 'xray']);
+    expect(built.map((entry) => entry.key)).to.deep.equal(['azure-devops', 'xray']);
     expect(built[0].provider).to.be.instanceOf(AzureDevopsTestProvider);
-    expect(built[1].provider).to.be.instanceOf(ServiceNowTestProvider);
-    expect(built[2].provider).to.be.instanceOf(XrayTestProvider);
-    // No token for Azure DevOps, no ServiceNow variable, but a complete Xray setup through the config
-    expect(built.map((entry) => entry.provider.isActive)).to.deep.equal([false, false, true]);
-    expect(selectTestManagementProvider(built, 'xray')).to.equal(built[2].provider);
-    expect(() => selectTestManagementProvider(built, 'servicenow')).to.throw(/SERVICENOW_URL/);
+    expect(built[1].provider).to.be.instanceOf(XrayTestProvider);
+    // No token for Azure DevOps, but a complete Xray setup through the config
+    expect(built.map((entry) => entry.provider.isActive)).to.deep.equal([false, true]);
+    expect(selectTestManagementProvider(built, 'xray')).to.equal(built[1].provider);
+    expect(() => selectTestManagementProvider(built, 'azure-devops')).to.throw(/CI_SFDX_HARDIS_AZURE_TOKEN/);
   });
 
   it('describes the settings of each provider on its own line', () => {
     const text = describeRequiredSettings([
-      { key: 'servicenow', provider: new ServiceNowTestProvider() },
+      { key: 'azure-devops', provider: new AzureDevopsTestProvider() },
       { key: 'xray', provider: new XrayTestProvider() },
     ]);
     const lines = text.split('\n');
     expect(lines).to.have.lengthOf(2);
-    expect(lines[0]).to.equal('  - ServiceNow (servicenow): SERVICENOW_URL, SERVICENOW_USERNAME, SERVICENOW_PASSWORD');
+    expect(lines[0]).to.equal('  - Azure DevOps (azure-devops): SYSTEM_COLLECTIONURI (or an Azure DevOps git remote), SYSTEM_TEAMPROJECT (or an Azure DevOps git remote), CI_SFDX_HARDIS_AZURE_TOKEN (or SYSTEM_ACCESSTOKEN or AZURE_DEVOPS_EXT_PAT)');
     expect(lines[1]).to.contain('XRAY_CLIENT_ID');
-    expect(lines[1]).to.not.contain('SERVICENOW');
+    expect(lines[1]).to.not.contain('AZURE');
   });
 });
 
