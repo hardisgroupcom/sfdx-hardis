@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta): a Developer Edition org used as a development environment is now an allowed target, instead of being refused as production.
+- CI authentication with `SFDX_AUTH_URL_<ALIAS>` now sets the org as the default one, like JWT already did: the job authenticated and the next command failed with `NoDefaultEnvError`.
 - `sf commands` no longer crashes with `ReferenceError: DS_PROMETHEUS is not defined`: a command description containing `${...}` made oclif evaluate it while reading its own manifest.
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/): the documentation page now explains the feature with diagrams and screenshots of the DevOps Pipeline.
 - [Retrofit](https://sfdx-hardis.cloudity.com/salesforce-devops-retrofit/) has its own documentation page, split from [Hotfixes](https://sfdx-hardis.cloudity.com/salesforce-devops-hotfixes/), and both are illustrated with diagrams.

@@ -200,9 +200,14 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
       const authFile = path.join(authTmpDir, 'sfdxScratchAuth.txt');
       try {
         await fs.writeFile(authFile, authUrl, 'utf8');
+        // Same rule as the JWT and web login branches below: the org becomes the default
+        // unless the caller explicitly said not to. `setDefaultOrg` is only computed when
+        // the hook also checks the existing connection, so relying on it here left a CI job
+        // authenticated with no default org, and the very next command failed with
+        // "NoDefaultEnvError: No default environment found".
         const authCommand =
           `sf org login sfdx-url -f "${authFile}"` +
-          (isDevHub ? ` --set-default-dev-hub` : (setDefaultOrg ? ` --set-default` : '')) +
+          (isDevHub ? ` --set-default-dev-hub` : options.setDefault === false ? '' : ' --set-default') +
           (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
         const authUrlRes = await execSfdxJson(authCommand, this, { fail: true, output: false });
         uxLog("action", this, c.cyan(t('successfullyLoggedUsingSfdxauthurl')));
