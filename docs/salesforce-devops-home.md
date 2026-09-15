@@ -38,7 +38,7 @@ There are many ways to do DevOps with Salesforce. Each has its advantages and li
 
 | Role                 | How they use sfdx-hardis                                                                                                                                                   |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Admins**           | [Build Pull Requests](salesforce-devops-publish-user-story.md) from the **VS Code extension** with clicks. No command line.                                                       |
+| **Admins**           | [Build Pull Requests](salesforce-devops-publish-user-story.md) from the **VS Code extension** with clicks. No command line.                                                |
 | **Developers**       | Same as admins, plus the **Advanced mode** of the UI to see the Salesforce CLI commands that run under the hood.                                                           |
 | **Release Managers** | Configure the pipeline with the **Pipeline Settings** panel, track Pull Requests and deployments in the **DevOps Pipeline** view, generate release notes and DORA reports. |
 | **Project Managers** | Follow the application lifecycle through the native integrations with **Jira** and **Azure Boards**.                                                                       |

@@ -327,8 +327,8 @@ flowchart TD
     class DONE_OW sfSuccess
 ```
 
-| File                                | Behavior                                                                                                                                                                                                |
-|:------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| File                                | Behavior                                                                                                                                                                                                 |
+|:------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `manifest/package-no-overwrite.xml` | Items are deployed **only if they don't already exist** in the target org. Useful for ListViews that clients customize in production. See [Overwrite management](salesforce-devops-config-overwrite.md). |
 
 ---
@@ -551,17 +551,17 @@ The PR comment includes:
 
 | Property                                    | Type     | Description                                                                                                                                                    |
 |:--------------------------------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `useDeltaDeployment`                        | boolean  | Enable [delta deployments](salesforce-devops-config-delta-deployment.md) between minor and major branches                                                       |
-| `enableDeltaDeploymentBetweenMajorBranches` | boolean  | Force [delta](salesforce-devops-config-delta-deployment.md) even between major branches (not recommended)                                                       |
+| `useDeltaDeployment`                        | boolean  | Enable [delta deployments](salesforce-devops-config-delta-deployment.md) between minor and major branches                                                      |
+| `enableDeltaDeploymentBetweenMajorBranches` | boolean  | Force [delta](salesforce-devops-config-delta-deployment.md) even between major branches (not recommended)                                                      |
 | `useSmartDeploymentTests`                   | boolean  | Skip tests if only [non-impacting metadata types](#delta-processing) in delta                                                                                  |
 | `testLevel`                                 | string   | Default [test level](#test-level-test-class-resolution)                                                                                                        |
 | `enableDeploymentApexTestClasses`           | boolean  | Enable custom [test class list](#test-level-test-class-resolution) from config/PRs                                                                             |
 | `deploymentApexTestClasses`                 | string[] | Explicit list of [Apex test classes](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_testing.htm) to run                         |
-| `installedPackages`                         | object[] | [Packages to install](salesforce-devops-work-on-user-story-install-packages.md) during deployment                                                                     |
-| `installPackagesDuringCheckDeploy`          | boolean  | Install [packages](salesforce-devops-work-on-user-story-install-packages.md) even in check-only mode                                                                  |
-| `commandsPreDeploy`                         | object[] | [Commands to run before deployment](salesforce-devops-work-on-user-story-deployment-actions.md)                                                                       |
-| `commandsPostDeploy`                        | object[] | [Commands to run after deployment](salesforce-devops-work-on-user-story-deployment-actions.md)                                                                        |
-| `packageNoOverwritePath`                    | string   | Custom path to [package-no-overwrite.xml](salesforce-devops-config-overwrite.md)                                                                                |
+| `installedPackages`                         | object[] | [Packages to install](salesforce-devops-work-on-user-story-install-packages.md) during deployment                                                              |
+| `installPackagesDuringCheckDeploy`          | boolean  | Install [packages](salesforce-devops-work-on-user-story-install-packages.md) even in check-only mode                                                           |
+| `commandsPreDeploy`                         | object[] | [Commands to run before deployment](salesforce-devops-work-on-user-story-deployment-actions.md)                                                                |
+| `commandsPostDeploy`                        | object[] | [Commands to run after deployment](salesforce-devops-work-on-user-story-deployment-actions.md)                                                                 |
+| `packageNoOverwritePath`                    | string   | Custom path to [package-no-overwrite.xml](salesforce-devops-config-overwrite.md)                                                                               |
 | `testCoverageNotBlocking`                   | boolean  | Allow deployment even with insufficient [code coverage](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm) |
 | `skipCodeCoverage`                          | boolean  | Skip [code coverage](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm) reporting                          |
 
@@ -571,17 +571,17 @@ See also the [full environment variables reference](all-env-variables.md).
 
 | Variable                               | Description                                                                                     |
 |:---------------------------------------|:------------------------------------------------------------------------------------------------|
-| `USE_DELTA_DEPLOYMENT`                 | Enable [delta deployment](salesforce-devops-config-delta-deployment.md)                          |
-| `ALWAYS_ENABLE_DELTA_DEPLOYMENT`       | Force [delta](salesforce-devops-config-delta-deployment.md) even between major branches          |
-| `DISABLE_DELTA_DEPLOYMENT`             | Explicitly disable [delta](salesforce-devops-config-delta-deployment.md)                         |
-| `USE_DELTA_DEPLOYMENT_AFTER_MERGE`     | Allow [delta](salesforce-devops-config-delta-deployment.md) for merge jobs (not just checks)     |
+| `USE_DELTA_DEPLOYMENT`                 | Enable [delta deployment](salesforce-devops-config-delta-deployment.md)                         |
+| `ALWAYS_ENABLE_DELTA_DEPLOYMENT`       | Force [delta](salesforce-devops-config-delta-deployment.md) even between major branches         |
+| `DISABLE_DELTA_DEPLOYMENT`             | Explicitly disable [delta](salesforce-devops-config-delta-deployment.md)                        |
+| `USE_DELTA_DEPLOYMENT_AFTER_MERGE`     | Allow [delta](salesforce-devops-config-delta-deployment.md) for merge jobs (not just checks)    |
 | `USE_SMART_DEPLOYMENT_TESTS`           | Enable [smart test skipping](#delta-processing)                                                 |
 | `NOT_IMPACTING_METADATA_TYPES`         | Override the list of [non-impacting types](#delta-processing) (comma-separated)                 |
 | `SFDX_HARDIS_QUICK_DEPLOY`             | Set to `false` to disable [Quick Deploy](#quick-deploy)                                         |
 | `SFDX_HARDIS_DEPLOY_CHECK_ID`          | Force the [Quick Deploy](#quick-deploy) job id instead of reading it from Pull Request comments |
 | `SFDX_DEPLOY_WAIT_MINUTES`             | Deployment wait timeout (default: 120)                                                          |
-| `INSTALL_PACKAGES_DURING_CHECK_DEPLOY` | Install [packages](salesforce-devops-work-on-user-story-install-packages.md) in check-only mode        |
-| `SKIP_PACKAGE_DEPLOY_ONCE`             | Skip [package-no-overwrite.xml](salesforce-devops-config-overwrite.md) processing                |
+| `INSTALL_PACKAGES_DURING_CHECK_DEPLOY` | Install [packages](salesforce-devops-work-on-user-story-install-packages.md) in check-only mode |
+| `SKIP_PACKAGE_DEPLOY_ONCE`             | Skip [package-no-overwrite.xml](salesforce-devops-config-overwrite.md) processing               |
 | `FORCE_TARGET_BRANCH`                  | Override target branch for delta scope                                                          |
 | `SFDX_HARDIS_DEPLOY_BEFORE_MERGE`      | Use current PR instead of merged PR for notifications                                           |
 | `SFDX_DISABLE_FLOW_DIFF`               | Disable [Flow Visual Git Diff](hardis/project/generate/flow-git-diff.md) in PR comments         |
@@ -601,11 +601,11 @@ See also the [full environment variables reference](all-env-variables.md).
 
 ## Check Mode vs. Process Mode
 
-| Aspect                                                               | Check Mode (`--check`)                   | Process Mode (no flag)                                                                |
-|:---------------------------------------------------------------------|:-----------------------------------------|:--------------------------------------------------------------------------------------|
-| Deployment                                                           | Dry-run / validation                     | Actual deployment                                                                     |
-| [Quick Deploy](#quick-deploy)                                        | Stores deployment ID in PR               | Uses stored deployment ID                                                             |
-| [Delta](salesforce-devops-config-delta-deployment.md) scope           | PR source branch → target branch         | HEAD^ → HEAD                                                                          |
-| [Packages](salesforce-devops-work-on-user-story-install-packages.md)        | Warns about missing packages             | Installs packages                                                                     |
-| [Post commands](salesforce-devops-work-on-user-story-deployment-actions.md) | Skips `process-deployment-only` commands | Skips `check-deployment-only` commands                                                |
-| [Notifications](salesforce-devops-setup-integrations-home.md)         | Posts check results to PR                | Sends deployment success [notifications](salesforce-devops-setup-integrations-home.md) |
+| Aspect                                                                      | Check Mode (`--check`)                   | Process Mode (no flag)                                                                 |
+|:----------------------------------------------------------------------------|:-----------------------------------------|:---------------------------------------------------------------------------------------|
+| Deployment                                                                  | Dry-run / validation                     | Actual deployment                                                                      |
+| [Quick Deploy](#quick-deploy)                                               | Stores deployment ID in PR               | Uses stored deployment ID                                                              |
+| [Delta](salesforce-devops-config-delta-deployment.md) scope                 | PR source branch → target branch         | HEAD^ → HEAD                                                                           |
+| [Packages](salesforce-devops-work-on-user-story-install-packages.md)        | Warns about missing packages             | Installs packages                                                                      |
+| [Post commands](salesforce-devops-work-on-user-story-deployment-actions.md) | Skips `process-deployment-only` commands | Skips `check-deployment-only` commands                                                 |
+| [Notifications](salesforce-devops-setup-integrations-home.md)               | Posts check results to PR                | Sends deployment success [notifications](salesforce-devops-setup-integrations-home.md) |

@@ -127,8 +127,8 @@ When running on Jenkins, sfdx-hardis **automatically detects** the Jenkins envir
 
 This means you only need to set the **authentication token** for your git provider: all other CI variables are derived automatically.
 
-| Git provider | Required credential              | Documentation                                                                                                     |
-|--------------|----------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| Git provider | Required credential              | Documentation                                                                                                      |
+|--------------|----------------------------------|--------------------------------------------------------------------------------------------------------------------|
 | GitHub       | `CI_SFDX_HARDIS_GITHUB_TOKEN`    | [GitHub integration](salesforce-devops-setup-integration-github.md#jenkins)                                        |
 | GitLab       | `CI_SFDX_HARDIS_GITLAB_TOKEN`    | [GitLab integration](salesforce-devops-setup-integration-gitlab.md#using-gitlab-integration-from-jenkins)          |
 | Azure DevOps | `CI_SFDX_HARDIS_AZURE_TOKEN`     | [Azure integration](salesforce-devops-setup-integration-azure.md#using-azure-devops-integration-from-jenkins)      |

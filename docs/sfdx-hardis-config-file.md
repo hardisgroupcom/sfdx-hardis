@@ -47,13 +47,13 @@ See the [**complete list of environment variables**](all-env-variables.md).
 
 ## Topic-specific Configuration Guides
 
-| Topic                                             | Guide                                                                      |
-|---------------------------------------------------|----------------------------------------------------------------------------|
+| Topic                                             | Guide                                                                       |
+|---------------------------------------------------|-----------------------------------------------------------------------------|
 | CI/CD pipeline setup (new or existing project)    | [Setup a Salesforce CI/CD Project](salesforce-devops-setup-home.md)         |
 | CI/CD configuration overview                      | [Configure a CI/CD Project](salesforce-devops-config-home.md)               |
 | Automated metadata cleaning before merge          | [Configure Cleaning](salesforce-devops-config-cleaning.md)                  |
 | Delta deployments with sfdx-git-delta             | [Configure Delta Deployments](salesforce-devops-config-delta-deployment.md) |
 | Overwrite management (`package-no-overwrite.xml`) | [Configure Overwrite Management](salesforce-devops-config-overwrite.md)     |
-| Org monitoring & backup                           | [Monitor your Salesforce Org](salesforce-monitoring-home.md)               |
-| AI providers (Claude, OpenAI, Gemini, Ollama)     | [AI Assistant Setup](salesforce-ai-setup.md)                               |
+| Org monitoring & backup                           | [Monitor your Salesforce Org](salesforce-monitoring-home.md)                |
+| AI providers (Claude, OpenAI, Gemini, Ollama)     | [AI Assistant Setup](salesforce-ai-setup.md)                                |
 
