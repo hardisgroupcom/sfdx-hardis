@@ -3139,6 +3139,7 @@
   "retrievingSourcesFrom": "{{flags}} からソースを取得しています...",
   "retrievingStorageLimits": "組織からストレージ制限を取得しています...",
   "retrievingValuesOfCustomSetting": "カスタム設定の値を取得しています：{{settingName}}",
+  "retrofitOrgDeprecatedUseUserStory": "このコマンドは非推奨であり、使用してはいけません。主要な org を手作業で変更することはサポートされている作業方法ではありません。変更内容は User Story として復元してください。integration からブランチを作成し、Metadata Retriever で変更点を正確に取得したうえで、レビューしてマージしてください。詳細は https://sfdx-hardis.cloudity.com/salesforce-ci-cd-retrofit/ を参照してください。",
   "retryDeleteFlowVersionsAfterInterviews": "インタビュー削除後にフローバージョンの削除を再試行しています...",
   "retryDeployExternalClientApp": "削除しました。デプロイを再試行します",
   "retryingGitFetchWithUpdatedCredentials": "更新された認証情報でgit fetchを再試行しています。",

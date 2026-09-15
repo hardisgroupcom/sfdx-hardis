@@ -3142,6 +3142,7 @@
   "retrievingSourcesFrom": "Récupération des sources depuis {{flags}} ...",
   "retrievingStorageLimits": "Récupération des limites de stockage depuis l'org...",
   "retrievingValuesOfCustomSetting": "Récupération des valeurs du Custom Setting : {{settingName}}",
+  "retrofitOrgDeprecatedUseUserStory": "Cette commande est obsolète et ne doit plus être utilisée. Modifier une org majeure à la main n'est pas une façon de travailler supportée. Récupérez la modification sous forme de User Story : démarrez une branch à partir de integration, récupérez exactement ce qui a changé avec le Metadata Retriever, puis relisez-la et mergez-la. Voir https://sfdx-hardis.cloudity.com/salesforce-ci-cd-retrofit/",
   "retryDeleteFlowVersionsAfterInterviews": "Nouvelle tentative de suppression des versions de Flux après suppression des interviews...",
   "retryDeployExternalClientApp": "Je l'ai supprimée, relancer le déploiement",
   "retryingGitFetchWithUpdatedCredentials": "Nouvelle tentative de git fetch avec les identifiants mis à jour.",

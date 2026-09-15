@@ -18,7 +18,8 @@ DevOps practices work best when one or two team members take the role of **relea
 - **Provide orgs**: create and refresh the [source-tracked dev sandboxes](salesforce-ci-cd-create-new-task.md#source-tracked-sandbox) that contributors work in (one per contributor, or shared by several of them), and the sandboxes of the major branches.
 - [**Review and merge Pull Requests**](salesforce-ci-cd-validate-merge-request.md): check the validation jobs, solve conflicts, merge into the major branches.
 - [**Deploy to major orgs**](salesforce-ci-cd-deploy-major-branches.md): promote the changes from `integration` to `uat`, `preprod` and production with Pull Requests between major branches.
-- [**Handle hotfixes and retrofits**](salesforce-ci-cd-hotfixes.md): run the RUN stream in parallel with the BUILD stream without regressions.
+- [**Handle hotfixes**](salesforce-ci-cd-hotfixes.md): ship an urgent fix to production through the RUN stream.
+- [**Retrofit**](salesforce-ci-cd-retrofit.md): bring what reached production back into the BUILD branches, so the next version does not undo it.
 - [**Assemble a promotion branch** (experimental)](salesforce-ci-cd-promotion-branches.md): when only some of the User Stories of `uat` are approved, ship them alone without losing their deployment actions.
 - [**Generate Release Notes**](hardis/doc/salesforce-ci-cd-release-notes.md): document the tickets, Pull Requests, metadata changes, deployment actions and contributors of a release.
 - [**Follow DORA Metrics**](hardis/doc/salesforce-ci-cd-dora-report.md): measure deployment frequency, lead time, change failure rate and time to restore.

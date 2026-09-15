@@ -3146,6 +3146,7 @@
   "retrievingSourcesFrom": "Retrieving sources from {{flags}} ...",
   "retrievingStorageLimits": "Retrieving storage limits from org...",
   "retrievingValuesOfCustomSetting": "Retrieving values of Custom Setting: {{settingName}}",
+  "retrofitOrgDeprecatedUseUserStory": "This command is deprecated and must not be used. Changing a major org by hand is not a supported way of working. Recover the change as a User Story: start a branch under integration, retrieve exactly what changed with the Metadata Retriever, then review and merge it. See https://sfdx-hardis.cloudity.com/salesforce-ci-cd-retrofit/",
   "retryDeleteFlowVersionsAfterInterviews": "Retrying deletion of Flow versions after deleting interviews...",
   "retryDeployExternalClientApp": "I deleted it, retry the deployment",
   "retryingGitFetchWithUpdatedCredentials": "Retrying git fetch with updated credentials.",

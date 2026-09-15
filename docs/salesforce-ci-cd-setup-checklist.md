@@ -46,12 +46,14 @@ Everything in this phase must be in place before you open the initialization Pul
 _See [Create the Git repository](salesforce-ci-cd-setup-git.md)_
 
 - [ ] The repository exists and contains the sfdx-hardis project sources.
-- [ ] One major branch exists for each major Salesforce org (for example `main`, `preprod`, `uat`, `integration`).
+- [ ] The [branch pattern](salesforce-ci-cd-setup-git.md#create-the-major-branches) is decided and written down: **pattern A** (BUILD and hotfixes) or **pattern B** (BUILD, RUN and hotfixes, with a `uat_run` branch).
+- [ ] One major branch exists for each major Salesforce org (for example `main`, `preprod`, `uat`, `integration`), plus `uat_run` on pattern B.
 - [ ] The lowest major branch (usually `integration`) is set as **default branch**.
 - [ ] All major branches are **protected**: they can only be updated through Pull Requests.
 - [ ] **Allowed to merge** is restricted to release managers / Maintainers on all major branches except the lowest one.
 - [ ] Source branches are deleted after merge, and squash is enforced for User Story branches.
 - [ ] The `cicd` initialization branch has been created, under the lowest major branch (usually `integration`).
+- [ ] Contributors know where an urgent fix goes: a [hotfix](salesforce-ci-cd-hotfixes.md) branch merges into `preprod`, never into a major org by hand, and it is [retrofitted](salesforce-ci-cd-retrofit.md) into the BUILD right after.
 
 #### Salesforce orgs
 
@@ -315,7 +317,7 @@ Easy to forget, and it changes the daily experience of the team.
 - [ ] Every contributor installed the required tooling and the VS Code SFDX Hardis extension. _See [Installation guide](salesforce-ci-cd-use-install.md)_
 - [ ] Every contributor cloned the repository and can create a User Story branch. _See [Clone repository](salesforce-ci-cd-clone-repository.md)_
 - [ ] The team knows the [contribution process](salesforce-ci-cd-use-home.md): create a User Story, work on it, publish it, handle Pull Request results.
-- [ ] Release managers know how to [review and merge Pull Requests](salesforce-ci-cd-validate-merge-request.md) and how to handle [hotfixes](salesforce-ci-cd-hotfixes.md).
+- [ ] Release managers know how to [review and merge Pull Requests](salesforce-ci-cd-validate-merge-request.md) and how to handle [hotfixes](salesforce-ci-cd-hotfixes.md) and their [retrofit](salesforce-ci-cd-retrofit.md).
 - [ ] The team knows that **custom Profiles deployed for the first time must be created manually** in the target org, cloned from "Minimal Access".
 - [ ] Someone owns the pipeline: they get the notifications and they know where the job logs and artifacts are.
 

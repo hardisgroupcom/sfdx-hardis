@@ -48,3 +48,16 @@ Never do this, even when a command has many changes:
 - <change>.
 - <change>.
 ```
+
+## Keep the Pull Request description in sync
+
+A CHANGELOG entry is rarely the only thing a change owes its readers. Whenever you **add work to a Pull Request that is already open**, update its description in the same pass:
+
+- The description must describe **what the PR contains now**, not what it contained when it was opened. A reviewer reads the description first, and a stale one sends them looking for things that moved or are no longer there.
+- Do it as part of finishing the work, not as a follow-up: a PR whose scope grew silently is the one that gets reviewed against the wrong expectations.
+- Mention what changed and, when a decision was made during the work (a default that flipped, an option that was dropped, a finding that turned out to be wrong), say so. Those are what a reviewer needs and cannot see from the diff.
+- **Always edit the description with the REST API, never `gh pr edit`:**
+  `gh api -X PATCH repos/<owner>/<repo>/pulls/<number> -F body=@<file.md>`
+  `gh pr edit` fails with a `projectCards` GraphQL error on repositories that still have Projects (classic), and it fails *silently enough* to look like it worked: it prints the error but leaves the description untouched. Write the body to a file and PATCH it.
+
+The same applies to the PR title when the scope no longer matches it.

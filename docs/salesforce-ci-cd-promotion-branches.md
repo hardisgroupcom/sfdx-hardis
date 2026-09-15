@@ -46,7 +46,7 @@ flowchart TB
     style KO2 fill:#fef1ee,stroke:#ea001e
 ```
 
-For urgent fixes that were never in `uat`, use [hotfixes and retrofit](salesforce-ci-cd-hotfixes.md) instead.
+For urgent fixes that were never in `uat`, use [hotfixes](salesforce-ci-cd-hotfixes.md) instead.
 
 ___
 
@@ -384,7 +384,7 @@ ___
 
 Two things to do, both borrowed from the [hotfix](salesforce-ci-cd-hotfixes.md) process:
 
-- **Retrofit right away.** Once `preprod` (or production) contains the promotion branch, retrofit it into `integration` with a `retrofit/` branch as for a [hotfix](salesforce-ci-cd-hotfixes.md#3-retrofit-in-the-build-stream). The cherry-picked commits then meet their originals at the next `integration -> uat` promotion instead of at the next go-live.
+- **Retrofit right away.** Once `preprod` (or production) contains the promotion branch, [retrofit](salesforce-ci-cd-retrofit.md) it into `integration` with a `retrofit/` branch, exactly as after a hotfix. The cherry-picked commits then meet their originals at the next `integration -> uat` promotion instead of at the next go-live.
 - **Freeze `uat -> preprod` while a promotion branch sits in `preprod`** and has not reached production yet, otherwise unapproved stories ride along. This is the RUN/BUILD rule of the hotfix process.
 
 In the DevOps Pipeline, a promoted story leaves the window of the branch it came from and is listed in the branch it reached, so **a Pull Request number appears in a single place in the diagram**, both in the counter on the node and in the list opened by clicking it.
