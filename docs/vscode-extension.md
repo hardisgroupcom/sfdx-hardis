@@ -16,12 +16,12 @@ These workbenches are just visual front-ends for features already documented els
 
 | Workbench / Panel | What it drives | Underlying docs |
 |---|---|---|
-| DevOps Pipeline view | Visualize branches, environments and deployments | [Salesforce CI/CD](salesforce-ci-cd-home.md) |
-| User Story workflow | New User Story -> retrieve -> save and publish, without a terminal | [Create](salesforce-ci-cd-create-new-task.md) / [Work](salesforce-ci-cd-work-on-task.md) / [Publish](salesforce-ci-cd-publish-task.md) |
+| DevOps Pipeline view | Visualize branches, environments and deployments | [Salesforce CI/CD](salesforce-devops-home.md) |
+| User Story workflow | New User Story -> retrieve -> save and publish, without a terminal | [Create](salesforce-devops-create-new-user-story.md) / [Work](salesforce-devops-work-on-user-story.md) / [Publish](salesforce-devops-publish-user-story.md) |
 | Documentation Workbench | Generate and publish AI-enriched project docs | [Generate Documentation](salesforce-project-documentation.md) |
 | Monitoring Config Workbench | Edit triggers, frequency, channels per check | [Monitoring config](salesforce-monitoring-config-home.md) |
 | Pipeline Settings | Configure deployment actions, auth, branches | [`.sfdx-hardis.yml`](sfdx-hardis-config-file.md) |
-| Installed Packages Manager | Install/update packages and pin them in CI/CD | [Install packages](salesforce-ci-cd-work-on-task-install-packages.md) |
+| Installed Packages Manager | Install/update packages and pin them in CI/CD | [Install packages](salesforce-devops-work-on-user-story-install-packages.md) |
 | Flow Visual Git Diff | Side-by-side diagram of two Flow versions | [Flow Visual Git Diff](salesforce-deployment-agent-flow-visual-git-diff.md) |
 | AI Assistant | Explain deployment errors, suggest fixes | [AI setup](salesforce-ai-setup.md) / [Prompts](salesforce-ai-prompts.md) |
 

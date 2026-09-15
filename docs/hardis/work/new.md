@@ -57,7 +57,7 @@ In `--agent` mode, the command intentionally skips:
 
 In `--agent` mode, opening org in browser is optional via `--open-org`.
 
-Advanced instructions are available in the [Create New User Story documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/).
+Advanced instructions are available in the [Create New User Story documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-create-new-user-story/).
 
 <details markdown="1">
 <summary>Technical explanations</summary>

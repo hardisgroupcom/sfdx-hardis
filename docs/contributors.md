@@ -33,13 +33,13 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Quentin Tiercelin](https://github.com/TiercelinQ), for the commands to [detect unsecure permissions](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions/) and [generate a data dictionary](https://sfdx-hardis.cloudity.com/hardis/doc/data-dictionary/)
 - [Pranay Jaiswal](https://github.com/pranayjswl007), for smarter [audit trail monitoring](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/) with allowed actions per user
 - [Maciej Ptak](https://github.com/0ptaq0), for fixing Flow git diff on projects with custom package directories
-- [Eric Mulder](https://github.com/ericmulder-welisa), for revising the [sandbox setup and best practices documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-activate-org/)
+- [Eric Mulder](https://github.com/ericmulder-welisa), for revising the [sandbox setup and best practices documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-activate-org/)
 - [Maxime Guenego](https://github.com/maximeg44), for the metadata lint commands: [unused metadata](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/), [inactive metadata](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/) and [missing descriptions](https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/)
 - [Meric Asaner](https://github.com/masaner), for the [unused users detection](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/) and bulkified Flow deletions
 - [Brahim Laissaoui](https://github.com/laissaouibrahim), for major [files export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) improvements (batched processing, Attachments support)
 - [Dimitri Monge](https://github.com/dimitrimonge), for the [user freeze/unfreeze](https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/) commands and the Jenkins and GitHub Actions pipeline templates
 - [zzyviolette](https://github.com/zzyviolette), for restoring Connected Apps after a [sandbox refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/)
-- [Yan Imensar](https://github.com/yan-imensar), for the [MS Teams notifications integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-ms-teams/)
+- [Yan Imensar](https://github.com/yan-imensar), for the [MS Teams notifications integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-ms-teams/)
 - [Maksym Petrov](https://github.com/maksym-petrov-ct), for Apex Trigger support in [project documentation generation](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) and CI runner cost savings
 - [Manoel Calixto](https://github.com/manoelcalixto), for robustness fixes on sources cleaning and Flow documentation
 - [Piotr](https://github.com/piotrekkr), for the [files export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) filename format options

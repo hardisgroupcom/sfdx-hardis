@@ -210,7 +210,7 @@ export async function assertPromotionBranchesEnabled(commandThis: any): Promise<
   const config = await getConfig('branch');
   const promotionConfig = getPromotionBranchConfig(config);
   if (!promotionConfig.enabled) {
-    throw new SfError(t('promotionCreateFeatureDisabled', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/` }));
+    throw new SfError(t('promotionCreateFeatureDisabled', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/` }));
   }
   // The steps a promotion may run on are part of enabling the feature: without them, nobody
   // decided what a release manager is allowed to promote, and the commands will not decide for them
@@ -219,7 +219,7 @@ export async function assertPromotionBranchesEnabled(commandThis: any): Promise<
     throw new SfError(t('promotionCreateAllowedStepsInvalid'));
   }
   if (promotionConfig.allowedSteps.length === 0) {
-    throw new SfError(t('promotionCreateAllowedStepsRequired', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/` }));
+    throw new SfError(t('promotionCreateAllowedStepsRequired', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/` }));
   }
   uxLog('log', commandThis, c.grey(t('promotionCreateAllowedStepsInfo', { steps: formatPromotionSteps(promotionConfig.allowedSteps) })));
   return promotionConfig;
@@ -1250,7 +1250,7 @@ export function assertPromotionBranchIsNotDeployed(
   uxLog('error', commandThis, c.red(t('promotionBranchDeploymentForbiddenShort', { branch: currentBranch })));
   throw new SfError(t('promotionBranchDeploymentForbidden', {
     branch: currentBranch,
-    docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/`,
+    docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/`,
   }));
 }
 

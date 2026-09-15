@@ -57,7 +57,7 @@ Key features include:
 
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
 
-- **Developer sandbox metadata:** The metadata of an existing sandbox is not updated by this command. To bring into it what the team merged in the target branch, use [hardis:work:backpromote](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-backpromote/) (the Backpromote panel in VS Code).
+- **Developer sandbox metadata:** The metadata of an existing sandbox is not updated by this command. To bring into it what the team merged in the target branch, use [hardis:work:backpromote](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-backpromote/) (the Backpromote panel in VS Code).
 
 - **Agent Mode (\`--agent\`):** Enables a fully non-interactive execution path for AI agents and automation. In this mode, all required decisions must be provided as flags and are validated at command start with explicit error messages listing missing inputs and available options.
 
@@ -94,7 +94,7 @@ In \`--agent\` mode, the command intentionally skips:
 
 In \`--agent\` mode, opening org in browser is optional via \`--open-org\`.
 
-Advanced instructions are available in the [Create New User Story documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-create-new-task/).
+Advanced instructions are available in the [Create New User Story documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-create-new-user-story/).
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -773,7 +773,7 @@ The command's logic orchestrates various underlying processes:
       uxLog(
         "action",
         this,
-        c.cyan(t('workNewBackpromoteHint', { branch: this.targetBranch, docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-backpromote/` }))
+        c.cyan(t('workNewBackpromoteHint', { branch: this.targetBranch, docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-backpromote/` }))
       );
     }
     // Open of if not already open

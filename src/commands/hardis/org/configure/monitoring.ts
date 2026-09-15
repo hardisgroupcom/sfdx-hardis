@@ -279,11 +279,11 @@ The command's technical implementation involves a series of Git operations, file
         t('configureNotificationsAndGrafana')
       )
     );
-    const slackIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-slack/`;
+    const slackIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-slack/`;
     WebSocketClient.sendReportFileMessage(slackIntegrationUrl, t('slackIntegrationLabel'), "docUrl");
-    const teamsIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-ms-teams/`;
+    const teamsIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-ms-teams/`;
     WebSocketClient.sendReportFileMessage(teamsIntegrationUrl, t('teamsIntegrationLabel'), "docUrl");
-    const grafanaIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-api/`;
+    const grafanaIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-api/`;
     WebSocketClient.sendReportFileMessage(grafanaIntegrationUrl, t('grafanaIntegrationLabel'), "docUrl");
     uxLog("log", this, t('slackIntegrationDoc') + ' ' + slackIntegrationUrl);
     uxLog("log", this, t('teamsIntegrationDoc') + ' ' + teamsIntegrationUrl);

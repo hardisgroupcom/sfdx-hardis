@@ -1,6 +1,6 @@
 ---
 title: Host your AI-enhanced Salesforce Project Documentation on Salesforce
-description: Learn how to host your project doc pages on Salesforce
+description: With sfdx-hardis, learn how to host your project doc pages on Salesforce
 ---
 <!-- markdownlint-disable MD013 -->
 

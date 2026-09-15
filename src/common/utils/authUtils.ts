@@ -306,7 +306,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
 
       if (isCI) {
         console.error(
-          c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
+          c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`)
         );
         throw new SfError(
           `In CI context, you may define:
@@ -459,7 +459,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
       )
     );
     console.warn(
-      c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
+      c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`)
     );
     return process.env.SFDX_CLIENT_ID;
   }
@@ -477,7 +477,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
       )
     );
     console.warn(c.yellow(`If you configured ${sfdxClientIdVarNameUpper} but still see this message, you may have forgotten to reference the variable name in your GitHub or Azure YML pipeline.`));
-    console.warn(c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
+    console.warn(c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`));
   }
   return null;
 }
@@ -504,7 +504,7 @@ async function getKey(orgAlias: string, config: any) {
       )
     );
     console.warn(
-      c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
+      c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`)
     );
     return process.env.SFDX_CLIENT_KEY;
   }
@@ -522,7 +522,7 @@ async function getKey(orgAlias: string, config: any) {
       )
     );
     console.warn(c.yellow(`If you configured ${sfdxClientKeyVarNameUpper} but still see this message, you may have forgotten to reference the variable name in your GitHub or Azure YML pipeline.`));
-    console.warn(c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
+    console.warn(c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`));
   }
   return null;
 }

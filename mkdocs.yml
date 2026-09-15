@@ -92,66 +92,66 @@ nav:
   - VS Code Extension: vscode-extension.md
   - Configuration: sfdx-hardis-config-file.md
   - Salesforce CI/CD:
-      - Overview: salesforce-ci-cd-home.md
+      - Overview: salesforce-devops-home.md
       - Contributor Guide:
-          - Overview: salesforce-ci-cd-use-home.md
+          - Overview: salesforce-devops-use-home.md
           - Get ready:
-              - Install the tools: salesforce-ci-cd-use-install.md
-              - Create a Git access token: salesforce-ci-cd-git-tokens.md
-              - Clone the repository: salesforce-ci-cd-clone-repository.md
-          - 1. Start a User Story: salesforce-ci-cd-create-new-task.md
+              - Install the tools: salesforce-devops-use-install.md
+              - Create a Git access token: salesforce-devops-git-tokens.md
+              - Clone the repository: salesforce-devops-clone-repository.md
+          - 1. Start a User Story: salesforce-devops-create-new-user-story.md
           - 2. Work in your org:
-              - Overview: salesforce-ci-cd-work-on-task.md
-              - Open your org: salesforce-ci-cd-work-on-task-open-org.md
-              - Configuration guidelines: salesforce-ci-cd-work-on-task-configuration.md
-              - Profiles and Permission Sets: salesforce-ci-cd-work-on-task-profiles.md
-              - Development guidelines: salesforce-ci-cd-work-on-task-development.md
-              - Install packages: salesforce-ci-cd-work-on-task-install-packages.md
-              - Deployment actions: salesforce-ci-cd-work-on-task-deployment-actions.md
-              - Backpromote (Beta): salesforce-ci-cd-backpromote.md
-          - 3. Publish your User Story: salesforce-ci-cd-publish-task.md
+              - Overview: salesforce-devops-work-on-user-story.md
+              - Open your org: salesforce-devops-work-on-user-story-open-org.md
+              - Configuration guidelines: salesforce-devops-work-on-user-story-configuration.md
+              - Profiles and Permission Sets: salesforce-devops-work-on-user-story-profiles.md
+              - Development guidelines: salesforce-devops-work-on-user-story-development.md
+              - Install packages: salesforce-devops-work-on-user-story-install-packages.md
+              - Deployment actions: salesforce-devops-work-on-user-story-deployment-actions.md
+              - Backpromote (Beta): salesforce-devops-backpromote.md
+          - 3. Publish your User Story: salesforce-devops-publish-user-story.md
           - 4. Create the Pull Request:
-              - On GitHub: salesforce-ci-cd-pull-request-github.md
-              - On GitLab: salesforce-ci-cd-merge-request-gitlab.md
-              - On Azure DevOps: salesforce-ci-cd-pull-request-azure.md
-              - On Bitbucket: salesforce-ci-cd-pull-request-bitbucket.md
+              - On GitHub: salesforce-devops-pull-request-github.md
+              - On GitLab: salesforce-devops-merge-request-gitlab.md
+              - On Azure DevOps: salesforce-devops-pull-request-azure.md
+              - On Bitbucket: salesforce-devops-pull-request-bitbucket.md
           - 5. Check the Pull Request results:
-              - Overview: salesforce-ci-cd-handle-merge-request-results.md
-              - Solve deployment errors: salesforce-ci-cd-solve-deployment-errors.md
-              - Solve MegaLinter errors: salesforce-ci-cd-solve-megalinter-errors.md
-          - Work with AI coding agents: salesforce-ci-cd-agent-skills.md
+              - Overview: salesforce-devops-handle-merge-request-results.md
+              - Solve deployment errors: salesforce-devops-solve-deployment-errors.md
+              - Solve MegaLinter errors: salesforce-devops-solve-megalinter-errors.md
+          - Work with AI coding agents: salesforce-devops-agent-skills.md
       - Release Manager Guide:
-          - Overview: salesforce-ci-cd-release-home.md
-          - Review and merge Pull Requests: salesforce-ci-cd-validate-merge-request.md
-          - Deploy to major orgs: salesforce-ci-cd-deploy-major-branches.md
-          - Hotfixes (RUN): salesforce-ci-cd-hotfixes.md
-          - Retrofit: salesforce-ci-cd-retrofit.md
-          - Promotion branches (Experimental): salesforce-ci-cd-promotion-branches.md
-          - Release Notes: hardis/doc/salesforce-ci-cd-release-notes.md
-          - DORA Metrics: hardis/doc/salesforce-ci-cd-dora-report.md
-          - Smart Deploy internals: salesforce-ci-cd-smart-deployment.md
+          - Overview: salesforce-devops-release-home.md
+          - Review and merge Pull Requests: salesforce-devops-validate-merge-request.md
+          - Deploy to major orgs: salesforce-devops-deploy-major-branches.md
+          - Hotfixes (RUN): salesforce-devops-hotfixes.md
+          - Retrofit: salesforce-devops-retrofit.md
+          - Promotion branches (Experimental): salesforce-devops-promotion-branches.md
+          - Release Notes: hardis/doc/salesforce-devops-release-notes.md
+          - DORA Metrics: hardis/doc/salesforce-devops-dora-report.md
+          - Smart Deploy internals: salesforce-devops-smart-deployment.md
           - Project configuration:
-              - Overview: salesforce-ci-cd-config-home.md
-              - Overwrite management: salesforce-ci-cd-config-overwrite.md
-              - Delta deployments: salesforce-ci-cd-config-delta-deployment.md
-              - Automated cleaning: salesforce-ci-cd-config-cleaning.md
-              - Source retrieve issues: salesforce-ci-cd-retrieve.md
-              - Repository clean up: salesforce-ci-cd-manual-repo-clean.md
+              - Overview: salesforce-devops-config-home.md
+              - Overwrite management: salesforce-devops-config-overwrite.md
+              - Delta deployments: salesforce-devops-config-delta-deployment.md
+              - Automated cleaning: salesforce-devops-config-cleaning.md
+              - Source retrieve issues: salesforce-devops-retrieve.md
+              - Repository clean up: salesforce-devops-manual-repo-clean.md
               - Environment variables: all-env-variables.md
           - Special cases:
-              - Managed packages (ISV): salesforce-ci-cd-packaging.md
-              - Conga Composer: salesforce-ci-cd-conga.md
-              - Salesforce CPQ: salesforce-ci-cd-cpq.md
+              - Managed packages (ISV): salesforce-devops-packaging.md
+              - Conga Composer: salesforce-devops-conga.md
+              - Salesforce CPQ: salesforce-devops-cpq.md
       - Setup Guide:
-          - Overview: salesforce-ci-cd-setup-home.md
-          - 1. Create the Git repository: salesforce-ci-cd-setup-git.md
-          - 2. Prepare the Salesforce orgs: salesforce-ci-cd-setup-activate-org.md
-          - 3. Initialize the SFDX project: salesforce-ci-cd-setup-init-project.md
-          - 4. Configure CI authentication: salesforce-ci-cd-setup-auth.md
-          - 5. Retrieve an existing org (optional): salesforce-ci-cd-setup-existing-org.md
-          - 6. First Pull Request: salesforce-ci-cd-setup-merge-request.md
-          - Publish job artifacts: salesforce-ci-cd-setup-publish-artifacts.md
-          - Setup checklist: salesforce-ci-cd-setup-checklist.md
+          - Overview: salesforce-devops-setup-home.md
+          - 1. Create the Git repository: salesforce-devops-setup-git.md
+          - 2. Prepare the Salesforce orgs: salesforce-devops-setup-activate-org.md
+          - 3. Initialize the SFDX project: salesforce-devops-setup-init-project.md
+          - 4. Configure CI authentication: salesforce-devops-setup-auth.md
+          - 5. Retrieve an existing org (optional): salesforce-devops-setup-existing-org.md
+          - 6. First Pull Request: salesforce-devops-setup-merge-request.md
+          - Publish job artifacts: salesforce-devops-setup-publish-artifacts.md
+          - Setup checklist: salesforce-devops-setup-checklist.md
   - Org Monitoring:
       - Overview: salesforce-monitoring-home.md
       - List of checks:
@@ -192,9 +192,9 @@ nav:
           - Azure: salesforce-monitoring-config-azure.md
           - Bitbucket: salesforce-monitoring-config-bitbucket.md
           - Jenkins: salesforce-monitoring-config-jenkins.md
-          - Slack: salesforce-ci-cd-setup-integration-slack.md
-          - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
-          - Google Chat: salesforce-ci-cd-setup-integration-google-chat.md
+          - Slack: salesforce-devops-setup-integration-slack.md
+          - Microsoft Teams: salesforce-devops-setup-integration-ms-teams.md
+          - Google Chat: salesforce-devops-setup-integration-google-chat.md
       - Sandbox Refresh: salesforce-sandbox-refresh.md
   - Generate Documentation:
       - Overview: salesforce-project-documentation.md
@@ -207,8 +207,8 @@ nav:
       - Publish to Confluence: salesforce-project-doc-confluence.md
   - AI & Agents:
       - Overview: salesforce-agentic-automation.md
-      - Using Coding Agents (Skills): salesforce-ci-cd-agent-skills.md
-      - Data Workspaces (SFDMU): salesforce-ci-cd-agent-data-workspaces.md
+      - Using Coding Agents (Skills): salesforce-devops-agent-skills.md
+      - Data Workspaces (SFDMU): salesforce-devops-agent-data-workspaces.md
       - Deployment Agent:
           - Overview: salesforce-deployment-agent-home.md
           - Agent deployment Hints: salesforce-deployment-agent-hints.md
@@ -249,32 +249,32 @@ nav:
               - Formatting Requirements: prompt-templates/VARIABLE_FORMATTING_REQUIREMENTS.md
               - Output Format Markdown Doc: prompt-templates/VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC.md
   - Integrations:
-      - Overview: salesforce-ci-cd-setup-integrations-home.md
+      - Overview: salesforce-devops-setup-integrations-home.md
       - Git Platforms:
-          - GitHub: salesforce-ci-cd-setup-integration-github.md
-          - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
-          - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
-          - BitBucket: salesforce-ci-cd-setup-integration-bitbucket.md
-          - Jenkins: salesforce-ci-cd-setup-integration-jenkins.md
+          - GitHub: salesforce-devops-setup-integration-github.md
+          - Gitlab: salesforce-devops-setup-integration-gitlab.md
+          - Azure DevOps: salesforce-devops-setup-integration-azure.md
+          - BitBucket: salesforce-devops-setup-integration-bitbucket.md
+          - Jenkins: salesforce-devops-setup-integration-jenkins.md
       - Authentication (CI/CD):
-          - GitHub Actions: salesforce-ci-cd-setup-auth-github.md
-          - GitLab CI: salesforce-ci-cd-setup-auth-gitlab.md
-          - Azure Pipelines: salesforce-ci-cd-setup-auth-azure.md
-          - Bitbucket Pipelines: salesforce-ci-cd-setup-auth-bitbucket.md
-          - Jenkins: salesforce-ci-cd-setup-auth-jenkins.md
+          - GitHub Actions: salesforce-devops-setup-auth-github.md
+          - GitLab CI: salesforce-devops-setup-auth-gitlab.md
+          - Azure Pipelines: salesforce-devops-setup-auth-azure.md
+          - Bitbucket Pipelines: salesforce-devops-setup-auth-bitbucket.md
+          - Jenkins: salesforce-devops-setup-auth-jenkins.md
       - Notifications:
-          - Slack: salesforce-ci-cd-setup-integration-slack.md
-          - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
-          - Google Chat: salesforce-ci-cd-setup-integration-google-chat.md
-          - Email: salesforce-ci-cd-setup-integration-email.md
+          - Slack: salesforce-devops-setup-integration-slack.md
+          - Microsoft Teams: salesforce-devops-setup-integration-ms-teams.md
+          - Google Chat: salesforce-devops-setup-integration-google-chat.md
+          - Email: salesforce-devops-setup-integration-email.md
       - Ticketing:
-          - Jira: salesforce-ci-cd-setup-integration-jira.md
-          - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
-          - ServiceNow: salesforce-ci-cd-setup-integration-servicenow.md
-          - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
+          - Jira: salesforce-devops-setup-integration-jira.md
+          - Azure Boards: salesforce-devops-setup-integration-azure-boards.md
+          - ServiceNow: salesforce-devops-setup-integration-servicenow.md
+          - Generic Ticketing: salesforce-devops-setup-integration-generic-ticketing.md
       - Monitoring Backends:
           - Grafana Dashboards: salesforce-monitoring-grafana-v2.md
-          - Grafana Setup: salesforce-ci-cd-setup-integration-api.md
+          - Grafana Setup: salesforce-devops-setup-integration-api.md
           - Grafana Dashboards v1 (legacy): salesforce-monitoring-grafana-v1-legacy.md
           - Vector.dev: salesforce-monitoring-config-vector.md
   - Commands Reference:
@@ -458,7 +458,7 @@ nav:
   - Community & Resources:
       - Community Events: events.md
       - Articles & Videos: articles-videos.md
-      - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
+      - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-devops-with-sfdx-hardis-q-a-1f412db34476
       - Meet the team: contributors.md
       - Contributing: contributing.md
   - Security & Privacy: salesforce-security-privacy.md

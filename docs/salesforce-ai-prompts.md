@@ -1,6 +1,6 @@
 ---
 title: Sfdx-hardis prompt templates
-description: Learn how to use and override prompt templates to generate documentation or solve Salesforce CLI deployment errors
+description: With sfdx-hardis, learn how to use and override prompt templates to generate documentation or solve Salesforce CLI deployment errors
 ---
 <!-- markdownlint-disable MD013 -->
 

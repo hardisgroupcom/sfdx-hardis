@@ -343,7 +343,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
   // LEGACY: free-text "MANUAL ACTION:" markers typed in commit messages / Pull Request bodies.
   // Superseded by deployment actions of type "manual" (commandsPreDeploy / commandsPostDeploy),
   // which carry an id, a phase, instructions and a tracked per-org status.
-  // See https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/
+  // See https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/
   // Kept for projects that still rely on it; notifications nudge users towards deployment actions.
   const manualActions: any[] = [];
   const tickets: Ticket[] = [];
