@@ -1,14 +1,15 @@
 ---
-title: Hotfixes and retrofit with Salesforce CI/CD
-description: Learn how to deploy a hotfix to production with sfdx-hardis using the BUILD and RUN streams, then retrofit it into the BUILD branches
+title: Hotfixes with Salesforce CI/CD
+description: Ship an urgent fix to production with sfdx-hardis through the RUN stream, without blocking the version being validated in the BUILD stream
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Hotfixes and retrofit
+## Hotfixes
+
+Production is broken, or a fix cannot wait for the next version. A **hotfix** takes it straight to production through the RUN stream, while the BUILD stream keeps preparing the next version.
 
 - [BUILD and RUN](#build-and-run)
-  - [The BUILD](#the-build)
-  - [The RUN](#the-run)
+- [Is a hotfix the right move?](#is-a-hotfix-the-right-move)
 - [Hotfix process](#hotfix-process)
   - [1. Implement the hotfix](#1-implement-the-hotfix)
   - [2. Deploy in the RUN stream](#2-deploy-in-the-run-stream)
@@ -41,24 +42,64 @@ The daily maintenance of the production org must be very reactive: the RUN strea
 
 As you usually cannot wait for the next minor or major version to reach production, you need a way to quickly deploy hotfixes. That stream is the RUN, and it only involves the **preprod** and **main** branches.
 
-To summarize, you **publish at RUN level, then also at BUILD level** (the retrofit), so that when the BUILD is later merged into the RUN, **no overwrite triggers a regression**.
+A hotfix therefore lands in production **before** the version being prepared in the BUILD. The BUILD branches do not have it yet, so it has to be brought back down to them: that is the [retrofit](salesforce-ci-cd-retrofit.md), and it is not optional.
+
+___
+
+## Is a hotfix the right move?
+
+Not every urgent request is a hotfix. What decides is **where the fix already lives**.
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "secondaryColor": "#f3f3f3", "tertiaryColor": "#ffffff", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
+flowchart TB
+    START{"A change has to reach<br/>production before the<br/>next version"}
+    START -->|"it does not exist yet,<br/>you write it now"| HOTFIX["**Hotfix**<br/>branch to preprod, then to main"]
+    START -->|"it is already merged in uat,<br/>with stories nobody approved"| PROMO["**Promotion branch**<br/>carries the approved stories only"]
+    START -->|"somebody already changed it<br/>by hand in the production org"| ORG["**Retrofit from the org**<br/>bring the manual change back into git"]
+    HOTFIX --> RETRO["Then retrofit it into the BUILD"]
+    PROMO --> RETRO
+    style HOTFIX fill:#e3f7e8,stroke:#2e844a
+    style RETRO fill:#fff7e0,stroke:#dd7a01
+```
+
+- **Hotfix**: this page.
+- **Promotion branch (experimental)**: do not fix it a second time, assemble a [promotion branch](salesforce-ci-cd-promotion-branches.md) carrying the approved stories.
+- **Retrofit from the org**: see [retrofit](salesforce-ci-cd-retrofit.md#retrofit-changes-made-directly-in-production).
+
+Whichever you pick, it ends the same way: what reached production has to come back down to the BUILD branches.
 
 ___
 
 ## Hotfix process
 
-The hotfix process has three phases:
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "secondaryColor": "#f3f3f3", "tertiaryColor": "#ffffff", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
+flowchart LR
+    %% Lanes stack in reverse declaration order: BUILD is declared first so RUN draws on top
+    subgraph BUILD_STREAM["BUILD: the next version"]
+        direction LR
+        RETROFIT["retrofit/from-main<br/>cut from integration"] --> INTEGRATION["integration"]
+    end
+    subgraph RUN_STREAM["RUN: production"]
+        direction LR
+        HOTFIX["my-very-hot-hotfix<br/>cut from preprod"] --> PREPROD["preprod"] --> MAIN["main<br/>production"]
+    end
+    MAIN -.->|"then merge main into<br/>the retrofit branch"| RETROFIT
+    style HOTFIX fill:#e3f7e8,stroke:#2e844a
+    style MAIN fill:#fef1ee,stroke:#ea001e
+```
 
-1. **Implement the hotfix** on a branch that targets `preprod`
-2. **Promote `preprod` to `main`**: the hotfix reaches production
-3. **Retrofit `main` (or `preprod`) into `integration`**: the BUILD gets the hotfix too
+Three phases: you ship the fix in the RUN, then you give it to the BUILD.
 
-_Note: in this example, the hotfix is merged directly into **preprod**. More advanced organizations can define a **uat_run** branch and org as an intermediate level before preprod._
+> **Note**: in this example, the hotfix is merged directly into **preprod**. More advanced organizations can define a **uat_run** branch and org as an intermediate level before preprod.
 
 ### 1. Implement the hotfix
 
 - [Start a new User Story](salesforce-ci-cd-create-new-task.md) and select **preprod as target branch when prompted**. Name it `my-very-hot-hotfix`, for example
 - Work on a dev sandbox that has been cloned from production
+
+![Start a new User Story from the VS Code SFDX Hardis extension](assets/images/new-user-story-2026.gif)
 
 ### 2. Deploy in the RUN stream
 
@@ -66,21 +107,27 @@ _Note: in this example, the hotfix is merged directly into **preprod**. More adv
 - Create a Pull Request from `preprod` to `main`
 - Merge it once the control jobs are green: the hotfix is deployed in production
 
+<details markdown="1">
+<summary>How it works behind the hood</summary>
+
+The merge of `preprod` into `main` is a merge between two major branches, so its scope is **every Pull Request merged into `preprod` since its last promotion**, not only the hotfix. Their [deployment actions](salesforce-ci-cd-work-on-task-deployment-actions.md) run in production and their Apex test classes are collected, with `runOnlyOnceByOrg` making sure an action already performed in that org is not replayed.
+
+The DevOps Pipeline lists the hotfix Pull Request as work of its own, whatever the branch is named (`feature/`, `fix/`, `hotfix/`...). Only the Pull Requests that **move** other Pull Requests, such as the `preprod -> main` merge itself, are left out of the lists and counters.
+
+</details>
+
 ### 3. Retrofit in the BUILD stream
 
-Activate the [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) plugin before the retrofit: it automatically solves many XML conflicts.
+The hotfix is in production but not in the BUILD branches. Bring it down to `integration` with a `retrofit/` branch, before the next version overwrites it.
 
-![Activate the merge driver from the VS Code SFDX Hardis extension](assets/images/activate-merge-driver-in-sfdx-hardis.gif)
+**This is a separate process, on its own page: [Retrofit](salesforce-ci-cd-retrofit.md).**
 
-- Create a sub-branch of `integration` named `retrofit/from-main`, for example. Keep the `retrofit/` prefix: sfdx-hardis recognizes it and carries the [deployment actions](salesforce-ci-cd-work-on-task-deployment-actions.md) of every Pull Request included in the retrofit
-- Using your git IDE, merge the `main` (or `preprod`) branch into `retrofit/from-main`
-- If there are git conflicts, solve them before committing
-- Create a Pull Request from `retrofit/from-main` to `integration`
-- Merge the Pull Request into `integration`: the retrofit from the RUN to the BUILD is done
-  - If the retrofit has many impacts, consider refreshing the dev sandboxes
+Do it **right away**, while the hotfix is still fresh: the longer the BUILD branches go without it, the bigger the conflict when they finally meet.
 
 ___
 
-## Ship only some of the uat stories
+## See also
 
-When the fix is already in `uat` with other stories that are not approved yet, do not hotfix it a second time: assemble a [promotion branch (experimental)](salesforce-ci-cd-promotion-branches.md) from the approved stories.
+- [Retrofit](salesforce-ci-cd-retrofit.md): bring what reached production back into the BUILD branches.
+- [Promotion branches (experimental)](salesforce-ci-cd-promotion-branches.md): ship the approved stories of `uat` without waiting for the rest.
+- [Deploy to major orgs](salesforce-ci-cd-deploy-major-branches.md): the ordinary promotion of a version.

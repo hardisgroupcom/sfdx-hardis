@@ -54,4 +54,4 @@ In the **DevOps Pipeline** panel of the VS Code SFDX Hardis extension, click a m
 
 - If your project publishes [Release Notes](hardis/doc/salesforce-ci-cd-release-notes.md), generate them from the major branch window of the DevOps Pipeline
 
-For urgent fixes that cannot wait for the next promotion, see [Hotfixes and retrofit](salesforce-ci-cd-hotfixes.md).
+For urgent fixes that cannot wait for the next promotion, see [Hotfixes](salesforce-ci-cd-hotfixes.md), then [Retrofit](salesforce-ci-cd-retrofit.md).

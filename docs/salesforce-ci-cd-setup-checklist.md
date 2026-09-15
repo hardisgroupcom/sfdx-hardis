@@ -315,7 +315,7 @@ Easy to forget, and it changes the daily experience of the team.
 - [ ] Every contributor installed the required tooling and the VS Code SFDX Hardis extension. _See [Installation guide](salesforce-ci-cd-use-install.md)_
 - [ ] Every contributor cloned the repository and can create a User Story branch. _See [Clone repository](salesforce-ci-cd-clone-repository.md)_
 - [ ] The team knows the [contribution process](salesforce-ci-cd-use-home.md): create a User Story, work on it, publish it, handle Pull Request results.
-- [ ] Release managers know how to [review and merge Pull Requests](salesforce-ci-cd-validate-merge-request.md) and how to handle [hotfixes](salesforce-ci-cd-hotfixes.md).
+- [ ] Release managers know how to [review and merge Pull Requests](salesforce-ci-cd-validate-merge-request.md) and how to handle [hotfixes](salesforce-ci-cd-hotfixes.md) and their [retrofit](salesforce-ci-cd-retrofit.md).
 - [ ] The team knows that **custom Profiles deployed for the first time must be created manually** in the target org, cloned from "Minimal Access".
 - [ ] Someone owns the pipeline: they get the notifications and they know where the job logs and artifacts are.
 
