@@ -58,22 +58,22 @@ A promotion branch is an ordinary minor branch for the deployment itself: its Pu
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "secondaryColor": "#f3f3f3", "tertiaryColor": "#ffffff", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
 flowchart LR
-    subgraph UATL["uat"]
+    subgraph UAT_BRANCH["uat"]
         direction LR
         M113["merge of PR 113"] --> M114["merge of PR 114"] --> M115["merge of PR 115"] --> M116["merge of PR 116"]
     end
-    subgraph PROML["promotion/uat/preprod/2026-08-20-0930"]
+    subgraph PROMOTION_BRANCH["promotion/uat/preprod/2026-08-20-0930"]
         direction LR
         C113["cherry-pick<br/>of PR 113"] --> C115["cherry-pick<br/>of PR 115"]
     end
-    subgraph PREL["preprod"]
+    subgraph PREPROD_BRANCH["preprod"]
         direction LR
-        P0["release 2026-07"] --> PMERGE["merge of the promotion"]
+        P0["release 2026-07"] --> PROMOTION_MERGE["merge of the promotion"]
     end
     P0 -->|"branch from origin/preprod"| C113
     M113 -.->|"git cherry-pick -x"| C113
     M115 -.->|"git cherry-pick -x"| C115
-    C115 -->|"Pull Request declaring<br/>promotionPullRequests: [113, 115]"| PMERGE
+    C115 -->|"Pull Request declaring<br/>promotionPullRequests: [113, 115]"| PROMOTION_MERGE
     style C113 fill:#e3f7e8,stroke:#2e844a
     style C115 fill:#e3f7e8,stroke:#2e844a
 ```
