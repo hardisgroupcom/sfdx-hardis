@@ -107,14 +107,14 @@ ___
 Two settings switch the feature on, both in the **Danger Zone** of the Pipeline Settings panel of the VS Code extension:
 
 - **Enable promotion branches** (`enablePromotionBranches`), off by default;
-- **Allowed promotion steps** (`allowedPromotionSteps`), the source and target branches your release managers may assemble a promotion between. This list is **required**: `sf hardis:project:promotion:create` stops while it is missing, rather than assume that every major branch can be promoted to every merge target.
+- **Allowed promotion steps** (`allowedPromotionSteps`), the source and target branches your release managers may assemble a promotion between. This list is **required**: sfdx-hardis refuses to assemble a promotion while it is missing, rather than assume that every major branch can be promoted to every merge target.
 
 ![Enable promotion branches and Allowed promotion steps in the Danger Zone of the Pipeline Settings](assets/images/promotion-settings.png)
 
 With `uat -> preprod` as the only allowed step, as above:
 
-- in the DevOps Pipeline, the **Create promotion** button and the checkboxes that tick the stories to carry show up in the `uat` window only. The other branches show their Pull Requests read-only, and `preprod` is passed to the command, so nothing is asked;
-- `sf hardis:project:promotion:create` offers `uat` and `preprod` alone, and refuses `--source-branch integration` or `--target-branch main` with the list of what is allowed;
+- the **Create promotion** button and the checkboxes that tick the stories to carry show up in the `uat` window only. The other branches show their Pull Requests read-only;
+- the target is settled, so nothing is asked: a promotion from `uat` can only go to `preprod`;
 - a promotion branch assembled outside the list all the same (by hand, or before the list was written) still deploys, and the job logs a warning naming the step and the allowed ones.
 
 <details markdown="1">
@@ -188,22 +188,24 @@ ___
 
 ## Assemble a promotion branch
 
-Promotion branches are **always created with the command** [`sf hardis:project:promotion:create`](hardis/project/promotion/create.md), from the VS Code SFDX Hardis extension (**Create promotion** button of a major branch in the DevOps Pipeline) or from a terminal. Do not assemble them by hand: the command is what guarantees the naming, the cherry-pick options and the Pull Request declaration the deployment jobs rely on.
+Everything below is done from the **DevOps Pipeline** of the VS Code SFDX Hardis extension: you tick, you click, and when a conflict shows up you copy a prompt into your coding agent. Nothing has to be typed in a terminal.
+
+Never assemble a promotion branch by hand: sfdx-hardis is what guarantees the naming, the cherry-pick options and the Pull Request declaration the deployment jobs rely on.
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "secondaryColor": "#f3f3f3", "tertiaryColor": "#ffffff", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
 sequenceDiagram
     autonumber
     actor RM as Release manager
-    participant CLI as hardis:project:promotion:create
+    participant CLI as SFDX Hardis
     participant Git as Git repository
     participant CI as CI/CD jobs
-    RM->>CLI: Create promotion from uat
+    RM->>CLI: Tick the stories, click Create promotion
     CLI->>Git: Read the stories merged in uat and not promoted yet
     CLI-->>RM: Which ones does this promotion carry?
     RM-->>CLI: PR 113 and PR 115
-    CLI->>Git: Branch from origin/preprod, cherry-pick -x each merge commit
-    CLI->>Git: Push and open the Pull Request declaring promotionPullRequests
+    CLI->>Git: Branch from preprod, cherry-pick each selected merge
+    CLI->>Git: Push and open the Pull Request, declaring what it carries
     CI->>CI: Validation: delta check, actions and test classes of PR 113 and PR 115
     RM->>Git: Review, then merge without squashing
     CI->>CI: Deployment to preprod with the same scope
@@ -211,23 +213,13 @@ sequenceDiagram
 
 ### 1. Tick the stories to carry
 
-Make sure they are merged into `uat` and validated there. In the DevOps Pipeline, open the window of the source branch, tick the User Stories to carry, then use **Create promotion**: the command opens with them preselected, and you confirm the selection in the terminal.
+Make sure they are merged into `uat` and validated there. In the DevOps Pipeline, open the window of the source branch, tick the User Stories to carry, then use **Create promotion**: it opens with them preselected, and you confirm the selection.
 
 ![The uat branch window with two User Stories ticked and the Create promotion button](assets/images/promotion-branch-modal.png)
 
-A story brought into the branch by an earlier promotion is promoted through that promotion and cannot be ticked.
+Only the stories waiting in that branch are offered: the target is its merge target (`preprod` for `uat`), and a story an earlier promotion already carried there is left out, so the same work is never shipped twice. A story brought into the branch by an earlier promotion is promoted through that promotion and cannot be ticked.
 
-From a terminal, the same thing without the pipeline:
-
-```bash
-sf hardis:project:promotion:create --source-branch uat
-```
-
-It lists the Pull Requests merged into `uat` and not yet promoted to `preprod`, and asks which ones to carry. The target branch is the merge target of `uat` (`preprod`), unless you pass `--target-branch`.
-
-A story carried by an earlier promotion branch to the same target is left out of the list. Pass `--include-already-promoted` to promote it a second time anyway.
-
-### 2. Let the command assemble the branch
+### 2. Let sfdx-hardis assemble the branch
 
 It creates the branch from the target, cherry-picks the selected stories oldest first, pushes, and opens the Pull Request with a description that declares what it carries and lists the titles, authors, source branches and tickets.
 
@@ -252,14 +244,22 @@ The `scripts/actions/.sfdx-hardis.<PR>.yml` files of the stories travel with the
 
 ### 3. Answer the conflicts, if any
 
-If a cherry-pick conflicts, the story depends on another one that is not part of the promotion. The command asks what to do (or takes it from `--on-conflict`):
+If a cherry-pick conflicts, the story depends on another one that is not part of the promotion. You are asked what to do.
 
+> 💡 **Recommended: pick "commit this User Story and every following conflict with their conflict markers, without asking again", then hand the conflicts to a coding agent.** A promotion window conflicts on the same files story after story, so answering once beats answering ten times. The promotion is assembled in one go, and the conflicts are all solved afterwards, on the branch, in a single pass.
+
+Once the Pull Request is open, **copy the prompt it carries and paste it into your coding agent** (Claude Code, Codex, Copilot...). It knows which files to fix and what the resolution has to look like, and it commits the result. The same prompt is saved as a markdown file under `hardis-report/`, in case the description is not the handiest place to copy from.
+
+The validation job fails while a conflict marker is still in the sources, so a promotion cannot reach the org half-solved.
+
+The four answers in full:
+
+- **commit the story and every following conflict with their conflict markers, without asking again** (recommended): the promotion is assembled whole, conflicts and all, for the coding agent to solve;
+- **commit-with-markers**: the same for this story only, so you are asked again on the next conflict;
 - **skip**: leave that story out, it is listed as such in the Pull Request description;
-- **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent;
-- **commit-with-markers, and all the following conflicts**: the same, and the question is not asked again for the rest of the promotion. A promotion window usually conflicts on the same files story after story, so answering ten times in a row is answering once;
 - **abort**: stop, the branch is deleted and nothing is pushed.
 
-The [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) plugin solves many XML conflicts by itself.
+The [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) plugin solves many XML conflicts by itself, so install it and you will see far fewer of them.
 
 A story whose change is already in the target branch (brought by a hotfix, a retrofit or an earlier promotion) has nothing to cherry-pick: it is left out and listed apart in the Pull Request description, without asking anything.
 
@@ -280,7 +280,7 @@ Review the Pull Request like any other, and do **not** squash it when merging: t
 
 The branch itself can be deleted right after the merge, by hand or by a repository that deletes the head branch of every merged Pull Request: a later promotion never takes its name back, because the name of a deleted branch is still read from the merged Pull Requests of the target branch and from its history.
 
-> ⚠️ **A promotion branch must only be validated, never deployed.** A promotion branch is the source branch of a Pull Request, like a feature branch. Your CI must run its **validation** job, never a deployment job: deploying from the promotion branch would send the promotion to the target org before it is reviewed and merged. `hardis:project:deploy:smart` stops with an error when it happens, naming the setting to fix. The usual cause is a deployment trigger that matches more than your major branches.
+> ⚠️ **A promotion branch must only be validated, never deployed.** A promotion branch is the source branch of a Pull Request, like a feature branch. Your CI must run its **validation** job, never a deployment job: deploying from the promotion branch would send the promotion to the target org before it is reviewed and merged. The deployment job stops with an error when it happens, naming the setting to fix. The usual cause is a deployment trigger that matches more than your major branches.
 
 <details markdown="1">
 <summary>How it works behind the hood</summary>
@@ -302,7 +302,7 @@ On GitHub Actions, Azure Pipelines and Bitbucket Pipelines, list your major bran
 
 A pipeline step holds a single promotion in flight, so the DevOps Pipeline can draw it on the arrow between the two branch nodes and there is one answer to "what is being promoted to `preprod` right now".
 
-When a promotion from `uat` to `preprod` is already open and you assemble a new one, the command lists it and asks you to confirm. The stories the superseded promotion carried come back to the candidate list, so you do not need `--include-already-promoted` to reassemble them.
+When a promotion from `uat` to `preprod` is already open and you assemble a new one, the open one is listed and you are asked to confirm before it is superseded. The stories it carried come straight back to the list you tick from.
 
 <details markdown="1">
 <summary>How it works behind the hood</summary>
@@ -315,9 +315,16 @@ The stories of a superseded promotion are not "already promoted" any more, since
 
 ### If your working copy is not clean
 
-Assembling a promotion checks out another branch and cherry-picks commits, so it needs a clean working tree. When you have local changes, the command does not just refuse: it lists them and offers to **stash** them (`git stash`, restore later with `git stash pop`) or to **commit** them on the branch you are on, with the message of your choice. Only the files you changed are stashed or committed: the reports sfdx-hardis writes under `hardis-report/` are left alone, so getting your work back does not fight with them.
+Assembling a promotion switches branches and cherry-picks commits, so it needs a clean working copy. When you have local changes, they are not simply refused: they are listed, and you choose to **stash** them (to restore later) or to **commit** them on the branch you are on, with the message of your choice. Only the files you changed are touched: the reports sfdx-hardis writes under `hardis-report/` are left alone, so getting your work back does not fight with them.
+
+<details markdown="1">
+<summary>How it works behind the hood</summary>
+
+Stashing runs `git stash`, and you get your work back with `git stash pop`.
 
 In `--agent` mode and in CI nothing is touched: the command stops and names the files to deal with.
+
+</details>
 
 ### For agents and automation
 
@@ -399,15 +406,22 @@ ___
 
 ## Release notes
 
-`sf hardis:doc:release-notes` lists the User Stories a promotion Pull Request carries, not the promotion Pull Request itself: the tickets, the metadata changes, the deployment actions and the contributor counts are those of the stories. A promotion whose declared Pull Requests could not be resolved is kept in the notes, so a change never disappears from them. The same rule applies to the merges between two major branches, which are left out whether or not the project uses promotion branches. Pass `--include-promotions` to list both kinds next to the stories they carry.
+The release notes list the User Stories a promotion Pull Request carries, not the promotion Pull Request itself: the tickets, the metadata changes, the deployment actions and the contributor counts are those of the stories. A promotion whose declared Pull Requests could not be resolved is kept in the notes, so a change never disappears from them. The same rule applies to the merges between two major branches, which are left out whether or not the project uses promotion branches.
+
+<details markdown="1">
+<summary>How it works behind the hood</summary>
+
+`sf hardis:doc:release-notes` is the command behind them. Pass `--include-promotions` to list the promotions and the major-to-major merges next to the stories they carry.
+
+</details>
 
 ___
 
 ## Limits
 
-- A promotion is always assembled **from a major branch**: you cannot pass a promotion branch as `--source-branch`. A promotion carrying another promotion is fine, and the deployment jobs follow the declarations down as many levels as there are.
+- A promotion is always assembled **from a major branch**, never from another promotion branch. A promotion carrying another promotion is fine, and the deployment jobs follow the declarations down as many levels as there are.
 - Custom behaviors are inherited on the promotion Pull Request only. On the next `preprod -> main` promotion, keywords are read from that Pull Request's description, like for any promotion.
-- `sf hardis:work:save` warns when run on a promotion branch: its cleaning and manifest updates are meant for User Story branches.
+- **Save / Publish User Story** warns when run on a promotion branch: its cleaning and manifest updates are meant for User Story branches.
 
 ___
 

@@ -1131,9 +1131,12 @@ async function promptConflictChoice(candidate: PromotionCandidate, commandThis: 
     message: c.cyanBright(t('promotionCreateConflictPrompt', { label: candidate.label })),
     description: t('promotionCreateConflictPrompt', { label: candidate.label }),
     choices: [
+      // commit-with-markers-all is the recommended answer, so it comes first and carries the
+      // description: a promotion window conflicts on the same files story after story, and the
+      // coding agent prompt solves them all in one pass once the branch is assembled
+      { title: t('promotionCreateConflictCommitAll'), value: 'commit-with-markers-all', description: t('promotionCreateConflictCommitAllHelp') },
       { title: t('promotionCreateConflictSkip'), value: 'skip' },
       { title: t('promotionCreateConflictCommit'), value: 'commit-with-markers' },
-      { title: t('promotionCreateConflictCommitAll'), value: 'commit-with-markers-all' },
       { title: t('promotionCreateConflictAbort'), value: 'abort' },
     ],
   });
