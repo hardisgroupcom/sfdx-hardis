@@ -8,15 +8,15 @@ description: Bring back into the BUILD branches what reached production through 
 
 A **retrofit** brings back into the BUILD branches what reached production without going through them. Skip it, and the next version quietly undoes the fix.
 
-> **Two things are called retrofit in sfdx-hardis**, and this page covers both:
+> A retrofit is one of **two things**, and this page covers both:
 >
-> - **[Retrofit a branch](#retrofit-a-branch-into-the-build)**: `main` (or `preprod`) is merged down into `integration` through a `retrofit/` branch. This is the one that follows a hotfix or a promotion branch.
-> - **[Retrofit changes made directly in production](#retrofit-changes-made-directly-in-production)**: somebody edited the production org by hand. That must never happen, and this is how you repair it.
+> - **[Retrofit a branch](#retrofit-a-branch-into-the-build)**: a top branch is merged down into a lower one through a `retrofit/` branch, to give the BUILD what the RUN just shipped. This is what follows a hotfix or a promotion branch.
+> - **[Manual retrofit](#manual-retrofit-of-a-change-made-in-an-org)**: somebody changed an org by hand. That must never happen; you recover the change as a User Story under `integration`, retrieved with the Metadata Retriever.
 
 - [Why it matters](#why-it-matters)
 - [When to retrofit](#when-to-retrofit)
 - [Retrofit a branch into the BUILD](#retrofit-a-branch-into-the-build)
-- [Retrofit changes made directly in production](#retrofit-changes-made-directly-in-production)
+- [Manual retrofit of a change made in an org](#manual-retrofit-of-a-change-made-in-an-org)
 
 ___
 
@@ -52,7 +52,7 @@ Every time something reached production without going through the BUILD branches
 |-------------------------------------------------------------------------------------------------------|------------------------------------------|-----------------------------------------------------------------------------------|
 | A [hotfix](salesforce-ci-cd-hotfixes.md) was merged into `main`                                       | `main` (or `preprod`) into `integration` | Right after the hotfix is in production                                           |
 | A [promotion branch (experimental)](salesforce-ci-cd-promotion-branches.md) was merged into `preprod` | `preprod` into `integration`             | Right after the promotion is merged                                               |
-| Somebody changed the production org **by hand** (which must never happen)                             | The org itself, back into git            | As soon as you notice, see [below](#retrofit-changes-made-directly-in-production) |
+| Somebody changed an org **by hand** (which must never happen)                                         | The change, as a User Story              | As soon as you notice, see [below](#manual-retrofit-of-a-change-made-in-an-org)   |
 
 Do it **right away** in every case. A retrofit left for later is a conflict that grows: the BUILD branches keep moving on top of metadata that is already out of date in production.
 
@@ -103,39 +103,33 @@ In the DevOps Pipeline, a `retrofit/` Pull Request is listed as work of its own:
 
 ___
 
-## Retrofit changes made directly in production
+## Manual retrofit of a change made in an org
 
 > ⚠️ **Changing a major org by hand must never happen.** Production, preprod, uat and integration are deployed from their branch: a change made through Setup is in no branch, nobody reviewed it, and the next deployment silently overwrites it. All work goes through a dev sandbox, a branch and a Pull Request, however small and however urgent. [Protect your major branches](salesforce-ci-cd-setup-git.md#protect-the-major-branches) and keep the number of people with Setup access in production to a minimum.
 
-It still happens, and pretending otherwise loses the change. This section is the **repair**, not a way of working.
+It still happens, and pretending otherwise loses the change. What follows is the **repair**, not a way of working.
 
-When somebody has changed the production org through Setup, the change is live, it is in no branch, and the next deployment will undo it. Retrieving it back into git puts it under review and makes it survive.
+The change is live in the org, it is in no branch, and the next deployment will undo it. Bring it back into git as an ordinary User Story, from the bottom of the pipeline, so it is reviewed and then climbs the branches like anything else.
 
-Schedule it as a CI job rather than running it by hand: the drift is then caught on its own, a few hours after it appears, instead of the day it breaks a deployment.
+### 1. Start a User Story under integration
 
-A few metadata types are the accepted exception, because they are meant to be edited by business users in the org: Reports, Dashboards and a handful of others. Those are exactly what this job is for.
+[Start a new User Story](salesforce-ci-cd-create-new-task.md) with `integration` as its target branch, on a dev sandbox. Name it after the change you are recovering.
 
-<details markdown="1">
-<summary>How it works behind the hood</summary>
+Start from the **bottom** of the pipeline even though the change was made at the top: what enters through `integration` reaches every branch above it on its own. Retrieving it straight into `preprod` would leave the BUILD branches without it, and you would be back to the [problem this page opens with](#why-it-matters).
 
-Run from a branch connected to the org, [`sf hardis:org:retrieve:sources:retrofit`](hardis/org/retrieve/sources/retrofit.md) retrieves the changes that are not in the branch sources, commits them and creates a merge request against the default branch. When a merge request already exists, it adds a commit to it instead of opening another one.
+### 2. Retrieve the changed metadata
 
-Configuration lives in `.sfdx-hardis.yml`:
+Use the **Metadata Retriever** of the VS Code SFDX Hardis extension to pick exactly what was changed in the org, and nothing else.
 
-```yaml
-productionBranch: main
-retrofitBranch: preprod
-retrofitIgnoredFiles:
-  - force-app/main/default/applications/MyApp.app-meta.xml
-```
+![Metadata Retriever panel](assets/images/metadata-retriever.gif)
 
-- `productionBranch`: the branch matching the production org.
-- `retrofitBranch`: the target branch of the merge request.
-- `retrofitIgnoredFiles`: files to leave alone even when production changed them.
+Retrieve from the org that holds the change. Take the items you identified, not everything the retriever offers: a retrofit that drags along unrelated metadata is a deployment nobody can review.
 
-Which metadata types are retrieved is read, in order of priority, from the `CI_SOURCES_TO_RETROFIT` environment variable, the `sourcesToRetrofit` property of `.sfdx-hardis.yml`, or a default list covering the types people most often edit by hand (CustomField, CustomLabel, CustomMetadata, CustomObject, FlexiPage, Layout, EmailTemplate, GlobalValueSet...). The command page lists the full default.
+Not sure what changed? The [Org Monitoring](salesforce-monitoring-home.md) backup gives you the git diff of the org day by day, and the Salesforce Audit Trail names who changed what.
 
-</details>
+### 3. Review and merge like any User Story
+
+Commit, **Save / Publish**, and open the Pull Request to `integration`. From there it climbs `uat`, `preprod` and production with the next promotions, the same as any other work.
 
 ___
 

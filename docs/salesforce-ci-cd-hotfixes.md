@@ -67,7 +67,7 @@ flowchart TB
 
 Either way, it ends the same way: what reached production has to come back down to the BUILD branches.
 
-> ⚠️ **Fixing it by hand in the production org is not on this list, and never is.** A change made through Setup is in no branch, so the next deployment overwrites it and the fix is lost. Always go through a branch and a Pull Request, even when it is one field and even at 2am. If it has already happened, treat it as an incident to repair: see [retrofit changes made directly in production](salesforce-ci-cd-retrofit.md#retrofit-changes-made-directly-in-production).
+> ⚠️ **Fixing it by hand in the production org is not on this list, and never is.** A change made through Setup is in no branch, so the next deployment overwrites it and the fix is lost. Always go through a branch and a Pull Request, even when it is one field and even at 2am. If it has already happened, treat it as an incident to repair: recover it as a User Story, see [manual retrofit](salesforce-ci-cd-retrofit.md#manual-retrofit-of-a-change-made-in-an-org).
 
 ___
 
