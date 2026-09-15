@@ -672,6 +672,18 @@ $ARGUMENTS
 
 ---
 
+## Other agent-ready commands
+
+These have their own `--agent` mode and their own guide. They are listed here so an agent knows they exist.
+
+| Command | What it does | Guide |
+|---------|--------------|-------|
+| `hardis:work:backpromote` | Brings into a developer sandbox what was merged in the parent branch since the last backpromote, with one decision per file that differs. `--auto` takes every decision from the flags (Beta). Replaces the deprecated `hardis:work:refresh` | [Backpromote](salesforce-ci-cd-backpromote.md) |
+| `hardis:project:promotion:list-candidates` | Lists, read-only, the User Stories that could be promoted from a major branch. Creates, pushes and closes nothing, so it is the safe one to call first (experimental) | [Promotion branches](salesforce-ci-cd-promotion-branches.md) |
+| `hardis:project:promotion:create` | Assembles a promotion branch carrying only the chosen User Stories and opens its Pull Request (experimental) | [Promotion branches](salesforce-ci-cd-promotion-branches.md) |
+
+---
+
 ## See Also
 
 - [Create New User Story](salesforce-ci-cd-create-new-task.md): interactive guide
@@ -686,3 +698,6 @@ $ARGUMENTS
 - [`hardis:project:action:delete` command reference](hardis/project/action/delete.md)
 - [`hardis:project:action:reorder` command reference](hardis/project/action/reorder.md)
 - [`hardis:project:action:link-pull-request` command reference](hardis/project/action/link-pull-request.md)
+- [`hardis:work:backpromote` command reference](hardis/work/backpromote.md)
+- [`hardis:project:promotion:create` command reference](hardis/project/promotion/create.md)
+- [`hardis:project:promotion:list-candidates` command reference](hardis/project/promotion/list-candidates.md)

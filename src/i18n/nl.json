@@ -3142,6 +3142,7 @@
   "retrievingSourcesFrom": "Bronnen ophalen van {{flags}} ...",
   "retrievingStorageLimits": "Opslaglimieten ophalen van org...",
   "retrievingValuesOfCustomSetting": "Waarden ophalen van Custom Setting: {{settingName}}",
+  "retrofitOrgDeprecatedUseUserStory": "Dit commando is verouderd en mag niet meer gebruikt worden. Een belangrijke org handmatig aanpassen is geen ondersteunde manier van werken. Herstel de wijziging als een User Story: start een branch vanaf integration, haal met de Metadata Retriever precies op wat er is gewijzigd, en review en merge het daarna. Zie https://sfdx-hardis.cloudity.com/salesforce-ci-cd-retrofit/",
   "retryDeleteFlowVersionsAfterInterviews": "Verwijdering van Flow-versies opnieuw proberen na het verwijderen van interviews...",
   "retryDeployExternalClientApp": "Ik heb het verwijderd, implementatie opnieuw proberen",
   "retryingGitFetchWithUpdatedCredentials": "Git fetch opnieuw proberen met bijgewerkte inloggegevens.",

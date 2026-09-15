@@ -1,26 +1,10 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import { getConfig } from '../../../../../config/index.js';
 import c from 'chalk';
-// import * as path from "path";
-import {
-  assertBranchNotInOtherWorktree,
-  ensureGitRepository,
-  gitHasLocalUpdates,
-  execCommand,
-  git,
-  gitFetch,
-  uxLog,
-  isCI,
-} from '../../../../../common/utils/index.js';
-import { CleanOptions } from 'simple-git';
-import CleanReferences from '../../../project/clean/references.js';
-import SaveTask from '../../../work/save.js';
-import CleanXml from '../../../project/clean/xml.js';
+import { uxLog } from '../../../../../common/utils/index.js';
 import { t } from '../../../../../common/utils/i18n.js';
-import { buildConventionalCommitMessage } from '../../../../../common/utils/gitUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -52,7 +36,14 @@ export default class Retrofit extends SfCommand<any> {
 
   public static title = 'Retrofit changes from an org';
 
-  public static description = `Retrieve changes from org link to a ref branch not present in sources
+  public static description = `
+## DEPRECATED
+
+**This command is deprecated and must not be used.** Changing a major org by hand is not a supported way of working.
+
+When a change was made directly in an org, recover it as an ordinary User Story: start a branch under the lowest major branch (usually \`integration\`), retrieve exactly what changed with the Metadata Retriever of the VS Code SFDX Hardis extension, then review and merge it like any other work. See [Retrofit](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-retrofit/).
+
+Retrieve changes from org link to a ref branch not present in sources
 
   This command need to be triggered from a branch that is connected to a SF org. It will then retrieve all changes not present in that branch sources, commit them and create a merge request against the default branch. If a merge request already exists, it will simply add a new commit.
 
@@ -157,164 +148,9 @@ In agent mode, all interactive prompts are skipped and default values are used.
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const { flags } = await this.parse(Retrofit);
-    this.commit = flags.commit || false;
-    this.commitMode = flags.commitmode || false;
-    this.push = flags.push || false;
-    this.pushMode = flags.pushmode || 'default';
-    this.productionBranch = flags.productionbranch || null;
-    this.retrofitTargetBranch = flags.retrofittargetbranch || null;
-    this.debugMode = flags.debug || false;
-    this.configInfo = await getConfig('branch');
-    // check git repo before processing
-    await ensureGitRepository();
-    // set commit & merge request author
-    await this.setDefaultGitConfig();
-    // checkout to retrofit branch, retrieve changes & push them if any
-    await this.processRetrofit(flags);
-
-    return { outputString: 'Merge request created/updated' };
+    uxLog("error", this, c.red(t('retrofitOrgDeprecatedUseUserStory')));
+    process.exitCode = 1;
+    return { outputString: 'This command is deprecated. Recover the change as a User Story: see https://sfdx-hardis.cloudity.com/salesforce-ci-cd-retrofit/' };
   }
 
-  async processRetrofit(flags) {
-    const config = await getConfig('branch');
-    this.productionBranch =
-      this.productionBranch || config.productionBranch || process.env.CI_COMMIT_REF_NAME || 'master';
-    const retrofitWorkBranch = `retrofit/${this.productionBranch}`;
-    this.retrofitTargetBranch =
-      this.retrofitTargetBranch || config.retrofitBranch || 'retrofitTargetBranch MUST BE SET';
-
-    await gitFetch(['--prune']);
-    const branches = await git().branch();
-    if (branches.all.find((branch) => branch.includes(retrofitWorkBranch))) {
-      // If manual command (not CI), force user to remove previous retrofit branches
-      if (!isCI) {
-        throw new SfError(
-          `You must delete local and remote branch ${c.yellow(retrofitWorkBranch)} before running this command`
-        );
-      }
-      uxLog("action", this, c.cyan(t('checkoutToExistingBranch', { retrofitWorkBranch })));
-      await assertBranchNotInOtherWorktree(retrofitWorkBranch);
-      await git().checkout(retrofitWorkBranch, ['--force']);
-    } else {
-      uxLog("action", this, c.cyan(t('createNewBranchFrom', { retrofitWorkBranch, productionBranch: this.productionBranch })));
-      await git().checkoutBranch(retrofitWorkBranch, `origin/${this.productionBranch}`);
-    }
-
-    const currentHash = await git().revparse(['HEAD']);
-    uxLog("log", this, c.grey(t('headCurrentlyAt', { currentHash })));
-
-    // Retrieve sources from target org
-    const hasChangedSources = await this.retrieveSources(flags);
-    if (hasChangedSources) {
-      // Commit and push if requested
-      if (this.commit) {
-        await this.commitChanges(flags);
-        // Update package.xml files and clean if necessary
-        await SaveTask.run(['--targetbranch', this.retrofitTargetBranch || '', '--auto']);
-        if (this.push) {
-          await this.pushChanges(retrofitWorkBranch);
-        }
-      }
-    } else {
-      uxLog("warning", this, c.yellow(t('noChangesToCommit')));
-      // Delete locally created branch if we are within CI process
-      if (isCI) {
-        uxLog("warning", this, c.yellow(t('deletingLocalRetrofitBranch')));
-        await git().branch([`-D ${retrofitWorkBranch}`]);
-      }
-    }
-  }
-
-  // Commit all changes or only updated files
-  async commitChanges(flags) {
-    if (this.commitMode === 'updated') {
-      uxLog("action", this, c.cyan(t('stageAndCommitOnlyUpdatedFiles')));
-      await git().add(['--update']);
-      await this.doCommit(flags);
-      uxLog("action", this, c.cyan(t('removingCreatedFiles')));
-      await git().reset(['--hard']);
-      await git().clean([CleanOptions.FORCE, CleanOptions.RECURSIVE]);
-    } else {
-      uxLog("action", this, c.cyan(t('stageAndCommitAllFiles')));
-      await git().add(['--all']);
-      await this.doCommit(flags);
-    }
-  }
-
-  async doCommit(flags) {
-    await git().commit(
-      buildConventionalCommitMessage({ subject: `retrofit changes from ${flags['target-org'].getUsername()}` })
-    );
-  }
-
-  // Push changes and add merge request options if requested
-  async pushChanges(retrofitWorkBranch: string) {
-    const origin = `https://root:${process.env.CI_TOKEN}@${process.env.CI_SERVER_HOST}/${process.env.CI_PROJECT_PATH}.git`;
-    const pushOptions: any[] = [];
-    if (this.pushMode === 'mergerequest') {
-      const mrOptions = [
-        '-o merge_request.create',
-        `-o merge_request.target ${this.retrofitTargetBranch}`,
-        `-o merge_request.title='[sfdx-hardis][RETROFIT] Created by pipeline #${process.env.CI_PIPELINE_ID}'`,
-        '-o merge_request.merge_when_pipeline_succeeds',
-        '-o merge_request.remove_source_branch',
-      ];
-      pushOptions.push(...mrOptions);
-    }
-
-    const pushResult = await execCommand(`git push ${origin} ${retrofitWorkBranch} ${pushOptions.join(' ')}`, this, {
-      fail: true,
-      debug: this.debugMode,
-      output: true,
-    });
-    uxLog("warning", this, c.yellow(JSON.stringify(pushResult)));
-  }
-
-  async setDefaultGitConfig() {
-    // Just do that in CI, because this config should already exist in local
-    if (isCI) {
-      // either use values from variables from CI or use predefined variables from gitlab
-      const USERNAME = process.env.CI_USER_NAME || process.env.GITLAB_USER_NAME || '';
-      const EMAIL = process.env.CI_USER_EMAIL || process.env.GITLAB_USER_EMAIL || '';
-      await git().addConfig('user.name', USERNAME, false, 'local');
-      await git().addConfig('user.email', EMAIL, false, 'local');
-    }
-  }
-
-  async retrieveSources(flags) {
-    uxLog("action", this, c.cyan(t('retrievingSourcesFrom', { flags: c.green(flags['target-org'].getUsername()) })));
-    const RETROFIT_MDT: Array<string> =
-      process.env.CI_SOURCES_TO_RETROFIT || this.configInfo.sourcesToRetrofit || Retrofit.DEFAULT_SOURCES_TO_RETROFIT;
-    const retrieveCommand = `sf project retrieve start -m "${RETROFIT_MDT.join(',')}" -o ${flags[
-      'target-org'
-    ].getUsername()}`;
-    await execCommand(retrieveCommand, this, { fail: true, debug: this.debugMode, output: true });
-
-    // Discard ignored changes
-    await this.discardIgnoredChanges();
-    // Clean sources
-    await CleanReferences.run(['--type', 'all']);
-    await CleanXml.run([]);
-
-    // display current changes to commit
-    return gitHasLocalUpdates();
-  }
-
-  // Discard ignored changes from retrofitIgnoredFiles
-  async discardIgnoredChanges() {
-    const config = await getConfig('branch');
-    const ignoredFiles = config.retrofitIgnoredFiles || [];
-    if (ignoredFiles.length > 0) {
-      uxLog(
-        "action",
-        this,
-        c.cyan(`Discarding ignored changes from .sfdx-hardis.yml ${c.bold('retrofitIgnoredFiles')} property...`)
-      );
-      for (const ignoredFile of ignoredFiles) {
-        // Reset file state
-        await git().checkout(['--', ignoredFile]);
-      }
-    }
-  }
 }

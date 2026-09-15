@@ -4,6 +4,7 @@
 
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/): the documentation page now explains the feature with diagrams and screenshots of the DevOps Pipeline.
 - [Retrofit](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-retrofit/) has its own documentation page, split from [Hotfixes](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-hotfixes/), and both are illustrated with diagrams.
+- [hardis:org:retrieve:sources:retrofit](https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/retrofit/) is deprecated: recover a change made by hand in an org as a User Story instead.
 
 ## [8.8.1] 2026-09-14
 

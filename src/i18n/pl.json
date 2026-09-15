@@ -3142,6 +3142,7 @@
   "retrievingSourcesFrom": "Pobieranie źródeł z {{flags}} ...",
   "retrievingStorageLimits": "Pobieranie limitów przechowywania z org...",
   "retrievingValuesOfCustomSetting": "Pobieranie wartości Custom Setting: {{settingName}}",
+  "retrofitOrgDeprecatedUseUserStory": "To polecenie jest przestarzałe i nie wolno go używać. Ręczna zmiana w kluczowym org nie jest wspieranym sposobem pracy. Należy odtworzyć zmianę jako User Story: utworzyć branch z integration, pobrać dokładnie to, co się zmieniło, za pomocą Metadata Retriever, a następnie zweryfikować i zmergować. Zobacz https://sfdx-hardis.cloudity.com/salesforce-ci-cd-retrofit/",
   "retryDeleteFlowVersionsAfterInterviews": "Ponowna próba usunięcia wersji Flow po usunięciu wywiadów...",
   "retryDeployExternalClientApp": "Usunięto, ponów wdrożenie",
   "retryingGitFetchWithUpdatedCredentials": "Ponowna próba git fetch z zaktualizowanymi poświadczeniami.",

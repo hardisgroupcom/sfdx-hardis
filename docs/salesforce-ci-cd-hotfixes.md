@@ -103,7 +103,7 @@ Three phases: you ship the fix in the RUN, then you give it to the BUILD.
 
 ### 2. Deploy in the RUN stream
 
-- Create a Pull Request (Merge Request on GitLab) from `my-very-hot-hotfix` to `preprod`, and merge it once the control jobs pass (do not select **Delete source branch after merge**)
+- Create a Pull Request (Merge Request on GitLab) from `my-very-hot-hotfix` to `preprod`, and merge it once the control jobs pass. It is a User Story branch like any other, so **Squash commits** and **Delete source branch after merge** are checked, as in the [merge rules](salesforce-ci-cd-validate-merge-request.md#merge)
 - Create a Pull Request from `preprod` to `main`
 - Merge it once the control jobs are green: the hotfix is deployed in production
 
