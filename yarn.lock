@@ -1104,12 +1104,12 @@
     "@inquirer/core" "^10.3.2"
     "@inquirer/type" "^3.0.10"
 
-"@inquirer/number@4.2.2":
-  version "4.2.2"
-  resolved "https://registry.yarnpkg.com/@inquirer/number/-/number-4.2.2.tgz#e7ef93fc2fdebf0e3d1f65c030eb84ee92df39c5"
-  integrity sha512-tjW1gMIQsFb/9Ie11i8SpuPARBdyCVfC5XOeVugWovrdm8CpjzN+A1CBX5QwCCN2mtNmpgDDCnuLCCT94cQ5zA==
+"@inquirer/number@4.2.3":
+  version "4.2.3"
+  resolved "https://registry.yarnpkg.com/@inquirer/number/-/number-4.2.3.tgz#671940419283fc8e534e557d675799901e184c1b"
+  integrity sha512-6Yuwh1NGSbu1Lo4N1EWjXs1jKRntLg/ZCwhmeorEHde90v1XxAozdbd4Iu30eOQLW+6h1hp2O9ujNfLSbTPJnA==
   dependencies:
-    "@inquirer/core" "^12.0.2"
+    "@inquirer/core" "^12.0.3"
     "@inquirer/type" "4.1.1"
 
 "@inquirer/number@^3.0.23":
