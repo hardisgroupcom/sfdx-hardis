@@ -48,11 +48,11 @@ ___
 
 Every time something reached production without going through the BUILD branches.
 
-| What happened                                                                                         | What to retrofit                         | When                                                                              |
-|-------------------------------------------------------------------------------------------------------|------------------------------------------|-----------------------------------------------------------------------------------|
-| A [hotfix](salesforce-ci-cd-hotfixes.md) was merged into `main`                                       | `main` (or `preprod`) into `integration` | Right after the hotfix is in production                                           |
-| A [promotion branch (experimental)](salesforce-ci-cd-promotion-branches.md) was merged into `preprod` | `preprod` into `integration`             | Right after the promotion is merged                                               |
-| Somebody changed an org **by hand** (which must never happen)                                         | The change, as a User Story              | As soon as you notice, see [below](#manual-retrofit-of-a-change-made-in-an-org)   |
+| What happened                                                                                         | What to retrofit                         | When                                                                            |
+|-------------------------------------------------------------------------------------------------------|------------------------------------------|---------------------------------------------------------------------------------|
+| A [hotfix](salesforce-ci-cd-hotfixes.md) was merged into `main`                                       | `main` (or `preprod`) into `integration` | Right after the hotfix is in production                                         |
+| A [promotion branch (experimental)](salesforce-ci-cd-promotion-branches.md) was merged into `preprod` | `preprod` into `integration`             | Right after the promotion is merged                                             |
+| Somebody changed an org **by hand** (which must never happen)                                         | The change, as a User Story              | As soon as you notice, see [below](#manual-retrofit-of-a-change-made-in-an-org) |
 
 Do it **right away** in every case. A retrofit left for later is a conflict that grows: the BUILD branches keep moving on top of metadata that is already out of date in production.
 
