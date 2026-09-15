@@ -56,6 +56,8 @@ Every time something reached production without going through the BUILD branches
 
 Do it **right away** in every case. A retrofit left for later is a conflict that grows: the BUILD branches keep moving on top of metadata that is already out of date in production.
 
+> On [pattern B](salesforce-ci-cd-setup-git.md#pattern-b-build-run-and-hotfixes), retrofit into **`uat_run` as well as `integration`**. `uat_run` also merges into `preprod` without holding the hotfix, so the next RUN promotion would overwrite it exactly like the next BUILD promotion would.
+
 ___
 
 ## Retrofit a branch into the BUILD

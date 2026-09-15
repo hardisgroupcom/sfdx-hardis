@@ -24,7 +24,7 @@ Except for projects in maintenance that only have a RUN, a project is split in t
 - the **RUN** stream: a fast cycle, to often deploy minor changes and fixes
 - the **BUILD** stream: the project cycle, to build larger features and enhancements that require User Acceptance Testing
 
-![BUILD and RUN streams with their branches and orgs](assets/images/ci-cd-schema-build-run.jpg)
+![Parallel BUILD and RUN architecture, with a hotfix branch merged into preprod and a retrofit down to integration](assets/images/ci-cd-schema-main.jpg)
 
 ### The BUILD
 
@@ -40,7 +40,7 @@ Major features or enhancements must **not be tested directly at preprod level**:
 
 The daily maintenance of the production org must be very reactive: the RUN stream lets you often **deploy patch versions**.
 
-As you usually cannot wait for the next minor or major version to reach production, you need a way to quickly deploy hotfixes. That stream is the RUN, and it only involves the **preprod** and **main** branches.
+As you usually cannot wait for the next minor or major version to reach production, you need a way to quickly deploy hotfixes. That stream is the RUN, and on [pattern A](salesforce-ci-cd-setup-git.md#pattern-a-build-and-hotfixes) it only involves the **preprod** and **main** branches. On [pattern B](salesforce-ci-cd-setup-git.md#pattern-b-build-run-and-hotfixes) it also has a **uat_run** branch and org, where the maintenance work that can wait is validated before reaching `preprod`.
 
 A hotfix therefore lands in production **before** the version being prepared in the BUILD. The BUILD branches do not have it yet, so it has to be brought back down to them: that is the [retrofit](salesforce-ci-cd-retrofit.md), and it is not optional.
 
@@ -92,7 +92,7 @@ flowchart LR
 
 Three phases: you ship the fix in the RUN, then you give it to the BUILD.
 
-> **Note**: in this example, the hotfix is merged directly into **preprod**. More advanced organizations can define a **uat_run** branch and org as an intermediate level before preprod.
+> **Note**: this page follows [pattern A](salesforce-ci-cd-setup-git.md#pattern-a-build-and-hotfixes), where the hotfix is merged directly into `preprod`. On [pattern B](salesforce-ci-cd-setup-git.md#pattern-b-build-run-and-hotfixes), which adds a `uat_run` branch and org for the RUN stream, a **hotfix still goes directly into `preprod`**: `uat_run` is for the maintenance work that can wait for a validation round, not for what is on fire.
 
 ### 1. Implement the hotfix
 

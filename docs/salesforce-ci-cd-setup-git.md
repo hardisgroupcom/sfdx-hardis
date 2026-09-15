@@ -8,9 +8,9 @@ description: Learn how to create the repository, create and protect the major br
 
 - [Create the repository](#create-the-repository)
 - [Create the major branches](#create-the-major-branches)
-  - [Small project](#small-project)
-  - [Medium project](#medium-project)
-  - [Complex project](#complex-project)
+  - [How deep is your BUILD chain?](#how-deep-is-your-build-chain)
+  - [Pattern A: BUILD and hotfixes](#pattern-a-build-and-hotfixes)
+  - [Pattern B: BUILD, RUN and hotfixes](#pattern-b-build-run-and-hotfixes)
 - [Protect the major branches](#protect-the-major-branches)
 - [Define the merge rules](#define-the-merge-rules)
 
@@ -25,29 +25,66 @@ Your git repository stores and versions your Salesforce DX sources.
 
 In the branches section of your Git platform (for example `Repository -> Branches` on GitLab), create the branch tree that matches the complexity of your project.
 
-Below are examples of branch trees that you can define.
+Two decisions shape the tree: **how many levels your BUILD chain needs**, and **whether urgent work gets a stream of its own**.
 
-#### Small project
+#### How deep is your BUILD chain?
 
-- **main** (related to the Production org)
-  - **preprod** (related to the PreProd org)
+Each level is a branch and the Salesforce org it deploys to. Start with what you can staff, you can always add a level later.
 
-#### Medium project
+| Project | Branch tree |
+|---------|-------------|
+| Small | **main** (Production) > **preprod** (PreProd) |
+| Medium | **main** (Production) > **preprod** (PreProd) > **integration** (Integration) |
+| Complex | **main** (Production) > **preprod** (PreProd) > **uat** (UAT) > **integration** (Integration) |
 
-- **main** (related to the Production org)
-  - **preprod** (related to the PreProd org)
-    - **integration** (related to the Integration org)
+The rest of this documentation uses the complex tree, `integration` > `uat` > `preprod` > `main`, because it names every level. Drop the ones you do not have.
 
-#### Complex project
+#### Pattern A: BUILD and hotfixes
 
-- **main** (related to the Production org)
-  - **preprod** (related to the PreProd org)
-    - **uat** (related to the UAT org)
-      - **integration** (related to the Integration org)
+The usual setup. User Stories climb the BUILD chain, and an urgent fix that cannot wait merges **straight into `preprod`** from its own branch, then goes to production with the next `preprod` > `main` merge.
 
-Example of branching strategy:
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "secondaryColor": "#f3f3f3", "tertiaryColor": "#ffffff", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
+flowchart LR
+    FEAT["feature/*<br/>User Stories"] --> INTEG["integration"]
+    INTEG --> UAT["uat"]
+    UAT --> PREPROD["preprod"]
+    HOTFIX["hotfix<br/>User Stories"] --> PREPROD
+    PREPROD --> MAIN["main<br/>production"]
+    style HOTFIX fill:#fff7e0,stroke:#dd7a01
+    style MAIN fill:#fef1ee,stroke:#ea001e
+```
 
-![Branching strategy with main, preprod, uat and integration](assets/images/ci-cd-schema-main.jpg){ align=center }
+See [Hotfixes](salesforce-ci-cd-hotfixes.md) for the process, and [Retrofit](salesforce-ci-cd-retrofit.md) for the step that brings the fix back down into the BUILD branches.
+
+The same model, seen as a git history with its orgs:
+
+![Parallel BUILD and RUN architecture, with a hotfix branch merged into preprod and a retrofit down to integration](assets/images/ci-cd-schema-main.jpg){ align=center }
+
+#### Pattern B: BUILD, RUN and hotfixes
+
+When the maintenance work is steady enough to need its own validation org, add a **`uat_run`** branch below `preprod`, parallel to the BUILD chain:
+
+- **RUN User Stories** (small changes and fixes that are not urgent) merge into **`uat_run`**, get validated in its org, and reach `preprod` with the next promotion;
+- **hotfix User Stories** still merge **directly into `preprod`**, because they cannot wait for anything.
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "secondaryColor": "#f3f3f3", "tertiaryColor": "#ffffff", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
+flowchart LR
+    FEAT["feature/*<br/>BUILD User Stories"] --> INTEG["integration"]
+    INTEG --> UAT["uat"]
+    UAT --> PREPROD["preprod"]
+    RUN_STORIES["RUN<br/>User Stories"] --> UATRUN["uat_run"]
+    UATRUN --> PREPROD
+    HOTFIX["hotfix<br/>User Stories"] --> PREPROD
+    PREPROD --> MAIN["main<br/>production"]
+    style RUN_STORIES fill:#eaf5fe,stroke:#0176d3
+    style UATRUN fill:#e3f7e8,stroke:#2e844a
+    style HOTFIX fill:#fff7e0,stroke:#dd7a01
+    style MAIN fill:#fef1ee,stroke:#ea001e
+```
+
+sfdx-hardis recognizes `uat_run` (and `uatrun`) as a RUN branch, and labels it as such in the DevOps Pipeline. Create its Salesforce org like any other major org, and add it to `availableTargetBranches` so developers can pick it when they start a User Story.
 
 ### Protect the major branches
 
