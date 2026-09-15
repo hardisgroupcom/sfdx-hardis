@@ -64,9 +64,9 @@ The deployment jobs then treat the declared Pull Requests as the scope of the pr
 
 On a cherry-pick conflict, you choose (or \`--on-conflict\` decides) to:
 
-- **skip**: leave the story out, it is listed as such in the Pull Request description;
+- **commit-with-markers, and all the following conflicts** (**recommended**, the first answer offered): same as below, and the command stops asking for the rest of the promotion. A promotion window conflicts on the same files story after story, so the promotion is assembled in one go and every conflict is then solved in a single pass by a coding agent: copy the prompt from the Pull Request description (also saved in \`hardis-report/\`) and paste it to Claude Code, Codex, Copilot... This is a prompt answer only, \`--on-conflict commit-with-markers\` already applies to every conflict;
 - **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description lists the files to fix and embeds a ready-to-paste prompt for a coding agent (Claude Code, Codex, Copilot...), also saved as a markdown report in \`hardis-report/\`. The validation job fails until the markers are gone;
-- **commit-with-markers, and all the following conflicts**: same, and the command stops asking for the rest of the promotion (the prompt only, \`--on-conflict commit-with-markers\` already applies to every conflict);
+- **skip**: leave the story out, it is listed as such in the Pull Request description;
 - **abort**: stop, the branch is deleted and nothing is pushed.
 
 <details markdown="1">
