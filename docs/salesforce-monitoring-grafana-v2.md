@@ -1,12 +1,12 @@
 ---
 title: Org Monitoring by sfdx-hardis (Grafana Dashboards v2)
-description: Complete guide to the v2 Grafana dashboard set - fleet overview, trends, forecasts, org health score, drill-down navigation and alerts
+description: With sfdx-hardis, complete guide to the v2 Grafana dashboard set - fleet overview, trends, forecasts, org health score, drill-down navigation and alerts
 ---
 <!-- markdownlint-disable MD013 -->
 
 # Org Monitoring by sfdx-hardis (Grafana Dashboards v2)
 
-The v2 dashboard set builds on the metrics and logs that [sfdx-hardis monitoring](salesforce-monitoring-home.md) already sends to Grafana ([setup guide](salesforce-ci-cd-setup-integration-api.md)).
+The v2 dashboard set builds on the metrics and logs that [sfdx-hardis monitoring](salesforce-monitoring-home.md) already sends to Grafana ([setup guide](salesforce-devops-setup-integration-api.md)).
 
 ![Dashboards folder](assets/images/grafana-v2-folder.png)
 
@@ -25,7 +25,7 @@ What it brings:
 
 ## Prerequisites
 
-- Monitoring configured with **both** endpoints of the [API integration](salesforce-ci-cd-setup-integration-api.md):
+- Monitoring configured with **both** endpoints of the [API integration](salesforce-devops-setup-integration-api.md):
   - `NOTIF_API_URL` (Loki logs): detail tables, searches, freshness detection
   - `NOTIF_API_METRICS_URL` (Prometheus/Mimir metrics): trends, averages, forecasts
 - A Grafana instance: Grafana Cloud (free tier works) or any self-hosted Grafana OSS/Enterprise (v10+)

@@ -285,7 +285,7 @@ export function buildDeployResultSummaryLines(resultJson: any, options: DeployRe
   if (options.reportFile) {
     lines.push(t('deployResultSummaryFullJson', { reportFile: options.reportFile }));
     // Old pipelines may not publish the hardis-report folder: point to the doc explaining how to add the step
-    lines.push(t('deployResultSummaryArtifactsDocHint', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-publish-artifacts/` }));
+    lines.push(t('deployResultSummaryArtifactsDocHint', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-publish-artifacts/` }));
   }
   if (!isFullDeployJsonLogRequested()) {
     lines.push(t('deployResultSummaryFullJsonHint'));

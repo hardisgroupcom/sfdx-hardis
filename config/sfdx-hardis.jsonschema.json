@@ -584,7 +584,7 @@
     "autoCleanTypes": {
       "$id": "#/properties/autoCleanTypes",
       "description": "When saving/publishing a User Story, sfdx-hardis can automatically clean the sources before submitting a Pull Request.\nSelect the cleanings that will be automatically applied on your project.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-cleaning/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-config-cleaning/",
       "examples": [
         [
           "dashboards",
@@ -1883,7 +1883,7 @@
       "$id": "#/properties/disableDeploymentActions",
       "default": false,
       "description": "Disable the deployment actions feature: commandsPreDeploy and commandsPostDeploy from the branch config and from Pull Requests are not collected nor run, and no Pull Request scope is computed. Use it when the git provider API cannot handle the Pull Request history processing (very large repositories). Can also be set with the SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS env variable.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/#disable-deployment-actions",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#disable-deployment-actions",
       "examples": [
         true
       ],
@@ -1934,7 +1934,7 @@
     "allowedPromotionSteps": {
       "$id": "#/properties/allowedPromotionSteps",
       "description": "Experimental feature. Required as soon as enablePromotionBranches is true.\nSource and target branches a release manager is allowed to assemble a promotion between (ex: only from uat to preprod).\nEvery other step is left out of the prompts of sf hardis:project:promotion:create and of the DevOps Pipeline, and naming one anyway fails the command.\nLeave an entry without a target to allow every merge target of that source branch.\nWhile the list is missing, sf hardis:project:promotion:create stops and asks for it: no promotion can be assembled before the project says between which branches.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/",
       "examples": [
         [
           {
@@ -1984,7 +1984,7 @@
       "$id": "#/properties/enablePromotionBranches",
       "description": "Experimental feature. Enable promotion branches: a branch named promotion/<source branch>/<target branch>/<YYYY-MM-DD>-<HHMM> (ex: promotion/uat/preprod/2026-09-06-1430) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.",
       "default": false,
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/",
       "examples": [
         true,
         false
@@ -2218,7 +2218,7 @@
       "$id": "#/properties/installPackagesDuringCheckDeploy",
       "default": false,
       "description": "If your configuration contains an installedPackages property, activating this option allows you to make sfdx-hardis automatically install packages during the Deployments Check workflow, and not to wait after the merge of the Pull Request.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-install-packages/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-install-packages/",
       "examples": [
         true
       ],
@@ -2312,7 +2312,7 @@
       "$id": "#/properties/manualActionsMode",
       "default": "externalFile",
       "description": "Defines how manual actions are managed for deployments.\n- **externalFile** (default): Manual actions are tracked in an external Excel/XLS file referenced by manualActionsFileUrl, and hardis:work:save reminds you to update it at the end of a run.\n- **sfdxHardis**: Manual actions are managed directly within sfdx-hardis, as deployment actions of type `manual`. They are listed in the Pull Request comments, where they can be ticked off once performed, and no external file is required.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-deploy/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/",
       "enum": [
         "externalFile",
         "sfdxHardis"
@@ -2952,7 +2952,7 @@
       "$id": "#/properties/orgAuthenticationMode",
       "default": "encryptedCert",
       "description": "Defines how the CI/CD pipeline authenticates to Salesforce orgs.\n- **encryptedCert** (default): Authentication uses encrypted certificate key files committed to the repository. The pipeline view will warn if a key file is missing for a branch.\n- **secretsOnly**: Authentication relies solely on CI/CD secrets variables (e.g. SFDX_HARDIS_CERT_<ORG>). No key file is required, and the pipeline view will not warn about missing certificate files.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/",
       "enum": [
         "encryptedCert",
         "secretsOnly"
@@ -3318,7 +3318,7 @@
       "$id": "#/properties/serviceNowAddDeploymentTag",
       "default": false,
       "description": "Add a tag on ServiceNow records when they are deployed in a major org. A ServiceNow tag is a record of the global label table, created on first use: keep it disabled unless the CI user is allowed to write there.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/",
       "title": "ServiceNow Add Deployment Tag",
       "type": "boolean",
       "visible-conditions": [
@@ -3333,7 +3333,7 @@
       "$id": "#/properties/serviceNowCommentField",
       "default": "work_notes",
       "description": "Journal field the deployment comment is written into. work_notes is the internal journal, comments is read by the person who opened the record.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/",
       "examples": [
         "work_notes",
         "comments"
@@ -3351,7 +3351,7 @@
     "serviceNowTablePrefixes": {
       "$id": "#/properties/serviceNowTablePrefixes",
       "description": "Additional record number prefixes, and the ServiceNow table each one belongs to, as PREFIX:table,PREFIX:table. Use it to reach the tables of a scoped application.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/",
       "examples": [
         "STRY:x_acme_story",
         "STRY:x_acme_story,DEFECT:x_acme_defect"
@@ -3369,7 +3369,7 @@
     "serviceNowTicketRegex": {
       "$id": "#/properties/serviceNowTicketRegex",
       "description": "Regular expression to identify ServiceNow record numbers in commits, branch names and Pull Request descriptions. The first capturing group must be the whole record number. Example: (INC[0-9]{7})",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/",
       "examples": [
         "(INC[0-9]{7})",
         "((?:INC|CHG|RITM)[0-9]{4,})"
@@ -3410,7 +3410,7 @@
       "$id": "#/properties/useDeltaDeployment",
       "default": false,
       "description": "Defines if sfdx-hardis will deploy in delta from minor to major branches.\nWhen active, Delta Deployments allow to deploy only the metadatas in the branch / User Story, and not the full sources of the SFDX project.\nNote: Even if activated, Delta Deployments will be applied only for Pull Requests from minor (features,hotfixes) to major branches (integration,preprod).",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-mode",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-config-delta-deployment/#delta-mode",
       "title": "Use Delta Deployment",
       "type": "boolean"
     },
@@ -3418,7 +3418,7 @@
       "$id": "#/properties/useDeltaDeploymentWithDependencies",
       "default": false,
       "description": "Also deploy dependencies of the metadatas identified by delta deployment, to avoid broken deployments due to missing dependencies.\n Example: removed picklist value in a field, that is still used in a record type.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-with-dependencies-beta",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-config-delta-deployment/#delta-with-dependencies-beta",
       "title": "Use Delta Deployment with dependencies (beta)",
       "type": "boolean"
     },

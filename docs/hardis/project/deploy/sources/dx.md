@@ -7,7 +7,7 @@ Smart deploy of SFDX sources to target org, with many useful options.
 
 In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error messages.
 
-> See the [whole sfdx-hardis smart deployment workflow explained in detail](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-smart-deployment.md)
+> See the [whole sfdx-hardis smart deployment workflow explained in detail](https://sfdx-hardis.cloudity.com/salesforce-devops-smart-deployment.md)
 
 ### Quick Deploy
 
@@ -15,9 +15,9 @@ In case Pull Request comments are configured on the project, Quick Deploy will t
 
 If you do not want to use QuickDeploy, define variable `SFDX_HARDIS_QUICK_DEPLOY=false`
 
-- [GitHub Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-github/)
-- [Gitlab Merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
-- [Azure Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
+- [GitHub Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-github/)
+- [Gitlab Merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-gitlab/)
+- [Azure Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-azure/)
 
 ### Delta deployments
 
@@ -115,7 +115,7 @@ If necessary,you can define the following files:
   - Can be overridden for a branch using .sfdx-hardis.yml property **packageNoOverwritePath** or environment variable PACKAGE_NO_OVERWRITE_PATH (for example, define: `packageNoOverwritePath: manifest/package-no-overwrite-main.xml` in config file `config/.sfdx-hardis.main.yml`)
 - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
-See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/)
+See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-config-overwrite/)
 
 ### Packages installation
 

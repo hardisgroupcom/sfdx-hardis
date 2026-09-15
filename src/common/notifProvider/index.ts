@@ -63,7 +63,7 @@ export abstract class NotifProvider {
         "log",
         this,
         c.grey(
-          `[NotifProvider] No notif has been configured: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
+          `[NotifProvider] No notif has been configured: ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integrations-home/#message-notifications`,
         ),
       );
     }

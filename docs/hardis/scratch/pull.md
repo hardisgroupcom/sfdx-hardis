@@ -14,7 +14,7 @@ Key features and considerations:
 
 - **Underlying Command:** Internally, this command executes `sf project retrieve start` to fetch the metadata.
 - **Error Handling:** If the pull operation encounters errors, it offers to automatically add the problematic items to your `.forceignore` file and then attempts to pull again, helping you resolve conflicts and ignore unwanted metadata.
-- **Missing Updates:** If you don't see certain updated items in the pull results, you might need to manually retrieve them using the Salesforce Extension's **Org Browser** or the **Salesforce CLI** directly. Refer to the [Retrieve Metadatas documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas) for more details.
+- **Missing Updates:** If you don't see certain updated items in the pull results, you might need to manually retrieve them using the Salesforce Extension's **Org Browser** or the **Salesforce CLI** directly. Refer to the [Retrieve Metadatas documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/#retrieve-metadatas) for more details.
 - **Automatic Retrieval:** You can configure the `autoRetrieveWhenPull` property in your `.sfdx-hardis.yml` file to always retrieve specific metadata types (e.g., `CustomApplication`) that might not always be detected as updates by `project:retrieve:start`.
 
 Example `.sfdx-hardis.yml` configuration for `autoRetrieveWhenPull`:

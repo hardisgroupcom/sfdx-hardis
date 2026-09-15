@@ -123,7 +123,7 @@ autoRemoveUserPermissions:
   - WorkCalibrationUser
 \`\`\`
 
-Advanced instructions are available in the [Publish a User Story documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/).
+Advanced instructions are available in the [Publish a User Story documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/).
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -300,7 +300,7 @@ The command's technical implementation involves a series of orchestrated steps:
     else {
       summaryMsg += c.grey(`- ${existingPullRequest ? 'Existing' : 'New'} ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}\n`);
     }
-    const mergeRequestDoc = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`;
+    const mergeRequestDoc = `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-publish-user-story/#create-merge-request`;
     summaryMsg += c.grey('- ' + t('repositoryLabel') + ': ' + c.green(this.gitUrl.replace('.git', '')) + '\n');
     summaryMsg += c.grey('- ' + t('sourceBranchLabel') + ': ' + c.green(this.currentBranch) + '\n');
     summaryMsg += c.grey('- ' + t('targetBranchLabel') + ': ' + c.green(this.targetBranch));
@@ -438,7 +438,7 @@ The command's technical implementation involves a series of orchestrated steps:
         c.cyan(t('sourcesHaveBeenPulledNowStageAndCommit', { username: flags['target-org'].getUsername() }))
       );
       WebSocketClient.sendReportFileMessage("workbench.view.scm", t('commitYourRetrievedFiles'), "actionCommand");
-      WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, t('retrieveAndCommitDocumentation'), 'docUrl');
+      WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-publish-user-story/#commit-your-updates`, t('retrieveAndCommitDocumentation'), 'docUrl');
       return { outputString: 'Pull performed' };
     } else if (commitReadyRes.value === 'help') {
       // Show pull commit stage help

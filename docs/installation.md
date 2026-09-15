@@ -61,7 +61,7 @@ Go back to the Welcome page and click **Connect** to log in to your first org. T
 Where to go next:
 
 - [What you can do from the VS Code extension](https://sfdx-hardis.cloudity.com/vscode-extension/)
-- [Set up a Salesforce CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
+- [Set up a Salesforce CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-devops-home/)
 - [Monitor a Salesforce org](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
 
 #### Video tutorial

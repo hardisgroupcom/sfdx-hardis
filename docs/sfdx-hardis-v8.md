@@ -233,7 +233,7 @@ A deployment action is anything that must happen **around** a metadata deploymen
 
 ![Deployment actions status by org branch](assets/images/pr-comment-deployment-actions-matrix.png)
 
-> The [Deployment Actions guide](salesforce-ci-cd-work-on-task-deployment-actions.md) was rewritten for v8, with one illustrated section per action type.
+> The [Deployment Actions guide](salesforce-devops-work-on-user-story-deployment-actions.md) was rewritten for v8, with one illustrated section per action type.
 
 ---
 
@@ -373,7 +373,7 @@ The default **GitHub Actions**, **Azure Pipelines** and **Bitbucket Pipelines** 
 - Images are published to **GitHub Container Registry** (`ghcr.io/hardisgroupcom/sfdx-hardis`), the recommended default, and mirrored on Docker Hub.
 - **Existing pipelines keep working**: the templates apply when you initialize a new project or monitoring repository.
 
-Two new pages help you check your setup: the [CI/CD Setup Checklist](salesforce-ci-cd-setup-checklist.md) and [how to publish job artifacts](salesforce-ci-cd-setup-publish-artifacts.md) on any platform.
+Two new pages help you check your setup: the [CI/CD Setup Checklist](salesforce-devops-setup-checklist.md) and [how to publish job artifacts](salesforce-devops-setup-publish-artifacts.md) on any platform.
 
 ---
 

@@ -44,7 +44,7 @@ export default class ConfigureGrafanaDashboards extends SfCommand<any> {
 
 Key functionalities:
 
-- **Guided start:** in interactive mode, the command first asks whether a Grafana instance is already available. If not, it opens the [Grafana free-tier setup guide](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-api/#grafana-setup) (Grafana Cloud free tier: free forever, no credit card required) instead of asking for a URL.
+- **Guided start:** in interactive mode, the command first asks whether a Grafana instance is already available. If not, it opens the [Grafana free-tier setup guide](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-api/#grafana-setup) (Grafana Cloud free tier: free forever, no credit card required) instead of asking for a URL.
 - **Folder creation:** creates the \`Org Monitoring by sfdx-hardis\` folder (uid \`sfdx-hardis-v2\`) if missing.
 - **Dashboard import:** downloads the dashboard definitions from the sfdx-hardis GitHub repository (\`--ref\` selects the branch or tag, default \`main\`) and imports them with \`overwrite: true\`. Re-running the command upgrades the dashboards in place: uids are stable, bookmarks and links keep working. The dashboards resolve their Prometheus and Loki datasources by themselves (hidden variables), so no datasource configuration is needed for this part.
 - **Optional alert pack:** with \`--with-alerts\`, imports the 6 alert rules (org limit above 90%, storage exhaustion forecast, error spike, backup failure, silent org, health score degradation). All rules are imported **paused**, so they trigger no evaluation and no cost until you enable them from **Alerting -> Alert rules** and configure your contact points. Alert rules need explicit datasource uids: the command auto-detects the Prometheus/Mimir and Loki datasources receiving sfdx-hardis data (Grafana Cloud internal datasources are filtered out), and \`--prom-uid\` / \`--loki-uid\` pin the choice when several candidates exist.
@@ -52,7 +52,7 @@ Key functionalities:
 
 Authentication uses a Grafana service account token provided via \`--grafana-token\` or the \`GRAFANA_API_TOKEN\` environment variable (prefer the environment variable: flag values can end up in shell history and local log files). The instance URL comes from \`--grafana-url\` or \`GRAFANA_API_URL\`. An Editor role is enough for the dashboards; \`--with-alerts\` additionally needs datasource read and alert provisioning permissions.
 
-This command requires no Salesforce org: it only talks to Grafana and GitHub. Configure the [API integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-api/) first so the dashboards have data to display.
+This command requires no Salesforce org: it only talks to Grafana and GitHub. Configure the [API integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-api/) first so the dashboards have data to display.
 
 ### Agent Mode
 
@@ -147,7 +147,7 @@ In agent mode:
         initial: true,
       });
       if (hasGrafana.value !== true) {
-        const docUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-api/#grafana-setup`;
+        const docUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-api/#grafana-setup`;
         uxLog("action", this, c.cyan(t('grafanaCreateAccountDoc', { url: docUrl })));
         await open(docUrl, { wait: false });
         return { success: false, grafanaInstanceMissing: true, docUrl: docUrl };

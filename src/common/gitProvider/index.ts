@@ -218,7 +218,7 @@ export abstract class GitProvider {
       uxLog(
         "warning",
         this,
-        c.yellow('[GitProvider] ' + t('gitProviderSeeDocumentation', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers` })),
+        c.yellow('[GitProvider] ' + t('gitProviderSeeDocumentation', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integrations-home/#git-providers` })),
       );
       return;
     }
@@ -596,7 +596,7 @@ export abstract class GitProvider {
     } catch (e) {
       uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderUnableToGetPrInfo', { message: (e as Error).message })));
       uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderMayBeMisconfigured', { provider: gitProvider.getLabel() })));
-      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderSeeDocumentation', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers` })));
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderSeeDocumentation', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integrations-home/#git-providers` })));
       prInfo = null;
     }
     return prInfo;

@@ -18,8 +18,8 @@ refuses to run while the list is missing.
 Everything below is inert while it is off, with one exception noted in [Filtering](#filtering-what-moves-the-pull-requests).
 The feature is **experimental** and must be labelled as such in docs and UIs.
 
-User documentation: `docs/salesforce-ci-cd-promotion-branches.md`
-(<https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/>).
+User documentation: `docs/salesforce-devops-promotion-branches.md`
+(<https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/>).
 End to end test runbook: the `promotion-branches-e2e` skill.
 
 ## Mental model

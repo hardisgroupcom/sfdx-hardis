@@ -1,0 +1,26 @@
+---
+title: Configure Gitlab CI/CD variables
+description: With sfdx-hardis, learn how to configure CI/CD variables for CI Server authentication to automate deployments with Gitlab
+---
+<!-- markdownlint-disable MD013 -->
+
+## Define sfdx-hardis environment variables
+
+- Go to **Project -> Settings -> CI/CD -> Variables** _(you must have GitLab permissions to access this menu)_
+
+![](assets/images/screenshot-gitlab-variables.png)
+
+- Create the variable with the following info:
+  - name: **YOUR_VARIABLE_NAME**
+  - value: `Your variable value`
+  - Select **Mask variable** if the value is sensitive, like credentials or tokens
+  - Unselect **Protected variable**
+
+![](assets/images/screenshot-add-variable-gitlab.png)
+
+More info: [GitLab documentation](https://docs.gitlab.com/ee/ci/variables/#for-a-project){target=blank}
+
+## Auto-fix branches
+
+Default CI templates skip steps that run `sf hardis` commands when the current branch starts with `auto-fix/`.
+This prevents recursive or redundant deploy/check executions on auto-generated fix branches.

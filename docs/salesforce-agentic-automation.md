@@ -1,6 +1,6 @@
 ---
 title: sfdx-hardis with AI Coding Agents
-description: How to drive Salesforce DevOps tasks non-interactively with Claude Code, GitHub Copilot, Gemini CLI, Cursor, and other AI coding agents using the --agent flag
+description: With sfdx-hardis, how to drive Salesforce DevOps tasks non-interactively with Claude Code, GitHub Copilot, Gemini CLI, Cursor, and other AI coding agents using the --agent flag
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -89,7 +89,7 @@ The skills folder depends on your agent:
 | Cursor         | `.cursor/skills/`  |
 | OpenAI Codex   | `.codex/skills/`   |
 
-See [Using AI Coding Agents](salesforce-ci-cd-agent-skills.md) for more detailed skill examples including org diagnostics.
+See [Using AI Coding Agents](salesforce-devops-agent-skills.md) for more detailed skill examples including org diagnostics.
 
 ---
 
@@ -305,7 +305,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 
 ## See Also
 
-- [Using AI Coding Agents (Detailed Guide)](salesforce-ci-cd-agent-skills.md): step-by-step skills for Claude Code, Copilot, and other agents
+- [Using AI Coding Agents (Detailed Guide)](salesforce-devops-agent-skills.md): step-by-step skills for Claude Code, Copilot, and other agents
 - [Coding Agent Auto-Fix](salesforce-deployment-agent-autofix.md): auto-fix deployment errors with AI agents
 - [AI Setup](salesforce-ai-setup.md): configure LLM providers (Claude, OpenAI, Gemini, Ollama) for sfdx-hardis AI features
 - [Deployment Agent](salesforce-deployment-agent-home.md): AI-assisted deployment error resolution

@@ -2005,7 +2005,7 @@ export async function generateSSLCertificate(
     uxLog(
       "log",
       commandThis,
-      c.grey(c.yellow(t('helpToConfigureCiCdVariablesUrl', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/` })))
+      c.grey(c.yellow(t('helpToConfigureCiCdVariablesUrl', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/` })))
     );
     uxLog(
       "warning",
@@ -2034,7 +2034,7 @@ export async function generateSSLCertificate(
       uxLog("log", commandThis, c.cyan(t('encryptedCertificateKeyFileDeletedLocally', { targetKeyFile })));
     }
 
-    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, t('helpToConfigureCiVariables'), "docUrl");
+    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`, t('helpToConfigureCiVariables'), "docUrl");
     await prompts({
       type: 'confirm',
       message: c.cyanBright(externalStorage ? t('pleaseConfirmWhenSecretsStoredInPasswordManager') : t('pleaseConfirmWhenVariablesHaveBeenSet')),
@@ -2216,7 +2216,7 @@ export async function generateSSLCertificate(
           placeholder: t('placeholderExternalClientAppDescription'),
         })).value;
     } else {
-      appDescription = `External Client App used by sfdx-hardis for CI/CD authentication. Documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`;
+      appDescription = `External Client App used by sfdx-hardis for CI/CD authentication. Documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`;
     }
 
     // Sanitize app name for metadata
@@ -2343,7 +2343,7 @@ async function configureCaSignedCertificate(branchName: string, commandThis: any
   const aliasUpper = branchName.toUpperCase();
   const clientIdVar = `SFDX_CLIENT_ID_${aliasUpper}`;
   const clientCertVar = `SFDX_CLIENT_CERT_${aliasUpper}`;
-  const docUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/#use-a-ca-signed-certificate`;
+  const docUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/#use-a-ca-signed-certificate`;
 
   uxLog("action", commandThis, c.cyan(t('caSignedConfigureForBranch', { branchName: c.bold(branchName) })));
   uxLog("log", commandThis, c.grey(t('caSignedManualEcaInstructions')));

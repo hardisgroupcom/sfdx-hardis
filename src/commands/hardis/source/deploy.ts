@@ -23,9 +23,9 @@ Additional to the base command wrapper: If using **--checkonly**, add options **
 
 You can also have deployment results as pull request comments, on:
 
-- GitHub (see [GitHub Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-github/))
-- Gitlab (see [Gitlab integration configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-gitlab/))
-- Azure DevOps (see [Azure integration configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-azure/))
+- GitHub (see [GitHub Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-github/))
+- Gitlab (see [Gitlab integration configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-gitlab/))
+- Azure DevOps (see [Azure integration configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-azure/))
 
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)

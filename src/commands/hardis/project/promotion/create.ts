@@ -51,7 +51,7 @@ export default class PromotionCreate extends SfCommand<any> {
 
 **Assembles a promotion branch: a branch carrying only the approved User Stories of a major branch (ex: uat), so they reach the next major branch (ex: preprod) before the rest of the promotion window.**
 
-This is the only supported way to create a [promotion branch (experimental)](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/). The command:
+This is the only supported way to create a [promotion branch (experimental)](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/). The command:
 
 - checks that \`enablePromotionBranches: true\` is set in the sfdx-hardis configuration;
 - checks that \`allowedPromotionSteps\` declares the steps promotions may run on (ex: \`- source: uat\` / \`target: preprod\`), and keeps to them: only those source and target branches are offered, and naming another one fails;

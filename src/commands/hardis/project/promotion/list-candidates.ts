@@ -29,7 +29,7 @@ export default class PromotionListCandidates extends SfCommand<any> {
 
 **Experimental feature.** Promotion branches are new and switched off by default; their behavior may still change from feedback.
 
-**Lists the Pull Requests merged into a major branch (ex: uat) and not yet promoted to the next one (ex: preprod), so you can choose the ones a [promotion branch (experimental)](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/) will carry.**
+**Lists the Pull Requests merged into a major branch (ex: uat) and not yet promoted to the next one (ex: preprod), so you can choose the ones a [promotion branch (experimental)](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/) will carry.**
 
 This is the read-only half of \`sf hardis:project:promotion:create\`: same configuration checks, same candidates, same rules about what is already on its way, but nothing is created, pushed or closed. Run it to know what can be promoted, then pass the numbers you picked to \`hardis:project:promotion:create --pull-requests\`.
 

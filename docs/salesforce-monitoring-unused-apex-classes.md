@@ -1,6 +1,6 @@
 ---
 title: Detect unused Apex Classes (Salesforce monitoring)
-description: Schedule weekly checks of which Batch, Schedulable and Queueable classes are never called and could be deleted to improve Apex Test Classes performances
+description: With sfdx-hardis, schedule weekly checks of which Batch, Schedulable and Queueable classes are never called and could be deleted to improve Apex Test Classes performances
 ---
 <!-- markdownlint-disable MD013 -->
 

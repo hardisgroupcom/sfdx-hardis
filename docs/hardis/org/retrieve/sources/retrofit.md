@@ -8,7 +8,7 @@
 
 **This command is deprecated and must not be used.** Changing a major org by hand is not a supported way of working.
 
-When a change was made directly in an org, recover it as an ordinary User Story: start a branch under the lowest major branch (usually `integration`), retrieve exactly what changed with the Metadata Retriever of the VS Code SFDX Hardis extension, then review and merge it like any other work. See [Retrofit](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-retrofit/).
+When a change was made directly in an org, recover it as an ordinary User Story: start a branch under the lowest major branch (usually `integration`), retrieve exactly what changed with the Metadata Retriever of the VS Code SFDX Hardis extension, then review and merge it like any other work. See [Retrofit](https://sfdx-hardis.cloudity.com/salesforce-devops-retrofit/).
 
 Retrieve changes from org link to a ref branch not present in sources
 

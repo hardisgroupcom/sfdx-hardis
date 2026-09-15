@@ -1,6 +1,6 @@
 ---
 title: How to monitor your Salesforce Org
-description: Free Salesforce Metadata BackUp, plus many extra monitoring features like Grafana Dashboards
+description: With sfdx-hardis, free Salesforce Metadata BackUp, plus many extra monitoring features like Grafana Dashboards
 ---
 
 <!-- markdownlint-disable MD013 -->
@@ -106,9 +106,9 @@ Additional jobs then run on top of the backup: Apex tests, code quality, legacy 
 
 Each notification type (audit trail, org limits, Apex tests, ...) can be configured **per channel** with its own severity threshold. Configure it from the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) or directly in `.sfdx-hardis.yml`.
 
-- **Messaging channels**: [Slack](salesforce-ci-cd-setup-integration-slack.md) and [Microsoft Teams](salesforce-ci-cd-setup-integration-ms-teams.md)
-- **Email**: [any recipient list](salesforce-ci-cd-setup-integration-email.md), with per-notification-type overrides
-- **API / Grafana / Prometheus**: [external endpoints](salesforce-ci-cd-setup-integration-api.md) for dashboards (e.g. Grafana Loki, Prometheus)
+- **Messaging channels**: [Slack](salesforce-devops-setup-integration-slack.md) and [Microsoft Teams](salesforce-devops-setup-integration-ms-teams.md)
+- **Email**: [any recipient list](salesforce-devops-setup-integration-email.md), with per-notification-type overrides
+- **API / Grafana / Prometheus**: [external endpoints](salesforce-devops-setup-integration-api.md) for dashboards (e.g. Grafana Loki, Prometheus)
 
 **Personal data stays private**: when monitoring runs in CI, usernames, emails, user Ids and client IPs are replaced by stable pseudonyms in generated reports and in every notification channel, so dashboards and shared files carry no readable end-user identity. Levels and overrides are described in [Security & Privacy](salesforce-security-privacy.md#data-anonymization).
 
