@@ -1,6 +1,6 @@
 ---
 title: Deployment actions on a Salesforce CI/CD project
-description: With sfdx-hardis, "Automate and track the steps around your deployments: data loads, Apex scripts, community publishing, scheduled batches and manual steps"
+description: "With sfdx-hardis, automate and track the steps around your deployments: data loads, Apex scripts, community publishing, scheduled batches and manual steps"
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -260,7 +260,7 @@ In case of multiple commands, use `&&` to separate them.
 
 #### Import data (SFDMU)
 
-Loads records into the target org using one of the [SFDMU data workspaces](https://sfdx-hardis.cloudity.com/salesforce-devops-config-data/) of your project: reference data, email templates, demo records...
+Loads records into the target org using one of the [SFDMU data workspaces](https://sfdx-hardis.cloudity.com/salesforce-devops-agent-data-workspaces/) of your project: reference data, email templates, demo records...
 
 ![Data deployment action](assets/images/screenshot-deployment-action-data.jpg)
 

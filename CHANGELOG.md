@@ -2472,7 +2472,7 @@ commandsPostDeploy:
 
 ## [4.32.0] 2024-04-24
 
-- Enhance [BitBucket Integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integrations-bitbucket/), by @Alainbates in <https://github.com/hardisgroupcom/sfdx-hardis/pull/584>
+- Enhance [BitBucket Integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-bitbucket/), by @Alainbates in <https://github.com/hardisgroupcom/sfdx-hardis/pull/584>
 
   - Deployment status in Pull Request comments
   - Quick Deploy to enhance performance

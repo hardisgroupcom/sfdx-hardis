@@ -55,7 +55,7 @@ export default class SmartDeploy extends SfCommand<any> {
 
 In case of errors, [tips to fix them](${CONSTANTS.DOC_URL_ROOT}/deployTips/) will be included within the error messages.
 
-> See the [whole sfdx-hardis smart deployment workflow explained in detail](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-smart-deployment.md)
+> See the [whole sfdx-hardis smart deployment workflow explained in detail](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-smart-deployment/)
 
 ### Quick Deploy
 

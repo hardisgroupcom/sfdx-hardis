@@ -458,7 +458,7 @@ nav:
   - Community & Resources:
       - Community Events: events.md
       - Articles & Videos: articles-videos.md
-      - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-devops-with-sfdx-hardis-q-a-1f412db34476
+      - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
       - Meet the team: contributors.md
       - Contributing: contributing.md
   - Security & Privacy: salesforce-security-privacy.md

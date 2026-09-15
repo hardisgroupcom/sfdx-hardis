@@ -2312,7 +2312,7 @@
       "$id": "#/properties/manualActionsMode",
       "default": "externalFile",
       "description": "Defines how manual actions are managed for deployments.\n- **externalFile** (default): Manual actions are tracked in an external Excel/XLS file referenced by manualActionsFileUrl, and hardis:work:save reminds you to update it at the end of a run.\n- **sfdxHardis**: Manual actions are managed directly within sfdx-hardis, as deployment actions of type `manual`. They are listed in the Pull Request comments, where they can be ticked off once performed, and no external file is required.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-deploy/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/",
       "enum": [
         "externalFile",
         "sfdxHardis"

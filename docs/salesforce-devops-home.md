@@ -139,7 +139,7 @@ _An advanced branch and org model you can build with sfdx-hardis. Simpler RUN-on
 
 For more questions and answers, see this article:
 
-[![Questions and answers](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-questions-answers.jpg)](https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-devops-with-sfdx-hardis-q-a-1f412db34476)
+[![Questions and answers](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-questions-answers.jpg)](https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476)
 
 ---
 
