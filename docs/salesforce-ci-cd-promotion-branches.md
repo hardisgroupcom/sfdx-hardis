@@ -31,10 +31,9 @@ A **promotion branch** is the exception path for that situation: a branch cut fr
 flowchart TB
     subgraph WINDOW["What is waiting in uat"]
         direction LR
-        OK1["PR 113<br/>Renewal reminders<br/>approved"]
-        KO1["PR 114<br/>Contract pricing<br/>waiting for sign-off"]
-        OK2["PR 115<br/>Appointment scheduler<br/>approved"]
-        KO2["PR 116<br/>Territory rules<br/>waiting for sign-off"]
+        %% Invisible links keep the four stories on one row, in order: without an
+        %% edge between them they would all sit in the first rank and stack up
+        OK1["PR 113<br/>Renewal reminders<br/>approved"] ~~~ KO1["PR 114<br/>Contract pricing<br/>waiting for sign-off"] ~~~ OK2["PR 115<br/>Appointment scheduler<br/>approved"] ~~~ KO2["PR 116<br/>Territory rules<br/>waiting for sign-off"]
     end
     WINDOW --> CHOICE{"Is the whole<br/>window approved?"}
     CHOICE -->|Yes| NORMAL["Merge uat into preprod:<br/>the recommended way,<br/>the stories were tested together"]
@@ -58,17 +57,19 @@ A promotion branch is an ordinary minor branch for the deployment itself: its Pu
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "secondaryColor": "#f3f3f3", "tertiaryColor": "#ffffff", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
 flowchart LR
-    subgraph UAT_BRANCH["uat"]
+    %% Lanes are stacked in reverse declaration order, so preprod is declared
+    %% first to draw uat on top, the promotion under it and preprod at the bottom
+    subgraph PREPROD_BRANCH["preprod"]
         direction LR
-        M113["merge of PR 113"] --> M114["merge of PR 114"] --> M115["merge of PR 115"] --> M116["merge of PR 116"]
+        P0["release 2026-07"] --> PROMOTION_MERGE["merge of the promotion"]
     end
     subgraph PROMOTION_BRANCH["promotion/uat/preprod/2026-08-20-0930"]
         direction LR
         C113["cherry-pick<br/>of PR 113"] --> C115["cherry-pick<br/>of PR 115"]
     end
-    subgraph PREPROD_BRANCH["preprod"]
+    subgraph UAT_BRANCH["uat"]
         direction LR
-        P0["release 2026-07"] --> PROMOTION_MERGE["merge of the promotion"]
+        M113["merge of PR 113"] --> M114["merge of PR 114"] --> M115["merge of PR 115"] --> M116["merge of PR 116"]
     end
     P0 -->|"branch from origin/preprod"| C113
     M113 -.->|"git cherry-pick -x"| C113
