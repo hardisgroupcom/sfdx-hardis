@@ -11,7 +11,7 @@ A **retrofit** brings back into the BUILD branches what reached production witho
 > **Two things are called retrofit in sfdx-hardis**, and this page covers both:
 >
 > - **[Retrofit a branch](#retrofit-a-branch-into-the-build)**: `main` (or `preprod`) is merged down into `integration` through a `retrofit/` branch. This is the one that follows a hotfix or a promotion branch.
-> - **[Retrofit changes made directly in production](#retrofit-changes-made-directly-in-production)**: somebody edited the production org by hand, and the change has to come back into git.
+> - **[Retrofit changes made directly in production](#retrofit-changes-made-directly-in-production)**: somebody edited the production org by hand. That must never happen, and this is how you repair it.
 
 - [Why it matters](#why-it-matters)
 - [When to retrofit](#when-to-retrofit)
@@ -52,7 +52,7 @@ Every time something reached production without going through the BUILD branches
 |-------------------------------------------------------------------------------------------------------|------------------------------------------|-----------------------------------------------------------------------------------|
 | A [hotfix](salesforce-ci-cd-hotfixes.md) was merged into `main`                                       | `main` (or `preprod`) into `integration` | Right after the hotfix is in production                                           |
 | A [promotion branch (experimental)](salesforce-ci-cd-promotion-branches.md) was merged into `preprod` | `preprod` into `integration`             | Right after the promotion is merged                                               |
-| Somebody changed the production org **by hand**                                                       | The org itself, back into git            | As soon as you notice, see [below](#retrofit-changes-made-directly-in-production) |
+| Somebody changed the production org **by hand** (which must never happen)                             | The org itself, back into git            | As soon as you notice, see [below](#retrofit-changes-made-directly-in-production) |
 
 Do it **right away** in every case. A retrofit left for later is a conflict that grows: the BUILD branches keep moving on top of metadata that is already out of date in production.
 
@@ -105,11 +105,15 @@ ___
 
 ## Retrofit changes made directly in production
 
-Somebody changed the production org through Setup instead of the pipeline. The change is live, it is in no branch, and the next deployment will overwrite it.
+> ⚠️ **Changing a major org by hand must never happen.** Production, preprod, uat and integration are deployed from their branch: a change made through Setup is in no branch, nobody reviewed it, and the next deployment silently overwrites it. All work goes through a dev sandbox, a branch and a Pull Request, however small and however urgent. [Protect your major branches](salesforce-ci-cd-setup-git.md#protect-the-major-branches) and keep the number of people with Setup access in production to a minimum.
 
-`sf hardis:org:retrieve:sources:retrofit` retrieves what the production org holds and the sources do not, commits it and opens a Pull Request against the retrofit target branch, so the change re-enters the pipeline instead of being lost.
+It still happens, and pretending otherwise loses the change. This section is the **repair**, not a way of working.
 
-It is usually scheduled as a CI job rather than run by hand, so the drift is caught on its own.
+When somebody has changed the production org through Setup, the change is live, it is in no branch, and the next deployment will undo it. Retrieving it back into git puts it under review and makes it survive.
+
+Schedule it as a CI job rather than running it by hand: the drift is then caught on its own, a few hours after it appears, instead of the day it breaks a deployment.
+
+A few metadata types are the accepted exception, because they are meant to be edited by business users in the org: Reports, Dashboards and a handful of others. Those are exactly what this job is for.
 
 <details markdown="1">
 <summary>How it works behind the hood</summary>

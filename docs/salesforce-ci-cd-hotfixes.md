@@ -56,7 +56,6 @@ flowchart TB
     START{"A change has to reach<br/>production before the<br/>next version"}
     START -->|"it does not exist yet,<br/>you write it now"| HOTFIX["**Hotfix**<br/>branch to preprod, then to main"]
     START -->|"it is already merged in uat,<br/>with stories nobody approved"| PROMO["**Promotion branch**<br/>carries the approved stories only"]
-    START -->|"somebody already changed it<br/>by hand in the production org"| ORG["**Retrofit from the org**<br/>bring the manual change back into git"]
     HOTFIX --> RETRO["Then retrofit it into the BUILD"]
     PROMO --> RETRO
     style HOTFIX fill:#e3f7e8,stroke:#2e844a
@@ -65,9 +64,10 @@ flowchart TB
 
 - **Hotfix**: this page.
 - **Promotion branch (experimental)**: do not fix it a second time, assemble a [promotion branch](salesforce-ci-cd-promotion-branches.md) carrying the approved stories.
-- **Retrofit from the org**: see [retrofit](salesforce-ci-cd-retrofit.md#retrofit-changes-made-directly-in-production).
 
-Whichever you pick, it ends the same way: what reached production has to come back down to the BUILD branches.
+Either way, it ends the same way: what reached production has to come back down to the BUILD branches.
+
+> ⚠️ **Fixing it by hand in the production org is not on this list, and never is.** A change made through Setup is in no branch, so the next deployment overwrites it and the fix is lost. Always go through a branch and a Pull Request, even when it is one field and even at 2am. If it has already happened, treat it as an incident to repair: see [retrofit changes made directly in production](salesforce-ci-cd-retrofit.md#retrofit-changes-made-directly-in-production).
 
 ___
 
