@@ -95,7 +95,7 @@ export abstract class TestManagementProviderRoot {
 
   /**
    * Message of a failed HTTP call, with what the server answered: "Request failed with status
-   * code 400" alone does not say which field Jira or ServiceNow refused.
+   * code 400" alone does not say which field Jira refused.
    */
   public static describeHttpError(e: any): string {
     const data = e?.response?.data;

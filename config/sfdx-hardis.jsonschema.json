@@ -3284,12 +3284,10 @@
       "docUrl": "https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/",
       "enum": [
         "azure-devops",
-        "servicenow",
         "xray"
       ],
       "enumNames": [
         "Azure DevOps",
-        "ServiceNow Test Management",
         "Xray Cloud"
       ],
       "examples": [

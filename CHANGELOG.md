@@ -3,7 +3,7 @@
 ## [beta] (main)
 
 - [hardis:ticket:test-cases:init](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/init/): **new command** writing the test cases of a ticket into a notebook a tester fills in: an Excel workbook, a CSV or a markdown table.
-- [hardis:ticket:test-cases:upsert](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/): **new command** creating or updating the test cases of a notebook in Azure DevOps, ServiceNow Test Management or Xray Cloud, safe to run again from a CI job.
+- [hardis:ticket:test-cases:upsert](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/): **new command** creating or updating the test cases of a notebook in Azure DevOps or Xray Cloud, safe to run again from a CI job.
 
 ## [8.8.0] 2026-09-13
 
