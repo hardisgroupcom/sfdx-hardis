@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/): the documentation page now explains the feature with diagrams and screenshots of the DevOps Pipeline.
+
 ## [8.8.1] 2026-09-14
 
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): duplicate commits are no longer shown in the Pull Request selection list when branches merge both ways.

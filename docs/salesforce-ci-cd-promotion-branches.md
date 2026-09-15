@@ -26,6 +26,27 @@ Some organizations cannot always follow it. Business sign-off happens **per User
 
 A **promotion branch** is the exception path for that situation: a branch cut from the target major branch (usually `preprod`), on which the release manager cherry-picks the approved stories only, and which is merged through an ordinary Pull Request. It is not a replacement for the normal promotion of `uat`: use it when you have to, and promote `uat` as usual as soon as you can.
 
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "secondaryColor": "#f3f3f3", "tertiaryColor": "#ffffff", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
+flowchart TB
+    subgraph WINDOW["What is waiting in uat"]
+        direction LR
+        OK1["PR 113<br/>Renewal reminders<br/>approved"]
+        KO1["PR 114<br/>Contract pricing<br/>waiting for sign-off"]
+        OK2["PR 115<br/>Appointment scheduler<br/>approved"]
+        KO2["PR 116<br/>Territory rules<br/>waiting for sign-off"]
+    end
+    WINDOW --> CHOICE{"Is the whole<br/>window approved?"}
+    CHOICE -->|Yes| NORMAL["Merge uat into preprod:<br/>the recommended way,<br/>the stories were tested together"]
+    CHOICE -->|"No, and the release<br/>date does not move"| PROMO["Assemble a promotion branch<br/>carrying PR 113 and PR 115 only"]
+    NORMAL --> PREPROD[["preprod"]]
+    PROMO --> PREPROD
+    style OK1 fill:#e3f7e8,stroke:#2e844a
+    style OK2 fill:#e3f7e8,stroke:#2e844a
+    style KO1 fill:#fef1ee,stroke:#ea001e
+    style KO2 fill:#fef1ee,stroke:#ea001e
+```
+
 For urgent fixes that were never in `uat`, use [hotfixes and retrofit](salesforce-ci-cd-hotfixes.md) instead.
 
 ___
@@ -33,6 +54,29 @@ ___
 ## How it works
 
 A promotion branch is an ordinary minor branch for the deployment itself: its Pull Request to `preprod` gets a delta validation, a Quick Deploy after the merge, the overwrite management, exactly like a hotfix branch.
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "secondaryColor": "#f3f3f3", "tertiaryColor": "#ffffff", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
+flowchart LR
+    subgraph UATL["uat"]
+        direction LR
+        M113["merge of PR 113"] --> M114["merge of PR 114"] --> M115["merge of PR 115"] --> M116["merge of PR 116"]
+    end
+    subgraph PROML["promotion/uat/preprod/2026-08-20-0930"]
+        direction LR
+        C113["cherry-pick<br/>of PR 113"] --> C115["cherry-pick<br/>of PR 115"]
+    end
+    subgraph PREL["preprod"]
+        direction LR
+        P0["release 2026-07"] --> PMERGE["merge of the promotion"]
+    end
+    P0 -->|"branch from origin/preprod"| C113
+    M113 -.->|"git cherry-pick -x"| C113
+    M115 -.->|"git cherry-pick -x"| C115
+    C115 -->|"Pull Request declaring<br/>promotionPullRequests: [113, 115]"| PMERGE
+    style C113 fill:#e3f7e8,stroke:#2e844a
+    style C115 fill:#e3f7e8,stroke:#2e844a
+```
 
 What makes it special is the **Pull Request scope**. sfdx-hardis finds the User Stories carried by a merge by matching merged Pull Requests with the commits of the merge. Cherry-picked commits have new SHAs, so the stories of a promotion branch would be invisible: their [deployment actions](salesforce-ci-cd-work-on-task-deployment-actions.md) would not run, their Apex test classes would not be collected, and the release notes would not mention them.
 
@@ -43,6 +87,10 @@ promotionPullRequests: [482, 487, 491]
 ```
 
 sfdx-hardis then treats those Pull Requests as the scope of the promotion Pull Request, on the validation job and on the deployment job.
+
+The DevOps Pipeline of the VS Code extension draws the promotion in flight on the arrow between the two branches it goes from and to, next to the counter of the User Stories still waiting in `uat`:
+
+![The open promotion drawn on the uat to preprod arrow of the DevOps Pipeline](assets/images/promotion-pipeline.png)
 
 ___
 
@@ -55,6 +103,10 @@ enablePromotionBranches: true
 ```
 
 `allowedPromotionSteps` is required with it: see below.
+
+Both settings sit in the **Danger Zone** of the Pipeline Settings panel of the VS Code extension, so they can be set without editing the YAML by hand:
+
+![Enable promotion branches and Allowed promotion steps in the Danger Zone of the Pipeline Settings](assets/images/promotion-settings.png)
 
 ### Which promotions the release manager can create
 
@@ -95,10 +147,8 @@ either, and would stop.
 To allow everything, name every step: there is no wildcard, on purpose, so the list always reads
 as a decision somebody made.
 
-The setting sits next to `enablePromotionBranches` in the **Danger Zone** of the Pipeline Settings
-panel of the VS Code extension. It is read from the project config only, since
-`hardis:project:promotion:create` runs from any branch: a list written in a branch config file
-would be invisible to it.
+The list is read from the project config only, since `hardis:project:promotion:create` runs from
+any branch: a list written in a branch config file would be invisible to it.
 
 ### Naming
 
@@ -132,6 +182,29 @@ ___
 ## Assemble a promotion branch
 
 Promotion branches are **always created with the command** [`sf hardis:project:promotion:create`](hardis/project/promotion/create.md), from the VS Code SFDX Hardis extension (**Create promotion** button of a major branch in the DevOps Pipeline) or from a terminal. Do not assemble them by hand: the command is what guarantees the naming, the cherry-pick options and the Pull Request declaration the deployment jobs rely on.
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eaf5fe", "primaryTextColor": "#032d60", "primaryBorderColor": "#0176d3", "lineColor": "#0176d3", "secondaryColor": "#f3f3f3", "tertiaryColor": "#ffffff", "fontFamily": "Salesforce Sans, Arial, sans-serif"}}}%%
+sequenceDiagram
+    autonumber
+    actor RM as Release manager
+    participant CLI as hardis:project:promotion:create
+    participant Git as Git repository
+    participant CI as CI/CD jobs
+    RM->>CLI: Create promotion from uat
+    CLI->>Git: Read the stories merged in uat and not promoted yet
+    CLI-->>RM: Which ones does this promotion carry?
+    RM-->>CLI: PR 113 and PR 115
+    CLI->>Git: Branch from origin/preprod, cherry-pick -x each merge commit
+    CLI->>Git: Push and open the Pull Request declaring promotionPullRequests
+    CI->>CI: Validation: delta check, actions and test classes of PR 113 and PR 115
+    RM->>Git: Review, then merge without squashing
+    CI->>CI: Deployment to preprod with the same scope
+```
+
+In the DevOps Pipeline, open the window of the source branch, tick the User Stories to carry, then use **Create promotion**: the command opens with them preselected.
+
+![The uat branch window with two User Stories ticked and the Create promotion button](assets/images/promotion-branch-modal.png)
 
 1. Make sure the stories are merged into `uat` and validated there.
 2. Run the command:
@@ -221,6 +294,10 @@ In `--agent` mode and in CI nothing is touched: the command stops and names the 
 ___
 
 ## What sfdx-hardis does with it
+
+The promotion Pull Request carries no work of its own: its deployment actions, its Apex test classes and its tickets are those of the stories it declares. The extension shows them read-only, with the list of the Pull Requests they come from:
+
+![Deployment Actions of a promotion Pull Request, inherited from the User Stories it carries](assets/images/promotion-pr-modal.png)
 
 | Job                                                              | Behavior                                                                                                                                                                                                                                                                                                                 |
 |------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
