@@ -27,7 +27,7 @@ export default class TicketTestCasesUpsert extends SfCommand<any> {
   public static description = `
 ## Command Behavior
 
-**Sends the test cases of a notebook to Azure DevOps, ServiceNow Test Management or Xray Cloud, creating the missing ones and updating the others.**
+**Sends the test cases of a notebook to Azure DevOps or Xray Cloud, creating the missing ones and updating the others.**
 
 [hardis:ticket:test-cases:init](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/init/) writes the notebook, a tester reviews it, and this command sends the reviewed version to the test management tool. No AI is involved: a notebook committed next to the code and a CI job keep the tool in sync.
 
@@ -42,7 +42,7 @@ export default class TicketTestCasesUpsert extends SfCommand<any> {
 
 The tool is never guessed from the environment variables that happen to be set, because the sfdx-hardis CI templates already set the Azure DevOps ones on every Azure pipeline:
 
-1. \`--provider\` (\`azure-devops\`, \`servicenow\` or \`xray\`)
+1. \`--provider\` (\`azure-devops\` or \`xray\`)
 2. else the \`testCasesProvider\` property of \`config/.sfdx-hardis.yml\`
 3. else, in an interactive session, a prompt listing the configured tools. In CI and in agent mode the command fails instead.
 
@@ -53,17 +53,15 @@ The variables sfdx-hardis already uses for these tools, from CI/CD variables or 
 | Tool | What is written | Settings |
 |------|-----------------|----------|
 | \`azure-devops\` | A Test Case work item with its steps, tagged and linked to its user story | \`CI_SFDX_HARDIS_AZURE_TOKEN\` (or \`SYSTEM_ACCESSTOKEN\` or \`AZURE_DEVOPS_EXT_PAT\`), plus \`SYSTEM_COLLECTIONURI\` and \`SYSTEM_TEAMPROJECT\`, read from the git remote when unset |
-| \`servicenow\` | A Test Management 2.0 test, its version and its steps | \`SERVICENOW_URL\`, \`SERVICENOW_USERNAME\`, \`SERVICENOW_PASSWORD\` |
 | \`xray\` | A Jira Test issue with its steps, labelled and linked to its story | \`XRAY_CLIENT_ID\`, \`XRAY_CLIENT_SECRET\`, \`JIRA_HOST\` (or \`jiraHost\` config), \`JIRA_PROJECT_KEY\`, \`JIRA_EMAIL\`, \`JIRA_TOKEN\`, and \`XRAY_REGION\` (\`us\`, \`eu\` or \`au\`) when not on the global endpoint |
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- **Idempotency key:** \`TESTKIT:<TICKET>:<SHORT ID>\`, the ticket being the one of the identifier, so \`--ticket-number\` never changes it. Azure DevOps stores it as a tag, Xray as a label, ServiceNow as a \`[TESTKIT:...]\` prefix of the test short description. Every search result is checked against the exact key before it is updated.
+- **Idempotency key:** \`TESTKIT:<TICKET>:<SHORT ID>\`, the ticket being the one of the identifier, so \`--ticket-number\` never changes it. Azure DevOps stores it as a tag and Xray as a label. Every search result is checked against the exact key before it is updated.
 - **Carrier ticket:** the ticket of the identifier, or \`--ticket-number\`. Azure DevOps uses its last group of digits as work item number (\`PROJ-2026-14545\` gives 14545), and reads that work item before any write: a missing one refuses the run. A new test case inherits its area, iteration and assignee; an unassigned story leaves the test case unassigned.
-- **Descriptions** are written in English whatever the language of sfdx-hardis, so runs from different machines do not rewrite each other. Azure DevOps descriptions are HTML: the text is escaped first, then links, \`code\` and \`**bold**\` become tags. ServiceNow and Jira descriptions are plain text, where a markdown link becomes its URL.
-- **ServiceNow steps:** Test Management 2.0 has no expected result field on \`sn_test_management_step\`, so the expected result is written in the step text, after \`Expected result:\`.
-- **Proxy:** ServiceNow and Xray calls go through the proxy-aware HTTP client (\`HTTP_PROXY\`, \`HTTPS_PROXY\`, \`NO_PROXY\`).
+- **Descriptions** are written in English whatever the language of sfdx-hardis, so runs from different machines do not rewrite each other. Azure DevOps descriptions are HTML: the text is escaped first, then links, \`code\` and \`**bold**\` become tags. Jira descriptions are plain text, where a markdown link becomes its URL.
+- **Proxy:** Xray calls go through the proxy-aware HTTP client (\`HTTP_PROXY\`, \`HTTPS_PROXY\`, \`NO_PROXY\`).
 
 </details>
 
@@ -80,10 +78,9 @@ The same applies in CI.
 ### Known limitations
 
 - **Azure DevOps test cases are not added to a Test Plan nor a Test Suite.**
-- **ServiceNow matching uses the title prefix:** removing \`[TESTKIT:...]\` from a test short description in ServiceNow makes the next run create a duplicate.
-- **ServiceNow and Xray updates do not change the steps:** ServiceNow steps may already have been run, and Xray has no mutation to update the steps of a test.
+- **Xray updates do not change the steps:** Xray has no mutation to update the steps of a test.
 - **Jira descriptions have no formatting:** they are sent as plain text.
-- **A partial create is not repaired by a rerun:** a failed story link, reported with the tracker id, has to be added by hand, and a ServiceNow test whose version or steps failed, reported with its URL, has to be completed or deleted by hand.
+- **A partial create is not repaired by a rerun:** a failed story link, reported with the tracker id, has to be added by hand.
 `;
 
   public static examples = [
