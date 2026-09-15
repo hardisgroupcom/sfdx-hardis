@@ -48,11 +48,11 @@ ___
 
 Every time something reached production without going through the BUILD branches.
 
-| What happened | What to retrofit | When |
-|---|---|---|
-| A [hotfix](salesforce-ci-cd-hotfixes.md) was merged into `main` | `main` (or `preprod`) into `integration` | Right after the hotfix is in production |
-| A [promotion branch (experimental)](salesforce-ci-cd-promotion-branches.md) was merged into `preprod` | `preprod` into `integration` | Right after the promotion is merged |
-| Somebody changed the production org **by hand** | The org itself, back into git | As soon as you notice, see [below](#retrofit-changes-made-directly-in-production) |
+| What happened                                                                                         | What to retrofit                         | When                                                                              |
+|-------------------------------------------------------------------------------------------------------|------------------------------------------|-----------------------------------------------------------------------------------|
+| A [hotfix](salesforce-ci-cd-hotfixes.md) was merged into `main`                                       | `main` (or `preprod`) into `integration` | Right after the hotfix is in production                                           |
+| A [promotion branch (experimental)](salesforce-ci-cd-promotion-branches.md) was merged into `preprod` | `preprod` into `integration`             | Right after the promotion is merged                                               |
+| Somebody changed the production org **by hand**                                                       | The org itself, back into git            | As soon as you notice, see [below](#retrofit-changes-made-directly-in-production) |
 
 Do it **right away** in every case. A retrofit left for later is a conflict that grows: the BUILD branches keep moving on top of metadata that is already out of date in production.
 
