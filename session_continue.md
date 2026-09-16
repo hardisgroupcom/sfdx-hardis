@@ -146,9 +146,11 @@ Pages is enabled on the training repository with **Source: GitHub Actions**, pub
 
 ### The Level 2 walk, in progress
 
-Labs verified against real runs: **1** (the `.forceignore` trap), **2** (rewritten against measured
-org behaviour), **4** (the PMD rule that actually fires), **5** (what `minimizeProfiles` strips),
-**6** (both conflicts), **3** (in flight, Pull Request #3 on the fork).
+**All nine labs walked.** Verified against real runs or against the command's own source: **0**
+(backpromote), **1** (the `.forceignore` trap), **2** (rewritten against measured org behaviour),
+**3** (the three deployment actions firing in CI, Pull Request #3 on the fork), **4** (the PMD rule
+that actually fires), **5** (what `minimizeProfiles` strips), **6** (both conflicts, against a real
+merge), **7** (`resetselection`), **8** (the capstone sequencing).
 
 What the walk has found so far, beyond the labs it corrected:
 
@@ -162,6 +164,15 @@ What the walk has found so far, beyond the labs it corrected:
   `all`. Watch Pull Request #3 to the end before deciding: if the real deployment loads the records,
   the lab should still be changed to `process-deployment-only`, because a validation job silently
   loading nothing teaches the wrong thing.
+- **`resetselection` does far more than clear a selection**: it soft resets every commit since the
+  branch left its target, unstages, restores both manifests and sets `canForcePush`. Lab 7 said in
+  bold that it does *not* undo the commit. A learner following it would have reset twice.
+- **Backpromote leaves the checkout on `backpromote/<parent>/<sandbox>`.** Lab 0 never said so.
+- **The capstone asked for a teammate story lab 6 had already merged**, so its third challenge could
+  not happen. It uses US-019 now.
+- **`productionBranch` has no field in the settings panel**, and the project already carries it. Lab
+  3-00 told the learner to set it there.
+- **Delta deployment is off in this project** and lab 3-03 taught it as active.
 
 ### In progress, picked up here
 
