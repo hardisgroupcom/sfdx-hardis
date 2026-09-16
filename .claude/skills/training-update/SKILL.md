@@ -1,6 +1,6 @@
 ---
 name: training-update
-description: Perform the edits in the sibling sfdx-hardis-training repository after training-impact found an impact, or when a lab has to change for its own reasons. Covers the lab text, training-universe.json, the audit rules, the link map, the Helios screenshot fixtures and the screenshot capture. Use it when the user says "update the training", "fix the labs", "regenerate the training screenshots", or when a training Pull Request has to be opened.
+description: Perform the edits in the sibling sfdx-hardis-training repository after training-impact found an impact, or when a lab has to change for its own reasons. Covers the lab text, training-universe.json, the audit rules, the link map, the Helios screenshot fixtures, and the screenshot rules: capture, web captures, numbered pills and verification. Use it when the user says "update the training", "fix the labs", "regenerate the training screenshots", "annotate a screenshot", or when a training Pull Request has to be opened.
 allowed-tools: Bash, Read, Write, Edit, Grep, Glob
 ---
 
@@ -31,7 +31,10 @@ have to be regenerated.
 | The audit rules                            | `scripts/verify/rules.mjs`                                                       | No                                             |
 | The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                              | **Yes**, `scripts/build/data.mjs`              |
 | The screenshot fixtures                    | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/` | **Yes**, `scripts/build/mocks.mjs`             |
-| The screenshots                            | `labs/_assets/vscode/*.png`                                                      | **Yes**, the extension harness                 |
+| The raw panel screenshots                  | `labs/_assets/vscode/*.png`                                                      | **Yes**, the extension harness                 |
+| The raw web screenshots                    | `labs/_assets/web/*.png`                                                         | **Yes**, `scripts/build/capture-web.mjs`       |
+| The capture and annotation specs           | `labs/_assets/web-captures.json`, `labs/_assets/annotations.json`                | No, written by hand                            |
+| The annotated screenshots labs link        | `labs/_assets/annotated/`                                                        | **Yes**, `scripts/build/annotate.mjs`          |
 | The site sources                           | `site-src/`                                                                      | **Yes**, `scripts/build/site.mjs`, git-ignored |
 
 **Never edit a generated file.** Change its source and re-run the generator. CI fails on drift
@@ -108,10 +111,42 @@ node scripts/verify/check.mjs --level 2
 node scripts/verify/audit.mjs --level 2 --dir <a clone> --handle test
 ```
 
-## Regenerating the screenshots
+## Screenshots
 
-Only when a panel actually changed. It is a local Windows run, because it drives a real VS Code
-window through PowerShell.
+The audience has no Salesforce background and no git background. A step it cannot see is a step it
+cannot do. The rules below are hard rules, not preferences.
+
+### What a lab must show
+
+1. **Every step that tells a learner to click something shows it.** A step that names a button, a
+   panel, a tab or a field and carries no screenshot of that screen is not finished. "Click New
+   User Story in the DevOps Pipeline panel" needs a picture with that button marked
+2. **Screenshots carry numbered pills, and the step text references the numbers.** That is what
+   stops the prose and the picture drifting apart. Pills are drawn by
+   `node scripts/build/annotate.mjs` from `labs/_assets/annotations.json` into
+   `labs/_assets/annotated/`, and labs reference the annotated copy, never the raw one
+3. **`labs/_assets/annotated/` is generated.** Never retouch an image there by hand: change the
+   spec and re-run the generator
+4. **A pill never covers anything the learner has to read**: text, a label, a field value, an icon.
+   Put it outside the highlighted box, which is what the `px` / `py` keys of the spec are for.
+   After drawing, look at the result and move any pill that landed on something
+
+### Verify every screenshot twice, by opening the image
+
+Both passes mean actually looking at the file, not at the file name:
+
+1. **At capture.** Is it the right screen? Is it cropped so the relevant part is legible? Does it
+   leak anything personal: a real username, an org id, an unrelated organisation name, a browser
+   banner
+2. **After the pills are drawn.** Is every pill on the element the text says it is? Does any pill
+   hide something
+
+A screenshot that has not been looked at has not been verified.
+
+### Two capture paths, and nothing else
+
+**VS Code panels** come from the extension's own harness, in the sibling clone. It drives a VS Code
+instance it owns. Regenerate only when a panel actually changed.
 
 ```bash
 # 1. the fixtures, from the training repository
@@ -128,9 +163,24 @@ yarn screenshots [names]
 
 Pass only the names you need: the full batch takes about fifteen minutes.
 
+**Web pages** come from `scripts/build/capture-web.mjs`, declared in `labs/_assets/web-captures.json`,
+driven by Playwright over CDP against a Chrome started with `--remote-debugging-port=9222`. A page
+that has to be seen signed out is declared `"fresh": true` and gets its own clean Chrome profile.
+
+```bash
+cd ../sfdx-hardis-training
+node scripts/build/capture-web.mjs [names]
+node scripts/build/annotate.mjs
+```
+
+**Never automate the desktop to take a screenshot.** No `SendKeys`, no `SetForegroundWindow`, and
+never kill a window matched by its title. Done once, it took over the user's own VS Code window,
+typed into it, closed it, and the image it produced contained the user's real org usernames.
+
+### Prove the product images did not move
+
 **`SF_MOCK_UNIVERSE` unset must keep the product documentation screenshots byte for byte
-unchanged.** That is the invariant of the whole fixture design. Prove it after touching anything in
-the harness:
+unchanged.** That is the invariant of the whole fixture design. Prove it after any screenshot work:
 
 ```bash
 cd ../vscode-sfdx-hardis
@@ -138,17 +188,27 @@ yarn screenshots            # writes doc-screenshots/, the MyCompany-CRM univers
 git status --porcelain doc-screenshots
 ```
 
-Anything modified there means the training work broke the product images.
+Empty output, or the training work broke the product images.
 
-Then look at the images. A screenshot that shows the wrong org, an unrelated project or a stale
-Pull Request is worse than no screenshot, because it teaches the learner that the picture is
-decoration.
+### Third-party screens rot faster than the rest
+
+GitHub, the Salesforce signup, an installer page: they change without warning, and the lab still
+reads fine while the clicks no longer exist. When a lab describes such a screen, re-check the
+screen against the live page before trusting the text. Two found the hard way:
+
+- GitHub ticks "Copy the main branch only" by default, and a lab said to leave the defaults alone,
+  which produced a fork with a single branch
+- the Salesforce Developer Edition signup no longer asks for a username at all
+
+A screenshot that shows the wrong org, an unrelated project or a stale Pull Request is worse than
+no screenshot, because it teaches the learner that the picture is decoration.
 
 ## Before opening the Pull Request
 
 ```bash
 cd ../sfdx-hardis-training
 node scripts/build/universe.mjs --check   # generated files up to date, fiction consistent
+node scripts/build/annotate.mjs           # every annotated image matches its spec
 node scripts/verify/check-links.mjs       # every link resolves
 node scripts/build/site.mjs               # the site assembles
 ```

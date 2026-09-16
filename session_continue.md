@@ -144,11 +144,40 @@ Pages is enabled on the training repository with **Source: GitHub Actions**, pub
   (the PMD rule that actually fires) and lab 5 (what `minimizeProfiles` actually strips) verified
   against real runs.
 
-### In progress
+### In progress, picked up here
 
+The screenshot pass. The user asked for a picture on every step that tells a learner to click, with
+numbered pills on the control, the pills referenced from the step text, and every image checked by
+eye before and after the pills are drawn. The rules are written into
+`.claude/skills/training-update/SKILL.md`, section Screenshots.
+
+An audit of all 27 labs produced the inventory: **155 steps need a picture, 24 had one**. It also
+found about thirty places where a lab names a control the product does not have.
+
+Done so far:
+
+- `scripts/build/capture-web.mjs` + `labs/_assets/web-captures.json`: the web pages (git, Node and
+  VS Code installers, the marketplace page, the Salesforce signup, the fork button, the fork form,
+  the Actions tab, the secret form). `"fresh": true` captures a page as a signed-out visitor.
+- `scripts/build/annotate.mjs` + `labs/_assets/annotations.json`: numbered pills into
+  `labs/_assets/annotated/`. Percentages, `px`/`py` to keep a pill off a label, `#variant` keys so one
+  screenshot can carry several pill sets. 20 annotated images so far, each one looked at.
+- New extension captures: the New User Story and Save / Publish commands at every question, and the
+  branch scoped Pipeline Settings. The mocked CLI scenarios are universe aware now, so they name the
+  Helios story instead of MyCompany-CRM.
+- Label corrections: Level 1 complete, Levels 2 and 3 partly done (see below).
+
+Still to do:
+
+- Finish the label corrections in Level 2 (lab-03 onwards) and Level 3 (lab-05 step 6 onwards). The
+  full mismatch table is in the audit; re-run it with the Explore agent if it is lost.
+- Place the annotated images into the lab text with their pill references. Only Level 1 labs 0 and 1
+  are partly done.
+- The Salesforce Setup captures (Level 1 lab 3 and beyond): a `scripts/build/capture-salesforce.mjs`
+  was specified but not written. It opens `sf org open --url-only`, then drives Setup over CDP.
+  **Never save anything in the org while capturing a wizard.**
+- The GitHub Pull Request, checks and comment captures from the fork.
 - The rest of the Level 2 walk (labs 0, 3, 6, 7, 8), then Level 3 end to end.
-- The beginner screenshot pass: web captures of the installers, the fork button and the secret form,
-  with numbered pills drawn on them and referenced from the lab text.
 
 ### Not done yet
 

@@ -83,6 +83,10 @@ than a habit.
 | A new feature, nothing existing changed        | **None**, unless it replaces a path a lab takes                                    | Say "none" and move on                         |
 | Behaviour a seeded failure depends on          | **Breaking, and silent.** The lab still reads fine and the failure no longer fires | A training Pull Request, and re-walk the lab   |
 
+The screenshot rows are never just a re-capture. Every click a lab describes has to be shown, the
+pills have to be redrawn and every image has to be looked at again. The hard rules for that live in
+[[training-update]], section **Screenshots**: read them before sizing a panel change.
+
 That last row is the dangerous one. The training deliberately seeds failures (a field excluded by
 `.forceignore`, a field that cannot be made required, a hardcoded id that trips PMD). A change that
 makes one of them stop failing turns a lab into a page describing something that does not happen,
