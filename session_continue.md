@@ -124,7 +124,7 @@ Pages is enabled on the training repository with **Source: GitHub Actions**, pub
 
 - `.github/workflows/pages.yml` therefore has a **TEMPORARY** `feat/training-v1` push trigger, with a
   comment saying so. **Remove it when the branch merges.**
-- **Remind the user to repoint Pages at `main` after the merge.** They asked to be reminded.
+- **Remind the user to point Pages back at `main` after the merge.** They asked to be reminded.
 
 ---
 
@@ -140,7 +140,7 @@ Pages is enabled on the training repository with **Source: GitHub Actions**, pub
   screenshots proven unchanged (`SF_MOCK_UNIVERSE` unset keeps `doc-screenshots/` byte identical).
 - The site builds and every asset resolves (38 pages, 141 references).
 - All three Pull Requests green.
-- Level 2 lab 1 (the `.forceignore` trap), lab 2 (rewritten against measured org behaviour), lab 4
+- Level 2 lab 1 (the `.forceignore` trap), lab 2 (rewritten against measured org behavior), lab 4
   (the PMD rule that actually fires) and lab 5 (what `minimizeProfiles` actually strips) verified
   against real runs.
 
