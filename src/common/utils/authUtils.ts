@@ -13,7 +13,7 @@ import {
   stripAnsi,
   uxLog,
 } from './index.js';
-import { CONSTANTS, getConfig } from '../../config/index.js';
+import { CONSTANTS, getConfig, getEnvVar } from '../../config/index.js';
 import { SfError } from '@salesforce/core';
 import { clearCache } from '../cache/index.js';
 import { WebSocketClient } from '../websocketClient.js';
@@ -235,7 +235,15 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
               ? process.env.TARGET_USERNAME
               : config.targetUsername || null;
     if (username == null && isCI) {
-      const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
+      // A CI Pull Request check runs on a detached HEAD, so the branch cannot be read
+      // from git. The CI variables hold it, and without them the message named a file
+      // called ".sfdx-hardis.null.yml", which does not help anybody.
+      const gitBranchFormatted =
+        (await getCurrentGitBranch({ formatted: true })) ||
+        getEnvVar('CONFIG_BRANCH') ||
+        getEnvVar('CI_COMMIT_REF_NAME') ||
+        orgAlias ||
+        '<branch>';
       console.error(
         c.yellow(
           `[sfdx-hardis][WARNING] You may have to define ${c.bold(
