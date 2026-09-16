@@ -66,3 +66,5 @@ site/
 
 # MegaLinter generated GitHub config (branch protection rules fetched at runtime)
 .megalinter_github_conf/
+# Session work reports, kept local
+report.md
