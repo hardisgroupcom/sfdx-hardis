@@ -23,16 +23,16 @@ have to be regenerated.
 
 ## What lives where
 
-| What | Where | Generated? |
-|---|---|---|
-| The lab text | `labs/en/level-N/lab-NN-*.md` | No, written by hand |
-| The fiction: stories, branches, orgs, cast | `training-universe.json` | No, the source of truth |
-| The backlog, the link map, the manifest | `BACKLOG.md`, `labs/link-map.en.md`, `training-manifest.json` | **Yes**, `scripts/build/universe.mjs` |
-| The audit rules | `scripts/verify/rules.mjs` | No |
-| The seed data | `scripts/data/HeliosBaseline/*.csv` | **Yes**, `scripts/build/data.mjs` |
-| The screenshot fixtures | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/` | **Yes**, `scripts/build/mocks.mjs` |
-| The screenshots | `labs/_assets/vscode/*.png` | **Yes**, the extension harness |
-| The site sources | `site-src/` | **Yes**, `scripts/build/site.mjs`, git-ignored |
+| What                                       | Where                                                                            | Generated?                                     |
+|--------------------------------------------|----------------------------------------------------------------------------------|------------------------------------------------|
+| The lab text                               | `labs/en/level-N/lab-NN-*.md`                                                    | No, written by hand                            |
+| The fiction: stories, branches, orgs, cast | `training-universe.json`                                                         | No, the source of truth                        |
+| The backlog, the link map, the manifest    | `BACKLOG.md`, `labs/link-map.en.md`, `training-manifest.json`                    | **Yes**, `scripts/build/universe.mjs`          |
+| The audit rules                            | `scripts/verify/rules.mjs`                                                       | No                                             |
+| The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                              | **Yes**, `scripts/build/data.mjs`              |
+| The screenshot fixtures                    | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/` | **Yes**, `scripts/build/mocks.mjs`             |
+| The screenshots                            | `labs/_assets/vscode/*.png`                                                      | **Yes**, the extension harness                 |
+| The site sources                           | `site-src/`                                                                      | **Yes**, `scripts/build/site.mjs`, git-ignored |
 
 **Never edit a generated file.** Change its source and re-run the generator. CI fails on drift
 (`node scripts/build/universe.mjs --check`).

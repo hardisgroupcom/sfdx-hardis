@@ -71,17 +71,17 @@ than a habit.
 
 ## Classifying
 
-| What changed | Training impact | What it needs |
-|---|---|---|
-| A command is renamed or removed | **Breaking.** Every lab naming it stops working | A training Pull Request, in the same effort |
-| A flag is renamed, or its default changes | **Breaking** if a lab relies on the behaviour | A training Pull Request |
-| A prompt's wording or its choices change | **Text only**, unless a lab tells the learner what to pick | Update the lab step |
-| A config key is renamed | **Breaking.** Labs quote these in "Under the hood" blocks | A training Pull Request |
-| `--json` output or a report file changes shape | **Breaking** if `scripts/verify/rules.mjs` reads it | A training Pull Request, and re-run the audit |
-| A documentation page is renamed | **Breaking link.** `link-check.yml` catches it monthly, which is too late | Update `depends_on.docs` and the lab links |
-| An LWC panel is redesigned | **Screenshots are wrong**, the text may still be right | [[training-update]] re-runs the Helios capture |
-| A new feature, nothing existing changed | **None**, unless it replaces a path a lab takes | Say "none" and move on |
-| Behaviour a seeded failure depends on | **Breaking, and silent.** The lab still reads fine and the failure no longer fires | A training Pull Request, and re-walk the lab |
+| What changed                                   | Training impact                                                                    | What it needs                                  |
+|------------------------------------------------|------------------------------------------------------------------------------------|------------------------------------------------|
+| A command is renamed or removed                | **Breaking.** Every lab naming it stops working                                    | A training Pull Request, in the same effort    |
+| A flag is renamed, or its default changes      | **Breaking** if a lab relies on the behaviour                                      | A training Pull Request                        |
+| A prompt's wording or its choices change       | **Text only**, unless a lab tells the learner what to pick                         | Update the lab step                            |
+| A config key is renamed                        | **Breaking.** Labs quote these in "Under the hood" blocks                          | A training Pull Request                        |
+| `--json` output or a report file changes shape | **Breaking** if `scripts/verify/rules.mjs` reads it                                | A training Pull Request, and re-run the audit  |
+| A documentation page is renamed                | **Breaking link.** `link-check.yml` catches it monthly, which is too late          | Update `depends_on.docs` and the lab links     |
+| An LWC panel is redesigned                     | **Screenshots are wrong**, the text may still be right                             | [[training-update]] re-runs the Helios capture |
+| A new feature, nothing existing changed        | **None**, unless it replaces a path a lab takes                                    | Say "none" and move on                         |
+| Behaviour a seeded failure depends on          | **Breaking, and silent.** The lab still reads fine and the failure no longer fires | A training Pull Request, and re-walk the lab   |
 
 That last row is the dangerous one. The training deliberately seeds failures (a field excluded by
 `.forceignore`, a field that cannot be made required, a hardcoded id that trips PMD). A change that
