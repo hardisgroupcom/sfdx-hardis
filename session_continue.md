@@ -144,6 +144,25 @@ Pages is enabled on the training repository with **Source: GitHub Actions**, pub
   (the PMD rule that actually fires) and lab 5 (what `minimizeProfiles` actually strips) verified
   against real runs.
 
+### The Level 2 walk, in progress
+
+Labs verified against real runs: **1** (the `.forceignore` trap), **2** (rewritten against measured
+org behaviour), **4** (the PMD rule that actually fires), **5** (what `minimizeProfiles` strips),
+**6** (both conflicts), **3** (in flight, Pull Request #3 on the fork).
+
+What the walk has found so far, beyond the labs it corrected:
+
+- **Lab 6 promised a conflict that could not happen.** It told the learner to grant edit on
+  `Crew_Size__c`, which is already granted on that permission set, so the edit changed nothing. Now
+  `Crew_Notes__c`, which conflicts because it sorts where Marco inserted his.
+- **The teammate simulation raced GitHub.** `gh pr create` fired before the API could see the branch
+  just pushed, and answered "No commits between integration and <branch>". Retried now.
+- **A data deployment action with `context: all` runs during validation**, against an org where the
+  object does not exist yet, and SFDMU exits 0 having done nothing. The lab tells the learner to use
+  `all`. Watch Pull Request #3 to the end before deciding: if the real deployment loads the records,
+  the lab should still be changed to `process-deployment-only`, because a validation job silently
+  loading nothing teaches the wrong thing.
+
 ### In progress, picked up here
 
 The screenshot pass. The user asked for a picture on every step that tells a learner to click, with
