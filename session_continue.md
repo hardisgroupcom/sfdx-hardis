@@ -174,6 +174,48 @@ What the walk has found so far, beyond the labs it corrected:
   3-00 told the learner to set it there.
 - **Delta deployment is off in this project** and lab 3-03 taught it as active.
 
+### Level 3, verified against the sources
+
+**All eleven labs carried a wrong claim. Six could not be run as written.** Verified by reading the
+commands and the panels, not by walking them: there was a worldwide Salesforce outage that day.
+
+The six that were impossible: a teammate story an earlier lab consumes, a merge conflict where the
+two edits land fifty lines apart (reproduced in a scratch repository, git merges them cleanly), a
+validation rule that already contained the fix the lab asked for, a button that does not render in a
+CI/CD repository, a branch selector that only lists branches which already have a config file, and a
+capstone repeating the Level 2 capstone's defect.
+
+Audit rule `3-04` was also unpassable: it required US-020 in the integration history while the lab
+correctly sends that story back to its author.
+
+**Five claims still need a real org**, and are the first thing to settle when one is free:
+
+1. That the corrected `Installation_Date_Not_Past` rule really refuses a back-dated `Cancelled` save
+2. Whether `Needs Reinspection` appears in the Metadata Retriever's default Recent Changes mode
+3. What a first monitoring report actually contains on a fresh Developer Edition org
+4. The shape of the DORA output on an org with two or three deployments
+5. Whether the External Client App deploy on `helios-prod` triggers the production Apex test path
+
+### The reset branches
+
+`scripts/start-states/level-3/` is built: 40 files, everything the nine Level 2 labs deliver.
+Proven three ways: `check.mjs --level 2` passes 9 of 9 against a clone sitting on
+`training/start-level-3`, the metadata validates against a real org (51 components, 0 failures, 8
+tests with `RunLocalTests`), and building it caught a `FlowCustomErrorMessage` missing its `name`
+plus a scheduler test that broke once Crew Size became required.
+
+`node scripts/build/start-branches.mjs` creates all three branches locally. **They are not pushed
+yet, on purpose**: the script says to run it from `main` once the training Pull Request has merged.
+Until they are on the remote, `Training > Reset this level` aborts for every level, and several labs
+point at it. **After the merge, run `node scripts/build/start-branches.mjs --push` from `main`.**
+
+Two deliberate choices in that start state, recorded in its `state.json`:
+
+- **US-019 is absent.** Level 3 lab 4 simulates and merges it; shipping it pre-merged makes that
+  exercise a no-op.
+- **US-018 is present**, because rule `2-06` requires Marco's cap. Level 3 lab 2 therefore reviews
+  the merged Pull Request rather than simulating one, which is how it now reads.
+
 ### In progress, picked up here
 
 The screenshot pass. The user asked for a picture on every step that tells a learner to click, with
