@@ -115,6 +115,44 @@ node scripts/verify/check.mjs --level 2
 node scripts/verify/audit.mjs --level 2 --dir <a clone> --handle test
 ```
 
+## Two rules about the reader, and they are hard rules
+
+**Never send anybody to a terminal.** Not once, in any level. Every action a lab asks for is a click
+in a VS Code sfdx-hardis panel, a Training menu entry on the Welcome page, a button in the GitHub web
+UI, or typing into a file in the editor. A command may only appear inside a collapsed
+`<details>` block titled "Under the hood", as an explanation of what a button did, never as an
+instruction. There is no fenced ```bash block outside such a block anywhere in the course, and adding
+one is a regression.
+
+When a step has no button, that is a finding, not a licence: either the product has a click nobody
+named, or the product is missing one. Two examples that were fixed rather than documented: connecting
+an org could not set an alias, so `hardis:org:select` gained `--alias` and a prompt; setting up a
+fork by hand took a dozen forms, so `Training > Set up my pipeline` does it.
+
+```bash
+# The check. It must print nothing.
+grep -rniE "from a terminal|open a terminal|in a terminal" labs/en/
+```
+
+**Levels 1 and 2 are for admins as much as for developers.** The main narrative must not assume
+developer knowledge. Raw XML, git internals, Apex interfaces, YAML structure and wildcard patterns
+either get a plain-English gloss where they first appear, or they move into a `<details>` block. Code
+a lab contains is there to be **copied and read**, never written from scratch: say so. Level 3 is for
+release managers and may be as technical as it needs to be.
+
+The tells that a Level 1 or 2 paragraph has drifted: a command name used as an explanation
+(`hardis:work:save` generates the package from the git diff), a file path the reader has no reason to
+know, an unglossed term (idempotent, working tree, soft reset, grep, `@testSetup`), or a step that
+asks the reader to hand-edit metadata that a panel can edit.
+
+## Level 1 lab 0 stands on its own
+
+It installs the tools and nothing else: Git, VS Code, Node, the GitHub CLI, the extension pack, and
+the Setup panel installing the Salesforce CLI. Somebody joining a real project can do that lab and
+stop, and the lab says so. Everything training-specific, the two free orgs, the clone, the pipeline,
+the seeded data, belongs to lab 1. Keep that line where it is: a tool that belongs on every
+Salesforce workstation goes in lab 0, anything that only makes sense for Helios goes in lab 1.
+
 ## Screenshots
 
 The audience has no Salesforce background and no git background. A step it cannot see is a step it
