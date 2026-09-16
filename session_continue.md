@@ -1,9 +1,10 @@
 # Session continuation: the sfdx-hardis training
 
-Everything another Claude Code instance needs to pick this up, on this machine or another.
-Kept current: updated on every commit of this effort.
+Everything another Claude Code instance needs to pick this work up, **on any computer**. Nothing
+here depends on a path that only exists on one machine: where a local detail is needed, the fallback
+that rebuilds it is given next to it.
 
-**Last updated**: 2026-09-16, during the Level 2 and Level 3 walk.
+**Last updated**: 2026-09-16, during the Level 2 walk and the screenshot pass.
 
 ---
 
@@ -18,72 +19,112 @@ the spec at `specs/trailmix-salesforce-devops.md` in this repository.
 | `hardisgroupcom/vscode-sfdx-hardis` | `feat/training-fixtures` | [#514](https://github.com/hardisgroupcom/vscode-sfdx-hardis/pull/514) |
 | `hardisgroupcom/sfdx-hardis` | `feat/training-skills` | [#2206](https://github.com/hardisgroupcom/sfdx-hardis/pull/2206) |
 
-The three clones are **siblings**, and the skills depend on that layout:
+Published site: <https://hardisgroupcom.github.io/sfdx-hardis-training/>
 
-```
-C:/git/
-├── sfdx-hardis/            the skills, the spec, report.md, this file
-├── sfdx-hardis-training/   the course
-└── vscode-sfdx-hardis/     the screenshot harness and the Helios fixtures
-```
-
-`report.md` in this repository is the full account of what was built and what was found. Read it
-first; this file is the operational state.
+`report.md` in this repository is the full account of what was built and what was found. It is
+git-ignored on purpose, so **it only exists on the machine that wrote it**. If it is not there, this
+file plus the Pull Request descriptions carry the same facts.
 
 ---
 
-## The standing instruction
+## Getting a working machine from nothing
 
-From the user, verbatim in intent:
+The three clones must be **siblings**, because the skills and the screenshot harness resolve each
+other with `../`:
 
-- Be autonomous, do not stop.
-- Do not stop until **all screenshots are good, verified, and fixed if necessary**.
-- Do not stop until **all modules have been performed in a forked repo**, fixing issues found on the way.
-- **Play Level 2 and Level 3** too, not just Level 1.
-- Commit everything on every change, including this file.
-- Installing safe tools (zensical and similar) is allowed.
+```bash
+mkdir -p ~/git && cd ~/git          # any parent folder works, they only have to share it
+git clone https://github.com/hardisgroupcom/sfdx-hardis.git
+git clone https://github.com/hardisgroupcom/sfdx-hardis-training.git
+git clone https://github.com/hardisgroupcom/vscode-sfdx-hardis.git
 
----
+cd sfdx-hardis          && git checkout feat/training-skills   && yarn install
+cd ../sfdx-hardis-training                                      # no dependencies, plain Node
+cd ../vscode-sfdx-hardis && git checkout feat/training-fixtures && yarn install
+```
 
-## Environment, verified working
+On the machine this started on they are `C:/git/sfdx-hardis`, `C:/git/sfdx-hardis-training` and
+`C:/git/vscode-sfdx-hardis`. Nothing requires that exact path.
 
-| Thing | State |
-|---|---|
-| Chrome with CDP | Running on `127.0.0.1:9222`, signed into GitHub as `nvuillam` and into Trailhead |
-| Playwright | `playwright-core` installed in the training repo (`--no-save`), connects over CDP, verified |
-| Zensical | Installed. Run it as `python -m zensical build` (the `zensical` binary is not on PATH) |
-| `gh` | Authenticated as `nvuillam`, scopes `gist, read:org, repo, workflow` |
-| Power settings | **Changed**: `monitor-timeout-ac 0` and `standby-timeout-ac 0`. Restore before finishing: `powercfg /change monitor-timeout-ac 15` and `powercfg /change standby-timeout-ac 180`. Also noted in `scratchpad/RESTORE-POWER.txt` |
-
-### The four orgs
-
-All authenticated, all fair game (the user said so explicitly: reset, deploy, delete as needed).
-
-| Alias | Username | Seeded |
+| Tool | Needed for | If it is missing |
 |---|---|---|
-| `helios-dev` | `veurtio.dd9da51447c4@agentforce.com` | yes |
-| `helios-integration` | `veurtio+demo.73193ee31bf8@agentforce.com` | yes (also aliased `integration`) |
-| `helios-uat` | `nicobackup@nico.com` | yes |
-| `helios-prod` | `nicolas.vuillamy.c8024b5deb9f@agentforce.com` | yes |
+| Node 20+ | everything | install from nodejs.org |
+| `sf` CLI plus the `sfdx-hardis`, `sfdmu` and `sfdx-git-delta` plugins | the org work | `npm i -g @salesforce/cli` then `sf plugins install sfdx-hardis sfdmu sfdx-git-delta` |
+| `gh`, authenticated | Pull Requests, CI logs, repository settings | `gh auth login`, scopes `repo, workflow, read:org` |
+| Zensical | building the site | `pip install zensical mdx_truly_sane_lists`, then **`python -m zensical build`** (the `zensical` binary is not put on PATH) |
+| `playwright-core` | the live site checks and `scripts/build/annotate.mjs` | `npm i --no-save playwright-core` in the training repo |
+| Chrome with CDP | the web screenshots and the live checks | start Chrome with `--remote-debugging-port=9222`, signed in to GitHub |
 
-### The learner fork
+**Never automate the desktop.** A capture script that used `SendKeys` and matched a window by title
+took over the user's own VS Code window and closed it. VS Code screenshots come from the extension's
+own harness (`yarn screenshots`), which drives an instance it owns; web screenshots come from
+Playwright over CDP in a new tab. Nothing else.
 
-`nvuillam/sfdx-hardis-training`, cloned at
-`C:/Users/33614/AppData/Local/Temp/claude/C--git-sfdx-hardis/<session>/scratchpad/learner`.
+---
 
-- `main` carries the full course content, `integration` is the learner's working branch.
-- Secret `SFDX_AUTH_URL_INTEGRATION` is set, pointing at `helios-integration`. **Delete it at the
-  end**: it is a long-lived refresh token, which is what Level 3 lab 1 teaches learners to remove.
+## The orgs
+
+Four Developer Edition orgs, all disposable, all fair game (the user said so explicitly: reset,
+deploy, delete as needed).
+
+| Alias | Username | What it is |
+|---|---|---|
+| `helios-dev` | `veurtio.dd9da51447c4@agentforce.com` | the learner's own dev org |
+| `helios-integration` (also aliased `integration`) | `veurtio+demo.73193ee31bf8@agentforce.com` | the shared integration org |
+| `helios-uat` | `nicobackup@nico.com` | Level 3 |
+| `helios-prod` | `nicolas.vuillamy.c8024b5deb9f@agentforce.com` | Level 3 |
+
+**On another computer none of these are authenticated.** Check with `sf org list`, then either:
+
+- re-authenticate the same orgs with
+  `sf org login web --alias helios-dev --instance-url https://login.salesforce.com`
+  (the passwords are in the user's own store, so this needs the user), or
+- **build fresh ones**, which is what the course asks a learner to do and is the better test: sign up
+  at <https://developer.salesforce.com/signup>, authenticate with the alias, then seed with
+  `node scripts/training.mjs seed --org <alias>` from the training repository. That deploys the
+  Helios app, assigns the permission set and loads 235 records, and it is idempotent.
+
+The aliases are what everything keys on. `SFDX_AUTH_URL_<ALIAS IN UPPER CASE>` is the CI secret name,
+so an org used by the `integration` branch has to answer to the `integration` alias too.
+
+---
+
+## The learner fork
+
+`nvuillam/sfdx-hardis-training`, which is where the modules are actually played.
+
+- `main` carries the course, `integration` is the major branch, feature branches come off it.
 - Level 1 is complete on it: US-014 and US-016 merged, audit 6/6, badge rendered.
+- Secret `SFDX_AUTH_URL_INTEGRATION` points at `helios-integration`. **Delete it when the walk is
+  finished**: it is a long-lived refresh token, and removing it is exactly what Level 3 lab 1 teaches.
+- A second throwaway fork, `nvuillam/sfdx-hardis-training-fresh`, was made only to photograph a
+  brand-new fork. **Delete it** (needs the `delete_repo` scope, or the GitHub web UI).
 
-### GitHub Pages
+The local clone of the fork lives in this session's scratchpad, which does **not** survive to another
+machine. Recreate it anywhere:
 
-The user enabled Pages on the training repo **from `feat/training-v1`**, not from `gh-pages`.
+```bash
+gh repo clone nvuillam/sfdx-hardis-training learner
+cd learner && git checkout integration
+```
 
-- **Remind the user to repoint it at `main` (or `gh-pages`) before merging.** `pages.yml` pushes the
-  built site to `gh-pages` with `ghp-import`, and it only triggers on `main`.
-- The site builds clean locally: `node scripts/build/site.mjs && python -m zensical build`.
-  38 pages, 141 asset references, all resolving (`node scripts/verify/check-site.mjs`).
+The CI secret, when it has to be set again:
+
+```bash
+sf org auth show-sfdx-auth-url --target-org helios-integration --no-prompt --json
+gh secret set SFDX_AUTH_URL_INTEGRATION --repo nvuillam/sfdx-hardis-training
+```
+
+---
+
+## GitHub Pages
+
+Pages is enabled on the training repository with **Source: GitHub Actions**, publishing from
+`feat/training-v1`.
+
+- `.github/workflows/pages.yml` therefore has a **TEMPORARY** `feat/training-v1` push trigger, with a
+  comment saying so. **Remove it when the branch merges.**
+- **Remind the user to repoint Pages at `main` after the merge.** They asked to be reminded.
 
 ---
 
@@ -91,84 +132,85 @@ The user enabled Pages on the training repo **from `feat/training-v1`**, not fro
 
 ### Done and verified
 
-- The whole course: 27 labs, 3 levels, the Helios app, the seed data, the Training menu, the checks,
-  the badge machinery.
-- Level 1 walked end to end on the real fork, against a real org: PR check green (31 components,
-  4/4 tests, 100% coverage), both stories merged, audit 1/6 → 6/6, badge rendered from that audit.
-- 51 screenshots captured from the real extension with the Helios fixtures.
-- The product screenshots proven unchanged (`SF_MOCK_UNIVERSE` unset keeps `doc-screenshots/` byte
-  identical).
-- The site builds and every asset resolves.
+- The course: 27 labs, 3 levels, the Helios app, the seed data, the Training menu, the checks, the
+  badge machinery.
+- Level 1 walked end to end on the fork against a real org: PR check green (31 components, 4/4 tests,
+  100% coverage), both stories merged, audit 1/6 to 6/6, badge rendered from that audit.
+- 51 screenshots captured from the real extension with the Helios fixtures, and the product
+  screenshots proven unchanged (`SF_MOCK_UNIVERSE` unset keeps `doc-screenshots/` byte identical).
+- The site builds and every asset resolves (38 pages, 141 references).
 - All three Pull Requests green.
+- Level 2 lab 1 (the `.forceignore` trap), lab 2 (rewritten against measured org behaviour), lab 4
+  (the PMD rule that actually fires) and lab 5 (what `minimizeProfiles` actually strips) verified
+  against real runs.
 
 ### In progress
 
-- Walking Level 2 on the fork, lab by lab, verifying each seeded failure actually fires.
-- Then Level 3, including JWT for three orgs, the promotion chain, hotfix, retrofit, monitoring.
+- The rest of the Level 2 walk (labs 0, 3, 6, 7, 8), then Level 3 end to end.
+- The beginner screenshot pass: web captures of the installers, the fork button and the secret form,
+  with numbered pills drawn on them and referenced from the lab text.
 
 ### Not done yet
 
-- `training/start-level-3` (needs the Level 2 end state, which the walk produces).
-- Teammate Pull Requests in the fork, and the GitHub web UI screenshots taken from them over CDP.
-- The six lab steps that still describe GitHub screens in words.
+- `training/start-level-2` and `training/start-level-3` branches, built from the real end states.
+- Teammate Pull Requests in the fork, and the GitHub screenshots taken from them.
+- The lab steps that still describe a GitHub screen in words.
 
 ---
 
-## How to resume
+## How to check anything
+
+From the training repository:
 
 ```bash
-cd C:/git/sfdx-hardis-training
-git pull
-
-# the fiction is consistent and nothing generated has drifted
-node scripts/build/universe.mjs --check
-
-# every link resolves
-node scripts/verify/check-links.mjs
-
-# the site builds and resolves its assets
+node scripts/build/universe.mjs --check      # the fiction is consistent, nothing generated drifted
+node scripts/verify/check-links.mjs          # every link resolves
 node scripts/build/site.mjs && python -m zensical build && node scripts/verify/check-site.mjs
-
-# where a learner repository stands
-node scripts/verify/check.mjs --level 1
-node scripts/verify/audit.mjs --level 2 --dir <a clone> --handle nvuillam
+node scripts/build/annotate.mjs --check      # the annotated screenshots match their spec
+node scripts/verify/check.mjs --level 1      # where a learner repository stands
+node scripts/verify/audit.mjs --level 2 --dir <a clone> --handle <handle>
 ```
 
-Screenshots, from the extension repository (Windows, needs an unlocked desktop):
+Screenshots of the extension, from the extension repository (Windows, unlocked desktop):
 
 ```bash
-cd C:/git/sfdx-hardis-training && node scripts/build/mocks.mjs
+cd ../sfdx-hardis-training && node scripts/build/mocks.mjs
 cd ../vscode-sfdx-hardis && yarn dev && yarn compile
 SF_MOCK_UNIVERSE=helios \
 SFDX_HARDIS_DOC_SCREENSHOTS_DIR=../sfdx-hardis-training/labs/_assets/vscode \
 yarn screenshots [names]
+yarn screenshots && git status --porcelain doc-screenshots   # must stay empty: the product images did not move
 ```
 
-And prove the product images did not move:
+Web screenshots, from the training repository, with Chrome listening on 9222:
 
 ```bash
-yarn screenshots && git status --porcelain doc-screenshots   # must be empty
+node scripts/build/capture-web.mjs [names]   # labs/_assets/web-captures.json says what and how
+node scripts/build/annotate.mjs              # draws the pills into labs/_assets/annotated/
 ```
 
 ---
 
 ## Things that will bite you
 
-- **An org answers to several aliases.** `sf org list` reports only one. `helios-integration` is also
-  aliased `integration` because the CI login names orgs after their branch. `connectedOrgs()` in
-  `scripts/lib/util.mjs` now reads `sf alias list` and keeps them all; do not regress that.
+- **An org answers to several aliases.** `sf org list` reports only one. `connectedOrgs()` in
+  `scripts/lib/util.mjs` reads `sf alias list` and keeps them all. Do not regress that.
 - **Formatters versus generators.** Prettier collapses JSON arrays that `JSON.stringify` expands, and
-  MegaLinter's table formatter realigns the tables `universe.mjs` writes. Both are excluded now
-  (`.prettierignore` in the extension, `FILTER_REGEX_EXCLUDE` in the training repo). Without those,
-  the drift check fails forever.
-- **Seeded failures have to be measured, not assumed.** Two of them did not fire, because `ApexDoc` is
-  excluded from the sfdx-hardis PMD ruleset and `AvoidHardcodedId` does not fire at the Moderate
-  threshold. Before writing a lab around a rule, run it:
+  MegaLinter's table formatter realigns the tables `universe.mjs` writes. Both are excluded
+  (`.prettierignore` in the extension, `FILTER_REGEX_EXCLUDE` in the training repo). Without those the
+  drift check fails forever.
+- **Seeded failures have to be measured, not assumed.** Two did not fire: `ApexDoc` is excluded from
+  the sfdx-hardis PMD ruleset, and `AvoidHardcodedId` does not fire at the Moderate threshold. Before
+  writing a lab around a rule, run it:
   `sf code-analyzer run --workspace . --severity-threshold Moderate --config-file ./code-analyzer.yml --rule-selector pmd:SfdxHardis --view table`
+- **Salesforce screens move.** The Developer Edition signup no longer asks for an email and a username
+  when the visitor is already signed in to a Salesforce account: it asks for a country and the
+  agreement, and provisions the org on the account's own address. Any lab that describes a vendor
+  screen has to be re-checked against the live page, not remembered.
 - **Never edit a generated file.** `BACKLOG.md`, `labs/link-map.en.md`, `training-manifest.json`,
-  `MY-PIPELINE.template.md`, `mkdocs-nav.yml`, `site-src/`, and the Helios fixtures in the extension
-  repo. Change the source and re-run the generator.
+  `MY-PIPELINE.template.md`, `mkdocs-nav.yml`, `site-src/`, `labs/_assets/annotated/`, and the Helios
+  fixtures in the extension repo. Change the source and re-run the generator.
 - **A browser DOM check lies about images.** Below-the-fold images are lazy-loaded, so they read as
   broken. `scripts/verify/check-site.mjs` resolves references on disk instead.
-- **commitlint crashes** on this machine (`yargs_1.default.options is not a function`). Pre-existing,
-  unrelated, and it does not stop the commit.
+- **commitlint crashes** on the original machine (`yargs_1.default.options is not a function`).
+  Pre-existing and unrelated, and it does not stop the commit.
