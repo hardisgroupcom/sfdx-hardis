@@ -14,7 +14,8 @@ Key functionalities:
 
 - **OAuth Token Analysis:** Queries all OAuth tokens in the org using SOQL to retrieve comprehensive token information including app names, users, authorization status, and usage statistics.
 - **Connected App and External Client App Coverage:** Checks both Connected Apps (via `AppMenuItem.IsUsingAdminAuthorization`) and External Client Apps (via `ExtlClntAppOauthPlcyCnfg.PermittedUsersPolicyType`) for proper admin pre-approval settings.
-- **App Type Column:** Each report row includes an `App Type` column indicating whether the app is a `Connected App` or `Ext Client App`.
+- **App Type Column:** Each report row includes an `App Type` column indicating whether the app is a `Connected App`, an `Ext Client App`, or an `Ext Client App (converted)`.
+- **Converted Connected Apps:** A Connected App migrated to an External Client App stays in the org as a read-only copy that Salesforce no longer uses for authentication, while its existing OAuth tokens still point to it. When an External Client App with the same name exists, the tokens are evaluated against the External Client App OAuth policy instead of the stale Connected App settings, so a properly secured migration is not reported as unsecured.
 - **AppName-based Fallback Matching:** When an OAuth token has no `AppMenuItem` link (common for External Client App tokens), the command falls back to matching by `AppName` against `ExternalClientApplication.MasterLabel` or `DeveloperName`.
 - **Ignore List Support:** Skips warning/escalation for apps configured in `monitoringUnsecureConnectedAppsIgnore` (project config) or `MONITORING_UNSECURE_CONNECTED_APPS_IGNORE` (environment variable). Matching OAuth tokens are marked as *Ignored*.
 - **Unsecured App Detection:** Identifies apps that allow users to authorize themselves without admin approval, which can pose security risks.
@@ -41,6 +42,7 @@ The command's technical implementation involves:
 - **SOQL Query Execution:** Executes a comprehensive SOQL query on the `OauthToken` object, joining with `AppMenuItem` and `User` objects to gather complete security context.
 - **Connected App Security Logic:** Analyzes the `AppMenuItem.IsUsingAdminAuthorization` field to determine if a Connected App requires admin pre-approval for user authorization.
 - **External Client App Security Logic:** Queries `ExtlClntAppOauthPlcyCnfg` for each External Client App and checks `PermittedUsersPolicyType === 'AdminApprovedPreAuthorized'` to determine if admin pre-approval is required. Falls back to AppName-based matching when `AppMenuItem.ApplicationId` is not populated.
+- **Converted Connected App Logic:** When a token points to a Connected App whose name matches an `ExternalClientApplication` `MasterLabel` or `DeveloperName`, the Connected App is considered migrated: the External Client App OAuth policy decides the status and the app type is reported as `Ext Client App (converted)`.
 - **Ignore Handling:** Normalizes app names and marks matching OAuth tokens as *Ignored* so they do not contribute to unsecured app counts and notifications.
 - **Data Transformation:** Processes raw SOQL results to add security status indicators, app type, and reorganizes data for optimal reporting and analysis.
 - **Aggregation Processing:** Groups OAuth tokens by app name to provide summary statistics and identify the most problematic applications.
