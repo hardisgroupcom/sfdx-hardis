@@ -13,11 +13,11 @@ that rebuilds it is given next to it.
 Three learning paths ("Salesforce DevOps with sfdx-hardis") built across three repositories, from
 the spec at `specs/trailmix-salesforce-devops.md` in this repository.
 
-| Repository | Branch | Pull Request |
-|---|---|---|
-| `hardisgroupcom/sfdx-hardis-training` | `feat/training-v1` | [#1](https://github.com/hardisgroupcom/sfdx-hardis-training/pull/1) |
-| `hardisgroupcom/vscode-sfdx-hardis` | `feat/training-fixtures` | [#514](https://github.com/hardisgroupcom/vscode-sfdx-hardis/pull/514) |
-| `hardisgroupcom/sfdx-hardis` | `feat/training-skills` | [#2206](https://github.com/hardisgroupcom/sfdx-hardis/pull/2206) |
+| Repository                            | Branch                   | Pull Request                                                          |
+|---------------------------------------|--------------------------|-----------------------------------------------------------------------|
+| `hardisgroupcom/sfdx-hardis-training` | `feat/training-v1`       | [#1](https://github.com/hardisgroupcom/sfdx-hardis-training/pull/1)   |
+| `hardisgroupcom/vscode-sfdx-hardis`   | `feat/training-fixtures` | [#514](https://github.com/hardisgroupcom/vscode-sfdx-hardis/pull/514) |
+| `hardisgroupcom/sfdx-hardis`          | `feat/training-skills`   | [#2206](https://github.com/hardisgroupcom/sfdx-hardis/pull/2206)      |
 
 Published site: <https://hardisgroupcom.github.io/sfdx-hardis-training/>
 
@@ -46,14 +46,14 @@ cd ../vscode-sfdx-hardis && git checkout feat/training-fixtures && yarn install
 On the machine this started on they are `C:/git/sfdx-hardis`, `C:/git/sfdx-hardis-training` and
 `C:/git/vscode-sfdx-hardis`. Nothing requires that exact path.
 
-| Tool | Needed for | If it is missing |
-|---|---|---|
-| Node 20+ | everything | install from nodejs.org |
-| `sf` CLI plus the `sfdx-hardis`, `sfdmu` and `sfdx-git-delta` plugins | the org work | `npm i -g @salesforce/cli` then `sf plugins install sfdx-hardis sfdmu sfdx-git-delta` |
-| `gh`, authenticated | Pull Requests, CI logs, repository settings | `gh auth login`, scopes `repo, workflow, read:org` |
-| Zensical | building the site | `pip install zensical mdx_truly_sane_lists`, then **`python -m zensical build`** (the `zensical` binary is not put on PATH) |
-| `playwright-core` | the live site checks and `scripts/build/annotate.mjs` | `npm i --no-save playwright-core` in the training repo |
-| Chrome with CDP | the web screenshots and the live checks | start Chrome with `--remote-debugging-port=9222`, signed in to GitHub |
+| Tool                                                                  | Needed for                                            | If it is missing                                                                                                            |
+|-----------------------------------------------------------------------|-------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| Node 20+                                                              | everything                                            | install from nodejs.org                                                                                                     |
+| `sf` CLI plus the `sfdx-hardis`, `sfdmu` and `sfdx-git-delta` plugins | the org work                                          | `npm i -g @salesforce/cli` then `sf plugins install sfdx-hardis sfdmu sfdx-git-delta`                                       |
+| `gh`, authenticated                                                   | Pull Requests, CI logs, repository settings           | `gh auth login`, scopes `repo, workflow, read:org`                                                                          |
+| Zensical                                                              | building the site                                     | `pip install zensical mdx_truly_sane_lists`, then **`python -m zensical build`** (the `zensical` binary is not put on PATH) |
+| `playwright-core`                                                     | the live site checks and `scripts/build/annotate.mjs` | `npm i --no-save playwright-core` in the training repo                                                                      |
+| Chrome with CDP                                                       | the web screenshots and the live checks               | start Chrome with `--remote-debugging-port=9222`, signed in to GitHub                                                       |
 
 **Never automate the desktop.** A capture script that used `SendKeys` and matched a window by title
 took over the user's own VS Code window and closed it. VS Code screenshots come from the extension's
@@ -67,12 +67,12 @@ Playwright over CDP in a new tab. Nothing else.
 Four Developer Edition orgs, all disposable, all fair game (the user said so explicitly: reset,
 deploy, delete as needed).
 
-| Alias | Username | What it is |
-|---|---|---|
-| `helios-dev` | `veurtio.dd9da51447c4@agentforce.com` | the learner's own dev org |
-| `helios-integration` (also aliased `integration`) | `veurtio+demo.73193ee31bf8@agentforce.com` | the shared integration org |
-| `helios-uat` | `nicobackup@nico.com` | Level 3 |
-| `helios-prod` | `nicolas.vuillamy.c8024b5deb9f@agentforce.com` | Level 3 |
+| Alias                                             | Username                                       | What it is                 |
+|---------------------------------------------------|------------------------------------------------|----------------------------|
+| `helios-dev`                                      | `veurtio.dd9da51447c4@agentforce.com`          | the learner's own dev org  |
+| `helios-integration` (also aliased `integration`) | `veurtio+demo.73193ee31bf8@agentforce.com`     | the shared integration org |
+| `helios-uat`                                      | `nicobackup@nico.com`                          | Level 3                    |
+| `helios-prod`                                     | `nicolas.vuillamy.c8024b5deb9f@agentforce.com` | Level 3                    |
 
 **On another computer none of these are authenticated.** Check with `sf org list`, then either:
 
