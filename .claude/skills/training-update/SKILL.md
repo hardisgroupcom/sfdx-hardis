@@ -35,7 +35,11 @@ have to be regenerated.
 | The raw web screenshots                    | `labs/_assets/web/*.png`                                                         | **Yes**, `scripts/build/capture-web.mjs`       |
 | The capture and annotation specs           | `labs/_assets/web-captures.json`, `labs/_assets/annotations.json`                | No, written by hand                            |
 | The annotated screenshots labs link        | `labs/_assets/annotated/`                                                        | **Yes**, `scripts/build/annotate.mjs`          |
+| The raw Salesforce screenshots             | `labs/_assets/salesforce/*.png`                                                  | **Yes**, `scripts/build/capture-salesforce.mjs` |
 | The site sources                           | `site-src/`                                                                      | **Yes**, `scripts/build/site.mjs`, git-ignored |
+| The site theme                             | `site-theme/`                                                                    | No, copied into the site by `site.mjs`         |
+| What a learner starts each level from      | `scripts/start-states/level-N/`                                                  | No, written by hand                            |
+| The teammate Pull Requests                 | `scripts/simulate/<story>/`                                                      | No, written by hand                            |
 
 **Never edit a generated file.** Change its source and re-run the generator. CI fails on drift
 (`node scripts/build/universe.mjs --check`).
@@ -210,15 +214,79 @@ screen against the live page before trusting the text. Two found the hard way:
 A screenshot that shows the wrong org, an unrelated project or a stale Pull Request is worse than
 no screenshot, because it teaches the learner that the picture is decoration.
 
+## Reset branches, and the state each level starts from
+
+`Training > Reset this level` resets a learner to `training/start-level-N`. Those branches are built
+from the deltas in `scripts/start-states/level-N/` by `scripts/build/start-branches.mjs`, each level
+applied on top of the one before.
+
+```bash
+node scripts/build/start-branches.mjs --dry-run   # what each branch would carry
+node scripts/build/start-branches.mjs             # build them locally
+node scripts/build/start-branches.mjs --push      # publish, from main, after a merge
+```
+
+Two rules that are easy to get wrong:
+
+- **A start state has to pass the previous level's audit.** Prove it, do not assume it: clone the
+  repository, check `integration` out at `training/start-level-N`, and run
+  `node scripts/verify/check.mjs --level N-1`. That is exactly what the reset produces.
+- **A teammate story merges once per level.** `scripts/simulate/<story>/` carries them, and a lab
+  that simulates one an earlier lab already merged gets "Nothing to commit" and opens no Pull
+  Request. If a start state ships a story pre-merged, the lab that used to simulate it has to review
+  the merged Pull Request instead. Both capstones had this bug.
+
+## Times
+
+They are measured against real orgs and a real fork, not estimated, and the home page says so. Two
+things drive them:
+
+- **The audience already knows Salesforce.** Creating a field or ticking field level security is
+  setup, not learning, and must not be budgeted as if the reader had never opened Setup.
+- **CI is fast.** A Pull Request check comes back in about two minutes and a deployment in about
+  two, and the reader reads the comment while they run. Do not pad for waiting.
+
+A lab's `**Time**` line and its row in the level index must agree, and the level totals appear in
+four places: each `labs/en/level-N/index.md`, `labs/en/index.md` and `README.md`.
+
+## Claims about the product
+
+**Read the command, not its name.** This is the single highest-yield rule in this skill: a pass that
+verified every lab against the sources found six of nine Level 2 labs and eleven of eleven Level 3
+labs carrying a wrong claim, six of them impossible to follow.
+
+What that pass kept finding:
+
+- A command doing much more than its name suggests. `hardis:work:resetselection` soft-resets every
+  commit since the branch point; the lab said in bold that it does not.
+- A lab promising a failure that cannot happen. A conflict needs both edits in the same region of
+  the file; a permission the lab grants may already be granted.
+- A panel field that does not exist. `sfdxHardisConfigHelper.ts` decides what the settings panel
+  renders and at which scope, and a branch-scoped key is invisible while the scope reads Global.
+- A setting taught as active that this project leaves off, `useDeltaDeployment` among them.
+
+**Green is not proof.** Two measured examples worth keeping in the labs: a deployment reported "No
+post-deployment actions defined" and went green when git refused the workspace, and SFDMU exits
+`0 SUCCESS` when the target object is missing, having written nothing. Whenever a lab tells a reader
+a thing happened, tell them where to look in the org.
+
 ## Before opening the Pull Request
 
 ```bash
 cd ../sfdx-hardis-training
-node scripts/build/universe.mjs --check   # generated files up to date, fiction consistent
-node scripts/build/annotate.mjs           # every annotated image matches its spec
-node scripts/verify/check-links.mjs       # every link resolves
-node scripts/build/site.mjs               # the site assembles
+node scripts/build/universe.mjs           # regenerate, because lab front matter feeds the manifest
+node scripts/build/universe.mjs --check    # generated files up to date, fiction consistent
+node scripts/build/annotate.mjs            # every annotated image matches its spec
+node scripts/verify/check-pills.mjs        # the pills an image carries are the ones its step cites
+node scripts/verify/check-links.mjs        # every link resolves
+node scripts/build/site.mjs && python -m zensical build
+node scripts/verify/check-site.mjs         # every page resolves every asset
+node scripts/verify/check-mobile.mjs       # the shared pages still read at 412px
 ```
+
+`check-pills.mjs` and `check-mobile.mjs` exist because two classes of mistake were invisible to
+everything else: a lab citing **(3)** over a two-pill image, and a five-column table rendering as
+one word per column on a phone. Both passed the markdown, the links and the asset checks.
 
 ## The Pull Request
 

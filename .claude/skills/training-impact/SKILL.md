@@ -1,6 +1,6 @@
 ---
 name: training-impact
-description: Decide whether a change in sfdx-hardis or vscode-sfdx-hardis breaks a lab of the sfdx-hardis training, and name the labs it touches. Load it for any change to a command name or flag, a prompt, --json output, a config key, a report file, a documentation page URL, an LWC panel, or any behaviour a lab walks through. Also use it when the user says "training impact", "does this break the course", "which labs use this", or asks to check the training before merging.
+description: Decide whether a change in sfdx-hardis or vscode-sfdx-hardis breaks a lab of the sfdx-hardis training, and name the labs it touches. Load it for any change to a command name or flag, a prompt, --json output, a config key, a report file, a documentation page URL, an LWC panel, or any behavior a lab walks through. Also use it when the user says "training impact", "does this break the course", "which labs use this", or asks to check the training before merging.
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
@@ -74,7 +74,7 @@ than a habit.
 | What changed                                   | Training impact                                                                    | What it needs                                  |
 |------------------------------------------------|------------------------------------------------------------------------------------|------------------------------------------------|
 | A command is renamed or removed                | **Breaking.** Every lab naming it stops working                                    | A training Pull Request, in the same effort    |
-| A flag is renamed, or its default changes      | **Breaking** if a lab relies on the behaviour                                      | A training Pull Request                        |
+| A flag is renamed, or its default changes      | **Breaking** if a lab relies on the behavior                                      | A training Pull Request                        |
 | A prompt's wording or its choices change       | **Text only**, unless a lab tells the learner what to pick                         | Update the lab step                            |
 | A config key is renamed                        | **Breaking.** Labs quote these in "Under the hood" blocks                          | A training Pull Request                        |
 | `--json` output or a report file changes shape | **Breaking** if `scripts/verify/rules.mjs` reads it                                | A training Pull Request, and re-run the audit  |
@@ -103,7 +103,7 @@ It diffs the working tree against the base branch, extracts the command ids, fla
 documentation slugs the diff touches, and names the labs that depend on them. Run it where the JSON
 schema check already runs.
 
-It is a helper, not an oracle: it cannot see that a behaviour changed under an unchanged name. The
+It is a helper, not an oracle: it cannot see that a behavior changed under an unchanged name. The
 table above is the part that needs judgement.
 
 ## What to output
@@ -129,6 +129,27 @@ When there is none, say so in one line and name what you checked:
 
 None. The change touches `hardis:org:diagnose:unusedlicenses`, which no lab uses.
 ```
+
+## The labs are not a reliable record of the product
+
+Worth knowing before you conclude a lab is fine. A pass that checked every claim in the course
+against the sources found **six of the nine Level 2 labs and all eleven Level 3 labs** carrying at
+least one wrong statement, and six of those labs could not be followed at all.
+
+So when you are deciding whether a change affects a lab, do not read the lab and ask "does this
+still match". Read what the command or the panel does now, and ask whether the lab was ever right.
+The four shapes that keep appearing:
+
+- **The command does more than its name says.** `hardis:work:resetselection` soft-resets every
+  commit since the branch point. A lab said in bold that it does not.
+- **A promised failure cannot happen.** A merge conflict needs both edits in the same region of a
+  file; a permission the lab asks you to grant may already be granted.
+- **A panel field does not exist, or not at that scope.** `sfdxHardisConfigHelper.ts` decides what
+  the settings panel renders; a branch-scoped key is invisible while the scope reads Global.
+- **A setting is taught as active that this project leaves off.**
+
+If a change you are assessing lands anywhere near one of those, the honest answer is that the lab
+needs reading against the source, not just patching.
 
 ## Process
 
