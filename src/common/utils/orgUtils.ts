@@ -232,6 +232,7 @@ export async function promptOrg(
       Command: commandThis,
       devHub: options.devHub === true,
       setDefault: options.setDefault !== false,
+      alias: options.alias,
     });
     const justConnectedOrg = globalThis.justConnectedOrg;
     if (!justConnectedOrg?.username) {
