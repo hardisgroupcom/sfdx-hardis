@@ -27,6 +27,7 @@ Your goal is to fully understand what the user wants before any design or implem
    - **Requirements**: Specific requirements and constraints
    - **i18n impact**: Whether translations are needed
    - **VS Code extension impact**: What changes in vscode-sfdx-hardis, or "none" with the reason
+   - **Training impact**: Which labs of sfdx-hardis-training this touches, or "none" with what you checked. Load the `training-impact` skill when the change touches a command, a flag, a prompt, a config key, a report shape, a doc page or a panel
    - **Open questions**: Any remaining uncertainties
 
 Do NOT proceed to design or implementation. Your only job is to understand the problem.

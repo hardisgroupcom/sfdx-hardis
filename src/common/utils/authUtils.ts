@@ -13,7 +13,7 @@ import {
   stripAnsi,
   uxLog,
 } from './index.js';
-import { CONSTANTS, getConfig } from '../../config/index.js';
+import { CONSTANTS, getConfig, getEnvVar } from '../../config/index.js';
 import { SfError } from '@salesforce/core';
 import { clearCache } from '../cache/index.js';
 import { WebSocketClient } from '../websocketClient.js';
@@ -200,9 +200,14 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
       const authFile = path.join(authTmpDir, 'sfdxScratchAuth.txt');
       try {
         await fs.writeFile(authFile, authUrl, 'utf8');
+        // Same rule as the JWT and web login branches below: the org becomes the default
+        // unless the caller explicitly said not to. `setDefaultOrg` is only computed when
+        // the hook also checks the existing connection, so relying on it here left a CI job
+        // authenticated with no default org, and the very next command failed with
+        // "NoDefaultEnvError: No default environment found".
         const authCommand =
           `sf org login sfdx-url -f "${authFile}"` +
-          (isDevHub ? ` --set-default-dev-hub` : (setDefaultOrg ? ` --set-default` : '')) +
+          (isDevHub ? ` --set-default-dev-hub` : options.setDefault === false ? '' : ' --set-default') +
           (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
         const authUrlRes = await execSfdxJson(authCommand, this, { fail: true, output: false });
         uxLog("action", this, c.cyan(t('successfullyLoggedUsingSfdxauthurl')));
@@ -230,7 +235,15 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
               ? process.env.TARGET_USERNAME
               : config.targetUsername || null;
     if (username == null && isCI) {
-      const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
+      // A CI Pull Request check runs on a detached HEAD, so the branch cannot be read
+      // from git. The CI variables hold it, and without them the message named a file
+      // called ".sfdx-hardis.null.yml", which does not help anybody.
+      const gitBranchFormatted =
+        (await getCurrentGitBranch({ formatted: true })) ||
+        getEnvVar('CONFIG_BRANCH') ||
+        getEnvVar('CI_COMMIT_REF_NAME') ||
+        orgAlias ||
+        '<branch>';
       console.error(
         c.yellow(
           `[sfdx-hardis][WARNING] You may have to define ${c.bold(
