@@ -877,6 +877,7 @@
   "deploymentActionsDisabledSkipping": "デプロイアクションは無効になっています(disableDeploymentActions 設定プロパティまたは SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS 環境変数): {{actionLabel}} をスキップしています",
   "deploymentActionsFoundToRun": "実行する {{actionLabel}} が {{count}} 件見つかりました",
   "deploymentActionsListing": "{{actionLabel}} を一覧表示しています...",
+  "deploymentActionsLookupFailed": "対象のプルリクエストの{{actionLabel}}を読み取れませんでした: {{message}}。アクションが不明なままデプロイせずに中止します。",
   "deploymentActionsNoneDefined": "branch config または pull request に {{actionLabel}} が定義されていません",
   "deploymentActionsNotRunDeploymentFailed": "メタデータのデプロイが失敗しました。{{count}} 件のデプロイ後アクションは実行されません",
   "deploymentActionsScopeError": "デプロイスコープの説明を作成できませんでした: {{message}}",

@@ -879,6 +879,7 @@
   "deploymentActionsDisabledSkipping": "Le azioni di distribuzione sono disabilitate (proprietà di configurazione disableDeploymentActions o variabile d'ambiente SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS): {{actionLabel}} viene saltata",
   "deploymentActionsFoundToRun": "Trovate {{count}} {{actionLabel}} da eseguire",
   "deploymentActionsListing": "Elenco delle {{actionLabel}} in corso...",
+  "deploymentActionsLookupFailed": "Impossibile leggere le {{actionLabel}} delle pull request coinvolte: {{message}}. Interruzione, invece di distribuire senza conoscere le azioni.",
   "deploymentActionsNoneDefined": "Nessuna {{actionLabel}} definita nella configurazione del branch o nelle pull request",
   "deploymentActionsNotRunDeploymentFailed": "Distribuzione dei metadati non riuscita: le {{count}} azioni post-distribuzione non verranno eseguite",
   "deploymentActionsScopeError": "Impossibile generare la spiegazione dell'ambito di distribuzione: {{message}}",

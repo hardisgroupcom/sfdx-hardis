@@ -879,6 +879,7 @@
   "deploymentActionsDisabledSkipping": "Las acciones de despliegue están deshabilitadas (propiedad de configuración disableDeploymentActions o variable de entorno SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS): omitiendo {{actionLabel}}",
   "deploymentActionsFoundToRun": "Se encontraron {{count}} {{actionLabel}} para ejecutar",
   "deploymentActionsListing": "Listando {{actionLabel}}...",
+  "deploymentActionsLookupFailed": "No se han podido leer las {{actionLabel}} de las pull requests del ambito: {{message}}. Se detiene en lugar de desplegar sin conocer las acciones.",
   "deploymentActionsNoneDefined": "No hay {{actionLabel}} definidas en la configuración de la rama o en los pull requests",
   "deploymentActionsNotRunDeploymentFailed": "El despliegue de metadatos falló: las {{count}} acciones post-despliegue no se ejecutarán",
   "deploymentActionsScopeError": "No se ha podido generar la explicación del alcance del despliegue: {{message}}",

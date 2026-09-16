@@ -878,6 +878,7 @@
   "deploymentActionsDisabledSkipping": "Deployment-Aktionen sind deaktiviert (Konfigurationseigenschaft disableDeploymentActions oder Umgebungsvariable SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS): {{actionLabel}} wird übersprungen",
   "deploymentActionsFoundToRun": "{{count}} auszuführende {{actionLabel}} gefunden",
   "deploymentActionsListing": "{{actionLabel}} werden aufgelistet...",
+  "deploymentActionsLookupFailed": "Die {{actionLabel}} der betroffenen Pull Requests konnten nicht gelesen werden: {{message}}. Der Vorgang wird abgebrochen, statt mit unbekannten Aktionen zu deployen.",
   "deploymentActionsNoneDefined": "Keine {{actionLabel}} in der Branch-Konfiguration oder in Pull Requests definiert",
   "deploymentActionsNotRunDeploymentFailed": "Metadaten-Deployment fehlgeschlagen: die {{count}} Post-Deployment-Aktionen werden nicht ausgeführt",
   "deploymentActionsScopeError": "Die Erklärung des Deployment-Umfangs konnte nicht erstellt werden: {{message}}",

@@ -879,6 +879,7 @@
   "deploymentActionsDisabledSkipping": "Les actions de déploiement sont désactivées (propriété de configuration disableDeploymentActions ou variable d'environnement SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS) : {{actionLabel}} est ignorée",
   "deploymentActionsFoundToRun": "{{count}} {{actionLabel}} trouvée(s) à exécuter",
   "deploymentActionsListing": "Listage des {{actionLabel}}...",
+  "deploymentActionsLookupFailed": "Impossible de lire les {{actionLabel}} des pull requests concernees : {{message}}. Arret, plutot que de deployer sans connaitre les actions.",
   "deploymentActionsNoneDefined": "Aucune {{actionLabel}} définie dans la configuration de branche ou dans les pull requests",
   "deploymentActionsNotRunDeploymentFailed": "Le déploiement des métadonnées a échoué : les {{count}} actions post-déploiement ne seront pas exécutées",
   "deploymentActionsScopeError": "Impossible de générer l'explication du périmètre de déploiement : {{message}}",

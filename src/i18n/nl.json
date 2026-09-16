@@ -879,6 +879,7 @@
   "deploymentActionsDisabledSkipping": "Implementatieacties zijn uitgeschakeld (configuratie-eigenschap disableDeploymentActions of omgevingsvariabele SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS): {{actionLabel}} wordt overgeslagen",
   "deploymentActionsFoundToRun": "{{count}} {{actionLabel}} gevonden om uit te voeren",
   "deploymentActionsListing": "{{actionLabel}} worden weergegeven...",
+  "deploymentActionsLookupFailed": "De {{actionLabel}} van de betrokken pull requests konden niet gelezen worden: {{message}}. Er wordt gestopt in plaats van te implementeren zonder de acties te kennen.",
   "deploymentActionsNoneDefined": "Geen {{actionLabel}} gedefinieerd in de branch config of pull requests",
   "deploymentActionsNotRunDeploymentFailed": "Metadata-implementatie mislukt: de {{count}} post-deploy acties worden niet uitgevoerd",
   "deploymentActionsScopeError": "Kon de uitleg over de implementatiescope niet opbouwen: {{message}}",

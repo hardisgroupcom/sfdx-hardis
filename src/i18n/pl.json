@@ -879,6 +879,7 @@
   "deploymentActionsDisabledSkipping": "Akcje wdrożenia są wyłączone (właściwość konfiguracyjna disableDeploymentActions lub zmienna środowiskowa SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS): pomijanie {{actionLabel}}",
   "deploymentActionsFoundToRun": "Znaleziono {{count}} {{actionLabel}} do uruchomienia",
   "deploymentActionsListing": "Wyświetlanie listy {{actionLabel}}...",
+  "deploymentActionsLookupFailed": "Nie udalo sie odczytac {{actionLabel}} dla powiazanych pull requestow: {{message}}. Przerwano zamiast wdrazac bez znajomosci akcji.",
   "deploymentActionsNoneDefined": "Brak {{actionLabel}} zdefiniowanych w konfiguracji branch lub w pull requestach",
   "deploymentActionsNotRunDeploymentFailed": "Wdrożenie metadanych nie powiodło się: {{count}} akcji po wdrożeniu nie zostanie uruchomionych",
   "deploymentActionsScopeError": "Nie udało się zbudować wyjaśnienia zakresu wdrożenia: {{message}}",
