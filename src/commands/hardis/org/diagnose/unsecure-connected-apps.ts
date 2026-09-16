@@ -34,7 +34,7 @@ Key functionalities:
 - **Connected App and External Client App Coverage:** Checks both Connected Apps (via \`AppMenuItem.IsUsingAdminAuthorization\`) and External Client Apps (via \`ExtlClntAppOauthPlcyCnfg.PermittedUsersPolicyType\`) for proper admin pre-approval settings.
 - **App Type Column:** Each report row includes an \`App Type\` column indicating whether the app is a \`Connected App\`, an \`Ext Client App\`, or an \`Ext Client App (converted)\`.
 - **Converted Connected Apps:** A Connected App migrated to an External Client App stays in the org as a read-only copy that Salesforce no longer uses for authentication, while its existing OAuth tokens still point to it. When an External Client App with the same name exists, the tokens are evaluated against the External Client App OAuth policy instead of the stale Connected App settings, so a properly secured migration is not reported as unsecured.
-- **AppName-based Fallback Matching:** When an OAuth token has no \`AppMenuItem\` link (common for External Client App tokens), the command falls back to matching by \`AppName\` against \`ExternalClientApplication.MasterLabel\` or \`DeveloperName\`.
+- **AppName-based Fallback Matching:** When an OAuth token has no \`AppMenuItem\` link (common for External Client App tokens, and for Connected App tokens issued before the app was reinstalled), the command falls back to matching by \`AppName\` against \`ExternalClientApplication.MasterLabel\` or \`DeveloperName\`, then against \`ConnectedApplication.Name\`. The Connected App setting \`OptionsAllowAdminApprovedUsersOnly\` ("Admin approved users are pre-authorized") then decides the status.
 - **Ignore List Support:** Skips warning/escalation for apps configured in \`monitoringUnsecureConnectedAppsIgnore\` (project config) or \`MONITORING_UNSECURE_CONNECTED_APPS_IGNORE\` (environment variable). Matching OAuth tokens are marked as *Ignored*.
 - **Unsecured App Detection:** Identifies apps that allow users to authorize themselves without admin approval, which can pose security risks.
 - **Phantom App Cleanup (Optional):** Detects unsecured apps not present in the installed Connected Apps or External Client Apps list and offers an interactive option to revoke their OAuth tokens (forces re-authentication if still needed).
@@ -58,7 +58,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 The command's technical implementation involves:
 
 - **SOQL Query Execution:** Executes a comprehensive SOQL query on the \`OauthToken\` object, joining with \`AppMenuItem\` and \`User\` objects to gather complete security context.
-- **Connected App Security Logic:** Analyzes the \`AppMenuItem.IsUsingAdminAuthorization\` field to determine if a Connected App requires admin pre-approval for user authorization.
+- **Connected App Security Logic:** Analyzes the \`ConnectedApplication.OptionsAllowAdminApprovedUsersOnly\` field (falling back to \`AppMenuItem.IsUsingAdminAuthorization\`) to determine if a Connected App requires admin pre-approval for user authorization. Booleans returned as strings by the Bulk API are normalized, so a \`"false"\` value is never read as secured.
 - **External Client App Security Logic:** Queries \`ExtlClntAppOauthPlcyCnfg\` for each External Client App and checks \`PermittedUsersPolicyType === 'AdminApprovedPreAuthorized'\` to determine if admin pre-approval is required. Falls back to AppName-based matching when \`AppMenuItem.ApplicationId\` is not populated.
 - **Converted Connected App Logic:** When a token points to a Connected App whose name matches an \`ExternalClientApplication\` \`MasterLabel\` or \`DeveloperName\`, the Connected App is considered migrated: the External Client App OAuth policy decides the status and the app type is reported as \`Ext Client App (converted)\`.
 - **Ignore Handling:** Normalizes app names and marks matching OAuth tokens as *Ignored* so they do not contribute to unsecured app counts and notifications.
@@ -135,6 +135,8 @@ In agent mode:
     const conn: Connection = flags['target-org'].getConnection();
 
     const normalizeAppName = (appName: string): string => (appName || '').trim().toLowerCase();
+    // Bulk API v2 returns every field as a string, so a "false" boolean must not be read as truthy
+    const toBoolean = (value: any): boolean => value === true || value === 'true';
 
     // Read config to get list of connected apps to ignore
     const config = await getConfig("project");
@@ -149,10 +151,17 @@ In agent mode:
 
     // List available connected apps
     uxLog("action", this, c.cyan(t('listingAllInstalledConnectedAppsFrom', { conn: conn.instanceUrl })));
-    const connectedAppQuery = `SELECT Id, Name FROM ConnectedApplication ORDER BY Name ASC`;
+    // OptionsAllowAdminApprovedUsersOnly is the "Admin approved users are pre-authorized" setting of the Connected App
+    const connectedAppQuery = `SELECT Id, Name, OptionsAllowAdminApprovedUsersOnly FROM ConnectedApplication ORDER BY Name ASC`;
     const connectedAppQueryRes = await bulkQuery(connectedAppQuery, conn);
     const allConnectedApps = connectedAppQueryRes.records;
     uxLog("log", this, t('connectedAppsFound', { count: allConnectedApps.length }));
+    const allConnectedAppsById = new Map<string, any>(allConnectedApps.map(app => [app.Id, app]));
+    // Also index by Name for AppName-based matching (tokens whose AppMenuItem link is gone)
+    const allConnectedAppsByName = new Map<string, any>();
+    for (const app of allConnectedApps) {
+      if (app.Name) allConnectedAppsByName.set(normalizeAppName(app.Name), app);
+    }
 
     // List available External Client Apps
     uxLog("action", this, c.cyan(t('listingAllExternalClientAppsFrom', { conn: conn.instanceUrl })));
@@ -222,10 +231,21 @@ In agent mode:
     sortArray(allOAuthTokens, { by: 'AppName' });
 
     const allOAuthTokensWithStatus = allOAuthTokens.map(oAuthToken => {
-      let adminPreApproved = oAuthToken["AppMenuItem.IsUsingAdminAuthorization"] ?? false;
+      let adminPreApproved = toBoolean(oAuthToken["AppMenuItem.IsUsingAdminAuthorization"]);
       let appName = oAuthToken.AppName ? oAuthToken.AppName : 'N/A';
       let appType = 'Connected App';
       const applicationId = oAuthToken["AppMenuItem.ApplicationId"];
+      // A Connected App migrated to an External Client App stays in the org as a read-only copy that is no longer
+      // used for authentication, but its OAuth tokens still point to it. The migrated External Client App keeps
+      // the Connected App name, so when one exists, its OAuth policy is the one that applies.
+      const applyConvertedExtClientApp = (connectedAppName: string) => {
+        const convertedExtClientApp = allExternalClientAppsByName.get(connectedAppName.toLowerCase());
+        if (convertedExtClientApp) {
+          appType = 'Ext Client App (converted)';
+          const ecaPolicy = ecaOauthPoliciesByAppId.get(convertedExtClientApp.Id);
+          adminPreApproved = ecaPolicy?.PermittedUsersPolicyType === 'AdminApprovedPreAuthorized';
+        }
+      };
       if (applicationId) {
         if (applicationId.startsWith("0xI")) {
           // External Client App (matched via AppMenuItem.ApplicationId)
@@ -239,30 +259,30 @@ In agent mode:
           adminPreApproved = ecaPolicy?.PermittedUsersPolicyType === 'AdminApprovedPreAuthorized';
         } else {
           // Connected App
-          const matchingConnectedApp = allConnectedApps.find(app => app.Id === applicationId);
+          const matchingConnectedApp = allConnectedAppsById.get(applicationId);
           if (matchingConnectedApp) {
             appName = matchingConnectedApp.Name;
+            if (matchingConnectedApp.OptionsAllowAdminApprovedUsersOnly != null) {
+              adminPreApproved = toBoolean(matchingConnectedApp.OptionsAllowAdminApprovedUsersOnly);
+            }
           } else {
             throw new SfError(`Connected App with Id ${applicationId} not found among installed Connected Apps.`);
           }
-          // A Connected App migrated to an External Client App stays in the org as a read-only copy that is no longer
-          // used for authentication, but its OAuth tokens still point to it. The migrated External Client App keeps
-          // the Connected App name, so when one exists, its OAuth policy is the one that applies.
-          const convertedExtClientApp = allExternalClientAppsByName.get(appName.toLowerCase());
-          if (convertedExtClientApp) {
-            appType = 'Ext Client App (converted)';
-            const ecaPolicy = ecaOauthPoliciesByAppId.get(convertedExtClientApp.Id);
-            adminPreApproved = ecaPolicy?.PermittedUsersPolicyType === 'AdminApprovedPreAuthorized';
-          }
+          applyConvertedExtClientApp(appName);
         }
       } else if (appName !== 'N/A') {
-        // No AppMenuItem link - try to match by AppName against External Client Apps
+        // No AppMenuItem link (External Client App token, or Connected App reinstalled since the token was issued):
+        // match by AppName against External Client Apps first, then against Connected Apps
         const matchingExtClientApp = allExternalClientAppsByName.get(appName.toLowerCase());
+        const matchingConnectedApp = allConnectedAppsByName.get(normalizeAppName(appName));
         if (matchingExtClientApp) {
           appType = 'Ext Client App';
           appName = matchingExtClientApp.MasterLabel || matchingExtClientApp.DeveloperName;
           const ecaPolicy = ecaOauthPoliciesByAppId.get(matchingExtClientApp.Id);
           adminPreApproved = ecaPolicy?.PermittedUsersPolicyType === 'AdminApprovedPreAuthorized';
+        } else if (matchingConnectedApp) {
+          appName = matchingConnectedApp.Name;
+          adminPreApproved = toBoolean(matchingConnectedApp.OptionsAllowAdminApprovedUsersOnly);
         }
       }
 
