@@ -74,7 +74,7 @@ than a habit.
 | What changed                                   | Training impact                                                                    | What it needs                                  |
 |------------------------------------------------|------------------------------------------------------------------------------------|------------------------------------------------|
 | A command is renamed or removed                | **Breaking.** Every lab naming it stops working                                    | A training Pull Request, in the same effort    |
-| A flag is renamed, or its default changes      | **Breaking** if a lab relies on the behavior                                      | A training Pull Request                        |
+| A flag is renamed, or its default changes      | **Breaking** if a lab relies on the behavior                                       | A training Pull Request                        |
 | A prompt's wording or its choices change       | **Text only**, unless a lab tells the learner what to pick                         | Update the lab step                            |
 | A config key is renamed                        | **Breaking.** Labs quote these in "Under the hood" blocks                          | A training Pull Request                        |
 | `--json` output or a report file changes shape | **Breaking** if `scripts/verify/rules.mjs` reads it                                | A training Pull Request, and re-run the audit  |
