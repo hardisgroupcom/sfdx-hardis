@@ -848,7 +848,7 @@ Non-negotiable rules for `claim.yml`:
 - Treat every issue field as untrusted input: validate against a schema, never interpolate into a shell command, and bound the clone (depth, blob filter, size and timeout) so a hostile repository cannot exhaust the runner.
 - Pin every action by SHA, as the sfdx-hardis workflows already do.
 - Rate limit per issue author, so a loop of edits cannot re-trigger the audit indefinitely.
-- Set a `concurrency` group on the workflow. Two claims landing at the same time both commit to `main`, and without serialisation the second push is rejected. Serialise, and retry the commit on top of the new head rather than failing the learner's claim.
+- Set a `concurrency` group on the workflow. Two claims landing at the same time both commit to `main`, and without serialization the second push is rejected. Serialize, and retry the commit on top of the new head rather than failing the learner's claim.
 
 ### 15.3 Can the Trailmix completion be checked automatically?
 
@@ -982,7 +982,7 @@ Fixed role assignment for the build:
 
 ### 19.2 The one real constraint: cold starts are not repeatable
 
-A learner meets `seed/` on a **completely empty org**. That first deployment is the single most fragile thing in the course, because metadata that deploys fine onto a warm org can fail on a cold one over ordering, missing dependencies or licence-gated features.
+A learner meets `seed/` on a **completely empty org**. That first deployment is the single most fragile thing in the course, because metadata that deploys fine onto a warm org can fail on a cold one over ordering, missing dependencies or license-gated features.
 
 With persistent orgs and no scratch orgs, there are only four genuinely cold orgs in existence, and each can be spent only once.
 
@@ -996,7 +996,7 @@ The policy that follows:
 | `scripts/teardown.sh` ships alongside `bootstrap`, using `destructiveChanges.xml` to remove the Helios app and its data | Approximates a fresh org well enough for repeat runs, and the learner gets it too when a lab goes wrong |
 | `bootstrap` is idempotent from the start, not as a later refinement | It will be run repeatedly on the same orgs during the build |
 
-Teardown is an approximation, not a reset: it removes what `seed/` created, and cannot undo a feature toggle or a licence assignment. Where a lab depends on org state that teardown cannot restore, the lab says so and the canary is what proves it.
+Teardown is an approximation, not a reset: it removes what `seed/` created, and cannot undo a feature toggle or a license assignment. Where a lab depends on org state that teardown cannot restore, the lab says so and the canary is what proves it.
 
 ### 19.3 Human actions, all complete
 
@@ -1088,7 +1088,7 @@ Nothing further is required from a human until the Trailmix creation attempt (19
 
 Every question raised so far is answered and recorded in section 21. Three second-order choices remain, each small enough to settle during the phase that needs it:
 
-1. **Does a learner who deletes or privatises their repository keep the badge?** The badge page is committed and would survive, but its evidence link would 404. (Recommendation: keep the badge, and have `sync-check.yml` mark the evidence link as no longer reachable rather than revoke anything.)
+1. **Does a learner who deletes or makes private their repository keep the badge?** The badge page is committed and would survive, but its evidence link would 404. (Recommendation: keep the badge, and have `sync-check.yml` mark the evidence link as no longer reachable rather than revoke anything.)
 2. **One badge page per learner, or one page per badge?** One page per learner keeps a single shareable URL as they progress through the three levels, which argues for it. Settle before A6, since the URL is the thing people share.
 3. **Which Trailhead handle field is authoritative if a learner's GitHub handle and Trailblazer username differ?** The badge page is keyed by GitHub handle (it is what the audit can prove) and shows the Trailblazer username as declared. Confirm that is the right way round before the issue form is written.
 
