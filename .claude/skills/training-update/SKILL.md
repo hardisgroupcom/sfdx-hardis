@@ -173,6 +173,13 @@ node scripts/build/capture-web.mjs [names]
 node scripts/build/annotate.mjs
 ```
 
+**Never call `browser.close()` on a CDP connection.** `chromium.connectOverCDP` attaches to the
+user's running browser: closing it closes *their* browser, with everything they had open. Close only
+the pages the script opened. A capture that needs a browser of its own uses
+`launchPersistentContext` with its own `--user-data-dir`, and closes that context. This has happened
+once: the user lost their session and their CDP Chrome, which cannot simply be relaunched because
+Chrome refuses `--remote-debugging-port` on the default profile.
+
 **Never automate the desktop to take a screenshot.** No `SendKeys`, no `SetForegroundWindow`, and
 never kill a window matched by its title. Done once, it took over the user's own VS Code window,
 typed into it, closed it, and the image it produced contained the user's real org usernames.
